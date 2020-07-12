@@ -54,6 +54,11 @@ local settingsList = {
     show_menu = { category="none", event="ShowMenu", title=_("Show menu"), device=true,},
     toggle_hold_corners = { category="none", event="IgnoreHoldCorners", title=_("Toggle hold corners"), device=true,},
     toggle_rotation = { category="none", event="ToggleRotation", title=_("Toggle rotation"), device=true,},
+    wallabag_download = { category="none", event="SynchronizeWallabag", title=_("Wallabag retrieval"), device=true,},
+    calibre_search = { category="none", event="CalibreSearch", title=_("Search in calibre metadata"), device=true,},
+    calibre_browse_tags = { category="none", event="CalibreBrowseTags", title=_("Browse all calibre tags"), device=true,},
+    calibre_browse_series = { category="none", event="CalibreBrowseSeries", title=_("Browse all calibre series"), device=true,},
+    favorites = { category="arg", event="ShowColl", arg="favorites", title=_("Favorites"), device=true,},
 
     --filemanager settings
     folder_up = { category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
@@ -70,11 +75,11 @@ local settingsList = {
     go_to = { category="none", event="ShowGotoDialog", title=_("Go to"), rolling=true, paging=true,},
     skim = { category="none", event="ShowSkimtoDialog", title=_("Skim"), rolling=true, paging=true,},
     back = { category="none", event="Back", title=_("Back"), rolling=true, paging=true,},
-    previous_location = { category="none", event="GoBackLink", title=_("Back to previous location"), rolling=true, paging=true,},
+    previous_location = { category="arg", event="GoBackLink", arg=true, title=_("Back to previous location"), rolling=true, paging=true,},
     latest_bookmark = { category="none", event="GoToLatestBookmark", title=_("Go to latest bookmark"), rolling=true, paging=true,},
 --    follow_nearest_link = { category="toggle", event="GoToPageLink", title=_("Follow nearest link"), rolling=true, paging=true,},
 --    follow_nearest_internal_link = { category="toggle", event="GoToInternalPageLink", title=_("Follow nearest internal link"), rolling=true, paging=true,},
-    clear_location_history = { category="none", event="ClearLocationStack", title=_("Clear location history"), rolling=true, paging=true,},
+    clear_location_history = { category="arg", event="ClearLocationStack", arg=true, title=_("Clear location history"), rolling=true, paging=true,},
     toc = { category="none", event="ShowToc", title=_("Table of contents"), rolling=true, paging=true,},
     bookmarks = { category="none", event="ShowBookmark", title=_("Bookmarks"), rolling=true, paging=true,},
     book_statistics = { category="none", event="ShowBookStats", title=_("Book statistics"), rolling=true, paging=true,},
@@ -87,6 +92,11 @@ local settingsList = {
     toggle_inverse_reading_order = { category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), rolling=true, paging=true,},
     cycle_highlight_action = { category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), rolling=true, paging=true,},
     cycle_highlight_style = { category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), rolling=true, paging=true,},
+    kosync_push_progress = { category="none", event="KOSyncPushProgress", title=_("Push progress from this device"), rolling=true, paging=true,},
+    kosync_pull_progress = { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), rolling=true, paging=true,},
+--    page_foward = { category="incrementalnumber", event="GotoViewRel" , min=-50, max=50, title=_("Go %1 pages"), rolling=true, paging=true,},
+
+    --rolling reader settings
 --    increase_font = { category="incrementalnumber", event="IncreaseFontSize", min=1, max=50, title=_("Increase font size"), rolling=true,},
 --    decrease_font = { category="incrementalnumber", event="DecreaseFontSize", min=1, max=50, title=_("Decrease font size"), rolling=true,},
 
@@ -171,7 +181,7 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
     for k, v in pairs(settingsList) do
         if settingsList[k][section] == true and
         (settingsList[k].condition == nil or settingsList[k].condition) then
-            if settingsList[k].category == "none" then
+            if settingsList[k].category == "none" or settingsList[k].category == "arg" then
                 table.insert(menu, {
                    text = settingsList[k].title,
                    checked_func = function()
@@ -353,6 +363,9 @@ function Dispatcher:execute(settings, gesture)
         if settingsList[k].conditions == nil or settingsList[k].conditions == true then
             if settingsList[k].category == "none" then
                 self.ui:handleEvent(Event:new(settingsList[k].event))
+            end
+            if settingsList[k].category == "arg" then
+                self.ui:handleEvent(Event:new(settingsList[k].event, settingsList[k].arg))
             end
             if settingsList[k].category == "absolutenumber"
             or settingsList[k].category == "string" then
