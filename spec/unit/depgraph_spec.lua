@@ -139,4 +139,30 @@ describe("DepGraph module", function()
         assert.is_true(type(tapBwdNode.deps) == "table")
         assert.is_true(#tapBwdNode.deps > 0)
     end)
+
+    it("should not serialize removed/disabled nodes", function()
+        local dg = DepGraph:new{}
+        dg:addNode('foo')
+        dg:addNode('bar')
+        dg:addNode('baz',
+                   {'foo', 'bar', 'bam'})
+        dg:addNode('feh')
+        dg:removeNode('baz')
+        dg:removeNode('bar')
+        dg:addNode('blah', {'bla', 'h', 'baz'})
+        assert.are.same({
+            'foo',
+            'bam',
+            'feh',
+            'bla',
+            'h',
+            'blah',
+        }, dg:serialize())
+
+        -- Check that baz was removed from blah's deps
+        assert.are.same({
+            'blah',
+            'h',
+        }, dg:getNode('blah').deps)
+    end)
 end)
