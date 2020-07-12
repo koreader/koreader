@@ -37,8 +37,8 @@ function DepGraph:checkNode(id)
 end
 
 function DepGraph:getNode(id)
-    local node = nil
-    local index = nil
+    local node
+    local index
     for i, n in ipairs(self.nodes) do
         if n.key == id then
             node = n
@@ -50,11 +50,11 @@ function DepGraph:getNode(id)
 end
 
 function DepGraph:getActiveNode(id)
-    local node = nil
-    local index = nil
+    local node
+    local index
 
     node, index = self:getNode(id)
-    if node.disabled then
+    if node and node.disabled then
         node = nil
     end
 
