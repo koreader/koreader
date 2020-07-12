@@ -27,8 +27,8 @@ end
 
 -- Check if node exists, and is active
 function DepGraph:checkNode(id)
-    for i, _ in ipairs(self.nodes) do
-       if self.nodes[i].key == id and not self.nodes[i].disabled then
+    for i, n in ipairs(self.nodes) do
+       if n.key == id and not n.disabled then
            return true
        end
     end
@@ -39,10 +39,9 @@ end
 function DepGraph:getNode(id)
     local node = nil
     local index = nil
-    -- FIXME: _ is node, duh.
-    for i, _ in ipairs(self.nodes) do
-        if self.nodes[i].key == id then
-            node = self.nodes[i]
+    for i, n in ipairs(self.nodes) do
+        if n.key == id then
+            node = n
             index = i
             break
         end
@@ -132,8 +131,7 @@ function DepGraph:removeNode(node_key)
         end
     end
     -- On the other hand, we definitely should remove it from the deps of every *other* node.
-    for i, _ in ipairs(self.nodes) do
-        local curr_node = self.nodes[i]
+    for i, curr_node in ipairs(self.nodes) do
         -- Is not the to be removed node, and has deps
         if curr_node.key ~= node_key and curr_node.deps then
             -- Walk that node's deps to check if it depends on us
@@ -198,8 +196,8 @@ function DepGraph:serialize()
     local visited = {}
     local ordered_nodes = {}
 
-    for i, _ in ipairs(self.nodes) do
-        local node_key = self.nodes[i].key
+    for i, n in ipairs(self.nodes) do
+        local node_key = n.key
         if not visited[node_key] then
             local queue = { node_key }
             while #queue > 0 do
