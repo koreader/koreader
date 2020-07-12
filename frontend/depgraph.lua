@@ -39,17 +39,17 @@ function DepGraph:getNode(id)
     local node = nil
     local index = nil
     for i, _ in ipairs(self.nodes) do
-       if self.nodes[i].key == id then
-           node = self.nodes[i]
-           index = i
-           break
-       end
+        if self.nodes[i].key == id then
+            node = self.nodes[i]
+            index = i
+            break
+        end
     end
     return node, index
 end
 
 -- Add a node, with an optional list of dependencies
--- If dependencies don't exist yet, they'll be created in order.
+-- If dependencies don't exist as proper nodes yet, they'll be created, in order.
 -- If node already exists, the new list of dependencies is *appended* to the existing one, without duplicates.
 function DepGraph:addNode(node_key, deps)
     -- Find main node if it already exists
@@ -90,12 +90,19 @@ function DepGraph:addNode(node_key, deps)
     node.deps = node_deps
 end
 
+-- Attempt to remove a node, as well as all traces of it from other nodes' deps
+-- If node has deps, it's actual node is kept, c.f., lenghty comment below.
 function DepGraph:removeNode(node_key)
-    -- We should not remove it from self.nodes if it has
-    -- a .deps array (it is the other nodes, that had this
-    -- one in their override=, that have added themselves in
-    -- this node's .deps). We don't want to lose these
-    -- dependencies if we later re-addNode this node.
+    -- We shouldn't remove a node if it has dependencies (as these may have been added via addNodeDep
+    -- (as opposed to the optional deps list passed to addNode), like what InputContainer does with overrides,
+    -- overrides originating from completely *different* nodes,
+    -- meaning those other nodes basically add themselves to another's deps).
+    -- We don't want to lose the non-native dependency on these other nodes in case we later re-addNode this one
+    -- with its stock dependency list.
+    --- @fixme: That feels a bit clunky.
+    --          A node entry could perhaps use a "disabled" flag to handle that if the node hasn't actually been removed?
+    --          That'd make iterating over nodes slightly more awkward, because we'd sometimes only want to walk active nodes,
+    --          but not necessarily all the time...
     local node, index = self:getNode(node_key)
     if node then
         if not node.deps or #node.deps == 0 then
@@ -104,7 +111,7 @@ function DepGraph:removeNode(node_key)
             table.remove(self.nodes, index)
         end
     end
-    -- But we should remove it from the .deps of *other* nodes.
+    -- On the other hand, we definitely should remove it from the deps of every *other* node.
     for i, _ in ipairs(self.nodes) do
         local curr_node = self.nodes[i]
         -- Is not the to be removed node, and has deps
@@ -150,6 +157,7 @@ function DepGraph:addNodeDep(node_key, dep_node_key)
     end
 end
 
+-- Remove dep_node_key from node_key's deps
 function DepGraph:removeNodeDep(node_key, dep_node_key)
     local node, index = self:getNode(node_key)
     if node.deps then
@@ -163,6 +171,8 @@ function DepGraph:removeNodeDep(node_key, dep_node_key)
     end
 end
 
+-- Return a list (array) of node keys, ordered by insertion order and dependency.
+-- Dependencies come first (and are also ordered by insertion order themselves).
 function DepGraph:serialize()
     local visited = {}
     local ordered_nodes = {}
