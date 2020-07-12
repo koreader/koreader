@@ -1299,6 +1299,7 @@ Note that %1 (out of %2) xpaths from your bookmarks and highlights have been nor
     })
 end
 
+-- Duplicated in ReaderPaging
 function ReaderRolling:onToggleReadingOrder()
     self.inverse_reading_order = not self.inverse_reading_order
     self:setupTouchZones()

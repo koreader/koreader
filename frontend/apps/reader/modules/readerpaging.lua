@@ -1040,6 +1040,7 @@ function ReaderPaging:onToggleReflow()
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
 end
 
+-- Duplicated in ReaderRolling
 function ReaderPaging:onToggleReadingOrder()
     self.inverse_reading_order = not self.inverse_reading_order
     self:setupTouchZones()
