@@ -196,7 +196,7 @@ function DepGraph:addNodeDep(node_key, dep_node_key)
     end
 end
 
--- Remove dep_node_key from node_key's deps
+-- Remove a single dep_node_key from node_key's deps
 function DepGraph:removeNodeDep(node_key, dep_node_key)
     local node = self:getNode(node_key)
     if node.deps then
