@@ -43,10 +43,12 @@ function DepGraph:getNode(id)
             return n, i
         end
     end
+
     return nil, nil
 end
 
--- If node is nil but index is set, node is disabled
+-- Like getNode, but only for active nodes:
+-- if node is nil but index is set, node is disabled
 function DepGraph:getActiveNode(id)
     local node, index = self:getNode(id)
     if node and node.disabled then
@@ -146,16 +148,22 @@ function DepGraph:removeNode(node_key)
     end
 end
 
--- Add dep_node_key to node_key's deps
+-- Add a single dep_node_key to node_key's deps
 function DepGraph:addNodeDep(node_key, dep_node_key)
     local node = self:getNode(node_key)
 
-    if not node then
+    if node then
+        -- If it exists, but was disabled, re-enable it
+        if node.disabled then
+           node.disabled = nil
+        end
+    else
+        -- If it doesn't exist at all, create it
         node = { key = node_key }
         table.insert(self.nodes, node)
     end
 
-    -- We'll need a table ;)
+    -- If it doesn't currently have deps, start with an empty array
     if not node.deps then
         node.deps = {}
     end
