@@ -150,6 +150,7 @@ end
 
 -- Add a single dep_node_key to node_key's deps
 function DepGraph:addNodeDep(node_key, dep_node_key)
+    -- Check the main node
     local node = self:getNode(node_key)
 
     if node then
@@ -163,7 +164,21 @@ function DepGraph:addNodeDep(node_key, dep_node_key)
         table.insert(self.nodes, node)
     end
 
-    -- If it doesn't currently have deps, start with an empty array
+    -- Then check the dep node
+    local dep_node = self:getNode(dep_node_key)
+
+    if dep_node then
+        -- If it exists, but was disabled, re-enable it
+        if dep_node.disabled then
+            dep_node.disabled = nil
+        end
+    else
+        -- Create dep node itself if need be
+        dep_node = { key = dep_node_key }
+        table.insert(self.nodes, dep_node)
+    end
+
+    -- If main node currently doesn't have deps, start with an empty array
     if not node.deps then
         node.deps = {}
     end
