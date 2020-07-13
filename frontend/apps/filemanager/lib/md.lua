@@ -1,5 +1,5 @@
 -- From https://github.com/bakpakin/luamd revision 388ce799d93e899e4d673cdc6d522f12310822bd
-local util = require("util")
+local FFIUtil = require("ffi/util")
 
 --[[
 Copyright (c) 2016 Calvin Rose <calsrose@gmail.com>
@@ -421,7 +421,7 @@ end
 local function renderAttributes(attributes)
     local accum = {}
     -- KOReader: oderedPairs instead of pairs
-    for k, v in util.orderedPairs(attributes) do
+    for k, v in FFIUtil.orderedPairs(attributes) do
         accum[#accum + 1] = format("%s=\"%s\"", k, v)
     end
     return concat(accum, ' ')
