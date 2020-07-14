@@ -112,6 +112,7 @@ local settingsList = {
     zoom = { category="string", event="SetZoomMode", title=_("Zoom to"), args={"contentwidth", "contentheight", "pagewidth", "pageheight", "column", "content", "page"}, toggle={"content width", "content height", "page width", "page height", "column", "content", "page"}, paging=true,},
 
     -- parsed from CreOptions
+    -- the rest of the table elements are built from their counterparts in CreOptions
     rotation_mode = {category="string", device=true},
     visible_pages = {category="string", rolling=true},
     h_page_margins = {category="string", rolling=true},
