@@ -30,7 +30,7 @@ and optionally
     separator: put a separator after in the menu list
 --]]--
 local settingsList = {
-    --Device settings
+    -- Device settings
     show_frontlight_dialog = { category="none", event="ShowFlDialog", title=_("Show frontlight dialog"), device=true, condition=Device:hasFrontlight(),},
     toggle_frontlight = { category="none", event="ToggleFrontlight", title=_("Toggle frontlight"), device=true, condition=Device:hasFrontlight(),},
     increase_frontlight = { category="incrementalnumber", event="IncreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Increase frontlight brightness"), device=true, condition=Device:hasFrontlight(),},
@@ -66,12 +66,12 @@ local settingsList = {
     calibre_browse_series = { category="none", event="CalibreBrowseSeries", title=_("Browse all calibre series"), device=true,},
     favorites = { category="arg", event="ShowColl", arg="favorites", title=_("Favorites"), device=true,},
 
-    --filemanager settings
+    -- filemanager settings
     folder_up = { category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
     show_plus_menu = { category="none", event="ShowPlusMenu", title=_("Show plus menu"), filemanager=true},
     folder_shortcuts = { category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true},
 
-    --reader settings
+    -- reader settings
     prev_chapter = { category="none", event="GotoPrevChapter", title=_("Previous chapter"), rolling=true, paging=true,},
     next_chapter = { category="none", event="GotoNextChapter", title=_("Next chapter"), rolling=true, paging=true,},
     first_page = { category="none", event="GoToBeginning", title=_("First page"), rolling=true, paging=true,},
@@ -100,18 +100,18 @@ local settingsList = {
     cycle_highlight_style = { category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), rolling=true, paging=true,},
     kosync_push_progress = { category="none", event="KOSyncPushProgress", title=_("Push progress from this device"), rolling=true, paging=true,},
     kosync_pull_progress = { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), rolling=true, paging=true,},
-    page_jmp = { category="absolutenumber", event="GotoViewRel" , min=-100, max=100, title=_("Go X pages"), rolling=true, paging=true,},
+    page_jmp = { category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Go X pages"), rolling=true, paging=true,},
 
-    --rolling reader settings
+    -- rolling reader settings
     increase_font = { category="incrementalnumber", event="IncreaseFontSize", min=1, max=255, title=_("Increase font size"), rolling=true,},
     decrease_font = { category="incrementalnumber", event="DecreaseFontSize", min=1, max=255, title=_("Decrease font size"), rolling=true,},
 
-    --paging reader settings
+    -- paging reader settings
     toggle_page_flipping = { category="none", event="TogglePageFlipping", title=_("Toggle page flipping"), paging=true,},
     toggle_reflow = { category="none", event="ToggleReflow", title=_("Toggle reflow"), paging=true,},
     zoom = { category="string", event="SetZoomMode", title=_("Zoom to"), args={"contentwidth", "contentheight", "pagewidth", "pageheight", "column", "content", "page"}, toggle={"content width", "content height", "page width", "page height", "column", "content", "page"}, paging=true,},
 
-    --parsed from CreOptions
+    -- parsed from CreOptions
     rotation_mode = {category="string", device=true},
     visible_pages = {category="string", rolling=true},
     h_page_margins = {category="string", rolling=true},
@@ -186,7 +186,7 @@ local dispatcher_menu_order = {
     "show_plus_menu",
     "folder_shortcuts",
 
-    --reader
+    -- reader
     "page_jmp",
     "prev_chapter",
     "next_chapter",
@@ -300,7 +300,7 @@ function Dispatcher:init()
 end
 
 function Dispatcher.addItem(caller, menu, location, settings, section)
-    for _,k in ipairs(dispatcher_menu_order) do
+    for _, k in ipairs(dispatcher_menu_order) do
         if settingsList[k][section] == true and
         (settingsList[k].condition == nil or settingsList[k].condition) then
             if settingsList[k].category == "none" or settingsList[k].category == "arg" then
@@ -463,7 +463,7 @@ function Dispatcher.addSubMenu(caller, menu, location, settings)
         {"rolling", _("Reflowable documents (epub, fb2, txt)")},
         {"paging", _("Fixed layout documents (pdf, djvu, pics)")},
     }
-    for _,section in ipairs(section_list) do
+    for _, section in ipairs(section_list) do
         local submenu = {}
         -- pass caller's context
         Dispatcher.addItem(caller, submenu, location, settings, section[1])

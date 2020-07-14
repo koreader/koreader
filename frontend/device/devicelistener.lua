@@ -85,8 +85,7 @@ if Device:hasFrontlight() then
 
             local steps_tbl = {}
             local scale = (powerd.fl_max - powerd.fl_min) / 2 / 10.6
-            for i = 1, #self.steps_fl, 1
-            do
+            for i = 1, #self.steps_fl, 1 do
                 steps_tbl[i] = math.ceil(self.steps_fl[i] * scale)
             end
 
@@ -176,8 +175,7 @@ if Device:hasFrontlight() then
 
             local steps_tbl = {}
             local scale = (powerd.fl_max - powerd.fl_min) / 2 / 10.6
-            for i = 1, #self.steps_fl, 1
-            do
+            for i = 1, #self.steps_fl, 1 do
                 steps_tbl[i] = math.ceil(self.steps_fl[i] * scale)
             end
 
