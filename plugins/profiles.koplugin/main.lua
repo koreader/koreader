@@ -6,6 +6,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local orderedPairs = require("ffi/util").orderedPairs
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -85,7 +86,7 @@ function Profiles:getSubMenuItems()
             separator = true,
         }
     }
-    for k,v in pairs(self.data) do
+    for k,v in orderedPairs(self.data) do
         local sub_items = {
             {
                 text = _("Delete profile"),
