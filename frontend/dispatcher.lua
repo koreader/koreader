@@ -463,8 +463,8 @@ function Dispatcher.addSubMenu(caller, menu, location, settings)
     local section_list = {
         {"device", _("Device")},
         {"filemanager", _("Filemanager")},
-        {"rolling", _("Reflowable documents (epub, fb2, txt)")},
-        {"paging", _("Fixed layout documents (pdf, djvu, pics)")},
+        {"rolling", _("Reflowable documents (epub, fb2, txt…)")},
+        {"paging", _("Fixed layout documents (pdf, djvu, pics…)")},
     }
     for _, section in ipairs(section_list) do
         local submenu = {}
