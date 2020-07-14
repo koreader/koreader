@@ -400,8 +400,8 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
                         text = tostring(settingsList[k].toggle[i]),
                         checked_func = function()
                             return caller[location][settings] ~= nil
-                            and caller[location][settings][k] ~= nil
-                            and caller[location][settings][k] == settingsList[k].args[i]
+                                and caller[location][settings][k] ~= nil
+                                and caller[location][settings][k] == settingsList[k].args[i]
                         end,
                         callback = function()
                             caller[location][settings][k] = settingsList[k].args[i]
@@ -414,7 +414,7 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
                     end,
                     checked_func = function()
                         return caller[location][settings] ~= nil
-                        and caller[location][settings][k] ~= nil
+                            and caller[location][settings][k] ~= nil
                     end,
                     sub_item_table = sub_item_table,
                     keep_menu_open = true,
