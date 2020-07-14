@@ -136,7 +136,118 @@ local settingsList = {
 
 -- array for item order in menu
 local dispatcher_menu_order = {
-    "show_frontlight_dialog", "toggle_frontlight", "toggle_gsensor", "wifi_on", "wifi_off", "toggle_wifi", "reading_progress", "stats_calendar_view", "history", "open_previous_document", "filemanager", "dictionary_lookup", "wikipedia_lookup", "fulltext_search", "file_search", "full_refresh", "night_mode", "suspend", "exit", "restart", "reboot", "poweroff", "show_menu", "toggle_hold_corners", "toggle_rotation", "wallabag_download", "calibre_search", "calibre_browse_tags", "calibre_browse_series", "favorites", "folder_up", "show_plus_menu", "folder_shortcuts", "prev_chapter", "next_chapter", "first_page", "last_page", "prev_bookmark", "next_bookmark", "go_to", "skim", "back", "previous_location", "latest_bookmark", "clear_location_history", "toc", "bookmarks", "book_statistics", "book_status", "book_info", "book_description", "book_cover", "show_config_menu", "toggle_bookmark", "toggle_inverse_reading_order", "cycle_highlight_action", "cycle_highlight_style", "kosync_push_progress", "kosync_pull_progress", "toggle_page_flipping", "toggle_reflow", "zoom", "rotation_mode", "visible_pages", "h_page_margins", "sync_t_b_page_margins", "t_page_margin", "b_page_margin", "view_mode", "block_rendering_mode", "render_dpi", "line_spacing", "font_size", "font_weight", "font_hinting", "font_kerning", "status_line", "embedded_css", "embedded_fonts", "smooth_scaling", "nightmode_images", "increase_frontlight", "decrease_frontlight", "increase_frontlight_warmth", "decrease_frontlight_warmth", "page_jmp", "increase_font", "decrease_font", "follow_nearest_link", "follow_nearest_internal_link", --"font_gamma",
+    -- device
+    "reading_progress",
+    "history",
+    "open_previous_document",
+    "favorites",
+    "filemanager",
+    "stats_calendar_view",
+
+    "dictionary_lookup",
+    "wikipedia_lookup",
+    "fulltext_search",
+    "file_search",
+
+    "full_refresh",
+    "night_mode",
+    "suspend",
+    "exit",
+    "restart",
+    "reboot",
+    "poweroff",
+
+    "show_menu",
+    "show_config_menu",
+    "show_frontlight_dialog",
+    "toggle_frontlight",
+    "increase_frontlight",
+    "decrease_frontlight",
+    "increase_frontlight_warmth",
+    "decrease_frontlight_warmth",
+
+    "toggle_hold_corners",
+    "toggle_gsensor",
+    "toggle_rotation",
+
+    "wifi_on",
+    "wifi_off",
+    "toggle_wifi",
+
+    "wallabag_download",
+    "calibre_search",
+    "calibre_browse_tags",
+    "calibre_browse_series",
+
+    "rotation_mode",
+
+    -- filemanager
+    "folder_up",
+    "show_plus_menu",
+    "folder_shortcuts",
+
+    --reader
+    "page_jmp",
+    "prev_chapter",
+    "next_chapter",
+    "first_page",
+    "last_page",
+    "prev_bookmark",
+    "next_bookmark",
+    "go_to",
+    "skim",
+    "back",
+    "previous_location",
+    "latest_bookmark",
+    "follow_nearest_link",
+    "follow_nearest_internal_link",
+    "clear_location_history",
+
+    "toc",
+    "bookmarks",
+    "book_statistics",
+
+    "book_status",
+    "book_info",
+    "book_description",
+    "book_cover",
+
+    "increase_font",
+    "decrease_font",
+    "font_size",
+    --"font_gamma",
+    "font_weight",
+    "font_hinting",
+    "font_kerning",
+
+    "toggle_bookmark",
+    "toggle_page_flipping",
+    "toggle_reflow",
+    "toggle_inverse_reading_order",
+    "zoom",
+    "cycle_highlight_action",
+    "cycle_highlight_style",
+
+    "kosync_push_progress",
+    "kosync_pull_progress",
+
+    "visible_pages",
+
+    "h_page_margins",
+    "sync_t_b_page_margins",
+    "t_page_margin",
+    "b_page_margin",
+
+    "view_mode",
+    "block_rendering_mode",
+    "render_dpi",
+    "line_spacing",
+
+    "status_line",
+    "embedded_css",
+    "embedded_fonts",
+    "smooth_scaling",
+    "nightmode_images",
 }
 
 --[[--
