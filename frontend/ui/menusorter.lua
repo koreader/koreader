@@ -33,7 +33,7 @@ end
 function MenuSorter:mergeAndSort(config_prefix, item_table, order)
     local user_order = self:readMSSettings(config_prefix)
     if user_order then
-        for user_order_id,user_order_item in pairs(user_order) do
+        for user_order_id, user_order_item in pairs(user_order) do
             order[user_order_id] = user_order_item
         end
     end
@@ -48,13 +48,13 @@ function MenuSorter:sort(item_table, order)
     local menu_table = {}
     local sub_menus = {}
     -- the actual sorting of menu items
-    for order_id, order_item in pairs (order) do
+    for order_id, order_item in pairs(order) do
         -- user might define non-existing menu item
         if item_table[order_id] ~= nil then
             local tmp_menu_table = {}
             menu_table[order_id] = item_table[order_id]
             menu_table[order_id].id = order_id
-            for order_number,order_number_id in ipairs(order_item) do
+            for order_number, order_number_id in ipairs(order_item) do
                 -- this is a submenu, mark it for later
                 if item_table[order_number_id] ~= nil and order[order_number_id] then
                     table.insert(sub_menus, order_number_id)
@@ -114,7 +114,7 @@ function MenuSorter:sort(item_table, order)
     while changed do
         changed = false
         -- now do the submenus
-        for i,sub_menu in ipairs(sub_menus) do
+        for i, sub_menu in ipairs(sub_menus) do
             if menu_table[sub_menu] ~= nil then
                 local sub_menu_position = self:findById(menu_table["KOMenu:menu_buttons"], sub_menu)
                 if sub_menu_position then
@@ -135,7 +135,7 @@ function MenuSorter:sort(item_table, order)
     -- they should, however have one going in
     -- Also, compress the menu table.
     local menu_buttons_offset = 0
-    for i,top_menu in ipairs(menu_table["KOMenu:menu_buttons"]) do
+    for i, top_menu in ipairs(menu_table["KOMenu:menu_buttons"]) do
         local menu_button = menu_table["KOMenu:menu_buttons"][i].sub_item_table
         menu_table["KOMenu:menu_buttons"][i] = nil
         if menu_button then
@@ -146,7 +146,7 @@ function MenuSorter:sort(item_table, order)
     end
     -- handle disabled
     if order["KOMenu:disabled"] then
-        for _,item in ipairs(order["KOMenu:disabled"]) do
+        for _, item in ipairs(order["KOMenu:disabled"]) do
             if item_table[item] then
                 -- remove reference from input so it won't show up as orphaned
                 item_table[item] = nil
@@ -158,7 +158,7 @@ function MenuSorter:sort(item_table, order)
     item_table["KOMenu:menu_buttons"] = nil
 
     -- attach orphans based on sorting_hint, or with a NEW prefix in the first menu if none found
-    for k,v in pairs(item_table) do
+    for k, v in pairs(item_table) do
         local sorting_hint = v.sorting_hint
 
         -- normally there should be menu text but check to be sure
@@ -170,7 +170,7 @@ function MenuSorter:sort(item_table, order)
             -- deal with orphaned submenus
             if #v > 0 then
                 v.sub_item_table = {}
-                for i=1,#v do
+                for i=1, #v do
                     v.sub_item_table[i] = v[i]
                 end
             end
@@ -193,7 +193,7 @@ end
 function MenuSorter:findById(tbl, needle_id)
     local items = {}
 
-    for _,item in pairs(tbl) do
+    for _, item in pairs(tbl) do
         if item ~= "KOMenu:menu_buttons" then
             table.insert(items, item)
         end
@@ -208,7 +208,7 @@ function MenuSorter:findById(tbl, needle_id)
         if id_match then
             return v
         elseif sub_table then
-            for _,item in pairs(sub_table) do
+            for _, item in pairs(sub_table) do
                 if type(item) == "table" and item.id then
                     table.insert(items, item)
                 end

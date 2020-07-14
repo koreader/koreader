@@ -29,17 +29,17 @@ describe("DepGraph module", function()
         dg:addNode('paging_pan_release', {})
         assert.are.same({
             'readerfooter_tap',
+            'readerfooter_hold',
             'readermenu_tap',
             'tap_backward',
-            'readerhighlight_hold_pan',
-            'paging_pan_release',
-            'readerfooter_hold',
-            'readerhighlight_hold',
-            'paging_pan',
-            'paging_swipe',
             'tap_forward',
             'readerhighlight_tap',
+            'readerhighlight_hold',
             'readerhighlight_hold_release',
+            'readerhighlight_hold_pan',
+            'paging_swipe',
+            'paging_pan',
+            'paging_pan_release',
         }, dg:serialize())
     end)
 
@@ -56,14 +56,14 @@ describe("DepGraph module", function()
         dg:addNode('readermenu_tap', {'readerfooter_tap'})
         assert.are.same({
             'readerfooter_tap',
-            'readermenu_tap',
-            'readerhighlight_tap',
-            'tap_backward',
-            'readerhighlight_hold_pan',
             'readerfooter_hold',
-            'readerhighlight_hold',
+            'readerhighlight_tap',
+            'readermenu_tap',
+            'tap_backward',
             'tap_forward',
+            'readerhighlight_hold',
             'readerhighlight_hold_release',
+            'readerhighlight_hold_pan',
         }, dg:serialize())
     end)
 
@@ -85,17 +85,17 @@ describe("DepGraph module", function()
         dg:addNode('paging_pan_release', {})
         assert.are.same({
             'readerfooter_tap',
+            'readerfooter_hold',
             'readermenu_tap',
             'tap_backward',
-            'readerhighlight_hold_pan',
-            'paging_pan_release',
-            'readerfooter_hold',
-            'readerhighlight_hold',
-            'paging_pan',
-            'paging_swipe',
             'tap_forward',
             'readerhighlight_tap',
+            'readerhighlight_hold',
             'readerhighlight_hold_release',
+            'readerhighlight_hold_pan',
+            'paging_swipe',
+            'paging_pan',
+            'paging_pan_release',
         }, dg:serialize())
     end)
 
@@ -132,9 +132,65 @@ describe("DepGraph module", function()
             "tap_backward",
             "tap_forward",
         }, dg:serialize())
-        assert.is_true(type(dg.nodes["tap_forward"].deps) == "table")
-        assert.is_true(#dg.nodes["tap_forward"].deps > 0)
-        assert.is_true(type(dg.nodes["tap_backward"].deps) == "table")
-        assert.is_true(#dg.nodes["tap_backward"].deps > 0)
+        local tapFwdNode = dg:getNode("tap_forward")
+        assert.is_true(type(tapFwdNode.deps) == "table")
+        assert.is_true(#tapFwdNode.deps > 0)
+        local tapBwdNode = dg:getNode("tap_backward")
+        assert.is_true(type(tapBwdNode.deps) == "table")
+        assert.is_true(#tapBwdNode.deps > 0)
+    end)
+
+    it("should not serialize removed/disabled nodes", function()
+        local dg = DepGraph:new{}
+        dg:addNode('foo')
+        dg:addNode('bar')
+        dg:addNode('baz',
+                   {'foo', 'bar', 'bam'})
+        dg:addNode('feh')
+        dg:removeNode('baz')
+        dg:removeNode('bar')
+        dg:addNode('blah', {'bla', 'h', 'bamf'})
+        dg:removeNode('bamf')
+        assert.are.same({
+            'foo',
+            'bam',
+            'feh',
+            'bla',
+            'h',
+            'blah',
+        }, dg:serialize())
+
+        -- Check that bamf was removed from blah's deps
+        assert.are.same({
+            'bla',
+            'h',
+        }, dg:getNode('blah').deps)
+
+        -- Check that baz is re-enabled w/ its full deps (minus bar, that we removed earlier) if re-Added as a dep
+        dg:addNode('whee', {'baz'})
+        assert.are.same({
+            'foo',
+            'bam',
+        }, dg:getNode('baz').deps)
+        assert.are.same({
+            'foo',
+            'bam',
+            'baz',
+            'feh',
+            'bla',
+            'h',
+            'blah',
+            'whee',
+        }, dg:serialize())
+
+        -- Check that re-adding an existing node with new deps properly *appends* to its existing deps
+        dg:addNode('baz', {'wham', 'bang'})
+        assert.are.same({
+            'foo',
+            'bam',
+            'wham',
+            'bang',
+        }, dg:getNode('baz').deps)
+
     end)
 end)

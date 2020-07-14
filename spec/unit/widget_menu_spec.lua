@@ -19,6 +19,7 @@ describe("Menu widget", function()
                 callback = cb2
             },
         })
+        --- @fixme: Currently broken because pairs (c.f., https://github.com/koreader/koreader/pull/6371#issuecomment-657251302)
         assert.are.same(re, {
             {
                 text = 'navi',
