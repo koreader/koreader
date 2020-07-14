@@ -321,6 +321,7 @@ function ReaderFont:addToMainMenu(menu_items)
 end
 
 function ReaderFont:gesToFontSize(ges)
+    if type(ges) ~= "table" then return ges end
     if ges.distance == nil then
         ges.distance = 1
     end

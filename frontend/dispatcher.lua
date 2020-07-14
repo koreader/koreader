@@ -15,10 +15,9 @@ contains a list of a dispatchable settings
 each setting contains:
     category: one of
        none: a direct event call
-       arg: a direct event call that gets passed a argument
-       toggle: a event that expects a gesture object
+       arg: a event that expects a gesture object or an argument
        absolutenumber: event that sets a number
-       incrementalnumber: event that increments a number & expects a gesture object
+       incrementalnumber: event that increments a number & accepts a gesture object
        string: event with a list of arguments to chose from
     event: what to call.
     title: for use in ui.
@@ -34,10 +33,10 @@ local settingsList = {
     --Device settings
     show_frontlight_dialog = { category="none", event="ShowFlDialog", title=_("Show frontlight dialog"), device=true, condition=Device:hasFrontlight(),},
     toggle_frontlight = { category="none", event="ToggleFrontlight", title=_("Toggle frontlight"), device=true, condition=Device:hasFrontlight(),},
---    increase_frontlight = { category="incrementalnumber", event="IncreaseFlIntensity", min=1, max=100, title=_("Increase frontlight brightness"), device=true, condition=Device:hasFrontlight(),},
---    decrease_frontlight = { category="incrementalnumber", event="DecreaseFlIntensity", min=1, max=100, title=_("Decrease frontlight brightness"), device=true, condition=Device:hasFrontlight(),},
---    increase_frontlight_warmth = { category="incrementalnumber", event="IncreaseFlWarmth", min=1, max=100, title=_("Increase frontlight warmth"), device=true, condition=Device:hasNaturalLight(),},
---    decrease_frontlight_warmth = { category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=100, title=_("Decrease frontlight warmth"), device=true, condition=Device:hasNaturalLight(),},
+    increase_frontlight = { category="incrementalnumber", event="IncreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Increase frontlight brightness"), device=true, condition=Device:hasFrontlight(),},
+    decrease_frontlight = { category="incrementalnumber", event="DecreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Decrease frontlight brightness"), device=true, condition=Device:hasFrontlight(),},
+    increase_frontlight_warmth = { category="incrementalnumber", event="IncreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Increase frontlight warmth"), device=true, condition=Device:hasNaturalLight(),},
+    decrease_frontlight_warmth = { category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Decrease frontlight warmth"), device=true, condition=Device:hasNaturalLight(),},
     toggle_gsensor = { category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:canToggleGSensor(),},
     wifi_on = { category="none", event="InfoWifiOn", title=_("Turn on Wi-Fi"), device=true, condition=Device:hasWifiToggle(),},
     wifi_off = { category="none", event="InfoWifiOff", title=_("Turn off Wi-Fi"), device=true, condition=Device:hasWifiToggle(),},
@@ -84,8 +83,8 @@ local settingsList = {
     back = { category="none", event="Back", title=_("Back"), rolling=true, paging=true,},
     previous_location = { category="arg", event="GoBackLink", arg=true, title=_("Back to previous location"), rolling=true, paging=true,},
     latest_bookmark = { category="none", event="GoToLatestBookmark", title=_("Go to latest bookmark"), rolling=true, paging=true,},
---    follow_nearest_link = { category="toggle", event="GoToPageLink", title=_("Follow nearest link"), rolling=true, paging=true,},
---    follow_nearest_internal_link = { category="toggle", event="GoToInternalPageLink", title=_("Follow nearest internal link"), rolling=true, paging=true,},
+    follow_nearest_link = { category="arg", event="GoToPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest link"), rolling=true, paging=true,},
+    follow_nearest_internal_link = { category="arg", event="GoToInternalPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest internal link"), rolling=true, paging=true,},
     clear_location_history = { category="arg", event="ClearLocationStack", arg=true, title=_("Clear location history"), rolling=true, paging=true,},
     toc = { category="none", event="ShowToc", title=_("Table of contents"), rolling=true, paging=true,},
     bookmarks = { category="none", event="ShowBookmark", title=_("Bookmarks"), rolling=true, paging=true,},
@@ -101,11 +100,11 @@ local settingsList = {
     cycle_highlight_style = { category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), rolling=true, paging=true,},
     kosync_push_progress = { category="none", event="KOSyncPushProgress", title=_("Push progress from this device"), rolling=true, paging=true,},
     kosync_pull_progress = { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), rolling=true, paging=true,},
---    page_foward = { category="incrementalnumber", event="GotoViewRel" , min=-50, max=50, title=_("Go %1 pages"), rolling=true, paging=true,},
+    page_jmp = { category="absolutenumber", event="GotoViewRel" , min=-100, max=100, title=_("Go X pages"), rolling=true, paging=true,},
 
     --rolling reader settings
---    increase_font = { category="incrementalnumber", event="IncreaseFontSize", min=1, max=50, title=_("Increase font size"), rolling=true,},
---    decrease_font = { category="incrementalnumber", event="DecreaseFontSize", min=1, max=50, title=_("Decrease font size"), rolling=true,},
+    increase_font = { category="incrementalnumber", event="IncreaseFontSize", min=1, max=255, title=_("Increase font size"), rolling=true,},
+    decrease_font = { category="incrementalnumber", event="DecreaseFontSize", min=1, max=255, title=_("Decrease font size"), rolling=true,},
 
     --paging reader settings
     toggle_page_flipping = { category="none", event="TogglePageFlipping", title=_("Toggle page flipping"), paging=true,},
@@ -137,8 +136,7 @@ local settingsList = {
 
 -- array for item order in menu
 local dispatcher_menu_order = {
-    "show_frontlight_dialog", "toggle_frontlight", "toggle_gsensor", "wifi_on", "wifi_off", "toggle_wifi", "reading_progress", "stats_calendar_view", "history", "open_previous_document", "filemanager", "dictionary_lookup", "wikipedia_lookup", "fulltext_search", "file_search", "full_refresh", "night_mode", "suspend", "exit", "restart", "reboot", "poweroff", "show_menu", "toggle_hold_corners", "toggle_rotation", "wallabag_download", "calibre_search", "calibre_browse_tags", "calibre_browse_series", "favorites", "folder_up", "show_plus_menu", "folder_shortcuts", "prev_chapter", "next_chapter", "first_page", "last_page", "prev_bookmark", "next_bookmark", "go_to", "skim", "back", "previous_location", "latest_bookmark", "clear_location_history", "toc", "bookmarks", "book_statistics", "book_status", "book_info", "book_description", "book_cover", "show_config_menu", "toggle_bookmark", "toggle_inverse_reading_order", "cycle_highlight_action", "cycle_highlight_style", "kosync_push_progress", "kosync_pull_progress", "toggle_page_flipping", "toggle_reflow", "zoom", "rotation_mode", "visible_pages", "h_page_margins", "sync_t_b_page_margins", "t_page_margin", "b_page_margin", "view_mode", "block_rendering_mode", "render_dpi", "line_spacing", "font_size", "font_weight", "font_hinting", "font_kerning", "status_line", "embedded_css", "embedded_fonts", "smooth_scaling", "nightmode_images",
-    --"increase_frontlight", "decrease_frontlight", "increase_frontlight_warmth", "decrease_frontlight_warmth", "follow_nearest_link", "follow_nearest_internal_link", "page_foward", "increase_font", "decrease_font", "font_gamma",
+    "show_frontlight_dialog", "toggle_frontlight", "toggle_gsensor", "wifi_on", "wifi_off", "toggle_wifi", "reading_progress", "stats_calendar_view", "history", "open_previous_document", "filemanager", "dictionary_lookup", "wikipedia_lookup", "fulltext_search", "file_search", "full_refresh", "night_mode", "suspend", "exit", "restart", "reboot", "poweroff", "show_menu", "toggle_hold_corners", "toggle_rotation", "wallabag_download", "calibre_search", "calibre_browse_tags", "calibre_browse_series", "favorites", "folder_up", "show_plus_menu", "folder_shortcuts", "prev_chapter", "next_chapter", "first_page", "last_page", "prev_bookmark", "next_bookmark", "go_to", "skim", "back", "previous_location", "latest_bookmark", "clear_location_history", "toc", "bookmarks", "book_statistics", "book_status", "book_info", "book_description", "book_cover", "show_config_menu", "toggle_bookmark", "toggle_inverse_reading_order", "cycle_highlight_action", "cycle_highlight_style", "kosync_push_progress", "kosync_pull_progress", "toggle_page_flipping", "toggle_reflow", "zoom", "rotation_mode", "visible_pages", "h_page_margins", "sync_t_b_page_margins", "t_page_margin", "b_page_margin", "view_mode", "block_rendering_mode", "render_dpi", "line_spacing", "font_size", "font_weight", "font_hinting", "font_kerning", "status_line", "embedded_css", "embedded_fonts", "smooth_scaling", "nightmode_images", "increase_frontlight", "decrease_frontlight", "increase_frontlight_warmth", "decrease_frontlight_warmth", "page_jmp", "increase_font", "decrease_font", "follow_nearest_link", "follow_nearest_internal_link", --"font_gamma",
 }
 
 --[[--
@@ -211,24 +209,6 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
                    end,
                    separator = settingsList[k].separator,
                })
-            elseif settingsList[k].category == "toggle" then
-                table.insert(menu, {
-                    text_func = function()
-                        return T(settingsList[k].title, caller[location][settings][k])
-                    end,
-                    checked_func = function()
-                    return caller[location][settings] ~= nil and caller[location][settings][k] ~= nil
-                    end,
-                    callback = function(touchmenu_instance)
-                        caller[location][settings][k] = not caller[location][settings][k]
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
-                    end,
-                    hold_callback = function(touchmenu_instance)
-                        caller[location][settings][k] = nil
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
-                    end,
-                    separator = settingsList[k].separator,
-                })
             elseif settingsList[k].category == "absolutenumber" then
                 table.insert(menu, {
                     text_func = function()
@@ -272,6 +252,7 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
                     return caller[location][settings] ~= nil and caller[location][settings][k] ~= nil
                     end,
                     callback = function(touchmenu_instance)
+                        local _ = require("gettext")
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
                             width = Screen:getWidth() * 0.6,
@@ -282,7 +263,7 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
                             value_max = settingsList[k].max,
                             default_value = 0,
                             title_text = T(settingsList[k].title, caller[location][settings][k] or ""),
-                            text = _([[If set to 0 and called by a gesture the amount of the gesture will be used]]),
+                            info_text = _([[If called by a gesture the amount of the gesture will be used]]),
                             callback = function(spin)
                                 caller[location][settings][k] = spin.value
                                 if touchmenu_instance then
@@ -388,21 +369,19 @@ function Dispatcher:execute(settings, gesture)
             if settingsList[k].category == "none" then
                 self.ui:handleEvent(Event:new(settingsList[k].event))
             end
-            if settingsList[k].category == "arg" then
-                self.ui:handleEvent(Event:new(settingsList[k].event, settingsList[k].arg))
-            end
             if settingsList[k].category == "absolutenumber"
             or settingsList[k].category == "string" then
                 self.ui:handleEvent(Event:new(settingsList[k].event, v))
             end
-            if settingsList[k].category == "toggle"
-            or settingsList[k].category == "incrementalnumber" then
-            -- the event expects a gesture object
-                if v then
-                    self.ui:handleEvent(Event:new(settingsList[k].event, {distance=v}))
-                elseif gesture ~= nil then
-                    self.ui:handleEvent(Event:new(settingsList[k].event, gesture))
-                end
+            if settingsList[k].category == "arg" then
+            -- the event can accept a gesture object or an argument
+                local arg = gesture or settingsList[k].arg
+                self.ui:handleEvent(Event:new(settingsList[k].event, arg))
+            end
+            if settingsList[k].category == "incrementalnumber" then
+            -- the event can accept a gesture object or a number
+                local arg = gesture or v
+                self.ui:handleEvent(Event:new(settingsList[k].event, arg))
             end
         end
     end
