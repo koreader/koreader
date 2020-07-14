@@ -303,7 +303,8 @@ end
 function Dispatcher.addItem(caller, menu, location, settings, section)
     for _, k in ipairs(dispatcher_menu_order) do
         if settingsList[k][section] == true and
-        (settingsList[k].condition == nil or settingsList[k].condition) then
+            (settingsList[k].condition == nil or settingsList[k].condition)
+        then
             if settingsList[k].category == "none" or settingsList[k].category == "arg" then
                 table.insert(menu, {
                     text = settingsList[k].title,
@@ -312,7 +313,8 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
                     end,
                     callback = function(touchmenu_instance)
                         if caller[location][settings] ~= nil
-                        and caller[location][settings][k] then
+                            and caller[location][settings][k]
+                        then
                             caller[location][settings][k] = nil
                         else
                             caller[location][settings][k] = true
@@ -482,7 +484,8 @@ function Dispatcher:execute(settings, gesture)
                 self.ui:handleEvent(Event:new(settingsList[k].event))
             end
             if settingsList[k].category == "absolutenumber"
-            or settingsList[k].category == "string" then
+                or settingsList[k].category == "string"
+            then
                 self.ui:handleEvent(Event:new(settingsList[k].event, v))
             end
             -- the event can accept a gesture object or an argument
