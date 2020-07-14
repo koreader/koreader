@@ -485,13 +485,13 @@ function Dispatcher:execute(settings, gesture)
             or settingsList[k].category == "string" then
                 self.ui:handleEvent(Event:new(settingsList[k].event, v))
             end
-            if settingsList[k].category == "arg" then
             -- the event can accept a gesture object or an argument
+            if settingsList[k].category == "arg" then
                 local arg = gesture or settingsList[k].arg
                 self.ui:handleEvent(Event:new(settingsList[k].event, arg))
             end
-            if settingsList[k].category == "incrementalnumber" then
             -- the event can accept a gesture object or a number
+            if settingsList[k].category == "incrementalnumber" then
                 local arg = gesture or v
                 self.ui:handleEvent(Event:new(settingsList[k].event, arg))
             end
