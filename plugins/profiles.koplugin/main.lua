@@ -6,12 +6,12 @@ local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local orderedPairs = require("ffi/util").orderedPairs
 local _ = require("gettext")
 local T = require("ffi/util").template
 
 local Profiles = WidgetContainer:new{
     name = "profiles",
-    is_doc_only = true,
     profiles_file = DataStorage:getSettingsDir() .. "/profiles.lua",
     profiles = nil,
     data = nil,
@@ -86,7 +86,7 @@ function Profiles:getSubMenuItems()
             separator = true,
         }
     }
-    for k,v in pairs(self.data) do
+    for k,v in orderedPairs(self.data) do
         local sub_items = {
             {
                 text = _("Delete profile"),
@@ -110,7 +110,7 @@ function Profiles:getSubMenuItems()
             hold_keep_menu_open = false,
             sub_item_table = sub_items,
             hold_callback = function()
-                Dispatcher.execute(self, v)
+                Dispatcher.execute(self, self.data[k])
             end,
         })
     end

@@ -58,40 +58,46 @@ if Device:hasFrontlight() then
     -- direction -1 - decrease frontlight
     function DeviceListener:onChangeFlIntensity(ges, direction)
         local powerd = Device:getPowerDevice()
-        local gestureScale
-        local scale_multiplier
-        if ges.ges == "two_finger_swipe" then
-            -- for backward compatibility
-            scale_multiplier = FRONTLIGHT_SENSITIVITY_DECREASE * 0.8
-        elseif ges.ges == "swipe" then
-            scale_multiplier = 0.8
-        else
-            scale_multiplier = 1
-        end
-        if ges.direction == "south" or ges.direction == "north" then
-            gestureScale = Screen:getHeight() * scale_multiplier
-        elseif ges.direction == "west" or ges.direction == "east" then
-            gestureScale = Screen:getWidth() * scale_multiplier
-        else
-            local width = Screen:getWidth()
-            local height = Screen:getHeight()
-            -- diagonal
-            gestureScale = math.sqrt(width * width + height * height) * scale_multiplier
-        end
-        if powerd.fl_intensity == nil then return false end
+        local delta_int
+        --received gesture
+        if type(ges) == "table" then
+            local gestureScale
+            local scale_multiplier
+            if ges.ges == "two_finger_swipe" then
+                -- for backward compatibility
+                scale_multiplier = FRONTLIGHT_SENSITIVITY_DECREASE * 0.8
+            elseif ges.ges == "swipe" then
+                scale_multiplier = 0.8
+            else
+                scale_multiplier = 1
+            end
+            if ges.direction == "south" or ges.direction == "north" then
+                gestureScale = Screen:getHeight() * scale_multiplier
+            elseif ges.direction == "west" or ges.direction == "east" then
+                gestureScale = Screen:getWidth() * scale_multiplier
+            else
+                local width = Screen:getWidth()
+                local height = Screen:getHeight()
+                -- diagonal
+                gestureScale = math.sqrt(width * width + height * height) * scale_multiplier
+            end
+            if powerd.fl_intensity == nil then return false end
 
-        local steps_tbl = {}
-        local scale = (powerd.fl_max - powerd.fl_min) / 2 / 10.6
-        for i = 1, #self.steps_fl, 1
-        do
-            steps_tbl[i] = math.ceil(self.steps_fl[i] * scale)
-        end
+            local steps_tbl = {}
+            local scale = (powerd.fl_max - powerd.fl_min) / 2 / 10.6
+            for i = 1, #self.steps_fl, 1 do
+                steps_tbl[i] = math.ceil(self.steps_fl[i] * scale)
+            end
 
-        if ges.distance == nil then
-            ges.distance = 1
+            if ges.distance == nil then
+                ges.distance = 1
+            end
+            local step = math.ceil(#steps_tbl * ges.distance / gestureScale)
+            delta_int = steps_tbl[step] or steps_tbl[#steps_tbl]
+        else
+            -- received amount to change
+            delta_int = ges
         end
-        local step = math.ceil(#steps_tbl * ges.distance / gestureScale)
-        local delta_int = steps_tbl[step] or steps_tbl[#steps_tbl]
         if direction ~= -1 and direction ~= 1 then
             -- set default value (increase frontlight)
             direction = 1
@@ -142,47 +148,52 @@ if Device:hasFrontlight() then
             return true
         end
 
-        local gestureScale
-        local scale_multiplier
-        if ges.ges == "two_finger_swipe" then
-            -- for backward compatibility
-            scale_multiplier = FRONTLIGHT_SENSITIVITY_DECREASE * 0.8
-        elseif ges.ges == "swipe" then
-            scale_multiplier = 0.8
+        local delta_int
+        --received gesture
+        if type(ges) == "table" then
+            local gestureScale
+            local scale_multiplier
+            if ges.ges == "two_finger_swipe" then
+                -- for backward compatibility
+                scale_multiplier = FRONTLIGHT_SENSITIVITY_DECREASE * 0.8
+            elseif ges.ges == "swipe" then
+                scale_multiplier = 0.8
+            else
+                scale_multiplier = 1
+            end
+
+            if ges.direction == "south" or ges.direction == "north" then
+                gestureScale = Screen:getHeight() * scale_multiplier
+            elseif ges.direction == "west" or ges.direction == "east" then
+                gestureScale = Screen:getWidth() * scale_multiplier
+            else
+                local width = Screen:getWidth()
+                local height = Screen:getHeight()
+                -- diagonal
+                gestureScale = math.sqrt(width * width + height * height) * scale_multiplier
+            end
+
+            local steps_tbl = {}
+            local scale = (powerd.fl_max - powerd.fl_min) / 2 / 10.6
+            for i = 1, #self.steps_fl, 1 do
+                steps_tbl[i] = math.ceil(self.steps_fl[i] * scale)
+            end
+
+            if ges.distance == nil then
+                ges.distance = 1
+            end
+
+            local step = math.ceil(#steps_tbl * ges.distance / gestureScale)
+            delta_int = steps_tbl[step] or steps_tbl[#steps_tbl]
         else
-            scale_multiplier = 1
+            -- received amount to change
+            delta_int = ges
         end
-
-        if ges.direction == "south" or ges.direction == "north" then
-            gestureScale = Screen:getHeight() * scale_multiplier
-        elseif ges.direction == "west" or ges.direction == "east" then
-            gestureScale = Screen:getWidth() * scale_multiplier
-        else
-            local width = Screen:getWidth()
-            local height = Screen:getHeight()
-            -- diagonal
-            gestureScale = math.sqrt(width * width + height * height) * scale_multiplier
-        end
-
-        local steps_tbl = {}
-        local scale = (powerd.fl_max - powerd.fl_min) / 2 / 10.6
-        for i = 1, #self.steps_fl, 1
-        do
-            steps_tbl[i] = math.ceil(self.steps_fl[i] * scale)
-        end
-
-        if ges.distance == nil then
-            ges.distance = 1
-        end
-
-        local step = math.ceil(#steps_tbl * ges.distance / gestureScale)
-        local delta_int = steps_tbl[step] or steps_tbl[#steps_tbl]
-        local warmth
         if direction ~= -1 and direction ~= 1 then
             -- set default value (increase frontlight)
             direction = 1
         end
-        warmth = powerd.fl_warmth + direction * delta_int
+        local warmth = powerd.fl_warmth + direction * delta_int
         if warmth > 100 then
             warmth = 100
         elseif warmth < 0 then
