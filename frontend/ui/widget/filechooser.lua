@@ -201,7 +201,7 @@ function FileChooser:genItemTableFromPath(path)
         end
         sorting = function(a, b)
             return tostring(a.name):gsub("%.?%d+", addLeadingZeroes)..("%3d"):format(#b.name)
-         < tostring(b.name):gsub("%.?%d+",addLeadingZeroes)..("%3d"):format(#a.name)
+                    < tostring(b.name):gsub("%.?%d+",addLeadingZeroes)..("%3d"):format(#a.name)
         end
     else
         sorting = function(a, b)
