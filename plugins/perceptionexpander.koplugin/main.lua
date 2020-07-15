@@ -128,7 +128,7 @@ function PerceptionExpander:showSettingsDialog()
             {
                 text = "",
                 input_type = "number",
-                hint = T(_("Increase margin after pages. Current value: %1"),
+                hint = T(_("Increase margin after pages. Current value: %1\nSet to 0 to disable."),
                     self.shift_each_pages),
             },
         },
@@ -203,7 +203,7 @@ function PerceptionExpander:onPageUpdate(pageno)
         self:createUI()
     end
 
-    if self.page_counter >= self.shift_each_pages and self.margin < self.ALMOST_CENTER_OF_THE_SCREEN then
+    if self.shift_each_pages ~= 0 and self.page_counter >= self.shift_each_pages and self.margin < self.ALMOST_CENTER_OF_THE_SCREEN then
         self.page_counter = 0
         self.margin = self.margin + self.margin_shift
         self.left_line.dimen.x = self.screen_width * self.margin
