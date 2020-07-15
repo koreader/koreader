@@ -944,7 +944,7 @@ function FileManager:getSortingMenuTable()
     local fm = self
     local collates = {
         strcoll = {_("filename"), _("Sort by filename")},
-        numeric = {_("numeric"), _("Sort by filename(detect numbers)")},
+        numeric = {_("numeric"), _("Sort by filename (natural sorting)")},
         strcoll_mixed = {_("name mixed"), _("Sort by name – mixed files and folders")},
         access = {_("date read"), _("Sort by last read date")},
         change = {_("date added"), _("Sort by date added")},
