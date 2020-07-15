@@ -29,7 +29,6 @@ local PluginLoader = require("pluginloader")
 local ReadCollection = require("readcollection")
 local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
-local ReaderGesture = require("apps/reader/modules/readergesture")
 local ReaderUI = require("apps/reader/readerui")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local Screenshoter = require("ui/widget/screenshoter")
@@ -480,10 +479,6 @@ function FileManager:init()
                             "at", plugin_module.path)
             end
         end
-    end
-
-    if Device:isTouchDevice() then
-        table.insert(self, ReaderGesture:new{ ui = self })
     end
 
     if Device:hasWifiToggle() then

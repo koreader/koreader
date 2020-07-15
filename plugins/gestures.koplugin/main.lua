@@ -15,7 +15,16 @@ local T = require("ffi/util").template
 local _ = require("gettext")
 local logger = require("logger")
 
-local ReaderGesture = InputContainer:new{}
+if not Device:isTouchDevice() then
+    return { disabled = true, }
+end
+
+local Gestures = InputContainer:new{
+    name = "gestures",
+    gestures_file = DataStorage:getSettingsDir() .. "/gestures.lua",
+    gestures = nil,
+    data = nil,
+}
 
 local action_strings = {
     nothing = _("Nothing"),
@@ -167,8 +176,7 @@ Multiswipes allow you to perform complex gestures built up out of multiple swipe
 
 These advanced gestures consist of either straight swipes or diagonal swipes. To ensure accuracy, they can't be mixed.]])
 
-function ReaderGesture:init()
-    if not Device:isTouchDevice() then return end
+function Gestures:init()
     self.ignore_hold_corners = G_reader_settings:readSetting("ignore_hold_corners")
     self.multiswipes_enabled = G_reader_settings:readSetting("multiswipes_enabled")
     self.is_docless = self.ui == nil or self.ui.document == nil
@@ -285,7 +293,7 @@ function ReaderGesture:init()
     self:initGesture()
 end
 
-function ReaderGesture:initGesture()
+function Gestures:initGesture()
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
     for gesture, action in pairs(self.default_gesture) do
         if not gesture_manager[gesture] then
@@ -298,7 +306,7 @@ function ReaderGesture:initGesture()
     G_reader_settings:saveSetting(self.ges_mode, gesture_manager)
 end
 
-function ReaderGesture:genMultiswipeSubmenu()
+function Gestures:genMultiswipeSubmenu()
     return {
         text = _("Multiswipe"),
         sub_item_table = self:buildMultiswipeMenu(),
@@ -307,7 +315,7 @@ function ReaderGesture:genMultiswipeSubmenu()
     }
 end
 
-function ReaderGesture:addToMainMenu(menu_items)
+function Gestures:addToMainMenu(menu_items)
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
 
     local actionTextFunc = function(gesture, gesture_name)
@@ -465,7 +473,7 @@ function ReaderGesture:addToMainMenu(menu_items)
 
                     function multiswipe_recorder:onMultiswipe(arg, ges)
                         multiswipe_recorder._raw_multiswipe = ges.multiswipe_directions
-                        multiswipe_recorder:setInputText(ReaderGesture:friendlyMultiswipeName(multiswipe_recorder._raw_multiswipe))
+                        multiswipe_recorder:setInputText(Gestures:friendlyMultiswipeName(multiswipe_recorder._raw_multiswipe))
                     end
 
                     UIManager:show(multiswipe_recorder)
@@ -742,7 +750,7 @@ Default value: %1]]), GestureDetector.SWIPE_INTERVAL/1000),
     end
 end
 
-function ReaderGesture:buildMenu(ges, default)
+function Gestures:buildMenu(ges, default)
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
     local menu = {
         {"nothing", true },
@@ -869,7 +877,7 @@ function ReaderGesture:buildMenu(ges, default)
     return return_menu
 end
 
-function ReaderGesture:buildMultiswipeMenu()
+function Gestures:buildMultiswipeMenu()
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
     local menu = {}
     multiswipes = {}
@@ -956,7 +964,7 @@ function ReaderGesture:buildMultiswipeMenu()
     return menu
 end
 
-function ReaderGesture:createSubMenu(text, action, ges, separator)
+function Gestures:createSubMenu(text, action, ges, separator)
     local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
     return {
         text = text,
@@ -982,15 +990,15 @@ local multiswipe_to_arrow = {
     southeast = "⬊",
     southwest = "⬋",
 }
-function ReaderGesture:friendlyMultiswipeName(multiswipe)
+function Gestures:friendlyMultiswipeName(multiswipe)
     return multiswipe:gsub("%S+", multiswipe_to_arrow)
 end
 
-function ReaderGesture:safeMultiswipeName(multiswipe)
+function Gestures:safeMultiswipeName(multiswipe)
     return multiswipe:gsub(" ", "_")
 end
 
-function ReaderGesture:setupGesture(ges, action)
+function Gestures:setupGesture(ges, action)
     local ges_type
     local zone
     local overrides
@@ -1304,7 +1312,7 @@ function ReaderGesture:setupGesture(ges, action)
     end
 end
 
-function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, direction, distance)
+function Gestures:registerGesture(ges, action, ges_type, zone, overrides, direction, distance)
     self.ui:registerTouchZones({
         {
             id = ges,
@@ -1315,24 +1323,7 @@ function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, d
                 if direction and not direction[gest.direction] then return end
 
                 if ges == "multiswipe" then
-                    if self.multiswipes_enabled == nil then
-                        UIManager:show(ConfirmBox:new{
-                            text = _("You have just performed your first multiswipe gesture.") .."\n\n".. multiswipes_info_text,
-                            ok_text = _("Turn on"),
-                            ok_callback = function()
-                                G_reader_settings:saveSetting("multiswipes_enabled", true)
-                                self.multiswipes_enabled = true
-                            end,
-                            cancel_text = _("Turn off"),
-                            cancel_callback = function()
-                                G_reader_settings:saveSetting("multiswipes_enabled", false)
-                                self.multiswipes_enabled = false
-                            end,
-                        })
-                        return
-                    else
-                        return self:multiswipeAction(gest.multiswipe_directions, gest)
-                    end
+                    return self:multiswipeAction(gest.multiswipe_directions, gest)
                 end
 
                 return self:gestureAction(action, gest)
@@ -1342,7 +1333,7 @@ function ReaderGesture:registerGesture(ges, action, ges_type, zone, overrides, d
     })
 end
 
-function ReaderGesture:gestureAction(action, ges)
+function Gestures:gestureAction(action, ges)
     if action == "ignore"
         or (ges.ges == "hold" and self.ignore_hold_corners) then
         return
@@ -1510,17 +1501,34 @@ function ReaderGesture:gestureAction(action, ges)
     return true
 end
 
-function ReaderGesture:multiswipeAction(multiswipe_directions, ges)
-    if not self.multiswipes_enabled then return end
-    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
-    local multiswipe_gesture_name = "multiswipe_"..self:safeMultiswipeName(multiswipe_directions)
-    local action = gesture_manager[multiswipe_gesture_name]
-    if action and action ~= "nothing" then
-        return self:gestureAction(action, ges)
+function Gestures:multiswipeAction(multiswipe_directions, ges)
+    if self.multiswipes_enabled == nil then
+        UIManager:show(ConfirmBox:new{
+            text = _("You have just performed your first multiswipe gesture.") .."\n\n".. multiswipes_info_text,
+            ok_text = _("Turn on"),
+            ok_callback = function()
+                G_reader_settings:saveSetting("multiswipes_enabled", true)
+                self.multiswipes_enabled = true
+            end,
+            cancel_text = _("Turn off"),
+            cancel_callback = function()
+                G_reader_settings:saveSetting("multiswipes_enabled", false)
+                self.multiswipes_enabled = false
+            end,
+        })
+        return
+    else
+        if not self.multiswipes_enabled then return end
+        local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
+        local multiswipe_gesture_name = "multiswipe_"..self:safeMultiswipeName(multiswipe_directions)
+        local action = gesture_manager[multiswipe_gesture_name]
+        if action and action ~= "nothing" then
+            return self:gestureAction(action, ges)
+        end
     end
 end
 
-function ReaderGesture:onIgnoreHoldCorners(ignore_hold_corners)
+function Gestures:onIgnoreHoldCorners(ignore_hold_corners)
     if ignore_hold_corners == nil then
         G_reader_settings:flipNilOrFalse("ignore_hold_corners")
     else
@@ -1530,4 +1538,4 @@ function ReaderGesture:onIgnoreHoldCorners(ignore_hold_corners)
     return true
 end
 
-return ReaderGesture
+return Gestures
