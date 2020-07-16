@@ -51,7 +51,8 @@ local settingsList = {
     fulltext_search = { category="none", event="ShowFulltextSearchInput", title=_("Fulltext search"), device=true,},
     file_search = { category="none", event="ShowFileSearch", title=_("File search"), device=true,},
     full_refresh = { category="none", event="FullRefresh", title=_("Full screen refresh"), device=true,},
-    night_mode = { category="none", event="ToggleNightMode", title=_("Night mode"), device=true,},
+    night_mode = { category="none", event="ToggleNightMode", title=_("Toggle night mode"), device=true,},
+    set_night_mode = { category="string", event="SetNightMode", title=_("Set night mode"), device=true, args={true, false}, toggle={_("On"), _("Off")},},
     suspend = { category="none", event="SuspendEvent", title=_("Suspend"), device=true,},
     exit = { category="none", event="Exit", title=_("Exit KOReader"), device=true,},
     restart = { category="none", event="Restart", title=_("Restart KOReader"), device=true, condition=Device:canRestart(),},
@@ -152,6 +153,7 @@ local dispatcher_menu_order = {
 
     "full_refresh",
     "night_mode",
+    "set_night_mode",
     "suspend",
     "exit",
     "restart",
