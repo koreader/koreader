@@ -262,6 +262,15 @@ local KoboStorm = Kobo:new{
     },
 }
 
+-- Kobo Nia:
+--- @fixme: Untested, assume it's Clara-ish for now.
+local KoboLuna = Kobo:new{
+    model = "Kobo_luna",
+    hasFrontlight = yes,
+    touch_snow_protocol = true,
+    display_dpi = 212,
+}
+
 -- This function will update itself after the first touch event
 local probeEvEpochTime
 probeEvEpochTime = function(self, ev)
@@ -827,6 +836,8 @@ elseif codename == "frost" then
     return KoboFrost
 elseif codename == "storm" then
     return KoboStorm
+elseif codename == "luna" then
+    return KoboLuna
 else
     error("unrecognized Kobo model "..codename)
 end
