@@ -14,9 +14,9 @@ local function isCommand(s)
 end
 
 local function getLinkOpener()
-    if jit.os == "Linux" and os.execute("xdg-open --version >/dev/null 2>&1") == 0 then
+    if jit.os == "Linux" and isCommand("xdg-open") then
         return true, "xdg-open"
-    elseif jit.os == "OSX" and os.execute("open >/dev/null 2>&1") == 256 then
+    elseif jit.os == "OSX" and isCommand("open") then
         return true, "open"
     end
     return false
@@ -141,7 +141,7 @@ function Device:init()
 
     self.hasClipboard = yes
     self.screen = require("ffi/framebuffer_SDL2_0"):new{device = self, debug = logger.dbg}
-    if jit.os ~= "OSX" then
+    if self.isEmulator or jit.os ~= "OSX" then
         local ok, re = pcall(self.screen.setWindowIcon, self.screen, "resources/koreader.png")
         if not ok then logger.warn(re) end
     end
