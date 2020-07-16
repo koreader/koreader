@@ -60,7 +60,7 @@ end
 
 function ReaderToc:onPageUpdate(pageno)
     self.pageno = pageno
-    if G_reader_settings:readSetting("full_refresh_count") == -1 then
+    if UIManager.FULL_REFRESH_COUNT == -1 then
         if self:isChapterEnd(pageno, 0) then
             self.chapter_refresh = true
         elseif self:isChapterBegin(pageno, 0) and self.chapter_refresh then

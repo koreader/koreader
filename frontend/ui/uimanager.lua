@@ -19,7 +19,7 @@ local DEFAULT_FULL_REFRESH_COUNT = 6
 local UIManager = {
     -- trigger a full refresh when counter reaches FULL_REFRESH_COUNT
     FULL_REFRESH_COUNT =
-        G_reader_settings:readSetting("full_refresh_count") or DEFAULT_FULL_REFRESH_COUNT,
+        G_reader_settings:isTrue("night_mode") and G_reader_settings:readSetting("night_full_refresh_count") or G_reader_settings:readSetting("full_refresh_count") or DEFAULT_FULL_REFRESH_COUNT,
     refresh_count = 0,
 
     -- How long to wait between ZMQ wakeups: 50ms.
@@ -688,15 +688,24 @@ end
 --- Sets full refresh rate for e-ink screen.
 --
 -- Also makes the refresh rate persistent in global reader settings.
-function UIManager:setRefreshRate(rate)
+function UIManager:setRefreshRate(rate, night_rate)
     logger.dbg("set screen full refresh rate", rate)
-    self.FULL_REFRESH_COUNT = rate
+    self.FULL_REFRESH_COUNT =  G_reader_settings:isTrue("night_mode") and night_rate or rate
     G_reader_settings:saveSetting("full_refresh_count", rate)
+    G_reader_settings:saveSetting("night_full_refresh_count", night_rate)
 end
 
 --- Gets full refresh rate for e-ink screen.
-function UIManager:getRefreshRate(rate)
-    return self.FULL_REFRESH_COUNT
+function UIManager:getRefreshRate()
+    return G_reader_settings:readSetting("full_refresh_count"), G_reader_settings:readSetting("night_full_refresh_count") or G_reader_settings:readSetting("full_refresh_count")
+end
+
+function UIManager:ToggleNightMode(night_mode)
+    if night_mode then
+        self.FULL_REFRESH_COUNT = G_reader_settings:readSetting("night_full_refresh_count") or G_reader_settings:readSetting("full_refresh_count")
+    else
+        self.FULL_REFRESH_COUNT = G_reader_settings:readSetting("full_refresh_count")
+    end
 end
 
 --- Get top widget.

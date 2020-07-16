@@ -17,7 +17,15 @@ function DeviceListener:onToggleNightMode()
     local night_mode = G_reader_settings:isTrue("night_mode")
     Screen:toggleNightMode()
     UIManager:setDirty("all", "full")
+    UIManager:ToggleNightMode(not night_mode)
     G_reader_settings:saveSetting("night_mode", not night_mode)
+end
+
+function DeviceListener:onSetNightMode(night_mode_on)
+    local night_mode = G_reader_settings:isTrue("night_mode")
+    if (night_mode_on and not night_mode) or (not night_mode_on and night_mode) then
+        self:onToggleNightMode()
+    end
 end
 
 local function lightFrontlight()
