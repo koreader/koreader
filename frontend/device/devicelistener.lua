@@ -23,7 +23,7 @@ end
 
 function DeviceListener:onSetNightMode(night_mode_on)
     local night_mode = G_reader_settings:isTrue("night_mode")
-    if (night_mode_on and not night_mode) or (not night_mode_on and night_mode) then
+    if night_mode_on ~= night_mode then
         self:onToggleNightMode()
     end
 end
