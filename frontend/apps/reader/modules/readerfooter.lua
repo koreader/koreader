@@ -1793,7 +1793,7 @@ end
 
 -- recalculate footer sizes when document page count is updated
 -- see documentation for more info about this event.
-ReaderFooter.onUpdatePos = ReaderFooter.updateFooter
+ReaderFooter.onUpdatePos = ReaderFooter.onUpdateFooter
 
 function ReaderFooter:onReaderReady()
     self.ui.menu:registerToMainMenu(self)
