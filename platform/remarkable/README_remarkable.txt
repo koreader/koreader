@@ -16,15 +16,15 @@ with a USB cable.
 
 # Launching using the included launcher
 
-koreader includes a very simple launcher called `button-listen` which starts
-koreader when the middle button is held down for 3 or more seconds in the
-xochitl UI.
+KOReader includes a very simple launcher called `button-listen` which starts
+KOReader when the middle button is held down for 3 or more seconds in the
+default UI (xochitl).
 
    cp -v koreader/*.service /etc/systemd/system/
    systemctl enable --now button-listen
 
-To return to xochitl just exit koreader (swipe down from the top of the screen,
-select icon in the top right, Exit, Exit).
+To return to the default UI just exit KOReader (swipe down from the top of the
+screen, select icon in the top right, Exit, Exit).
 
 Some reMarkable software updates will wipe the new systemd units so you will have
 to run the two install steps again when that happens.
@@ -35,13 +35,11 @@ The command that the launcher needs to run is:
 
    /home/root/koreader/koreader.sh
 
-Alternatively, if you want the default behaviour of koreader exit starting up
-xochitl you can run (once on installation):
+Alternatively, if you want the default behaviour of KOReader exit starting the
+default UI you can run (once on installation):
 
    cp -v koreader/koreader.service /etc/systemd/system/
 
-And then the launcher needs to run:
+Then to start KOReader the launcher needs to run:
 
    systemctl start koreader
-
-To start koreader (this is the command which `button-listen` runs).
