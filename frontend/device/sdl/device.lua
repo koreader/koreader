@@ -5,40 +5,24 @@ local logger = require("logger")
 local function yes() return true end
 local function no() return false end
 
--- xdg-open is used on most linux systems
-local function hasXdgOpen()
-    local std_out = io.popen("xdg-open --version 2>/dev/null")
-    local version = nil
-    if std_out ~= nil then
-        version = std_out:read()
-        std_out:close()
-    end
-    return version ~= nil
-end
-
--- open is the macOS counterpart
-local function hasMacOpen()
-    return os.execute("open >/dev/null 2>&1") == 256
-end
-
--- get the name of the binary used to open links
-local function getLinkOpener()
-    local enabled = false
-    local tool = nil
-    if jit.os == "Linux" and hasXdgOpen() then
-        enabled = true
-        tool = "xdg-open"
-    elseif jit.os == "OSX" and hasMacOpen() then
-        enabled = true
-        tool = "open"
-    end
-    return enabled, tool
-end
-
--- differentiate between urls and commands
 local function isUrl(s)
-    if type(s) == "string" and s:match("*?://") then
-        return true
+    return type(s) == "string" and s:match("*?://")
+end
+
+local function isCommand(s)
+    return os.execute("which "..s.." >/dev/null 2>&1") == 0
+end
+
+local function runCommand(command)
+    local env = jit.os ~= "OSX" and 'env -u LD_LIBRARY_PATH ' or ""
+    return os.execute(env..command) == 0
+end
+
+local function getLinkOpener()
+    if jit.os == "Linux" and isCommand("xdg-open") then
+        return true, "xdg-open"
+    elseif jit.os == "OSX" and isCommand("open") then
+        return true, "open"
     end
     return false
 end
@@ -52,10 +36,10 @@ local function getExternalDicts()
         EXTERNAL_DICTS_AVAILABILITY_CHECKED = true
         for i, v in ipairs(EXTERNAL_DICTS) do
             local tool = v[4]
-            if not tool then return end
-            if isUrl(tool) and getLinkOpener()
-            or os.execute("which "..tool .. " >/dev/null 2>&1") == 0 then
-                v[3] = true
+            if tool then
+                if (isUrl(tool) and getLinkOpener()) or isCommand(tool) then
+                    v[3] = true
+                end
             end
         end
     end
@@ -80,11 +64,7 @@ local Device = Generic:new{
     openLink = function(self, link)
         local enabled, tool = getLinkOpener()
         if not enabled or not tool or not link or type(link) ~= "string" then return end
-        if jit.os == "OSX" then
-            return os.execute(tool .. " '" .. link .. "'") == 0
-        else
-            return os.execute('env -u LD_LIBRARY_PATH '..tool.." '"..link.."'") == 0
-        end
+        return runCommand(tool .. " '" .. link .. "'")
     end,
     canExternalDictLookup = yes,
     getExternalDictLookupList = getExternalDicts,
@@ -99,8 +79,8 @@ local Device = Generic:new{
         end
         if isUrl(tool) and getLinkOpener() then
             ok = self:openLink(tool..text)
-        else
-            ok = os.execute('env -u LD_LIBRARY_PATH '..tool.." "..text.." &") == 0
+        elseif isCommand(tool) then
+            ok = runCommand(tool .. " " .. text .. " &")
         end
         if ok and external_dict_when_back_callback then
             external_dict_when_back_callback()
@@ -145,21 +125,20 @@ local UbuntuTouch = Device:new{
 }
 
 function Device:init()
-    local emulator = self.isEmulator
     -- allows to set a viewport via environment variable
     -- syntax is Lua table syntax, e.g. EMULATE_READER_VIEWPORT="{x=10,w=550,y=5,h=790}"
     local viewport = os.getenv("EMULATE_READER_VIEWPORT")
-    if emulator and viewport then
+    if viewport then
         self.viewport = require("ui/geometry"):new(loadstring("return " .. viewport)())
     end
 
     local touchless = os.getenv("DISABLE_TOUCH") == "1"
-    if emulator and touchless then
+    if touchless then
         self.isTouchDevice = no
     end
 
     local portrait = os.getenv("EMULATE_READER_FORCE_PORTRAIT")
-    if emulator and portrait then
+    if portrait then
         self.isAlwaysPortrait = yes
     end
 
@@ -287,7 +266,7 @@ function Device:init()
         end
     end
 
-    if emulator and portrait then
+    if portrait then
         self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
         self.input:registerEventAdjustHook(
             self.input.adjustTouchMirrorX,
@@ -314,7 +293,7 @@ function Device:setDateTime(year, month, day, hour, min, sec)
     end
 end
 
-function Device:simulateSuspend()
+function Emulator:simulateSuspend()
     local InfoMessage = require("ui/widget/infomessage")
     local UIManager = require("ui/uimanager")
     local _ = require("gettext")
@@ -323,7 +302,7 @@ function Device:simulateSuspend()
     })
 end
 
-function Device:simulateResume()
+function Emulator:simulateResume()
     local InfoMessage = require("ui/widget/infomessage")
     local UIManager = require("ui/uimanager")
     local _ = require("gettext")
