@@ -27,6 +27,7 @@ function FtpApi:ftpGet(u, command)
     p.password = util.urlDecode(p.password)
     p.command = command
     p.sink = ltn12.sink.table(t)
+    p.type = "i"  -- binary
     local r, e = ftp.get(p)
     return r and table.concat(t), e
 end
