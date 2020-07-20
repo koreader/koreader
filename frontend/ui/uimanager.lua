@@ -697,14 +697,14 @@ end
 
 --- Gets full refresh rate for e-ink screen.
 function UIManager:getRefreshRate()
-    return G_reader_settings:readSetting("full_refresh_count"), G_reader_settings:readSetting("night_full_refresh_count") or G_reader_settings:readSetting("full_refresh_count")
+    return G_reader_settings:readSetting("full_refresh_count") or DEFAULT_FULL_REFRESH_COUNT, G_reader_settings:readSetting("night_full_refresh_count") or G_reader_settings:readSetting("full_refresh_count") or DEFAULT_FULL_REFRESH_COUNT
 end
 
 function UIManager:ToggleNightMode(night_mode)
     if night_mode then
-        self.FULL_REFRESH_COUNT = G_reader_settings:readSetting("night_full_refresh_count") or G_reader_settings:readSetting("full_refresh_count")
+        self.FULL_REFRESH_COUNT = G_reader_settings:readSetting("night_full_refresh_count") or G_reader_settings:readSetting("full_refresh_count") or DEFAULT_FULL_REFRESH_COUNT
     else
-        self.FULL_REFRESH_COUNT = G_reader_settings:readSetting("full_refresh_count")
+        self.FULL_REFRESH_COUNT = G_reader_settings:readSetting("full_refresh_count") or DEFAULT_FULL_REFRESH_COUNT
     end
 end
 
