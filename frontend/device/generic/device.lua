@@ -328,6 +328,10 @@ function Device:setDateTime(year, month, day, hour, min, sec) end
 -- Device specific method if any setting needs being saved
 function Device:saveSettings() end
 
+-- Simulates suspend/resume
+function Device:simulateSuspend() end
+function Device:simulateResume() end
+
 --[[--
 Device specific method for performing haptic feedback.
 
