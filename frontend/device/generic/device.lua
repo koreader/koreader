@@ -28,6 +28,7 @@ local Device = {
     suspend_wait_timeout = 15,
 
     -- hardware feature tests: (these are functions!)
+    hasBattery = yes,
     hasKeyboard = no,
     hasKeys = no,
     hasDPad = no,

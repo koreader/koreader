@@ -663,7 +663,7 @@ function TouchMenu:updateItems()
             batt_symbol = ""
         end
     end
-    if not Device:isDesktop() then
+    if Device:hasBattery() then
         time_info_txt = BD.wrap(time_info_txt) .. " " .. BD.wrap("⌁") .. BD.wrap(batt_symbol) ..  BD.wrap(batt_lvl .. "%")
     end
     self.time_info:setText(time_info_txt)

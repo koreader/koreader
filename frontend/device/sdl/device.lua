@@ -1,5 +1,6 @@
 local Event = require("ui/event")
 local Generic = require("device/generic/device")
+local SDL = require("ffi/SDL2_0")
 local logger = require("logger")
 
 local function yes() return true end
@@ -51,6 +52,7 @@ local Device = Generic:new{
     model = "SDL",
     isSDL = yes,
     home_dir = os.getenv("HOME"),
+    hasBattery = SDL.getPowerInfo(),
     hasKeyboard = yes,
     hasKeys = yes,
     hasDPad = yes,
@@ -96,9 +98,15 @@ local AppImage = Device:new{
     isDesktop = yes,
 }
 
+local Desktop = Device:new{
+    model = SDL.getPlatform(),
+    isDesktop = yes,
+}
+
 local Emulator = Device:new{
     model = "Emulator",
     isEmulator = yes,
+    hasBattery = yes,
     hasEinkScreen = yes,
     hasFrontlight = yes,
     hasWifiToggle = yes,
@@ -106,16 +114,6 @@ local Emulator = Device:new{
     canPowerOff = yes,
     canReboot = yes,
     canSuspend = yes,
-}
-
-local Linux = Device:new{
-    model = "Linux",
-    isDesktop = yes,
-}
-
-local Mac = Device:new{
-    model = "Mac",
-    isDesktop = yes,
 }
 
 local UbuntuTouch = Device:new{
@@ -144,6 +142,7 @@ function Device:init()
 
     self.hasClipboard = yes
     self.screen = require("ffi/framebuffer_SDL2_0"):new{device = self, debug = logger.dbg}
+    self.powerd = require("device/sdl/powerd"):new{device = self}
 
     local ok, re = pcall(self.screen.setWindowIcon, self.screen, "resources/koreader.png")
     if not ok then logger.warn(re) end
@@ -334,15 +333,13 @@ function Emulator:initNetworkManager(NetworkMgr)
     end
 end
 
+io.write("Starting SDL in " .. SDL.getBasePath() .. "\n")
+
 -------------- device probe ------------
 if os.getenv("APPIMAGE") then
     return AppImage
 elseif os.getenv("KO_MULTIUSER") then
-    if jit.os == "OSX" then
-        return Mac
-    else
-        return Linux
-    end
+    return Desktop
 elseif os.getenv("UBUNTU_APPLICATION_ISOLATION") then
     return UbuntuTouch
 else
