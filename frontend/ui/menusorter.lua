@@ -4,6 +4,7 @@ menu_items and a separate menu order.
 ]]
 
 local DataStorage = require("datastorage")
+local FFIUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
@@ -158,7 +159,7 @@ function MenuSorter:sort(item_table, order)
     item_table["KOMenu:menu_buttons"] = nil
 
     -- attach orphans based on sorting_hint, or with a NEW prefix in the first menu if none found
-    for k, v in pairs(item_table) do
+    for k, v in FFIUtil.orderedPairs(item_table) do
         local sorting_hint = v.sorting_hint
 
         -- normally there should be menu text but check to be sure
