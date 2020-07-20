@@ -311,7 +311,7 @@ function ReaderFooter:init()
         all_at_once = false,
         reclaim_height = false,
         toc_markers = true,
-        battery = not Device:isDesktop(),
+        battery = Device:hasBattery(),
         time = true,
         page_progress = true,
         pages_left = true,
@@ -338,7 +338,7 @@ function ReaderFooter:init()
     if not Device:hasFrontlight() then
         MODE.frontlight = nil
     end
-    if Device:isDesktop() then
+    if not Device:hasBattery() then
         MODE.battery = nil
     end
 
@@ -1609,7 +1609,7 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(sub_items, getMinibarOption("page_progress"))
     table.insert(sub_items, getMinibarOption("time"))
     table.insert(sub_items, getMinibarOption("pages_left"))
-    if not Device:isDesktop() then
+    if Device:hasBattery() then
         table.insert(sub_items, getMinibarOption("battery"))
     end
     table.insert(sub_items, getMinibarOption("percentage"))
