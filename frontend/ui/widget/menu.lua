@@ -8,6 +8,7 @@ local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
+local FFIUtil = require("ffi/util")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -1326,7 +1327,7 @@ end
 
 function Menu.itemTableFromTouchMenu(t)
     local item_t = {}
-    for k,v in pairs(t) do
+    for k, v in FFIUtil.orderedPairs(t) do
         local item = { text = k }
         if v.callback then
             item.callback = v.callback

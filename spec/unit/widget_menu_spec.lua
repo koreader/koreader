@@ -20,7 +20,11 @@ describe("Menu widget", function()
             },
         })
         --- @fixme: Currently broken because pairs (c.f., https://github.com/koreader/koreader/pull/6371#issuecomment-657251302)
-        assert.are.same(re, {
+        assert.are.same({
+            {
+                text = 'exit',
+                callback = cb2,
+            },
             {
                 text = 'navi',
                 sub_item_table = {
@@ -29,10 +33,6 @@ describe("Menu widget", function()
                     { text = 'bar', callback = cb2 },
                 }
             },
-            {
-                text = 'exit',
-                callback = cb2,
-            }
-        })
+        }, re)
     end)
 end)
