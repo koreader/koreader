@@ -338,8 +338,8 @@ ruby { display: inline !important; }
                 id = "lineheight_all_normal_strut_confined";
                 title = _("Enforce steady line heights"),
                 description = _("Prevent inline content like sub- and superscript from changing their paragraph line height."),
-                priority = -5, -- so other -cr-hint can override (this one has effect only on inline content)
-                css = [[* { -cr-hint: strut-confined; }]],
+                -- strut-confined is among the few cr-hints that are inherited
+                css = [[body { -cr-hint: strut-confined; }]],
                 separator = true,
             },
             {
@@ -650,13 +650,17 @@ This is just an example, that will need to be adapted into a user style tweak.]]
                     title = _("In-page FB2 footnotes"),
                     description = _([[
 Show FB2 footnote text at the bottom of pages that contain links to them.]]),
+                    -- Restrict this to FB2 documents, even if we won't probably
+                    -- match in any other kind of document
                     css = [[
 body[name="notes"] section {
-    -cr-hint: footnote-inpage;
-    margin: 0 !important;
+    -cr-only-if: fb2-document;
+        -cr-hint: footnote-inpage;
+        margin: 0 !important;
 }
 body[name="notes"] > section {
-    font-size: 0.75rem;
+    -cr-only-if: fb2-document;
+        font-size: 0.75rem;
 }
                     ]],
                 },
@@ -667,11 +671,13 @@ body[name="notes"] > section {
 Show FB2 endnote text at the bottom of pages that contain links to them.]]),
                     css = [[
 body[name="comments"] section {
-    -cr-hint: footnote-inpage;
-    margin: 0 !important;
+    -cr-only-if: fb2-document;
+        -cr-hint: footnote-inpage;
+        margin: 0 !important;
 }
 body[name="comments"] > section {
-    font-size: 0.85rem;
+    -cr-only-if: fb2-document;
+        font-size: 0.85rem;
 }
                     ]],
                     separator = true,
@@ -685,7 +691,8 @@ FB2 footnotes and endnotes get a smaller font size when displayed in-page. This 
 body[name="notes"] > section,
 body[name="comments"] > section
 {
-    font-size: 1rem !important;
+    -cr-only-if: fb2-document;
+        font-size: 1rem !important;
 }
                     ]],
                 },
@@ -697,6 +704,7 @@ body[name="comments"] > section
                 description = _([[
 Show EPUB footnote text at the bottom of pages that contain links to them.
 This only works with footnotes that have specific attributes set by the publisher.]]),
+                -- Restrict this to EPUB documents, as FB2 can have <a type="note">
                 css = [[
 *[type~="note"],
 *[type~="footnote"],
@@ -705,8 +713,9 @@ This only works with footnotes that have specific attributes set by the publishe
 *[role~="doc-footnote"],
 *[role~="doc-rearnote"]
 {
-    -cr-hint: footnote-inpage;
-    margin: 0 !important;
+    -cr-only-if: epub-document;
+        -cr-hint: footnote-inpage;
+        margin: 0 !important;
 }
                 ]],
             },
@@ -716,6 +725,8 @@ This only works with footnotes that have specific attributes set by the publishe
                 description = _([[
 Show EPUB footnote text at the bottom of pages that contain links to them.
 This only works with footnotes that have specific attributes set by the publisher.]]),
+                -- Restrict this to EPUB documents, as FB2 can have <a type="note">
+                -- and we don't want to have them smaller
                 css = [[
 *[type~="note"],
 *[type~="footnote"],
@@ -724,9 +735,10 @@ This only works with footnotes that have specific attributes set by the publishe
 *[role~="doc-footnote"],
 *[role~="doc-rearnote"]
 {
-    -cr-hint: footnote-inpage;
-    margin: 0 !important;
-    font-size: 0.8rem !important;
+    -cr-only-if: epub-document;
+        -cr-hint: footnote-inpage;
+        margin: 0 !important;
+        font-size: 0.8rem !important;
 }
                 ]],
                 separator = true,
