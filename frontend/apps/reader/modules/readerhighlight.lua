@@ -127,6 +127,21 @@ function ReaderHighlight:genHighlightDrawerMenu()
             end,
             callback = function()
                 self.view.highlight.disabled = not self.view.highlight.disabled
+                self.view.highlight.zoom =  self.view.highlight.disabled
+            end,
+            hold_callback = function(touchmenu_instance)
+                self:toggleDefault()
+            end,
+        },
+        {
+            text = _("Zoom Touched"),
+            checked_func = function()
+                return self.view.highlight.zoom
+            end,
+            callback = function()
+                
+                self.view.highlight.zoom = not self.view.highlight.zoom
+                self.view.highlight.disabled =  self.view.highlight.zoom
             end,
             hold_callback = function(touchmenu_instance)
                 self:toggleDefault()
@@ -561,9 +576,55 @@ function ReaderHighlight:_resetHoldTimer(clear)
     end
 end
 
+
+
+
 function ReaderHighlight:onHold(arg, ges)
     -- disable hold gesture if highlighting is disabled
-    if self.view.highlight.disabled then return false end
+    if self.view.highlight.disabled then 
+        if self.view.highlight.zoom then
+            --zoom the hold area
+            self:clear() -- clear previous highlight (delayed clear may not have done it yet)
+            self.hold_ges_pos = ges.pos -- remember hold original gesture position
+            self.hold_pos = self.view:screenToPageTransform(ges.pos)
+            logger.dbg("hold position in page", self.hold_pos)
+            if not self.hold_pos then
+                logger.dbg("not inside page area")
+                return false
+            end
+            logger.dbg("hold position in page", self.hold_pos)
+            logger.dbg("screen width x", Screen:getWidth())
+            logger.dbg("hold position in page x", self.hold_pos.x)
+            logger.dbg("screen width y", Screen:getHeight())
+            logger.dbg("hold position in page y", self.hold_pos.x)
+            logger.dbg("x ratio: ", (self.hold_pos.x / (Screen:getWidth() * 2)))
+            logger.dbg("y ratio: ", (self.hold_pos.y / (Screen:getHeight() * 2)))
+            
+            Screen:shot("/home/m/1.png")
+            logger.dbg("hold on image")
+                                
+            local ImageViewer = require("ui/widget/imageviewer")
+            local imgviewer = ImageViewer:new{
+                file = "/home/m/1.png",
+                -- title_text = _("Document embedded image"),
+                -- No title, more room for image
+                with_title_bar = false,
+                scale_factor = 3,
+                _center_x_ratio = (self.hold_pos.x / (Screen:getWidth() * 2)),
+                _center_y_ratio = (self.hold_pos.y / (Screen:getHeight() * 2)),
+            }
+            UIManager:show(imgviewer)
+            return true 
+
+            
+        
+            
+
+        end
+        
+        return false 
+    
+    end
     self:clear() -- clear previous highlight (delayed clear may not have done it yet)
     self.hold_ges_pos = ges.pos -- remember hold original gesture position
     self.hold_pos = self.view:screenToPageTransform(ges.pos)
