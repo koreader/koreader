@@ -139,7 +139,7 @@ function ReaderHighlight:genHighlightDrawerMenu()
                 return self.view.highlight.zoom
             end,
             callback = function()
-                
+
                 self.view.highlight.zoom = not self.view.highlight.zoom
                 self.view.highlight.disabled =  self.view.highlight.zoom
             end,
@@ -581,13 +581,13 @@ end
 
 function ReaderHighlight:onHold(arg, ges)
     -- disable hold gesture if highlighting is disabled
-    if self.view.highlight.disabled then 
+    if self.view.highlight.disabled then
         if self.view.highlight.zoom then
             --zoom the hold area
             self:clear() -- clear previous highlight (delayed clear may not have done it yet)
             self.hold_ges_pos = ges.pos -- remember hold original gesture position
             self.hold_pos = self.view:screenToPageTransform(ges.pos)
-            logger.dbg("hold position in page", self.hold_pos)
+            logger.dbg("hold position in page msh", self.hold_pos)
             if not self.hold_pos then
                 logger.dbg("not inside page area")
                 return false
@@ -596,34 +596,65 @@ function ReaderHighlight:onHold(arg, ges)
             logger.dbg("screen width x", Screen:getWidth())
             logger.dbg("hold position in page x", self.hold_pos.x)
             logger.dbg("screen width y", Screen:getHeight())
-            logger.dbg("hold position in page y", self.hold_pos.x)
-            logger.dbg("x ratio: ", (self.hold_pos.x / (Screen:getWidth() * 2)))
-            logger.dbg("y ratio: ", (self.hold_pos.y / (Screen:getHeight() * 2)))
+            logger.dbg("hold position in page y", self.hold_pos.y)
             
-            Screen:shot("/home/m/1.png")
+            local Center_X_ratio = (self.hold_pos.x / (Screen:getWidth() /self.hold_pos.zoom))
+            local Center_Y_ratio = (self.hold_pos.y / (Screen:getHeight() /self.hold_pos.zoom))
+
+
+            logger.dbg("x ratio: ",Center_X_ratio)
+            logger.dbg("y ratio: ", Center_Y_ratio)
+            logger.dbg("page: ", self.hold_pos.page)
+
+            -- Screen:shot("/home/m/1.png")
             logger.dbg("hold on image")
-                                
+
+            local Getcover = require("document/koptinterface")
+            local Image = Getcover:getNativePageImage(self.ui.document, self.hold_pos.page)
+            if Image then
+                logger.dbg("we got image")
+            end
+
             local ImageViewer = require("ui/widget/imageviewer")
             local imgviewer = ImageViewer:new{
-                file = "/home/m/1.png",
+                image = Image,
                 -- title_text = _("Document embedded image"),
                 -- No title, more room for image
                 with_title_bar = false,
-                scale_factor = 3,
-                _center_x_ratio = (self.hold_pos.x / (Screen:getWidth() * 2)),
-                _center_y_ratio = (self.hold_pos.y / (Screen:getHeight() * 2)),
+                scale_factor = 2,
+                _center_x_ratio = Center_X_ratio,
+                _center_y_ratio = Center_Y_ratio,
+                
             }
+            
             UIManager:show(imgviewer)
-            return true 
+            
+            -- local ImageWidget = require("ui/widget/imagewidget")
+            -- local imagewedget = ImageWidget:new{
+                   
+            --     image = Image,
+            --     image_disposable = false, -- we may re-use self.image
+            --     alpha = true, -- we might be showing images with an alpha channel (e.g., from Wikipedia)
+            --     width = 400,
+            --     height = 400,
+            --     scale_factor = 1,
+            --     center_x_ratio = 0.5,
+            --     center_y_ratio = 0.5,
 
+            -- }
+            -- UIManager:show(imagewedget)
             
-        
             
+            return true
+
+
+
+
 
         end
-        
-        return false 
-    
+
+        return false
+
     end
     self:clear() -- clear previous highlight (delayed clear may not have done it yet)
     self.hold_ges_pos = ges.pos -- remember hold original gesture position
