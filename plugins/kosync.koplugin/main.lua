@@ -9,7 +9,7 @@ local Event = require("ui/event")
 local Math = require("optmath")
 local Screen = Device.screen
 local logger = require("logger")
-local md5 = require("ffi/MD5")
+local md5 = require("ffi/sha2").md5
 local random = require("random")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -386,7 +386,7 @@ function KOSync:doRegister(username, password)
     }
     -- on Android to avoid ANR (no-op on other platforms)
     Device:setIgnoreInput(true)
-    local userkey = md5.sum(password)
+    local userkey = md5(password)
     local ok, status, body = pcall(client.register, client, username, userkey)
     if not ok then
         if status then
@@ -422,7 +422,7 @@ function KOSync:doLogin(username, password)
         service_spec = self.path .. "/api.json"
     }
     Device:setIgnoreInput(true)
-    local userkey = md5.sum(password)
+    local userkey = md5(password)
     local ok, status, body = pcall(client.authorize, client, username, userkey)
     if not ok then
         if status then

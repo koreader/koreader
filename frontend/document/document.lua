@@ -135,20 +135,20 @@ function Document:fastDigest(docsettings)
         if not result then
             logger.dbg("computing and storing partial_md5_checksum")
             local bit = require("bit")
-            local md5 = require("ffi/MD5")
+            local md5 = require("ffi/sha2").md5
             local lshift = bit.lshift
             local step, size = 1024, 1024
-            local m = md5.new()
+            local update = md5()
             for i = -1, 10 do
                 file:seek("set", lshift(step, 2*i))
                 local sample = file:read(size)
                 if sample then
-                    m:update(sample)
+                    update(sample)
                 else
                     break
                 end
             end
-            result = m:sum()
+            result = update()
             docsettings:saveSetting("partial_md5_checksum", result)
         end
         if tmp_docsettings then
