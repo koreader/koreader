@@ -200,6 +200,18 @@ local function inside_box(pos, box)
     end
 end
 
+local function cleanupSelectedText(text)
+    -- Trim spaces and new lines at start and end
+    text = text:gsub("^[\n%s]*", "")
+    text = text:gsub("[\n%s]*$", "")
+    -- Trim spaces around newlines
+    text = text:gsub("%s*\n%s*", "\n")
+    -- Trim consecutive spaces (that would probably have collapsed
+    -- in rendered CreDocuments)
+    text = text:gsub("%s%s+", " ")
+    return text
+end
+
 function ReaderHighlight:onTapPageSavedHighlight(ges)
     local pages = self.view:getCurrentPageList()
     local pos = self.view:screenToPageTransform(ges.pos)
@@ -324,7 +336,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
     local new_end = self.view.highlight.saved[page][index].pos1
     local new_text = self.ui.document:getTextFromXPointers(new_beginning, new_end)
     local new_chapter = self.ui.toc:getTocTitleByPage(new_beginning)
-    self.view.highlight.saved[page][index].text = new_text
+    self.view.highlight.saved[page][index].text = cleanupSelectedText(new_text)
     self.view.highlight.saved[page][index].chapter = new_chapter
     local new_highlight = self.view.highlight.saved[page][index]
     self.ui.bookmark:updateBookmark({
@@ -468,7 +480,7 @@ function ReaderHighlight:onShowHighlightMenu()
                 text = C_("Text", "Copy"),
                 enabled = Device:hasClipboard(),
                 callback = function()
-                    Device.input.setClipboardText(self.selected_text.text)
+                    Device.input.setClipboardText(cleanupSelectedText(self.selected_text.text))
                 end,
             },
             {
@@ -537,7 +549,7 @@ function ReaderHighlight:onShowHighlightMenu()
             {
                 text = _("Share text"),
                 callback = function()
-                    local text = self.selected_text.text
+                    local text = cleanupSelectedText(self.selected_text.text)
                     -- call self:onClose() before calling the android framework
                     self:onClose()
                     Device.doShareText(text)
@@ -1068,7 +1080,7 @@ function ReaderHighlight:onUnhighlight(bookmark_item)
         datetime = bookmark_item.datetime
     else -- called from DictQuickLookup Unhighlight button
         page = self.hold_pos.page
-        sel_text = self.selected_text.text
+        sel_text = cleanupSelectedText(self.selected_text.text)
         sel_pos0 = self.selected_text.pos0
     end
     if self.ui.document.info.has_pages then -- We can safely use page
@@ -1131,7 +1143,7 @@ function ReaderHighlight:getHighlightBookmarkItem()
             pos0 = self.selected_text.pos0,
             pos1 = self.selected_text.pos1,
             datetime = datetime,
-            notes = self.selected_text.text,
+            notes = cleanupSelectedText(self.selected_text.text),
             highlighted = true,
             chapter = chapter_name,
         }
@@ -1153,7 +1165,7 @@ function ReaderHighlight:saveHighlight()
         local chapter_name = self.ui.toc:getTocTitleByPage(pg_or_xp)
         local hl_item = {
             datetime = datetime,
-            text = self.selected_text.text,
+            text = cleanupSelectedText(self.selected_text.text),
             pos0 = self.selected_text.pos0,
             pos1 = self.selected_text.pos1,
             pboxes = self.selected_text.pboxes,
@@ -1225,7 +1237,7 @@ end
 
 function ReaderHighlight:lookupWikipedia()
     if self.selected_text then
-        self.ui:handleEvent(Event:new("LookupWikipedia", self.selected_text.text))
+        self.ui:handleEvent(Event:new("LookupWikipedia", cleanupSelectedText(self.selected_text.text)))
     end
 end
 
@@ -1233,7 +1245,7 @@ function ReaderHighlight:onHighlightSearch()
     logger.dbg("search highlight")
     self:highlightFromHoldPos()
     if self.selected_text then
-        local text = util.stripPunctuation(self.selected_text.text)
+        local text = util.stripPunctuation(cleanupSelectedText(self.selected_text.text))
         self.ui:handleEvent(Event:new("ShowSearchDialog", text))
     end
 end
@@ -1242,7 +1254,7 @@ function ReaderHighlight:onHighlightDictLookup()
     logger.dbg("dictionary lookup highlight")
     self:highlightFromHoldPos()
     if self.selected_text then
-        self.ui:handleEvent(Event:new("LookupWord", self.selected_text.text))
+        self.ui:handleEvent(Event:new("LookupWord", cleanupSelectedText(self.selected_text.text)))
     end
 end
 
