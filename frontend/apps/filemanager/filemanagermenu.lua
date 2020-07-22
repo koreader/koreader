@@ -360,7 +360,7 @@ function FileManagerMenu:setUpdateItemTable()
                 Device.screen:toggleHWDithering()
                 -- Make sure SW dithering gets disabled when we enable HW dithering
                 if Device.screen.hw_dithering and Device.screen.sw_dithering then
-                    Device.screen:toggleSWDithering()
+                    Device.screen:toggleSWDithering(false)
                 end
                 UIManager:setDirty("all", "full")
             end,
@@ -380,7 +380,7 @@ function FileManagerMenu:setUpdateItemTable()
                 Device.screen:toggleSWDithering()
                 -- Make sure HW dithering gets disabled when we enable SW dithering
                 if Device.screen.hw_dithering and Device.screen.sw_dithering then
-                    Device.screen:toggleHWDithering()
+                    Device.screen:toggleHWDithering(false)
                 end
                 UIManager:setDirty("all", "full")
             end,
