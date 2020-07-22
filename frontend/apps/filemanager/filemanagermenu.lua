@@ -357,7 +357,7 @@ function FileManagerMenu:setUpdateItemTable()
             end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("dev_no_hw_dither")
-                Device.screen:toggleHWDithering()
+                Device.screen:toggleHWDithering(not G_reader_settings:isTrue("dev_no_hw_dither"))
                 -- Make sure SW dithering gets disabled when we enable HW dithering
                 if Device.screen.hw_dithering and Device.screen.sw_dithering then
                     Device.screen:toggleSWDithering(false)
@@ -377,7 +377,7 @@ function FileManagerMenu:setUpdateItemTable()
             end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("dev_no_sw_dither")
-                Device.screen:toggleSWDithering()
+                Device.screen:toggleSWDithering(not G_reader_settings:isTrue("dev_no_sw_dither"))
                 -- Make sure HW dithering gets disabled when we enable SW dithering
                 if Device.screen.hw_dithering and Device.screen.sw_dithering then
                     Device.screen:toggleHWDithering(false)
