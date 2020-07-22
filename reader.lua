@@ -129,13 +129,16 @@ end
 -- Dithering
 if Device:hasEinkScreen() then
     Device.screen:setupDithering()
-    -- FIXME: If device can HW dither (i.e., after setupDithering, hw_dithering is true, but sw_dithering is false),
-    --        but HW dither is explicitly disabled, and SW dither enabled, don't disable SW dither (i.e., re-enable sw_dithering)!
     if Device.screen.hw_dithering and G_reader_settings:isTrue("dev_no_hw_dither") then
         Device.screen:toggleHWDithering(false)
     end
     if Device.screen.sw_dithering and G_reader_settings:isTrue("dev_no_sw_dither") then
         Device.screen:toggleSWDithering(false)
+    end
+    -- NOTE: If device can HW dither (i.e., after setupDithering(), hw_dithering is true, but sw_dithering is false),
+    --       but HW dither is explicitly disabled, and SW dither enabled, don't leave SW dither disabled (i.e., re-enable sw_dithering)!
+    if Device:canHWDither() and G_reader_settings:isTrue("dev_no_hw_dither") and G_reader_settings:nilOrFalse("dev_no_sw_dither") then
+        Device.screen:toggleSWDithering(true)
     end
 end
 
