@@ -597,7 +597,7 @@ function ReaderHighlight:onHold(arg, ges)
             logger.dbg("hold position in page x", self.hold_pos.x)
             logger.dbg("screen width y", Screen:getHeight())
             logger.dbg("hold position in page y", self.hold_pos.y)
-            
+
             local Center_X_ratio = (self.hold_pos.x / (Screen:getWidth() /self.hold_pos.zoom))
             local Center_Y_ratio = (self.hold_pos.y / (Screen:getHeight() /self.hold_pos.zoom))
 
@@ -624,28 +624,51 @@ function ReaderHighlight:onHold(arg, ges)
                 scale_factor = 2,
                 _center_x_ratio = Center_X_ratio,
                 _center_y_ratio = Center_Y_ratio,
-                
-            }
-            
-            UIManager:show(imgviewer)
-            
-            -- local ImageWidget = require("ui/widget/imagewidget")
-            -- local imagewedget = ImageWidget:new{
-                   
-            --     image = Image,
-            --     image_disposable = false, -- we may re-use self.image
-            --     alpha = true, -- we might be showing images with an alpha channel (e.g., from Wikipedia)
-            --     width = 400,
-            --     height = 400,
-            --     scale_factor = 1,
-            --     center_x_ratio = 0.5,
-            --     center_y_ratio = 0.5,
 
-            -- }
+            }
+
+            --UIManager:show(imgviewer)
+
+            local ImageWidget = require("ui/widget/imagewidget")
+            local imagewedget = ImageWidget:new{
+
+                image = Image,
+                image_disposable = false, -- we may re-use self.image
+                alpha = true, -- we might be showing images with an alpha channel (e.g., from Wikipedia)
+                width = 400,
+                height = 400,
+                scale_factor = 1,
+                center_x_ratio = 0.5,
+                center_y_ratio = 0.5,
+
+            }
             -- UIManager:show(imagewedget)
-            
-            
-            return true
+            local Magnifier = require("ui/widget/magnifier")
+            local magnifier = Magnifier:new{
+                image = Image,
+                height = Screen:scaleBySize(200),
+                width = Screen:scaleBySize(200),
+                timeout = 5
+            }
+            -- UIManager:show(magnifier)
+
+            local sample
+
+            sample = InfoMessage:new{
+
+                text = ("Some message"),
+             height = Screen:scaleBySize(400),
+             show_icon = false,
+             timeout = 5
+            }
+        --    UIManager:show(sample)
+        UIManager:show(InfoMessage:new{
+            text = _("gest to test if i can run container"),
+        })
+
+
+
+            return false
 
 
 
