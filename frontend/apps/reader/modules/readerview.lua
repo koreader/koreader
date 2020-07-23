@@ -827,7 +827,11 @@ end
 
 function ReaderView:onSaveSettings()
     self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
-    self.ui.doc_settings:saveSetting("rotation_mode", Screen:getRotationMode())
+    -- Don't etch the current rotation in stone when sticky rotation is enabled
+    local locked = G_reader_settings:isTrue("lock_rotation")
+    if not locked then
+        self.ui.doc_settings:saveSetting("rotation_mode", Screen:getRotationMode())
+    end
     self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
     self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)
     self.ui.doc_settings:saveSetting("page_overlap_style", self.page_overlap_style)
