@@ -276,6 +276,15 @@ function NetworkMgr:getProxyMenuTable()
     }
 end
 
+function NetworkMgr:getPowersaveMenuTable()
+    return {
+        text = _("Automatically disable Wi-Fi connection when inactive"),
+        checked_func = function() return G_reader_settings:isTrue("auto_disable_wifi") end,
+        enabled_func = function() return Device:hasWifiManager() and not Device:isEmulator() end,
+        callback = function() G_reader_settings:flipNilOrFalse("auto_disable_wifi") end,
+    }
+end
+
 function NetworkMgr:getRestoreMenuTable()
     return {
         text = _("Automatically restore Wi-Fi connection after resume"),
@@ -354,6 +363,7 @@ function NetworkMgr:getMenuTable(common_settings)
     common_settings.network_info = self:getInfoMenuTable()
 
     if Device:hasWifiManager() then
+        common_settings.network_powersave = self:getPowersaveMenuTable()
         common_settings.network_restore = self:getRestoreMenuTable()
         common_settings.network_dismiss_scan = self:getDismissScanMenuTable()
         common_settings.network_before_wifi_action = self:getBeforeWifiActionMenuTable()

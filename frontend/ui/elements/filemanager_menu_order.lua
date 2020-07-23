@@ -62,6 +62,7 @@ local order = {
     network = {
         "network_wifi",
         "network_proxy",
+        "network_powersave",
         "network_restore",
         "network_info",
         "network_before_wifi_action",
