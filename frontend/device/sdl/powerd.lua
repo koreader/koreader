@@ -5,7 +5,7 @@ local SDLPowerD = BasePowerD:new{}
 
 function SDLPowerD:getCapacityHW()
     local _, _, _, percent = SDL.getPowerInfo()
-    -- never return negative values, since tests rely on battery being 0%
+    -- -1 looks a bit odd compared to 0
     if percent == -1 then return 0 end
     return percent
 end
