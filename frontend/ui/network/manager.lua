@@ -26,7 +26,7 @@ function NetworkMgr:connectivityCheck(iter)
     if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
         local Event = require("ui/event")
         UIManager:broadcastEvent(Event:new("NetworkConnected"))
-        logger.info("WiFi successfully restored!")
+        logger.info("Wi-Fi successfully restored!")
     else
         UIManager:scheduleIn(2, function() NetworkMgr:connectivityCheck(iter + 1) end)
     end
@@ -37,10 +37,10 @@ function NetworkMgr:scheduleConnectivityCheck()
 end
 
 function NetworkMgr:init()
-    -- On Kobo, kill WiFi if NetworkMgr:isWifiOn() and NOT NetworkMgr:isConnected()
-    -- (i.e., if the launcher left the WiFi in an inconsistent state: modules loaded, but no route to gateway).
+    -- On Kobo, kill Wi-Fi if NetworkMgr:isWifiOn() and NOT NetworkMgr:isConnected()
+    -- (i.e., if the launcher left the Wi-Fi in an inconsistent state: modules loaded, but no route to gateway).
     if Device:isKobo() and self:isWifiOn() and not self:isConnected() then
-        logger.info("Kobo WiFi: Left in an inconsistent state by launcher!")
+        logger.info("Kobo Wi-Fi: Left in an inconsistent state by launcher!")
         self:turnOffWifi()
     end
 
@@ -208,7 +208,7 @@ function NetworkMgr:getWifiToggleMenuTable()
                         if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
                             UIManager:broadcastEvent(Event:new("NetworkConnected"))
                         elseif NetworkMgr:isWifiOn() and not NetworkMgr:isConnected() then
-                            -- Don't leave WiFi in an inconsistent state if the connection failed.
+                            -- Don't leave Wi-Fi in an inconsistent state if the connection failed.
                             self.wifi_was_on = false
                             G_reader_settings:saveSetting("wifi_was_on", false)
                             -- NOTE: We're limiting this to only a few platforms, as it might be actually harmful on some devices.
@@ -219,8 +219,8 @@ function NetworkMgr:getWifiToggleMenuTable()
                             --       Kobo: Yes, please.
                             --       Cervantes: Loads/unloads module, probably could use it like Kobo.
                             --       Kindle: Probably could use it, if only because leaving Wireless on is generally a terrible idea on Kindle,
-                            --               except that we defer to lipc, which makes WiFi handling asynchronous, and the callback is simply delayed by 1s,
-                            --               so we can't be sure the system will actually have finished bringing WiFi up by then...
+                            --               except that we defer to lipc, which makes Wi-Fi handling asynchronous, and the callback is simply delayed by 1s,
+                            --               so we can't be sure the system will actually have finished bringing Wi-Fi up by then...
                             NetworkMgr:turnOffWifi()
                             touchmenu_instance:updateItems()
                         end

@@ -16,7 +16,7 @@ function NetworkListener:onToggleWifi()
         })
 
         -- NB Normal widgets should use NetworkMgr:promptWifiOn()
-        -- This is specifically the toggle wifi action, so consent is implied.
+        -- This is specifically the toggle Wi-Fi action, so consent is implied.
         NetworkMgr:turnOnWifi()
     else
         NetworkMgr:turnOffWifi()

@@ -131,7 +131,7 @@ if [ -z "${PRODUCT}" ]; then
     export PRODUCT
 fi
 
-# PLATFORM is used in koreader for the path to the WiFi drivers (as well as when restarting nickel)
+# PLATFORM is used in koreader for the path to the Wi-Fi drivers (as well as when restarting nickel)
 if [ -z "${PLATFORM}" ]; then
     # shellcheck disable=SC2046
     export $(grep -s -e '^PLATFORM=' "/proc/$(pidof -s udevd)/environ")

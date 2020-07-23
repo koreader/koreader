@@ -21,11 +21,11 @@ EOF
 }
 
 RestoreWifi() {
-    echo "[$(date)] restore-wifi-async.sh: Restarting WiFi"
+    echo "[$(date)] restore-wifi-async.sh: Restarting Wi-Fi"
     ./enable-wifi.sh
     RunWpaCli
     ./obtain-ip.sh
-    echo "[$(date)] restore-wifi-async.sh: Restarted WiFi"
+    echo "[$(date)] restore-wifi-async.sh: Restarted Wi-Fi"
 }
 
 RestoreWifi &
