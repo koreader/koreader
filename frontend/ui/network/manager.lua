@@ -46,7 +46,10 @@ function NetworkMgr:init()
 
     self.wifi_was_on = G_reader_settings:isTrue("wifi_was_on")
     if self.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
-        self:restoreWifiAsync()
+        -- Don't bother if WiFi is already up...
+        if not self:isConnected() then
+            self:restoreWifiAsync()
+        end
         self:scheduleConnectivityCheck()
     end
 end
