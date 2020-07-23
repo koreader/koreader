@@ -576,7 +576,20 @@ function ReaderHighlight:_resetHoldTimer(clear)
     end
 end
 
-
+function ReaderHighlight:getRegionalZoomCenter(pos)
+    if not self.dimen then
+        self.dimen = self.ui.dimen
+    end
+    local page_size = self.ui.document:getNativePageDimensions(pos.page)
+    local margin = self.ui.document.configurable.page_margin * Screen:getDPI()
+    local zoom = 2*self.dimen.w / page_size.w
+    zoom = zoom/(1 + 3*margin/zoom/page_size.w)
+    local x_ratio = (pos.x/ page_size.w) -- x center ratio
+    local y_ratio = (pos.y / page_size.h) -- y center ratio
+       
+    return zoom, x_ratio, y_ratio
+    
+end
 
 
 function ReaderHighlight:onHold(arg, ges)
@@ -587,95 +600,42 @@ function ReaderHighlight:onHold(arg, ges)
             self:clear() -- clear previous highlight (delayed clear may not have done it yet)
             self.hold_ges_pos = ges.pos -- remember hold original gesture position
             self.hold_pos = self.view:screenToPageTransform(ges.pos)
-            logger.dbg("hold position in page msh", self.hold_pos)
+            logger.dbg("hold position in page ", self.hold_pos)
             if not self.hold_pos then
                 logger.dbg("not inside page area")
                 return false
             end
-            logger.dbg("hold position in page", self.hold_pos)
-            logger.dbg("screen width x", Screen:getWidth())
-            logger.dbg("hold position in page x", self.hold_pos.x)
-            logger.dbg("screen width y", Screen:getHeight())
-            logger.dbg("hold position in page y", self.hold_pos.y)
-
-            local Center_X_ratio = (self.hold_pos.x / (Screen:getWidth() /self.hold_pos.zoom))
-            local Center_Y_ratio = (self.hold_pos.y / (Screen:getHeight() /self.hold_pos.zoom))
-
-
-            logger.dbg("x ratio: ",Center_X_ratio)
-            logger.dbg("y ratio: ", Center_Y_ratio)
-            logger.dbg("page: ", self.hold_pos.page)
-
+            
             -- Screen:shot("/home/m/1.png")
             logger.dbg("hold on image")
 
-            local Getcover = require("document/koptinterface")
-            local Image = Getcover:getNativePageImage(self.ui.document, self.hold_pos.page)
+            local getImage = require("document/koptinterface")
+            local Image = getImage:getNativePageImage(self.ui.document, self.hold_pos.page)
             if Image then
                 logger.dbg("we got image")
+                local zoom, x_ratio, y_ratio
+                zoom, x_ratio, y_ratio = self:getRegionalZoomCenter(self.hold_pos)
+                logger.dbg("zoom:", zoom)
+                logger.dbg("xpos:", x_ratio)
+                logger.dbg("ypos:", y_ratio)
+                
+                --call magnifier widget
+                local Magnifier = require("ui/widget/magnifier")
+                local magnifier = Magnifier:new{
+                image = Image,
+                timeout = 5,
+                -- set zoom to dubble now - setting variable to be add
+                zoom = zoom * 2 ,
+                x_ratio = x_ratio,
+                y_ratio = y_ratio
+
+                }
+            UIManager:show(magnifier)
             end
-
-            local ImageViewer = require("ui/widget/imageviewer")
-            local imgviewer = ImageViewer:new{
-                image = Image,
-                -- title_text = _("Document embedded image"),
-                -- No title, more room for image
-                with_title_bar = false,
-                scale_factor = 2,
-                _center_x_ratio = Center_X_ratio,
-                _center_y_ratio = Center_Y_ratio,
-
-            }
-
-            --UIManager:show(imgviewer)
-
-            local ImageWidget = require("ui/widget/imagewidget")
-            local imagewedget = ImageWidget:new{
-
-                image = Image,
-                image_disposable = false, -- we may re-use self.image
-                alpha = true, -- we might be showing images with an alpha channel (e.g., from Wikipedia)
-                width = 400,
-                height = 400,
-                scale_factor = 1,
-                center_x_ratio = 0.5,
-                center_y_ratio = 0.5,
-
-            }
-            -- UIManager:show(imagewedget)
-            local Magnifier = require("ui/widget/magnifier")
-            local magnifier = Magnifier:new{
-                image = Image,
-                height = Screen:scaleBySize(200),
-                width = Screen:scaleBySize(200),
-                timeout = 5
-            }
-            -- UIManager:show(magnifier)
-
-            local sample
-
-            sample = InfoMessage:new{
-
-                text = ("Some message"),
-             height = Screen:scaleBySize(400),
-             show_icon = false,
-             timeout = 5
-            }
-        --    UIManager:show(sample)
-        UIManager:show(InfoMessage:new{
-            text = _("gest to test if i can run container"),
-        })
-
-
-
+            
             return false
 
-
-
-
-
         end
-
         return false
 
     end
@@ -1391,6 +1351,8 @@ function ReaderHighlight:editHighlight(page, i)
     }, true)
 end
 
+
+
 function ReaderHighlight:onReadSettings(config)
     self.view.highlight.saved_drawer = config:readSetting("highlight_drawer") or self.view.highlight.saved_drawer
     local disable_highlight = config:readSetting("highlight_disabled")
@@ -1398,11 +1360,17 @@ function ReaderHighlight:onReadSettings(config)
         disable_highlight = G_reader_settings:readSetting("highlight_disabled") or false
     end
     self.view.highlight.disabled = disable_highlight
+    local zoom = config:readSetting("hold_to_zoom")
+    if zoom == nil then
+        zoom = G_reader_settings:readSetting("hold_to_zoom") or false
+    end
+    self.view.highlight.zoom = zoom
 end
 
 function ReaderHighlight:onSaveSettings()
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
     self.ui.doc_settings:saveSetting("highlight_disabled", self.view.highlight.disabled)
+    self.ui.doc_settings:saveSetting("hold_to_zoom", self.view.highlight.zoom)
 end
 
 function ReaderHighlight:onClose()

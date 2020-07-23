@@ -19,33 +19,46 @@ Example:
 ]]
 
 local Blitbuffer = require("ffi/blitbuffer")
-local CenterContainer = require("ui/widget/container/centercontainer")
+local BottomContainer = require("ui/widget/container/bottomcontainer")
+local Topcontainer = require("ui/widget/container/topcontainer")
 local Device = require("device")
-local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local HorizontalSpan = require("ui/widget/horizontalspan")
 local ImageWidget = require("ui/widget/imagewidget")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local MovableContainer = require("ui/widget/container/movablecontainer")
-local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
-local TextBoxWidget = require("ui/widget/textboxwidget")
-local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
+local BD = require("ui/bidi")
+local Device = require("device")
+local Event = require("ui/event")
+local InfoMessage = require("ui/widget/infomessage")
+local InputContainer = require("ui/widget/container/inputcontainer")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+local Notification = require("ui/widget/notification")
+local TimeVal = require("ui/timeval")
+local Translator = require("ui/translator")
+local UIManager = require("ui/uimanager")
+local logger = require("logger")
+local util = require("util")
+local _ = require("gettext")
+local C_ = _.pgettext
+local T = require("ffi/util").template
+
+
 
 local Magnifier = InputContainer:new{
     image = nil,
     timeout = nil, -- in seconds
-    width = nil,  -- The width of the Magnifier. Keep it nil to use default value.
-    height = nil,  -- The height of the Magnifier. 
     alpha = false, -- does that icon have an alpha channel?
     dismiss_callback = function() end,
+    zoom = nil,
+    x_ratio = nil,
+    y_ratio = nil
+
 }
 
 function Magnifier:init()
@@ -67,30 +80,41 @@ function Magnifier:init()
             }
         }
     end
-
+   
+    
     local image_widget
     image_widget = ImageWidget:new{
         image = self.image,
-        width = self.width-10,
-        height = self.height-10,
+        width = Screen:getWidth(),
+        height = Screen:scaleBySize(200),
         alpha = self.alpha,
+        scale_for_dpi = true,
+        scale_factor = self.zoom,
+        center_x_ratio = self.x_ratio,
+        center_y_ratio = self.y_ratio,
+
     }
 
     local frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
-        HorizontalGroup:new{
-            align = "center",
-            image_widget
-        }
+        image_widget
+       
     }
     self.movable = MovableContainer:new{
         frame,
     }
-    self[1] = CenterContainer:new{
-        dimen = Screen:getSize(),
-        self.movable,
-    }
-  
+    if self.x_ratio < 0.5 then
+        
+        self[1] = BottomContainer:new{
+            dimen = Screen:getSize(),
+            self.movable,
+        }
+    else
+        self[1] = Topcontainer:new{
+            dimen = Screen:getSize(),
+            self.movable,
+        } 
+    end
 end
 
 function Magnifier:onCloseWidget()
@@ -127,5 +151,6 @@ function Magnifier:onTapClose()
         return true
     end
 end
+
 
 return Magnifier
