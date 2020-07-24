@@ -19,9 +19,17 @@ function NetworkListener:onToggleWifi()
 
         -- NB Normal widgets should use NetworkMgr:promptWifiOn()
         -- This is specifically the toggle Wi-Fi action, so consent is implied.
-        NetworkMgr:turnOnWifi()
+        local complete_callback = function()
+            local Event = require("ui/event")
+            UIManager:broadcastEvent(Event:new("NetworkConnected"))
+        end
+        NetworkMgr:turnOnWifi(complete_callback)
     else
-        NetworkMgr:turnOffWifi()
+        local complete_callback = function()
+            local Event = require("ui/event")
+            UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
+        end
+        NetworkMgr:turnOffWifi(complete_callback)
 
         UIManager:show(InfoMessage:new{
             text = _("Wi-Fi off."),
@@ -31,8 +39,12 @@ function NetworkListener:onToggleWifi()
 end
 
 function NetworkListener:onInfoWifiOff()
-    -- can't hurt
-    NetworkMgr:turnOffWifi()
+    -- That's the end goal
+    local complete_callback = function()
+        local Event = require("ui/event")
+        UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
+    end
+    NetworkMgr:turnOffWifi(complete_callback)
 
     UIManager:show(InfoMessage:new{
         text = _("Wi-Fi off."),
@@ -49,7 +61,11 @@ function NetworkListener:onInfoWifiOn()
 
         -- NB Normal widgets should use NetworkMgr:promptWifiOn()
         -- This is specifically the toggle Wi-Fi action, so consent is implied.
-        NetworkMgr:turnOnWifi()
+        local complete_callback = function()
+            local Event = require("ui/event")
+            UIManager:broadcastEvent(Event:new("NetworkConnected"))
+        end
+        NetworkMgr:turnOnWifi(complete_callback)
     else
         local info_text
         local current_network = NetworkMgr:getCurrentNetwork()
