@@ -19,8 +19,10 @@ end
 
 -- Used after restoreWifiAsync() to make sure we eventually send a NetworkConnected event, as a few things rely on it (KOSync, c.f. #5109).
 function NetworkMgr:connectivityCheck(iter, callback, widget)
+    logger.dbg("NetworkMgr:connectivityCheck iteration", iter)
+
     -- Give up after a while...
-    if iter > 6 then
+    if iter > 7 then
         logger.info("Failed to restore Wi-Fi!")
         -- If we abort, murder Wi-Fi and the async script first...
         os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
