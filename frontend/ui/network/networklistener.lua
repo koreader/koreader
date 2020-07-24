@@ -158,9 +158,9 @@ function NetworkListener:_scheduleActivityCheck()
         -- Update tracker for next iter
         self._last_tx_packets = tx_packets
 
-        -- If it's already been scheduled, double the delay until we hit the ceiling
+        -- If it's already been scheduled, increase the delay until we hit the ceiling
         if self._activity_check_delay then
-            self._activity_check_delay = self._activity_check_delay * 2
+            self._activity_check_delay = self._activity_check_delay + default_network_timeout_seconds
 
             if self._activity_check_delay > max_network_timeout_seconds then
                 self._activity_check_delay = max_network_timeout_seconds
