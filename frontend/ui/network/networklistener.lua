@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local Device = require("device")
+local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local NetworkMgr = require("ui/network/manager")
@@ -20,13 +21,11 @@ function NetworkListener:onToggleWifi()
         -- NB Normal widgets should use NetworkMgr:promptWifiOn()
         -- This is specifically the toggle Wi-Fi action, so consent is implied.
         local complete_callback = function()
-            local Event = require("ui/event")
             UIManager:broadcastEvent(Event:new("NetworkConnected"))
         end
         NetworkMgr:turnOnWifi(complete_callback)
     else
         local complete_callback = function()
-            local Event = require("ui/event")
             UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
         end
         NetworkMgr:turnOffWifi(complete_callback)
@@ -41,7 +40,6 @@ end
 function NetworkListener:onInfoWifiOff()
     -- That's the end goal
     local complete_callback = function()
-        local Event = require("ui/event")
         UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
     end
     NetworkMgr:turnOffWifi(complete_callback)
@@ -62,7 +60,6 @@ function NetworkListener:onInfoWifiOn()
         -- NB Normal widgets should use NetworkMgr:promptWifiOn()
         -- This is specifically the toggle Wi-Fi action, so consent is implied.
         local complete_callback = function()
-            local Event = require("ui/event")
             UIManager:broadcastEvent(Event:new("NetworkConnected"))
         end
         NetworkMgr:turnOnWifi(complete_callback)
@@ -149,7 +146,6 @@ function NetworkListener:_scheduleActivityCheck()
             logger.dbg("NetworkListener: No meaningful network activity ( then:", self._last_tx_packets, "vs. now:", tx_packets, "), disabling Wi-Fi")
             keep_checking = false
             local complete_callback = function()
-                local Event = require("ui/event")
                 UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
             end
             NetworkMgr:turnOffWifi(complete_callback)

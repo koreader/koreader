@@ -2,6 +2,7 @@ local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
+local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
@@ -24,7 +25,6 @@ function NetworkMgr:connectivityCheck(iter)
     end
 
     if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
-        local Event = require("ui/event")
         UIManager:broadcastEvent(Event:new("NetworkConnected"))
         logger.info("Wi-Fi successfully restored!")
     else
@@ -205,7 +205,6 @@ function NetworkMgr:getWifiToggleMenuTable()
             local complete_callback = function()
                 -- notify touch menu to update item check state
                 touchmenu_instance:updateItems()
-                local Event = require("ui/event")
                 -- if wifi was on, this callback will only be executed when the network has been
                 -- disconnected.
                 if wifi_status then
