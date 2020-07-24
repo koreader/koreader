@@ -69,6 +69,7 @@ end
 -- Everything below is to handle auto_disable_wifi ;).
 local default_network_timeout_seconds = 30
 local max_network_timeout_seconds = 5*60
+-- This should be more than enough to catch actual activity vs. noise spread over 5 minutes.
 local network_activity_noise_margin = 12
 
 -- Read the statistics/tx_packets sysfs entry for the current network interface.
@@ -181,7 +182,7 @@ function NetworkListener:onNetworkDisconnected()
 end
 
 -- Also unschedule on suspend
-function AutoSuspend:onSuspend()
+function NetworkListener:onSuspend()
     self:onNetworkDisconnected()
 end
 
