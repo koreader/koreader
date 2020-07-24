@@ -180,5 +180,10 @@ function NetworkListener:onNetworkDisconnected()
     NetworkListener:_unscheduleActivityCheck()
 end
 
+-- Also unschedule on suspend
+function AutoSuspend:onSuspend()
+    self:onNetworkDisconnected()
+end
+
 
 return NetworkListener
