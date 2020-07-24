@@ -133,11 +133,12 @@ function NetworkListener:_scheduleActivityCheck()
             -- NOTE: We leave wifi_was_on as-is on purpose, we wouldn't want to break auto_restore_wifi workflows on the next start...
         end
     end
-    -- Update tracker for next iter
-    self._last_tx_packets = tx_packets
 
     -- If we've just killed Wi-Fi, onNetworkDisconnected will take care of unscheuling us
     if keep_checking then
+        -- Update tracker for next iter
+        self._last_tx_packets = tx_packets
+
         -- If it's already been scheduled, double the delay until we hit the ceiling
         if self._activity_check_delay then
             self._activity_check_delay = self._activity_check_delay * 2
