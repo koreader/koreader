@@ -456,7 +456,7 @@ function OTAManager:getOTAMenuTable()
         text = _("Update"),
         hold_callback = function()
             if not NetworkMgr:isOnline() then
-                NetworkMgr:promptWifiOn()
+                NetworkMgr:beforeWifiAction(OTAManager.fetchAndProcessUpdate)
             else
                 OTAManager:fetchAndProcessUpdate()
             end
@@ -466,7 +466,7 @@ function OTAManager:getOTAMenuTable()
                 text = _("Check for update"),
                 callback = function()
                     if not NetworkMgr:isOnline() then
-                        NetworkMgr:promptWifiOn()
+                        NetworkMgr:beforeWifiAction(OTAManager.fetchAndProcessUpdate)
                     else
                         OTAManager:fetchAndProcessUpdate()
                     end
