@@ -429,6 +429,9 @@ function Kobo:initNetworkManager(NetworkMgr)
     if not net_if then
         net_if = "eth0"
     end
+    function NetworkMgr:getNetworkInterfaceName()
+        return net_if
+    end
     NetworkMgr:setWirelessBackend(
         "wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/" .. net_if})
 

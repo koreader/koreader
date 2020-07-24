@@ -236,6 +236,9 @@ function Cervantes:initNetworkManager(NetworkMgr)
         os.execute("./enable-wifi.sh")
         self:reconnectOrShowNetworkMenu(complete_callback)
     end
+    function NetworkMgr:getNetworkInterfaceName()
+        return "eth0"
+    end
     NetworkMgr:setWirelessBackend("wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/eth0"})
     function NetworkMgr:obtainIP()
         os.execute("./obtain-ip.sh")

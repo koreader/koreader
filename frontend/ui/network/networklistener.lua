@@ -1,8 +1,10 @@
 local BD = require("ui/bidi")
+local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
+local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -63,5 +65,115 @@ function NetworkListener:onInfoWifiOn()
         })
     end
 end
+
+-- Everything below is to handle auto_disable_wifi ;).
+local default_network_timeout_seconds = 30
+local max_network_timeout_seconds = 5*60
+local network_activity_noise_margin = 12
+
+-- Read the statistics/tx_packets sysfs entry for the current network interface.
+-- It *should* be the least noisy entry on an idle network...
+-- The fact that auto_disable_wifi is only available on (Device:hasWifiManager() and not Device:isEmulator())
+-- allows us to get away with a Linux-only solution.
+function NetworkListener:_getTxPackets()
+    -- read tx_packets stats from sysfs (for the right network if)
+    local file = io.open("/sys/class/net/" .. NetworkMgr:getNetworkInterfaceName() .. "/statistics/tx_packets", "rb")
+
+    -- file exists only when Wi-Fi module is loaded.
+    if not file then return nil end
+
+    local out = file:read("*all")
+    file:close()
+
+    -- strip NaN from file read (i.e.,: line endings, error messages)
+    local tx_packets
+    if type(out) ~= "number" then
+        tx_packets = tonumber(out)
+    else
+        tx_packets = out
+    end
+
+    -- finally return it
+    if type(tx_packets) == "number" then
+        return tx_packets
+    else
+        return nil
+    end
+end
+
+function NetworkListener:_unscheduleActivityCheck()
+    logger.dbg("NetworkListener: unschedule network activity check")
+    UIManager:unschedule(self._scheduleActivityCheck)
+    self._activity_check_scheduled = nil
+end
+
+function NetworkListener:_scheduleActivityCheck()
+    logger.dbg("NetworkListener: schedule network activity check")
+    local keep_checking = true
+
+    local tx_packets = NetworkListener:_getTxPackets()
+    if self._last_tx_packets then
+        -- If there was no meaningful activity (+/- a couple packets), kill the WiFi
+        if math.max(0, tx_packets - network_activity_noise_margin) <= self._last_tx_packets then
+            logger.dbg("NetworkListener: No meaningful network activity, disabling Wi-Fi")
+            keep_checking = false
+            local complete_callback = function()
+                local Event = require("ui/event")
+                UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
+            end
+            NetworkMgr:turnOffWifi(complete_callback)
+        end
+        -- Update tracker for next iter
+        self._last_tx_packets = tx_packets
+    else
+        -- First iteration, just store it for later
+        self._last_tx_packets = tx_packets
+    end
+
+    -- If we've just killed Wi-Fi, onNetworkDisconnected will take care of unscheuling us
+    if keep_checking then
+        -- If it's already been scheduled, double the delay until we hit the ceiling
+        if self._activity_check_delay then
+            self._activity_check_delay = self._activity_check_delay * 2
+
+            if self._activity_check_delay > max_network_timeout_seconds then
+                self._activity_check_delay = max_network_timeout_seconds
+            end
+        else
+            self._activity_check_delay = default_network_timeout_seconds
+        end
+
+        UIManager:scheduleIn(self._activity_check_delay, self._scheduleActivityCheck, self)
+        self._activity_check_scheduled = true
+    end
+end
+
+
+function NetworkListener:onNetworkConnected()
+    if not (Device:hasWifiManager() and not Device:isEmulator()) then
+        return
+    end
+
+    print("NetworkListener:onNetworkConnected")
+    print("NetworkMgr:getNetworkInterfaceName:", NetworkMgr:getNetworkInterfaceName())
+    print("NetworkListener:_getTxPackets:", NetworkListener:_getTxPackets())
+
+    -- If the activity check has already been scheduled for some reason, unschedule it.
+    if self._activity_check_scheduled then
+        NetworkListener:_unscheduleActivityCheck()
+    end
+
+    NetworkListener:_scheduleActivityCheck()
+end
+
+function NetworkListener:onNetworkDisconnected()
+    if not (Device:hasWifiManager() and not Device:isEmulator()) then
+        return
+    end
+
+    print("NetworkListener:onNetworkDisconnected")
+    NetworkListener:_unscheduleActivityCheck()
+end
+
 
 return NetworkListener
