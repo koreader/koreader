@@ -674,7 +674,7 @@ function Wallabag:processRemoteDeletes(remote_article_ids)
     end
     logger.dbg("Wallabag: articles IDs from server: ", remote_article_ids)
 
-    local info = InfoMessage:new{ text = _("Synchonising remote deletions…") }
+    local info = InfoMessage:new{ text = _("Synchronizing remote deletions…") }
     UIManager:show(info)
     UIManager:forceRePaint()
     UIManager:close(info)
