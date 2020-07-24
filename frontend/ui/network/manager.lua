@@ -135,6 +135,7 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     if is_connected and not self:isOnline() then
         logger.info("Wi-Fi appears to be connected, but not online?!")
         self:turnOffWifi()
+        self:turnOnWifi()
     end
 
     if not is_connected then
