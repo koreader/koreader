@@ -18,26 +18,40 @@ function NetworkMgr:readNWSettings()
 end
 
 -- Used after restoreWifiAsync() to make sure we eventually send a NetworkConnected event, as a few things rely on it (KOSync, c.f. #5109).
-function NetworkMgr:connectivityCheck(iter)
+function NetworkMgr:connectivityCheck(iter, callback, widget)
     -- Give up after a while...
     if iter > 6 then
         logger.info("Failed to restore Wi-Fi!")
         -- If we abort, murder Wi-Fi and the async script first...
         os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
         NetworkMgr:turnOffWifi()
+
+        -- Handle the UI warning if it's from a beforeWifiAction...
+        if widget then
+            UIManager:close(widget)
+            UIManager:show(InfoMessage:new{ text = _("Error connecting to the network") })
+        end
         return
     end
 
     if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
         UIManager:broadcastEvent(Event:new("NetworkConnected"))
         logger.info("Wi-Fi successfully restored!")
+
+        -- Handle the UI & callback if it's from a beforeWifiAction...
+        if widget then
+            UIManager:close(widget)
+        end
+        if callback then
+            callback()
+        end
     else
-        UIManager:scheduleIn(2, function() NetworkMgr:connectivityCheck(iter + 1) end)
+        UIManager:scheduleIn(2, function() NetworkMgr:connectivityCheck(iter + 1, callback, widget) end)
     end
 end
 
-function NetworkMgr:scheduleConnectivityCheck()
-    UIManager:scheduleIn(2, function() NetworkMgr:connectivityCheck(1) end)
+function NetworkMgr:scheduleConnectivityCheck(callback, widget)
+    UIManager:scheduleIn(2, function() NetworkMgr:connectivityCheck(1, callback, widget) end)
 end
 
 function NetworkMgr:init()
@@ -105,23 +119,14 @@ function NetworkMgr:promptWifiOff(complete_callback)
 end
 
 function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
-    NetworkMgr:turnOnWifi()
-    local timeout = 30
-    local retry_count = 0
-    local info = InfoMessage:new{ text = T(_("Enabling Wi-Fi. Waiting for Internet connection…\nTimeout %1 seconds."), timeout)}
+    local info = InfoMessage:new{ text = _("Enabling Wi-Fi. Waiting for Internet connection…") }
     UIManager:show(info)
     UIManager:forceRePaint()
-    while not NetworkMgr:isOnline() and retry_count < timeout do
-        ffiutil.sleep(1)
-        retry_count = retry_count + 1
+
+    if not (self:isWifiOn() and self:isConnected()) then
+        self:turnOnWifi()
     end
-    UIManager:close(info)
-    if retry_count == timeout then
-        NetworkMgr:turnOffWifi()
-        UIManager:show(InfoMessage:new{ text = _("Error connecting to the network") })
-        return
-    end
-    if callback then callback() end
+    self:scheduleConnectivityCheck(callback, info)
 end
 
 function NetworkMgr:beforeWifiAction(callback)
