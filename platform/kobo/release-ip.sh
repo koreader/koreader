@@ -4,5 +4,5 @@
 export PATH="${PATH}:/sbin"
 
 # Release IP and shutdown udhcpc.
-pkill -9 -f '/bin/sh /etc/udhcpc.d/default.script'
+killall udhcpc default.script 2>/dev/null
 ifconfig "${INTERFACE}" 0.0.0.0

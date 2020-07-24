@@ -10,7 +10,7 @@ local function yes() return true end
 local function no() return false end
 
 local function koboEnableWifi(toggle)
-    if toggle == 1 then
+    if toggle == true then
         logger.info("Kobo Wi-Fi: enabling Wi-Fi")
         os.execute("./enable-wifi.sh")
     else
@@ -414,14 +414,15 @@ end
 
 function Kobo:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOffWifi(complete_callback)
-        koboEnableWifi(0)
+        self:releaseIP()
+        koboEnableWifi(false)
         if complete_callback then
             complete_callback()
         end
     end
 
     function NetworkMgr:turnOnWifi(complete_callback)
-        koboEnableWifi(1)
+        koboEnableWifi(true)
         self:showNetworkMenu(complete_callback)
     end
 
