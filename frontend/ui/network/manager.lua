@@ -72,7 +72,8 @@ function NetworkMgr:init()
     else
         -- Trigger an initial NetworkConnected event if WiFi was already up when we were launched
         if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
-            UIManager:broadcastEvent(Event:new("NetworkConnected"))
+            -- NOTE: This needs to be delayed because NetworkListener is initialized slightly later by the FM/Reader app...
+            UIManager:scheduleIn(2, function() UIManager:broadcastEvent(Event:new("NetworkConnected")) end)
         end
     end
 end
