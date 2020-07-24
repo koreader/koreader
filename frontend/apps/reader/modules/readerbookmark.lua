@@ -572,7 +572,8 @@ function ReaderBookmark:toggleBookmark(pn_or_xp)
         local notes = self.ui.toc:getTocTitleByPage(pn_or_xp)
         local chapter_name = notes
         if notes ~= "" then
-            notes = _("in ") ..notes
+            -- @translators In which chapter title (%1) a note is found.
+            notes = T(_("in %1"), notes)
         end
         self:addBookmark({
             page = pn_or_xp,
