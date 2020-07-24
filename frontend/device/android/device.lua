@@ -247,10 +247,10 @@ function Device:init()
 
     -- TODO fl_last_level is a leftover from frontlightwidget
     -- check if we enable a custom light level for this activity
-    local last_value = G_reader_settings:readSetting("fl_last_level")
-    if type(last_value) == "number" and last_value >= 0 then 
-        Device:setScreenBrightness(last_value)
-    end
+ --   local last_value = G_reader_settings:readSetting("fl_last_level")
+ --   if type(last_value) == "number" and last_value >= 0 then 
+ --       Device:setScreenBrightness(last_value)
+ --   end
 
     Generic.init(self)
 end
