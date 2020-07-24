@@ -107,6 +107,7 @@ function NetworkListener:_unscheduleActivityCheck()
     if self._activity_check_scheduled then
         UIManager:unschedule(self._scheduleActivityCheck)
         self._activity_check_scheduled = nil
+        logger.dbg("NetworkListener: network activity check unscheduled")
     end
 
     -- We also need to reset the stats, otherwise we'll be comparing apples vs. oranges... (i.e., two different network sessions)
@@ -116,7 +117,7 @@ function NetworkListener:_unscheduleActivityCheck()
 end
 
 function NetworkListener:_scheduleActivityCheck()
-    logger.dbg("NetworkListener: schedule network activity check")
+    logger.dbg("NetworkListener: network activity check")
     local keep_checking = true
 
     local tx_packets = NetworkListener:_getTxPackets()
@@ -152,6 +153,7 @@ function NetworkListener:_scheduleActivityCheck()
 
         UIManager:scheduleIn(self._activity_check_delay, self._scheduleActivityCheck, self)
         self._activity_check_scheduled = true
+        logger.dbg("NetworkListener: network activity check scheduled in", self._activity_check_delay, "seconds")
     end
 end
 
