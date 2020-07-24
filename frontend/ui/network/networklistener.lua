@@ -69,8 +69,8 @@ end
 -- Everything below is to handle auto_disable_wifi ;).
 local default_network_timeout_seconds = 5*60
 local max_network_timeout_seconds = 30*60
--- This should be more than enough to catch actual activity vs. noise spread over half an hour.
-local network_activity_noise_margin = 64
+-- This should be more than enough to catch actual activity vs. noise spread over 5 minutes.
+local network_activity_noise_margin = 12
 
 -- Read the statistics/tx_packets sysfs entry for the current network interface.
 -- It *should* be the least noisy entry on an idle network...
@@ -122,8 +122,11 @@ function NetworkListener:_scheduleActivityCheck()
 
     local tx_packets = NetworkListener:_getTxPackets()
     if self._last_tx_packets then
+        -- Compute noise margin based on the current delay
+        local delay = self._activity_check_delay or default_network_timeout_seconds
+        local noise = delay / default_network_timeout_seconds * network_activity_noise_margin
         -- If there was no meaningful activity (+/- a couple packets), kill the Wi-Fi
-        if math.max(0, tx_packets - network_activity_noise_margin) <= self._last_tx_packets then
+        if math.max(0, tx_packets - noise) <= self._last_tx_packets then
             logger.dbg("NetworkListener: No meaningful network activity ( then:", self._last_tx_packets, "vs. now:", tx_packets, "), disabling Wi-Fi")
             keep_checking = false
             local complete_callback = function()
