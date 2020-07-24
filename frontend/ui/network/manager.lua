@@ -293,6 +293,7 @@ function NetworkMgr:getPowersaveMenuTable()
         callback = function()
             G_reader_settings:flipNilOrFalse("auto_disable_wifi")
             local InfoMessage = require("ui/widget/infomessage")
+            -- NOTE: Well, not exactly, but the activity check wouldn't be (un)scheduled until the next Network(Dis)Connected event...
             UIManager:show(InfoMessage:new{
                 text = _("This will take effect on next restart."),
             })
