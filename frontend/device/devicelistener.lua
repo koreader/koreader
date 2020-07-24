@@ -202,18 +202,10 @@ if Device:hasFrontlight() then
             direction = 1
         end
         local warmth = powerd.fl_warmth + direction * delta_int
-        if powerd.getMaxWarmth~=nil and powerd.getMinWarmth ~=nil then
-            if warmth > powerd.getMaxWarmth() then
-                warmth = powerd.getMaxWarmth()
-            elseif warmth < powerd.getMinWarmth() then
-                warmth = powerd.getMinWarmth();
-            end
-        else
-            if warmth > 100 then
-                warmth = 100
-            elseif warmth < 0 then
-                warmth = 0
-            end
+        if warmth > 100 then
+            warmth = 100
+        elseif warmth < 0 then
+            warmth = 0
         end
         powerd:setWarmth(warmth)
         self:onShowWarmth()

@@ -7,7 +7,7 @@ local AndroidPowerD = BasePowerD:new{
 }
 
 function AndroidPowerD:frontlightIntensityHW()
-    intensity = math.floor(android.getScreenBrightness() / 255 * self.fl_max)
+    local intensity = math.floor(android.getScreenBrightness() / 255 * self.fl_max)
     if intensity < 0 then
         intensity = 0
     end
@@ -27,11 +27,12 @@ end
 
 function AndroidPowerD:setWarmth(warmth)
     self.fl_warmth = warmth
-    android.setScreenWarmth(warmth)
+    android.setScreenWarmth( warmth / getMaxWarmth() )
 end
 
 function AndroidPowerD:getWarmth()
-    return android.getScreenWarmth()
+    local warmth = android.getScreenWarmth() * AndroidPowerD:getMaxWarmth()
+    return warmth
 end
 
 function AndroidPowerD:getMaxWarmth()
