@@ -116,7 +116,7 @@ function NetworkListener:_scheduleActivityCheck()
     if self._last_tx_packets then
         -- If there was no meaningful activity (+/- a couple packets), kill the WiFi
         if math.max(0, tx_packets - network_activity_noise_margin) <= self._last_tx_packets then
-            logger.dbg("NetworkListener: No meaningful network activity, disabling Wi-Fi")
+            logger.dbg("NetworkListener: No meaningful network activity (then:", self._last_tx_packets, "now:", tx_packets, "), disabling Wi-Fi")
             keep_checking = false
             local complete_callback = function()
                 local Event = require("ui/event")
