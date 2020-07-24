@@ -123,6 +123,7 @@ function NetworkListener:_scheduleActivityCheck()
                 UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
             end
             NetworkMgr:turnOffWifi(complete_callback)
+            -- NOTE: We leave wifi_was_on as-is on purpose, we wouldn't want to break auto_restore_wifi workflows on the next start...
         end
     end
     -- Update tracker for next iter
