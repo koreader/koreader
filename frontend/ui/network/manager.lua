@@ -120,7 +120,7 @@ function NetworkMgr:promptWifiOff(complete_callback)
 end
 
 function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
-    local info = InfoMessage:new{ text = _("Enabling Wi-Fi. Waiting for Internet connection…") }
+    local info = InfoMessage:new{ text = _("Enabling Wi-Fi…") }
     UIManager:show(info)
     UIManager:forceRePaint()
 
