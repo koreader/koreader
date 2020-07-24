@@ -165,10 +165,6 @@ function NetworkListener:onNetworkConnected()
         return
     end
 
-    print("NetworkListener:onNetworkConnected")
-    print("NetworkMgr:getNetworkInterfaceName:", NetworkMgr:getNetworkInterfaceName())
-    print("NetworkListener:_getTxPackets:", NetworkListener:_getTxPackets())
-
     -- If the activity check has already been scheduled for some reason, unschedule it.
     if self._activity_check_scheduled then
         NetworkListener:_unscheduleActivityCheck()
@@ -186,7 +182,6 @@ function NetworkListener:onNetworkDisconnected()
         return
     end
 
-    print("NetworkListener:onNetworkDisconnected")
     NetworkListener:_unscheduleActivityCheck()
 end
 
