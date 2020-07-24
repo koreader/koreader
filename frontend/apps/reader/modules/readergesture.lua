@@ -184,7 +184,7 @@ function ReaderGesture:init()
         hold_bottom_right_corner = "ignore",
         one_finger_swipe_left_edge_down = Device:hasFrontlight() and "decrease_frontlight" or "ignore",
         one_finger_swipe_left_edge_up = Device:hasFrontlight() and "increase_frontlight" or "ignore",
-        one_finger_swipe_right_edge_down =  Device:hasNaturalLight() and "decrease_frontlight_warmth" or "ignore",
+        one_finger_swipe_right_edge_down = Device:hasNaturalLight() and "decrease_frontlight_warmth" or "ignore",
         one_finger_swipe_right_edge_up = Device:hasNaturalLight() and "increase_frontlight_warmth" or "ignore",
         one_finger_swipe_top_edge_right = "ignore",
         one_finger_swipe_top_edge_left = "ignore",

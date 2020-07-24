@@ -72,6 +72,7 @@ local Device = Generic:new{
     hasEinkScreen = function() return android.isEink() end,
     hasColorScreen = function() return not android.isEink() end,
     hasFrontlight = yes,
+    hasNaturalLight = android.isWarmthDevice,
     hasLightLevelFallback = yes,
     canRestart = no,
     canSuspend = no,
@@ -244,9 +245,10 @@ function Device:init()
         android.setBackButtonIgnored(true)
     end
 
+    -- TODO fl_last_level is a leftover from frontlightwidget
     -- check if we enable a custom light level for this activity
     local last_value = G_reader_settings:readSetting("fl_last_level")
-    if type(last_value) == "number" and last_value >= 0 then
+    if type(last_value) == "number" and last_value >= 0 then 
         Device:setScreenBrightness(last_value)
     end
 
@@ -375,7 +377,8 @@ function Device:canExecuteScript(file)
     end
 end
 
-android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",
-    android.prop.version, getCodename(), Device.firmware_rev, android.prop.flavor))
+android.LOGI(string.format("Android %s - %s (API %d, product %s) - flavor: %s",
+    android.prop.version, getCodename(), Device.firmware_rev, android.prop.product, android.prop.flavor))
 
 return Device
+
