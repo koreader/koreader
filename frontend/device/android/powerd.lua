@@ -35,13 +35,11 @@ function AndroidPowerD:getWarmth()
 end
 
 function AndroidPowerD:getMaxWarmth()
---    return android.getScreenMaxWarmth()
-    return 10
+    return android.getScreenMaxWarmth()
 end
 
 function AndroidPowerD:getMinWarmth()
---    return android.getScreenMinWarmth()
-    return 0
+    return android.getScreenMinWarmth()
 end
 
 
