@@ -123,12 +123,9 @@ function NetworkListener:_scheduleActivityCheck()
             end
             NetworkMgr:turnOffWifi(complete_callback)
         end
-        -- Update tracker for next iter
-        self._last_tx_packets = tx_packets
-    else
-        -- First iteration, just store it for later
-        self._last_tx_packets = tx_packets
     end
+    -- Update tracker for next iter
+    self._last_tx_packets = tx_packets
 
     -- If we've just killed Wi-Fi, onNetworkDisconnected will take care of unscheuling us
     if keep_checking then
