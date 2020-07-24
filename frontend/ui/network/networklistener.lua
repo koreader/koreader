@@ -86,7 +86,7 @@ end
 local default_network_timeout_seconds = 5*60
 local max_network_timeout_seconds = 30*60
 -- This should be more than enough to catch actual activity vs. noise spread over 5 minutes.
-local network_activity_noise_margin = 12
+local network_activity_noise_margin = 12 -- unscaled_size_check: ignore
 
 -- Read the statistics/tx_packets sysfs entry for the current network interface.
 -- It *should* be the least noisy entry on an idle network...
