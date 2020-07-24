@@ -131,6 +131,8 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     -- But sometimes Lua ends up with broken name resolution despite the bringup, while my shell is just fine?! (#6421)
     -- Fun fact: just restarting KOReader fixes it, without having to touch the network interface...
     --           I smell kernel/glibc bugs?
+    -- Fun fact²: The workaround doesn't actually help, if it's broke, it's broke until we restart the process...
+    --            Yaaaay. -_-"
     -- FIXME: Tweak the init & connectivityCheck checks, too?
     if is_connected and not self:isOnline() then
         logger.info("Wi-Fi appears to be connected, but not online?!")
