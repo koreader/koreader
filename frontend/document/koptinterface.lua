@@ -289,13 +289,12 @@ function KoptInterface:getCoverPageImage(doc)
     end
 end
 
+--[[Unlike in getCoverPageImage(),
+    we cancel zoom to get better image quality for zooming.]]
 function KoptInterface:getNativePageImage(doc , pageno)
-    --[[cancel zoom to get better image quality for zooming
-
-    local native_size = Document.getNativePageDimensions(doc, pageno)
-    local canvas_size = CanvasContext:getSize()
-    local zoom = math.min(canvas_size.w / native_size.w, canvas_size.h / native_size.h)
-    ]]
+    -- local native_size = Document.getNativePageDimensions(doc, pageno)
+    -- local canvas_size = CanvasContext:getSize()
+    -- local zoom = math.min(canvas_size.w / native_size.w, canvas_size.h / native_size.h)
     local zoom = 1
     local tile = Document.renderPage(doc, pageno, nil, zoom, 0, 1, 0)
     if tile then

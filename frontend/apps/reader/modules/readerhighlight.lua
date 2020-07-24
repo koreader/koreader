@@ -15,7 +15,6 @@ local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
 local Screen = Device.screen
-
 local ReaderHighlight = InputContainer:new{}
 
 function ReaderHighlight:init()
@@ -127,24 +126,24 @@ function ReaderHighlight:genHighlightDrawerMenu()
             end,
             callback = function()
                 self.view.highlight.disabled = not self.view.highlight.disabled
-                self.view.highlight.zoom =  self.view.highlight.disabled
+                self.view.highlight.magnifier =  self.view.highlight.disabled
             end,
             hold_callback = function(touchmenu_instance)
                 self:toggleDefault()
             end,
         },
         {
-            text = _("Zoom Touched"),
+            text = _("use magnifier (beta)"),
             checked_func = function()
-                return self.view.highlight.zoom
+                return self.view.highlight.magnifier
             end,
             callback = function()
 
-                self.view.highlight.zoom = not self.view.highlight.zoom
-                self.view.highlight.disabled =  self.view.highlight.zoom
+                self.view.highlight.magnifier = not self.view.highlight.magnifier
+                self.view.highlight.disabled =  self.view.highlight.magnifier
             end,
             hold_callback = function(touchmenu_instance)
-                self:toggleDefault()
+                self:magnifiertoggleDefault()
             end,
             separator = true,
         },
@@ -586,58 +585,17 @@ function ReaderHighlight:getRegionalZoomCenter(pos)
     zoom = zoom/(1 + 3*margin/zoom/page_size.w)
     local x_ratio = (pos.x/ page_size.w) -- x center ratio
     local y_ratio = (pos.y / page_size.h) -- y center ratio
-       
     return zoom, x_ratio, y_ratio
-    
 end
 
 
-function ReaderHighlight:onHold(arg, ges)
+function ReaderHighlight:onHold(_, ges)
     -- disable hold gesture if highlighting is disabled
     if self.view.highlight.disabled then
-        if self.view.highlight.zoom then
-            --zoom the hold area
-            self:clear() -- clear previous highlight (delayed clear may not have done it yet)
-            self.hold_ges_pos = ges.pos -- remember hold original gesture position
-            self.hold_pos = self.view:screenToPageTransform(ges.pos)
-            logger.dbg("hold position in page ", self.hold_pos)
-            if not self.hold_pos then
-                logger.dbg("not inside page area")
-                return false
-            end
-            
-            -- Screen:shot("/home/m/1.png")
-            logger.dbg("hold on image")
-
-            local getImage = require("document/koptinterface")
-            local Image = getImage:getNativePageImage(self.ui.document, self.hold_pos.page)
-            if Image then
-                logger.dbg("we got image")
-                local zoom, x_ratio, y_ratio
-                zoom, x_ratio, y_ratio = self:getRegionalZoomCenter(self.hold_pos)
-                logger.dbg("zoom:", zoom)
-                logger.dbg("xpos:", x_ratio)
-                logger.dbg("ypos:", y_ratio)
-                
-                --call magnifier widget
-                local Magnifier = require("ui/widget/magnifier")
-                local magnifier = Magnifier:new{
-                image = Image,
-                timeout = 5,
-                -- set zoom to dubble now - setting variable to be add
-                zoom = zoom * 2 ,
-                x_ratio = x_ratio,
-                y_ratio = y_ratio
-
-                }
-            UIManager:show(magnifier)
-            end
-            
-            return false
-
+        if self.view.highlight.magnifier then
+           self:onTouchZoom(nil, ges) 
         end
         return false
-
     end
     self:clear() -- clear previous highlight (delayed clear may not have done it yet)
     self.hold_ges_pos = ges.pos -- remember hold original gesture position
@@ -696,6 +654,52 @@ function ReaderHighlight:onHold(arg, ges)
         return true
     end
     return false
+end
+
+--display zoomed image 
+function ReaderHighlight:onTouchZoom(_, ges)
+    self:clear() -- clear previous highlight (delayed clear may not have done it yet)
+    self.hold_ges_pos = ges.pos -- remember hold original gesture position
+    self.hold_pos = self.view:screenToPageTransform(ges.pos)
+    logger.dbg("hold position in page ", self.hold_pos)
+    if not self.hold_pos then
+        logger.dbg("not inside page area")
+        return false
+    end
+    local image
+    if self.ui.document.koptinterface ~= nil then
+        image = self.ui.document.koptinterface:getNativePageImage(self.ui.document, self.hold_pos.page)
+    else
+        logger.dbg("document has no koptinterface")
+    end
+    if image then
+        logger.dbg("we got image")
+        local zoom, x_ratio, y_ratio
+        zoom, x_ratio, y_ratio = self:getRegionalZoomCenter(self.hold_pos)
+        logger.dbg("zoom:", zoom)
+        logger.dbg("xpos:", x_ratio)
+        logger.dbg("ypos:", y_ratio)
+
+        --call magnifier widget
+        local Magnifier = require("ui/widget/magnifier")
+        --set the magnifier location
+        local location = ""
+        if ges.pos.y > (Screen:getHeight() / 2) then
+            location = "top"
+            -- if not top will be bottom by default
+        end
+        local magnifier = Magnifier:new{
+        image = image,
+        timeout = 5,
+        -- set zoom to dubble now - setting variable to be add
+        zoom = zoom * 2 ,
+        x_ratio = x_ratio,
+        y_ratio = y_ratio,
+        location = location
+        }
+    UIManager:show(magnifier)
+    end
+    return true
 end
 
 function ReaderHighlight:onHoldPan(_, ges)
@@ -1356,21 +1360,22 @@ end
 function ReaderHighlight:onReadSettings(config)
     self.view.highlight.saved_drawer = config:readSetting("highlight_drawer") or self.view.highlight.saved_drawer
     local disable_highlight = config:readSetting("highlight_disabled")
+    local disable_magnifier = config:readSetting("disable_magnifier")
     if disable_highlight == nil then
         disable_highlight = G_reader_settings:readSetting("highlight_disabled") or false
     end
-    self.view.highlight.disabled = disable_highlight
-    local zoom = config:readSetting("hold_to_zoom")
-    if zoom == nil then
-        zoom = G_reader_settings:readSetting("hold_to_zoom") or false
+   
+    if disable_magnifier == nil then
+        disable_magnifier = G_reader_settings:readSetting("disable_magnifier") or false
     end
-    self.view.highlight.zoom = zoom
+    self.view.highlight.disabled = disable_highlight
+    self.view.highlight.magnifier = disable_magnifier
 end
 
 function ReaderHighlight:onSaveSettings()
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
     self.ui.doc_settings:saveSetting("highlight_disabled", self.view.highlight.disabled)
-    self.ui.doc_settings:saveSetting("hold_to_zoom", self.view.highlight.zoom)
+    self.ui.doc_settings:saveSetting("disable_magnifier", self.view.highlight.magnifier)
 end
 
 function ReaderHighlight:onClose()
@@ -1399,4 +1404,23 @@ function ReaderHighlight:toggleDefault()
     })
 end
 
+function ReaderHighlight:magnifiertoggleDefault()
+    local disable_magnifier = G_reader_settings:isTrue("disable_magnifier")
+    UIManager:show(MultiConfirmBox:new{
+        text = disable_magnifier and _("Would you like to enable or disable magnifier on hold by default?\n\nThe current default (★) is enabled.")
+        or _("Would you like to enable or disable magnifier on hold by default?\n\nThe current default (★) is disabled."),
+        choice1_text_func =  function()
+            return disable_magnifier and _("Disable (★)") or _("Disable")
+        end,
+        choice1_callback = function()
+            G_reader_settings:saveSetting("disable_magnifier", true)
+        end,
+        choice2_text_func = function()
+            return highlight_disabled and _("Enable") or _("Enable (★)")
+        end,
+        choice2_callback = function()
+            G_reader_settings:saveSetting("disable_magnifier", false)
+        end,
+    })
+end
 return ReaderHighlight
