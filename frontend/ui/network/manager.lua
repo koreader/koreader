@@ -127,12 +127,17 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     UIManager:forceRePaint()
 
     -- Don't bother if WiFi is already up...
-    if not (self:isWifiOn() and self:isConnected()) then
+    local is_connected = self:isWifiOn() and self:isConnected()
+    -- But sometimes Lua ends up with broken name resolution despite the bringup, while my shell is just fine?! (#6421)
+    -- FIXME: Tweak the init & connectivityCheck checks, too?
+    if is_connected and not self:isOnline() then
+        self:turnOffWifi()
+    end
+
+    if not is_connected then
         self:turnOnWifi()
     end
-    -- FIXME: But sometimes Lua ends up with broken name resolution despite the bringup, while my shell is just fine?!
-    --        (Re #6421)
-    --        SHitty workaround: Add another isOnline check and tear down Wi-Fi first?
+
     self:scheduleConnectivityCheck(callback, info)
 end
 
