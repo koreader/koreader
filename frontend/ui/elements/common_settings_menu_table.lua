@@ -409,7 +409,7 @@ common_settings.document = {
                 local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
                 local s_interval
                 if interval == false then
-                    s_interval = "only on close"
+                    s_interval = _("only on close")
                 else
                     s_interval = T(N_("every 1 m", "every %1 m", interval), interval)
                 end
