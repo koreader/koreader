@@ -21,6 +21,10 @@ end
 function NetworkMgr:connectivityCheck(iter)
     -- Give up after a while...
     if iter > 6 then
+        logger.info("Failed to restore Wi-Fi!")
+        -- If we abort, murder Wi-Fi and the async script first...
+        os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
+        NetworkMgr:turnOffWifi()
         return
     end
 
