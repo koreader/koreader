@@ -67,10 +67,10 @@ function NetworkListener:onInfoWifiOn()
 end
 
 -- Everything below is to handle auto_disable_wifi ;).
-local default_network_timeout_seconds = 30
-local max_network_timeout_seconds = 5*60
--- This should be more than enough to catch actual activity vs. noise spread over 5 minutes.
-local network_activity_noise_margin = 12
+local default_network_timeout_seconds = 5*60
+local max_network_timeout_seconds = 30*60
+-- This should be more than enough to catch actual activity vs. noise spread over half an hour.
+local network_activity_noise_margin = 64
 
 -- Read the statistics/tx_packets sysfs entry for the current network interface.
 -- It *should* be the least noisy entry on an idle network...
@@ -116,7 +116,7 @@ function NetworkListener:_scheduleActivityCheck()
     if self._last_tx_packets then
         -- If there was no meaningful activity (+/- a couple packets), kill the WiFi
         if math.max(0, tx_packets - network_activity_noise_margin) <= self._last_tx_packets then
-            logger.dbg("NetworkListener: No meaningful network activity (then:", self._last_tx_packets, "now:", tx_packets, "), disabling Wi-Fi")
+            logger.dbg("NetworkListener: No meaningful network activity ( then:", self._last_tx_packets, "vs. now:", tx_packets, "), disabling Wi-Fi")
             keep_checking = false
             local complete_callback = function()
                 local Event = require("ui/event")
