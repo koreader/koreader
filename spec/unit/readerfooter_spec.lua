@@ -6,7 +6,11 @@ describe("Readerfooter module", function()
     setup(function()
         require("commonrequire")
         package.unloadAll()
-        require("document/canvascontext"):init(require("device"))
+        local Device = require("device")
+        -- Override powerd for running tests on devices with batteries.
+        Device.powerd.isChargingHW = function() return false end
+        Device.powerd.getCapacityHW = function() return 0 end
+        require("document/canvascontext"):init(Device)
         DocumentRegistry = require("document/documentregistry")
         DocSettings = require("docsettings")
         ReaderUI = require("apps/reader/readerui")

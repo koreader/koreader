@@ -407,7 +407,7 @@ macosupdate: all
 
 	cp $(MACOS_DIR)/koreader.sh $(INSTALL_DIR)/bundle/Contents/MacOS/koreader
 	cp resources/koreader.icns $(INSTALL_DIR)/bundle/Contents/Resources/icon.icns
-	cp -LR $(INSTALL_DIR)/koreader $(INSTALL_DIR)/bundle/Contents/Resources
+	cp -LR $(INSTALL_DIR)/koreader $(INSTALL_DIR)/bundle/Contents
 
 REMARKABLE_PACKAGE:=koreader-remarkable$(KODEDUG_SUFFIX)-$(VERSION).zip
 REMARKABLE_PACKAGE_OTA:=koreader-remarkable$(KODEDUG_SUFFIX)-$(VERSION).targz

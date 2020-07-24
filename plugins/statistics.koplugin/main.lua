@@ -288,21 +288,21 @@ function ReaderStatistics:partialMd5(file)
         return nil
     end
     local bit = require("bit")
-    local md5 = require("ffi/MD5")
+    local md5 = require("ffi/sha2").md5
     local lshift = bit.lshift
     local step, size = 1024, 1024
-    local m = md5.new()
+    local update = md5()
     local file_handle = io.open(file, 'rb')
     for i = -1, 10 do
         file_handle:seek("set", lshift(step, 2*i))
         local sample = file_handle:read(size)
         if sample then
-            m:update(sample)
+            update(sample)
         else
             break
         end
     end
-    return m:sum()
+    return update()
 end
 
 function ReaderStatistics:createDB(conn)
