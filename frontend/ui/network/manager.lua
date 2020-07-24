@@ -290,7 +290,13 @@ function NetworkMgr:getPowersaveMenuTable()
         text = _("Automatically disable Wi-Fi connection when inactive"),
         checked_func = function() return G_reader_settings:isTrue("auto_disable_wifi") end,
         enabled_func = function() return Device:hasWifiManager() and not Device:isEmulator() end,
-        callback = function() G_reader_settings:flipNilOrFalse("auto_disable_wifi") end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("auto_disable_wifi")
+            local InfoMessage = require("ui/widget/infomessage")
+            UIManager:show(InfoMessage:new{
+                text = _("This will take effect on next restart."),
+            })
+        end,
     }
 end
 
