@@ -134,7 +134,7 @@ function NetworkListener:_scheduleActivityCheck()
         end
     end
 
-    -- If we've just killed Wi-Fi, onNetworkDisconnected will take care of unscheuling us
+    -- If we've just killed Wi-Fi, onNetworkDisconnected will take care of unscheduling us
     if keep_checking then
         -- Update tracker for next iter
         self._last_tx_packets = tx_packets
@@ -165,10 +165,8 @@ function NetworkListener:onNetworkConnected()
         return
     end
 
-    -- If the activity check has already been scheduled for some reason, unschedule it.
-    if self._activity_check_scheduled then
-        NetworkListener:_unscheduleActivityCheck()
-    end
+    -- If the activity check has already been scheduled for some reason, unschedule it first.
+    NetworkListener:_unscheduleActivityCheck()
 
     NetworkListener:_scheduleActivityCheck()
 end
