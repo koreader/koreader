@@ -47,10 +47,15 @@ function NetworkMgr:init()
     self.wifi_was_on = G_reader_settings:isTrue("wifi_was_on")
     if self.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
         -- Don't bother if WiFi is already up...
-        if not self:isConnected() then
+        if not (self:isWifiOn() and self:isConnected()) then
             self:restoreWifiAsync()
         end
         self:scheduleConnectivityCheck()
+    else
+        -- Trigger an initial NetworkConnected event if WiFi was already up when we were launched
+        if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
+            UIManager:broadcastEvent(Event:new("NetworkConnected"))
+        end
     end
 end
 
