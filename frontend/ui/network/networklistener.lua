@@ -104,8 +104,15 @@ end
 
 function NetworkListener:_unscheduleActivityCheck()
     logger.dbg("NetworkListener: unschedule network activity check")
-    UIManager:unschedule(self._scheduleActivityCheck)
-    self._activity_check_scheduled = nil
+    if self._activity_check_scheduled then
+        UIManager:unschedule(self._scheduleActivityCheck)
+        self._activity_check_scheduled = nil
+    end
+
+    -- We also need to reset the stats, otherwise we'll be comparing apples vs. oranges... (i.e., two different network sessions)
+    if self._last_tx_packets then
+        self._last_tx_packets = nil
+    end
 end
 
 function NetworkListener:_scheduleActivityCheck()
@@ -182,7 +189,7 @@ function NetworkListener:onNetworkDisconnected()
     NetworkListener:_unscheduleActivityCheck()
 end
 
--- Also unschedule on suspend
+-- Also unschedule on suspend (and we happen to also kill Wi-Fi to do so, so resetting the stats is also relevant here)
 function NetworkListener:onSuspend()
     self:onNetworkDisconnected()
 end
