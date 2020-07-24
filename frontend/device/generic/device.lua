@@ -287,7 +287,7 @@ function Device:onPowerEvent(ev)
           --       without us being aware of it (i.e., wifi_was_on still unset or false),
           --       because suspend will at best fail, and at worst deadlock the system if Wi-Fi is on,
           --       regardless of who enabled it!
-          if network_manager.wifi_was_on or network_manager:isWifiOn() then
+          if network_manager:isWifiOn() then
               network_manager:releaseIP()
               network_manager:turnOffWifi()
           end
