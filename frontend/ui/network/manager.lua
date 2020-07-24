@@ -291,7 +291,7 @@ end
 
 function NetworkMgr:getPowersaveMenuTable()
     return {
-        text = _("Automatically disable Wi-Fi connection when inactive"),
+        text = _("Kill Wi-Fi connection when inactive"),
         checked_func = function() return G_reader_settings:isTrue("auto_disable_wifi") end,
         enabled_func = function() return Device:hasWifiManager() and not Device:isEmulator() end,
         callback = function()
@@ -306,7 +306,7 @@ end
 
 function NetworkMgr:getRestoreMenuTable()
     return {
-        text = _("Automatically restore Wi-Fi connection after resume"),
+        text = _("Restore Wi-Fi connection on resume"),
         checked_func = function() return G_reader_settings:isTrue("auto_restore_wifi") end,
         enabled_func = function() return Device:hasWifiManager() and not Device:isEmulator() end,
         callback = function() G_reader_settings:flipNilOrFalse("auto_restore_wifi") end,
