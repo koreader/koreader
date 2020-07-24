@@ -133,6 +133,7 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     --           I smell kernel/glibc bugs?
     -- FIXME: Tweak the init & connectivityCheck checks, too?
     if is_connected and not self:isOnline() then
+        logger.info("Wi-Fi appears to be connected, but not online?!")
         self:turnOffWifi()
     end
 
