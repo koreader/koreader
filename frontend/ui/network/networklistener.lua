@@ -114,6 +114,9 @@ function NetworkListener:_unscheduleActivityCheck()
     if self._last_tx_packets then
         self._last_tx_packets = nil
     end
+    if self._activity_check_delay then
+        self._activity_check_delay = nil
+    end
 end
 
 function NetworkListener:_scheduleActivityCheck()
