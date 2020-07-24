@@ -151,6 +151,10 @@ function NetworkListener:onNetworkConnected()
         return
     end
 
+    if not G_reader_settings:isTrue("auto_disable_wifi") then
+        return
+    end
+
     print("NetworkListener:onNetworkConnected")
     print("NetworkMgr:getNetworkInterfaceName:", NetworkMgr:getNetworkInterfaceName())
     print("NetworkListener:_getTxPackets:", NetworkListener:_getTxPackets())
@@ -165,6 +169,10 @@ end
 
 function NetworkListener:onNetworkDisconnected()
     if not (Device:hasWifiManager() and not Device:isEmulator()) then
+        return
+    end
+
+    if not G_reader_settings:isTrue("auto_disable_wifi") then
         return
     end
 
