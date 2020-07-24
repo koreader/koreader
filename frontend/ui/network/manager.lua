@@ -117,6 +117,7 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     end
     UIManager:close(info)
     if retry_count == timeout then
+        NetworkMgr:turnOffWifi()
         UIManager:show(InfoMessage:new{ text = _("Error connecting to the network") })
         return
     end
