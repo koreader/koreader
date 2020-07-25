@@ -351,34 +351,67 @@ function NetworkMgr:getInfoMenuTable()
 end
 
 function NetworkMgr:getBeforeWifiActionMenuTable()
-   local wifi_enable_action_setting = G_reader_settings:readSetting("wifi_enable_action") or "prompt"
-   local wifi_enable_actions = {
-       turn_on = {_("turn on"), _("Turn on")},
-       prompt = {_("prompt"), _("Prompt")},
-   }
-   local action_table = function(wifi_enable_action)
-       return {
-           text = wifi_enable_actions[wifi_enable_action][2],
-           checked_func = function()
-               return wifi_enable_action_setting == wifi_enable_action
-           end,
-           callback = function()
-               wifi_enable_action_setting = wifi_enable_action
-               G_reader_settings:saveSetting("wifi_enable_action", wifi_enable_action)
-           end,
-       }
-   end
-   return {
-       text_func = function()
-           return T(_("Action when Wi-Fi is off: %1"),
-               wifi_enable_actions[wifi_enable_action_setting][1]
-           )
-       end,
-       sub_item_table = {
-           action_table("turn_on"),
-           action_table("prompt"),
-       }
-   }
+    local wifi_enable_action_setting = G_reader_settings:readSetting("wifi_enable_action") or "prompt"
+    local wifi_enable_actions = {
+        turn_on = {_("turn on"), _("Turn on")},
+        prompt = {_("prompt"), _("Prompt")},
+    }
+    local action_table = function(wifi_enable_action)
+    return {
+        text = wifi_enable_actions[wifi_enable_action][2],
+        checked_func = function()
+            return wifi_enable_action_setting == wifi_enable_action
+        end,
+        callback = function()
+            wifi_enable_action_setting = wifi_enable_action
+            G_reader_settings:saveSetting("wifi_enable_action", wifi_enable_action)
+        end,
+    }
+    end
+    return {
+        text_func = function()
+            return T(_("Action when Wi-Fi is off: %1"),
+                wifi_enable_actions[wifi_enable_action_setting][1]
+            )
+        end,
+        sub_item_table = {
+            action_table("turn_on"),
+            action_table("prompt"),
+        }
+    }
+end
+
+function NetworkMgr:getAfterWifiActionMenuTable()
+    local wifi_disable_action_setting = G_reader_settings:readSetting("wifi_disable_action") or "prompt"
+    local wifi_disable_actions = {
+        leave_on = {_("leave on"), _("Leave on")},
+        turn_off = {_("turn off"), _("Turn off")},
+        prompt = {_("prompt"), _("Prompt")},
+    }
+    local action_table = function(wifi_disable_action)
+    return {
+        text = wifi_disable_actions[wifi_disable_action][2],
+        checked_func = function()
+            return wifi_disable_action_setting == wifi_disable_action
+        end,
+        callback = function()
+            wifi_disable_action_setting = wifi_disable_action
+            G_reader_settings:saveSetting("wifi_disable_action", wifi_disable_action)
+        end,
+    }
+    end
+    return {
+        text_func = function()
+            return T(_("Action when done with Wi-Fi: %1"),
+                wifi_disable_actions[wifi_disable_action_setting][1]
+            )
+        end,
+        sub_item_table = {
+            action_table("turn_off"),
+            action_table("turn_off"),
+            action_table("prompt"),
+        }
+    }
 end
 
 function NetworkMgr:getDismissScanMenuTable()
@@ -403,6 +436,7 @@ function NetworkMgr:getMenuTable(common_settings)
         common_settings.network_restore = self:getRestoreMenuTable()
         common_settings.network_dismiss_scan = self:getDismissScanMenuTable()
         common_settings.network_before_wifi_action = self:getBeforeWifiActionMenuTable()
+        common_settings.network_after_wifi_action = self:getAfterWifiActionMenuTable()
     end
 end
 
