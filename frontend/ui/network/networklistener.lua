@@ -201,6 +201,9 @@ function NetworkListener:onNetworkDisconnected()
     end
 
     NetworkListener:_unscheduleActivityCheck()
+
+    -- Reset NetworkMgr's beforeWifiAction marker
+    NetworkMgr._before_action_ran = nil
 end
 
 -- Also unschedule on suspend (and we happen to also kill Wi-Fi to do so, so resetting the stats is also relevant here)

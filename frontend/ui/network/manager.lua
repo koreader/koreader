@@ -140,6 +140,9 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
 end
 
 function NetworkMgr:beforeWifiAction(callback)
+    -- Remember that we ran, for afterWifiAction...
+    self._before_action_ran = true
+
     local wifi_enable_action = G_reader_settings:readSetting("wifi_enable_action")
     if wifi_enable_action == "turn_on" then
         NetworkMgr:turnOnWifiAndWaitForConnection(callback)
@@ -148,7 +151,15 @@ function NetworkMgr:beforeWifiAction(callback)
     end
 end
 
+-- NOTE: This is actually used very sparingly (newsdownloader/send2ebook),
+--       because bracketing a single action in a connect/disconnect session doesn't necessarily make much sense...
 function NetworkMgr:afterWifiAction(callback)
+    -- Don't do anything if beforeWifiAction never actually ran...
+    if not self._before_action_ran then
+        return
+    end
+    self._before_action_ran = nil
+
     local wifi_disable_action = G_reader_settings:readSetting("wifi_disable_action")
     if wifi_disable_action == "leave_on" then
         -- NOP :)
