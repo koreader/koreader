@@ -20,8 +20,8 @@ end
 -- Used after restoreWifiAsync() and the turn_on beforeWifiAction to make sure we eventually send a NetworkConnected event,
 -- as quite a few things rely on it (KOSync, c.f. #5109; the network activity check, c.f., #6424).
 function NetworkMgr:connectivityCheck(iter, callback, widget)
-    -- Give up after a while...
-    if iter > 7 then
+    -- Give up after a while (restoreWifiAsync can take over 45s, so, try to cover that)...
+    if iter > 25 then
         logger.info("Failed to restore Wi-Fi (after", iter, "iterations)!")
         self.wifi_was_on = false
         G_reader_settings:saveSetting("wifi_was_on", false)
