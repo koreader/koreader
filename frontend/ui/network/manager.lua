@@ -139,12 +139,25 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     self:scheduleConnectivityCheck(callback, info)
 end
 
+--- This quirky internal flag is used for the rare beforeWifiAction -> afterWifiAction brackets.
+function NetworkMgr:clearBeforeActionFlag()
+    self._before_action_tripped = nil
+end
+
+function NetworkMgr:setBeforeActionFlag()
+    self._before_action_tripped = true
+end
+
+function NetworkMgr:getBeforeActionFlag()
+    return self._before_action_tripped
+end
+
 --- @note: The callback will only run *after* a *succesful* network connection.
 ---        The only guarantee it provides is isConnected (i.e., an IP & a local gateway),
 ---        *NOT* isOnline (i.e., WAN), se be careful with recursive callbacks!
 function NetworkMgr:beforeWifiAction(callback)
     -- Remember that we ran, for afterWifiAction...
-    self._before_action_ran = true
+    self:setBeforeActionFlag()
 
     local wifi_enable_action = G_reader_settings:readSetting("wifi_enable_action")
     if wifi_enable_action == "turn_on" then
@@ -158,10 +171,10 @@ end
 --       because bracketing a single action in a connect/disconnect session doesn't necessarily make much sense...
 function NetworkMgr:afterWifiAction(callback)
     -- Don't do anything if beforeWifiAction never actually ran...
-    if not self._before_action_ran then
+    if not self:getBeforeActionFlag() then
         return
     end
-    self._before_action_ran = nil
+    self:clearBeforeActionFlag()
 
     local wifi_disable_action = G_reader_settings:readSetting("wifi_disable_action")
     if wifi_disable_action == "leave_on" then
