@@ -5,8 +5,9 @@
 cp -a "/etc/resolv.conf" "/tmp/resolv.ko"
 if [ -x "/sbin/dhcpcd" ]; then
     env -u LD_LIBRARY_PATH dhcpcd -d -k "${INTERFACE}"
-else
     killall udhcpc default.script 2>/dev/null
+else
+    killall udhcpc default.script dhcpcd 2>/dev/null
     ifconfig "${INTERFACE}" 0.0.0.0
 fi
 mv -f "/tmp/resolv.ko" "/etc/resolv.conf"
