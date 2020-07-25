@@ -385,7 +385,7 @@ end
 
 function ReaderWikipedia:lookupWikipedia(word, box, get_fullpage, forced_lang)
     if not NetworkMgr:isOnline() then
-        NetworkMgr:beforeWifiAction(function() ReaderWikipedia:lookupWikipedia(word, box, get_fullpage, forced_lang) end)
+        NetworkMgr:beforeWifiAction()
         return
     end
     -- word is the text to query. If get_fullpage is true, it is the
