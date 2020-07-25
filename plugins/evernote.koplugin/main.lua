@@ -348,7 +348,7 @@ end
 
 function EvernoteExporter:login()
     if not NetworkMgr:isOnline() then
-        NetworkMgr:promptWifiOn()
+        NetworkMgr:beforeWifiAction(function() EvernoteExporter:login() end)
         return
     end
     self.login_dialog = LoginDialog:new{
@@ -410,7 +410,7 @@ function EvernoteExporter:doLogin(username, password)
     }
     self.evernote_username = username
     local ok, token = pcall(oauth.getToken, oauth)
-    -- prompt users to turn on Wifi if network is unreachable
+    -- prompt users to turn on Wi-Fi if network is unreachable
     if not ok and token then
         UIManager:show(InfoMessage:new{
             text = _("An error occurred while logging in:") .. "\n" .. token,
@@ -425,7 +425,7 @@ function EvernoteExporter:doLogin(username, password)
     local guid
     ok, guid = pcall(self.getExportNotebook, self, client)
     if not ok and guid and guid:find("Transport not open") then
-        NetworkMgr:promptWifiOn()
+        NetworkMgr:beforeWifiAction(function() EvernoteExporter:doLogin(username, password) end)
         return
     elseif not ok and guid then
         UIManager:show(InfoMessage:new{
@@ -589,7 +589,7 @@ function EvernoteExporter:exportClippings(clippings)
         end
         -- check if booknotes are exported in this notebook
         -- so that booknotes will still be exported after switching user account
-        --Don't respect exported_stamp on txt export since it isn't possible to delete(update) prior clippings.
+        -- Don't respect exported_stamp on txt export since it isn't possible to delete(update) prior clippings.
         if booknotes.exported[exported_stamp] ~= true or self.txt_export or self.json_export then
             local ok, err
             if self.html_export then
@@ -603,9 +603,9 @@ function EvernoteExporter:exportClippings(clippings)
             else
                 ok, err = pcall(self.exportBooknotesToEvernote, self, client, title, booknotes)
             end
-            -- error reporting
+            -- Error reporting
             if not ok and err and err:find("Transport not open") then
-                NetworkMgr:promptWifiOn()
+                NetworkMgr:beforeWifiAction(function() EvernoteExporter:exportClippings(clippings) end)
                 return
             elseif not ok and err then
                 logger.dbg("Error while exporting book", title, err)
