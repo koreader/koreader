@@ -1001,7 +1001,7 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
                     -- to one of the original preset values tables
                     local updated = {}
                     for i=1, #value do
-                        v = value[i] - 1
+                        local v = value[i] - 1
                         if v < 0 then
                             v = 0
                         end
