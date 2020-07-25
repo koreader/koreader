@@ -61,7 +61,12 @@ local menuItem = {
         if NetworkMgr:isOnline() then
             syncNTP()
         else
-            NetworkMgr:beforeWifiAction(function() syncNTP() end)
+            --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
+            if not NetworkMgr:isConnected() then
+                NetworkMgr:beforeWifiAction(function() syncNTP() end)
+            else
+                NetworkMgr:beforeWifiAction()
+            end
         end
     end
 }

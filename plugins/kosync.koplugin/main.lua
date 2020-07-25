@@ -296,7 +296,12 @@ end
 
 function KOSync:login()
     if not NetworkMgr:isOnline() then
-        NetworkMgr:beforeWifiAction(function() KOSync:login() end)
+        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
+        if not NetworkMgr:isConnected() then
+            NetworkMgr:beforeWifiAction(function() self:login() end)
+        else
+            NetworkMgr:beforeWifiAction()
+        end
         return
     end
     self.login_dialog = LoginDialog:new{

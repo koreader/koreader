@@ -57,11 +57,16 @@ function Send2Ebook:addToMainMenu(menu_items)
                 text = _("Download and remove from server"),
                 keep_menu_open = true,
                 callback = function()
-                  if not NetworkMgr:isOnline() then
-                      NetworkMgr:beforeWifiAction(function() Send2Ebook:process() end)
-                  else
-                      self:process()
-                  end
+                    if not NetworkMgr:isOnline() then
+                        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
+                        if not NetworkMgr:isConnected() then
+                            NetworkMgr:beforeWifiAction(function() self:process() end)
+                        else
+                            NetworkMgr:beforeWifiAction()
+                        end
+                    else
+                        self:process()
+                    end
                 end,
             },
             {

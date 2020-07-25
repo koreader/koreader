@@ -348,7 +348,12 @@ end
 
 function EvernoteExporter:login()
     if not NetworkMgr:isOnline() then
-        NetworkMgr:beforeWifiAction(function() EvernoteExporter:login() end)
+        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
+        if not NetworkMgr:isConnected() then
+            NetworkMgr:beforeWifiAction(function() self:login() end)
+        else
+            NetworkMgr:beforeWifiAction()
+        end
         return
     end
     self.login_dialog = LoginDialog:new{

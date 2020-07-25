@@ -204,7 +204,7 @@ end
 
 function CalibreWireless:connect()
     if not NetworkMgr:isConnected() then
-        NetworkMgr:beforeWifiAction(function() CalibreWireless:connect() end)
+        NetworkMgr:beforeWifiAction(function() self:connect() end)
         return
     end
 

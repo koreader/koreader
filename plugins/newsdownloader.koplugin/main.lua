@@ -72,7 +72,12 @@ function NewsDownloader:addToMainMenu(menu_items)
                 keep_menu_open = true,
                 callback = function()
                     if not NetworkMgr:isOnline() then
-                        NetworkMgr:beforeWifiAction(function() NewsDownloader:loadConfigAndProcessFeedsWithUI() end)
+                        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
+                        if not NetworkMgr:isConnected() then
+                            NetworkMgr:beforeWifiAction(function() self:loadConfigAndProcessFeedsWithUI() end)
+                        else
+                            NetworkMgr:beforeWifiAction()
+                        end
                     else
                         self:loadConfigAndProcessFeedsWithUI()
                     end

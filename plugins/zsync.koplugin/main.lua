@@ -49,7 +49,12 @@ function ZSync:addToMainMenu(menu_items)
                         end
                     end
                     if not NetworkMgr:isOnline() then
-                        NetworkMgr:beforeWifiAction(connect_callback)
+                        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
+                        if not NetworkMgr:isConnected() then
+                            NetworkMgr:beforeWifiAction(connect_callback)
+                        else
+                            NetworkMgr:beforeWifiAction()
+                        end
                     else
                         connect_callback()
                     end
@@ -74,7 +79,12 @@ function ZSync:addToMainMenu(menu_items)
                         end
                     end
                     if not NetworkMgr:isOnline() then
-                        NetworkMgr:beforeWifiAction(connect_callback)
+                        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
+                        if not NetworkMgr:isConnected() then
+                            NetworkMgr:beforeWifiAction(connect_callback)
+                        else
+                            NetworkMgr:beforeWifiAction()
+                        end
                     else
                         connect_callback()
                     end
