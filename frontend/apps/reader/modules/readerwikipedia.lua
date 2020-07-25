@@ -385,7 +385,7 @@ end
 
 function ReaderWikipedia:lookupWikipedia(word, box, get_fullpage, forced_lang)
     if not NetworkMgr:isOnline() then
-        NetworkMgr:promptWifiOn()
+        NetworkMgr:beforeWifiAction(function() ReaderWikipedia:lookupWikipedia(word, box, get_fullpage, forced_lang) end)
         return
     end
     -- word is the text to query. If get_fullpage is true, it is the
@@ -525,10 +525,13 @@ function ReaderWikipedia:onSaveSettings()
 end
 
 function ReaderWikipedia:onShowWikipediaLookup()
-    if NetworkMgr:isOnline() then
+    local connect_callback = function()
         self:lookupInput()
+    end
+    if NetworkMgr:isOnline() then
+        connect_callback()
     else
-        NetworkMgr:promptWifiOn()
+        NetworkMgr:beforeWifiAction(connect_callback)
     end
     return true
 end

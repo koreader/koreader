@@ -417,7 +417,7 @@ Show translated text in TextViewer, with alternate translations
 function Translator:showTranslation(text, target_lang, source_lang)
     local NetworkMgr = require("ui/network/manager")
     if not NetworkMgr:isOnline() then
-        NetworkMgr:promptWifiOn()
+        NetworkMgr:beforeWifiAction(function() Translator:showTranslation(text, target_lang, source_lang) end)
         return
     end
     -- Wrap next function with Trapper to be able to interrupt

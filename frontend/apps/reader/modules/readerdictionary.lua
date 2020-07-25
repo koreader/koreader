@@ -836,11 +836,14 @@ function ReaderDictionary:showDownload(downloadable_dicts)
     for dummy, dict in ipairs(downloadable_dicts) do
         table.insert(kv_pairs, {dict.name, "",
             callback = function()
-                if not NetworkMgr:isOnline() then
-                    NetworkMgr:promptWifiOn()
-                    return
+                local connect_callback = function()
+                    self:downloadDictionaryPrep(dict)
                 end
-                self:downloadDictionaryPrep(dict)
+                if not NetworkMgr:isOnline() then
+                    NetworkMgr:beforeWifiAction(connect_callback)
+                else
+                    connect_callback()
+                end
             end})
         local lang
         if dict.lang_in == dict.lang_out then

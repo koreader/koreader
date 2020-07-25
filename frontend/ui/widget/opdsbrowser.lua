@@ -378,7 +378,7 @@ end
 function OPDSBrowser:getCatalog(item_url, username, password)
     local ok, catalog = pcall(self.parseFeed, self, item_url, username, password)
     if not ok and catalog and not NetworkMgr:isOnline() then
-        NetworkMgr:promptWifiOn()
+        NetworkMgr:beforeWifiAction(function() OPDSBrowser:getCatalog(item_url, username, password) end)
         return
     elseif not ok and catalog then
         logger.info("cannot get catalog info from", item_url, catalog)
