@@ -1,7 +1,5 @@
 #!/bin/sh
 
-echo "[$(date)] obtain-ip.sh: begin"
-
 ./release-ip.sh
 
 # NOTE: Prefer dhcpcd over udhcpc if available. That's what Nickel uses,
@@ -11,6 +9,3 @@ if [ -x "/sbin/dhcpcd" ] ; then
 else
     env -u LD_LIBRARY_PATH udhcpc -S -i "${INTERFACE}" -s /etc/udhcpc.d/default.script -b -q
 fi
-usleep 500000
-
-echo "[$(date)] obtain-ip.sh: end"
