@@ -17,7 +17,7 @@ usleep 500000
 
 pkill -0 wpa_supplicant ||
     env -u LD_LIBRARY_PATH \
-        wpa_supplicant -D wext -s -i "${INTERFACE}" -O /var/run/wpa_supplicant -c /etc/wpa_supplicant/wpa_supplicant.conf -B
+        wpa_supplicant -D wext -s -i "${INTERFACE}" -c /etc/wpa_supplicant/wpa_supplicant.conf -O /var/run/wpa_supplicant -B
 
 usleep 500000
 
