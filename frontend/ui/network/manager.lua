@@ -146,7 +146,21 @@ function NetworkMgr:beforeWifiAction(callback)
     else
         NetworkMgr:promptWifiOn(callback)
     end
- end
+end
+
+function NetworkMgr:afterWifiAction(callback)
+    local wifi_disable_action = G_reader_settings:readSetting("wifi_disable_action")
+    if wifi_disable_action == "leave_on" then
+        -- NOP :)
+        if callback then
+           callback()
+        end
+    elseif wifi_disable_action == "turn_off" then
+        NetworkMgr:turnOffWifi(callback)
+    else
+        NetworkMgr:promptWifiOff(callback)
+    end
+end
 
 function NetworkMgr:isConnected()
     if Device:isAndroid() or Device:isCervantes() or Device:isPocketBook() or Device:isEmulator() then
@@ -407,7 +421,7 @@ function NetworkMgr:getAfterWifiActionMenuTable()
             )
         end,
         sub_item_table = {
-            action_table("turn_off"),
+            action_table("leave_on"),
             action_table("turn_off"),
             action_table("prompt"),
         }
