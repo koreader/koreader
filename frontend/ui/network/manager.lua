@@ -17,13 +17,16 @@ function NetworkMgr:readNWSettings()
     self.nw_settings = LuaSettings:open(DataStorage:getSettingsDir().."/network.lua")
 end
 
--- Used after restoreWifiAsync() to make sure we eventually send a NetworkConnected event, as a few things rely on it (KOSync, c.f. #5109).
+-- Used after restoreWifiAsync() and the turn_on beforeWifiAction to make sure we eventually send a NetworkConnected event,
+-- as quite a few things rely on it (KOSync, c.f. #5109; the network activity check, c.f., #6424).
 function NetworkMgr:connectivityCheck(iter, callback, widget)
     logger.dbg("NetworkMgr:connectivityCheck iteration", iter)
 
     -- Give up after a while...
     if iter > 7 then
         logger.info("Failed to restore Wi-Fi!")
+        self.wifi_was_on = false
+        G_reader_settings:saveSetting("wifi_was_on", false)
         -- If we abort, murder Wi-Fi and the async script first...
         os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
         NetworkMgr:turnOffWifi()
@@ -37,6 +40,8 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
     end
 
     if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
+        self.wifi_was_on = true
+        G_reader_settings:saveSetting("wifi_was_on", true)
         UIManager:broadcastEvent(Event:new("NetworkConnected"))
         logger.info("Wi-Fi successfully restored!")
 
@@ -131,8 +136,8 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
         self:turnOnWifi()
     end
 
-    -- This will handle sending the proper Event, and tearing down Wi-Fi in case of failures,
-    -- (i.e., much like getWifiToggleMenuTable, minus wifi_was_on handling).
+    -- This will handle sending the proper Event, manage wifi_was_on, as well as tearing down Wi-Fi in case of failures,
+    -- (i.e., much like getWifiToggleMenuTable).
     self:scheduleConnectivityCheck(callback, info)
 end
 
