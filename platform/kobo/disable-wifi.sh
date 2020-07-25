@@ -1,12 +1,8 @@
 #!/bin/sh
 
 # Disable wifi, and remove all modules.
-if [ -x "/sbin/dhcpcd" ]; then
-    env -u LD_LIBRARY_PATH dhcpcd -d -k "${INTERFACE}"
-else
-    killall udhcpc default.script 2>/dev/null
-fi
-wpa_cli terminate
+# NOTE: Trying to do this nicely with 'wpa_cli terminate' and 'dhcpcd -d -k "${INTERFACE}"' trips mysterious buggy corner-cases... (#6424)
+killall udhcpc default.script dhcpcd wpa_supplicant 2>/dev/null
 
 [ "${WIFI_MODULE}" != "8189fs" ] && [ "${WIFI_MODULE}" != "8192es" ] && wlarm_le -i "${INTERFACE}" down
 ifconfig "${INTERFACE}" down
