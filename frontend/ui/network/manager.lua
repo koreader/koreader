@@ -139,6 +139,9 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     self:scheduleConnectivityCheck(callback, info)
 end
 
+--- @note: The callback will only run *after* a *succesful* network connection.
+---        The only guarantee it provides is isConnected (i.e., an IP & a local gateway),
+---        *NOT* isOnline (i.e., WAN), se be careful with recursive callbacks!
 function NetworkMgr:beforeWifiAction(callback)
     -- Remember that we ran, for afterWifiAction...
     self._before_action_ran = true
