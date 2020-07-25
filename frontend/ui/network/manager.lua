@@ -49,6 +49,15 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
         end
         if callback then
             callback()
+        else
+            -- If this trickled down from a turn_onbeforeWifiAction and there is no callback,
+            -- mention that the action needs to be retried manually.
+            if widget then
+                UIManager:show(InfoMessage:new{
+                    text = _("You can now retry the action that required network access"),
+                    timeout = 3,
+                })
+            end
         end
     else
         UIManager:scheduleIn(2, function() NetworkMgr:connectivityCheck(iter + 1, callback, widget) end)
