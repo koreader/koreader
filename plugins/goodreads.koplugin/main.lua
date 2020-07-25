@@ -177,7 +177,7 @@ function Goodreads:search(search_type)
     local info
     local result
     if not NetworkMgr:isOnline() then
-        NetworkMgr:promptWifiOn()
+        NetworkMgr:beforeWifiAction(function() Goodreads:search(search_type) end)
         return
     end
     if search_type == "all" then

@@ -203,6 +203,11 @@ Do you want to continue? ]]), driver),
 end
 
 function CalibreWireless:connect()
+    if not NetworkMgr:isConnected() then
+        NetworkMgr:beforeWifiAction(function() CalibreWireless:connect() end)
+        return
+    end
+
     self.connect_message = false
     local host, port
     if G_reader_settings:hasNot("calibre_wireless_url") then
@@ -231,8 +236,6 @@ function CalibreWireless:connect()
         else
             self:setInboxDir(host, port)
         end
-    elseif not NetworkMgr:isConnected() then
-        NetworkMgr:promptWifiOn()
     else
         logger.info("cannot connect to calibre server")
         UIManager:show(InfoMessage:new{
