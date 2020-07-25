@@ -213,8 +213,8 @@ ko_do_fbdepth() {
 ko_do_dns() {
     # If there aren't any servers listed, append CloudFlare's
     if not grep -q '^nameserver' "/etc/resolv.conf"; then
-        echo "# Added by KOReader because your setup is broken" >> "/etc/resolv.conf"
-        echo "nameserver 1.1.1.1" >> "/etc/resolv.conf"
+        echo "# Added by KOReader because your setup is broken" >>"/etc/resolv.conf"
+        echo "nameserver 1.1.1.1" >>"/etc/resolv.conf"
     fi
 }
 
