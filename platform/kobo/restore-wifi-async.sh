@@ -10,14 +10,16 @@ RestoreWifi() {
     wpac_timeout=0
     while ! wpa_cli status | grep -q "wpa_state=COMPLETED"; do
         # If wpa_supplicant hasn't connected within 10 seconds, assume it never will, and tear down Wi-Fi
-        if [ ${wpac_timeout} -ge 40 ]; then
+        if [ ${wpac_timeout} -ge 20 ]; then
             echo "[$(date)] restore-wifi-async.sh: Failed to connect to preferred AP!"
             ./disable-wifi.sh
             return 1
         fi
-        usleep 250000
+        usleep 500000
         wpac_timeout=$((wpac_timeout + 1))
     done
+
+    usleep 500000
 
     ./obtain-ip.sh
 
