@@ -127,16 +127,12 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
     UIManager:forceRePaint()
 
     -- Don't bother if WiFi is already up...
-    -- But sometimes Lua ends up with broken name resolution despite the bringup, while my shell is just fine?! (#6421)
-    -- Fun fact: just restarting KOReader fixes it, without having to touch the network interface...
-    --           I smell kernel/glibc bugs?
-    -- Fun fact²: The workaround doesn't actually help, if it's broke, it's broke until we restart the process...
-    --            Yaaaay. -_-"
-
     if not (self:isWifiOn() and self:isConnected()) then
         self:turnOnWifi()
     end
 
+    -- This will handle sending the proper Event, and tearing down Wi-Fi in case of failures,
+    -- (i.e., much like getWifiToggleMenuTable, minus wifi_was_on handling).
     self:scheduleConnectivityCheck(callback, info)
 end
 
