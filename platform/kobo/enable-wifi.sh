@@ -1,6 +1,7 @@
 #!/bin/sh
 
 # Load wifi modules and enable wifi.
+echo "[$(date)] enable-wifi.sh: begin"
 
 lsmod | grep -q sdio_wifi_pwr || insmod "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko"
 # Moar sleep!
@@ -19,3 +20,5 @@ pkill -0 wpa_supplicant ||
         wpa_supplicant -D wext -s -i "${INTERFACE}" -O /var/run/wpa_supplicant -c /etc/wpa_supplicant/wpa_supplicant.conf -B
 
 usleep 500000
+
+echo "[$(date)] enable-wifi.sh: end"

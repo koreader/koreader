@@ -1,6 +1,7 @@
 #!/bin/sh
 
 # Disable wifi, and remove all modules.
+echo "[$(date)] disable-wifi.sh: begin"
 
 killall udhcpc default.script wpa_supplicant 2>/dev/null
 usleep 500000
@@ -21,3 +22,5 @@ if lsmod | grep -q sdio_wifi_pwr; then
 fi
 
 usleep 500000
+
+echo "[$(date)] disable-wifi.sh: end"

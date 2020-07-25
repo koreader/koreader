@@ -45,7 +45,8 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
             UIManager:close(widget)
         end
         if callback then
-            callback()
+            -- Delay the callback for... reasons.
+            UIManager:scheduleIn(1, callback)
         end
     else
         UIManager:scheduleIn(2, function() NetworkMgr:connectivityCheck(iter + 1, callback, widget) end)
