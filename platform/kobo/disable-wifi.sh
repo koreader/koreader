@@ -1,8 +1,15 @@
 #!/bin/sh
 
 # Disable wifi, and remove all modules.
-# NOTE: Trying to do this nicely with 'wpa_cli terminate' and 'dhcpcd -d -k "${INTERFACE}"' trips mysterious buggy corner-cases... (#6424)
-killall udhcpc default.script dhcpcd wpa_supplicant 2>/dev/null
+# NOTE: Save our resolv.conf to avoid ending up with an empty one, in case the DHCP client wipes it on release (#6424).
+cp -a "/etc/resolv.conf" "/tmp/resolv.ko"
+if [ -x "/sbin/dhcpcd" ]; then
+    env -u LD_LIBRARY_PATH dhcpcd -d -k "${INTERFACE}"
+else
+    killall udhcpc default.script 2>/dev/null
+fi
+mv -f "/tmp/resolv.ko" "/etc/resolv.conf"
+wpa_cli terminate
 
 [ "${WIFI_MODULE}" != "8189fs" ] && [ "${WIFI_MODULE}" != "8192es" ] && wlarm_le -i "${INTERFACE}" down
 ifconfig "${INTERFACE}" down
