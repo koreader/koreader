@@ -3,7 +3,7 @@
 # Disable wifi, and remove all modules.
 echo "[$(date)] disable-wifi.sh: begin"
 
-killall udhcpc default.script wpa_supplicant 2>/dev/null
+killall udhcpc default.script dhcpcd wpa_supplicant 2>/dev/null
 usleep 500000
 
 [ "${WIFI_MODULE}" != "8189fs" ] && [ "${WIFI_MODULE}" != "8192es" ] && wlarm_le -i "${INTERFACE}" down && usleep 500000
