@@ -209,6 +209,15 @@ ko_do_fbdepth() {
     fi
 }
 
+# Ensure we start with a valid nameserver in resolv.conf, otherwise we're stuck with broken name resolution (#6421, #6424).
+ko_do_dns() {
+    # If there aren't any servers listed, append CloudFlare's
+    if not grep -q '^nameserver' "/etc/resolv.conf"; then
+        echo "# Added by KOReader because your setup is broken" >> "/etc/resolv.conf"
+        echo "nameserver 1.1.1.1" >> "/etc/resolv.conf"
+    fi
+}
+
 # Remount the SD card RW if it's inserted and currently RO
 if awk '$4~/(^|,)ro($|,)/' /proc/mounts | grep ' /mnt/sd '; then
     mount -o remount,rw /mnt/sd
@@ -232,6 +241,8 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         ko_update_check
         # Do or double-check the fb depth switch, or restore original bitdepth if requested
         ko_do_fbdepth
+        # Make sure we have a sane resolv.conf
+        ko_do_dns
     fi
 
     ./reader.lua "${args}" >>crash.log 2>&1
