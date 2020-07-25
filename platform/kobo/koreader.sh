@@ -210,6 +210,7 @@ ko_do_fbdepth() {
 }
 
 # Ensure we start with a valid nameserver in resolv.conf, otherwise we're stuck with broken name resolution (#6421, #6424).
+# Fun fact: this wouldn't be necessary if Kobo were using a non-prehistoric glibc... (it was fixed in glibc 2.26).
 ko_do_dns() {
     # If there aren't any servers listed, append CloudFlare's
     if not grep -q '^nameserver' "/etc/resolv.conf"; then
