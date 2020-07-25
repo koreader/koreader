@@ -425,7 +425,8 @@ function EvernoteExporter:doLogin(username, password)
     local guid
     ok, guid = pcall(self.getExportNotebook, self, client)
     if not ok and guid and guid:find("Transport not open") then
-        NetworkMgr:beforeWifiAction(function() EvernoteExporter:doLogin(username, password) end)
+        --- @note: No recursive callback because it feels fishy here...
+        NetworkMgr:beforeWifiAction()
         return
     elseif not ok and guid then
         UIManager:show(InfoMessage:new{
@@ -605,7 +606,8 @@ function EvernoteExporter:exportClippings(clippings)
             end
             -- Error reporting
             if not ok and err and err:find("Transport not open") then
-                NetworkMgr:beforeWifiAction(function() EvernoteExporter:exportClippings(clippings) end)
+                --- @note: No recursive callback because it feels fishy here...
+                NetworkMgr:beforeWifiAction()
                 return
             elseif not ok and err then
                 logger.dbg("Error while exporting book", title, err)
