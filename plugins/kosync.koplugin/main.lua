@@ -296,7 +296,7 @@ end
 
 function KOSync:login()
     if not NetworkMgr:isOnline() then
-        NetworkMgr:promptWifiOn()
+        NetworkMgr:beforeWifiAction(function() KOSync:login() end)
         return
     end
     self.login_dialog = LoginDialog:new{

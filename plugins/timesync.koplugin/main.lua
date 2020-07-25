@@ -34,7 +34,7 @@ local function currentTime()
     return _("Time synchronized.")
 end
 
-local function execute()
+local function syncNTP()
     local info = InfoMessage:new{
         text = _("Synchronizing time. This may take several seconds.")
     }
@@ -59,9 +59,9 @@ local menuItem = {
     keep_menu_open = true,
     callback = function()
         if NetworkMgr:isOnline() then
-            execute()
+            syncNTP()
         else
-            NetworkMgr:promptWifiOn()
+            NetworkMgr:beforeWifiAction(function() syncNTP() end)
         end
     end
 }
