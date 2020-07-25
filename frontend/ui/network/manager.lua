@@ -20,11 +20,9 @@ end
 -- Used after restoreWifiAsync() and the turn_on beforeWifiAction to make sure we eventually send a NetworkConnected event,
 -- as quite a few things rely on it (KOSync, c.f. #5109; the network activity check, c.f., #6424).
 function NetworkMgr:connectivityCheck(iter, callback, widget)
-    logger.dbg("NetworkMgr:connectivityCheck iteration", iter)
-
     -- Give up after a while...
     if iter > 7 then
-        logger.info("Failed to restore Wi-Fi!")
+        logger.info("Failed to restore Wi-Fi (after", iter, "iterations)!")
         self.wifi_was_on = false
         G_reader_settings:saveSetting("wifi_was_on", false)
         -- If we abort, murder Wi-Fi and the async script first...
@@ -43,7 +41,7 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
         self.wifi_was_on = true
         G_reader_settings:saveSetting("wifi_was_on", true)
         UIManager:broadcastEvent(Event:new("NetworkConnected"))
-        logger.info("Wi-Fi successfully restored!")
+        logger.info("Wi-Fi successfully restored (after", iter, "iterations)!")
 
         -- Handle the UI & callback if it's from a beforeWifiAction...
         if widget then
