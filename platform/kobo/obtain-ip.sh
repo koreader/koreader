@@ -4,9 +4,13 @@ echo "[$(date)] obtain-ip.sh: begin"
 
 ./release-ip.sh
 
-# Use udhcpc to obtain IP.
-#env -u LD_LIBRARY_PATH udhcpc -S -i "${INTERFACE}" -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q
-env -u LD_LIBRARY_PATH dhcpcd -d -t 30 -w "${INTERFACE}"
+# NOTE: Prefer dhcpcd over udhcpc if available. That's what Nickel uses,
+#       and udhcpc appears to trip some insanely wonky corner cases on current FW (#6421)
+if [ -x "/sbin/dhcpcd" ] ; then
+    env -u LD_LIBRARY_PATH dhcpcd -d -t 30 -w "${INTERFACE}"
+else
+    env -u LD_LIBRARY_PATH udhcpc -S -i "${INTERFACE}" -s /etc/udhcpc.d/default.script -t15 -T10 -A3 -b -q
+fi
 usleep 500000
 
 echo "[$(date)] obtain-ip.sh: end"
