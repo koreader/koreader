@@ -309,6 +309,7 @@ end
 function NetworkMgr:getPowersaveMenuTable()
     return {
         text = _("Kill Wi-Fi connection when inactive"),
+        help_text = _([[This will automatically turn Wi-Fi off after a generous period of network inactivity, without disrupting workflows that require a network connection, so you can just keep reading without worrying about battery drain.]]),
         checked_func = function() return G_reader_settings:isTrue("auto_disable_wifi") end,
         enabled_func = function() return Device:hasWifiManager() and not Device:isEmulator() end,
         callback = function()
@@ -324,6 +325,7 @@ end
 function NetworkMgr:getRestoreMenuTable()
     return {
         text = _("Restore Wi-Fi connection on resume"),
+        help_text = _([[This will attempt to automatically and silently re-connect to Wi-Fi on startup or on resume if Wi-Fi used to be enabled the last time you used KOReader.]]),
         checked_func = function() return G_reader_settings:isTrue("auto_restore_wifi") end,
         enabled_func = function() return Device:hasWifiManager() and not Device:isEmulator() end,
         callback = function() G_reader_settings:flipNilOrFalse("auto_restore_wifi") end,
