@@ -385,8 +385,7 @@ end
 
 function ReaderWikipedia:lookupWikipedia(word, box, get_fullpage, forced_lang)
     if not NetworkMgr:isOnline() then
-        --- @note: Wanted: a way to actually forward a working callback for this specific function call to beforeWifiAction!
-        NetworkMgr:beforeWifiAction()
+        NetworkMgr:beforeWifiAction(function() self:lookupWikipedia(word, box, get_fullpage, forced_lang) end)
         return
     end
     -- word is the text to query. If get_fullpage is true, it is the
