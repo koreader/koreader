@@ -385,7 +385,12 @@ end
 
 function ReaderWikipedia:lookupWikipedia(word, box, get_fullpage, forced_lang)
     if not NetworkMgr:isOnline() then
-        NetworkMgr:beforeWifiAction(function() self:lookupWikipedia(word, box, get_fullpage, forced_lang) end)
+        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
+        if not NetworkMgr:isConnected() then
+            NetworkMgr:beforeWifiAction(function() self:lookupWikipedia(word, box, get_fullpage, forced_lang) end)
+        else
+            NetworkMgr:beforeWifiAction()
+        end
         return
     end
     -- word is the text to query. If get_fullpage is true, it is the
@@ -531,7 +536,12 @@ function ReaderWikipedia:onShowWikipediaLookup()
     if NetworkMgr:isOnline() then
         connect_callback()
     else
-        NetworkMgr:beforeWifiAction(connect_callback)
+        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
+        if not NetworkMgr:isConnected() then
+            NetworkMgr:beforeWifiAction(connect_callback)
+        else
+            NetworkMgr:beforeWifiAction()
+        end
     end
     return true
 end

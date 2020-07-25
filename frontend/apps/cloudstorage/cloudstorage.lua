@@ -150,19 +150,34 @@ function CloudStorage:openCloudServer(url)
     local NetworkMgr = require("ui/network/manager")
     if self.type == "dropbox" then
         if not NetworkMgr:isOnline() then
-            NetworkMgr:beforeWifiAction(function() CloudStorage:openCloudServer(url) end)
+            --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
+            if not NetworkMgr:isConnected() then
+                NetworkMgr:beforeWifiAction(function() self:openCloudServer(url) end)
+            else
+                NetworkMgr:beforeWifiAction()
+            end
             return
         end
         tbl = DropBox:run(url, self.password, self.choose_folder_mode)
     elseif self.type == "ftp" then
         if not NetworkMgr:isConnected() then
-            NetworkMgr:beforeWifiAction(function() CloudStorage:openCloudServer(url) end)
+            --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
+            if not NetworkMgr:isConnected() then
+                NetworkMgr:beforeWifiAction(function() self:openCloudServer(url) end)
+            else
+                NetworkMgr:beforeWifiAction()
+            end
             return
         end
         tbl = Ftp:run(self.address, self.username, self.password, url)
     elseif self.type == "webdav" then
         if not NetworkMgr:isConnected() then
-            NetworkMgr:beforeWifiAction(function() CloudStorage:openCloudServer(url) end)
+            --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
+            if not NetworkMgr:isConnected() then
+                NetworkMgr:beforeWifiAction(function() self:openCloudServer(url) end)
+            else
+                NetworkMgr:beforeWifiAction()
+            end
             return
         end
         tbl = WebDav:run(self.address, self.username, self.password, url)

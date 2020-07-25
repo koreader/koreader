@@ -840,7 +840,12 @@ function ReaderDictionary:showDownload(downloadable_dicts)
                     self:downloadDictionaryPrep(dict)
                 end
                 if not NetworkMgr:isOnline() then
-                    NetworkMgr:beforeWifiAction(connect_callback)
+                    --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
+                    if not NetworkMgr:isConnected() then
+                        NetworkMgr:beforeWifiAction(connect_callback)
+                    else
+                        NetworkMgr:beforeWifiAction()
+                    end
                 else
                     connect_callback()
                 end
