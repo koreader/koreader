@@ -474,8 +474,15 @@ function NetworkSetting:init()
             if G_reader_settings:nilOrTrue("auto_dismiss_wifi_scan") then
                 UIManager:close(self, 'ui', self.dimen)
             end
+            -- If this trickled down from a beforeWifiAction and there is no callback, mention that the action needs to be retried manually.
+            local info_text
+            if self.connect_callback then
+                info_text = T(_("Connected to network %1"), BD.wrap(connected_item.info.ssid))
+            else
+                info_text = T(_("Connected to network %1\nYou can now retry the action that required network access."), BD.wrap(connected_item.info.ssid))
+            end
             UIManager:show(InfoMessage:new{
-                text = T(_("Connected to network %1"), BD.wrap(connected_item.info.ssid)),
+                text = info_text,
                 timeout = 3,
             })
             if self.connect_callback then
