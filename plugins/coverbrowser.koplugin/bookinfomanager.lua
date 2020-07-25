@@ -11,6 +11,7 @@ local logger = require("logger")
 local util = require("ffi/util")
 local splitFilePathName = require("util").splitFilePathName
 local _ = require("gettext")
+local N_ = _.ngettext
 local T = require("ffi/util").template
 
 -- Util functions needed by this plugin, but that may be added to existing base/ffi/ files
@@ -776,7 +777,7 @@ Do you want to prune the cache of removed books?]]
     UIManager:close(info)
 
     if refresh_existing then
-        info = InfoMessage:new{text = T(_("Found %1 books to index."), #files)}
+        info = InfoMessage:new{text = T(N_("Found 1 book to index.", "Found %1 books to index."), #files)}
         UIManager:show(info)
         UIManager:forceRePaint()
         util.sleep(2) -- Let the user see that
@@ -823,7 +824,7 @@ Do you want to prune the cache of removed books?]]
             end
         end
         UIManager:close(info)
-        info = InfoMessage:new{text = T(_("Found %1 books to index."), #files)}
+        info = InfoMessage:new{text = T(N_("Found 1 book to index.", "Found %1 books to index."), #files)}
         UIManager:show(info)
         UIManager:forceRePaint()
         util.sleep(2) -- Let the user see that
