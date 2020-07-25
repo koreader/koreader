@@ -24,6 +24,10 @@ unset KO_NO_CBB
 # Make sure we kill the Wi-Fi first, because nickel apparently doesn't like it if it's up... (cf. #1520)
 # NOTE: That check is possibly wrong on PLATFORM == freescale (because I don't know if the sdio_wifi_pwr module exists there), but we don't terribly care about that.
 if lsmod | grep -q sdio_wifi_pwr; then
+    if [ -x "/sbin/dhcpcd" ]; then
+        env -u LD_LIBRARY_PATH dhcpcd -d -k "${INTERFACE}"
+    fi
+    wpa_cli terminate
     killall restore-wifi-async.sh enable-wifi.sh obtain-ip.sh udhcpc default.script dhcpcd wpa_supplicant 2>/dev/null
     [ "${WIFI_MODULE}" != "8189fs" ] && [ "${WIFI_MODULE}" != "8192es" ] && wlarm_le -i "${INTERFACE}" down
     ifconfig "${INTERFACE}" down
