@@ -110,6 +110,10 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     sync
     # And we can now stop the full Kobo software stack
     # NOTE: We don't need to kill KFMon, it's smart enough not to allow running anything else while we're up
+    # NOTE: We kill Nickel's master dhcpcd daemon on purpose,
+    #       as we want to be able to use our own per-if processes w/ custom args later on.
+    #       A SIGTERM does not break anything, it'll just prevent automatic lease renewal until the time
+    #       KOReader actually sets the if up itself (i.e., it'll do)...
     killall -q -TERM nickel hindenburg sickel fickel adobehost dhcpcd-dbus dhcpcd fmon
 fi
 
