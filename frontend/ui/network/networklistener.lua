@@ -18,7 +18,8 @@ function NetworkListener:onToggleWifi()
             timeout = 1,
         })
 
-        -- NB Normal widgets should use NetworkMgr:promptWifiOn() (or, better yet, NetworkMgr:beforeWifiAction())
+        -- NB Normal widgets should use NetworkMgr:promptWifiOn()
+        -- (or, better yet, the NetworkMgr:beforeWifiAction wrappers: NetworkMgr:runWhenOnline() & co.)
         -- This is specifically the toggle Wi-Fi action, so consent is implied.
         local complete_callback = function()
             UIManager:broadcastEvent(Event:new("NetworkConnected"))
@@ -57,7 +58,8 @@ function NetworkListener:onInfoWifiOn()
             timeout = 1,
         })
 
-        -- NB Normal widgets should use NetworkMgr:promptWifiOn() (or, better yet, NetworkMgr:beforeWifiAction())
+        -- NB Normal widgets should use NetworkMgr:promptWifiOn()
+        -- (or, better yet, the NetworkMgr:beforeWifiAction wrappers: NetworkMgr:runWhenOnline() & co.)
         -- This is specifically the toggle Wi-Fi action, so consent is implied.
         local complete_callback = function()
             UIManager:broadcastEvent(Event:new("NetworkConnected"))
