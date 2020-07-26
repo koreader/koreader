@@ -302,7 +302,7 @@ function Dispatcher:init()
     Dispatcher.initialized = true
 end
 
-function Dispatcher.addItem(menu, location, settings, section)
+function Dispatcher:addItem(menu, location, settings, section)
     for _, k in ipairs(dispatcher_menu_order) do
         if settingsList[k][section] == true and
             (settingsList[k].condition == nil or settingsList[k].condition)
@@ -466,7 +466,7 @@ function Dispatcher:addSubMenu(menu, location, settings)
     for _, section in ipairs(section_list) do
         local submenu = {}
         -- pass caller's context
-        Dispatcher.addItem(submenu, location, settings, section[1])
+        Dispatcher:addItem(submenu, location, settings, section[1])
         table.insert(menu, {
             text = section[2],
             sub_item_table = submenu,
