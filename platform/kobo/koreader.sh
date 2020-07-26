@@ -110,7 +110,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     sync
     # And we can now stop the full Kobo software stack
     # NOTE: We don't need to kill KFMon, it's smart enough not to allow running anything else while we're up
-    killall -q -TERM nickel hindenburg sickel fickel adobehost dhcpcd-dbus fmon
+    killall -q -TERM nickel hindenburg sickel fickel adobehost dhcpcd-dbus dhcpcd fmon
 fi
 
 # fallback for old fmon, KFMon and advboot users (-> if no args were passed to the script, start the FM)
