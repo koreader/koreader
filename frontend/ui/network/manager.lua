@@ -253,6 +253,30 @@ function NetworkMgr:setHTTPProxy(proxy)
     end
 end
 
+-- Helper functions to hide the quirks of using beforeWifiAction properly ;).
+
+-- Mild variants that are used for recursive calls at the start of a complex function call.
+-- Returns false when not online, in which case you should *abort* (i.e., return) the initial call.
+function NetworkMgr:rerunWhenOnline(callback)
+    if not NetworkMgr:isOnline() then
+        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
+        if not NetworkMgr:isConnected() then
+            NetworkMgr:beforeWifiAction(callback)
+        else
+            NetworkMgr:beforeWifiAction()
+        end
+        return false
+    end
+
+    return true
+end
+
+function NetworkMgr:rerunWhenConnected()
+
+end
+
+
+
 function NetworkMgr:getWifiMenuTable()
     if Device:isAndroid() then
         return {

@@ -384,15 +384,10 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage, forced_lang)
 end
 
 function ReaderWikipedia:lookupWikipedia(word, box, get_fullpage, forced_lang)
-    if not NetworkMgr:isOnline() then
-        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
-        if not NetworkMgr:isConnected() then
-            NetworkMgr:beforeWifiAction(function() self:lookupWikipedia(word, box, get_fullpage, forced_lang) end)
-        else
-            NetworkMgr:beforeWifiAction()
-        end
+    if not NetworkMgr:rerunWhenOnline(function() self:lookupWikipedia(word, box, get_fullpage, forced_lang) end) then
         return
     end
+
     -- word is the text to query. If get_fullpage is true, it is the
     -- exact wikipedia page title we want the full page of.
     self:initLanguages(word)
