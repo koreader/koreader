@@ -104,19 +104,18 @@ function Kindle:initNetworkManager(NetworkMgr)
         kindleEnableWifi(1)
         -- NOTE: As we defer the actual work to lipc,
         --       we have no guarantee the Wi-Fi state will have changed by the time kindleEnableWifi returns,
-        --       so, delay the callback a bit...
+        --       so, delay the callback until we at least can ensure isConnect is true.
         if complete_callback then
-            local UIManager = require("ui/uimanager")
-            UIManager:scheduleIn(1, complete_callback)
+            NetworkMgr:scheduleConnectivityCheck(complete_callback)
         end
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
         kindleEnableWifi(0)
-        -- NOTE: Same here...
+        -- NOTE: Same here, except disconnect is simpler, so a dumb delay will do...
         if complete_callback then
             local UIManager = require("ui/uimanager")
-            UIManager:scheduleIn(1, complete_callback)
+            UIManager:scheduleIn(2, complete_callback)
         end
     end
 
