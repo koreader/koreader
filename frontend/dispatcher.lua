@@ -474,26 +474,33 @@ function Dispatcher:addSubMenu(menu, location, settings)
     end
 end
 
-function Dispatcher:execute(settings, gesture)
+--[[--
+Calls the events in a settings list
+arguments are:
+    1) a reference to the uimanager
+    2) the settings table
+    3) optionally a `gestures`object
+--]]--
+function Dispatcher:execute(ui, settings, gesture)
     for k, v in pairs(settings) do
         if settingsList[k].conditions == nil or settingsList[k].conditions == true then
             if settingsList[k].category == "none" then
-                self.ui:handleEvent(Event:new(settingsList[k].event))
+                ui:handleEvent(Event:new(settingsList[k].event))
             end
             if settingsList[k].category == "absolutenumber"
                 or settingsList[k].category == "string"
             then
-                self.ui:handleEvent(Event:new(settingsList[k].event, v))
+                ui:handleEvent(Event:new(settingsList[k].event, v))
             end
             -- the event can accept a gesture object or an argument
             if settingsList[k].category == "arg" then
                 local arg = gesture or settingsList[k].arg
-                self.ui:handleEvent(Event:new(settingsList[k].event, arg))
+                ui:handleEvent(Event:new(settingsList[k].event, arg))
             end
             -- the event can accept a gesture object or a number
             if settingsList[k].category == "incrementalnumber" then
                 local arg = gesture or v
-                self.ui:handleEvent(Event:new(settingsList[k].event, arg))
+                ui:handleEvent(Event:new(settingsList[k].event, arg))
             end
         end
     end

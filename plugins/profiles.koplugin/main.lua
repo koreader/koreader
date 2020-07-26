@@ -110,7 +110,7 @@ function Profiles:getSubMenuItems()
             hold_keep_menu_open = false,
             sub_item_table = sub_items,
             hold_callback = function()
-                Dispatcher.execute(self, self.data[k])
+                Dispatcher:execute(self.ui, self.data[k])
             end,
         })
     end
