@@ -283,7 +283,7 @@ function NetworkMgr:runWhenConnected(callback)
     end
 end
 
--- Mild variants that are used for recursive calls at the start of a complex function calls.
+-- Mild variants that are used for recursive calls at the beginning of a complex function call.
 -- Returns true when not yet online, in which case you should *abort* (i.e., return) the initial call,
 -- and otherwise, go-on as planned.
 -- NOTE: If you're currently connected but without Internet access (i.e., isConnected and not isOnline),

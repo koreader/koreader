@@ -22,9 +22,9 @@ Example:
     UIManager:show(require("ui/widget/networksetting"):new{
         network_list = network_list,
         connect_callback = function()
-            -- connect_callback will be called when an *connect* (NOT disconnect)
-            -- attempt has been successful. You can update UI widgets in the
-            -- callback.
+            -- connect_callback will be called when a *connect* (NOT disconnect)
+            -- attempt has been successful.
+            -- You can update UI widgets in the callback.
         end,
         disconnect_callback = function()
             -- This one will fire unconditionally after a disconnect attempt.

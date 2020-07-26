@@ -33,7 +33,7 @@ if lsmod | grep -q sdio_wifi_pwr; then
     else
         killall -q -TERM udhcpc default.script dhcpcd
     fi
-    # NOTE: dhcpcd -k waits for the signaled process to die, but busybox's killall doesn't have a -w, --wait flag,
+    # NOTE: dhcpcd -k waits for the signalled process to die, but busybox's killall doesn't have a -w, --wait flag,
     #       so we have to wait for udhcpc to die ourselves...
     kill_timeout=0
     while pkill -0 udhcpc; do
