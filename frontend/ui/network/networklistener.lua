@@ -177,7 +177,6 @@ function NetworkListener:_scheduleActivityCheck()
     end
 end
 
-
 function NetworkListener:onNetworkConnected()
     if not (Device:hasWifiManager() and not Device:isEmulator()) then
         return

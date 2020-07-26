@@ -650,6 +650,7 @@ if NETWORK_PROXY then
     NetworkMgr:setHTTPProxy(NETWORK_PROXY)
 end
 
+
 Device:initNetworkManager(NetworkMgr)
 NetworkMgr:init()
 
