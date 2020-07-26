@@ -258,7 +258,8 @@ end
 -- Mild variants that are used for recursive calls at the start of a complex function calls.
 -- Returns true when not yet online, in which case you should *abort* (i.e., return) the initial call,
 -- and otherwise, go-on as planned.
--- NOTE: If you're currently connected but without Internet access, it will just attempt to re-connect, *without* running the callback.
+-- NOTE: If you're currently connected but without Internet access (i.e., not isOnline),
+--       it will just attempt to re-connect, *without* running the callback.
 -- c.f., ReaderWikipedia:lookupWikipedia @ frontend/apps/reader/modules/readerwikipedia.lua
 function NetworkMgr:willRerunWhenOnline(callback)
     if not self:isOnline() then
@@ -274,7 +275,7 @@ function NetworkMgr:willRerunWhenOnline(callback)
     return false
 end
 
--- This once only require isConnected, and since that's guaranteed by beforeWifiAction,
+-- This one is for callbacks that only require isConnected, and since that's guaranteed by beforeWifiAction,
 -- you also have a guarantee that the callback *will* run.
 function NetworkMgr:willRerunWhenConnected(callback)
     if not self:isConnected() then
