@@ -255,10 +255,38 @@ end
 
 -- Helper functions to hide the quirks of using beforeWifiAction properly ;).
 
+-- Run callback *now* if you're currently online (ie., isOnline),
+-- or attempt to go online and run it *ASAP* without any more user interaction.
+-- NOTE: If you're currently connected but without Internet access (i.e., isConnected and not isOnline),
+--       it will just attempt to re-connect, *without* running the callback.
+-- c.f., ReaderWikipedia:onShowWikipediaLookup @ frontend/apps/reader/modules/readerwikipedia.lua
+function NetworkMgr:runWhenOnline(callback)
+    if self:isOnline() then
+        callback()
+    else
+        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
+        if not self:isConnected() then
+            self:beforeWifiAction(callback)
+        else
+            self:beforeWifiAction()
+        end
+    end
+end
+
+-- This one is for callbacks that only require isConnected, and since that's guaranteed by beforeWifiAction,
+-- you also have a guarantee that the callback *will* run.
+function NetworkMgr:runWhenConnected(callback)
+    if self:isConnected() then
+        callback()
+    else
+        self:beforeWifiAction(callback)
+    end
+end
+
 -- Mild variants that are used for recursive calls at the start of a complex function calls.
 -- Returns true when not yet online, in which case you should *abort* (i.e., return) the initial call,
 -- and otherwise, go-on as planned.
--- NOTE: If you're currently connected but without Internet access (i.e., not isOnline),
+-- NOTE: If you're currently connected but without Internet access (i.e., isConnected and not isOnline),
 --       it will just attempt to re-connect, *without* running the callback.
 -- c.f., ReaderWikipedia:lookupWikipedia @ frontend/apps/reader/modules/readerwikipedia.lua
 function NetworkMgr:willRerunWhenOnline(callback)

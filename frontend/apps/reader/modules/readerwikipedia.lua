@@ -529,16 +529,7 @@ function ReaderWikipedia:onShowWikipediaLookup()
     local connect_callback = function()
         self:lookupInput()
     end
-    if NetworkMgr:isOnline() then
-        connect_callback()
-    else
-        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
-        if not NetworkMgr:isConnected() then
-            NetworkMgr:beforeWifiAction(connect_callback)
-        else
-            NetworkMgr:beforeWifiAction()
-        end
-    end
+    NetworkMgr:runWhenOnline(connect_callback)
     return true
 end
 
