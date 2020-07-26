@@ -26,7 +26,9 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
         self.wifi_was_on = false
         G_reader_settings:saveSetting("wifi_was_on", false)
         -- If we abort, murder Wi-Fi and the async script first...
-        os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
+        if Device:hasWifiManager() and not Device:isEmulator() then
+            os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
+        end
         NetworkMgr:turnOffWifi()
 
         -- Handle the UI warning if it's from a beforeWifiAction...
