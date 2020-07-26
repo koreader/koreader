@@ -119,16 +119,7 @@ function Wallabag:addToMainMenu(menu_items)
                         })
                         self:refreshCurrentDirIfNeeded()
                     end
-                    if not NetworkMgr:isOnline() then
-                        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
-                        if not NetworkMgr:isConnected() then
-                            NetworkMgr:beforeWifiAction(connect_callback)
-                        else
-                            NetworkMgr:beforeWifiAction()
-                        end
-                    else
-                        connect_callback()
-                    end
+                    NetworkMgr:runWhenOnline(connect_callback)
                 end,
                 enabled_func = function()
                     return self.is_delete_finished or self.is_delete_read
@@ -1090,16 +1081,7 @@ function Wallabag:onSynchronizeWallabag()
         self:synchronize()
         self:refreshCurrentDirIfNeeded()
     end
-    if not NetworkMgr:isOnline() then
-        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
-        if not NetworkMgr:isConnected() then
-            NetworkMgr:beforeWifiAction(connect_callback)
-        else
-            NetworkMgr:beforeWifiAction()
-        end
-    else
-        connect_callback()
-    end
+    NetworkMgr:runWhenOnline(connect_callback)
 
     -- stop propagation
     return true

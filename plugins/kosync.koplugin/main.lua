@@ -295,15 +295,10 @@ function KOSync:setWhisperBackward(strategy)
 end
 
 function KOSync:login()
-    if not NetworkMgr:isOnline() then
-        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
-        if not NetworkMgr:isConnected() then
-            NetworkMgr:beforeWifiAction(function() self:login() end)
-        else
-            NetworkMgr:beforeWifiAction()
-        end
+    if NetworkMgr:willRerunWhenOnline(function() self:login() end) then
         return
     end
+
     self.login_dialog = LoginDialog:new{
         title = self.title,
         username = self.kosync_username or "",

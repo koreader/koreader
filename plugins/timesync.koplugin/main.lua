@@ -58,16 +58,7 @@ local menuItem = {
     text = _("Synchronize time"),
     keep_menu_open = true,
     callback = function()
-        if NetworkMgr:isOnline() then
-            syncNTP()
-        else
-            --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
-            if not NetworkMgr:isConnected() then
-                NetworkMgr:beforeWifiAction(function() syncNTP() end)
-            else
-                NetworkMgr:beforeWifiAction()
-            end
-        end
+        NetworkMgr:runWhenOnline(function() syncNTP() end)
     end
 }
 

@@ -203,8 +203,7 @@ Do you want to continue? ]]), driver),
 end
 
 function CalibreWireless:connect()
-    if not NetworkMgr:isConnected() then
-        NetworkMgr:beforeWifiAction(function() self:connect() end)
+    if NetworkMgr:willRerunWhenConnected(function() self:connect() end) then
         return
     end
 

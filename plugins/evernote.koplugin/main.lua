@@ -347,15 +347,10 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Eve
 end
 
 function EvernoteExporter:login()
-    if not NetworkMgr:isOnline() then
-        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
-        if not NetworkMgr:isConnected() then
-            NetworkMgr:beforeWifiAction(function() self:login() end)
-        else
-            NetworkMgr:beforeWifiAction()
-        end
+    if NetworkMgr:willRerunWhenOnline(function() self:login() end) then
         return
     end
+
     self.login_dialog = LoginDialog:new{
         title = self.login_title,
         username = self.evernote_username or "",

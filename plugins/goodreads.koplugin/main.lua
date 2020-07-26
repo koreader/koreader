@@ -170,21 +170,16 @@ end
 -- search_type = author - serch book by author
 -- search_type = title - search book by title
 function Goodreads:search(search_type)
+    if NetworkMgr:willRerunWhenOnline(function() self:search(search_type) end) then
+       return
+    end
+
     local title_header
     local hint
     local search_input
     local text_input
     local info
     local result
-    if not NetworkMgr:isOnline() then
-        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
-        if not NetworkMgr:isConnected() then
-            NetworkMgr:beforeWifiAction(function() self:search(search_type) end)
-        else
-            NetworkMgr:beforeWifiAction()
-        end
-        return
-    end
     if search_type == "all" then
         title_header = _("Search all books in Goodreads")
         hint = _("Title, author or ISBN")
