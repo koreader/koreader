@@ -276,7 +276,7 @@ end
 
 -- This once only require isConnected, and since that's guaranteed by beforeWifiAction,
 -- you also have a guarantee that the callback *will* run.
-function self:willRerunWhenConnected(callback)
+function NetworkMgr:willRerunWhenConnected(callback)
     if not self:isConnected() then
         self:beforeWifiAction(callback)
         return true
