@@ -588,12 +588,12 @@ function ReaderHighlight:_resetHoldTimer(clear)
 end
 
 function ReaderHighlight:getRegionalZoomCenter(pos)
-    if not self.dimen then
-        self.dimen = self.ui.dimen
-    end
+    
+    local dimen = self.ui.dimen
+   
     local page_size = self.ui.document:getNativePageDimensions(pos.page)
     local margin = self.ui.document.configurable.page_margin * Screen:getDPI()
-    local zoom = 2*self.dimen.w / page_size.w
+    local zoom = 2* dimen.w / page_size.w
     zoom = zoom/(1 + 3*margin/zoom/page_size.w)
     local x_ratio = (pos.x/ page_size.w) -- x center ratio
     local y_ratio = (pos.y / page_size.h) -- y center ratio
@@ -703,8 +703,8 @@ function ReaderHighlight:onTouchZoom(_, ges)
         local magnifier = Magnifier:new{
         image = image,
         timeout = 5,
-        -- set zoom to dubble now - setting variable to be add
-        zoom = zoom * 2 ,
+        -- set zoom to double now - setting variable to be add
+        zoom = zoom * 1.2 ,
         x_ratio = x_ratio,
         y_ratio = y_ratio,
         location = location
@@ -715,6 +715,9 @@ function ReaderHighlight:onTouchZoom(_, ges)
 end
 
 function ReaderHighlight:onHoldPan(_, ges)
+    if self.view.highlight.disabled then
+        return true
+    end
     if self.hold_pos == nil then
         logger.dbg("no previous hold position")
         self:_resetHoldTimer(true)
