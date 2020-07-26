@@ -154,12 +154,12 @@ function CloudStorage:openCloudServer(url)
         end
         tbl = DropBox:run(url, self.password, self.choose_folder_mode)
     elseif self.type == "ftp" then
-        if NetworkMgr:willRerunWhenOnline(function() self:openCloudServer(url) end) then
+        if NetworkMgr:willRerunWhenConnected(function() self:openCloudServer(url) end) then
             return
         end
         tbl = Ftp:run(self.address, self.username, self.password, url)
     elseif self.type == "webdav" then
-        if NetworkMgr:willRerunWhenOnline(function() self:openCloudServer(url) end) then
+        if NetworkMgr:willRerunWhenConnected(function() self:openCloudServer(url) end) then
             return
         end
         tbl = WebDav:run(self.address, self.username, self.password, url)
