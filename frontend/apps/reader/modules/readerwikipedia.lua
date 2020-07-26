@@ -384,7 +384,8 @@ function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage, forced_lang)
 end
 
 function ReaderWikipedia:lookupWikipedia(word, box, get_fullpage, forced_lang)
-    if not NetworkMgr:rerunWhenOnline(function() self:lookupWikipedia(word, box, get_fullpage, forced_lang) end) then
+    if NetworkMgr:willRerunWhenOnline(function() self:lookupWikipedia(word, box, get_fullpage, forced_lang) end) then
+        -- Not online yet, nothing more to do here, NetworkMgr will forward the callback and run it once connected!
         return
     end
 

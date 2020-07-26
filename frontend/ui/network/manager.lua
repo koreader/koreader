@@ -255,26 +255,35 @@ end
 
 -- Helper functions to hide the quirks of using beforeWifiAction properly ;).
 
--- Mild variants that are used for recursive calls at the start of a complex function call.
--- Returns false when not online, in which case you should *abort* (i.e., return) the initial call.
-function NetworkMgr:rerunWhenOnline(callback)
-    if not NetworkMgr:isOnline() then
+-- Mild variants that are used for recursive calls at the start of a complex function calls.
+-- Returns true when not yet online, in which case you should *abort* (i.e., return) the initial call,
+-- and otherwise, go-on as planned.
+-- NOTE: If you're currently connected but without Internet access, it will just attempt to re-connect, *without* running the callback.
+-- c.f., ReaderWikipedia:lookupWikipedia @ frontend/apps/reader/modules/readerwikipedia.lua
+function NetworkMgr:willRerunWhenOnline(callback)
+    if not self:isOnline() then
         --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
-        if not NetworkMgr:isConnected() then
-            NetworkMgr:beforeWifiAction(callback)
+        if not self:isConnected() then
+            self:beforeWifiAction(callback)
         else
-            NetworkMgr:beforeWifiAction()
+            self:beforeWifiAction()
         end
-        return false
+        return true
     end
 
-    return true
+    return false
 end
 
-function NetworkMgr:rerunWhenConnected()
+-- This once only require isConnected, and since that's guaranteed by beforeWifiAction,
+-- you also have a guarantee that the callback *will* run.
+function self:willRerunWhenConnected(callback)
+    if not self:isConnected() then
+        self:beforeWifiAction(callback)
+        return true
+    end
 
+    return false
 end
-
 
 
 function NetworkMgr:getWifiMenuTable()
