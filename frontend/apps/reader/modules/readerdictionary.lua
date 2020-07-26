@@ -839,16 +839,7 @@ function ReaderDictionary:showDownload(downloadable_dicts)
                 local connect_callback = function()
                     self:downloadDictionaryPrep(dict)
                 end
-                if not NetworkMgr:isOnline() then
-                    --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
-                    if not NetworkMgr:isConnected() then
-                        NetworkMgr:beforeWifiAction(connect_callback)
-                    else
-                        NetworkMgr:beforeWifiAction()
-                    end
-                else
-                    connect_callback()
-                end
+                NetworkMgr:runWhenOnline(connect_callback)
             end})
         local lang
         if dict.lang_in == dict.lang_out then

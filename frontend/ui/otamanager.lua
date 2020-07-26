@@ -455,31 +455,19 @@ function OTAManager:getOTAMenuTable()
     return {
         text = _("Update"),
         hold_callback = function()
-            if not NetworkMgr:isOnline() then
-                --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
-                if not NetworkMgr:isConnected() then
-                    NetworkMgr:beforeWifiAction(function() OTAManager:fetchAndProcessUpdate() end)
-                else
-                    NetworkMgr:beforeWifiAction()
-                end
-            else
+            local connect_callback = function()
                 OTAManager:fetchAndProcessUpdate()
             end
+            NetworkMgr:runWhenOnline(connect_callback)
         end,
         sub_item_table = {
             {
                 text = _("Check for update"),
                 callback = function()
-                    if not NetworkMgr:isOnline() then
-                        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
-                        if not NetworkMgr:isConnected() then
-                            NetworkMgr:beforeWifiAction(function() OTAManager:fetchAndProcessUpdate() end)
-                        else
-                            NetworkMgr:beforeWifiAction()
-                        end
-                    else
+                    local connect_callback = function()
                         OTAManager:fetchAndProcessUpdate()
                     end
+                    NetworkMgr:runWhenOnline(connect_callback)
                 end
             },
             {

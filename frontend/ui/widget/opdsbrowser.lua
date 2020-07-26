@@ -378,7 +378,7 @@ end
 function OPDSBrowser:getCatalog(item_url, username, password)
     local ok, catalog = pcall(self.parseFeed, self, item_url, username, password)
     if not ok and catalog and not NetworkMgr:isOnline() then
-        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
+        --- @note: This is pretty much NetworkMgr:willRerunWhenOnline with a very minor twist.
         if not NetworkMgr:isConnected() then
             NetworkMgr:beforeWifiAction(function() self:getCatalog(item_url, username, password) end)
         else

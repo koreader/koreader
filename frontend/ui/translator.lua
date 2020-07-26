@@ -416,15 +416,10 @@ Show translated text in TextViewer, with alternate translations
 --]]
 function Translator:showTranslation(text, target_lang, source_lang)
     local NetworkMgr = require("ui/network/manager")
-    if not NetworkMgr:isOnline() then
-        --- @note: Avoid infinite recursion, beforeWifiAction only guarantees isConnected, not isOnline.
-        if not NetworkMgr:isConnected() then
-            NetworkMgr:beforeWifiAction(function() self:showTranslation(text, target_lang, source_lang) end)
-        else
-            NetworkMgr:beforeWifiAction()
-        end
+    if NetworkMgr:willRerunWhenOnline(function() self:showTranslation(text, target_lang, source_lang) end) then
         return
     end
+
     -- Wrap next function with Trapper to be able to interrupt
     -- translation service query.
     local Trapper = require("ui/trapper")
