@@ -377,15 +377,7 @@ end
 
 function OPDSBrowser:getCatalog(item_url, username, password)
     local ok, catalog = pcall(self.parseFeed, self, item_url, username, password)
-    if not ok and catalog and not NetworkMgr:isOnline() then
-        --- @note: This is pretty much NetworkMgr:willRerunWhenOnline with a very minor twist.
-        if not NetworkMgr:isConnected() then
-            NetworkMgr:beforeWifiAction(function() self:getCatalog(item_url, username, password) end)
-        else
-            NetworkMgr:beforeWifiAction()
-        end
-        return
-    elseif not ok and catalog then
+    if not ok and catalog then
         logger.info("cannot get catalog info from", item_url, catalog)
         UIManager:show(InfoMessage:new{
             text = T(_("Cannot get catalog info from %1"), (BD.url(item_url) or "")),
@@ -729,11 +721,17 @@ function OPDSBrowser:onMenuSelect(item)
         self:showDownloads(item)
     -- navigation
     else
+        local connect_callback
         if item.searchable then
-            self:browseSearchable(item.url, item.username, item.password)
+            connect_callback = function()
+                self:browseSearchable(item.url, item.username, item.password)
+            end
         else
-            self:browse(item.url, item.username, item.password)
+            connect_callback = function()
+                self:browse(item.url, item.username, item.password)
+            end
         end
+        NetworkMgr:runWhenConnected(connect_callback)
     end
     return true
 end
