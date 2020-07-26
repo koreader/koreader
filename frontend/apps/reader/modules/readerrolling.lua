@@ -787,6 +787,7 @@ function ReaderRolling:updatePos()
         self.old_doc_height = new_height
         self.old_page = new_page
         self.ui:handleEvent(Event:new("UpdateToc"))
+        self.view.footer:setTocMarkers(true)
         self.view.footer:onUpdateFooter()
     end
     self:updateTopStatusBarMarkers()
