@@ -155,26 +155,28 @@ function NetworkListener:_scheduleActivityCheck()
         end
     end
 
-    -- If we've just killed Wi-Fi, onNetworkDisconnected will take care of unscheduling us
-    if keep_checking then
-        -- Update tracker for next iter
-        self._last_tx_packets = tx_packets
-
-        -- If it's already been scheduled, increase the delay until we hit the ceiling
-        if self._activity_check_delay then
-            self._activity_check_delay = self._activity_check_delay + default_network_timeout_seconds
-
-            if self._activity_check_delay > max_network_timeout_seconds then
-                self._activity_check_delay = max_network_timeout_seconds
-            end
-        else
-            self._activity_check_delay = default_network_timeout_seconds
-        end
-
-        UIManager:scheduleIn(self._activity_check_delay, self._scheduleActivityCheck, self)
-        self._activity_check_scheduled = true
-        logger.dbg("NetworkListener: network activity check scheduled in", self._activity_check_delay, "seconds")
+    -- If we've just killed Wi-Fi, onNetworkDisconnected will take care of unscheduling us, so we're done
+    if not keep_checking then
+        return
     end
+
+    -- Update tracker for next iter
+    self._last_tx_packets = tx_packets
+
+    -- If it's already been scheduled, increase the delay until we hit the ceiling
+    if self._activity_check_delay then
+        self._activity_check_delay = self._activity_check_delay + default_network_timeout_seconds
+
+        if self._activity_check_delay > max_network_timeout_seconds then
+            self._activity_check_delay = max_network_timeout_seconds
+        end
+    else
+        self._activity_check_delay = default_network_timeout_seconds
+    end
+
+    UIManager:scheduleIn(self._activity_check_delay, self._scheduleActivityCheck, self)
+    self._activity_check_scheduled = true
+    logger.dbg("NetworkListener: network activity check scheduled in", self._activity_check_delay, "seconds")
 end
 
 function NetworkListener:onNetworkConnected()
