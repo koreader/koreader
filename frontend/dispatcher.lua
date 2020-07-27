@@ -169,6 +169,7 @@ local dispatcher_menu_order = {
     "set_frontlight",
     "increase_frontlight",
     "decrease_frontlight",
+    "set_frontlight_warmth",
     "increase_frontlight_warmth",
     "decrease_frontlight_warmth",
 
