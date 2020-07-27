@@ -22,7 +22,6 @@ local NewsDownloader = WidgetContainer:new{
 }
 
 local initialized = false
-local wifi_enabled_before_action = true
 local feed_config_file_name = "feed_config.lua"
 local news_downloader_config_file = "news_downloader_settings.lua"
 local news_downloader_settings
@@ -59,13 +58,6 @@ local function getFeedLink(possible_link)
     end
 end
 
---- @todo Implement as NetworkMgr:afterWifiAction with configuration options.
-function NewsDownloader:afterWifiAction()
-    if not wifi_enabled_before_action then
-        NetworkMgr:promptWifiOff()
-    end
-end
-
 function NewsDownloader:init()
     self.ui.menu:registerToMainMenu(self)
 end
@@ -79,12 +71,7 @@ function NewsDownloader:addToMainMenu(menu_items)
                 text = _("Download news"),
                 keep_menu_open = true,
                 callback = function()
-                    if not NetworkMgr:isOnline() then
-                        wifi_enabled_before_action = false
-                        NetworkMgr:beforeWifiAction(self.loadConfigAndProcessFeedsWithUI)
-                    else
-                        self:loadConfigAndProcessFeedsWithUI()
-                    end
+                    NetworkMgr:runWhenOnline(function() self:loadConfigAndProcessFeedsWithUI() end)
                 end,
             },
             {
@@ -222,7 +209,7 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         end
         UI:info(T(_("Downloading news finished. Could not process some feeds. Unsupported format in: %1"), unsupported_urls))
     end
-    NewsDownloader:afterWifiAction()
+    NetworkMgr:afterWifiAction()
 end
 
 function NewsDownloader:loadConfigAndProcessFeedsWithUI()

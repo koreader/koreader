@@ -57,7 +57,7 @@ local symbol_prefix = {
         frontlight = C_("FooterLetterPrefix", "L:"),
         -- @translators This is the footer letter prefix for memory usage.
         mem_usage = C_("FooterLetterPrefix", "M:"),
-        -- @translators This is the footer letter prefix for wifi status.
+        -- @translators This is the footer letter prefix for Wi-Fi status.
         wifi_status = C_("FooterLetterPrefix", "W:"),
     },
     icons = {
@@ -1835,7 +1835,7 @@ function ReaderFooter:applyFooterMode(mode)
     -- 7 for from statistics chapter time to read
     -- 8 for front light level
     -- 9 for memory usage
-    -- 10 for wifi status
+    -- 10 for Wi-Fi status
     -- 11 for book title
     -- 12 for current chapter
 

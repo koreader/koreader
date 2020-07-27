@@ -12,7 +12,7 @@ local function kindleEnableWifi(toggle)
     end
     if lipc_handle then
         -- Be extremely thorough... c.f., #6019
-        -- NOTE: I *assume* this'll also ensure we prefer WiFi over 3G/4G, which is a plus in my book...
+        -- NOTE: I *assume* this'll also ensure we prefer Wi-Fi over 3G/4G, which is a plus in my book...
         if toggle == 1 then
             lipc_handle:set_int_property("com.lab126.cmd", "wirelessEnable", 1)
             lipc_handle:set_int_property("com.lab126.wifid", "enable", 1)
@@ -103,20 +103,19 @@ function Kindle:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback)
         kindleEnableWifi(1)
         -- NOTE: As we defer the actual work to lipc,
-        --       we have no guarantee the WiFi state will have changed by the time kindleEnableWifi returns,
-        --       so, delay the callback a bit...
+        --       we have no guarantee the Wi-Fi state will have changed by the time kindleEnableWifi returns,
+        --       so, delay the callback until we at least can ensure isConnect is true.
         if complete_callback then
-            local UIManager = require("ui/uimanager")
-            UIManager:scheduleIn(1, complete_callback)
+            NetworkMgr:scheduleConnectivityCheck(complete_callback)
         end
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
         kindleEnableWifi(0)
-        -- NOTE: Same here...
+        -- NOTE: Same here, except disconnect is simpler, so a dumb delay will do...
         if complete_callback then
             local UIManager = require("ui/uimanager")
-            UIManager:scheduleIn(1, complete_callback)
+            UIManager:scheduleIn(2, complete_callback)
         end
     end
 
@@ -374,7 +373,7 @@ local KindleOasis = Kindle:new{
     hasGSensor = yes,
     display_dpi = 300,
     --[[
-    -- NOTE: Points to event3 on WiFi devices, event4 on 3G devices...
+    -- NOTE: Points to event3 on Wi-Fi devices, event4 on 3G devices...
     --       3G devices apparently have an extra SX9500 Proximity/Capacitive controller for mysterious purposes...
     --       This evidently screws with the ordering, so, use the udev by-path path instead to avoid hackier workarounds.
     --       cf. #2181
@@ -405,7 +404,7 @@ local KindlePaperWhite4 = Kindle:new{
     display_dpi = 300,
     -- NOTE: LTE devices once again have a mysterious extra SX9310 proximity sensor...
     --       Except this time, we can't rely on by-path, because there's no entry for the TS :/.
-    --       Should be event2 on WiFi, event3 on LTE, we'll fix it in init.
+    --       Should be event2 on Wi-Fi, event3 on LTE, we'll fix it in init.
     touch_dev = "/dev/input/event2",
 }
 

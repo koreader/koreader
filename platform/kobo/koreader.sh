@@ -110,7 +110,11 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     sync
     # And we can now stop the full Kobo software stack
     # NOTE: We don't need to kill KFMon, it's smart enough not to allow running anything else while we're up
-    killall -TERM nickel hindenburg sickel fickel adobehost fmon 2>/dev/null
+    # NOTE: We kill Nickel's master dhcpcd daemon on purpose,
+    #       as we want to be able to use our own per-if processes w/ custom args later on.
+    #       A SIGTERM does not break anything, it'll just prevent automatic lease renewal until the time
+    #       KOReader actually sets the if up itself (i.e., it'll do)...
+    killall -q -TERM nickel hindenburg sickel fickel adobehost dhcpcd-dbus dhcpcd fmon
 fi
 
 # fallback for old fmon, KFMon and advboot users (-> if no args were passed to the script, start the FM)
@@ -131,7 +135,7 @@ if [ -z "${PRODUCT}" ]; then
     export PRODUCT
 fi
 
-# PLATFORM is used in koreader for the path to the WiFi drivers (as well as when restarting nickel)
+# PLATFORM is used in koreader for the path to the Wi-Fi drivers (as well as when restarting nickel)
 if [ -z "${PLATFORM}" ]; then
     # shellcheck disable=SC2046
     export $(grep -s -e '^PLATFORM=' "/proc/$(pidof -s udevd)/environ")
@@ -209,6 +213,16 @@ ko_do_fbdepth() {
     fi
 }
 
+# Ensure we start with a valid nameserver in resolv.conf, otherwise we're stuck with broken name resolution (#6421, #6424).
+# Fun fact: this wouldn't be necessary if Kobo were using a non-prehistoric glibc... (it was fixed in glibc 2.26).
+ko_do_dns() {
+    # If there aren't any servers listed, append CloudFlare's
+    if not grep -q '^nameserver' "/etc/resolv.conf"; then
+        echo "# Added by KOReader because your setup is broken" >>"/etc/resolv.conf"
+        echo "nameserver 1.1.1.1" >>"/etc/resolv.conf"
+    fi
+}
+
 # Remount the SD card RW if it's inserted and currently RO
 if awk '$4~/(^|,)ro($|,)/' /proc/mounts | grep ' /mnt/sd '; then
     mount -o remount,rw /mnt/sd
@@ -232,6 +246,8 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         ko_update_check
         # Do or double-check the fb depth switch, or restore original bitdepth if requested
         ko_do_fbdepth
+        # Make sure we have a sane resolv.conf
+        ko_do_dns
     fi
 
     ./reader.lua "${args}" >>crash.log 2>&1
@@ -273,11 +289,11 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         fi
         # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
         # shellcheck disable=SC2039
-        ./fbink -q -b -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} $'\xf0\x9f\x92\xa3'
+        ./fbink -q -b -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} -- $'\xf0\x9f\x92\xa3'
         # And then print the tail end of the log on the bottom of the screen...
         crashLog="$(tail -n 25 crash.log | sed -e 's/\t/    /g')"
         # The idea for the margins being to leave enough room for an fbink -Z bar, small horizontal margins, and a font size based on what 6pt looked like @ 265dpi
-        ./fbink -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight / 2 + FONTH * 2 + FONTH / 2)),left=$((viewWidth / 60)),right=$((viewWidth / 60)),px=$((viewHeight / 64)) "${crashLog}"
+        ./fbink -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight / 2 + FONTH * 2 + FONTH / 2)),left=$((viewWidth / 60)),right=$((viewWidth / 60)),px=$((viewHeight / 64)) -- "${crashLog}"
         # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
         ./fbink -q -f -s
         # Cue a lemming's faceplant sound effect!

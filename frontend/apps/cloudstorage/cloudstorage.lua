@@ -149,20 +149,17 @@ function CloudStorage:openCloudServer(url)
     local tbl
     local NetworkMgr = require("ui/network/manager")
     if self.type == "dropbox" then
-        if not NetworkMgr:isOnline() then
-            NetworkMgr:promptWifiOn()
+        if NetworkMgr:willRerunWhenOnline(function() self:openCloudServer(url) end) then
             return
         end
         tbl = DropBox:run(url, self.password, self.choose_folder_mode)
     elseif self.type == "ftp" then
-        if not NetworkMgr:isConnected() then
-            NetworkMgr:promptWifiOn()
+        if NetworkMgr:willRerunWhenConnected(function() self:openCloudServer(url) end) then
             return
         end
         tbl = Ftp:run(self.address, self.username, self.password, url)
     elseif self.type == "webdav" then
-        if not NetworkMgr:isConnected() then
-            NetworkMgr:promptWifiOn()
+        if NetworkMgr:willRerunWhenConnected(function() self:openCloudServer(url) end) then
             return
         end
         tbl = WebDav:run(self.address, self.username, self.password, url)

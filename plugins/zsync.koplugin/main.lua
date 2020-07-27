@@ -41,15 +41,14 @@ function ZSync:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     local NetworkMgr = require("ui/network/manager")
-                    if not NetworkMgr:isOnline() then
-                        NetworkMgr:promptWifiOn()
-                        return
+                    local connect_callback = function()
+                        if not self.filemq_server then
+                            self:publish()
+                        else
+                            self:unpublish()
+                        end
                     end
-                    if not self.filemq_server then
-                        self:publish()
-                    else
-                        self:unpublish()
-                    end
+                    NetworkMgr:runWhenOnline(connect_callback)
                 end
             },
             {
@@ -63,15 +62,14 @@ function ZSync:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     local NetworkMgr = require("ui/network/manager")
-                    if not NetworkMgr:isOnline() then
-                        NetworkMgr:promptWifiOn()
-                        return
+                    local connect_callback = function()
+                        if not self.filemq_client then
+                            self:subscribe()
+                        else
+                            self:unsubscribe()
+                        end
                     end
-                    if not self.filemq_client then
-                        self:subscribe()
-                    else
-                        self:unsubscribe()
-                    end
+                    NetworkMgr:runWhenOnline(connect_callback)
                 end
             }
         }

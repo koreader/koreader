@@ -112,15 +112,14 @@ function Wallabag:addToMainMenu(menu_items)
             {
                 text = _("Delete finished articles remotely"),
                 callback = function()
-                    if not NetworkMgr:isOnline() then
-                        NetworkMgr:promptWifiOn()
-                        return
+                    local connect_callback = function()
+                        local num_deleted = self:processLocalFiles("manual")
+                        UIManager:show(InfoMessage:new{
+                            text = T(_("Articles processed.\nDeleted: %1"), num_deleted)
+                        })
+                        self:refreshCurrentDirIfNeeded()
                     end
-                    local num_deleted = self:processLocalFiles("manual")
-                    UIManager:show(InfoMessage:new{
-                        text = T(_("Articles processed.\nDeleted: %1"), num_deleted)
-                    })
-                    self:refreshCurrentDirIfNeeded()
+                    NetworkMgr:runWhenOnline(connect_callback)
                 end,
                 enabled_func = function()
                     return self.is_delete_finished or self.is_delete_read
@@ -1078,12 +1077,11 @@ function Wallabag:onAddWallabagArticle(article_url)
 end
 
 function Wallabag:onSynchronizeWallabag()
-    if not NetworkMgr:isOnline() then
-        NetworkMgr:promptWifiOn()
-        return
+    local connect_callback = function()
+        self:synchronize()
+        self:refreshCurrentDirIfNeeded()
     end
-    self:synchronize()
-    self:refreshCurrentDirIfNeeded()
+    NetworkMgr:runWhenOnline(connect_callback)
 
     -- stop propagation
     return true
