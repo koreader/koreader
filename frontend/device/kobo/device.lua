@@ -359,7 +359,7 @@ function Kobo:init()
     self.input.open("/dev/input/event0") -- Various HW Buttons, Switches & Synthetic NTX events
     self.input.open("/dev/input/event1")
     -- fake_events is only used for usb plug event so far
-    -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status
+    -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status (... but only when Nickel is running ;p)
     self.input.open("fake_events")
 
     if not self.needsTouchScreenProbe() then
