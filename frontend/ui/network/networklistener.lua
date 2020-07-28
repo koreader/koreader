@@ -140,12 +140,13 @@ function NetworkListener:_scheduleActivityCheck()
 
     local tx_packets = NetworkListener:_getTxPackets()
     if self._last_tx_packets then
-        -- Compute noise margin based on the current delay
+        -- Compute noise threshold based on the current delay
         local delay = self._activity_check_delay or default_network_timeout_seconds
         local noise = delay / default_network_timeout_seconds * network_activity_noise_margin
+        local delta = tx_packets - self._last_tx_packets
         -- If there was no meaningful activity (+/- a couple packets), kill the Wi-Fi
-        if math.max(0, tx_packets - noise) <= self._last_tx_packets then
-            logger.dbg("NetworkListener: No meaningful network activity ( then:", self._last_tx_packets, "vs. now:", tx_packets, "), disabling Wi-Fi")
+        if delta <= noise then
+            logger.dbg("NetworkListener: No meaningful network activity ( delta:", delta, "<= noise:", noise, "[ then:", self._last_tx_packets, "vs. now:", tx_packets, "] ), disabling Wi-Fi")
             keep_checking = false
             local complete_callback = function()
                 UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
