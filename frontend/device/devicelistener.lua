@@ -123,7 +123,7 @@ if Device:hasFrontlight() then
         return true
     end
 
-    -- Used by dispatcher only(all the conditions such as min/max frontlight value should be handled by dispatcher already)
+    -- Used by dispatcher only (all the conditions such as min/max frontlight value should be handled by dispatcher already)
     function DeviceListener:onSetFlIntensity(new_intensity)
         local powerd = Device:getPowerDevice()
         powerd:setIntensity(new_intensity)
@@ -219,7 +219,7 @@ if Device:hasFrontlight() then
         return true
     end
 
-    -- Used by dispatcher only(all the conditions such as min/max frontlight warmth should be handled by dispatcher already)
+    -- Used by dispatcher only (all the conditions such as min/max frontlight warmth should be handled by dispatcher already)
     function DeviceListener:onSetFlWarmth(new_warmth)
         local powerd = Device:getPowerDevice()
         powerd:setWarmth(new_warmth)
