@@ -477,7 +477,7 @@ end
 
 -- Returns a display name for the item.
 function Dispatcher:getNameFromItem(item)
-    return item and settingsList[item].title or nil
+    return item and settingsList[item].title
 end
 
 --[[--
