@@ -38,20 +38,20 @@ local settingsList = {
     decrease_frontlight = { category="incrementalnumber", event="DecreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Decrease frontlight brightness"), device=true, condition=Device:hasFrontlight(),},
     set_frontlight_warmth = { category="absolutenumber", event="SetFlWarmth", min=0, max=100, title=_("Set frontlight warmth"), device=true, condition=Device:hasNaturalLight(),},
     increase_frontlight_warmth = { category="incrementalnumber", event="IncreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Increase frontlight warmth"), device=true, condition=Device:hasNaturalLight(),},
-    decrease_frontlight_warmth = { category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Decrease frontlight warmth"), device=true, condition=Device:hasNaturalLight(),},
+    decrease_frontlight_warmth = { category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Decrease frontlight warmth"), device=true, condition=Device:hasNaturalLight(), separator=true,},
     toggle_gsensor = { category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:canToggleGSensor(),},
     wifi_on = { category="none", event="InfoWifiOn", title=_("Turn on Wi-Fi"), device=true, condition=Device:hasWifiToggle(),},
     wifi_off = { category="none", event="InfoWifiOff", title=_("Turn off Wi-Fi"), device=true, condition=Device:hasWifiToggle(),},
-    toggle_wifi = { category="none", event="ToggleWifi", title=_("Toggle Wi-Fi"), device=true, condition=Device:hasWifiToggle(),},
+    toggle_wifi = { category="none", event="ToggleWifi", title=_("Toggle Wi-Fi"), device=true, condition=Device:hasWifiToggle(), separator=true,},
     reading_progress = { category="none", event="ShowReaderProgress", title=_("Reading progress"), device=true,},
-    stats_calendar_view = { category="none", event="ShowCalendarView", title=_("Statistics calendar view"), device=true,},
+    stats_calendar_view = { category="none", event="ShowCalendarView", title=_("Statistics calendar view"), device=true, separator=true,},
     history = { category="none", event="ShowHist", title=_("History"), device=true,},
     open_previous_document = { category="none", event="OpenLastDoc", title=_("Open previous document"), device=true,},
     filemanager = { category="none", event="Home", title=_("File browser"), device=true,},
     dictionary_lookup = { category="none", event="ShowDictionaryLookup", title=_("Dictionary lookup"), device=true,},
     wikipedia_lookup = { category="none", event="ShowWikipediaLookup", title=_("Wikipedia lookup"), device=true,},
     fulltext_search = { category="none", event="ShowFulltextSearchInput", title=_("Fulltext search"), device=true,},
-    file_search = { category="none", event="ShowFileSearch", title=_("File search"), device=true,},
+    file_search = { category="none", event="ShowFileSearch", title=_("File search"), device=true, separator=true,},
     full_refresh = { category="none", event="FullRefresh", title=_("Full screen refresh"), device=true,},
     night_mode = { category="none", event="ToggleNightMode", title=_("Toggle night mode"), device=true,},
     set_night_mode = { category="string", event="SetNightMode", title=_("Set night mode"), device=true, args={true, false}, toggle={_("On"), _("Off")},},
@@ -59,20 +59,20 @@ local settingsList = {
     exit = { category="none", event="Exit", title=_("Exit KOReader"), device=true,},
     restart = { category="none", event="Restart", title=_("Restart KOReader"), device=true, condition=Device:canRestart(),},
     reboot = { category="none", event="Reboot", title=_("Reboot the device"), device=true, condition=Device:canReboot(),},
-    poweroff = { category="none", event="PowerOff", title=_("Power off"), device=true, condition=Device:canPowerOff(),},
+    poweroff = { category="none", event="PowerOff", title=_("Power off"), device=true, condition=Device:canPowerOff(), separator=true,},
     show_menu = { category="none", event="ShowMenu", title=_("Show menu"), device=true,},
     toggle_hold_corners = { category="none", event="IgnoreHoldCorners", title=_("Toggle hold corners"), device=true,},
-    toggle_rotation = { category="none", event="ToggleRotation", title=_("Toggle rotation"), device=true,},
+    toggle_rotation = { category="none", event="ToggleRotation", title=_("Toggle rotation"), device=true, separator=true,},
     wallabag_download = { category="none", event="SynchronizeWallabag", title=_("Wallabag retrieval"), device=true,},
     calibre_search = { category="none", event="CalibreSearch", title=_("Search in calibre metadata"), device=true,},
     calibre_browse_tags = { category="none", event="CalibreBrowseTags", title=_("Browse all calibre tags"), device=true,},
-    calibre_browse_series = { category="none", event="CalibreBrowseSeries", title=_("Browse all calibre series"), device=true,},
+    calibre_browse_series = { category="none", event="CalibreBrowseSeries", title=_("Browse all calibre series"), device=true, separator=true,},
     favorites = { category="arg", event="ShowColl", arg="favorites", title=_("Favorites"), device=true,},
 
     -- filemanager settings
     folder_up = { category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
     show_plus_menu = { category="none", event="ShowPlusMenu", title=_("Show plus menu"), filemanager=true},
-    folder_shortcuts = { category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true},
+    folder_shortcuts = { category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true, separator=true,},
 
     -- reader settings
     prev_chapter = { category="none", event="GotoPrevChapter", title=_("Previous chapter"), rolling=true, paging=true,},
@@ -88,22 +88,22 @@ local settingsList = {
     latest_bookmark = { category="none", event="GoToLatestBookmark", title=_("Go to latest bookmark"), rolling=true, paging=true,},
     follow_nearest_link = { category="arg", event="GoToPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest link"), rolling=true, paging=true,},
     follow_nearest_internal_link = { category="arg", event="GoToInternalPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest internal link"), rolling=true, paging=true,},
-    clear_location_history = { category="arg", event="ClearLocationStack", arg=true, title=_("Clear location history"), rolling=true, paging=true,},
+    clear_location_history = { category="arg", event="ClearLocationStack", arg=true, title=_("Clear location history"), rolling=true, paging=true, separator=true,},
     toc = { category="none", event="ShowToc", title=_("Table of contents"), rolling=true, paging=true,},
     bookmarks = { category="none", event="ShowBookmark", title=_("Bookmarks"), rolling=true, paging=true,},
-    book_statistics = { category="none", event="ShowBookStats", title=_("Book statistics"), rolling=true, paging=true,},
+    book_statistics = { category="none", event="ShowBookStats", title=_("Book statistics"), rolling=true, paging=true, separator=true,},
     book_status = { category="none", event="ShowBookStatus", title=_("Book status"), rolling=true, paging=true,},
     book_info = { category="none", event="ShowBookInfo", title=_("Book information"), rolling=true, paging=true,},
     book_description = { category="none", event="ShowBookDescription", title=_("Book description"), rolling=true, paging=true,},
-    book_cover = { category="none", event="ShowBookCover", title=_("Book cover"), rolling=true, paging=true,},
+    book_cover = { category="none", event="ShowBookCover", title=_("Book cover"), rolling=true, paging=true, separator=true,},
     show_config_menu = { category="none", event="ShowConfigMenu", title=_("Show bottom menu"), rolling=true, paging=true,},
     toggle_bookmark = { category="none", event="ToggleBookmark", title=_("Toggle bookmark"), rolling=true, paging=true,},
     toggle_inverse_reading_order = { category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), rolling=true, paging=true,},
     cycle_highlight_action = { category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), rolling=true, paging=true,},
-    cycle_highlight_style = { category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), rolling=true, paging=true,},
+    cycle_highlight_style = { category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), rolling=true, paging=true, separator=true,},
     kosync_push_progress = { category="none", event="KOSyncPushProgress", title=_("Push progress from this device"), rolling=true, paging=true,},
-    kosync_pull_progress = { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), rolling=true, paging=true,},
-    page_jmp = { category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Go X pages"), rolling=true, paging=true,},
+    kosync_pull_progress = { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), rolling=true, paging=true, separator=true,},
+    page_jmp = { category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Go %1 pages"), rolling=true, paging=true,},
 
     -- rolling reader settings
     increase_font = { category="incrementalnumber", event="IncreaseFontSize", min=1, max=255, title=_("Increase font size"), rolling=true,},
@@ -116,21 +116,21 @@ local settingsList = {
 
     -- parsed from CreOptions
     -- the rest of the table elements are built from their counterparts in CreOptions
-    rotation_mode = {category="string", device=true},
-    visible_pages = {category="string", rolling=true},
+    rotation_mode = {category="string", device=true, separator=true,},
+    visible_pages = {category="string", rolling=true, separator=true,},
     h_page_margins = {category="string", rolling=true},
     sync_t_b_page_margins = {category="string", rolling=true},
     t_page_margin = {category="absolutenumber", rolling=true},
-    b_page_margin = {category="absolutenumber", rolling=true},
+    b_page_margin = {category="absolutenumber", rolling=true, separator=true,},
     view_mode = {category="string", rolling=true},
     block_rendering_mode = {category="string", rolling=true},
     render_dpi = {category="string", rolling=true},
-    line_spacing = {category="absolutenumber", rolling=true},
+    line_spacing = {category="absolutenumber", rolling=true, separator=true,},
     font_size = {category="absolutenumber", title=_("Font Size"), rolling=true},
     font_weight = {category="string", rolling=true},
     --font_gamma = {category="string", rolling=true},
     font_hinting = {category="string", rolling=true},
-    font_kerning = {category="string", rolling=true},
+    font_kerning = {category="string", rolling=true, separator=true,},
     status_line = {category="string", rolling=true},
     embedded_css = {category="string", rolling=true},
     embedded_fonts = {category="string", rolling=true},
@@ -306,6 +306,18 @@ function Dispatcher:init()
     Dispatcher.initialized = true
 end
 
+-- Returns a display name for the item.
+function Dispatcher:getNameFromItem(item, location, settings)
+    local amount
+    if location[settings] ~= nil and location[settings][item] ~= nil then
+        amount = location[settings][item]
+    end
+    if amount == nil or amount == 0 then
+        amount = "X"
+    end
+    return T(settingsList[item].title, amount)
+end
+
 function Dispatcher:addItem(menu, location, settings, section)
     for _, k in ipairs(dispatcher_menu_order) do
         if settingsList[k][section] == true and
@@ -318,9 +330,10 @@ function Dispatcher:addItem(menu, location, settings, section)
                     return location[settings] ~= nil and location[settings][k] ~= nil
                     end,
                     callback = function(touchmenu_instance)
-                        if location[settings] ~= nil
-                            and location[settings][k]
-                        then
+                        if location[settings] == nil then
+                            location[settings] = {}
+                        end
+                        if location[settings][k] then
                             location[settings][k] = nil
                         else
                             location[settings][k] = true
@@ -332,7 +345,7 @@ function Dispatcher:addItem(menu, location, settings, section)
             elseif settingsList[k].category == "absolutenumber" then
                 table.insert(menu, {
                     text_func = function()
-                        return T(settingsList[k].title, location[settings][k] or "")
+                        return Dispatcher:getNameFromItem(k, location, settings)
                     end,
                     checked_func = function()
                     return location[settings] ~= nil and location[settings][k] ~= nil
@@ -340,15 +353,18 @@ function Dispatcher:addItem(menu, location, settings, section)
                     callback = function(touchmenu_instance)
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
-                            width = Screen:getWidth() * 0.6,
-                            value = location[settings][k] or settingsList[k].default or 0,
+                            width = math.floor(Screen:getWidth() * 0.6),
+                            value = location[settings] ~= nil and location[settings][k] or settingsList[k].default or 0,
                             value_min = settingsList[k].min,
                             value_step = 1,
                             value_hold_step = 2,
                             value_max = settingsList[k].max,
                             default_value = 0,
-                            title_text = T(settingsList[k].title, location[settings][k] or ""),
+                            title_text = Dispatcher:getNameFromItem(k, location, settings),
                             callback = function(spin)
+                                if location[settings] == nil then
+                                    location[settings] = {}
+                                end
                                 location[settings][k] = spin.value
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
@@ -358,7 +374,9 @@ function Dispatcher:addItem(menu, location, settings, section)
                         UIManager:show(items)
                     end,
                     hold_callback = function(touchmenu_instance)
-                        location[settings][k] = nil
+                        if location[settings] ~= nil and location[settings][k] ~= nil then
+                            location[settings][k] = nil
+                        end
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
                     separator = settingsList[k].separator,
@@ -366,7 +384,7 @@ function Dispatcher:addItem(menu, location, settings, section)
             elseif settingsList[k].category == "incrementalnumber" then
                 table.insert(menu, {
                     text_func = function()
-                        return T(settingsList[k].title, location[settings][k] or "")
+                        return Dispatcher:getNameFromItem(k, location, settings)
                     end,
                     checked_func = function()
                     return location[settings] ~= nil and location[settings][k] ~= nil
@@ -375,16 +393,19 @@ function Dispatcher:addItem(menu, location, settings, section)
                         local _ = require("gettext")
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
-                            width = Screen:getWidth() * 0.6,
-                            value = location[settings][k] or 0,
+                            width = math.floor(Screen:getWidth() * 0.6),
+                            value = location[settings] ~= nil and location[settings][k] or 0,
                             value_min = settingsList[k].min,
                             value_step = 1,
                             value_hold_step = 2,
                             value_max = settingsList[k].max,
                             default_value = 0,
-                            title_text = T(settingsList[k].title, location[settings][k] or ""),
+                            title_text = Dispatcher:getNameFromItem(k, location, settings),
                             info_text = _([[If called by a gesture the amount of the gesture will be used]]),
                             callback = function(spin)
+                                if location[settings] == nil then
+                                    location[settings] = {}
+                                end
                                 location[settings][k] = spin.value
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
@@ -394,7 +415,9 @@ function Dispatcher:addItem(menu, location, settings, section)
                         UIManager:show(items)
                     end,
                     hold_callback = function(touchmenu_instance)
-                        location[settings][k] = nil
+                        if location[settings] ~= nil and location[settings][k] ~= nil then
+                            location[settings][k] = nil
+                        end
                         if touchmenu_instance then
                             touchmenu_instance:updateItems()
                         end
@@ -412,22 +435,26 @@ function Dispatcher:addItem(menu, location, settings, section)
                                 and location[settings][k] == settingsList[k].args[i]
                         end,
                         callback = function()
+                            if location[settings] == nil then
+                                location[settings] = {}
+                            end
                             location[settings][k] = settingsList[k].args[i]
                         end,
                     })
                 end
                 table.insert(menu, {
                     text_func = function()
-                        return T(settingsList[k].title, location[settings][k])
+                        return Dispatcher:getNameFromItem(k, location, settings)
                     end,
                     checked_func = function()
-                        return location[settings] ~= nil
-                            and location[settings][k] ~= nil
+                        return location[settings] ~= nil and location[settings][k] ~= nil
                     end,
                     sub_item_table = sub_item_table,
                     keep_menu_open = true,
                     hold_callback = function(touchmenu_instance)
-                        location[settings][k] = nil
+                        if location[settings] ~= nil and location[settings][k] ~= nil then
+                            location[settings][k] = nil
+                        end
                         if touchmenu_instance then
                             touchmenu_instance:updateItems()
                         end
@@ -451,10 +478,10 @@ example usage:
 function Dispatcher:addSubMenu(menu, location, settings)
     if not Dispatcher.initialized then Dispatcher:init() end
     table.insert(menu, {
-        text = _("None"),
+        text = _("Nothing"),
         separator = true,
         checked_func = function()
-            return next(location[settings]) == nil
+            return location[settings] ~= nil and next(location[settings]) == nil
         end,
         callback = function(touchmenu_instance)
             location[settings] = {}
@@ -473,6 +500,25 @@ function Dispatcher:addSubMenu(menu, location, settings)
         Dispatcher:addItem(submenu, location, settings, section[1])
         table.insert(menu, {
             text = section[2],
+            checked_func = function()
+                if location[settings] ~= nil then
+                    for k, _ in pairs(location[settings]) do
+                        if settingsList[k][section[1]] == true and
+                            (settingsList[k].condition == nil or settingsList[k].condition)
+                        then return true end
+                    end
+                end
+            end,
+            hold_callback = function(touchmenu_instance)
+                if location[settings] ~= nil then
+                    for k, _ in pairs(location[settings]) do
+                        if settingsList[k][section[1]] == true then
+                            location[settings][k] = nil
+                        end
+                    end
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end
+            end,
             sub_item_table = submenu,
         })
     end
