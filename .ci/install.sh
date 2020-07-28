@@ -49,8 +49,8 @@ else
 fi
 
 #install our own updated shellcheck
-SHELLCHECK_VERSION="v0.7.0"
-SHELLCHECK_URL="https://storage.googleapis.com/shellcheck/shellcheck-${SHELLCHECK_VERSION?}.linux.x86_64.tar.xz"
+SHELLCHECK_VERSION="v0.7.1"
+SHELLCHECK_URL="https://github.com/koalaman/shellcheck/releases/download/${SHELLCHECK_VERSION?}/shellcheck-${SHELLCHECK_VERSION?}.linux.x86_64.tar.xz"
 if ! command -v shellcheck; then
     curl -sSL "${SHELLCHECK_URL}" | tar --exclude 'SHA256SUMS' --strip-components=1 -C "${HOME}/bin" -xJf -
     chmod +x "${HOME}/bin/shellcheck"
