@@ -3,6 +3,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
+local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
@@ -530,6 +531,36 @@ Default value: %1]]), GestureDetector.PAN_DELAYED_INTERVAL/1000),
                         callback = function(spin)
                             G_reader_settings:saveSetting("ges_pan_delayed_interval", spin.value*1000)
                             GestureDetector:setNewInterval("ges_pan_delayed_interval", spin.value*1000)
+                        end
+                    }
+                    UIManager:show(items)
+                end,
+            },
+            {
+                text = _("Hold pan rate"),
+                callback = function()
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local current_value = G_reader_settings:readSetting("pan_rate")
+                    if not current_value then
+                        current_value = Screen.has_low_pan_rate and 2.0 or 30.0
+                    end
+                    local items = SpinWidget:new{
+                        text = T(_([[
+Used when highlighting text, higher value means faster refresh, but uses more CPU.
+5.0 should be good for most e-ink ereaders.
+Default value: %1]]), current_value),
+                        width = math.floor(Screen:getWidth() * 0.6),
+                        value = current_value,
+                        value_min = 1.0,
+                        value_max = 60.0,
+                        value_step = 1,
+                        value_hold_step = 5,
+                        ok_text = _("Set rate"),
+                        title_text = _("Hold pan rate"),
+                        default_value = Screen.has_low_pan_rate and 5.0 or 30.0,
+                        callback = function(spin)
+                            G_reader_settings:saveSetting("hold_pan_rate", spin.value)
+                            UIManager:broadcastEvent(Event:new("UpdateHoldPanRate"))
                         end
                     }
                     UIManager:show(items)

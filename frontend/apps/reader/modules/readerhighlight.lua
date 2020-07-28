@@ -30,7 +30,10 @@ function ReaderHighlight:setupTouchZones()
     self.onGesture = nil
 
     if not Device:isTouchDevice() then return end
-
+    local hold_pan_rate = G_reader_settings:readSetting("hold_pan_rate")
+    if not hold_pan_rate then
+        hold_pan_rate = Screen.low_pan_rate and 5.0 or 30.0
+    end
     self.ui:registerTouchZones({
         {
             id = "readerhighlight_tap",
@@ -76,7 +79,7 @@ function ReaderHighlight:setupTouchZones()
         {
             id = "readerhighlight_hold_pan",
             ges = "hold_pan",
-            rate = 2.0,
+            rate = hold_pan_rate,
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
@@ -1295,6 +1298,10 @@ function ReaderHighlight:onReadSettings(config)
         disable_highlight = G_reader_settings:readSetting("highlight_disabled") or false
     end
     self.view.highlight.disabled = disable_highlight
+end
+
+function ReaderHighlight:onUpdateHoldPanRate()
+    self:setupTouchZones()
 end
 
 function ReaderHighlight:onSaveSettings()
