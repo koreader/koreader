@@ -213,7 +213,6 @@ if Device:hasFrontlight() then
         return true
     end
 
-    -- Used by dispatcher only (all the conditions such as min/max frontlight warmth should be handled by dispatcher already)
     function DeviceListener:onSetFlWarmth(warmth)
         local powerd = Device:getPowerDevice()
         if warmth > 100 then
