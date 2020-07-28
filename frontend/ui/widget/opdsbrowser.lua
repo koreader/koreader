@@ -59,6 +59,7 @@ local OPDSBrowser = Menu:extend{
         ["application/x-cbr"] = "CBR",
         ["application/vnd.comicbook-rar"] = "CBR",
         ["application/x-rar-compressed"] = "CBR",
+        ["application/vnd.rar"] = "CBR",
         ["application/djvu"] = "DJVU",
     },
 
