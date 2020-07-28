@@ -142,17 +142,19 @@ function NetworkListener:_scheduleActivityCheck()
     if self._last_tx_packets then
         -- Compute noise threshold based on the current delay
         local delay = self._activity_check_delay or default_network_timeout_seconds
-        local noise = delay / default_network_timeout_seconds * network_activity_noise_margin
+        local noise_threshold = delay / default_network_timeout_seconds * network_activity_noise_margin
         local delta = tx_packets - self._last_tx_packets
         -- If there was no meaningful activity (+/- a couple packets), kill the Wi-Fi
-        if delta <= noise then
-            logger.dbg("NetworkListener: No meaningful network activity ( delta:", delta, "<= noise:", noise, "[ then:", self._last_tx_packets, "vs. now:", tx_packets, "] ), disabling Wi-Fi")
+        if delta <= noise_threshold then
+            logger.dbg("NetworkListener: No meaningful network activity (delta:", delta, "<= threshold:", noise_threshold, "[ then:", self._last_tx_packets, "vs. now:", tx_packets, "]) -> disabling Wi-Fi")
             keep_checking = false
             local complete_callback = function()
                 UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
             end
             NetworkMgr:turnOffWifi(complete_callback)
             -- NOTE: We leave wifi_was_on as-is on purpose, we wouldn't want to break auto_restore_wifi workflows on the next start...
+        else
+            logger.dbg("NetworkListener: Significant network activity (delta:", delta, "> threshold:", noise_threshold, "[ then:", self._last_tx_packets, "vs. now:", tx_packets, "]) -> keeping Wi-Fi enabled")
         end
     end
 
@@ -177,7 +179,7 @@ function NetworkListener:_scheduleActivityCheck()
 
     UIManager:scheduleIn(self._activity_check_delay, self._scheduleActivityCheck, self)
     self._activity_check_scheduled = true
-    logger.dbg("NetworkListener: network activity check scheduled in", self._activity_check_delay, "seconds ( current activity:", tx_packets, ")")
+    logger.dbg("NetworkListener: network activity check scheduled in", self._activity_check_delay, "seconds")
 end
 
 function NetworkListener:onNetworkConnected()
