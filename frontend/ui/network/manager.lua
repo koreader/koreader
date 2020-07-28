@@ -420,7 +420,7 @@ end
 
 function NetworkMgr:getPowersaveMenuTable()
     return {
-        text = _("Kill Wi-Fi connection when inactive"),
+        text = _("Disable Wi-Fi connection when inactive"),
         help_text = _([[This will automatically turn Wi-Fi off after a generous period of network inactivity, without disrupting workflows that require a network connection, so you can just keep reading without worrying about battery drain.]]),
         checked_func = function() return G_reader_settings:isTrue("auto_disable_wifi") end,
         enabled_func = function() return Device:hasWifiManager() and not Device:isEmulator() end,
