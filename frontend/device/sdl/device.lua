@@ -5,6 +5,7 @@ local logger = require("logger")
 
 local function yes() return true end
 local function no() return false end
+local function notOSX() return jit.os ~= "OSX" end
 
 local function isUrl(s)
     return type(s) == "string" and s:match("*?://")
@@ -101,6 +102,8 @@ local AppImage = Device:new{
 local Desktop = Device:new{
     model = SDL.getPlatform(),
     isDesktop = yes,
+    canRestart = notOSX,
+    hasExitOptions = notOSX,
 }
 
 local Emulator = Device:new{
