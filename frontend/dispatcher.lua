@@ -447,10 +447,11 @@ example usage:
 function Dispatcher:addSubMenu(menu, location, settings)
     if not Dispatcher.initialized then Dispatcher:init() end
     table.insert(menu, {
-        text = _("None"),
+        text = _("Nothing"),
         separator = true,
         checked_func = function()
-            return next(location[settings]) == nil
+            return location[settings] ~= nil
+                and next(location[settings]) == nil
         end,
         callback = function(touchmenu_instance)
             location[settings] = {}
@@ -472,6 +473,11 @@ function Dispatcher:addSubMenu(menu, location, settings)
             sub_item_table = submenu,
         })
     end
+end
+
+-- Returns a display name for the item.
+function Dispatcher:getNameFromItem(item)
+    return item and settingsList[item].title or nil
 end
 
 --[[--
