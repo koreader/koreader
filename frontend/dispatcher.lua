@@ -302,7 +302,7 @@ function Dispatcher:init()
     Dispatcher.initialized = true
 end
 
-function Dispatcher.addItem(caller, menu, location, settings, section)
+function Dispatcher:addItem(menu, location, settings, section)
     for _, k in ipairs(dispatcher_menu_order) do
         if settingsList[k][section] == true and
             (settingsList[k].condition == nil or settingsList[k].condition)
@@ -311,15 +311,15 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
                 table.insert(menu, {
                     text = settingsList[k].title,
                     checked_func = function()
-                    return caller[location][settings] ~= nil and caller[location][settings][k] ~= nil
+                    return location[settings] ~= nil and location[settings][k] ~= nil
                     end,
                     callback = function(touchmenu_instance)
-                        if caller[location][settings] ~= nil
-                            and caller[location][settings][k]
+                        if location[settings] ~= nil
+                            and location[settings][k]
                         then
-                            caller[location][settings][k] = nil
+                            location[settings][k] = nil
                         else
-                            caller[location][settings][k] = true
+                            location[settings][k] = true
                         end
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                    end,
@@ -328,24 +328,24 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
             elseif settingsList[k].category == "absolutenumber" then
                 table.insert(menu, {
                     text_func = function()
-                        return T(settingsList[k].title, caller[location][settings][k] or "")
+                        return T(settingsList[k].title, location[settings][k] or "")
                     end,
                     checked_func = function()
-                    return caller[location][settings] ~= nil and caller[location][settings][k] ~= nil
+                    return location[settings] ~= nil and location[settings][k] ~= nil
                     end,
                     callback = function(touchmenu_instance)
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
                             width = Screen:getWidth() * 0.6,
-                            value = caller[location][settings][k] or settingsList[k].default or 0,
+                            value = location[settings][k] or settingsList[k].default or 0,
                             value_min = settingsList[k].min,
                             value_step = 1,
                             value_hold_step = 2,
                             value_max = settingsList[k].max,
                             default_value = 0,
-                            title_text = T(settingsList[k].title, caller[location][settings][k] or ""),
+                            title_text = T(settingsList[k].title, location[settings][k] or ""),
                             callback = function(spin)
-                                caller[location][settings][k] = spin.value
+                                location[settings][k] = spin.value
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
                                 end
@@ -354,7 +354,7 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
                         UIManager:show(items)
                     end,
                     hold_callback = function(touchmenu_instance)
-                        caller[location][settings][k] = nil
+                        location[settings][k] = nil
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
                     separator = settingsList[k].separator,
@@ -362,26 +362,26 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
             elseif settingsList[k].category == "incrementalnumber" then
                 table.insert(menu, {
                     text_func = function()
-                        return T(settingsList[k].title, caller[location][settings][k] or "")
+                        return T(settingsList[k].title, location[settings][k] or "")
                     end,
                     checked_func = function()
-                    return caller[location][settings] ~= nil and caller[location][settings][k] ~= nil
+                    return location[settings] ~= nil and location[settings][k] ~= nil
                     end,
                     callback = function(touchmenu_instance)
                         local _ = require("gettext")
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
                             width = Screen:getWidth() * 0.6,
-                            value = caller[location][settings][k] or 0,
+                            value = location[settings][k] or 0,
                             value_min = settingsList[k].min,
                             value_step = 1,
                             value_hold_step = 2,
                             value_max = settingsList[k].max,
                             default_value = 0,
-                            title_text = T(settingsList[k].title, caller[location][settings][k] or ""),
+                            title_text = T(settingsList[k].title, location[settings][k] or ""),
                             info_text = _([[If called by a gesture the amount of the gesture will be used]]),
                             callback = function(spin)
-                                caller[location][settings][k] = spin.value
+                                location[settings][k] = spin.value
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
                                 end
@@ -390,7 +390,7 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
                         UIManager:show(items)
                     end,
                     hold_callback = function(touchmenu_instance)
-                        caller[location][settings][k] = nil
+                        location[settings][k] = nil
                         if touchmenu_instance then
                             touchmenu_instance:updateItems()
                         end
@@ -403,27 +403,27 @@ function Dispatcher.addItem(caller, menu, location, settings, section)
                     table.insert(sub_item_table, {
                         text = tostring(settingsList[k].toggle[i]),
                         checked_func = function()
-                            return caller[location][settings] ~= nil
-                                and caller[location][settings][k] ~= nil
-                                and caller[location][settings][k] == settingsList[k].args[i]
+                            return location[settings] ~= nil
+                                and location[settings][k] ~= nil
+                                and location[settings][k] == settingsList[k].args[i]
                         end,
                         callback = function()
-                            caller[location][settings][k] = settingsList[k].args[i]
+                            location[settings][k] = settingsList[k].args[i]
                         end,
                     })
                 end
                 table.insert(menu, {
                     text_func = function()
-                        return T(settingsList[k].title, caller[location][settings][k])
+                        return T(settingsList[k].title, location[settings][k])
                     end,
                     checked_func = function()
-                        return caller[location][settings] ~= nil
-                            and caller[location][settings][k] ~= nil
+                        return location[settings] ~= nil
+                            and location[settings][k] ~= nil
                     end,
                     sub_item_table = sub_item_table,
                     keep_menu_open = true,
                     hold_callback = function(touchmenu_instance)
-                        caller[location][settings][k] = nil
+                        location[settings][k] = nil
                         if touchmenu_instance then
                             touchmenu_instance:updateItems()
                         end
@@ -438,27 +438,22 @@ end
 --[[--
 Add a submenu to edit which items are dispatched
 arguments are:
-    1) the caller
-    2) the table representing the submenu (can be empty)
-    3) the name of the parent of the settings table (must be a child of self)
-    4) the name of the settings table
+    1) the table representing the submenu (can be empty)
+    2) the object (table) in which the settings table is found
+    3) the name of the settings table
 example usage:
-    Dispatcher.addSubMenu(self, sub_items, "profiles", "profile1")
-
-Must be executed in the context of the caller to add items to the callers menu.
-therefore declared as Dispatcher.addSubMenu(caller, menu, location, settings)
-but should be called as Dispatcher.addSubMenu(self, menu, location, settings)
+    Dispatcher.addSubMenu(sub_items, self.data, "profile1")
 --]]--
-function Dispatcher.addSubMenu(caller, menu, location, settings)
+function Dispatcher:addSubMenu(menu, location, settings)
     if not Dispatcher.initialized then Dispatcher:init() end
     table.insert(menu, {
         text = _("None"),
         separator = true,
         checked_func = function()
-            return next(caller[location][settings]) == nil
+            return next(location[settings]) == nil
         end,
         callback = function(touchmenu_instance)
-            caller[location][settings] = {}
+            location[settings] = {}
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
     })
@@ -471,7 +466,7 @@ function Dispatcher.addSubMenu(caller, menu, location, settings)
     for _, section in ipairs(section_list) do
         local submenu = {}
         -- pass caller's context
-        Dispatcher.addItem(caller, submenu, location, settings, section[1])
+        Dispatcher:addItem(submenu, location, settings, section[1])
         table.insert(menu, {
             text = section[2],
             sub_item_table = submenu,
@@ -479,26 +474,33 @@ function Dispatcher.addSubMenu(caller, menu, location, settings)
     end
 end
 
-function Dispatcher:execute(settings, gesture)
+--[[--
+Calls the events in a settings list
+arguments are:
+    1) a reference to the uimanager
+    2) the settings table
+    3) optionally a `gestures`object
+--]]--
+function Dispatcher:execute(ui, settings, gesture)
     for k, v in pairs(settings) do
         if settingsList[k].conditions == nil or settingsList[k].conditions == true then
             if settingsList[k].category == "none" then
-                self.ui:handleEvent(Event:new(settingsList[k].event))
+                ui:handleEvent(Event:new(settingsList[k].event))
             end
             if settingsList[k].category == "absolutenumber"
                 or settingsList[k].category == "string"
             then
-                self.ui:handleEvent(Event:new(settingsList[k].event, v))
+                ui:handleEvent(Event:new(settingsList[k].event, v))
             end
             -- the event can accept a gesture object or an argument
             if settingsList[k].category == "arg" then
                 local arg = gesture or settingsList[k].arg
-                self.ui:handleEvent(Event:new(settingsList[k].event, arg))
+                ui:handleEvent(Event:new(settingsList[k].event, arg))
             end
             -- the event can accept a gesture object or a number
             if settingsList[k].category == "incrementalnumber" then
                 local arg = gesture or v
-                self.ui:handleEvent(Event:new(settingsList[k].event, arg))
+                ui:handleEvent(Event:new(settingsList[k].event, arg))
             end
         end
     end
