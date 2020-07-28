@@ -114,7 +114,7 @@ if Device:hasFrontlight() then
 
         if new_intensity == nil then return true end
         -- when new_intensity <=0, toggle light off
-	self:onSetFlIntensity(new_intensity)
+        self:onSetFlIntensity(new_intensity)
         self:onShowIntensity()
         return true
     end
@@ -208,7 +208,7 @@ if Device:hasFrontlight() then
             direction = 1
         end
         local warmth = powerd.fl_warmth + direction * delta_int
-	self:onSetFlWarmth(warmth)
+        self:onSetFlWarmth(warmth)
         self:onShowWarmth()
         return true
     end
