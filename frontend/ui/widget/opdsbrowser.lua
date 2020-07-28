@@ -54,7 +54,12 @@ local OPDSBrowser = Menu:extend{
         ["application/x-mobipocket-ebook"] = "MOBI",
         ["application/x-mobi8-ebook"] = "AZW3",
         ["application/x-cbz"] = "CBZ",
+        ["application/vnd.comicbook+zip"] = "CBZ",
+        ["application/zip"] = "CBZ",
         ["application/x-cbr"] = "CBR",
+        ["application/vnd.comicbook-rar"] = "CBR",
+        ["application/x-rar-compressed"] = "CBR",
+        ["application/vnd.rar"] = "CBR",
         ["application/djvu"] = "DJVU",
     },
 
