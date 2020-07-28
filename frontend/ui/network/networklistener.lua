@@ -176,7 +176,7 @@ function NetworkListener:_scheduleActivityCheck()
 
     UIManager:scheduleIn(self._activity_check_delay, self._scheduleActivityCheck, self)
     self._activity_check_scheduled = true
-    logger.dbg("NetworkListener: network activity check scheduled in", self._activity_check_delay, "seconds")
+    logger.dbg("NetworkListener: network activity check scheduled in", self._activity_check_delay, "seconds ( current activity:", tx_packets, ")")
 end
 
 function NetworkListener:onNetworkConnected()
