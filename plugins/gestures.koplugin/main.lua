@@ -2,13 +2,15 @@ local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
-local Event = require("ui/event")
+local Dispatcher = require("dispatcher")
+local FFIUtil = require("ffi/util")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaData = require("luadata")
+local LuaSettings = require("luasettings")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
@@ -21,10 +23,16 @@ end
 
 local Gestures = InputContainer:new{
     name = "gestures",
-    gestures_file = DataStorage:getSettingsDir() .. "/gestures.lua",
+    settings_data = nil,
     gestures = nil,
-    data = nil,
 }
+local gestures_path = FFIUtil.joinPath(DataStorage:getSettingsDir(), "gestures.lua")
+
+function Gestures:onFlushSettings()
+    if self.settings_data then
+        self.settings_data:flush()
+    end
+end
 
 local action_strings = {
     nothing = _("Nothing"),
@@ -177,10 +185,19 @@ Multiswipes allow you to perform complex gestures built up out of multiple swipe
 These advanced gestures consist of either straight swipes or diagonal swipes. To ensure accuracy, they can't be mixed.]])
 
 function Gestures:init()
+    if not lfs.attributes(gestures_path, "mode") then
+        FFIUtil.copyFile(FFIUtil.joinPath(self.path, "defaults.lua"), gestures_path)
+    end
     self.ignore_hold_corners = G_reader_settings:readSetting("ignore_hold_corners")
     self.multiswipes_enabled = G_reader_settings:readSetting("multiswipes_enabled")
     self.is_docless = self.ui == nil or self.ui.document == nil
     self.ges_mode = self.is_docless and "gesture_fm" or "gesture_reader"
+    if not self.settings_data then
+        self.settings_data = LuaSettings:open(gestures_path)
+    end
+    self.gestures = self.settings_data.data[self.ges_mode]
+require("logger").warn("@@@@", self.is_docless, self.ges_mode, self.gestures)
+
     self.default_gesture = {
         tap_top_left_corner = self.ges_mode == "gesture_reader" and "toggle_page_flipping" or "ignore",
         tap_top_right_corner = self.ges_mode == "gesture_reader" and "toggle_bookmark" or "show_plus_menu",
@@ -294,16 +311,9 @@ function Gestures:init()
 end
 
 function Gestures:initGesture()
-    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
-    for gesture, action in pairs(self.default_gesture) do
-        if not gesture_manager[gesture] then
-            gesture_manager[gesture] = action
-        end
+    for gesture, action in pairs(self.gestures) do
+        self:setupGesture(gesture, self.gestures[gesture])
     end
-    for gesture, action in pairs(gesture_manager) do
-        self:setupGesture(gesture, action)
-    end
-    G_reader_settings:saveSetting(self.ges_mode, gesture_manager)
 end
 
 function Gestures:genMultiswipeSubmenu()
@@ -1307,8 +1317,8 @@ function Gestures:setupGesture(ges, action)
     if ges_type == "swipe" and ges ~= "short_diagonal_swipe" then
         local pan_gesture = ges.."_pan"
         local pan_release_gesture = ges.."_pan_release"
-        self:registerGesture(pan_gesture, "", "pan", zone, overrides_swipe_pan, direction, distance)
-        self:registerGesture(pan_release_gesture, "", "pan_release", zone, overrides_swipe_pan_release, direction, distance)
+        self:registerGesture(pan_gesture, {}, "pan", zone, overrides_swipe_pan, direction, distance)
+        self:registerGesture(pan_release_gesture, {}, "pan_release", zone, overrides_swipe_pan_release, direction, distance)
     end
 end
 
@@ -1334,169 +1344,13 @@ function Gestures:registerGesture(ges, action, ges_type, zone, overrides, direct
 end
 
 function Gestures:gestureAction(action, ges)
+require("logger").warn("@@@@", action)
+require("logger").warn("@@@@", ges)
     if action == "ignore"
         or (ges.ges == "hold" and self.ignore_hold_corners) then
         return
-    elseif action == "reading_progress" then
-        self.ui:handleEvent(Event:new("ShowReaderProgress"))
-    elseif action == "book_statistics" then
-        self.ui:handleEvent(Event:new("ShowBookStats"))
-    elseif action == "stats_calendar_view" then
-        self.ui:handleEvent(Event:new("ShowCalendarView"))
-    elseif action == "toc" then
-        self.ui:handleEvent(Event:new("ShowToc"))
-    elseif action == "night_mode" then
-        self.ui:handleEvent(Event:new("ToggleNightMode"))
-    elseif action == "full_refresh" then
-        self.ui:handleEvent(Event:new("FullRefresh"))
-    elseif action == "bookmarks" then
-        self.ui:handleEvent(Event:new("ShowBookmark"))
-    elseif action == "history" then
-        self.ui:handleEvent(Event:new("ShowHist"))
-    elseif action == "favorites" then
-        self.ui:handleEvent(Event:new("ShowColl", "favorites"))
-    elseif action == "book_info" then
-        self.ui:handleEvent(Event:new("ShowBookInfo"))
-    elseif action == "book_description" then
-        self.ui:handleEvent(Event:new("ShowBookDescription"))
-    elseif action == "book_cover" then
-        self.ui:handleEvent(Event:new("ShowBookCover"))
-    elseif action == "book_status" then
-        self.ui:handleEvent(Event:new("ShowBookStatus"))
-    elseif action == "page_jmp_fwd_10" then
-        self.ui:handleEvent(Event:new("GotoRelativePage", 10))
-    elseif action == "page_jmp_fwd_1" then
-        self.ui:handleEvent(Event:new("GotoViewRel", 1))
-    elseif action == "page_jmp_back_10" then
-        self.ui:handleEvent(Event:new("GotoRelativePage", -10))
-    elseif action == "page_jmp_back_1" then
-        self.ui:handleEvent(Event:new("GotoViewRel", -1))
-    elseif action == "next_chapter" then
-        self.ui:handleEvent(Event:new("GotoNextChapter"))
-    elseif action == "first_page" then
-        self.ui:handleEvent(Event:new("GoToBeginning"))
-    elseif action == "last_page" then
-        self.ui:handleEvent(Event:new("GoToEnd"))
-    elseif action == "prev_chapter" then
-        self.ui:handleEvent(Event:new("GotoPrevChapter"))
-    elseif action == "next_bookmark" then
-        self.ui:handleEvent(Event:new("GotoNextBookmarkFromPage"))
-    elseif action == "prev_bookmark" then
-        self.ui:handleEvent(Event:new("GotoPreviousBookmarkFromPage"))
-    elseif action == "go_to" then
-        self.ui:handleEvent(Event:new("ShowGotoDialog"))
-    elseif action == "skim" then
-        self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
-    elseif action == "back" then
-        self.ui:handleEvent(Event:new("Back"))
-    elseif action == "previous_location" then
-        self.ui:handleEvent(Event:new("GoBackLink", true)) -- show_notification_if_empty
-    elseif action == "latest_bookmark" then
-        self.ui:handleEvent(Event:new("GoToLatestBookmark"))
-    elseif action == "follow_nearest_link" then
-        self.ui:handleEvent(Event:new("GoToPageLink", ges))
-    elseif action == "follow_nearest_internal_link" then
-        self.ui:handleEvent(Event:new("GoToInternalPageLink", ges))
-    elseif action == "clear_location_history" then
-        self.ui:handleEvent(Event:new("ClearLocationStack", true)) -- show_notification
-    elseif action == "filemanager" then
-        self.ui:handleEvent(Event:new("Home"))
-    elseif action == "file_search" then
-        self.ui:handleEvent(Event:new("ShowFileSearch"))
-    elseif action == "folder_up" then
-        self.ui:handleEvent(Event:new("FolderUp"))
-    elseif action == "show_plus_menu" then
-        self.ui:handleEvent(Event:new("ShowPlusMenu"))
-    elseif action == "folder_shortcuts" then
-        self.ui:handleEvent(Event:new("ShowFolderShortcutsDialog"))
-    elseif action == "open_previous_document" then
-        self.ui:handleEvent(Event:new("OpenLastDoc"))
-    elseif action == "dictionary_lookup" then
-        self.ui:handleEvent(Event:new("ShowDictionaryLookup"))
-    elseif action == "wikipedia_lookup" then
-        self.ui:handleEvent(Event:new("ShowWikipediaLookup"))
-    elseif action == "fulltext_search" then
-        self.ui:handleEvent(Event:new("ShowFulltextSearchInput"))
-    elseif action == "show_menu" then
-        self.ui:handleEvent(Event:new("ShowMenu"))
-    elseif action == "show_config_menu" then
-        self.ui:handleEvent(Event:new("ShowConfigMenu"))
-    elseif action == "show_frontlight_dialog" then
-        self.ui:handleEvent(Event:new("ShowFlDialog"))
-    elseif action == "increase_frontlight" then
-        self.ui:handleEvent(Event:new("IncreaseFlIntensity", ges))
-    elseif action == "decrease_frontlight" then
-        self.ui:handleEvent(Event:new("DecreaseFlIntensity", ges))
-    elseif action == "increase_frontlight_warmth" then
-        self.ui:handleEvent(Event:new("IncreaseFlWarmth", ges))
-    elseif action == "decrease_frontlight_warmth" then
-        self.ui:handleEvent(Event:new("DecreaseFlWarmth", ges))
-    elseif action == "toggle_bookmark" then
-        self.ui:handleEvent(Event:new("ToggleBookmark"))
-    elseif action == "toggle_inverse_reading_order" then
-        self.ui:handleEvent(Event:new("ToggleReadingOrder"))
-    elseif action == "toggle_frontlight" then
-        self.ui:handleEvent(Event:new("ToggleFrontlight"))
-    elseif action == "toggle_hold_corners" then
-        self:onIgnoreHoldCorners()
-    elseif action == "toggle_gsensor" then
-        self.ui:handleEvent(Event:new("ToggleGSensor"))
-    elseif action == "toggle_page_flipping" then
-        self.ui:handleEvent(Event:new("TogglePageFlipping"))
-    elseif action == "toggle_reflow" then
-        self.ui:handleEvent(Event:new("ToggleReflow"))
-    elseif action == "toggle_rotation" then
-        self.ui:handleEvent(Event:new("ToggleRotation"))
-    elseif action == "toggle_wifi" then
-        self.ui:handleEvent(Event:new("ToggleWifi"))
-    elseif action == "wifi_off" then
-        self.ui:handleEvent(Event:new("InfoWifiOff"))
-    elseif action == "wifi_on" then
-        self.ui:handleEvent(Event:new("InfoWifiOn"))
-    elseif action == "increase_font" then
-        self.ui:handleEvent(Event:new("IncreaseFontSize", ges))
-    elseif action == "decrease_font" then
-        self.ui:handleEvent(Event:new("DecreaseFontSize", ges))
-    elseif action == "suspend" then
-        self.ui:handleEvent(Event:new("SuspendEvent"))
-    elseif action == "exit" then
-        self.ui:handleEvent(Event:new("Exit"))
-    elseif action == "restart" then
-        self.ui:handleEvent(Event:new("Restart"))
-    elseif action == "reboot" then
-        self.ui:handleEvent(Event:new("Reboot"))
-    elseif action == "poweroff" then
-        self.ui:handleEvent(Event:new("PowerOff"))
-    elseif action == "zoom_contentwidth" then
-        self.ui:handleEvent(Event:new("SetZoomMode", "contentwidth"))
-    elseif action == "zoom_contentheight" then
-        self.ui:handleEvent(Event:new("SetZoomMode", "contentheight"))
-    elseif action == "zoom_pagewidth" then
-        self.ui:handleEvent(Event:new("SetZoomMode", "pagewidth"))
-    elseif action == "zoom_pageheight" then
-        self.ui:handleEvent(Event:new("SetZoomMode", "pageheight"))
-    elseif action == "zoom_column" then
-        self.ui:handleEvent(Event:new("SetZoomMode", "column"))
-    elseif action == "zoom_content" then
-        self.ui:handleEvent(Event:new("SetZoomMode", "content"))
-    elseif action == "zoom_page" then
-        self.ui:handleEvent(Event:new("SetZoomMode", "page"))
-    elseif action == "wallabag_download" then
-        self.ui:handleEvent(Event:new("SynchronizeWallabag"))
-    elseif action == "cycle_highlight_action" then
-        self.ui:handleEvent(Event:new("CycleHighlightAction"))
-    elseif action == "cycle_highlight_style" then
-        self.ui:handleEvent(Event:new("CycleHighlightStyle"))
-    elseif action == "kosync_push_progress" then
-        self.ui:handleEvent(Event:new("KOSyncPushProgress"))
-    elseif action == "kosync_pull_progress" then
-        self.ui:handleEvent(Event:new("KOSyncPullProgress"))
-    elseif action == "calibre_search" then
-        self.ui:handleEvent(Event:new("CalibreSearch"))
-    elseif action == "calibre_browse_tags" then
-        self.ui:handleEvent(Event:new("CalibreBrowseTags"))
-    elseif action == "calibre_browse_series" then
-        self.ui:handleEvent(Event:new("CalibreBrowseSeries"))
+    else
+         Dispatcher:execute(self.ui, action, ges)
     end
     return true
 end
@@ -1519,10 +1373,9 @@ function Gestures:multiswipeAction(multiswipe_directions, ges)
         return
     else
         if not self.multiswipes_enabled then return end
-        local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
         local multiswipe_gesture_name = "multiswipe_"..self:safeMultiswipeName(multiswipe_directions)
-        local action = gesture_manager[multiswipe_gesture_name]
-        if action and action ~= "nothing" then
+        local action = self.gestures[multiswipe_gesture_name]
+        if action then
             return self:gestureAction(action, ges)
         end
     end
