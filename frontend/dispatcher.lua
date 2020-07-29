@@ -3,7 +3,6 @@ local Device = require("device")
 local Event = require("ui/event")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
-local T = require("ffi/util").template
 local _ = require("gettext")
 
 local Dispatcher = {
@@ -314,8 +313,10 @@ function Dispatcher:addItem(menu, location, settings, section)
                     return location[settings] ~= nil and location[settings][k] ~= nil
                     end,
                     callback = function(touchmenu_instance)
-                        if location[settings] ~= nil
-                            and location[settings][k]
+                        if location[settings] == nil then
+                            location[settings] = {}
+                        end
+                        if location[settings][k]
                         then
                             location[settings][k] = nil
                         else
@@ -328,7 +329,7 @@ function Dispatcher:addItem(menu, location, settings, section)
             elseif settingsList[k].category == "absolutenumber" then
                 table.insert(menu, {
                     text_func = function()
-                        return T(settingsList[k].title, location[settings][k] or "")
+                        return settingsList[k].title
                     end,
                     checked_func = function()
                     return location[settings] ~= nil and location[settings][k] ~= nil
@@ -337,14 +338,17 @@ function Dispatcher:addItem(menu, location, settings, section)
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
                             width = Screen:getWidth() * 0.6,
-                            value = location[settings][k] or settingsList[k].default or 0,
+                            value = location[settings] ~= nil and location[settings][k] or settingsList[k].default or 0,
                             value_min = settingsList[k].min,
                             value_step = 1,
                             value_hold_step = 2,
                             value_max = settingsList[k].max,
                             default_value = 0,
-                            title_text = T(settingsList[k].title, location[settings][k] or ""),
+                            title_text = settingsList[k].title,
                             callback = function(spin)
+                                if location[settings] == nil then
+                                    location[settings] = {}
+                                end
                                 location[settings][k] = spin.value
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
@@ -354,7 +358,9 @@ function Dispatcher:addItem(menu, location, settings, section)
                         UIManager:show(items)
                     end,
                     hold_callback = function(touchmenu_instance)
-                        location[settings][k] = nil
+                        if location[settings] ~= nil and location[settings][k] ~= nil then
+                            location[settings][k] = nil
+                        end
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
                     separator = settingsList[k].separator,
@@ -362,7 +368,7 @@ function Dispatcher:addItem(menu, location, settings, section)
             elseif settingsList[k].category == "incrementalnumber" then
                 table.insert(menu, {
                     text_func = function()
-                        return T(settingsList[k].title, location[settings][k] or "")
+                        return settingsList[k].title
                     end,
                     checked_func = function()
                     return location[settings] ~= nil and location[settings][k] ~= nil
@@ -372,15 +378,18 @@ function Dispatcher:addItem(menu, location, settings, section)
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
                             width = Screen:getWidth() * 0.6,
-                            value = location[settings][k] or 0,
+                            value = location[settings] ~= nil and location[settings][k] or 0,
                             value_min = settingsList[k].min,
                             value_step = 1,
                             value_hold_step = 2,
                             value_max = settingsList[k].max,
                             default_value = 0,
-                            title_text = T(settingsList[k].title, location[settings][k] or ""),
+                            title_text = settingsList[k].title,
                             info_text = _([[If called by a gesture the amount of the gesture will be used]]),
                             callback = function(spin)
+                                if location[settings] == nil then
+                                    location[settings] = {}
+                                end
                                 location[settings][k] = spin.value
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
@@ -390,7 +399,9 @@ function Dispatcher:addItem(menu, location, settings, section)
                         UIManager:show(items)
                     end,
                     hold_callback = function(touchmenu_instance)
-                        location[settings][k] = nil
+                        if location[settings] ~= nil and location[settings][k] ~= nil then
+                            location[settings][k] = nil
+                        end
                         if touchmenu_instance then
                             touchmenu_instance:updateItems()
                         end
@@ -408,13 +419,16 @@ function Dispatcher:addItem(menu, location, settings, section)
                                 and location[settings][k] == settingsList[k].args[i]
                         end,
                         callback = function()
+                            if location[settings] == nil then
+                                location[settings] = {}
+                            end
                             location[settings][k] = settingsList[k].args[i]
                         end,
                     })
                 end
                 table.insert(menu, {
                     text_func = function()
-                        return T(settingsList[k].title, location[settings][k])
+                        return settingsList[k].title
                     end,
                     checked_func = function()
                         return location[settings] ~= nil
@@ -423,7 +437,9 @@ function Dispatcher:addItem(menu, location, settings, section)
                     sub_item_table = sub_item_table,
                     keep_menu_open = true,
                     hold_callback = function(touchmenu_instance)
-                        location[settings][k] = nil
+                        if location[settings] ~= nil and location[settings][k] ~= nil then
+                            location[settings][k] = nil
+                        end
                         if touchmenu_instance then
                             touchmenu_instance:updateItems()
                         end
