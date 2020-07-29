@@ -115,6 +115,19 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     #       A SIGTERM does not break anything, it'll just prevent automatic lease renewal until the time
     #       KOReader actually sets the if up itself (i.e., it'll do)...
     killall -q -TERM nickel hindenburg sickel fickel adobehost dhcpcd-dbus dhcpcd fmon
+
+    # Wait for Nickel to die... (oh, procps with killall -w, how I miss you...)
+    kill_timeout=0
+    while pkill -0 nickel; do
+        # Stop waiting after 4s
+        if [ ${kill_timeout} -ge 15 ]; then
+            break
+        fi
+        usleep 250000
+        kill_timeout=$((kill_timeout + 1))
+    done
+    # Remove Nickel's FIFO to avoid udev & udhcpc scripts hanging on open() on it...
+    rm -f /tmp/nickel-hardware-status
 fi
 
 # fallback for old fmon, KFMon and advboot users (-> if no args were passed to the script, start the FM)
