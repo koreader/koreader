@@ -9,7 +9,6 @@ local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
-local LuaData = require("luadata")
 local LuaSettings = require("luasettings")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
@@ -27,14 +26,9 @@ local Gestures = InputContainer:new{
     settings_data = nil,
     gestures = nil,
     defaults = nil,
+    custom_multiswipes = nil,
 }
 local gestures_path = FFIUtil.joinPath(DataStorage:getSettingsDir(), "gestures.lua")
-
-function Gestures:onFlushSettings()
-    if self.settings_data then
-        self.settings_data:flush()
-    end
-end
 
 local gestures_list = {
     tap_top_left_corner = _("Top left"),
@@ -64,32 +58,6 @@ local gestures_list = {
     two_finger_tap_bottom_left_corner = _("Bottom left"),
     two_finger_tap_bottom_right_corner = _("Bottom right"),
     short_diagonal_swipe = _("Short diagonal swipe"),
-    multiswipe = "",
-    multiswipe_west_east = "",
-    multiswipe_east_west = "",
-    multiswipe_north_east = "",
-    multiswipe_north_west = "",
-    multiswipe_north_south = "",
-    multiswipe_east_north = "",
-    multiswipe_west_north = "",
-    multiswipe_east_south = "",
-    multiswipe_south_north = "",
-    multiswipe_south_east = "",
-    multiswipe_south_west = "",
-    multiswipe_west_south = "",
-    multiswipe_north_south_north = "",
-    multiswipe_south_north_south = "",
-    multiswipe_west_east_west = "",
-    multiswipe_east_west_east = "",
-    multiswipe_east_north_west = "",
-    multiswipe_south_east_north = "",
-    multiswipe_east_north_west_east = "",
-    multiswipe_south_east_north_south = "",
-    multiswipe_east_south_west_north = "",
-    multiswipe_southeast_northeast = "",
-    multiswipe_northwest_southwest_northwest = "",
-    multiswipe_southeast_southwest_northwest = "",
-    multiswipe_southeast_northeast_northwest = "",
     two_finger_swipe_east = "⇒",
     two_finger_swipe_west = "⇐",
     two_finger_swipe_south = "⇓",
@@ -100,153 +68,44 @@ local gestures_list = {
     two_finger_swipe_southwest = "⇙",
     spread_gesture = _("Spread"),
     pinch_gesture = _("Pinch"),
+    multiswipe = "", -- otherwise registerGesture() won't pick up on multiswipes
+    multiswipe_west_east = "⬅ ➡",
+    multiswipe_east_west = "➡ ⬅",
+    multiswipe_north_east = "⬆ ➡",
+    multiswipe_north_west = "⬆ ⬅",
+    multiswipe_north_south = "⬆ ⬇",
+    multiswipe_east_north = "➡ ⬆",
+    multiswipe_west_north = "⬅ ⬆",
+    multiswipe_east_south = "➡ ⬇",
+    multiswipe_south_north = "⬇ ⬆",
+    multiswipe_south_east = "⬇ ➡",
+    multiswipe_south_west = "⬇ ⬅",
+    multiswipe_west_south = "⬅ ⬇",
+    multiswipe_north_south_north = "⬆ ⬇ ⬆",
+    multiswipe_south_north_south = "⬇ ⬆ ⬇",
+    multiswipe_west_east_west = "⬅ ➡ ⬅",
+    multiswipe_east_west_east = "➡ ⬅ ➡",
+    multiswipe_south_west_north = "⬇ ⬅ ⬆",
+    multiswipe_north_east_south = "⬆ ➡ ⬇",
+    multiswipe_north_west_south = "⬆ ⬅ ⬇",
+    multiswipe_west_south_east = "⬅ ⬇ ➡",
+    multiswipe_west_north_east = "⬅ ⬆ ➡",
+    multiswipe_east_south_west = "➡ ⬇ ⬅",
+    multiswipe_east_north_west = "➡ ⬆ ⬅",
+    multiswipe_south_east_north = "⬇ ➡ ⬆",
+    multiswipe_east_north_west_east = "➡ ⬆ ⬅ ➡",
+    multiswipe_south_east_north_south = "⬇ ➡ ⬆ ⬇",
+    multiswipe_east_south_west_north = "➡ ⬇ ⬅ ⬆",
+    multiswipe_west_south_east_north = "⬅ ⬇ ➡ ⬆",
+    multiswipe_south_east_north_west = "⬇ ➡ ⬆ ⬅",
+    multiswipe_south_west_north_east = "⬇ ⬅ ⬆ ➡",
+    multiswipe_southeast_northeast = "⬊ ⬈",
+    multiswipe_northeast_southeast = "⬈ ⬊",
+    multiswipe_northwest_southwest_northwest = "⬉ ⬋ ⬉",
+    multiswipe_southeast_southwest_northwest = "⬊ ⬋ ⬉",
+    multiswipe_southeast_northeast_northwest = "⬊ ⬈ ⬉",
 }
 
-local action_strings = {
-    nothing = _("Nothing"),
-    ignore = _("Pass through"),
-
-    page_jmp_back_10 = _("Back 10 pages"),
-    page_jmp_back_1 = _("Previous page"),
-    page_jmp_fwd_10 = _("Forward 10 pages"),
-    page_jmp_fwd_1 = _("Next page"),
-    prev_chapter = _("Previous chapter"),
-    next_chapter = _("Next chapter"),
-    first_page = _("First page"),
-    last_page = _("Last page"),
-    prev_bookmark = _("Previous bookmark"),
-    next_bookmark = _("Next bookmark"),
-    go_to = _("Go to"),
-    skim = _("Skim"),
-    back = _("Back"),
-    previous_location = _("Back to previous location"),
-    latest_bookmark = _("Go to latest bookmark"),
-    follow_nearest_link = _("Follow nearest link"),
-    follow_nearest_internal_link = _("Follow nearest internal link"),
-    clear_location_history = _("Clear location history"),
-
-    toc = _("Table of contents"),
-    bookmarks = _("Bookmarks"),
-    reading_progress = _("Reading progress"),
-    book_statistics = _("Book statistics"),
-    book_status = _("Book status"),
-    book_info = _("Book information"),
-    book_description = _("Book description"),
-    book_cover = _("Book cover"),
-    stats_calendar_view = _("Statistics calendar view"),
-
-    history = _("History"),
-    open_previous_document = _("Open previous document"),
-    filemanager = _("File browser"),
-    favorites = _("Favorites"),
-
-    dictionary_lookup = _("Dictionary lookup"),
-    wikipedia_lookup = _("Wikipedia lookup"),
-    fulltext_search = _("Fulltext search"),
-    file_search = _("File search"),
-
-    full_refresh = _("Full screen refresh"),
-    night_mode = _("Night mode"),
-    suspend = _("Suspend"),
-    exit = _("Exit KOReader"),
-    restart = _("Restart KOReader"),
-    reboot = _("Reboot the device"),
-    poweroff = _("Power off"),
-    show_menu = _("Show menu"),
-    show_config_menu = _("Show bottom menu"),
-    show_frontlight_dialog = _("Show frontlight dialog"),
-    toggle_frontlight = _("Toggle frontlight"),
-    increase_frontlight = _("Increase frontlight brightness"),
-    decrease_frontlight = _("Decrease frontlight brightness"),
-    increase_frontlight_warmth = _("Increase frontlight warmth"),
-    decrease_frontlight_warmth = _("Decrease frontlight warmth"),
-    toggle_hold_corners = _("Toggle hold corners"),
-    toggle_gsensor = _("Toggle accelerometer"),
-    toggle_rotation = _("Toggle rotation"),
-
-    wifi_on = _("Turn on Wi-Fi"),
-    wifi_off = _("Turn off Wi-Fi"),
-    toggle_wifi = _("Toggle Wi-Fi"),
-
-    toggle_bookmark = _("Toggle bookmark"),
-    toggle_page_flipping = _("Toggle page flipping"),
-    toggle_reflow = _("Toggle reflow"),
-    toggle_inverse_reading_order = _("Toggle page turn direction"),
-
-    zoom_contentwidth = _("Zoom to fit content width"),
-    zoom_contentheight = _("Zoom to fit content height"),
-    zoom_pagewidth = _("Zoom to fit page width"),
-    zoom_pageheight = _("Zoom to fit page height"),
-    zoom_column = _("Zoom to fit column"),
-    zoom_content = _("Zoom to fit content"),
-    zoom_page = _("Zoom to fit page"),
-
-    increase_font = _("Increase font size"),
-    decrease_font = _("Decrease font size"),
-
-    folder_up = _("Folder up"),
-    show_plus_menu = _("Show plus menu"),
-    folder_shortcuts = _("Folder shortcuts"),
-    cycle_highlight_action = _("Cycle highlight action"),
-    cycle_highlight_style = _("Cycle highlight style"),
-    wallabag_download = _("Wallabag retrieval"),
-    kosync_push_progress = _("Push progress from this device"),
-    kosync_pull_progress = _("Pull progress from other devices"),
-    calibre_search = _("Search in calibre metadata"),
-    calibre_browse_tags = _("Browse all calibre tags"),
-    calibre_browse_series = _("Browse all calibre series"),
-}
-
-local custom_multiswipes_path = DataStorage:getSettingsDir().."/multiswipes.lua"
-local custom_multiswipes = LuaData:open(custom_multiswipes_path, { name = "MultiSwipes" })
-local custom_multiswipes_table = custom_multiswipes:readSetting("multiswipes")
-
-local default_multiswipes = {
-    "west east",
-    "east west",
-    "north south",
-    "south north",
-    true, -- separator
-    "north west",
-    "north east",
-    "south west",
-    "south east",
-    "east north",
-    "west north",
-    "east south",
-    "west south",
-    true, -- separator
-    "north south north",
-    "south north south",
-    "west east west",
-    "east west east",
-    true, -- separator
-    "south west north",
-    "north east south",
-    "north west south",
-    "west south east",
-    "west north east",
-    "east south west",
-    "east north west",
-    "south east north",
-    true, -- separator
-    "east north west east",
-    "south east north south",
-    true, -- separator
-    "east south west north",
-    "west south east north",
-    "south east north west",
-    "south west north east",
-    true, -- separator
-    "southeast northeast",
-    "northeast southeast",
-    -- "southwest northwest", -- visually ambiguous
-    -- "northwest southwest", -- visually ambiguous
-    "northwest southwest northwest",
-    "southeast southwest northwest",
-    "southeast northeast northwest",
-}
-local multiswipes = {}
 local multiswipes_info_text = _([[
 Multiswipes allow you to perform complex gestures built up out of multiple swipe directions, never losing touch with the screen.
 
@@ -262,81 +121,14 @@ function Gestures:init()
     self.is_docless = self.ui == nil or self.ui.document == nil
     self.ges_mode = self.is_docless and "gesture_fm" or "gesture_reader"
     self.defaults = LuaSettings:open(defaults_path).data[self.ges_mode]
-require("logger").warn("!!!!", self.defaults)
     if not self.settings_data then
         self.settings_data = LuaSettings:open(gestures_path)
     end
     self.gestures = self.settings_data.data[self.ges_mode]
-require("logger").warn("@@@@", self.is_docless, self.ges_mode, self.gestures)
-
-    self.default_gesture = {
-        tap_top_left_corner = self.ges_mode == "gesture_reader" and "toggle_page_flipping" or "ignore",
-        tap_top_right_corner = self.ges_mode == "gesture_reader" and "toggle_bookmark" or "show_plus_menu",
-        tap_right_bottom_corner = "ignore",
-        tap_left_bottom_corner = Device:hasFrontlight() and "toggle_frontlight" or "ignore",
-        hold_top_left_corner = "ignore",
-        hold_top_right_corner = "ignore",
-        hold_bottom_left_corner = "ignore",
-        hold_bottom_right_corner = "ignore",
-        one_finger_swipe_left_edge_down = Device:hasFrontlight() and "decrease_frontlight" or "ignore",
-        one_finger_swipe_left_edge_up = Device:hasFrontlight() and "increase_frontlight" or "ignore",
-        one_finger_swipe_right_edge_down =  Device:hasNaturalLight() and "decrease_frontlight_warmth" or "ignore",
-        one_finger_swipe_right_edge_up = Device:hasNaturalLight() and "increase_frontlight_warmth" or "ignore",
-        one_finger_swipe_top_edge_right = "ignore",
-        one_finger_swipe_top_edge_left = "ignore",
-        one_finger_swipe_bottom_edge_right = "ignore",
-        one_finger_swipe_bottom_edge_left = "ignore",
-        double_tap_left_side = self.ges_mode == "gesture_reader" and "page_jmp_back_10",
-        double_tap_right_side = self.ges_mode == "gesture_reader" and "page_jmp_fwd_10",
-        double_tap_top_left_corner = "ignore",
-        double_tap_top_right_corner = "ignore",
-        double_tap_bottom_left_corner = "ignore",
-        double_tap_bottom_right_corner = "ignore",
-        two_finger_tap_top_left_corner = "ignore",
-        two_finger_tap_top_right_corner = "ignore",
-        two_finger_tap_bottom_left_corner = "ignore",
-        two_finger_tap_bottom_right_corner = "ignore",
-        short_diagonal_swipe = "full_refresh",
-        multiswipe = "nothing", -- otherwise registerGesture() won't pick up on multiswipes
-        multiswipe_west_east = self.ges_mode == "gesture_reader" and "previous_location" or "nothing",
-        multiswipe_east_west = self.ges_mode == "gesture_reader" and "latest_bookmark" or "nothing",
-        multiswipe_north_east = self.ges_mode == "gesture_reader" and "toc" or "nothing",
-        multiswipe_north_west = self.ges_mode == "gesture_reader" and "bookmarks" or "folder_shortcuts",
-        multiswipe_north_south = self.ges_mode == "gesture_reader" and "nothing" or "folder_up",
-        multiswipe_east_north = "history",
-        multiswipe_west_north = self.ges_mode == "gesture_reader" and "book_status" or "nothing",
-        multiswipe_east_south = "go_to",
-        multiswipe_south_north = self.ges_mode == "gesture_reader" and "skim" or "nothing",
-        multiswipe_south_east = self.ges_mode == "gesture_reader" and "toggle_reflow" or "nothing",
-        multiswipe_south_west = "show_frontlight_dialog",
-        multiswipe_west_south = "back",
-        multiswipe_north_south_north = self.ges_mode == "gesture_reader" and "prev_chapter" or "nothing",
-        multiswipe_south_north_south = self.ges_mode == "gesture_reader" and "next_chapter" or "nothing",
-        multiswipe_west_east_west = "open_previous_document",
-        multiswipe_east_west_east = "favorites",
-        multiswipe_east_north_west = self.ges_mode == "gesture_reader" and "zoom_contentwidth" or "nothing",
-        multiswipe_south_east_north = self.ges_mode == "gesture_reader" and "zoom_contentheight" or "nothing",
-        multiswipe_east_north_west_east = self.ges_mode == "gesture_reader" and "zoom_pagewidth" or "nothing",
-        multiswipe_south_east_north_south = self.ges_mode == "gesture_reader" and "zoom_pageheight" or "nothing",
-        multiswipe_east_south_west_north = "full_refresh",
-        multiswipe_southeast_northeast = self.ges_mode == "gesture_reader" and "follow_nearest_link" or "nothing",
-        multiswipe_northwest_southwest_northwest = Device:hasWifiToggle() and "toggle_wifi" or "nothing",
-        multiswipe_southeast_southwest_northwest = Device:hasWifiToggle() and "wifi_off" or "nothing",
-        multiswipe_southeast_northeast_northwest = Device:hasWifiToggle() and "wifi_on" or "nothing",
-
-        two_finger_swipe_east = self.ges_mode == "gesture_reader" and "toc" or "ignore",
-        two_finger_swipe_west = self.ges_mode == "gesture_reader" and "bookmarks" or "folder_shortcuts",
-        two_finger_swipe_south = Device:hasFrontlight() and "decrease_frontlight" or "ignore",
-        two_finger_swipe_north = Device:hasFrontlight() and "increase_frontlight" or "ignore",
-        two_finger_swipe_northeast = "ignore",
-        two_finger_swipe_northwest = "ignore",
-        two_finger_swipe_southeast = "ignore",
-        two_finger_swipe_southwest = "ignore",
-        spread_gesture = self.ges_mode == "gesture_reader" and "increase_font" or "ignore",
-        pinch_gesture = self.ges_mode == "gesture_reader" and "decrease_font" or "ignore",
-    }
-    local gm = G_reader_settings:readSetting(self.ges_mode)
-    if gm == nil then G_reader_settings:saveSetting(self.ges_mode, {}) end
+    self.custom_multiswipes = self.settings_data.data["custom_multiswipes"]
+    --if G_reader_settings:has("gesture_fm") or G_reader_settings:has("gesture_reader") then
+        -- Migrate old gestures
+    --end
 
     -- Some of these defaults need to be reversed in RTL mirrored UI,
     -- and as we set them in the saved gestures, we need to reset them
@@ -348,11 +140,6 @@ require("logger").warn("@@@@", self.is_docless, self.ges_mode, self.gestures)
         double_tap_right_side = "double_tap_left_side",
     }
     local is_rtl = BD.mirroredUILayout()
-    if is_rtl then
-        for k, v in pairs(mirrored_if_rtl) do
-            self.default_gesture[k], self.default_gesture[v] = self.default_gesture[v], self.default_gesture[k]
-        end
-    end
     -- We remember the last UI direction gestures were made on. If it changes,
     -- reset the mirrored_if_rtl ones to the default for the new direction.
     local ges_dir_setting = self.ges_mode.."ui_lang_direction_rtl"
@@ -362,13 +149,24 @@ require("logger").warn("@@@@", self.is_docless, self.ges_mode, self.gestures)
         for k, v in pairs(mirrored_if_rtl) do
             -- We only replace them if they are still the other direction's default.
             -- If not, the user has changed them: let him deal with setting new ones if needed.
-            if gm[k] == self.default_gesture[v] then
-                gm[k] = self.default_gesture[k]
-                reset = true
-            end
-            if gm[v] == self.default_gesture[k] then
-                gm[v] = self.default_gesture[v]
-                reset = true
+            if is_rtl then
+                if util.tableEquals(self.gestures[k], self.defaults[k]) then
+                    self.gestures[k] = self.defaults[v]
+                    reset = true
+                end
+                if util.tableEquals(self.gestures[v], self.defaults[v]) then
+                    self.gestures[v] = self.defaults[k]
+                    reset = true
+                end
+            else
+                if util.tableEquals(self.gestures[k], self.defaults[v]) then
+                    self.gestures[k] = self.defaults[k]
+                    reset = true
+                end
+                if util.tableEquals(self.gestures[v], self.defaults[k]) then
+                    self.gestures[v] = self.defaults[v]
+                    reset = true
+                end
             end
         end
         if reset then
@@ -381,8 +179,8 @@ require("logger").warn("@@@@", self.is_docless, self.ges_mode, self.gestures)
     self:initGesture()
 end
 
-local gestureTextFunc = function(location, gesture)
-    local item = location[gesture]
+local gestureTextFunc = function(location, ges)
+    local item = location[ges]
     local action_name = _("Pass through")
     if item then
         local sub_item = next(item)
@@ -395,13 +193,15 @@ local gestureTextFunc = function(location, gesture)
     return action_name
 end
 
-function Gestures:gestureTitleFunc(gesture)
-    return T(_("%1   (%2)"), gestures_list[gesture], gestureTextFunc(self.gestures, gesture))
+function Gestures:gestureTitleFunc(ges)
+    local title = gestures_list[ges] or self:friendlyMultiswipeName(ges)
+    return T(_("%1   (%2)"), title, gestureTextFunc(self.gestures, ges))
 end
 
-function Gestures:buildMenu(ges)
-    local sub_items = {
-        {
+function Gestures:genMenu(ges)
+    local sub_items = {}
+    if gestures_list[ges] ~= nil then
+        table.insert(sub_items, {
             text = T(_("%1 (default)"), gestureTextFunc(self.defaults, ges)),
             keep_menu_open = true,
             separator = true,
@@ -411,24 +211,24 @@ function Gestures:buildMenu(ges)
             callback = function()
                 self.gestures[ges] = util.tableDeepCopy(self.defaults[ges])
             end,
-        },
-        {
-            text = _("Pass through"),
-            keep_menu_open = true,
-            separator = true,
-            checked_func = function()
-                return self.gestures[ges] == nil
-            end,
-            callback = function()
-                self.gestures[ges] = nil
-            end,
-        },
-    }
+        })
+    end
+    table.insert(sub_items, {
+        text = _("Pass through"),
+        keep_menu_open = true,
+        separator = true,
+        checked_func = function()
+            return self.gestures[ges] == nil
+        end,
+        callback = function()
+            self.gestures[ges] = nil
+        end,
+    })
     Dispatcher:addSubMenu(sub_items, self.gestures, ges)
     return sub_items
 end
 
-function Gestures:genSubItem(ges)
+function Gestures:genSubItem(ges, separator, hold_callback)
     local reader_only = {tap_top_left_corner=true, hold_top_left_corner=true}
     local enabled_func
     if reader_only[ges] then
@@ -437,7 +237,9 @@ function Gestures:genSubItem(ges)
     return {
         text_func = function() return self:gestureTitleFunc(ges) end,
         enabled_func = enabled_func,
-        sub_item_table = self:buildMenu(ges),
+        sub_item_table = self:genMenu(ges),
+        separator = separator,
+        hold_callback = hold_callback,
     }
 end
 
@@ -448,6 +250,183 @@ function Gestures:genSubItemTable(gestures)
     end
     return sub_item_table
 end
+
+function Gestures:genMultiswipeMenu()
+    local sub_item_table = {}
+    -- { multiswipe name, separator }
+    local multiswipe_list = {
+        {"multiswipe_west_east",},
+        {"multiswipe_east_west",},
+        {"multiswipe_north_south",},
+        {"multiswipe_south_north", true},
+        {"multiswipe_north_west",},
+        {"multiswipe_north_east",},
+        {"multiswipe_south_west",},
+        {"multiswipe_south_east",},
+        {"multiswipe_east_north",},
+        {"multiswipe_west_north",},
+        {"multiswipe_east_south",},
+        {"multiswipe_west_south", true},
+        {"multiswipe_north_south_north",},
+        {"multiswipe_south_north_south",},
+        {"multiswipe_west_east_west",},
+        {"multiswipe_east_west_east", true},
+        {"multiswipe_south_west_north",},
+        {"multiswipe_north_east_south",},
+        {"multiswipe_north_west_south",},
+        {"multiswipe_west_south_east",},
+        {"multiswipe_west_north_east",},
+        {"multiswipe_east_south_west",},
+        {"multiswipe_east_north_west",},
+        {"multiswipe_south_east_north", true},
+        {"multiswipe_east_north_west_east",},
+        {"multiswipe_south_east_north_south", true},
+        {"multiswipe_east_south_west_north",},
+        {"multiswipe_west_south_east_north",},
+        {"multiswipe_south_east_north_west",},
+        {"multiswipe_south_west_north_east", true},
+        {"multiswipe_southeast_northeast",},
+        {"multiswipe_northeast_southeast",},
+        {"multiswipe_northwest_southwest_northwest",},
+        {"multiswipe_southeast_southwest_northwest",},
+        {"multiswipe_southeast_northeast_northwest",},
+    }
+    for _, item in ipairs(multiswipe_list) do
+        table.insert(sub_item_table, self:genSubItem(item[1], item[2]))
+    end
+    return sub_item_table
+end
+
+local multiswipe_to_arrow = {
+    east = "➡",
+    west = "⬅",
+    north = "⬆",
+    south = "⬇",
+    northeast = "⬈",
+    northwest = "⬉",
+    southeast = "⬊",
+    southwest = "⬋",
+}
+function Gestures:friendlyMultiswipeName(multiswipe)
+    return multiswipe:gsub("multiswipe", ""):gsub("_", " "):gsub("%S+", multiswipe_to_arrow)
+end
+
+function Gestures:safeMultiswipeName(multiswipe)
+    return multiswipe:gsub(" ", "_")
+end
+
+function Gestures:multiswipeRecorder(touchmenu_instance)
+    local multiswipe_recorder
+    multiswipe_recorder = InputDialog:new{
+        title = _("Multiswipe recorder"),
+        input_hint = _("Make a multiswipe gesture"),
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(multiswipe_recorder)
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    is_enter_default = true,
+                    callback = function()
+                        local recorded_multiswipe = multiswipe_recorder._raw_multiswipe
+                        if not recorded_multiswipe then return end
+                        logger.dbg("Multiswipe recorder detected:", recorded_multiswipe)
+
+                        if gestures_list[recorded_multiswipe] ~= nil then
+                            UIManager:show(InfoMessage:new{
+                                text = _("Recorded multiswipe already exists."),
+                                show_icon = false,
+                                timeout = 5,
+                            })
+                            return
+                        end
+
+                        self.custom_multiswipes[recorded_multiswipe] = true
+                        --touchmenu_instance.item_table = self:genMultiswipeMenu()
+                        -- We need to update touchmenu_instance.item_table in-place for the upper
+                        -- menu to have it updated too
+                        local item_table = touchmenu_instance.item_table
+                        while #item_table > 0 do
+                            table.remove(item_table, #item_table)
+                        end
+                        for __, v in ipairs(self:genCustomMultiswipeSubmenu()) do
+                            table.insert(item_table, v)
+                        end
+                        touchmenu_instance:updateItems()
+                        UIManager:close(multiswipe_recorder)
+                    end,
+                },
+            }
+        },
+    }
+
+    multiswipe_recorder.ges_events.Multiswipe = {
+        GestureRange:new{
+            ges = "multiswipe",
+            range = Geom:new{
+                x = 0, y = 0,
+                w = Screen:getWidth(),
+                h = Screen:getHeight(),
+            },
+            doc = "Multiswipe in gesture creator"
+        }
+    }
+
+    function multiswipe_recorder:onMultiswipe(arg, ges)
+        multiswipe_recorder._raw_multiswipe = "multiswipe_" .. Gestures:safeMultiswipeName(ges.multiswipe_directions)
+        multiswipe_recorder:setInputText(Gestures:friendlyMultiswipeName(ges.multiswipe_directions))
+    end
+
+    UIManager:show(multiswipe_recorder)
+end
+
+
+function Gestures:genCustomMultiswipeSubmenu()
+    local submenu = {
+        {
+            text = _("Multiswipe recorder"),
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                self:multiswipeRecorder(touchmenu_instance)
+            end,
+            help_text = _("The number of possible multiswipe gestures is theoretically infinite. With the multiswipe recorder you can easily record your own."),
+        }
+    }
+    for item in FFIUtil.orderedPairs(self.custom_multiswipes) do
+        local hold_callback = function(touchmenu_instance)
+            UIManager:show(ConfirmBox:new{
+                text = T(_("Remove custom multiswipe %1?"), self:friendlyMultiswipeName(item)),
+                ok_text = _("Remove"),
+                ok_callback = function()
+                    -- remove from list of custom multiswipes
+                    self.custom_multiswipes[item] = nil
+                    -- remove any settings for the muliswipe
+                    self.settings_data.data["gesture_fm"][item] = nil
+                    self.settings_data.data["gesture_reader"][item] = nil
+
+                    --touchmenu_instance.item_table = self:genMultiswipeMenu()
+                    -- We need to update touchmenu_instance.item_table in-place for the upper
+                    -- menu to have it updated too
+                    local item_table = touchmenu_instance.item_table
+                    while #item_table > 0 do
+                        table.remove(item_table, #item_table)
+                    end
+                    for __, v in ipairs(self:genCustomMultiswipeSubmenu()) do
+                        table.insert(item_table, v)
+                    end
+                    touchmenu_instance:updateItems()
+                end,
+            })
+        end
+        table.insert(submenu, self:genSubItem(item, nil, hold_callback))
+    end
+    return submenu
+end
+
 function Gestures:addIntervals(menu_items)
     menu_items.gesture_intervals = {
         text = _("Gesture intervals"),
@@ -605,75 +584,16 @@ function Gestures:addToMainMenu(menu_items)
                 help_text = multiswipes_info_text,
             },
             {
-                text = _("Multiswipe recorder"),
+                text = _("Multiswipes"),
+                sub_item_table = self:genMultiswipeMenu(),
                 enabled_func = function() return self.multiswipes_enabled end,
-                keep_menu_open = true,
-                callback = function(touchmenu_instance)
-                    local multiswipe_recorder
-                    multiswipe_recorder = InputDialog:new{
-                        title = _("Multiswipe recorder"),
-                        input_hint = _("Make a multiswipe gesture"),
-                        buttons = {
-                            {
-                                {
-                                    text = _("Cancel"),
-                                    callback = function()
-                                        UIManager:close(multiswipe_recorder)
-                                    end,
-                                },
-                                {
-                                    text = _("Save"),
-                                    is_enter_default = true,
-                                    callback = function()
-                                        local recorded_multiswipe = multiswipe_recorder._raw_multiswipe
-                                        if not recorded_multiswipe then return end
-                                        logger.dbg("Multiswipe recorder detected:", recorded_multiswipe)
-
-                                        for k, multiswipe in pairs(multiswipes) do
-                                            if recorded_multiswipe == multiswipe then
-                                                UIManager:show(InfoMessage:new{
-                                                    text = _("Recorded multiswipe already exists."),
-                                                    show_icon = false,
-                                                    timeout = 5,
-                                                })
-                                                return
-                                            end
-                                        end
-
-                                        custom_multiswipes:addTableItem("multiswipes", recorded_multiswipe)
-                                        --- @todo Implement some nicer method in TouchMenu than this ugly hack for updating the menu.
-                                        touchmenu_instance.item_table[3] = self:genMultiswipeSubmenu()
-                                        touchmenu_instance:updateItems()
-                                        UIManager:close(multiswipe_recorder)
-                                    end,
-                                },
-                            }
-                        },
-                    }
-
-                    multiswipe_recorder.ges_events.Multiswipe = {
-                        GestureRange:new{
-                            ges = "multiswipe",
-                            range = Geom:new{
-                                x = 0, y = 0,
-                                w = Screen:getWidth(),
-                                h = Screen:getHeight(),
-                            },
-                            doc = "Multiswipe in gesture creator"
-                        }
-                    }
-
-                    function multiswipe_recorder:onMultiswipe(arg, ges)
-                        multiswipe_recorder._raw_multiswipe = ges.multiswipe_directions
-                        multiswipe_recorder:setInputText(Gestures:friendlyMultiswipeName(multiswipe_recorder._raw_multiswipe))
-                    end
-
-                    UIManager:show(multiswipe_recorder)
-                end,
-                help_text = _("The number of possible multiswipe gestures is theoretically infinite. With the multiswipe recorder you can easily record your own."),
             },
-            -- NB If this changes from position 3, also update the position of this menu in multiswipe recorder callback
-            self:genMultiswipeSubmenu(),
+            {
+                text = _("Custom multiswipes"),
+                sub_item_table = self:genCustomMultiswipeSubmenu(),
+                enabled_func = function() return self.multiswipes_enabled end,
+                separator = true,
+            },
             {
                 text = _("Tap corner"),
                 sub_item_table = self:genSubItemTable({"tap_top_left_corner", "tap_top_right_corner", "tap_left_bottom_corner", "tap_right_bottom_corner"}),
@@ -684,7 +604,7 @@ function Gestures:addToMainMenu(menu_items)
             },
             {
                 text = _("Short diagonal swipe"),
-                sub_item_table = self:buildMenu("short_diagonal_swipe"),
+                sub_item_table = self:genMenu("short_diagonal_swipe"),
             },
             {
                 text = _("One-finger swipe"),
@@ -718,127 +638,13 @@ function Gestures:addToMainMenu(menu_items)
     self:addIntervals(menu_items)
 end
 
-local multiswipe_to_arrow = {
-    east = "➡",
-    west = "⬅",
-    north = "⬆",
-    south = "⬇",
-    northeast = "⬈",
-    northwest = "⬉",
-    southeast = "⬊",
-    southwest = "⬋",
-}
-function Gestures:friendlyMultiswipeName(multiswipe)
-    return multiswipe:gsub("%S+", multiswipe_to_arrow)
-end
-
-function Gestures:safeMultiswipeName(multiswipe)
-    return multiswipe:gsub(" ", "_")
-end
-
-function Gestures:buildMultiswipeMenu()
-    local gesture_manager = G_reader_settings:readSetting(self.ges_mode)
-    local menu = {}
-    multiswipes = {}
-
-    -- Build a list of gestures in settings, so we can show those
-    -- that don't appear anymore in default or custom lists, and
-    -- allow removing them (as they will still work)
-    local settings_gestures = {}
-    for k, v in pairs(gesture_manager) do
-        if k:sub(1, 11) == "multiswipe_" then
-            k = k:sub(12):gsub("_", " ")
-            settings_gestures[k] = v
-        end
-    end
-
-    for k, v in pairs(default_multiswipes) do
-        table.insert(multiswipes, v)
-        settings_gestures[v] = nil -- remove from settings list
-    end
-
-    if custom_multiswipes_table and #custom_multiswipes_table > 0 then
-        table.insert(multiswipes, true) -- add separator
-        for k, v in pairs(custom_multiswipes_table) do
-            table.insert(multiswipes, v)
-            settings_gestures[v] = nil -- remove from settings list
-        end
-    end
-
-    if next(settings_gestures) then -- there are old gestures in settings
-        table.insert(multiswipes, true) -- add separator
-        for k, v in pairs(settings_gestures) do
-            table.insert(multiswipes, k)
-        end
-    end
-
-    for i=1, #multiswipes do
-        local separator = false
-        if i < #multiswipes and multiswipes[i+1] == true then
-            separator = true
-        end
-        if type(multiswipes[i]) == "string" then -- skip separators (true)
-            local multiswipe = multiswipes[i]
-            local friendly_multiswipe_name = self:friendlyMultiswipeName(multiswipe)
-            -- friendly_multiswipe_name = friendly_multiswipe_name .. os.time() -- for debugging menu updates
-            local safe_multiswipe_name = "multiswipe_"..self:safeMultiswipeName(multiswipe)
-            local default_action = self.default_gesture[safe_multiswipe_name] and self.default_gesture[safe_multiswipe_name] or "nothing"
-            table.insert(menu, {
-                text_func = function()
-                    local action_name = gesture_manager[safe_multiswipe_name] ~= "nothing" and action_strings[gesture_manager[safe_multiswipe_name]] or _("Available")
-                    return T(_("%1   (%2)"), friendly_multiswipe_name, action_name)
-                end,
-                sub_item_table = self:buildMenu(safe_multiswipe_name, default_action),
-                hold_callback = function(touchmenu_instance)
-                    if i > #default_multiswipes + 1 then -- +1 for added separator (true)
-                        UIManager:show(ConfirmBox:new{
-                            text = T(_("Remove custom multiswipe %1?"), friendly_multiswipe_name),
-                            ok_text = _("Remove"),
-                            ok_callback = function()
-                                -- Remove associated action from settings
-                                gesture_manager[safe_multiswipe_name] = nil
-                                -- multiswipes are a combined table, first defaults, then custom
-                                -- so the right index is minus #defalt_multiswipes minus 1 added separator
-                                custom_multiswipes:removeTableItem("multiswipes", i-#default_multiswipes-1)
-                                -- touchmenu_instance.item_table = self:buildMultiswipeMenu()
-                                -- We need to update touchmenu_instance.item_table in-place for the upper
-                                -- menu to have it updated too
-                                local item_table = touchmenu_instance.item_table
-                                while #item_table > 0 do
-                                    table.remove(item_table, #item_table)
-                                end
-                                for __, v in ipairs(self:buildMultiswipeMenu()) do
-                                    table.insert(item_table, v)
-                                end
-                                touchmenu_instance:updateItems()
-                            end,
-                        })
-                    end
-                end,
-                separator = separator,
-            })
-        end
-    end
-
-    return menu
-end
-
-function Gestures:genMultiswipeSubmenu()
-    return {
-        text = _("Multiswipe"),
-        sub_item_table = self:buildMultiswipeMenu(),
-        enabled_func = function() return self.multiswipes_enabled end,
-        separator = true,
-    }
-end
-
 function Gestures:initGesture()
-    for gesture, _ in pairs(gestures_list) do
-        self:setupGesture(gesture)
+    for ges, _ in pairs(gestures_list) do
+        self:setupGesture(ges)
     end
 end
 
-function Gestures:setupGesture(ges, action)
+function Gestures:setupGesture(ges)
     local ges_type
     local zone
     local overrides
@@ -1142,17 +948,17 @@ function Gestures:setupGesture(ges, action)
         zone = zone_fullscreen
     else return
     end
-    self:registerGesture(ges, action, ges_type, zone, overrides, direction, distance)
+    self:registerGesture(ges, ges_type, zone, overrides, direction, distance)
     -- make dummy zone to disable panning and panning_release when gesture is swipe
     if ges_type == "swipe" and ges ~= "short_diagonal_swipe" then
         local pan_gesture = ges.."_pan"
         local pan_release_gesture = ges.."_pan_release"
-        self:registerGesture(pan_gesture, {}, "pan", zone, overrides_swipe_pan, direction, distance)
-        self:registerGesture(pan_release_gesture, {}, "pan_release", zone, overrides_swipe_pan_release, direction, distance)
+        self:registerGesture(pan_gesture, "pan", zone, overrides_swipe_pan, direction, distance)
+        self:registerGesture(pan_release_gesture, "pan_release", zone, overrides_swipe_pan_release, direction, distance)
     end
 end
 
-function Gestures:registerGesture(ges, action, ges_type, zone, overrides, direction, distance)
+function Gestures:registerGesture(ges, ges_type, zone, overrides, direction, distance)
     self.ui:registerTouchZones({
         {
             id = ges,
@@ -1174,6 +980,13 @@ function Gestures:registerGesture(ges, action, ges_type, zone, overrides, direct
 end
 
 function Gestures:gestureAction(action, ges)
+    if G_reader_settings:isTrue("gestures_migrated") then
+        UIManager:show(InfoMessage:new{
+            text = _("Gestures have been upgraded. You may now set more than one action per gesture."),
+            show_icon = false,
+        })
+        return true
+    end
     local action_list = self.gestures[action]
     if action_list == nil
         or (ges.ges == "hold" and self.ignore_hold_corners) then
@@ -1215,6 +1028,12 @@ function Gestures:onIgnoreHoldCorners(ignore_hold_corners)
     end
     self.ignore_hold_corners = G_reader_settings:isTrue("ignore_hold_corners")
     return true
+end
+
+function Gestures:onFlushSettings()
+    if self.settings_data then
+        self.settings_data:flush()
+    end
 end
 
 return Gestures

@@ -159,7 +159,7 @@ return {
         ["short_diagonal_swipe"] = {
             ["full_refresh"] = true,
         },
-        ["multiswipe"] = {},
+        ["multiswipe"] = {}, -- otherwise registerGesture() won't pick up on multiswipes
         ["multiswipe_west_east"] = {
             ["previous_location"] = true,
         },
@@ -256,4 +256,5 @@ return {
             ["decrease_font"] = 0,
         },
     },
+    ["custom_multiswipes"] = {},
 }
