@@ -53,6 +53,7 @@ local OPDSBrowser = Menu:extend{
         ["text/plain"] = "TXT",
         ["application/x-mobipocket-ebook"] = "MOBI",
         ["application/x-mobi8-ebook"] = "AZW3",
+        ["application/vnd.amazon.mobi8-ebook"] = "AZW3",
         ["application/x-cbz"] = "CBZ",
         ["application/vnd.comicbook+zip"] = "CBZ",
         ["application/zip"] = "CBZ",
@@ -61,6 +62,8 @@ local OPDSBrowser = Menu:extend{
         ["application/x-rar-compressed"] = "CBR",
         ["application/vnd.rar"] = "CBR",
         ["application/djvu"] = "DJVU",
+        ["image/x-djvu"] = "DJVU",
+        ["image/vnd.djvu"] = "DJVU",
     },
 
     width = Screen:getWidth(),
