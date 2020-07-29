@@ -33,8 +33,10 @@ local settingsList = {
     -- Device settings
     show_frontlight_dialog = { category="none", event="ShowFlDialog", title=_("Show frontlight dialog"), device=true, condition=Device:hasFrontlight(),},
     toggle_frontlight = { category="none", event="ToggleFrontlight", title=_("Toggle frontlight"), device=true, condition=Device:hasFrontlight(),},
+    set_frontlight = { category="absolutenumber", event="SetFlIntensity", min=0, max=Device:getPowerDevice().fl_max, title=_("Set frontlight brightness"), device=true, condition=Device:hasFrontlight(),},
     increase_frontlight = { category="incrementalnumber", event="IncreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Increase frontlight brightness"), device=true, condition=Device:hasFrontlight(),},
     decrease_frontlight = { category="incrementalnumber", event="DecreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Decrease frontlight brightness"), device=true, condition=Device:hasFrontlight(),},
+    set_frontlight_warmth = { category="absolutenumber", event="SetFlWarmth", min=0, max=100, title=_("Set frontlight warmth"), device=true, condition=Device:hasNaturalLight(),},
     increase_frontlight_warmth = { category="incrementalnumber", event="IncreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Increase frontlight warmth"), device=true, condition=Device:hasNaturalLight(),},
     decrease_frontlight_warmth = { category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Decrease frontlight warmth"), device=true, condition=Device:hasNaturalLight(),},
     toggle_gsensor = { category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:canToggleGSensor(),},
@@ -164,8 +166,10 @@ local dispatcher_menu_order = {
     "show_config_menu",
     "show_frontlight_dialog",
     "toggle_frontlight",
+    "set_frontlight",
     "increase_frontlight",
     "decrease_frontlight",
+    "set_frontlight_warmth",
     "increase_frontlight_warmth",
     "decrease_frontlight_warmth",
 
