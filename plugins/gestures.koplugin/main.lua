@@ -126,9 +126,11 @@ function Gestures:init()
     end
     self.gestures = self.settings_data.data[self.ges_mode]
     self.custom_multiswipes = self.settings_data.data["custom_multiswipes"]
-    --if G_reader_settings:has("gesture_fm") or G_reader_settings:has("gesture_reader") then
+    if G_reader_settings:has("gesture_fm") or G_reader_settings:has("gesture_reader") then
         -- Migrate old gestures
-    --end
+        local Migration = require("migration")
+        Migration:migrateGestures(self)
+    end
 
     -- Some of these defaults need to be reversed in RTL mirrored UI,
     -- and as we set them in the saved gestures, we need to reset them
@@ -985,6 +987,7 @@ function Gestures:gestureAction(action, ges)
             text = _("Gestures have been upgraded. You may now set more than one action per gesture."),
             show_icon = false,
         })
+        G_reader_settings:delSetting("gestures_migrated")
         return true
     end
     local action_list = self.gestures[action]
