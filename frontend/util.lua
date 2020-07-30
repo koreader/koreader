@@ -2,9 +2,11 @@
 This module contains miscellaneous helper functions for the KOReader frontend.
 ]]
 
+local ffi = require("ffi")
 local BaseUtil = require("ffi/util")
 local dbg = require("dbg")
 local _ = require("gettext")
+local C = ffi.C
 local T = BaseUtil.template
 
 local lshift = bit.lshift
@@ -1169,6 +1171,46 @@ end
 -- @return boolean: true on success
 function util.stringEndsWith(str, ending)
    return ending == "" or str:sub(-#ending) == ending
+end
+
+ffi.cdef[[
+int strcoll (const char *str1, const char *str2);
+]]
+
+-- string sort function respecting LC_COLLATE
+local function strcoll(str1, str2)
+    return C.strcoll(str1, str2) < 0
+end
+
+function util.strcoll(str1, str2)
+    -- lookup strcoll implementation on first use to avoid circular require
+    local Device = require("device")
+    local strcoll_func = strcoll
+
+    -- circumvent string collating in Kobo devices. See issue koreader/koreader#686
+    if Device:isKobo() then
+        strcoll_func = function(a, b)
+            return a < b
+        end
+    end
+
+    -- patch real strcoll implementation
+    util.strcoll = function(a, b)
+        if a == nil and b == nil then
+            return false
+        elseif a == nil then
+            return true
+        elseif b == nil then
+            return false
+        elseif DALPHA_SORT_CASE_INSENSITIVE then
+            return strcoll_func(string.lower(a), string.lower(b))
+        else
+            return strcoll_func(a, b)
+        end
+    end
+
+    -- delegate to real strcoll implementation
+    return util.strcoll(str1, str2)
 end
 
 return util
