@@ -120,6 +120,7 @@ function ReaderTypography:init()
     self.hyph_trust_soft_hyphens = false
     self.hyph_soft_hyphens_only = false
     self.hyph_force_algorithmic = false
+    self.floating_punctuation = 0
 
     -- Migrate old readerhyphenation settings (but keep them in case one
     -- go back to a previous version)
@@ -583,6 +584,17 @@ These settings will apply to all books with any hyphenation dictionary.
         sub_item_table = hyphenation_submenu,
     })
 
+    table.insert(self.menu_table, {
+        -- @translators See https://en.wikipedia.org/wiki/Hanging_punctuation
+        text = _("Hanging punctuation"),
+        checked_func = function() return self.floating_punctuation == 1 end,
+        callback = function()
+            self.floating_punctuation = self.floating_punctuation == 1 and 0 or 1
+            self:onToggleFloatingPunctuation(self.floating_punctuation)
+        end,
+        hold_callback = function() self:makeDefaultFloatingPunctuation() end,
+    })
+
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -597,6 +609,39 @@ function ReaderTypography:addToMainMenu(menu_items)
         sub_item_table = self.menu_table,
     }
 end
+
+function ReaderTypography:onToggleFloatingPunctuation(toggle)
+    -- for some reason the toggle value read from history files may stay boolean
+    -- and there seems no more elegant way to convert boolean values to numbers
+    if toggle == true then
+        toggle = 1
+    elseif toggle == false then
+        toggle = 0
+    end
+    self.ui.document:setFloatingPunctuation(toggle)
+    self.ui:handleEvent(Event:new("UpdatePos"))
+end
+
+function ReaderTypography:makeDefaultFloatingPunctuation()
+    local floating_punctuation = G_reader_settings:isTrue("floating_punctuation")
+    UIManager:show(MultiConfirmBox:new{
+        text = floating_punctuation and _("Would you like to enable or disable hanging punctuation by default?\n\nThe current default (★) is enabled.")
+        or _("Would you like to enable or disable hanging punctuation by default?\n\nThe current default (★) is disabled."),
+        choice1_text_func =  function()
+            return floating_punctuation and _("Disable") or _("Disable (★)")
+        end,
+        choice1_callback = function()
+            G_reader_settings:saveSetting("floating_punctuation", false)
+        end,
+        choice2_text_func = function()
+            return floating_punctuation and _("Enable (★)") or _("Enable")
+        end,
+        choice2_callback = function()
+            G_reader_settings:saveSetting("floating_punctuation", true)
+        end,
+    })
+end
+
 
 function ReaderTypography:getCurrentDefaultHyphDictLanguage()
     local hyph_dict_name = self.ui.document:getTextMainLangDefaultHyphDictionary()
@@ -718,6 +763,15 @@ function ReaderTypography:onReadSettings(config)
     self.ui.document:setHyphLeftHyphenMin(G_reader_settings:readSetting("hyph_left_hyphen_min") or 0)
     self.ui.document:setHyphRightHyphenMin(G_reader_settings:readSetting("hyph_right_hyphen_min") or 0)
 
+    -- Default to disable hanging/floating punctuation
+    -- (Stored as 0/1 in docsetting for historical reasons, but as true/false
+    -- in global settings.)
+    self.floating_punctuation = config:readSetting("floating_punctuation")
+    if self.floating_punctuation == nil then
+        self.floating_punctuation = G_reader_settings:isTrue("floating_punctuation") and 1 or 0
+    end
+    self:onToggleFloatingPunctuation(self.floating_punctuation)
+
     -- Decide and set the text main lang tag according to settings
     self.allow_doc_lang_tag_override = false
     -- Use the one manually set for this document
@@ -806,6 +860,7 @@ function ReaderTypography:onSaveSettings()
     self.ui.doc_settings:saveSetting("hyph_trust_soft_hyphens", self.hyph_trust_soft_hyphens)
     self.ui.doc_settings:saveSetting("hyph_soft_hyphens_only", self.hyph_soft_hyphens_only)
     self.ui.doc_settings:saveSetting("hyph_force_algorithmic", self.hyph_force_algorithmic)
+    self.ui.doc_settings:saveSetting("floating_punctuation", self.floating_punctuation)
 end
 
 return ReaderTypography
