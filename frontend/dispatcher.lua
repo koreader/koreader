@@ -350,7 +350,7 @@ function Dispatcher:addItem(menu, location, settings, section)
                     callback = function(touchmenu_instance)
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
-                            width = Screen:getWidth() * 0.6,
+                            width = math.floor(Screen:getWidth() * 0.6),
                             value = location[settings] ~= nil and location[settings][k] or settingsList[k].default or 0,
                             value_min = settingsList[k].min,
                             value_step = 1,
@@ -390,7 +390,7 @@ function Dispatcher:addItem(menu, location, settings, section)
                         local _ = require("gettext")
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
-                            width = Screen:getWidth() * 0.6,
+                            width = math.floor(Screen:getWidth() * 0.6),
                             value = location[settings] ~= nil and location[settings][k] or 0,
                             value_min = settingsList[k].min,
                             value_step = 1,
