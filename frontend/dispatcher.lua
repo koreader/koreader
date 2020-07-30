@@ -329,8 +329,7 @@ function Dispatcher:addItem(menu, location, settings, section)
                         if location[settings] == nil then
                             location[settings] = {}
                         end
-                        if location[settings][k]
-                        then
+                        if location[settings][k] then
                             location[settings][k] = nil
                         else
                             location[settings][k] = true
@@ -357,7 +356,7 @@ function Dispatcher:addItem(menu, location, settings, section)
                             value_hold_step = 2,
                             value_max = settingsList[k].max,
                             default_value = 0,
-                            title_text = settingsList[k].title,
+                            title_text = Dispatcher:getNameFromItem(k, location, settings),
                             callback = function(spin)
                                 if location[settings] == nil then
                                     location[settings] = {}
@@ -397,7 +396,7 @@ function Dispatcher:addItem(menu, location, settings, section)
                             value_hold_step = 2,
                             value_max = settingsList[k].max,
                             default_value = 0,
-                            title_text = settingsList[k].title,
+                            title_text = Dispatcher:getNameFromItem(k, location, settings),
                             info_text = _([[If called by a gesture the amount of the gesture will be used]]),
                             callback = function(spin)
                                 if location[settings] == nil then
@@ -441,11 +440,10 @@ function Dispatcher:addItem(menu, location, settings, section)
                 end
                 table.insert(menu, {
                     text_func = function()
-                        return settingsList[k].title
+                        return Dispatcher:getNameFromItem(k, location, settings)
                     end,
                     checked_func = function()
-                        return location[settings] ~= nil
-                            and location[settings][k] ~= nil
+                        return location[settings] ~= nil and location[settings][k] ~= nil
                     end,
                     sub_item_table = sub_item_table,
                     keep_menu_open = true,
@@ -479,8 +477,7 @@ function Dispatcher:addSubMenu(menu, location, settings)
         text = _("Nothing"),
         separator = true,
         checked_func = function()
-            return location[settings] ~= nil
-                and next(location[settings]) == nil
+            return location[settings] ~= nil and next(location[settings]) == nil
         end,
         callback = function(touchmenu_instance)
             location[settings] = {}
