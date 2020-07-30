@@ -12,6 +12,7 @@ local KeyValuePage = require("ui/widget/keyvaluepage")
 local LuaData = require("luadata")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
+local SortWidget = require("ui/widget/sortwidget")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local ffiUtil  = require("ffi/util")
@@ -28,11 +29,6 @@ local lookup_history = nil
 
 local function getIfosInDir(path)
     -- Get all the .ifo under directory path.
-    -- We use the same logic as sdcv to walk directories and ifos files
-    -- (so we get them in the order sdcv queries them) :
-    -- - No sorting, entries are processed in the order the dir_read_name() call
-    --   returns them (inodes linked list)
-    -- - If entry is a directory, Walk in it first and recurse
     -- Don't walk into "res/" subdirectories, as per Stardict specs, they
     -- may contain possibly many resource files (image, audio files...)
     -- that could slow down our walk here.
@@ -138,6 +134,12 @@ function ReaderDictionary:init()
         end
         logger.dbg("found", #available_ifos, "dictionaries")
 
+        if not G_reader_settings:readSetting("dicts_order") then
+            G_reader_settings:saveSetting("dicts_order", {})
+        end
+
+        self:sortAvailableIfos()
+
         if not G_reader_settings:readSetting("dicts_disabled") then
             -- Create an empty dict for this setting, so that we can
             -- access and update it directly through G_reader_settings
@@ -145,30 +147,42 @@ function ReaderDictionary:init()
             G_reader_settings:saveSetting("dicts_disabled", {})
         end
     end
-    -- Prepare the -u options to give to sdcv if some dictionaries are disabled
+    -- Prepare the -u options to give to sdcv the dictionary order and if some are disabled
     self:updateSdcvDictNamesOptions()
     if not lookup_history then
         lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", { name = "LookupHistory" })
     end
 end
 
+function ReaderDictionary:sortAvailableIfos()
+    local dicts_order = G_reader_settings:readSetting("dicts_order")
+
+    table.sort(available_ifos, function(lifo, rifo)
+        local lord = dicts_order[lifo.file]
+        local rord = dicts_order[rifo.file]
+
+        -- Both ifos without an explicit position -> lexical comparison
+        if lord == rord then
+            return ffiUtil.strcoll(lifo.name, rifo.name)
+        end
+
+        -- Ifos without an explicit position come last.
+        return lord ~= nil and (rord == nil or lord < rord)
+    end)
+end
+
+
 function ReaderDictionary:updateSdcvDictNamesOptions()
-    self.enabled_dict_names = nil
+    self.enabled_dict_names = {}
 
     -- We cannot tell sdcv which dictionaries to ignore, but we
     -- can tell it which dictionaries to use, by using multiple
     -- -u <dictname> options.
-    -- (The order of the -u does not matter, and we can not use
-    -- them for ordering queries and results)
+    -- The order of the -u options controls the dictionary order
+    -- that sdcv uses to order its results.
     local dicts_disabled = G_reader_settings:readSetting("dicts_disabled")
-    if not next(dicts_disabled) then
-        return
-    end
     for _, ifo in pairs(available_ifos) do
         if not dicts_disabled[ifo.file] then
-            if not self.enabled_dict_names then
-                self.enabled_dict_names = {}
-            end
             table.insert(self.enabled_dict_names, ifo.name)
         end
     end
@@ -214,29 +228,22 @@ function ReaderDictionary:addToMainMenu(menu_items)
         text = _("Dictionary settings"),
         sub_item_table = {
             {
+                keep_menu_open = true,
                 text_func = function()
                     local nb_available, nb_enabled, nb_disabled = self:getNumberOfDictionaries()
                     local nb_str = nb_available
                     if nb_disabled > 0 then
                         nb_str = nb_enabled .. "/" .. nb_available
                     end
-                    return T(_("Installed dictionaries (%1)"), nb_str)
+                    return T(_("Manage dictionaries (%1)"), nb_str)
                 end,
                 enabled_func = function()
                     return self:getNumberOfDictionaries() > 0
                 end,
-                sub_item_table = self:genDictionariesMenu(),
-            },
-            {
-                text = _("Info on dictionary order"),
-                keep_menu_open = true,
-                callback = function()
-                    UIManager:show(InfoMessage:new{
-                        text = T(_([[
-If you'd like to change the order in which dictionaries are queried (and their results displayed), you can:
-- move all dictionary directories out of %1.
-- move them back there, one by one, in the order you want them to be used.]]), BD.dirpath(self.data_dir))
-                    })
+                callback = function(touchmenu_instance)
+                    self:showDictionariesMenu(function()
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end)
                 end,
             },
             {
@@ -495,28 +502,51 @@ function ReaderDictionary:_genDownloadDictionariesMenu()
     return menu_items
 end
 
-function ReaderDictionary:genDictionariesMenu()
-    local items = {}
+function ReaderDictionary:showDictionariesMenu(changed_callback)
+    -- Work on local copy, save to settings only when SortWidget is closed with the accept button
+    local dicts_disabled = util.tableDeepCopy(G_reader_settings:readSetting("dicts_disabled"))
+
+    local sort_items = {}
     for _, ifo in pairs(available_ifos) do
-        table.insert(items, {
+        table.insert(sort_items, {
             text = ifo.name,
             callback = function()
-                local dicts_disabled = G_reader_settings:readSetting("dicts_disabled")
                 if dicts_disabled[ifo.file] then
                     dicts_disabled[ifo.file] = nil
                 else
                     dicts_disabled[ifo.file] = true
                 end
-                -- Update the -u options to give to sdcv
-                self:updateSdcvDictNamesOptions()
             end,
             checked_func = function()
-                local dicts_disabled = G_reader_settings:readSetting("dicts_disabled")
                 return not dicts_disabled[ifo.file]
-            end
+            end,
+            ifo = ifo,
         })
     end
-    return items
+
+    local sort_widget = SortWidget:new{
+        title = _("Manage installed dictionaries"),
+        item_table = sort_items,
+        callback = function()
+            -- Save local copy of dicts_disabled
+            G_reader_settings:saveSetting("dicts_disabled", dicts_disabled)
+
+            -- Write back the sorted items to dicts_order
+            local dicts_order = {}
+            for i, sort_item in pairs(sort_items) do
+                dicts_order[sort_item.ifo.file] = i
+            end
+            G_reader_settings:saveSetting("dicts_order", dicts_order)
+
+            self:sortAvailableIfos()
+
+            self:updateSdcvDictNamesOptions()
+
+            UIManager:setDirty(nil, "ui")
+            changed_callback()
+        end
+    }
+    UIManager:show(sort_widget)
 end
 
 local function dictDirsEmpty(dict_dirs)
