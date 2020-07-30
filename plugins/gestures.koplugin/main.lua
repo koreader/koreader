@@ -139,9 +139,14 @@ function Gestures:init()
         tap_top_left_corner = "tap_top_right_corner",
         tap_right_bottom_corner = "tap_left_bottom_corner",
         double_tap_left_side = "double_tap_right_side",
-        double_tap_right_side = "double_tap_left_side",
     }
+
     local is_rtl = BD.mirroredUILayout()
+    if is_rtl then
+        for k, v in pairs(mirrored_if_rtl) do
+            self.defaults[k], self.defaults[v] = self.defaults[v], self.defaults[k]
+        end
+    end
     -- We remember the last UI direction gestures were made on. If it changes,
     -- reset the mirrored_if_rtl ones to the default for the new direction.
     local ges_dir_setting = self.ges_mode.."ui_lang_direction_rtl"
@@ -151,24 +156,13 @@ function Gestures:init()
         for k, v in pairs(mirrored_if_rtl) do
             -- We only replace them if they are still the other direction's default.
             -- If not, the user has changed them: let him deal with setting new ones if needed.
-            if is_rtl then
-                if util.tableEquals(self.gestures[k], self.defaults[k]) then
-                    self.gestures[k] = self.defaults[v]
-                    reset = true
-                end
-                if util.tableEquals(self.gestures[v], self.defaults[v]) then
-                    self.gestures[v] = self.defaults[k]
-                    reset = true
-                end
-            else
-                if util.tableEquals(self.gestures[k], self.defaults[v]) then
-                    self.gestures[k] = self.defaults[k]
-                    reset = true
-                end
-                if util.tableEquals(self.gestures[v], self.defaults[k]) then
-                    self.gestures[v] = self.defaults[v]
-                    reset = true
-                end
+            if util.tableEquals(self.gestures[k], self.defaults[v]) then
+                self.gestures[k] = self.defaults[k]
+                reset = true
+            end
+            if util.tableEquals(self.gestures[v], self.defaults[k]) then
+                self.gestures[v] = self.defaults[v]
+                reset = true
             end
         end
         if reset then
