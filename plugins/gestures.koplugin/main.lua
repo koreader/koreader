@@ -181,7 +181,7 @@ local gestureTextFunc = function(location, ges)
     if item then
         local sub_item = next(item)
         if sub_item == nil then return _("Nothing") end
-        action_name = Dispatcher:getNameFromItem(sub_item)
+        action_name = Dispatcher:getNameFromItem(sub_item, location, ges)
         if next(item, sub_item) ~= nil then
             action_name = _("Many")
         end

@@ -3,6 +3,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local Dispatcher = {
@@ -100,7 +101,7 @@ local settingsList = {
     cycle_highlight_style = { category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), rolling=true, paging=true, separator=true,},
     kosync_push_progress = { category="none", event="KOSyncPushProgress", title=_("Push progress from this device"), rolling=true, paging=true,},
     kosync_pull_progress = { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), rolling=true, paging=true, separator=true,},
-    page_jmp = { category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Go X pages"), rolling=true, paging=true,},
+    page_jmp = { category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Go %1 pages"), rolling=true, paging=true,},
 
     -- rolling reader settings
     increase_font = { category="incrementalnumber", event="IncreaseFontSize", min=1, max=255, title=_("Increase font size"), rolling=true,},
@@ -301,6 +302,18 @@ function Dispatcher:init()
     Dispatcher.initialized = true
 end
 
+-- Returns a display name for the item.
+function Dispatcher:getNameFromItem(item, location, settings)
+    local amount
+    if location[settings] ~= nil and location[settings][item] ~= nil then
+        amount = location[settings][item]
+    end
+    if amount == nil or amount == 0 then
+        amount = "X"
+    end
+    return T(settingsList[item].title, amount)
+end
+
 function Dispatcher:addItem(menu, location, settings, section)
     for _, k in ipairs(dispatcher_menu_order) do
         if settingsList[k][section] == true and
@@ -329,7 +342,7 @@ function Dispatcher:addItem(menu, location, settings, section)
             elseif settingsList[k].category == "absolutenumber" then
                 table.insert(menu, {
                     text_func = function()
-                        return settingsList[k].title
+                        return Dispatcher:getNameFromItem(k, location, settings)
                     end,
                     checked_func = function()
                     return location[settings] ~= nil and location[settings][k] ~= nil
@@ -368,7 +381,7 @@ function Dispatcher:addItem(menu, location, settings, section)
             elseif settingsList[k].category == "incrementalnumber" then
                 table.insert(menu, {
                     text_func = function()
-                        return settingsList[k].title
+                        return Dispatcher:getNameFromItem(k, location, settings)
                     end,
                     checked_func = function()
                     return location[settings] ~= nil and location[settings][k] ~= nil
@@ -489,11 +502,6 @@ function Dispatcher:addSubMenu(menu, location, settings)
             sub_item_table = submenu,
         })
     end
-end
-
--- Returns a display name for the item.
-function Dispatcher:getNameFromItem(item)
-    return item and settingsList[item].title
 end
 
 --[[--
