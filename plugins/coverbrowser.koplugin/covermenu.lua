@@ -34,6 +34,10 @@ local BookInfoManager = require("bookinfomanager")
 local current_path = nil
 local current_cover_specs = false
 
+-- Do some collectgarbage() every few drawings
+local NB_DRAWINGS_BETWEEN_COLLECTGARBAGE = 5
+local nb_drawings_since_last_collectgarbage = 0
+
 -- Simple holder of methods that will replace those
 -- in the real Menu class or instance
 local CoverMenu = {}
@@ -78,8 +82,17 @@ function CoverMenu:updateItems(select_number)
     -- and getting stuck...
     -- With this, garbage collecting may be more deterministic, and it has
     -- no negative impact on user experience.
-    collectgarbage()
-    collectgarbage()
+    -- But don't do it on every drawing, to not have all of them slow
+    -- when memory usage is already high
+    nb_drawings_since_last_collectgarbage = nb_drawings_since_last_collectgarbage + 1
+    if nb_drawings_since_last_collectgarbage >= NB_DRAWINGS_BETWEEN_COLLECTGARBAGE then
+        -- (delay it a bit so this pause is less noticable)
+        UIManager:scheduleIn(0.2, function()
+            collectgarbage()
+            collectgarbage()
+        end)
+        nb_drawings_since_last_collectgarbage = 0
+    end
 
     -- Specific UI building implementation (defined in some other module)
     self._has_cover_images = false
@@ -642,6 +655,11 @@ end
 function CoverMenu:onCloseWidget()
     -- Due to close callback in FileManagerHistory:onShowHist, we may be called
     -- multiple times (witnessed that with print(debug.traceback())
+    -- So, avoid doing what follows twice
+    if self._covermenu_onclose_done then
+        return
+    end
+    self._covermenu_onclose_done = true
 
     -- Stop background job if any (so that full cpu is available to reader)
     logger.dbg("CoverMenu:onCloseWidget: terminating jobs if needed")
@@ -663,8 +681,12 @@ function CoverMenu:onCloseWidget()
     self.cover_info_cache = nil
 
     -- Force garbage collecting when leaving too
-    collectgarbage()
-    collectgarbage()
+    -- (delay it a bit so this pause is less noticable)
+    UIManager:scheduleIn(0.2, function()
+        collectgarbage()
+        collectgarbage()
+    end)
+    nb_drawings_since_last_collectgarbage = 0
 
     -- Call original Menu:onCloseWidget (no subclass seems to override it)
     Menu.onCloseWidget(self)
