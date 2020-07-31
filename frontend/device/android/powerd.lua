@@ -4,8 +4,6 @@ local _, android = pcall(require, "android")
 local AndroidPowerD = BasePowerD:new{
     fl_min = 0,
     fl_max = 100,
-    bright_diff = android.getScreenMaxBrightness() - android.getScreenMinBrightness(),
-    warm_diff = android.getScreenMaxWarmth() - android.getScreenMinWarmth(),
 }
 
 function AndroidPowerD:frontlightIntensityHW()
@@ -18,19 +16,20 @@ function AndroidPowerD:setIntensityHW(intensity)
 end
 
 function AndroidPowerD:init()
+    self.bright_diff = android:getScreenMaxBrightness() - android:getScreenMinBrightness()
     if self.device:hasNaturalLight() then
-        self.fl_warmth = self.getWarmth()
+        self.warm_diff = android:getScreenMaxWarmth() - android:getScreenMinWarmth()
+        self.fl_warmth = self:getWarmth()
     end
 end
 
 function AndroidPowerD:setWarmth(warmth)
     self.fl_warmth = warmth
-    android.setScreenWarmth(warmth / (android.getScreenWarmth() * self.warm_diff))
+    android.setScreenWarmth(warmth / self.warm_diff)
 end
 
 function AndroidPowerD:getWarmth()
-    local warmth = android.getScreenWarmth() * self.bright_diff
-    return warmth
+   return android.getScreenWarmth() * self.warm_diff
 end
 
 function AndroidPowerD:getCapacityHW()
