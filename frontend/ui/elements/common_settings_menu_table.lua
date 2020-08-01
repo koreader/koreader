@@ -201,31 +201,12 @@ if Device:isAndroid() then
     local isAndroid, android = pcall(require, "android")
     if not isAndroid then return end
 
-    local logger = require("logger")
-    local powerd = Device:getPowerDevice()
-
-    local function FrontlightDialogWrapper( )
-        local usleep = require("ffi/util").usleep
-        android.settings.dialog(_("Frontlight settings"), _("Intensity"), _("Warmth"), _("Ok"))
-        logger.info("intensity: " .. powerd:frontlightIntensityHW())
-        repeat
-            usleep(75000) -- sleep 75ms before next check if dialog was quit
-        until (not android.isFrontlightDialogRunning())
-        logger.info("powerd.fl_intensity: " .. powerd.fl_intensity)
-        powerd:setIntensityHW(powerd:frontlightIntensityHW())
-        if android.isWarmthDevice~=nil and android.isWarmthDevice() then
-            powerd:setWarmth(powerd:getWarmth())
-            logger.info("powerd.fl_warmth: " .. powerd.fl_warmth)
-        end
-
-    end
-
-    -- on Android: overwrite generic frontlight with a native Dialog
+    -- overwrite generic frontlight with a native Dialog
     common_settings.frontlight = {
         text = _("Frontlight"),
         callback = function()
-            FrontlightDialogWrapper()
-            end,
+            Device:lightDialog()
+        end,
     }
 
     -- screen timeout options, disabled if device needs wakelocks.

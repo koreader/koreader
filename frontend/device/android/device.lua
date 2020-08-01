@@ -377,6 +377,20 @@ function Device:canExecuteScript(file)
     end
 end
 
+function Device:lightDialog()
+    local usleep = require("ffi/util").usleep
+    android.settings.dialog(_("Frontlight settings"), _("Intensity"), _("Warmth"), _("Ok"))
+    repeat
+        usleep(75000) -- sleep 75ms before next check if dialog was quit
+    until (not android.isFrontlightDialogRunning())
+    logger.info("new brightness: " .. self.powerd.fl_intensity)
+    self.powerd:setIntensityHW(self.powerd:frontlightIntensityHW())
+    if android.isWarmthDevice() then
+        self.powerd:setWarmth(self.powerd:getWarmth())
+        logger.info("new warmth: " .. self.powerd.fl_warmth)
+    end
+end
+
 android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",
     android.prop.version, getCodename(), Device.firmware_rev, android.prop.flavor))
 
