@@ -295,10 +295,10 @@ function KOSync:setWhisperBackward(strategy)
 end
 
 function KOSync:login()
-    if not NetworkMgr:isOnline() then
-        NetworkMgr:promptWifiOn()
+    if NetworkMgr:willRerunWhenOnline(function() self:login() end) then
         return
     end
+
     self.login_dialog = LoginDialog:new{
         title = self.title,
         username = self.kosync_username or "",

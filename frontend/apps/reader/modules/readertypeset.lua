@@ -3,7 +3,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
 local Math = require("optmath")
 local lfs = require("libs/libkoreader-lfs")
@@ -96,14 +95,6 @@ function ReaderTypeset:onReadSettings(config)
         G_reader_settings:readSetting("copt_sync_t_b_page_margins") or 0
     self.sync_t_b_page_margins = self.sync_t_b_page_margins == 1 and true or false
 
-    -- default to disable floating punctuation
-    -- the floating punctuation should not be boolean value for the following
-    -- expression otherwise a false value will never be returned but numerical
-    -- values will survive this expression
-    self.floating_punctuation = config:readSetting("floating_punctuation") or
-        G_reader_settings:readSetting("floating_punctuation") or 0
-    self:toggleFloatingPunctuation(self.floating_punctuation)
-
     -- default to disable TXT formatting as it does more harm than good
     self.txt_preformatted = config:readSetting("txt_preformatted") or
         G_reader_settings:readSetting("txt_preformatted") or 1
@@ -129,7 +120,6 @@ end
 function ReaderTypeset:onSaveSettings()
     self.ui.doc_settings:saveSetting("css", self.css)
     self.ui.doc_settings:saveSetting("embedded_css", self.embedded_css)
-    self.ui.doc_settings:saveSetting("floating_punctuation", self.floating_punctuation)
     self.ui.doc_settings:saveSetting("embedded_fonts", self.embedded_fonts)
     self.ui.doc_settings:saveSetting("render_dpi", self.render_dpi)
     self.ui.doc_settings:saveSetting("smooth_scaling", self.smooth_scaling)
@@ -411,18 +401,6 @@ function ReaderTypeset:toggleNightmodeImages(toggle)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
-function ReaderTypeset:toggleFloatingPunctuation(toggle)
-    -- for some reason the toggle value read from history files may stay boolean
-    -- and there seems no more elegant way to convert boolean values to numbers
-    if toggle == true then
-        toggle = 1
-    elseif toggle == false then
-        toggle = 0
-    end
-    self.ui.document:setFloatingPunctuation(toggle)
-    self.ui:handleEvent(Event:new("UpdatePos"))
-end
-
 function ReaderTypeset:toggleTxtPreFormatted(toggle)
     self.ui.document:setTxtPreFormatted(toggle)
     self.ui:handleEvent(Event:new("UpdatePos"))
@@ -440,36 +418,6 @@ function ReaderTypeset:addToMainMenu(menu_items)
         text = self.css_menu_title,
         sub_item_table = self:genStyleSheetMenu(),
     }
-    menu_items.floating_punctuation = {
-        -- @translators See https://en.wikipedia.org/wiki/Hanging_punctuation
-        text = _("Hanging punctuation"),
-        checked_func = function() return self.floating_punctuation == 1 end,
-        callback = function()
-            self.floating_punctuation = self.floating_punctuation == 1 and 0 or 1
-            self:toggleFloatingPunctuation(self.floating_punctuation)
-        end,
-        hold_callback = function() self:makeDefaultFloatingPunctuation() end,
-    }
-end
-
-function ReaderTypeset:makeDefaultFloatingPunctuation()
-    local floating_punctuation = G_reader_settings:isTrue("floating_punctuation")
-    UIManager:show(MultiConfirmBox:new{
-        text = floating_punctuation and _("Would you like to enable or disable hanging punctuation by default?\n\nThe current default (★) is enabled.")
-        or _("Would you like to enable or disable hanging punctuation by default?\n\nThe current default (★) is disabled."),
-        choice1_text_func =  function()
-            return floating_punctuation and _("Disable") or _("Disable (★)")
-        end,
-        choice1_callback = function()
-            G_reader_settings:saveSetting("floating_punctuation", false)
-        end,
-        choice2_text_func = function()
-            return floating_punctuation and _("Enable (★)") or _("Enable")
-        end,
-        choice2_callback = function()
-            G_reader_settings:saveSetting("floating_punctuation", true)
-        end,
-    })
 end
 
 function ReaderTypeset:makeDefaultStyleSheet(css, text, touchmenu_instance)

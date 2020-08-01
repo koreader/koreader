@@ -2,7 +2,7 @@
 
 set -x
 
-# disable WiFi
+# disable Wi-Fi
 ./set-wifi.sh off
 
 # enter sleep, disabling all devices except CPU

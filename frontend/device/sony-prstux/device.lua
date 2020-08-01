@@ -158,6 +158,10 @@ function SonyPRSTUX:initNetworkManager(NetworkMgr)
        self:showNetworkMenu(complete_callback)
     end
 
+    function NetworkMgr:getNetworkInterfaceName()
+        return "wlan0"
+    end
+
     NetworkMgr:setWirelessBackend("wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/wlan0"})
 
     function NetworkMgr:obtainIP()

@@ -997,12 +997,17 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
             if direction == "-" then
                 value = self.configurable[name] or values[1]
                 if type(value) == "table" then
+                    -- Don't update directly this table: it might be a reference
+                    -- to one of the original preset values tables
+                    local updated = {}
                     for i=1, #value do
-                        value[i] = value[i] - 1
-                        if value[i] < 0 then
-                            value[i] = 0
+                        local v = value[i] - 1
+                        if v < 0 then
+                            v = 0
                         end
+                        table.insert(updated, v)
                     end
+                    value = updated
                 else
                     value = value - 1
                     if value < 0 then
@@ -1012,9 +1017,11 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
             else
                 value = self.configurable[name] or values[#values]
                 if type(value) == "table" then
+                    local updated = {}
                     for i=1, #value do
-                        value[i] = value[i] + 1
+                        table.insert(updated, value[i] + 1)
                     end
+                    value = updated
                 else
                     value = value + 1
                 end

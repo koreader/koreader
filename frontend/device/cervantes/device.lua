@@ -17,7 +17,7 @@ local function isConnected()
     -- read carrier state from sysfs (for eth0)
     local file = io.open("/sys/class/net/eth0/carrier", "rb")
 
-    -- file exists while wifi module is loaded.
+    -- file exists while Wi-Fi module is loaded.
     if not file then return 0 end
 
     -- 0 means not connected, 1 connected
@@ -224,7 +224,7 @@ end
 -- wireless
 function Cervantes:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOffWifi(complete_callback)
-        logger.info("Cervantes: disabling WiFi")
+        logger.info("Cervantes: disabling Wi-Fi")
         self:releaseIP()
         os.execute("./disable-wifi.sh")
         if complete_callback then
@@ -232,9 +232,12 @@ function Cervantes:initNetworkManager(NetworkMgr)
         end
     end
     function NetworkMgr:turnOnWifi(complete_callback)
-        logger.info("Cervantes: enabling WiFi")
+        logger.info("Cervantes: enabling Wi-Fi")
         os.execute("./enable-wifi.sh")
         self:reconnectOrShowNetworkMenu(complete_callback)
+    end
+    function NetworkMgr:getNetworkInterfaceName()
+        return "eth0"
     end
     NetworkMgr:setWirelessBackend("wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/eth0"})
     function NetworkMgr:obtainIP()

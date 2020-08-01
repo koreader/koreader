@@ -10,11 +10,11 @@ local function yes() return true end
 local function no() return false end
 
 local function koboEnableWifi(toggle)
-    if toggle == 1 then
-        logger.info("Kobo WiFi: enabling WiFi")
+    if toggle == true then
+        logger.info("Kobo Wi-Fi: enabling Wi-Fi")
         os.execute("./enable-wifi.sh")
     else
-        logger.info("Kobo WiFi: disabling WiFi")
+        logger.info("Kobo Wi-Fi: disabling Wi-Fi")
         os.execute("./disable-wifi.sh")
     end
 end
@@ -359,7 +359,7 @@ function Kobo:init()
     self.input.open("/dev/input/event0") -- Various HW Buttons, Switches & Synthetic NTX events
     self.input.open("/dev/input/event1")
     -- fake_events is only used for usb plug event so far
-    -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status
+    -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status (... but only when Nickel is running ;p)
     self.input.open("fake_events")
 
     if not self.needsTouchScreenProbe() then
@@ -414,20 +414,24 @@ end
 
 function Kobo:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOffWifi(complete_callback)
-        koboEnableWifi(0)
+        self:releaseIP()
+        koboEnableWifi(false)
         if complete_callback then
             complete_callback()
         end
     end
 
     function NetworkMgr:turnOnWifi(complete_callback)
-        koboEnableWifi(1)
+        koboEnableWifi(true)
         self:showNetworkMenu(complete_callback)
     end
 
     local net_if = os.getenv("INTERFACE")
     if not net_if then
         net_if = "eth0"
+    end
+    function NetworkMgr:getNetworkInterfaceName()
+        return net_if
     end
     NetworkMgr:setWirelessBackend(
         "wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/" .. net_if})
@@ -444,14 +448,14 @@ function Kobo:initNetworkManager(NetworkMgr)
         os.execute("./restore-wifi-async.sh")
     end
 
-    -- NOTE: Cheap-ass way of checking if WiFi seems to be enabled...
+    -- NOTE: Cheap-ass way of checking if Wi-Fi seems to be enabled...
     --       Since the crux of the issues lies in race-y module unloading, this is perfectly fine for our usage.
     function NetworkMgr:isWifiOn()
         local fd = io.open("/proc/modules", "r")
         if fd then
             local lsmod = fd:read("*all")
             fd:close()
-            -- lsmod is usually empty, unless WiFi or USB is enabled
+            -- lsmod is usually empty, unless Wi-Fi or USB is enabled
             -- We could alternatively check if lfs.attributes("/proc/sys/net/ipv4/conf/" .. os.getenv("INTERFACE"), "mode") == "directory"
             -- c.f., also what Cervantes does via /sys/class/net/eth0/carrier to check if the interface is up.
             -- That said, since we only care about whether *modules* are loaded, this does the job nicely.

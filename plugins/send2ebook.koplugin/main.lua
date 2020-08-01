@@ -21,7 +21,6 @@ local Send2Ebook = WidgetContainer:new{
 }
 
 local initialized = false
-local wifi_enabled_before_action = true
 local send2ebook_config_file = "send2ebook_settings.lua"
 local config_key_custom_dl_dir = "custom_dl_dir";
 local default_download_dir_name = "send2ebook"
@@ -45,13 +44,6 @@ function Send2Ebook:downloadFileAndRemove(connection_url, remote_path, local_dow
     end
 end
 
---- @todo Implement as NetworkMgr:afterWifiAction with configuration options.
-function Send2Ebook:afterWifiAction()
-    if not wifi_enabled_before_action then
-        NetworkMgr:promptWifiOff()
-    end
-end
-
 function Send2Ebook:init()
     self.ui.menu:registerToMainMenu(self)
 end
@@ -65,12 +57,10 @@ function Send2Ebook:addToMainMenu(menu_items)
                 text = _("Download and remove from server"),
                 keep_menu_open = true,
                 callback = function()
-                  if not NetworkMgr:isOnline() then
-                      wifi_enabled_before_action = false
-                      NetworkMgr:beforeWifiAction(self.process)
-                  else
-                      self:process()
-                  end
+                    local connect_callback = function()
+                        self:process()
+                    end
+                    NetworkMgr:runWhenOnline(connect_callback)
                 end,
             },
             {
@@ -171,7 +161,7 @@ function Send2Ebook:process()
           end
     end
     UIManager:show(info)
-    Send2Ebook:afterWifiAction()
+    NetworkMgr:afterWifiAction()
 end
 
 function Send2Ebook:removeReadActicles()

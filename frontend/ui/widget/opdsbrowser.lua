@@ -53,9 +53,17 @@ local OPDSBrowser = Menu:extend{
         ["text/plain"] = "TXT",
         ["application/x-mobipocket-ebook"] = "MOBI",
         ["application/x-mobi8-ebook"] = "AZW3",
+        ["application/vnd.amazon.mobi8-ebook"] = "AZW3",
         ["application/x-cbz"] = "CBZ",
+        ["application/vnd.comicbook+zip"] = "CBZ",
+        ["application/zip"] = "CBZ",
         ["application/x-cbr"] = "CBR",
+        ["application/vnd.comicbook-rar"] = "CBR",
+        ["application/x-rar-compressed"] = "CBR",
+        ["application/vnd.rar"] = "CBR",
         ["application/djvu"] = "DJVU",
+        ["image/x-djvu"] = "DJVU",
+        ["image/vnd.djvu"] = "DJVU",
     },
 
     width = Screen:getWidth(),
@@ -377,10 +385,7 @@ end
 
 function OPDSBrowser:getCatalog(item_url, username, password)
     local ok, catalog = pcall(self.parseFeed, self, item_url, username, password)
-    if not ok and catalog and not NetworkMgr:isOnline() then
-        NetworkMgr:promptWifiOn()
-        return
-    elseif not ok and catalog then
+    if not ok and catalog then
         logger.info("cannot get catalog info from", item_url, catalog)
         UIManager:show(InfoMessage:new{
             text = T(_("Cannot get catalog info from %1"), (BD.url(item_url) or "")),
@@ -724,11 +729,17 @@ function OPDSBrowser:onMenuSelect(item)
         self:showDownloads(item)
     -- navigation
     else
+        local connect_callback
         if item.searchable then
-            self:browseSearchable(item.url, item.username, item.password)
+            connect_callback = function()
+                self:browseSearchable(item.url, item.username, item.password)
+            end
         else
-            self:browse(item.url, item.username, item.password)
+            connect_callback = function()
+                self:browse(item.url, item.username, item.password)
+            end
         end
+        NetworkMgr:runWhenConnected(connect_callback)
     end
     return true
 end

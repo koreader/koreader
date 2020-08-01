@@ -22,9 +22,12 @@ Example:
     UIManager:show(require("ui/widget/networksetting"):new{
         network_list = network_list,
         connect_callback = function()
-            -- connect_callback will be called when an connect/disconnect
-            -- attempt has been made. you can update UI widgets in the
-            -- callback.
+            -- connect_callback will be called when a *connect* (NOT disconnect)
+            -- attempt has been successful.
+            -- You can update UI widgets in the callback.
+        end,
+        disconnect_callback = function()
+            -- This one will fire unconditionally after a disconnect attempt.
         end,
     })
 
@@ -224,7 +227,8 @@ function NetworkItem:connect()
         text = err_msg
     end
 
-    if self.setting_ui.connect_callback then
+    -- Do what it says on the tin, and only trigger the connect_callback on a *successful* connect.
+    if success and self.setting_ui.connect_callback then
         self.setting_ui.connect_callback()
     end
 
@@ -244,8 +248,8 @@ function NetworkItem:disconnect()
     self.info.connected = nil
     self:refresh()
     self.setting_ui:setConnectedItem(nil)
-    if self.setting_ui.connect_callback then
-        self.setting_ui.connect_callback()
+    if self.setting_ui.disconnect_callback then
+        self.setting_ui.disconnect_callback()
     end
 end
 
@@ -378,6 +382,7 @@ local NetworkSetting = InputContainer:new{
     -- }
     network_list = nil,
     connect_callback = nil,
+    disconnect_callback = nil,
 }
 
 function NetworkSetting:init()

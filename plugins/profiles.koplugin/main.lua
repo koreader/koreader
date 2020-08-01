@@ -104,13 +104,13 @@ function Profiles:getSubMenuItems()
                 end,
             }
         }
-        Dispatcher.addSubMenu(self, sub_items, "data", k)
+        Dispatcher:addSubMenu(sub_items, self.data, k)
         table.insert(sub_item_table, {
             text = k,
             hold_keep_menu_open = false,
             sub_item_table = sub_items,
             hold_callback = function()
-                Dispatcher.execute(self, self.data[k])
+                Dispatcher:execute(self.ui, self.data[k])
             end,
         })
     end
