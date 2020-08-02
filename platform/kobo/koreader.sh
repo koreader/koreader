@@ -230,7 +230,7 @@ ko_do_fbdepth() {
 # Fun fact: this wouldn't be necessary if Kobo were using a non-prehistoric glibc... (it was fixed in glibc 2.26).
 ko_do_dns() {
     # If there aren't any servers listed, append CloudFlare's
-    if not grep -q '^nameserver' "/etc/resolv.conf"; then
+    if ! grep -q '^nameserver' "/etc/resolv.conf"; then
         echo "# Added by KOReader because your setup is broken" >>"/etc/resolv.conf"
         echo "nameserver 1.1.1.1" >>"/etc/resolv.conf"
     fi
