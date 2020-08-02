@@ -380,7 +380,7 @@ end
 function Device:showLightDialog()
     local usleep = require("ffi/util").usleep
     local title = android.isEink() and _("Frontlight settings") or _("Light settings")
-    android.lights.showDialog(title, _("Brightness"), _("Warmth"), _("Ok"), _("Cancel"))
+    android.lights.showDialog(title, _("Brightness"), _("Warmth"), _("OK"), _("Cancel"))
     repeat
         usleep(25000) -- sleep 25ms before next check if dialog was quit
     until (android.lights.dialogState() ~= C.ALIGHTS_DIALOG_OPENED)

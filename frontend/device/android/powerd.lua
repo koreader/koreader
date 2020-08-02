@@ -29,7 +29,7 @@ function AndroidPowerD:setWarmth(warmth)
 end
 
 function AndroidPowerD:getWarmth()
-   return android.getScreenWarmth() * self.warm_diff
+    return android.getScreenWarmth() * self.warm_diff
 end
 
 function AndroidPowerD:getCapacityHW()
