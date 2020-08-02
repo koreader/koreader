@@ -72,6 +72,7 @@ local Device = Generic:new{
     hasEinkScreen = function() return android.isEink() end,
     hasColorScreen = function() return not android.isEink() end,
     hasFrontlight = yes,
+    hasNaturalLight = android.isWarmthDevice,
     hasLightLevelFallback = yes,
     canRestart = no,
     canSuspend = no,
@@ -244,11 +245,13 @@ function Device:init()
         android.setBackButtonIgnored(true)
     end
 
+    --- @todo remove fl_last_level and revert hasLightFallback if frontlightwidget
+
     -- check if we enable a custom light level for this activity
-    local last_value = G_reader_settings:readSetting("fl_last_level")
-    if type(last_value) == "number" and last_value >= 0 then
-        Device:setScreenBrightness(last_value)
-    end
+    --local last_value = G_reader_settings:readSetting("fl_last_level")
+    --if type(last_value) == "number" and last_value >= 0 then
+    --    Device:setScreenBrightness(last_value)
+    --end
 
     Generic.init(self)
 end
@@ -372,6 +375,31 @@ function Device:canExecuteScript(file)
     local file_ext = string.lower(util.getFileNameSuffix(file))
     if android.prop.flavor ~= "fdroid" and file_ext == "sh"  then
         return true
+    end
+end
+
+function Device:showLightDialog()
+    local usleep = require("ffi/util").usleep
+    local title = android.isEink() and _("Frontlight settings") or _("Light settings")
+    android.lights.showDialog(title, _("Brightness"), _("Warmth"), _("OK"), _("Cancel"))
+    repeat
+        usleep(25000) -- sleep 25ms before next check if dialog was quit
+    until (android.lights.dialogState() ~= C.ALIGHTS_DIALOG_OPENED)
+    local action = android.lights.dialogState()
+    if action == C.ALIGHTS_DIALOG_OK then
+        self.powerd.fl_intensity = self.powerd:frontlightIntensityHW()
+        logger.dbg("Dialog OK, brightness: " .. self.powerd.fl_intensity)
+        if android.isWarmthDevice() then
+            self.powerd.fl_warmth = self.powerd:getWarmth()
+            logger.dbg("Dialog OK, warmth: " .. self.powerd.fl_warmth)
+        end
+    elseif action == C.ALIGHTS_DIALOG_CANCEL then
+        logger.dbg("Dialog Cancel, brightness: " .. self.powerd.fl_intensity)
+        self.powerd:setIntensityHW(self.powerd.fl_intensity)
+        if android.isWarmthDevice() then
+            logger.dbg("Dialog Cancel, warmth: " .. self.powerd.fl_warmth)
+            self.powerd:setWarmth(self.powerd.fl_warmth)
+        end
     end
 end
 
