@@ -247,10 +247,10 @@ function Device:init()
 
     -- TODO fl_last_level is a leftover from frontlightwidget
     -- check if we enable a custom light level for this activity
-    local last_value = G_reader_settings:readSetting("fl_last_level")
-    if type(last_value) == "number" and last_value >= 0 then
-        Device:setScreenBrightness(last_value)
-    end
+    --local last_value = G_reader_settings:readSetting("fl_last_level")
+    --if type(last_value) == "number" and last_value >= 0 then
+    --    Device:setScreenBrightness(last_value)
+    --end
 
     Generic.init(self)
 end
@@ -379,7 +379,8 @@ end
 
 function Device:lightDialog()
     local usleep = require("ffi/util").usleep
-    android.settings.dialog(_("Frontlight settings"), _("Intensity"), _("Warmth"), _("Ok"))
+    local title = android.isEink() and _("Frontlight settings") or _("Light settings")
+    android.settings.dialog(title, _("Brightness"), _("Warmth"), _("Ok"))
     repeat
         usleep(75000) -- sleep 75ms before next check if dialog was quit
     until (not android.isFrontlightDialogRunning())
@@ -395,4 +396,3 @@ android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",
     android.prop.version, getCodename(), Device.firmware_rev, android.prop.flavor))
 
 return Device
-

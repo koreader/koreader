@@ -201,7 +201,7 @@ if Device:isAndroid() then
     local isAndroid, android = pcall(require, "android")
     if not isAndroid then return end
 
-    -- overwrite generic frontlight with a native Dialog function
+    -- overwrite generic frontlight with a native Dialog
     common_settings.frontlight = {
         text = _("Frontlight"),
         callback = function()
