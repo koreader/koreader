@@ -126,7 +126,7 @@ local settingsList = {
     block_rendering_mode = {category="string", rolling=true},
     render_dpi = {category="string", rolling=true},
     line_spacing = {category="absolutenumber", rolling=true},
-    font_size = {category="absolutenumber", title="Font Size", rolling=true},
+    font_size = {category="absolutenumber", title=_("Font Size"), rolling=true},
     font_weight = {category="string", rolling=true},
     --font_gamma = {category="string", rolling=true},
     font_hinting = {category="string", rolling=true},
