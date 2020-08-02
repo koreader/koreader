@@ -245,7 +245,8 @@ function Device:init()
         android.setBackButtonIgnored(true)
     end
 
-    -- TODO fl_last_level is a leftover from frontlightwidget
+    --- @todo remove fl_last_level and revert hasLightFallback if frontlightwidget
+
     -- check if we enable a custom light level for this activity
     --local last_value = G_reader_settings:readSetting("fl_last_level")
     --if type(last_value) == "number" and last_value >= 0 then
