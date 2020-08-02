@@ -205,7 +205,7 @@ if Device:isAndroid() then
     common_settings.frontlight = {
         text = _("Frontlight"),
         callback = function()
-            Device:lightDialog()
+            Device:showLightDialog()
         end,
     }
 

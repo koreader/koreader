@@ -377,18 +377,28 @@ function Device:canExecuteScript(file)
     end
 end
 
-function Device:lightDialog()
+function Device:showLightDialog()
     local usleep = require("ffi/util").usleep
     local title = android.isEink() and _("Frontlight settings") or _("Light settings")
-    android.settings.dialog(title, _("Brightness"), _("Warmth"), _("Ok"))
+    android.lights.showDialog(title, _("Brightness"), _("Warmth"), _("Ok"), _("Cancel"))
     repeat
-        usleep(75000) -- sleep 75ms before next check if dialog was quit
-    until (not android.isFrontlightDialogRunning())
-    logger.info("new brightness: " .. self.powerd.fl_intensity)
-    self.powerd:setIntensityHW(self.powerd:frontlightIntensityHW())
-    if android.isWarmthDevice() then
-        self.powerd:setWarmth(self.powerd:getWarmth())
-        logger.info("new warmth: " .. self.powerd.fl_warmth)
+        usleep(25000) -- sleep 25ms before next check if dialog was quit
+    until (android.lights.dialogState() ~= C.ALIGHTS_DIALOG_OPENED)
+    local action = android.lights.dialogState()
+    if action == C.ALIGHTS_DIALOG_OK then
+        self.powerd.fl_intensity = self.powerd:frontlightIntensityHW()
+        logger.dbg("Dialog OK, brightness: " .. self.powerd.fl_intensity)
+        if android.isWarmthDevice() then
+            self.powerd.fl_warmth = self.powerd:getWarmth()
+            logger.dbg("Dialog OK, warmth: " .. self.powerd.fl_warmth)
+        end
+    elseif action == C.ALIGHTS_DIALOG_CANCEL then
+        logger.dbg("Dialog Cancel, brightness: " .. self.powerd.fl_intensity)
+        self.powerd:setIntensityHW(self.powerd.fl_intensity)
+        if android.isWarmthDevice() then
+            logger.dbg("Dialog Cancel, warmth: " .. self.powerd.fl_warmth)
+            self.powerd:setWarmth(self.powerd.fl_warmth)
+        end
     end
 end
 
