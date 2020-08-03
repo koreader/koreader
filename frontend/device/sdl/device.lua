@@ -89,6 +89,12 @@ local Device = Generic:new{
             external_dict_when_back_callback = nil
         end
     end,
+    window = {
+        top = os.getenv("KOREADER_WINDOW_POS_Y") or -1,
+        left = os.getenv("KOREADER_WINDOW_POS_X") or -1,
+        width = os.getenv("EMULATE_READER_W") or 600,
+        height = os.getenv("EMULATE_READER_H") or 800,
+    },
 }
 
 local AppImage = Device:new{
@@ -101,6 +107,8 @@ local AppImage = Device:new{
 local Desktop = Device:new{
     model = SDL.getPlatform(),
     isDesktop = yes,
+    canRestart = no,
+    hasExitOptions = no,
 }
 
 local Emulator = Device:new{
@@ -160,6 +168,7 @@ function Device:init()
             local SDL_MOUSEWHEEL = 1027
             local SDL_MULTIGESTURE = 2050
             local SDL_DROPFILE = 4096
+            local SDL_WINDOWEVENT_MOVED = 4
             local SDL_WINDOWEVENT_RESIZED = 5
 
             if ev.code == SDL_MOUSEWHEEL then
@@ -227,6 +236,9 @@ function Device:init()
                 device_input.device.screen.screen_size.h = ev.value.data2
                 device_input.device.screen.resize(device_input.device.screen, ev.value.data1, ev.value.data2)
 
+                self.window.width = ev.value.data1
+                self.window.height = ev.value.data2
+
                 local new_size = device_input.device.screen:getSize()
                 logger.dbg("Resizing screen to", new_size)
 
@@ -239,6 +251,9 @@ function Device:init()
                 -- this triggers paged media like PDF and DjVu to redraw
                 -- CreDocument doesn't need it
                 UIManager:broadcastEvent(Event:new("RedrawCurrentPage"))
+            elseif ev.code == SDL_WINDOWEVENT_MOVED then
+                self.window.left = ev.value.data1
+                self.window.top = ev.value.data2
             end
         end,
         hasClipboardText = function()
@@ -290,6 +305,17 @@ function Device:setDateTime(year, month, day, hour, min, sec)
     else
         return false
     end
+end
+
+function Device:exit()
+    if self.isDesktop() then
+        local DataStorage = require("datastorage")
+        local util = require("util")
+        local desktop_file = DataStorage:getSettingsDir() .. "/desktop.lua"
+        util.dumpTable(self.window, desktop_file)
+    end
+    require("ffi/input"):closeAll()
+    self.screen:close()
 end
 
 function Emulator:simulateSuspend()

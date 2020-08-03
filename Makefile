@@ -386,8 +386,8 @@ debianupdate: all
 	cp -pv resources/koreader.png $(INSTALL_DIR)/debian/usr/share/pixmaps
 	cp -pv $(DEBIAN_DIR)/koreader.desktop $(INSTALL_DIR)/debian/usr/share/applications
 	cp -pv $(DEBIAN_DIR)/copyright COPYING $(INSTALL_DIR)/debian/usr/share/doc/koreader
-	cp -pv $(DEBIAN_DIR)/koreader.sh $(INSTALL_DIR)/debian/usr/bin/koreader
 	cp -Lr $(INSTALL_DIR)/koreader $(INSTALL_DIR)/debian/usr/lib
+	mv -pv $(INSTALL_DIR)/debian/usr/lib/koreader $(INSTALL_DIR)/debian/usr/bin/koreader
 
 	gzip -cn9 $(DEBIAN_DIR)/changelog > $(INSTALL_DIR)/debian/usr/share/doc/koreader/changelog.Debian.gz
 	gzip -cn9 $(DEBIAN_DIR)/koreader.1 > $(INSTALL_DIR)/debian/usr/share/man/man1/koreader.1.gz
@@ -405,9 +405,11 @@ macosupdate: all
 		$(INSTALL_DIR)/bundle/Contents/MacOS \
 		$(INSTALL_DIR)/bundle/Contents/Resources
 
-	cp $(MACOS_DIR)/koreader.sh $(INSTALL_DIR)/bundle/Contents/MacOS/koreader
 	cp resources/koreader.icns $(INSTALL_DIR)/bundle/Contents/Resources/icon.icns
 	cp -LR $(INSTALL_DIR)/koreader $(INSTALL_DIR)/bundle/Contents
+	cp -pRv $(MACOS_DIR)/menu.xml $(INSTALL_DIR)/bundle/Contents/MainMenu.xib
+	ibtool --compile "$(INSTALL_DIR)/bundle/Contents/Resources/Base.lproj/MainMenu.nib" "$(INSTALL_DIR)/bundle/Contents/MainMenu.xib"
+	rm -rfv $(INSTALL_DIR)/bundle/Contents/MainMenu.xib
 
 REMARKABLE_PACKAGE:=koreader-remarkable$(KODEDUG_SUFFIX)-$(VERSION).zip
 REMARKABLE_PACKAGE_OTA:=koreader-remarkable$(KODEDUG_SUFFIX)-$(VERSION).targz

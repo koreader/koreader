@@ -94,8 +94,17 @@ if command_exists "${COMMAND}"; then
     find "${BASE_DIR}" -type f -name "git-rev" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "reader.lua" -print0 | xargs -0 chmod 755
 
-    # use absolute path to luajit in reader.lua
-    sed -i 's/.\/luajit/\/usr\/lib\/koreader\/luajit/' "${BASE_DIR}/lib/koreader/reader.lua"
+    mv "${BASE_DIR}/lib/koreader/koreader" "${BASE_DIR}/bin/koreader"
+
+    pushd "${BASE_DIR}/lib/koreader" || exit 1
+    sed '1d' reader.lua >tempfile
+    sed -i.backup 's/.\/reader.lua/koreader/' tempfile
+    sed -i.backup 's/the last viewed document will be opened"/" .. os.getenv("HOME") .. " will be opened"/' tempfile
+    mv tempfile reader.lua
+    rm -f tempfile*
+    chmod -x reader.lua
+    popd || exit 1
+
 
     # use debian packaged fonts instead of our embedded ones to save a couple of MB.
     # Note: avoid linking against fonts-noto-cjk-extra, cause it weights ~200MB.
