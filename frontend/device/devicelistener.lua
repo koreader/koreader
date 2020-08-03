@@ -63,7 +63,7 @@ end
 -- frontlight controller
 if Device:hasFrontlight() then
 
-    local function calculateGestureDeltaInterval(ges, direction, min, max)
+    local function calculateGestureDelta(ges, direction, min, max)
         local delta_int
         if type(ges) == "table" then
             -- here we are using just two scales
@@ -129,7 +129,7 @@ if Device:hasFrontlight() then
         local delta_int
         --received gesture
 
-        direction, delta_int = calculateGestureDeltaInterval( ges, direction, powerd.fl_min, powerd.fl_max)
+        direction, delta_int = calculateGestureDelta( ges, direction, powerd.fl_min, powerd.fl_max)
 
         local new_intensity = powerd.fl_intensity + direction * delta_int
         if new_intensity == nil then return true end
@@ -176,7 +176,7 @@ if Device:hasFrontlight() then
         local delta_int
         --received gesture
 
-        direction, delta_int = calculateGestureDeltaInterval(ges, direction, powerd.fl_warmth_min, powerd.fl_warmth_max)
+        direction, delta_int = calculateGestureDelta(ges, direction, powerd.fl_warmth_min, powerd.fl_warmth_max)
 
         local warmth = math.floor(powerd.fl_warmth + direction * delta_int * 100 / powerd.fl_warmth_max)
         self:onSetFlWarmth(warmth)
