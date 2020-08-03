@@ -31,7 +31,10 @@ end
 
 function Profiles:onFlushSettings()
     if self.profiles then
-        self.profiles:flush()
+        if self.data._updated then
+            self.profiles:flush()
+            self.data._updated = nil
+        end
     end
 end
 
@@ -87,32 +90,34 @@ function Profiles:getSubMenuItems()
         }
     }
     for k,v in orderedPairs(self.data) do
-        local sub_items = {
-            {
-                text = _("Delete profile"),
-                keep_menu_open = false,
-                separator = true,
-                callback = function()
-                    UIManager:show(ConfirmBox:new{
-                        text = _("Do you want to delete this profile?"),
-                        ok_text = _("Yes"),
-                        cancel_text = _("No"),
-                        ok_callback = function()
-                            self:deleteProfile(k)
-                        end,
-                    })
-                end,
+        if k ~= "_updated" then
+            local sub_items = {
+                {
+                    text = _("Delete profile"),
+                    keep_menu_open = false,
+                    separator = true,
+                    callback = function()
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Do you want to delete this profile?"),
+                            ok_text = _("Yes"),
+                            cancel_text = _("No"),
+                            ok_callback = function()
+                                self:deleteProfile(k)
+                            end,
+                        })
+                    end,
+                }
             }
-        }
-        Dispatcher:addSubMenu(sub_items, self.data, k)
-        table.insert(sub_item_table, {
-            text = k,
-            hold_keep_menu_open = false,
-            sub_item_table = sub_items,
-            hold_callback = function()
-                Dispatcher:execute(self.ui, self.data[k])
-            end,
-        })
+            Dispatcher:addSubMenu(sub_items, self.data, k)
+            table.insert(sub_item_table, {
+                text = k,
+                hold_keep_menu_open = false,
+                sub_item_table = sub_items,
+                hold_callback = function()
+                    Dispatcher:execute(self.ui, self.data[k])
+                end,
+            })
+        end
     end
     return sub_item_table
 end
@@ -120,6 +125,7 @@ end
 function Profiles:newProfile(name)
     if self.data[name] == nil then
         self.data[name] = {}
+        self.data._updated = true
         return true
     else
         return false
@@ -128,6 +134,7 @@ end
 
 function Profiles:deleteProfile(name)
     self.data[name] = nil
+    self.data._updated = true
 end
 
 return Profiles

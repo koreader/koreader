@@ -338,6 +338,7 @@ function Dispatcher:addItem(menu, location, settings, section)
                         else
                             location[settings][k] = true
                         end
+                        location._updated = true
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                    end,
                    separator = settingsList[k].separator,
@@ -366,6 +367,7 @@ function Dispatcher:addItem(menu, location, settings, section)
                                     location[settings] = {}
                                 end
                                 location[settings][k] = spin.value
+                                location._updated = true
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
                                 end
@@ -376,6 +378,7 @@ function Dispatcher:addItem(menu, location, settings, section)
                     hold_callback = function(touchmenu_instance)
                         if location[settings] ~= nil and location[settings][k] ~= nil then
                             location[settings][k] = nil
+                            location._updated = true
                         end
                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
@@ -407,6 +410,7 @@ function Dispatcher:addItem(menu, location, settings, section)
                                     location[settings] = {}
                                 end
                                 location[settings][k] = spin.value
+                                location._updated = true
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
                                 end
@@ -417,6 +421,7 @@ function Dispatcher:addItem(menu, location, settings, section)
                     hold_callback = function(touchmenu_instance)
                         if location[settings] ~= nil and location[settings][k] ~= nil then
                             location[settings][k] = nil
+                            location._updated = true
                         end
                         if touchmenu_instance then
                             touchmenu_instance:updateItems()
@@ -439,6 +444,7 @@ function Dispatcher:addItem(menu, location, settings, section)
                                 location[settings] = {}
                             end
                             location[settings][k] = settingsList[k].args[i]
+                            location._updated = true
                         end,
                     })
                 end
@@ -454,6 +460,7 @@ function Dispatcher:addItem(menu, location, settings, section)
                     hold_callback = function(touchmenu_instance)
                         if location[settings] ~= nil and location[settings][k] ~= nil then
                             location[settings][k] = nil
+                            location._updated = true
                         end
                         if touchmenu_instance then
                             touchmenu_instance:updateItems()
@@ -485,6 +492,7 @@ function Dispatcher:addSubMenu(menu, location, settings)
         end,
         callback = function(touchmenu_instance)
             location[settings] = {}
+            location._updated = true
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
     })
@@ -514,6 +522,7 @@ function Dispatcher:addSubMenu(menu, location, settings)
                     for k, _ in pairs(location[settings]) do
                         if settingsList[k][section[1]] == true then
                             location[settings][k] = nil
+                            location._updated = true
                         end
                     end
                     if touchmenu_instance then touchmenu_instance:updateItems() end
