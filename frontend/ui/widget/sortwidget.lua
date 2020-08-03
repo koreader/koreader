@@ -168,6 +168,13 @@ function SortWidget:init()
         w = self.width or Screen:getWidth(),
         h = self.height or Screen:getHeight(),
     }
+    if Device:hasKeys() then
+        self.key_events = {
+            --don't get locked in on non touch devices
+            AnyKeyPressed = { { Device.input.group.Any },
+                seqtext = "any key", doc = "close dialog" }
+        }
+    end
     if Device:isTouchDevice() then
         self.ges_events.Swipe = {
             GestureRange:new{
@@ -453,6 +460,10 @@ function SortWidget:swapItems(pos1, pos2)
         self.item_table[pos1] = self.item_table[pos2]
         self.item_table[pos2] = entry
     end
+end
+
+function SortWidget:onAnyKeyPressed()
+    return self:onClose()
 end
 
 function SortWidget:onNextPage()
