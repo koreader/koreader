@@ -20,6 +20,8 @@ function AndroidPowerD:init()
     if self.device:hasNaturalLight() then
         self.warm_diff = android:getScreenMaxWarmth() - android:getScreenMinWarmth()
         self.fl_warmth = self:getWarmth()
+        self.fl_warmth_min = android:getScreenMinWarmth()
+        self.fl_warmth_max = android:getScreenMaxWarmth()
     end
 end
 
