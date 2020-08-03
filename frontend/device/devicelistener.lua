@@ -10,7 +10,7 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 
 local DeviceListener = InputContainer:new{
-    steps_fl = { 0.1, 0.1, 0.2, 0.4, 0.7, 1.1, 1.6, 2.2, 2.9, 3.7, 4.6, 5.6, 6.7, 7.9, 9.2, 10.6, },
+
 }
 
 function DeviceListener:onToggleNightMode()
@@ -47,10 +47,17 @@ end
 function DeviceListener:onShowWarmth(value)
     local powerd = Device:getPowerDevice()
     if powerd.fl_warmth ~= nil then
-        UIManager:show(Notification:new{
-            text = T(_("Warmth set to %1."), powerd.fl_warmth),
+        if powerd.fl_warmth_max == nil then
+            UIManager:show(Notification:new{
+                text = T(_("Warmth set to %1."), math.floor(powerd.fl_warmth)),
+                timeout = 1.0,
+            })
+        else
+            UIManager:show(Notification:new{
+            text = T(_("Warmth set to %1."), math.floor(powerd.fl_warmth/100*powerd.fl_warmth_max)),
             timeout = 1.0,
-        })
+            })
+        end
     end
     return true
 end
@@ -58,13 +65,20 @@ end
 -- frontlight controller
 if Device:hasFrontlight() then
 
-    -- direction +1 - increase frontlight
-    -- direction -1 - decrease frontlight
-    function DeviceListener:onChangeFlIntensity(ges, direction)
-        local powerd = Device:getPowerDevice()
+    local function calculateGestureDeltaIntervall(ges, direction, min, max)
         local delta_int
-        --received gesture
         if type(ges) == "table" then
+            -- here we are using just two scales
+            -- big scale is for high dynamic ranges (e.g. brightness from 1..100)
+            --           original scale maybe tuned by hand
+            -- small scale is for lower dynamic ranges (e.g. warmth from 1..10)
+            --           scale entries are calculated by math.round(1*sqrt(2)^n)  
+            local steps_fl_big_scale = { 0.1, 0.1, 0.2, 0.4, 0.7, 1.1, 1.6, 2.2, 2.9, 3.7, 4.6, 5.6, 6.7, 7.9, 9.2, 10.6, }
+            local steps_fl_small_scale = { 1.0, 1.0, 2.0, 3.0, 4.0, 6.0, 8.1, 11.3 }
+            local steps_fl = steps_fl_big_scale
+            if ( min - max < 50 ) then
+                steps_fl = steps_fl_small_scale
+            end
             local gestureScale
             local scale_multiplier
             if ges.ges == "two_finger_swipe" then
@@ -75,6 +89,7 @@ if Device:hasFrontlight() then
             else
                 scale_multiplier = 1
             end
+
             if ges.direction == "south" or ges.direction == "north" then
                 gestureScale = Screen:getHeight() * scale_multiplier
             elseif ges.direction == "west" or ges.direction == "east" then
@@ -85,17 +100,17 @@ if Device:hasFrontlight() then
                 -- diagonal
                 gestureScale = math.sqrt(width * width + height * height) * scale_multiplier
             end
-            if powerd.fl_intensity == nil then return false end
 
             local steps_tbl = {}
-            local scale = (powerd.fl_max - powerd.fl_min) / 2 / 10.6
-            for i = 1, #self.steps_fl, 1 do
-                steps_tbl[i] = math.ceil(self.steps_fl[i] * scale)
+            local scale = (max - min) / steps_fl[#steps_fl] / 2 -- full swipe gives half scale
+            for i = 1, #steps_fl, 1 do
+                steps_tbl[i] = math.ceil(steps_fl[i] * scale)
             end
 
             if ges.distance == nil then
                 ges.distance = 1
             end
+
             local step = math.ceil(#steps_tbl * ges.distance / gestureScale)
             delta_int = steps_tbl[step] or steps_tbl[#steps_tbl]
         else
@@ -106,8 +121,19 @@ if Device:hasFrontlight() then
             -- set default value (increase frontlight)
             direction = 1
         end
-        local new_intensity = powerd.fl_intensity + direction * delta_int
+        return direction, delta_int
+    end
 
+    -- direction +1 - increase frontlight
+    -- direction -1 - decrease frontlight
+    function DeviceListener:onChangeFlIntensity(ges, direction)
+        local powerd = Device:getPowerDevice()
+        local delta_int
+        --received gesture
+
+        direction, delta_int = calculateGestureDeltaIntervall( ges, direction, powerd.fl_min, powerd.fl_max)
+
+        local new_intensity = powerd.fl_intensity + direction * delta_int
         if new_intensity == nil then return true end
         -- when new_intensity <=0, toggle light off
         self:onSetFlIntensity(new_intensity)
@@ -151,50 +177,10 @@ if Device:hasFrontlight() then
 
         local delta_int
         --received gesture
-        if type(ges) == "table" then
-            local gestureScale
-            local scale_multiplier
-            if ges.ges == "two_finger_swipe" then
-                -- for backward compatibility
-                scale_multiplier = FRONTLIGHT_SENSITIVITY_DECREASE * 0.8
-            elseif ges.ges == "swipe" then
-                scale_multiplier = 0.8
-            else
-                scale_multiplier = 1
-            end
 
-            if ges.direction == "south" or ges.direction == "north" then
-                gestureScale = Screen:getHeight() * scale_multiplier
-            elseif ges.direction == "west" or ges.direction == "east" then
-                gestureScale = Screen:getWidth() * scale_multiplier
-            else
-                local width = Screen:getWidth()
-                local height = Screen:getHeight()
-                -- diagonal
-                gestureScale = math.sqrt(width * width + height * height) * scale_multiplier
-            end
+        direction, delta_int = calculateGestureDeltaIntervall(ges, direction, powerd.fl_warmth_min, powerd.fl_warmth_max)
 
-            local steps_tbl = {}
-            local scale = (powerd.fl_max - powerd.fl_min) / 2 / 10.6
-            for i = 1, #self.steps_fl, 1 do
-                steps_tbl[i] = math.ceil(self.steps_fl[i] * scale)
-            end
-
-            if ges.distance == nil then
-                ges.distance = 1
-            end
-
-            local step = math.ceil(#steps_tbl * ges.distance / gestureScale)
-            delta_int = steps_tbl[step] or steps_tbl[#steps_tbl]
-        else
-            -- received amount to change
-            delta_int = ges
-        end
-        if direction ~= -1 and direction ~= 1 then
-            -- set default value (increase frontlight)
-            direction = 1
-        end
-        local warmth = powerd.fl_warmth + direction * delta_int
+        local warmth = math.floor(powerd.fl_warmth + direction * delta_int * 100 / powerd.fl_warmth_max)
         self:onSetFlWarmth(warmth)
         self:onShowWarmth()
         return true
