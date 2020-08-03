@@ -9,8 +9,7 @@ local bit = require("bit")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local DeviceListener = InputContainer:new{
-}
+local DeviceListener = InputContainer:new{}
 
 function DeviceListener:onToggleNightMode()
     local night_mode = G_reader_settings:isTrue("night_mode")
