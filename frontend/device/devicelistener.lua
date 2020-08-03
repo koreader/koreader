@@ -10,7 +10,6 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 
 local DeviceListener = InputContainer:new{
-
 }
 
 function DeviceListener:onToggleNightMode()
@@ -54,8 +53,8 @@ function DeviceListener:onShowWarmth(value)
             })
         else
             UIManager:show(Notification:new{
-            text = T(_("Warmth set to %1."), math.floor(powerd.fl_warmth/100*powerd.fl_warmth_max)),
-            timeout = 1.0,
+                text = T(_("Warmth set to %1."), math.floor(powerd.fl_warmth/100*powerd.fl_warmth_max)),
+                timeout = 1.0,
             })
         end
     end
@@ -65,18 +64,18 @@ end
 -- frontlight controller
 if Device:hasFrontlight() then
 
-    local function calculateGestureDeltaIntervall(ges, direction, min, max)
+    local function calculateGestureDeltaInterval(ges, direction, min, max)
         local delta_int
         if type(ges) == "table" then
             -- here we are using just two scales
             -- big scale is for high dynamic ranges (e.g. brightness from 1..100)
             --           original scale maybe tuned by hand
             -- small scale is for lower dynamic ranges (e.g. warmth from 1..10)
-            --           scale entries are calculated by math.round(1*sqrt(2)^n)  
+            --           scale entries are calculated by math.round(1*sqrt(2)^n)
             local steps_fl_big_scale = { 0.1, 0.1, 0.2, 0.4, 0.7, 1.1, 1.6, 2.2, 2.9, 3.7, 4.6, 5.6, 6.7, 7.9, 9.2, 10.6, }
             local steps_fl_small_scale = { 1.0, 1.0, 2.0, 3.0, 4.0, 6.0, 8.1, 11.3 }
             local steps_fl = steps_fl_big_scale
-            if ( min - max < 50 ) then
+            if (min - max) < 50  then
                 steps_fl = steps_fl_small_scale
             end
             local gestureScale
@@ -131,7 +130,7 @@ if Device:hasFrontlight() then
         local delta_int
         --received gesture
 
-        direction, delta_int = calculateGestureDeltaIntervall( ges, direction, powerd.fl_min, powerd.fl_max)
+        direction, delta_int = calculateGestureDeltaInterval( ges, direction, powerd.fl_min, powerd.fl_max)
 
         local new_intensity = powerd.fl_intensity + direction * delta_int
         if new_intensity == nil then return true end
@@ -178,7 +177,7 @@ if Device:hasFrontlight() then
         local delta_int
         --received gesture
 
-        direction, delta_int = calculateGestureDeltaIntervall(ges, direction, powerd.fl_warmth_min, powerd.fl_warmth_max)
+        direction, delta_int = calculateGestureDeltaInterval(ges, direction, powerd.fl_warmth_min, powerd.fl_warmth_max)
 
         local warmth = math.floor(powerd.fl_warmth + direction * delta_int * 100 / powerd.fl_warmth_max)
         self:onSetFlWarmth(warmth)
