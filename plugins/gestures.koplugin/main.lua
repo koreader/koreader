@@ -27,7 +27,7 @@ local Gestures = InputContainer:new{
     gestures = nil,
     defaults = nil,
     custom_multiswipes = nil,
-    _updated = nil,
+    _updated = false,
 }
 local gestures_path = FFIUtil.joinPath(DataStorage:getSettingsDir(), "gestures.lua")
 
@@ -224,7 +224,7 @@ function Gestures:genMenu(ges)
             self._updated = true
         end,
     })
-    Dispatcher:addSubMenu(sub_items, self.gestures, ges)
+    Dispatcher:addSubMenu(self, sub_items, self.gestures, ges)
     return sub_items
 end
 
@@ -1034,15 +1034,9 @@ function Gestures:onIgnoreHoldCorners(ignore_hold_corners)
 end
 
 function Gestures:onFlushSettings()
-    if self.settings_data then
-        if self.gestures._updated then
-            self._updated = true
-            self.gestures._updated = nil
-        end
-        if self._updated then
-            self.settings_data:flush()
-            self._updated = nil
-        end
+    if self.settings_data and self._updated then
+        self.settings_data:flush()
+        self._updated = false
     end
 end
 
