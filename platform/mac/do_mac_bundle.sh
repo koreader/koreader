@@ -1,5 +1,20 @@
 #!/bin/bash
 # Script to generate mac application bundles for KOReader
+#
+# We don't use XCode at all. Just commandline tools.
+#
+# menu.xml contains the main menu of a typical OSX program.
+# each time some user facing string in menu.xml changed we can
+# generate a new translation template with:
+#
+#  cp menu.xml menu.xib
+#  ibtool --generate-strings-file mac.strings menu.xib
+#  rm -rf menu.xib
+#
+# the generated "mac.strings" is in xliff format (binary, not plain text)
+# and can be translated using an xliff editor or an online service that support
+# IOS string format, like weblate.
+
 COPYRIGHT="Copyright © $(date +"%Y") KOReader"
 
 command_exists() {
@@ -95,10 +110,14 @@ cat <<END >"${APP_PATH}/Contents/Info.plist"
         <true/>
         <key>NSPrincipalClass</key>
         <string>NSApplication</string>
+        <key>NSMainNibFile</key>
+        <string>MainMenu</string>
         <key>LSMultipleInstancesProhibited</key>
         <true/>
         <key>LSMinimumSystemVersion</key>
         <string>${MACOSX_DEPLOYMENT_TARGET}</string>
+        <key>SDL_FILESYSTEM_BASE_DIR_TYPE</key>
+        <string>bundle</string>
     </dict>
 </plist>
 END
@@ -135,18 +154,41 @@ install_name_tool -change ${BREW}/webp/lib/libwebp.7.dylib libs/libwebp.7.dylib 
 
 # prepare bundle for distribution
 ln -s /usr/bin/tar tar
-mv COPYING ../COPYING.txt
+mv COPYING README.md ../Resources/
+mv koreader ../MacOS/koreader
 rm -rf cache clipboard history ota \
     l10n/.git l10n/.tx l10n/templates l10n/LICENSE l10n/Makefile l10n/README.md \
     plugins/SSH.koplugin plugins/hello.koplugin plugins/timesync.koplugin \
     plugins/autofrontlight.koplugin resources/fonts resources/icons/src \
     resources/kobo-touch-probe.png resources/koreader.icns rocks/bin \
-    rocks/lib/luarocks screenshots spec tools README.md
+    rocks/lib/luarocks screenshots spec tools
+
+# adjust reader.lua a bit.
+
+sed '1d' reader.lua >tempfile
+sed -i.backup 's/.\/reader.lua/koreader/' tempfile
+sed -i.backup 's/the last viewed document will be opened"/" .. os.getenv("HOME") .. " will be opened"/' tempfile
+mv tempfile reader.lua
+rm -f tempfile*
+chmod -x reader.lua
 popd || exit 1
+
+# bundle translations, if any
+for path in l10n/*; do
+    lang=$(echo "${path}" | sed s'/l10n\///')
+    if [ "${lang}" != "templates" ]; then
+        translation_file="l10n/${lang}/mac.strings"
+        if [ -f "${translation_file}" ]; then
+            mkdir -p "${APP_PATH}/Contents/Resources/${lang}.lproj"
+            cp -pv "${translation_file}" "${APP_PATH}/Contents/Resources/${lang}.lproj/MainMenu.strings"
+        fi
+    fi
+done
 
 # package as DMG if create-dmg is available
 # reduces size from 80MB to 40MB
 mv "${APP_PATH}" "${APP_BUNDLE}.app"
+
 if command_exists "create-dmg"; then
     # create KOReader-$VERSION.dmg with KOReader.app inside
     create-dmg "${APP_BUNDLE}.app" --overwrite
