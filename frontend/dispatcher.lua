@@ -5,6 +5,7 @@ local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
 local _ = require("gettext")
+local C_ = _.pgettext
 
 local Dispatcher = {
     initialized = false,
@@ -315,7 +316,7 @@ function Dispatcher:getNameFromItem(item, location, settings)
     if amount == nil
         or (amount == 0 and settingsList[item].category == "incrementalnumber")
     then
-        amount = "#"
+        amount = C_("Number placeholder", "#")
     end
     return T(settingsList[item].title, amount)
 end
