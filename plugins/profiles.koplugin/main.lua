@@ -15,7 +15,7 @@ local Profiles = WidgetContainer:new{
     profiles_file = DataStorage:getSettingsDir() .. "/profiles.lua",
     profiles = nil,
     data = nil,
-    _updated = false,
+    updated = false,
 }
 
 function Profiles:init()
@@ -31,9 +31,9 @@ function Profiles:loadProfiles()
 end
 
 function Profiles:onFlushSettings()
-    if self.profiles and self._updated then
+    if self.profiles and self.updated then
         self.profiles:flush()
-        self._updated = false
+        self.updated = false
     end
 end
 
@@ -122,7 +122,7 @@ end
 function Profiles:newProfile(name)
     if self.data[name] == nil then
         self.data[name] = {}
-        self._updated = true
+        self.updated = true
         return true
     else
         return false
@@ -131,7 +131,7 @@ end
 
 function Profiles:deleteProfile(name)
     self.data[name] = nil
-    self._updated = true
+    self.updated = true
 end
 
 return Profiles
