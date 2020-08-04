@@ -27,6 +27,7 @@ local Gestures = InputContainer:new{
     gestures = nil,
     defaults = nil,
     custom_multiswipes = nil,
+    updated = false,
 }
 local gestures_path = FFIUtil.joinPath(DataStorage:getSettingsDir(), "gestures.lua")
 
@@ -166,6 +167,7 @@ function Gestures:init()
             end
         end
         if reset then
+            self.updated = true
             logger.info("UI language direction changed: resetting some gestures to direction default")
         end
         G_reader_settings:flipNilOrFalse(ges_dir_setting)
@@ -206,6 +208,7 @@ function Gestures:genMenu(ges)
             end,
             callback = function()
                 self.gestures[ges] = util.tableDeepCopy(self.defaults[ges])
+                self.updated = true
             end,
         })
     end
@@ -218,9 +221,10 @@ function Gestures:genMenu(ges)
         end,
         callback = function()
             self.gestures[ges] = nil
+            self.updated = true
         end,
     })
-    Dispatcher:addSubMenu(sub_items, self.gestures, ges)
+    Dispatcher:addSubMenu(self, sub_items, self.gestures, ges)
     return sub_items
 end
 
@@ -342,6 +346,7 @@ function Gestures:multiswipeRecorder(touchmenu_instance)
                         end
 
                         self.custom_multiswipes[recorded_multiswipe] = true
+                        self.updated = true
                         --touchmenu_instance.item_table = self:genMultiswipeMenu()
                         -- We need to update touchmenu_instance.item_table in-place for the upper
                         -- menu to have it updated too
@@ -403,6 +408,7 @@ function Gestures:genCustomMultiswipeSubmenu()
                     -- remove any settings for the muliswipe
                     self.settings_data.data["gesture_fm"][item] = nil
                     self.settings_data.data["gesture_reader"][item] = nil
+                    self.updated = true
 
                     --touchmenu_instance.item_table = self:genMultiswipeMenu()
                     -- We need to update touchmenu_instance.item_table in-place for the upper
@@ -1028,8 +1034,9 @@ function Gestures:onIgnoreHoldCorners(ignore_hold_corners)
 end
 
 function Gestures:onFlushSettings()
-    if self.settings_data then
+    if self.settings_data and self.updated then
         self.settings_data:flush()
+        self.updated = false
     end
 end
 

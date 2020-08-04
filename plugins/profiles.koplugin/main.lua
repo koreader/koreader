@@ -15,6 +15,7 @@ local Profiles = WidgetContainer:new{
     profiles_file = DataStorage:getSettingsDir() .. "/profiles.lua",
     profiles = nil,
     data = nil,
+    updated = false,
 }
 
 function Profiles:init()
@@ -30,8 +31,9 @@ function Profiles:loadProfiles()
 end
 
 function Profiles:onFlushSettings()
-    if self.profiles then
+    if self.profiles and self.updated then
         self.profiles:flush()
+        self.updated = false
     end
 end
 
@@ -104,7 +106,7 @@ function Profiles:getSubMenuItems()
                 end,
             }
         }
-        Dispatcher:addSubMenu(sub_items, self.data, k)
+        Dispatcher:addSubMenu(self, sub_items, self.data, k)
         table.insert(sub_item_table, {
             text = k,
             hold_keep_menu_open = false,
@@ -120,6 +122,7 @@ end
 function Profiles:newProfile(name)
     if self.data[name] == nil then
         self.data[name] = {}
+        self.updated = true
         return true
     else
         return false
@@ -128,6 +131,7 @@ end
 
 function Profiles:deleteProfile(name)
     self.data[name] = nil
+    self.updated = true
 end
 
 return Profiles
