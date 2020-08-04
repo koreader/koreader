@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="16097.2" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="16097.2"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="NSApplication"/>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <customObject id="-3" userLabel="Application" customClass="NSObject"/>
+        <menu title="Main Menu" systemMenu="main" id="1">
+            <items>
+                <menuItem title="KOReader" id="2">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <menu key="submenu" title="KOReader" systemMenu="apple" id="3">
+                        <items>
+                            <menuItem title="About KOReader" id="4">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="orderFrontStandardAboutPanel:" target="-1" id="5"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="6"/>
+                            <menuItem title="Services" id="7">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <menu key="submenu" title="Services" systemMenu="services" id="8"/>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="9"/>
+                            <menuItem title="Hide KOReader" keyEquivalent="h" id="10">
+                                <connections>
+                                    <action selector="hide:" target="-1" id="11"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Hide Others" keyEquivalent="h" id="12">
+                                <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
+                                <connections>
+                                    <action selector="hideOtherApplications:" target="-1" id="13"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Show All" id="14">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="unhideAllApplications:" target="-1" id="15"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="16"/>
+                            <menuItem title="Quit KOReader" keyEquivalent="q" id="17">
+                                <connections>
+                                    <action selector="terminate:" target="-1" id="18"/>
+                                </connections>
+                            </menuItem>
+                        </items>
+                    </menu>
+                </menuItem>
+                <menuItem title="Window" id="19">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <menu key="submenu" title="Window" systemMenu="window" id="20">
+                        <items>
+                            <menuItem title="Enter Full Screen" keyEquivalent="f" id="21">
+                                <modifierMask key="keyEquivalentModifierMask" control="YES" command="YES"/>
+                                <connections>
+                                    <action selector="toggleFullScreen:" target="-1" id="22"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="23"/>
+                            <menuItem title="Minimize" keyEquivalent="m" id="24">
+                                <connections>
+                                    <action selector="performMiniaturize:" target="-1" id="25"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Zoom" id="26">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="performZoom:" target="-1" id="27"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="28"/>
+                            <menuItem title="Bring All to Front" id="29">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="arrangeInFront:" target="-1" id="30"/>
+                                </connections>
+                            </menuItem>
+                        </items>
+                    </menu>
+                </menuItem>
+                <menuItem title="Help" id="31">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <menu key="submenu" title="Help" systemMenu="help" id="32">
+                        <items>
+                            <menuItem title="License" id="33">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="openLicense:" target="-1" id="34"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="35"/>
+                            <menuItem title="Online documentation" id="36">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="openWiki:" target="-1" id="37"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Online forum" id="38">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="openForum:" target="-1" id="39"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="40"/>
+                            <menuItem title="KOReader webpage" id="41">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="openWeb:" target="-1" id="42"/>
+                                </connections>
+                            </menuItem>
+                        </items>
+                    </menu>
+                </menuItem>
+            </items>
+        </menu>
+    </objects>
+</document>

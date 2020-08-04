@@ -405,9 +405,11 @@ macosupdate: all
 		$(INSTALL_DIR)/bundle/Contents/MacOS \
 		$(INSTALL_DIR)/bundle/Contents/Resources
 
-	cp $(MACOS_DIR)/koreader.sh $(INSTALL_DIR)/bundle/Contents/MacOS/koreader
 	cp resources/koreader.icns $(INSTALL_DIR)/bundle/Contents/Resources/icon.icns
 	cp -LR $(INSTALL_DIR)/koreader $(INSTALL_DIR)/bundle/Contents
+	cp -pRv $(MACOS_DIR)/menu.xml $(INSTALL_DIR)/bundle/Contents/MainMenu.xib
+	ibtool --compile "$(INSTALL_DIR)/bundle/Contents/Resources/Base.lproj/MainMenu.nib" "$(INSTALL_DIR)/bundle/Contents/MainMenu.xib"
+	rm -rfv "$(INSTALL_DIR)/bundle/Contents/MainMenu.xib"
 
 REMARKABLE_PACKAGE:=koreader-remarkable$(KODEDUG_SUFFIX)-$(VERSION).zip
 REMARKABLE_PACKAGE_OTA:=koreader-remarkable$(KODEDUG_SUFFIX)-$(VERSION).targz
