@@ -129,7 +129,7 @@ if Device:hasFrontlight() then
         local delta_int
         --received gesture
 
-        direction, delta_int = calculateGestureDelta( ges, direction, powerd.fl_min, powerd.fl_max)
+        direction, delta_int = calculateGestureDelta(ges, direction, powerd.fl_min, powerd.fl_max)
 
         local new_intensity = powerd.fl_intensity + direction * delta_int
         if new_intensity == nil then return true end
