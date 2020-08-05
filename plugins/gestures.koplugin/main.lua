@@ -546,7 +546,7 @@ Default value: %1]]), GestureDetector.PAN_DELAYED_INTERVAL/1000),
                     end
                     local items = SpinWidget:new{
                         text = T(_([[
-Used when highlighting text, higher value means faster refresh, but uses more CPU.
+Used when highlighting text. Higher values mean faster screen updates, but also use more CPU.
 Default value: %1]]), current_value),
                         width = math.floor(Screen:getWidth() * 0.6),
                         value = current_value,
