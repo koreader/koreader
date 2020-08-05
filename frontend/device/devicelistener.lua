@@ -45,17 +45,12 @@ end
 function DeviceListener:onShowWarmth(value)
     local powerd = Device:getPowerDevice()
     if powerd.fl_warmth ~= nil then
-        if powerd.fl_warmth_max == nil then
-            UIManager:show(Notification:new{
-                text = T(_("Warmth set to %1."), math.floor(powerd.fl_warmth)),
-                timeout = 1.0,
-            })
-        else
-            UIManager:show(Notification:new{
-                text = T(_("Warmth set to %1."), math.floor(powerd.fl_warmth/100*powerd.fl_warmth_max)),
-                timeout = 1.0,
-            })
-        end
+        -- powerd.fl_warmth holds the warmth-value in the internal koreader scale [0,100]
+        -- powerd.fl_warmth_max is the maximum value the hardware accepts
+        UIManager:show(Notification:new{
+            text = T(_("Warmth set to %1."), math.floor(powerd.fl_warmth/100*powerd.fl_warmth_max)),
+            timeout = 1.0,
+        })
     end
     return true
 end
