@@ -438,9 +438,8 @@ function Gestures:addIntervals(menu_items)
                     end
                     local items = SpinWidget:new{
                         text = T(_([[
-Used when selecting the text.
-The rate is the number of times per second screen will be refreshed,
-while selecting the text (for translating/highlighting/wikipedia search).
+Used when selecting text.
+The rate is how often screen will be refreshed per second while selecting text.
 Higher values mean faster screen updates, but also use more CPU.
 Default value: %1]]), current_value),
                         width = math.floor(Screen:getWidth() * 0.6),
