@@ -441,7 +441,7 @@ function Gestures:addIntervals(menu_items)
 Used when selecting text.
 The rate is how often screen will be refreshed per second while selecting text.
 Higher values mean faster screen updates, but also use more CPU.
-Default value: %1]]), current_value),
+Default value: %1]]), Screen.low_pan_rate and 5.0 or 30.0),
                         width = math.floor(Screen:getWidth() * 0.6),
                         value = current_value,
                         value_min = 1.0,
