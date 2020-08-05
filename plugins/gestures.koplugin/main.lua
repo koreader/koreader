@@ -3,6 +3,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
+local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
@@ -433,6 +434,38 @@ function Gestures:addIntervals(menu_items)
     menu_items.gesture_intervals = {
         text = _("Gesture intervals"),
         sub_item_table = {
+            {
+                text = _("Text selection rate"),
+                callback = function()
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local current_value = G_reader_settings:readSetting("hold_pan_rate")
+                    if not current_value then
+                        current_value = Screen.low_pan_rate and 5.0 or 30.0
+                    end
+                    local items = SpinWidget:new{
+                        text = T(_([[
+Used when selecting text.
+The rate is how often screen will be refreshed per second while selecting text.
+Higher values mean faster screen updates, but also use more CPU.
+Default value: %1]]), Screen.low_pan_rate and 5.0 or 30.0),
+                        width = math.floor(Screen:getWidth() * 0.6),
+                        value = current_value,
+                        value_min = 1.0,
+                        value_max = 60.0,
+                        value_step = 1,
+                        value_hold_step = 15,
+                        ok_text = _("Set rate"),
+                        title_text = _("Hold pan rate"),
+                        default_value = Screen.low_pan_rate and 5.0 or 30.0,
+                        callback = function(spin)
+                            G_reader_settings:saveSetting("hold_pan_rate", spin.value)
+                            UIManager:broadcastEvent(Event:new("UpdateHoldPanRate"))
+                        end
+                    }
+                    UIManager:show(items)
+                end,
+                separator = true,
+            },
             {
                 text = _("Double tap interval"),
                 callback = function()
