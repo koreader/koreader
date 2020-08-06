@@ -73,7 +73,6 @@ local Device = Generic:new{
     hasColorScreen = function() return not android.isEink() end,
     hasFrontlight = yes,
     hasNaturalLight = android.isWarmthDevice,
-    hasLightLevelFallback = yes,
     canRestart = no,
     canSuspend = no,
     firmware_rev = android.app.activity.sdkVersion,
@@ -245,14 +244,6 @@ function Device:init()
         android.setBackButtonIgnored(true)
     end
 
-    --- @todo remove fl_last_level and revert hasLightFallback if frontlightwidget
-
-    -- check if we enable a custom light level for this activity
-    --local last_value = G_reader_settings:readSetting("fl_last_level")
-    --if type(last_value) == "number" and last_value >= 0 then
-    --    Device:setScreenBrightness(last_value)
-    --end
-
     Generic.init(self)
 end
 
@@ -309,10 +300,6 @@ function Device:setViewport(x,y,w,h)
     logger.info(string.format("Switching viewport to new geometry [x=%d,y=%d,w=%d,h=%d]",x, y, w, h))
     local viewport = Geom:new{x=x, y=y, w=w, h=h}
     self.screen:setViewport(viewport)
-end
-
-function Device:setScreenBrightness(level)
-    android.setScreenBrightness(level)
 end
 
 function Device:toggleFullscreen()

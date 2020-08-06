@@ -28,10 +28,6 @@ function DeviceListener:onSetNightMode(night_mode_on)
     end
 end
 
-local function lightFrontlight()
-    return Device:hasLightLevelFallback() and G_reader_settings:nilOrTrue("light_fallback")
-end
-
 function DeviceListener:onShowIntensity()
     if not Device:hasFrontlight() then return true end
     local powerd = Device:getPowerDevice()
@@ -142,15 +138,6 @@ if Device:hasFrontlight() then
     -- direction +1 - increase frontlight warmth
     -- direction -1 - decrease frontlight warmth
     function DeviceListener:onChangeFlWarmth(ges, direction)
-        -- when using frontlight system settings
-        if lightFrontlight() then
-            UIManager:show(Notification:new{
-                text = _("Frontlight controlled by system settings."),
-                timeout = 2.5,
-            })
-            return true
-        end
-
         local powerd = Device:getPowerDevice()
         if powerd.fl_warmth == nil then return false end
 
@@ -233,14 +220,6 @@ if Device:hasFrontlight() then
     end
 
     function DeviceListener:onToggleFrontlight()
-        -- when using frontlight system settings
-        if lightFrontlight() then
-            UIManager:show(Notification:new{
-                text = _("Frontlight controlled by system settings."),
-                timeout = 2.5,
-            })
-            return true
-        end
         local powerd = Device:getPowerDevice()
         powerd:toggleFrontlight()
         local new_text
@@ -258,9 +237,7 @@ if Device:hasFrontlight() then
 
     function DeviceListener:onShowFlDialog()
         local FrontLightWidget = require("ui/widget/frontlightwidget")
-        UIManager:show(FrontLightWidget:new{
-            use_system_fl = Device:hasLightLevelFallback()
-        })
+        UIManager:show(FrontLightWidget:new{})
     end
 
 end
