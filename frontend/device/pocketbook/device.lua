@@ -334,6 +334,8 @@ local PocketBook633 = PocketBook:new{
     model = "PBColor",
     display_dpi = 300,
     hasColorScreen = yes,
+    has3BytesWideFrameBuffer = yes,
+    canUseCBB = no, -- 24bpp
 }
 
 -- PocketBook Aqua (640)
@@ -372,7 +374,6 @@ local PocketBook740_2 = PocketBook:new{
 local PocketBookColorLux = PocketBook:new{
     model = "PBColorLux",
     display_dpi = 125,
-    isAlwaysPortrait = yes,
     hasColorScreen = yes,
     has3BytesWideFrameBuffer = yes,
     canUseCBB = no, -- 24bpp
@@ -401,11 +402,9 @@ elseif codename == "PocketBook 611" then
     return PocketBook611
 elseif codename == "PocketBook 613" then
     return PocketBook613
-elseif codename == "PocketBook 614W" or
-    codename == "PocketBook 614" then
+elseif codename == "PocketBook 614W" or codename == "PocketBook 614" then
     return PocketBook614W
-elseif codename == "PocketBook 615" or
-    codename == "PB615" then
+elseif codename == "PocketBook 615" or codename == "PB615" then
     return PocketBook615
 elseif codename == "PB616W" or
     codename == "PocketBook 616" then
@@ -427,8 +426,7 @@ elseif codename == "PB628" then
     return PocketBook628
 elseif codename == "PocketBook 630" then
     return PocketBook630
-elseif codename == "PB631" or
-    codename == "PocketBook 631" then
+elseif codename == "PB631" or codename == "PocketBook 631" then
     return PocketBook631
 elseif codename == "PB632" then
     return PocketBook632
