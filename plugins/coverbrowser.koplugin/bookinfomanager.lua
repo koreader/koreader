@@ -777,7 +777,7 @@ Do you want to prune the cache of removed books?]]
     UIManager:close(info)
 
     if refresh_existing then
-        info = InfoMessage:new{text = T(N_("Found 1 book to index.", "Found %1 books to index."), #files)}
+        info = InfoMessage:new{text = T(N_("Found 1 book to index.", "Found %1 books to index.", #files), #files)}
         UIManager:show(info)
         UIManager:forceRePaint()
         util.sleep(2) -- Let the user see that
@@ -890,7 +890,7 @@ Do you want to prune the cache of removed books?]]
         end
     end
     UIManager:close(info)
-    info = InfoMessage:new{text = T(_("Processed %1 / %2 books.\n%3 extracted successfully."), nb_done, nb_files, nb_success)}
+    info = InfoMessage:new{text = T(_("Processed %1 / %2 books."), nb_done, nb_files) .. "\n" .. T(N_("One extracted successfully.", "%1 extracted successfully.", nb_success), nb_success)}
     UIManager:show(info)
 end
 
