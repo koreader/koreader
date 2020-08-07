@@ -338,7 +338,7 @@ local PocketBook633 = PocketBook:new{
 
 -- PocketBook Aqua (640)
 local PocketBook640 = PocketBook:new{
-    model = "PBAqua"
+    model = "PBAqua",
     display_dpi = 167,
 }
 
@@ -359,7 +359,6 @@ local PocketBook740 = PocketBook:new{
     model = "PBInkPad3",
     display_dpi = 300,
     isAlwaysPortrait = yes,
-    hasGSensor = yes,
 }
 
 -- PocketBook InkPad 3 Pro (740_2)
@@ -367,7 +366,6 @@ local PocketBook740_2 = PocketBook:new{
     model = "PBInkPad3Pro",
     display_dpi = 300,
     isAlwaysPortrait = yes,
-    hasGSensor = yes,
 }
 
 -- PocketBook Color Lux (801)
@@ -391,7 +389,6 @@ local PocketBook1040 = PocketBook:new{
     model = "PB1040",
     display_dpi = 227,
     isAlwaysPortrait = yes,
-    hasGSensor = yes,
 }
 
 logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
