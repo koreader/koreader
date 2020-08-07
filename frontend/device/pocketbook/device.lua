@@ -206,35 +206,28 @@ function PocketBook:getDeviceModel()
     return ffi.string(inkview.GetDeviceModel())
 end
 
--- PocketBook InkPad
-local PocketBook840 = PocketBook:new{
-    model = "PBInkPad",
-    display_dpi = 250,
-}
-
--- PocketBook 515
+-- PocketBook Mini (515)
 local PocketBook515 = PocketBook:new{
     model = "PB515",
     display_dpi = 200,
     isTouchDevice = no,
-    hasWifiToggle = no,
     hasDPad = yes,
     hasFewKeys = yes,
 }
 
--- PocketBoot 613 Basic
-local PocketBook613 = PocketBook:new{
-    model = "PB613B",
+-- PocketBook Basic (611)
+local PocketBook611 = PocketBook:new{
+    model = "PB611",
     display_dpi = 167,
     isTouchDevice = no,
-    hasWifiToggle = no,
+    hasFrontlight = no,
     hasDPad = yes,
     hasFewKeys = yes,
 }
 
--- PocketBook 614W Basic
-local PocketBook614W = PocketBook:new{
-    model = "PB614W",
+-- PocketBook Basic (613)
+local PocketBook613 = PocketBook:new{
+    model = "PB613B",
     display_dpi = 167,
     isTouchDevice = no,
     hasWifiToggle = no,
@@ -243,107 +236,160 @@ local PocketBook614W = PocketBook:new{
     hasFewKeys = yes,
 }
 
--- PocketBook Basic Lux 2
-local PocketBook616 = PocketBook:new{
-    model = "PBBLux2",
-    display_dpi = 212,
+-- PocketBook Basic 2 / Basic 3 (614/614W)
+local PocketBook614W = PocketBook:new{
+    model = "PB614W",
+    display_dpi = 167,
     isTouchDevice = no,
-    hasWifiToggle = no,
+    hasFrontlight = no,
     hasDPad = yes,
     hasFewKeys = yes,
 }
 
--- PocketBook Lux 4
+-- PocketBook Basic Lux (615)
+local PocketBook615 = PocketBook:new{
+    model = "PBBLux",
+    display_dpi = 212,
+    isTouchDevice = no,
+    hasDPad = yes,
+    hasFewKeys = yes,
+}
+
+-- PocketBook Basic Lux 2 (616)
+local PocketBook616 = PocketBook:new{
+    model = "PBBLux2",
+    display_dpi = 212,
+    isTouchDevice = no,
+    hasDPad = yes,
+    hasFewKeys = yes,
+}
+
+-- PocketBook Touch (622)
+local PocketBook622 = PocketBook:new{
+    model = "PBTouch",
+    display_dpi = 167,
+    hasFrontlight = no,
+}
+
+-- PocketBook Touch Lux (623)
+local PocketBook623 = PocketBook:new{
+    model = "PBTouchLux",
+    display_dpi = 212,
+}
+
+-- PocketBook Basic Touch (624)
+local PocketBook624 = PocketBook:new{
+    model = "PBBasicTouch",
+    display_dpi = 167,
+    hasFrontlight = no,
+}
+
+-- PocketBook Basic Touch 2 (625)
+local PocketBook625 = PocketBook:new{
+    model = "PBBasicTouch2",
+    display_dpi = 167,
+    hasFrontlight = no,
+}
+
+-- PocketBook Touch Lux 2 / Touch Lux 3 (626)
+local PocketBook626 = PocketBook:new{
+    model = "PBLux3",
+    display_dpi = 212,
+}
+
+-- PocketBook Touch Lux 4 (627)
 local PocketBook627 = PocketBook:new{
     model = "PBLux4",
     display_dpi = 212,
 }
 
--- PocketBook Touch HD
+-- PocketBook Touch Lux 5 (628)
+local PocketBook628 = PocketBook:new{
+    model = "PBTouchLux5",
+    display_dpi = 212,
+    isAlwaysPortrait = yes,
+}
+
+-- PocketBook Sense / Sense 2 (630)
+local PocketBook630 = PocketBook:new{
+    model = "PBSense",
+    display_dpi = 212,
+}
+
+-- PocketBook Touch HD / Touch HD 2 (631)
 local PocketBook631 = PocketBook:new{
     model = "PBTouchHD",
     display_dpi = 300,
 }
 
--- PocketBook Touch HD Plus
+-- PocketBook Touch HD Plus / Touch HD 3 (632)
 local PocketBook632 = PocketBook:new{
     model = "PBTouchHDPlus",
     display_dpi = 300,
     isAlwaysPortrait = yes,
 }
 
--- PocketBook Lux 3
-local PocketBook626 = PocketBook:new{
-    model = "PBLux3",
-    display_dpi = 212,
-}
-
--- PocketBook Basic Touch
-local PocketBook624 = PocketBook:new{
-    model = "PBBasicTouch",
-    hasFrontlight = no,
-    display_dpi = 166,
-}
-
--- PocketBook Basic Touch 2
-local PocketBook625 = PocketBook:new{
-    model = "PBBasicTouch2",
-    hasFrontlight = no,
-    display_dpi = 166,
-}
-
--- PocketBook Touch
-local PocketBook622 = PocketBook:new{
-    model = "PBTouch",
-    hasFrontlight = no,
-    display_dpi = 166,
-}
-
--- PocketBook Touch Lux
-local PocketBook623 = PocketBook:new{
-    model = "PBTouchLux",
-    display_dpi = 212,
-}
-
--- PocketBook InkPad 3
-local PocketBook740 = PocketBook:new{
-    model = "PBInkPad3",
-    isAlwaysPortrait = yes,
+-- PocketBook Color (633)
+local PocketBook633 = PocketBook:new{
+    model = "PBColor",
     display_dpi = 300,
+    hasColorScreen = yes,
+    has3BytesWideFrameBuffer = yes,
+    canUseCBB = no, -- 24bpp
 }
 
--- PocketBook InkPad 3 Pro
-local PocketBook740_2 = PocketBook:new{
-    model = "PBInkPad3Pro",
-    isAlwaysPortrait = yes,
-    display_dpi = 300,
+-- PocketBook Aqua (640)
+local PocketBook640 = PocketBook:new{
+    model = "PBAqua",
+    display_dpi = 167,
 }
 
--- PocketBook InkPad X
-local PocketBook1040 = PocketBook:new{
-    model = "PB1040",
-    isAlwaysPortrait = yes,
-    display_dpi = 227,
-}
-
--- PocketBook Sense
-local PocketBook630 = PocketBook:new{
-    model = "PBSense",
-    display_dpi = 212,
-}
-
--- PocketBook Aqua 2
+-- PocketBook Aqua 2 (641)
 local PocketBook641 = PocketBook:new{
     model = "PBAqua2",
     display_dpi = 212,
 }
 
--- PocketBook Color Lux
+-- PocketBook Ultra (650)
+local PocketBook650 = PocketBook:new{
+    model = "PBUltra",
+    display_dpi = 212,
+}
+
+-- PocketBook InkPad 3 (740)
+local PocketBook740 = PocketBook:new{
+    model = "PBInkPad3",
+    display_dpi = 300,
+    isAlwaysPortrait = yes,
+}
+
+-- PocketBook InkPad 3 Pro (740_2)
+local PocketBook740_2 = PocketBook:new{
+    model = "PBInkPad3Pro",
+    display_dpi = 300,
+    isAlwaysPortrait = yes,
+}
+
+-- PocketBook Color Lux (801)
 local PocketBookColorLux = PocketBook:new{
     model = "PBColorLux",
+    display_dpi = 125,
     hasColorScreen = yes,
     has3BytesWideFrameBuffer = yes,
     canUseCBB = no, -- 24bpp
+}
+
+-- PocketBook InkPad / InkPad 2 (840)
+local PocketBook840 = PocketBook:new{
+    model = "PBInkPad",
+    display_dpi = 250,
+}
+
+-- PocketBook InkPad X (1040)
+local PocketBook1040 = PocketBook:new{
+    model = "PB1040",
+    display_dpi = 227,
+    isAlwaysPortrait = yes,
 }
 
 logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
@@ -352,10 +398,14 @@ local codename = PocketBook:getDeviceModel()
 
 if codename == "PocketBook 515" then
     return PocketBook515
+elseif codename == "PocketBook 611" then
+    return PocketBook611
 elseif codename == "PocketBook 613" then
     return PocketBook613
-elseif codename == "PocketBook 614W" then
+elseif codename == "PocketBook 614W" or codename == "PocketBook 614" then
     return PocketBook614W
+elseif codename == "PocketBook 615" or codename == "PB615" then
+    return PocketBook615
 elseif codename == "PB616W" or
     codename == "PocketBook 616" then
     return PocketBook616
@@ -372,22 +422,30 @@ elseif codename == "PB626" or codename == "PB626(2)-TL3" or
     return PocketBook626
 elseif codename == "PB627" then
     return PocketBook627
+elseif codename == "PB628" then
+    return PocketBook628
 elseif codename == "PocketBook 630" then
     return PocketBook630
-elseif codename == "PB631" then
+elseif codename == "PB631" or codename == "PocketBook 631" then
     return PocketBook631
 elseif codename == "PB632" then
     return PocketBook632
+elseif codename == "PB633" then
+    return PocketBook633
+elseif codename == "PB640" then
+    return PocketBook640
 elseif codename == "PB641" then
     return PocketBook641
+elseif codename == "PB650" then
+    return PocketBook650
 elseif codename == "PB740" then
     return PocketBook740
 elseif codename == "PB740-2" then
     return PocketBook740_2
-elseif codename == "PB1040" then
-    return PocketBook1040
 elseif codename == "PocketBook 840" then
     return PocketBook840
+elseif codename == "PB1040" then
+    return PocketBook1040
 elseif codename == "PocketBook Color Lux" then
     return PocketBookColorLux
 else
