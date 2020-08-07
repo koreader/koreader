@@ -211,7 +211,6 @@ local PocketBook515 = PocketBook:new{
     model = "PB515",
     display_dpi = 200,
     isTouchDevice = no,
-    hasWifiToggle = no,
     hasDPad = yes,
     hasFewKeys = yes,
 }
@@ -221,7 +220,6 @@ local PocketBook611 = PocketBook:new{
     model = "PB611",
     display_dpi = 167,
     isTouchDevice = no,
-    hasWifiToggle = no,
     hasFrontlight = no,
     hasDPad = yes,
     hasFewKeys = yes,
@@ -243,7 +241,6 @@ local PocketBook614W = PocketBook:new{
     model = "PB614W",
     display_dpi = 167,
     isTouchDevice = no,
-    hasWifiToggle = no,
     hasFrontlight = no,
     hasDPad = yes,
     hasFewKeys = yes,
@@ -254,8 +251,6 @@ local PocketBook615 = PocketBook:new{
     model = "PBBLux",
     display_dpi = 212,
     isTouchDevice = no,
-    hasWifiToggle = no,
-    hasFrontlight = yes,
     hasDPad = yes,
     hasFewKeys = yes,
 }
@@ -265,8 +260,6 @@ local PocketBook616 = PocketBook:new{
     model = "PBBLux2",
     display_dpi = 212,
     isTouchDevice = no,
-    hasWifiToggle = no,
-    hasFrontlight = yes,
     hasDPad = yes,
     hasFewKeys = yes,
 }
@@ -275,7 +268,6 @@ local PocketBook616 = PocketBook:new{
 local PocketBook622 = PocketBook:new{
     model = "PBTouch",
     display_dpi = 167,
-    isTouchDevice = yes,
     hasFrontlight = no,
 }
 
@@ -283,15 +275,12 @@ local PocketBook622 = PocketBook:new{
 local PocketBook623 = PocketBook:new{
     model = "PBTouchLux",
     display_dpi = 212,
-    isTouchDevice = yes,
-    hasFrontlight = yes,
 }
 
 -- PocketBook Basic Touch (624)
 local PocketBook624 = PocketBook:new{
     model = "PBBasicTouch",
     display_dpi = 167,
-    isTouchDevice = yes,
     hasFrontlight = no,
 }
 
@@ -299,7 +288,6 @@ local PocketBook624 = PocketBook:new{
 local PocketBook625 = PocketBook:new{
     model = "PBBasicTouch2",
     display_dpi = 167,
-    isTouchDevice = yes,
     hasFrontlight = no,
 }
 
@@ -307,16 +295,12 @@ local PocketBook625 = PocketBook:new{
 local PocketBook626 = PocketBook:new{
     model = "PBLux3",
     display_dpi = 212,
-    isTouchDevice = yes,
-    hasFrontlight = yes,
 }
 
 -- PocketBook Touch Lux 4 (627)
 local PocketBook627 = PocketBook:new{
     model = "PBLux4",
     display_dpi = 212,
-    isTouchDevice = yes,
-    hasFrontlight = yes,
 }
 
 -- PocketBook Touch Lux 5 (628)
@@ -324,24 +308,18 @@ local PocketBook628 = PocketBook:new{
     model = "PBTouchLux5",
     display_dpi = 212,
     isAlwaysPortrait = yes,
-    isTouchDevice = yes,
-    hasFrontlight = yes,
 }
 
 -- PocketBook Sense / Sense 2 (630)
 local PocketBook630 = PocketBook:new{
     model = "PBSense",
     display_dpi = 212,
-    isTouchDevice = yes,
-    hasFrontlight = yes,
 }
 
 -- PocketBook Touch HD / Touch HD 2 (631)
 local PocketBook631 = PocketBook:new{
     model = "PBTouchHD",
     display_dpi = 300,
-    isTouchDevice = yes,
-    hasFrontlight = yes,
 }
 
 -- PocketBook Touch HD Plus / Touch HD 3 (632)
@@ -349,40 +327,31 @@ local PocketBook632 = PocketBook:new{
     model = "PBTouchHDPlus",
     display_dpi = 300,
     isAlwaysPortrait = yes,
-    isTouchDevice = yes,
-    hasFrontlight = yes,
 }
 
 -- PocketBook Color (633)
 local PocketBook633 = PocketBook:new{
     model = "PBColor",
     display_dpi = 300,
-    isTouchDevice = yes,
     hasColorScreen = yes,
-    hasFrontlight = yes,
 }
 
 -- PocketBook Aqua (640)
 local PocketBook640 = PocketBook:new{
     model = "PBAqua"
     display_dpi = 167,
-    isTouchDevice = yes,
 }
 
 -- PocketBook Aqua 2 (641)
 local PocketBook641 = PocketBook:new{
     model = "PBAqua2",
     display_dpi = 212,
-    isTouchDevice = yes,
-    hasFrontlight = yes,
 }
 
 -- PocketBook Ultra (650)
 local PocketBook650 = PocketBook:new{
     model = "PBUltra",
     display_dpi = 212,
-    isTouchDevice = yes,
-    hasFrontlight = yes
 }
 
 -- PocketBook InkPad 3 (740)
@@ -390,8 +359,7 @@ local PocketBook740 = PocketBook:new{
     model = "PBInkPad3",
     display_dpi = 300,
     isAlwaysPortrait = yes,
-    isTouchDevice = yes,
-    hasFrontlight = yes,
+    hasGSensor = yes,
 }
 
 -- PocketBook InkPad 3 Pro (740_2)
@@ -399,8 +367,7 @@ local PocketBook740_2 = PocketBook:new{
     model = "PBInkPad3Pro",
     display_dpi = 300,
     isAlwaysPortrait = yes,
-    isTouchDevice = yes,
-    hasFrontlight = yes,
+    hasGSensor = yes,
 }
 
 -- PocketBook Color Lux (801)
@@ -408,9 +375,7 @@ local PocketBookColorLux = PocketBook:new{
     model = "PBColorLux",
     display_dpi = 125,
     isAlwaysPortrait = yes,
-    isTouchDevice = yes,
     hasColorScreen = yes,
-    hasFrontlight = yes,
     has3BytesWideFrameBuffer = yes,
     canUseCBB = no, -- 24bpp
 }
@@ -419,8 +384,6 @@ local PocketBookColorLux = PocketBook:new{
 local PocketBook840 = PocketBook:new{
     model = "PBInkPad",
     display_dpi = 250,
-    isTouchDevice = yes,
-    hasFrontlight = yes,
 }
 
 -- PocketBook InkPad X (1040)
@@ -428,8 +391,7 @@ local PocketBook1040 = PocketBook:new{
     model = "PB1040",
     display_dpi = 227,
     isAlwaysPortrait = yes,
-    isTouchDevice = yes,
-    hasFrontlight = yes,
+    hasGSensor = yes,
 }
 
 logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
