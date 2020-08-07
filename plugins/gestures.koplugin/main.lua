@@ -444,7 +444,6 @@ function Gestures:addIntervals(menu_items)
                     end
                     local items = SpinWidget:new{
                         text = T(_([[
-Used when selecting text.
 The rate is how often screen will be refreshed per second while selecting text.
 Higher values mean faster screen updates, but also use more CPU.
 Default value: %1]]), Screen.low_pan_rate and 5.0 or 30.0),
@@ -455,7 +454,7 @@ Default value: %1]]), Screen.low_pan_rate and 5.0 or 30.0),
                         value_step = 1,
                         value_hold_step = 15,
                         ok_text = _("Set rate"),
-                        title_text = _("Hold pan rate"),
+                        title_text = _("Text selection rate"),
                         default_value = Screen.low_pan_rate and 5.0 or 30.0,
                         callback = function(spin)
                             G_reader_settings:saveSetting("hold_pan_rate", spin.value)
