@@ -165,6 +165,7 @@ function KOSync:addToMainMenu(menu_items)
                         -- current progress now to avoid to lose it silently.
                         self:updateProgress(true)
                     end
+                    self:saveSettings()
                 end,
             },
             {
