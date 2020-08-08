@@ -177,6 +177,7 @@ function CalibreWireless:setInboxDir(host, port)
                 logger.info("set inbox directory", inbox)
                 G_reader_settings:saveSetting("inbox_dir", inbox)
                 if host and port then
+                    CalibreMetadata:init(inbox)
                     calibre_device:initCalibreMQ(host, port)
                 end
             end
