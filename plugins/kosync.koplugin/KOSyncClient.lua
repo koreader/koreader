@@ -1,5 +1,5 @@
-local UIManager = require("ui/uimanager")
 local NetworkMgr = require("ui/network/manager")
+local UIManager = require("ui/uimanager")
 local DEBUG = require("dbg")
 
 local KOSyncClient = {
