@@ -145,7 +145,9 @@ function Device:init()
     end
 
     self.hasClipboard = yes
-    self.screen = require("ffi/framebuffer_SDL2_0"):new{device = self, debug = logger.dbg,
+    self.screen = require("ffi/framebuffer_SDL2_0"):new{
+        device = self,
+        debug = logger.dbg,
         w = self.window.width,
         h = self.window.height,
         x = self.window.left,
