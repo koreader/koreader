@@ -90,6 +90,7 @@ local Device = Generic:new{
             external_dict_when_back_callback = nil
         end
     end,
+    window = G_reader_settings:readSetting("sdl_window") or {},
 }
 
 local AppImage = Device:new{
@@ -144,7 +145,14 @@ function Device:init()
     end
 
     self.hasClipboard = yes
-    self.screen = require("ffi/framebuffer_SDL2_0"):new{device = self, debug = logger.dbg}
+    self.screen = require("ffi/framebuffer_SDL2_0"):new{
+        device = self,
+        debug = logger.dbg,
+        w = self.window.width,
+        h = self.window.height,
+        x = self.window.left,
+        y = self.window.top,
+    }
     self.powerd = require("device/sdl/powerd"):new{device = self}
 
     local ok, re = pcall(self.screen.setWindowIcon, self.screen, "resources/koreader.png")
@@ -163,6 +171,7 @@ function Device:init()
             local SDL_MOUSEWHEEL = 1027
             local SDL_MULTIGESTURE = 2050
             local SDL_DROPFILE = 4096
+            local SDL_WINDOWEVENT_MOVED = 4
             local SDL_WINDOWEVENT_RESIZED = 5
 
             if ev.code == SDL_MOUSEWHEEL then
@@ -229,6 +238,8 @@ function Device:init()
                 device_input.device.screen.screen_size.w = ev.value.data1
                 device_input.device.screen.screen_size.h = ev.value.data2
                 device_input.device.screen.resize(device_input.device.screen, ev.value.data1, ev.value.data2)
+                self.window.width = ev.value.data1
+                self.window.height = ev.value.data2
 
                 local new_size = device_input.device.screen:getSize()
                 logger.dbg("Resizing screen to", new_size)
@@ -242,6 +253,9 @@ function Device:init()
                 -- this triggers paged media like PDF and DjVu to redraw
                 -- CreDocument doesn't need it
                 UIManager:broadcastEvent(Event:new("RedrawCurrentPage"))
+            elseif ev.code == SDL_WINDOWEVENT_MOVED then
+                self.window.left = ev.value.data1
+                self.window.top = ev.value.data2
             end
         end,
         hasClipboardText = function()
@@ -293,6 +307,12 @@ function Device:setDateTime(year, month, day, hour, min, sec)
     else
         return false
     end
+end
+
+function Device:exit()
+    G_reader_settings:saveSetting("sdl_window", self.window)
+    G_reader_settings:flush()
+    Generic.exit(self)
 end
 
 function Emulator:simulateSuspend()
