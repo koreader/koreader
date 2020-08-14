@@ -896,7 +896,11 @@ function ReaderRolling:_gotoPos(new_pos, do_dim_area)
 end
 
 function ReaderRolling:_gotoPercent(new_percent)
-    self:_gotoPos(new_percent * self.ui.document.info.doc_height / 10000)
+    if self.view.view_mode == "page" then
+        self:_gotoPage(new_percent * self.ui.document:getPageCount() / 100)
+    else
+        self:_gotoPos(new_percent * self.ui.document.info.doc_height / 100)
+    end
 end
 
 function ReaderRolling:_gotoPage(new_page, free_first_page)
