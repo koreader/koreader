@@ -188,7 +188,7 @@ function ReaderRolling:onReadSettings(config)
     --- @fixme remove this branch with migration script
     elseif last_per then
         self.setupXpointer = function()
-            self:_gotoPercent(last_per)
+            self:_gotoPercent(last_per * 100)
             -- _gotoPercent calls _gotoPos, which only updates self.current_pos
             -- and self.view.
             -- we need to do a real pos change in self.ui.document._document
