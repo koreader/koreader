@@ -53,7 +53,7 @@ Please follow the model specific steps for your device:
 
 ## Development
 
-[Setting a build environment](doc/Building.md) •
+[Setting up a build environment](doc/Building.md) •
 [Collaborating with Git](doc/Collaborating_with_Git.md) •
 [Building targets](doc/Building_targets.md) •
 [Porting](doc/Porting.md) •
