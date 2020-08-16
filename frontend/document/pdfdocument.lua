@@ -105,6 +105,10 @@ function PdfDocument:getPageTextBoxes(pageno)
     return text
 end
 
+function PdfDocument:getPanelFromPage(pageno, pos)
+    return self.koptinterface:getPanelFromPage(self, pageno, pos)
+end
+
 function PdfDocument:getWordFromPosition(spos)
     return self.koptinterface:getWordFromPosition(self, spos)
 end

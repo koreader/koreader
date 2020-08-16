@@ -576,9 +576,21 @@ function ReaderHighlight:_resetHoldTimer(clear)
     end
 end
 
+function ReaderHighlight:onPanelZoom(arg, ges)
+    -- TODO: add necessary checks
+    self:clear()
+    local hold_ges_pos = ges.pos
+    local hold_pos = self.view:screenToPageTransform(ges.pos)
+    self.ui.document:getPanelFromPage(hold_pos.page, ges.pos)
+    return true
+end
+
 function ReaderHighlight:onHold(arg, ges)
     -- disable hold gesture if highlighting is disabled
-    if self.view.highlight.disabled then return false end
+    if self.view.highlight.disabled then
+        self:onPanelZoom(arg, ges)
+        return false
+    end
     self:clear() -- clear previous highlight (delayed clear may not have done it yet)
     self.hold_ges_pos = ges.pos -- remember hold original gesture position
     self.hold_pos = self.view:screenToPageTransform(ges.pos)
