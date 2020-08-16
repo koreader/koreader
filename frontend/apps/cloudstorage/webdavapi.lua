@@ -99,7 +99,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
     end
 
     local res = table.concat(sink)
-    --[[ 
+    --[[
     Apache Webserver WebDAV mod_dav module adds this fragment to the XML tags
     It also uses upper casing for the XML tags, amongst other things, which we
     deal with in the pattern matching that follows
