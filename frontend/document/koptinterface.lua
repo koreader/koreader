@@ -550,10 +550,10 @@ function KoptInterface:getPanelFromPage(doc, pageno, ges)
     kc:setZoom(1.0)
     local page = doc._document:openPage(pageno)
     page:getPagePix(kc)
-    local boxes = kc:getPanelFromPage(ges.pos)
+    local panel = kc:getPanelFromPage(ges.pos)
     page:close()
     kc:free()
-    return boxes
+    return panel
 end
 
 --[[--

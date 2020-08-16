@@ -577,11 +577,12 @@ function ReaderHighlight:_resetHoldTimer(clear)
 end
 
 function ReaderHighlight:onPanelZoom(arg, ges)
-    -- TODO: add necessary checks
+    -- @todo: add necessary checks
     self:clear()
     local hold_ges_pos = ges.pos
     local hold_pos = self.view:screenToPageTransform(ges.pos)
-    self.ui.document:getPanelFromPage(hold_pos.page, ges.pos)
+    local res = self.ui.document:getPanelFromPage(hold_pos.page, ges)
+    logger.dbg("result: ", res)
     return true
 end
 
