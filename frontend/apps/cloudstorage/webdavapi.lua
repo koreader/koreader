@@ -98,17 +98,11 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
         return nil
     end
 
-    local res = table.concat(sink)
-    --[[
-    Apache Webserver WebDAV mod_dav module adds this fragment to the XML tags
-    It also uses upper casing for the XML tags, amongst other things, which we
-    deal with in the pattern matching that follows
-    --]]
-    local res_data = res:gsub(' xmlns:lp1="DAV:"','')
+    local res_data = table.concat(sink)
 
     if res_data ~= "" then
         -- iterate through the <d:response> tags, each containing an entry
-        for item in res_data:gmatch("<[dD]:response>(.-)</[dD]:response>") do
+        for item in res_data:gmatch("<[^:]*:response[^>]*>(.-)</[^:]*:response>") do
             --logger.dbg("WebDav catalog item=", item)
             -- <d:href> is the path and filename of the entry.
             local item_fullpath = item:match("<[dD]:href>(.*)</[dD]:href>")
@@ -127,7 +121,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
                         type = "folder",
                     })
                 end
-            elseif item:find("<[dDlp1]+:resourcetype/>") and (DocumentRegistry:hasProvider(item_name)
+            elseif item:find("<[^:]*:resourcetype/>") and (DocumentRegistry:hasProvider(item_name)
                 or G_reader_settings:isTrue("show_unsupported")) then
                 table.insert(webdav_file, {
                     text = item_name,
