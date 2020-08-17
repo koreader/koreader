@@ -59,7 +59,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
 
     local has_trailing_slash = false
     local has_leading_slash = false
-    if string.sub( address, -1 ) ~= "/" then has_trailing_slash = true end
+    if string.sub( address, -1 ) == "/" then has_trailing_slash = true end
     if path == nil or path == "/" then
         path = ""
     elseif string.sub( path, 1, 2 ) == "/" then
@@ -73,6 +73,9 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
         address = address .. "/"
     end
     local webdav_url = address .. path
+    if not has_trailing_slash then
+        webdav_url = webdav_url .. "/"
+    end
 
     local request, sink = {}, {}
     local parsed = url.parse(webdav_url)
@@ -96,19 +99,20 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
     end
 
     local res_data = table.concat(sink)
+
     if res_data ~= "" then
         -- iterate through the <d:response> tags, each containing an entry
-        for item in res_data:gmatch("<d:response>(.-)</d:response>") do
+        for item in res_data:gmatch("<[^:]*:response[^>]*>(.-)</[^:]*:response>") do
             --logger.dbg("WebDav catalog item=", item)
             -- <d:href> is the path and filename of the entry.
-            local item_fullpath = item:match("<d:href>(.*)</d:href>")
+            local item_fullpath = item:match("<[^:]*:href[^>]*>(.*)</[^:]*:href>")
             if string.sub( item_fullpath, -1 ) == "/" then
                 item_fullpath = string.sub( item_fullpath, 1, -2 )
             end
             local is_current_dir = self:isCurrentDirectory( item_fullpath, address, path )
             local item_name = util.urlDecode( FFIUtil.basename( item_fullpath ) )
             local item_path = path .. "/" .. item_name
-            if item:find("<d:collection/>") then
+            if item:find("<[^:]*:collection/>") then
                 item_name = item_name .. "/"
                 if not is_current_dir then
                     table.insert(webdav_list, {
@@ -117,7 +121,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
                         type = "folder",
                     })
                 end
-            elseif item:find("<d:resourcetype/>") and (DocumentRegistry:hasProvider(item_name)
+            elseif item:find("<[^:]*:resourcetype/>") and (DocumentRegistry:hasProvider(item_name)
                 or G_reader_settings:isTrue("show_unsupported")) then
                 table.insert(webdav_file, {
                     text = item_name,
