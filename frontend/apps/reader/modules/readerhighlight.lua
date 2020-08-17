@@ -581,17 +581,14 @@ function ReaderHighlight:onPanelZoom(arg, ges)
     self:clear()
     local hold_ges_pos = ges.pos
     local hold_pos = self.view:screenToPageTransform(ges.pos)
-    local rect = self.ui.document:getPanelFromPage(hold_pos.page, ges)
+    local rect = self.ui.document:getPanelFromPage(hold_pos.page, hold_pos)
     if not rect then return false end
-    logger.dbg("result: ", res)
     local image = self.ui.document:getPagePart(hold_pos.page, rect, 0)
 
     if image then
         local ImageViewer = require("ui/widget/imageviewer")
         local imgviewer = ImageViewer:new{
             image = image,
-            -- title_text = _("Document embedded image"),
-            -- No title, more room for image
             with_title_bar = false,
             fullscreen = true,
         }
