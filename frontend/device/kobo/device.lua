@@ -106,6 +106,7 @@ local KoboDragon = Kobo:new{
     hasFrontlight = yes,
     hasMultitouch = no,
     display_dpi = 265,
+    canHWInvert = no,
 }
 
 -- Kobo Glo:
