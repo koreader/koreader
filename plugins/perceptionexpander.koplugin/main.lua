@@ -216,14 +216,14 @@ end
 
 function PerceptionExpander:saveSettings(fields)
     if fields then
-        self.line_thickness = tonumber(fields[1])
-        self.margin = tonumber(fields[2])
+        self.line_thickness = fields[1] ~= "" and tonumber(fields[1]) or self.line_thickness
+        self.margin = fields[2] ~= "" and tonumber(fields[2]) or self.margin
 
-        local line_intensity = tonumber(fields[3])
+        local line_intensity = fields[3] ~= "" and tonumber(fields[3]) or self.line_color_intensity * 10
         if line_intensity then
             self.line_color_intensity = line_intensity / 10
         end
-        self.shift_each_pages = tonumber(fields[4])
+        self.shift_each_pages = fields[4] ~= "" and tonumber(fields[4]) or self.shift_each_pages
     end
 
     self.settings:saveSetting("line_thick", self.line_thickness)
