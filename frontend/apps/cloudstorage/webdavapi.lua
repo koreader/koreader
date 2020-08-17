@@ -105,14 +105,14 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
         for item in res_data:gmatch("<[^:]*:response[^>]*>(.-)</[^:]*:response>") do
             --logger.dbg("WebDav catalog item=", item)
             -- <d:href> is the path and filename of the entry.
-            local item_fullpath = item:match("<[dD]:href>(.*)</[dD]:href>")
+            local item_fullpath = item:match("<[^:]*:href[^>]*>(.*)</[^:]*:href>")
             if string.sub( item_fullpath, -1 ) == "/" then
                 item_fullpath = string.sub( item_fullpath, 1, -2 )
             end
             local is_current_dir = self:isCurrentDirectory( item_fullpath, address, path )
             local item_name = util.urlDecode( FFIUtil.basename( item_fullpath ) )
             local item_path = path .. "/" .. item_name
-            if item:find("<[dD]:collection/>") then
+            if item:find("<[^:]*:collection/>") then
                 item_name = item_name .. "/"
                 if not is_current_dir then
                     table.insert(webdav_list, {
