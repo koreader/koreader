@@ -3,8 +3,9 @@ local Device = require("device")
 local Event = require("ui/event")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
-local T = require("ffi/util").template
 local _ = require("gettext")
+local C_ = _.pgettext
+local T = require("ffi/util").template
 
 local Dispatcher = {
     initialized = false,
@@ -33,12 +34,12 @@ local settingsList = {
     -- Device settings
     show_frontlight_dialog = { category="none", event="ShowFlDialog", title=_("Show frontlight dialog"), device=true, condition=Device:hasFrontlight(),},
     toggle_frontlight = { category="none", event="ToggleFrontlight", title=_("Toggle frontlight"), device=true, condition=Device:hasFrontlight(),},
-    set_frontlight = { category="absolutenumber", event="SetFlIntensity", min=0, max=Device:getPowerDevice().fl_max, title=_("Set frontlight brightness"), device=true, condition=Device:hasFrontlight(),},
-    increase_frontlight = { category="incrementalnumber", event="IncreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Increase frontlight brightness"), device=true, condition=Device:hasFrontlight(),},
-    decrease_frontlight = { category="incrementalnumber", event="DecreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Decrease frontlight brightness"), device=true, condition=Device:hasFrontlight(),},
-    set_frontlight_warmth = { category="absolutenumber", event="SetFlWarmth", min=0, max=100, title=_("Set frontlight warmth"), device=true, condition=Device:hasNaturalLight(),},
-    increase_frontlight_warmth = { category="incrementalnumber", event="IncreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Increase frontlight warmth"), device=true, condition=Device:hasNaturalLight(),},
-    decrease_frontlight_warmth = { category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Decrease frontlight warmth"), device=true, condition=Device:hasNaturalLight(), separator=true,},
+    set_frontlight = { category="absolutenumber", event="SetFlIntensity", min=0, max=Device:getPowerDevice().fl_max, title=_("Set frontlight brightness to %1"), device=true, condition=Device:hasFrontlight(),},
+    increase_frontlight = { category="incrementalnumber", event="IncreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Increase frontlight brightness by %1"), device=true, condition=Device:hasFrontlight(),},
+    decrease_frontlight = { category="incrementalnumber", event="DecreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Decrease frontlight brightness by %1"), device=true, condition=Device:hasFrontlight(),},
+    set_frontlight_warmth = { category="absolutenumber", event="SetFlWarmth", min=0, max=100, title=_("Set frontlight warmth to %1"), device=true, condition=Device:hasNaturalLight(),},
+    increase_frontlight_warmth = { category="incrementalnumber", event="IncreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Increase frontlight warmth by %1"), device=true, condition=Device:hasNaturalLight(),},
+    decrease_frontlight_warmth = { category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Decrease frontlight warmth by %1"), device=true, condition=Device:hasNaturalLight(), separator=true,},
     toggle_gsensor = { category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:canToggleGSensor(),},
     wifi_on = { category="none", event="InfoWifiOn", title=_("Turn on Wi-Fi"), device=true, condition=Device:hasWifiToggle(),},
     wifi_off = { category="none", event="InfoWifiOff", title=_("Turn off Wi-Fi"), device=true, condition=Device:hasWifiToggle(),},
@@ -106,8 +107,8 @@ local settingsList = {
     page_jmp = { category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Go %1 pages"), rolling=true, paging=true,},
 
     -- rolling reader settings
-    increase_font = { category="incrementalnumber", event="IncreaseFontSize", min=1, max=255, title=_("Increase font size"), rolling=true,},
-    decrease_font = { category="incrementalnumber", event="DecreaseFontSize", min=1, max=255, title=_("Decrease font size"), rolling=true,},
+    increase_font = { category="incrementalnumber", event="IncreaseFontSize", min=1, max=255, title=_("Increase font size by %1"), rolling=true,},
+    decrease_font = { category="incrementalnumber", event="DecreaseFontSize", min=1, max=255, title=_("Decrease font size by %1"), rolling=true,},
 
     -- paging reader settings
     toggle_page_flipping = { category="none", event="TogglePageFlipping", title=_("Toggle page flipping"), paging=true,},
@@ -126,7 +127,7 @@ local settingsList = {
     block_rendering_mode = {category="string", rolling=true},
     render_dpi = {category="string", rolling=true},
     line_spacing = {category="absolutenumber", rolling=true, separator=true,},
-    font_size = {category="absolutenumber", title=_("Font Size"), rolling=true},
+    font_size = {category="absolutenumber", title=_("Set font size to %1"), rolling=true},
     font_weight = {category="string", rolling=true},
     --font_gamma = {category="string", rolling=true},
     font_hinting = {category="string", rolling=true},
@@ -312,8 +313,10 @@ function Dispatcher:getNameFromItem(item, location, settings)
     if location[settings] ~= nil and location[settings][item] ~= nil then
         amount = location[settings][item]
     end
-    if amount == nil or amount == 0 then
-        amount = "X"
+    if amount == nil
+        or (amount == 0 and settingsList[item].category == "incrementalnumber")
+    then
+        amount = C_("Number placeholder", "#")
     end
     return T(settingsList[item].title, amount)
 end
