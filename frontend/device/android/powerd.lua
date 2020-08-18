@@ -42,4 +42,38 @@ function AndroidPowerD:isChargingHW()
     return android.isCharging()
 end
 
+function AndroidPowerD:turnOffFrontlightHW()
+    if not self:isFrontlightOnHW() then
+        return
+    end
+
+    android.setScreenBrightness(math.floor( self.fl_min))
+
+    self.is_fl_on = false
+    -- And let the footer know of the change
+    if package.loaded["ui/uimanager"] ~= nil then
+        local Event = require("ui/event")
+        local UIManager = require("ui/uimanager")
+        UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
+    end
+end
+
+function AndroidPowerD:turnOnFrontlightHW()
+    local logger = require("logger")
+    logger.err("self.fl_intensity= " .. self.fl_intensity)
+    if self:isFrontlightOn() and self:isFrontlightOnHW() then
+        logger.err("isFrontlightOnHW() = true")
+        return
+    end
+    android.setScreenBrightness(math.floor(self.fl_intensity * self.bright_diff / self.fl_max))
+
+    self.is_fl_on = true
+    -- And let the footer know of the change
+    if package.loaded["ui/uimanager"] ~= nil then
+        local Event = require("ui/event")
+        local UIManager = require("ui/uimanager")
+        UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
+    end
+end
+
 return AndroidPowerD
