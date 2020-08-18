@@ -71,14 +71,9 @@ sync
 
 # And finally, simply restart nickel.
 # We don't care about horribly legacy stuff, because if people switch between nickel and KOReader in the first place, I assume they're using a decently recent enough FW version.
-# Last tested on an H2O & a Forma running FW 4.7.x - 4.12.x
+# Last tested on an H2O & a Forma running FW 4.7.x - 4.23.x
 /usr/local/Kobo/hindenburg &
 LIBC_FATAL_STDERR_=1 /usr/local/Kobo/nickel -platform kobo -skipFontLoad &
-udevadm trigger &
-
-# Handle sdcard
-if [ -e "/dev/mmcblk1p1" ]; then
-    echo sd add /dev/mmcblk1p1 >>/tmp/nickel-hardware-status &
-fi
+[ $PLATFORM != freescale ] && udevadm trigger &
 
 return 0
