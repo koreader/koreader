@@ -4,8 +4,8 @@
 lsmod | grep -q sdio_wifi_pwr || insmod "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko"
 # Moar sleep!
 usleep 250000
-# WIFI_MODULE_PATH = /drivers/$PLATFORM/wifi/$WIFI_MODULE.ko
-lsmod | grep -q "${WIFI_MODULE}" || insmod "${WIFI_MODULE_PATH}"
+# NOTE: Used to be exported in WIFI_MODULE_PATH before FW 4.23
+lsmod | grep -q "${WIFI_MODULE}" || insmod "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko"
 # Race-y as hell, don't try to optimize this!
 sleep 1
 
