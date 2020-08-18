@@ -652,6 +652,8 @@ This is just an example, that will need to be adapted into a user style tweak.]]
 Show FB2 footnote text at the bottom of pages that contain links to them.]]),
                     -- Restrict this to FB2 documents, even if we won't probably
                     -- match in any other kind of document
+                    -- (Last selector avoids title bottom margin from collapsing
+                    -- into the first footnote by substituting it with padding.)
                     css = [[
 body[name="notes"] section {
     -cr-only-if: fb2-document;
@@ -661,6 +663,11 @@ body[name="notes"] section {
 body[name="notes"] > section {
     -cr-only-if: fb2-document;
         font-size: 0.75rem;
+}
+body[name="notes"] > title {
+    -cr-only-if: fb2-document;
+        margin-bottom: 0;
+        padding-bottom: 0.5em;
 }
                     ]],
                 },
@@ -678,6 +685,11 @@ body[name="comments"] section {
 body[name="comments"] > section {
     -cr-only-if: fb2-document;
         font-size: 0.85rem;
+}
+body[name="comments"] > title {
+    -cr-only-if: fb2-document;
+        margin-bottom: 0;
+        padding-bottom: 0.5em;
 }
                     ]],
                     separator = true,
