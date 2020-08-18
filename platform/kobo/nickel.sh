@@ -74,6 +74,6 @@ sync
 # Last tested on an H2O & a Forma running FW 4.7.x - 4.23.x
 /usr/local/Kobo/hindenburg &
 LIBC_FATAL_STDERR_=1 /usr/local/Kobo/nickel -platform kobo -skipFontLoad &
-[ $PLATFORM != freescale ] && udevadm trigger &
+[ "${PLATFORM}" != "freescale" ] && udevadm trigger &
 
 return 0
