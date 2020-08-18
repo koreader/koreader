@@ -68,6 +68,7 @@ fi
 
 # Recreate Nickel's FIFO ourselves, otherwise, udev may attempt to write to it before Nickel creates it,
 # and Nickel doesn't handle that well (i.e., it doesn't unlink first, the FIFO isn't created, it's now a regular file, hilarity ensues).
+# Plus, we actually *do* want the stuff udev writes in there to be processed by Nickel, anyway.
 rm -f "/tmp/nickel-hardware-status"
 mkfifo "/tmp/nickel-hardware-status"
 
