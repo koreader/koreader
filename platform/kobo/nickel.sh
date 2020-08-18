@@ -66,6 +66,11 @@ if lsmod | grep -q sdio_wifi_pwr; then
     rmmod sdio_wifi_pwr
 fi
 
+# Recreate Nickel's FIFO ourselves, otherwise, udev may attempt to write to it before Nickel creates it,
+# and Nickel doesn't handle that well (i.e., it doesn't unlink first, the FIFO isn't created, it's now a regular file, hilarity ensues).
+rm -f "/tmp/nickel-hardware-status"
+mkfifo "/tmp/nickel-hardware-status"
+
 # Flush buffers to disk, who knows.
 sync
 
