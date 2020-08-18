@@ -577,10 +577,12 @@ function ReaderHighlight:_resetHoldTimer(clear)
 end
 
 function ReaderHighlight:onPanelZoom(arg, ges)
-    -- @todo: add necessary checks
     self:clear()
+    -- if not pdf/cbz return
+    if not self.ui.document.info.has_pages then return false end
     local hold_ges_pos = ges.pos
     local hold_pos = self.view:screenToPageTransform(ges.pos)
+    if not hold_pos then return false end
     local rect = self.ui.document:getPanelFromPage(hold_pos.page, hold_pos)
     if not rect then return false end
     local image = self.ui.document:getPagePart(hold_pos.page, rect, 0)
