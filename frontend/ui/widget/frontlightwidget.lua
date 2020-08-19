@@ -58,6 +58,7 @@ function FrontLightWidget:init()
     self.steps = math.min(self.steps, steps_fl)
     self.natural_light = Device:hasNaturalLight()
     self.has_nl_mixer = Device:hasNaturalLightMixer()
+    self.has_nl_api = Device:hasNaturalLightApi()
     -- Handle Warmth separately, because it may use a different scale
     if self.natural_light then
         self.nl_min = self.powerd.fl_warmth_min
@@ -254,7 +255,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
         -- If the device supports natural light, add the widgets for 'warmth',
         -- as well as a 'Configure' button for devices *without* a mixer
         self:addWarmthWidgets(num_warmth, step, vertical_group)
-        if not self.has_nl_mixer then
+        if not self.has_nl_mixer and not self.has_nl_api then
             self.configure_button =  Button:new{
                 text = _("Configure"),
                 margin = Size.margin.small,
@@ -409,64 +410,68 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
             end
         })
 
-    local text_auto_nl = TextBoxWidget:new{
-        --- @todo Implement padding_right (etc.) on TextBoxWidget and remove the two-space hack.
-        text = _("Max. at:") .. "  ",
-        face = self.larger_font_face,
-        alignment = "right",
-        fgcolor = self.powerd.auto_warmth and Blitbuffer.COLOR_BLACK or
-            Blitbuffer.COLOR_DARK_GRAY,
-        width = math.floor(self.screen_width * 0.3),
-    }
-    local text_hour = TextBoxWidget:new{
-        text = " " .. math.floor(self.powerd.max_warmth_hour) .. ":" ..
-            self.powerd.max_warmth_hour % 1 * 6 .. "0",
-        face = self.larger_font_face,
-        alignment = "center",
-        fgcolor =self.powerd.auto_warmth and Blitbuffer.COLOR_BLACK or
-            Blitbuffer.COLOR_DARK_GRAY,
-        width = math.floor(self.screen_width * 0.15),
-    }
-    local button_minus_one_hour = Button:new{
-        text = "−",
-        margin = Size.margin.small,
-        radius = 0,
-        enabled = self.powerd.auto_warmth,
-        width = math.floor(self.screen_width * 0.1),
-        show_parent = self,
-        callback = function()
-            self.powerd.max_warmth_hour =
-                (self.powerd.max_warmth_hour - 1) % 24
-            self.powerd:calculateAutoWarmth()
-            self:setProgress(self.fl_cur, step)
-        end,
-        hold_callback = function()
-            self.powerd.max_warmth_hour =
-                (self.powerd.max_warmth_hour - 0.5) % 24
-            self.powerd:calculateAutoWarmth()
-            self:setProgress(self.fl_cur, step)
-        end,
-    }
-    local button_plus_one_hour = Button:new{
-        text = "+",
-        margin = Size.margin.small,
-        radius = 0,
-        enabled = self.powerd.auto_warmth,
-        width = math.floor(self.screen_width * 0.1),
-        show_parent = self,
-        callback = function()
-            self.powerd.max_warmth_hour =
-                (self.powerd.max_warmth_hour + 1) % 24
-            self.powerd:calculateAutoWarmth()
-            self:setProgress(self.fl_cur, step)
-        end,
-        hold_callback = function()
-            self.powerd.max_warmth_hour =
-                (self.powerd.max_warmth_hour + 0.5) % 24
-            self.powerd:calculateAutoWarmth()
-            self:setProgress(self.fl_cur, step)
-        end,
-    }
+    local text_auto_nl, text_hour, button_minus_one_hour, button_plus_one_hour
+
+    if not self.has_nl_api then
+        text_auto_nl = TextBoxWidget:new{
+            --- @todo Implement padding_right (etc.) on TextBoxWidget and remove the two-space hack.
+            text = _("Max. at:") .. "  ",
+            face = self.larger_font_face,
+            alignment = "right",
+            fgcolor = self.powerd.auto_warmth and Blitbuffer.COLOR_BLACK or
+                Blitbuffer.COLOR_DARK_GRAY,
+            width = math.floor(self.screen_width * 0.3),
+        }
+        text_hour = TextBoxWidget:new{
+            text = " " .. math.floor(self.powerd.max_warmth_hour) .. ":" ..
+                self.powerd.max_warmth_hour % 1 * 6 .. "0",
+            face = self.larger_font_face,
+            alignment = "center",
+            fgcolor =self.powerd.auto_warmth and Blitbuffer.COLOR_BLACK or
+                Blitbuffer.COLOR_DARK_GRAY,
+            width = math.floor(self.screen_width * 0.15),
+        }
+        button_minus_one_hour = Button:new{
+            text = "−",
+            margin = Size.margin.small,
+            radius = 0,
+            enabled = self.powerd.auto_warmth,
+            width = math.floor(self.screen_width * 0.1),
+            show_parent = self,
+            callback = function()
+                self.powerd.max_warmth_hour =
+                    (self.powerd.max_warmth_hour - 1) % 24
+                self.powerd:calculateAutoWarmth()
+                self:setProgress(self.fl_cur, step)
+            end,
+            hold_callback = function()
+                self.powerd.max_warmth_hour =
+                    (self.powerd.max_warmth_hour - 0.5) % 24
+                self.powerd:calculateAutoWarmth()
+                self:setProgress(self.fl_cur, step)
+            end,
+        }
+        button_plus_one_hour = Button:new{
+            text = "+",
+            margin = Size.margin.small,
+            radius = 0,
+            enabled = self.powerd.auto_warmth,
+            width = math.floor(self.screen_width * 0.1),
+            show_parent = self,
+            callback = function()
+                self.powerd.max_warmth_hour =
+                    (self.powerd.max_warmth_hour + 1) % 24
+                self.powerd:calculateAutoWarmth()
+                self:setProgress(self.fl_cur, step)
+            end,
+            hold_callback = function()
+                self.powerd.max_warmth_hour =
+                    (self.powerd.max_warmth_hour + 0.5) % 24
+                self.powerd:calculateAutoWarmth()
+                self:setProgress(self.fl_cur, step)
+            end,
+        }
+    end
 
     table.insert(vertical_group, text_warmth)
     table.insert(button_group_up, button_table_up)
@@ -484,7 +489,10 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
     table.insert(vertical_group, padding_span)
     table.insert(vertical_group, button_group_down)
     table.insert(vertical_group, padding_span)
-    table.insert(vertical_group, auto_nl_group)
+
+    if not self.has_nl_api then
+        table.insert(vertical_group, auto_nl_group)
+    end
 end
 
 function FrontLightWidget:setFrontLightIntensity(num)
