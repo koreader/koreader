@@ -404,8 +404,8 @@ elseif codename == "PocketBook 613" then
     return PocketBook613
 elseif codename == "PocketBook 614" or codename == "PocketBook 614W" then
     return PocketBook614W
-elseif codename == "PB615" or codename == "PB615W" then
-    codename == "PocketBook 615" or codename == "PocketBook 615W" or
+elseif codename == "PB615" or codename == "PB615W" or
+    codename == "PocketBook 615" or codename == "PocketBook 615W" then
     return PocketBook615
 elseif codename == "PB616" or codename == "PB616W" or
     codename == "PocketBook 616" or codename == "PocketBook 616W" then
