@@ -122,7 +122,7 @@ function Migration:convertAction(location, ges, action)
     elseif action == "toggle_reflow" then
         result = {toggle_reflow = true,}
     elseif action == "toggle_rotation" then
-        result = {toggle_rotation = true,}
+        result = {swap_rotation = true,}
     elseif action == "toggle_wifi" then
         result = {toggle_wifi = true,}
     elseif action == "wifi_off" then
