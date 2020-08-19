@@ -241,7 +241,7 @@ end
 
 function DeviceListener:onIterateRotation()
     -- Simply rotate by 90° CW
-    local arg = bit.band((Screen:getRotationMode() + 1), 3)
+    local arg = bit.band(Screen:getRotationMode() + 1, 3)
     self.ui:handleEvent(Event:new("SetRotationMode", arg))
     return true
 end
