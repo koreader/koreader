@@ -7,7 +7,7 @@ void OpenScreen();
 int GetFrontlightState(void);
 int GetFrontlightColor(void);
 void SetFrontlightState(int flstate);
-void SetFrontlightState(int color);
+void SetFrontlightColor(int color);
 int GetBatteryPower();
 int IsCharging();
 ]]
