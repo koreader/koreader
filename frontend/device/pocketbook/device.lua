@@ -46,6 +46,7 @@ ffi.cdef[[
 char *GetSoftwareVersion(void);
 char *GetDeviceModel(void);
 int GetNetState(void);
+int GetFrontlightColor(void);
 int NetConnect(const char *name);
 int NetDisconnect();
 ]]
@@ -66,6 +67,10 @@ local PocketBook = Generic:new{
     canSuspend = no,
     emu_events_dev = "/dev/shm/emu_events",
     home_dir = "/mnt/ext1",
+
+    -- all devices that have warmth lights use inkview api
+    hasNaturalLightApi = yes,
+
 }
 
 -- Make sure the C BB cannot be used on devices with a 24bpp fb
@@ -308,6 +313,7 @@ local PocketBook628 = PocketBook:new{
     model = "PBTouchLux5",
     display_dpi = 212,
     isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
 }
 
 -- PocketBook Sense / Sense 2 (630)
@@ -320,6 +326,8 @@ local PocketBook630 = PocketBook:new{
 local PocketBook631 = PocketBook:new{
     model = "PBTouchHD",
     display_dpi = 300,
+    -- see https://github.com/koreader/koreader/pull/6531#issuecomment-676629182
+    hasNaturalLight = function() return inkview.GetFrontlightColor() >= 0 end,
 }
 
 -- PocketBook Touch HD Plus / Touch HD 3 (632)
@@ -327,6 +335,7 @@ local PocketBook632 = PocketBook:new{
     model = "PBTouchHDPlus",
     display_dpi = 300,
     isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
 }
 
 -- PocketBook Color (633)
@@ -361,6 +370,7 @@ local PocketBook740 = PocketBook:new{
     model = "PBInkPad3",
     display_dpi = 300,
     isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
 }
 
 -- PocketBook InkPad 3 Pro (740_2)
@@ -368,6 +378,7 @@ local PocketBook740_2 = PocketBook:new{
     model = "PBInkPad3Pro",
     display_dpi = 300,
     isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
 }
 
 -- PocketBook Color Lux (801)
@@ -390,6 +401,7 @@ local PocketBook1040 = PocketBook:new{
     model = "PB1040",
     display_dpi = 227,
     isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
 }
 
 logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
