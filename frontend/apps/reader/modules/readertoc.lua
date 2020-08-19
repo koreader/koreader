@@ -65,7 +65,7 @@ function ReaderToc:onPageUpdate(pageno)
             self.chapter_refresh = true
         elseif self.chapter_refresh and self:isChapterStart(pageno, 0) then
             UIManager:setDirty(nil, "full")
-            self.chapter_refresh = true
+            --self.chapter_refresh = true
         elseif self.chapter_refresh and self:isChapterSecondPage(pageno, 0) then
             UIManager:setDirty(nil, "full")
             self.chapter_refresh = false
