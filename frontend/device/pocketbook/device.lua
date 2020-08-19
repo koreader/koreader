@@ -335,6 +335,7 @@ local PocketBook633 = PocketBook:new{
     display_dpi = 300,
     hasColorScreen = yes,
     canUseCBB = no, -- 24bpp
+    isAlwaysPortrait = yes,
 }
 
 -- PocketBook Aqua (640)
