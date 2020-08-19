@@ -60,7 +60,7 @@ end
 
 function ReaderToc:onPageUpdate(pageno)
     self.pageno = pageno
-    if UIManager.FULL_REFRESH_COUNT == -1 then
+    if UIManager.FULL_REFRESH_COUNT == -1 or G_reader_settings:isTrue("refresh_on_chapter_boundaries") then
         if self:isChapterEnd(pageno, 0) then
             self.chapter_refresh = true
         elseif self:isChapterStart(pageno, 0) and self.chapter_refresh then
@@ -361,26 +361,26 @@ end
 
 function ReaderToc:isChapterStart(cur_pageno, level)
     local ticks = self:getTocTicks(level)
-    local _begin = false
+    local _start = false
     for i = 1, #ticks do
         if ticks[i] == cur_pageno then
-            _begin = true
+            _start = true
             break
         end
     end
-    return _begin
+    return _start
 end
 
 function ReaderToc:isChapterSecondPage(cur_pageno, level)
     local ticks = self:getTocTicks(level)
-    local _end = false
+    local _second = false
     for i = 1, #ticks do
         if ticks[i] + 1 == cur_pageno then
-            _end = true
+            _second = true
             break
         end
     end
-    return _end
+    return _second
 end
 
 function ReaderToc:isChapterEnd(cur_pageno, level)

@@ -105,6 +105,12 @@ return {
             text = _("Every chapter"),
             checked_func = function() return refreshChecked(-1, -1) end,
             callback = function() UIManager:setRefreshRate(-1, -1) end,
+            separator = true,
+        },
+        {
+            text = _("Always refresh on chapter boundaries"),
+            checked_func = function() return G_reader_settings:isTrue("refresh_on_chapter_boundaries") end,
+            callback = function() G_reader_settings:flipNilOrFalse("refresh_on_chapter_boundaries") end,
         },
     }
 }
