@@ -66,6 +66,10 @@ local PocketBook = Generic:new{
     canSuspend = no,
     emu_events_dev = "/dev/shm/emu_events",
     home_dir = "/mnt/ext1",
+
+    -- all devices that have warmth lights use inkview api
+    hasNaturalLightApi = yes,
+
 }
 
 -- Make sure the C BB cannot be used on devices with a 24bpp fb
@@ -327,6 +331,7 @@ local PocketBook632 = PocketBook:new{
     model = "PBTouchHDPlus",
     display_dpi = 300,
     isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
 }
 
 -- PocketBook Color (633)

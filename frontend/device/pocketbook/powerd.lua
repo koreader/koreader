@@ -5,20 +5,28 @@ local inkview = ffi.load("inkview")
 ffi.cdef[[
 void OpenScreen();
 int GetFrontlightState(void);
+int GetFrontlightColor(void);
 void SetFrontlightState(int flstate);
+void SetFrontlightState(int color);
 int GetBatteryPower();
 int IsCharging();
 ]]
 
 local PocketBookPowerD = BasePowerD:new{
     is_charging = nil,
+    fl_warmth = nil,
+
     fl_min = 0,
     fl_max = 100,
+    fl_warmth_min = 0,
+    fl_warmth_max = 100,
 }
 
 function PocketBookPowerD:init()
     -- needed for SetFrontlightState / GetFrontlightState
     inkview.OpenScreen()
+    local color = inkview.GetFrontlightColor()
+    self.fl_warmth = color >= 0 and color or 0
 end
 
 function PocketBookPowerD:frontlightIntensityHW()
@@ -32,6 +40,11 @@ function PocketBookPowerD:setIntensityHW(intensity)
     else
         inkview.SetFrontlightState(intensity)
     end
+end
+
+function PocketBookPowerD:setWarmth(level)
+    self.fl_warmth = level or self.fl_warmth
+    inkview.SetFrontlightColor(self.fl_warmth)
 end
 
 function PocketBookPowerD:getCapacityHW()
