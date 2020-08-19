@@ -46,6 +46,7 @@ ffi.cdef[[
 char *GetSoftwareVersion(void);
 char *GetDeviceModel(void);
 int GetNetState(void);
+int GetFrontlightColor(void);
 int NetConnect(const char *name);
 int NetDisconnect();
 ]]
@@ -325,8 +326,8 @@ local PocketBook630 = PocketBook:new{
 local PocketBook631 = PocketBook:new{
     model = "PBTouchHD",
     display_dpi = 300,
-    -- See https://github.com/koreader/koreader/pull/6531#issuecomment-676622476
-    --hasNaturalLight = yes,
+    -- see https://github.com/koreader/koreader/pull/6531#issuecomment-676629182
+    hasNaturalLight = function() return inkview.GetFrontlightColor() >= 0 end,
 }
 
 -- PocketBook Touch HD Plus / Touch HD 3 (632)
