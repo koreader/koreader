@@ -63,7 +63,10 @@ function ReaderToc:onPageUpdate(pageno)
     if UIManager.FULL_REFRESH_COUNT == -1 then
         if self:isChapterEnd(pageno, 0) then
             self.chapter_refresh = true
-        elseif self:isChapterBegin(pageno, 0) and self.chapter_refresh then
+        elseif self:isChapterStart(pageno, 0) and self.chapter_refresh then
+            UIManager:setDirty(nil, "full")
+            self.chapter_refresh = true
+        elseif self:isChapterSecondPage(pageno, 0) and self.chapter_refresh then
             UIManager:setDirty(nil, "full")
             self.chapter_refresh = false
         else
@@ -356,7 +359,7 @@ function ReaderToc:getPreviousChapter(cur_pageno, level)
     return previous_chapter
 end
 
-function ReaderToc:isChapterBegin(cur_pageno, level)
+function ReaderToc:isChapterStart(cur_pageno, level)
     local ticks = self:getTocTicks(level)
     local _begin = false
     for i = 1, #ticks do
@@ -368,9 +371,21 @@ function ReaderToc:isChapterBegin(cur_pageno, level)
     return _begin
 end
 
+function ReaderToc:isChapterSecondPage(cur_pageno, level)
+    local ticks = self:getTocTicks(level)
+    local _end = false
+    for i = 1, #ticks do
+        if ticks[i] + 1 == cur_pageno then
+            _end = true
+            break
+        end
+    end
+    return _end
+end
+
 function ReaderToc:isChapterEnd(cur_pageno, level)
     local ticks = self:getTocTicks(level)
-    local _end= false
+    local _end = false
     for i = 1, #ticks do
         if ticks[i] - 1 == cur_pageno then
             _end = true
@@ -390,7 +405,7 @@ function ReaderToc:getChapterPagesLeft(pageno, level)
 end
 
 function ReaderToc:getChapterPagesDone(pageno, level)
-    if self:isChapterBegin(pageno, level) then return 0 end
+    if self:isChapterStart(pageno, level) then return 0 end
     local previous_chapter = self:getPreviousChapter(pageno, level)
     if previous_chapter then
         previous_chapter = pageno - previous_chapter
