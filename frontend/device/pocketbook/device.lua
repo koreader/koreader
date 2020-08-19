@@ -334,7 +334,6 @@ local PocketBook633 = PocketBook:new{
     model = "PBColor",
     display_dpi = 300,
     hasColorScreen = yes,
-    has3BytesWideFrameBuffer = yes,
     canUseCBB = no, -- 24bpp
 }
 
