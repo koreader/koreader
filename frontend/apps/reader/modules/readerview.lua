@@ -223,6 +223,8 @@ function ReaderView:paintTo(bb, x, y)
         -- With some nil guards because this may not be implemented in every engine ;).
         if img_count and img_count > 0 and img_coverage and img_coverage >= 0.075 then
             self.dialog.dithered = true
+            -- Request a flashing update while we're at it
+            UIManager:setDirty(nil, "full")
         end
     end
 end
