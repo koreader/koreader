@@ -246,7 +246,7 @@ local PocketBook614W = PocketBook:new{
     hasFewKeys = yes,
 }
 
--- PocketBook Basic Lux (615)
+-- PocketBook Basic Lux / 615 Plus (615/615W)
 local PocketBook615 = PocketBook:new{
     model = "PBBLux",
     display_dpi = 212,
@@ -255,7 +255,7 @@ local PocketBook615 = PocketBook:new{
     hasFewKeys = yes,
 }
 
--- PocketBook Basic Lux 2 (616)
+-- PocketBook Basic Lux 2 (616/616W)
 local PocketBook616 = PocketBook:new{
     model = "PBBLux2",
     display_dpi = 212,
@@ -402,12 +402,13 @@ elseif codename == "PocketBook 611" then
     return PocketBook611
 elseif codename == "PocketBook 613" then
     return PocketBook613
-elseif codename == "PocketBook 614W" or codename == "PocketBook 614" then
+elseif codename == "PocketBook 614" or codename == "PocketBook 614W" then
     return PocketBook614W
-elseif codename == "PocketBook 615" or codename == "PB615" then
+elseif codename == "PB615" or codename == "PB615W" then
+    codename == "PocketBook 615" or codename == "PocketBook 615W" or
     return PocketBook615
-elseif codename == "PB616W" or
-    codename == "PocketBook 616" then
+elseif codename == "PB616" or codename == "PB616W" or
+    codename == "PocketBook 616" or codename == "PocketBook 616W" then
     return PocketBook616
 elseif codename == "PocketBook 622" then
     return PocketBook622
