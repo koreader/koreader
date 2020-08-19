@@ -17,14 +17,14 @@ end
 
 function AndroidPowerD:init()
     self.bright_diff = android:getScreenMaxBrightness() - android:getScreenMinBrightness()
-    
+
     -- if necessary scale fl_min:
-    --    do not use fl_min==0 if getScreenMinBrightness!=0, 
-    --    because intenstiy==0 would mean to use system intensity 
+    --    do not use fl_min==0 if getScreenMinBrightness!=0,
+    --    because intenstiy==0 would mean to use system intensity
     if android:getScreenMinBrightness() ~= self.fl_min then
         self.fl_min = math.ceil(android:getScreenMinBrightness() * self.bright_diff /self.fl_max)
     end
-    
+
     if self.device:hasNaturalLight() then
         self.warm_diff = android:getScreenMaxWarmth() - android:getScreenMinWarmth()
         self.fl_warmth = self:getWarmth()
