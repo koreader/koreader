@@ -63,7 +63,9 @@ local settingsList = {
     poweroff = { category="none", event="PowerOff", title=_("Power off"), device=true, condition=Device:canPowerOff(), separator=true,},
     show_menu = { category="none", event="ShowMenu", title=_("Show menu"), device=true,},
     toggle_hold_corners = { category="none", event="IgnoreHoldCorners", title=_("Toggle hold corners"), device=true,},
-    toggle_rotation = { category="none", event="ToggleRotation", title=_("Toggle rotation"), device=true, separator=true,},
+    swap_rotation = { category="none", event="SwapRotation", title=_("Swap rotation"), device=true, separator=true,},
+    invert_rotation = { category="none", event="InvertRotation", title=_("Invert rotation"), device=true, separator=true,},
+    iterate_rotation = { category="none", event="IterateRotation", title=_("Rotate by 90° CW"), device=true, separator=true,},
     wallabag_download = { category="none", event="SynchronizeWallabag", title=_("Wallabag retrieval"), device=true,},
     calibre_search = { category="none", event="CalibreSearch", title=_("Search in calibre metadata"), device=true,},
     calibre_browse_tags = { category="none", event="CalibreBrowseTags", title=_("Browse all calibre tags"), device=true,},
@@ -176,7 +178,9 @@ local dispatcher_menu_order = {
 
     "toggle_hold_corners",
     "toggle_gsensor",
-    "toggle_rotation",
+    "swap_rotation",
+    "invert_rotation",
+    "iterate_rotation",
 
     "wifi_on",
     "wifi_off",
