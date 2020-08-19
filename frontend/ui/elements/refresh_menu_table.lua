@@ -108,7 +108,7 @@ return {
             separator = true,
         },
         {
-            text = _("Always refresh on chapter boundaries"),
+            text = _("Always flash on chapter boundaries"),
             checked_func = function() return G_reader_settings:isTrue("refresh_on_chapter_boundaries") end,
             callback = function() G_reader_settings:flipNilOrFalse("refresh_on_chapter_boundaries") end,
         },
