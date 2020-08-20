@@ -61,12 +61,15 @@ end
 function ReaderToc:onPageUpdate(pageno)
     self.pageno = pageno
     if UIManager.FULL_REFRESH_COUNT == -1 or G_reader_settings:isTrue("refresh_on_chapter_boundaries") then
+        local flash_on_second = G_reader_settings:nilOrFalse("no_refresh_on_second_chapter_page")
         if self:isChapterEnd(pageno, 0) then
             self.chapter_refresh = true
         elseif self.chapter_refresh and self:isChapterStart(pageno, 0) then
             UIManager:setDirty(nil, "full")
-            --self.chapter_refresh = true
-        elseif self.chapter_refresh and self:isChapterSecondPage(pageno, 0) then
+            if not flash_on_second then
+                self.chapter_refresh = false
+            end
+        elseif flash_on_second and self.chapter_refresh and self:isChapterSecondPage(pageno, 0) then
             UIManager:setDirty(nil, "full")
             self.chapter_refresh = false
         else
