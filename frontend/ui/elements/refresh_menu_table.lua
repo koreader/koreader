@@ -110,13 +110,13 @@ return {
         {
             text = _("Always flash on chapter boundaries"),
             checked_func = function() return G_reader_settings:isTrue("refresh_on_chapter_boundaries") end,
-            callback = function() G_reader_settings:flipNilOrFalse("refresh_on_chapter_boundaries") end,
+            callback = function() UIManager:broadcastEvent(Event:new("ToggleFlashOnChapterBoundaries")) end,
         },
         {
             text = _("Don't flash on the second page of a new chapter"),
             enabled_func = function() return UIManager.FULL_REFRESH_COUNT == -1 or G_reader_settings:isTrue("refresh_on_chapter_boundaries") end,
             checked_func = function() return G_reader_settings:isTrue("no_refresh_on_second_chapter_page") end,
-            callback = function() G_reader_settings:flipNilOrFalse("no_refresh_on_second_chapter_page") end,
+            callback = function() UIManager:broadcastEvent(Event:new("ToggleNoFlashOnSecondChapterPage")) end,
         },
     }
 }

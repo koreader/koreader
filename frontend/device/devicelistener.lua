@@ -269,6 +269,14 @@ function DeviceListener:onSwapRotation()
     return true
 end
 
+function DeviceListener:onToggleFlashOnChapterBoundaries()
+    G_reader_settings:flipNilOrFalse("refresh_on_chapter_boundaries")
+end
+
+function DeviceListener:onToggleNoFlashOnSecondChapterPage()
+    G_reader_settings:isTrue("no_refresh_on_second_chapter_page")
+end
+
 if Device:canReboot() then
     function DeviceListener:onReboot()
         UIManager:show(ConfirmBox:new{
