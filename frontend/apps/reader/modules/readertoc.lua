@@ -69,7 +69,7 @@ function ReaderToc:onPageUpdate(pageno)
             if not flash_on_second then
                 self.chapter_refresh = false
             end
-        elseif flash_on_second and self.chapter_refresh and self:isChapterSecondPage(pageno, 0) then
+        elseif self.chapter_refresh and self:isChapterSecondPage(pageno, 0) then
             UIManager:setDirty(nil, "full")
             self.chapter_refresh = false
         else
