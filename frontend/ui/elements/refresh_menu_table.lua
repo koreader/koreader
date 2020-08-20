@@ -44,7 +44,7 @@ local function spinWidgetSetRefresh(touchmenu_instance, refresh_rate_num)
         callback = function(left_value, right_value)
             G_reader_settings:saveSetting(refresh_rate_num, left_value)
             G_reader_settings:saveSetting("night_" .. refresh_rate_num, right_value)
-            UIManager:setRefreshRate(left_value, right_value)
+            UIManager:broadcastEvent(Event:new("SetRefreshRates", left_value, right_value))
             touchmenu_instance:updateItems()
         end
     }
@@ -59,24 +59,24 @@ return {
         {
             text = _("Never"),
             checked_func = function() return refreshChecked(0, 0) end,
-            callback = function() UIManager:setRefreshRate(0, 0) end,
+            callback = function() UIManager:broadcastEvent(Event:new("SetBothRefreshRates", 0)) end,
         },
         {
             text = _("Every page"),
             checked_func = function() return refreshChecked(1, 1) end,
-            callback = function() UIManager:setRefreshRate(1, 1) end,
+            callback = function() UIManager:broadcastEvent(Event:new("SetBothRefreshRates", 1)) end,
         },
         {
             text = _("Every 6 pages"),
             checked_func = function() return refreshChecked(6, 6) end,
-            callback = function() UIManager:setRefreshRate(6, 6) end,
+            callback = function() UIManager:broadcastEvent(Event:new("SetBothRefreshRates", 6)) end,
         },
         {
             text_func = function()
                 return T(_("Custom 1: %1:%2 pages"), custom("refresh_rate_1"))
             end,
             checked_func = function() return refreshChecked(custom("refresh_rate_1")) end,
-            callback = function() UIManager:setRefreshRate(custom("refresh_rate_1")) end,
+            callback = function() UIManager:broadcastEvent(Event:new("SetRefreshRates", custom("refresh_rate_1"))) end,
             hold_callback = function(touchmenu_instance)
                 spinWidgetSetRefresh(touchmenu_instance, "refresh_rate_1")
             end,
@@ -86,7 +86,7 @@ return {
                 return T(_("Custom 2: %1:%2 pages"), custom("refresh_rate_2"))
             end,
             checked_func = function() return refreshChecked(custom("refresh_rate_2")) end,
-            callback = function() UIManager:setRefreshRate(custom("refresh_rate_2")) end,
+            callback = function() UIManager:broadcastEvent(Event:new("SetRefreshRates", custom("refresh_rate_2"))) end,
             hold_callback = function(touchmenu_instance)
                 spinWidgetSetRefresh(touchmenu_instance, "refresh_rate_2")
             end,
@@ -96,7 +96,7 @@ return {
                 return T(_("Custom 3: %1:%2 pages"), custom("refresh_rate_3"))
             end,
             checked_func = function() return refreshChecked(custom("refresh_rate_3")) end,
-            callback = function() UIManager:setRefreshRate(custom("refresh_rate_3")) end,
+            callback = function() UIManager:broadcastEvent(Event:new("SetRefreshRates", custom("refresh_rate_3"))) end,
             hold_callback = function(touchmenu_instance)
                 spinWidgetSetRefresh(touchmenu_instance, "refresh_rate_3")
             end,
@@ -104,7 +104,7 @@ return {
         {
             text = _("Every chapter"),
             checked_func = function() return refreshChecked(-1, -1) end,
-            callback = function() UIManager:setRefreshRate(-1, -1) end,
+            callback = function() UIManager:broadcastEvent(Event:new("SetBothRefreshRates", -1)) end,
             separator = true,
         },
         {

@@ -66,6 +66,11 @@ local settingsList = {
     toggle_rotation = { category="none", event="SwapRotation", title=_("Toggle orientation"), device=true,},
     invert_rotation = { category="none", event="InvertRotation", title=_("Invert rotation"), device=true,},
     iterate_rotation = { category="none", event="IterateRotation", title=_("Rotate by 90° CW"), device=true, separator=true,},
+    set_refresh_rate = { category="absolutenumber", event="SetBothRefreshRates", min=-1, max=200, title=_("Full refresh every %1 pages (always)"), device=true,},
+    set_day_refresh_rate = { category="absolutenumber", event="SetDayRefreshRate", min=-1, max=200, title=_("Full refresh every %1 pages (when not in nightmode)"), device=true,},
+    set_night_refresh_rate = { category="absolutenumber", event="SetNightRefreshRate", min=-1, max=200, title=_("Full refresh every %1 pages (when in nightmode)"), device=true,},
+    toggle_flash_on_chapter_boundaries = { category="none", event="ToggleFlashOnChapterBoundaries", title=_("Toggle always flash on chapter boundaries"), device=true,},
+    toggle_no_flash_on_second_chapter_page = { category="none", event="ToggleNoFlashOnSecondChapterPage", title=_("Toggle don't flash on the second page of a new chapter"), device=true, separator=true,},
     wallabag_download = { category="none", event="SynchronizeWallabag", title=_("Wallabag retrieval"), device=true,},
     calibre_search = { category="none", event="CalibreSearch", title=_("Search in calibre metadata"), device=true,},
     calibre_browse_tags = { category="none", event="CalibreBrowseTags", title=_("Browse all calibre tags"), device=true,},
@@ -177,10 +182,17 @@ local dispatcher_menu_order = {
     "decrease_frontlight_warmth",
 
     "toggle_hold_corners",
+
     "toggle_gsensor",
     "toggle_rotation",
     "invert_rotation",
     "iterate_rotation",
+
+    "set_refresh_rate",
+    "set_day_refresh_rate",
+    "set_night_refresh_rate",
+    "toggle_flash_on_chapter_boundaries",
+    "toggle_no_flash_on_second_chapter_page",
 
     "wifi_on",
     "wifi_off",

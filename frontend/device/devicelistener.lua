@@ -269,12 +269,28 @@ function DeviceListener:onSwapRotation()
     return true
 end
 
+function DeviceListener:onSetRefreshRates(day, night)
+    UIManager:setRefreshRate(day, night)
+end
+
+function DeviceListener:onSetBothRefreshRates(rate)
+    UIManager:setRefreshRate(rate, rate)
+end
+
+function DeviceListener:onSetDayRefreshRate(day)
+    UIManager:setRefreshRate(day, nil)
+end
+
+function DeviceListener:onSetNightRefreshRate(night)
+    UIManager:setRefreshRate(nil, night)
+end
+
 function DeviceListener:onToggleFlashOnChapterBoundaries()
     G_reader_settings:flipNilOrFalse("refresh_on_chapter_boundaries")
 end
 
 function DeviceListener:onToggleNoFlashOnSecondChapterPage()
-    G_reader_settings:isTrue("no_refresh_on_second_chapter_page")
+    G_reader_settings:flipNilOrFalse("no_refresh_on_second_chapter_page")
 end
 
 if Device:canReboot() then
