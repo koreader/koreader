@@ -239,8 +239,32 @@ if Device:canToggleGSensor() then
     end
 end
 
-function DeviceListener:onToggleRotation()
-    local arg = bit.band((Screen:getRotationMode() + 1), 3)
+function DeviceListener:onIterateRotation()
+    -- Simply rotate by 90° CW
+    local arg = bit.band(Screen:getRotationMode() + 1, 3)
+    self.ui:handleEvent(Event:new("SetRotationMode", arg))
+    return true
+end
+
+function DeviceListener:onInvertRotation()
+    -- Invert is always rota + 2, w/ wraparound
+    local arg = bit.band(Screen:getRotationMode() + 2, 3)
+    self.ui:handleEvent(Event:new("SetRotationMode", arg))
+    return true
+end
+
+function DeviceListener:onSwapRotation()
+    local rota = Screen:getRotationMode()
+    -- Portrait is always even, Landscape is always odd. For each of 'em, Landscape = Portrait + 1.
+    -- As such...
+    local arg
+    if bit.band(rota, 1) == 0 then
+        -- If Portrait, Landscape is +1
+        arg = bit.band(rota + 1, 3)
+    else
+        -- If Landscape, Portrait is -1
+        arg = bit.band(rota - 1, 3)
+    end
     self.ui:handleEvent(Event:new("SetRotationMode", arg))
     return true
 end
