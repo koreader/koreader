@@ -109,7 +109,7 @@ return {
             separator = true,
         },
         {
-            text = _("Always flash on chapter boundaries…"),
+            text = _("Always flash on chapter boundaries"),
             checked_func = function() return G_reader_settings:isTrue("refresh_on_chapter_boundaries") end,
             callback = function() UIManager:broadcastEvent(Event:new("ToggleFlashOnChapterBoundaries")) end,
         },
