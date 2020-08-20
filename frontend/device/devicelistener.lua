@@ -297,24 +297,24 @@ function DeviceListener:onSetNightRefreshRate(night)
     UIManager:setRefreshRate(nil, night)
 end
 
-function DeviceListener:onSetFlashOnChapterBoundaries()
-    _setSetting("refresh_on_chapter_boundaries")
-end
-
-function DeviceListener:onUnsetFlashOnChapterBoundaries()
-    _unsetSetting("refresh_on_chapter_boundaries")
+function DeviceListener:onSetFlashOnChapterBoundaries(toggle)
+    if toggle == true then
+        _setSetting("refresh_on_chapter_boundaries")
+    else
+        _unsetSetting("refresh_on_chapter_boundaries")
+    end
 end
 
 function DeviceListener:onToggleFlashOnChapterBoundaries()
     _toggleSetting("refresh_on_chapter_boundaries")
 end
 
-function DeviceListener:onSetNoFlashOnSecondChapterPage()
-    _setSetting("no_refresh_on_second_chapter_page")
-end
-
-function DeviceListener:onUnsetNoFlashOnSecondChapterPage()
-    _unsetSetting("no_refresh_on_second_chapter_page")
+function DeviceListener:onSetNoFlashOnSecondChapterPage(toggle)
+    if toggle == true then
+        _setSetting("no_refresh_on_second_chapter_page")
+    else
+        _unsetSetting("no_refresh_on_second_chapter_page")
+    end
 end
 
 function DeviceListener:onToggleNoFlashOnSecondChapterPage()
