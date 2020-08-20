@@ -1,4 +1,3 @@
-local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local DEBUG = require("dbg")
 
@@ -104,21 +103,6 @@ function KOSyncClient:update_progress(
         device,
         device_id,
         callback)
-
-    local callback_ok = NetworkMgr:willRerunWhenOnline(function()
-            self:update_progress(
-            username,
-            password,
-            document,
-            progress,
-            percentage,
-            device,
-            device_id,
-            callback)
-        end)
-    if callback_ok then
-        return
-    end
     self.client:reset_middlewares()
     self.client:enable('Format.JSON')
     self.client:enable("GinClient")
@@ -153,11 +137,6 @@ function KOSyncClient:get_progress(
         password,
         document,
         callback)
-
-    if NetworkMgr:willRerunWhenOnline(function() self:get_progress(username, password, document, callback) end) then
-        return
-    end
-
     self.client:reset_middlewares()
     self.client:enable('Format.JSON')
     self.client:enable("GinClient")
