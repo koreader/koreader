@@ -285,8 +285,24 @@ function DeviceListener:onSetNightRefreshRate(night)
     UIManager:setRefreshRate(nil, night)
 end
 
+function DeviceListener:onSetFlashOnChapterBoundaries()
+    G_reader_settings:saveSetting("refresh_on_chapter_boundaries", true)
+end
+
+function DeviceListener:onUnsetFlashOnChapterBoundaries()
+    G_reader_settings:delSetting("refresh_on_chapter_boundaries")
+end
+
 function DeviceListener:onToggleFlashOnChapterBoundaries()
     G_reader_settings:flipNilOrFalse("refresh_on_chapter_boundaries")
+end
+
+function DeviceListener:onSetNoFlashOnSecondChapterPage()
+    G_reader_settings:saveSetting("no_refresh_on_second_chapter_page", true)
+end
+
+function DeviceListener:onUnsetNoFlashOnSecondChapterPage()
+    G_reader_settings:delSetting("no_refresh_on_second_chapter_page")
 end
 
 function DeviceListener:onToggleNoFlashOnSecondChapterPage()
