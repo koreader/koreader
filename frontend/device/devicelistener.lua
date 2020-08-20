@@ -11,6 +11,18 @@ local T = require("ffi/util").template
 
 local DeviceListener = InputContainer:new{}
 
+local function _setSetting(name)
+    G_reader_settings:saveSetting(name, true)
+end
+
+local function _unsetSetting(name)
+    G_reader_settings:delSetting(name)
+end
+
+local function _toggleSetting(name)
+    G_reader_settings:flipNilOrFalse(name)
+end
+
 function DeviceListener:onToggleNightMode()
     local night_mode = G_reader_settings:isTrue("night_mode")
     Screen:toggleNightMode()
@@ -223,7 +235,7 @@ end
 
 if Device:canToggleGSensor() then
     function DeviceListener:onToggleGSensor()
-        G_reader_settings:flipNilOrFalse("input_ignore_gsensor")
+        _toggleSetting("input_ignore_gsensor")
         Device:toggleGSensor(not G_reader_settings:isTrue("input_ignore_gsensor"))
         local new_text
         if G_reader_settings:isTrue("input_ignore_gsensor") then
@@ -286,27 +298,27 @@ function DeviceListener:onSetNightRefreshRate(night)
 end
 
 function DeviceListener:onSetFlashOnChapterBoundaries()
-    G_reader_settings:saveSetting("refresh_on_chapter_boundaries", true)
+    _setSetting("refresh_on_chapter_boundaries")
 end
 
 function DeviceListener:onUnsetFlashOnChapterBoundaries()
-    G_reader_settings:delSetting("refresh_on_chapter_boundaries")
+    _unsetSetting("refresh_on_chapter_boundaries")
 end
 
 function DeviceListener:onToggleFlashOnChapterBoundaries()
-    G_reader_settings:flipNilOrFalse("refresh_on_chapter_boundaries")
+    _toggleSetting("refresh_on_chapter_boundaries")
 end
 
 function DeviceListener:onSetNoFlashOnSecondChapterPage()
-    G_reader_settings:saveSetting("no_refresh_on_second_chapter_page", true)
+    _setSetting("no_refresh_on_second_chapter_page")
 end
 
 function DeviceListener:onUnsetNoFlashOnSecondChapterPage()
-    G_reader_settings:delSetting("no_refresh_on_second_chapter_page")
+    _unsetSetting("no_refresh_on_second_chapter_page")
 end
 
 function DeviceListener:onToggleNoFlashOnSecondChapterPage()
-    G_reader_settings:flipNilOrFalse("no_refresh_on_second_chapter_page")
+    _toggleSetting("no_refresh_on_second_chapter_page")
 end
 
 if Device:canReboot() then
