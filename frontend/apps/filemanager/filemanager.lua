@@ -61,7 +61,6 @@ function FileManager:onSetRotationMode(rotation)
     if rotation ~= nil and rotation ~= Screen:getRotationMode() then
         Screen:setRotationMode(rotation)
         if self.instance then
-            UIManager:flushSettings()
             self:reinit(self.instance.path, self.instance.focused_file)
             UIManager:setDirty(self.instance.banner, function()
                 return "ui", self.instance.banner.dimen
@@ -644,6 +643,7 @@ function FileManager:tapPlus()
 end
 
 function FileManager:reinit(path, focused_file)
+    UIManager:flushSettings()
     self.dimen = Screen:getSize()
     -- backup the root path and path items
     self.root_path = path or self.file_chooser.path
