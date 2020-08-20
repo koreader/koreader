@@ -63,7 +63,7 @@ local settingsList = {
     poweroff = { category="none", event="PowerOff", title=_("Power off"), device=true, condition=Device:canPowerOff(), separator=true,},
     show_menu = { category="none", event="ShowMenu", title=_("Show menu"), device=true,},
     toggle_hold_corners = { category="none", event="IgnoreHoldCorners", title=_("Toggle hold corners"), device=true, separator=true,},
-    swap_rotation = { category="none", event="SwapRotation", title=_("Swap rotation"), device=true,},
+    swap_rotation = { category="none", event="SwapRotation", title=_("Toggle orientation"), device=true,},
     invert_rotation = { category="none", event="InvertRotation", title=_("Invert rotation"), device=true,},
     iterate_rotation = { category="none", event="IterateRotation", title=_("Rotate by 90° CW"), device=true, separator=true,},
     wallabag_download = { category="none", event="SynchronizeWallabag", title=_("Wallabag retrieval"), device=true,},
