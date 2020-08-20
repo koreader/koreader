@@ -220,6 +220,16 @@ local PocketBook515 = PocketBook:new{
     hasFewKeys = yes,
 }
 
+-- PocketBook 606 (606)
+local PocketBook606 = PocketBook:new{
+    model = "PB606",
+    display_dpi = 212,
+    isTouchDevice = no,
+    hasFrontlight = no,
+    hasDPad = yes,
+    hasFewKeys = yes,
+}
+
 -- PocketBook Basic (611)
 local PocketBook611 = PocketBook:new{
     model = "PB611",
@@ -410,6 +420,8 @@ local codename = PocketBook:getDeviceModel()
 
 if codename == "PocketBook 515" then
     return PocketBook515
+elseif codename == "PB606" or codename == "PocketBook 606" then
+    return PocketBook606
 elseif codename == "PocketBook 611" then
     return PocketBook611
 elseif codename == "PocketBook 613" then
@@ -445,11 +457,11 @@ elseif codename == "PB632" then
     return PocketBook632
 elseif codename == "PB633" then
     return PocketBook633
-elseif codename == "PB640" then
+elseif codename == "PB640" or codename == "PocketBook 640" then
     return PocketBook640
 elseif codename == "PB641" then
     return PocketBook641
-elseif codename == "PB650" then
+elseif codename == "PB650" or codename == "PocketBook 650" then
     return PocketBook650
 elseif codename == "PB740" then
     return PocketBook740
