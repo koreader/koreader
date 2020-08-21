@@ -22,7 +22,7 @@ function AndroidPowerD:init()
     --    do not use fl_min==0 if getScreenMinBrightness!=0,
     --    because intenstiy==0 would mean to use system intensity
     if android:getScreenMinBrightness() ~= self.fl_min then
-        self.fl_min = math.ceil(android:getScreenMinBrightness() * self.bright_diff /self.fl_max)
+        self.fl_min = math.ceil(android:getScreenMinBrightness() * self.bright_diff / self.fl_max)
     end
 
     if self.device:hasNaturalLight() then
@@ -54,9 +54,7 @@ function AndroidPowerD:turnOffFrontlightHW()
     if not self:isFrontlightOnHW() then
         return
     end
-
-    android.setScreenBrightness(math.floor( self.fl_min))
-
+    android.setScreenBrightness(self.fl_min)
     self.is_fl_on = false
     -- And let the footer know of the change
     if package.loaded["ui/uimanager"] ~= nil then
@@ -67,10 +65,7 @@ function AndroidPowerD:turnOffFrontlightHW()
 end
 
 function AndroidPowerD:turnOnFrontlightHW()
-    local logger = require("logger")
-    logger.err("self.fl_intensity= " .. self.fl_intensity)
     if self:isFrontlightOn() and self:isFrontlightOnHW() then
-        logger.err("isFrontlightOnHW() = true")
         return
     end
     android.setScreenBrightness(math.floor(self.fl_intensity * self.bright_diff / self.fl_max))
@@ -82,6 +77,10 @@ function AndroidPowerD:turnOnFrontlightHW()
         local UIManager = require("ui/uimanager")
         UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
     end
+end
+
+function AndroidPowerD:canChangeFrontlight()
+    return android:canChangeFrontlight()
 end
 
 return AndroidPowerD
