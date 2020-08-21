@@ -689,10 +689,24 @@ end
 --
 -- Also makes the refresh rate persistent in global reader settings.
 function UIManager:setRefreshRate(rate, night_rate)
-    logger.dbg("set screen full refresh rate", rate)
-    self.FULL_REFRESH_COUNT =  G_reader_settings:isTrue("night_mode") and night_rate or rate
-    G_reader_settings:saveSetting("full_refresh_count", rate)
-    G_reader_settings:saveSetting("night_full_refresh_count", night_rate)
+    logger.dbg("set screen full refresh rate", rate, night_rate)
+
+    if G_reader_settings:isTrue("night_mode") then
+        if night_rate then
+            self.FULL_REFRESH_COUNT = night_rate
+        end
+    else
+        if rate then
+            self.FULL_REFRESH_COUNT = rate
+        end
+    end
+
+    if rate then
+        G_reader_settings:saveSetting("full_refresh_count", rate)
+    end
+    if night_rate then
+        G_reader_settings:saveSetting("night_full_refresh_count", night_rate)
+    end
 end
 
 --- Gets full refresh rate for e-ink screen.
