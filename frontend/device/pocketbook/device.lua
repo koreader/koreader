@@ -46,6 +46,7 @@ ffi.cdef[[
 char *GetSoftwareVersion(void);
 char *GetDeviceModel(void);
 int GetNetState(void);
+int GetFrontlightColor(void);
 int NetConnect(const char *name);
 int NetDisconnect();
 ]]
@@ -66,6 +67,10 @@ local PocketBook = Generic:new{
     canSuspend = no,
     emu_events_dev = "/dev/shm/emu_events",
     home_dir = "/mnt/ext1",
+
+    -- all devices that have warmth lights use inkview api
+    hasNaturalLightApi = yes,
+
 }
 
 -- Make sure the C BB cannot be used on devices with a 24bpp fb
@@ -215,6 +220,16 @@ local PocketBook515 = PocketBook:new{
     hasFewKeys = yes,
 }
 
+-- PocketBook 606 (606)
+local PocketBook606 = PocketBook:new{
+    model = "PB606",
+    display_dpi = 212,
+    isTouchDevice = no,
+    hasFrontlight = no,
+    hasDPad = yes,
+    hasFewKeys = yes,
+}
+
 -- PocketBook Basic (611)
 local PocketBook611 = PocketBook:new{
     model = "PB611",
@@ -246,7 +261,7 @@ local PocketBook614W = PocketBook:new{
     hasFewKeys = yes,
 }
 
--- PocketBook Basic Lux (615)
+-- PocketBook Basic Lux / 615 Plus (615/615W)
 local PocketBook615 = PocketBook:new{
     model = "PBBLux",
     display_dpi = 212,
@@ -255,7 +270,7 @@ local PocketBook615 = PocketBook:new{
     hasFewKeys = yes,
 }
 
--- PocketBook Basic Lux 2 (616)
+-- PocketBook Basic Lux 2 (616/616W)
 local PocketBook616 = PocketBook:new{
     model = "PBBLux2",
     display_dpi = 212,
@@ -308,6 +323,7 @@ local PocketBook628 = PocketBook:new{
     model = "PBTouchLux5",
     display_dpi = 212,
     isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
 }
 
 -- PocketBook Sense / Sense 2 (630)
@@ -320,6 +336,8 @@ local PocketBook630 = PocketBook:new{
 local PocketBook631 = PocketBook:new{
     model = "PBTouchHD",
     display_dpi = 300,
+    -- see https://github.com/koreader/koreader/pull/6531#issuecomment-676629182
+    hasNaturalLight = function() return inkview.GetFrontlightColor() >= 0 end,
 }
 
 -- PocketBook Touch HD Plus / Touch HD 3 (632)
@@ -327,6 +345,7 @@ local PocketBook632 = PocketBook:new{
     model = "PBTouchHDPlus",
     display_dpi = 300,
     isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
 }
 
 -- PocketBook Color (633)
@@ -334,8 +353,8 @@ local PocketBook633 = PocketBook:new{
     model = "PBColor",
     display_dpi = 300,
     hasColorScreen = yes,
-    has3BytesWideFrameBuffer = yes,
     canUseCBB = no, -- 24bpp
+    isAlwaysPortrait = yes,
 }
 
 -- PocketBook Aqua (640)
@@ -361,6 +380,7 @@ local PocketBook740 = PocketBook:new{
     model = "PBInkPad3",
     display_dpi = 300,
     isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
 }
 
 -- PocketBook InkPad 3 Pro (740_2)
@@ -368,6 +388,7 @@ local PocketBook740_2 = PocketBook:new{
     model = "PBInkPad3Pro",
     display_dpi = 300,
     isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
 }
 
 -- PocketBook Color Lux (801)
@@ -390,6 +411,7 @@ local PocketBook1040 = PocketBook:new{
     model = "PB1040",
     display_dpi = 227,
     isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
 }
 
 logger.info('SoftwareVersion: ', PocketBook:getSoftwareVersion())
@@ -398,16 +420,19 @@ local codename = PocketBook:getDeviceModel()
 
 if codename == "PocketBook 515" then
     return PocketBook515
+elseif codename == "PB606" or codename == "PocketBook 606" then
+    return PocketBook606
 elseif codename == "PocketBook 611" then
     return PocketBook611
 elseif codename == "PocketBook 613" then
     return PocketBook613
-elseif codename == "PocketBook 614W" or codename == "PocketBook 614" then
+elseif codename == "PocketBook 614" or codename == "PocketBook 614W" then
     return PocketBook614W
-elseif codename == "PocketBook 615" or codename == "PB615" then
+elseif codename == "PB615" or codename == "PB615W" or
+    codename == "PocketBook 615" or codename == "PocketBook 615W" then
     return PocketBook615
-elseif codename == "PB616W" or
-    codename == "PocketBook 616" then
+elseif codename == "PB616" or codename == "PB616W" or
+    codename == "PocketBook 616" or codename == "PocketBook 616W" then
     return PocketBook616
 elseif codename == "PocketBook 622" then
     return PocketBook622
@@ -432,11 +457,11 @@ elseif codename == "PB632" then
     return PocketBook632
 elseif codename == "PB633" then
     return PocketBook633
-elseif codename == "PB640" then
+elseif codename == "PB640" or codename == "PocketBook 640" then
     return PocketBook640
 elseif codename == "PB641" then
     return PocketBook641
-elseif codename == "PB650" then
+elseif codename == "PB650" or codename == "PocketBook 650" then
     return PocketBook650
 elseif codename == "PB740" then
     return PocketBook740

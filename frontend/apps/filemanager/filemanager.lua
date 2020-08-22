@@ -643,6 +643,7 @@ function FileManager:tapPlus()
 end
 
 function FileManager:reinit(path, focused_file)
+    UIManager:flushSettings()
     self.dimen = Screen:getSize()
     -- backup the root path and path items
     self.root_path = path or self.file_chooser.path

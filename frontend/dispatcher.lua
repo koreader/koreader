@@ -62,13 +62,22 @@ local settingsList = {
     reboot = { category="none", event="Reboot", title=_("Reboot the device"), device=true, condition=Device:canReboot(),},
     poweroff = { category="none", event="PowerOff", title=_("Power off"), device=true, condition=Device:canPowerOff(), separator=true,},
     show_menu = { category="none", event="ShowMenu", title=_("Show menu"), device=true,},
-    toggle_hold_corners = { category="none", event="IgnoreHoldCorners", title=_("Toggle hold corners"), device=true,},
-    toggle_rotation = { category="none", event="ToggleRotation", title=_("Toggle rotation"), device=true, separator=true,},
+    toggle_hold_corners = { category="none", event="IgnoreHoldCorners", title=_("Toggle hold corners"), device=true, separator=true,},
+    toggle_rotation = { category="none", event="SwapRotation", title=_("Toggle orientation"), device=true,},
+    invert_rotation = { category="none", event="InvertRotation", title=_("Invert rotation"), device=true,},
+    iterate_rotation = { category="none", event="IterateRotation", title=_("Rotate by 90° CW"), device=true, separator=true,},
+    set_refresh_rate = { category="absolutenumber", event="SetBothRefreshRates", min=-1, max=200, title=_("Flash every %1 pages (always)"), device=true,},
+    set_day_refresh_rate = { category="absolutenumber", event="SetDayRefreshRate", min=-1, max=200, title=_("Flash every %1 pages (not in night mode)"), device=true,},
+    set_night_refresh_rate = { category="absolutenumber", event="SetNightRefreshRate", min=-1, max=200, title=_("Flash every %1 pages (in night mode)"), device=true,},
+    set_flash_on_chapter_boundaries = { category="string", event="SetFlashOnChapterBoundaries", title=_("Always flash on chapter boundaries"), device=true, args={true, false}, toggle={_("On"), _("Off")},},
+    toggle_flash_on_chapter_boundaries = { category="none", event="ToggleFlashOnChapterBoundaries", title=_("Toggle flashing on chapter boundaries"), device=true,},
+    set_no_flash_on_second_chapter_page = { category="string", event="SetNoFlashOnSecondChapterPage", title=_("Never flash on chapter's 2nd page"), device=true, args={true, false}, toggle={_("On"), _("Off")},},
+    toggle_no_flash_on_second_chapter_page = { category="none", event="ToggleNoFlashOnSecondChapterPage", title=_("Toggle flashing on chapter's 2nd page"), device=true, separator=true,},
     wallabag_download = { category="none", event="SynchronizeWallabag", title=_("Wallabag retrieval"), device=true,},
     calibre_search = { category="none", event="CalibreSearch", title=_("Search in calibre metadata"), device=true,},
     calibre_browse_tags = { category="none", event="CalibreBrowseTags", title=_("Browse all calibre tags"), device=true,},
     calibre_browse_series = { category="none", event="CalibreBrowseSeries", title=_("Browse all calibre series"), device=true, separator=true,},
-    favorites = { category="arg", event="ShowColl", arg="favorites", title=_("Favorites"), device=true,},
+    favorites = { category="none", event="ShowColl", arg="favorites", title=_("Favorites"), device=true,},
 
     -- filemanager settings
     folder_up = { category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
@@ -85,11 +94,11 @@ local settingsList = {
     go_to = { category="none", event="ShowGotoDialog", title=_("Go to"), rolling=true, paging=true,},
     skim = { category="none", event="ShowSkimtoDialog", title=_("Skim"), rolling=true, paging=true,},
     back = { category="none", event="Back", title=_("Back"), rolling=true, paging=true,},
-    previous_location = { category="arg", event="GoBackLink", arg=true, title=_("Back to previous location"), rolling=true, paging=true,},
+    previous_location = { category="none", event="GoBackLink", arg=true, title=_("Back to previous location"), rolling=true, paging=true,},
     latest_bookmark = { category="none", event="GoToLatestBookmark", title=_("Go to latest bookmark"), rolling=true, paging=true,},
     follow_nearest_link = { category="arg", event="GoToPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest link"), rolling=true, paging=true,},
     follow_nearest_internal_link = { category="arg", event="GoToInternalPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest internal link"), rolling=true, paging=true,},
-    clear_location_history = { category="arg", event="ClearLocationStack", arg=true, title=_("Clear location history"), rolling=true, paging=true, separator=true,},
+    clear_location_history = { category="none", event="ClearLocationStack", arg=true, title=_("Clear location history"), rolling=true, paging=true, separator=true,},
     toc = { category="none", event="ShowToc", title=_("Table of contents"), rolling=true, paging=true,},
     bookmarks = { category="none", event="ShowBookmark", title=_("Bookmarks"), rolling=true, paging=true,},
     book_statistics = { category="none", event="ShowBookStats", title=_("Book statistics"), rolling=true, paging=true, separator=true,},
@@ -175,8 +184,19 @@ local dispatcher_menu_order = {
     "decrease_frontlight_warmth",
 
     "toggle_hold_corners",
+
     "toggle_gsensor",
     "toggle_rotation",
+    "invert_rotation",
+    "iterate_rotation",
+
+    "set_refresh_rate",
+    "set_day_refresh_rate",
+    "set_night_refresh_rate",
+    "set_flash_on_chapter_boundaries",
+    "toggle_flash_on_chapter_boundaries",
+    "set_no_flash_on_second_chapter_page",
+    "toggle_no_flash_on_second_chapter_page",
 
     "wifi_on",
     "wifi_off",
@@ -547,7 +567,11 @@ function Dispatcher:execute(ui, settings, gesture)
     for k, v in pairs(settings) do
         if settingsList[k].conditions == nil or settingsList[k].conditions == true then
             if settingsList[k].category == "none" then
-                ui:handleEvent(Event:new(settingsList[k].event))
+                if settingsList[k].arg ~= nil then
+                    ui:handleEvent(Event:new(settingsList[k].event, settingsList[k].arg))
+                else
+                    ui:handleEvent(Event:new(settingsList[k].event))
+                end
             end
             if settingsList[k].category == "absolutenumber"
                 or settingsList[k].category == "string"

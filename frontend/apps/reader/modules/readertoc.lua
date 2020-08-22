@@ -60,10 +60,16 @@ end
 
 function ReaderToc:onPageUpdate(pageno)
     self.pageno = pageno
-    if UIManager.FULL_REFRESH_COUNT == -1 then
+    if UIManager.FULL_REFRESH_COUNT == -1 or G_reader_settings:isTrue("refresh_on_chapter_boundaries") then
+        local flash_on_second = G_reader_settings:nilOrFalse("no_refresh_on_second_chapter_page")
         if self:isChapterEnd(pageno, 0) then
             self.chapter_refresh = true
-        elseif self:isChapterBegin(pageno, 0) and self.chapter_refresh then
+        elseif self.chapter_refresh and self:isChapterStart(pageno, 0) then
+            UIManager:setDirty(nil, "full")
+            if not flash_on_second then
+                self.chapter_refresh = false
+            end
+        elseif self.chapter_refresh and self:isChapterSecondPage(pageno, 0) then
             UIManager:setDirty(nil, "full")
             self.chapter_refresh = false
         else
@@ -356,21 +362,33 @@ function ReaderToc:getPreviousChapter(cur_pageno, level)
     return previous_chapter
 end
 
-function ReaderToc:isChapterBegin(cur_pageno, level)
+function ReaderToc:isChapterStart(cur_pageno, level)
     local ticks = self:getTocTicks(level)
-    local _begin = false
+    local _start = false
     for i = 1, #ticks do
         if ticks[i] == cur_pageno then
-            _begin = true
+            _start = true
             break
         end
     end
-    return _begin
+    return _start
+end
+
+function ReaderToc:isChapterSecondPage(cur_pageno, level)
+    local ticks = self:getTocTicks(level)
+    local _second = false
+    for i = 1, #ticks do
+        if ticks[i] + 1 == cur_pageno then
+            _second = true
+            break
+        end
+    end
+    return _second
 end
 
 function ReaderToc:isChapterEnd(cur_pageno, level)
     local ticks = self:getTocTicks(level)
-    local _end= false
+    local _end = false
     for i = 1, #ticks do
         if ticks[i] - 1 == cur_pageno then
             _end = true
@@ -390,7 +408,7 @@ function ReaderToc:getChapterPagesLeft(pageno, level)
 end
 
 function ReaderToc:getChapterPagesDone(pageno, level)
-    if self:isChapterBegin(pageno, level) then return 0 end
+    if self:isChapterStart(pageno, level) then return 0 end
     local previous_chapter = self:getPreviousChapter(pageno, level)
     if previous_chapter then
         previous_chapter = pageno - previous_chapter
