@@ -1766,18 +1766,6 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
     -- NOTE: That's assuming using "fast" for pans was a good idea, which, it turned out, not so much ;).
     -- NOTE: We skip repaints on page turns/pos update, as that's redundant (and slow).
     if force_repaint then
-        print("self.dimen:", self.dimen, self:getSize())
-        print("self.height:", self.height)
-        print("self.footer_container.dimen:", self.footer_container.dimen, self.footer_container:getSize())
-        print("self.footer_content.dimen:", self.footer_content.dimen, self.footer_container:getSize())
-        print("self.footer_positioner.dimen:", self.footer_positioner.dimen, self.footer_positioner:getSize())
-        print("self.view.footer.dimen:", self.view.footer.dimen, self.view.footer:getSize())
-
-        print("self.progress_bar.dimen:", self.progress_bar.dimen, self.progress_bar:getSize())
-        print("self.progress_bar.height:", self.progress_bar.height)
-        print("self.footer_text.height:", self.footer_text.height)
-        print("self.bottom_padding:", self.bottom_padding)
-        print("self.vertical_frame.dimen:", self.vertical_frame.dimen, require("dump")(self.vertical_frame:getSize()))
         -- NOTE: Getting the dimensions of the widget is impossible without having drawn it first,
         --       so, we'll fudge it if need be...
         local refresh_dim = self.footer_content.dimen
@@ -1807,14 +1795,6 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
                 return "ui", refresh_dim
             end)
         end
-        -- NOTE: It's not a modal, so it's not on the window stack...
-        print("self:", self.x, self.y)
-        print("self.footer_container:", self.footer_container.dimen.x, self.footer_container.dimen.y)
-        print("self.footer_content:", self.footer_content.dimen and self.footer_content.dimen.x or nil, self.footer_content.dimen and self.footer_content.dimen.y or nil)
-        print("self.footer_positioner:", self.footer_positioner.dimen.x, self.footer_positioner.dimen.y)
-        print("self.view.footer:", self.view.footer.dimen.x, self.view.footer.dimen.y)
-        --print(require("dump")(self.separator_line))
-        --UIManager:widgetRepaint(self.footer_container, 0, self.dimen.h - self.footer_container.dimen.h)
     end
 end
 
