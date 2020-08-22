@@ -1785,6 +1785,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
         if self.view.footer_visible then
             -- Unfortunately, it's not a modal (we never show() it), so it's not in the window stack,
             -- instead, it's baked inside ReaderUI, so it gets slightly trickier...
+            -- NOTE: self.view.footer -> self ;).
             UIManager:setDirty(self.view.footer, function()
                 return "ui", refresh_dim
             end)
