@@ -1772,21 +1772,32 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
         print("self.footer_content.dimen:", self.footer_content.dimen, self.footer_container:getSize())
         print("self.footer_positioner.dimen:", self.footer_positioner.dimen, self.footer_positioner:getSize())
         print("self.view.footer.dimen:", self.view.footer.dimen, self.view.footer:getSize())
+
+        print("self.progress_bar.dimen:", self.progress_bar.dimen, self.progress_bar:getSize())
+        print("self.progress_bar.height:", self.progress_bar.height)
+        print("self.footer_text.height:", self.footer_text.height)
+        print("self.bottom_padding:", self.bottom_padding)
+        print("self.vertical_frame.dimen:", self.vertical_frame.dimen, require("dump")(self.vertical_frame:getSize()))
         -- NOTE: We need to repaint everything when toggling the progress bar, for some reason.
         --       Also, getting the dimensions of the widget is impossible without having drawn it first,
         --       so, we'll fudge it if need be...
         local refresh_dim = self.footer_content.dimen
-        -- No content yet, go with twice the container height...
+        -- No content yet...
         if not refresh_dim then
-            -- NOTE: When self.footer_content.dimen is set, self.dimen.h == self.height * 2, for some reason, so, fake that.
+            -- So, instead, compute the self.footer_content's height ourselves: i.e., vertical_frame + padding...
             refresh_dim = self.dimen
-            refresh_dim.h = self.height * 2
+            if self.view.footer_visible then
+                refresh_dim.h = self.vertical_frame:getSize().h + self.bottom_padding
+            else
+                -- When going invisible, the text is no longer visible, so the frame's height is off by self.height.
+                refresh_dim.h = self.vertical_frame:getSize().h + self.height + self.bottom_padding
+            end
             refresh_dim.y = self._saved_screen_height - refresh_dim.h
         end
         -- If we're making the footer visible (or it already is), we don't need to repaint ReaderUI behind it
         if self.view.footer_visible then
             -- Unfortunately, it's not a modal (we never show() it), so it's not in the window stack,
-            -- instead, it's baked inside ReaderUI, so it gets slightly trickier.
+            -- instead, it's baked inside ReaderUI, so it gets slightly trickier...
             UIManager:setDirty(self.view.footer, function()
                 return "ui", refresh_dim
             end)
