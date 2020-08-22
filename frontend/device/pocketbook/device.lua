@@ -59,11 +59,13 @@ local PocketBook = Generic:new{
     model = "PocketBook",
     isPocketBook = yes,
     isInBackGround = false,
+    hasExitOptions = no,
     hasOTAUpdates = yes,
     hasWifiToggle = yes,
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
+    canRestart = no,
     canSuspend = no,
     emu_events_dev = "/dev/shm/emu_events",
     home_dir = "/mnt/ext1",
@@ -71,6 +73,7 @@ local PocketBook = Generic:new{
     -- all devices that have warmth lights use inkview api
     hasNaturalLightApi = yes,
 
+    needsScreenRefreshAfterResume = no,
 }
 
 -- Make sure the C BB cannot be used on devices with a 24bpp fb
@@ -120,6 +123,11 @@ function PocketBook:init()
                     self.isInBackGround = false
                     return "Resume"
                 end
+                self:setSuspendState("resume")
+            elseif ev.code == EVT_SHOW then
+                self:setSuspendState("show")
+            elseif ev.code == EVT_HIDE then
+                return "SaveState"
             end
         end,
     }
@@ -135,10 +143,12 @@ function PocketBook:init()
             ev.type = 1 -- linux/input.h Key-Event
         end
 
-        -- handle EVT_BACKGROUND and EVT_FOREGROUND as MiscEvent as this makes
+        -- handle app state events as misc events as this makes
         -- it easy to return a string directly which can be used in
         -- uimanager.lua as event_handler index.
-        if ev.type == EVT_BACKGROUND or ev.type == EVT_FOREGROUND then
+        if ev.type == EVT_BACKGROUND or ev.type == EVT_FOREGROUND or
+            ev.type == EVT_SHOW or ev.type == EVT_HIDE
+        then
             ev.code = ev.type
             ev.type = 4 -- handle as MiscEvent, see above
         end
@@ -163,7 +173,22 @@ function PocketBook:init()
     Generic.init(self)
 end
 
-function PocketBook:supportsScreensaver() return true end
+-- system sleep is disabled when the app is in the foreground.
+-- This is handled automatically based on application state.
+-- see https://github.com/koreader/koreader-base/blob/master/input/input-pocketbook.h
+--
+-- reenable it based on user preferences, to be used on handleMiscEv
+
+function PocketBook:setSuspendState(state)
+    local msg = string.format("system sleep on %s", state)
+    if G_reader_settings:isTrue("pocketbook_timeout") then
+        logger.info("enabling " .. msg)
+        local ms = G_reader_settings:readSetting("pocketbook_timeout_ms") or 5 * 60 * 1000
+        require("ffi/input").setSuspendState(1, ms)
+    else
+        logger.info("ignoring " .. msg .. ". Timeout is disabled")
+    end
+end
 
 function PocketBook:setDateTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end

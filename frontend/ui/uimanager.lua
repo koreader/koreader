@@ -82,10 +82,10 @@ function UIManager:init()
     if Device:isPocketBook() then
         self.event_handlers["Suspend"] = function()
             self:_beforeSuspend()
-            Device:onPowerEvent("Power")
         end
         self.event_handlers["Resume"] = function()
-            Device:onPowerEvent("Power")
+            self:setDirty("all", "full")
+            self:forceRePaint()
             self:_afterResume()
         end
     end
