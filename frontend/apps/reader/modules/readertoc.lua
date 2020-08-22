@@ -63,10 +63,12 @@ function ReaderToc:onPageUpdate(pageno)
         local flash_on_second = G_reader_settings:nilOrFalse("no_refresh_on_second_chapter_page")
         local paging_forward, paging_backward
         if flash_on_second then
-            if pageno > self.pageno then
-                paging_forward = true
-            elseif pageno < self.pageno then
-                paging_backward = true
+            if self.pageno then
+                if pageno > self.pageno then
+                    paging_forward = true
+                elseif pageno < self.pageno then
+                    paging_backward = true
+                end
             end
         end
 
