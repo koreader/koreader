@@ -1778,18 +1778,17 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
         print("self.footer_text.height:", self.footer_text.height)
         print("self.bottom_padding:", self.bottom_padding)
         print("self.vertical_frame.dimen:", self.vertical_frame.dimen, require("dump")(self.vertical_frame:getSize()))
-        -- NOTE: We need to repaint everything when toggling the progress bar, for some reason.
-        --       Also, getting the dimensions of the widget is impossible without having drawn it first,
+        -- NOTE: Getting the dimensions of the widget is impossible without having drawn it first,
         --       so, we'll fudge it if need be...
         local refresh_dim = self.footer_content.dimen
         -- No content yet...
         if not refresh_dim then
-            -- So, instead, compute the self.footer_content's height ourselves: i.e., vertical_frame + padding...
+            -- So, instead, compute self.footer_content's height ourselves: i.e., self.vertical_frame + self.bottom_padding...
             refresh_dim = self.dimen
             if self.view.footer_visible then
                 refresh_dim.h = self.vertical_frame:getSize().h + self.bottom_padding
             else
-                -- When going invisible, the text is no longer visible, so the frame's height is off by self.height.
+                -- When going invisible, the text is no longer visible, so the frame's height is off by self.height
                 refresh_dim.h = self.vertical_frame:getSize().h + self.height + self.bottom_padding
             end
             refresh_dim.y = self._saved_screen_height - refresh_dim.h
