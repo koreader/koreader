@@ -97,6 +97,9 @@ while [ "${RETURN_VALUE}" -ge "${RESTART_KOREADER}" ]; do
     # move dictionaries from external storage to koreader private partition.
     find /mnt/public/dict -type f -exec mv -v \{\} /mnt/private/koreader/data/dict \; 2>/dev/null
 
+    # Do an update check now, so we can actually update KOReader via the "Restart KOReader" menu entry ;).
+    ko_update_check
+
     # run KOReader
     ./reader.lua "${args}" >>crash.log 2>&1
     RETURN_VALUE=$?
