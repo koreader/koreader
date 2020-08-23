@@ -25,8 +25,10 @@ local PocketBookPowerD = BasePowerD:new{
 function PocketBookPowerD:init()
     -- needed for SetFrontlightState / GetFrontlightState
     inkview.OpenScreen()
-    local color = inkview.GetFrontlightColor()
-    self.fl_warmth = color >= 0 and color or 0
+    if self.device:hasNaturalLight() then
+        local color = inkview.GetFrontlightColor()
+        self.fl_warmth = color >= 0 and color or 0
+    end
 end
 
 function PocketBookPowerD:frontlightIntensityHW()
@@ -43,8 +45,10 @@ function PocketBookPowerD:setIntensityHW(intensity)
 end
 
 function PocketBookPowerD:setWarmth(level)
-    self.fl_warmth = level or self.fl_warmth
-    inkview.SetFrontlightColor(self.fl_warmth)
+    if self.fl_warmth then
+        self.fl_warmth = level or self.fl_warmth
+        inkview.SetFrontlightColor(self.fl_warmth)
+    end
 end
 
 function PocketBookPowerD:getCapacityHW()
