@@ -1,13 +1,14 @@
 #!/bin/sh
 
 # NOTE: Close any non-standard fds, so that it doesn't come back to bite us in the ass with USBMS later...
-for fd in $(ls /proc/$$/fd); do
-    if [ "${fd}" -gt 2 ]; then
+for fd in /proc/"$$"/fd/*; do
+    fd_id="$(basename "${fd}")"
+    if [ -e "${fd}" ] && [ "${fd_id}" -gt 2 ]; then
         # NOTE: dash (meaning, in turn, busybox's ash, may also have fd 10 open to /dev/tty)
-        fd_path="$(readlink -f /proc/$$/fd/10)"
+        fd_path="$(readlink -f "${fd}")"
         if [ "${fd_path}" != "/dev/tty" ]; then
-            eval "exec ${fd}>&-"
-            echo "[enable-wifi.sh] Closed fd ${fd} -> ${fd_path}"
+            eval "exec ${fd_id}>&-"
+            echo "[enable-wifi.sh] Closed fd ${fd_id} -> ${fd_path}"
         fi
     fi
 done
