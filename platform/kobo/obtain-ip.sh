@@ -6,7 +6,7 @@ for fd in /proc/"$$"/fd/*; do
     if [ -e "${fd}" ] && [ "${fd_id}" -gt 2 ]; then
         # NOTE: dash (meaning, in turn, busybox's ash, may also have fd 10 open to /dev/tty)
         fd_path="$(readlink -f "${fd}")"
-        if [ "${fd_path}" != "/dev/tty" ]; then
+        if [ "${fd_path}" != "/dev/tty" ] && [ "${fd}" != "${fd_path}" ]; then
             eval "exec ${fd_id}>&-"
             echo "[obtain-ip.sh] Closed fd ${fd_id} -> ${fd_path}"
         fi
