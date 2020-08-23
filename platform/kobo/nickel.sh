@@ -11,7 +11,7 @@ export LD_LIBRARY_PATH="/usr/local/Kobo"
 cd /
 unset OLDPWD
 unset LC_ALL TESSDATA_PREFIX STARDICT_DATA_DIR EXT_FONT_DIR
-unset KO_NO_CBB
+unset KOREADER_DIR KO_NO_CBB
 
 # Ensures fmon will restart. Note that we don't have to worry about reaping this, nickel kills on-animator.sh on start.
 (

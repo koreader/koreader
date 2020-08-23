@@ -2,13 +2,15 @@
 export LC_ALL="en_US.UTF-8"
 
 # Compute our working directory in an extremely defensive manner
-KOREADER_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
+# NOTE: We need to remember the *actual* KOREADER_DIR, not the relocalized version in /tmp...
+export KOREADER_DIR="${KOREADER_DIR:-${SCRIPT_DIR}}"
 
 # We rely on starting from our working directory, and it needs to be set, sane and absolute.
 cd "${KOREADER_DIR:-/dev/null}" || exit
 
 # To make USBMS behave, relocalize ourselves outside of onboard
-if [ "${KOREADER_DIR}" != "/tmp" ]; then
+if [ "${SCRIPT_DIR}" != "/tmp" ]; then
     cp -pf "${0}" "/tmp/koreader.sh"
     chmod 777 "/tmp/koreader.sh"
     exec "/tmp/koreader.sh" "$@"
