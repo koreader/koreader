@@ -48,6 +48,7 @@ local Kobo = Generic:new{
     -- HW inversion is generally safe on Kobo, except on a few boards/kernels
     canHWInvert = yes,
     home_dir = "/mnt/onboard",
+    canToggleMassStorage = yes,
 }
 
 --- @todo hasKeys for some devices?
