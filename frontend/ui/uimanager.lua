@@ -161,7 +161,7 @@ function UIManager:init()
             else
                 -- Potentially start an USBMS session
                 local MassStorage = require("ui/elements/mass_storage")
-                MassStorage:start()
+                MassStorage:start(true)
             end
         end
         self.event_handlers["NotCharging"] = function()
