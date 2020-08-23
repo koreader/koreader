@@ -1766,10 +1766,36 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
     -- NOTE: That's assuming using "fast" for pans was a good idea, which, it turned out, not so much ;).
     -- NOTE: We skip repaints on page turns/pos update, as that's redundant (and slow).
     if force_repaint then
-        -- NOTE: We need to repaint everything when toggling the progress bar, for some reason.
-        UIManager:setDirty(self.view.dialog, function()
-            return "ui", self.footer_content.dimen
-        end)
+        -- NOTE: Getting the dimensions of the widget is impossible without having drawn it first,
+        --       so, we'll fudge it if need be...
+        local refresh_dim = self.footer_content.dimen
+        -- No content yet...
+        if not refresh_dim then
+            -- So, instead, compute self.footer_content's height ourselves: i.e., self.vertical_frame + self.bottom_padding...
+            refresh_dim = self.dimen
+            if self.view.footer_visible then
+                refresh_dim.h = self.vertical_frame:getSize().h + self.bottom_padding
+            else
+                -- When going invisible, the text is no longer visible, so the frame's height is off by self.height
+                refresh_dim.h = self.vertical_frame:getSize().h + self.height + self.bottom_padding
+            end
+            refresh_dim.y = self._saved_screen_height - refresh_dim.h
+        end
+        -- If we're making the footer visible (or it already is), we don't need to repaint ReaderUI behind it
+        if self.view.footer_visible then
+            -- Unfortunately, it's not a modal (we never show() it), so it's not in the window stack,
+            -- instead, it's baked inside ReaderUI, so it gets slightly trickier...
+            -- NOTE: self.view.footer -> self ;).
+            UIManager:setDirty(self.view.footer, function()
+                return "ui", refresh_dim
+            end)
+            -- c.f., ReaderView:paintTo()
+            UIManager:widgetRepaint(self.view.footer, 0, 0)
+        else
+            UIManager:setDirty(self.view.dialog, function()
+                return "ui", refresh_dim
+            end)
+        end
     end
 end
 
