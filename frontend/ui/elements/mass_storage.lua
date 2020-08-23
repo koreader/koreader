@@ -13,6 +13,7 @@ function MassStorage:getSettingsMenuTable()
     return {
         {
             text = _("Disable confirmation popup"),
+            help_text = _([[Be aware that on some devices, this also affects what happens when you simply plug-in the device!]]),
             checked_func = function() return not self:requireConfirmation() end,
             callback = function()
                 G_reader_settings:saveSetting("mass_storage_confirmation_disabled", self:requireConfirmation())
@@ -38,7 +39,7 @@ function MassStorage:start()
     if self:requireConfirmation() then
         local ConfirmBox = require("ui/widget/confirmbox")
         UIManager:show(ConfirmBox:new{
-            text = _("Share storage via USB?\n"),
+            text = _("Share storage via USB?"),
             ok_text = _("Share"),
             ok_callback = function()
                 UIManager:quit()
