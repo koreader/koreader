@@ -7,6 +7,13 @@ KOREADER_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
 # We rely on starting from our working directory, and it needs to be set, sane and absolute.
 cd "${KOREADER_DIR:-/dev/null}" || exit
 
+# To make USBMS behave, relocalize ourselves outside of onboard
+if [ "${KOREADER_DIR}" != "/tmp" ]; then
+    cp -pf "${0}" "/tmp/koreader.sh"
+    chmod 777 "/tmp/koreader.sh"
+    exec "/tmp/koreader.sh" "$@"
+fi
+
 # Attempt to switch to a sensible CPUFreq governor when that's not already the case...
 IFS= read -r current_cpufreq_gov <"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 # NOTE: We're being fairly conservative here, because what's used and what's available varies depending on HW...
@@ -407,5 +414,8 @@ else
         /sbin/reboot
     fi
 fi
+
+# Wipe the clones on exit
+rm -f "/tmp/koreader.sh"
 
 exit ${RETURN_VALUE}
