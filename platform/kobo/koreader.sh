@@ -357,7 +357,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         ./tar xzf "./data/KoboUSBMS.tar.gz" -C "/tmp/usbms"
 
         # Here we go!
-        cd "/tmp/usbms"
+        cd "/tmp/usbms" || continue
         if ! ./usbms; then
             # Hu, oh, something went wrong... Stay around for 90s (enough time to look at the syslog over Wi-Fi), and then shutdown.
             sleep 90
@@ -365,7 +365,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         fi
 
         # Jump back to the right place, and keep on trucking
-        cd "${KOREADER_DIR}"
+        cd "${KOREADER_DIR}" || poweroff -f
         rm -rf "/tmp/usbms"
     fi
 done
