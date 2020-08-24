@@ -126,6 +126,7 @@ function Trapper:info(text, fast_refresh)
         return true -- not dismissed
     end
 
+    UIManager:preventStandby()
     if self.current_widget and self.current_widget.is_infomessage then
         -- We are replacing a InfoMessage with a new InfoMessage: we want to check
         -- if the previous one was dismissed.
@@ -171,6 +172,7 @@ function Trapper:info(text, fast_refresh)
             if not go_on then
                 UIManager:close(self.current_widget)
                 UIManager:forceRePaint()
+                UIManager:allowStandby()
                 return false
             end
             if self.current_widget then
@@ -218,6 +220,7 @@ function Trapper:info(text, fast_refresh)
         UIManager:show(self.current_widget)
         UIManager:forceRePaint()
     end
+    UIManager:allowStandby()
     return true
 end
 
@@ -270,6 +273,7 @@ function Trapper:confirm(text, cancel_text, ok_text)
     -- events won't be considered action on the yet to be displayed
     -- widget
 
+    UIManager:preventStandby()
     -- Close any previous widget
     if self.current_widget then
         UIManager:close(self.current_widget)
@@ -293,6 +297,7 @@ function Trapper:confirm(text, cancel_text, ok_text)
     -- no need to forceRePaint, UIManager will do it when we yield()
     local ret = coroutine.yield() -- wait for ConfirmBox callback
     logger.dbg("ConfirmBox answers", ret)
+    UIManager:allowStandby()
     return ret
 end
 
@@ -387,6 +392,7 @@ function Trapper:dismissablePopen(cmd, trap_widget_or_string)
     local completed = false
     local output = nil
 
+    UIManager:preventStandby()
     local std_out = io.popen(cmd, "r")
     if std_out then
         -- We check regularly if data is available to be read, and we give control
@@ -437,6 +443,7 @@ function Trapper:dismissablePopen(cmd, trap_widget_or_string)
             -- logger.dbg("no cmd output yet, will check again soon")
         end
     end
+    UIManager:allowStandby()
     if own_trap_widget then
         -- Remove our own trap_widget
         UIManager:close(trap_widget)
@@ -539,6 +546,7 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
     local completed = false
     local ret_values = nil
 
+    UIManager:preventStandby()
     local pid, parent_read_fd = ffiutil.runInSubProcess(function(pid, child_write_fd)
         local output_str = ""
         if task_returns_simple_string then
@@ -658,6 +666,7 @@ function Trapper:dismissableRunInSubprocess(task, trap_widget_or_string, task_re
             logger.dbg("process not yet done, will check again soon")
         end
     end
+    UIManager:allowStandby()
     if own_trap_widget then
         -- Remove our own trap_widget
         UIManager:close(trap_widget)

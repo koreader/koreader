@@ -544,6 +544,7 @@ function BookInfoManager:collectSubprocesses()
             local pid = self.subprocesses_pids[i]
             if util.isSubProcessDone(pid) then
                 table.remove(self.subprocesses_pids, i)
+                UIManager:allowStandby()
             else
                 i = i + 1
             end
@@ -621,6 +622,7 @@ function BookInfoManager:extractInBackground(files)
         logger.warn("Failed lauching background extraction sub-process (fork failed)")
         return false -- let caller know it failed
     end
+    UIManager:preventStandby()
     table.insert(self.subprocesses_pids, task_pid)
     self.subprocesses_last_added_ts = util.gettime()
 
@@ -831,6 +833,7 @@ Do you want to prune the cache of removed books?]]
     end
     UIManager:close(info)
 
+    UIManager:preventStandby()
     local nb_files = #files
     local nb_done = 0
     local nb_success = 0
@@ -892,6 +895,7 @@ Do you want to prune the cache of removed books?]]
     UIManager:close(info)
     info = InfoMessage:new{text = T(_("Processed %1 / %2 books."), nb_done, nb_files) .. "\n" .. T(N_("One extracted successfully.", "%1 extracted successfully.", nb_success), nb_success)}
     UIManager:show(info)
+    UIManager:allowStandby()
 end
 
 BookInfoManager:init()

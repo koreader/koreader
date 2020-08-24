@@ -300,6 +300,9 @@ function Device:info()
     return self.model
 end
 
+-- Hardware specific method to signal allowed/disallowed standby
+function Device:setAutoStandby(isAllowed) end
+
 -- Hardware specific method to handle usb plug in event
 function Device:usbPlugIn() end
 

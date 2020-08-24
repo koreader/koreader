@@ -37,6 +37,7 @@ local UIManager = {
     _refresh_func_stack = {},
     _entered_poweroff_stage = false,
     _exit_code = nil,
+    _prevent_standby_count = 0,
 
     event_hook = require("ui/hook_container"):new()
 }
@@ -1289,6 +1290,25 @@ function UIManager:resume()
         self.event_handlers["Resume"]()
     elseif Device:isKindle() then
         self.event_handlers["OutOfSS"]()
+    end
+end
+
+function UIManager:allowStandby()
+    assert(self._prevent_standby_count > 0, "allowing standby that wasn't prevented; you have a ref leak somewhere")
+    self._prevent_standby_count = self._prevent_standby_count - 1
+    if self._prevent_standby_count == 0 then
+        logger.dbg("allow standby")
+        Device:setAutoStandby(true)
+        self:broadcastEvent(Event:new("AllowStandby"))
+    end
+end
+
+function UIManager:preventStandby()
+    self._prevent_standby_count = self._prevent_standby_count + 1
+    if self._prevent_standby_count == 1 then
+        logger.dbg("prevent standby")
+        Device:setAutoStandby(false)
+        self:broadcastEvent(Event:new("PreventStandby"))
     end
 end
 
