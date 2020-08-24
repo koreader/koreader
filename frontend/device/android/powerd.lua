@@ -6,6 +6,15 @@ local AndroidPowerD = BasePowerD:new{
     fl_max = 100,
 }
 
+-- Let the footer know of the change
+local function broadcastLightChanges()
+    if package.loaded["ui/uimanager"] ~= nil then
+        local Event = require("ui/event")
+        local UIManager = require("ui/uimanager")
+        UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
+    end
+end
+
 function AndroidPowerD:frontlightIntensityHW()
     return math.floor(android.getScreenBrightness() / self.bright_diff * self.fl_max)
 end
@@ -59,12 +68,7 @@ function AndroidPowerD:turnOffFrontlightHW()
     end
     android.setScreenBrightness(self.fl_min)
     self.is_fl_on = false
-    -- And let the footer know of the change
-    if package.loaded["ui/uimanager"] ~= nil then
-        local Event = require("ui/event")
-        local UIManager = require("ui/uimanager")
-        UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
-    end
+    broadcastLightChanges()
 end
 
 function AndroidPowerD:turnOnFrontlightHW()
@@ -74,12 +78,7 @@ function AndroidPowerD:turnOnFrontlightHW()
     android.setScreenBrightness(math.floor(self.fl_intensity * self.bright_diff / self.fl_max))
 
     self.is_fl_on = true
-    -- And let the footer know of the change
-    if package.loaded["ui/uimanager"] ~= nil then
-        local Event = require("ui/event")
-        local UIManager = require("ui/uimanager")
-        UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
-    end
+    broadcastLightChanges()
 end
 
 return AndroidPowerD
