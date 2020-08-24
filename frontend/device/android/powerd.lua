@@ -25,6 +25,9 @@ function AndroidPowerD:init()
         self.fl_min = math.ceil(android:getScreenMinBrightness() * self.bright_diff / self.fl_max)
     end
 
+   -- if frontlight switch was toggled of, turn it on
+    android:toggleFrontlightSwitchOn()
+
     if self.device:hasNaturalLight() then
         self.warm_diff = android:getScreenMaxWarmth() - android:getScreenMinWarmth()
         self.fl_warmth = self:getWarmth()
@@ -77,10 +80,6 @@ function AndroidPowerD:turnOnFrontlightHW()
         local UIManager = require("ui/uimanager")
         UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
     end
-end
-
-function AndroidPowerD:canChangeFrontlight()
-    return android:canChangeFrontlight()
 end
 
 return AndroidPowerD

@@ -206,14 +206,6 @@ if G_reader_settings:isTrue("color_rendering") and not Device:hasColorScreen() t
     })
 end
 
--- Check and warn if frontlight is disabled by system settings (e.g. Tolinos)
-if Device.powerd.canChangeFrontlight ~= nil and not Device.powerd.canChangeFrontlight() then
-    local InfoMessage = require("ui/widget/infomessage")
-    UIManager:show(InfoMessage:new{
-        text = _("Frontlight is disabled by system settings.\nIf you want to change frontlight intensity, close KOReader and activate frontlight on your system."),
-    })
-end
-
 -- Helpers
 local lfs = require("libs/libkoreader-lfs")
 local function retryLastFile()
