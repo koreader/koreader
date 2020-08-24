@@ -1,4 +1,5 @@
 local logger = require("logger")
+local UIManager = require("ui/uimanager")
 
 local CommandRunner = {
     pio = nil,
@@ -41,6 +42,7 @@ function CommandRunner:start(job)
                     "sh plugins/backgroundrunner.koplugin/luawrapper.sh " ..
                     "\"" .. self.job.executable .. "\""
     logger.dbg("CommandRunner: Will execute command " .. command)
+    UIManager:preventStandby()
     self.pio = io.popen(command)
 end
 
@@ -71,6 +73,7 @@ function CommandRunner:poll()
                 self.job.result = 222
             end
         end
+        UIManager:allowStandby()
         self.pio:close()
         self.pio = nil
         self.job.end_sec = os.time()

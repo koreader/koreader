@@ -43,8 +43,10 @@ function Trapper:wrap(func)
     -- Catch and log any error happening in func (an error happening
     -- in a coroutine just aborts silently the coroutine)
     local pcalled_func = function()
+        UIManager:preventStandby()
         -- we use xpcall as it can give a whole stacktrace, unlike pcall
         local ok, err = xpcall(func, debug.traceback)
+        UIManager:allowStandby()
         if not ok then
             logger.warn("error in wrapped function:", err)
             return false

@@ -544,6 +544,8 @@ function BookInfoManager:collectSubprocesses()
             local pid = self.subprocesses_pids[i]
             if util.isSubProcessDone(pid) then
                 table.remove(self.subprocesses_pids, i)
+                -- Prevent has been issued for each bg task spawn, we must allow for each death too.
+                UIManager:allowStandby()
             else
                 i = i + 1
             end
@@ -621,6 +623,9 @@ function BookInfoManager:extractInBackground(files)
         logger.warn("Failed lauching background extraction sub-process (fork failed)")
         return false -- let caller know it failed
     end
+    -- No straight control flow exists for background task completion here, so we bump prevent
+    -- counter on each task, and undo that inside collectSubprocesses() zombie reaper.
+    UIManager:preventStandby()
     table.insert(self.subprocesses_pids, task_pid)
     self.subprocesses_last_added_ts = util.gettime()
 

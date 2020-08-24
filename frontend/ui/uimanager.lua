@@ -37,6 +37,8 @@ local UIManager = {
     _refresh_func_stack = {},
     _entered_poweroff_stage = false,
     _exit_code = nil,
+    _prevent_standby_count = 0,
+    _prev_prevent_standby_count = 0,
 
     event_hook = require("ui/hook_container"):new()
 }
@@ -80,12 +82,11 @@ function UIManager:init()
         end)
     end
     if Device:isPocketBook() then
+        -- Only fg/bg state plugin notifiers, not real power event.
         self.event_handlers["Suspend"] = function()
             self:_beforeSuspend()
-            Device:onPowerEvent("Power")
         end
         self.event_handlers["Resume"] = function()
-            Device:onPowerEvent("Power")
             self:_afterResume()
         end
     end
@@ -1189,6 +1190,11 @@ function UIManager:handleInput()
         wait_us = math.min(wait_us or math.huge, self.ZMQ_TIMEOUT)
     end
 
+    -- If allowed, entering standby (from which we can wake by input) must trigger in response to event
+    -- this function emits (plugin), or within waitEvent() right after (hardware).
+    -- Anywhere else breaks preventStandby/allowStandby invariants used by background jobs while UI is left running.
+    self:_standbyTransition()
+
     -- wait for next event
     local input_event = Input:waitEvent(wait_us)
 
@@ -1290,6 +1296,35 @@ function UIManager:resume()
     elseif Device:isKindle() then
         self.event_handlers["OutOfSS"]()
     end
+end
+
+-- Release standby lock once. We're done with whatever we were doing in the background.
+-- Standby is re-enabled only after all issued prevents are paired with allowStandby for each one.
+function UIManager:allowStandby()
+    assert(self._prevent_standby_count > 0, "allowing standby that isn't prevented; you have an allow/prevent mismatch somewhere")
+    self._prevent_standby_count = self._prevent_standby_count - 1
+end
+
+-- Prevent standby, ie something is happening in background, yet UI may tick.
+function UIManager:preventStandby()
+    self._prevent_standby_count = self._prevent_standby_count + 1
+end
+
+-- Allow/prevent calls above can interminently allow standbys, but we're not interested until
+-- the state change crosses UI tick boundary, which is what self._prev_prevent_standby_count is tracking.
+function UIManager:_standbyTransition()
+    if self._prevent_standby_count == 0 and self._prev_prevent_standby_count > 0 then
+        -- edge prevent->allow
+        logger.dbg("allow standby")
+        Device:setAutoStandby(true)
+        self:broadcastEvent(Event:new("AllowStandby"))
+    elseif self._prevent_standby_count > 0 and self._prev_prevent_standby_count == 0 then
+        -- edge allow->prevent
+        logger.dbg("prevent standby")
+        Device:setAutoStandby(false)
+        self:broadcastEvent(Event:new("PreventStandby"))
+    end
+    self._prev_prevent_standby_count = self._prevent_standby_count
 end
 
 function UIManager:flushSettings()
