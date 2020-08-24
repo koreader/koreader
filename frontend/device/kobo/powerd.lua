@@ -348,6 +348,7 @@ function KoboPowerD:turnOffFrontlightHW()
         UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
     end
 end
+
 function KoboPowerD:turnOnFrontlightHW()
     -- NOTE: Insane workaround for the first toggle after a startup with the FL off.
     -- The light is actually off, but hw_intensity couldn't have been set to a sane value because of a number of interactions.
