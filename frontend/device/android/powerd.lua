@@ -12,7 +12,7 @@ end
 
 function AndroidPowerD:setIntensityHW(intensity)
     -- if frontlight switch was toggled of, turn it on
-    android:toggleFrontlightSwitchOn()
+    android:enableFrontlightSwitch()
 
     self.fl_intensity = intensity
     android.setScreenBrightness(math.floor(intensity * self.bright_diff / self.fl_max))
