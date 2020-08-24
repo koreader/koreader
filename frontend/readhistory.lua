@@ -241,7 +241,7 @@ function ReadHistory:removeItem(item)
     assert(self ~= nil)
     table.remove(self.hist, item.index)
     os.remove(DocSettings:getHistoryPath(item.file))
-    self:_indexing(item.index)
+    self:_indexing(item.index and item.index or 1)
     self:_flush()
     self:ensureLastFile()
 end
