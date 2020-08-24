@@ -200,7 +200,7 @@ function ReadHistory:clearMissing()
     assert(self ~= nil)
     for i = #self.hist, 1, -1 do
         if self.hist[i].file == nil or lfs.attributes(self.hist[i].file, "mode") ~= "file" then
-            self:removeItem(self.hist[i])
+            self:removeItem(self.hist[i], i)
         end
     end
     self:ensureLastFile()
@@ -237,11 +237,11 @@ function ReadHistory:updateItemByPath(old_path, new_path)
     self:ensureLastFile()
 end
 
-function ReadHistory:removeItem(item)
+function ReadHistory:removeItem(item, idx)
     assert(self ~= nil)
-    table.remove(self.hist, item.index)
+    table.remove(self.hist, item.index or idx)
     os.remove(DocSettings:getHistoryPath(item.file))
-    self:_indexing(item.index and item.index or 1)
+    self:_indexing(item.index or idx)
     self:_flush()
     self:ensureLastFile()
 end
