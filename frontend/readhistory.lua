@@ -200,7 +200,7 @@ function ReadHistory:clearMissing()
     assert(self ~= nil)
     for i = #self.hist, 1, -1 do
         if self.hist[i].file == nil or lfs.attributes(self.hist[i].file, "mode") ~= "file" then
-            table.remove(self.hist, i)
+            self:removeItem(self.hist[i])
         end
     end
     self:ensureLastFile()
