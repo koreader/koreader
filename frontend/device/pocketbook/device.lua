@@ -2,6 +2,11 @@ local Generic = require("device/generic/device") -- <= look at this file!
 local logger = require("logger")
 local ffi = require("ffi")
 local inkview = ffi.load("inkview")
+local band = require("bit").band
+
+-- FIXME: Signal ffi/input.lua that we want to use poll mode backend.
+-- Remove this once backend becomes poll-only.
+_G.POCKETBOOK_FFI = true
 
 -- luacheck: push
 -- luacheck: ignore
@@ -37,15 +42,19 @@ local KEY_NEXT2  = 0x1d
 local KEY_COVEROPEN = 0x02
 local KEY_COVERCLOSE = 0x03
 
-local CONNECTING = 1
-local CONNECTED = 2
+local CONNECTED = 0xf00
 local NET_OK = 0
+
+local EV_KEY = 1
+local EV_MSC = 4
+
 -- luacheck: pop
 
 ffi.cdef[[
 char *GetSoftwareVersion(void);
 char *GetDeviceModel(void);
-int GetNetState(void);
+void iv_sleepmode(int on);
+int QueryNetwork();
 int GetFrontlightColor(void);
 int NetConnect(const char *name);
 int NetDisconnect();
@@ -65,7 +74,6 @@ local PocketBook = Generic:new{
     hasKeys = yes,
     hasFrontlight = yes,
     canSuspend = no,
-    emu_events_dev = "/dev/shm/emu_events",
     home_dir = "/mnt/ext1",
 
     -- all devices that have warmth lights use inkview api
@@ -79,9 +87,8 @@ function PocketBook:blacklistCBB()
     local C = ffi.C
 
     -- As well as on those than can't do HW inversion, as otherwise NightMode would be ineffective.
-    --- @fixme Either relax the HWInvert check, or actually enable HWInvert on PB if it's safe and it works,
-    --        as, currently, no PB device is marked as canHWInvert, so, the C BB is essentially *always* blacklisted.
-    if not self:canUseCBB() or not self:canHWInvert() then
+    -- Do this only if settings override isn't present.
+    if (not G_reader_settings:has("dev_no_c_blitter")) and (not self:canUseCBB() or not self:canHWInvert()) then
         logger.info("Blacklisting the C BB on this device")
         if ffi.os == "Windows" then
             C._putenv("KO_NO_CBB=true")
@@ -112,14 +119,11 @@ function PocketBook:init()
             [KEY_OK] = "Press",
         },
         handleMiscEv = function(this, ev)
-            if ev.code == EVT_BACKGROUND then
-                self.isInBackGround = true
-                return "Suspend"
+            if ev.code == EVT_HIDE or ev.code == EVT_BACKGROUND then
+                return "SaveState"
             elseif ev.code == EVT_FOREGROUND then
-                if self.isInBackGround then
-                    self.isInBackGround = false
-                    return "Resume"
-                end
+                require("ui/uimanager"):setDirty('all', 'partial')
+                return "Foreground"
             end
         end,
     }
@@ -132,15 +136,15 @@ function PocketBook:init()
     self.input:registerEventAdjustHook(function(_input, ev)
         if ev.type == EVT_KEYDOWN or ev.type == EVT_KEYUP then
             ev.value = ev.type == EVT_KEYDOWN and 1 or 0
-            ev.type = 1 -- linux/input.h Key-Event
+            ev.type = EV_KEY
         end
 
         -- handle EVT_BACKGROUND and EVT_FOREGROUND as MiscEvent as this makes
         -- it easy to return a string directly which can be used in
         -- uimanager.lua as event_handler index.
-        if ev.type == EVT_BACKGROUND or ev.type == EVT_FOREGROUND then
+        if ev.type == EVT_BACKGROUND or ev.type == EVT_FOREGROUND or ev.type == EVT_SHOW or ev.type == EVT_HIDE then
             ev.code = ev.type
-            ev.type = 4 -- handle as MiscEvent, see above
+            ev.type = EV_MSC -- handle as MiscEvent, see above
         end
 
         -- auto shutdown event from inkview framework, gracefully close
@@ -157,28 +161,31 @@ function PocketBook:init()
         self.screen.native_rotation_mode = self.screen.ORIENTATION_PORTRAIT
     end
 
-    os.remove(self.emu_events_dev)
-    os.execute("mkfifo " .. self.emu_events_dev)
-    self.input.open(self.emu_events_dev, 1)
+    self.input.open()
+    self:setAutoStandby(true)
     Generic.init(self)
 end
 
-function PocketBook:supportsScreensaver() return true end
-
 function PocketBook:setDateTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end
+    local su = "/mnt/secure/su"
+    su = util.pathExists(su) and (su .. " ") or ""
     local command
     if year and month and day then
-        command = string.format("date -s '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec)
+        command = string.format(su .. "/bin/date -s '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec)
     else
-        command = string.format("date -s '%d:%d'",hour, min)
+        command = string.format(su .. "/bin/date -s '%d:%d'",hour, min)
     end
     if os.execute(command) == 0 then
-        os.execute('hwclock -u -w')
+        os.execute(su .. '/sbin/hwclock -u -w')
         return true
     else
         return false
     end
+end
+
+function PocketBook:setAutoStandby(isAllowed)
+    inkview.iv_sleepmode(isAllowed and 1 or 0)
 end
 
 function PocketBook:initNetworkManager(NetworkMgr)
@@ -199,7 +206,7 @@ function PocketBook:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:isWifiOn()
-        return inkview.GetNetState() == CONNECTED
+        return band(inkview.QueryNetwork(), CONNECTED) ~= 0
     end
 end
 
