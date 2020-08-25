@@ -466,7 +466,6 @@ function ReaderFooter:init()
         self.footer_text.height = 0
     end
     if self.settings.all_at_once then
-        print("ReaderFooter:init w/ all_at_once")
         self.view.footer_visible = (self.mode ~= self.mode_list.off)
         self:updateFooterTextGenerator()
         if self.settings.progress_bar_position and self.has_no_mode then
@@ -474,7 +473,6 @@ function ReaderFooter:init()
             self.footer_text.height = 0
         end
     else
-        print("ReaderFooter:init w/o all_at_once")
         self:applyFooterMode()
     end
     if self.settings.auto_refresh_time then
@@ -658,7 +656,6 @@ function ReaderFooter:disableFooter()
 end
 
 function ReaderFooter:updateFooterTextGenerator()
-    print("ReaderFooter:updateFooterTextGenerator")
     local footerTextGenerators = {}
     for i, m in pairs(self.mode_index) do
         if self.settings[m] then
@@ -1646,7 +1643,6 @@ function ReaderFooter:genAllFooterText()
     -- We need to BD.wrap() all items and separators, so we're
     -- sure they are laid out in our order (reversed in RTL),
     -- without ordering by the RTL Bidi algorithm.
-    print("@ReaderFooter:genAllFooterText, self.footerTextGenerators:", self.footerTextGenerators)
     for _, gen in ipairs(self.footerTextGenerators) do
         table.insert(info, BD.wrap(gen(self)))
     end
