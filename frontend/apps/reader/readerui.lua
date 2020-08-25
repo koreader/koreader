@@ -53,6 +53,7 @@ local ReaderZooming = require("apps/reader/modules/readerzooming")
 local Screenshoter = require("ui/widget/screenshoter")
 local SettingsMigration = require("ui/data/settings_migration")
 local UIManager = require("ui/uimanager")
+local ffiUtil  = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -270,15 +271,22 @@ function ReaderUI:init()
         end
         -- make sure we render document first before calling any callback
         self:registerPostInitCallback(function()
+            local start_ts = ffiUtil.getTimestamp()
             if not self.document:loadDocument() then
                 self:dealWithLoadDocumentFailure()
             end
+            logger.dbg(string.format("  loading took %.3f seconds", ffiUtil.getDuration(start_ts)))
 
             -- used to read additional settings after the document has been
             -- loaded (but not rendered yet)
             self:handleEvent(Event:new("PreRenderDocument", self.doc_settings))
 
+            start_ts = ffiUtil.getTimestamp()
             self.document:render()
+            logger.dbg(string.format("  rendering took %.3f seconds", ffiUtil.getDuration(start_ts)))
+
+            -- Uncomment to output the built DOM (for debugging)
+            -- logger.dbg(self.document:getHTMLFromXPointer(".0", 0x6830))
         end)
         -- styletweak controller (must be before typeset controller)
         self:registerModule("styletweak", ReaderStyleTweak:new{

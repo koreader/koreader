@@ -1203,6 +1203,12 @@ function ReaderRolling:checkXPointersAndProposeDOMVersionUpgrade()
 
         -- Set latest DOM version, to be used at next load
         local latest_dom_version = self.ui.document:getLatestDomVersion()
+        -- For some formats, DOM version 20200824 uses a new HTML parser that may build
+        -- a different DOM tree. So, migrate these to a lower version
+        local doc_format = self.ui.document:getDocumentFormat()
+        if doc_format == "HTML" or doc_format == "CHM" or doc_format == "PDB" then
+            latest_dom_version = self.ui.document:getDomVersionWithNormalizedXPointers()
+        end
         self.ui.doc_settings:saveSetting("cre_dom_version", latest_dom_version)
         logger.info("  cre_dom_version updated to", latest_dom_version)
 

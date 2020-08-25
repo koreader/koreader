@@ -180,6 +180,10 @@ function CreDocument:requestDomVersion(version)
     cre.requestDomVersion(version)
 end
 
+function CreDocument:getDocumentFormat()
+    return self._document:getDocumentFormat()
+end
+
 function CreDocument:setupDefaultView()
     if self.loaded then
         -- Don't apply defaults if the document has already been loaded
