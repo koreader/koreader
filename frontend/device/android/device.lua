@@ -53,7 +53,7 @@ local external = require("device/thirdparty"):new{
         { "Alpus", "Alpus", false, "com.ngcomputing.fora.android", "search" },
         { "ColorDict", "ColorDict", false, "com.socialnmobile.colordict", "colordict" },
         { "Eudic", "Eudic", false, "com.eusoft.eudic", "send" },
-        { "Fora", "Fora Dict", false, "com.ngc.fora", "search" },
+        { "Fora", "Fora Dict", false, "com.ngc.fora.android", "search" },
         { "GoldenFree", "GoldenDict Free", false, "mobi.goldendict.android.free", "send" },
         { "GoldenPro", "GoldenDict Pro", false, "mobi.goldendict.android", "send" },
         { "Kiwix", "Kiwix", false, "org.kiwix.kiwixmobile", "text" },
