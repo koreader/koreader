@@ -676,9 +676,12 @@ function ReaderFooter:updateFooterTextGenerator()
         -- function to that one
         self.genFooterText = footerTextGenerators[1]
     else
-        self.footerTextGenerators = footerTextGenerators
         self.genFooterText = self.genAllFooterText
     end
+
+    -- Even if there's no or a single mode enabled, all_at_once requires this to be set
+     self.footerTextGenerators = footerTextGenerators
+
     -- notify caller that UI needs update
     return true
 end
