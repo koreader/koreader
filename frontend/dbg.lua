@@ -52,9 +52,15 @@ function Dbg:turnOn()
         return check
     end
 
-    --- @todo close ev.log fd for children
     -- create or clear ev log file
-    self.ev_log = io.open("ev.log", "w")
+    --- @note: On Linux, use CLOEXEC to avoid polluting the fd table of our child processes.
+    ---        Otherwise, it can be problematic w/ wpa_supplicant & USBMS...
+    ---        Note that this is entirely undocumented, but at least LuaJIT passes the mode as-is to fopen, so, we're good.
+    if jit.os == "Linux" then
+        self.ev_log = io.open("ev.log", "we")
+    else
+        self.ev_log = io.open("ev.log", "w")
+    end
 end
 
 function Dbg:turnOff()

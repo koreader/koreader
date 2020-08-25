@@ -2,10 +2,19 @@
 export LC_ALL="en_US.UTF-8"
 
 # Compute our working directory in an extremely defensive manner
-KOREADER_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
+# NOTE: We need to remember the *actual* KOREADER_DIR, not the relocalized version in /tmp...
+export KOREADER_DIR="${KOREADER_DIR:-${SCRIPT_DIR}}"
 
 # We rely on starting from our working directory, and it needs to be set, sane and absolute.
 cd "${KOREADER_DIR:-/dev/null}" || exit
+
+# To make USBMS behave, relocalize ourselves outside of onboard
+if [ "${SCRIPT_DIR}" != "/tmp" ]; then
+    cp -pf "${0}" "/tmp/koreader.sh"
+    chmod 777 "/tmp/koreader.sh"
+    exec "/tmp/koreader.sh" "$@"
+fi
 
 # Attempt to switch to a sensible CPUFreq governor when that's not already the case...
 IFS= read -r current_cpufreq_gov <"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
@@ -249,11 +258,13 @@ fi
 CRASH_COUNT=0
 CRASH_TS=0
 CRASH_PREV_TS=0
+# List of supported special return codes
+KO_RC_RESTART=85
+KO_RC_USBMS=86
 # Because we *want* an initial fbdepth pass ;).
-RETURN_VALUE=85
+RETURN_VALUE=${KO_RC_RESTART}
 while [ ${RETURN_VALUE} -ne 0 ]; do
-    # 85 is what we return when asking for a KOReader restart
-    if [ ${RETURN_VALUE} -eq 85 ]; then
+    if [ ${RETURN_VALUE} -eq ${KO_RC_RESTART} ]; then
         # Do an update check now, so we can actually update KOReader via the "Restart KOReader" menu entry ;).
         ko_update_check
         # Do or double-check the fb depth switch, or restore original bitdepth if requested
@@ -266,7 +277,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
     RETURN_VALUE=$?
 
     # Did we crash?
-    if [ ${RETURN_VALUE} -ne 0 ] && [ ${RETURN_VALUE} -ne 85 ]; then
+    if [ ${RETURN_VALUE} -ne 0 ] && [ ${RETURN_VALUE} -ne ${KO_RC_RESTART} ] && [ ${RETURN_VALUE} -ne ${KO_RC_USBMS} ]; then
         # Increment the crash counter
         CRASH_COUNT=$((CRASH_COUNT + 1))
         CRASH_TS=$(date +'%s')
@@ -348,6 +359,24 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         # Reset the crash counter if that was a sane exit/restart
         CRASH_COUNT=0
     fi
+
+    if [ ${RETURN_VALUE} -eq ${KO_RC_USBMS} ]; then
+        # User requested an USBMS session, setup the tool outside of onboard
+        mkdir -p "/tmp/usbms"
+        ./tar xzf "./data/KoboUSBMS.tar.gz" -C "/tmp/usbms"
+
+        # Here we go!
+        cd "/tmp/usbms" || continue
+        if ! ./usbms; then
+            # Hu, oh, something went wrong... Stay around for 90s (enough time to look at the syslog over Wi-Fi), and then shutdown.
+            sleep 90
+            poweroff -f
+        fi
+
+        # Jump back to the right place, and keep on trucking
+        cd "${KOREADER_DIR}" || poweroff -f
+        rm -rf "/tmp/usbms"
+    fi
 done
 
 # Restore original fb bitdepth if need be...
@@ -387,5 +416,8 @@ else
         /sbin/reboot
     fi
 fi
+
+# Wipe the clones on exit
+rm -f "/tmp/koreader.sh"
 
 exit ${RETURN_VALUE}

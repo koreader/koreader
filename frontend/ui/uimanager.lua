@@ -155,8 +155,13 @@ function UIManager:init()
         end
         self.event_handlers["Charging"] = function()
             self:_beforeCharging()
+            -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
             if Device.screen_saver_mode then
                 self:suspend()
+            else
+                -- Potentially start an USBMS session
+                local MassStorage = require("ui/elements/mass_storage")
+                MassStorage:start(true)
             end
         end
         self.event_handlers["NotCharging"] = function()
