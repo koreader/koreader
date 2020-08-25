@@ -51,7 +51,7 @@ function M:checkMethod(role, method)
             break
         end
     end
-    if not tool then
+    if not tool and not action then
         return false
     else
         return true, tool, action
