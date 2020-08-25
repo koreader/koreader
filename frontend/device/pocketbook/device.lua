@@ -1,55 +1,17 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local logger = require("logger")
 local ffi = require("ffi")
+local C = ffi.C
 local inkview = ffi.load("inkview")
+local band = require("bit").band
 
--- luacheck: push
--- luacheck: ignore
-local EVT_INIT = 21
-local EVT_EXIT = 22
-local EVT_SHOW = 23
-local EVT_REPAINT = 23
-local EVT_HIDE = 24
-local EVT_KEYDOWN = 25
-local EVT_KEYPRESS = 25
-local EVT_KEYUP = 26
-local EVT_KEYRELEASE = 26
-local EVT_KEYREPEAT = 28
-local EVT_FOREGROUND = 151
-local EVT_BACKGROUND = 152
+require("ffi/posix_h")
+require("ffi/linux_input_h")
+require("ffi/inkview_h")
 
-local KEY_POWER  = 0x01
-local KEY_DELETE = 0x08
-local KEY_OK     = 0x0a
-local KEY_UP     = 0x11
-local KEY_DOWN   = 0x12
-local KEY_LEFT   = 0x13
-local KEY_RIGHT  = 0x14
-local KEY_MINUS  = 0x15
-local KEY_PLUS   = 0x16
-local KEY_MENU   = 0x17
-local KEY_PREV   = 0x18
-local KEY_NEXT   = 0x19
-local KEY_HOME   = 0x1a
-local KEY_BACK   = 0x1b
-local KEY_PREV2  = 0x1c
-local KEY_NEXT2  = 0x1d
-local KEY_COVEROPEN = 0x02
-local KEY_COVERCLOSE = 0x03
-
-local CONNECTING = 1
-local CONNECTED = 2
-local NET_OK = 0
--- luacheck: pop
-
-ffi.cdef[[
-char *GetSoftwareVersion(void);
-char *GetDeviceModel(void);
-int GetNetState(void);
-int GetFrontlightColor(void);
-int NetConnect(const char *name);
-int NetDisconnect();
-]]
+-- FIXME: Signal ffi/input.lua (brought in by device/input later on) that we want to use poll mode backend.
+-- Remove this once backend becomes poll-only.
+_G.POCKETBOOK_FFI = true
 
 local function yes() return true end
 local function no() return false end
@@ -58,26 +20,23 @@ local function no() return false end
 local PocketBook = Generic:new{
     model = "PocketBook",
     isPocketBook = yes,
-    isInBackGround = false,
     hasOTAUpdates = yes,
     hasWifiToggle = yes,
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
     canSuspend = no,
-    emu_events_dev = "/dev/shm/emu_events",
+    hasExitOptions = no,
+    canRestart = no,
+    needsScreenRefreshAfterResume = no,
     home_dir = "/mnt/ext1",
 
     -- all devices that have warmth lights use inkview api
     hasNaturalLightApi = yes,
-
 }
 
 -- Make sure the C BB cannot be used on devices with a 24bpp fb
 function PocketBook:blacklistCBB()
-    local dummy = require("ffi/posix_h")
-    local C = ffi.C
-
     -- As well as on those than can't do HW inversion, as otherwise NightMode would be ineffective.
     --- @fixme Either relax the HWInvert check, or actually enable HWInvert on PB if it's safe and it works,
     --        as, currently, no PB device is marked as canHWInvert, so, the C BB is essentially *always* blacklisted.
@@ -99,25 +58,37 @@ function PocketBook:init()
 
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/pocketbook/powerd"):new{device = self}
+
+    -- Whenever we lose focus, but also get suspended for real (we can't reliably tell atm),
+    -- plugins need to be notified to stop doing foreground stuff, and vice versa. To this end,
+    -- we maintain pseudo suspended state just to keep plugins happy, even though it's not
+    -- related real to suspend states.
+    local quasiSuspended
+
     self.input = require("device/input"):new{
         device = self,
         event_map = {
-            [KEY_MENU] = "Menu",
-            [KEY_PREV] = "LPgBack",
-            [KEY_NEXT] = "LPgFwd",
-            [KEY_UP] = "Up",
-            [KEY_DOWN] = "Down",
-            [KEY_LEFT] = "Left",
-            [KEY_RIGHT] = "Right",
-            [KEY_OK] = "Press",
+            [C.KEY_MENU] = "Menu",
+            [C.KEY_PREV] = "LPgBack",
+            [C.KEY_NEXT] = "LPgFwd",
+            [C.KEY_UP] = "Up",
+            [C.KEY_DOWN] = "Down",
+            [C.KEY_LEFT] = "Left",
+            [C.KEY_RIGHT] = "Right",
+            [C.KEY_OK] = "Press",
         },
         handleMiscEv = function(this, ev)
-            if ev.code == EVT_BACKGROUND then
-                self.isInBackGround = true
-                return "Suspend"
-            elseif ev.code == EVT_FOREGROUND then
-                if self.isInBackGround then
-                    self.isInBackGround = false
+            local ui = require("ui/uimanager")
+            if ev.code == C.EVT_HIDE or ev.code == C.EVT_BACKGROUND then
+                ui:flushSettings()
+                if not quasiSuspended then
+                    quasiSuspended = true
+                    return "Suspend"
+                end
+            elseif ev.code == C.EVT_FOREGROUND or ev.code == C.EVT_SHOW then
+                ui:setDirty('all', 'partial')
+                if quasiSuspended then
+                    quasiSuspended = false
                     return "Resume"
                 end
             end
@@ -130,22 +101,23 @@ function PocketBook:init()
     -- here.
     -- Unhandled events will leave Input:waitEvent() as "GenericInput"
     self.input:registerEventAdjustHook(function(_input, ev)
-        if ev.type == EVT_KEYDOWN or ev.type == EVT_KEYUP then
-            ev.value = ev.type == EVT_KEYDOWN and 1 or 0
-            ev.type = 1 -- linux/input.h Key-Event
+        if ev.type == C.EVT_KEYDOWN or ev.type == C.EVT_KEYUP then
+            ev.value = ev.type == C.EVT_KEYDOWN and 1 or 0
+            ev.type = C.EV_KEY
         end
 
-        -- handle EVT_BACKGROUND and EVT_FOREGROUND as MiscEvent as this makes
+        -- handle C.EVT_BACKGROUND and C.EVT_FOREGROUND as MiscEvent as this makes
         -- it easy to return a string directly which can be used in
         -- uimanager.lua as event_handler index.
-        if ev.type == EVT_BACKGROUND or ev.type == EVT_FOREGROUND then
+        if ev.type == C.EVT_BACKGROUND or ev.type == C.EVT_FOREGROUND
+        or ev.type == C.EVT_SHOW or ev.type == C.EVT_HIDE then
             ev.code = ev.type
-            ev.type = 4 -- handle as MiscEvent, see above
+            ev.type = C.EV_MSC -- handle as MiscEvent, see above
         end
 
         -- auto shutdown event from inkview framework, gracefully close
         -- everything and let the framework shutdown the device
-        if ev.type == EVT_EXIT then
+        if ev.type == C.EVT_EXIT then
             require("ui/uimanager"):broadcastEvent(
                 require("ui/event"):new("Close"))
         end
@@ -157,33 +129,37 @@ function PocketBook:init()
         self.screen.native_rotation_mode = self.screen.ORIENTATION_PORTRAIT
     end
 
-    os.remove(self.emu_events_dev)
-    os.execute("mkfifo " .. self.emu_events_dev)
-    self.input.open(self.emu_events_dev, 1)
+    self.input.open()
+    self:setAutoStandby(true)
     Generic.init(self)
 end
 
-function PocketBook:supportsScreensaver() return true end
-
 function PocketBook:setDateTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end
+    -- If the device is rooted, we might actually have a fighting chance to change os clock.
+    local su = "/mnt/secure/su"
+    su = util.pathExists(su) and (su .. " ") or ""
     local command
     if year and month and day then
-        command = string.format("date -s '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec)
+        command = string.format(su .. "/bin/date -s '%d-%d-%d %d:%d:%d'", year, month, day, hour, min, sec)
     else
-        command = string.format("date -s '%d:%d'",hour, min)
+        command = string.format(su .. "/bin/date -s '%d:%d'",hour, min)
     end
     if os.execute(command) == 0 then
-        os.execute('hwclock -u -w')
+        os.execute(su .. '/sbin/hwclock -u -w')
         return true
     else
         return false
     end
 end
 
+function PocketBook:setAutoStandby(isAllowed)
+    inkview.iv_sleepmode(isAllowed and 1 or 0)
+end
+
 function PocketBook:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback)
-        if inkview.NetConnect(nil) ~= NET_OK then
+        if inkview.NetConnect(nil) ~= C.NET_OK then
             logger.info('NetConnect failed')
         end
         if complete_callback then
@@ -199,7 +175,7 @@ function PocketBook:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:isWifiOn()
-        return inkview.GetNetState() == CONNECTED
+        return band(inkview.QueryNetwork(), C.CONNECTED) ~= 0
     end
 end
 
