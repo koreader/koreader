@@ -14,6 +14,12 @@ local function getDir(isUser)
         else
             return "/system/fonts"
         end
+    elseif Device:isPocketBook() then
+        if isUser then
+            return "/mnt/ext1/system/fonts"
+        else
+            return "/ebrmain/adobefonts;/ebrmain/fonts"
+        end
     elseif Device:isDesktop() or Device:isEmulator() then
         if jit.os == "OSX" then
             return isUser and home .. "/Library/fonts" or "/Library/fonts"
