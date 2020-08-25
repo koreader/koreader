@@ -353,7 +353,7 @@ end
 function ReaderFont:getFontSettingsTable()
     local settings_table = {}
 
-    if Device:isAndroid() or Device:isDesktop() or Device:isEmulator() then
+    if Device:isAndroid() or Device:isDesktop() or Device:isEmulator() or Device:isPocketBook() then
         for _, item in ipairs(require("ui/elements/font_settings"):getSystemFontMenuItems()) do
             table.insert(settings_table, item)
         end

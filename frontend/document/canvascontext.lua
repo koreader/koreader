@@ -40,6 +40,7 @@ function CanvasContext:init(device)
     self.isDesktop = device.isDesktop
     self.isEmulator = device.isEmulator
     self.isKindle = device.isKindle
+    self.isPocketBook = device.isPocketBook
     self.should_restrict_JIT = device.should_restrict_JIT
     self:setColorRenderingEnabled(device.screen.isColorEnabled())
 
