@@ -162,7 +162,7 @@ function ReaderTypography:init()
 
     local info_text = _([[
 Some languages have specific typographic rules: these include hyphenation, line breaking rules, and language specific glyph variants.
-KOReader will chose one according to the language tag from the book's metadata, but you can select another one.
+KOReader will choose one according to the language tag from the book's metadata, but you can select another one.
 You can also set a default language or a fallback one with a long-press.
 
 Features available per language are marked with:
