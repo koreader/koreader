@@ -227,8 +227,7 @@ if Device:hasFrontlight() then
     end
 
     function DeviceListener:onShowFlDialog()
-        local FrontLightWidget = require("ui/widget/frontlightwidget")
-        UIManager:show(FrontLightWidget:new{})
+        Device:showLightDialog()
     end
 
 end

@@ -296,6 +296,12 @@ function Device:onPowerEvent(ev)
     end
 end
 
+function Device:showLightDialog()
+    local FrontLightWidget = require("ui/widget/frontlightwidget")
+    local UIManager = require("ui/uimanager")
+    UIManager:show(FrontLightWidget:new{})
+end
+
 function Device:info()
     return self.model
 end
