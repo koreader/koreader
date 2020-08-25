@@ -585,7 +585,7 @@ function Dispatcher:execute(ui, settings, gesture)
             end
             -- the event can accept a gesture object or a number
             if settingsList[k].category == "incrementalnumber" then
-                local arg = v ~=0 and v or gesture or 0
+                local arg = v ~= 0 and v or gesture or 0
                 ui:handleEvent(Event:new(settingsList[k].event, arg))
             end
         end
