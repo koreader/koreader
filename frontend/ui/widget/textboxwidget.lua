@@ -87,6 +87,7 @@ local TextBoxWidget = InputContainer:new{
     image_padding_bottom = Screen:scaleBySize(3),
     image_alt_face = Font:getFace("xx_smallinfofont"),
     image_alt_fgcolor = Blitbuffer.COLOR_BLACK,
+    scroll_force_to_page = false, -- will be forced to true if images
 
     -- Additional properties only used when using xtext
     use_xtext = G_reader_settings:nilOrTrue("use_xtext"),
@@ -249,6 +250,11 @@ function TextBoxWidget:_splitToLines()
     local ln = 1
     local offset, end_offset, cur_line_width
 
+    if self.images and #self.images > 0 then
+        -- Force scrolling to align to top of pages, as we
+        -- expect to draw images only at top of view
+        self.scroll_force_to_page = true
+    end
     local image_num = 0
     local targeted_width = self.width
     local image_lines_remaining = 0
@@ -1227,12 +1233,25 @@ function TextBoxWidget:scrollToBottom()
 end
 
 
-function TextBoxWidget:scrollToRatio(ratio)
+function TextBoxWidget:scrollToRatio(ratio, force_to_page)
     self.image_show_alt_text = nil
+    local line_num
     ratio = math.max(0, math.min(1, ratio)) -- ensure ratio is between 0 and 1 (100%)
-    local page_count = 1 + math.floor((#self.vertical_string_list - 1) / self.lines_per_page)
-    local page_num = 1 + Math.round((page_count - 1) * ratio)
-    local line_num = 1 + (page_num - 1) * self.lines_per_page
+    if force_to_page or self.scroll_force_to_page then
+        -- We want scroll to align to original pages
+        local page_count = 1 + math.floor((#self.vertical_string_list - 1) / self.lines_per_page)
+        local page_num = 1 + Math.round((page_count - 1) * ratio)
+        line_num = 1 + (page_num - 1) * self.lines_per_page
+    else
+        -- We want the middle of page to show at ratio, so remove self.lines_per_page/2
+        line_num = 1 + math.floor(ratio * #self.vertical_string_list - self.lines_per_page/2)
+        if line_num + self.lines_per_page > #self.vertical_string_list then
+            line_num = #self.vertical_string_list - self.lines_per_page + 1
+        end
+        if line_num < 1 then
+            line_num = 1
+        end
+    end
     if line_num ~= self.virtual_line_num then
         self:free(false)
         self.virtual_line_num = line_num
