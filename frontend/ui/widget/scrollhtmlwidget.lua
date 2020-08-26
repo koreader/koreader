@@ -12,7 +12,6 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local VerticalScrollBar = require("ui/widget/verticalscrollbar")
-local Math = require("optmath")
 local Input = Device.input
 local Screen = Device.screen
 
@@ -46,6 +45,9 @@ function ScrollHtmlWidget:init()
         enable = self.htmlbox_widget.page_count > 1,
         width = self.scroll_bar_width,
         height = self.height,
+        scroll_callback = function(ratio)
+            self:scrollToRatio(ratio)
+        end
     }
 
     self.v_scroll_bar:set((self.htmlbox_widget.page_number-1) / self.htmlbox_widget.page_count, self.htmlbox_widget.page_number / self.htmlbox_widget.page_count)
@@ -89,7 +91,10 @@ end
 
 function ScrollHtmlWidget:scrollToRatio(ratio)
     ratio = math.max(0, math.min(1, ratio)) -- ensure ratio is between 0 and 1 (100%)
-    local page_num = 1 + Math.round((self.htmlbox_widget.page_count - 1) * ratio)
+    local page_num = 1 + math.floor((self.htmlbox_widget.page_count) * ratio)
+    if page_num > self.htmlbox_widget.page_count then
+        page_num = self.htmlbox_widget.page_count
+    end
     if page_num == self.htmlbox_widget.page_number then
         return
     end

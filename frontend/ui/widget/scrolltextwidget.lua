@@ -71,6 +71,9 @@ function ScrollTextWidget:init()
         high = visible_line_count / total_line_count,
         width = self.scroll_bar_width,
         height = self.text_widget:getTextHeight(),
+        scroll_callback = function(ratio)
+            self:scrollToRatio(ratio, false)
+        end
     }
     self:updateScrollBar()
     local horizontal_group = HorizontalGroup:new{ align = "top" }
@@ -219,8 +222,14 @@ function ScrollTextWidget:scrollText(direction)
     self:updateScrollBar(true)
 end
 
-function ScrollTextWidget:scrollToRatio(ratio)
-    self.text_widget:scrollToRatio(ratio)
+function ScrollTextWidget:scrollToRatio(ratio, force_to_page)
+    if force_to_page == nil then
+        -- default to force to page, for consistency with
+        -- ScrollHtmlWidget that always forces to page (for
+        -- DictQuickLookup when going back to previous dict)
+        force_to_page = true
+    end
+    self.text_widget:scrollToRatio(ratio, force_to_page)
     self:updateScrollBar(true)
 end
 
