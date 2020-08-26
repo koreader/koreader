@@ -161,7 +161,7 @@ function UIManager:init()
             else
                 -- Potentially start an USBMS session
                 local MassStorage = require("ui/elements/mass_storage")
-                MassStorage:start(true)
+                MassStorage:start()
             end
         end
         self.event_handlers["NotCharging"] = function()
@@ -315,6 +315,10 @@ function UIManager:init()
             self:_beforeCharging()
             if Device.screen_saver_mode then
                 self:suspend()
+            else
+                -- Potentially start an USBMS session
+                local MassStorage = require("ui/elements/mass_storage")
+                MassStorage:start()
             end
         end
         self.event_handlers["USbPlugOut"] = function()
