@@ -47,7 +47,7 @@ if Device:canToggleMassStorage() then
     -- mass storage actions
     common_settings.mass_storage_actions = {
         text = _("Start USB storage"),
-        callback = function() MassStorage:start() end,
+        callback = function() MassStorage:start(true) end,
     }
 end
 

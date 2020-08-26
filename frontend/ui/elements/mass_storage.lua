@@ -13,7 +13,7 @@ function MassStorage:getSettingsMenuTable()
     return {
         {
             text = _("Disable confirmation popup"),
-            help_text = _([[This will NOT affect what happens when you simply plug in the device!]]),
+            help_text = _([[This will ONLY affect what happens when you simply plug in the device!]]),
             checked_func = function() return not self:requireConfirmation() end,
             callback = function()
                 G_reader_settings:saveSetting("mass_storage_confirmation_disabled", self:requireConfirmation())
@@ -35,8 +35,8 @@ function MassStorage:getActionsMenuTable()
 end
 
 -- exit KOReader and start mass storage mode.
-function MassStorage:start(always_ask)
-    if self:requireConfirmation() or always_ask then
+function MassStorage:start(never_ask)
+    if not never_ask and self:requireConfirmation() then
         local ConfirmBox = require("ui/widget/confirmbox")
         UIManager:show(ConfirmBox:new{
             text = _("Share storage via USB?"),
