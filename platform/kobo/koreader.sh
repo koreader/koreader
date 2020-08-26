@@ -365,9 +365,16 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         mkdir -p "/tmp/usbms"
         ./tar xzf "./data/KoboUSBMS.tar.gz" -C "/tmp/usbms"
 
+        # Then siphon KOReader's language for i18n...
+        if grep -q '\["language"\]' 'settings.reader.lua' 2>/dev/null; then
+            usbms_lang="$(grep '\["language"\]' 'settings.reader.lua' | cut -d'"' -f4)"
+        else
+            usbms_lang="C"
+        fi
+
         # Here we go!
         cd "/tmp/usbms" || continue
-        if ! ./usbms; then
+        if ! env LANGUAGE="${usbms_lang}" ./usbms; then
             # Hu, oh, something went wrong... Stay around for 90s (enough time to look at the syslog over Wi-Fi), and then shutdown.
             sleep 90
             poweroff -f

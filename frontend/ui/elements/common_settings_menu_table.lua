@@ -45,10 +45,7 @@ if Device:canToggleMassStorage() then
     }
 
     -- mass storage actions
-    common_settings.mass_storage_actions = {
-        text = _("Start USB storage"),
-        callback = function() MassStorage:start() end,
-    }
+    common_settings.mass_storage_actions = MassStorage:getActionsMenuTable()
 end
 
 -- This affects the topmenu, we want to be able to access it even if !Device:setDateTime()
