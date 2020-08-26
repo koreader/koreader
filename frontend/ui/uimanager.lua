@@ -317,10 +317,8 @@ function UIManager:init()
                 self:suspend()
             else
                 -- Potentially start an USBMS session
-                if Device:canToggleMassStorage() then
-                    local MassStorage = require("ui/elements/mass_storage")
-                    MassStorage:start()
-                end
+                local MassStorage = require("ui/elements/mass_storage")
+                MassStorage:start()
             end
         end
         self.event_handlers["USbPlugOut"] = function()
