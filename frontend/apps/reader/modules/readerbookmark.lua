@@ -391,7 +391,8 @@ end
 function ReaderBookmark:isBookmarkSame(item1, item2)
     if item1.notes ~= item2.notes then return false end
     if self.ui.document.info.has_pages then
-        return item2.pos0 and item2.pos1 and item1.pos0.page == item2.pos0.page
+        return item1.pos0 and item1.pos1 and item2.pos0 and item2.pos1
+        and item1.pos0.page == item2.pos0.page
         and item1.pos0.x == item2.pos0.x and item1.pos0.y == item2.pos0.y
         and item1.pos1.x == item2.pos1.x and item1.pos1.y == item2.pos1.y
     else
