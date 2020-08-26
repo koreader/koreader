@@ -292,6 +292,13 @@ if ARGV[argidx] and ARGV[argidx] ~= "" then
             UIManager:nextTick(function()
                 FileManagerHistory:onShowHist(last_file)
             end)
+        elseif start_with == "favorites" then
+            local FileManagerCollection = require("apps/filemanager/filemanagercollection")
+            UIManager:nextTick(function()
+                FileManagerCollection:new{
+                    ui = FileManager.instance,
+                }:onShowColl("favorites")
+            end)
         elseif start_with == "folder_shortcuts" then
             local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
             UIManager:nextTick(function()
