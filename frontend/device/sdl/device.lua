@@ -20,6 +20,17 @@ local function runCommand(command)
     return os.execute(env..command) == 0
 end
 
+local function getDesktopDicts()
+    local t = {
+        { "Goldendict", "Goldendict", false, "goldendict" },
+    }
+    -- apple dict is always present in osx
+    if jit.os == "OSX" then
+        table.insert(t, 1, { "Apple", "AppleDict", false, "dict://" })
+    end
+    return t
+end
+
 local function getLinkOpener()
     if jit.os == "Linux" and isCommand("xdg-open") then
         return true, "xdg-open"
@@ -29,25 +40,16 @@ local function getLinkOpener()
     return false
 end
 
-local EXTERNAL_DICTS_AVAILABILITY_CHECKED = false
-local EXTERNAL_DICTS = require("device/sdl/dictionaries")
-local external_dict_when_back_callback = nil
-
-local function getExternalDicts()
-    if not EXTERNAL_DICTS_AVAILABILITY_CHECKED then
-        EXTERNAL_DICTS_AVAILABILITY_CHECKED = true
-        for i, v in ipairs(EXTERNAL_DICTS) do
-            local tool = v[4]
-            if tool then
-                if (isUrl(tool) and getLinkOpener()) or isCommand(tool) then
-                    v[3] = true
-                end
-            end
+-- thirdparty app support
+local external = require("device/thirdparty"):new{
+    dicts = getDesktopDicts(),
+    check = function(self, app)
+        if (isUrl(app) and getLinkOpener()) or isCommand(app) then
+            return true
         end
-    end
-    return EXTERNAL_DICTS
-end
-
+        return false
+    end,
+}
 
 local Device = Generic:new{
     model = "SDL",
@@ -70,24 +72,20 @@ local Device = Generic:new{
         return runCommand(tool .. " '" .. link .. "'")
     end,
     canExternalDictLookup = yes,
-    getExternalDictLookupList = getExternalDicts,
+    getExternalDictLookupList = function() return external.dicts end,
     doExternalDictLookup = function(self, text, method, callback)
-        external_dict_when_back_callback = callback
-        local tool, ok = nil
-        for i, v in ipairs(getExternalDicts()) do
-            if v[1] == method then
-                tool = v[4]
-                break
+        external.when_back_callback = callback
+        local ok, app = external:checkMethod("dict", method)
+        if app then
+            if isUrl(app) and getLinkOpener() then
+                ok = self:openLink(app..text)
+            elseif isCommand(app) then
+                ok = runCommand(app .. " " .. text .. " &")
             end
         end
-        if isUrl(tool) and getLinkOpener() then
-            ok = self:openLink(tool..text)
-        elseif isCommand(tool) then
-            ok = runCommand(tool .. " " .. text .. " &")
-        end
-        if ok and external_dict_when_back_callback then
-            external_dict_when_back_callback()
-            external_dict_when_back_callback = nil
+        if ok and external.when_back_callback then
+            external.when_back_callback()
+            external.when_back_callback = nil
         end
     end,
     window = G_reader_settings:readSetting("sdl_window") or {},

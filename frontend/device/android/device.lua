@@ -46,22 +46,25 @@ local function getCodename()
     return codename
 end
 
-local EXTERNAL_DICTS_AVAILABILITY_CHECKED = false
-local EXTERNAL_DICTS = require("device/android/dictionaries")
-local external_dict_when_back_callback = nil
-
-local function getExternalDicts()
-    if not EXTERNAL_DICTS_AVAILABILITY_CHECKED then
-        EXTERNAL_DICTS_AVAILABILITY_CHECKED = true
-        for i, v in ipairs(EXTERNAL_DICTS) do
-            local package = v[4]
-            if android.isPackageEnabled(package) then
-                v[3] = true
-            end
-        end
-    end
-    return EXTERNAL_DICTS
-end
+-- thirdparty app support
+local external = require("device/thirdparty"):new{
+    dicts = {
+        { "Aard2", "Aard2", false, "itkach.aard2", "aard2" },
+        { "Alpus", "Alpus", false, "com.ngcomputing.fora.android", "search" },
+        { "ColorDict", "ColorDict", false, "com.socialnmobile.colordict", "colordict" },
+        { "Eudic", "Eudic", false, "com.eusoft.eudic", "send" },
+        { "Fora", "Fora Dict", false, "com.ngc.fora", "search" },
+        { "ForaPro", "Fora Pro", false, "com.ngc.fora.android", "search" },
+        { "GoldenFree", "GoldenDict Free", false, "mobi.goldendict.android.free", "send" },
+        { "GoldenPro", "GoldenDict Pro", false, "mobi.goldendict.android", "send" },
+        { "Kiwix", "Kiwix", false, "org.kiwix.kiwixmobile", "text" },
+        { "Mdict", "Mdict", false, "cn.mdict", "send" },
+        { "QuickDic", "QuickDic", false, "de.reimardoeffinger.quickdic", "quickdic" },
+    },
+    check = function(self, app)
+        return android.isPackageEnabled(app)
+    end,
+}
 
 local Device = Generic:new{
     isAndroid = yes,
@@ -93,18 +96,13 @@ local Device = Generic:new{
     doShareText = function(text) android.sendText(text) end,
 
     canExternalDictLookup = yes,
-    getExternalDictLookupList = getExternalDicts,
+    getExternalDictLookupList = function() return external.dicts end,
     doExternalDictLookup = function (self, text, method, callback)
-        external_dict_when_back_callback = callback
-        local package, action = nil
-        for i, v in ipairs(getExternalDicts()) do
-            if v[1] == method then
-                package = v[4]
-                action = v[5]
-                break
-            end
+        external.when_back_callback = callback
+        local _, app, action = external:checkMethod("dict", method)
+        if app and action then
+            android.dictLookup(text, app, action)
         end
-        android.dictLookup(text, package, action)
     end,
 
 
@@ -151,10 +149,9 @@ function Device:init()
                 end
                 -- to-do: keyboard connected, disconnected
             elseif ev.code == C.APP_CMD_RESUME then
-                EXTERNAL_DICTS_AVAILABILITY_CHECKED = false
-                if external_dict_when_back_callback then
-                    external_dict_when_back_callback()
-                    external_dict_when_back_callback = nil
+                if external.when_back_callback then
+                    external.when_back_callback()
+                    external.when_back_callback = nil
                 end
                 local new_file = android.getIntent()
                 if new_file ~= nil and lfs.attributes(new_file, "mode") == "file" then
