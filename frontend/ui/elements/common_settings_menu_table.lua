@@ -201,14 +201,6 @@ if Device:isAndroid() then
     local isAndroid, android = pcall(require, "android")
     if not isAndroid then return end
 
-    -- overwrite generic frontlight with a native Dialog
-    common_settings.frontlight = {
-        text = _("Frontlight"),
-        callback = function()
-            Device:showLightDialog()
-        end,
-    }
-
     -- screen timeout options, disabled if device needs wakelocks.
     common_settings.screen_timeout = require("ui/elements/screen_android"):getTimeoutMenuTable()
 
