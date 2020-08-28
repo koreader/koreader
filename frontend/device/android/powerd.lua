@@ -75,6 +75,7 @@ function AndroidPowerD:turnOnFrontlightHW()
     if self:isFrontlightOn() and self:isFrontlightOnHW() then
         return
     end
+    android.enableFrontlightSwitch()
     android.setScreenBrightness(math.floor(self.fl_intensity * self.bright_diff / self.fl_max))
 
     self.is_fl_on = true
