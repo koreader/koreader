@@ -363,7 +363,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
     if [ ${RETURN_VALUE} -eq ${KO_RC_USBMS} ]; then
         # User requested an USBMS session, setup the tool outside of onboard
         mkdir -p "/tmp/usbms"
-        if  ! ./tar xzf "./data/KoboUSBMS.tar.gz" -C "/tmp/usbms"; then
+        if ! ./tar xzf "./data/KoboUSBMS.tar.gz" -C "/tmp/usbms"; then
             echo "Couldn't unpack KoboUSBMS to /tmp/usbms, restarting KOReader . . ." >>crash.log 2>&1
             continue
         fi
