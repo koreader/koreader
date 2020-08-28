@@ -376,6 +376,9 @@ function Device:showLightDialog()
         if android.isWarmthDevice() then
             self.powerd.fl_warmth = self.powerd:getWarmth()
             logger.dbg("Dialog OK, warmth: " .. self.powerd.fl_warmth)
+            local Event = require("ui/event")
+            local UIManager = require("ui/uimanager")
+            UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
         end
     elseif action == C.ALIGHTS_DIALOG_CANCEL then
         logger.dbg("Dialog Cancel, brightness: " .. self.powerd.fl_intensity)
