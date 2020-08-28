@@ -3,6 +3,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
+local Version = require("version")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -12,13 +13,12 @@ if Device:hasOTAUpdates() then
     local OTAManager = require("ui/otamanager")
     common_info.ota_update = OTAManager:getOTAMenuTable()
 end
-local version = require("version"):getCurrentRevision()
 common_info.version = {
-    text = _("Version"),
+    text = T(_("Version: %1"), Version:getShortVersion()),
     keep_menu_open = true,
     callback = function()
         UIManager:show(InfoMessage:new{
-            text = version,
+            text = Version:getCurrentRevision(),
         })
     end
 }
