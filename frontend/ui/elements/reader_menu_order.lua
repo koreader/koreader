@@ -166,8 +166,7 @@ local order = {
         "book_status",
         "book_info",
         "----------------------------",
-        "system_statistics",
-        "mass_storage_actions",
+        "mass_storage_actions", -- if Device:canToggleMassStorage()
         "----------------------------",
         "ota_update", -- if Device:hasOTAUpdates()
         "version",
@@ -180,6 +179,7 @@ local order = {
         "----------------------------",
         "report_bug",
         "----------------------------",
+        "system_statistics",  -- if enabled (Plugin)
         "about",
     },
     exit_menu = {

@@ -139,8 +139,7 @@ local order = {
         "----------------------------",
         "collections",
         "----------------------------",
-        "system_statistics",
-        "mass_storage_actions",
+        "mass_storage_actions", -- if Device:canToggleMassStorage()
         "----------------------------",
         "ota_update", -- if Device:hasOTAUpdates()
         "version",
@@ -153,6 +152,7 @@ local order = {
         "----------------------------",
         "report_bug",
         "----------------------------",
+        "system_statistics", -- if enabled (Plugin)
         "about",
     },
     plus_menu = {},
