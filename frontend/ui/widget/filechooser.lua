@@ -363,7 +363,7 @@ function FileChooser:changeToPath(path, focused_path)
             unreadable_dir_content[path][focused_path] = {
                 name = focused_path:sub(#path+2),
                 fullpath = focused_path,
-                attr = lfs.attributes(focused_path);
+                attr = lfs.attributes(focused_path),
             }
         end
     end
