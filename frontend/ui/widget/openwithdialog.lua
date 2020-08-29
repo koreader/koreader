@@ -13,6 +13,7 @@ local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local RadioButtonTable = require("ui/widget/radiobuttontable")
 local Size = require("ui/size")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -24,6 +25,21 @@ local OpenWithDialog = InputDialog:extend{}
 function OpenWithDialog:init()
     -- init title and buttons in base class
     InputDialog.init(self)
+
+    -- replace single line title with a multiline one,
+    -- as the filename might be long
+    self.title_widget:free()
+    self.title_widget = FrameContainer:new{
+        padding = self.title_padding,
+        margin = self.title_margin,
+        bordersize = 0,
+        TextBoxWidget:new{
+            text = self.title,
+            width = self.width - 2*self.title_padding - 2*self.title_margin,
+            face = self.title_face,
+        },
+    }
+
     self.face = Font:getFace("cfont", 22)
 
     self.radio_button_table = RadioButtonTable:new{
@@ -33,6 +49,15 @@ function OpenWithDialog:init()
         scroll = false,
         parent = self,
         face = self.face,
+        button_select_callback = function(btn)
+            if btn.provider.one_time_provider then
+                self._check_file_button:disable()
+                self._check_global_button:disable()
+            else
+                self._check_file_button:enable()
+                self._check_global_button:enable()
+            end
+        end
     }
 
     self._check_file_button = self._check_file_button or CheckButton:new{

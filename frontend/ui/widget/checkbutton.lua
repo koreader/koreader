@@ -14,6 +14,7 @@ Example:
 
 ]]
 
+local Blitbuffer = require("ffi/blitbuffer")
 local CheckMark = require("ui/widget/checkmark")
 local Device = require("device")
 local Font = require("ui/font")
@@ -50,6 +51,7 @@ function CheckButton:initCheckButton(checked)
     self.checked = checked
     self._checkmark = CheckMark:new{
         checked = self.checked,
+        enabled = self.enabled,
         parent = self.parent or self,
         show_parent = self.show_parent or self,
     }
@@ -57,6 +59,7 @@ function CheckButton:initCheckButton(checked)
         text = self.text,
         face = self.face,
         max_width = self.max_width,
+        fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
     }
     self._horizontalgroup = HorizontalGroup:new{
         self._checkmark,
@@ -140,6 +143,23 @@ function CheckButton:unCheck()
     self:initCheckButton(false)
     UIManager:setDirty(self.parent, function()
         return "fast", self.dimen
+    end)
+end
+
+function CheckButton:enable()
+    self.enabled = true
+    self:initCheckButton(self.checked)
+    UIManager:setDirty(self.parent, function()
+        return "ui", self.dimen
+    end)
+end
+
+function CheckButton:disable()
+    self.enabled = false
+    self:initCheckButton(false)
+    UIManager:setDirty(self.parent, function()
+        return "ui", self.dimen
+        -- best to use "ui" instead of "fast" when we make things gray
     end)
 end
 

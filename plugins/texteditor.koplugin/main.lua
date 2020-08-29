@@ -329,6 +329,7 @@ function TextEditor:chooseFile()
 end
 
 function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
+    self:loadSettings()
     local attr = lfs.attributes(file_path)
     if not possibly_new_file and not attr then
         UIManager:show(ConfirmBox:new{
