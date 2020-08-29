@@ -27,6 +27,7 @@ local RadioButtonTable = FocusManager:new{
     face = Font:getFace("cfont", 22),
     _first_button = nil,
     checked_button = nil,
+    button_select_callback = nil,
 }
 
 function RadioButtonTable:init()
@@ -72,6 +73,9 @@ function RadioButtonTable:init()
             }
             local button_callback = function()
                 self:_checkButton(button)
+                if self.button_select_callback then
+                    self.button_select_callback(btn_entry)
+                end
             end
             button.callback = button_callback
 

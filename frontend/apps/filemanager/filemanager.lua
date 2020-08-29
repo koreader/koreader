@@ -356,10 +356,19 @@ function FileManager:init()
             table.insert(buttons, {
                 {
                     text = _("Open with…"),
-                    enabled = DocumentRegistry:getProviders(file) == nil or #(DocumentRegistry:getProviders(file)) > 1,
+                    enabled = DocumentRegistry:getProviders(file) == nil or #(DocumentRegistry:getProviders(file)) > 1 or fileManager.texteditor,
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        self:showSetProviderButtons(file, FileManager.instance, ReaderUI)
+                        local one_time_providers = {}
+                        if fileManager.texteditor then
+                            table.insert(one_time_providers, {
+                                provider_name = _("Text editor"),
+                                callback = function()
+                                    fileManager.texteditor:checkEditFile(file)
+                                end,
+                            })
+                        end
+                        self:showSetProviderButtons(file, FileManager.instance, ReaderUI, one_time_providers)
                     end,
                 },
                 {

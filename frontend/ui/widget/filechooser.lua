@@ -455,7 +455,7 @@ function FileChooser:getNextFile(curr_file)
     return next_file
 end
 
-function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_ui)
+function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_ui, one_time_providers)
     local __, filename_pure = util.splitFilePathName(file)
     local filename_suffix = util.getFileNameSuffix(file)
 
@@ -486,6 +486,17 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
             },
         })
     end
+    if one_time_providers and #one_time_providers > 0 then
+        for ___, provider in ipairs(one_time_providers) do
+            provider.one_time_provider = true
+            table.insert(radio_buttons, {
+                {
+                    text = provider.provider_name,
+                    provider = provider,
+                },
+            })
+        end
+    end
 
     table.insert(buttons, {
         {
@@ -499,6 +510,11 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
             is_enter_default = true,
             callback = function()
                 local provider = self.set_provider_dialog.radio_button_table.checked_button.provider
+                if provider.one_time_provider then
+                    UIManager:close(self.set_provider_dialog)
+                    provider.callback()
+                    return
+                end
 
                 -- always for this file
                 if self.set_provider_dialog._check_file_button.checked then
