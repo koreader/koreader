@@ -83,6 +83,13 @@ function DocSettings:getNameFromHistory(hist_name)
     return string.sub(hist_name, string.len(s)+2, -5)
 end
 
+function DocSettings:getLastSaveTime(doc_path)
+    local attr = lfs.attributes(self:getSidecarFile(doc_path))
+    if attr and attr.mode == "file" then
+        return attr.modification
+    end
+end
+
 function DocSettings:ensureSidecar(sidecar)
     if lfs.attributes(sidecar, "mode") ~= "directory" then
         lfs.mkdir(sidecar)

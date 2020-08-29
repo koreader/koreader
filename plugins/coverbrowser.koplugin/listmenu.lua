@@ -224,7 +224,7 @@ function ListMenuItem:update()
         self.is_directory = true
         -- nb items on the right, directory name on the left
         local wright = TextWidget:new{
-            text = self.mandatory,
+            text = self.mandatory_func and self.mandatory_func() or self.mandatory,
             face = Font:getFace("infont", math.min(max_fontsize_fileinfo, _fontSize(15))),
         }
         local pad_width = Screen:scaleBySize(10) -- on the left, in between, and on the right
@@ -357,15 +357,23 @@ function ListMenuItem:update()
             --   pages read / nb of pages (not available for crengine doc not opened)
             local directory, filename = util.splitFilePathName(self.filepath) -- luacheck: no unused
             local filename_without_suffix, filetype = util.splitFileNameSuffix(filename)
-            local fileinfo_str = filetype
-            if self.mandatory then
-                fileinfo_str = self.mandatory .. "  " .. BD.wrap(fileinfo_str)
-            end
-            if bookinfo._no_provider then
-                -- for unspported files: don't show extension on the right,
-                -- keep it in filename
-                filename_without_suffix = filename
-                fileinfo_str = self.mandatory
+            local fileinfo_str
+            if self.mandatory_func then
+                -- Currently only provided by History, giving the last time read.
+                -- Just show this date, without the file extension
+                fileinfo_str = self.mandatory_func()
+            else
+                if self.mandatory then
+                    fileinfo_str = BD.wrap(self.mandatory) .. "  " .. BD.wrap(filetype)
+                else
+                    fileinfo_str = filetype
+                end
+                if bookinfo._no_provider then
+                    -- for unspported files: don't show extension on the right,
+                    -- keep it in filename
+                    filename_without_suffix = filename
+                    fileinfo_str = self.mandatory
+                end
             end
             -- Current page / pages are available or more accurate in .sdr/metadata.lua
             -- We use a cache (cleaned at end of this browsing session) to store
@@ -949,6 +957,7 @@ function ListMenu:_updateItemsBuildUI()
                 text = getMenuText(entry),
                 show_parent = self.show_parent,
                 mandatory = entry.mandatory,
+                mandatory_func = entry.mandatory_func,
                 dimen = self.item_dimen:new(),
                 shortcut = item_shortcut,
                 shortcut_style = shortcut_style,
