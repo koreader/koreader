@@ -236,12 +236,13 @@ function MenuItem:init()
     -- Padding before mandatory
     local text_mandatory_padding = 0
     local text_ellipsis_mandatory_padding = 0
-    if self.mandatory then
+    local mandatory = self.mandatory_func and self.mandatory_func() or self.mandatory
+    if mandatory then
         text_mandatory_padding = Size.span.horizontal_default
         -- Smaller padding when ellipsis for better visual feeling
         text_ellipsis_mandatory_padding = Size.span.horizontal_small
     end
-    local mandatory = self.mandatory and ""..self.mandatory or ""
+    mandatory = mandatory and ""..mandatory or ""
     local mandatory_widget = TextWidget:new{
         text = mandatory,
         face = self.info_face,
@@ -1014,6 +1015,7 @@ function Menu:updateItems(select_number)
                 text = Menu.getMenuText(self.item_table[i]),
                 bidi_wrap_func = self.item_table[i].bidi_wrap_func,
                 mandatory = self.item_table[i].mandatory,
+                mandatory_func = self.item_table[i].mandatory_func,
                 bold = self.item_table.current == i or self.item_table[i].bold == true,
                 dim = self.item_table[i].dim,
                 font = "smallinfofont",

@@ -2,7 +2,7 @@ local DataStorage = require("datastorage")
 local DocSettings = require("docsettings")
 local dump = require("dump")
 local ffiutil = require("ffi/util")
-local getFriendlySize = require("util").getFriendlySize
+local util = require("util")
 local joinPath = ffiutil.joinPath
 local lfs = require("libs/libkoreader-lfs")
 local realpath = ffiutil.realpath
@@ -15,13 +15,30 @@ local ReadHistory = {
 }
 
 local function buildEntry(input_time, input_file)
-    local file_exists = lfs.attributes(input_file, "mode") == "file"
+    local file_path = realpath(input_file) or input_file -- keep orig file path of deleted files
+    local file_exists = lfs.attributes(file_path, "mode") == "file"
     return {
         time = input_time,
         text = input_file:gsub(".*/", ""),
-        file = realpath(input_file) or input_file, -- keep orig file path of deleted files
+        file = file_path,
         dim = not file_exists, -- "dim", as expected by Menu
-        mandatory = file_exists and getFriendlySize(lfs.attributes(input_file, "size") or 0),
+        -- mandatory = file_exists and require("util").getFriendlySize(lfs.attributes(input_file, "size") or 0),
+        mandatory_func = function() -- Show the last read time (rather than file size)
+            local readerui_instance = require("apps/reader/readerui"):_getRunningInstance()
+            local currently_opened_file = readerui_instance and readerui_instance.document.file
+            local last_read_ts
+            if file_path == currently_opened_file then
+                -- Don't use the sidecar file date which is updated regularly while
+                -- reading: keep showing the opening time for the current document.
+                last_read_ts = input_time
+            else
+                -- For past documents, the last save time of the settings is better
+                -- as last read time than input_time (its last opening time, that
+                -- we fallback to it no sidecar file)
+                last_read_ts = DocSettings:getLastSaveTime(file_path) or input_time
+            end
+            return util.secondsToDate(last_read_ts, G_reader_settings:nilOrTrue("twelve_hour_clock"))
+        end,
         callback = function()
             local ReaderUI = require("apps/reader/readerui")
             ReaderUI:showReader(input_file)
