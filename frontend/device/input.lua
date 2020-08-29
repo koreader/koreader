@@ -341,6 +341,14 @@ function Input:handleKeyBoardEv(ev)
         return
     end
 
+    -- A Button to turn on/off the frontlight
+    if keycode == "FLSwitch" and ev.value == EVENT_VALUE_KEY_RELEASE then
+        local Device = require("device")
+        local powerd = Device:getPowerDevice()
+        powerd:detectedFrontlightSwitchToggle()
+        return "FLSwitch"
+    end
+
     if keycode == "Power" then
         -- Kobo generates Power keycode only, we need to decide whether it's
         -- power-on or power-off ourselves.

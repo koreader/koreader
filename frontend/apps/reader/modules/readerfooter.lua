@@ -25,6 +25,7 @@ local _ = require("gettext")
 local C_ = _.pgettext
 local Screen = Device.screen
 
+
 local MODE = {
     off = 0,
     page_progress = 1,
@@ -106,7 +107,7 @@ local footerTextGeneratorMap = {
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].frontlight
         local powerd = Device:getPowerDevice()
-        if powerd:isFrontlightOn() then
+        if powerd:isFrontlightOn() and powerd:getFrontlightSwitchState() then
             if Device:isCervantes() or Device:isKobo() then
                 return (prefix .. " %d%%"):format(powerd:frontlightIntensity())
             else
@@ -114,6 +115,7 @@ local footerTextGeneratorMap = {
             end
         else
             return T(_("%1 Off"), prefix)
+
         end
     end,
     battery = function(footer)

@@ -212,12 +212,17 @@ if Device:hasFrontlight() then
 
     function DeviceListener:onToggleFrontlight()
         local powerd = Device:getPowerDevice()
-        powerd:toggleFrontlight()
         local new_text
-        if powerd.is_fl_on then
+        if not powerd:getFrontlightSwitchState() then
+            powerd:turnOnFrontlightHW()
             new_text = _("Frontlight enabled.")
         else
-            new_text = _("Frontlight disabled.")
+            powerd:toggleFrontlight()
+            if powerd.is_fl_on then
+                new_text = _("Frontlight enabled.")
+            else
+                new_text = _("Frontlight disabled.")
+            end
         end
         UIManager:show(Notification:new{
             text = new_text,
@@ -227,7 +232,9 @@ if Device:hasFrontlight() then
     end
 
     function DeviceListener:onShowFlDialog()
-        Device:showLightDialog()
+        if Device:showLightDialog() then
+            UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
+        end
     end
 
 end

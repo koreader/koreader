@@ -387,6 +387,14 @@ end
 
 function Device:showLightDialog()
     local usleep = require("ffi/util").usleep
+    local old_is_fl_sw_on = self.powerd.is_fl_sw_on
+    if not self.powerd.is_fl_sw_on then
+        android:enableFrontlightSwitch()
+        self.powerd.is_fl_sw_on = true
+    end
+
+    self.powerd:setIntensityHW(self.powerd.fl_intensity)
+
     local title = android.isEink() and _("Frontlight settings") or _("Light settings")
     android.lights.showDialog(title, _("Brightness"), _("Warmth"), _("OK"), _("Cancel"))
     repeat
@@ -400,21 +408,38 @@ function Device:showLightDialog()
     local action = android.lights.dialogState()
     if action == C.ALIGHTS_DIALOG_OK then
         self.powerd.fl_intensity = self.powerd:frontlightIntensityHW()
+        if self.powerd.fl_intensity > self.powerd.fl_min then
+            self.powerd.is_fl_on = true
+        else
+            self.powerd.is_fl_on = false
+        end
         logger.dbg("Dialog OK, brightness: " .. self.powerd.fl_intensity)
         if android.isWarmthDevice() then
             self.powerd.fl_warmth = self.powerd:getWarmth()
             logger.dbg("Dialog OK, warmth: " .. self.powerd.fl_warmth)
         end
-        local Event = require("ui/event")
-        local UIManager = require("ui/uimanager")
-        UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
+        return true
     elseif action == C.ALIGHTS_DIALOG_CANCEL then
         logger.dbg("Dialog Cancel, brightness: " .. self.powerd.fl_intensity)
-        self.powerd:setIntensityHW(self.powerd.fl_intensity)
+        if not old_is_fl_sw_on then
+            local old_intensity = self.powerd.fl_intensity
+            self.powerd:setIntensityHW(self.powerd.fl_min)
+            self.powerd.fl_intensity = old_intensity
+            self.powerd.is_fl_on = false
+        else
+            if self.powerd.is_fl_on then
+                self.powerd:setIntensityHW(self.powerd.fl_intensity)
+            else
+                local old_intensity = self.powerd.fl_intensity
+                self.powerd:setIntensityHW(self.powerd.fl_min)
+                self.powerd.fl_intensity = old_intensity
+            end
+        end
         if android.isWarmthDevice() then
             logger.dbg("Dialog Cancel, warmth: " .. self.powerd.fl_warmth)
             self.powerd:setWarmth(self.powerd.fl_warmth)
         end
+        return false
     end
 end
 

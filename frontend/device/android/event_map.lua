@@ -27,6 +27,7 @@ return {
     [84] = "Search",--SEARCH
     [92] = "LPgBack", -- PAGE_UP
     [93] = "LPgFwd",  -- PAGE_DOWN
+    [96] = "FLSwitch", -- BUTTON_A
 
     [104] = "LPgBack", -- T68 PageUp
     [109] = "LPgFwd",  -- T68 PageDown

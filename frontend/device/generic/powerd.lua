@@ -66,7 +66,7 @@ end
 function BasePowerD:toggleFrontlight()
     assert(self ~= nil)
     if not self.device:hasFrontlight() then return false end
-    if self:isFrontlightOn() then
+    if self:isFrontlightOn() and self:getFrontlightSwitchState() then
         return self:turnOffFrontlight()
     else
         return self:turnOnFrontlight()
@@ -145,6 +145,18 @@ function BasePowerD:_setIntensity(intensity)
     self:setIntensityHW(intensity)
     -- BasePowerD is loaded before UIManager. So we cannot broadcast events before UIManager has
     -- been loaded.
+    self:broadcastLightChanges()
+end
+
+function BasePowerD:getFrontlightSwitchState()
+    return true
+end
+function BasePowerD:detectedFrontlightSwitchToggle()
+    return true
+end
+
+-- Let the footer know of the change
+function BasePowerD:broadcastLightChanges()
     if package.loaded["ui/uimanager"] ~= nil then
         local Event = require("ui/event")
         local UIManager = require("ui/uimanager")
