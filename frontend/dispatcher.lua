@@ -49,6 +49,7 @@ local settingsList = {
     history = { category="none", event="ShowHist", title=_("History"), device=true,},
     open_previous_document = { category="none", event="OpenLastDoc", title=_("Open previous document"), device=true,},
     filemanager = { category="none", event="Home", title=_("File browser"), device=true,},
+    show_terminal = { category = "none", event = "TerminalStart", title = 'Show terminal', device = true, },
     dictionary_lookup = { category="none", event="ShowDictionaryLookup", title=_("Dictionary lookup"), device=true,},
     wikipedia_lookup = { category="none", event="ShowWikipediaLookup", title=_("Wikipedia lookup"), device=true,},
     fulltext_search = { category="none", event="ShowFulltextSearchInput", title=_("Fulltext search"), device=true,},
@@ -156,6 +157,7 @@ local dispatcher_menu_order = {
     "open_previous_document",
     "favorites",
     "filemanager",
+    "show_terminal",
     "stats_calendar_view",
 
     "dictionary_lookup",

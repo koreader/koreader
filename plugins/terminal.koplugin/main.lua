@@ -21,7 +21,7 @@ function Terminal:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function Terminal:start()
+function Terminal:onTerminalStart()
     self.input = InputDialog:new{
         title =  _("Enter a command and press \"Execute\""),
         input = self.command,
@@ -90,7 +90,7 @@ function Terminal:addToMainMenu(menu_items)
         text = _("Terminal emulator"),
         keep_menu_open = true,
         callback = function()
-            self:start()
+            self:onTerminalStart()
         end,
     }
 end
