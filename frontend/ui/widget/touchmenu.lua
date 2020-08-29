@@ -27,6 +27,7 @@ local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local util = require("util")
 local getMenuText = require("ui/widget/menu").getMenuText
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -620,19 +621,7 @@ function TouchMenu:updateItems()
     self.page_info_left_chev:enableDisable(self.page > 1)
     self.page_info_right_chev:enableDisable(self.page < self.page_num)
 
-    local time_info_txt
-    if G_reader_settings:nilOrTrue("twelve_hour_clock") then
-        if os.date("%p") == "AM" then
-            -- @translators This is the time in the morning in the 12-hour clock (%I is the hour, %M the minute).
-            time_info_txt = os.date(_("%I:%M AM"))
-        else
-            -- @translators This is the time in the afternoon in the 12-hour clock (%I is the hour, %M the minute).
-            time_info_txt = os.date(_("%I:%M PM"))
-        end
-    else
-        -- @translators This is the time in the 24-hour clock (%H is the hour, %M the minute).
-        time_info_txt = os.date(_("%H:%M"))
-    end
+    local time_info_txt = util.secondsToHour(os.time(), G_reader_settings:nilOrTrue("twelve_hour_clock"))
     local powerd = Device:getPowerDevice()
     local batt_lvl = powerd:getCapacity()
     local batt_symbol

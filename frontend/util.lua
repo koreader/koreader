@@ -194,6 +194,38 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
     end
 end
 
+--- Converts timestamp to an hour string
+---- @int seconds number of seconds
+---- @bool twelve_hour_clock
+---- @treturn string hour string
+function util.secondsToHour(seconds, twelve_hour_clock)
+    local time
+    if twelve_hour_clock then
+        if os.date("%p", seconds) == "AM" then
+            -- @translators This is the time in the morning in the 12-hour clock (%I is the hour, %M the minute).
+            time = os.date(_("%I:%M AM"), seconds)
+        else
+            -- @translators This is the time in the afternoon in the 12-hour clock (%I is the hour, %M the minute).
+            time = os.date(_("%I:%M PM"), seconds)
+        end
+    else
+        -- @translators This is the time in the 24-hour clock (%H is the hour, %M the minute).
+        time = os.date(_("%H:%M"), seconds)
+    end
+    return time
+end
+
+--- Converts timestamp to a date string
+---- @int seconds number of seconds
+---- @bool twelve_hour_clock
+---- @treturn string date string
+function util.secondsToDate(seconds, twelve_hour_clock)
+    local BD = require("ui/bidi")
+    local time = util.secondsToHour(seconds, twelve_hour_clock)
+    -- @translators This is the date (%Y is the year, %m the month, %d the day)
+    local day = os.date(_("%Y-%m-%d"), seconds)
+    return BD.wrap(day) .. " " .. BD.wrap(time)
+end
 
 --[[--
 Compares values in two different tables.
