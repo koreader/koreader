@@ -3,6 +3,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
+local Version = require("version")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -12,13 +13,12 @@ if Device:hasOTAUpdates() then
     local OTAManager = require("ui/otamanager")
     common_info.ota_update = OTAManager:getOTAMenuTable()
 end
-local version = require("version"):getCurrentRevision()
 common_info.version = {
-    text = _("Version"),
+    text = T(_("Version: %1"), Version:getShortVersion()),
     keep_menu_open = true,
     callback = function()
         UIManager:show(InfoMessage:new{
-            text = version,
+            text = Version:getCurrentRevision(),
         })
     end
 }
@@ -45,7 +45,7 @@ common_info.about = {
     keep_menu_open = true,
     callback = function()
         UIManager:show(InfoMessage:new{
-            text = T(_("KOReader %1\n\nA document viewer for E Ink devices.\n\nLicensed under Affero GPL v3. All dependencies are free software.\n\nhttp://koreader.rocks/"), BD.ltr(version)),
+            text = T(_("KOReader %1\n\nA document viewer for E Ink devices.\n\nLicensed under Affero GPL v3. All dependencies are free software.\n\nhttp://koreader.rocks/"), BD.ltr(Version:getCurrentRevision())),
             icon_file = "resources/ko-icon.png",
             alpha = true,
         })
@@ -57,7 +57,7 @@ common_info.report_bug = {
     callback = function()
         UIManager:show(InfoMessage:new{
             text = T(_("Please report bugs to \nhttps://github.com/koreader/koreader/issues\n\nVersion:\n%1\n\nDetected device:\n%2"),
-                version, Device:info()),
+                Version:getCurrentRevision(), Device:info()),
         })
     end
 }

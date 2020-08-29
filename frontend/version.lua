@@ -50,4 +50,21 @@ function Version:getNormalizedCurrentVersion()
     return self.version, self.commit
 end
 
+--- Returns current version of KOReader, in short form.
+-- @treturn string version, without the git details (i.e., at most YYYY.MM.P-R)
+function Version:getShortVersion()
+    if not self.short then
+        local rev = self:getCurrentRevision()
+        local year, month, point, revision = rev:match("v(%d%d%d%d)%.(%d%d)%.?(%d?%d?)-?(%d*)")
+        self.short = year .. "." .. month
+        if point then
+            self.short = self.short .. "." .. point
+        end
+        if revision then
+            self.short = self.short .. "-" .. revision
+        end
+    end
+    return self.short
+end
+
 return Version

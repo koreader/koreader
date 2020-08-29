@@ -363,7 +363,10 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
     if [ ${RETURN_VALUE} -eq ${KO_RC_USBMS} ]; then
         # User requested an USBMS session, setup the tool outside of onboard
         mkdir -p "/tmp/usbms"
-        ./tar xzf "./data/KoboUSBMS.tar.gz" -C "/tmp/usbms"
+        if ! ./tar xzf "./data/KoboUSBMS.tar.gz" -C "/tmp/usbms"; then
+            echo "Couldn't unpack KoboUSBMS to /tmp/usbms, restarting KOReader . . ." >>crash.log 2>&1
+            continue
+        fi
 
         # Then siphon KOReader's language for i18n...
         if grep -q '\["language"\]' 'settings.reader.lua' 2>/dev/null; then
@@ -373,15 +376,24 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         fi
 
         # Here we go!
-        cd "/tmp/usbms" || continue
+        if ! cd "/tmp/usbms"; then
+            echo "Couldn't chdir to /tmp/usbms, restarting KOReader . . ." >>crash.log 2>&1
+            continue
+        fi
         if ! env LANGUAGE="${usbms_lang}" ./usbms; then
             # Hu, oh, something went wrong... Stay around for 90s (enough time to look at the syslog over Wi-Fi), and then shutdown.
+            fail=$?
+            logger -p "DAEMON.CRIT" -t "koreader.sh[$$]" "USBMS session failed (${fail}), shutting down in 90 sec!"
             sleep 90
             poweroff -f
         fi
 
         # Jump back to the right place, and keep on trucking
-        cd "${KOREADER_DIR}" || poweroff -f
+        if ! cd "${KOREADER_DIR}"; then
+            logger -p "DAEMON.CRIT" -t "koreader.sh[$$]" "Couldn't chdir back to KOREADER_DIR (${KOREADER_DIR}), shutting down in 30 sec!"
+            sleep 30
+            poweroff -f
+        fi
         rm -rf "/tmp/usbms"
     fi
 done
