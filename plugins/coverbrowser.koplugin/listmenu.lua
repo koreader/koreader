@@ -235,6 +235,9 @@ function ListMenuItem:update()
             width = wleft_width,
             alignment = "left",
             bold = true,
+            height = dimen.h,
+            height_adjust = true,
+            height_overflow_show_ellipsis = true,
         }
         widget = OverlapGroup:new{
             dimen = dimen,
@@ -317,10 +320,25 @@ function ListMenuItem:update()
                     self.menu._has_cover_images = true
                     self._has_cover_image = true
                 else
-                    -- empty element the size of an image
+                    local fake_cover_w = max_img_w * 0.6
+                    local fake_cover_h = max_img_h
                     wleft = CenterContainer:new{
                         dimen = Geom:new{ w = wleft_width, h = wleft_height },
-                        HorizontalSpan:new{ width = wleft_width },
+                        FrameContainer:new{
+                            width = fake_cover_w + 2*border_size,
+                            height = fake_cover_h + 2*border_size,
+                            margin = 0,
+                            padding = 0,
+                            bordersize = border_size,
+                            dim = self.file_deleted,
+                            CenterContainer:new{
+                                dimen = Geom:new{ w = fake_cover_w, h = fake_cover_h },
+                                TextWidget:new{
+                                    text = "⛶", -- U+26F6 Square four corners
+                                    face = Font:getFace("cfont",  _fontSize(20)),
+                                },
+                            },
+                        },
                     }
                 end
             end
