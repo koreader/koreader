@@ -47,6 +47,11 @@ local FileChooser = Menu:extend{
     goto_letter = true,
 }
 
+-- Cache of content we knew of for directories that are not readable
+-- (i.e. /storage/emulated/ on Android that we can meet when coming
+-- from readable /storage/emulated/0/ - so we know it contains "0/")
+local unreadable_dir_content = {}
+
 function FileChooser:init()
     self.width = Screen:getWidth()
     -- common dir filter
@@ -60,6 +65,7 @@ function FileChooser:init()
         -- lfs.dir directory without permission will give error
         local ok, iter, dir_obj = pcall(lfs.dir, path)
         if ok then
+            unreadable_dir_content[path] = nil
             for f in iter, dir_obj do
                 if count_only then
                     if self.dir_filter(f) and ((not self.show_hidden and not util.stringStartsWith(f, "."))
@@ -98,6 +104,25 @@ function FileChooser:init()
                                                      percent_finished = percent_finished })
                             end
                         end
+                    end
+                end
+            end
+        else -- error, probably "permission denied"
+            if unreadable_dir_content[path] then
+                -- Add this dummy item that will be replaced with a message
+                -- by genItemTableFromPath()
+                table.insert(dirs, {
+                    name = "./.",
+                    fullpath = path,
+                    attr = lfs.attributes(path);
+                })
+                -- If we knew about some content (if we had come up from them
+                -- to this directory), have them shown
+                for k, v in pairs(unreadable_dir_content[path]) do
+                    if v.attr and v.attr.mode == "directory" then
+                        table.insert(dirs, v)
+                    else
+                        table.insert(files, v)
                     end
                 end
             end
@@ -236,6 +261,8 @@ function FileChooser:genItemTableFromPath(path)
             text = up_folder_arrow
         elseif dir.name == "." then -- possible with show_current_dir_for_hold
             text = _("Long-press to select current directory")
+        elseif dir.name == "./." then -- added as content of an unreadable directory
+            text = _("Current directory not readable. Some content may not be shown.")
         else
             text = dir.name.."/"
             bidi_wrap_func = BD.directory
@@ -326,6 +353,19 @@ function FileChooser:changeToPath(path, focused_path)
 
     if focused_path then
         self.focused_path = focused_path
+        -- We know focused_path is a child of path. In case path is
+        -- not a readable directory, we can have focused_path shown,
+        -- to allow the user to go back in it
+        if not unreadable_dir_content[path] then
+            unreadable_dir_content[path] = {}
+        end
+        if not unreadable_dir_content[path][focused_path] then
+            unreadable_dir_content[path][focused_path] = {
+                name = focused_path:sub(#path+2),
+                fullpath = focused_path,
+                attr = lfs.attributes(focused_path);
+            }
+        end
     end
 
     self:refreshPath()
@@ -333,7 +373,7 @@ function FileChooser:changeToPath(path, focused_path)
 end
 
 function FileChooser:onFolderUp()
-    self:changeToPath(string.format("%s/..", self.path))
+    self:changeToPath(string.format("%s/..", self.path), self.path)
 end
 
 function FileChooser:changePageToPath(path)
