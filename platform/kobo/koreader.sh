@@ -380,12 +380,19 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
             echo "Couldn't chdir to /tmp/usbms, restarting KOReader . . ." >>crash.log 2>&1
             continue
         fi
-        if ! env LANGUAGE="${usbms_lang}" ./usbms; then
-            # Hu, oh, something went wrong... Stay around for 90s (enough time to look at the syslog over Wi-Fi), and then shutdown.
-            fail=$?
-            logger -p "DAEMON.CRIT" -t "koreader.sh[$$]" "USBMS session failed (${fail}), shutting down in 90 sec!"
-            sleep 90
-            poweroff -f
+        env LANGUAGE="${usbms_lang}" ./usbms
+        fail=$?
+        if [ ${fail} -ne 0 ]; then
+            # NOTE: Early init failures return KO_RC_USBMS,
+            #       to allow simply restarting KOReader when we know the integrity of onboard hasn't been compromised...
+            if [ ${fail} -eq ${KO_RC_USBMS} ]; then
+                echo "KoboUSBMS failed to setup an USBMS session, restarting KOReader . . ." >>"${KOREADER_DIR}/crash.log" 2>&1
+            else
+                # Hu, oh, something went wrong... Stay around for 90s (enough time to look at the syslog over Wi-Fi), and then shutdown.
+                logger -p "DAEMON.CRIT" -t "koreader.sh[$$]" "USBMS session failed (${fail}), shutting down in 90 sec!"
+                sleep 90
+                poweroff -f
+            fi
         fi
 
         # Jump back to the right place, and keep on trucking
