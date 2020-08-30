@@ -220,7 +220,7 @@ function BackgroundRunner:_execute()
 
     self.running = false
     if PluginShare.stopBackgroundRunner == nil then
-        if #self.jobs == 0 then
+        if #self.jobs == 0 and not CommandRunner:pending() then
             logger.dbg("BackgroundRunnerWidget: no job, stop running @ ", os.time())
         else
             self:_schedule()
@@ -233,7 +233,7 @@ end
 function BackgroundRunner:_schedule()
     assert(self ~= nil)
     if self.running == false then
-        if #self.jobs == 0 then
+        if #self.jobs == 0 and not CommandRunner:pending() then
             logger.dbg("BackgroundRunnerWidget: no job, not running @ ", os.time())
         else
             logger.dbg("BackgroundRunnerWidget: start running @ ", os.time())
