@@ -114,7 +114,7 @@ function FileChooser:init()
                 table.insert(dirs, {
                     name = "./.",
                     fullpath = path,
-                    attr = lfs.attributes(path);
+                    attr = lfs.attributes(path),
                 })
                 -- If we knew about some content (if we had come up from them
                 -- to this directory), have them shown
@@ -363,7 +363,7 @@ function FileChooser:changeToPath(path, focused_path)
             unreadable_dir_content[path][focused_path] = {
                 name = focused_path:sub(#path+2),
                 fullpath = focused_path,
-                attr = lfs.attributes(focused_path);
+                attr = lfs.attributes(focused_path),
             }
         end
     end
