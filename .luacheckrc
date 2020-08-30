@@ -137,6 +137,7 @@ files["spec/unit/*"].globals = {
     "package",
     "requireBackgroundRunner",
     "stopBackgroundRunner",
+    "notifyBackgroundJobsUpdated",
 }
 
 -- TODO: clean up and enforce max line width (631)
