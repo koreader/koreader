@@ -21,13 +21,16 @@ function Terminal:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function Terminal:start()
+function Terminal:onTerminalStart()
     self.input = InputDialog:new{
         title =  _("Enter a command and press \"Execute\""),
         input = self.command,
         para_direction_rtl = false, -- force LTR
         text_height = math.floor(Screen:getHeight() * 0.4),
         input_type = "string",
+        -- allow multiple lines with commands:
+        allow_newline = true,
+        cursor_at_end = true,
         buttons = {{{
             text = _("Cancel"),
             callback = function()
@@ -35,7 +38,6 @@ function Terminal:start()
             end,
         }, {
             text = _("Execute"),
-            is_enter_default = true,
             callback = function()
                 UIManager:close(self.input)
                 Trapper:wrap(function()
@@ -66,12 +68,32 @@ function Terminal:execute()
         table.insert(entries, _("Execution canceled."))
     end
     UIManager:close(wait_msg)
-    UIManager:show(TextViewer:new{
+    local viewer
+    viewer = TextViewer:new {
         title = _("Command output"),
         text = table.concat(entries, "\n"),
         justified = false,
         text_face = Font:getFace("smallinfont"),
-    })
+        -- support re-invoking the terminal with a button:
+        buttons_table = {
+            {
+                {
+                    text = _("Back"),
+                    callback = function()
+                        UIManager:close(viewer)
+                        self:onTerminalStart()
+                    end,
+                },
+                {
+                    text = _("Close"),
+                    callback = function()
+                        UIManager:close(viewer)
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(viewer)
 end
 
 function Terminal:dump(entries)
@@ -90,7 +112,7 @@ function Terminal:addToMainMenu(menu_items)
         text = _("Terminal emulator"),
         keep_menu_open = true,
         callback = function()
-            self:start()
+            self:onTerminalStart()
         end,
     }
 end
