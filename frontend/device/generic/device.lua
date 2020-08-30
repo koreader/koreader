@@ -306,6 +306,11 @@ function Device:info()
     return self.model
 end
 
+-- Hardware specific method for UI to signal allowed/disallowed standby.
+-- The device is allowed to enter standby only from within waitForEvents,
+-- and only if allowed state is true at the time of waitForEvents() invocation.
+function Device:setAutoStandby(isAllowed) end
+
 -- Hardware specific method to handle usb plug in event
 function Device:usbPlugIn() end
 
