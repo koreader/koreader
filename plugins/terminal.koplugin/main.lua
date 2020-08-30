@@ -1,4 +1,5 @@
 local DataStorage = require("datastorage")
+local Event = require("ui/event")
 local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -78,10 +79,10 @@ function Terminal:execute()
         buttons_table = {
             {
                 {
-                    text = 'New command(s)...',
+                    text = _("Back"),
                     callback = function()
                         UIManager:close(viewer)
-                        Terminal:onTerminalStart()
+                        self.ui:handleEvent(Event:new("TerminalStart"))
                     end,
                 },
                 {
