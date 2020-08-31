@@ -61,6 +61,7 @@ local order = {
         "keyboard_layout",
         "time",
         "battery",
+        "autostandby",
         "autosuspend",
         "autoshutdown",
         "ignore_sleepcover",
