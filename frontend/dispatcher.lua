@@ -48,7 +48,6 @@ local settingsList = {
     stats_calendar_view = { category="none", event="ShowCalendarView", title=_("Statistics calendar view"), device=true, separator=true,},
     history = { category="none", event="ShowHist", title=_("History"), device=true,},
     open_previous_document = { category="none", event="OpenLastDoc", title=_("Open previous document"), device=true,},
-    edit_last_edited_file = { category = "none", event = "OpenLastEditedFile", title = 'Texteditor: re-open last edited file', device = true, },
     filemanager = { category="none", event="Home", title=_("File browser"), device=true,},
     dictionary_lookup = { category="none", event="ShowDictionaryLookup", title=_("Dictionary lookup"), device=true,},
     wikipedia_lookup = { category="none", event="ShowWikipediaLookup", title=_("Wikipedia lookup"), device=true,},
@@ -78,6 +77,7 @@ local settingsList = {
     calibre_search = { category="none", event="CalibreSearch", title=_("Search in calibre metadata"), device=true,},
     calibre_browse_tags = { category="none", event="CalibreBrowseTags", title=_("Browse all calibre tags"), device=true,},
     calibre_browse_series = { category="none", event="CalibreBrowseSeries", title=_("Browse all calibre series"), device=true, separator=true,},
+    edit_last_edited_file = { category = "none", event = "OpenLastEditedFile", title = 'Texteditor: open last file', device = true, separator = true, },
     favorites = { category="none", event="ShowColl", arg="favorites", title=_("Favorites"), device=true,},
 
     -- filemanager settings
@@ -155,7 +155,6 @@ local dispatcher_menu_order = {
     "reading_progress",
     "history",
     "open_previous_document",
-    "edit_last_edited_file",
     "favorites",
     "filemanager",
     "stats_calendar_view",
@@ -208,6 +207,8 @@ local dispatcher_menu_order = {
     "calibre_search",
     "calibre_browse_tags",
     "calibre_browse_series",
+
+    "edit_last_edited_file",
 
     "rotation_mode",
 
