@@ -575,4 +575,15 @@ Do you want to keep this file as empty, or do you prefer to delete it?
     -- will hardly ever be readonly).
 end
 
+-- reopen last edited file. Invokeable with gesture:
+function TextEditor:onOpenLastEditedFile()
+    self:loadSettings()
+    if #self.history > 0 then
+        local file_path = self.history[1]
+        self:checkEditFile(file_path, true)
+    else
+        self:chooseFile()
+    end
+end
+
 return TextEditor
