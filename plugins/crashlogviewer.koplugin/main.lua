@@ -171,7 +171,7 @@ function CrashlogViewer:shortenCrashlog(info)
     local lines = self:split(info,"\n")
     local errors = ""
     for _, line in ipairs(lines) do
-        if line:match("[a-z]") and not line:match("RD loaded plugin") and not line:match("ffi%.load") and not line:match("FB:") and not line:match("has been disabled") and not line:match("bitdepth") and not line:match("rotate") and not line:match("setting") and not line:match("fixed") and not line:match("[@%*%]]") and not line:match("KOReader") and not line:match("library") and not line:match("orientation") and not line:match("framebuffer") and not line:match("Loading") and not line:match("initializing") and not line:match("launching") and not line:match("opening file") and not line:match("grayscale") and not line:match(" fb ") then
+        if line:match("[a-z]") and not line:match("RD loaded plugin") and not line:match("ffi%.load") and not line:match("FB:") and not line:match("has been disabled") and not line:match("bitdepth") and not line:match("rotate") and not line:match("setting") and not line:match("fixed") and not line:match("[@%*%]]") and not line:match("KOReader") and not line:match("library") and not line:match("orientation") and not line:match("framebuffer") and not line:match("Loading") and not line:match("initializing") and not line:match("launching") and not line:match("opening file") and not line:match("grayscale") and not line:match("suspend") and not line:match("wakeup") and not line:match(" fb ") then
             errors = errors .. line .. "\n"
         end
     end
