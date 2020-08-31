@@ -49,7 +49,6 @@ local settingsList = {
     history = { category="none", event="ShowHist", title=_("History"), device=true,},
     open_previous_document = { category="none", event="OpenLastDoc", title=_("Open previous document"), device=true,},
     filemanager = { category="none", event="Home", title=_("File browser"), device=true,},
-    show_terminal = { category = "none", event = "TerminalStart", title = 'Show terminal', device = true, },
     dictionary_lookup = { category="none", event="ShowDictionaryLookup", title=_("Dictionary lookup"), device=true,},
     wikipedia_lookup = { category="none", event="ShowWikipediaLookup", title=_("Wikipedia lookup"), device=true,},
     fulltext_search = { category="none", event="ShowFulltextSearchInput", title=_("Fulltext search"), device=true,},
@@ -78,6 +77,7 @@ local settingsList = {
     calibre_search = { category="none", event="CalibreSearch", title=_("Search in calibre metadata"), device=true,},
     calibre_browse_tags = { category="none", event="CalibreBrowseTags", title=_("Browse all calibre tags"), device=true,},
     calibre_browse_series = { category="none", event="CalibreBrowseSeries", title=_("Browse all calibre series"), device=true, separator=true,},
+    show_terminal = { category = "none", event = "TerminalStart", title = _("Show terminal"), device = true, separator = true, },
     favorites = { category="none", event="ShowColl", arg="favorites", title=_("Favorites"), device=true,},
 
     -- filemanager settings
@@ -157,7 +157,6 @@ local dispatcher_menu_order = {
     "open_previous_document",
     "favorites",
     "filemanager",
-    "show_terminal",
     "stats_calendar_view",
 
     "dictionary_lookup",
@@ -208,6 +207,8 @@ local dispatcher_menu_order = {
     "calibre_search",
     "calibre_browse_tags",
     "calibre_browse_series",
+
+    "show_terminal",
 
     "rotation_mode",
 
