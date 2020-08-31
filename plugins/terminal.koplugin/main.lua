@@ -7,6 +7,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
+local T = require("ffi/util").template
 local TextViewer = require("ui/widget/textviewer")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
@@ -216,7 +217,7 @@ end
 function Terminal:editCommands(item)
     local edit_dialog
     edit_dialog = InputDialog:new{
-        title = _("Edit commands for") .. " \"" .. item.text .. "\"",
+        title = T(_('Edit commands for "%1"'), item.text),
         input = item.commands,
         width = Screen:getWidth() * 0.9,
         para_direction_rtl = false, -- force LTR
