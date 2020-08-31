@@ -121,7 +121,7 @@ end
 
 function Terminal:insertPageActions(item_table)
     table.insert(item_table, {
-        text = "   " .. string.lower(_("to terminal…")),
+        text = "   " .. _("to terminal…"),
         deletable = false,
         editable = false,
         callback = function()
@@ -129,7 +129,7 @@ function Terminal:insertPageActions(item_table)
         end,
     })
     table.insert(item_table, {
-        text = "   " .. string.lower(_("Close…")),
+        text = "   " .. _("Close…"),
         deletable = false,
         editable = false,
         callback = function()
