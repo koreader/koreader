@@ -36,9 +36,9 @@ end
 function Terminal:saveShortcuts()
     self.settings:saveSetting("shortcuts", self.shortcuts)
     self.settings:flush()
-    UIManager:show(InfoMessage:new {
-        text = _("Shortcuts saved!"),
-        timeout = 3
+    UIManager:show(InfoMessage:new{
+        text = _("Shortcuts saved"),
+        timeout = 2
     })
 end
 
@@ -46,7 +46,7 @@ function Terminal:manageShortcuts()
     self.shortcuts_dialog = CenterContainer:new {
         dimen = Screen:getSize(),
     }
-    self.shortcuts_menu = Menu:new {
+    self.shortcuts_menu = Menu:new{
         show_parent = self.ui,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
@@ -86,7 +86,7 @@ function Terminal:updateItemTable()
                     -- so we know which middle button to display in the results:
                     self.source = "shortcut"
                     -- execute immediately, skip terminal dialog:
-                    self.command = f.commands
+                    self.command = self:ensureWhitelineAfterCommands(f.commands)
                     Trapper:wrap(function()
                         self:execute()
                     end)
@@ -113,7 +113,7 @@ function Terminal:updateItemTable()
     else
         self:insertPageActions(item_table)
     end
-    local title = #self.shortcuts == 1 and _("Shortcut") or _("Shortcuts")
+    local title = #self.shortcuts == 1 and _("Terminal shortcut") or _("Terminal shortcuts")
     self.shortcuts_menu:switchItemTable(tostring(#self.shortcuts) .. " " .. title, item_table)
     UIManager:show(self.shortcuts_dialog)
 end
@@ -140,7 +140,7 @@ end
 function Terminal:onMenuHoldShortcuts(item)
     if item.deletable or item.editable then
         local shortcut_shortcuts_dialog
-        shortcut_shortcuts_dialog = ButtonDialog:new {
+        shortcut_shortcuts_dialog = ButtonDialog:new{
             buttons = {{
                 {
                     text = _("Edit name"),
@@ -205,8 +205,8 @@ function Terminal:copyCommands(item)
         commands = item.commands
     }
     table.insert(self.shortcuts, new_item)
-    UIManager:show(InfoMessage:new {
-        text = _("Shortcut copied!"),
+    UIManager:show(InfoMessage:new{
+        text = _("Shortcut copied"),
         timeout = 2
     })
     self:saveShortcuts()
@@ -215,7 +215,7 @@ end
 
 function Terminal:editCommands(item)
     local edit_dialog
-    edit_dialog = InputDialog:new {
+    edit_dialog = InputDialog:new{
         title = _("Edit commands for") .. " \"" .. item.text .. "\"",
         input = item.commands,
         width = Screen:getWidth() * 0.9,
@@ -224,26 +224,26 @@ function Terminal:editCommands(item)
         allow_newline = true,
         cursor_at_end = true,
         fullscreen = true,
-        buttons = { { {
-                          text = _("Cancel"),
-                          callback = function()
-                              UIManager:close(edit_dialog)
-                              edit_dialog = nil
-                              self:manageShortcuts()
-                          end,
-                      }, {
-                          text = _("Save"),
-                          callback = function()
-                              local input = edit_dialog:getInputText()
-                              UIManager:close(edit_dialog)
-                              edit_dialog = nil
-                              if input:match("[A-Za-z]") then
-                                  self.shortcuts[item.nr]["commands"] = input
-                                  self:saveShortcuts()
-                                  self:manageShortcuts()
-                              end
-                          end,
-                      } } },
+        buttons = {{{
+                  text = _("Cancel"),
+                  callback = function()
+                      UIManager:close(edit_dialog)
+                      edit_dialog = nil
+                      self:manageShortcuts()
+                  end,
+              }, {
+                  text = _("Save"),
+                  callback = function()
+                      local input = edit_dialog:getInputText()
+                      UIManager:close(edit_dialog)
+                      edit_dialog = nil
+                      if input:match("[A-Za-z]") then
+                          self.shortcuts[item.nr]["commands"] = input
+                          self:saveShortcuts()
+                          self:manageShortcuts()
+                      end
+                  end,
+              }}},
     }
     UIManager:show(edit_dialog)
     edit_dialog:onShowKeyboard()
@@ -251,7 +251,7 @@ end
 
 function Terminal:editName(item)
     local edit_dialog
-    edit_dialog = InputDialog:new {
+    edit_dialog = InputDialog:new{
         title = _("Edit name"),
         input = item.text,
         width = Screen:getWidth() * 0.9,
@@ -260,26 +260,26 @@ function Terminal:editName(item)
         allow_newline = false,
         cursor_at_end = true,
         fullscreen = true,
-        buttons = { { {
-                          text = _("Cancel"),
-                          callback = function()
-                              UIManager:close(edit_dialog)
-                              edit_dialog = nil
-                              self:manageShortcuts()
-                          end,
-                      }, {
-                          text = _("Save"),
-                          callback = function()
-                              local input = edit_dialog:getInputText()
-                              UIManager:close(edit_dialog)
-                              edit_dialog = nil
-                              if input:match("[A-Za-z]") then
-                                  self.shortcuts[item.nr]["text"] = input
-                                  self:saveShortcuts()
-                                  self:manageShortcuts()
-                              end
-                          end,
-                      } } },
+        buttons = {{{
+              text = _("Cancel"),
+              callback = function()
+                  UIManager:close(edit_dialog)
+                  edit_dialog = nil
+                  self:manageShortcuts()
+              end,
+          }, {
+              text = _("Save"),
+              callback = function()
+                  local input = edit_dialog:getInputText()
+                  UIManager:close(edit_dialog)
+                  edit_dialog = nil
+                  if input:match("[A-Za-z]") then
+                      self.shortcuts[item.nr]["text"] = input
+                      self:saveShortcuts()
+                      self:manageShortcuts()
+                  end
+              end,
+          }}},
     }
     UIManager:show(edit_dialog)
     edit_dialog:onShowKeyboard()
@@ -307,9 +307,9 @@ function Terminal:onTerminalStart()
 end
 
 function Terminal:terminal()
-    self.input = InputDialog:new {
+    self.input = InputDialog:new{
         title = _("Enter a command and press \"Execute\""),
-        input = self.command,
+        input = self.command:gsub("\n+$", ""),
         para_direction_rtl = false, -- force LTR
         input_type = "string",
         allow_newline = true,
@@ -333,16 +333,16 @@ function Terminal:terminal()
                   if input:match("[A-Za-z]") then
 
                       local function callback(name)
-                          local new_fav = {
+                          local new_shortcut = {
                               text = name,
                               commands = input,
                           }
-                          table.insert(self.shortcuts, new_fav)
+                          table.insert(self.shortcuts, new_shortcut)
                           self:saveShortcuts()
                       end
 
                       local prompt
-                      prompt = InputDialog:new {
+                      prompt = InputDialog:new{
                           title = _("Name"),
                           input = "",
                           input_type = "text",
@@ -376,7 +376,7 @@ function Terminal:terminal()
                   UIManager:close(self.input)
                   -- so we know which middle button to display in the results:
                   self.source = "terminal"
-                  self.command = self.input:getInputText()
+                  self.command = self:ensureWhitelineAfterCommands(self.input:getInputText())
                   Trapper:wrap(function()
                       self:execute()
                   end)
@@ -387,8 +387,16 @@ function Terminal:terminal()
     self.input:onShowKeyboard()
 end
 
+-- for prettier formatting of output by separating commands and result thereof with a whiteline:
+function Terminal:ensureWhitelineAfterCommands(commands)
+    if string.sub(commands, -1) ~= "\n" then
+        commands = commands .. "\n"
+    end
+    return commands
+end
+
 function Terminal:execute()
-    local wait_msg = InfoMessage:new {
+    local wait_msg = InfoMessage:new{
         text = _("Executing…"),
     }
     UIManager:show(wait_msg)
@@ -454,7 +462,7 @@ function Terminal:execute()
             },
         }
     end
-    viewer = TextViewer:new {
+    viewer = TextViewer:new{
         title = _("Command output"),
         text = table.concat(entries, "\n"),
         justified = false,
