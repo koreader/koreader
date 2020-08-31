@@ -141,46 +141,76 @@ function Terminal:onMenuHoldShortcuts(item)
     if item.deletable or item.editable then
         local shortcut_shortcuts_dialog
         shortcut_shortcuts_dialog = ButtonDialog:new {
-                buttons = {{{
-                  text = _("Edit name"),
-                  enabled = item.editable,
-                  callback = function()
-                      UIManager:close(shortcut_shortcuts_dialog)
-                      if self._manager.shortcuts_dialog ~= nil then
-                          UIManager:close(self._manager.shortcuts_dialog)
-                          self._manager.shortcuts_dialog = nil
-                      end
-                      self._manager:editName(item)
-                  end
-              },
-              {
-                  text = _("Edit commands"),
-                  enabled = item.editable,
-                  callback = function()
-                      UIManager:close(shortcut_shortcuts_dialog)
-                      if self._manager.shortcuts_dialog ~= nil then
-                          UIManager:close(self._manager.shortcuts_dialog)
-                          self._manager.shortcuts_dialog = nil
-                      end
-                      self._manager:editCommands(item)
-                  end
-              },
-              {
-                  text = _("Delete"),
-                  enabled = item.deletable,
-                  callback = function()
-                      UIManager:close(shortcut_shortcuts_dialog)
-                      if self._manager.shortcuts_dialog ~= nil then
-                          UIManager:close(self._manager.shortcuts_dialog)
-                          self._manager.shortcuts_dialog = nil
-                      end
-                      self._manager:deleteShortcut(item)
-                  end
-          }}}
+            buttons = {{
+                {
+                    text = _("Edit name"),
+                    enabled = item.editable,
+                    callback = function()
+                        UIManager:close(shortcut_shortcuts_dialog)
+                        if self._manager.shortcuts_dialog ~= nil then
+                            UIManager:close(self._manager.shortcuts_dialog)
+                            self._manager.shortcuts_dialog = nil
+                        end
+                        self._manager:editName(item)
+                    end
+                },
+                {
+                    text = _("Edit commands"),
+                    enabled = item.editable,
+                    callback = function()
+                        UIManager:close(shortcut_shortcuts_dialog)
+                        if self._manager.shortcuts_dialog ~= nil then
+                            UIManager:close(self._manager.shortcuts_dialog)
+                            self._manager.shortcuts_dialog = nil
+                        end
+                        self._manager:editCommands(item)
+                    end
+                },
+            },
+            {
+                {
+                    text = _("Copy"),
+                    enabled = item.editable,
+                    callback = function()
+                        UIManager:close(shortcut_shortcuts_dialog)
+                        if self._manager.shortcuts_dialog ~= nil then
+                            UIManager:close(self._manager.shortcuts_dialog)
+                            self._manager.shortcuts_dialog = nil
+                        end
+                        self._manager:copyCommands(item)
+                    end
+                },
+                {
+                    text = _("Delete"),
+                    enabled = item.deletable,
+                    callback = function()
+                        UIManager:close(shortcut_shortcuts_dialog)
+                        if self._manager.shortcuts_dialog ~= nil then
+                            UIManager:close(self._manager.shortcuts_dialog)
+                            self._manager.shortcuts_dialog = nil
+                        end
+                        self._manager:deleteShortcut(item)
+                    end
+                }
+            }}
         }
         UIManager:show(shortcut_shortcuts_dialog)
         return true
     end
+end
+
+function Terminal:copyCommands(item)
+    local new_item = {
+        text = item.text .. " (copy)",
+        commands = item.commands
+    }
+    table.insert(self.shortcuts, new_item)
+    UIManager:show(InfoMessage:new {
+        text = _("Shortcut copied!"),
+        timeout = 2
+    })
+    self:saveShortcuts()
+    self:manageShortcuts()
 end
 
 function Terminal:editCommands(item)
