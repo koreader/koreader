@@ -35,6 +35,8 @@ describe("BackgroundRunner widget tests", function()
                 executed = true
             end,
         })
+        notifyBackgroundJobsUpdated()
+
         MockTime:increase(2)
         UIManager:handleInput()
         MockTime:increase(9)
@@ -54,6 +56,7 @@ describe("BackgroundRunner widget tests", function()
                 executed = executed + 1
             end,
         })
+        notifyBackgroundJobsUpdated()
 
         MockTime:increase(2)
         UIManager:handleInput()
@@ -77,6 +80,7 @@ describe("BackgroundRunner widget tests", function()
                 executed = executed + 1
             end,
         })
+        notifyBackgroundJobsUpdated()
 
         MockTime:increase(2)
         UIManager:handleInput()
@@ -102,6 +106,7 @@ describe("BackgroundRunner widget tests", function()
             end,
         }
         table.insert(PluginShare.backgroundJobs, job)
+        notifyBackgroundJobsUpdated()
 
         MockTime:increase(2)
         UIManager:handleInput()
@@ -125,6 +130,7 @@ describe("BackgroundRunner widget tests", function()
             end,
         }
         table.insert(PluginShare.backgroundJobs, job)
+        notifyBackgroundJobsUpdated()
 
         while job.end_sec == nil do
             MockTime:increase(2)
@@ -149,6 +155,7 @@ describe("BackgroundRunner widget tests", function()
             }
         }
         table.insert(PluginShare.backgroundJobs, job)
+        notifyBackgroundJobsUpdated()
 
         while job.end_sec == nil do
             MockTime:increase(2)
@@ -166,6 +173,7 @@ describe("BackgroundRunner widget tests", function()
         }
         job.end_sec = nil
         table.insert(PluginShare.backgroundJobs, job)
+        notifyBackgroundJobsUpdated()
 
         while job.end_sec == nil do
             MockTime:increase(2)
@@ -196,6 +204,7 @@ describe("BackgroundRunner widget tests", function()
             end,
         }
         table.insert(PluginShare.backgroundJobs, job)
+        notifyBackgroundJobsUpdated()
 
         while job.end_sec == nil do
             MockTime:increase(2)
@@ -210,6 +219,7 @@ describe("BackgroundRunner widget tests", function()
         job.end_sec = nil
         env2 = "no"
         table.insert(PluginShare.backgroundJobs, job)
+        notifyBackgroundJobsUpdated()
 
         while job.end_sec == nil do
             MockTime:increase(2)
@@ -232,6 +242,7 @@ describe("BackgroundRunner widget tests", function()
             }
         }
         table.insert(PluginShare.backgroundJobs, job)
+        notifyBackgroundJobsUpdated()
 
         while job.end_sec == nil do
             MockTime:increase(2)
@@ -253,6 +264,7 @@ describe("BackgroundRunner widget tests", function()
                 executed = executed + 1
             end,
         })
+        notifyBackgroundJobsUpdated()
 
         MockTime:increase(2)
         UIManager:handleInput()
@@ -281,6 +293,7 @@ describe("BackgroundRunner widget tests", function()
                 executed = executed + 1
             end,
         })
+        notifyBackgroundJobsUpdated()
 
         MockTime:increase(2)
         UIManager:handleInput()
@@ -305,6 +318,7 @@ describe("BackgroundRunner widget tests", function()
             end,
         }
         table.insert(PluginShare.backgroundJobs, job)
+        notifyBackgroundJobsUpdated()
 
         MockTime:increase(2)
         UIManager:handleInput()
@@ -338,6 +352,7 @@ describe("BackgroundRunner widget tests", function()
             end,
         }
         table.insert(PluginShare.backgroundJobs, job)
+        notifyBackgroundJobsUpdated()
 
         for i = 1, 10 do
             requireBackgroundRunner():onResume()

@@ -49,6 +49,7 @@ describe("AutoFrontlight widget tests", function()
 
         requireBackgroundRunner()
         class = dofile("plugins/autofrontlight.koplugin/main.lua")
+        notifyBackgroundJobsUpdated()
 
         -- Ensure the background runner has succeeded set the job.insert_sec.
         MockTime:increase(2)

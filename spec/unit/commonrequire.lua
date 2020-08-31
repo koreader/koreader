@@ -103,3 +103,9 @@ stopBackgroundRunner = function()
     background_runner = nil
     require("pluginshare").stopBackgroundRunner = true
 end
+
+notifyBackgroundJobsUpdated = function()
+    if background_runner then
+        background_runner:onBackgroundJobsUpdated()
+    end
+end
