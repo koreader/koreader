@@ -6,6 +6,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local Menu = require("ui/widget/menu")
+local Screen = require("device").screen
 local TextViewer = require("ui/widget/textviewer")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
@@ -13,55 +14,32 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local util = require("ffi/util")
 local _ = require("gettext")
-local lfs = require("libs/libkoreader-lfs")
-local Screen = require("device").screen
 
-local Terminal = WidgetContainer:new {
+local Terminal = WidgetContainer:new{
     name = "terminal",
-    dump_file = util.realpath(DataStorage:getDataDir()) .. "/terminal_output.txt",
     command = "",
+    dump_file = util.realpath(DataStorage:getDataDir()) .. "/terminal_output.txt",
     items_per_page = G_reader_settings:readSetting("items_per_page") or 16,
-    source = 'terminal',
+    settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/terminal_shortcuts.lua"),
     shortcuts_dialog = nil,
     shortcuts_menu = nil,
-    shortcuts_file = DataStorage:getSettingsDir() .. "/terminal_shortcuts.lua",
+    --    shortcuts_file = DataStorage:getSettingsDir() .. "/terminal_shortcuts.lua",
     shortcuts = {},
+    source = "terminal",
 }
 
 function Terminal:init()
     self.ui.menu:registerToMainMenu(self)
-    self:createSettingsFileIfNotExists()
-    local file_handle = LuaSettings:open(self.shortcuts_file)
-    self.shortcuts = file_handle:readSetting("shortcuts") or {}
-end
-
-function Terminal:createSettingsFileIfNotExists()
-    if not lfs.attributes(self.shortcuts_file) then
-        local file = io.open(self.shortcuts_file, "w")
-        local content = "-- we can read Lua syntax here!\nreturn {}\n"
-        if file then
-            file:write(content)
-            file:close()
-        end
-    end
+    self.shortcuts = self.settings:readSetting("shortcuts") or {}
 end
 
 function Terminal:saveShortcuts()
-    local file = io.open(self.shortcuts_file, "w")
-    local dump = require("dump")
-    local content = "-- we can read Lua syntax here!\nreturn "
-    local wrapper = {
-        shortcuts = self.shortcuts
-    }
-    content = content .. dump(wrapper) .. "\n"
-    if file then
-        file:write(content)
-        file:close()
-        UIManager:show(InfoMessage:new {
-            text = _("Shortcuts saved!"),
-            timeout = 3
-        })
-    end
+    self.settings:saveSetting("shortcuts", self.shortcuts)
+    self.settings:flush()
+    UIManager:show(InfoMessage:new {
+        text = _("Shortcuts saved!"),
+        timeout = 3
+    })
 end
 
 function Terminal:manageShortcuts()
@@ -69,12 +47,12 @@ function Terminal:manageShortcuts()
         dimen = Screen:getSize(),
     }
     self.shortcuts_menu = Menu:new {
-        width = Screen:getWidth() - 70,
-        height = Screen:getHeight() - 120,
         show_parent = self.ui,
-        is_popout = true,
-        is_borderless = false,
-        cface = Font:getFace("smallinfofont"),
+        width = Screen:getWidth(),
+        height = Screen:getHeight(),
+        covers_fullscreen = true, -- hint for UIManager:_repaint()
+        is_borderless = true,
+        is_popout = false,
         perpage = self.items_per_page,
         onMenuHold = self.onMenuHoldShortcuts,
         _manager = self,
@@ -106,7 +84,7 @@ function Terminal:updateItemTable()
                 deletable = true,
                 callback = function()
                     -- so we know which middle button to display in the results:
-                    self.source = 'shortcut'
+                    self.source = "shortcut"
                     -- execute immediately, skip terminal dialog:
                     self.command = f.commands
                     Trapper:wrap(function()
@@ -120,7 +98,7 @@ function Terminal:updateItemTable()
             if nr % factor == 0 or nr == #self.shortcuts then
                 -- insert "separator":
                 table.insert(item_table, {
-                    text = ' ',
+                    text = " ",
                     deletable = false,
                     editable = false,
                     callback = function()
@@ -136,7 +114,7 @@ function Terminal:updateItemTable()
         self:insertPageActions(item_table)
     end
     local title = #self.shortcuts == 1 and _("Shortcut") or _("Shortcuts")
-    self.shortcuts_menu:switchItemTable(tostring(#self.shortcuts) .. ' ' .. title, item_table)
+    self.shortcuts_menu:switchItemTable(tostring(#self.shortcuts) .. " " .. title, item_table)
     UIManager:show(self.shortcuts_dialog)
 end
 
@@ -229,8 +207,8 @@ function Terminal:editCommands(item)
                               local input = edit_dialog:getInputText()
                               UIManager:close(edit_dialog)
                               edit_dialog = nil
-                              if input:match('[A-Za-z]') then
-                                  self.shortcuts[item.nr]['commands'] = input
+                              if input:match("[A-Za-z]") then
+                                  self.shortcuts[item.nr]["commands"] = input
                                   self:saveShortcuts()
                                   self:manageShortcuts()
                               end
@@ -265,8 +243,8 @@ function Terminal:editName(item)
                               local input = edit_dialog:getInputText()
                               UIManager:close(edit_dialog)
                               edit_dialog = nil
-                              if input:match('[A-Za-z]') then
-                                  self.shortcuts[item.nr]['text'] = input
+                              if input:match("[A-Za-z]") then
+                                  self.shortcuts[item.nr]["text"] = input
                                   self:saveShortcuts()
                                   self:manageShortcuts()
                               end
@@ -313,7 +291,7 @@ function Terminal:onTerminalStart()
               text = _("Save"),
               callback = function()
                   local input = self.input:getInputText()
-                  if input:match('[A-Za-z]') then
+                  if input:match("[A-Za-z]") then
 
                       local function callback(name)
                           local new_fav = {
@@ -327,9 +305,8 @@ function Terminal:onTerminalStart()
                       local prompt
                       prompt = InputDialog:new {
                           title = _("Name"),
-                          input = '',
+                          input = "",
                           input_type = "text",
-                          description = _("Name for this (set of) command(s)"),
                           fullscreen = true,
                           condensed = true,
                           allow_newline = false,
@@ -359,7 +336,7 @@ function Terminal:onTerminalStart()
               callback = function()
                   UIManager:close(self.input)
                   -- so we know which middle button to display in the results:
-                  self.source = 'terminal'
+                  self.source = "terminal"
                   self.command = self.input:getInputText()
                   Trapper:wrap(function()
                       self:execute()
@@ -394,7 +371,7 @@ function Terminal:execute()
         text = _("Back"),
         callback = function()
             UIManager:close(viewer)
-            if self.source == 'terminal' then
+            if self.source == "terminal" then
                 self:onTerminalStart()
             else
                 self:manageShortcuts()
@@ -407,7 +384,7 @@ function Terminal:execute()
             UIManager:close(viewer)
         end,
     }
-    if self.source == 'terminal' then
+    if self.source == "terminal" then
         buttons_table = {
             {
                 back_button,
