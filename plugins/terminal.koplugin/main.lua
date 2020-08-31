@@ -102,7 +102,7 @@ function Terminal:updateItemTable()
                     deletable = false,
                     editable = false,
                     callback = function()
-                        self:onTerminalStart()
+                        self:manageShortcuts()
                     end,
                 })
                 -- actions:
@@ -124,7 +124,7 @@ function Terminal:insertPageActions(item_table)
         deletable = false,
         editable = false,
         callback = function()
-            self:onTerminalStart()
+            self:start()
         end,
     })
     table.insert(item_table, {
@@ -298,6 +298,15 @@ function Terminal:deleteShortcut(item)
 end
 
 function Terminal:onTerminalStart()
+    -- if shortcut commands are defined, go directly to the the shortcuts manager (so we can execute scripts more quickly):
+    if #self.shortcuts == 0 then
+        self:start()
+    else
+        self:manageShortcuts()
+    end
+end
+
+function Terminal:start()
     self.input = InputDialog:new {
         title = _("Enter a command and press \"Execute\""),
         input = self.command,
@@ -402,7 +411,7 @@ function Terminal:execute()
         callback = function()
             UIManager:close(viewer)
             if self.source == "terminal" then
-                self:onTerminalStart()
+                self:start()
             else
                 self:manageShortcuts()
             end
@@ -438,7 +447,7 @@ function Terminal:execute()
                     -- switch to terminal:
                     callback = function()
                         UIManager:close(viewer)
-                        self:onTerminalStart()
+                        self:start()
                     end,
                 },
                 close_button,
