@@ -129,7 +129,7 @@ function Terminal:insertPageActions(item_table)
         end,
     })
     table.insert(item_table, {
-        text = "   " .. _("Close…"),
+        text = "   " .. _("close…"),
         deletable = false,
         editable = false,
         callback = function()
