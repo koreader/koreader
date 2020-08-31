@@ -93,7 +93,7 @@ function AutoStandby:onInputEvent()
         -- all standbys forbidden, always prevent
         self:prevent()
         return
-    elseif delay == 0 then
+    elseif self.delay == 0 then
         -- If delay is 0 now, just allow straight
         self:allow()
         return
