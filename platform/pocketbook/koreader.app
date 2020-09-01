@@ -8,14 +8,14 @@ KOREADER_DIR=/mnt/ext1/applications/koreader
 export KO_PATH_OPEN_BOOK=/tmp/.koreader.open
 
 # check for and notify a running instance
-INSTANCE_PID=$(cat /tmp/koreader.pid 2> /dev/null)
+INSTANCE_PID=$(cat /tmp/koreader.pid 2>/dev/null)
 if [ "${INSTANCE_PID}" != "" ] && [ -e "/proc/${INSTANCE_PID}" ]; then
-    echo "$@" > "${KO_PATH_OPEN_BOOK}"
+    echo "$@" >"${KO_PATH_OPEN_BOOK}"
     exec /usr/bin/iv2sh SetActiveTask "${INSTANCE_PID}" 0
 fi
 
 # we're first, so publish our instance
-echo $$ > /tmp/koreader.pid
+echo $$ >/tmp/koreader.pid
 
 # update to new version from OTA directory
 NEWUPDATE="${KOREADER_DIR}/ota/koreader.updated.tar"
