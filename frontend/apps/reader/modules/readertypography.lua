@@ -87,7 +87,7 @@ local LANGUAGES = {
     { "ru-GB",                 {},   "Hb  ",   _("Russian + English (UK)") },
     { "ru-US",                 {},   "Hb  ",   _("Russian + English (US)") },
     { "ru",               {"rus"},   "Hb  ",   _("Russian") },
-    { "sr",               {"srp"},   "H   ",   _("Serbian") },
+    { "sr",               {"srp"},   "HB  ",   _("Serbian") },
     { "sk",               {"slk"},   "HB  ",   _("Slovak") },
     { "sl",               {"slv"},   "H   ",   _("Slovenian") },
     { "es",               {"spa"},   "Hb  ",   _("Spanish") },
