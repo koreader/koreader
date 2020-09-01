@@ -195,7 +195,8 @@ function FootnoteWidget:init()
     end
     if Device:hasKeys() then
         self.key_events = {
-            Close = { {"Back"}, doc = "cancel" }
+            Close = { {"Back"}, doc = "cancel" },
+            Follow = { {"Press"}, doc = "follow link" },
         }
     end
 
@@ -342,6 +343,15 @@ function FootnoteWidget:onClose()
         self.close_callback(self.height)
     end
     return true
+end
+
+function FootnoteWidget:onFollow()
+    if self.follow_callback then
+        if self.close_callback then
+            self.close_callback(self.height)
+        end
+        return self.follow_callback()
+    end
 end
 
 function FootnoteWidget:onTapClose(arg, ges)

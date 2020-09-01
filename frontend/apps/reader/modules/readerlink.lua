@@ -24,6 +24,29 @@ local ReaderLink = InputContainer:new{
 }
 
 function ReaderLink:init()
+    if Device:hasKeys() then
+        self.key_events.SelectNextPageLink = {
+            {"Tab" },
+            doc = "select next page link",
+            event = "SelectNextPageLink",
+        }
+        self.key_events.SelectPrevPageLink = {
+            {"Shift", "Tab" },
+            {"Sym", "Tab" }, -- Right Shift + Tab
+            doc = "select previous page link",
+            event = "SelectPrevPageLink",
+        }
+        self.key_events.GotoSelectedPageLink = {
+            { "Press" },
+            doc = "go to selected page link",
+            event = "GotoSelectedPageLink",
+        }
+        self.key_events.GoBackLink = {
+            { "Back" },
+            doc = "go back from link",
+            event = "GoBackLink",
+        }
+    end
     if Device:isTouchDevice() then
         self.ui:registerTouchZones({
             {
@@ -935,6 +958,101 @@ end
 
 function ReaderLink:onGoToInternalPageLink(ges)
     self:onGoToPageLink(ges, true)
+end
+
+function ReaderLink:onSelectNextPageLink()
+    return self:selectRelPageLink(1)
+end
+
+function ReaderLink:onSelectPrevPageLink()
+    return self:selectRelPageLink(-1)
+end
+
+function ReaderLink:selectRelPageLink(rel)
+    if self.ui.document.info.has_pages then
+        -- not implemented for now (see at doing like in showLinkBox()
+        -- to highlight the link before jumping to it)
+        return
+    end
+    -- Follow swipe_ignore_external_links setting to allow
+    -- skipping external links when using keys
+    local links = self.ui.document:getPageLinks(isSwipeIgnoreExternalLinksEnabled())
+    if not links or #links == 0 then
+        return
+    end
+    if self.cur_selected_page_link_num then
+        self.cur_selected_page_link_num = self.cur_selected_page_link_num + rel
+        -- When reaching end of list, don't immediately jump to
+        -- the other side: allow one step with no link selected
+        if self.cur_selected_page_link_num > #links then
+            self.cur_selected_page_link_num = nil
+        elseif self.cur_selected_page_link_num <= 0 then
+            self.cur_selected_page_link_num = nil
+        end
+    else
+        if rel > 0 then
+            self.cur_selected_page_link_num = 1
+        elseif rel < 0 then
+            self.cur_selected_page_link_num = #links
+        end
+    end
+    if not self.cur_selected_page_link_num then
+        self.cur_selected_link = nil
+        self.ui.document:highlightXPointer()
+        UIManager:setDirty(self.dialog, "ui")
+        return
+    end
+    local selected_link = links[self.cur_selected_page_link_num]
+    logger.dbg("selected_link", selected_link)
+    -- Check a_xpointer is coherent, use it as from_xpointer only if it is
+    local from_xpointer = nil
+    if selected_link.a_xpointer and self:isXpointerCoherent(selected_link.a_xpointer) then
+        from_xpointer = selected_link.a_xpointer
+    end
+    local link_y
+    if selected_link.segments and #selected_link.segments > 0 then
+        link_y = selected_link.segments[#selected_link.segments].y1
+    else
+        link_y = selected_link.end_y
+    end
+    -- Make it a link as expected by onGotoLink
+    self.cur_selected_link = {
+        xpointer = selected_link.section or selected_link.uri,
+        marker_xpointer = selected_link.section,
+        from_xpointer = from_xpointer,
+        -- (keep a_xpointer even if incoherent, might be needed for
+        -- footnote detection (better than nothing if incoherent)
+        a_xpointer = selected_link.a_xpointer,
+        -- keep the link y position, so we can keep its highlight shown
+        -- a bit more time if it was hidden by the footnote popup
+        link_y = link_y,
+    }
+    self.ui.document:highlightXPointer() -- clear any previous one
+    self.ui.document:highlightXPointer(self.cur_selected_link.from_xpointer)
+    UIManager:setDirty(self.dialog, "ui")
+    return true
+end
+
+function ReaderLink:onGotoSelectedPageLink()
+    if self.cur_selected_link then
+        return self:onGotoLink(self.cur_selected_link, false, isFootnoteLinkInPopupEnabled())
+    end
+end
+
+function ReaderLink:onPageUpdate()
+    if self.cur_selected_link then
+        self.ui.document:highlightXPointer()
+        self.cur_selected_page_link_num = nil
+        self.cur_selected_link = nil
+    end
+end
+
+function ReaderLink:onPosUpdate()
+    if self.cur_selected_link then
+        self.ui.document:highlightXPointer()
+        self.cur_selected_page_link_num = nil
+        self.cur_selected_link = nil
+    end
 end
 
 function ReaderLink:onGoToLatestBookmark(ges)
