@@ -148,6 +148,18 @@ function DocumentRegistry:getProviders(file)
     end
 end
 
+--- Get mapping of file extensions to providers
+-- @treturn table mapping file extensions to a list of providers
+function DocumentRegistry:getExtensions()
+    local t = {}
+    for _, provider in ipairs(self.providers) do
+        local ext = provider.extension
+        t[ext] = t[ext] or {}
+        table.insert(t[ext], provider)
+    end
+    return t
+end
+
 --- Sets the preferred registered document handler.
 -- @string file
 -- @bool all
