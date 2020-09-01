@@ -29,8 +29,7 @@ local PocketBook = Generic:new{
     hasKeys = yes,
     hasFrontlight = yes,
     canSuspend = no,
-    hasExitOptions = no,
-    canRestart = no,
+    canPowerOff = yes,
     needsScreenRefreshAfterResume = no,
     home_dir = "/mnt/ext1",
 
@@ -52,6 +51,20 @@ function PocketBook:blacklistCBB()
         end
         -- Enforce the global setting, too, so the Dev menu is accurate...
         G_reader_settings:saveSetting("dev_no_c_blitter", true)
+    end
+end
+
+-- Helper to try load externally signalled book whenever we're brought to foreground
+local function tryOpenBook()
+    local path = os.getenv("KO_PATH_OPEN_BOOK")
+    if not path then return end
+    local fi = io.open(path, "r")
+    if not fi then return end
+    local fn = fi:read("*line")
+    fi:close()
+    os.remove(path)
+    if fn and util.pathExists(fn) then
+        require("apps/reader/readerui"):showReader(fn)
     end
 end
 
@@ -89,6 +102,7 @@ function PocketBook:init()
                     return "Suspend"
                 end
             elseif ev.code == C.EVT_FOREGROUND or ev.code == C.EVT_SHOW then
+                tryOpenBook()
                 ui:setDirty('all', 'partial')
                 if quasiSuspended then
                     quasiSuspended = false
@@ -208,6 +222,10 @@ end
 
 function PocketBook:setAutoStandby(isAllowed)
     inkview.iv_sleepmode(isAllowed and 1 or 0)
+end
+
+function PocketBook:powerOff()
+    inkview.PowerOff()
 end
 
 function PocketBook:initNetworkManager(NetworkMgr)
