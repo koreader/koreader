@@ -61,6 +61,7 @@ local Device = {
     canSuspend = yes,
     canReboot = no,
     canPowerOff = no,
+    canAssociateFileExtensions = no,
 
     -- use these only as a last resort. We should abstract the functionality
     -- and have device dependent implementations in the corresponting
@@ -310,6 +311,11 @@ end
 -- The device is allowed to enter standby only from within waitForEvents,
 -- and only if allowed state is true at the time of waitForEvents() invocation.
 function Device:setAutoStandby(isAllowed) end
+
+-- Hardware specific method to set OS-level file associations to launch koreader. Expects boolean map.
+function Device:associateFileExtensions(exts)
+    logger.dbg("Device:associateFileExtensions():", util.tableSize(exts), "entries, OS handler missing")
+end
 
 -- Hardware specific method to handle usb plug in event
 function Device:usbPlugIn() end

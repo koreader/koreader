@@ -47,6 +47,7 @@ local order = {
         "ignore_sleepcover",
         "ignore_open_sleepcover",
         "mass_storage_settings",
+        "file_ext_assoc",
         "screenshot",
     },
     navigation = {
