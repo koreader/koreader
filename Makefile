@@ -257,7 +257,6 @@ pbupdate: all
 
 	cp $(POCKETBOOK_DIR)/koreader.app $(INSTALL_DIR)/applications
 	cp $(POCKETBOOK_DIR)/koreader.app $(INSTALL_DIR)/system/bin
-	cp $(POCKETBOOK_DIR)/extensions.cfg $(INSTALL_DIR)/system/config
 	cp -rfL $(INSTALL_DIR)/koreader $(INSTALL_DIR)/applications
 	# create new package
 	cd $(INSTALL_DIR) && \
