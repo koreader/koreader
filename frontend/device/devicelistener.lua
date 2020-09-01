@@ -232,9 +232,7 @@ if Device:hasFrontlight() then
     end
 
     function DeviceListener:onShowFlDialog()
-        if Device:showLightDialog() then
-            UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
-        end
+        Device:showLightDialog()
     end
 
 end

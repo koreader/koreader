@@ -418,6 +418,7 @@ function Device:showLightDialog()
             self.powerd.fl_warmth = self.powerd:getWarmth()
             logger.dbg("Dialog OK, warmth: " .. self.powerd.fl_warmth)
         end
+        self.powerd:broadcastLightChanges()
         return true
     elseif action == C.ALIGHTS_DIALOG_CANCEL then
         logger.dbg("Dialog Cancel, brightness: " .. self.powerd.fl_intensity)

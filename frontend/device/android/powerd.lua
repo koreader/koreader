@@ -12,7 +12,7 @@ end
 
 function AndroidPowerD:setIntensityHW(intensity)
     -- if frontlight switch was toggled of, turn it on
-    if not self.is_fl_sw_off then
+    if not self.is_fl_sw_on then
         android:enableFrontlightSwitch()
         self.is_fl_sw_on = true
     end
@@ -56,6 +56,11 @@ end
 
 function AndroidPowerD:isChargingHW()
     return android.isCharging()
+end
+
+function BasePowerD:isFrontlightOn()
+    assert(self ~= nil)
+    return self.is_fl_on and self.is_fl_sw_on
 end
 
 function AndroidPowerD:turnOffFrontlightHW()

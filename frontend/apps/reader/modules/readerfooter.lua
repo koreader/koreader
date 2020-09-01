@@ -107,7 +107,7 @@ local footerTextGeneratorMap = {
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].frontlight
         local powerd = Device:getPowerDevice()
-        if powerd:isFrontlightOn() and powerd:getFrontlightSwitchState() then
+        if powerd:isFrontlightOn() then
             if Device:isCervantes() or Device:isKobo() then
                 return (prefix .. " %d%%"):format(powerd:frontlightIntensity())
             else

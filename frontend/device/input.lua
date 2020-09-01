@@ -346,7 +346,7 @@ function Input:handleKeyBoardEv(ev)
         local Device = require("device")
         local powerd = Device:getPowerDevice()
         powerd:detectedFrontlightSwitchToggle()
-        return "FLSwitch"
+        return
     end
 
     if keycode == "Power" then
