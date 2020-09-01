@@ -306,6 +306,9 @@ function Device:info()
     return self.model
 end
 
+-- Hardware specific method to track opened/closed books (nil on book close)
+function Device:notifyBookState(title, document) end
+
 -- Hardware specific method for UI to signal allowed/disallowed standby.
 -- The device is allowed to enter standby only from within waitForEvents,
 -- and only if allowed state is true at the time of waitForEvents() invocation.

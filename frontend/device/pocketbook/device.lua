@@ -17,6 +17,8 @@ _G.POCKETBOOK_FFI = true
 local function yes() return true end
 local function no() return false end
 
+local ext_path = "/mnt/ext1/system/config/extensions.cfg"
+local app_name = "koreader.app"
 
 local PocketBook = Generic:new{
     model = "PocketBook",
@@ -135,6 +137,18 @@ function PocketBook:init()
     Generic.init(self)
 end
 
+function PocketBook:notifyBookState(title, document)
+    local fn = document and document.file or nil
+    logger.dbg("Notify book state", title or "[nil]", fn or "[nil]")
+    os.remove("/tmp/.current")
+    if fn then
+        local fo = io.open("/tmp/.current", "w+")
+        fo:write(fn)
+        fo:close()
+    end
+    inkview.SetSubtaskInfo(inkview.GetCurrentTask(), 0, title and (title .. " - koreader") or "koreader", fn)
+end
+
 function PocketBook:setDateTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end
     -- If the device is rooted, we might actually have a fighting chance to change os clock.
@@ -152,6 +166,44 @@ function PocketBook:setDateTime(year, month, day, hour, min, sec)
     else
         return false
     end
+end
+
+-- Predicate, so no self
+function PocketBook.canAssociateFileExtensions()
+    local f = io.open(ext_path, "r")
+    if not f then return true end
+    local l = f:read("*line")
+    f:close()
+    if l and not l:match("^#koreader") then
+        return false
+    end
+    return true
+end
+
+function PocketBook:associateFileExtensions(assoc)
+    -- First load the system-wide table, from which we'll snoop file types and icons
+    local info = {}
+    for l in io.lines("/ebrmain/config/extensions.cfg") do
+        local m = { l:match("^([^:]*):([^:]*):([^:]*):([^:]*):(.*)") }
+        info[m[1]] = m
+    end
+    local res = {"#koreader"}
+    for k,v in pairs(assoc) do
+        local t = info[k]
+        if t then
+            -- A system entry exists, so just change app, and reuse the rest
+            t[4] = app_name
+        else
+            -- Doesn't exist, so hallucinate up something
+            -- TBD: We have document opener in 'v', maybe consult mime in there?
+            local bn = k:match("%a+"):upper()
+            t = { k, '@' .. bn .. '_file', "1", app_name, "ICON_" .. bn }
+        end
+        table.insert(res, table.concat(t, ":"))
+    end
+    local out = io.open(ext_path, "w+")
+    out:write(table.concat(res, "\n"))
+    out:close()
 end
 
 function PocketBook:setAutoStandby(isAllowed)
