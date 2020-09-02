@@ -350,7 +350,7 @@ function Terminal:terminal()
                           fullscreen = true,
                           condensed = true,
                           allow_newline = false,
-                          cursor_at_end = false,
+                          cursor_at_end = true,
                           buttons = {{{
                                   text = _("Cancel"),
                                   callback = function()
