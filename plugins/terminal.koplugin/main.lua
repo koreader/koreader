@@ -6,7 +6,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local Menu = require("ui/widget/menu")
-local T = require("ffi/util").template
 local TextViewer = require("ui/widget/textviewer")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
@@ -14,7 +13,9 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local util = require("ffi/util")
 local _ = require("gettext")
+local N_ = _.ngettext
 local Screen = require("device").screen
+local T = require("ffi/util").template
 
 local Terminal = WidgetContainer:new{
     name = "terminal",
@@ -114,7 +115,7 @@ function Terminal:updateItemTable()
     else
         self:insertPageActions(item_table)
     end
-    local title = #self.shortcuts == 1 and _("Terminal shortcut") or _("Terminal shortcuts")
+    local title = N_("Terminal shortcut", "Terminal shortcuts", #self.shortcuts)
     self.shortcuts_menu:switchItemTable(tostring(#self.shortcuts) .. " " .. title, item_table)
     UIManager:show(self.shortcuts_dialog)
 end
