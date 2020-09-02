@@ -206,7 +206,7 @@ function PocketBook:associateFileExtensions(assoc)
         local t = info[k]
         if t then
             -- A system entry exists, so just change app, and reuse the rest
-            t[4] = app_name
+            t[4] = app_name .. "," .. t[4]
         else
             -- Doesn't exist, so hallucinate up something
             -- TBD: We have document opener in 'v', maybe consult mime in there?
