@@ -6,7 +6,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local Menu = require("ui/widget/menu")
-local Screen = require("device").screen
 local T = require("ffi/util").template
 local TextViewer = require("ui/widget/textviewer")
 local Trapper = require("ui/trapper")
@@ -15,6 +14,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local util = require("ffi/util")
 local _ = require("gettext")
+local Screen = require("device").screen
 
 local Terminal = WidgetContainer:new{
     name = "terminal",
