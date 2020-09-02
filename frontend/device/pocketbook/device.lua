@@ -29,6 +29,7 @@ local PocketBook = Generic:new{
     hasKeys = yes,
     hasFrontlight = yes,
     canSuspend = no,
+    canReboot = yes,
     canPowerOff = yes,
     needsScreenRefreshAfterResume = no,
     home_dir = "/mnt/ext1",
@@ -226,6 +227,10 @@ end
 
 function PocketBook:powerOff()
     inkview.PowerOff()
+end
+
+function PocketBook:reboot()
+    inkview.iv_ipc_request(C.MSG_REBOOT, 1, nil, 0, 0)
 end
 
 function PocketBook:initNetworkManager(NetworkMgr)
