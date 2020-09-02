@@ -77,6 +77,7 @@ local settingsList = {
     calibre_search = { category="none", event="CalibreSearch", title=_("Search in calibre metadata"), device=true,},
     calibre_browse_tags = { category="none", event="CalibreBrowseTags", title=_("Browse all calibre tags"), device=true,},
     calibre_browse_series = { category="none", event="CalibreBrowseSeries", title=_("Browse all calibre series"), device=true, separator=true,},
+    show_terminal = { category = "none", event = "TerminalStart", title = _("Show terminal"), device = true, },
     edit_last_edited_file = { category = "none", event = "OpenLastEditedFile", title = _("Texteditor: open last file"), device = true, separator = true, },
     favorites = { category="none", event="ShowColl", arg="favorites", title=_("Favorites"), device=true,},
 
@@ -208,6 +209,7 @@ local dispatcher_menu_order = {
     "calibre_browse_tags",
     "calibre_browse_series",
 
+    "show_terminal",
     "edit_last_edited_file",
 
     "rotation_mode",
