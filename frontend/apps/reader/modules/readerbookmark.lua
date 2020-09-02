@@ -268,7 +268,7 @@ function ReaderBookmark:onPageUpdate(pageno)
     end
 end
 
-function ReaderBookmark:onPosUpdate(pos)
+function ReaderBookmark:onPosUpdate()
     self:setDogearVisibility(self.ui.document:getXPointer())
 end
 
@@ -312,7 +312,7 @@ end
 function ReaderBookmark:onShowBookmark()
     self:updateHighlightsIfNeeded()
     -- build up item_table
-    for k, v in ipairs(self.bookmarks) do
+    for _, v in ipairs(self.bookmarks) do
         local page = v.page
         -- for CREngine, bookmark page is xpointer
         if not self.ui.document.info.has_pages then
@@ -421,7 +421,7 @@ function ReaderBookmark:onShowBookmark()
                     end,
                     save_button_text = _("Search")
                 }
-                Dialogs:prompt(arguments)
+                self:prompt(arguments)
             end,
         })
         if bookmark.search_value ~= "" then
@@ -554,6 +554,51 @@ function ReaderBookmark:onShowBookmark()
 
     UIManager:show(self.bookmark_menu)
     return true
+end
+
+-- argument is a table, containing: value, hint, callback, cancel_callback
+function ReaderBookmark:prompt(args)
+    local value = args.value
+    local description = args.description
+    local callback = args.callback
+    local cancel_callback = args.cancel_callback or nil
+    local title = args.title or 'Bewerk'
+    local save_button_text = args.save_button_text or _("Save")
+    local prompt_dialog
+    prompt_dialog = InputDialog:new {
+        title = title,
+        input = value,
+        input_type = "text",
+        description = description,
+        fullscreen = false,
+        condensed = true,
+        allow_newline = false,
+        cursor_at_end = true,
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(prompt_dialog)
+                        if cancel_callback ~= nil then
+                            cancel_callback()
+                        end
+                    end,
+                },
+                {
+                    text = save_button_text,
+                    is_enter_default = true,
+                    callback = function()
+                        local newval = prompt_dialog:getInputText()
+                        UIManager:close(prompt_dialog)
+                        callback(newval)
+                    end,
+                },
+            }
+        },
+    }
+    UIManager:show(prompt_dialog)
+    prompt_dialog:onShowKeyboard()
 end
 
 function ReaderBookmark:isBookmarkMatch(item, pn_or_xp)
@@ -860,7 +905,7 @@ function ReaderBookmark:onGotoPreviousBookmarkFromPage(add_current_location_to_s
 end
 
 function ReaderBookmark:getLatestBookmark()
-    local latest_bookmark = nil
+    local latest_bookmark
     local latest_bookmark_datetime = "0"
     for i = 1, #self.bookmarks do
         if self.bookmarks[i].datetime > latest_bookmark_datetime then
