@@ -308,7 +308,8 @@ function ReaderBookmark:updateHighlightsIfNeeded()
     self.ui.doc_settings:saveSetting("bookmarks_version", 20200615)
 end
 
-function ReaderBookmark:onShowBookmark()
+-- make bookmark navigator available for gesture through open_navigator (if set, then open navigator):
+function ReaderBookmark:onShowBookmark(open_navigator)
     self:updateHighlightsIfNeeded()
     -- build up item_table
     for k, v in ipairs(self.bookmarks) do
@@ -356,7 +357,7 @@ function ReaderBookmark:onShowBookmark()
         bm_menu,
     }
 
-    -- buid up menu widget method as closure
+    -- build up menu widget method as closure
     local bookmark = self
     function bm_menu:onMenuChoice(item)
         bookmark.ui.link:addCurrentLocationToStack()
@@ -557,6 +558,14 @@ function ReaderBookmark:onShowBookmark()
     end
 
     UIManager:show(self.bookmark_menu)
+    if open_navigator then
+        if #self.bookmarks > 0 then
+            -- open first bookmark in page order:
+            bm_menu:onMenuHold(self.bookmarks[#self.bookmarks])
+        else
+            UIManager:show(InfoMessage:new { text = _('Bookmarks navigator: no bookmarks defined yet') })
+        end
+    end
     return true
 end
 
