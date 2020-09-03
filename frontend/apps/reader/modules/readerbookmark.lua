@@ -447,16 +447,15 @@ function ReaderBookmark:onShowBookmark()
         table.insert(first_button_row, {
             text = _("Search"),
             callback = function()
-                local arguments = {
-                    title = _("Search in bookmarks"),
+                bookmark:prompt({
+                    title = _("Bookmark search"),
                     value = bookmark.search_value,
                     hint = _("Needle"),
                     callback = function(query)
                         bookmark:search(string.lower(query), bookmarks, current_bookmark, bm_menu, self.textviewer, 1)
                     end,
                     save_button_text = _("Search")
-                }
-                bookmark:prompt(arguments)
+                })
             end,
         })
         table.insert(first_button_row, {
