@@ -69,7 +69,7 @@ function ReaderBookmark:search(query, bookmarks, current_bookmark, bm_menu, view
     local found_index = 0
     local start
     local use_second_loop = true
-    if direction == "forward" then
+    if direction == 1 then
         start = current_bookmark + 1
         if start > #bookmarks then
             start = 1
@@ -91,7 +91,7 @@ function ReaderBookmark:search(query, bookmarks, current_bookmark, bm_menu, view
                 end
             end
         end
-    -- direction == "previous":
+    -- direction == -1:
     else
         start = current_bookmark - 1
         if start < 1 then
@@ -119,9 +119,8 @@ function ReaderBookmark:search(query, bookmarks, current_bookmark, bm_menu, view
     if found_index > 0 then
         UIManager:close(viewer_instance)
         bm_menu:onMenuHold(bookmarks[found_index])
-        UIManager:show(InfoMessage:new { text = _("Found"), timeout = 1 })
     else
-        UIManager:show(InfoMessage:new { text = T(_('No bookmarks found with query "%1"'), query), timeout = 2 })
+        UIManager:show(InfoMessage:new { text = T(_('No bookmarks found with query "%1"'), query) })
     end
 end
 
@@ -392,20 +391,52 @@ function ReaderBookmark:onShowBookmark()
         end
         local first_button_row = {
             {
-                text = _("Go to"),
+                text = _("Remove"),
                 callback = function()
-                    UIManager:close(self.textviewer)
-                    UIManager:close(bookmark.bookmark_menu)
-                    bookmark.ui.link:addCurrentLocationToStack()
-                    bookmark:gotoBookmark(item.page)
+                    UIManager:show(ConfirmBox:new {
+                        text = _("Do you want remove this bookmark?"),
+                        cancel_text = _("Cancel"),
+                        cancel_callback = function()
+                            return
+                        end,
+                        ok_text = _("Remove"),
+                        ok_callback = function()
+                            local org_item = bookmark.bookmarks[item.index]
+                            bookmark:removeHighlight(org_item)
+                            UIManager:close(self.textviewer)
+                            if #bookmark.bookmarks > 1 then
+                                bm_menu:switchItemTable(nil, bookmark.bookmarks, -1)
+                                -- if no bookmarks left after removal, return to reader:
+                            else
+                                return false
+                            end
+                        end,
+                    })
                 end,
-            }
+            },
+            {
+                text = _("Rename"),
+                callback = function()
+                    local org_item = bookmark.bookmarks[item.index]
+                    bookmark:renameBookmark(org_item)
+                    UIManager:close(self.textviewer)
+                end,
+            },
         }
+        local from_start_text = "▕◁"
+        local backward_text = "◁"
+        local forward_text = "▷"
+        local from_end_text = "▷▏"
+        if BD.mirroredUILayout() then
+            backward_text, forward_text = forward_text, backward_text
+            -- Keep the LTR order of |< and >|:
+            from_start_text, from_end_text = BD.ltr(from_end_text), BD.ltr(from_start_text)
+        end
         if bookmark.search_value ~= "" then
             table.insert(first_button_row, {
-                text = "<",
+                text = backward_text,
                 callback = function()
-                    bookmark:search(bookmark.search_value, bookmarks, current_bookmark, bm_menu, self.textviewer, "previous")
+                    bookmark:search(bookmark.search_value, bookmarks, current_bookmark, bm_menu, self.textviewer, -1)
                 end,
             })
         end
@@ -413,11 +444,11 @@ function ReaderBookmark:onShowBookmark()
             text = _("Search"),
             callback = function()
                 local arguments = {
-                    title = _("Search bookmark"),
+                    title = _("Search in bookmarks"),
                     value = bookmark.search_value,
                     hint = _("Needle"),
                     callback = function(query)
-                        bookmark:search(string.lower(query), bookmarks, current_bookmark, bm_menu, self.textviewer, "forward")
+                        bookmark:search(string.lower(query), bookmarks, current_bookmark, bm_menu, self.textviewer, 1)
                     end,
                     save_button_text = _("Search")
                 }
@@ -426,54 +457,33 @@ function ReaderBookmark:onShowBookmark()
         })
         if bookmark.search_value ~= "" then
             table.insert(first_button_row, {
-                text = ">",
+                text = forward_text,
                 callback = function()
-                    bookmark:search(bookmark.search_value, bookmarks, current_bookmark, bm_menu, self.textviewer, "forward")
+                    bookmark:search(bookmark.search_value, bookmarks, current_bookmark, bm_menu, self.textviewer, 1)
                 end,
             })
         end
         table.insert(first_button_row, {
-            text = _("Rename"),
+            text = _("Go to"),
             callback = function()
-                local org_item = bookmark.bookmarks[item.index]
-                bookmark:renameBookmark(org_item)
                 UIManager:close(self.textviewer)
-            end,
-        })
-        table.insert(first_button_row, {
-            text = _("Remove"),
-            callback = function()
-                UIManager:show(ConfirmBox:new {
-                    text = _("Do you want remove this bookmark?"),
-                    cancel_text = _("Cancel"),
-                    cancel_callback = function()
-                        return
-                    end,
-                    ok_text = _("Remove"),
-                    ok_callback = function()
-                        local org_item = bookmark.bookmarks[item.index]
-                        bookmark:removeHighlight(org_item)
-                        UIManager:close(self.textviewer)
-                        if #bookmark.bookmarks > 1 then
-                            bm_menu:switchItemTable(nil, bookmark.bookmarks, -1)
-                            -- if no bookmarks left after removal, return to reader:
-                        else
-                            return false
-                        end
-                    end,
-                })
+                UIManager:close(bookmark.bookmark_menu)
+                bookmark.ui.link:addCurrentLocationToStack()
+                bookmark:gotoBookmark(item.page)
             end,
         })
         local second_button_row = {
             {
-                text = "<<",
+                text = from_start_text,
+                enabled = #bookmark.bookmarks > 1,
                 callback = function()
                     UIManager:close(self.textviewer)
                     bm_menu:onMenuHold(bookmarks[1])
                 end,
             },
             {
-                text = "<",
+                text = backward_text,
+                enabled = #bookmark.bookmarks > 1,
                 callback = function()
                     UIManager:close(self.textviewer)
                     local prev = current_bookmark - 1
@@ -493,7 +503,8 @@ function ReaderBookmark:onShowBookmark()
                 end,
             },
             {
-                text = ">",
+                text = forward_text,
+                enabled = #bookmark.bookmarks > 1,
                 callback = function()
                     UIManager:close(self.textviewer)
                     local next = current_bookmark + 1
@@ -504,19 +515,14 @@ function ReaderBookmark:onShowBookmark()
                 end,
             },
             {
-                text = ">>",
+                text = from_end_text,
+                enabled = #bookmark.bookmarks > 1,
                 callback = function()
                     UIManager:close(self.textviewer)
                     bm_menu:onMenuHold(bookmarks[#bookmarks])
                 end,
             },
         }
-        -- if there is only one bookmark, we need only to retain the close button:
-        if #bookmark.bookmarks == 1 then
-            second_button_row = {
-                second_button_row[3]
-            }
-        end
         local text = item.notes
         if not item.highlighted then
             local ipage = item.page
@@ -562,7 +568,7 @@ function ReaderBookmark:prompt(args)
     local description = args.description
     local callback = args.callback
     local cancel_callback = args.cancel_callback or nil
-    local title = args.title or 'Bewerk'
+    local title = args.title or _("Edit")
     local save_button_text = args.save_button_text or _("Save")
     local prompt_dialog
     prompt_dialog = InputDialog:new {
@@ -580,7 +586,7 @@ function ReaderBookmark:prompt(args)
                     text = _("Cancel"),
                     callback = function()
                         UIManager:close(prompt_dialog)
-                        if cancel_callback ~= nil then
+                        if cancel_callback then
                             cancel_callback()
                         end
                     end,
