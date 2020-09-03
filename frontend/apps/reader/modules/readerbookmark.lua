@@ -63,14 +63,16 @@ function ReaderBookmark:addToMainMenu(menu_items)
     end
 end
 
-function ReaderBookmark:search(query, bookmarks, current_bookmark, bm_menu, viewer_instance, direction)
+function ReaderBookmark:search(query, bookmarks, current_bookmark, bm_menu, viewer_instance, direction, manual_search)
     -- handle empty queries:
     if query == "" then
         self.search_value = ""
         return
     end
-    -- make sure query doesn't fail on special characters:
-    query = query:gsub("%.", "%."):gsub("%-", "%-")
+    -- make sure query doesn't fail on special characters. Only applied for manually searched terms, not for searching previous or next hits with buttons:
+    if manual_search then
+        query = query:gsub("%.", "%."):gsub("%-", "%-"):gsub("%%", "%%")
+    end
     self.search_value = query
     local content
     local found_index = 0
@@ -456,10 +458,10 @@ function ReaderBookmark:onShowBookmark(open_navigator)
                 callback = function()
                     bookmark:prompt({
                         title = _("Bookmark search"),
-                        value = bookmark.search_value,
+                        value = bookmark.search_value:gsub("%%", ""),
                         hint = _("Needle"),
                         callback = function(query)
-                            bookmark:search(string.lower(query), bookmarks, current_bookmark, bm_menu, self.textviewer, 1)
+                            bookmark:search(string.lower(query), bookmarks, current_bookmark, bm_menu, self.textviewer, 1, true)
                         end,
                         save_button_text = _("Search")
                     })
