@@ -452,7 +452,7 @@ function ReaderBookmark:onShowBookmark()
                     end,
                     save_button_text = _("Search")
                 }
-                self:prompt(arguments)
+                bookmark:prompt(arguments)
             end,
         })
         if bookmark.search_value ~= "" then
