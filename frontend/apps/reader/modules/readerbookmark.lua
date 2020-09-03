@@ -386,8 +386,13 @@ function ReaderBookmark:onShowBookmark()
             end
         end
         local title = T(_("Bookmark details  -  %1/%2"), tostring(current_bookmark), tostring(#bookmarks))
+        -- show page of bookmark in title:
         if page ~= "" then
             title = title .. "  -  " .. string.lower(page)
+        end
+        -- show search term in title:
+        if bookmark.search_value and bookmark.search_value ~= "" then
+            title = title .. '  -  "' .. bookmark.search_value .. '"'
         end
         local first_button_row = {
             {
