@@ -570,7 +570,7 @@ function ReaderBookmark:prompt(args)
     local value = args.value
     local description = args.description
     local callback = args.callback
-    local cancel_callback = args.cancel_callback or nil
+    local cancel_callback = args.cancel_callback
     local title = args.title or _("Edit")
     local save_button_text = args.save_button_text or _("Save")
     local prompt_dialog
