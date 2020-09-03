@@ -311,7 +311,7 @@ end
 function ReaderBookmark:onShowBookmark()
     self:updateHighlightsIfNeeded()
     -- build up item_table
-    for _, v in ipairs(self.bookmarks) do
+    for k, v in ipairs(self.bookmarks) do
         local page = v.page
         -- for CREngine, bookmark page is xpointer
         if not self.ui.document.info.has_pages then
@@ -322,6 +322,7 @@ function ReaderBookmark:onShowBookmark()
             end
         end
         if v.text == nil or v.text == "" then
+            self.garbage = k
             v.text = T(_("Page %1 %2 @ %3"), page, v.notes, v.datetime)
         end
     end
@@ -377,18 +378,17 @@ function ReaderBookmark:onShowBookmark()
         for nr, bmk in ipairs(bookmarks) do
             if item.index == bmk.index then
                 current_bookmark = nr
-                -- grep the "page" string and page number:
-                page = item.text:match("^([A-Za-z]+ [0-9]+)")
-                if page == nil then
-                    page = ""
-                end
                 break
             end
         end
         local title = T(_("Bookmark details  -  %1/%2"), tostring(current_bookmark), tostring(#bookmarks))
         -- show page of bookmark in title:
+        local ipage = item.page
+        if not bookmark.ui.document.info.has_pages then
+            page = bookmark.ui.document:getPageFromXPointer(ipage)
+        end
         if page ~= "" then
-            title = title .. "  -  " .. string.lower(page)
+            title = title .. "  -  " .. _("page") .. " " .. page
         end
         -- show search term in title:
         if bookmark.search_value and bookmark.search_value ~= "" then
@@ -527,10 +527,6 @@ function ReaderBookmark:onShowBookmark()
         }
         local text = item.notes
         if not item.highlighted then
-            local ipage = item.page
-            if not bookmark.ui.document.info.has_pages then
-                ipage = bookmark.ui.document:getPageFromXPointer(ipage)
-            end
             text = T(_("Page %1 %2 @ %3"), ipage, item.notes, item.datetime)
         end
         self.textviewer = TextViewer:new{
