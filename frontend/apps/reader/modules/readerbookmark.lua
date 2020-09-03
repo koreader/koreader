@@ -432,14 +432,13 @@ function ReaderBookmark:onShowBookmark()
             -- Keep the LTR order of |< and >|:
             from_start_text, from_end_text = BD.ltr(from_end_text), BD.ltr(from_start_text)
         end
-        if bookmark.search_value ~= "" then
-            table.insert(first_button_row, {
-                text = backward_text,
-                callback = function()
-                    bookmark:search(bookmark.search_value, bookmarks, current_bookmark, bm_menu, self.textviewer, -1)
-                end,
-            })
-        end
+        table.insert(first_button_row, {
+            text = backward_text,
+            enabled = bookmark.search_value ~= "",
+            callback = function()
+                bookmark:search(bookmark.search_value, bookmarks, current_bookmark, bm_menu, self.textviewer, -1)
+            end,
+        })
         table.insert(first_button_row, {
             text = _("Search"),
             callback = function()
@@ -455,14 +454,13 @@ function ReaderBookmark:onShowBookmark()
                 bookmark:prompt(arguments)
             end,
         })
-        if bookmark.search_value ~= "" then
-            table.insert(first_button_row, {
-                text = forward_text,
-                callback = function()
-                    bookmark:search(bookmark.search_value, bookmarks, current_bookmark, bm_menu, self.textviewer, 1)
-                end,
-            })
-        end
+        table.insert(first_button_row, {
+            text = forward_text,
+            enabled = bookmark.search_value ~= "",
+            callback = function()
+                bookmark:search(bookmark.search_value, bookmarks, current_bookmark, bm_menu, self.textviewer, 1)
+            end,
+        })
         table.insert(first_button_row, {
             text = _("Go to"),
             callback = function()
