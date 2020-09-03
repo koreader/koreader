@@ -64,6 +64,11 @@ function ReaderBookmark:addToMainMenu(menu_items)
 end
 
 function ReaderBookmark:search(query, bookmarks, current_bookmark, bm_menu, viewer_instance, direction)
+    -- handle empty queries:
+    if query == "" then
+        self.search_value = ""
+        return
+    end
     -- make sure query doesn't fail on special characters:
     query = query:gsub("%.", "%."):gsub("%-", "%-")
     self.search_value = query
