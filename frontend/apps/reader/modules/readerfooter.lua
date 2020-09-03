@@ -3,7 +3,6 @@ local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
-local DocSettings = require("docsettings")
 local Event = require("ui/event")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -164,14 +163,12 @@ local footerTextGeneratorMap = {
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].bookmark_count
         --retrieve bookmark count:
-        local config = DocSettings:open(G_reader_settings:readSetting("lastfile"))
-        local bookmarks = config:readSetting("bookmarks") or {}
-        local bookmark_count = tostring(#bookmarks)
+        local bookmark_count = footer.ui.bookmark:getNumberOfBookmarks()
         -- if no bookmarks defined, don't show icon:
-        if bookmark_count == "0" then
+        if bookmark_count == 0 then
             return ""
         end
-        return prefix .. bookmark_count
+        return prefix .. tostring(bookmark_count)
     end,
     time = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"

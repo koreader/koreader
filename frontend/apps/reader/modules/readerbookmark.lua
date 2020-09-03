@@ -681,6 +681,10 @@ function ReaderBookmark:hasBookmarks()
     return self.bookmarks and #self.bookmarks > 0
 end
 
+function ReaderBookmark:getNumberOfBookmarks()
+    return self.bookmarks and #self.bookmarks or 0
+end
+
 function ReaderBookmark:getNumberOfHighlightsAndNotes()
     local highlights = 0
     local notes = 0
