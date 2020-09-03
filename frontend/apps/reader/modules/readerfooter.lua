@@ -49,7 +49,7 @@ local symbol_prefix = {
         pages_left = "=>",
         -- @translators This is the footer letter prefix for battery % remaining.
         battery = C_("FooterLetterPrefix", "B:"),
-        -- @translators This is the footer letter prefix for bookmarks count.
+        -- @translators This is the footer letter prefix for the number of bookmarks (bookmark count).
         bookmarks_count = C_("FooterLetterPrefix", "BM:"),
         -- @translators This is the footer letter prefix for percentage read.
         percentage = C_("FooterLetterPrefix", "R:"),
@@ -168,8 +168,8 @@ local footerTextGeneratorMap = {
         local bookmarks = config:readSetting("bookmarks") or {}
         local bookmarks_count = tostring(#bookmarks)
         -- if no bookmarks defined, don't show icon:
-        if bookmarks_count == '0' then
-            return ''
+        if bookmarks_count == "0" then
+            return ""
         end
         return prefix .. bookmarks_count
     end,
@@ -711,7 +711,7 @@ function ReaderFooter:textOptionTitles(option)
     local option_titles = {
         all_at_once = _("Show all at once"),
         reclaim_height = _("Reclaim bar height from bottom margin"),
-        bookmarks_count = T("Bookmarks count (%1)", symbol_prefix[symbol].bookmarks_count),
+        bookmarks_count = T("Bookmark count (%1)", symbol_prefix[symbol].bookmarks_count),
         page_progress = T(_("Current page (%1)"), "/"),
         time = symbol_prefix[symbol].time
             and T(_("Current time (%1)"), symbol_prefix[symbol].time) or _("Current time"),
