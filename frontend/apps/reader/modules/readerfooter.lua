@@ -50,7 +50,7 @@ local symbol_prefix = {
         -- @translators This is the footer letter prefix for battery % remaining.
         battery = C_("FooterLetterPrefix", "B:"),
         -- @translators This is the footer letter prefix for bookmarks count.
-        bookmarks_count = C_("FooterLetterPrefix", "Bk:"),
+        bookmarks_count = C_("FooterLetterPrefix", "BM:"),
         -- @translators This is the footer letter prefix for percentage read.
         percentage = C_("FooterLetterPrefix", "R:"),
         -- @translators This is the footer letter prefix for book time to read.
