@@ -394,6 +394,15 @@ function ReaderBookmark:onShowBookmark()
         if bookmark.search_value and bookmark.search_value ~= "" then
             title = title .. '  -  "' .. bookmark.search_value .. '"'
         end
+        local from_start_text = "▕◁"
+        local backward_text = "◁"
+        local forward_text = "▷"
+        local from_end_text = "▷▏"
+        if BD.mirroredUILayout() then
+            backward_text, forward_text = forward_text, backward_text
+            -- Keep the LTR order of |< and >|:
+            from_start_text, from_end_text = BD.ltr(from_end_text), BD.ltr(from_start_text)
+        end
         local first_button_row = {
             {
                 text = _("Remove"),
@@ -427,53 +436,44 @@ function ReaderBookmark:onShowBookmark()
                     UIManager:close(self.textviewer)
                 end,
             },
+            {
+                text = backward_text,
+                enabled = bookmark.search_value ~= "",
+                callback = function()
+                    bookmark:search(bookmark.search_value, bookmarks, current_bookmark, bm_menu, self.textviewer, -1)
+                end,
+            },
+            {
+                text = _("Search"),
+                callback = function()
+                    bookmark:prompt({
+                        title = _("Bookmark search"),
+                        value = bookmark.search_value,
+                        hint = _("Needle"),
+                        callback = function(query)
+                            bookmark:search(string.lower(query), bookmarks, current_bookmark, bm_menu, self.textviewer, 1)
+                        end,
+                        save_button_text = _("Search")
+                    })
+                end,
+            },
+            {
+                text = forward_text,
+                enabled = bookmark.search_value ~= "",
+                callback = function()
+                    bookmark:search(bookmark.search_value, bookmarks, current_bookmark, bm_menu, self.textviewer, 1)
+                end,
+            },
+            {
+                text = _("Go to"),
+                callback = function()
+                    UIManager:close(self.textviewer)
+                    UIManager:close(bookmark.bookmark_menu)
+                    bookmark.ui.link:addCurrentLocationToStack()
+                    bookmark:gotoBookmark(item.page)
+                end,
+            },
         }
-        local from_start_text = "▕◁"
-        local backward_text = "◁"
-        local forward_text = "▷"
-        local from_end_text = "▷▏"
-        if BD.mirroredUILayout() then
-            backward_text, forward_text = forward_text, backward_text
-            -- Keep the LTR order of |< and >|:
-            from_start_text, from_end_text = BD.ltr(from_end_text), BD.ltr(from_start_text)
-        end
-        table.insert(first_button_row, {
-            text = backward_text,
-            enabled = bookmark.search_value ~= "",
-            callback = function()
-                bookmark:search(bookmark.search_value, bookmarks, current_bookmark, bm_menu, self.textviewer, -1)
-            end,
-        })
-        table.insert(first_button_row, {
-            text = _("Search"),
-            callback = function()
-                bookmark:prompt({
-                    title = _("Bookmark search"),
-                    value = bookmark.search_value,
-                    hint = _("Needle"),
-                    callback = function(query)
-                        bookmark:search(string.lower(query), bookmarks, current_bookmark, bm_menu, self.textviewer, 1)
-                    end,
-                    save_button_text = _("Search")
-                })
-            end,
-        })
-        table.insert(first_button_row, {
-            text = forward_text,
-            enabled = bookmark.search_value ~= "",
-            callback = function()
-                bookmark:search(bookmark.search_value, bookmarks, current_bookmark, bm_menu, self.textviewer, 1)
-            end,
-        })
-        table.insert(first_button_row, {
-            text = _("Go to"),
-            callback = function()
-                UIManager:close(self.textviewer)
-                UIManager:close(bookmark.bookmark_menu)
-                bookmark.ui.link:addCurrentLocationToStack()
-                bookmark:gotoBookmark(item.page)
-            end,
-        })
         local second_button_row = {
             {
                 text = from_start_text,
