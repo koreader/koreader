@@ -104,6 +104,7 @@ local order = {
         "news_downloader",
         "send2ebook",
         "text_editor",
+        "eyesaver",
         "profiles",
         "----------------------------",
         "more_tools",
