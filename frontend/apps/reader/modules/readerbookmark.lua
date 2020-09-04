@@ -558,21 +558,56 @@ function ReaderBookmark:onShowBookmark(open_navigator)
             end
             return t
         end
-        local function indent(itext)
-            local paras = split(itext, "\n")
-            local skip_next_para = false
-            for nr, para in ipairs(paras) do
-                if nr > 1 and para:match("[A-Za-z]") then
-                    if not skip_next_para then
-                        paras[nr] = "     " .. para
-                    else
-                        skip_next_para = false
-                    end
-                elseif nr > 1 then
-                    skip_next_para = true
+
+        -- HELPER FUNCTIONS WHICH PROBABLY SHOULD BE PUT SOMEWHERE ELSE:
+
+        local function substrCount(subject, needle)
+            return select(2, subject:gsub(needle, ""))
+        end
+
+        -- put uppercase strings (authors etc.) at start of line, and always a linebreak between them and the following text:
+        local function uppercaseWordsAtStartOfLine(itext)
+            itext = string.gsub(itext, "\n[ ]+([A-Z][A-Z]+)", "\n%1")
+            itext = string.gsub(itext, "([A-Z]+)\n[ ]+", "%1\n\n")
+            itext = string.gsub(itext, "([A-Z]+)\n\n[ ]+", "%1\n\n")
+            itext = string.gsub(itext, "([A-Z]+)\n([A-Z])", "%1\n\n%2")
+            itext = string.gsub(itext, "\n\n\n", "\n\n")
+            return itext
+        end
+        local function isPoem(itext)
+            local line_endings_count = substrCount(text, "\n")
+            local requisition1 = line_endings_count > 3
+
+            -- check whether lines are not too long:
+            local lines = split(itext, "\n")
+            local requisition2 = true
+            for _, line in ipairs(lines) do
+                if string.len(line) > 52 then
+                    requisition2 = false
+                    break
                 end
             end
-            return table.concat(paras, "\n")
+            return (requisition1 == true and requisition2 == true)
+        end
+        local function indent(itext)
+            -- only for non poetic text indent para's:
+            if not isPoem(itext) then
+                local paras = split(itext, "\n")
+                local skip_next_para = false
+                for nr, para in ipairs(paras) do
+                    if nr > 1 and para:match("[A-Za-z]") then
+                        if not skip_next_para then
+                            paras[nr] = "     " .. para
+                        else
+                            skip_next_para = false
+                        end
+                    elseif nr > 1 then
+                        skip_next_para = true
+                    end
+                end
+                itext = table.concat(paras, "\n")
+            end
+            return uppercaseWordsAtStartOfLine(itext)
         end
 
         self.textviewer = TextViewer:new{
