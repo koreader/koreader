@@ -5,9 +5,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local util = require("ffi/util")
 local _ = require("gettext")
-local T = require("ffi/util").template
 
 local EyeSaver = WidgetContainer:new {
     name = "eyesaver",
@@ -45,26 +43,8 @@ function EyeSaver:init()
     end
 end
 
--- when display_timestamp for displaying the message was in a period in which the ereader "slept", adapt the new display display_timestamp to be in the future again:
-function EyeSaver:scheduleAdapt()
-    if not self.enabled then
-        return
-    end
-    local timestamp = self.display_timestamp
-    if self:eyeSaverMessageScheduled() and timestamp < os.time() then
-        self:unschedule();
-        self:scheduleTimeCompute()
-        self:schedule();
-    end
-end
-
 function EyeSaver:scheduleTimeCompute()
-    if not self.enabled then
-        return
-    end
-    local time = self.display_interval
-    local now = util:getTimestamp()
-    self.display_timestamp = now + time
+    self.display_timestamp = os.time() + self.display_interval
     self.display_time_clock = os.date(_("%H:%M"), self.display_timestamp)
     self:saveSettings()
 end
@@ -76,7 +56,19 @@ function EyeSaver:schedule()
     if not self:eyeSaverMessageScheduled() then
         self:scheduleTimeCompute()
     end
-    UIManager:schedule(self.display_timestamp, self.timed_display_callback)
+    UIManager:scheduleIn(self.display_interval, self.timed_display_callback)
+end
+
+-- when time for displaying the message was in a period in which the ereader "slept", adapt the new display time to be in the future again:
+function EyeSaver:scheduleAdapt()
+    if not self.enabled then
+        return
+    end
+    if self.display_timestamp and self:eyeSaverMessageScheduled() and self.display_timestamp < os.time() then
+        self:unschedule();
+        self:scheduleTimeCompute()
+        self:schedule();
+    end
 end
 
 function EyeSaver:unschedule()
@@ -115,10 +107,6 @@ function EyeSaver:onToggleEyeSaverMessage()
         self.settings:saveSetting("eyesaver_enabled", false)
         status = _("disabled")
     end
-    UIManager:show(InfoMessage:new {
-        text = T(_("EyeSaver messages: %1"), status),
-        timeout = 3
-    })
 end
 
 function EyeSaver:eyeSaverMessageScheduled()
@@ -146,9 +134,8 @@ function EyeSaver:addToMainMenu(menu_items)
             return self.enabled
         end,
         text = _("EyeSaver messages"),
-        keep_menu_open = false,
         callback = function()
-            self:onToggleEyeSaverMessage(true)
+            self:onToggleEyeSaverMessage()
         end,
     }
 end
