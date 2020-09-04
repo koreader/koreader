@@ -168,7 +168,7 @@ local footerTextGeneratorMap = {
         if bookmark_count == 0 then
             return ""
         end
-        return prefix .. tostring(bookmark_count)
+        return prefix .. " " .. tostring(bookmark_count)
     end,
     time = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
