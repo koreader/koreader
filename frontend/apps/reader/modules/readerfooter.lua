@@ -39,6 +39,7 @@ local MODE = {
     wifi_status = 10,
     book_title = 11,
     book_chapter = 12,
+    bookmark_count = 13,
 }
 
 local symbol_prefix = {
@@ -47,6 +48,8 @@ local symbol_prefix = {
         pages_left = "=>",
         -- @translators This is the footer letter prefix for battery % remaining.
         battery = C_("FooterLetterPrefix", "B:"),
+        -- @translators This is the footer letter prefix for the number of bookmarks (bookmark count).
+        bookmark_count = C_("FooterLetterPrefix", "BM:"),
         -- @translators This is the footer letter prefix for percentage read.
         percentage = C_("FooterLetterPrefix", "R:"),
         -- @translators This is the footer letter prefix for book time to read.
@@ -64,6 +67,7 @@ local symbol_prefix = {
         time = "⌚",
         pages_left = BD.mirroredUILayout() and "⇐" or "⇒",
         battery = "",
+        bookmark_count = "☆",
         percentage = BD.mirroredUILayout() and "⤟" or "⤠",
         book_time_to_read = "⏳",
         chapter_time_to_read = BD.mirroredUILayout() and "⥖" or "⤻",
@@ -154,6 +158,17 @@ local footerTextGeneratorMap = {
         else
             return BD.wrap(prefix) .. " " .. (powerd:isCharging() and "+" or "") .. batt_lvl .. "%"
         end
+    end,
+    bookmark_count = function(footer)
+        local symbol_type = footer.settings.item_prefix or "icons"
+        local prefix = symbol_prefix[symbol_type].bookmark_count
+        --retrieve bookmark count:
+        local bookmark_count = footer.ui.bookmark:getNumberOfBookmarks()
+        -- if no bookmarks defined, don't show icon:
+        if bookmark_count == 0 then
+            return ""
+        end
+        return prefix .. " " .. tostring(bookmark_count)
     end,
     time = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
@@ -300,6 +315,7 @@ function ReaderFooter:init()
         reclaim_height = false,
         toc_markers = true,
         battery = Device:hasBattery(),
+        bookmark_count = true,
         time = true,
         page_progress = true,
         pages_left = true,
@@ -692,6 +708,7 @@ function ReaderFooter:textOptionTitles(option)
     local option_titles = {
         all_at_once = _("Show all at once"),
         reclaim_height = _("Reclaim bar height from bottom margin"),
+        bookmark_count = T("Bookmark count (%1)", symbol_prefix[symbol].bookmark_count),
         page_progress = T(_("Current page (%1)"), "/"),
         time = symbol_prefix[symbol].time
             and T(_("Current time (%1)"), symbol_prefix[symbol].time) or _("Current time"),
@@ -1603,6 +1620,7 @@ function ReaderFooter:addToMainMenu(menu_items)
     if Device:hasBattery() then
         table.insert(sub_items, getMinibarOption("battery"))
     end
+    table.insert(sub_items, getMinibarOption("bookmark_count"))
     table.insert(sub_items, getMinibarOption("percentage"))
     table.insert(sub_items, getMinibarOption("book_time_to_read"))
     table.insert(sub_items, getMinibarOption("chapter_time_to_read"))
@@ -1855,6 +1873,7 @@ function ReaderFooter:applyFooterMode(mode)
     -- 10 for Wi-Fi status
     -- 11 for book title
     -- 12 for current chapter
+    -- 13 for bookmark count
 
     if mode ~= nil then self.mode = mode end
     local prev_visible_state = self.view.footer_visible
