@@ -10,14 +10,14 @@ function ExtAssoc:commit()
     G_reader_settings:saveSetting("file_ext_assoc", self.assoc):flush()
     -- Translate the boolean map back to map of providers the OS backend can inquire further
     local t = {}
-    for k, v in pairs(DocumentRegistry:getExtensions()) do
+    for k, v in pairs(DocumentRegistry:getOpenableExtensions()) do
         if self.assoc[k] then t[k] = v end
     end
     Device:associateFileExtensions(t)
 end
 
 function ExtAssoc:setAll(state)
-    for k, dummy in pairs(DocumentRegistry:getExtensions()) do
+    for k, dummy in pairs(DocumentRegistry:getOpenableExtensions()) do
         self:setOne(k, state)
     end
     self:commit()
@@ -47,7 +47,7 @@ function ExtAssoc:getSettingsMenuTable()
             separator = true,
         },
     }
-    local exts = DocumentRegistry:getExtensions()
+    local exts = DocumentRegistry:getOpenableExtensions()
     local keys = {}
     for k, dummy in pairs(exts) do
         table.insert(keys, k)

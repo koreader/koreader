@@ -160,6 +160,15 @@ function DocumentRegistry:getExtensions()
     return t
 end
 
+--- Get mapping of openable file extensions to providers
+-- @treturn table mapping openable file extensions to a list of providers
+function DocumentRegistry:getOpenableExtensions()
+    local t = self:getExtensions()
+    t["sh"] = nil
+    t["py"] = nil
+    return t
+end
+
 --- Sets the preferred registered document handler.
 -- @string file
 -- @bool all

@@ -250,14 +250,15 @@ pbupdate: all
 	file $(INSTALL_DIR)/koreader/luajit | grep ARM || exit 1
 	# remove old package if any
 	rm -f $(PB_PACKAGE)
-	# Pocketbook launching script
+	# Pocketbook launching scripts
 	mkdir -p $(INSTALL_DIR)/applications
 	mkdir -p $(INSTALL_DIR)/system/bin
-	mkdir -p $(INSTALL_DIR)/system/config
-
 	cp $(POCKETBOOK_DIR)/koreader.app $(INSTALL_DIR)/applications
 	cp $(POCKETBOOK_DIR)/koreader.app $(INSTALL_DIR)/system/bin
 	cp -rfL $(INSTALL_DIR)/koreader $(INSTALL_DIR)/applications
+	find $(INSTALL_DIR)/applications/koreader \
+		-type f \( -name "*.gif" -o -name "*.html" -o -name "*.md" -o -name "*.txt" \) \
+		-exec rm -vf {} \;
 	# create new package
 	cd $(INSTALL_DIR) && \
 		zip -9 -r \

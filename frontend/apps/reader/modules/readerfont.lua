@@ -397,7 +397,7 @@ If that font happens to be part of this list already, it will be used first.]]),
 end
 
 -- Default sample file
-local FONT_TEST_DEFAULT_SAMPLE_PATH = "frontend/ui/elements/font-test-sample-default.html"
+local FONT_TEST_DEFAULT_SAMPLE_PATH = "frontend/ui/elements/font-test-sample-default.template"
 -- Users can set their own sample file, that will be used if found
 local FONT_TEST_USER_SAMPLE_PATH = require("datastorage"):getSettingsDir() .. "/font-test-sample.html"
 -- This document will be generated in the home or default directory
