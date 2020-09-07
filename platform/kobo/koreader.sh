@@ -389,9 +389,11 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         fi
 
         # If the language is CJK, copy the CJK font, too...
-        if [ "${usbms_lang}" = ja* ] || [ "${usbms_lang}" = ko* ] || [ "${usbms_lang}" = zh* ]; then
-            cp -pf "${KOREADER_DIR}/fonts/noto/NotoSansCJKsc-Regular.otf" "${USBMS_HOME}/resources/fonts/NotoSansCJKsc-Regular.otf"
-        fi
+        case "${usbms_lang}" in
+            ja* | ko* | zh* )
+                cp -pf "${KOREADER_DIR}/fonts/noto/NotoSansCJKsc-Regular.otf" "${USBMS_HOME}/resources/fonts/NotoSansCJKsc-Regular.otf"
+            ;;
+        esac
 
         # Here we go!
         if ! cd "${USBMS_HOME}"; then
