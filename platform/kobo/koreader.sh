@@ -390,7 +390,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
 
         # If the language is CJK, copy the CJK font, too...
         case "${usbms_lang}" in
-            ja* | ko* | zh* )
+            ja* | ko* | zh*)
                 cp -pf "${KOREADER_DIR}/fonts/noto/NotoSansCJKsc-Regular.otf" "${USBMS_HOME}/resources/fonts/NotoSansCJKsc-Regular.otf"
             ;;
         esac
