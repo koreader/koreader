@@ -373,7 +373,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         if ! ./tar xzf "./data/KoboUSBMS.tar.gz" -C "${USBMS_HOME}"; then
             echo "Couldn't unpack KoboUSBMS, restarting KOReader . . ." >>crash.log 2>&1
             if ! umount "${USBMS_HOME}"; then
-                logger -p "DAEMON.CRIT" -t "koreader.sh[$$]" "Couldn't unmount the USBMS tmpfs, shutting down in 30 sec!"
+                echo "Couldn't unmount the USBMS tmpfs, shutting down in 30 sec!" >>crash.log 2>&1
                 sleep 30
                 poweroff -f
             fi
@@ -399,7 +399,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         if ! cd "${USBMS_HOME}"; then
             echo "Couldn't chdir to ${USBMS_HOME}, restarting KOReader . . ." >>crash.log 2>&1
             if ! umount "${USBMS_HOME}"; then
-                logger -p "DAEMON.CRIT" -t "koreader.sh[$$]" "Couldn't unmount the USBMS tmpfs, shutting down in 30 sec!"
+                echo "Couldn't unmount the USBMS tmpfs, shutting down in 30 sec!" >>crash.log 2>&1
                 sleep 30
                 poweroff -f
             fi
