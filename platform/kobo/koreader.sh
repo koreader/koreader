@@ -362,21 +362,22 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
 
     if [ ${RETURN_VALUE} -eq ${KO_RC_USBMS} ]; then
         # User requested an USBMS session, setup the tool outside of onboard
-        mkdir -p "/mnt/usbms"
+        USBMS_HOME="/mnt/usbms"
+        mkdir -p "${USBMS_HOME}"
         # We're using a custom tmpfs in case /tmp is too small (mainly because we may need to import a large CJK font in there...)
-        if ! mount -t tmpfs tmpfs /mnt/usbms -o defaults,size=32M,mode=1777,noatime; then
+        if ! mount -t tmpfs tmpfs ${USBMS_HOME} -o defaults,size=32M,mode=1777,noatime; then
             echo "Failed to create the USBMS tmpfs, restarting KOReader . . ." >>crash.log 2>&1
             continue
         fi
 
-        if ! ./tar xzf "./data/KoboUSBMS.tar.gz" -C "/mnt/usbms"; then
+        if ! ./tar xzf "./data/KoboUSBMS.tar.gz" -C "${USBMS_HOME}"; then
             echo "Couldn't unpack KoboUSBMS, restarting KOReader . . ." >>crash.log 2>&1
-            if ! umount "/mnt/usbms"; then
+            if ! umount "${USBMS_HOME}"; then
                 logger -p "DAEMON.CRIT" -t "koreader.sh[$$]" "Couldn't unmount the USBMS tmpfs, shutting down in 30 sec!"
                 sleep 30
                 poweroff -f
             fi
-            rm -rf "/mnt/usbms"
+            rm -rf "${USBMS_HOME}"
             continue
         fi
 
@@ -389,18 +390,18 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
 
         # If the language is CJK, copy the CJK font, too...
         if [ "${usbms_lang}" = ja* ] || [ "${usbms_lang}" = ko* ] || [ "${usbms_lang}" = zh* ]; then
-            cp -pf "${KOREADER_DIR}/fonts/noto/NotoSansCJKsc-Regular.otf" "/mnt/usbms/resources/fonts/NotoSansCJKsc-Regular.otf"
+            cp -pf "${KOREADER_DIR}/fonts/noto/NotoSansCJKsc-Regular.otf" "${USBMS_HOME}/resources/fonts/NotoSansCJKsc-Regular.otf"
         fi
 
         # Here we go!
-        if ! cd "/mnt/usbms"; then
-            echo "Couldn't chdir to /mnt/usbms, restarting KOReader . . ." >>crash.log 2>&1
-            if ! umount "/mnt/usbms"; then
+        if ! cd "${USBMS_HOME}"; then
+            echo "Couldn't chdir to ${USBMS_HOME}, restarting KOReader . . ." >>crash.log 2>&1
+            if ! umount "${USBMS_HOME}"; then
                 logger -p "DAEMON.CRIT" -t "koreader.sh[$$]" "Couldn't unmount the USBMS tmpfs, shutting down in 30 sec!"
                 sleep 30
                 poweroff -f
             fi
-            rm -rf "/mnt/usbms"
+            rm -rf "${USBMS_HOME}"
             continue
         fi
         env LANGUAGE="${usbms_lang}" ./usbms
@@ -426,12 +427,12 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         fi
 
         # Tear down the tmpfs...
-        if ! umount "/mnt/usbms"; then
+        if ! umount "${USBMS_HOME}"; then
             logger -p "DAEMON.CRIT" -t "koreader.sh[$$]" "Couldn't unmount the USBMS tmpfs, shutting down in 30 sec!"
             sleep 30
             poweroff -f
         fi
-        rm -rf "/mnt/usbms"
+        rm -rf "${USBMS_HOME}"
     fi
 done
 
