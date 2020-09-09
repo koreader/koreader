@@ -1,6 +1,12 @@
 local Device = require("device")
-local DocumentRegistry = require("document/documentregistry")
 local _ = require("gettext")
+
+local function getSupportedExtensions()
+    local t = require("document/documentregistry"):getExtensions()
+    t["sh"] = nil
+    t["py"] = nil
+    return t
+end
 
 local ExtAssoc = {
     assoc = G_reader_settings:readSetting("file_ext_assoc") or {},
@@ -10,14 +16,14 @@ function ExtAssoc:commit()
     G_reader_settings:saveSetting("file_ext_assoc", self.assoc):flush()
     -- Translate the boolean map back to map of providers the OS backend can inquire further
     local t = {}
-    for k, v in pairs(DocumentRegistry:getExtensions()) do
+    for k, v in pairs(getSupportedExtensions()) do
         if self.assoc[k] then t[k] = v end
     end
     Device:associateFileExtensions(t)
 end
 
 function ExtAssoc:setAll(state)
-    for k, dummy in pairs(DocumentRegistry:getExtensions()) do
+    for k, dummy in pairs(getSupportedExtensions()) do
         self:setOne(k, state)
     end
     self:commit()
@@ -47,7 +53,7 @@ function ExtAssoc:getSettingsMenuTable()
             separator = true,
         },
     }
-    local exts = DocumentRegistry:getExtensions()
+    local exts = getSupportedExtensions()
     local keys = {}
     for k, dummy in pairs(exts) do
         table.insert(keys, k)
