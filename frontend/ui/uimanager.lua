@@ -159,13 +159,27 @@ function UIManager:init()
             -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
             if Device.screen_saver_mode then
                 self:suspend()
+            end
+        end
+        self.event_handlers["NotCharging"] = function()
+            -- We need to put the device into suspension, other things need to be done before it.
+            self:_afterNotCharging()
+            if Device.screen_saver_mode then
+                self:suspend()
+            end
+        end
+        self.event_handlers["UsbPlugIn"] = function()
+            self:_beforeCharging()
+            -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
+            if Device.screen_saver_mode then
+                self:suspend()
             else
                 -- Potentially start an USBMS session
                 local MassStorage = require("ui/elements/mass_storage")
                 MassStorage:start()
             end
         end
-        self.event_handlers["NotCharging"] = function()
+        self.event_handlers["UsbPlugOut"] = function()
             -- We need to put the device into suspension, other things need to be done before it.
             self:_afterNotCharging()
             if Device.screen_saver_mode then
@@ -322,7 +336,7 @@ function UIManager:init()
                 MassStorage:start()
             end
         end
-        self.event_handlers["USbPlugOut"] = function()
+        self.event_handlers["UsbPlugOut"] = function()
             self:_afterNotCharging()
             if Device.screen_saver_mode then
                 self:suspend()
