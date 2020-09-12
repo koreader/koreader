@@ -561,7 +561,25 @@ end
 function ReaderFooter:setupAutoRefreshTime()
     if not self.autoRefreshTime then
         self.autoRefreshTime = function()
-            self:onUpdateFooter(true)
+            -- Don't refresh if there's another widget than ReaderUI flagged as covers_fullscreen being shown!
+            -- This isn't particularly pretty, but, oh, well (#6616).
+            local skip_refresh = false
+            -- c.f., UIManager:_repaint
+            for i = #UIManager._window_stack, 1, -1 do
+                local widget = UIManager._window_stack[i].widget
+                if widget.covers_fullscreen then
+                    if widget.name and widget.name == "ReaderUI" then
+                        -- NOP
+                    else
+                        skip_refresh = true
+                        logger.dbg("Skipping ReaderFooter:autoRefreshTime refresh, because something covers ReaderUI")
+                        break
+                    end
+                end
+            end
+            if not skip_refresh then
+                self:onUpdateFooter(true)
+            end
             UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
         end
     end
