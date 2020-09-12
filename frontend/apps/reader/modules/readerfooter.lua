@@ -2011,8 +2011,11 @@ end
 -- otherwise it'll happily keep on ticking and drawing on top of stuff it ought not to... (#6616)
 --- @note: If the widget actually makes it to UIManager's stack (i.e., it's passed to UIManager:show()),
 -- it's generally simpler to set covers_footer when initializing the Widget object.
+-- Since these Events are currently not in use, comment the handlers out ;).
+--[[
 ReaderFooter.onDisableFooterAutoRefresh = ReaderFooter.onSuspend
 ReaderFooter.onRestoreFooterAutoRefresh = ReaderFooter.onResume
+--]]
 
 function ReaderFooter:onFrontlightStateChanged()
     if self.settings.frontlight then
