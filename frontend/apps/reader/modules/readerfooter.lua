@@ -562,7 +562,8 @@ end
 function ReaderFooter:setupAutoRefreshTime()
     if not self.autoRefreshTime then
         self.autoRefreshTime = function()
-            -- Don't refresh if there's another widget than ReaderUI flagged as covers_fullscreen being shown!
+            -- Don't refresh if there's another widget than ReaderUI flagged as covers_fullscreen being shown,
+            -- or if a non-fullscreen widget is flagged as covers_footer.
             -- This isn't particularly pretty, but, oh, well (#6616).
             local skip_refresh = false
             -- c.f., UIManager:_repaint
@@ -2032,6 +2033,8 @@ end
 
 -- We want to be able to disable auto_refresh_time when displaying *some* non-fullscreen widgets on top of ReaderUI,
 -- otherwise it'll happily keep on ticking and drawing on top of stuff it ought not to... (#6616)
+--- @note: If the widget actually makes it to UIManager's stack (i.e., it's passed to UIManager:show()),
+-- it's generally simpler to set covers_footer when initializing the Widget object.
 ReaderFooter.onDisableFooterAutoRefresh = ReaderFooter.onSuspend
 ReaderFooter.onRestoreFooterAutoRefresh = ReaderFooter.onResume
 
