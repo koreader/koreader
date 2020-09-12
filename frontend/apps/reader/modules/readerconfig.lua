@@ -81,7 +81,7 @@ end
 
 function ReaderConfig:onShowConfigMenu()
     self.config_dialog = ConfigDialog:new{
-        covers_footer = true, -- hint for ReaderFooter:setupAutoRefreshTime
+        covers_footer = true, -- hint for UIManager:repaintReaderFooter
         dimen = self.dimen:copy(),
         document = self.document,
         ui = self.ui,
