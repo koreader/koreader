@@ -1045,6 +1045,16 @@ function UIManager:_repaint()
         end
     end
 
+    -- Show IDs of covered widgets when debugging
+    --[[
+    if start_idx > 1 then
+        for i = 1, start_idx-1 do
+            local widget = self._window_stack[i]
+            logger.dbg("NOT painting widget:", widget.widget.name or widget.widget.id or tostring(widget))
+        end
+    end
+    --]]
+
     for i = start_idx, #self._window_stack do
         local widget = self._window_stack[i]
         -- paint if current widget or any widget underneath is dirty
@@ -1215,6 +1225,8 @@ function UIManager:handleInput()
     repeat
         wait_until, now = self:_checkTasks()
         --dbg("---------------------------------------------------")
+        --dbg("wait_until", wait_until)
+        --dbg("now", now)
         --dbg("exec stack", self._task_queue)
         --dbg("window stack", self._window_stack)
         --dbg("dirty stack", self._dirty)
