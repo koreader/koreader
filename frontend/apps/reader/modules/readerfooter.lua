@@ -2016,7 +2016,6 @@ function ReaderFooter:refreshFooter(refresh, signal)
 end
 
 function ReaderFooter:onResume()
-    print("ReaderFooter:onResume")
     self:onUpdateFooter()
     if self.settings.auto_refresh_time then
         self:setupAutoRefreshTime()
@@ -2024,7 +2023,6 @@ function ReaderFooter:onResume()
 end
 
 function ReaderFooter:onSuspend()
-    print("ReaderFooter:onSuspend")
     if self.settings.auto_refresh_time then
         UIManager:unschedule(self.autoRefreshTime)
         self.onCloseDocument = nil
