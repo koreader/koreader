@@ -1263,6 +1263,7 @@ function ReaderLink:showAsFootnotePopup(link, neglect_current_location)
     local FootnoteWidget = require("ui/widget/footnotewidget")
     local popup
     popup = FootnoteWidget:new{
+        covers_footer = true, -- hint for ReaderFooter:setupAutoRefreshTime
         html = html,
         doc_font_size = Screen:scaleBySize(self.ui.font.font_size),
         doc_margins = self.ui.document:getPageMargins(),

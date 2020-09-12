@@ -576,6 +576,10 @@ function ReaderFooter:setupAutoRefreshTime()
                         logger.dbg("Skipping ReaderFooter:autoRefreshTime refresh, because something covers ReaderUI")
                         break
                     end
+                elseif widget.covers_footer then
+                        skip_refresh = true
+                        logger.dbg("Skipping ReaderFooter:autoRefreshTime refresh, because something covers ReaderFooter")
+                        break
                 end
             end
             if not skip_refresh then
