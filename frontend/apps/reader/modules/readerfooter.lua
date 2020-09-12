@@ -19,6 +19,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local logger = require("logger")
 local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -2025,7 +2026,7 @@ function ReaderFooter:onSuspend()
     end
 end
 
--- We want to be able to disable auto_refresh_time when displaying *some* widgets on top of ReaderUI,
+-- We want to be able to disable auto_refresh_time when displaying *some* non-fullscreen widgets on top of ReaderUI,
 -- otherwise it'll happily keep on ticking and drawing on top of stuff it ought not to... (#6616)
 ReaderFooter.onDisableFooterAutoRefresh = ReaderFooter.onSuspend
 ReaderFooter.onRestoreFooterAutoRefresh = ReaderFooter.onResume
