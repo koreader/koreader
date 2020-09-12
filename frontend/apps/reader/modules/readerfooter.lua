@@ -570,8 +570,8 @@ function ReaderFooter:setupAutoRefreshTime()
             for i = #UIManager._window_stack, 1, -1 do
                 local widget = UIManager._window_stack[i].widget
                 if widget.covers_fullscreen then
-                    if widget.name and widget.name == "ReaderUI" then
-                        -- luacheck: ignore
+                    if widget.name and widget.name == "ReaderUI" then  -- luacheck: ignore
+                        -- NOP
                     else
                         skip_refresh = true
                         logger.dbg("Skipping ReaderFooter:autoRefreshTime refresh, because something covers ReaderUI")
