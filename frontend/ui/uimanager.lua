@@ -1144,8 +1144,8 @@ end
 -- Now, this one is basically widgetRepaint, but tailored for a very,
 -- very specific use-cases related to ReaderFooter:setupAutoRefreshTime
 -- (c.f., #6648)
-function UIManager:repaintReaderFooter(widget)
-    if not widget then return end
+function UIManager:repaintReaderFooter(readerfooter_widget)
+    if not readerfooter_widget then return end
 
     -- Don't repaint if there's another widget than ReaderUI flagged as covers_fullscreen being shown,
     -- or if a non-fullscreen widget is flagged as covers_footer.
@@ -1170,9 +1170,9 @@ function UIManager:repaintReaderFooter(widget)
     end
     if skip_repaint then return end
 
-    logger.dbg("Explicit ReaderFooter repaint:", widget.name or widget.id or tostring(widget))
+    logger.dbg("Explicit ReaderFooter repaint:", readerfooter_widget.name or readerfooter_widget.id or tostring(readerfooter_widget))
     -- c.f., ReaderView:paintTo()
-    widget:paintTo(Screen.bb, 0, 0)
+    readerfooter_widget:paintTo(Screen.bb, 0, 0)
 
     -- Inform the caller that we did, in fact, repaint it.
     return true
