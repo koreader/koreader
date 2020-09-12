@@ -1795,11 +1795,13 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             -- Unfortunately, it's not a modal (we never show() it), so it's not in the window stack,
             -- instead, it's baked inside ReaderUI, so it gets slightly trickier...
             -- NOTE: self.view.footer -> self ;).
-            UIManager:setDirty(self.view.footer, function()
-                return "ui", refresh_dim
-            end)
-            -- c.f., ReaderView:paintTo()
-            UIManager:widgetRepaint(self.view.footer, 0, 0)
+            if UIManager:repaintReaderFooter(self.view.footer) then
+                -- NOTE: repaintReaderFooter will sometimes choose *not* to repaint, in which case,
+                --       we don't want to generate a bogus setDirty call ;).
+                UIManager:setDirty(self.view.footer, function()
+                    return "ui", refresh_dim
+                end)
+            end
         else
             UIManager:setDirty(self.view.dialog, function()
                 return "ui", refresh_dim
@@ -2004,6 +2006,16 @@ function ReaderFooter:onSuspend()
         self.onCloseDocument = nil
     end
 end
+
+-- We want to be able to disable auto_refresh_time when displaying *some* non-fullscreen widgets on top of ReaderUI,
+-- otherwise it'll happily keep on ticking and drawing on top of stuff it ought not to... (#6616)
+--- @note: If the widget actually makes it to UIManager's window stack (i.e., it's passed to UIManager:show()),
+---        it's generally simpler to set covers_footer when initializing the Widget object.
+-- Since these Events are not currently in use, comment the handlers out ;).
+--[[
+ReaderFooter.onDisableFooterAutoRefresh = ReaderFooter.onSuspend
+ReaderFooter.onRestoreFooterAutoRefresh = ReaderFooter.onResume
+--]]
 
 function ReaderFooter:onFrontlightStateChanged()
     if self.settings.frontlight then
