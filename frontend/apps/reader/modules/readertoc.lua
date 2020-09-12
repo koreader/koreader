@@ -557,6 +557,7 @@ function ReaderToc:onShowToc()
 
     toc_menu.close_callback = function()
         UIManager:close(menu_container)
+        self.ui:handleEvent(Event:new("RestoreFooterAutoRefresh"))
     end
 
     toc_menu.show_parent = menu_container
@@ -569,6 +570,7 @@ function ReaderToc:onShowToc()
     -- auto goto page of the current toc entry
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, self.collapsed_toc.current or -1)
 
+    self.ui:handleEvent(Event:new("DisableFooterAutoRefresh"))
     UIManager:show(menu_container)
 
     return true

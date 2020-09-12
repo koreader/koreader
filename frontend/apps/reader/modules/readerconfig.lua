@@ -90,6 +90,7 @@ function ReaderConfig:onShowConfigMenu()
         close_callback = function() self:onCloseCallback() end,
     }
     self.ui:handleEvent(Event:new("DisableHinting"))
+    self.ui:handleEvent(Event:new("DisableFooterAutoRefresh"))
     -- show last used panel when opening config dialog
     self.config_dialog:onShowConfigPanel(self.last_panel_index)
     UIManager:show(self.config_dialog)
@@ -123,6 +124,7 @@ function ReaderConfig:onCloseCallback()
     self.last_panel_index = self.config_dialog.panel_index
     self.config_dialog = nil
     self.ui:handleEvent(Event:new("RestoreHinting"))
+    self.ui:handleEvent(Event:new("RestoreFooterAutoRefresh"))
 end
 
 -- event handler for readercropping

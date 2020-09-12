@@ -141,8 +141,10 @@ function FileManagerHistory:onShowHist()
         -- display of the underlying File Browser)
         UIManager:nextTick(function()
             UIManager:close(self.hist_menu)
+            self.ui:handleEvent(Event:new("RestoreFooterAutoRefresh"))
         end)
     end
+    self.ui:handleEvent(Event:new("DisableFooterAutoRefresh"))
     UIManager:show(self.hist_menu)
     return true
 end

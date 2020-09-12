@@ -2005,6 +2005,11 @@ function ReaderFooter:onSuspend()
     end
 end
 
+-- We want to be able to disable auto_refresh_time when displaying *some* widgets on top of ReaderUI,
+-- otherwise it'll happily keep on ticking and drawing on top of stuff it ought not to... (#6616)
+self.onDisableFooterAutoRefresh = self.onSuspend
+self.onRestoreFooterAutoRefresh = self.onResume
+
 function ReaderFooter:onFrontlightStateChanged()
     if self.settings.frontlight then
         self:onUpdateFooter(true)
