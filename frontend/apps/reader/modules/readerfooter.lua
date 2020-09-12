@@ -19,7 +19,6 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local logger = require("logger")
 local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -562,30 +561,7 @@ end
 function ReaderFooter:setupAutoRefreshTime()
     if not self.autoRefreshTime then
         self.autoRefreshTime = function()
-            -- Don't refresh if there's another widget than ReaderUI flagged as covers_fullscreen being shown,
-            -- or if a non-fullscreen widget is flagged as covers_footer.
-            -- This isn't particularly pretty, but, oh, well (#6616).
-            local skip_refresh = false
-            -- c.f., UIManager:_repaint
-            for i = #UIManager._window_stack, 1, -1 do
-                local widget = UIManager._window_stack[i].widget
-                if widget.covers_fullscreen then
-                    if widget.name and widget.name == "ReaderUI" then  -- luacheck: ignore
-                        -- NOP
-                    else
-                        skip_refresh = true
-                        logger.dbg("Skipping ReaderFooter:autoRefreshTime refresh, because something covers ReaderUI")
-                        break
-                    end
-                elseif widget.covers_footer then
-                        skip_refresh = true
-                        logger.dbg("Skipping ReaderFooter:autoRefreshTime refresh, because something covers ReaderFooter")
-                        break
-                end
-            end
-            if not skip_refresh then
-                self:onUpdateFooter(true)
-            end
+            self:onUpdateFooter(true)
             UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
         end
     end
@@ -1819,11 +1795,13 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             -- Unfortunately, it's not a modal (we never show() it), so it's not in the window stack,
             -- instead, it's baked inside ReaderUI, so it gets slightly trickier...
             -- NOTE: self.view.footer -> self ;).
-            UIManager:setDirty(self.view.footer, function()
-                return "ui", refresh_dim
-            end)
-            -- c.f., ReaderView:paintTo()
-            UIManager:widgetRepaint(self.view.footer, 0, 0)
+            if UIManager:repaintReaderFooter(self.view.footer) then
+                -- NOTE: repaintReaderFooter will sometimes choose *not* to repaint, in which case,
+                --       we don't want to generate a bogus setDirty call ;).
+                UIManager:setDirty(self.view.footer, function()
+                    return "ui", refresh_dim
+                end)
+            end
         else
             UIManager:setDirty(self.view.dialog, function()
                 return "ui", refresh_dim
