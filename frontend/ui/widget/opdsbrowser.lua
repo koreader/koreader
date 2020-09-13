@@ -365,16 +365,18 @@ function OPDSBrowser:parseFeed(item_url, username, password)
     local feed_last_modified = self:fetchFeed(item_url, username, password, "HEAD")
     local hash = "opds|catalog|" .. item_url
     if feed_last_modified then
-        hash = hash .. feed_last_modified
+        hash = hash .. "|" .. feed_last_modified
     end
 
     local cache = CatalogCache:check(hash)
     if cache then
+        logger.dbg("Cache hit for", hash)
         feed = cache.feed
     else
-        logger.dbg("cache", hash)
+        logger.dbg("Cache miss for", hash)
         feed = self:fetchFeed(item_url, username, password)
         if feed then
+            logger.dbg("Caching", hash)
             CatalogCache:insert(hash, CatalogCacheItem:new{ feed = feed })
         end
     end
