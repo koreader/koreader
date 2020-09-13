@@ -37,7 +37,7 @@ function AutoTurn:_schedule(settings_id)
     local delay = self.last_action_sec + self.autoturn_sec - os.time()
 
     if delay <= 0 then
-        if UIManager:getTopWidget() == "ReaderUI"then
+        if UIManager:getTopWidget() == "ReaderUI" then
             logger.dbg("AutoTurn: go to next page")
             self.ui:handleEvent(Event:new("GotoViewRel", self.autoturn_distance))
         end

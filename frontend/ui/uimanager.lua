@@ -1151,43 +1151,6 @@ function UIManager:widgetRepaint(widget, x, y)
     widget:paintTo(Screen.bb, x, y)
 end
 
--- Now, this one is basically widgetRepaint, but tailored for a very,
--- very specific use-case related to ReaderFooter:setupAutoRefreshTime
--- (c.f., #6648)
-function UIManager:repaintReaderFooter(readerfooter_widget)
-    if not readerfooter_widget then return false end
-
-    -- Don't repaint if there's another widget than ReaderUI flagged as covers_fullscreen being shown,
-    -- or if a non-fullscreen widget is flagged as covers_footer.
-    -- This isn't particularly pretty, but, oh, well (#6616).
-    local skip_repaint = false
-    -- c.f., UIManager:_repaint
-    for i = #self._window_stack, 1, -1 do
-        local widget = self._window_stack[i].widget
-        if widget.covers_fullscreen then
-            if widget.name and widget.name == "ReaderUI" then  -- luacheck: ignore
-                -- NOP (i.e., continue)
-            else
-                skip_repaint = true
-                logger.dbg("Skipping ReaderFooter repaint, because something covers ReaderUI")
-                break
-            end
-        elseif widget.covers_footer then
-            skip_repaint = true
-            logger.dbg("Skipping ReaderFooter repaint, because something covers ReaderFooter")
-            break
-        end
-    end
-    if skip_repaint then return false end
-
-    logger.dbg("Explicit ReaderFooter repaint:", readerfooter_widget.name or readerfooter_widget.id or tostring(readerfooter_widget))
-    -- c.f., ReaderView:paintTo()
-    readerfooter_widget:paintTo(Screen.bb, 0, 0)
-
-    -- Inform the caller that we did, in fact, repaint it.
-    return true
-end
-
 function UIManager:setInputTimeout(timeout)
     self.INPUT_TIMEOUT = timeout or 200*1000
 end
