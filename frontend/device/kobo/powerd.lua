@@ -2,6 +2,7 @@ local BasePowerD = require("device/generic/powerd")
 local NickelConf = require("device/kobo/nickel_conf")
 local PluginShare = require("pluginshare")
 local SysfsLight = require ("device/sysfs_light")
+local ffiUtil = require("ffi/util")
 
 local batt_state_folder =
         "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/"
@@ -324,15 +325,14 @@ function KoboPowerD:turnOffFrontlightHW()
     if not self:isFrontlightOnHW() then
         return
     end
-    local util = require("ffi/util")
-    util.runInSubProcess(function()
+    ffiUtil.runInSubProcess(function()
         for i = 1,5 do
             self:_setIntensity(math.floor(self.fl_intensity - ((self.fl_intensity / 5) * i)))
             --- @note: Newer devices appear to block slightly longer on FL ioctls/sysfs, so only sleep on older devices,
             ---        otherwise we get a jump and not a ramp ;).
             if not self.device:hasNaturalLight() then
                 if (i < 5) then
-                    util.usleep(35 * 1000)
+                    ffiUtil.usleep(35 * 1000)
                 end
             end
         end
@@ -364,15 +364,14 @@ function KoboPowerD:turnOnFrontlightHW()
     if self:isFrontlightOnHW() then
         return
     end
-    local util = require("ffi/util")
-    util.runInSubProcess(function()
+    ffiUtil.runInSubProcess(function()
         for i = 1,5 do
             self:_setIntensity(math.ceil(self.fl_min + ((self.fl_intensity / 5) * i)))
             --- @note: Newer devices appear to block slightly longer on FL ioctls/sysfs, so only sleep on older devices,
             ---        otherwise we get a jump and not a ramp ;).
             if not self.device:hasNaturalLight() then
                 if (i < 5) then
-                    util.usleep(35 * 1000)
+                    ffiUtil.usleep(35 * 1000)
                 end
             end
         end

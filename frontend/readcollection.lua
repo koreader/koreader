@@ -1,7 +1,6 @@
 local DataStorage = require("datastorage")
 local FFIUtil = require("ffi/util")
 local LuaSettings = require("luasettings")
-local getFriendlySize = require("util").getFriendlySize
 local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 
@@ -43,7 +42,7 @@ function ReadCollection:prepareList(collection_name)
             text = v.file:gsub(".*/", ""),
             file = FFIUtil.realpath(v.file) or v.file, -- keep orig file path of deleted files
             dim = not file_exists, -- "dim", as expected by Menu
-            mandatory = file_exists and getFriendlySize(lfs.attributes(v.file, "size") or 0),
+            mandatory = file_exists and util.getFriendlySize(lfs.attributes(v.file, "size") or 0),
             callback = function()
                 local ReaderUI = require("apps/reader/readerui")
                 ReaderUI:showReader(v.file)
