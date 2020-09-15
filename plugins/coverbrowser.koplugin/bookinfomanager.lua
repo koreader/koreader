@@ -562,7 +562,7 @@ function BookInfoManager:collectSubprocesses()
             -- the user has not left FileManager or changed page - that would
             -- have caused a terminateBackgroundJobs() - if we're here, it's
             -- that user has left reader in FileBrower and went away)
-            if FFIUtil.gettime() > self.subprocesses_last_added_ts + self.subprocesses_killall_timeout_seconds then
+            if FFIUtil.getTimestamp() > self.subprocesses_last_added_ts + self.subprocesses_killall_timeout_seconds then
                 logger.warn("Some subprocesses were running for too long, killing them")
                 self:terminateBackgroundJobs()
                 -- we'll collect them next time we're run
@@ -627,7 +627,7 @@ function BookInfoManager:extractInBackground(files)
     -- counter on each task, and undo that inside collectSubprocesses() zombie reaper.
     UIManager:preventStandby()
     table.insert(self.subprocesses_pids, task_pid)
-    self.subprocesses_last_added_ts = FFIUtil.gettime()
+    self.subprocesses_last_added_ts = FFIUtil.getTimestamp()
 
     -- We need to collect terminated jobs pids (so they do not stay "zombies"
     -- and fill linux processes table)
