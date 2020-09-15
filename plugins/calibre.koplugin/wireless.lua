@@ -6,6 +6,7 @@
 local BD = require("ui/bidi")
 local CalibreMetadata = require("metadata")
 local ConfirmBox = require("ui/widget/confirmbox")
+local FFIUtil = require("ffi/util")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
@@ -13,11 +14,10 @@ local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local rapidjson = require("rapidjson")
-local sleep = require("ffi/util").sleep
 local sha = require("ffi/sha2")
 local util = require("util")
 local _ = require("gettext")
-local T = require("ffi/util").template
+local T = FFIUtil.template
 
 require("ffi/zeromq_h")
 
@@ -257,9 +257,9 @@ end
 
 function CalibreWireless:reconnect()
     -- to use when something went wrong and we aren't in sync with calibre
-    sleep(1)
+    FFIUtil.sleep(1)
     self:disconnect()
-    sleep(1)
+    FFIUtil.sleep(1)
     self:connect()
 end
 

@@ -5,6 +5,7 @@ This widget displays a keyboard layout dialog.
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local FFIUtil = require("ffi/util")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -19,7 +20,6 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local _ = require("gettext")
 local Screen = require("device").screen
-local orderedPairs = require("ffi/util").orderedPairs
 
 local KeyboardLayoutDialog = InputContainer:new{
     is_always_active = true,
@@ -56,7 +56,7 @@ function KeyboardLayoutDialog:init()
 
     local buttons = {}
     local radio_buttons = {}
-    for k, _ in orderedPairs(self.parent.keyboard.lang_to_keyboard_layout) do
+    for k, _ in FFIUtil.orderedPairs(self.parent.keyboard.lang_to_keyboard_layout) do
         table.insert(radio_buttons, {
             {
             text = Language:getLanguageName(k),

@@ -31,7 +31,6 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
-local util = require("ffi/util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
@@ -734,7 +733,7 @@ function Menu:init()
             callback = function()
                 for k, v in ipairs(self.item_table) do
                     --- @todo Support utf8 lowercase.
-                    local filename = util.basename(v.path):lower()
+                    local filename = FFIUtil.basename(v.path):lower()
                     local search_string = self.page_info_text.input_dialog:getInputText():lower()
                     local i, _ = filename:find(search_string)
                     if i == 1 and not v.is_go_up then
@@ -953,7 +952,7 @@ function Menu:updatePageInfo(select_number)
         end
         -- update page information
         if self.page_num > 1 then
-            self.page_info_text:setText(util.template(_("Page %1 of %2"), self.page, self.page_num))
+            self.page_info_text:setText(FFIUtil.template(_("Page %1 of %2"), self.page, self.page_num))
         else
             self.page_info_text:setText("");
         end

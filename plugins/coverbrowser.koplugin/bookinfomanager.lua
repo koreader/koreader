@@ -3,16 +3,16 @@ local Blitbuffer = require("ffi/blitbuffer")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
+local FFIUtil = require("ffi/util")
 local RenderImage = require("ui/renderimage")
 local SQ3 = require("lua-ljsqlite3/init")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local util = require("ffi/util")
-local splitFilePathName = require("util").splitFilePathName
+local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
-local T = require("ffi/util").template
+local T = FFIUtil.template
 
 -- Util functions needed by this plugin, but that may be added to existing base/ffi/ files
 local xutil = require("xutil")
@@ -136,7 +136,7 @@ end
 -- DB management
 function BookInfoManager:getDbSize()
     local file_size = lfs.attributes(self.db_location, "size") or 0
-    return require("util").getFriendlySize(file_size)
+    return util.getFriendlySize(file_size)
 end
 
 function BookInfoManager:createDB()
@@ -263,7 +263,7 @@ end
 
 -- Bookinfo management
 function BookInfoManager:getBookInfo(filepath, get_cover)
-    local directory, filename = splitFilePathName(filepath)
+    local directory, filename = util.splitFilePathName(filepath)
 
     -- CoverBrowser may be used by PathChooser, which will not filter out
     -- files with unknown book extension. If not a supported extension,
@@ -346,7 +346,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
         self.cre_cache_overriden = true
     end
 
-    local directory, filename = splitFilePathName(filepath)
+    local directory, filename = util.splitFilePathName(filepath)
 
     -- Initialize the new row that we will INSERT
     local dbrow = { }
@@ -482,7 +482,7 @@ end
 function BookInfoManager:setBookInfoProperties(filepath, props)
     -- If we need to set column=NULL, use props[column] = false (as
     -- props[column] = nil would make column disappear from props)
-    local directory, filename = splitFilePathName(filepath)
+    local directory, filename = util.splitFilePathName(filepath)
     self:openDbConnection()
     -- Let's do multiple one-column UPDATE (easier than building
     -- a multiple columns UPDATE)
@@ -500,7 +500,7 @@ function BookInfoManager:setBookInfoProperties(filepath, props)
 end
 
 function BookInfoManager:deleteBookInfo(filepath)
-    local directory, filename = splitFilePathName(filepath)
+    local directory, filename = util.splitFilePathName(filepath)
     self:openDbConnection()
     local query = "DELETE FROM bookinfo WHERE directory=? AND filename=?"
     local stmt = self.db_conn:prepare(query)
@@ -542,7 +542,7 @@ function BookInfoManager:collectSubprocesses()
         local i = 1
         while i <= #self.subprocesses_pids do -- clean in-place
             local pid = self.subprocesses_pids[i]
-            if util.isSubProcessDone(pid) then
+            if FFIUtil.isSubProcessDone(pid) then
                 table.remove(self.subprocesses_pids, i)
                 -- Prevent has been issued for each bg task spawn, we must allow for each death too.
                 UIManager:allowStandby()
@@ -562,7 +562,7 @@ function BookInfoManager:collectSubprocesses()
             -- the user has not left FileManager or changed page - that would
             -- have caused a terminateBackgroundJobs() - if we're here, it's
             -- that user has left reader in FileBrower and went away)
-            if util.gettime() > self.subprocesses_last_added_ts + self.subprocesses_killall_timeout_seconds then
+            if FFIUtil.getTimestamp() > self.subprocesses_last_added_ts + self.subprocesses_killall_timeout_seconds then
                 logger.warn("Some subprocesses were running for too long, killing them")
                 self:terminateBackgroundJobs()
                 -- we'll collect them next time we're run
@@ -582,7 +582,7 @@ end
 function BookInfoManager:terminateBackgroundJobs()
     logger.dbg("terminating", #self.subprocesses_pids, "subprocesses")
     for i=1, #self.subprocesses_pids do
-        util.terminateSubProcess(self.subprocesses_pids[i])
+        FFIUtil.terminateSubProcess(self.subprocesses_pids[i])
     end
 end
 
@@ -610,7 +610,7 @@ function BookInfoManager:extractInBackground(files)
             local cover_specs = files[idx].cover_specs
             logger.dbg("  BG extracting:", filepath)
             self:extractBookInfo(filepath, cover_specs)
-            util.usleep(100000) -- give main process 100ms of free cpu to do its processing
+            FFIUtil.usleep(100000) -- give main process 100ms of free cpu to do its processing
         end
         logger.dbg("  BG extraction done")
     end
@@ -618,7 +618,7 @@ function BookInfoManager:extractInBackground(files)
     self.cleanup_needed = true -- so we will remove temporary cache directory created by subprocess
 
     -- Run task in sub-process, and remember its pid
-    local task_pid = util.runInSubProcess(task)
+    local task_pid = FFIUtil.runInSubProcess(task)
     if not task_pid then
         logger.warn("Failed lauching background extraction sub-process (fork failed)")
         return false -- let caller know it failed
@@ -627,7 +627,7 @@ function BookInfoManager:extractInBackground(files)
     -- counter on each task, and undo that inside collectSubprocesses() zombie reaper.
     UIManager:preventStandby()
     table.insert(self.subprocesses_pids, task_pid)
-    self.subprocesses_last_added_ts = util.gettime()
+    self.subprocesses_last_added_ts = FFIUtil.getTimestamp()
 
     -- We need to collect terminated jobs pids (so they do not stay "zombies"
     -- and fill linux processes table)
@@ -651,13 +651,12 @@ function BookInfoManager:cleanUp()
     end
     if self.cleanup_needed then
         logger.dbg("Removing directory", self.tmpcr3cache)
-        util.purgeDir(self.tmpcr3cache)
+        FFIUtil.purgeDir(self.tmpcr3cache)
         self.cleanup_needed = false
     end
 end
 
 local function findFilesInDir(path, recursive)
-    local stringStartsWith = require("util").stringStartsWith
     local dirs = {path}
     local files = {}
     while #dirs ~= 0 do
@@ -669,10 +668,10 @@ local function findFilesInDir(path, recursive)
                 local fullpath = d.."/"..f
                 local attributes = lfs.attributes(fullpath)
                 -- Don't traverse hidden folders if we're not showing them
-                if recursive and attributes.mode == "directory" and f ~= "." and f ~= ".." and (G_reader_settings:isTrue("show_hidden") or not stringStartsWith(f, ".")) then
+                if recursive and attributes.mode == "directory" and f ~= "." and f ~= ".." and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, ".")) then
                     table.insert(new_dirs, fullpath)
                 -- Always ignore macOS resource forks, too.
-                elseif attributes.mode == "file" and not stringStartsWith(f, "._") and DocumentRegistry:hasProvider(fullpath) then
+                elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") and DocumentRegistry:hasProvider(fullpath) then
                     table.insert(files, fullpath)
                 end
             end
@@ -749,7 +748,7 @@ Do you want to prune the cache of removed books?]]
                 info = InfoMessage:new{text = summary}
                 UIManager:show(info)
                 UIManager:forceRePaint()
-                util.sleep(2) -- Let the user see that
+                FFIUtil.sleep(2) -- Let the user see that
                 break
             end
         end
@@ -785,14 +784,14 @@ Do you want to prune the cache of removed books?]]
         info = InfoMessage:new{text = T(N_("Found 1 book to index.", "Found %1 books to index.", #files), #files)}
         UIManager:show(info)
         UIManager:forceRePaint()
-        util.sleep(2) -- Let the user see that
+        FFIUtil.sleep(2) -- Let the user see that
     else
         local all_files = files
         while true do
             info = InfoMessage:new{text = T(_("Found %1 books.\nLooking for those not already present in the cache database…"), #all_files)}
             UIManager:show(info)
             UIManager:forceRePaint()
-            util.sleep(2) -- Let the user see that
+            FFIUtil.sleep(2) -- Let the user see that
             completed, files = Trapper:dismissableRunInSubprocess(function()
                 files = {}
                 for _, filepath in pairs(all_files) do
@@ -832,7 +831,7 @@ Do you want to prune the cache of removed books?]]
         info = InfoMessage:new{text = T(N_("Found 1 book to index.", "Found %1 books to index."), #files)}
         UIManager:show(info)
         UIManager:forceRePaint()
-        util.sleep(2) -- Let the user see that
+        FFIUtil.sleep(2) -- Let the user see that
     end
     UIManager:close(info)
 
@@ -850,7 +849,7 @@ Do you want to prune the cache of removed books?]]
 
     while i <= nb_files do
         local filepath = files[i]
-        local filename = util.basename(filepath)
+        local filename = FFIUtil.basename(filepath)
 
         local orig_moved_offset = info.movable:getMovedOffset()
         info:free()

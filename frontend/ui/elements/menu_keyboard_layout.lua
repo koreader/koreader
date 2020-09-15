@@ -1,10 +1,10 @@
+local FFIUtil = require("ffi/util")
 local Language = require("ui/language")
 local VirtualKeyboard = require("ui/widget/virtualkeyboard")
-local orderedPairs = require("ffi/util").orderedPairs
 
 local sub_item_table = {}
 
-for k, _ in orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
+for k, _ in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
     table.insert(sub_item_table, {
         text_func = function()
             local text = Language:getLanguageName(k)

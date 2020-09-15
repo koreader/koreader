@@ -9,6 +9,7 @@ local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
+local util = require("util")
 
 local BookInfoManager = require("bookinfomanager")
 
@@ -293,7 +294,7 @@ function CoverMenu:updateItems(select_number)
                                     -- Err, a summary table with no status entry? Should never happen...
                                     local summary = { status = status }
                                     -- Append the status entry to the existing summary...
-                                    require("util").tableMerge(docinfo.data.summary, summary)
+                                    util.tableMerge(docinfo.data.summary, summary)
                                 else
                                     -- No summary table at all, create a minimal one
                                     local summary = { status = status }
@@ -341,7 +342,7 @@ function CoverMenu:updateItems(select_number)
                         text = bookinfo.description and _("View book description") or _("No book description"),
                         enabled = bookinfo.description and true or false,
                         callback = function()
-                            local description = require("util").htmlToPlainTextIfHtml(bookinfo.description)
+                            local description = util.htmlToPlainTextIfHtml(bookinfo.description)
                             local textviewer = TextViewer:new{
                                 title = bookinfo.title,
                                 text = description,
@@ -474,7 +475,7 @@ function CoverMenu:onHistoryMenuHold(item)
             text = bookinfo.description and _("View book description") or _("No book description"),
             enabled = bookinfo.description and true or false,
             callback = function()
-                local description = require("util").htmlToPlainTextIfHtml(bookinfo.description)
+                local description = util.htmlToPlainTextIfHtml(bookinfo.description)
                 local textviewer = TextViewer:new{
                     title = bookinfo.title,
                     text = description,
@@ -596,7 +597,7 @@ function CoverMenu:onCollectionsMenuHold(item)
             text = bookinfo.description and _("View book description") or _("No book description"),
             enabled = bookinfo.description and true or false,
             callback = function()
-                local description = require("util").htmlToPlainTextIfHtml(bookinfo.description)
+                local description = util.htmlToPlainTextIfHtml(bookinfo.description)
                 local textviewer = TextViewer:new{
                     title = bookinfo.title,
                     text = description,

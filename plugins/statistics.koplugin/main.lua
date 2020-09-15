@@ -4,6 +4,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local DocSettings = require("docsettings")
+local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local Math = require("optmath")
@@ -19,10 +20,9 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
-local joinPath = require("ffi/util").joinPath
 local Screen = require("device").screen
 local N_ = _.ngettext
-local T = require("ffi/util").template
+local T = FFIUtil.template
 
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
 local db_location = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
@@ -1898,7 +1898,7 @@ end
 function ReaderStatistics:importFromFile(base_path, item)
     item = string.gsub(item, "^%s*(.-)%s*$", "%1") -- trim
     if item ~= ".stat" then
-        local statistic_file = joinPath(base_path, item)
+        local statistic_file = FFIUtil.joinPath(base_path, item)
         if lfs.attributes(statistic_file, "mode") == "directory" then
             return
         end

@@ -3,6 +3,7 @@ local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Event = require("ui/event")
+local FFIUtil = require("ffi/util")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -20,7 +21,6 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
-local orderedPairs = require("ffi/util").orderedPairs
 local util = require("util")
 local Screen = Device.screen
 
@@ -60,7 +60,7 @@ function VirtualKey:init()
             local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
             local enabled = false
             local next_layout = nil
-            for k, v in orderedPairs(keyboard_layouts) do
+            for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
                 if enabled and v == true then
                     next_layout = k
                     break
@@ -70,7 +70,7 @@ function VirtualKey:init()
                 end
             end
             if not next_layout then
-                for k, v in orderedPairs(keyboard_layouts) do
+                for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
                     if enabled and v == true then
                         next_layout = k
                         break
@@ -241,7 +241,7 @@ function VirtualKey:genkeyboardLayoutKeyChars()
         end,
     }
     local index = 1
-    for k, v in orderedPairs(keyboard_layouts) do
+    for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
         if v == true then
             key_chars[positions[index]] = string.sub(k, 1, 2)
             key_chars[positions[index] .. "_func"] = function()

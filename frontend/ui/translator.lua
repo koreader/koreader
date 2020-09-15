@@ -17,7 +17,7 @@ local Screen = require("device").screen
 local ffiutil  = require("ffi/util")
 local logger = require("logger")
 local util = require("util")
-local T = require("ffi/util").template
+local T = ffiutil.template
 local _ = require("gettext")
 
 -- From https://cloud.google.com/translate/docs/languages

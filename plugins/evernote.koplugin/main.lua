@@ -11,13 +11,12 @@ local logger = require("logger")
 local util = require("ffi/util")
 local Device = require("device")
 local JoplinClient = require("JoplinClient")
-local T = require("ffi/util").template
+local T = util.template
 local _ = require("gettext")
 local N_ = _.ngettext
 local slt2 = require('slt2')
 local MyClipping = require("clip")
 local json = require("json")
-local realpath = require("ffi/util").realpath
 
 local EvernoteExporter = InputContainer:new{
     name = "evernote",
@@ -642,7 +641,7 @@ function EvernoteExporter:exportClippings(clippings)
         )
     end
     if (self.html_export or self.txt_export) and export_count > 0 then
-        msg = msg .. T(_("\nNotes can be found in %1/."), BD.dirpath(realpath(self.clipping_dir)))
+        msg = msg .. T(_("\nNotes can be found in %1/."), BD.dirpath(util.realpath(self.clipping_dir)))
     end
     UIManager:show(InfoMessage:new{ text = msg })
 end

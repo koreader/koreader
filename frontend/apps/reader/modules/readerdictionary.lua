@@ -19,7 +19,7 @@ local logger = require("logger")
 local util  = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
-local T = require("ffi/util").template
+local T = ffiUtil.template
 
 -- We'll store the list of available dictionaries as a module local
 -- so we only have to look for them on the first :init()

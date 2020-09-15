@@ -2,6 +2,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local CanvasContext = require("document/canvascontext")
 local DataStorage = require("datastorage")
 local Document = require("document/document")
+local FFIUtil = require("ffi/util")
 local FontList = require("fontlist")
 local Geom = require("ui/geometry")
 local RenderImage = require("ui/renderimage")
@@ -420,14 +421,16 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
     -- We also honor the current smooth scaling setting,
     -- as well as the global SW dithering setting.
 
-    -- local start_clock = os.clock()
+    --local start_ts = FFIUtil.getTimestamp()
     self._drawn_images_count, self._drawn_images_surface_ratio =
         self._document:drawCurrentPage(self.buffer, self.render_color, Screen.night_mode and self._nightmode_images, self._smooth_scaling, Screen.sw_dithering)
-    -- print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (os.clock() - start_clock) * 1000))
+    --local end_ts = FFIUtil.getTimestamp()
+    --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (end_ts - start_ts) * 1000))
 
-    -- start_clock = os.clock()
+    --start_ts = FFIUtil.getTimestamp()
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
-    -- print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", (os.clock() - start_clock) * 1000))
+    --end_ts = FFIUtil.getTimestamp()
+    --print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", (end_ts - start_ts) * 1000))
 end
 
 function CreDocument:drawCurrentViewByPos(target, x, y, rect, pos)
@@ -1137,20 +1140,14 @@ function CreDocument:setupCallCache()
     end
 
     local no_op = function() end
-    local getTime = no_op
     local addStatMiss = no_op
     local addStatHit = no_op
     local dumpStats = no_op
     if do_stats then
         -- cache statistics
         self._call_cache_stats = {}
-        local _gettime = require("ffi/util").gettime
-        getTime = function()
-            local secs, usecs = _gettime()
-            return secs + usecs/1000000
-        end
         addStatMiss = function(name, starttime, not_cached)
-            local duration = getTime() - starttime
+            local duration = FFIUtil.getTimestamp() - starttime
             if not self._call_cache_stats[name] then
                 self._call_cache_stats[name] = {0, 0.0, 1, duration, not_cached}
             else
@@ -1160,7 +1157,7 @@ function CreDocument:setupCallCache()
             end
         end
         addStatHit = function(name, starttime)
-            local duration = getTime() - starttime
+            local duration = FFIUtil.getTimestamp() - starttime
             if not duration then duration = 0.0 end
             if not self._call_cache_stats[name] then
                 self._call_cache_stats[name] = {1, duration, 0, 0.0}
@@ -1351,7 +1348,7 @@ function CreDocument:setupCallCache()
             elseif cache_by_tag then
                 is_cached = true
                 self[name] = function(...)
-                    local starttime = getTime()
+                    local starttime = FFIUtil.getTimestamp()
                     local cache_key = name .. asString(select(2, ...))
                     local results = self._callCacheTagGet(cache_key)
                     if results then
@@ -1372,7 +1369,7 @@ function CreDocument:setupCallCache()
             elseif cache_global then
                 is_cached = true
                 self[name] = function(...)
-                    local starttime = getTime()
+                    local starttime = FFIUtil.getTimestamp()
                     local cache_key = name .. asString(select(2, ...))
                     local results = self._callCacheGet(cache_key)
                     if results then
@@ -1392,7 +1389,7 @@ function CreDocument:setupCallCache()
             if do_stats_include_not_cached and not is_cached then
                 local func2 = self[name] -- might already be wrapped
                 self[name] = function(...)
-                    local starttime = getTime()
+                    local starttime = FFIUtil.getTimestamp()
                     local results = { func2(...) }
                     addStatMiss(name, starttime, true) -- not_cached = true
                     return unpack(results)
@@ -1414,7 +1411,7 @@ function CreDocument:setupCallCache()
         elseif current_buffer_tag ~= current_tag then
             do_draw = true
         end
-        local starttime = getTime()
+        local starttime = FFIUtil.getTimestamp()
         if do_draw then
             if do_log then logger.dbg("callCache: ########## drawCurrentView: full draw") end
             CreDocument.drawCurrentView(_self, target, x, y, rect, pos)
