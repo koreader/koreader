@@ -448,11 +448,11 @@ function ReaderBookmark:onShowBookmark(open_navigator)
             page = bookmark.ui.document:getPageFromXPointer(ipage)
         end
         if page ~= "" then
-            title = title .. "  -  " .. _("page") .. " " .. page
+            title = T("%1  -  %2 %3", title, _("page"), page)
         end
         -- show search term in title:
         if bookmark.search_value and bookmark.search_value ~= "" then
-            title = title .. '  -  "' .. bookmark.search_value .. '"'
+            title = T('%1  -  "%2"', title, bookmark.search_value)
         end
         local from_start_text = "▕◁"
         local backward_text = "◁"
