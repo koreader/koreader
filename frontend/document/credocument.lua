@@ -421,16 +421,16 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
     -- We also honor the current smooth scaling setting,
     -- as well as the global SW dithering setting.
 
-    local start_clock = os.clock()
+    --local start_ts = FFIUtil.getTimestamp()
     self._drawn_images_count, self._drawn_images_surface_ratio =
         self._document:drawCurrentPage(self.buffer, self.render_color, Screen.night_mode and self._nightmode_images, self._smooth_scaling, Screen.sw_dithering)
-    local end_clock = os.clock()
-    print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (end_clock - start_clock) * 1000))
+    --local end_ts = FFIUtil.getTimestamp()
+    --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (end_ts - start_ts) * 1000))
 
-    start_clock = os.clock()
+    --start_ts = FFIUtil.getTimestamp()
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
-    end_clock = os.clock()
-    print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", (end_clock - start_clock) * 1000))
+    --end_ts = FFIUtil.getTimestamp()
+    --print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", (end_ts - start_ts) * 1000))
 end
 
 function CreDocument:drawCurrentViewByPos(target, x, y, rect, pos)
