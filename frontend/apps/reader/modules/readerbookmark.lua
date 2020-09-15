@@ -14,6 +14,7 @@ local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
+local util = require("util")
 local Screen = require("device").screen
 local T = require("ffi/util").template
 
@@ -317,25 +318,6 @@ function ReaderBookmark:updateHighlightsIfNeeded()
     self.ui.doc_settings:saveSetting("bookmarks_version", 20200615)
 end
 
-local function split(str, pat)
-    local t = {}  -- NOTE: use {n = 0} in Lua-5.0
-    local fpat = "(.-)" .. pat
-    local last_end = 1
-    local s, e, cap = str:find(fpat, 1)
-    while s do
-        if s ~= 1 or cap ~= "" then
-            table.insert(t, cap)
-        end
-        last_end = e + 1
-        s, e, cap = str:find(fpat, last_end)
-    end
-    if last_end <= #str then
-        cap = str:sub(last_end)
-        table.insert(t, cap)
-    end
-    return t
-end
-
 local function substrCount(subject, needle)
     return select(2, subject:gsub(needle, ""))
 end
@@ -355,9 +337,8 @@ local function isPoem(itext)
     local requisition1 = line_endings_count > 3
 
     -- check whether lines are not too long:
-    local lines = split(itext, "\n")
     local requisition2 = true
-    for _, line in ipairs(lines) do
+    for line in util.gsplit(itext, "\n", true, true) do
         if string.len(line) > 52 then
             requisition2 = false
             break
@@ -369,8 +350,8 @@ end
 local function indent(itext)
     -- only for non poetic text indent para's:
     if not isPoem(itext) then
-        local paras = split(itext, "\n")
         local skip_next_para = false
+        local paras = util.splitToArray(itext, "\n", true)
         for nr, para in ipairs(paras) do
             if nr > 1 and para:match("[A-Za-z]") then
                 if not skip_next_para then
