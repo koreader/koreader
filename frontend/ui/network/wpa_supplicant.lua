@@ -2,12 +2,12 @@
 WPA client helper for Kobo.
 ]]
 
+local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local WpaClient = require('lj-wpaclient/wpaclient')
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
-local T = require("ffi/util").template
-local sleep = require("ffi/util").sleep
+local T = FFIUtil.template
 
 local CLIENT_INIT_ERR_MSG = _("Failed to initialize network control client: %1.")
 
@@ -113,7 +113,7 @@ function WpaSupplicant:authenticateNetwork(network)
                 end
             end
         else
-            sleep(1)
+            FFIUtil.sleep(1)
             cnt = cnt + 1
         end
     end

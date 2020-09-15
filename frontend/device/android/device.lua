@@ -1,3 +1,4 @@
+local FFIUtil = require("ffi/util")
 local Generic = require("device/generic/device")
 local A, android = pcall(require, "android")  -- luacheck: ignore
 local Geom = require("ui/geometry")
@@ -7,7 +8,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
-local T = require("ffi/util").template
+local T = FFIUtil.template
 
 local function yes() return true end
 local function no() return false end
@@ -386,12 +387,11 @@ local function processEvents()
 end
 
 function Device:showLightDialog()
-    local usleep = require("ffi/util").usleep
     local title = android.isEink() and _("Frontlight settings") or _("Light settings")
     android.lights.showDialog(title, _("Brightness"), _("Warmth"), _("OK"), _("Cancel"))
     repeat
         processEvents() -- swallow all events, including the last one
-        usleep(25000) -- sleep 25ms before next check if dialog was quit
+        FFIUtil.usleep(25000) -- sleep 25ms before next check if dialog was quit
     until (android.lights.dialogState() ~= C.ALIGHTS_DIALOG_OPENED)
 
     local GestureDetector = require("device/gesturedetector")

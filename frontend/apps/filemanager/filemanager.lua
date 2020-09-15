@@ -45,7 +45,7 @@ local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local Screen = Device.screen
-local T = require("ffi/util").template
+local T = BaseUtil.template
 
 local FileManager = InputContainer:extend{
     title = _("KOReader"),

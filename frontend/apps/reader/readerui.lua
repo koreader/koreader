@@ -59,7 +59,7 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
-local T = require("ffi/util").template
+local T = ffiUtil.template
 
 local ReaderUI = InputContainer:new{
     name = "ReaderUI",

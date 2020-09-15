@@ -8,7 +8,7 @@ local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local util = require("ffi/util")
 local _ = require("gettext")
-local T = require("ffi/util").template
+local T = util.template
 
 local FileManagerShortcuts = InputContainer:extend{}
 
