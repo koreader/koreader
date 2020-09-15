@@ -317,6 +317,76 @@ function ReaderBookmark:updateHighlightsIfNeeded()
     self.ui.doc_settings:saveSetting("bookmarks_version", 20200615)
 end
 
+local function split(str, pat)
+    local t = {}  -- NOTE: use {n = 0} in Lua-5.0
+    local fpat = "(.-)" .. pat
+    local last_end = 1
+    local s, e, cap = str:find(fpat, 1)
+    while s do
+        if s ~= 1 or cap ~= "" then
+            table.insert(t, cap)
+        end
+        last_end = e + 1
+        s, e, cap = str:find(fpat, last_end)
+    end
+    if last_end <= #str then
+        cap = str:sub(last_end)
+        table.insert(t, cap)
+    end
+    return t
+end
+
+local function substrCount(subject, needle)
+    return select(2, subject:gsub(needle, ""))
+end
+
+-- put uppercase strings (authors etc.) at start of line, and always a linebreak between them and the following text:
+local function uppercaseWordsAtStartOfLine(itext)
+    itext = string.gsub(itext, "\n[ ]+([A-Z][A-Z]+)", "\n%1")
+    itext = string.gsub(itext, "([A-Z]+)\n[ ]+", "%1\n\n")
+    itext = string.gsub(itext, "([A-Z]+)\n\n[ ]+", "%1\n\n")
+    itext = string.gsub(itext, "([A-Z]+)\n([A-Z])", "%1\n\n%2")
+    itext = string.gsub(itext, "\n\n\n", "\n\n")
+    return itext
+end
+
+local function isPoem(itext)
+    local line_endings_count = substrCount(itext, "\n")
+    local requisition1 = line_endings_count > 3
+
+    -- check whether lines are not too long:
+    local lines = split(itext, "\n")
+    local requisition2 = true
+    for _, line in ipairs(lines) do
+        if string.len(line) > 52 then
+            requisition2 = false
+            break
+        end
+    end
+    return (requisition1 == true and requisition2 == true)
+end
+
+local function indent(itext)
+    -- only for non poetic text indent para's:
+    if not isPoem(itext) then
+        local paras = split(itext, "\n")
+        local skip_next_para = false
+        for nr, para in ipairs(paras) do
+            if nr > 1 and para:match("[A-Za-z]") then
+                if not skip_next_para then
+                    paras[nr] = "     " .. para
+                else
+                    skip_next_para = false
+                end
+            elseif nr > 1 then
+                skip_next_para = true
+            end
+        end
+        itext = table.concat(paras, "\n")
+    end
+    return uppercaseWordsAtStartOfLine(itext)
+end
+
 -- make bookmark navigator available for gesture through open_navigator (if set, then open navigator):
 function ReaderBookmark:onShowBookmark(open_navigator)
     self:updateHighlightsIfNeeded()
@@ -332,7 +402,6 @@ function ReaderBookmark:onShowBookmark(open_navigator)
             end
         end
         if v.text == nil or v.text == "" then
-            self.garbage = k
             v.text = T(_("Page %1 %2 @ %3"), page, v.notes, v.datetime)
         end
     end
@@ -538,76 +607,6 @@ function ReaderBookmark:onShowBookmark(open_navigator)
         local text = item.notes
         if not item.highlighted then
             text = T(_("Page %1 %2 @ %3"), ipage, item.notes, item.datetime)
-        end
-
-        local function split(str, pat)
-            local t = {}  -- NOTE: use {n = 0} in Lua-5.0
-            local fpat = "(.-)" .. pat
-            local last_end = 1
-            local s, e, cap = str:find(fpat, 1)
-            while s do
-                if s ~= 1 or cap ~= "" then
-                    table.insert(t, cap)
-                end
-                last_end = e + 1
-                s, e, cap = str:find(fpat, last_end)
-            end
-            if last_end <= #str then
-                cap = str:sub(last_end)
-                table.insert(t, cap)
-            end
-            return t
-        end
-
-        -- HELPER FUNCTIONS WHICH PROBABLY SHOULD BE PUT SOMEWHERE ELSE:
-
-        local function substrCount(subject, needle)
-            return select(2, subject:gsub(needle, ""))
-        end
-
-        -- put uppercase strings (authors etc.) at start of line, and always a linebreak between them and the following text:
-        local function uppercaseWordsAtStartOfLine(itext)
-            itext = string.gsub(itext, "\n[ ]+([A-Z][A-Z]+)", "\n%1")
-            itext = string.gsub(itext, "([A-Z]+)\n[ ]+", "%1\n\n")
-            itext = string.gsub(itext, "([A-Z]+)\n\n[ ]+", "%1\n\n")
-            itext = string.gsub(itext, "([A-Z]+)\n([A-Z])", "%1\n\n%2")
-            itext = string.gsub(itext, "\n\n\n", "\n\n")
-            return itext
-        end
-        local function isPoem(itext)
-            local line_endings_count = substrCount(text, "\n")
-            local requisition1 = line_endings_count > 3
-
-            -- check whether lines are not too long:
-            local lines = split(itext, "\n")
-            local requisition2 = true
-            for _, line in ipairs(lines) do
-                if string.len(line) > 52 then
-                    requisition2 = false
-                    break
-                end
-            end
-            return (requisition1 == true and requisition2 == true)
-        end
-        local function indent(itext)
-            -- only for non poetic text indent para's:
-            if not isPoem(itext) then
-                local paras = split(itext, "\n")
-                local skip_next_para = false
-                for nr, para in ipairs(paras) do
-                    if nr > 1 and para:match("[A-Za-z]") then
-                        if not skip_next_para then
-                            paras[nr] = "     " .. para
-                        else
-                            skip_next_para = false
-                        end
-                    elseif nr > 1 then
-                        skip_next_para = true
-                    end
-                end
-                itext = table.concat(paras, "\n")
-            end
-            return uppercaseWordsAtStartOfLine(itext)
         end
 
         self.textviewer = TextViewer:new{
