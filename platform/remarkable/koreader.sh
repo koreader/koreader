@@ -108,7 +108,7 @@ ko_do_fbdepth() {
         # Swap to 8bpp if things look sane
         if [ -n "${ORIG_FB_BPP}" ]; then
             echo "Switching fb bitdepth to 8bpp & rotation to Portrait" >>crash.log 2>&1
-            ./fbdepth -d 8 -r -1 >>crash.log 2>&1
+            ./fbdepth -d 8 -r 1 >>crash.log 2>&1
         fi
     fi
 }
