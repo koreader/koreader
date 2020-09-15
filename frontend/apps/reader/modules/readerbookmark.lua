@@ -609,13 +609,14 @@ function ReaderBookmark:onShowBookmark(open_navigator)
             text = T(_("Page %1 %2 @ %3"), ipage, item.notes, item.datetime)
         end
 
+        local font_size = G_reader_settings:readSetting("dict_font_size") or 20
         self.textviewer = TextViewer:new{
             title = title,
             -- add indentation for better readability:
             text = indent(text),
             -- make text easier to read:
             justified = false,
-            text_face = Font:getFace("xx_smallinfofont"),
+            text_face = Font:getFace("cfont", font_size),
             width = self.textviewer_width,
             height = self.textviewer_height,
             buttons_table = {
