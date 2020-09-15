@@ -245,10 +245,10 @@ local footerTextGeneratorMap = {
         local prefix = symbol_prefix[symbol_type].wifi_status
         local NetworkMgr = require("ui/network/manager")
         if NetworkMgr:isWifiOn() then
-            -- only show wifi-icon/symbol when wifi enabled:
+            -- only show Wi-Fi-icon/symbol when Wi-Fi enabled:
             return prefix
         end
-        -- wifi off, so no icon/symbol:
+        -- Wi-Fi off, so no icon/symbol:
         return ""
     end,
     book_title = function(footer)
