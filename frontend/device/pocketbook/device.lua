@@ -36,13 +36,14 @@ local PocketBook = Generic:new{
 
     -- all devices that have warmth lights use inkview api
     hasNaturalLightApi = yes,
+
+    -- Let's assume that HW inversion is generally safe
+    canHWInvert = yes,
 }
 
 -- Make sure the C BB cannot be used on devices with a 24bpp fb
 function PocketBook:blacklistCBB()
     -- As well as on those than can't do HW inversion, as otherwise NightMode would be ineffective.
-    --- @fixme Either relax the HWInvert check, or actually enable HWInvert on PB if it's safe and it works,
-    --        as, currently, no PB device is marked as canHWInvert, so, the C BB is essentially *always* blacklisted.
     if not self:canUseCBB() or not self:canHWInvert() then
         logger.info("Blacklisting the C BB on this device")
         if ffi.os == "Windows" then
