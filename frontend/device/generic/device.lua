@@ -49,6 +49,7 @@ local Device = {
     canHWInvert = no,
     canUseCBB = yes, -- The C BB maintains a 1:1 feature parity with the Lua BB, except that is has NO support for BB4, and limited support for BBRGB24
     hasColorScreen = no,
+    hasCFAScreen = no, -- For BBRGB{32,24}->BB8 blits, perform the CFA color mask transform
     hasBGRFrameBuffer = no,
     canImportFiles = no,
     canShareText = no,
