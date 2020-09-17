@@ -141,11 +141,11 @@ function BasePowerD:isCharging()
     return self:isChargingHW()
 end
 
-function BasePowerD:_setIntensity(intensity)
+function BasePowerD:_setIntensity(intensity, silent)
     self:setIntensityHW(intensity)
-    -- BasePowerD is loaded before UIManager. So we cannot broadcast events before UIManager has
-    -- been loaded.
-    if package.loaded["ui/uimanager"] ~= nil then
+    -- BasePowerD is loaded before UIManager. So we cannot broadcast events before UIManager has been loaded.
+    -- NOTE: If silent is set, inhibit the Event (useful for platforms that do a ramp-up/ramp-down on toggle).
+    if not silent and package.loaded["ui/uimanager"] ~= nil then
         local Event = require("ui/event")
         local UIManager = require("ui/uimanager")
         UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))

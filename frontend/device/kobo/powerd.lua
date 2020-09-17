@@ -327,7 +327,8 @@ function KoboPowerD:turnOffFrontlightHW()
     end
     ffiUtil.runInSubProcess(function()
         for i = 1,5 do
-            self:_setIntensity(math.floor(self.fl_intensity - ((self.fl_intensity / 5) * i)))
+            -- NOTE: Make sure _setIntensity doesn't send a FrontlightStateChanged event for those!
+            self:_setIntensity(math.floor(self.fl_intensity - ((self.fl_intensity / 5) * i)), true)
             --- @note: Newer devices appear to block slightly longer on FL ioctls/sysfs, so only sleep on older devices,
             ---        otherwise we get a jump and not a ramp ;).
             if not self.device:hasNaturalLight() then
@@ -366,7 +367,8 @@ function KoboPowerD:turnOnFrontlightHW()
     end
     ffiUtil.runInSubProcess(function()
         for i = 1,5 do
-            self:_setIntensity(math.ceil(self.fl_min + ((self.fl_intensity / 5) * i)))
+            -- NOTE: Make sure _setIntensity doesn't send a FrontlightStateChanged event for those!
+            self:_setIntensity(math.ceil(self.fl_min + ((self.fl_intensity / 5) * i)), true)
             --- @note: Newer devices appear to block slightly longer on FL ioctls/sysfs, so only sleep on older devices,
             ---        otherwise we get a jump and not a ramp ;).
             if not self.device:hasNaturalLight() then
