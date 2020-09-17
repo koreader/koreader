@@ -2,16 +2,6 @@ local BasePowerD = require("device/generic/powerd")
 local ffi = require("ffi")
 local inkview = ffi.load("inkview")
 
-ffi.cdef[[
-void OpenScreen();
-int GetFrontlightState(void);
-int GetFrontlightColor(void);
-void SetFrontlightState(int flstate);
-void SetFrontlightColor(int color);
-int GetBatteryPower();
-int IsCharging();
-]]
-
 local PocketBookPowerD = BasePowerD:new{
     is_charging = nil,
     fl_warmth = nil,
@@ -32,16 +22,43 @@ function PocketBookPowerD:init()
 end
 
 function PocketBookPowerD:frontlightIntensityHW()
+    -- Always update fl_intensity (and perhaps fl_warmth) from the OS value whenever queried (its fast).
+    -- This way koreader setting can stay in sync even if the value is changed behind its back.
+    self.fl_intensity = math.max(0, inkview.GetFrontlightState())
+    if self.fl_warmth then
+        self.fl_warmth = math.max(0, inkview.GetFrontlightColor())
+    end
+    return self.fl_intensity
+end
+
+function PocketBookPowerD:frontlightIntensity()
     if not self.device:hasFrontlight() then return 0 end
-    return inkview.GetFrontlightState()
+    if self:isFrontlightOff() then return 0 end
+    return self:frontlightIntensityHW()
 end
 
 function PocketBookPowerD:setIntensityHW(intensity)
+    local v2api = pcall(function()
+        inkview.SetFrontlightEnabled(intensity == 0 and 0 or 1)
+    end)
     if intensity == 0 then
-        inkview.SetFrontlightState(-1)
+        -- -1 is valid only for the old api, on newer firmwares that's just a bogus brightness level
+        if not v2api then
+            inkview.SetFrontlightState(-1)
+        end
     else
         inkview.SetFrontlightState(intensity)
     end
+end
+
+function PocketBookPowerD:isFrontlightOn()
+    if not self.device:hasFrontlight() then return false end
+    -- Query directly instead of assuming from cached value.
+    local enabled = inkview.GetFrontlightState() >= 0
+    pcall(function()
+        enabled = inkview.GetFrontlightEnabled() > 0
+    end)
+    return enabled
 end
 
 function PocketBookPowerD:setWarmth(level)
