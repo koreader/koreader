@@ -117,7 +117,7 @@ function PocketBook:init()
                 end
             elseif ev.code == C.EVT_FOREGROUND or ev.code == C.EVT_SHOW then
                 tryOpenBook()
-                ui:setDirty('all', 'partial')
+                ui:setDirty('all', 'ui')
                 if quasiSuspended then
                     quasiSuspended = false
                     return "Resume"
