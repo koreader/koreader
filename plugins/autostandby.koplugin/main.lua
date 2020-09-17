@@ -16,6 +16,8 @@ local _ = require("gettext")
 local AutoStandby = WidgetContainer:new{
     is_doc_only = false,
     name = "autostandby",
+
+    -- static for all plugin instances
     settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/autostandby.lua"),
     delay = 0,
     lastInput = 0,
@@ -23,6 +25,7 @@ local AutoStandby = WidgetContainer:new{
 }
 
 function AutoStandby:init()
+    logger.dbg("AutoStandby:init() instance=", tostring(self))
     if not self.settings:has("filter") then
         logger.dbg("AutoStandby: No settings found, initializing defaults")
         self.settings.data = {
@@ -61,39 +64,40 @@ end
 
 -- We've received touch/key event, so delay stadby accordingly
 function AutoStandby:onInputEvent()
+    logger.dbg("AutoStandby:onInputevent() instance=", tostring(self))
     local config = self.settings.data
     local t = os.time()
-    if t < self.lastInput + config.filter then
+    if t < AutoStandby.lastInput + config.filter then
         -- packed too close together, ignore
         logger.dbg("AutoStandby: input packed too close to previous one, ignoring")
         return
     end
 
     -- Nuke past timer as we'll reschedule the allow (or not)
-    UIManager:unschedule(self.allow)
+    UIManager:unschedule(AutoStandby.allow)
 
     if PowerD:getCapacityHW() <= config.bat then
         -- battery is below threshold, so allow standby aggressively
         logger.dbg("AutoStandby: battery below threshold, enabling aggressive standby")
         self:allow()
         return
-    elseif t > self.lastInput + config.max then
+    elseif t > AutoStandby.lastInput + config.max then
         -- too far apart, so reset delay
-        logger.dbg("AutoStandby: input too far in future, resetting adaptive standby delay from", self.delay, "to", config.min)
-        self.delay = config.min
-    elseif t < self.lastInput + self.delay + config.win then
+        logger.dbg("AutoStandby: input too far in future, resetting adaptive standby delay from", AutoStandby.delay, "to", config.min)
+        AutoStandby.delay = config.min
+    elseif t < AutoStandby.lastInput + AutoStandby.delay + config.win then
         -- otherwise widen the delay - "adaptive" - with frequent inputs, but don't grow beyonnd the max
-        self.delay = math.min((self.delay+1) * config.mul, config.max)
-        logger.dbg("AutoStandby: increasing standby delay to", self.delay)
+        AutoStandby.delay = math.min((AutoStandby.delay+1) * config.mul, config.max)
+        logger.dbg("AutoStandby: increasing standby delay to", AutoStandby.delay)
     end -- equilibrium: when the event arrives beyond delay + win, but still below max, we keep the delay as-is
 
-    self.lastInput = t
+    AutoStandby.lastInput = t
 
     if not self:isAllowedByConfig() then
         -- all standbys forbidden, always prevent
         self:prevent()
         return
-    elseif self.delay == 0 then
+    elseif AutoStandby.delay == 0 then
         -- If delay is 0 now, just allow straight
         self:allow()
         return
@@ -101,21 +105,21 @@ function AutoStandby:onInputEvent()
     -- otherwise prevent for a while for duration of the delay
     self:prevent()
     -- and schedule standby re-enable once delay expires
-    UIManager:scheduleIn(self.delay, self.allow, self)
+    UIManager:scheduleIn(AutoStandby.delay, AutoStandby.allow, AutoStandby)
 end
 
 -- Prevent standby (by timer)
 function AutoStandby:prevent()
-    if not self.preventing then
-        self.preventing = true
+    if not AutoStandby.preventing then
+        AutoStandby.preventing = true
         UIManager:preventStandby()
     end
 end
 
 -- Allow standby (by timer)
 function AutoStandby:allow()
-    if self.preventing then
-        self.preventing = false
+    if AutoStandby.preventing then
+        AutoStandby.preventing = false
         UIManager:allowStandby()
     end
 end
