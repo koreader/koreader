@@ -21,6 +21,10 @@ local ext_path = "/mnt/ext1/system/config/extensions.cfg"
 local app_name = "koreader.app"
 
 local PocketBook = Generic:new{
+    canUseCBB = no,
+    hasColorScreen = yes,
+    hasCFAScreen = yes,
+
     model = "PocketBook",
     isPocketBook = yes,
     hasOTAUpdates = yes,
@@ -74,6 +78,9 @@ function PocketBook:init()
     self:blacklistCBB()
 
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    if self:hasCFAScreen() then
+        self.screen.bb:setCFA()
+    end
     self.powerd = require("device/pocketbook/powerd"):new{device = self}
 
     -- Whenever we lose focus, but also get suspended for real (we can't reliably tell atm),
@@ -407,6 +414,7 @@ local PocketBook633 = PocketBook:new{
     display_dpi = 300,
     hasColorScreen = yes,
     canUseCBB = no, -- 24bpp
+    hasCFAScreen = yes,
     isAlwaysPortrait = yes,
 }
 
