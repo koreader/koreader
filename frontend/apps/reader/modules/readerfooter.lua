@@ -1704,6 +1704,7 @@ function ReaderFooter:getDataFromStatistics(title, pages)
 end
 
 function ReaderFooter:onUpdateFooter(force_repaint, force_recompute)
+    print("ReaderFooter:onUpdateFooter", force_repaint, force_recompute)
     if self.pageno then
         self:updateFooterPage(force_repaint, force_recompute)
     else
@@ -1730,6 +1731,7 @@ end
 
 -- only call this function after document is fully loaded
 function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
+    print("ReaderFooter:_updateFooterText", force_repaint, force_recompute)
     -- footer is invisible, we need neither a repaint nor a recompute, go away.
     if not self.view.footer_visible and not force_repaint and not force_recompute then
         return
@@ -2014,7 +2016,9 @@ function ReaderFooter:onSuspend()
 end
 
 function ReaderFooter:onFrontlightStateChanged()
+    print("ReaderFooter:onFrontlightStateChanged")
     if self.settings.frontlight then
+        --self:refreshFooter(true)
         self:onUpdateFooter(true)
     end
 end
