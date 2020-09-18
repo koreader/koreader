@@ -78,17 +78,6 @@ function PocketBook:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/pocketbook/powerd"):new{device = self}
 
-    -- Probe the right MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctl... (#6000)
-    if self.screen:mech_wait_update_complete(1) ~= 0 then
-        logger.info("MXCFB_WAIT_FOR_UPDATE_COMPLETE_PB631_V2 ioctl failed, switching to MXCFB_WAIT_FOR_UPDATE_COMPLETE")
-        self.screen.mech_wait_update_complete = self.screen.mech_wait_update_complete_fallback
-
-        if self.screen:mech_wait_update_complete(1) ~= 0 then
-            logger.warn("MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctl failed, disabling mech_wait_update_complete")
-            self.screen.mech_wait_update_complete = nil
-        end
-    end
-
     -- Whenever we lose focus, but also get suspended for real (we can't reliably tell atm),
     -- plugins need to be notified to stop doing foreground stuff, and vice versa. To this end,
     -- we maintain pseudo suspended state just to keep plugins happy, even though it's not
