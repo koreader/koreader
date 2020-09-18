@@ -641,13 +641,14 @@ function ReaderLink:onGoToExternalLink(link_url)
         -- wikipedia page saved as epub, full of wikipedia links, it's
         -- too easy to click on links when wanting to change page...)
         -- But first check if this wikipedia article has been saved as EPUB
-        local epub_filename = util.getSafeFilename(wiki_page:gsub("_", " ")) .. "."..string.upper(wiki_lang)..".epub"
+        local epub_filename = wiki_page .. "."..string.upper(wiki_lang)..".epub"
         local epub_fullpath
         -- either in current book directory
         local last_file = G_reader_settings:readSetting("lastfile")
         if last_file then
             local current_book_dir = last_file:match("(.*)/")
-            local epub_path = current_book_dir .. "/" .. epub_filename
+            local safe_filename = util.getSafeFilename(epub_filename, current_book_dir):gsub("_", " ")
+            local epub_path = current_book_dir .. "/" .. safe_filename
             if util.pathExists(epub_path) then
                 epub_fullpath = epub_path
             end
@@ -658,7 +659,8 @@ function ReaderLink:onGoToExternalLink(link_url)
             if not dir then dir = G_reader_settings:readSetting("home_dir") end
             if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
             if dir then
-                local epub_path = dir .. "/" .. epub_filename
+                local safe_filename = util.getSafeFilename(epub_filename, dir):gsub("_", " ")
+                local epub_path = dir .. "/" .. safe_filename
                 if util.pathExists(epub_path) then
                     epub_fullpath = epub_path
                 end
