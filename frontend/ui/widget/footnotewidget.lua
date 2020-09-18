@@ -91,9 +91,19 @@ body > li { list-style-type: none; }
 .noprint { display: none; }
 
 /* Style some FB2 tags not known to MuPDF */
-emphasis { font-style: italic; }
-strikethrough { text-decoration: line-through; }
-underline { text-decoration: underline; }
+strike, strikethrough { text-decoration: line-through; }
+underline   { text-decoration: underline; }
+emphasis    { font-style: italic; }
+small       { font-size: 80%; }
+big         { font-size: 130%; }
+empty-line  { display: block; padding: 0.5em; }
+image       { display: block; padding: 0.4em; border: 0.1em solid black; width: 0; }
+date        { display: block; font-style: italic; }
+epigraph    { display: block; font-style: italic; }
+poem        { display: block; }
+stanza      { display: block; font-style: italic; }
+v           { display: block; text-align: left; hyphenate: none; }
+text-author { display: block; font-weight: bold; font-style: italic; }
 
 /* Attempt to display FB2 footnotes as expected (as crengine does, putting
  * the footnote number on the same line as the first paragraph via its
