@@ -578,12 +578,10 @@ end
 
 function ReaderHighlight:onPanelZoom(arg, ges)
     self:clear()
-    -- if not pdf/cbz return
-    if not self.ui.document.info.has_pages then return false end
     local hold_pos = self.view:screenToPageTransform(ges.pos)
-    if not hold_pos then return false end
+    if not hold_pos then return false end -- outside page boundary
     local rect = self.ui.document:getPanelFromPage(hold_pos.page, hold_pos)
-    if not rect then return false end
+    if not rect then return false end -- panel not found, return
     local image = self.ui.document:getPagePart(hold_pos.page, rect, 0)
 
     if image then
@@ -595,8 +593,6 @@ function ReaderHighlight:onPanelZoom(arg, ges)
         }
         UIManager:show(imgviewer)
     end
-    logger.dbg("File:", self.ui.document.file)
-    logger.dbg("Extension:", util.getFileNameSuffix(self.ui.document.file))
     return true
 end
 
@@ -609,9 +605,8 @@ function ReaderHighlight:onHold(arg, ges)
     end
 
     -- disable hold gesture if highlighting is disabled
-    if self.view.highlight.disabled then
-        return false
-    end
+    if self.view.highlight.disabled then return false end
+
     self:clear() -- clear previous highlight (delayed clear may not have done it yet)
     self.hold_ges_pos = ges.pos -- remember hold original gesture position
     self.hold_pos = self.view:screenToPageTransform(ges.pos)
