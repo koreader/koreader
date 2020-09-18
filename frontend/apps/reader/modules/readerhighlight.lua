@@ -603,7 +603,7 @@ end
 function ReaderHighlight:onHold(arg, ges)
     -- if it's manga/comic, panel zoom
     local filetype = util.getFileNameSuffix(self.ui.document.file)
-    if filetype == 'cbz' or filetype == 'djvu' then
+    if filetype == "cbz" or filetype == "djvu" then
         self:onPanelZoom(arg, ges)
         return false
     end
