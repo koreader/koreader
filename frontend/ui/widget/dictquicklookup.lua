@@ -355,10 +355,6 @@ function DictQuickLookup:update()
                         -- if forced_lang was specified, it may not be in our wiki_languages,
                         -- but ReaderWikipedia will have put it in result.lang
                         local lang = self.lang or self.wiki_languages_copy[1]
-                        -- Just to be safe (none of the invalid chars, except ':' for uninteresting
-                        -- Portal: or File: wikipedia pages, should be in lookup_word)
-                        local cleaned_lookupword = util.getSafeFilename(self.lookupword:gsub("_", " "))
-                        local filename = cleaned_lookupword .. "."..string.upper(lang)..".epub"
                         -- Find a directory to save file into
                         local dir
                         if G_reader_settings:isTrue("wikipedia_save_in_book_dir") and not self:isDocless() then
@@ -376,6 +372,10 @@ function DictQuickLookup:update()
                             })
                             return
                         end
+                        -- Just to be safe (none of the invalid chars, except ':' for uninteresting
+                        -- Portal: or File: wikipedia pages, should be in lookupword)
+                        local filename = self.lookupword .. "."..string.upper(lang)..".epub"
+                        filename = util.getSafeFilename(filename, dir):gsub("_", " ")
                         local epub_path = dir .. "/" .. filename
                         UIManager:show(ConfirmBox:new{
                             text = T(_("Save as %1?"), BD.filename(filename)),
