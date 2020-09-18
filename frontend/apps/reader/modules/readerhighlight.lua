@@ -595,13 +595,21 @@ function ReaderHighlight:onPanelZoom(arg, ges)
         }
         UIManager:show(imgviewer)
     end
+    logger.dbg("File:", self.ui.document.file)
+    logger.dbg("Extension:", util.getFileNameSuffix(self.ui.document.file))
     return true
 end
 
 function ReaderHighlight:onHold(arg, ges)
+    -- if it's manga/comic, panel zoom
+    local filetype = util.getFileNameSuffix(self.ui.document.file)
+    if filetype == 'cbz' or filetype == 'djvu' then
+        self:onPanelZoom(arg, ges)
+        return false
+    end
+
     -- disable hold gesture if highlighting is disabled
     if self.view.highlight.disabled then
-        self:onPanelZoom(arg, ges)
         return false
     end
     self:clear() -- clear previous highlight (delayed clear may not have done it yet)
