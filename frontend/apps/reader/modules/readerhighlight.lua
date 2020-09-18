@@ -606,7 +606,6 @@ function ReaderHighlight:onHold(arg, ges)
 
     -- disable hold gesture if highlighting is disabled
     if self.view.highlight.disabled then return false end
-
     self:clear() -- clear previous highlight (delayed clear may not have done it yet)
     self.hold_ges_pos = ges.pos -- remember hold original gesture position
     self.hold_pos = self.view:screenToPageTransform(ges.pos)
