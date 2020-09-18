@@ -1032,6 +1032,7 @@ function CreDocument:register(registry)
     registry:addProvider("md", "text/plain", self)
     registry:addProvider("md.zip", "application/zip", self)
     registry:addProvider("mobi", "application/x-mobipocket-ebook", self, 90)
+    registry:addProvider("odt", "application/vnd.oasis.opendocument.text ", self, 90)
     -- Palmpilot Document File
     registry:addProvider("pdb", "application/vnd.palm", self, 90)
     -- Palmpilot Resource File
