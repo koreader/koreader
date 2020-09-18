@@ -271,24 +271,64 @@ From the footnote popup, you can jump to the footnote location in the book by sw
             end,
             keep_menu_open = true,
             callback = function()
-                local SpinWidget = require("ui/widget/spinwidget")
-                UIManager:show(SpinWidget:new{
-                    width = math.floor(Screen:getWidth() * 0.75),
-                    value = G_reader_settings:readSetting("footnote_popup_relative_font_size") or -2,
-                    value_min = -10,
-                    value_max = 5,
-                    precision = "%+d",
-                    ok_text = _("Set font size"),
-                    title_text =  _("Set footnote popup font size"),
-                    info_text = _([[
+                local spin_widget
+                local get_font_size_widget
+                get_font_size_widget = function(show_absolute_font_size_widget)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    if show_absolute_font_size_widget then
+                        spin_widget = SpinWidget:new{
+                            width = math.floor(Screen:getWidth() * 0.75),
+                            value = G_reader_settings:readSetting("footnote_popup_absolute_font_size")
+                                            or Screen:scaleBySize(self.ui.font.font_size),
+                            value_min = 12,
+                            value_max = 255,
+                            precision = "%d",
+                            ok_text = _("Set font size"),
+                            title_text =  _("Set footnote popup font size"),
+                            info_text = _([[
+The footnote popup font can adjust to the font size you've set for the document, but you can specify here a fixed absolute font size to be used instead.]]),
+                            callback = function(spin)
+                                G_reader_settings:delSetting("footnote_popup_relative_font_size")
+                                G_reader_settings:saveSetting("footnote_popup_absolute_font_size", spin.value)
+                            end,
+                            extra_text = _("Set a relative font size instead"),
+                            extra_callback = function()
+                                UIManager:close(spin_widget)
+                                spin_widget = get_font_size_widget(false)
+                                UIManager:show(spin_widget)
+                            end,
+                        }
+                    else
+                        spin_widget = SpinWidget:new{
+                            width = math.floor(Screen:getWidth() * 0.75),
+                            value = G_reader_settings:readSetting("footnote_popup_relative_font_size") or -2,
+                            value_min = -10,
+                            value_max = 5,
+                            precision = "%+d",
+                            ok_text = _("Set font size"),
+                            title_text =  _("Set footnote popup font size"),
+                            info_text = _([[
 The footnote popup font adjusts to the font size you've set for the document.
 You can specify here how much smaller or larger it should be relative to the document font size.
 A negative value will make it smaller, while a positive one will make it larger.
 The recommended value is -2.]]),
-                    callback = function(spin)
-                        G_reader_settings:saveSetting("footnote_popup_relative_font_size", spin.value)
-                    end,
-                })
+                            callback = function(spin)
+                                G_reader_settings:delSetting("footnote_popup_absolute_font_size")
+                                G_reader_settings:saveSetting("footnote_popup_relative_font_size", spin.value)
+                            end,
+                            extra_text = _("Set an absolute font size instead"),
+                            extra_callback = function()
+                                UIManager:close(spin_widget)
+                                spin_widget = get_font_size_widget(true)
+                                UIManager:show(spin_widget)
+                            end,
+                        }
+                    end
+                    return spin_widget
+                end
+                local show_absolute_font_size_widget = G_reader_settings:readSetting("footnote_popup_absolute_font_size") ~= nil
+                spin_widget = get_font_size_widget(show_absolute_font_size_widget)
+                UIManager:show(spin_widget)
             end,
             help_text = _([[
 The footnote popup font adjusts to the font size you've set for the document.
