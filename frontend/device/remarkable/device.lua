@@ -126,7 +126,7 @@ function Remarkable:reboot()
     os.execute("systemctl reboot")
 end
 
-function osCapture(cmd, raw)
+local function osCapture(cmd, raw)
     local f = io.popen(cmd, 'r')
     if not f then
         return nil
@@ -145,17 +145,17 @@ function osCapture(cmd, raw)
     return s
 end
 
-function getNetworkProperty(path, name)
+local function getNetworkProperty(path, name)
     path = string.sub(path, string.len("/codes/eeems/oxide1/") + 1)
     local json, err = rapidjson.decode(osCapture("rot --object Network:" .. path .. " wifi get " .. name))
     return json
 end
-function getBSSProperty(path, name)
+local function getBSSProperty(path, name)
     path = string.sub(path, string.len("/codes/eeems/oxide1/") + 1)
     local json, err = rapidjson.decode(osCapture("rot --object BSS:" .. path .. " wifi get " .. name))
     return json
 end
-function getWifiProperty(name)
+local function getWifiProperty(name)
     local json, err = rapidjson.decode(osCapture("rot wifi get " .. name))
     return json
 end
@@ -170,24 +170,24 @@ function Remarkable:initNetworkManager(NetworkMgr)
     end
     function NetworkMgr:turnOffWifi(complete_callback)
         logger.info("Remarkable: disabling Wi-Fi")
-        osCapture("rot wifi call disable")
+        os.execute("rot wifi call disable")
         if complete_callback then
             complete_callback()
         end
     end
     function NetworkMgr:turnOnWifi(complete_callback)
         logger.info("Remarkable: enabling Wi-Fi")
-        osCapture("rot wifi call enable")
+        os.execute("rot wifi call enable")
         self:showNetworkMenu(complete_callback)
     end
     function NetworkMgr:getNetworkInterfaceName()
         return "wlan0"
     end
     function NetworkMgr:obtainIP()
-        osCapture("dhcpcd")
+        os.execute("dhcpcd")
     end
     function NetworkMgr:releaseIP()
-        osCapture("dhcpcd -k")
+        os.execute("dhcpcd -k")
     end
     function NetworkMgr:isWifiOn()
         return tonumber(osCapture("rot wifi get state")) > 1
