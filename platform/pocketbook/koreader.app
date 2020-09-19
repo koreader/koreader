@@ -49,8 +49,6 @@ ko_update_check() {
         sync
     fi
 }
-# NOTE: Keep doing an initial update check, in addition to one during the restart loop, so we can pickup potential updates of this very script...
-ko_update_check
 
 # we're always starting from our working directory
 cd ${KOREADER_DIR} || exit
