@@ -181,17 +181,14 @@ function Remarkable:initNetworkManager(NetworkMgr)
         os.execute("rot wifi call enable")
         local UIManager = require("ui/uimanager")
         local InfoMessage = require("ui/widget/infomessage")
-        local info = InfoMessage:new{text = _("Turning on wifi…")}
+        local info = InfoMessage:new{text = _("Connecting to Wi-Fi…")}
         UIManager:show(info)
         UIManager:nextTick(function()
             -- Wait for wifi to enable
             while getWifiProperty("state") < 1 do
                 os.execute("sleep 1")
             end
-            UIManager:close(info)
             logger.info("Scanning for networks...")
-            info = InfoMessage:new{text = _("Scanning for networks…")}
-            UIManager:show(info)
             -- Initiate active scan
             os.execute("rot wifi call scan bool:true")
             -- Wait for scan to finish
