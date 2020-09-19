@@ -43,10 +43,10 @@ ko_update_check() {
         fi
         rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
         unset BLOCKS CPOINTS
-        # Don't forget to go back home, for proper restart behavior
-        cd ${KOREADER_DIR}
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
         sync
+        # Don't forget to go back home, for proper restart behavior
+        cd ${KOREADER_DIR} || exit
     fi
 }
 
@@ -85,8 +85,8 @@ KO_RC_RESTART=85
 # Ensure a clean slate on startup
 rm -f "${KO_EXIT_CODE}"
 RETURN_VALUE=${KO_RC_RESTART}
-while [ ${RETURN_VALUE} -ne 0 ]; do
-    if [ ${RETURN_VALUE} -eq ${KO_RC_RESTART} ]; then
+while [ "${RETURN_VALUE}" -ne 0 ]; do
+    if [ "${RETURN_VALUE}" -eq ${KO_RC_RESTART} ]; then
         # Do an update check now, so we can actually update KOReader via the "Restart KOReader" menu entry ;).
         ko_update_check
     fi
@@ -96,7 +96,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
     rm -f "${KO_EXIT_CODE}"
 
     # Did we crash?
-    if [ ${RETURN_VALUE} -ne 0 ] && [ ${RETURN_VALUE} -ne ${KO_RC_RESTART} ]; then
+    if [ "${RETURN_VALUE}" -ne 0 ] && [ "${RETURN_VALUE}" -ne ${KO_RC_RESTART} ]; then
         # Increment the crash counter
         CRASH_COUNT=$((CRASH_COUNT + 1))
         CRASH_TS=$(date +'%s')
