@@ -43,6 +43,8 @@ ko_update_check() {
         fi
         rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
         unset BLOCKS CPOINTS
+        # Don't forget to go back home, for proper restart behavior
+        cd ${KOREADER_DIR}
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
         sync
     fi
@@ -76,11 +78,108 @@ if [ -e crash.log ]; then
 fi
 
 export KO_EXIT_CODE="/tmp/.koreader.exit"
-RETURN_VALUE="85"
-while [ "${RETURN_VALUE}" = "85" ]; do
-    rm -f "${KO_EXIT_CODE}"
+CRASH_COUNT=0
+CRASH_TS=0
+CRASH_PREV_TS=0
+# List of supported special return codes
+KO_RC_RESTART=85
+#KO_RC_USBMS=86
+# Ensure a clean slate on startup
+rm -f "${KO_EXIT_CODE}"
+RETURN_VALUE=${KO_RC_RESTART}
+while [ ${RETURN_VALUE} -ne 0 ]; do
+    if [ ${RETURN_VALUE} -eq ${KO_RC_RESTART} ]; then
+        # Do an update check now, so we can actually update KOReader via the "Restart KOReader" menu entry ;).
+        ko_update_check
+    fi
+
     ./reader.lua "${args}" >>crash.log 2>&1
-    RETURN_VALUE=$(cat ${KO_EXIT_CODE})
+    RETURN_VALUE="$(cat ${KO_EXIT_CODE})"
+    rm -f "${KO_EXIT_CODE}"
+
+    # Did we crash?
+    if [ ${RETURN_VALUE} -ne 0 ] && [ ${RETURN_VALUE} -ne ${KO_RC_RESTART} ]; then
+        # Increment the crash counter
+        CRASH_COUNT=$((CRASH_COUNT + 1))
+        CRASH_TS=$(date +'%s')
+        # Reset it to a first crash if it's been a while since our last crash...
+        if [ $((CRASH_TS - CRASH_PREV_TS)) -ge 20 ]; then
+            CRASH_COUNT=1
+        fi
+
+        # Check if the user requested to always abort on crash
+        if grep -q '\["dev_abort_on_crash"\] = true' 'settings.reader.lua' 2>/dev/null; then
+            ALWAYS_ABORT="true"
+            # In which case, make sure we pause on *every* crash
+            CRASH_COUNT=1
+        else
+            ALWAYS_ABORT="false"
+        fi
+
+        # Show a fancy bomb on screen
+        viewWidth=600
+        viewHeight=800
+        FONTH=16
+        eval "$("${KOREADER_DIR}/fbink" -e | tr ';' '\n' | grep -e viewWidth -e viewHeight -e FONTH | tr '\n' ';')"
+        # Compute margins & sizes relative to the screen's resolution, so we end up with a similar layout, no matter the device.
+        # Height @ ~56.7%, w/ a margin worth 1.5 lines
+        bombHeight=$((viewHeight / 2 + viewHeight / 15))
+        bombMargin=$((FONTH + FONTH / 2))
+        # With a little notice at the top of the screen, on a big gray screen of death ;).
+        "${KOREADER_DIR}/fbink" -q -b -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
+        if [ ${CRASH_COUNT} -eq 1 ]; then
+            # Warn that we're waiting on a tap to continue...
+            "${KOREADER_DIR}/fbink" -q -b -O -m -y 2 "Tap the screen to continue."
+        fi
+        # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
+        # shellcheck disable=SC2039
+        "${KOREADER_DIR}/fbink" -q -b -O -m -t regular=${KOREADER_DIR}/fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} -- $'\xf0\x9f\x92\xa3'
+        # And then print the tail end of the log on the bottom of the screen...
+        crashLog="$(tail -n 25 crash.log | sed -e 's/\t/    /g')"
+        # The idea for the margins being to leave enough room for an fbink -Z bar, small horizontal margins, and a font size based on what 6pt looked like @ 265dpi
+        "${KOREADER_DIR}/fbink" -q -b -O -t regular=${KOREADER_DIR}/fonts/droid/DroidSansMono.ttf,top=$((viewHeight / 2 + FONTH * 2 + FONTH / 2)),left=$((viewWidth / 60)),right=$((viewWidth / 60)),px=$((viewHeight / 64)) -- "${crashLog}"
+        # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
+        ${KOREADER_DIR}/fbink -q -f -s
+        # Cue a lemming's faceplant sound effect!
+
+        {
+            echo "!!!!"
+            echo "Uh oh, something went awry... (Crash n°${CRASH_COUNT}: $(date +'%x @ %X'))"
+        } >>crash.log 2>&1
+        if [ ${CRASH_COUNT} -lt 5 ] && [ "${ALWAYS_ABORT}" = "false" ]; then
+            echo "Attempting to restart KOReader . . ." >>crash.log 2>&1
+            echo "!!!!" >>crash.log 2>&1
+        fi
+
+        # Pause a bit if it's the first crash in a while, so that it actually has a chance of getting noticed ;).
+        if [ ${CRASH_COUNT} -eq 1 ]; then
+            # NOTE: We don't actually care about what read read, we're just using it as a fancy sleep ;).
+            #       i.e., we pause either until the 15s timeout, or until the user touches the screen.
+            # FIXME: That probably won't work on PB? Just stick a sleep 15 here?
+            # shellcheck disable=SC2039
+            read -r -t 15 </dev/input/event1
+        fi
+        # Cycle the last crash timestamp
+        CRASH_PREV_TS=${CRASH_TS}
+
+        # But if we've crashed more than 5 consecutive times, exit, because we wouldn't want to be stuck in a loop...
+        # NOTE: No need to check for ALWAYS_ABORT, CRASH_COUNT will always be 1 when it's true ;).
+        if [ ${CRASH_COUNT} -ge 5 ]; then
+            echo "Too many consecutive crashes, aborting . . ." >>crash.log 2>&1
+            echo "!!!! ! !!!!" >>crash.log 2>&1
+            break
+        fi
+
+        # If the user requested to always abort on crash, do so.
+        if [ "${ALWAYS_ABORT}" = "true" ]; then
+            echo "Aborting . . ." >>crash.log 2>&1
+            echo "!!!! ! !!!!" >>crash.log 2>&1
+            break
+        fi
+    else
+        # Reset the crash counter if that was a sane exit/restart
+        CRASH_COUNT=0
+    fi
 done
 
 rm -f "/tmp/koreader.pid"
