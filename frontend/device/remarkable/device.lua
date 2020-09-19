@@ -150,17 +150,14 @@ end
 
 local function getNetworkProperty(path, name)
     path = string.sub(path, string.len("/codes/eeems/oxide1/") + 1)
-    local json, err = rapidjson.decode(osCapture("rot --object Network:" .. path .. " wifi get " .. name))
-    return json, err
+    return rapidjson.decode(osCapture("rot --object Network:" .. path .. " wifi get " .. name))
 end
 local function getBSSProperty(path, name)
     path = string.sub(path, string.len("/codes/eeems/oxide1/") + 1)
-    local json, err = rapidjson.decode(osCapture("rot --object BSS:" .. path .. " wifi get " .. name))
-    return json, err
+    return rapidjson.decode(osCapture("rot --object BSS:" .. path .. " wifi get " .. name))
 end
 local function getWifiProperty(name)
-    local json, err = rapidjson.decode(osCapture("rot wifi get " .. name))
-    return json, err
+    return rapidjson.decode(osCapture("rot wifi get " .. name))
 end
 local function isempty(s)
   return s == nil or s == ''
@@ -168,7 +165,8 @@ end
 
 -- wireless
 function Remarkable:initNetworkManager(NetworkMgr)
-    if os.execute("which rot") == 0 then
+    if os.execute("which rot") == 1 then
+        logger.info("Could not find rot")
         return
     end
     function NetworkMgr:turnOffWifi(complete_callback)
@@ -181,7 +179,62 @@ function Remarkable:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback)
         logger.info("Remarkable: enabling Wi-Fi")
         os.execute("rot wifi call enable")
-        self:showNetworkMenu(complete_callback)
+        local UIManager = require("ui/uimanager")
+        local InfoMessage = require("ui/widget/infomessage")
+        local info = InfoMessage:new{text = _("Turning on wifi…")}
+        UIManager:show(info)
+        UIManager:nextTick(function()
+            -- Wait for wifi to enable
+            while getWifiProperty("state") < 1 do
+                os.execute("sleep 1")
+            end
+            UIManager:close(info)
+            logger.info("Scanning for networks...")
+            info = InfoMessage:new{text = _("Scanning for networks…")}
+            UIManager:show(info)
+            -- Initiate active scan
+            os.execute("rot wifi call scan bool:true")
+            -- Wait for scan to finish
+            while getWifiProperty("scanning") do
+                os.execute("sleep 1")
+            end
+            logger.info("Scan finished")
+            -- Check for known networks
+            local network_list, err = self:getNetworkList()
+            while network_list == nil and not err do
+                os.execute("sleep 1")
+                network_list, err = self:getNetworkList()
+            end
+            if getWifiProperty("state") > 2 then
+                local network = self:getCurrentNetwork()
+                if network then
+                    logger.info("Connected to " .. network.ssid)
+                    UIManager:close(info)
+                    local BD = require("ui/bidi")
+                    UIManager:show(InfoMessage:new{
+                       text = T(_("Connected to network %1"), BD.wrap(network.ssid)),
+                       timeout = 3,
+                    })
+                    if complete_callback then
+                        complete_callback()
+                    end
+                    return
+                end
+            end
+            UIManager:close(info)
+            UIManager:show(InfoMessage:new{
+               text = _("No network found."),
+               timeout = 3,
+            })
+            if complete_callback then
+                complete_callback()
+            end
+            -- TODO
+            --   In the future we will have to properly show the wifi menu
+            --   But for now, oxide doesn't return enough information to properly
+            --   use it.
+            -- self:showNetworkMenu(complete_callback)
+        end)
     end
     function NetworkMgr:getNetworkInterfaceName()
         return "wlan0"
@@ -193,18 +246,20 @@ function Remarkable:initNetworkManager(NetworkMgr)
         os.execute("dhcpcd -k")
     end
     function NetworkMgr:isWifiOn()
-        return tonumber(osCapture("rot wifi get state")) > 1
+        return getWifiProperty("state") > 1
     end
 
     function NetworkMgr:getNetworkList()
         local currentNetwork = getWifiProperty("network")
         local bsss = getWifiProperty("bSSs")
-        local err = ""
         if not bsss then
-            return nil, "No network results."
+            local err = "No network results."
+            logger.err(err)
+            return nil, err
         end
+        local err = ""
         local results = nil
-        for _,path in ipairs(bsss) do
+        for _, path in ipairs(bsss) do
             if path then
                 local bssid = getBSSProperty(path, "bssid")
                 -- We may need to wait for the object to have been registered properly
@@ -249,17 +304,23 @@ function Remarkable:initNetworkManager(NetworkMgr)
                 err = err .. "Got nil instead of dbus path. "
             end
         end
+        if string.len(err) > 0 then
+            logger.err("Error while getting networks: " .. err)
+        end
         return results, err
     end
     function NetworkMgr:getCurrentNetwork()
         local path = getWifiProperty("network")
-        local results = {}
-        if path and path ~= "/" then
-            table.insert(results, {
-                ssid = getNetworkProperty(path, "ssid"),
-            })
+        if not path then
+            logger.err("Unable to get current network")
+            return nil
         end
-        return results
+        if path == "/" then
+            return nil
+        end
+        return {
+            ssid = getNetworkProperty(path, "ssid"),
+        }
     end
     function NetworkMgr:authenticateNetwork(network)
         local InfoMessage = require("ui/widget/infomessage")
