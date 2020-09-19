@@ -97,7 +97,7 @@ esac
 # The actual swap is done in a function, because we can disable it in the Developer settings, and we want to honor it on restart.
 ko_do_fbdepth() {
     if [ -n "${KO_DONT_SET_DEPTH}" ]; then
-      return
+        return
     fi
 
     # Check if the swap has been disabled...
