@@ -126,7 +126,7 @@ function Remarkable:reboot()
     os.execute("systemctl reboot")
 end
 
-function os.capture(cmd, raw)
+function osCapture(cmd, raw)
     local f = io.popen(cmd, 'r')
     if not f then
         return nil
@@ -147,16 +147,16 @@ end
 
 function getNetworkProperty(path, name)
     path = string.sub(path, string.len("/codes/eeems/oxide1/") + 1)
-    local json, err = rapidjson.decode(os.capture("rot --object Network:" .. path .. " wifi get " .. name))
+    local json, err = rapidjson.decode(osCapture("rot --object Network:" .. path .. " wifi get " .. name))
     return json
 end
 function getBSSProperty(path, name)
     path = string.sub(path, string.len("/codes/eeems/oxide1/") + 1)
-    local json, err = rapidjson.decode(os.capture("rot --object BSS:" .. path .. " wifi get " .. name))
+    local json, err = rapidjson.decode(osCapture("rot --object BSS:" .. path .. " wifi get " .. name))
     return json
 end
 function getWifiProperty(name)
-    local json, err = rapidjson.decode(os.capture("rot wifi get " .. name))
+    local json, err = rapidjson.decode(osCapture("rot wifi get " .. name))
     return json
 end
 local function isempty(s)
@@ -165,32 +165,32 @@ end
 
 -- wireless
 function Remarkable:initNetworkManager(NetworkMgr)
-    if isempty(os.capture("rot")) then
+    if isempty(osCapture("rot")) then
         return
     end
     function NetworkMgr:turnOffWifi(complete_callback)
         logger.info("Remarkable: disabling Wi-Fi")
-        os.capture("rot wifi call disable")
+        osCapture("rot wifi call disable")
         if complete_callback then
             complete_callback()
         end
     end
     function NetworkMgr:turnOnWifi(complete_callback)
         logger.info("Remarkable: enabling Wi-Fi")
-        os.capture("rot wifi call enable")
+        osCapture("rot wifi call enable")
         self:showNetworkMenu(complete_callback)
     end
     function NetworkMgr:getNetworkInterfaceName()
         return "wlan0"
     end
     function NetworkMgr:obtainIP()
-        os.capture("dhcpcd")
+        osCapture("dhcpcd")
     end
     function NetworkMgr:releaseIP()
-        os.capture("dhcpcd -k")
+        osCapture("dhcpcd -k")
     end
     function NetworkMgr:isWifiOn()
-        return tonumber(os.capture("rot wifi get state")) > 1
+        return tonumber(osCapture("rot wifi get state")) > 1
     end
 
     function NetworkMgr:getNetworkList()
@@ -270,7 +270,7 @@ function Remarkable:initNetworkManager(NetworkMgr)
             properties.key_mgmt = "WPA-PSK"
             properties.psk = network.password
         end
-        local path, err = rapidjson.decode(os.capture("rot wifi call addNetwork 'QVariantMap:" .. rapidjson.encode(properties) .. "'"))
+        local path, err = rapidjson.decode(osCapture("rot wifi call addNetwork 'QVariantMap:" .. rapidjson.encode(properties) .. "'"))
         local success = path and path ~= "/"
         UIManager:close(info)
         return success, err
