@@ -1,6 +1,9 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local logger = require("logger")
 local rapidjson = require("rapidjson")
+local ffiutil = require("ffi/util")
+local T = ffiutil.template
+local _ = require("gettext")
 
 local function yes() return true end
 local function no() return false end
@@ -148,16 +151,16 @@ end
 local function getNetworkProperty(path, name)
     path = string.sub(path, string.len("/codes/eeems/oxide1/") + 1)
     local json, err = rapidjson.decode(osCapture("rot --object Network:" .. path .. " wifi get " .. name))
-    return json
+    return json, err
 end
 local function getBSSProperty(path, name)
     path = string.sub(path, string.len("/codes/eeems/oxide1/") + 1)
     local json, err = rapidjson.decode(osCapture("rot --object BSS:" .. path .. " wifi get " .. name))
-    return json
+    return json, err
 end
 local function getWifiProperty(name)
     local json, err = rapidjson.decode(osCapture("rot wifi get " .. name))
-    return json
+    return json, err
 end
 local function isempty(s)
   return s == nil or s == ''
@@ -165,7 +168,7 @@ end
 
 -- wireless
 function Remarkable:initNetworkManager(NetworkMgr)
-    if isempty(osCapture("rot")) then
+    if os.execute("which rot") == 0 then
         return
     end
     function NetworkMgr:turnOffWifi(complete_callback)
@@ -262,8 +265,6 @@ function Remarkable:initNetworkManager(NetworkMgr)
         local InfoMessage = require("ui/widget/infomessage")
         local UIManager = require("ui/uimanager")
         local BD = require("ui/bidi")
-        local ffiutil = require("ffi/util")
-        local T = ffiutil.template
         local info = InfoMessage:new{text = T(_("Connecting to %1."), BD.wrap(network.ssid)) }
         local properties = {
             ssid = network.ssid,
