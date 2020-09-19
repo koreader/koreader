@@ -1,5 +1,6 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local logger = require("logger")
+local rapidjson = require("rapidjson")
 
 local function yes() return true end
 local function no() return false end
@@ -123,6 +124,117 @@ end
 
 function Remarkable:reboot()
     os.execute("systemctl reboot")
+end
+
+function os.capture(cmd, raw)
+    local f = assert(io.popen(cmd, 'r'))
+    local s = assert(f:read('*a'))
+    f:close()
+    if raw then return s end
+    s = string.gsub(s, '^%s+', '')
+    s = string.gsub(s, '%s+$', '')
+    s = string.gsub(s, '[\n\r]+', ' ')
+    return s
+end
+
+function getNetworkProperty(path, name)
+    path = strsub(path, strlen("/codes/eeems/oxide1/"))
+    local json, err = rapidjson.decode(os.capture("rot --object Network:" .. path .. " wifi get " .. name))
+    return json
+end
+function getBSSProperty(path, name)
+    path = strsub(path, strlen("/codes/eeems/oxide1/"))
+    local json, err = rapidjson.decode(os.capture("rot --object BSS:" .. path .. " wifi get " .. name))
+    return json
+end
+function getWifiProperty(name)
+    local json, err = rapidjson.decode(os.capture("rot wifi get " .. name))
+    return json
+end
+local function isempty(s)
+  return s == nil or s == ''
+end
+
+-- wireless
+function Remarkable:initNetworkManager(NetworkMgr)
+    if isempty(os.capture("rot")) then
+        return
+    end
+    function NetworkMgr:turnOffWifi(complete_callback)
+        logger.info("Remarkable: disabling Wi-Fi")
+        os.capture("rot wifi call disable")
+        if complete_callback then
+            complete_callback()
+        end
+    end
+    function NetworkMgr:turnOnWifi(complete_callback)
+        logger.info("Remarkable: enabling Wi-Fi")
+        os.capture("rot wifi call enable")
+        self:reconnectOrShowNetworkMenu(complete_callback)
+    end
+    function NetworkMgr:getNetworkInterfaceName()
+        return "wlan0"
+    end
+    NetworkMgr:setWirelessBackend("rot"})
+    function NetworkMgr:obtainIP()
+        os.capture("dhcpcd")
+    end
+    function NetworkMgr:releaseIP()
+        os.capture("dhcpcd -k")
+    end
+    function NetworkMgr:isWifiOn()
+        return tonumber(os.capture("rot wifi get state")) > 1
+    end
+
+    function NetworkMgr:getNetworkList()
+        local results = {}
+        local currentNetwork = getWifiProperty("network")
+        for path in getWifiProperty("bSSs") do
+            local flags = {}
+            for flag in getBSSProperty(path, "key_mgmt") do
+                table.insert(flags, "[" .. strupper(flag) .. "]")
+            end
+            local network = {
+                bssid = getBSSProperty(path, "bssid"),
+                ssid = getBSSProperty(path, "ssid"),
+                frequency = getBSSProperty(path, "frequency"),
+                signal_level = getBSSProperty(path, "signal"),
+                flags = flags,
+            }
+            network.signal_quality = math.min(math.max((network.signal + 100) * 2, 0), 100)
+            local networkPath = getBSSProperty(path, "network")
+            if networkPath then
+                if networkPath == currentNetwork then
+                    network.connected = true
+                end
+            end
+            table.insert(results, network)
+        end
+        return results
+    end
+    function NetworkMgr:getCurrentNetwork()
+        local path = getWifiProperty("network")
+        local results = {}
+        if path and path ~= "/" then
+            table.insert(results, {
+                ssid = getNetworkProperty(path, "ssid"),
+            })
+        end
+        return results
+    end
+    function NetworkMgr:authenticateNetwork(network)
+        local properties = {
+            ssid = network.ssid,
+        }
+        if network.psk then
+            properties.key_mgmt = "WPA-PSK"
+            properties.psk = network.password
+        end
+        local path, err = rapidjson.decode(os.capture("rot wifi call addNetwork 'QVariantMap:" .. rapidjson.encode(properties) .. "'"))
+    end
+    function NetworkMgr:disconnectNetwork(network)
+        os.execute("rot wifi call disconnect")
+    end
 end
 
 return Remarkable
