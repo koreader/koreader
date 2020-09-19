@@ -178,41 +178,7 @@ function Remarkable:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback)
         logger.info("Remarkable: enabling Wi-Fi")
         os.capture("rot wifi call enable")
-        local InfoMessage = require("ui/widget/infomessage")
-        local UIManager = require("ui/uimanager")
-        local _ = require("gettext")
-        local info = InfoMessage:new{text = _("Scanning for networks…")}
-        UIManager:show(info)
-        os.execute("sleep 1")
-        UIManager:nextTick(function()
-            local network_list, err = self.getNetworkList()
-            while network_list == nil do
-                if string.len(err) > 0 then
-                    UIManager:close(info)
-                    UIManager:show(InfoMessage:new{text = "Error: " .. err})
-                    return
-                end
-                os.execute("sleep 1")
-                network_list, err = self.getNetworkList()
-            end
-            if tonumber(os.capture("rot wifi get state")) > 2 then
-                network = self:getCurrentNetwork()
-                local BD = require("ui/bidi")
-                UIManager:close(info)
-                UIManager:show(InfoMessage:new{
-                   text = _("Connected to network ") .. BD.wrap(network.ssid),
-                   timeout = 3,
-               })
-                return
-            end
-            UIManager:close(info)
-            if not success then
-                UIManager:show(require("ui/widget/networksetting"):new{
-                    network_list = network_list,
-                    connect_callback = complete_callback,
-                })
-            end
-        end)
+        self:showNetworkMenu(complete_callback)
     end
     function NetworkMgr:getNetworkInterfaceName()
         return "wlan0"
@@ -259,6 +225,8 @@ function Remarkable:initNetworkManager(NetworkMgr)
                         frequency = getBSSProperty(path, "frequency"),
                         signal_level = getBSSProperty(path, "signal"),
                         flags = flags,
+                        path = path,
+                        connected = false
                     }
                     if network.signal then
                         network.signal_quality = math.min(math.max((network.signal + 100) * 2, 0), 100)
@@ -266,7 +234,7 @@ function Remarkable:initNetworkManager(NetworkMgr)
                         network.signal_quality = 0
                     end
                     local networkPath = getBSSProperty(path, "network")
-                    if networkPath and networkPath == currentNetwork then
+                    if currentNetwork and currentNetwork ~= "/" and networkPath and networkPath == currentNetwork then
                         network.connected = true
                     end
                     if results == nil then
