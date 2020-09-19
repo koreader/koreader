@@ -127,10 +127,18 @@ function Remarkable:reboot()
 end
 
 function os.capture(cmd, raw)
-    local f = assert(io.popen(cmd, 'r'))
-    local s = assert(f:read('*a'))
+    local f = io.popen(cmd, 'r')
+    if not f then
+        return nil
+    end
+    local s = f:read('*a')
     f:close()
-    if raw then return s end
+    if not s then
+        return nil
+    end
+    if raw then
+        return s
+    end
     s = string.gsub(s, '^%s+', '')
     s = string.gsub(s, '%s+$', '')
     s = string.gsub(s, '[\n\r]+', ' ')
@@ -138,12 +146,12 @@ function os.capture(cmd, raw)
 end
 
 function getNetworkProperty(path, name)
-    path = strsub(path, strlen("/codes/eeems/oxide1/"))
+    path = string.sub(path, string.len("/codes/eeems/oxide1/") + 1)
     local json, err = rapidjson.decode(os.capture("rot --object Network:" .. path .. " wifi get " .. name))
     return json
 end
 function getBSSProperty(path, name)
-    path = strsub(path, strlen("/codes/eeems/oxide1/"))
+    path = string.sub(path, string.len("/codes/eeems/oxide1/") + 1)
     local json, err = rapidjson.decode(os.capture("rot --object BSS:" .. path .. " wifi get " .. name))
     return json
 end
@@ -170,12 +178,45 @@ function Remarkable:initNetworkManager(NetworkMgr)
     function NetworkMgr:turnOnWifi(complete_callback)
         logger.info("Remarkable: enabling Wi-Fi")
         os.capture("rot wifi call enable")
-        self:reconnectOrShowNetworkMenu(complete_callback)
+        local InfoMessage = require("ui/widget/infomessage")
+        local UIManager = require("ui/uimanager")
+        local _ = require("gettext")
+        local info = InfoMessage:new{text = _("Scanning for networks…")}
+        UIManager:show(info)
+        os.execute("sleep 1")
+        UIManager:nextTick(function()
+            local network_list, err = self.getNetworkList()
+            while network_list == nil do
+                if string.len(err) > 0 then
+                    UIManager:close(info)
+                    UIManager:show(InfoMessage:new{text = "Error: " .. err})
+                    return
+                end
+                os.execute("sleep 1")
+                network_list, err = self.getNetworkList()
+            end
+            if tonumber(os.capture("rot wifi get state")) > 2 then
+                network = self:getCurrentNetwork()
+                local BD = require("ui/bidi")
+                UIManager:close(info)
+                UIManager:show(InfoMessage:new{
+                   text = _("Connected to network ") .. BD.wrap(network.ssid),
+                   timeout = 3,
+               })
+                return
+            end
+            UIManager:close(info)
+            if not success then
+                UIManager:show(require("ui/widget/networksetting"):new{
+                    network_list = network_list,
+                    connect_callback = complete_callback,
+                })
+            end
+        end)
     end
     function NetworkMgr:getNetworkInterfaceName()
         return "wlan0"
     end
-    NetworkMgr:setWirelessBackend("rot"})
     function NetworkMgr:obtainIP()
         os.capture("dhcpcd")
     end
@@ -187,30 +228,57 @@ function Remarkable:initNetworkManager(NetworkMgr)
     end
 
     function NetworkMgr:getNetworkList()
-        local results = {}
         local currentNetwork = getWifiProperty("network")
-        for path in getWifiProperty("bSSs") do
-            local flags = {}
-            for flag in getBSSProperty(path, "key_mgmt") do
-                table.insert(flags, "[" .. strupper(flag) .. "]")
-            end
-            local network = {
-                bssid = getBSSProperty(path, "bssid"),
-                ssid = getBSSProperty(path, "ssid"),
-                frequency = getBSSProperty(path, "frequency"),
-                signal_level = getBSSProperty(path, "signal"),
-                flags = flags,
-            }
-            network.signal_quality = math.min(math.max((network.signal + 100) * 2, 0), 100)
-            local networkPath = getBSSProperty(path, "network")
-            if networkPath then
-                if networkPath == currentNetwork then
-                    network.connected = true
-                end
-            end
-            table.insert(results, network)
+        local bsss = getWifiProperty("bSSs")
+        local err = ""
+        if not bsss then
+            return nil, "No network results."
         end
-        return results
+        local results = nil
+        for _,path in ipairs(bsss) do
+            if path then
+                local bssid = getBSSProperty(path, "bssid")
+                -- We may need to wait for the object to have been registered properly
+                while not bssid do
+                    os.execute("sleep 1")
+                    bssid = getBSSProperty(path, "bssid")
+                end
+                local ssid = getBSSProperty(path, "ssid")
+                if not isempty(ssid) then
+                    logger.info("Network " .. ssid)
+                    local flags = ""
+                    local keyMgmt = getBSSProperty(path, "key_mgmt")
+                    if keyMgmt then
+                        for _,flag in ipairs(keyMgmt) do
+                            flags = flags .. "[" .. string.upper(flag) .. "]"
+                        end
+                    end
+                    local network = {
+                        bssid = bssid,
+                        ssid = ssid,
+                        frequency = getBSSProperty(path, "frequency"),
+                        signal_level = getBSSProperty(path, "signal"),
+                        flags = flags,
+                    }
+                    if network.signal then
+                        network.signal_quality = math.min(math.max((network.signal + 100) * 2, 0), 100)
+                    else
+                        network.signal_quality = 0
+                    end
+                    local networkPath = getBSSProperty(path, "network")
+                    if networkPath and networkPath == currentNetwork then
+                        network.connected = true
+                    end
+                    if results == nil then
+                        results = {}
+                    end
+                    table.insert(results, network)
+                end
+            else
+                err = err .. "Got nil instead of dbus path. "
+            end
+        end
+        return results, err
     end
     function NetworkMgr:getCurrentNetwork()
         local path = getWifiProperty("network")
@@ -223,6 +291,10 @@ function Remarkable:initNetworkManager(NetworkMgr)
         return results
     end
     function NetworkMgr:authenticateNetwork(network)
+        local InfoMessage = require("ui/widget/infomessage")
+        local UIManager = require("ui/uimanager")
+        local BD = require("ui/bidi")
+        local info = InfoMessage:new{text = "Connecting to " .. BD.wrap(network.ssid) }
         local properties = {
             ssid = network.ssid,
         }
@@ -231,6 +303,9 @@ function Remarkable:initNetworkManager(NetworkMgr)
             properties.psk = network.password
         end
         local path, err = rapidjson.decode(os.capture("rot wifi call addNetwork 'QVariantMap:" .. rapidjson.encode(properties) .. "'"))
+        local success = path and path ~= "/"
+        UIManager:close(info)
+        return success, err
     end
     function NetworkMgr:disconnectNetwork(network)
         os.execute("rot wifi call disconnect")
