@@ -80,16 +80,17 @@ local Device = {
 
     -- some devices have part of their screen covered by the bezel
     viewport = nil,
-    -- enforce portrait orientation on display, no matter how configured at
-    -- startup
+    -- enforce portrait orientation of display when FB defaults to landscape
     isAlwaysPortrait = no,
+    -- On some devices (eg newer pocketbook) we can force HW rotation on the fly (before each update)
+    -- The value here is table of 4 elements mapping the sensible linux constants to whatever
+    -- nonsense the device actually has. Canonically it should be { 0, 1, 2, 3 } if the device
+    -- matches <linux/fb.h> FB_ROTATE_* constants.
+    -- See https://github.com/koreader/koreader-base/blob/master/ffi/framebuffer.lua for full template
+    -- of the table expected.
+    usingForcedRotation = nil,
     -- needs full screen refresh when resumed from screensaver?
     needsScreenRefreshAfterResume = yes,
-
-    -- set to yes on devices whose framebuffer reports 8bit per pixel,
-    -- but is actually a color eInk screen with 24bit per pixel.
-    -- The refresh is still based on bytes. (This solves issue #4193.)
-    has3BytesWideFrameBuffer = no,
 
     -- set to yes on devices that support over-the-air incremental updates.
     hasOTAUpdates = no,
@@ -392,8 +393,8 @@ end
 prepare for application shutdown
 --]]
 function Device:exit()
-    require("ffi/input"):closeAll()
     self.screen:close()
+    require("ffi/input"):closeAll()
 end
 
 function Device:retrieveNetworkInfo()

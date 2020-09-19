@@ -601,7 +601,7 @@ function GestureDetector:handlePan(tev)
             local pan_ev_multiswipe = pan_ev
             -- store a copy of pan_ev without rotation adjustment
             -- for multiswipe calculations when rotated
-            if self.screen.cur_rotation_mode > self.screen.ORIENTATION_PORTRAIT then
+            if self.screen:getTouchRotation() > self.screen.ORIENTATION_PORTRAIT then
                 pan_ev_multiswipe = util.tableDeepCopy(pan_ev)
             end
             if msd_direction ~= msd_direction_prev then
@@ -787,7 +787,8 @@ end
   @return adjusted gesture.
 --]]
 function GestureDetector:adjustGesCoordinate(ges)
-    if self.screen.cur_rotation_mode == self.screen.ORIENTATION_LANDSCAPE then
+    local mode = self.screen:getTouchRotation()
+    if mode == self.screen.ORIENTATION_LANDSCAPE then
         -- in landscape mode rotated 90
         if ges.pos then
             ges.pos.x, ges.pos.y = (self.screen:getWidth() - ges.pos.y), (ges.pos.x)
@@ -814,7 +815,7 @@ function GestureDetector:adjustGesCoordinate(ges)
                 ges.direction = "horizontal"
             end
         end
-    elseif self.screen.cur_rotation_mode == self.screen.ORIENTATION_LANDSCAPE_ROTATED then
+    elseif mode == self.screen.ORIENTATION_LANDSCAPE_ROTATED then
         -- in landscape mode rotated 270
         if ges.pos then
             ges.pos.x, ges.pos.y = (ges.pos.y), (self.screen:getHeight() - ges.pos.x)
@@ -841,7 +842,7 @@ function GestureDetector:adjustGesCoordinate(ges)
                 ges.direction = "horizontal"
             end
         end
-    elseif self.screen.cur_rotation_mode == self.screen.ORIENTATION_PORTRAIT_ROTATED then
+    elseif mode == self.screen.ORIENTATION_PORTRAIT_ROTATED then
         -- in portrait mode rotated 180
         if ges.pos then
             ges.pos.x, ges.pos.y = (self.screen:getWidth() - ges.pos.x), (self.screen:getHeight() - ges.pos.y)
