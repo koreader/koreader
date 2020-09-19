@@ -262,7 +262,9 @@ function Remarkable:initNetworkManager(NetworkMgr)
         local InfoMessage = require("ui/widget/infomessage")
         local UIManager = require("ui/uimanager")
         local BD = require("ui/bidi")
-        local info = InfoMessage:new{text = "Connecting to " .. BD.wrap(network.ssid) }
+        local ffiutil = require("ffi/util")
+        local T = ffiutil.template
+        local info = InfoMessage:new{text = T(_("Connecting to %1."), BD.wrap(network.ssid)) }
         local properties = {
             ssid = network.ssid,
         }
