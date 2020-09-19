@@ -263,6 +263,10 @@ function PocketBook:getDeviceModel()
     return ffi.string(inkview.GetDeviceModel())
 end
 
+-- Pocketbook HW rotation starts from landsape and is CCW
+-- { PORTRAIT, LANDSCAPE, PORTRAIT_180, LANDSCAPE_180 }
+local landscape_ccw = { 1, 0, 3, 2 }
+
 -- PocketBook Mini (515)
 local PocketBook515 = PocketBook:new{
     model = "PB515",
@@ -375,7 +379,7 @@ local PocketBook627 = PocketBook:new{
 local PocketBook628 = PocketBook:new{
     model = "PBTouchLux5",
     display_dpi = 212,
-    isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
 
@@ -397,7 +401,7 @@ local PocketBook631 = PocketBook:new{
 local PocketBook632 = PocketBook:new{
     model = "PBTouchHDPlus",
     display_dpi = 300,
-    isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
 
@@ -407,7 +411,7 @@ local PocketBook633 = PocketBook:new{
     display_dpi = 300,
     hasColorScreen = yes,
     canUseCBB = no, -- 24bpp
-    isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
 }
 
 -- PocketBook Aqua (640)
@@ -432,7 +436,7 @@ local PocketBook650 = PocketBook:new{
 local PocketBook740 = PocketBook:new{
     model = "PBInkPad3",
     display_dpi = 300,
-    isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
 
@@ -440,7 +444,7 @@ local PocketBook740 = PocketBook:new{
 local PocketBook740_2 = PocketBook:new{
     model = "PBInkPad3Pro",
     display_dpi = 300,
-    isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
 
@@ -463,7 +467,7 @@ local PocketBook840 = PocketBook:new{
 local PocketBook1040 = PocketBook:new{
     model = "PB1040",
     display_dpi = 227,
-    isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
 

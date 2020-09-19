@@ -83,6 +83,16 @@ local Device = {
     -- enforce portrait orientation on display, no matter how configured at
     -- startup
     isAlwaysPortrait = no,
+    -- On some devices (eg newer pocketbook) we can force HW rotation on the fly (before each update)
+    -- The value here is table of 4 elements mapping the sensible linux constants to whatever
+    -- nonsense the device actually has. Canonically it should be { 0, 1, 2, 3 } if the device
+    -- matches <linux/fb.h> FB_ROTATE_* constants.
+    -- See https://github.com/koreader/koreader-base/blob/master/ffi/framebuffer.lua#L28
+    usingForcedRotation = nil,
+    -- If we're forcing rotation, we might want to restore the OS one after we're done with the update.
+    -- This would be necessary if other system apps that steal our focus don't set their own rotation
+    -- before their paint (ie not-inkview).
+    needsRestoredRotation = no,
     -- needs full screen refresh when resumed from screensaver?
     needsScreenRefreshAfterResume = yes,
 
