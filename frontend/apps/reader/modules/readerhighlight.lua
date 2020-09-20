@@ -98,6 +98,10 @@ function ReaderHighlight:addToMainMenu(menu_items)
         text = _("Highlighting"),
         sub_item_table = self:genHighlightDrawerMenu(),
     }
+    menu_items.panel_zoom_options = {
+        text = _("Panel zoom (manga/comic)"),
+        sub_item_table = self:genPanelZoomMenu(),
+    }
     menu_items.translation_settings = Translator:genSettingsMenu()
 end
 
@@ -107,8 +111,58 @@ local highlight_style = {
     invert = _("Invert"),
 }
 
-local function isPanelZoomAllowed()
+local function getPanelZoomSupportedExt()
+    local default_supported_ext = {
+        cbz = true,
+        cbt = true,
+    }
+    return G_reader_settings:readSetting("panel_zoom_ext") or default_supported_ext
+end
+
+local function isDocumentComicOrManga(file)
+    local filetype = util.getFileNameSuffix(file)
+    local supported_filetypes = getPanelZoomSupportedExt()
+    return supported_filetypes[filetype]
+end
+
+local function isPanelZoomEnabled()
     return G_reader_settings:nilOrTrue("panel_zoom_allowed")
+end
+
+function ReaderHighlight:genPanelZoomMenu()
+    local function genExtension(ext)
+        return {
+            text = ext,
+            checked_func = function()
+                local supported_ext = getPanelZoomSupportedExt()
+                return supported_ext[ext]
+            end,
+            enabled_func = function()
+                return isPanelZoomEnabled()
+            end,
+            callback = function()
+                local supported_ext = getPanelZoomSupportedExt()
+                supported_ext[ext] = not supported_ext[ext]
+                G_reader_settings:saveSetting("panel_zoom_ext", supported_ext)
+            end
+        }
+    end
+    return {
+        {
+            text = _("Allow panel zoom"),
+            checked_func = isPanelZoomEnabled,
+            callback = function()
+                local toggled = not isPanelZoomEnabled()
+                G_reader_settings:saveSetting("panel_zoom_enabled", toggled)
+            end,
+            separator = true,
+        },
+        genExtension("cbz"),
+        genExtension("cbt"),
+        genExtension("zip"),
+        genExtension("pdf"),
+        genExtension("djvu"),
+    }
 end
 
 function ReaderHighlight:genHighlightDrawerMenu()
@@ -137,17 +191,6 @@ function ReaderHighlight:genHighlightDrawerMenu()
             end,
             hold_callback = function(touchmenu_instance)
                 self:toggleDefault()
-            end,
-            separator = true,
-        },
-        {
-            text = _("Allow panel zoom in manga/comic"),
-            checked_func = function()
-                return isPanelZoomAllowed()
-            end,
-            callback = function()
-                local toggled = not isPanelZoomAllowed()
-                G_reader_settings:saveSetting("panel_zoom_allowed", toggled)
             end,
             separator = true,
         },
@@ -611,13 +654,8 @@ function ReaderHighlight:onPanelZoom(arg, ges)
     return true
 end
 
-local function isDocumentComicOrManga(file)
-    local filetype = util.getFileNameSuffix(file)
-    return filetype == "cbz" or filetype == "cbt" or filetype == "zip"
-end
-
 function ReaderHighlight:onHold(arg, ges)
-    if isDocumentComicOrManga(self.ui.document.file) and isPanelZoomAllowed() then
+    if isDocumentComicOrManga(self.ui.document.file) and isPanelZoomEnabled() then
         self:onPanelZoom(arg, ges)
         return false
     end

@@ -37,6 +37,7 @@ local order = {
         "speed_reading_module_perception_expander",
         "----------------------------",
         "highlight_options",
+        "panel_zoom_options"
     },
     setting = {
         -- common settings
