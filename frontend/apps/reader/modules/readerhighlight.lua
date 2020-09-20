@@ -613,7 +613,7 @@ end
 
 local function isDocumentComicOrManga(file)
     local filetype = util.getFileNameSuffix(file)
-    return filetype == "cbz" or filetype == "djvu"
+    return filetype == "cbz" or filetype == "cbt" or filetype == "zip"
 end
 
 function ReaderHighlight:onHold(arg, ges)
