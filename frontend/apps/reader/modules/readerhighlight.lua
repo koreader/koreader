@@ -107,6 +107,10 @@ local highlight_style = {
     invert = _("Invert"),
 }
 
+local function isPanelZoomAllowed()
+    return G_reader_settings:nilOrTrue("panel_zoom_allowed")
+end
+
 function ReaderHighlight:genHighlightDrawerMenu()
     local get_highlight_style = function(style)
         return {
@@ -133,6 +137,17 @@ function ReaderHighlight:genHighlightDrawerMenu()
             end,
             hold_callback = function(touchmenu_instance)
                 self:toggleDefault()
+            end,
+            separator = true,
+        },
+        {
+            text = _("Allow panel zoom in manga/comic"),
+            checked_func = function()
+                return isPanelZoomAllowed()
+            end,
+            callback = function()
+                local toggled = not isPanelZoomAllowed()
+                G_reader_settings:saveSetting("panel_zoom_allowed", toggled)
             end,
             separator = true,
         },
@@ -596,10 +611,13 @@ function ReaderHighlight:onPanelZoom(arg, ges)
     return true
 end
 
+local function isDocumentComicOrManga(file)
+    local filetype = util.getFileNameSuffix(file)
+    return filetype == "cbz" or filetype == "djvu"
+end
+
 function ReaderHighlight:onHold(arg, ges)
-    -- if it's manga/comic, panel zoom
-    local filetype = util.getFileNameSuffix(self.ui.document.file)
-    if filetype == "cbz" or filetype == "djvu" then
+    if isDocumentComicOrManga(self.ui.document.file) and isPanelZoomAllowed() then
         self:onPanelZoom(arg, ges)
         return false
     end
