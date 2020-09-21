@@ -258,25 +258,6 @@ function Kindle:ambientBrightnessLevel()
     return 4
 end
 
---- Makes sure the C BB cannot be used on devices with a 4bpp fb.
-function Kindle:blacklistCBB()
-    local ffi = require("ffi")
-    local dummy = require("ffi/posix_h")
-    local C = ffi.C
-
-    -- As well as on those than can't do HW inversion, as otherwise NightMode would be ineffective.
-    if not self:canUseCBB() or not self:canHWInvert() then
-        logger.info("Blacklisting the C BB on this device")
-        if ffi.os == "Windows" then
-            C._putenv("KO_NO_CBB=true")
-        else
-            C.setenv("KO_NO_CBB", "true", 1)
-        end
-        -- Enforce the global setting, too, so the Dev menu is accurate...
-        G_reader_settings:saveSetting("dev_no_c_blitter", true)
-    end
-end
-
 local Kindle2 = Kindle:new{
     model = "Kindle2",
     hasKeyboard = yes,
@@ -416,9 +397,6 @@ local KindleBasic3 = Kindle:new{
 }
 
 function Kindle2:init()
-    -- Blacklist the C BB before the first BB require...
-    self:blacklistCBB()
-
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,

@@ -37,23 +37,10 @@ if lang_locale then
     _.changeLang(lang_locale)
 end
 
--- Make the C blitter optional (ffi/blitbuffer.lua will check that env var)
-local ffi = require("ffi")
 local dummy = require("ffi/posix_h")
-local C = ffi.C
-if G_reader_settings:isTrue("dev_no_c_blitter") then
-    if ffi.os == "Windows" then
-        C._putenv("KO_NO_CBB=true")
-    else
-        C.setenv("KO_NO_CBB", "true", 1)
-    end
-else
-    if ffi.os == "Windows" then
-        C._putenv("KO_NO_CBB=false")
-    else
-        C.unsetenv("KO_NO_CBB")
-    end
-end
+
+-- Make the C blitter optional and synchronize the setting with current state
+G_reader_settings:saveSetting("dev_no_c_blitter", not require("ffi/blitbuffer"):enableCBB(G_reader_settings:nilOrFalse("dev_no_c_blitter")))
 
 -- Should check DEBUG option in arg and turn on DEBUG before loading other
 -- modules, otherwise DEBUG in some modules may not be printed.
