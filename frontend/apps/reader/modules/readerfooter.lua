@@ -716,7 +716,7 @@ function ReaderFooter:textOptionTitles(option)
     local option_titles = {
         all_at_once = _("Show all at once"),
         reclaim_height = _("Reclaim bar height from bottom margin"),
-        bookmark_count = T("Bookmark count (%1)", symbol_prefix[symbol].bookmark_count),
+        bookmark_count = T(_("Bookmark count (%1)"), symbol_prefix[symbol].bookmark_count),
         page_progress = T(_("Current page (%1)"), "/"),
         time = symbol_prefix[symbol].time
             and T(_("Current time (%1)"), symbol_prefix[symbol].time) or _("Current time"),
