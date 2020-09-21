@@ -21,7 +21,7 @@ function KindlePowerD:init()
 end
 
 -- If we start with the light off (fl_intensity is fl_min), ensure a toggle will set it to the lowest "on" step,
--- and that we update fl_intensity (by using setIntensity and not _setIntensity).
+-- and that we update fl_intensity (by using setIntensity and not setIntensityHW).
 function KindlePowerD:turnOnFrontlightHW()
     self:setIntensity(self.fl_intensity == self.fl_min and self.fl_min + 1 or self.fl_intensity)
 end
@@ -32,6 +32,7 @@ function BasePowerD:turnOnFrontlight()
     if self:isFrontlightOn() then return false end
     self:turnOnFrontlightHW()
     self.is_fl_on = true
+    self:stateChanged()
     return true
 end
 

@@ -32,8 +32,8 @@ function BasePowerD:setDissmisBatteryStatus(status) self.battery_warning = statu
 function BasePowerD:isChargingHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
 function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min end
-function BasePowerD:turnOffFrontlightHW() self:_setIntensity(self.fl_min) end
-function BasePowerD:turnOnFrontlightHW() self:_setIntensity(self.fl_intensity) end --- @fixme: what if fl_intensity == fl_min (c.f., kindle)?
+function BasePowerD:turnOffFrontlightHW() self:setIntensityHW(self.fl_min) end
+function BasePowerD:turnOnFrontlightHW() self:setIntensityHW(self.fl_intensity) end --- @fixme: what if fl_intensity == fl_min (c.f., kindle)?
 -- Anything needs to be done before do a real hardware suspend. Such as turn off
 -- front light.
 function BasePowerD:beforeSuspend() end
@@ -79,6 +79,7 @@ function BasePowerD:turnOffFrontlight()
     if self:isFrontlightOff() then return false end
     self:turnOffFrontlightHW()
     self.is_fl_on = false
+    self:stateChanged()
     return true
 end
 
@@ -89,6 +90,7 @@ function BasePowerD:turnOnFrontlight()
     if self.fl_intensity == self.fl_min then return false end  --- @fixme what the hell?
     self:turnOnFrontlightHW()
     self.is_fl_on = true
+    self:stateChanged()
     return true
 end
 
@@ -125,7 +127,8 @@ function BasePowerD:setIntensity(intensity)
     self.fl_intensity = self:normalizeIntensity(intensity)
     self:_decideFrontlightState()
     logger.dbg("set light intensity", self.fl_intensity)
-    self:_setIntensity(self.fl_intensity)
+    self:setIntensityHW(self.fl_intensity)
+    self:stateChanged()
     return true
 end
 
@@ -141,11 +144,9 @@ function BasePowerD:isCharging()
     return self:isChargingHW()
 end
 
-function BasePowerD:_setIntensity(intensity, silent)
-    self:setIntensityHW(intensity)
+function BasePowerD:stateChanged()
     -- BasePowerD is loaded before UIManager. So we cannot broadcast events before UIManager has been loaded.
-    -- NOTE: If silent is set, inhibit the Event (useful for platforms that do a ramp-up/ramp-down on toggle).
-    if not silent and package.loaded["ui/uimanager"] ~= nil then
+    if package.loaded["ui/uimanager"] ~= nil then
         local Event = require("ui/event")
         local UIManager = require("ui/uimanager")
         UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))

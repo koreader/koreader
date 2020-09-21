@@ -11,6 +11,10 @@ local SDLPowerD = BasePowerD:new{
     fl_warmth_max = 100,
 }
 
+function SDLPowerD:frontlightIntensityHW()
+    return self.hw_intensity
+end
+
 function SDLPowerD:setIntensityHW(intensity)
     require("logger").info("set brightness to", intensity)
     self.hw_intensity = intensity or self.hw_intensity
