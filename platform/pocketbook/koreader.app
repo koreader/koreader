@@ -99,7 +99,7 @@ while [ "${RETURN_VALUE}" -ne 0 ]; do
         rm -f "${KO_EXIT_CODE}"
     else
         # If we couldn't find it, something went horribly wrong ;).
-        RETURN_CODE=42
+        RETURN_VALUE=42
     fi
 
     # Did we crash?
