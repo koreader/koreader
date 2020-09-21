@@ -92,8 +92,15 @@ while [ "${RETURN_VALUE}" -ne 0 ]; do
     fi
 
     ./reader.lua "${args}" >>crash.log 2>&1
-    RETURN_VALUE="$(cat ${KO_EXIT_CODE})"
-    rm -f "${KO_EXIT_CODE}"
+
+    # Account for the fact a hard crash may have prevented the KO_EXIT_CODE file from being written to...
+    if [ -f "${KO_EXIT_CODE}" ]; then
+        RETURN_VALUE="$(cat ${KO_EXIT_CODE})"
+        rm -f "${KO_EXIT_CODE}"
+    else
+        # If we couldn't find it, something went horribly wrong ;).
+        RETURN_CODE=42
+    fi
 
     # Did we crash?
     if [ "${RETURN_VALUE}" -ne 0 ] && [ "${RETURN_VALUE}" -ne ${KO_RC_RESTART} ]; then
