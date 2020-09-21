@@ -45,22 +45,6 @@ local PocketBook = Generic:new{
     _model_init = function() end,
 }
 
--- Make sure the C BB cannot be used on devices with a 24bpp fb
-function PocketBook:blacklistCBB()
-    -- As well as on those than can't do HW inversion, as otherwise NightMode would be ineffective.
-    --- @note: Since HWInvert is a no-go on PB, the C BB is essentially *always* blacklisted.
-    if not self:canUseCBB() or not self:canHWInvert() then
-        logger.info("Blacklisting the C BB on this device")
-        if ffi.os == "Windows" then
-            C._putenv("KO_NO_CBB=true")
-        else
-            C.setenv("KO_NO_CBB", "true", 1)
-        end
-        -- Enforce the global setting, too, so the Dev menu is accurate...
-        G_reader_settings:saveSetting("dev_no_c_blitter", true)
-    end
-end
-
 -- Helper to try load externally signalled book whenever we're brought to foreground
 local function tryOpenBook()
     local path = os.getenv("KO_PATH_OPEN_BOOK")
@@ -76,9 +60,6 @@ local function tryOpenBook()
 end
 
 function PocketBook:init()
-    -- Blacklist the C BB before the first BB require...
-    self:blacklistCBB()
-
     self.screen = require("ffi/framebuffer_mxcfb"):new {
         device = self,
         debug = logger.dbg,
