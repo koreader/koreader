@@ -1062,6 +1062,7 @@ function UIManager:_repaint()
             -- pass hint to widget that we got when setting widget dirty
             -- the widget can use this to decide which parts should be refreshed
             logger.dbg("painting widget:", widget.widget.name or widget.widget.id or tostring(widget))
+            Screen:beforePaint()
             widget.widget:paintTo(Screen.bb, widget.x, widget.y, self._dirty[widget.widget])
 
             -- and remove from list after painting
@@ -1133,6 +1134,7 @@ function UIManager:_repaint()
             refresh.region.w, refresh.region.h,
             refresh.dither)
     end
+    Screen:afterPaint()
     self._refresh_stack = {}
     self.refresh_counted = false
 end

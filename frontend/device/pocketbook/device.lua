@@ -39,6 +39,10 @@ local PocketBook = Generic:new{
 
     -- Apparently, HW inversion is a pipedream on PB (#6669)
     canHWInvert = no,
+
+    -- Private per-model kludges
+    _fb_init = function() end,
+    _model_init = function() end,
 }
 
 -- Make sure the C BB cannot be used on devices with a 24bpp fb
@@ -75,7 +79,13 @@ function PocketBook:init()
     -- Blacklist the C BB before the first BB require...
     self:blacklistCBB()
 
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.screen = require("ffi/framebuffer_mxcfb"):new {
+        device = self,
+        debug = logger.dbg,
+        is_always_portrait = self.isAlwaysPortrait(),
+        forced_rotation = self.usingForcedRotation,
+        fbinfoOverride = self._fb_init,
+    }
     self.powerd = require("device/pocketbook/powerd"):new{device = self}
 
     -- Whenever we lose focus, but also get suspended for real (we can't reliably tell atm),
@@ -143,12 +153,7 @@ function PocketBook:init()
         end
     end)
 
-    -- fix rotation for Color Lux device
-    if PocketBook:getDeviceModel() == "PocketBook Color Lux" then
-        self.screen.blitbuffer_rotation_mode = self.screen.ORIENTATION_PORTRAIT
-        self.screen.native_rotation_mode = self.screen.ORIENTATION_PORTRAIT
-    end
-
+    self._model_init()
     self.input.open()
     self:setAutoStandby(true)
     Generic.init(self)
@@ -265,6 +270,14 @@ function PocketBook:getDeviceModel()
     return ffi.string(inkview.GetDeviceModel())
 end
 
+-- Pocketbook HW rotation modes start from landsape, CCW
+local landscape_ccw = {
+    1, 0, 3, 2,         -- PORTRAIT, LANDSCAPE, PORTRAIT_180, LANDSCAPE_180
+    every_paint = true, -- inkview will try to steal the rot mode frequently
+    restore = false,    -- no need, because everything using inkview forces 3 on focus
+    default = nil,      -- usually 3
+}
+
 -- PocketBook Mini (515)
 local PocketBook515 = PocketBook:new{
     model = "PB515",
@@ -377,7 +390,7 @@ local PocketBook627 = PocketBook:new{
 local PocketBook628 = PocketBook:new{
     model = "PBTouchLux5",
     display_dpi = 212,
-    isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
 
@@ -399,7 +412,7 @@ local PocketBook631 = PocketBook:new{
 local PocketBook632 = PocketBook:new{
     model = "PBTouchHDPlus",
     display_dpi = 300,
-    isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
 
@@ -409,7 +422,7 @@ local PocketBook633 = PocketBook:new{
     display_dpi = 300,
     hasColorScreen = yes,
     canUseCBB = no, -- 24bpp
-    isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
 }
 
 -- PocketBook Aqua (640)
@@ -434,7 +447,7 @@ local PocketBook650 = PocketBook:new{
 local PocketBook740 = PocketBook:new{
     model = "PBInkPad3",
     display_dpi = 300,
-    isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
 
@@ -442,7 +455,7 @@ local PocketBook740 = PocketBook:new{
 local PocketBook740_2 = PocketBook:new{
     model = "PBInkPad3Pro",
     display_dpi = 300,
-    isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
 
@@ -451,9 +464,18 @@ local PocketBookColorLux = PocketBook:new{
     model = "PBColorLux",
     display_dpi = 125,
     hasColorScreen = yes,
-    has3BytesWideFrameBuffer = yes,
     canUseCBB = no, -- 24bpp
 }
+function PocketBookColorLux:_model_init()
+    self.screen.blitbuffer_rotation_mode = self.screen.ORIENTATION_PORTRAIT
+    self.screen.native_rotation_mode = self.screen.ORIENTATION_PORTRAIT
+end
+function PocketBookColorLux._fb_init(fb,finfo,vinfo)
+    -- Pocketbook Color Lux reports bits_per_pixel = 8, but actually uses an RGB24 framebuffer
+    vinfo.bits_per_pixel = 24
+    vinfo.xres = vinfo.xres / 3
+    fb.refresh_pixel_size = 3
+end
 
 -- PocketBook InkPad / InkPad 2 (840)
 local PocketBook840 = PocketBook:new{
@@ -465,7 +487,7 @@ local PocketBook840 = PocketBook:new{
 local PocketBook1040 = PocketBook:new{
     model = "PB1040",
     display_dpi = 227,
-    isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
 
