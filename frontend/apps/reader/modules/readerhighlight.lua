@@ -128,39 +128,16 @@ local function isDocumentComicOrManga(file)
     return supported_filetypes[filetype]
 end
 
-local function isPanelZoomEnabled(file)
-    local doc_setting = DocSettings:readSetting("panel_zoom_enabled")
-    if doc_setting == nil then
-        return G_reader_settings:nilOrTrue("panel_zoom_enabled")
-    end
-    return doc_setting
-end
-
 function ReaderHighlight:genPanelZoomMenu()
-    local function genExtension(ext)
-        return {
-            text = ext,
-            checked_func = function()
-                local supported_ext = getPanelZoomSupportedExt()
-                return supported_ext[ext]
-            end,
-            enabled_func = function()
-                return isPanelZoomEnabled()
-            end,
-            callback = function()
-                local supported_ext = getPanelZoomSupportedExt()
-                supported_ext[ext] = not supported_ext[ext]
-                G_reader_settings:saveSetting("panel_zoom_ext", supported_ext)
-            end
-        }
-    end
     return {
         {
             text = _("Allow panel zoom"),
-            checked_func = isPanelZoomEnabled,
+            checked_func = function()
+                return self.panel_zoom_enabled
+            end,
             callback = function()
-                local toggled = not isPanelZoomEnabled()
-                DocSettings:saveSetting("panel_zoom_enabled", toggled)
+                self.panel_zoom_enabled = not self.panel_zoom_enabled
+                self:onSaveSettings()
             end,
             hold_callback = function()
                 local ext = util.getFileNameSuffix(self.ui.document.file)
@@ -170,11 +147,6 @@ function ReaderHighlight:genPanelZoomMenu()
             end,
             separator = true,
         },
-        -- genExtension("cbz"),
-        -- genExtension("cbt"),
-        -- genExtension("zip"),
-        -- genExtension("pdf"),
-        -- genExtension("djvu"),
     }
 end
 
@@ -668,7 +640,7 @@ function ReaderHighlight:onPanelZoom(arg, ges)
 end
 
 function ReaderHighlight:onHold(arg, ges)
-    if isDocumentComicOrManga(self.ui.document.file) and isPanelZoomEnabled() then
+    if self.panel_zoom_enabled then
         self:onPanelZoom(arg, ges)
         return false
     end
@@ -1394,6 +1366,12 @@ function ReaderHighlight:onReadSettings(config)
         disable_highlight = G_reader_settings:readSetting("highlight_disabled") or false
     end
     self.view.highlight.disabled = disable_highlight
+
+    -- panel zoom settings
+    self.panel_zoom_enabled = config:readSetting("panel_zoom_enabled")
+    if self.panel_zoom_enabled == nil then
+        self.panel_zoom_enabled = isDocumentComicOrManga(self.ui.document.file)
+    end
 end
 
 function ReaderHighlight:onUpdateHoldPanRate()
@@ -1403,6 +1381,7 @@ end
 function ReaderHighlight:onSaveSettings()
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
     self.ui.doc_settings:saveSetting("highlight_disabled", self.view.highlight.disabled)
+    self.ui.doc_settings:saveSetting("panel_zoom_enabled", self.panel_zoom_enabled)
 end
 
 function ReaderHighlight:onClose()
