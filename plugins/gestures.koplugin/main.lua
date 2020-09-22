@@ -175,6 +175,7 @@ function Gestures:init()
     end
 
     self.ui.menu:registerToMainMenu(self)
+    Dispatcher:init()
     self:initGesture()
 end
 

@@ -287,6 +287,7 @@ local dispatcher_menu_order = {
     add settings from CreOptions / KoptOptions
 --]]--
 function Dispatcher:init()
+    if Dispatcher.initialized then return end
     local parseoptions = function(base, i)
         for y=1,#base[i].options do
             local option = base[i].options[y]
@@ -512,7 +513,7 @@ example usage:
     Dispatcher.addSubMenu(self, sub_items, self.data, "profile1")
 --]]--
 function Dispatcher:addSubMenu(caller, menu, location, settings)
-    if not Dispatcher.initialized then Dispatcher:init() end
+    Dispatcher:init()
     table.insert(menu, {
         text = _("Nothing"),
         separator = true,
