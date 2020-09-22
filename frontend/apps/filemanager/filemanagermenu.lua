@@ -332,18 +332,18 @@ function FileManagerMenu:setUpdateItemTable()
         })
     end
     if not Device.should_restrict_JIT then
-        local bb = require("ffi/blitbuffer")
+        local Blitbuffer = require("ffi/blitbuffer")
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Disable C blitter"),
             enabled_func = function()
-                return bb.has_cblitbuffer
+                return Blitbuffer.has_cblitbuffer
             end,
             checked_func = function()
                 return G_reader_settings:isTrue("dev_no_c_blitter")
             end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("dev_no_c_blitter")
-                bb:enableCBB(G_reader_settings:nilOrFalse("dev_no_c_blitter"))
+                Blitbuffer:enableCBB(G_reader_settings:nilOrFalse("dev_no_c_blitter"))
             end,
         })
     end
