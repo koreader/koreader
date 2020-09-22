@@ -272,10 +272,10 @@ end
 
 -- Pocketbook HW rotation modes start from landsape, CCW
 local landscape_ccw = {
-  1, 0, 3, 2,         -- PORTRAIT, LANDSCAPE, PORTRAIT_180, LANDSCAPE_180
-  every_paint = true, -- inkview will try to steal the rot mode frequently
-  restore = false,    -- no need, because everything using inkview forces 3 on focus
-  default = nil,      -- usually 3
+    1, 0, 3, 2,         -- PORTRAIT, LANDSCAPE, PORTRAIT_180, LANDSCAPE_180
+    every_paint = true, -- inkview will try to steal the rot mode frequently
+    restore = false,    -- no need, because everything using inkview forces 3 on focus
+    default = nil,      -- usually 3
 }
 
 -- PocketBook Mini (515)
