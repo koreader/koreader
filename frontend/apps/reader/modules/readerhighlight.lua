@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
+local DocSettings = require("docsettings")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -125,8 +126,12 @@ local function isDocumentComicOrManga(file)
     return supported_filetypes[filetype]
 end
 
-local function isPanelZoomEnabled()
-    return G_reader_settings:nilOrTrue("panel_zoom_allowed")
+local function isPanelZoomEnabled(file)
+    local doc_setting = DocSettings:readSetting("panel_zoom_enabled")
+    if doc_setting == nil then
+        return G_reader_settings:nilOrTrue("panel_zoom_enabled")
+    end
+    return doc_setting
 end
 
 function ReaderHighlight:genPanelZoomMenu()
