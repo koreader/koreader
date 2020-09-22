@@ -99,10 +99,12 @@ function ReaderHighlight:addToMainMenu(menu_items)
         text = _("Highlighting"),
         sub_item_table = self:genHighlightDrawerMenu(),
     }
-    menu_items.panel_zoom_options = {
-        text = _("Panel zoom (manga/comic)"),
-        sub_item_table = self:genPanelZoomMenu(),
-    }
+    if self.document.info.has_pages then
+        menu_items.panel_zoom_options = {
+            text = _("Panel zoom (manga/comic)"),
+            sub_item_table = self:genPanelZoomMenu(),
+        }
+    end
     menu_items.translation_settings = Translator:genSettingsMenu()
 end
 
@@ -158,15 +160,21 @@ function ReaderHighlight:genPanelZoomMenu()
             checked_func = isPanelZoomEnabled,
             callback = function()
                 local toggled = not isPanelZoomEnabled()
-                G_reader_settings:saveSetting("panel_zoom_enabled", toggled)
+                DocSettings:saveSetting("panel_zoom_enabled", toggled)
+            end,
+            hold_callback = function()
+                local ext = util.getFileNameSuffix(self.ui.document.file)
+                local supported_ext = getPanelZoomSupportedExt()
+                supported_ext[ext] = not supported_ext[ext]
+                G_reader_settings:saveSetting("panel_zoom_ext", supported_ext)
             end,
             separator = true,
         },
-        genExtension("cbz"),
-        genExtension("cbt"),
-        genExtension("zip"),
-        genExtension("pdf"),
-        genExtension("djvu"),
+        -- genExtension("cbz"),
+        -- genExtension("cbt"),
+        -- genExtension("zip"),
+        -- genExtension("pdf"),
+        -- genExtension("djvu"),
     }
 end
 
