@@ -135,8 +135,7 @@ function ReaderHighlight:genPanelZoomMenu()
                 return self.panel_zoom_enabled
             end,
             callback = function()
-                self.panel_zoom_enabled = not self.panel_zoom_enabled
-                self:onSaveSettings()
+                self:onTogglePanelZoomSetting()
             end,
             hold_callback = function()
                 local ext = util.getFileNameSuffix(self.ui.document.file)
@@ -616,6 +615,11 @@ function ReaderHighlight:_resetHoldTimer(clear)
     else
         self.hold_last_tv = TimeVal.now()
     end
+end
+
+function ReaderHighlight:onTogglePanelZoomSetting(arg, ges)
+    self.panel_zoom_enabled = not self.panel_zoom_enabled
+    self:onSaveSettings()
 end
 
 function ReaderHighlight:onPanelZoom(arg, ges)

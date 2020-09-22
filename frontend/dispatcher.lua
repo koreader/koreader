@@ -103,7 +103,8 @@ local settingsList = {
     cycle_highlight_style = { category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), rolling=true, paging=true, separator=true,},
     kosync_push_progress = { category="none", event="KOSyncPushProgress", title=_("Push progress from this device"), rolling=true, paging=true,},
     kosync_pull_progress = { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), rolling=true, paging=true, separator=true,},
-    page_jmp = { category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Go %1 pages"), rolling=true, paging=true,},
+    page_jmp = { category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Go %1 pages"), rolling=true, paging=true, separator=true,},
+    panel_zoom_toggle = { category="none", event="TogglePanelZoomSetting", title=_("Toggle panel zoom"), rolling=false, paging=true,},
 
     -- rolling reader settings
     increase_font = { category="incrementalnumber", event="IncreaseFontSize", min=1, max=255, title=_("Increase font size"), rolling=true,},
@@ -206,6 +207,7 @@ local dispatcher_menu_order = {
     "back",
     "previous_location",
     "latest_bookmark",
+    "panel_zoom_toggle",
     "follow_nearest_link",
     "follow_nearest_internal_link",
     "clear_location_history",
