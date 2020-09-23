@@ -618,6 +618,7 @@ function ReaderHighlight:_resetHoldTimer(clear)
 end
 
 function ReaderHighlight:onTogglePanelZoomSetting(arg, ges)
+    if not self.document.info.has_pages then return end
     self.panel_zoom_enabled = not self.panel_zoom_enabled
     self:onSaveSettings()
 end
@@ -643,9 +644,8 @@ function ReaderHighlight:onPanelZoom(arg, ges)
 end
 
 function ReaderHighlight:onHold(arg, ges)
-    if self.panel_zoom_enabled then
-        self:onPanelZoom(arg, ges)
-        return false
+    if self.panel_zoom_enabled and self.document.info.has_pages then
+        return self:onPanelZoom(arg, ges)
     end
 
     -- disable hold gesture if highlighting is disabled
@@ -1370,10 +1370,12 @@ function ReaderHighlight:onReadSettings(config)
     end
     self.view.highlight.disabled = disable_highlight
 
-    -- panel zoom settings
-    self.panel_zoom_enabled = config:readSetting("panel_zoom_enabled")
-    if self.panel_zoom_enabled == nil then
-        self.panel_zoom_enabled = isDocumentComicOrManga(self.ui.document.file)
+    -- panel zoom settings shouldn't work in EPUB
+    if self.document.info.has_pages then
+        self.panel_zoom_enabled = config:readSetting("panel_zoom_enabled")
+        if self.panel_zoom_enabled == nil then
+            self.panel_zoom_enabled = isDocumentComicOrManga(self.ui.document.file)
+        end
     end
 end
 
