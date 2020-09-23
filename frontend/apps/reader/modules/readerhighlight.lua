@@ -121,7 +121,7 @@ local function getPanelZoomSupportedExt()
     return G_reader_settings:readSetting("panel_zoom_ext") or default_supported_ext
 end
 
-local function isDocumentComicOrManga(file)
+local function isPanelZoomSupported(file)
     local filetype = util.getFileNameSuffix(file)
     local supported_filetypes = getPanelZoomSupportedExt()
     return supported_filetypes[filetype]
@@ -1374,7 +1374,7 @@ function ReaderHighlight:onReadSettings(config)
     if self.document.info.has_pages then
         self.panel_zoom_enabled = config:readSetting("panel_zoom_enabled")
         if self.panel_zoom_enabled == nil then
-            self.panel_zoom_enabled = isDocumentComicOrManga(self.ui.document.file)
+            self.panel_zoom_enabled = isPanelZoomSupported(self.ui.document.file)
         end
     end
 end
