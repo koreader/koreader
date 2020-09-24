@@ -1369,7 +1369,7 @@ function ReaderHighlight:onReadSettings(config)
     end
     self.view.highlight.disabled = disable_highlight
 
-    -- panel zoom settings shouldn't work in EPUB
+    -- panel zoom settings isn't supported in EPUB
     if self.document.info.has_pages then
         self.panel_zoom_enabled = config:readSetting("panel_zoom_enabled")
         if self.panel_zoom_enabled == nil then
