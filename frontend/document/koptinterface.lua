@@ -539,6 +539,23 @@ function KoptInterface:getReflowedTextBoxesFromScratch(doc, pageno)
     end
 end
 
+function KoptInterface:getPanelFromPage(doc, pageno, ges)
+    local page_size = Document.getNativePageDimensions(doc, pageno)
+    local bbox = {
+        x0 = 0, y0 = 0,
+        x1 = page_size.w,
+        y1 = page_size.h,
+    }
+    local kc = self:createContext(doc, pageno, bbox)
+    kc:setZoom(1.0)
+    local page = doc._document:openPage(pageno)
+    page:getPagePix(kc)
+    local panel = kc:getPanelFromPage(ges)
+    page:close()
+    kc:free()
+    return panel
+end
+
 --[[--
 Get text boxes in native page via optical method.
 

@@ -112,10 +112,11 @@ local settingsList = {
     toggle_bookmark = { category="none", event="ToggleBookmark", title=_("Toggle bookmark"), rolling=true, paging=true,},
     toggle_inverse_reading_order = { category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), rolling=true, paging=true,},
     cycle_highlight_action = { category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), rolling=true, paging=true,},
-    cycle_highlight_style = { category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), rolling=true, paging=true, separator=true,},
+    cycle_highlight_style = { category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), rolling=true, paging=true,},
     kosync_push_progress = { category="none", event="KOSyncPushProgress", title=_("Push progress from this device"), rolling=true, paging=true,},
     kosync_pull_progress = { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), rolling=true, paging=true, separator=true,},
     page_jmp = { category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Go %1 pages"), rolling=true, paging=true,},
+    panel_zoom_toggle = { category="none", event="TogglePanelZoomSetting", title=_("Toggle panel zoom"), paging=true, separator=true,},
 
     -- rolling reader settings
     increase_font = { category="incrementalnumber", event="IncreaseFontSize", min=1, max=255, title=_("Increase font size by %1"), rolling=true,},
@@ -260,6 +261,7 @@ local dispatcher_menu_order = {
     "zoom",
     "cycle_highlight_action",
     "cycle_highlight_style",
+    "panel_zoom_toggle",
 
     "kosync_push_progress",
     "kosync_pull_progress",

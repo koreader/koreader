@@ -413,6 +413,13 @@ function Document:getDrawnImagesStatistics()
     return self._drawn_images_count, self._drawn_images_surface_ratio
 end
 
+function Document:getPagePart(pageno, rect, rotation)
+    local tile = self:renderPage(pageno, rect, 1, rotation, 1, 0)
+    local target = Blitbuffer.new(rect.w, rect.h, self.render_color and self.color_bb_type or nil)
+    target:blitFrom(tile.bb, 0, 0, rect.x, rect.y, rect.w, rect.h)
+    return target
+end
+
 function Document:getPageText(pageno)
     -- is this worth caching? not done yet.
     local page = self._document:openPage(pageno)

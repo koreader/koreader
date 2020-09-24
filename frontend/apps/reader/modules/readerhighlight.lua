@@ -98,6 +98,12 @@ function ReaderHighlight:addToMainMenu(menu_items)
         text = _("Highlighting"),
         sub_item_table = self:genHighlightDrawerMenu(),
     }
+    if self.document.info.has_pages then
+        menu_items.panel_zoom_options = {
+            text = _("Panel zoom (manga/comic)"),
+            sub_item_table = self:genPanelZoomMenu(),
+        }
+    end
     menu_items.translation_settings = Translator:genSettingsMenu()
 end
 
@@ -106,6 +112,41 @@ local highlight_style = {
     underscore = _("Underline"),
     invert = _("Invert"),
 }
+
+local function getPanelZoomSupportedExt()
+    local default_supported_ext = {
+        cbz = true,
+        cbt = true,
+    }
+    return G_reader_settings:readSetting("panel_zoom_ext") or default_supported_ext
+end
+
+local function isPanelZoomSupported(file)
+    local filetype = util.getFileNameSuffix(file)
+    local supported_filetypes = getPanelZoomSupportedExt()
+    return supported_filetypes[filetype]
+end
+
+function ReaderHighlight:genPanelZoomMenu()
+    return {
+        {
+            text = _("Allow panel zoom"),
+            checked_func = function()
+                return self.panel_zoom_enabled
+            end,
+            callback = function()
+                self:onTogglePanelZoomSetting()
+            end,
+            hold_callback = function()
+                local ext = util.getFileNameSuffix(self.ui.document.file)
+                local supported_ext = getPanelZoomSupportedExt()
+                supported_ext[ext] = not supported_ext[ext]
+                G_reader_settings:saveSetting("panel_zoom_ext", supported_ext)
+            end,
+            separator = true,
+        },
+    }
+end
 
 function ReaderHighlight:genHighlightDrawerMenu()
     local get_highlight_style = function(style)
@@ -576,7 +617,36 @@ function ReaderHighlight:_resetHoldTimer(clear)
     end
 end
 
+function ReaderHighlight:onTogglePanelZoomSetting(arg, ges)
+    if not self.document.info.has_pages then return end
+    self.panel_zoom_enabled = not self.panel_zoom_enabled
+end
+
+function ReaderHighlight:onPanelZoom(arg, ges)
+    self:clear()
+    local hold_pos = self.view:screenToPageTransform(ges.pos)
+    if not hold_pos then return false end -- outside page boundary
+    local rect = self.ui.document:getPanelFromPage(hold_pos.page, hold_pos)
+    if not rect then return false end -- panel not found, return
+    local image = self.ui.document:getPagePart(hold_pos.page, rect, 0)
+
+    if image then
+        local ImageViewer = require("ui/widget/imageviewer")
+        local imgviewer = ImageViewer:new{
+            image = image,
+            with_title_bar = false,
+            fullscreen = true,
+        }
+        UIManager:show(imgviewer)
+    end
+    return true
+end
+
 function ReaderHighlight:onHold(arg, ges)
+    if self.document.info.has_pages and self.panel_zoom_enabled then
+        return self:onPanelZoom(arg, ges)
+    end
+
     -- disable hold gesture if highlighting is disabled
     if self.view.highlight.disabled then return false end
     self:clear() -- clear previous highlight (delayed clear may not have done it yet)
@@ -1298,6 +1368,14 @@ function ReaderHighlight:onReadSettings(config)
         disable_highlight = G_reader_settings:readSetting("highlight_disabled") or false
     end
     self.view.highlight.disabled = disable_highlight
+
+    -- panel zoom settings isn't supported in EPUB
+    if self.document.info.has_pages then
+        self.panel_zoom_enabled = config:readSetting("panel_zoom_enabled")
+        if self.panel_zoom_enabled == nil then
+            self.panel_zoom_enabled = isPanelZoomSupported(self.ui.document.file)
+        end
+    end
 end
 
 function ReaderHighlight:onUpdateHoldPanRate()
@@ -1307,6 +1385,7 @@ end
 function ReaderHighlight:onSaveSettings()
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
     self.ui.doc_settings:saveSetting("highlight_disabled", self.view.highlight.disabled)
+    self.ui.doc_settings:saveSetting("panel_zoom_enabled", self.panel_zoom_enabled)
 end
 
 function ReaderHighlight:onClose()
