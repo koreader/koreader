@@ -137,6 +137,11 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     done
     # Remove Nickel's FIFO to avoid udev & udhcpc scripts hanging on open() on it...
     rm -f /tmp/nickel-hardware-status
+
+    # We don't need to grab input devices (unless MiniClock is running, in which case that neatly inhibits it while we run).
+    if [ ! -d "/tmp/MiniClock" ]; then
+        export KO_DONT_GRAB_INPUT="true"
+    fi
 fi
 
 # fallback for old fmon, KFMon and advboot users (-> if no args were passed to the script, start the FM)
