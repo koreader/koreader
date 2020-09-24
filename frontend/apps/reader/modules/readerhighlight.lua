@@ -620,7 +620,6 @@ end
 function ReaderHighlight:onTogglePanelZoomSetting(arg, ges)
     if not self.document.info.has_pages then return end
     self.panel_zoom_enabled = not self.panel_zoom_enabled
-    self:onSaveSettings()
 end
 
 function ReaderHighlight:onPanelZoom(arg, ges)
@@ -644,7 +643,7 @@ function ReaderHighlight:onPanelZoom(arg, ges)
 end
 
 function ReaderHighlight:onHold(arg, ges)
-    if self.panel_zoom_enabled and self.document.info.has_pages then
+    if self.document.info.has_pages and self.panel_zoom_enabled then
         return self:onPanelZoom(arg, ges)
     end
 
