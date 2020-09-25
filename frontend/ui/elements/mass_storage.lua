@@ -46,6 +46,14 @@ function MassStorage:getActionsMenuTable()
     }
 end
 
+local function saveDocSettings()
+    local
+    readerui_instance = require("apps/reader/readerui"):_getRunningInstance()
+    if readerui_instance then
+        readerui_instance:saveSettings()
+    end
+end
+
 -- exit KOReader and start mass storage mode.
 function MassStorage:start(never_ask)
     if not Device:canToggleMassStorage() or not self:isEnabled() then
@@ -54,15 +62,19 @@ function MassStorage:start(never_ask)
 
     if not never_ask and self:requireConfirmation() then
         local ConfirmBox = require("ui/widget/confirmbox")
-        UIManager:show(ConfirmBox:new{
+        UIManager:show(ConfirmBox:new {
             text = _("Share storage via USB?"),
             ok_text = _("Share"),
             ok_callback = function()
+                -- save document settings before activating USBMS:
+                saveDocSettings()
                 UIManager:quit()
                 UIManager._exit_code = 86
             end,
         })
     else
+        -- save document settings before activating USBMS:
+        saveDocSettings()
         UIManager:quit()
         UIManager._exit_code = 86
     end
