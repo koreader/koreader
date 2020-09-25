@@ -63,7 +63,7 @@ function FileManagerShortcuts:updateItemTable()
     end
 
     self.fm_bookmark:switchItemTable(nil,
-        item_table, select_number)
+                                     item_table, select_number)
 end
 
 function FileManagerShortcuts:addNewFolder()
