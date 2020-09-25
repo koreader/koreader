@@ -291,7 +291,7 @@ probeEvEpochTime = function(self, ev)
 end
 
 function Kobo:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg, is_always_portrait = self.isAlwaysPortrait()}
     if self.screen.fb_bpp == 32 then
         -- Ensure we decode images properly, as our framebuffer is BGRA...
         logger.info("Enabling Kobo @ 32bpp BGR tweaks")

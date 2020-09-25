@@ -152,6 +152,7 @@ function Device:init()
         h = self.window.height,
         x = self.window.left,
         y = self.window.top,
+        is_always_portrait = self.isAlwaysPortrait(),
     }
     self.powerd = require("device/sdl/powerd"):new{device = self}
 
