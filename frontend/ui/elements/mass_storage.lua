@@ -58,11 +58,15 @@ function MassStorage:start(never_ask)
             text = _("Share storage via USB?"),
             ok_text = _("Share"),
             ok_callback = function()
+                -- save settings before activating USBMS:
+                UIManager:flushSettings()
                 UIManager:quit()
                 UIManager._exit_code = 86
             end,
         })
     else
+        -- save settings before activating USBMS:
+        UIManager:flushSettings()
         UIManager:quit()
         UIManager._exit_code = 86
     end
