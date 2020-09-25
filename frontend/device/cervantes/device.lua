@@ -157,7 +157,7 @@ function Cervantes:initEventAdjustHooks()
 end
 
 function Cervantes:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg, is_always_portrait = self.isAlwaysPortrait()}
 
     -- Automagically set this so we never have to remember to do it manually ;p
     if self:hasNaturalLight() and self.frontlight_settings and self.frontlight_settings.frontlight_mixer then
