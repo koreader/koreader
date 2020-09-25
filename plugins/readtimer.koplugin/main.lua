@@ -134,6 +134,7 @@ end
 function ReadTimer:eyeSaverSaveSettings()
     self.eyesaver.settings:saveSetting("eyesaver_timestamp", self.eyesaver.display_timestamp)
     self.eyesaver.settings:saveSetting("eyesaver_display_time_clock", self.eyesaver.display_time_clock)
+    self.eyesaver.settings:flush()
 end
 
 function ReadTimer:eyeSaverToggleMessages()
