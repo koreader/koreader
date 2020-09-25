@@ -1,7 +1,10 @@
+local DataStorage = require("datastorage")
 local InfoMessage = require("ui/widget/infomessage")
+local LuaSettings = require("luasettings")
 local TimeWidget = require("ui/widget/timewidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
 local T = require("ffi/util").template
@@ -9,6 +12,18 @@ local T = require("ffi/util").template
 local ReadTimer = WidgetContainer:new{
     name = "readtimer",
     time = 0,  -- The expected time of alarm if enabled, or 0.
+
+    timeout = 3,
+
+    eyesaver = {
+        -- 20 minutes:
+        display_interval = 3600 / 3,
+        display_time_clock = '', -- The expected time display if enabled, or ''
+        enabled = false,
+        settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/eyesaver_options.lua"),
+        display_timestamp = 0,
+        timed_display_callback = nil,
+    },
 }
 
 function ReadTimer:init()
@@ -19,7 +34,31 @@ function ReadTimer:init()
             text = T(_("Read timer alarm\nTime's up. It's %1 now."), os.date("%c")),
         })
     end
+    self:initEyeSaver()
     self.ui.menu:registerToMainMenu(self)
+end
+
+function ReadTimer:initEyeSaver()
+    self.eyesaver.display_time_clock = self.eyesaver.settings:readSetting("eyesaver_display_time_clock") or ""
+    self.eyesaver.display_timestamp = self.eyesaver.settings:readSetting("eyesaver_timestamp") or 0
+    self.eyesaver.enabled = self.eyesaver.settings:readSetting("eyesaver_enabled") or false
+
+    self.eyesaver.timed_display_callback = function()
+        if not self.eyesaver.enabled or not self:eyeSaverMessageScheduled() then
+            return
+        end -- How could this happen?
+
+        self:eyeSaverShowMessage()
+        self:eyeSaverScheduleTimeCompute()
+        -- schedule the next display of a eyesaver message:
+        self:eyeSaverSchedule()
+    end
+
+    if self.eyesaver.enabled and not self:eyeSaverMessageScheduled() then
+        self:eyeSaverScheduleTimeCompute()
+        -- schedule the next display of a eyesaver message:
+        self:eyeSaverSchedule()
+    end
 end
 
 function ReadTimer:scheduled()
@@ -48,6 +87,89 @@ function ReadTimer:unschedule()
         UIManager:unschedule(self.alarm_callback)
         self.time = 0
     end
+end
+
+function ReadTimer:eyeSaverScheduleTimeCompute()
+    self.eyesaver.display_timestamp = os.time() + self.eyesaver.display_interval
+    self.eyesaver.display_time_clock = os.date(_("%H:%M"), self.eyesaver.display_timestamp)
+    self:eyeSaverSaveSettings()
+end
+
+function ReadTimer:eyeSaverSchedule()
+    if not self.eyesaver.enabled then
+        return
+    end
+    if not self:eyeSaverMessageScheduled() then
+        self:eyeSaverScheduleTimeCompute()
+    end
+    UIManager:scheduleIn(self.eyesaver.display_interval, self.eyesaver.timed_display_callback)
+end
+
+-- when time for displaying the message was in a period in which the ereader "slept", adapt the new display time to be 20 minutes in the future again:
+function ReadTimer:eyeSaverScheduleAdapt()
+    if not self.eyesaver.enabled then
+        return
+    end
+    if self.eyesaver.display_timestamp and self:eyeSaverMessageScheduled() and self.eyesaver.display_timestamp < os.time() then
+        self:eyeSaverUnschedule();
+        self:eyeSaverScheduleTimeCompute()
+        self:eyeSaverSchedule();
+    end
+end
+
+function ReadTimer:eyeSaverUnschedule()
+    if self:eyeSaverMessageScheduled() then
+        UIManager:unschedule(self.eyesaver.timed_display_callback)
+    end
+    self:eyeSaverResetTimer()
+end
+
+function ReadTimer:eyeSaverMessageScheduled()
+    return self.eyesaver.display_timestamp > 0
+end
+
+function ReadTimer:eyeSaverResetTimer()
+    self.eyesaver.display_timestamp = 0
+    self.eyesaver.display_time_clock = ''
+    self:eyeSaverSaveSettings()
+end
+
+function ReadTimer:eyeSaverSaveSettings()
+    self.eyesaver.settings:saveSetting("eyesaver_timestamp", self.eyesaver.display_timestamp)
+    self.eyesaver.settings:saveSetting("eyesaver_display_time_clock", self.eyesaver.display_time_clock)
+end
+
+function ReadTimer:eyeSaverToggleMessage()
+    self.eyesaver.enabled = not self.eyesaver.enabled
+    if self.eyesaver.enabled then
+        self.eyesaver.settings:saveSetting("eyesaver_enabled", true)
+        if not self:eyeSaverMessageScheduled() then
+            self:eyeSaverSchedule()
+        end
+    else
+        self:eyeSaverUnschedule()
+        self.eyesaver.settings:saveSetting("eyesaver_enabled", false)
+    end
+end
+
+function ReadTimer:eyeSaverShowMessage()
+    UIManager:show(InfoMessage:new {
+        text = _("Look 20 seconds into the distance.\n\nAfter this period the current message will disappear…"),
+        timeout = 20
+    })
+end
+
+-- when resuming, reset the timer to 20 minutes delay from waking:
+function ReadTimer:onResume()
+    self:eyeSaverScheduleAdapt()
+end
+
+function ReadTimer:onSuspend()
+    self:eyeSaverUnschedule()
+end
+
+function ReadTimer:onCloseWidget()
+    self:eyeSaverResetTimer()
 end
 
 function ReadTimer:addToMainMenu(menu_items)
@@ -181,6 +303,18 @@ function ReadTimer:addToMainMenu(menu_items)
                 callback = function(touchmenu_instance)
                     self:unschedule()
                     touchmenu_instance:updateItems()
+                end,
+            },
+            {
+                text_func = function()
+                    local time_info_txt = util.secondsToHour(self.eyesaver.display_timestamp, G_reader_settings:nilOrTrue("twelve_hour_clock"))
+                    return self.eyesaver.enabled and string.format(_("EyeSaver messages - next display %s"), time_info_txt) or _("EyeSaver messages")
+                end,
+                checked_func = function()
+                    return self.eyesaver.enabled
+                end,
+                callback = function()
+                    self:eyeSaverToggleMessage()
                 end,
             },
         },
