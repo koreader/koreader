@@ -48,16 +48,12 @@ function FileManagerShortcuts:updateItemTable()
     table.sort(item_table, function(l, r)
         return l.text < r.text
     end)
-    local item_table_sorted = {}
-    table.insert(item_table_sorted, {
+    table.insert(item_table, 1, {
         text = _("Add new folder shortcut"),
         callback = function()
             self:addNewFolder()
         end,
     })
-    for _, item in ipairs(item_table) do
-        table.insert(item_table_sorted, item)
-    end
 
     -- try to stay on current page
     local select_number
@@ -67,7 +63,7 @@ function FileManagerShortcuts:updateItemTable()
     end
 
     self.fm_bookmark:switchItemTable(nil,
-        item_table_sorted, select_number)
+        item_table, select_number)
 end
 
 function FileManagerShortcuts:addNewFolder()
