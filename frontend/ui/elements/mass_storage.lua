@@ -54,7 +54,7 @@ function MassStorage:start(never_ask)
 
     if not never_ask and self:requireConfirmation() then
         local ConfirmBox = require("ui/widget/confirmbox")
-        UIManager:show(ConfirmBox:new {
+        UIManager:show(ConfirmBox:new{
             text = _("Share storage via USB?"),
             ok_text = _("Share"),
             ok_callback = function()
