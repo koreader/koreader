@@ -415,7 +415,7 @@ end
 
 function Document:getPagePart(pageno, rect, rotation)
     local canvas_size = CanvasContext:getSize()
-    local zoom = math.min(canvas_size.w / rect.w, canvas_size.h / rect.h)
+    local zoom = math.min(canvas_size.w*2 / rect.w, canvas_size.h*2 / rect.h)
     -- it's really, really important to do math.floor, otherwise we get image projection
     local scaled_rect = {
         x = math.floor(rect.x * zoom),
