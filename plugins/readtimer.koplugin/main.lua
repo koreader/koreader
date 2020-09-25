@@ -12,9 +12,6 @@ local T = require("ffi/util").template
 local ReadTimer = WidgetContainer:new{
     name = "readtimer",
     time = 0,  -- The expected time of alarm if enabled, or 0.
-
-    timeout = 3,
-
     eyesaver = {
         -- 20 minutes:
         display_interval = 3600 / 3,
