@@ -13,12 +13,6 @@ local T = util.template
 
 local FileManagerShortcuts = InputContainer:extend{}
 
-local function tableSortByTextProp(subject)
-    table.sort(subject, function (v1, v2)
-        return v1.text < v2.text
-    end)
-end
-
 function FileManagerShortcuts:updateItemTable()
     local item_table = {}
     local folder_shortcuts = G_reader_settings:readSetting("folder_shortcuts") or {}
@@ -51,7 +45,9 @@ function FileManagerShortcuts:updateItemTable()
         })
     end
 
-    tableSortByTextProp(item_table)
+    table.sort(item_table, function(l, r)
+        return l.text < r.text
+    end)
     local item_table_sorted = {}
     table.insert(item_table_sorted, {
         text = _("Add new folder shortcut"),
