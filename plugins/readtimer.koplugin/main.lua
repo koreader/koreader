@@ -136,7 +136,7 @@ function ReadTimer:eyeSaverSaveSettings()
     self.eyesaver.settings:saveSetting("eyesaver_display_time_clock", self.eyesaver.display_time_clock)
 end
 
-function ReadTimer:eyeSaverToggleMessage()
+function ReadTimer:eyeSaverToggleMessages()
     self.eyesaver.enabled = not self.eyesaver.enabled
     if self.eyesaver.enabled then
         self.eyesaver.settings:saveSetting("eyesaver_enabled", true)
@@ -311,7 +311,7 @@ function ReadTimer:addToMainMenu(menu_items)
                     return self.eyesaver.enabled
                 end,
                 callback = function()
-                    self:eyeSaverToggleMessage()
+                    self:eyeSaverToggleMessages()
                 end,
             },
         },
