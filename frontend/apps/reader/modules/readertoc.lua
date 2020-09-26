@@ -17,6 +17,7 @@ local T = require("ffi/util").template
 
 local ReaderToc = InputContainer:new{
     toc = nil,
+    toc_depth = 0,
     ticks = {},
     toc_indent = "    ",
     collapsed_toc = {},
@@ -275,6 +276,7 @@ function ReaderToc:getTocTitleOfCurrentPage()
 end
 
 function ReaderToc:getMaxDepth()
+    if self.toc_depth then return self.toc_depth end
     self:fillToc()
     local max_depth = 0
     for _, v in ipairs(self.toc) do
@@ -282,6 +284,7 @@ function ReaderToc:getMaxDepth()
             max_depth = v.depth
         end
     end
+    self.toc_depth = max_depth
     return max_depth
 end
 
