@@ -17,8 +17,9 @@ local T = require("ffi/util").template
 
 local ReaderToc = InputContainer:new{
     toc = nil,
-    toc_depth = 0,
+    toc_depth = 1,
     ticks = {},
+    ticks_flattened = {},
     toc_indent = "    ",
     collapsed_toc = {},
     collapse_depth = 2,
@@ -293,7 +294,6 @@ TOC ticks is a list of page number in ascending order of TOC nodes at certain le
 positive level counts nodes of the depth level (level 1 for depth 1)
 negative level counts nodes of reversed depth level (level -1 for max_depth)
 zero level counts leaf nodes of the toc tree
---]]
 function ReaderToc:getTocTicks(level)
     if self.ticks[level] then return self.ticks[level] end
     -- build toc ticks if not found
@@ -331,6 +331,81 @@ function ReaderToc:getTocTicks(level)
     end
     return ticks
 end
+--]]
+
+--[[
+ToC ticks is a list of page number in ascending order of TOC nodes at certain level
+positive level counts nodes of the depth level (level 1 for depth 1)
+negative level counts nodes of reversed depth level (level -1 for max_depth)
+--]]
+function ReaderToc:getTocTicks(level)
+    if level then
+        if self.ticks[level] then
+            return self.ticks[level]
+        end
+    else
+        if self.ticks then
+            return self.ticks
+        end
+    end
+
+    -- Build ToC ticks if not found
+    self:fillToc()
+
+    if #self.toc > 0 then
+        -- Start by building a simple hierarchical ToC tick table
+        for _, v in ipairs(self.toc) do
+            print("ToC:", v.page, "@", v.depth)
+            table.insert(self.ticks[v.depth], v.page)
+        end
+
+        -- Normally the ticks are already sorted, but in rare cases,
+        -- ToC nodes may be not in ascending order
+        for k, _ in ipairs(self.ticks) do
+            table.sort(self.ticks[k])
+        end
+    end
+
+    if level then
+        return self.ticks[level]
+    else
+        return self.ticks
+    end
+end
+
+--[[
+Returns a flattened list of ToC ticks, without duplicates
+]]
+function ReaderToc:getTocTicksFlattened()
+    if self.ticks_flattened then return self.ticks_flattened end
+
+    local ticks = self:getTocTicks()
+    local ticks_candidates = {}
+
+    for _, v in ipairs(ticks) do
+        for depth, page in ipairs(v) do
+            print("Tick:", page, "@", depth)
+            table.insert(ticks_candidates, page)
+        end
+    end
+
+    -- Then drop duplicates (by using the value as a key to make a quick check) (c.f., https://stackoverflow.com/a/20067270)
+    local hash = {}
+    local ticks_flattened = {}
+    for _, v in ipairs(ticks_candidates) do
+        if (not hash[v]) then
+            ticks_flattened[#res+1] = v
+            hash[v] = true
+        end
+    end
+
+    -- And finally, sort it again
+    table.sort(ticks_flattened)
+
+    self.ticks_flattened = ticks_flattened
+    return self.ticks_flattened
+end
+
 
 function ReaderToc:getTocTicksForFooter()
     local ticks_candidates = {}
