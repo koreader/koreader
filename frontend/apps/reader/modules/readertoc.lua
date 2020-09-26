@@ -344,7 +344,10 @@ positive level counts nodes of the depth level (top-level is 1, depth always mat
 negative level counts nodes of reversed depth level (level -1 for max_depth)
 --]]
 function ReaderToc:getTocTicks(level)
-    -- FIXME: Reimplement negative level count ;).
+    -- Handle negative levels
+    if level and level < 0 then
+        level = self:getMaxDepth() + level + 1
+    end
 
     if level then
         if self.ticks and self.ticks[level] then
