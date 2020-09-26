@@ -74,11 +74,11 @@ function ReaderToc:onPageUpdate(pageno)
             end
         end
 
-        if paging_backward and self:isChapterEnd(pageno, 0) then
+        if paging_backward and self:isChapterEnd(pageno) then
             UIManager:setDirty(nil, "full")
-        elseif self:isChapterStart(pageno, 0) then
+        elseif self:isChapterStart(pageno) then
             UIManager:setDirty(nil, "full")
-        elseif paging_forward and self:isChapterSecondPage(pageno, 0) then
+        elseif paging_forward and self:isChapterSecondPage(pageno) then
             UIManager:setDirty(nil, "full")
         end
     end
