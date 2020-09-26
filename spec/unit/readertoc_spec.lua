@@ -31,12 +31,6 @@ describe("Readertoc module", function()
         assert.is.equal("SCENE I. Friar Laurence's cell.", title)
     end)
     describe("getTocTicks API", function()
-        local ticks_level_0 = nil
-        it("should get ticks of level 0", function()
-            ticks_level_0 = toc:getTocTicks(0)
-            --DEBUG("ticks", ticks_level_0)
-            assert.are.same(28, #ticks_level_0)
-        end)
         local ticks_level_1 = nil
         it("should get ticks of level 1", function()
             ticks_level_1 = toc:getTocTicks(1)
