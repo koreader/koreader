@@ -374,9 +374,9 @@ end
 function ReaderToc:getNextChapter(cur_pageno)
     local ticks = self:getTocTicksFlattened()
     local next_chapter = nil
-    for _, v in ipairs(ticks) do
-        if v > cur_pageno then
-            next_chapter = v
+    for _, page in ipairs(ticks) do
+        if page > cur_pageno then
+            next_chapter = page
             break
         end
     end
@@ -386,11 +386,11 @@ end
 function ReaderToc:getPreviousChapter(cur_pageno)
     local ticks = self:getTocTicksFlattened()
     local previous_chapter = nil
-    for _, v in ipairs(ticks) do
-        if v >= cur_pageno then
+    for _, page in ipairs(ticks) do
+        if page >= cur_pageno then
             break
         end
-        previous_chapter = v
+        previous_chapter = page
     end
     return previous_chapter
 end
@@ -398,8 +398,8 @@ end
 function ReaderToc:isChapterStart(cur_pageno)
     local ticks = self:getTocTicksFlattened()
     local _start = false
-    for _, v in ipairs(ticks) do
-        if v == cur_pageno then
+    for _, page in ipairs(ticks) do
+        if page == cur_pageno then
             _start = true
             break
         end
@@ -410,8 +410,8 @@ end
 function ReaderToc:isChapterSecondPage(cur_pageno)
     local ticks = self:getTocTicksFlattened()
     local _second = false
-    for _, v in ipairs(ticks) do
-        if v + 1 == cur_pageno then
+    for _, page in ipairs(ticks) do
+        if page + 1 == cur_pageno then
             _second = true
             break
         end
@@ -422,8 +422,8 @@ end
 function ReaderToc:isChapterEnd(cur_pageno)
     local ticks = self:getTocTicksFlattened()
     local _end = false
-    for _, v in ipairs(ticks) do
-        if v - 1 == cur_pageno then
+    for _, page in ipairs(ticks) do
+        if page - 1 == cur_pageno then
             _end = true
             break
         end
