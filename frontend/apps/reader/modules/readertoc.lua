@@ -404,7 +404,7 @@ function ReaderToc:getTocTicksFlattened()
     local ticks_flattened = {}
     for _, v in ipairs(ticks_candidates) do
         if (not hash[v]) then
-            ticks_flattened[#res+1] = v
+            ticks_flattened[#ticks_flattened+1] = v
             hash[v] = true
         end
     end
