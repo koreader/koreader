@@ -356,6 +356,9 @@ function ReaderToc:getTocTicks(level)
         -- Start by building a simple hierarchical ToC tick table
         for _, v in ipairs(self.toc) do
             print("ToC:", v.page, "@", v.depth)
+            if not self.ticks[v.depth] then
+                self.ticks[v.depth] = {}
+            end
             table.insert(self.ticks[v.depth], v.page)
         end
 
@@ -422,35 +425,35 @@ function ReaderToc:getTocTicksForFooter()
     return {}
 end
 
-function ReaderToc:getNextChapter(cur_pageno, level)
-    local ticks = self:getTocTicks(level)
+function ReaderToc:getNextChapter(cur_pageno)
+    local ticks = self:getTocTicksFlattened()
     local next_chapter = nil
-    for i = 1, #ticks do
-        if ticks[i] > cur_pageno then
-            next_chapter = ticks[i]
+    for _, v in ipairs(ticks) do
+        if v > cur_pageno then
+            next_chapter = v
             break
         end
     end
     return next_chapter
 end
 
-function ReaderToc:getPreviousChapter(cur_pageno, level)
-    local ticks = self:getTocTicks(level)
+function ReaderToc:getPreviousChapter(cur_pageno)
+    local ticks = self:getTocTicksFlattened()
     local previous_chapter = nil
-    for i = 1, #ticks do
-        if ticks[i] >= cur_pageno then
+    for _, v in ipairs(ticks) do
+        if v >= cur_pageno then
             break
         end
-        previous_chapter = ticks[i]
+        previous_chapter = v
     end
     return previous_chapter
 end
 
-function ReaderToc:isChapterStart(cur_pageno, level)
-    local ticks = self:getTocTicks(level)
+function ReaderToc:isChapterStart(cur_pageno)
+    local ticks = self:getTocTicksFlattened()
     local _start = false
-    for i = 1, #ticks do
-        if ticks[i] == cur_pageno then
+    for _, v in ipairs(ticks) do
+        if v == cur_pageno then
             _start = true
             break
         end
@@ -458,11 +461,11 @@ function ReaderToc:isChapterStart(cur_pageno, level)
     return _start
 end
 
-function ReaderToc:isChapterSecondPage(cur_pageno, level)
-    local ticks = self:getTocTicks(level)
+function ReaderToc:isChapterSecondPage(cur_pageno)
+    local ticks = self:getTocTicksFlattened()
     local _second = false
-    for i = 1, #ticks do
-        if ticks[i] + 1 == cur_pageno then
+    for _, v in ipairs(ticks) do
+        if v + 1 == cur_pageno then
             _second = true
             break
         end
@@ -470,11 +473,11 @@ function ReaderToc:isChapterSecondPage(cur_pageno, level)
     return _second
 end
 
-function ReaderToc:isChapterEnd(cur_pageno, level)
-    local ticks = self:getTocTicks(level)
+function ReaderToc:isChapterEnd(cur_pageno)
+    local ticks = self:getTocTicksFlattened()
     local _end = false
-    for i = 1, #ticks do
-        if ticks[i] - 1 == cur_pageno then
+    for _, v in ipairs(ticks) do
+        if v - 1 == cur_pageno then
             _end = true
             break
         end
@@ -482,18 +485,18 @@ function ReaderToc:isChapterEnd(cur_pageno, level)
     return _end
 end
 
-function ReaderToc:getChapterPagesLeft(pageno, level)
-    --if self:isChapterEnd(pageno, level) then return 0 end
-    local next_chapter = self:getNextChapter(pageno, level)
+function ReaderToc:getChapterPagesLeft(pageno)
+    --if self:isChapterEnd(pageno) then return 0 end
+    local next_chapter = self:getNextChapter(pageno)
     if next_chapter then
         next_chapter = next_chapter - pageno - 1
     end
     return next_chapter
 end
 
-function ReaderToc:getChapterPagesDone(pageno, level)
-    if self:isChapterStart(pageno, level) then return 0 end
-    local previous_chapter = self:getPreviousChapter(pageno, level)
+function ReaderToc:getChapterPagesDone(pageno)
+    if self:isChapterStart(pageno) then return 0 end
+    local previous_chapter = self:getPreviousChapter(pageno)
     if previous_chapter then
         previous_chapter = pageno - previous_chapter
     end
