@@ -212,7 +212,7 @@ function SkimToWidget:init()
         width = self.button_width,
         show_parent = self,
         callback = function()
-            local page = self.ui.toc:getPrevChapter(self.curr_page)
+            local page = self.ui.toc:getPreviousChapter(self.curr_page)
             if page and page >=1 and page <= self.page_count then
                 self:goToPage(page)
             end
