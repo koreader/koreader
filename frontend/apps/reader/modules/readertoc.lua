@@ -18,8 +18,8 @@ local T = require("ffi/util").template
 local ReaderToc = InputContainer:new{
     toc = nil,
     toc_depth = 1,
-    ticks = {},
-    ticks_flattened = {},
+    ticks = nil,
+    ticks_flattened = nil,
     toc_indent = "    ",
     collapsed_toc = {},
     collapse_depth = 2,
@@ -340,7 +340,7 @@ negative level counts nodes of reversed depth level (level -1 for max_depth)
 --]]
 function ReaderToc:getTocTicks(level)
     if level then
-        if self.ticks[level] then
+        if self.ticks and self.ticks[level] then
             return self.ticks[level]
         end
     else
@@ -351,6 +351,7 @@ function ReaderToc:getTocTicks(level)
 
     -- Build ToC ticks if not found
     self:fillToc()
+    self.ticks = {}
 
     if #self.toc > 0 then
         -- Start by building a simple hierarchical ToC tick table
@@ -382,6 +383,7 @@ Returns a flattened list of ToC ticks, without duplicates
 function ReaderToc:getTocTicksFlattened()
     if self.ticks_flattened then return self.ticks_flattened end
 
+    -- It hasn't been cached yet, compute it.
     local ticks = self:getTocTicks()
     local ticks_candidates = {}
 
