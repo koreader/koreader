@@ -193,7 +193,7 @@ function SkimToWidget:init()
         width = self.button_width,
         show_parent = self,
         callback = function()
-            local page = self:getNextChapter(self.curr_page)
+            local page = self.ui.toc:getNextChapter(self.curr_page)
             if page and page >=1 and page <= self.page_count then
                 self:goToPage(page)
             end
@@ -212,7 +212,7 @@ function SkimToWidget:init()
         width = self.button_width,
         show_parent = self,
         callback = function()
-            local page = self:getPrevChapter(self.curr_page)
+            local page = self.ui.toc:getPrevChapter(self.curr_page)
             if page and page >=1 and page <= self.page_count then
                 self:goToPage(page)
             end
@@ -343,28 +343,6 @@ function SkimToWidget:addOriginToLocationStack(add_current)
         self.ui.link:addCurrentLocationToStack()
         self.orig_page_added_to_stack = true
     end
-end
-
-function SkimToWidget:getNextChapter(cur_pageno)
-    local next_chapter = nil
-    for _, v in ipairs(self.ticks_flattened) do
-        if v > cur_pageno then
-            next_chapter = v
-            break
-        end
-    end
-    return next_chapter
-end
-
-function SkimToWidget:getPrevChapter(cur_pageno)
-    local previous_chapter = nil
-    for _, v in ipairs(self.ticks_flattened) do
-        if v >= cur_pageno then
-            break
-        end
-        previous_chapter = v
-    end
-    return previous_chapter
 end
 
 function SkimToWidget:onCloseWidget()
