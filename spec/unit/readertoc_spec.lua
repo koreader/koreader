@@ -51,6 +51,11 @@ describe("Readertoc module", function()
                 assert.are.same(ticks_level_2, ticks_level_m1)
             end
         end)
+        local ticks_level_flat = nil
+        it("should get all ticks (flattened)", function()
+            ticks_level_flat = toc:getTocTicksFlattened()
+            assert.are.same(28, #ticks_level_flat)
+        end)
     end)
     it("should get page of next chapter", function()
         assert.truthy(toc:getNextChapter(10) > 10)
