@@ -340,10 +340,12 @@ end
 
 --[[
 ToC ticks is a list of page number in ascending order of TOC nodes at certain level
-positive level counts nodes of the depth level (level 1 for depth 1)
+positive level counts nodes of the depth level (top-level is 1, depth always matches level. Higher values meen deeper nesting.)
 negative level counts nodes of reversed depth level (level -1 for max_depth)
 --]]
 function ReaderToc:getTocTicks(level)
+    -- FIXME: Reimplement negative level count ;).
+
     if level then
         if self.ticks and self.ticks[level] then
             return self.ticks[level]
