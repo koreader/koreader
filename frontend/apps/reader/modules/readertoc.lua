@@ -295,53 +295,9 @@ function ReaderToc:getMaxDepth()
 end
 
 --[[
-TOC ticks is a list of page number in ascending order of TOC nodes at certain level
-positive level counts nodes of the depth level (level 1 for depth 1)
-negative level counts nodes of reversed depth level (level -1 for max_depth)
-zero level counts leaf nodes of the toc tree
-function ReaderToc:getTocTicks(level)
-    if self.ticks[level] then return self.ticks[level] end
-    -- build toc ticks if not found
-    self:fillToc()
-    local ticks = {}
-
-    if #self.toc > 0 then
-        if level == 0 then
-            local depth = 0
-            for i = #self.toc, 1, -1 do
-                local v = self.toc[i]
-                if v.depth >= depth then
-                    table.insert(ticks, v.page)
-                end
-                depth = v.depth
-            end
-        else
-            local depth
-            if level > 0 then
-                depth = level
-            else
-                depth = self:getMaxDepth() + level + 1
-            end
-            for _, v in ipairs(self.toc) do
-                if v.depth == depth then
-                    table.insert(ticks, v.page)
-                end
-            end
-        end
-        -- normally the ticks are sorted already but in rare cases
-        -- toc nodes may be not in ascending order
-        table.sort(ticks)
-        -- cache ticks only if ticks are available
-        self.ticks[level] = ticks
-    end
-    return ticks
-end
---]]
-
---[[
-ToC ticks is a list of page number in ascending order of TOC nodes at certain level
-positive level counts nodes of the depth level (top-level is 1, depth always matches level. Higher values meen deeper nesting.)
-negative level counts nodes of reversed depth level (level -1 for max_depth)
+The ToC ticks is a list of page numbers in ascending order of ToC nodes at a particular depth level.
+A positive level returns nodes at that depth level (top-level is 1, depth always matches level. Higher values mean deeper nesting.)
+A negative level does the same, but computes the depth level in reverse (i.e., -1 is the most deeply nested one).
 --]]
 function ReaderToc:getTocTicks(level)
     -- Handle negative levels
@@ -366,7 +322,6 @@ function ReaderToc:getTocTicks(level)
     if #self.toc > 0 then
         -- Start by building a simple hierarchical ToC tick table
         for _, v in ipairs(self.toc) do
-            print("ToC:", v.page, "@", v.depth)
             if not self.ticks[v.depth] then
                 self.ticks[v.depth] = {}
             end
@@ -399,7 +354,6 @@ function ReaderToc:getTocTicksFlattened()
 
     for _, v in ipairs(ticks) do
         for depth, page in ipairs(v) do
-            print("Tick:", page, "@", depth)
             table.insert(ticks_candidates, page)
         end
     end
@@ -419,22 +373,6 @@ function ReaderToc:getTocTicksFlattened()
 
     self.ticks_flattened = ticks_flattened
     return self.ticks_flattened
-end
-
-
-function ReaderToc:getTocTicksForFooter()
-    local ticks_candidates = {}
-    local max_level = self:getMaxDepth()
-    for i = 0, -max_level, -1 do
-        local ticks = self:getTocTicks(i)
-        table.insert(ticks_candidates, ticks)
-    end
-    if #ticks_candidates > 0 then
-        -- Find the finest toc ticks by sorting out the largest one
-        table.sort(ticks_candidates, function(a, b) return #a > #b end)
-        return ticks_candidates[1]
-    end
-    return {}
 end
 
 function ReaderToc:getNextChapter(cur_pageno)
