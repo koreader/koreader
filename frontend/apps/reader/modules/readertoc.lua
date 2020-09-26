@@ -298,7 +298,7 @@ end
 The ToC ticks is a list of page numbers in ascending order of ToC nodes at a particular depth level.
 A positive level returns nodes at that depth level (top-level is 1, depth always matches level. Higher values mean deeper nesting.)
 A negative level does the same, but computes the depth level in reverse (i.e., -1 is the most deeply nested one).
-Ommitting the level argument returns the full hierarchical table.
+Omitting the level argument returns the full hierarchical table.
 --]]
 function ReaderToc:getTocTicks(level)
     -- Handle negative levels
