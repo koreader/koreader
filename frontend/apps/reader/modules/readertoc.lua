@@ -351,21 +351,16 @@ function ReaderToc:getTocTicksFlattened()
 
     -- It hasn't been cached yet, compute it.
     local ticks = self:getTocTicks()
-    local ticks_candidates = {}
+    local ticks_flattened = {}
 
+    -- Keep track of what we add to avoid duplicates (c.f., https://stackoverflow.com/a/20067270)
+    local hash = {}
     for _, v in ipairs(ticks) do
         for depth, page in ipairs(v) do
-            table.insert(ticks_candidates, page)
-        end
-    end
-
-    -- Then drop duplicates (by using the value as a key to make a quick check) (c.f., https://stackoverflow.com/a/20067270)
-    local hash = {}
-    local ticks_flattened = {}
-    for _, v in ipairs(ticks_candidates) do
-        if (not hash[v]) then
-            ticks_flattened[#ticks_flattened+1] = v
-            hash[v] = true
+            if (not hash[page]) then
+                table.insert(ticks_flattened, page)
+                hash[page] = true
+            end
         end
     end
 
