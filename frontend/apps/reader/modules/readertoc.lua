@@ -51,8 +51,8 @@ end
 function ReaderToc:resetToc()
     self.toc = nil
     self.toc_depth = nil
-    self.ticks = {}
-    self.ticks_flattened = {}
+    self.ticks = nil
+    self.ticks_flattened = nil
     self.collapsed_toc = {}
     self.collapse_depth = 2
     self.expanded_nodes = {}
