@@ -357,7 +357,7 @@ function ReaderToc:getTocTicksFlattened()
     local hash = {}
     for _, v in ipairs(ticks) do
         for depth, page in ipairs(v) do
-            if (not hash[page]) then
+            if not hash[page] then
                 table.insert(ticks_flattened, page)
                 hash[page] = true
             end
