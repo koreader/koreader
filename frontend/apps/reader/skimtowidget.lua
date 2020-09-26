@@ -71,19 +71,7 @@ function SkimToWidget:init()
         curr_page_display = self.ui.pagemap:getCurrentPageLabel(true)
     end
 
-    local ticks_candidates = {}
-    if self.ui.toc then
-        local max_level = self.ui.toc:getMaxDepth()
-        for i = 0, -max_level, -1 do
-            local ticks = self.ui.toc:getTocTicks(i)
-            table.insert(ticks_candidates, ticks)
-        end
-        -- find the finest toc ticks by sorting out the largest one
-        table.sort(ticks_candidates, function(a, b) return #a > #b end)
-    end
-    if #ticks_candidates > 0 then
-        self.ticks_candidates = ticks_candidates[1]
-    end
+    self.ticks_flattened = self.ui.toc:getTocTicksFlattened()
 
     local skimto_title = FrameContainer:new{
         padding = Size.padding.default,
@@ -101,7 +89,7 @@ function SkimToWidget:init()
         width = math.floor(self.screen_width * 0.9),
         height = Size.item.height_big,
         percentage = self.curr_page / self.page_count,
-        ticks = self.ticks_candidates,
+        ticks = self.ticks_flattened,
         tick_width = Size.line.medium,
         last = self.page_count,
     }
@@ -359,9 +347,9 @@ end
 
 function SkimToWidget:getNextChapter(cur_pageno)
     local next_chapter = nil
-    for i = 1, #self.ticks_candidates do
-        if self.ticks_candidates[i] > cur_pageno then
-            next_chapter = self.ticks_candidates[i]
+    for _, v in ipairs(self.ticks_flattened) do
+        if v > cur_pageno then
+            next_chapter = v
             break
         end
     end
@@ -370,11 +358,11 @@ end
 
 function SkimToWidget:getPrevChapter(cur_pageno)
     local previous_chapter = nil
-    for i = 1, #self.ticks_candidates do
-        if self.ticks_candidates[i] >= cur_pageno then
+    for _, v in ipairs(self.ticks_flattened) do
+        if v >= cur_pageno then
             break
         end
-        previous_chapter = self.ticks_candidates[i]
+        previous_chapter = v
     end
     return previous_chapter
 end

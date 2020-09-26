@@ -1676,7 +1676,7 @@ function ReaderFooter:setTocMarkers(reset)
         end
         self.progress_bar.ticks = {}
         if self.ui.toc then
-            self.progress_bar.ticks = self.ui.toc:getTocTicksForFooter()
+            self.progress_bar.ticks = self.ui.toc:getTocTicksFlattened()
         end
         self.progress_bar.last = self.pages or self.view.document:getPageCount()
     else
