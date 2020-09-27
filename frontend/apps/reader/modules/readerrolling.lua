@@ -983,7 +983,7 @@ function ReaderRolling:updateTopStatusBarMarkers()
         return
     end
     local pages = self.ui.document:getPageCount()
-    local ticks = self.ui.toc:getTocTicksForFooter()
+    local ticks = self.ui.toc:getTocTicksFlattened()
     self.ui.document:setHeaderProgressMarks(pages, ticks)
 end
 

@@ -17,7 +17,9 @@ local T = require("ffi/util").template
 
 local ReaderToc = InputContainer:new{
     toc = nil,
-    ticks = {},
+    toc_depth = nil,
+    ticks = nil,
+    ticks_flattened = nil,
     toc_indent = "    ",
     collapsed_toc = {},
     collapse_depth = 2,
@@ -48,8 +50,11 @@ end
 
 function ReaderToc:resetToc()
     self.toc = nil
-    self.ticks = {}
+    self.toc_depth = nil
+    self.ticks = nil
+    self.ticks_flattened = nil
     self.collapsed_toc = {}
+    self.collapse_depth = 2
     self.expanded_nodes = {}
 end
 
@@ -72,11 +77,11 @@ function ReaderToc:onPageUpdate(pageno)
             end
         end
 
-        if paging_backward and self:isChapterEnd(pageno, 0) then
+        if paging_backward and self:isChapterEnd(pageno) then
             UIManager:setDirty(nil, "full")
-        elseif self:isChapterStart(pageno, 0) then
+        elseif self:isChapterStart(pageno) then
             UIManager:setDirty(nil, "full")
-        elseif paging_forward and self:isChapterSecondPage(pageno, 0) then
+        elseif paging_forward and self:isChapterSecondPage(pageno) then
             UIManager:setDirty(nil, "full")
         end
     end
@@ -275,6 +280,9 @@ function ReaderToc:getTocTitleOfCurrentPage()
 end
 
 function ReaderToc:getMaxDepth()
+    if self.toc_depth then return self.toc_depth end
+
+    -- Not cached yet, compute it
     self:fillToc()
     local max_depth = 0
     for _, v in ipairs(self.toc) do
@@ -282,97 +290,116 @@ function ReaderToc:getMaxDepth()
             max_depth = v.depth
         end
     end
-    return max_depth
+    self.toc_depth = max_depth
+    return self.toc_depth
 end
 
 --[[
-TOC ticks is a list of page number in ascending order of TOC nodes at certain level
-positive level counts nodes of the depth level (level 1 for depth 1)
-negative level counts nodes of reversed depth level (level -1 for max_depth)
-zero level counts leaf nodes of the toc tree
+The ToC ticks is a list of page numbers in ascending order of ToC nodes at a particular depth level.
+A positive level returns nodes at that depth level (top-level is 1, depth always matches level. Higher values mean deeper nesting.)
+A negative level does the same, but computes the depth level in reverse (i.e., -1 is the most deeply nested one).
+Omitting the level argument returns the full hierarchical table.
 --]]
 function ReaderToc:getTocTicks(level)
-    if self.ticks[level] then return self.ticks[level] end
-    -- build toc ticks if not found
+    -- Handle negative levels
+    if level and level < 0 then
+        level = self:getMaxDepth() + level + 1
+    end
+
+    if level then
+        if self.ticks and self.ticks[level] then
+            return self.ticks[level]
+        end
+    else
+        if self.ticks then
+            return self.ticks
+        end
+    end
+
+    -- Build ToC ticks if not found
     self:fillToc()
-    local ticks = {}
+    self.ticks = {}
 
     if #self.toc > 0 then
-        if level == 0 then
-            local depth = 0
-            for i = #self.toc, 1, -1 do
-                local v = self.toc[i]
-                if v.depth >= depth then
-                    table.insert(ticks, v.page)
-                end
-                depth = v.depth
+        -- Start by building a simple hierarchical ToC tick table
+        for _, v in ipairs(self.toc) do
+            if not self.ticks[v.depth] then
+                self.ticks[v.depth] = {}
             end
-        else
-            local depth
-            if level > 0 then
-                depth = level
-            else
-                depth = self:getMaxDepth() + level + 1
-            end
-            for _, v in ipairs(self.toc) do
-                if v.depth == depth then
-                    table.insert(ticks, v.page)
-                end
+            table.insert(self.ticks[v.depth], v.page)
+        end
+
+        -- Normally the ticks are already sorted, but in rare cases,
+        -- ToC nodes may be not in ascending order
+        for k, _ in ipairs(self.ticks) do
+            table.sort(self.ticks[k])
+        end
+    end
+
+    if level then
+        return self.ticks[level]
+    else
+        return self.ticks
+    end
+end
+
+--[[
+Returns a flattened list of ToC ticks, without duplicates
+]]
+function ReaderToc:getTocTicksFlattened()
+    if self.ticks_flattened then return self.ticks_flattened end
+
+    -- It hasn't been cached yet, compute it.
+    local ticks = self:getTocTicks()
+    local ticks_flattened = {}
+
+    -- Keep track of what we add to avoid duplicates (c.f., https://stackoverflow.com/a/20067270)
+    local hash = {}
+    for _, v in ipairs(ticks) do
+        for depth, page in ipairs(v) do
+            if not hash[page] then
+                table.insert(ticks_flattened, page)
+                hash[page] = true
             end
         end
-        -- normally the ticks are sorted already but in rare cases
-        -- toc nodes may be not in ascending order
-        table.sort(ticks)
-        -- cache ticks only if ticks are available
-        self.ticks[level] = ticks
     end
-    return ticks
+
+    -- And finally, sort it again
+    table.sort(ticks_flattened)
+
+    self.ticks_flattened = ticks_flattened
+    return self.ticks_flattened
 end
 
-function ReaderToc:getTocTicksForFooter()
-    local ticks_candidates = {}
-    local max_level = self:getMaxDepth()
-    for i = 0, -max_level, -1 do
-        local ticks = self:getTocTicks(i)
-        table.insert(ticks_candidates, ticks)
-    end
-    if #ticks_candidates > 0 then
-        -- Find the finest toc ticks by sorting out the largest one
-        table.sort(ticks_candidates, function(a, b) return #a > #b end)
-        return ticks_candidates[1]
-    end
-    return {}
-end
-
-function ReaderToc:getNextChapter(cur_pageno, level)
-    local ticks = self:getTocTicks(level)
+function ReaderToc:getNextChapter(cur_pageno)
+    local ticks = self:getTocTicksFlattened()
     local next_chapter = nil
-    for i = 1, #ticks do
-        if ticks[i] > cur_pageno then
-            next_chapter = ticks[i]
+    for _, page in ipairs(ticks) do
+        if page > cur_pageno then
+            next_chapter = page
             break
         end
     end
     return next_chapter
 end
 
-function ReaderToc:getPreviousChapter(cur_pageno, level)
-    local ticks = self:getTocTicks(level)
+function ReaderToc:getPreviousChapter(cur_pageno)
+    local ticks = self:getTocTicksFlattened()
     local previous_chapter = nil
-    for i = 1, #ticks do
-        if ticks[i] >= cur_pageno then
+    for _, page in ipairs(ticks) do
+        if page >= cur_pageno then
             break
         end
-        previous_chapter = ticks[i]
+        previous_chapter = page
     end
     return previous_chapter
 end
 
-function ReaderToc:isChapterStart(cur_pageno, level)
-    local ticks = self:getTocTicks(level)
+function ReaderToc:isChapterStart(cur_pageno)
+    local ticks = self:getTocTicksFlattened()
     local _start = false
-    for i = 1, #ticks do
-        if ticks[i] == cur_pageno then
+    for _, page in ipairs(ticks) do
+        if page == cur_pageno then
             _start = true
             break
         end
@@ -380,11 +407,11 @@ function ReaderToc:isChapterStart(cur_pageno, level)
     return _start
 end
 
-function ReaderToc:isChapterSecondPage(cur_pageno, level)
-    local ticks = self:getTocTicks(level)
+function ReaderToc:isChapterSecondPage(cur_pageno)
+    local ticks = self:getTocTicksFlattened()
     local _second = false
-    for i = 1, #ticks do
-        if ticks[i] + 1 == cur_pageno then
+    for _, page in ipairs(ticks) do
+        if page + 1 == cur_pageno then
             _second = true
             break
         end
@@ -392,11 +419,11 @@ function ReaderToc:isChapterSecondPage(cur_pageno, level)
     return _second
 end
 
-function ReaderToc:isChapterEnd(cur_pageno, level)
-    local ticks = self:getTocTicks(level)
+function ReaderToc:isChapterEnd(cur_pageno)
+    local ticks = self:getTocTicksFlattened()
     local _end = false
-    for i = 1, #ticks do
-        if ticks[i] - 1 == cur_pageno then
+    for _, page in ipairs(ticks) do
+        if page - 1 == cur_pageno then
             _end = true
             break
         end
@@ -404,18 +431,18 @@ function ReaderToc:isChapterEnd(cur_pageno, level)
     return _end
 end
 
-function ReaderToc:getChapterPagesLeft(pageno, level)
-    --if self:isChapterEnd(pageno, level) then return 0 end
-    local next_chapter = self:getNextChapter(pageno, level)
+function ReaderToc:getChapterPagesLeft(pageno)
+    --if self:isChapterEnd(pageno) then return 0 end
+    local next_chapter = self:getNextChapter(pageno)
     if next_chapter then
         next_chapter = next_chapter - pageno - 1
     end
     return next_chapter
 end
 
-function ReaderToc:getChapterPagesDone(pageno, level)
-    if self:isChapterStart(pageno, level) then return 0 end
-    local previous_chapter = self:getPreviousChapter(pageno, level)
+function ReaderToc:getChapterPagesDone(pageno)
+    if self:isChapterStart(pageno) then return 0 end
+    local previous_chapter = self:getPreviousChapter(pageno)
     if previous_chapter then
         previous_chapter = pageno - previous_chapter
     end

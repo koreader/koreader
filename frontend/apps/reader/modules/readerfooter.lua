@@ -196,8 +196,7 @@ local footerTextGeneratorMap = {
     pages_left = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].pages_left
-        local left = footer.ui.toc:getChapterPagesLeft(
-            footer.pageno, footer.toc_level)
+        local left = footer.ui.toc:getChapterPagesLeft(footer.pageno)
         return prefix .. " " .. (left and left or footer.pages - footer.pageno)
     end,
     percentage = function(footer)
@@ -221,8 +220,7 @@ local footerTextGeneratorMap = {
     chapter_time_to_read = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].chapter_time_to_read
-        local left = footer.ui.toc:getChapterPagesLeft(
-            footer.pageno, footer.toc_level)
+        local left = footer.ui.toc:getChapterPagesLeft(footer.pageno)
         return footer:getDataFromStatistics(
             prefix .. " ", (left and left or footer.pages - footer.pageno))
     end,
@@ -294,7 +292,6 @@ local ReaderFooter = WidgetContainer:extend{
     mode = MODE.page_progress,
     pageno = nil,
     pages = nil,
-    toc_level = 0,
     progress_percentage = 0.0,
     footer_text = nil,
     text_font_face = "ffont",
@@ -1676,7 +1673,7 @@ function ReaderFooter:setTocMarkers(reset)
         end
         self.progress_bar.ticks = {}
         if self.ui.toc then
-            self.progress_bar.ticks = self.ui.toc:getTocTicksForFooter()
+            self.progress_bar.ticks = self.ui.toc:getTocTicksFlattened()
         end
         self.progress_bar.last = self.pages or self.view.document:getPageCount()
     else
