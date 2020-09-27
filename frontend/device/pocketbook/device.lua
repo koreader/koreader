@@ -37,8 +37,10 @@ local PocketBook = Generic:new{
     -- all devices that have warmth lights use inkview api
     hasNaturalLightApi = yes,
 
-    -- Apparently, HW inversion is a pipedream on PB (#6669)
-    canHWInvert = no,
+    -- NOTE: Apparently, HW inversion is a pipedream on PB (#6669), ... well, on sunxi chipsets anyway.
+    -- For which we now probe in fbinfoOverride() and tweak the flag to "no".
+    -- NTX chipsets *should* work (PB631), but in case it doesn't on your device, set this to "no" in here.
+    canHWInvert = yes,
 
     -- Private per-model kludges
     _fb_init = function() end,
@@ -59,13 +61,32 @@ local function tryOpenBook()
     end
 end
 
+local function isB288(fb)
+    -- No real header exists for this, see https://github.com/koreader/koreader-base/issues/1202/
+    local B288_POLL_FOR_UPDATE_COMPLETE = 0x80044655
+    -- On NXT that has a real MXC driver, it returns -EINVAL
+    return C.ioctl(fb.fd, B288_POLL_FOR_UPDATE_COMPLETE, ffi.new("uint32_t[1]")) == 0
+end
+
 function PocketBook:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new {
         device = self,
         debug = logger.dbg,
-        is_always_portrait = self.isAlwaysPortrait(),
-        forced_rotation = self.usingForcedRotation,
-        fbinfoOverride = self._fb_init,
+        fbinfoOverride = function(fb, finfo, vinfo)
+            -- Device model caps *can* set both to indicate that either will work to get correct orientation.
+            -- But for FB backend, the flags are mutually exclusive, so we nuke one of em later.
+            fb.is_always_portrait = self.isAlwaysPortrait()
+            fb.forced_rotation = self.usingForcedRotation()
+            -- Tweak combination of alwaysPortrait/hwRot/hwInvert flags depending on probed HW.
+            if isB288(fb) then
+                logger.dbg("mxcfb: Detected B288 chipset, disabling HW rotation and invert")
+                fb.forced_rotation = nil
+                self.canHWInvert = no
+            elseif fb.forced_rotation then
+                fb.is_always_portrait = false
+            end
+            return self._fb_init(fb, finfo, vinfo)
+        end,
     }
     self.powerd = require("device/pocketbook/powerd"):new{device = self}
 
@@ -252,12 +273,12 @@ function PocketBook:getDeviceModel()
 end
 
 -- Pocketbook HW rotation modes start from landsape, CCW
-local landscape_ccw = {
+local function landscape_ccw() return {
     1, 0, 3, 2,         -- PORTRAIT, LANDSCAPE, PORTRAIT_180, LANDSCAPE_180
     every_paint = true, -- inkview will try to steal the rot mode frequently
     restore = false,    -- no need, because everything using inkview forces 3 on focus
     default = nil,      -- usually 3
-}
+} end
 
 -- PocketBook Mini (515)
 local PocketBook515 = PocketBook:new{
@@ -371,6 +392,7 @@ local PocketBook627 = PocketBook:new{
 local PocketBook628 = PocketBook:new{
     model = "PBTouchLux5",
     display_dpi = 212,
+    isAlwaysPortrait = yes,
     usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
@@ -393,6 +415,7 @@ local PocketBook631 = PocketBook:new{
 local PocketBook632 = PocketBook:new{
     model = "PBTouchHDPlus",
     display_dpi = 300,
+    isAlwaysPortrait = yes,
     usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
@@ -403,6 +426,7 @@ local PocketBook633 = PocketBook:new{
     display_dpi = 300,
     hasColorScreen = yes,
     canUseCBB = no, -- 24bpp
+    isAlwaysPortrait = yes,
     usingForcedRotation = landscape_ccw,
 }
 
@@ -436,6 +460,7 @@ local PocketBook740 = PocketBook:new{
 local PocketBook740_2 = PocketBook:new{
     model = "PBInkPad3Pro",
     display_dpi = 300,
+    isAlwaysPortrait = yes,
     usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
