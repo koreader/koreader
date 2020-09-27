@@ -39,7 +39,7 @@ local PocketBook = Generic:new{
 
     -- NOTE: Apparently, HW inversion is a pipedream on PB (#6669), ... well, on sunxi chipsets anyway.
     -- For which we now probe in fbinfoOverride() and tweak the flag to "no".
-    -- NXT/other chipsets *should* work (PB631), but in case it doesn't on your device, set this to "no" in here.
+    -- NTX chipsets *should* work (PB631), but in case it doesn't on your device, set this to "no" in here.
     canHWInvert = yes,
 
     -- Private per-model kludges
@@ -73,9 +73,11 @@ function PocketBook:init()
         device = self,
         debug = logger.dbg,
         fbinfoOverride = function(fb, finfo, vinfo)
-            -- Tweak combination of alwaysPortrait/hwRot/hwInvert flags depending on probed HW.
+            -- Device model caps *can* set both to indicate that either will work to get correct orientation.
+            -- But for FB backend, the flags are mutually exclusive, so we nuke one of em later.
             fb.is_always_portrait = self.isAlwaysPortrait()
             fb.forced_rotation = self.usingForcedRotation()
+            -- Tweak combination of alwaysPortrait/hwRot/hwInvert flags depending on probed HW.
             if isB288(fb) then
                 logger.dbg("mxcfb: Detected B288 chipset, disabling HW rotation and invert")
                 fb.forced_rotation = nil
