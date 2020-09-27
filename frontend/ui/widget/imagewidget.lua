@@ -169,7 +169,7 @@ function ImageWidget:_loadfile()
                 -- cache this image
                 logger.dbg("cache", hash)
                 cache = ImageCacheItem:new{ bb = self._bb }
-                cache.size = cache.bb.pitch * cache.bb.h * cache.bb:getBytesPerPixel()
+                cache.size = cache.bb.stride * cache.bb.h
                 ImageCache:insert(hash, cache)
             end
         end

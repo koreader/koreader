@@ -450,7 +450,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                     dbrow.cover_w = cbb_w
                     dbrow.cover_h = cbb_h
                     dbrow.cover_btype = cover_bb:getType()
-                    dbrow.cover_bpitch = cover_bb.pitch
+                    dbrow.cover_bpitch = cover_bb.stride
                     local cover_data = Blitbuffer.tostring(cover_bb)
                     cover_bb:free() -- free bb before compressing to save memory
                     dbrow.cover_datalen = cover_data:len()
