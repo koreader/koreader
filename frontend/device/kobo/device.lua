@@ -25,6 +25,7 @@ local Kobo = Generic:new{
     isKobo = yes,
     isTouchDevice = yes, -- all of them are
     hasOTAUpdates = yes,
+    hasFastWifiStatusQuery = yes,
     hasWifiManager = yes,
     canReboot = yes,
     canPowerOff = yes,

@@ -344,7 +344,7 @@ function ReaderFooter:init()
     }
 
     -- Remove items not supported by the current device
-    if not Device:isAndroid() then
+    if not Device:hasFastWifiStatusQuery() then
         MODE.wifi_status = nil
     end
     if not Device:hasFrontlight() then
@@ -1643,7 +1643,7 @@ function ReaderFooter:addToMainMenu(menu_items)
         table.insert(sub_items, getMinibarOption("frontlight"))
     end
     table.insert(sub_items, getMinibarOption("mem_usage"))
-    if Device:isAndroid() then
+    if Device:hasFastWifiStatusQuery() then
         table.insert(sub_items, getMinibarOption("wifi_status"))
     end
     table.insert(sub_items, getMinibarOption("book_title"))
