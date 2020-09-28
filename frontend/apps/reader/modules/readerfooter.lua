@@ -2026,6 +2026,18 @@ function ReaderFooter:onFrontlightStateChanged()
     end
 end
 
+function ReaderFooter:onNetworkConnected()
+    if self.settings.wifi_status then
+        self:onUpdateFooter(true)
+    end
+end
+
+function ReaderFooter:onNetworkDisconnected()
+    if self.settings.wifi_status then
+        self:onUpdateFooter(true)
+    end
+end
+
 function ReaderFooter:onSetRotationMode()
     self:updateFooterContainer()
     self:resetLayout(true)
