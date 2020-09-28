@@ -75,6 +75,7 @@ local symbol_prefix = {
         frontlight = "☼",
         mem_usage = "",
         wifi_status = "",
+        wifi_status_off = "",
     }
 }
 if BD.mirroredUILayout() then
@@ -239,13 +240,22 @@ local footerTextGeneratorMap = {
         return ""
     end,
     wifi_status = function(footer)
+        -- NOTE: This one deviates a bit from the mold because, in icons mode, we simply use two different icons and no text.
         local symbol_type = footer.settings.item_prefix or "icons"
-        local prefix = symbol_prefix[symbol_type].wifi_status
         local NetworkMgr = require("ui/network/manager")
-        if NetworkMgr:isWifiOn() then
-            return T(_("%1 On"), prefix)
+        if symbol_type == "icons" then
+            if NetworkMgr:isWifiOn() then
+                return symbol_prefix.icons.wifi_status
+            else
+                return symbol_prefix.icons.wifi_status_off
+            end
         else
-            return T(_("%1 Off"), prefix)
+            local prefix = symbol_prefix[symbol_type].wifi_status
+            if NetworkMgr:isWifiOn() then
+                return T(_("%1 On"), prefix)
+            else
+                return T(_("%1 Off"), prefix)
+            end
         end
     end,
     book_title = function(footer)
