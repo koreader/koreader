@@ -86,6 +86,7 @@ local Device = Generic:new{
     isHapticFeedbackEnabled = yes,
     hasClipboard = yes,
     hasOTAUpdates = canUpdateApk,
+    hasFastWifiStatusQuery = yes,
     canOpenLink = yes,
     openLink = function(self, link)
         if not link or type(link) ~= "string" then return end

@@ -75,6 +75,7 @@ local symbol_prefix = {
         frontlight = "☼",
         mem_usage = "",
         wifi_status = "",
+        wifi_status_off = "",
     }
 }
 if BD.mirroredUILayout() then
@@ -239,13 +240,22 @@ local footerTextGeneratorMap = {
         return ""
     end,
     wifi_status = function(footer)
+        -- NOTE: This one deviates a bit from the mold because, in icons mode, we simply use two different icons and no text.
         local symbol_type = footer.settings.item_prefix or "icons"
-        local prefix = symbol_prefix[symbol_type].wifi_status
         local NetworkMgr = require("ui/network/manager")
-        if NetworkMgr:isWifiOn() then
-            return T(_("%1 On"), prefix)
+        if symbol_type == "icons" then
+            if NetworkMgr:isWifiOn() then
+                return symbol_prefix.icons.wifi_status
+            else
+                return symbol_prefix.icons.wifi_status_off
+            end
         else
-            return T(_("%1 Off"), prefix)
+            local prefix = symbol_prefix[symbol_type].wifi_status
+            if NetworkMgr:isWifiOn() then
+                return T(_("%1 On"), prefix)
+            else
+                return T(_("%1 Off"), prefix)
+            end
         end
     end,
     book_title = function(footer)
@@ -334,7 +344,7 @@ function ReaderFooter:init()
     }
 
     -- Remove items not supported by the current device
-    if not Device:isAndroid() then
+    if not Device:hasFastWifiStatusQuery() then
         MODE.wifi_status = nil
     end
     if not Device:hasFrontlight() then
@@ -1633,7 +1643,7 @@ function ReaderFooter:addToMainMenu(menu_items)
         table.insert(sub_items, getMinibarOption("frontlight"))
     end
     table.insert(sub_items, getMinibarOption("mem_usage"))
-    if Device:isAndroid() then
+    if Device:hasFastWifiStatusQuery() then
         table.insert(sub_items, getMinibarOption("wifi_status"))
     end
     table.insert(sub_items, getMinibarOption("book_title"))
@@ -2012,6 +2022,18 @@ end
 
 function ReaderFooter:onFrontlightStateChanged()
     if self.settings.frontlight then
+        self:onUpdateFooter(true)
+    end
+end
+
+function ReaderFooter:onNetworkConnected()
+    if self.settings.wifi_status then
+        self:onUpdateFooter(true)
+    end
+end
+
+function ReaderFooter:onNetworkDisconnected()
+    if self.settings.wifi_status then
         self:onUpdateFooter(true)
     end
 end

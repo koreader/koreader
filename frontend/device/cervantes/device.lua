@@ -58,6 +58,7 @@ local Cervantes = Generic:new{
     touch_mirrored_x = true,
     touch_probe_ev_epoch_time = true,
     hasOTAUpdates = yes,
+    hasFastWifiStatusQuery = yes,
     hasKeys = yes,
     hasWifiManager = yes,
     canReboot = yes,
