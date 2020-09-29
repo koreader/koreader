@@ -589,7 +589,7 @@ function ReaderToc:onShowToc()
         local textviewer = TextViewer:new{
             title = _("ToC entry"),
             text = item.text,
-            lang = nil, -- TODO: Get doc's lang?
+            lang = nil, --- @todo: Get doc's lang?
             width = self.width - (self.width / 8),
             height = self.height / 4,
         }
