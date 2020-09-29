@@ -27,13 +27,7 @@ If you want to use your own installed tools please make sure that you have the *
 
 Cross compile toolchains are available for Ubuntu users through these commands:
 
-##### Kindle and Cervantes
-
-```
-sudo apt-get install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
-```
-
-##### Kobo and Ubuntu Touch
+##### Ubuntu Touch
 
 ```
 sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
@@ -46,13 +40,17 @@ block you from building. Remove them if you get the following ld error
 /usr/lib/gcc-cross/arm-linux-gnueabihf/4.8/../../../../arm-linux-gnueabihf/bin/ld: cannot find -lglib-2.0
 ```
 
-**NOTE 2:** In the specific case of Cervantes, Kindle & Kobo targets, while we make some effort to support these Linaro/Ubuntu TCs,
-they do *not* exactly target the proper devices. While your build will go fine, this may lead to runtime failure.
-As time goes by, and/or the more bleeding-edge your distro is, the greater the risk for mismatch gets.
-Thankfully, we have a distribution-agnostic solution for you: [koxtoolchain](https://github.com/koreader/koxtoolchain)!
-This will allow you to build the *exact* same TCs used to build the nightlies, thanks to the magic of [crosstool-ng](https://github.com/crosstool-ng/crosstool-ng). These are also included precompiled in the Docker images for the respective targets.
+##### e-Ink devices (e.g., Kindle, Kobo, Cervantes, reMarkable, PocketBook)
 
-**NOTE 3:** The vendor toolchain will be downloaded automatically by `./kodev release pocketbook`
+
+**NOTE:** While, for some targets (specifically, Cervantes, Kindle & Kobo), we make *some* effort to support Linaro/Ubuntu TCs,
+they do *not* exactly target the proper devices. While your build *may* go fine, this will *probably* lead to runtime failure.  
+As time goes by, and/or the more bleeding-edge your distro is, the greater the risk for mismatch gets.  
+
+Which means, that, unless you are *very* sure you know what you're doing, you'll want to use the exact same TCs we do, ones that target their respective platforms properly.  
+We have a distribution-agnostic solution to make that mostly painless: [koxtoolchain](https://github.com/koreader/koxtoolchain)!  
+This will allow you to build the *exact* same TCs used to build the nightlies, thanks to the magic of [crosstool-ng](https://github.com/crosstool-ng/crosstool-ng). These are also included precompiled in the Docker images for the respective targets.  
+
 
 ### Additional packages
 
@@ -83,15 +81,13 @@ Ubuntu users can install it with:
 sudo apt-get install click
 ```
 
-**NOTE**: The Ubuntu Touch build won't start anymore, and none of the currently active developers have any physical devices. Please visit [#4960](
-https://github.com/koreader/koreader/issues/4960) if you want to help.
+**NOTE**: The Ubuntu Touch build won't start anymore, and none of the currently active developers have any physical devices. Please visit [#4960](https://github.com/koreader/koreader/issues/4960) if you want to help.
 
 The Ubuntu Touch builds are therefore no longer published under releases on GitHub, but they are still available from [the nightly build server](http://build.koreader.rocks/download/nightly/).
 
 ## Building 
 
-You can check out our [nightlybuild script][nb-script] to see how to build a
-package from scratch.
+You can check out our [nightlybuild script][nb-script] to see how to build a package from scratch.
 
 ### Android
 
@@ -153,6 +149,12 @@ ANDROID_ARCH=x86 ./kodev release android
 
 ```
 ./kodev release pocketbook
+```
+
+### reMarkable
+
+```
+./kodev release remarkable
 ```
 
 ### Ubuntu Touch
