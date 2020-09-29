@@ -589,8 +589,8 @@ function ReaderToc:onShowToc()
             title = _("ToC entry"),
             text = item.text,
             lang = nil, -- TODO: Get doc's lang?
-            width = self.width,
-            height = self.height,
+            width = nil,
+            height = nil,
         }
         UIManager:show(textviewer)
         return true
