@@ -4,7 +4,6 @@ KOReader is available for multiple platforms. Here are instructions to build ins
 
 These instructions are intended for a Linux OS. MacOS and Windows users are suggested to develop in a Linux VM.
 
-
 ## Prerequisites
 
 This instructions asume that you [have a development environment ready to run](Building.md) KOReader. If not then please install common prerequisites first.
@@ -41,7 +40,6 @@ block you from building. Remove them if you get the following ld error
 ```
 
 ##### e-Ink devices (e.g., Kindle, Kobo, Cervantes, reMarkable, PocketBook)
-
 
 **NOTE:** While, for some targets (specifically, Cervantes, Kindle & Kobo), we make *some* effort to support Linaro/Ubuntu TCs,
 they do *not* exactly target the proper devices. While your build *may* go fine, this will *probably* lead to runtime failure.  
@@ -163,10 +161,8 @@ ANDROID_ARCH=x86 ./kodev release android
 ./kodev release ubuntu-touch
 ```
 
-
 ## Porting to a new target.
 
 See [Porting.md](Porting.md)
-
 
 [nb-script]:https://gitlab.com/koreader/nightly-builds/blob/master/build_release.sh
