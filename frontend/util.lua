@@ -14,7 +14,7 @@ local bor = bit.bor
 
 local util = {}
 
---- Strips all punctuation marks and spaces from a string.
+---- Strips all punctuation marks and spaces from a string.
 ---- @string text the string to be stripped
 ---- @treturn string stripped text
 function util.stripPunctuation(text)
@@ -24,7 +24,7 @@ function util.stripPunctuation(text)
     return text:gsub("\226[\128-\131][\128-\191]", ''):gsub("^%p+", ''):gsub("%p+$", '')
 end
 
---- Various whitespace trimming helpers, from http://lua-users.org/wiki/CommonFunctions
+---- Various whitespace trimming helpers, from http://lua-users.org/wiki/CommonFunctions
 ---- @string s the string to be trimmed
 ---- @treturn string trimmed text
 -- remove leading whitespace from string.
