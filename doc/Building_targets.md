@@ -99,13 +99,11 @@ You can check out our [nightlybuild script][nb-script] to see how to build a pac
 ANDROID_ARCH=x86 ./kodev release android
 ```
 
-### Cervantes
-
-```
-./kodev release cervantes
-```
-
 ### Desktop Linux
+
+#### Emulator
+
+See [Building](https://github.com/koreader/koreader/blob/master/doc/Building.md).
 
 #### AppImage (x86_64)
 
@@ -131,31 +129,47 @@ ANDROID_ARCH=x86 ./kodev release android
 ./kodev release debian-armhf
 ```
 
-### Kindle
+### Desktop macOS
+
+```
+./kodev release macos
+```
+
+### e-Ink devices
+
+#### Cervantes
+
+```
+./kodev release cervantes
+```
+
+#### Kindle
 
 ```
 ./kodev release kindle
 ```
 
-### Kobo
+#### Kobo
 
 ```
 ./kodev release kobo
 ```
 
-### Pocketbook
+#### Pocketbook
 
 ```
 ./kodev release pocketbook
 ```
 
-### reMarkable
+#### reMarkable
 
 ```
 ./kodev release remarkable
 ```
 
-### Ubuntu Touch
+### Embedded Linux devices
+
+#### Ubuntu Touch
 
 ```
 ./kodev release ubuntu-touch
