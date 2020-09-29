@@ -585,7 +585,7 @@ function ReaderToc:onShowToc()
 
     function toc_menu:onMenuHold(item)
         local textviewer = TextViewer:new{
-            title = _("ToC entry"),
+            title = _("Chapter title"),
             text = item.text,
             lang = self.ui.document:getProps().language,
             width = math.floor(self.width * 0.8),
