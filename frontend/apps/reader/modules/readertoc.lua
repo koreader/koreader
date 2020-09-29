@@ -589,7 +589,7 @@ function ReaderToc:onShowToc()
             text = item.text,
             lang = self.ui.document:getProps().language,
             width = math.floor(self.width * 0.8),
-            height = math.floor(self.height * 0.25),
+            height = self.height > self.width and math.floor(self.height * 0.25) or math.floor(self.height * 0.33),
         }
         UIManager:show(textviewer)
         return true
