@@ -584,12 +584,10 @@ function ReaderToc:onShowToc()
     end
 
     function toc_menu:onMenuHold(item)
-        print("toc_menu:onMenuHold", item)
-        print(require("dump")(item))
         local textviewer = TextViewer:new{
             title = _("ToC entry"),
             text = item.text,
-            lang = nil, --- @todo: Get doc's lang?
+            lang = self.ui.document:getProps().language,
             width = math.floor(self.width * 0.8),
             height = math.floor(self.height * 0.25),
         }
