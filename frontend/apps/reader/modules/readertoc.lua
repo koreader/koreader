@@ -585,12 +585,13 @@ function ReaderToc:onShowToc()
 
     function toc_menu:onMenuHold(item)
         print("toc_menu:onMenuHold", item)
+        print(require("dump")(item))
         local textviewer = TextViewer:new{
             title = _("ToC entry"),
             text = item.text,
             lang = nil, -- TODO: Get doc's lang?
-            width = nil,
-            height = nil,
+            width = self.width - (self.width / 8),
+            height = self.height / 4,
         }
         UIManager:show(textviewer)
         return true
