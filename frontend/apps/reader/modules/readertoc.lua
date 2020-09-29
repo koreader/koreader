@@ -12,6 +12,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local util  = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
@@ -584,9 +585,11 @@ function ReaderToc:onShowToc()
     end
 
     function toc_menu:onMenuHold(item)
+        -- Trim toc_indent
+        local trimmed_text = util.ltrim(item.text)
         local infomessage = InfoMessage:new{
             show_icon = false,
-            text = item.text,
+            text = trimmed_text,
         }
         UIManager:show(infomessage)
         return true
