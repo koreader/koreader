@@ -9,6 +9,7 @@ local GestureRange = require("ui/gesturerange")
 local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
+local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -580,6 +581,19 @@ function ReaderToc:onShowToc()
             self.ui.link:addCurrentLocationToStack()
             self.ui:handleEvent(Event:new("GotoPage", item.page))
         end
+    end
+
+    function toc_menu:onMenuHold(item)
+        print("toc_menu:onMenuHold", item)
+        local textviewer = TextViewer:new{
+            title = _("ToC entry"),
+            text = item.text,
+            lang = nil, -- TODO: Get doc's lang?
+            width = self.width,
+            height = self.height,
+        }
+        UIManager:show(textviewer)
+        return true
     end
 
     toc_menu.close_callback = function()
