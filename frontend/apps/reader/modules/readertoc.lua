@@ -7,9 +7,9 @@ local Event = require("ui/event")
 local Font = require("ui/font")
 local GestureRange = require("ui/gesturerange")
 local Geom = require("ui/geometry")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
-local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -584,15 +584,11 @@ function ReaderToc:onShowToc()
     end
 
     function toc_menu:onMenuHold(item)
-        local textviewer = TextViewer:new{
-            title = _("Chapter title"),
+        local infomessage = InfoMessage:new{
+            show_icon = false,
             text = item.text,
-            lang = self.ui.document:getProps().language,
-            width = math.floor(self.width * 0.8),
-            height = self.height > self.width and math.floor(self.height * 0.25) or math.floor(self.height * 0.33),
-            justified = false,
         }
-        UIManager:show(textviewer)
+        UIManager:show(infomessage)
         return true
     end
 
