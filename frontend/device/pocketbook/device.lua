@@ -494,6 +494,7 @@ local PocketBook840 = PocketBook:new{
 local PocketBook1040 = PocketBook:new{
     model = "PB1040",
     display_dpi = 227,
+    isAlwaysPortrait = yes,
     usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
