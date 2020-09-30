@@ -422,7 +422,7 @@ function Device:retrieveNetworkInfo()
         std_out = io.popen('2>/dev/null iwconfig | grep ESSID | cut -d\\" -f2')
         if std_out then
             local ssid = std_out:read("*all")
-            result = result .. "SSID: " .. ssid:gsub("(.-)%s*$", "%1") .. "\n"
+            result = result .. "SSID: " .. util.trim(ssid) .. "\n"
             std_out:close()
         end
         if os.execute("ip r | grep -q default") == 0 then
