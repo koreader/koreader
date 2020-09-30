@@ -63,6 +63,8 @@ local Device = Generic:new{
     isTouchDevice = yes,
     needsScreenRefreshAfterResume = no,
     hasColorScreen = yes,
+    hasCFAScreen = yes,
+    canUseCBB = no,
     hasEinkScreen = no,
     canSuspend = no,
     canOpenLink = getLinkOpener,
@@ -155,6 +157,10 @@ function Device:init()
         is_always_portrait = self.isAlwaysPortrait(),
     }
     self.powerd = require("device/sdl/powerd"):new{device = self}
+    if self:hasCFAScreen() then
+        self.screen.bb:setCFA()
+    end
+
 
     local ok, re = pcall(self.screen.setWindowIcon, self.screen, "resources/koreader.png")
     if not ok then logger.warn(re) end
