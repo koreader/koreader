@@ -494,6 +494,10 @@ function KOSync:updateProgress(manual)
         return
     end
 
+    if manual and NetworkMgr:willRerunWhenOnline(function() self:updateProgress(manual) end) then
+        return
+    end
+
     local KOSyncClient = require("KOSyncClient")
     local client = KOSyncClient:new{
         custom_url = self.kosync_custom_server,
@@ -535,6 +539,10 @@ function KOSync:getProgress(manual)
         if manual then
             promptLogin()
         end
+        return
+    end
+
+    if manual and NetworkMgr:willRerunWhenOnline(function() self:getProgress(manual) end) then
         return
     end
 
