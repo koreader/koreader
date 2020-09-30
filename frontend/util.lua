@@ -24,17 +24,17 @@ function util.stripPunctuation(text)
     return text:gsub("\226[\128-\131][\128-\191]", ''):gsub("^%p+", ''):gsub("%p+$", '')
 end
 
----- Various whitespace trimming helpers, from http://lua-users.org/wiki/CommonFunctions
+-- Various whitespace trimming helpers, from http://lua-users.org/wiki/CommonFunctions & http://lua-users.org/wiki/StringTrim
+---- Remove leading whitespace from string.
 ---- @string s the string to be trimmed
 ---- @treturn string trimmed text
--- remove leading whitespace from string.
--- http://en.wikipedia.org/wiki/Trim_(programming)
 function util.ltrim(s)
     return (s:gsub("^%s*", ""))
 end
 
--- remove trailing whitespace from string.
--- http://en.wikipedia.org/wiki/Trim_(programming)
+---- Remove trailing whitespace from string.
+---- @string s the string to be trimmed
+---- @treturn string trimmed text
 function util.rtrim(s)
     local n = #s
     while n > 0 and s:find("^%s", n) do
@@ -43,7 +43,9 @@ function util.rtrim(s)
     return s:sub(1, n)
 end
 
--- c.f., http://lua-users.org/wiki/StringTrim
+---- Remove leading & trailing whitespace from string.
+---- @string s the string to be trimmed
+---- @treturn string trimmed text
 function util.trim(s)
    local from = s:match"^%s*()"
    return from > #s and "" or s:match(".*%S", from)
