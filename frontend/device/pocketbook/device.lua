@@ -452,6 +452,7 @@ local PocketBook650 = PocketBook:new{
 local PocketBook740 = PocketBook:new{
     model = "PBInkPad3",
     display_dpi = 300,
+    isAlwaysPortrait = yes,
     usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
