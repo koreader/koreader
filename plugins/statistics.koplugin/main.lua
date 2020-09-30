@@ -1896,7 +1896,7 @@ end
 
 -- For backward compatibility
 function ReaderStatistics:importFromFile(base_path, item)
-    item = string.gsub(item, "^%s*(.-)%s*$", "%1") -- trim
+    item = util.trim(item)
     if item ~= ".stat" then
         local statistic_file = FFIUtil.joinPath(base_path, item)
         if lfs.attributes(statistic_file, "mode") == "directory" then

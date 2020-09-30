@@ -14,7 +14,7 @@ local bor = bit.bor
 
 local util = {}
 
---- Strips all punctuation marks and spaces from a string.
+---- Strips all punctuation marks and spaces from a string.
 ---- @string text the string to be stripped
 ---- @treturn string stripped text
 function util.stripPunctuation(text)
@@ -22,6 +22,33 @@ function util.stripPunctuation(text)
     -- strip ASCII punctuation marks around text
     -- and strip any generic punctuation marks (U+2000 - U+206F) in the text
     return text:gsub("\226[\128-\131][\128-\191]", ''):gsub("^%p+", ''):gsub("%p+$", '')
+end
+
+-- Various whitespace trimming helpers, from http://lua-users.org/wiki/CommonFunctions & http://lua-users.org/wiki/StringTrim
+---- Remove leading whitespace from string.
+---- @string s the string to be trimmed
+---- @treturn string trimmed text
+function util.ltrim(s)
+    return (s:gsub("^%s*", ""))
+end
+
+---- Remove trailing whitespace from string.
+---- @string s the string to be trimmed
+---- @treturn string trimmed text
+function util.rtrim(s)
+    local n = #s
+    while n > 0 and s:find("^%s", n) do
+        n = n - 1
+    end
+    return s:sub(1, n)
+end
+
+---- Remove leading & trailing whitespace from string.
+---- @string s the string to be trimmed
+---- @treturn string trimmed text
+function util.trim(s)
+   local from = s:match"^%s*()"
+   return from > #s and "" or s:match(".*%S", from)
 end
 
 --[[--
