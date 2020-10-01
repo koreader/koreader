@@ -33,6 +33,7 @@ local Terminal = WidgetContainer:new{
     -- placeholders in commands are marked with "%[placeholder]":
     placeholders = {
         {
+            -- is it wise to translate these labels? It would have to have consequences for the placeholder strings:
             "directory of current ebook",
             function(command)
                 return command:gsub("%%d", BaseUtil.dirname(G_reader_settings:readSetting("lastfile")))
@@ -74,13 +75,13 @@ end
 
 -- other place where placeholders are used: Terminal:substitutions():
 function Terminal:showHelp()
-    local message = "PLACEHOLDERS\n"
+    local message = _("PLACEHOLDERS\n")
     for _, v in pairs(self.placeholders) do
         local label = v[1]
         local placeholder = getPlaceholder(label)
         message = message .. "\n%" .. placeholder .. " = " .. label
     end
-    message = message .. _('\n%v = add value from prompt\n\nVoorbeeld:\ncat "%s"\nom sidecar bestand huidige ebook weer te geven')
+    message = message .. _('\n%v = add value from prompt\n\nExample:\ncat "%s"\nto display sidecar file for current ebook')
     UIManager:show(InfoMessage:new{
         text = message
     })
@@ -188,7 +189,7 @@ function Terminal:commandHandler(commands)
             title = _("Value for %v placeholder"),
             input = self.last_substitution,
             input_type = "text",
-            description = "Vervang placeholder %v door deze term:",
+            description = _("Substitute placeholder %v with this:"),
             fullscreen = true,
             condensed = true,
             allow_newline = false,
