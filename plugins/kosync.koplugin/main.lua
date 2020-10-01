@@ -715,9 +715,7 @@ function KOSync:_onPageUpdate(page)
         self.last_page = page
         self.last_page_turn_ticks = os.time()
         self.page_update_times = self.page_update_times + 1
-        if self.kosync_pages_before_update ~= nil
-        and (self.kosync_pages_before_update <= 0
-             or self.page_update_times == self.kosync_pages_before_update) then
+        if self.kosync_pages_before_update and self.page_update_times == self.kosync_pages_before_update then
             self.page_update_times = 0
             UIManager:scheduleIn(1, function() self:updateProgress() end)
         end
