@@ -24,7 +24,7 @@ local function getPlaceholder(label)
     return string.lower(string.sub(label, 1, 1))
 end
 
-local Terminal = WidgetContainer:new {
+local Terminal = WidgetContainer:new{
     name = "terminal",
     command = "",
     dump_file = util.realpath(DataStorage:getDataDir()) .. "/terminal_output.txt",
@@ -81,7 +81,7 @@ function Terminal:showHelp()
         message = message .. "\n%" .. placeholder .. " = " .. label
     end
     message = message .. _('\n%v = add value from prompt\n\nVoorbeeld:\ncat "%s"\nom sidecar bestand huidige ebook weer te geven')
-    UIManager:show(InfoMessage:new {
+    UIManager:show(InfoMessage:new{
         text = message
     })
 end
@@ -89,17 +89,17 @@ end
 function Terminal:saveShortcuts()
     self.settings:saveSetting("shortcuts", self.shortcuts)
     self.settings:flush()
-    UIManager:show(InfoMessage:new {
+    UIManager:show(InfoMessage:new{
         text = _("Shortcuts saved"),
         timeout = 2
     })
 end
 
 function Terminal:manageShortcuts()
-    self.shortcuts_dialog = CenterContainer:new {
+    self.shortcuts_dialog = CenterContainer:new{
         dimen = Screen:getSize(),
     }
-    self.shortcuts_menu = Menu:new {
+    self.shortcuts_menu = Menu:new{
         show_parent = self.ui,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
@@ -184,7 +184,7 @@ function Terminal:commandHandler(commands)
     self:substitutions()
     if self.command:match("%%v") then
         local prompt
-        prompt = InputDialog:new {
+        prompt = InputDialog:new{
             title = _("Value for %v placeholder"),
             input = self.last_substitution,
             input_type = "text",
@@ -193,28 +193,30 @@ function Terminal:commandHandler(commands)
             condensed = true,
             allow_newline = false,
             cursor_at_end = true,
-            buttons = {{{
-                              text = _("Cancel"),
-                              callback = function()
-                                  if self.source == "terminal" then
-                                      self:terminal()
-                                  else
-                                      self:manageShortcuts()
-                                  end
-                              end,
-                          },
-                          {
-                              text = _("Execute"),
-                              is_enter_default = true,
-                              callback = function()
-                                  local newval = prompt:getInputText()
-                                  self.command = self.command:gsub("%%v", newval)
-                                  self.last_substitution = newval
-                                  Trapper:wrap(function()
-                                      self:execute()
-                                  end)
-                              end,
-                          }}}
+            buttons = {{
+               {
+                  text = _("Cancel"),
+                  callback = function()
+                      if self.source == "terminal" then
+                          self:terminal()
+                      else
+                          self:manageShortcuts()
+                      end
+                  end,
+              },
+              {
+                  text = _("Execute"),
+                  is_enter_default = true,
+                  callback = function()
+                      local newval = prompt:getInputText()
+                      self.command = self.command:gsub("%%v", newval)
+                      self.last_substitution = newval
+                      Trapper:wrap(function()
+                          self:execute()
+                      end)
+                  end,
+              }}
+            }
         }
         UIManager:show(prompt)
         prompt:onShowKeyboard()
@@ -247,7 +249,7 @@ end
 function Terminal:onMenuHoldShortcuts(item)
     if item.deletable or item.editable then
         local shortcut_shortcuts_dialog
-        shortcut_shortcuts_dialog = ButtonDialog:new {
+        shortcut_shortcuts_dialog = ButtonDialog:new{
             buttons = {{
                 {
                     text = _("Edit name"),
@@ -312,7 +314,7 @@ function Terminal:copyCommands(item)
         commands = item.commands
     }
     table.insert(self.shortcuts, new_item)
-    UIManager:show(InfoMessage:new {
+    UIManager:show(InfoMessage:new{
         text = _("Shortcut copied"),
         timeout = 2
     })
@@ -322,7 +324,7 @@ end
 
 function Terminal:editCommands(item)
     local edit_dialog
-    edit_dialog = InputDialog:new {
+    edit_dialog = InputDialog:new{
         title = T(_('Edit commands for "%1"'), item.text),
         input = item.commands,
         width = Screen:getWidth() * 0.9,
@@ -363,7 +365,7 @@ end
 
 function Terminal:editName(item)
     local edit_dialog
-    edit_dialog = InputDialog:new {
+    edit_dialog = InputDialog:new{
         title = _("Edit name"),
         input = item.text,
         width = Screen:getWidth() * 0.9,
@@ -419,7 +421,7 @@ function Terminal:onTerminalStart()
 end
 
 function Terminal:terminal()
-    self.input = InputDialog:new {
+    self.input = InputDialog:new{
         title = _("Enter a command and press \"Execute\""),
         input = self.command:gsub("\n+$", ""),
         para_direction_rtl = false, -- force LTR
@@ -455,7 +457,7 @@ function Terminal:terminal()
                       end
 
                       local prompt
-                      prompt = InputDialog:new {
+                      prompt = InputDialog:new{
                           title = _("Name"),
                           input = "",
                           input_type = "text",
@@ -508,7 +510,7 @@ function Terminal:ensureWhitelineAfterCommands(commands)
 end
 
 function Terminal:execute()
-    local wait_msg = InfoMessage:new {
+    local wait_msg = InfoMessage:new{
         text = _("Executing…"),
     }
     UIManager:show(wait_msg)
@@ -574,7 +576,7 @@ function Terminal:execute()
             },
         }
     end
-    viewer = TextViewer:new {
+    viewer = TextViewer:new{
         title = _("Command output"),
         text = table.concat(entries, "\n"),
         justified = false,
