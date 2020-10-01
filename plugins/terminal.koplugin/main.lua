@@ -86,14 +86,12 @@ local Terminal = WidgetContainer:new{
     shortcuts_menu = nil,
     --    shortcuts_file = DataStorage:getSettingsDir() .. "/terminal_shortcuts.lua",
     shortcuts = {},
-    show_sizes = false,
     source = "terminal",
 }
 
 function Terminal:init()
     self.ui.menu:registerToMainMenu(self)
     self.shortcuts = self.settings:readSetting("shortcuts") or {}
-    self.show_sizes = self.settings:readSetting("show_sizes") or false
 end
 
 -- other place where placeholders are used: substitutePlaceHolders():
@@ -117,20 +115,6 @@ function Terminal:saveShortcuts()
         text = _("Shortcuts saved"),
         timeout = 2
     })
-end
-
-function Terminal:saveSizesSetting()
-    self.show_sizes = not self.show_sizes
-    self.settings:saveSetting("show_sizes", self.show_sizes)
-    self.settings:flush()
-    self:reloadShortcutsDialog()
-end
-
-function Terminal:reloadShortcutsDialog()
-    if self.shortcuts_dialog then
-        UIManager:close(self.shortcuts_dialog)
-    end
-    self:manageShortcuts()
 end
 
 function Terminal:manageShortcuts()
@@ -165,7 +149,7 @@ end
 function Terminal:updateItemTable()
     local item_table = {}
     if #self.shortcuts > 0 then
-        local actions_count = 4 -- separator + actions
+        local actions_count = 3 -- separator + actions
         for nr, f in ipairs(self.shortcuts) do
             local item = {
                 nr = nr,
@@ -218,19 +202,9 @@ local function substitutePlaceHolders(commands, placeholders)
     return commands
 end
 
--- if self.show_sizes == true, then curry ls commands with -lh option:
-local function showFileSizes(commands, show_sizes)
-    if show_sizes then
-        -- %f[%w_] ... %f[^%w_]: emulate word boundaries:
-        commands = commands:gsub("%f[%w_]ls%f[^%w_]", "ls -lh")
-    end
-    return commands
-end
-
 function Terminal:commandHandler(commands)
     self.commands = self:ensureWhitelineAfterCommands(commands)
     self.commands = substitutePlaceHolders(self.commands, self.substitutions)
-    self.commands = showFileSizes(self.commands, self.show_sizes)
     if self.commands:match("%%v") then
         local prompt
         prompt = InputDialog:new{
@@ -275,20 +249,6 @@ function Terminal:commandHandler(commands)
 end
 
 function Terminal:insertPageActions(item_table)
-    table.insert(item_table, {
-        text_func = function()
-            if self.show_sizes then
-                return "   " .. _("don't show sizes for ls commands…")
-            else
-                return "   " .. _("show sizes for ls commands…")
-            end
-        end,
-        deletable = false,
-        editable = false,
-        callback = function()
-            self:saveSizesSetting()
-        end,
-    })
     table.insert(item_table, {
         text = "   " .. _("to terminal…"),
         deletable = false,
