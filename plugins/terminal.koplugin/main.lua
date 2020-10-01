@@ -333,31 +333,33 @@ function Terminal:editCommands(item)
         allow_newline = true,
         cursor_at_end = true,
         fullscreen = true,
-        buttons = { { {
-                          text = "Help",
-                          callback = function()
-                              self:showHelp()
-                          end,
-                      }, {
-                          text = _("Cancel"),
-                          callback = function()
-                              UIManager:close(edit_dialog)
-                              edit_dialog = nil
-                              self:manageShortcuts()
-                          end,
-                      }, {
-                          text = _("Save"),
-                          callback = function()
-                              local input = edit_dialog:getInputText()
-                              UIManager:close(edit_dialog)
-                              edit_dialog = nil
-                              if input:match("[A-Za-z]") then
-                                  self.shortcuts[item.nr]["commands"] = input
-                                  self:saveShortcuts()
-                                  self:manageShortcuts()
-                              end
-                          end,
-                      } } },
+        buttons = {{
+          {
+              text = "Help",
+              callback = function()
+                  self:showHelp()
+              end,
+          }, {
+              text = _("Cancel"),
+              callback = function()
+                  UIManager:close(edit_dialog)
+                  edit_dialog = nil
+                  self:manageShortcuts()
+              end,
+          }, {
+              text = _("Save"),
+              callback = function()
+                  local input = edit_dialog:getInputText()
+                  UIManager:close(edit_dialog)
+                  edit_dialog = nil
+                  if input:match("[A-Za-z]") then
+                      self.shortcuts[item.nr]["commands"] = input
+                      self:saveShortcuts()
+                      self:manageShortcuts()
+                  end
+              end,
+          }}
+        },
     }
     UIManager:show(edit_dialog)
     edit_dialog:onShowKeyboard()
@@ -374,26 +376,28 @@ function Terminal:editName(item)
         allow_newline = false,
         cursor_at_end = true,
         fullscreen = true,
-        buttons = { { {
-                          text = _("Cancel"),
-                          callback = function()
-                              UIManager:close(edit_dialog)
-                              edit_dialog = nil
-                              self:manageShortcuts()
-                          end,
-                      }, {
-                          text = _("Save"),
-                          callback = function()
-                              local input = edit_dialog:getInputText()
-                              UIManager:close(edit_dialog)
-                              edit_dialog = nil
-                              if input:match("[A-Za-z]") then
-                                  self.shortcuts[item.nr]["text"] = input
-                                  self:saveShortcuts()
-                                  self:manageShortcuts()
-                              end
-                          end,
-                      } } },
+        buttons = {{
+             {
+                  text = _("Cancel"),
+                  callback = function()
+                      UIManager:close(edit_dialog)
+                      edit_dialog = nil
+                      self:manageShortcuts()
+                  end,
+              }, {
+                  text = _("Save"),
+                  callback = function()
+                      local input = edit_dialog:getInputText()
+                      UIManager:close(edit_dialog)
+                      edit_dialog = nil
+                      if input:match("[A-Za-z]") then
+                          self.shortcuts[item.nr]["text"] = input
+                          self:saveShortcuts()
+                          self:manageShortcuts()
+                      end
+                  end,
+              }}
+        },
     }
     UIManager:show(edit_dialog)
     edit_dialog:onShowKeyboard()
