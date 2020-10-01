@@ -9,11 +9,11 @@ local logger = require("logger")
 
 -- Known regular (and italic) fonts with an available bold font file
 local _bold_font_variant = {}
-_bold_font_variant["NotoSans-Regular.ttf"] = "NotoSans-Bold.ttf"
-_bold_font_variant["NotoSans-Italic.ttf"] = "NotoSans-BoldItalic.ttf"
-_bold_font_variant["NotoSansArabicUI-Regular.ttf"] = "NotoSansArabicUI-Bold.ttf"
-_bold_font_variant["NotoSerif-Regular.ttf"] = "NotoSerif-Bold.ttf"
-_bold_font_variant["NotoSerif-Italic.ttf"] = "NotoSerif-BoldItalic.ttf"
+_bold_font_variant["NotoSans-Regular"] = "NotoSans-Bold"
+_bold_font_variant["NotoSans-Italic"] = "NotoSans-BoldItalic"
+_bold_font_variant["NotoSansArabicUI-Regular"] = "NotoSansArabicUI-Bold"
+_bold_font_variant["NotoSerif-Regular"] = "NotoSerif-Bold"
+_bold_font_variant["NotoSerif-Italic"] = "NotoSerif-BoldItalic"
 
 -- Build the reverse mapping, so we can know a font is bold
 local _regular_font_variant = {}
@@ -38,48 +38,48 @@ local Font = {
 
     fontmap = {
         -- default font for menu contents
-        cfont = "NotoSans-Regular.ttf",
+        cfont = "NotoSans-Regular",
         -- default font for title
         --tfont = "NimbusSanL-BoldItal.cff",
-        tfont = "NotoSans-Bold.ttf",
-        smalltfont = "NotoSans-Bold.ttf",
-        x_smalltfont = "NotoSans-Bold.ttf",
+        tfont = "NotoSans-Bold",
+        smalltfont = "NotoSans-Bold",
+        x_smalltfont = "NotoSans-Bold",
         -- default font for footer
-        ffont = "NotoSans-Regular.ttf",
-        smallffont = "NotoSans-Regular.ttf",
-        largeffont = "NotoSans-Regular.ttf",
+        ffont = "NotoSans-Regular",
+        smallffont = "NotoSans-Regular",
+        largeffont = "NotoSans-Regular",
 
         -- default font for reading position info
-        rifont = "NotoSans-Regular.ttf",
+        rifont = "NotoSans-Regular",
 
         -- default font for pagination display
-        pgfont = "NotoSans-Regular.ttf",
+        pgfont = "NotoSans-Regular",
 
         -- selectmenu: font for item shortcut
-        scfont = "DroidSansMono.ttf",
+        scfont = "DroidSansMono",
 
         -- help page: font for displaying keys
-        hpkfont = "DroidSansMono.ttf",
+        hpkfont = "DroidSansMono",
         -- font for displaying help messages
-        hfont = "NotoSans-Regular.ttf",
+        hfont = "NotoSans-Regular",
 
         -- font for displaying input content
         -- we have to use mono here for better distance controlling
-        infont = "DroidSansMono.ttf",
+        infont = "DroidSansMono",
         -- small mono font for displaying code
-        smallinfont = "DroidSansMono.ttf",
+        smallinfont = "DroidSansMono",
 
         -- font for info messages
-        infofont = "NotoSans-Regular.ttf",
+        infofont = "NotoSans-Regular",
 
         -- small font for info messages
-        smallinfofont = "NotoSans-Regular.ttf",
+        smallinfofont = "NotoSans-Regular",
         -- small bold font for info messages
-        smallinfofontbold = "NotoSans-Bold.ttf",
+        smallinfofontbold = "NotoSans-Bold",
         -- extra small font for info messages
-        x_smallinfofont = "NotoSans-Regular.ttf",
+        x_smallinfofont = "NotoSans-Regular",
         -- extra extra small font for info messages
-        xx_smallinfofont = "NotoSans-Regular.ttf",
+        xx_smallinfofont = "NotoSans-Regular",
     },
     sizemap = {
         cfont = 24,
@@ -105,34 +105,45 @@ local Font = {
     -- This fallback fonts list should only contain
     -- regular weight (non bold) font files.
     fallbacks = {
-        [1] = "NotoSans-Regular.ttf",
-        [2] = "NotoSansCJKsc-Regular.otf",
-        [3] = "NotoSansArabicUI-Regular.ttf",
-        [4] = "NotoSansDevanagariUI-Regular.ttf",
-        [5] = "nerdfonts/symbols.ttf",
-        [6] = "freefont/FreeSans.ttf",
-        [7] = "freefont/FreeSerif.ttf",
+        [1] = "NotoSans-Regular",
+        [2] = "NotoSansCJKsc-Regular",
+        [3] = "NotoSansArabicUI-Regular",
+        [4] = "NotoSansDevanagariUI-Regular",
+        [5] = "nerdfonts/symbols",
+        [6] = "freefont/FreeSans",
+        [7] = "freefont/FreeSerif",
     },
 
     -- face table
     faces = {},
 }
 
+local function normalize(path, remove_path)
+    if remove_path then
+        path = ("//"..path):match("^.+/(.+)$")
+    end
+    return path:match("(.-)%.")
+end
+
 -- Helper functions with explicite names around
 -- bold/regular_font_variant tables
 function Font:hasBoldVariant(name)
+    name = normalize(name)
     return self.bold_font_variant[name] and true or false
 end
 
 function Font:getBoldVariantName(name)
+    name = normalize(name)
     return self.bold_font_variant[name]
 end
 
 function Font:isRealBoldFont(name)
+    name = normalize(name)
     return self.regular_font_variant[name] and true or false
 end
 
 function Font:getRegularVariantName(name)
+    name = normalize(name)
     return self.regular_font_variant[name] or name
 end
 
@@ -246,10 +257,9 @@ function Font:getFace(font, size)
         -- In that case, search through all font folders for the requested font.
         if not ok then
             local fonts = FontList:getFontList()
-            local escaped_realname = realname:gsub("[-]", "%%-")
 
             for _k, _v in ipairs(fonts) do
-                if _v:find(escaped_realname) then
+                if _v:find(realname, 1, true) then
                     logger.dbg("Found font:", realname, "in", _v)
                     ok, face = pcall(Freetype.newFace, _v, size)
 
