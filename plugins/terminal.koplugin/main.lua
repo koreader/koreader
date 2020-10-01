@@ -20,10 +20,6 @@ local N_ = _.ngettext
 local Screen = require("device").screen
 local T = util.template
 
-local function getPlaceholder(label)
-    return string.lower(string.sub(label, 1, 1))
-end
-
 local Terminal = WidgetContainer:new{
     name = "terminal",
     command = "",
@@ -33,27 +29,30 @@ local Terminal = WidgetContainer:new{
     -- placeholders in commands are marked with "%[placeholder]":
     placeholders = {
         {
-            -- is it wise to translate these labels? It would have to have consequences for the placeholder strings:
-            "directory of current ebook",
+            _("directory of current ebook"),
+            "d",
             function(command)
                 return command:gsub("%%d", BaseUtil.dirname(G_reader_settings:readSetting("lastfile")))
             end
         },
         {
-            "home dir",
+            _("home dir"),
+            "h",
             function(command)
                 local home_dir = G_reader_settings:readSetting("home_dir") or Device.home_dir
                 return command:gsub("%%h", home_dir)
             end
         },
         {
-            "KOReader dir",
+            _("KOReader dir"),
+            "k",
             function(command)
                 return command:gsub("%%k", DataStorage:getDataDir())
             end
         },
         {
-            "sidecar file current ebook",
+            _("sidecar file current ebook"),
+            "s",
             function(command)
                 return command:gsub("%%s", DocSettings:getSidecarFile(G_reader_settings:readSetting("lastfile")))
             end
@@ -78,7 +77,7 @@ function Terminal:showHelp()
     local message = _("PLACEHOLDERS\n")
     for _, v in pairs(self.placeholders) do
         local label = v[1]
-        local placeholder = getPlaceholder(label)
+        local placeholder = v[2]
         message = message .. "\n%" .. placeholder .. " = " .. label
     end
     message = message .. _('\n%v = add value from prompt\n\nExample:\ncat "%s"\nto display sidecar file for current ebook')
@@ -172,9 +171,9 @@ end
 -- other place where placeholders are used: Terminal:showHelp():
 local function substitutePlaceHolders(command, placeholders)
     for _, v in pairs(placeholders) do
-        local placeholder = getPlaceholder(v[1])
+        local placeholder = v[2]
         if command:match("%%" .. placeholder) then
-            local substitution = v[2]
+            local substitution = v[3]
             command = substitution(command)
         end
     end
