@@ -33,7 +33,7 @@ local Terminal = WidgetContainer:new{
             "c",
             function(command)
                 local file = G_reader_settings:readSetting("lastfile")
-                if DocSettings:hasSidecarFile() then
+                if DocSettings:hasSidecarFile(file) then
                     return command:gsub("%%c", DocSettings:getSidecarFile(file))
                 end
                 return string.format(_("echo 'File \"%s\" has no sidecar file'"), BaseUtil.basename(file))
