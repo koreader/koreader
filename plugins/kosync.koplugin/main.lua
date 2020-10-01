@@ -18,11 +18,6 @@ if not G_reader_settings:readSetting("device_id") then
     G_reader_settings:saveSetting("device_id", random.uuid())
 end
 
--- DAUTO_SAVE_PAGING_COUNT was set to nil in defaults.lua, but
--- could be overriden in defaults.persistent.lua with a value
--- that was also used here as the interval for auto sync.
--- DAUTO_SAVE_PAGING_COUNT has been removed, but let's allow
--- this plugin to still pick it from defaults.persistent.lua.
 local KOSync = InputContainer:new{
     name = "kosync",
     is_doc_only = true,
@@ -108,7 +103,7 @@ function KOSync:onReaderReady()
     self.kosync_username = settings.username
     self.kosync_userkey = settings.userkey
     self.kosync_auto_sync = not (settings.auto_sync == false)
-    self.kosync_pages_before_update = settings.pages_before_update or DAUTO_SAVE_PAGING_COUNT
+    self.kosync_pages_before_update = settings.pages_before_update
     self.kosync_whisper_forward = settings.whisper_forward or SYNC_STRATEGY.DEFAULT_FORWARD
     self.kosync_whisper_backward = settings.whisper_backward or SYNC_STRATEGY.DEFAULT_BACKWARD
     self.kosync_device_id = G_reader_settings:readSetting("device_id")
@@ -280,16 +275,16 @@ function KOSync:addToMainMenu(menu_items)
                     local SpinWidget = require('ui/widget/spinwidget')
                     local items = SpinWidget:new{
                         text = _([[This value decides how many pages it takes to update book progress.
-If set to 0, it'll sync progress every page.]]),
+If set to 0, disables updating progress based on page turns.]]),
                         width = math.floor(Screen:getWidth() * 0.6),
-                        value = self.kosync_pages_before_update,
+                        value = self.kosync_pages_before_update or 0,
                         value_min = 0,
                         value_max = 999,
                         value_step = 1,
                         value_hold_step = 10,
                         ok_text = _("Set"),
                         title_text = _("Number of pages before update"),
-                        default_value = DAUTO_SAVE_PAGING_COUNT or 10,
+                        default_value = 0,
                         callback = function(spin)
                             self:setPagesBeforeUpdate(spin.value)
                         end
@@ -302,7 +297,7 @@ If set to 0, it'll sync progress every page.]]),
 end
 
 function KOSync:setPagesBeforeUpdate(pages_before_update)
-    self.kosync_pages_before_update = pages_before_update
+    self.kosync_pages_before_update = pages_before_update > 0 and pages_before_update or nil
     self:saveSettings()
 end
 
