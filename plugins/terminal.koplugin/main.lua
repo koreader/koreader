@@ -32,7 +32,11 @@ local Terminal = WidgetContainer:new{
             _("sidecar file current ebook"),
             "c",
             function(command)
-                return command:gsub("%%c", DocSettings:getSidecarFile(G_reader_settings:readSetting("lastfile")))
+                local file = G_reader_settings:readSetting("lastfile")
+                if DocSettings:hasSidecarFile() then
+                    return command:gsub("%%c", DocSettings:getSidecarFile(file))
+                end
+                return string.format(_("echo 'File \"%s\" has no sidecar file'"), BaseUtil.basename(file))
             end
         },
         {
