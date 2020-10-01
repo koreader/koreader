@@ -193,8 +193,7 @@ function Terminal:commandHandler(commands)
             condensed = true,
             allow_newline = false,
             cursor_at_end = true,
-            buttons = {{
-               {
+            buttons = {{{
                   text = _("Cancel"),
                   callback = function()
                       if self.source == "terminal" then
@@ -215,8 +214,7 @@ function Terminal:commandHandler(commands)
                           self:execute()
                       end)
                   end,
-              }}
-            }
+              }}},
         }
         UIManager:show(prompt)
         prompt:onShowKeyboard()
@@ -250,8 +248,7 @@ function Terminal:onMenuHoldShortcuts(item)
     if item.deletable or item.editable then
         local shortcut_shortcuts_dialog
         shortcut_shortcuts_dialog = ButtonDialog:new{
-            buttons = {{
-                {
+            buttons = {{{
                     text = _("Edit name"),
                     enabled = item.editable,
                     callback = function()
@@ -300,8 +297,7 @@ function Terminal:onMenuHoldShortcuts(item)
                         end
                         self._manager:deleteShortcut(item)
                     end
-                }
-            }}
+                }}},
         }
         UIManager:show(shortcut_shortcuts_dialog)
         return true
@@ -333,8 +329,7 @@ function Terminal:editCommands(item)
         allow_newline = true,
         cursor_at_end = true,
         fullscreen = true,
-        buttons = {{
-          {
+        buttons = {{{
               text = "Help",
               callback = function()
                   self:showHelp()
@@ -358,8 +353,7 @@ function Terminal:editCommands(item)
                       self:manageShortcuts()
                   end
               end,
-          }}
-        },
+          }}},
     }
     UIManager:show(edit_dialog)
     edit_dialog:onShowKeyboard()
@@ -376,8 +370,7 @@ function Terminal:editName(item)
         allow_newline = false,
         cursor_at_end = true,
         fullscreen = true,
-        buttons = {{
-             {
+        buttons = {{{
                   text = _("Cancel"),
                   callback = function()
                       UIManager:close(edit_dialog)
@@ -396,8 +389,7 @@ function Terminal:editName(item)
                           self:manageShortcuts()
                       end
                   end,
-              }}
-        },
+              }}},
     }
     UIManager:show(edit_dialog)
     edit_dialog:onShowKeyboard()
@@ -433,8 +425,7 @@ function Terminal:terminal()
         allow_newline = true,
         cursor_at_end = true,
         fullscreen = true,
-        buttons = {{
-          {
+        buttons = {{{
               text = _("Cancel"),
               callback = function()
                   UIManager:close(self.input)
@@ -469,23 +460,21 @@ function Terminal:terminal()
                           condensed = true,
                           allow_newline = false,
                           cursor_at_end = true,
-                          buttons = {{
-                              {
-                                    text = _("Cancel"),
-                                    callback = function()
-                                        UIManager:close(prompt)
-                                    end,
-                                },
-                                {
-                                    text = _("Save"),
-                                    is_enter_default = true,
-                                    callback = function()
-                                        local newval = prompt:getInputText()
-                                        UIManager:close(prompt)
-                                        callback(newval)
-                                    end,
-                                }}
-                          }
+                          buttons = {{{
+                                text = _("Cancel"),
+                                callback = function()
+                                    UIManager:close(prompt)
+                                end,
+                            },
+                            {
+                                text = _("Save"),
+                                is_enter_default = true,
+                                callback = function()
+                                    local newval = prompt:getInputText()
+                                    UIManager:close(prompt)
+                                    callback(newval)
+                                end,
+                            }}},
                       }
                       UIManager:show(prompt)
                       prompt:onShowKeyboard()
@@ -499,7 +488,7 @@ function Terminal:terminal()
                   self.source = "terminal"
                   self:commandHandler(self.input:getInputText())
               end,
-          } } },
+          }}},
     }
     UIManager:show(self.input)
     self.input:onShowKeyboard()
