@@ -29,6 +29,13 @@ local Terminal = WidgetContainer:new{
     -- placeholders in commands are marked with "%[placeholder]":
     placeholders = {
         {
+            _("sidecar file current ebook"),
+            "c",
+            function(command)
+                return command:gsub("%%c", DocSettings:getSidecarFile(G_reader_settings:readSetting("lastfile")))
+            end
+        },
+        {
             _("directory of current ebook"),
             "d",
             function(command)
@@ -51,10 +58,10 @@ local Terminal = WidgetContainer:new{
             end
         },
         {
-            _("sidecar file current ebook"),
+            _("settings dir"),
             "s",
             function(command)
-                return command:gsub("%%s", DocSettings:getSidecarFile(G_reader_settings:readSetting("lastfile")))
+                return command:gsub("%%s", DataStorage:getSettingsDir())
             end
         },
         -- there is also a "%v" placeholder, which prompts for a value; but that special case is being handled in Terminal:commandHandler()
