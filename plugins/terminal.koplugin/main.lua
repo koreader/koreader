@@ -22,7 +22,7 @@ local T = util.template
 
 local Terminal = WidgetContainer:new{
     name = "terminal",
-    command = "",
+    commands = "",
     dump_file = util.realpath(DataStorage:getDataDir()) .. "/terminal_output.txt",
     items_per_page = G_reader_settings:readSetting("items_per_page") or 16,
     last_substitution = "",
@@ -31,10 +31,10 @@ local Terminal = WidgetContainer:new{
         {
             _("sidecar directory of current ebook"),
             "cd",
-            function(command)
+            function(commands)
                 local file = G_reader_settings:readSetting("lastfile")
                 if DocSettings:hasSidecarFile(file) then
-                    return command:gsub("%%cd", DocSettings:getSidecarDir(file))
+                    return commands:gsub("%%cd", DocSettings:getSidecarDir(file))
                 end
                 return string.format(_("echo 'File \"%s\" has no sidecar file'"), BaseUtil.basename(file))
             end
@@ -42,10 +42,10 @@ local Terminal = WidgetContainer:new{
         {
             _("sidecar file of current ebook"),
             "cf",
-            function(command)
+            function(commands)
                 local file = G_reader_settings:readSetting("lastfile")
                 if DocSettings:hasSidecarFile(file) then
-                    return command:gsub("%%cf", DocSettings:getSidecarFile(file))
+                    return commands:gsub("%%cf", DocSettings:getSidecarFile(file))
                 end
                 return string.format(_("echo 'File \"%s\" has no sidecar file'"), BaseUtil.basename(file))
             end
@@ -53,30 +53,30 @@ local Terminal = WidgetContainer:new{
         {
             _("directory of current ebook"),
             "d",
-            function(command)
-                return command:gsub("%%d", BaseUtil.dirname(G_reader_settings:readSetting("lastfile")))
+            function(commands)
+                return commands:gsub("%%d", BaseUtil.dirname(G_reader_settings:readSetting("lastfile")))
             end
         },
         {
             _("home dir"),
             "h",
-            function(command)
+            function(commands)
                 local home_dir = G_reader_settings:readSetting("home_dir") or Device.home_dir
-                return command:gsub("%%h", home_dir)
+                return commands:gsub("%%h", home_dir)
             end
         },
         {
             _("KOReader dir"),
             "k",
-            function(command)
-                return command:gsub("%%k", DataStorage:getDataDir())
+            function(commands)
+                return commands:gsub("%%k", DataStorage:getDataDir())
             end
         },
         {
             _("settings dir"),
             "s",
-            function(command)
-                return command:gsub("%%s", DataStorage:getSettingsDir())
+            function(commands)
+                return commands:gsub("%%s", DataStorage:getSettingsDir())
             end
         },
         -- there is also a "%v" placeholder, which prompts for a value; but that special case is being handled in Terminal:commandHandler()
@@ -207,15 +207,15 @@ function Terminal:updateItemTable()
 end
 
 -- other place where placeholders are used: Terminal:showHelp():
-local function substitutePlaceHolders(command, placeholders)
+local function substitutePlaceHolders(commands, placeholders)
     for _, v in pairs(placeholders) do
         local placeholder = v[2]
-        if command:match("%%" .. placeholder) then
+        if commands:match("%%" .. placeholder) then
             local substitution = v[3]
-            command = substitution(command)
+            commands = substitution(commands)
         end
     end
-    return command
+    return commands
 end
 
 -- if self.show_sizes == true, then curry ls commands with -lh option:
@@ -228,10 +228,10 @@ local function showFileSizes(commands, show_sizes)
 end
 
 function Terminal:commandHandler(commands)
-    self.command = self:ensureWhitelineAfterCommands(commands)
-    self.command = substitutePlaceHolders(self.command, self.substitutions)
-    self.command = showFileSizes(self.command, self.show_sizes)
-    if self.command:match("%%v") then
+    self.commands = self:ensureWhitelineAfterCommands(commands)
+    self.commands = substitutePlaceHolders(self.commands, self.substitutions)
+    self.commands = showFileSizes(self.commands, self.show_sizes)
+    if self.commands:match("%%v") then
         local prompt
         prompt = InputDialog:new{
             title = _("Value for %v placeholder"),
@@ -257,7 +257,7 @@ function Terminal:commandHandler(commands)
                   is_enter_default = true,
                   callback = function()
                       local newval = prompt:getInputText()
-                      self.command = self.command:gsub("%%v", newval)
+                      self.commands = self.commands:gsub("%%v", newval)
                       self.last_substitution = newval
                       Trapper:wrap(function()
                           self:execute()
@@ -482,7 +482,7 @@ end
 function Terminal:terminal()
     self.input = InputDialog:new{
         title = _("Enter a command and press \"Execute\""),
-        input = self.command:gsub("\n+$", ""),
+        input = self.commands:gsub("\n+$", ""),
         para_direction_rtl = false, -- force LTR
         input_type = "string",
         allow_newline = true,
@@ -570,9 +570,9 @@ function Terminal:execute()
         text = _("Executing…"),
     }
     UIManager:show(wait_msg)
-    local entries = { self.command }
-    local command = self.command .. " 2>&1 ; echo" -- ensure we get stderr and output something
-    local completed, result_str = Trapper:dismissablePopen(command, wait_msg)
+    local entries = { self.commands }
+    local commands = self.commands .. " 2>&1 ; echo" -- ensure we get stderr and output something
+    local completed, result_str = Trapper:dismissablePopen(commands, wait_msg)
     if completed then
         table.insert(entries, result_str)
         self:dump(entries)
