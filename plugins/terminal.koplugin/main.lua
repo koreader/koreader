@@ -248,58 +248,58 @@ function Terminal:onMenuHoldShortcuts(item)
     if item.deletable or item.editable then
         local shortcut_shortcuts_dialog
         shortcut_shortcuts_dialog = ButtonDialog:new {
-            buttons = { {
-                            {
-                                text = _("Edit name"),
-                                enabled = item.editable,
-                                callback = function()
-                                    UIManager:close(shortcut_shortcuts_dialog)
-                                    if self._manager.shortcuts_dialog ~= nil then
-                                        UIManager:close(self._manager.shortcuts_dialog)
-                                        self._manager.shortcuts_dialog = nil
-                                    end
-                                    self._manager:editName(item)
-                                end
-                            },
-                            {
-                                text = _("Edit commands"),
-                                enabled = item.editable,
-                                callback = function()
-                                    UIManager:close(shortcut_shortcuts_dialog)
-                                    if self._manager.shortcuts_dialog ~= nil then
-                                        UIManager:close(self._manager.shortcuts_dialog)
-                                        self._manager.shortcuts_dialog = nil
-                                    end
-                                    self._manager:editCommands(item)
-                                end
-                            },
-                        },
-                        {
-                            {
-                                text = _("Copy"),
-                                enabled = item.editable,
-                                callback = function()
-                                    UIManager:close(shortcut_shortcuts_dialog)
-                                    if self._manager.shortcuts_dialog ~= nil then
-                                        UIManager:close(self._manager.shortcuts_dialog)
-                                        self._manager.shortcuts_dialog = nil
-                                    end
-                                    self._manager:copyCommands(item)
-                                end
-                            },
-                            {
-                                text = _("Delete"),
-                                enabled = item.deletable,
-                                callback = function()
-                                    UIManager:close(shortcut_shortcuts_dialog)
-                                    if self._manager.shortcuts_dialog ~= nil then
-                                        UIManager:close(self._manager.shortcuts_dialog)
-                                        self._manager.shortcuts_dialog = nil
-                                    end
-                                    self._manager:deleteShortcut(item)
-                                end
-                            }
-                        } }
+            buttons = {{
+                {
+                    text = _("Edit name"),
+                    enabled = item.editable,
+                    callback = function()
+                        UIManager:close(shortcut_shortcuts_dialog)
+                        if self._manager.shortcuts_dialog ~= nil then
+                            UIManager:close(self._manager.shortcuts_dialog)
+                            self._manager.shortcuts_dialog = nil
+                        end
+                        self._manager:editName(item)
+                    end
+                },
+                {
+                    text = _("Edit commands"),
+                    enabled = item.editable,
+                    callback = function()
+                        UIManager:close(shortcut_shortcuts_dialog)
+                        if self._manager.shortcuts_dialog ~= nil then
+                            UIManager:close(self._manager.shortcuts_dialog)
+                            self._manager.shortcuts_dialog = nil
+                        end
+                        self._manager:editCommands(item)
+                    end
+                },
+            },
+            {
+                {
+                    text = _("Copy"),
+                    enabled = item.editable,
+                    callback = function()
+                        UIManager:close(shortcut_shortcuts_dialog)
+                        if self._manager.shortcuts_dialog ~= nil then
+                            UIManager:close(self._manager.shortcuts_dialog)
+                            self._manager.shortcuts_dialog = nil
+                        end
+                        self._manager:copyCommands(item)
+                    end
+                },
+                {
+                    text = _("Delete"),
+                    enabled = item.deletable,
+                    callback = function()
+                        UIManager:close(shortcut_shortcuts_dialog)
+                        if self._manager.shortcuts_dialog ~= nil then
+                            UIManager:close(self._manager.shortcuts_dialog)
+                            self._manager.shortcuts_dialog = nil
+                        end
+                        self._manager:deleteShortcut(item)
+                    end
+                }
+            }}
         }
         UIManager:show(shortcut_shortcuts_dialog)
         return true
@@ -427,70 +427,73 @@ function Terminal:terminal()
         allow_newline = true,
         cursor_at_end = true,
         fullscreen = true,
-        buttons = { { {
-                          text = _("Cancel"),
-                          callback = function()
-                              UIManager:close(self.input)
-                          end,
-                      }, {
-                          text = _("Shortcuts"),
-                          callback = function()
-                              UIManager:close(self.input)
-                              self:manageShortcuts()
-                          end,
-                      }, {
-                          text = _("Save"),
-                          callback = function()
-                              local input = self.input:getInputText()
-                              if input:match("[A-Za-z]") then
+        buttons = {{
+          {
+              text = _("Cancel"),
+              callback = function()
+                  UIManager:close(self.input)
+              end,
+          }, {
+              text = _("Shortcuts"),
+              callback = function()
+                  UIManager:close(self.input)
+                  self:manageShortcuts()
+              end,
+          }, {
+              text = _("Save"),
+              callback = function()
+                  local input = self.input:getInputText()
+                  if input:match("[A-Za-z]") then
 
-                                  local function callback(name)
-                                      local new_shortcut = {
-                                          text = name,
-                                          commands = input,
-                                      }
-                                      table.insert(self.shortcuts, new_shortcut)
-                                      self:saveShortcuts()
-                                  end
+                      local function callback(name)
+                          local new_shortcut = {
+                              text = name,
+                              commands = input,
+                          }
+                          table.insert(self.shortcuts, new_shortcut)
+                          self:saveShortcuts()
+                      end
 
-                                  local prompt
-                                  prompt = InputDialog:new {
-                                      title = _("Name"),
-                                      input = "",
-                                      input_type = "text",
-                                      fullscreen = true,
-                                      condensed = true,
-                                      allow_newline = false,
-                                      cursor_at_end = true,
-                                      buttons = { { {
-                                                        text = _("Cancel"),
-                                                        callback = function()
-                                                            UIManager:close(prompt)
-                                                        end,
-                                                    },
-                                                    {
-                                                        text = _("Save"),
-                                                        is_enter_default = true,
-                                                        callback = function()
-                                                            local newval = prompt:getInputText()
-                                                            UIManager:close(prompt)
-                                                            callback(newval)
-                                                        end,
-                                                    } } }
-                                  }
-                                  UIManager:show(prompt)
-                                  prompt:onShowKeyboard()
-                              end
-                          end,
-                      }, {
-                          text = _("Execute"),
-                          callback = function()
-                              UIManager:close(self.input)
-                              -- so we know which middle button to display in the results:
-                              self.source = "terminal"
-                              self:commandHandler(self.input:getInputText())
-                          end,
-                      } } },
+                      local prompt
+                      prompt = InputDialog:new {
+                          title = _("Name"),
+                          input = "",
+                          input_type = "text",
+                          fullscreen = true,
+                          condensed = true,
+                          allow_newline = false,
+                          cursor_at_end = true,
+                          buttons = {{
+                              {
+                                    text = _("Cancel"),
+                                    callback = function()
+                                        UIManager:close(prompt)
+                                    end,
+                                },
+                                {
+                                    text = _("Save"),
+                                    is_enter_default = true,
+                                    callback = function()
+                                        local newval = prompt:getInputText()
+                                        UIManager:close(prompt)
+                                        callback(newval)
+                                    end,
+                                }}
+                          }
+                      }
+                      UIManager:show(prompt)
+                      prompt:onShowKeyboard()
+                  end
+              end,
+          }, {
+              text = _("Execute"),
+              callback = function()
+                  UIManager:close(self.input)
+                  -- so we know which middle button to display in the results:
+                  self.source = "terminal"
+                  self:commandHandler(self.input:getInputText())
+              end,
+          } } },
     }
     UIManager:show(self.input)
     self.input:onShowKeyboard()
