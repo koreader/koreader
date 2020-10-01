@@ -29,12 +29,23 @@ local Terminal = WidgetContainer:new{
     -- placeholders in commands are marked with "%[placeholder]":
     placeholders = {
         {
-            _("sidecar file current ebook"),
-            "c",
+            _("sidecar directory of current ebook"),
+            "cd",
             function(command)
                 local file = G_reader_settings:readSetting("lastfile")
                 if DocSettings:hasSidecarFile(file) then
-                    return command:gsub("%%c", DocSettings:getSidecarFile(file))
+                    return command:gsub("%%cd", DocSettings:getSidecarDir(file))
+                end
+                return string.format(_("echo 'File \"%s\" has no sidecar file'"), BaseUtil.basename(file))
+            end
+        },
+        {
+            _("sidecar file of current ebook"),
+            "cf",
+            function(command)
+                local file = G_reader_settings:readSetting("lastfile")
+                if DocSettings:hasSidecarFile(file) then
+                    return command:gsub("%%cf", DocSettings:getSidecarFile(file))
                 end
                 return string.format(_("echo 'File \"%s\" has no sidecar file'"), BaseUtil.basename(file))
             end
