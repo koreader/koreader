@@ -73,7 +73,7 @@ function Terminal:init()
     self.shortcuts = self.settings:readSetting("shortcuts") or {}
 end
 
--- other place where placeholders are used: Terminal:substitutions():
+-- other place where placeholders are used: substitutePlaceHolders():
 function Terminal:showHelp()
     local message = _("PLACEHOLDERS\n")
     for _, v in pairs(self.placeholders) do
@@ -170,19 +170,20 @@ function Terminal:updateItemTable()
 end
 
 -- other place where placeholders are used: Terminal:showHelp():
-function Terminal:substitutions()
-    for _, v in pairs(self.placeholders) do
+local function substitutePlaceHolders(command, placeholders)
+    for _, v in pairs(placeholders) do
         local placeholder = getPlaceholder(v[1])
-        if self.command:match("%%" .. placeholder) then
+        if command:match("%%" .. placeholder) then
             local substitution = v[2]
-            self.command = substitution(self.command)
+            command = substitution(command)
         end
     end
+    return command
 end
 
 function Terminal:commandHandler(commands)
     self.command = self:ensureWhitelineAfterCommands(commands)
-    self:substitutions()
+    self.command = substitutePlaceHolders(self.command, self.substitutions)
     if self.command:match("%%v") then
         local prompt
         prompt = InputDialog:new{
