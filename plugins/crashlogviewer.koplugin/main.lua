@@ -1,181 +1,213 @@
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local BaseUtil = require("ffi/util")
 local DataStorage = require("datastorage")
 local InfoMessage = require("ui/widget/infomessage")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
-local lfs = require("libs/libkoreader-lfs")
+local util = require("util")
 
 local CrashlogViewer = WidgetContainer:new{
-    name = "crashlogviewer",
-    log = DataStorage:getDataDir() .. "/scripts/tail-crashlog.txt",
-    show_less_info = true,
+    name = "logviewer",
+    -- for the errors only view:
+    error_strings = {
+        "attempt",
+        "bad argument",
+        "error",
+        "ERROR",
+        "initial value",
+        "invalid",
+        "WARN",
+    },
+    -- for both the errors only and the errors with context view:
+    skip_strings = {
+        " fb ",
+        "CRE WARNING",
+        "Current rotation",
+        "ICC",
+        "FB:",
+        "FM loaded plugin",
+        "KOReader",
+        "Loading",
+        "Migrating",
+        "PING",
+        "RD loaded plugin",
+        "Upgrading",
+        "Wi%-Fi",
+        "bitdepth",
+        "block_rendering",
+        "bytes from",
+        "cre_dom",
+        "ctrl%_ifname",
+        "dom version",
+        "ffi%.load",
+        "fixed",
+        "framebuffer",
+        "grayscale",
+        "has been disabled",
+        "ignoring cache",
+        "INFO",
+        "initializing",
+        "interface",
+        "launching",
+        "library",
+        "no dialog left",
+        "opening file",
+        "orientation",
+        "quitting uimanager",
+        "resume",
+        "round%-trip",
+        "rotate",
+        "setting",
+        "statistics",
+        "suspend",
+        "transmitted",
+        "validateWakeupAlarm",
+        "wakeup",
+        "xpointers",
+        "[@%*%]]",
+    },
+    log_tail = DataStorage:getDataDir() .. "/scripts/tail-crashlog.txt",
+    show_errors_only = true,
 }
-
 function CrashlogViewer:onShowCrashlog()
     self:runShellScript(DataStorage:getDataDir() .. "/scripts/tail-crashlog.sh", true, true)
-    local info = self:file_get_contents(self.log)
-    if info == false then
-        self:alertError(_("No crashlog dump found!"), 2)
+
+    local file = io.open(self.log_tail, "r")
+    local info = file:read("*all")
+    file:close()
+    file = nil
+    if not info then
+        UIManager:show(InfoMessage:new {
+            text = _("No crash.log dump found"),
+            icon_file = "resources/info-error.png",
+            timeout = 2
+        })
         return
     end
-    if info == "" then
-        self:alertInfo(_("No errors found!"), 1)
-        return
+    if not self:hasErrorString(info) then
+        UIManager:show(InfoMessage:new {
+            text = _("No error messages found"),
+            timeout = 1
+        })
+        self.show_errors_only = false
     end
-    if self.show_less_info then
-        info = self:filterCrashlog(info)
+    if self.show_errors_only then
+        info = self:showErrorsOnly(info)
     else
-        info = self:shortenCrashlog(info)
+        info = self:showErrorsAndContext(info)
     end
     local viewer
-    local more_less_label = self.show_less_info and "Meer info" or "Minder info"
-    viewer = self:textBox("Crash.log", info, "en", {
+    local more_less_label = self.show_errors_only and _("More info") or _("Less info")
+    local buttons_table = {{
+        -- this is some kind of a toggle button, switching between more and less info:
         {
-            {
-                text = _("Empty crashlog"),
-                callback = function()
-                    UIManager:close(viewer)
-                    self:onEmptyLog()
-                end,
-            },
-            -- this is some kind of a toggle button, switching between more and less info:
-            {
-                text = more_less_label,
-                callback = function()
-                    UIManager:close(viewer)
-                    -- toggle the display mode:
-                    self.show_less_info = not self.show_less_info
-                    self:onShowCrashlog()
-                end,
-            },
-            {
-                text = _("Close"),
-                callback = function()
-                    UIManager:close(viewer)
-                end,
-            },
+            text = more_less_label,
+            callback = function()
+                UIManager:close(viewer)
+                -- toggle the display mode:
+                self.show_errors_only = not self.show_errors_only
+                self:onShowCrashlog()
+            end,
         },
-    })
-end
-
-function CrashlogViewer:alertError(message, timeout, dismiss_callback)
-    if not dismiss_callback then
-        UIManager:show(InfoMessage:new { text = message, icon_file = "resources/info-error.png", timeout = timeout })
-    else
-        UIManager:show(InfoMessage:new { text = message, icon_file = "resources/info-error.png", timeout = timeout, dismiss_callback = dismiss_callback })
-    end
-end
-
-function CrashlogViewer:alertInfo(message, timeout, dismiss_callback)
-    if not dismiss_callback then
-        UIManager:show(InfoMessage:new { text = message, timeout = timeout })
-    else
-        UIManager:show(InfoMessage:new { text = message, timeout = timeout, dismiss_callback = dismiss_callback })
-    end
-end
-
-function CrashlogViewer:textBox(title, info, lang, buttons_table)
-    -- you can optionally add a buttons_table setting:
+        {
+            text = _("Close"),
+            callback = function()
+                UIManager:close(viewer)
+            end,
+        }}
+    }
     local textviewer
-    if not lang then
-        lang = "en"
-    end
-    info = require("util").htmlToPlainTextIfHtml(info)
     textviewer = TextViewer:new {
-        title = title,
-        text = info,
+        title = _("Crash.log (filtered)"),
+        text = require("util").htmlToPlainTextIfHtml(info),
         justified = false,
-        lang = lang,
         buttons_table = buttons_table,
     }
     UIManager:show(textviewer)
-    -- return the instance, so we can close it from a custom button table:
-    return textviewer
 end
 
-function CrashlogViewer:exists(path)
-    return lfs.attributes(path) or false
+function CrashlogViewer:hasErrorString(line)
+    for _, string in ipairs(self.error_strings) do
+        if line:match(string) then
+            return true
+        end
+    end
+    return false
 end
 
-function CrashlogViewer:file_get_contents(path)
-    if (not self:exists(path)) then
-        self:alertError(string.format(_("File %s doesn't exist!"), path), 3)
-        return false
+function CrashlogViewer:hasSkipString(line)
+    for _, string in ipairs(self.skip_strings) do
+        if line:match(string) then
+            return true
+        end
+    end
+    return false
+end
+
+function CrashlogViewer:showErrorsOnly(info)
+    local errors = ""
+    for line in util:gsplit(info, "\n", true, true) do
+        if self:hasErrorString(line)
+            and not self:hasSkipString(line) then
+            errors = errors .. line .. "\n"
+        end
+    end
+    return errors
+end
+
+function CrashlogViewer:showErrorsAndContext(info)
+    local errors = ""
+    for line in util:gsplit(info, "\n", true, true) do
+        if line:match("[a-z]")
+            and not self:hasSkipString(line)
+        then
+            errors = errors .. line .. "\n"
+        end
+    end
+    return errors
+end
+
+function CrashlogViewer:runShellScript(file, show_message, no_run_message)
+    local BD = require("ui/bidi")
+    local T = require("ffi/util").template
+    local alert_duration = 2
+    local script_is_running_msg
+    if not no_run_message then
+        script_is_running_msg = InfoMessage:new {
+            -- @translators %1 is the script's programming language (e.g., shell or python), %2 is the filename
+            text = T(_("Running %1 script %2…"), util.getScriptType(file), BD.filename(BaseUtil.basename(file))),
+        }
+        UIManager:show(script_is_running_msg)
     end
 
-    local file = io.open(path, "r")
-    local content = file:read("*all")
-    file:close()
-    file = nil
-    return content
-end
-
-function CrashlogViewer:file_put_contents(path, content)
-    local target = io.open(path, "w")
-    if target then
-        target:write(content)
-        target:close()
-    else
-        self:alertError(string.format(_("File %s doesn't exist!"), path), 3)
-    end
-    target = nil
-end
-
-function CrashlogViewer:runShellScript(file)
-    local BaseUtil = require("ffi/util")
     UIManager:scheduleIn(0.5, function()
-        -- we ignore raw return values:
-        os.execute(BaseUtil.realpath(file))
+        local rv = os.execute(BaseUtil.realpath(file))
+        UIManager:close(script_is_running_msg)
+        if rv == 0 then
+            if not show_message or type(show_message) == "string" then
+                local message = _("The script exited successfully")
+                if type(show_message) == "string" then
+                    message = show_message
+                end
+                UIManager:show(InfoMessage:new {
+                    text = message,
+                    timeout = alert_duration
+                })
+            end
+        else
+            if not show_message or type(show_message) == "string" then
+                local message = "Script klaar!"
+                if type(show_message) == "string" then
+                    message = show_message
+                end
+                UIManager:show(InfoMessage:new {
+                    text = message,
+                    timeout = alert_duration
+                })
+            end
+        end
     end)
-end
-
-function CrashlogViewer:onEmptyLog()
-    -- DOES NOT WORK (why not?), even when using a commandline shellscript:
-    self:runShellScript(DataStorage:getSettingsDir() .. "/scripts/empty-crashlog.sh", true, true)
-    self:file_put_contents(self.log, "")
-    self:alertInfo(_("Crashlog emptied!"), 2)
-end
-
-function CrashlogViewer:split(str, pat)
-    local t = {}  -- NOTE: use {n = 0} in Lua-5.0
-    local fpat = "(.-)" .. pat
-    local last_end = 1
-    local s, e, cap = str:find(fpat, 1)
-    while s do
-        if s ~= 1 or cap ~= "" then
-            table.insert(t, cap)
-        end
-        last_end = e + 1
-        s, e, cap = str:find(fpat, last_end)
-    end
-    if last_end <= #str then
-        cap = str:sub(last_end)
-        table.insert(t, cap)
-    end
-    return t
-end
-
-function CrashlogViewer:filterCrashlog(info)
-    local lines = self:split(info,"\n")
-    local errors = ""
-    for _, line in ipairs(lines) do
-        if line:match("ERROR") or line:match("WARN") then
-            errors = errors .. line .. "\n"
-        end
-    end
-    return errors
-end
-
-function CrashlogViewer:shortenCrashlog(info)
-    local lines = self:split(info,"\n")
-    local errors = ""
-    for _, line in ipairs(lines) do
-        if line:match("[a-z]") and not line:match("RD loaded plugin") and not line:match("ffi%.load") and not line:match("FB:") and not line:match("has been disabled") and not line:match("bitdepth") and not line:match("rotate") and not line:match("setting") and not line:match("fixed") and not line:match("[@%*%]]") and not line:match("KOReader") and not line:match("library") and not line:match("orientation") and not line:match("framebuffer") and not line:match("Loading") and not line:match("initializing") and not line:match("launching") and not line:match("opening file") and not line:match("grayscale") and not line:match("suspend") and not line:match("wakeup") and not line:match(" fb ") then
-            errors = errors .. line .. "\n"
-        end
-    end
-    return errors
 end
 
 return CrashlogViewer
