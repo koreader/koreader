@@ -139,6 +139,7 @@ local order = {
         "synchronize_time",
         "keep_alive",
         "doc_setting_tweak",
+        "show_developer_tools",
         "terminal",
         "----------------------------",
         "plugin_management",
