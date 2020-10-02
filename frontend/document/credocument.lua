@@ -120,7 +120,7 @@ function CreDocument:engineInit()
         -- we need to initialize the CRE font list
         local fonts = FontList:getFontList()
         for _k, _v in ipairs(fonts) do
-            if not self:isFontBlacklisted() then
+            if not self:isFontBlacklisted(_v) then
                 local ok, err = pcall(cre.registerFont, _v)
                 if not ok then
                     logger.err("failed to register crengine font:", err)
