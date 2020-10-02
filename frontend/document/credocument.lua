@@ -58,7 +58,7 @@ local CreDocument = Document:new{
     -- lua patterns
     blacklist_fonts = {
         "/urw/",
-	"/sil/",
+        "/sil/",
         "/nerdfonts/symbols%.",
     },
 
