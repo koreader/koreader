@@ -55,6 +55,13 @@ local CreDocument = Document:new{
         "Noto Sans",
     },
 
+    -- lua patterns
+    blacklist_fonts = {
+        "/urw/",
+	"/sil/",
+        "/nerdfonts/symbols%.",
+    },
+
     default_css = "./data/cr3.css",
     provider = "crengine",
     provider_name = "Cool Reader Engine",
@@ -94,6 +101,13 @@ function CreDocument:cacheInit()
         G_reader_settings:readSetting("cre_storage_size_factor") or default_cre_storage_size_factor)
 end
 
+function CreDocument:isFontBlacklisted(name)
+    for _, v in ipairs(self.blacklist_fonts) do
+        if name:match(v) then return true end
+    end
+    return false
+end
+
 function CreDocument:engineInit()
     if not engine_initialized then
         require "libs/libkoreader-cre"
@@ -106,7 +120,7 @@ function CreDocument:engineInit()
         -- we need to initialize the CRE font list
         local fonts = FontList:getFontList()
         for _k, _v in ipairs(fonts) do
-            if not _v:find("/urw/") and not _v:find("/nerdfonts/symbols.ttf") then
+            if not self:isFontBlacklisted() then
                 local ok, err = pcall(cre.registerFont, _v)
                 if not ok then
                     logger.err("failed to register crengine font:", err)
