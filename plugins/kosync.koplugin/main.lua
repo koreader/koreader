@@ -272,10 +272,10 @@ function KOSync:addToMainMenu(menu_items)
                 text = _("Sync every # pages"),
                 keep_menu_open = true,
                 callback = function()
-                    local SpinWidget = require('ui/widget/spinwidget')
+                    local SpinWidget = require("ui/widget/spinwidget")
                     local items = SpinWidget:new{
-                        text = _([[This value decides how many pages it takes to update book progress.
-If set to 0, disables updating progress based on page turns.]]),
+                        text = _([[This value determines how many page turns it takes to update book progress.
+If set to 0, updating progress based on page turns will be disabled.]]),
                         width = math.floor(Screen:getWidth() * 0.6),
                         value = self.kosync_pages_before_update or 0,
                         value_min = 0,
