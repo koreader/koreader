@@ -18,14 +18,6 @@ if not G_reader_settings:readSetting("device_id") then
     G_reader_settings:saveSetting("device_id", random.uuid())
 end
 
--- DAUTO_SAVE_PAGING_COUNT was set to nil in defaults.lua, but
--- could be overriden in defaults.persistent.lua with a value
--- that was also used here as the interval for auto sync.
--- DAUTO_SAVE_PAGING_COUNT has been removed, but let's allow
--- this plugin to still pick it from defaults.persistent.lua.
---- @todo make this tunable via an added menu item below
-local SYNC_PAGING_COUNT = DAUTO_SAVE_PAGING_COUNT -- luacheck: ignore
-
 local KOSync = InputContainer:new{
     name = "kosync",
     is_doc_only = true,
@@ -111,6 +103,7 @@ function KOSync:onReaderReady()
     self.kosync_username = settings.username
     self.kosync_userkey = settings.userkey
     self.kosync_auto_sync = not (settings.auto_sync == false)
+    self.kosync_pages_before_update = settings.pages_before_update
     self.kosync_whisper_forward = settings.whisper_forward or SYNC_STRATEGY.DEFAULT_FORWARD
     self.kosync_whisper_backward = settings.whisper_backward or SYNC_STRATEGY.DEFAULT_BACKWARD
     self.kosync_device_id = G_reader_settings:readSetting("device_id")
@@ -275,8 +268,37 @@ function KOSync:addToMainMenu(menu_items)
                     }
                 end,
             },
+            {
+                text = _("Sync every # pages"),
+                keep_menu_open = true,
+                callback = function()
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local items = SpinWidget:new{
+                        text = _([[This value determines how many page turns it takes to update book progress.
+If set to 0, updating progress based on page turns will be disabled.]]),
+                        width = math.floor(Screen:getWidth() * 0.6),
+                        value = self.kosync_pages_before_update or 0,
+                        value_min = 0,
+                        value_max = 999,
+                        value_step = 1,
+                        value_hold_step = 10,
+                        ok_text = _("Set"),
+                        title_text = _("Number of pages before update"),
+                        default_value = 0,
+                        callback = function(spin)
+                            self:setPagesBeforeUpdate(spin.value)
+                        end
+                    }
+                    UIManager:show(items)
+                end,
+            },
         }
     }
+end
+
+function KOSync:setPagesBeforeUpdate(pages_before_update)
+    self.kosync_pages_before_update = pages_before_update > 0 and pages_before_update or nil
+    self:saveSettings()
 end
 
 function KOSync:setCustomServer(server)
@@ -494,6 +516,10 @@ function KOSync:updateProgress(manual)
         return
     end
 
+    if manual and NetworkMgr:willRerunWhenOnline(function() self:updateProgress(manual) end) then
+        return
+    end
+
     local KOSyncClient = require("KOSyncClient")
     local client = KOSyncClient:new{
         custom_url = self.kosync_custom_server,
@@ -535,6 +561,10 @@ function KOSync:getProgress(manual)
         if manual then
             promptLogin()
         end
+        return
+    end
+
+    if manual and NetworkMgr:willRerunWhenOnline(function() self:getProgress(manual) end) then
         return
     end
 
@@ -654,6 +684,7 @@ function KOSync:saveSettings()
         username = self.kosync_username,
         userkey = self.kosync_userkey,
         auto_sync = self.kosync_auto_sync,
+        pages_before_update = self.kosync_pages_before_update,
         whisper_forward =
               (self.kosync_whisper_forward == SYNC_STRATEGY.DEFAULT_FORWARD
                and nil
@@ -684,9 +715,7 @@ function KOSync:_onPageUpdate(page)
         self.last_page = page
         self.last_page_turn_ticks = os.time()
         self.page_update_times = self.page_update_times + 1
-        if SYNC_PAGING_COUNT ~= nil
-        and (SYNC_PAGING_COUNT <= 0
-             or self.page_update_times == SYNC_PAGING_COUNT) then
+        if self.kosync_pages_before_update and self.page_update_times == self.kosync_pages_before_update then
             self.page_update_times = 0
             UIManager:scheduleIn(1, function() self:updateProgress() end)
         end
