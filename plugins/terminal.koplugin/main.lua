@@ -102,7 +102,7 @@ function Terminal:showHelp()
         local placeholder = v[2]
         message = message .. "\n%" .. placeholder .. " = " .. label
     end
-    message = message .. _('\n%v = add value from prompt\n\nExample:\ncat "%s"\nto display sidecar file for current ebook')
+    message = message .. _('\n%v = add value from prompt\n\nExample:\ncat "%s/%v"\nto get a prompt for displaying a file in the settings dir')
     UIManager:show(InfoMessage:new{
         text = message
     })
