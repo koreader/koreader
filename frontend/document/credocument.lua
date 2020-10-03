@@ -178,7 +178,7 @@ end
 
 function CreDocument:requestDomVersion(version)
     logger.dbg("CreDocument: requesting DOM version:", version)
-    cre.requestDomVersion(version)
+    self._document:setIntProperty("crengine.render.requested_dom_version", version)
 end
 
 function CreDocument:getDocumentFormat()
@@ -1041,7 +1041,8 @@ function CreDocument:register(registry)
     registry:addProvider("txt", "text/plain", self, 90)
     registry:addProvider("txt.zip", "application/zip", self, 90)
     registry:addProvider("rtf", "application/rtf", self, 90)
-    registry:addProvider("xhtml", "application/xhtml+xml", self, 90)
+    registry:addProvider("xhtml", "application/xhtml+xml", self, 100)
+    registry:addProvider("xml", "application/xml", self, 90)
     registry:addProvider("zip", "application/zip", self, 10)
     -- Scripts that we allow running in the FM (c.f., Device:canExecuteScript)
     registry:addProvider("sh", "application/x-shellscript", self, 90)
