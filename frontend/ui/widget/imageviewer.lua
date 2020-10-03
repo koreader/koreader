@@ -7,6 +7,8 @@ local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CloseButton = require("ui/widget/closebutton")
+local ConfirmBox = require("ui/widget/confirmbox")
+local DataStorage = require("datastorage")
 local Device = require("device")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
@@ -24,6 +26,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local T = require("ffi/util").template
 local _ = require("gettext")
 local Screen = Device.screen
 
@@ -101,6 +104,7 @@ function ImageViewer:init()
             w = Screen:getWidth(),
             h = Screen:getHeight(),
         }
+        local diagonal = math.sqrt( math.pow(Screen:getWidth(), 2) + math.pow(Screen:getHeight(), 2) )
         self.ges_events = {
             Tap = { GestureRange:new{ ges = "tap", range = range } },
             -- Zoom in/out (Pinch & Spread are not triggered if user is too
@@ -116,6 +120,13 @@ function ImageViewer:init()
             Pan = { GestureRange:new{ ges = "pan", range = range } },
             PanRelease = { GestureRange:new{ ges = "pan_release", range = range } },
             Swipe = { GestureRange:new{ ges = "swipe", range = range } },
+            -- Allow saving the image as Screenshoter does (with two fingers tap,
+            -- swipe being reserved for panning - on non multitouch Devices, this
+            -- is also available with a tap in the bottom left corner)
+            TapDiagonal = { GestureRange:new{ ges = "two_finger_tap",
+                    scale = {diagonal - Screen:scaleBySize(200), diagonal}, rate = 1.0,
+                }
+            },
         }
     end
     if self.fullscreen then
@@ -453,6 +464,12 @@ function ImageViewer:onTap(_, ges)
         self:onClose()
         return true
     end
+    if not Device:hasMultitouch() then
+        -- Allow saving screenshot with tap in bottom left corner
+        if not self.buttons_visible and ges.pos.x < Screen:getWidth()/10 and ges.pos.y > Screen:getHeight()*9/10 then
+            return self:onSaveImageView()
+        end
+    end
     if self.caption_tap_area and ges.pos:intersectWith(self.caption_tap_area.dimen) then
         self.caption_visible = not self.caption_visible
         self:update()
@@ -626,6 +643,59 @@ function ImageViewer:onPinch(_, ges)
     -- Set some zoom decrease value from pinch distance
     local dec = ges.distance / Screen:getWidth()
     self:onZoomOut(dec)
+    return true
+end
+
+function ImageViewer:onTapDiagonal()
+    return self:onSaveImageView()
+end
+
+function ImageViewer:onSaveImageView()
+    -- Similar behaviour as in Screenshoter:onScreenshot()
+    -- We save the currently displayed blitbuffer (panned or zoomed)
+    -- after getting fullscreen and removing UI elements if needed.
+    local screenshots_dir = G_reader_settings:readSetting("screenshot_dir")
+    if not screenshots_dir then
+        screenshots_dir = DataStorage:getDataDir() .. "/screenshots/"
+    end
+    self.screenshot_fn_fmt = screenshots_dir .. "ImageViewer_%Y-%m-%d_%H%M%S.png"
+    local screenshot_name = os.date(self.screenshot_fn_fmt)
+    local restore_settings_func
+    if self.with_title_bar or self.buttons_visible or not self.fullscreen then
+        local with_title_bar = self.with_title_bar
+        local buttons_visible = self.buttons_visible
+        local fullscreen = self.fullscreen
+        restore_settings_func = function()
+            self.with_title_bar = with_title_bar
+            self.buttons_visible = buttons_visible
+            self.fullscreen = fullscreen
+            self:update()
+        end
+        self.with_title_bar = false
+        self.buttons_visible = false
+        self.fullscreen = true
+        self:update()
+        UIManager:forceRePaint()
+    end
+    Screen:shot(screenshot_name)
+    local widget = ConfirmBox:new{
+        text = T( _("Saved screenshot to %1.\nWould you like to set it as screensaver?"), BD.filepath(screenshot_name)),
+        ok_text = _("Yes"),
+        ok_callback = function()
+            G_reader_settings:saveSetting("screensaver_type", "image_file")
+            G_reader_settings:saveSetting("screensaver_image", screenshot_name)
+            if restore_settings_func then
+                restore_settings_func()
+            end
+        end,
+        cancel_text = _("No"),
+        cancel_callback = function()
+            if restore_settings_func then
+                restore_settings_func()
+            end
+        end
+    }
+    UIManager:show(widget)
     return true
 end
 
