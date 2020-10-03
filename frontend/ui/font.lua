@@ -237,8 +237,18 @@ function Font:getFace(font, size)
     local hash = realname..size
 
     local face_obj = self.faces[hash]
-    -- build face if not found
-    if not face_obj then
+    if face_obj then
+        -- Font found
+        if face_obj.orig_size ~= orig_size then
+            -- orig_size has changed (which may happen on small orig_size variations
+            -- mapping to a same final size, but more importantly when geometry
+            -- or dpi has changed): keep it updated, so code that would re-use
+            -- it to fetch another font get the current original font size and
+            -- not one from the past
+            face_obj.orig_size = orig_size
+        end
+    else
+        -- Build face if not found
         local builtin_font_location = FontList.fontdir.."/"..realname
         local ok, face = pcall(Freetype.newFace, builtin_font_location, size)
 
