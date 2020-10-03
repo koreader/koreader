@@ -25,6 +25,7 @@ local Kobo = Generic:new{
     isKobo = yes,
     isTouchDevice = yes, -- all of them are
     hasOTAUpdates = yes,
+    hasFastWifiStatusQuery = yes,
     hasWifiManager = yes,
     canReboot = yes,
     canPowerOff = yes,
@@ -290,30 +291,8 @@ probeEvEpochTime = function(self, ev)
     end
 end
 
--- Make sure the C BB cannot be used on devices with unsafe HW inversion, as otherwise NightMode would be ineffective.
-function Kobo:blacklistCBB()
-    local ffi = require("ffi")
-    local dummy = require("ffi/posix_h")
-    local C = ffi.C
-
-    -- NOTE: canUseCBB is never no on Kobo ;).
-    if not self:canUseCBB() or not self:canHWInvert() then
-        logger.info("Blacklisting the C BB on this device")
-        if ffi.os == "Windows" then
-            C._putenv("KO_NO_CBB=true")
-        else
-            C.setenv("KO_NO_CBB", "true", 1)
-        end
-        -- Enforce the global setting, too, so the Dev menu is accurate...
-        G_reader_settings:saveSetting("dev_no_c_blitter", true)
-    end
-end
-
 function Kobo:init()
-    -- Blacklist the C BB before the first BB require...
-    self:blacklistCBB()
-
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg, is_always_portrait = self.isAlwaysPortrait()}
     if self.screen.fb_bpp == 32 then
         -- Ensure we decode images properly, as our framebuffer is BGRA...
         logger.info("Enabling Kobo @ 32bpp BGR tweaks")

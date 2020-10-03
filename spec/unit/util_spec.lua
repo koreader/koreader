@@ -31,9 +31,9 @@ describe("util module", function()
             for arg1 in util.gsplit(command, "[\"'].-[\"']", true) do
                 for arg2 in util.gsplit(arg1, "^[^\"'].-%s+", true) do
                     for arg3 in util.gsplit(arg2, "[\"']", false) do
-                        local trimed = arg3:gsub("^%s*(.-)%s*$", "%1")
-                        if trimed ~= "" then
-                            table.insert(argv, trimed)
+                        local trimmed = util.trim(arg3)
+                        if trimmed ~= "" then
+                            table.insert(argv, trimmed)
                         end
                     end
                 end

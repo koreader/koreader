@@ -48,6 +48,14 @@ if Device:canToggleMassStorage() then
     common_settings.mass_storage_actions = MassStorage:getActionsMenuTable()
 end
 
+-- Associate OS level file extensions (must be off by default, because we're not associated initially)
+if Device:canAssociateFileExtensions() then
+    common_settings.file_ext_assoc = {
+        text = _("Associate file extensions"),
+        sub_item_table = require("ui/elements/file_ext_assoc"):getSettingsMenuTable()
+    }
+end
+
 -- This affects the topmenu, we want to be able to access it even if !Device:setDateTime()
 common_settings.time = {
     text = _("Time and date"),

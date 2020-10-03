@@ -1,8 +1,7 @@
 local DataStorage = require("datastorage")
+local FFIUtil = require("ffi/util")
 local LuaSettings = require("luasettings")
-local getFriendlySize = require("util").getFriendlySize
 local lfs = require("libs/libkoreader-lfs")
-local realpath = require("ffi/util").realpath
 local util = require("util")
 
 local DEFAULT_COLLECTION_NAME = "favorites"
@@ -41,9 +40,9 @@ function ReadCollection:prepareList(collection_name)
         table.insert(list, {
             order = v.order,
             text = v.file:gsub(".*/", ""),
-            file = realpath(v.file) or v.file, -- keep orig file path of deleted files
+            file = FFIUtil.realpath(v.file) or v.file, -- keep orig file path of deleted files
             dim = not file_exists, -- "dim", as expected by Menu
-            mandatory = file_exists and getFriendlySize(lfs.attributes(v.file, "size") or 0),
+            mandatory = file_exists and util.getFriendlySize(lfs.attributes(v.file, "size") or 0),
             callback = function()
                 local ReaderUI = require("apps/reader/readerui")
                 ReaderUI:showReader(v.file)

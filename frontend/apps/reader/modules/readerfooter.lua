@@ -19,6 +19,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local logger = require("logger")
 local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
@@ -39,6 +40,7 @@ local MODE = {
     wifi_status = 10,
     book_title = 11,
     book_chapter = 12,
+    bookmark_count = 13,
 }
 
 local symbol_prefix = {
@@ -47,6 +49,8 @@ local symbol_prefix = {
         pages_left = "=>",
         -- @translators This is the footer letter prefix for battery % remaining.
         battery = C_("FooterLetterPrefix", "B:"),
+        -- @translators This is the footer letter prefix for the number of bookmarks (bookmark count).
+        bookmark_count = C_("FooterLetterPrefix", "BM:"),
         -- @translators This is the footer letter prefix for percentage read.
         percentage = C_("FooterLetterPrefix", "R:"),
         -- @translators This is the footer letter prefix for book time to read.
@@ -64,12 +68,14 @@ local symbol_prefix = {
         time = "⌚",
         pages_left = BD.mirroredUILayout() and "⇐" or "⇒",
         battery = "",
+        bookmark_count = "☆",
         percentage = BD.mirroredUILayout() and "⤟" or "⤠",
         book_time_to_read = "⏳",
         chapter_time_to_read = BD.mirroredUILayout() and "⥖" or "⤻",
         frontlight = "☼",
         mem_usage = "",
         wifi_status = "",
+        wifi_status_off = "",
     }
 }
 if BD.mirroredUILayout() then
@@ -155,6 +161,17 @@ local footerTextGeneratorMap = {
             return BD.wrap(prefix) .. " " .. (powerd:isCharging() and "+" or "") .. batt_lvl .. "%"
         end
     end,
+    bookmark_count = function(footer)
+        local symbol_type = footer.settings.item_prefix or "icons"
+        local prefix = symbol_prefix[symbol_type].bookmark_count
+        --retrieve bookmark count:
+        local bookmark_count = footer.ui.bookmark:getNumberOfBookmarks()
+        -- if no bookmarks defined, don't show icon:
+        if bookmark_count == 0 then
+            return ""
+        end
+        return prefix .. " " .. tostring(bookmark_count)
+    end,
     time = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].time
@@ -180,8 +197,7 @@ local footerTextGeneratorMap = {
     pages_left = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].pages_left
-        local left = footer.ui.toc:getChapterPagesLeft(
-            footer.pageno, footer.toc_level)
+        local left = footer.ui.toc:getChapterPagesLeft(footer.pageno)
         return prefix .. " " .. (left and left or footer.pages - footer.pageno)
     end,
     percentage = function(footer)
@@ -205,8 +221,7 @@ local footerTextGeneratorMap = {
     chapter_time_to_read = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].chapter_time_to_read
-        local left = footer.ui.toc:getChapterPagesLeft(
-            footer.pageno, footer.toc_level)
+        local left = footer.ui.toc:getChapterPagesLeft(footer.pageno)
         return footer:getDataFromStatistics(
             prefix .. " ", (left and left or footer.pages - footer.pageno))
     end,
@@ -225,13 +240,22 @@ local footerTextGeneratorMap = {
         return ""
     end,
     wifi_status = function(footer)
+        -- NOTE: This one deviates a bit from the mold because, in icons mode, we simply use two different icons and no text.
         local symbol_type = footer.settings.item_prefix or "icons"
-        local prefix = symbol_prefix[symbol_type].wifi_status
         local NetworkMgr = require("ui/network/manager")
-        if NetworkMgr:isWifiOn() then
-            return T(_("%1 On"), prefix)
+        if symbol_type == "icons" then
+            if NetworkMgr:isWifiOn() then
+                return symbol_prefix.icons.wifi_status
+            else
+                return symbol_prefix.icons.wifi_status_off
+            end
         else
-            return T(_("%1 Off"), prefix)
+            local prefix = symbol_prefix[symbol_type].wifi_status
+            if NetworkMgr:isWifiOn() then
+                return T(_("%1 On"), prefix)
+            else
+                return T(_("%1 Off"), prefix)
+            end
         end
     end,
     book_title = function(footer)
@@ -278,7 +302,6 @@ local ReaderFooter = WidgetContainer:extend{
     mode = MODE.page_progress,
     pageno = nil,
     pages = nil,
-    toc_level = 0,
     progress_percentage = 0.0,
     footer_text = nil,
     text_font_face = "ffont",
@@ -300,6 +323,7 @@ function ReaderFooter:init()
         reclaim_height = false,
         toc_markers = true,
         battery = Device:hasBattery(),
+        bookmark_count = true,
         time = true,
         page_progress = true,
         pages_left = true,
@@ -320,7 +344,7 @@ function ReaderFooter:init()
     }
 
     -- Remove items not supported by the current device
-    if not Device:isAndroid() then
+    if not Device:hasFastWifiStatusQuery() then
         MODE.wifi_status = nil
     end
     if not Device:hasFrontlight() then
@@ -545,7 +569,14 @@ end
 function ReaderFooter:setupAutoRefreshTime()
     if not self.autoRefreshTime then
         self.autoRefreshTime = function()
-            self:onUpdateFooter(true)
+            -- Only actually repaint the footer if nothing's being shown over ReaderUI (#6616)
+            if UIManager:getTopWidget() == "ReaderUI" then
+                self:onUpdateFooter(true)
+            else
+                logger.dbg("Skipping ReaderFooter repaint, because ReaderUI is not the top-level widget")
+                -- NOTE: We *do* keep its content up-to-date, though
+                self:onUpdateFooter()
+            end
             UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
         end
     end
@@ -692,6 +723,7 @@ function ReaderFooter:textOptionTitles(option)
     local option_titles = {
         all_at_once = _("Show all at once"),
         reclaim_height = _("Reclaim bar height from bottom margin"),
+        bookmark_count = T(_("Bookmark count (%1)"), symbol_prefix[symbol].bookmark_count),
         page_progress = T(_("Current page (%1)"), "/"),
         time = symbol_prefix[symbol].time
             and T(_("Current time (%1)"), symbol_prefix[symbol].time) or _("Current time"),
@@ -1603,6 +1635,7 @@ function ReaderFooter:addToMainMenu(menu_items)
     if Device:hasBattery() then
         table.insert(sub_items, getMinibarOption("battery"))
     end
+    table.insert(sub_items, getMinibarOption("bookmark_count"))
     table.insert(sub_items, getMinibarOption("percentage"))
     table.insert(sub_items, getMinibarOption("book_time_to_read"))
     table.insert(sub_items, getMinibarOption("chapter_time_to_read"))
@@ -1610,7 +1643,7 @@ function ReaderFooter:addToMainMenu(menu_items)
         table.insert(sub_items, getMinibarOption("frontlight"))
     end
     table.insert(sub_items, getMinibarOption("mem_usage"))
-    if Device:isAndroid() then
+    if Device:hasFastWifiStatusQuery() then
         table.insert(sub_items, getMinibarOption("wifi_status"))
     end
     table.insert(sub_items, getMinibarOption("book_title"))
@@ -1650,7 +1683,7 @@ function ReaderFooter:setTocMarkers(reset)
         end
         self.progress_bar.ticks = {}
         if self.ui.toc then
-            self.progress_bar.ticks = self.ui.toc:getTocTicksForFooter()
+            self.progress_bar.ticks = self.ui.toc:getTocTicksFlattened()
         end
         self.progress_bar.last = self.pages or self.view.document:getPageCount()
     else
@@ -1855,6 +1888,7 @@ function ReaderFooter:applyFooterMode(mode)
     -- 10 for Wi-Fi status
     -- 11 for book title
     -- 12 for current chapter
+    -- 13 for bookmark count
 
     if mode ~= nil then self.mode = mode end
     local prev_visible_state = self.view.footer_visible
@@ -1988,6 +2022,18 @@ end
 
 function ReaderFooter:onFrontlightStateChanged()
     if self.settings.frontlight then
+        self:onUpdateFooter(true)
+    end
+end
+
+function ReaderFooter:onNetworkConnected()
+    if self.settings.wifi_status then
+        self:onUpdateFooter(true)
+    end
+end
+
+function ReaderFooter:onNetworkDisconnected()
+    if self.settings.wifi_status then
         self:onUpdateFooter(true)
     end
 end

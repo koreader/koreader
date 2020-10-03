@@ -26,6 +26,9 @@ function BackgroundTaskPlugin:_schedule(settings_id)
         repeated = enabled,
         executable = self.executable,
     })
+    local Event = require("ui/event")
+    local UIManager = require("ui/uimanager")
+    UIManager:broadcastEvent(Event:new("BackgroundJobsUpdated"))
 end
 
 function BackgroundTaskPlugin:_start()

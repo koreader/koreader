@@ -91,7 +91,7 @@ function TweakInfoWidget:init()
             f:close()
         end
     end
-    self.css_text = css:gsub("^%s+", ""):gsub("%s+$", "")
+    self.css_text = util.trim(css)
     self.css_frame = FrameContainer:new{
         bordersize = Size.border.thin,
         padding = Size.padding.large,
@@ -309,7 +309,7 @@ function ReaderStyleTweak:updateCssText(apply)
                 -- re-reading it, but this will allow a user to experiment
                 -- wihout having to restart KOReader
             end
-            css = css:gsub("^%s+", ""):gsub("%s+$", "")
+            css = util.trim(css)
             table.insert(css_snippets, css)
         end
         if self.book_style_tweak and self.book_style_tweak_enabled then

@@ -1,14 +1,14 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Dispatcher = require("dispatcher")
+local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local orderedPairs = require("ffi/util").orderedPairs
 local _ = require("gettext")
-local T = require("ffi/util").template
+local T = FFIUtil.template
 
 local Profiles = WidgetContainer:new{
     name = "profiles",
@@ -19,6 +19,7 @@ local Profiles = WidgetContainer:new{
 }
 
 function Profiles:init()
+    Dispatcher:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -88,7 +89,7 @@ function Profiles:getSubMenuItems()
             separator = true,
         }
     }
-    for k,v in orderedPairs(self.data) do
+    for k,v in FFIUtil.orderedPairs(self.data) do
         local sub_items = {
             {
                 text = _("Delete profile"),

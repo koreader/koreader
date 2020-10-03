@@ -716,7 +716,7 @@ body[name="comments"] > section
                 description = _([[
 Show EPUB footnote text at the bottom of pages that contain links to them.
 This only works with footnotes that have specific attributes set by the publisher.]]),
-                -- Restrict this to EPUB documents, as FB2 can have <a type="note">
+                -- Restrict this to non-FB2 documents, as FB2 can have <a type="note">
                 css = [[
 *[type~="note"],
 *[type~="footnote"],
@@ -725,7 +725,7 @@ This only works with footnotes that have specific attributes set by the publishe
 *[role~="doc-footnote"],
 *[role~="doc-rearnote"]
 {
-    -cr-only-if: epub-document;
+    -cr-only-if: -fb2-document;
         -cr-hint: footnote-inpage;
         margin: 0 !important;
 }
@@ -737,7 +737,7 @@ This only works with footnotes that have specific attributes set by the publishe
                 description = _([[
 Show EPUB footnote text at the bottom of pages that contain links to them.
 This only works with footnotes that have specific attributes set by the publisher.]]),
-                -- Restrict this to EPUB documents, as FB2 can have <a type="note">
+                -- Restrict this to non-FB2 documents, as FB2 can have <a type="note">
                 -- and we don't want to have them smaller
                 css = [[
 *[type~="note"],
@@ -747,7 +747,7 @@ This only works with footnotes that have specific attributes set by the publishe
 *[role~="doc-footnote"],
 *[role~="doc-rearnote"]
 {
-    -cr-only-if: epub-document;
+    -cr-only-if: -fb2-document;
         -cr-hint: footnote-inpage;
         margin: 0 !important;
         font-size: 0.8rem !important;

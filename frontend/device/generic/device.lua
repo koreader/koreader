@@ -61,6 +61,7 @@ local Device = {
     canSuspend = yes,
     canReboot = no,
     canPowerOff = no,
+    canAssociateFileExtensions = no,
 
     -- use these only as a last resort. We should abstract the functionality
     -- and have device dependent implementations in the corresponting
@@ -79,19 +80,24 @@ local Device = {
 
     -- some devices have part of their screen covered by the bezel
     viewport = nil,
-    -- enforce portrait orientation on display, no matter how configured at
-    -- startup
+    -- enforce portrait orientation of display when FB defaults to landscape
     isAlwaysPortrait = no,
+    -- On some devices (eg newer pocketbook) we can force HW rotation on the fly (before each update)
+    -- The value here is table of 4 elements mapping the sensible linux constants to whatever
+    -- nonsense the device actually has. Canonically it should return { 0, 1, 2, 3 } if the device
+    -- matches <linux/fb.h> FB_ROTATE_* constants.
+    -- See https://github.com/koreader/koreader-base/blob/master/ffi/framebuffer.lua for full template
+    -- of the table expected.
+    usingForcedRotation = function() return nil end,
     -- needs full screen refresh when resumed from screensaver?
     needsScreenRefreshAfterResume = yes,
 
-    -- set to yes on devices whose framebuffer reports 8bit per pixel,
-    -- but is actually a color eInk screen with 24bit per pixel.
-    -- The refresh is still based on bytes. (This solves issue #4193.)
-    has3BytesWideFrameBuffer = no,
-
     -- set to yes on devices that support over-the-air incremental updates.
     hasOTAUpdates = no,
+
+    -- set to yes on devices that have a non-blocking isWifiOn implementation
+    -- (c.f., https://github.com/koreader/koreader/pull/5211#issuecomment-521304139)
+    hasFastWifiStatusQuery = no,
 
     canOpenLink = no,
     openLink = no,
@@ -130,6 +136,13 @@ function Device:init()
     assert(self ~= nil)
     if not self.screen then
         error("screen/framebuffer must be implemented")
+    end
+
+    -- opt-out of CBB if the device is broken with it
+    if not self.canUseCBB() then
+        local bb = require("ffi/blitbuffer")
+        bb.has_cblitbuffer = false
+        bb:enableCBB(false)
     end
 
     if self.hasMultitouch == nil then
@@ -306,10 +319,18 @@ function Device:info()
     return self.model
 end
 
+-- Hardware specific method to track opened/closed books (nil on book close)
+function Device:notifyBookState(title, document) end
+
 -- Hardware specific method for UI to signal allowed/disallowed standby.
 -- The device is allowed to enter standby only from within waitForEvents,
 -- and only if allowed state is true at the time of waitForEvents() invocation.
 function Device:setAutoStandby(isAllowed) end
+
+-- Hardware specific method to set OS-level file associations to launch koreader. Expects boolean map.
+function Device:associateFileExtensions(exts)
+    logger.dbg("Device:associateFileExtensions():", util.tableSize(exts), "entries, OS handler missing")
+end
 
 -- Hardware specific method to handle usb plug in event
 function Device:usbPlugIn() end
@@ -383,8 +404,8 @@ end
 prepare for application shutdown
 --]]
 function Device:exit()
-    require("ffi/input"):closeAll()
     self.screen:close()
+    require("ffi/input"):closeAll()
 end
 
 function Device:retrieveNetworkInfo()
@@ -401,7 +422,7 @@ function Device:retrieveNetworkInfo()
         std_out = io.popen('2>/dev/null iwconfig | grep ESSID | cut -d\\" -f2')
         if std_out then
             local ssid = std_out:read("*all")
-            result = result .. "SSID: " .. ssid:gsub("(.-)%s*$", "%1") .. "\n"
+            result = result .. "SSID: " .. util.trim(ssid) .. "\n"
             std_out:close()
         end
         if os.execute("ip r | grep -q default") == 0 then

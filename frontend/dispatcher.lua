@@ -66,13 +66,13 @@ local settingsList = {
     toggle_rotation = { category="none", event="SwapRotation", title=_("Toggle orientation"), device=true,},
     invert_rotation = { category="none", event="InvertRotation", title=_("Invert rotation"), device=true,},
     iterate_rotation = { category="none", event="IterateRotation", title=_("Rotate by 90° CW"), device=true, separator=true,},
-    set_refresh_rate = { category="absolutenumber", event="SetBothRefreshRates", min=-1, max=200, title=_("Flash every %1 pages (always)"), device=true,},
-    set_day_refresh_rate = { category="absolutenumber", event="SetDayRefreshRate", min=-1, max=200, title=_("Flash every %1 pages (not in night mode)"), device=true,},
-    set_night_refresh_rate = { category="absolutenumber", event="SetNightRefreshRate", min=-1, max=200, title=_("Flash every %1 pages (in night mode)"), device=true,},
-    set_flash_on_chapter_boundaries = { category="string", event="SetFlashOnChapterBoundaries", title=_("Always flash on chapter boundaries"), device=true, args={true, false}, toggle={_("On"), _("Off")},},
-    toggle_flash_on_chapter_boundaries = { category="none", event="ToggleFlashOnChapterBoundaries", title=_("Toggle flashing on chapter boundaries"), device=true,},
-    set_no_flash_on_second_chapter_page = { category="string", event="SetNoFlashOnSecondChapterPage", title=_("Never flash on chapter's 2nd page"), device=true, args={true, false}, toggle={_("On"), _("Off")},},
-    toggle_no_flash_on_second_chapter_page = { category="none", event="ToggleNoFlashOnSecondChapterPage", title=_("Toggle flashing on chapter's 2nd page"), device=true, separator=true,},
+    set_refresh_rate = { category="absolutenumber", event="SetBothRefreshRates", min=-1, max=200, title=_("Flash every %1 pages (always)"), device=true, condition=Device:hasEinkScreen(),},
+    set_day_refresh_rate = { category="absolutenumber", event="SetDayRefreshRate", min=-1, max=200, title=_("Flash every %1 pages (not in night mode)"), device=true, condition=Device:hasEinkScreen(),},
+    set_night_refresh_rate = { category="absolutenumber", event="SetNightRefreshRate", min=-1, max=200, title=_("Flash every %1 pages (in night mode)"), device=true, condition=Device:hasEinkScreen(),},
+    set_flash_on_chapter_boundaries = { category="string", event="SetFlashOnChapterBoundaries", title=_("Always flash on chapter boundaries"), device=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("On"), _("Off")},},
+    toggle_flash_on_chapter_boundaries = { category="none", event="ToggleFlashOnChapterBoundaries", title=_("Toggle flashing on chapter boundaries"), device=true, condition=Device:hasEinkScreen(),},
+    set_no_flash_on_second_chapter_page = { category="string", event="SetNoFlashOnSecondChapterPage", title=_("Never flash on chapter's 2nd page"), device=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("On"), _("Off")},},
+    toggle_no_flash_on_second_chapter_page = { category="none", event="ToggleNoFlashOnSecondChapterPage", title=_("Toggle flashing on chapter's 2nd page"), device=true, condition=Device:hasEinkScreen(), separator=true,},
     wallabag_download = { category="none", event="SynchronizeWallabag", title=_("Wallabag retrieval"), device=true,},
     calibre_search = { category="none", event="CalibreSearch", title=_("Search in calibre metadata"), device=true,},
     calibre_browse_tags = { category="none", event="CalibreBrowseTags", title=_("Browse all calibre tags"), device=true,},
@@ -113,10 +113,11 @@ local settingsList = {
     toggle_bookmark = { category="none", event="ToggleBookmark", title=_("Toggle bookmark"), rolling=true, paging=true,},
     toggle_inverse_reading_order = { category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), rolling=true, paging=true,},
     cycle_highlight_action = { category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), rolling=true, paging=true,},
-    cycle_highlight_style = { category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), rolling=true, paging=true, separator=true,},
+    cycle_highlight_style = { category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), rolling=true, paging=true,},
     kosync_push_progress = { category="none", event="KOSyncPushProgress", title=_("Push progress from this device"), rolling=true, paging=true,},
     kosync_pull_progress = { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), rolling=true, paging=true, separator=true,},
     page_jmp = { category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Go %1 pages"), rolling=true, paging=true,},
+    panel_zoom_toggle = { category="none", event="TogglePanelZoomSetting", title=_("Toggle panel zoom"), paging=true, separator=true,},
 
     -- rolling reader settings
     increase_font = { category="incrementalnumber", event="IncreaseFontSize", min=1, max=255, title=_("Increase font size by %1"), rolling=true,},
@@ -141,7 +142,7 @@ local settingsList = {
     line_spacing = {category="absolutenumber", rolling=true, separator=true,},
     font_size = {category="absolutenumber", title=_("Set font size to %1"), rolling=true},
     font_weight = {category="string", rolling=true},
-    --font_gamma = {category="string", rolling=true},
+    font_gamma = {category="string", rolling=true},
     font_hinting = {category="string", rolling=true},
     font_kerning = {category="string", rolling=true, separator=true,},
     status_line = {category="string", rolling=true},
@@ -250,7 +251,7 @@ local dispatcher_menu_order = {
     "increase_font",
     "decrease_font",
     "font_size",
-    --"font_gamma",
+    "font_gamma",
     "font_weight",
     "font_hinting",
     "font_kerning",
@@ -262,6 +263,7 @@ local dispatcher_menu_order = {
     "zoom",
     "cycle_highlight_action",
     "cycle_highlight_style",
+    "panel_zoom_toggle",
 
     "kosync_push_progress",
     "kosync_pull_progress",
@@ -289,6 +291,7 @@ local dispatcher_menu_order = {
     add settings from CreOptions / KoptOptions
 --]]--
 function Dispatcher:init()
+    if Dispatcher.initialized then return end
     local parseoptions = function(base, i)
         for y=1,#base[i].options do
             local option = base[i].options[y]
@@ -514,7 +517,7 @@ example usage:
     Dispatcher.addSubMenu(self, sub_items, self.data, "profile1")
 --]]--
 function Dispatcher:addSubMenu(caller, menu, location, settings)
-    if not Dispatcher.initialized then Dispatcher:init() end
+    Dispatcher:init()
     table.insert(menu, {
         text = _("Nothing"),
         separator = true,

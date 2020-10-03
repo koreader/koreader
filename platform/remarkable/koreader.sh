@@ -96,6 +96,10 @@ esac
 
 # The actual swap is done in a function, because we can disable it in the Developer settings, and we want to honor it on restart.
 ko_do_fbdepth() {
+    if [ -n "${KO_DONT_SET_DEPTH}" ]; then
+        return
+    fi
+
     # Check if the swap has been disabled...
     if grep -q '\["dev_startup_no_fbdepth"\] = true' 'settings.reader.lua' 2>/dev/null; then
         # Swap back to the original bitdepth (in case this was a restart)
@@ -108,7 +112,7 @@ ko_do_fbdepth() {
         # Swap to 8bpp if things look sane
         if [ -n "${ORIG_FB_BPP}" ]; then
             echo "Switching fb bitdepth to 8bpp & rotation to Portrait" >>crash.log 2>&1
-            ./fbdepth -d 8 -r -1 >>crash.log 2>&1
+            ./fbdepth -d 8 -r 1 >>crash.log 2>&1
         fi
     fi
 }

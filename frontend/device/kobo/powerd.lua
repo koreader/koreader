@@ -2,6 +2,7 @@ local BasePowerD = require("device/generic/powerd")
 local NickelConf = require("device/kobo/nickel_conf")
 local PluginShare = require("pluginshare")
 local SysfsLight = require ("device/sysfs_light")
+local ffiUtil = require("ffi/util")
 
 local batt_state_folder =
         "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/"
@@ -303,6 +304,11 @@ function KoboPowerD:calculateAutoWarmth()
                              end
                          end,
         })
+        if package.loaded["ui/uimanager"] ~= nil then
+            local Event = require("ui/event")
+            local UIManager = require("ui/uimanager")
+            UIManager:broadcastEvent(Event:new("BackgroundJobsUpdated"))
+        end
         self.autowarmth_job_running = true
     end
 end
@@ -319,34 +325,27 @@ function KoboPowerD:turnOffFrontlightHW()
     if not self:isFrontlightOnHW() then
         return
     end
-    local util = require("ffi/util")
-    util.runInSubProcess(function()
+    ffiUtil.runInSubProcess(function()
         for i = 1,5 do
-            self:_setIntensity(math.floor(self.fl_intensity - ((self.fl_intensity / 5) * i)))
+            self:setIntensityHW(math.floor(self.fl_intensity - ((self.fl_intensity / 5) * i)))
             --- @note: Newer devices appear to block slightly longer on FL ioctls/sysfs, so only sleep on older devices,
             ---        otherwise we get a jump and not a ramp ;).
             if not self.device:hasNaturalLight() then
                 if (i < 5) then
-                    util.usleep(35 * 1000)
+                    ffiUtil.usleep(35 * 1000)
                 end
             end
         end
     end, false, true)
-    -- NOTE: This is essentially what _setIntensity does, except we don't actually touch the FL,
+    -- NOTE: This is essentially what setIntensityHW does, except we don't actually touch the FL,
     --       we only sync the state of the main process with the final state of what we're doing in the forks.
     -- And update hw_intensity in our actual process ;).
     self.hw_intensity = self.fl_min
-    -- NOTE: And don't forget to update sysfs_light, too, as a real _setIntensity would via setBrightness
+    -- NOTE: And don't forget to update sysfs_light, too, as a real setIntensityHW would via setBrightness
     if self.fl then
         self.fl.current_brightness = self.fl_min
     end
     self:_decideFrontlightState()
-    -- And let the footer know of the change
-    if package.loaded["ui/uimanager"] ~= nil then
-        local Event = require("ui/event")
-        local UIManager = require("ui/uimanager")
-        UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
-    end
 end
 
 function KoboPowerD:turnOnFrontlightHW()
@@ -359,34 +358,27 @@ function KoboPowerD:turnOnFrontlightHW()
     if self:isFrontlightOnHW() then
         return
     end
-    local util = require("ffi/util")
-    util.runInSubProcess(function()
+    ffiUtil.runInSubProcess(function()
         for i = 1,5 do
-            self:_setIntensity(math.ceil(self.fl_min + ((self.fl_intensity / 5) * i)))
+            self:setIntensityHW(math.ceil(self.fl_min + ((self.fl_intensity / 5) * i)))
             --- @note: Newer devices appear to block slightly longer on FL ioctls/sysfs, so only sleep on older devices,
             ---        otherwise we get a jump and not a ramp ;).
             if not self.device:hasNaturalLight() then
                 if (i < 5) then
-                    util.usleep(35 * 1000)
+                    ffiUtil.usleep(35 * 1000)
                 end
             end
         end
     end, false, true)
-    -- NOTE: This is essentially what _setIntensity does, except we don't actually touch the FL,
+    -- NOTE: This is essentially what setIntensityHW does, except we don't actually touch the FL,
     --       we only sync the state of the main process with the final state of what we're doing in the forks.
     -- And update hw_intensity in our actual process ;).
     self.hw_intensity = self.fl_intensity
-    -- NOTE: And don't forget to update sysfs_light, too, as a real _setIntensity would via setBrightness
+    -- NOTE: And don't forget to update sysfs_light, too, as a real setIntensityHW would via setBrightness
     if self.fl then
         self.fl.current_brightness = self.fl_intensity
     end
     self:_decideFrontlightState()
-    -- And let the footer know of the change
-    if package.loaded["ui/uimanager"] ~= nil then
-        local Event = require("ui/event")
-        local UIManager = require("ui/uimanager")
-        UIManager:broadcastEvent(Event:new("FrontlightStateChanged"))
-    end
 end
 
 -- Turn off front light before suspend.

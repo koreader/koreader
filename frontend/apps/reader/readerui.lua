@@ -59,7 +59,7 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
-local T = require("ffi/util").template
+local T = ffiUtil.template
 
 local ReaderUI = InputContainer:new{
     name = "ReaderUI",
@@ -583,6 +583,7 @@ function ReaderUI:doShowReader(file, provider)
         local _, filename = util.splitFilePathName(file)
         Screen:setWindowTitle(filename)
     end
+    Device:notifyBookState(title, document)
 
     UIManager:show(reader)
     _running_instance = reader
@@ -692,6 +693,7 @@ end
 
 function ReaderUI:onClose(full_refresh)
     logger.dbg("closing reader")
+    Device:notifyBookState(nil, nil)
     if full_refresh == nil then
         full_refresh = true
     end

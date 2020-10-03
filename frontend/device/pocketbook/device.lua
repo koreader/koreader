@@ -17,6 +17,8 @@ _G.POCKETBOOK_FFI = true
 local function yes() return true end
 local function no() return false end
 
+local ext_path = "/mnt/ext1/system/config/extensions.cfg"
+local app_name = "koreader.app"
 
 local PocketBook = Generic:new{
     model = "PocketBook",
@@ -27,37 +29,65 @@ local PocketBook = Generic:new{
     hasKeys = yes,
     hasFrontlight = yes,
     canSuspend = no,
-    hasExitOptions = no,
-    canRestart = no,
+    canReboot = yes,
+    canPowerOff = yes,
     needsScreenRefreshAfterResume = no,
     home_dir = "/mnt/ext1",
 
     -- all devices that have warmth lights use inkview api
     hasNaturalLightApi = yes,
+
+    -- NOTE: Apparently, HW inversion is a pipedream on PB (#6669), ... well, on sunxi chipsets anyway.
+    -- For which we now probe in fbinfoOverride() and tweak the flag to "no".
+    -- NTX chipsets *should* work (PB631), but in case it doesn't on your device, set this to "no" in here.
+    canHWInvert = yes,
+
+    -- Private per-model kludges
+    _fb_init = function() end,
+    _model_init = function() end,
 }
 
--- Make sure the C BB cannot be used on devices with a 24bpp fb
-function PocketBook:blacklistCBB()
-    -- As well as on those than can't do HW inversion, as otherwise NightMode would be ineffective.
-    --- @fixme Either relax the HWInvert check, or actually enable HWInvert on PB if it's safe and it works,
-    --        as, currently, no PB device is marked as canHWInvert, so, the C BB is essentially *always* blacklisted.
-    if not self:canUseCBB() or not self:canHWInvert() then
-        logger.info("Blacklisting the C BB on this device")
-        if ffi.os == "Windows" then
-            C._putenv("KO_NO_CBB=true")
-        else
-            C.setenv("KO_NO_CBB", "true", 1)
-        end
-        -- Enforce the global setting, too, so the Dev menu is accurate...
-        G_reader_settings:saveSetting("dev_no_c_blitter", true)
+-- Helper to try load externally signalled book whenever we're brought to foreground
+local function tryOpenBook()
+    local path = os.getenv("KO_PATH_OPEN_BOOK")
+    if not path then return end
+    local fi = io.open(path, "r")
+    if not fi then return end
+    local fn = fi:read("*line")
+    fi:close()
+    os.remove(path)
+    if fn and util.pathExists(fn) then
+        require("apps/reader/readerui"):showReader(fn)
     end
 end
 
-function PocketBook:init()
-    -- Blacklist the C BB before the first BB require...
-    self:blacklistCBB()
+local function isB288(fb)
+    -- No real header exists for this, see https://github.com/koreader/koreader-base/issues/1202/
+    local B288_POLL_FOR_UPDATE_COMPLETE = 0x80044655
+    -- On NXT that has a real MXC driver, it returns -EINVAL
+    return C.ioctl(fb.fd, B288_POLL_FOR_UPDATE_COMPLETE, ffi.new("uint32_t[1]")) == 0
+end
 
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
+function PocketBook:init()
+    self.screen = require("ffi/framebuffer_mxcfb"):new {
+        device = self,
+        debug = logger.dbg,
+        fbinfoOverride = function(fb, finfo, vinfo)
+            -- Device model caps *can* set both to indicate that either will work to get correct orientation.
+            -- But for FB backend, the flags are mutually exclusive, so we nuke one of em later.
+            fb.is_always_portrait = self.isAlwaysPortrait()
+            fb.forced_rotation = self.usingForcedRotation()
+            -- Tweak combination of alwaysPortrait/hwRot/hwInvert flags depending on probed HW.
+            if isB288(fb) then
+                logger.dbg("mxcfb: Detected B288 chipset, disabling HW rotation and invert")
+                fb.forced_rotation = nil
+                self.canHWInvert = no
+            elseif fb.forced_rotation then
+                fb.is_always_portrait = false
+            end
+            return self._fb_init(fb, finfo, vinfo)
+        end,
+    }
     self.powerd = require("device/pocketbook/powerd"):new{device = self}
 
     -- Whenever we lose focus, but also get suspended for real (we can't reliably tell atm),
@@ -87,7 +117,8 @@ function PocketBook:init()
                     return "Suspend"
                 end
             elseif ev.code == C.EVT_FOREGROUND or ev.code == C.EVT_SHOW then
-                ui:setDirty('all', 'partial')
+                tryOpenBook()
+                ui:setDirty('all', 'ui')
                 if quasiSuspended then
                     quasiSuspended = false
                     return "Resume"
@@ -124,15 +155,22 @@ function PocketBook:init()
         end
     end)
 
-    -- fix rotation for Color Lux device
-    if PocketBook:getDeviceModel() == "PocketBook Color Lux" then
-        self.screen.blitbuffer_rotation_mode = self.screen.ORIENTATION_PORTRAIT
-        self.screen.native_rotation_mode = self.screen.ORIENTATION_PORTRAIT
-    end
-
+    self._model_init()
     self.input.open()
     self:setAutoStandby(true)
     Generic.init(self)
+end
+
+function PocketBook:notifyBookState(title, document)
+    local fn = document and document.file or nil
+    logger.dbg("Notify book state", title or "[nil]", fn or "[nil]")
+    os.remove("/tmp/.current")
+    if fn then
+        local fo = io.open("/tmp/.current", "w+")
+        fo:write(fn)
+        fo:close()
+    end
+    inkview.SetSubtaskInfo(inkview.GetCurrentTask(), 0, title and (title .. " - koreader") or "koreader", fn)
 end
 
 function PocketBook:setDateTime(year, month, day, hour, min, sec)
@@ -154,8 +192,54 @@ function PocketBook:setDateTime(year, month, day, hour, min, sec)
     end
 end
 
+-- Predicate, so no self
+function PocketBook.canAssociateFileExtensions()
+    local f = io.open(ext_path, "r")
+    if not f then return true end
+    local l = f:read("*line")
+    f:close()
+    if l and not l:match("^#koreader") then
+        return false
+    end
+    return true
+end
+
+function PocketBook:associateFileExtensions(assoc)
+    -- First load the system-wide table, from which we'll snoop file types and icons
+    local info = {}
+    for l in io.lines("/ebrmain/config/extensions.cfg") do
+        local m = { l:match("^([^:]*):([^:]*):([^:]*):([^:]*):(.*)") }
+        info[m[1]] = m
+    end
+    local res = {"#koreader"}
+    for k,v in pairs(assoc) do
+        local t = info[k]
+        if t then
+            -- A system entry exists, so just change app, and reuse the rest
+            t[4] = app_name .. "," .. t[4]
+        else
+            -- Doesn't exist, so hallucinate up something
+            -- TBD: We have document opener in 'v', maybe consult mime in there?
+            local bn = k:match("%a+"):upper()
+            t = { k, '@' .. bn .. '_file', "1", app_name, "ICON_" .. bn }
+        end
+        table.insert(res, table.concat(t, ":"))
+    end
+    local out = io.open(ext_path, "w+")
+    out:write(table.concat(res, "\n"))
+    out:close()
+end
+
 function PocketBook:setAutoStandby(isAllowed)
     inkview.iv_sleepmode(isAllowed and 1 or 0)
+end
+
+function PocketBook:powerOff()
+    inkview.PowerOff()
+end
+
+function PocketBook:reboot()
+    inkview.iv_ipc_request(C.MSG_REBOOT, 1, nil, 0, 0)
 end
 
 function PocketBook:initNetworkManager(NetworkMgr)
@@ -187,6 +271,14 @@ end
 function PocketBook:getDeviceModel()
     return ffi.string(inkview.GetDeviceModel())
 end
+
+-- Pocketbook HW rotation modes start from landsape, CCW
+local function landscape_ccw() return {
+    1, 0, 3, 2,         -- PORTRAIT, LANDSCAPE, PORTRAIT_180, LANDSCAPE_180
+    every_paint = true, -- inkview will try to steal the rot mode frequently
+    restore = false,    -- no need, because everything using inkview forces 3 on focus
+    default = nil,      -- usually 3
+} end
 
 -- PocketBook Mini (515)
 local PocketBook515 = PocketBook:new{
@@ -301,6 +393,7 @@ local PocketBook628 = PocketBook:new{
     model = "PBTouchLux5",
     display_dpi = 212,
     isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
 
@@ -323,6 +416,7 @@ local PocketBook632 = PocketBook:new{
     model = "PBTouchHDPlus",
     display_dpi = 300,
     isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
 
@@ -333,6 +427,7 @@ local PocketBook633 = PocketBook:new{
     hasColorScreen = yes,
     canUseCBB = no, -- 24bpp
     isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
 }
 
 -- PocketBook Aqua (640)
@@ -358,6 +453,7 @@ local PocketBook740 = PocketBook:new{
     model = "PBInkPad3",
     display_dpi = 300,
     isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
 
@@ -366,6 +462,7 @@ local PocketBook740_2 = PocketBook:new{
     model = "PBInkPad3Pro",
     display_dpi = 300,
     isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
 
@@ -374,9 +471,18 @@ local PocketBookColorLux = PocketBook:new{
     model = "PBColorLux",
     display_dpi = 125,
     hasColorScreen = yes,
-    has3BytesWideFrameBuffer = yes,
     canUseCBB = no, -- 24bpp
 }
+function PocketBookColorLux:_model_init()
+    self.screen.blitbuffer_rotation_mode = self.screen.ORIENTATION_PORTRAIT
+    self.screen.native_rotation_mode = self.screen.ORIENTATION_PORTRAIT
+end
+function PocketBookColorLux._fb_init(fb,finfo,vinfo)
+    -- Pocketbook Color Lux reports bits_per_pixel = 8, but actually uses an RGB24 framebuffer
+    vinfo.bits_per_pixel = 24
+    vinfo.xres = vinfo.xres / 3
+    fb.refresh_pixel_size = 3
+end
 
 -- PocketBook InkPad / InkPad 2 (840)
 local PocketBook840 = PocketBook:new{
@@ -389,6 +495,7 @@ local PocketBook1040 = PocketBook:new{
     model = "PB1040",
     display_dpi = 227,
     isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
 }
 

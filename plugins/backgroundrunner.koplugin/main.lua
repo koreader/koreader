@@ -171,7 +171,6 @@ function BackgroundRunner:_execute()
         local round = 0
         while #self.jobs > 0 do
             local job = table.remove(self.jobs, 1)
-            logger.dbg("BackgroundRunner: run job ", job, " @ ", os.time())
             if job.insert_sec == nil then
                 -- Jobs are first inserted to jobs table from external users. So
                 -- they may not have insert_sec field.
@@ -206,6 +205,7 @@ function BackgroundRunner:_execute()
             end
 
             if should_execute then
+                logger.dbg("BackgroundRunner: run job ", job, " @ ", os.time())
                 assert(not should_ignore)
                 self:_executeJob(job)
                 break
@@ -220,7 +220,11 @@ function BackgroundRunner:_execute()
 
     self.running = false
     if PluginShare.stopBackgroundRunner == nil then
-        self:_schedule()
+        if #self.jobs == 0 and not CommandRunner:pending() then
+            logger.dbg("BackgroundRunnerWidget: no job, stop running @ ", os.time())
+        else
+            self:_schedule()
+        end
     else
         logger.dbg("BackgroundRunnerWidget: stop running @ ", os.time())
     end
@@ -229,9 +233,13 @@ end
 function BackgroundRunner:_schedule()
     assert(self ~= nil)
     if self.running == false then
-        logger.dbg("BackgroundRunnerWidget: start running @ ", os.time())
-        self.running = true
-        UIManager:scheduleIn(2, function() self:_execute() end)
+        if #self.jobs == 0 and not CommandRunner:pending() then
+            logger.dbg("BackgroundRunnerWidget: no job, not running @ ", os.time())
+        else
+            logger.dbg("BackgroundRunnerWidget: start running @ ", os.time())
+            self.running = true
+            UIManager:scheduleIn(2, function() self:_execute() end)
+        end
     else
         logger.dbg("BackgroundRunnerWidget: a schedule is pending @ ",
                    os.time())
@@ -258,6 +266,12 @@ end
 
 function BackgroundRunnerWidget:onResume()
     logger.dbg("BackgroundRunnerWidget:onResume() @ ", os.time())
+    PluginShare.stopBackgroundRunner = nil
+    BackgroundRunner:_schedule()
+end
+
+function BackgroundRunnerWidget:onBackgroundJobsUpdated()
+    logger.dbg("BackgroundRunnerWidget:onBackgroundJobsUpdated() @ ", os.time())
     PluginShare.stopBackgroundRunner = nil
     BackgroundRunner:_schedule()
 end

@@ -105,6 +105,10 @@ function PdfDocument:getPageTextBoxes(pageno)
     return text
 end
 
+function PdfDocument:getPanelFromPage(pageno, pos)
+    return self.koptinterface:getPanelFromPage(self, pageno, pos)
+end
+
 function PdfDocument:getWordFromPosition(spos)
     return self.koptinterface:getWordFromPosition(self, spos)
 end
@@ -294,7 +298,7 @@ function PdfDocument:register(registry)
     registry:addProvider("html", "text/html", self, 90)
     registry:addProvider("pdf", "application/pdf", self, 100)
     registry:addProvider("tar", "application/x-tar", self, 10)
-    registry:addProvider("xhtml", "application/xhtml+xml", self, 100)
+    registry:addProvider("xhtml", "application/xhtml+xml", self, 90)
     registry:addProvider("xml", "application/xml", self, 10)
     registry:addProvider("xps", "application/oxps", self, 100)
     registry:addProvider("zip", "application/zip", self, 20)

@@ -1,3 +1,4 @@
+local FFIUtil = require("ffi/util")
 local Generic = require("device/generic/device")
 local A, android = pcall(require, "android")  -- luacheck: ignore
 local Geom = require("ui/geometry")
@@ -7,7 +8,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
-local T = require("ffi/util").template
+local T = FFIUtil.template
 
 local function yes() return true end
 local function no() return false end
@@ -53,8 +54,9 @@ local external = require("device/thirdparty"):new{
         { "Alpus", "Alpus", false, "com.ngcomputing.fora.android", "search" },
         { "ColorDict", "ColorDict", false, "com.socialnmobile.colordict", "colordict" },
         { "Eudic", "Eudic", false, "com.eusoft.eudic", "send" },
+        { "EudicPlay", "Eudic (Google Play)", false, "com.qianyan.eudic", "send" },
         { "Fora", "Fora Dict", false, "com.ngc.fora", "search" },
-        { "ForaPro", "Fora Pro", false, "com.ngc.fora.android", "search" },
+        { "ForaPro", "Fora Dict Pro", false, "com.ngc.fora.android", "search" },
         { "GoldenFree", "GoldenDict Free", false, "mobi.goldendict.android.free", "send" },
         { "GoldenPro", "GoldenDict Pro", false, "mobi.goldendict.android", "send" },
         { "Kiwix", "Kiwix", false, "org.kiwix.kiwixmobile", "text" },
@@ -84,6 +86,7 @@ local Device = Generic:new{
     isHapticFeedbackEnabled = yes,
     hasClipboard = yes,
     hasOTAUpdates = canUpdateApk,
+    hasFastWifiStatusQuery = yes,
     canOpenLink = yes,
     openLink = function(self, link)
         if not link or type(link) ~= "string" then return end
@@ -386,12 +389,11 @@ local function processEvents()
 end
 
 function Device:showLightDialog()
-    local usleep = require("ffi/util").usleep
     local title = android.isEink() and _("Frontlight settings") or _("Light settings")
     android.lights.showDialog(title, _("Brightness"), _("Warmth"), _("OK"), _("Cancel"))
     repeat
         processEvents() -- swallow all events, including the last one
-        usleep(25000) -- sleep 25ms before next check if dialog was quit
+        FFIUtil.usleep(25000) -- sleep 25ms before next check if dialog was quit
     until (android.lights.dialogState() ~= C.ALIGHTS_DIALOG_OPENED)
 
     local GestureDetector = require("device/gesturedetector")

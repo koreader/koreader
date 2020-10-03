@@ -7,7 +7,7 @@ local Language = {
         C = "English",
         en = "English",
         ca = "Catalá",
-        cs_CZ = "Čeština",
+        cs = "Čeština",
         de = "Deutsch",
         eo = "Esperanto",
         es = "Español",
@@ -114,7 +114,7 @@ function Language:getLangMenuTable()
             sub_item_table = {
                 self:genLanguageSubItem("C"),
                 self:genLanguageSubItem("ca"),
-                self:genLanguageSubItem("cs_CZ"),
+                self:genLanguageSubItem("cs"),
                 self:genLanguageSubItem("de"),
                 self:genLanguageSubItem("eo"),
                 self:genLanguageSubItem("es"),

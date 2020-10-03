@@ -21,27 +21,28 @@ end
 
 function AndroidPowerD:setIntensityHW(intensity)
     -- if frontlight switch was toggled of, turn it on
-    android:enableFrontlightSwitch()
+    android.enableFrontlightSwitch()
 
     self.fl_intensity = intensity
     android.setScreenBrightness(math.floor(intensity * self.bright_diff / self.fl_max))
 end
 
 function AndroidPowerD:init()
-    self.bright_diff = android:getScreenMaxBrightness() - android:getScreenMinBrightness()
+    local min_bright = android.getScreenMinBrightness()
+    self.bright_diff = android.getScreenMaxBrightness() - min_bright
 
     -- if necessary scale fl_min:
     --    do not use fl_min==0 if getScreenMinBrightness!=0,
     --    because intenstiy==0 would mean to use system intensity
-    if android:getScreenMinBrightness() ~= self.fl_min then
-        self.fl_min = math.ceil(android:getScreenMinBrightness() * self.bright_diff / self.fl_max)
+    if min_bright ~= self.fl_min then
+        self.fl_min = math.ceil(min_bright * self.bright_diff / self.fl_max)
     end
 
     if self.device:hasNaturalLight() then
-        self.warm_diff = android:getScreenMaxWarmth() - android:getScreenMinWarmth()
+        self.fl_warmth_min = android.getScreenMinWarmth()
+        self.fl_warmth_max = android.getScreenMaxWarmth()
+        self.warm_diff = self.fl_warmth_max - self.fl_warmth_min
         self.fl_warmth = self:getWarmth()
-        self.fl_warmth_min = android:getScreenMinWarmth()
-        self.fl_warmth_max = android:getScreenMaxWarmth()
     end
 end
 

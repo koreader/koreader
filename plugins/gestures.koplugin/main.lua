@@ -14,7 +14,7 @@ local LuaSettings = require("luasettings")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local util = require("util")
-local T = require("ffi/util").template
+local T = FFIUtil.template
 local _ = require("gettext")
 local logger = require("logger")
 
@@ -175,6 +175,7 @@ function Gestures:init()
     end
 
     self.ui.menu:registerToMainMenu(self)
+    Dispatcher:init()
     self:initGesture()
 end
 

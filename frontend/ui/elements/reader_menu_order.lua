@@ -37,6 +37,7 @@ local order = {
         "speed_reading_module_perception_expander",
         "----------------------------",
         "highlight_options",
+        "panel_zoom_options"
     },
     setting = {
         -- common settings
@@ -61,11 +62,13 @@ local order = {
         "keyboard_layout",
         "time",
         "battery",
+        "autostandby",
         "autosuspend",
         "autoshutdown",
         "ignore_sleepcover",
         "ignore_open_sleepcover",
         "mass_storage_settings",
+        "file_ext_assoc",
         "screenshot",
     },
     navigation = {

@@ -12,40 +12,15 @@ local C_ = _.pgettext
 local T = require("ffi/util").template
 local Screen = Device.screen
 
--- Mostly for migrating hyph settings, and to know the dict
--- left and right hyph min values (2/2 when not specified)
+-- This is used to migrate old hyph settings, and to show the currently
+-- used hyph dict language in the hyphenation menu.
+-- It will be completed with info from the LANGUAGES table below.
 local HYPH_DICT_NAME_TO_LANG_NAME_TAG = {
     ["@none"]                = { "@none",           "en" },
     ["@softhyphens"]         = { "@softhyphens",    "en" },
     ["@algorithm"]           = { "@algorithm",      "en" },
-    ["Bulgarian.pattern"]    = { _("Bulgarian"),    "bg" },
-    ["Catalan.pattern"]      = { _("Catalan"),      "ca" },
-    ["Czech.pattern"]        = { _("Czech"),        "cs" },
-    ["Danish.pattern"]       = { _("Danish"),       "da" },
-    ["Dutch.pattern"]        = { _("Dutch"),        "nl" },
-    ["English_GB.pattern"]   = { _("English (UK)"), "en-GB" },
-    ["English_US.pattern"]   = { _("English (US)"), "en-US" },
-    ["Finnish.pattern"]      = { _("Finnish"),      "fi" },
-    ["French.pattern"]       = { _("French"),       "fr", 2, 1 },
-    ["Galician.pattern"]     = { _("Galician"),     "gl" },
-    ["German.pattern"]       = { _("German"),       "de" },
-    ["Greek.pattern"]        = { _("Greek"),        "el" },
-    ["Hungarian.pattern"]    = { _("Hungarian"),    "hu" },
-    ["Icelandic.pattern"]    = { _("Icelandic"),    "is" },
-    ["Irish.pattern"]        = { _("Irish"),        "ga" },
-    ["Italian.pattern"]      = { _("Italian"),      "it" },
-    ["Norwegian.pattern"]    = { _("Norwegian"),    "no" },
-    ["Polish.pattern"]       = { _("Polish"),       "pl" },
-    ["Portuguese.pattern"]   = { _("Portuguese"),   "pt" },
+    -- Old filenames with typos, before they were renamed
     ["Roman.pattern"]        = { _("Romanian"),     "ro" },
-    ["Russian_EnGB.pattern"] = { _("Russian + English (UK)"), "ru-GB" },
-    ["Russian_EnUS.pattern"] = { _("Russian + English (US)"), "ru-US" },
-    ["Russian.pattern"]      = { _("Russian"),      "ru" },
-    ["Slovak.pattern"]       = { _("Slovak"),       "sk" },
-    ["Slovenian.pattern"]    = { _("Slovenian"),    "sl" },
-    ["Spanish.pattern"]      = { _("Spanish"),      "es" },
-    ["Swedish.pattern"]      = { _("Swedish"),      "sv" },
-    ["Turkish.pattern"]      = { _("Turkish"),      "tr" },
     ["Ukrain.pattern"]       = { _("Ukrainian"),    "uk" },
 }
 
@@ -56,42 +31,64 @@ local HYPH_DICT_NAME_TO_LANG_NAME_TAG = {
 --   H = language specific hyphenation dictionary
 --   b = language specific line breaking rules
 --   B = language specific additional line breaking tweaks
+-- The "hyphenation file name" field is used to
+-- update HYPH_DICT_NAME_TO_LANG_NAME_TAG. If multiple
+-- languages were to use the same hyphenation pattern,
+-- just set it for one language, whose name will be
+-- used in the Hyphenation sub-menu.
 -- Update them when language tweaks and features are added to crengine/src/textlang.cpp
 local LANGUAGES = {
-    -- lang-tag          aliases    features    menu title
-    { "bg",               {"bul"},   "H   ",   _("Bulgarian") },
-    { "ca",               {"cat"},   "H   ",   _("Catalan") },
+    -- lang-tag          aliases    features    menu title                  hyphenation file name
+    { "hy", {"arm", "hye", "hyw"},   "H   ",   _("Armenian"),               "Armenian.pattern" },
+    { "eu",                    {},   "H   ",   _("Basque"),                 "Basque.pattern" },
+    { "bg",               {"bul"},   "H   ",   _("Bulgarian"),              "Bulgarian.pattern" },
+    { "ca",               {"cat"},   "H   ",   _("Catalan"),                "Catalan.pattern" },
     { "zh-CN",  {"zh", "zh-Hans"},   " b  ",   _("Chinese (Simplified)") },
     { "zh-TW",        {"zh-Hant"},   " b  ",   _("Chinese (Traditional)") },
-    { "cs",               {"ces"},   "HB  ",   _("Czech") },
-    { "da",               {"dan"},   "H   ",   _("Danish") },
-    { "nl",               {"nld"},   "H   ",   _("Dutch") },
-    { "en-GB",                 {},   "Hb  ",   _("English (UK)") },
-    { "en-US",      {"en", "eng"},   "Hb  ",   _("English (US)") },
-    { "fi",               {"fin"},   "H   ",   _("Finnish") },
-    { "fr",        {"fra", "fre"},   "Hb  ",   _("French") },
-    { "gl",               {"glg"},   "H   ",   _("Galician") },
-    { "de",               {"deu"},   "Hb  ",   _("German") },
-    { "el",               {"ell"},   "H   ",   _("Greek") },
-    { "hu",               {"hun"},   "H   ",   _("Hungarian") },
-    { "is",               {"isl"},   "H   ",   _("Icelandic") },
-    { "ga",               {"gle"},   "H   ",   _("Irish") },
-    { "it",               {"ita"},   "H   ",   _("Italian") },
+    { "hr",                    {},   "H   ",   _("Croatian"),               "Croatian.pattern" },
+    { "cs",               {"ces"},   "HB  ",   _("Czech"),                  "Czech.pattern" },
+    { "da",               {"dan"},   "H   ",   _("Danish"),                 "Danish.pattern" },
+    { "nl",               {"nld"},   "H   ",   _("Dutch"),                  "Dutch.pattern" },
+    { "en-GB",                 {},   "Hb  ",   _("English (UK)"),           "English_GB.pattern" },
+    { "en-US",      {"en", "eng"},   "Hb  ",   _("English (US)"),           "English_US.pattern" },
+    { "eo",               {"epo"},   "H   ",   _("Esperanto"),              "Esperanto.pattern" },
+    { "et",               {"est"},   "H   ",   _("Estonian"),               "Estonian.pattern" },
+    { "fi",               {"fin"},   "H   ",   _("Finnish"),                "Finnish.pattern" },
+    { "fr",        {"fra", "fre"},   "Hb  ",   _("French"),                 "French.pattern" },
+    { "fur",                   {},   "H   ",   _("Friulian"),               "Friulian.pattern" },
+    { "gl",               {"glg"},   "H   ",   _("Galician"),               "Galician.pattern" },
+    { "ka",                    {},   "H   ",   _("Georgian"),               "Georgian.pattern" },
+    { "de",               {"deu"},   "Hb  ",   _("German"),                 "German.pattern" },
+    { "el",               {"ell"},   "H   ",   _("Greek"),                  "Greek.pattern" },
+    { "hu",               {"hun"},   "H   ",   _("Hungarian"),              "Hungarian.pattern" },
+    { "is",               {"isl"},   "H   ",   _("Icelandic"),              "Icelandic.pattern" },
+    { "ga",               {"gle"},   "H   ",   _("Irish"),                  "Irish.pattern" },
+    { "it",               {"ita"},   "H   ",   _("Italian"),                "Italian.pattern" },
     { "ja",                    {},   "    ",   _("Japanese") },
     { "ko",                    {},   "    ",   _("Korean") },
-    { "no",               {"nor"},   "H   ",   _("Norwegian") },
-    { "pl",               {"pol"},   "HB  ",   _("Polish") },
-    { "pt",               {"por"},   "HB  ",   _("Portuguese") },
-    { "ro",               {"ron"},   "H   ",   _("Romanian") },
-    { "ru-GB",                 {},   "Hb  ",   _("Russian + English (UK)") },
-    { "ru-US",                 {},   "Hb  ",   _("Russian + English (US)") },
-    { "ru",               {"rus"},   "Hb  ",   _("Russian") },
-    { "sk",               {"slk"},   "HB  ",   _("Slovak") },
-    { "sl",               {"slv"},   "H   ",   _("Slovenian") },
-    { "es",               {"spa"},   "Hb  ",   _("Spanish") },
-    { "sv",               {"swe"},   "H   ",   _("Swedish") },
-    { "tr",               {"tur"},   "H   ",   _("Turkish") },
-    { "uk",               {"ukr"},   "H   ",   _("Ukrainian") }
+    { "lv",               {"lav"},   "H   ",   _("Latvian"),                "Latvian.pattern" },
+    { "lt",               {"lit"},   "H   ",   _("Lithuanian"),             "Lithuanian.pattern" },
+    { "mk",                  {""},   "H   ",   _("Macedonian"),             "Macedonian.pattern" },
+    { "no",               {"nor"},   "H   ",   _("Norwegian"),              "Norwegian.pattern" },
+    { "oc",               {"oci"},   "H   ",   _("Occitan"),                "Occitan.pattern" },
+    { "pl",               {"pol"},   "HB  ",   _("Polish"),                 "Polish.pattern" },
+    { "pms",                   {},   "H   ",   _("Piedmontese"),            "Piedmontese.pattern" },
+    { "pt-BR",                 {},   "HB  ",   _("Portuguese (BR)"),        "Portuguese_BR.pattern" },
+    { "pt",               {"por"},   "HB  ",   _("Portuguese"),             "Portuguese.pattern" },
+    { "rm",               {"roh"},   "H   ",   _("Romansh"),                "Romansh.pattern" },
+    { "ro",               {"ron"},   "H   ",   _("Romanian"),               "Romanian.pattern" },
+    { "ru-GB",                 {},   "Hb  ",   _("Russian + English (UK)"), "Russian_EnGB.pattern" },
+    { "ru-US",                 {},   "Hb  ",   _("Russian + English (US)"), "Russian_EnUS.pattern" },
+    { "ru",               {"rus"},   "Hb  ",   _("Russian"),                "Russian.pattern" },
+    { "sr",               {"srp"},   "HB  ",   _("Serbian"),                "Serbian.pattern" },
+    { "sk",               {"slk"},   "HB  ",   _("Slovak"),                 "Slovak.pattern" },
+    { "sl",               {"slv"},   "H   ",   _("Slovenian"),              "Slovenian.pattern" },
+    { "es",               {"spa"},   "Hb  ",   _("Spanish"),                "Spanish.pattern" },
+    { "sv",               {"swe"},   "H   ",   _("Swedish"),                "Swedish.pattern" },
+    { "tr",               {"tur"},   "H   ",   _("Turkish"),                "Turkish.pattern" },
+    { "uk",               {"ukr"},   "H   ",   _("Ukrainian"),              "Ukrainian.pattern" },
+    { "cy",               {"cym"},   "H   ",   _("Welsh"),                  "Welsh.pattern" },
+    { "zu",               {"zul"},   "H   ",   _("Zulu"),                   "Zulu.pattern" },
 }
 
 local DEFAULT_LANG_TAG = "en-US" -- English_US.pattern is loaded by default in crengine
@@ -99,12 +96,15 @@ local DEFAULT_LANG_TAG = "en-US" -- English_US.pattern is loaded by default in c
 local LANG_TAG_TO_LANG_NAME = {}
 local LANG_ALIAS_TO_LANG_TAG = {}
 for __, v in ipairs(LANGUAGES) do
-    local lang_tag, lang_aliases, lang_features, lang_name = unpack(v) -- luacheck: no unused
+    local lang_tag, lang_aliases, lang_features, lang_name, hyph_filename = unpack(v) -- luacheck: no unused
     LANG_TAG_TO_LANG_NAME[lang_tag] = lang_name
     if lang_aliases and #lang_aliases > 0 then
         for ___, alias in ipairs(lang_aliases) do
             LANG_ALIAS_TO_LANG_TAG[alias] = lang_tag
         end
+    end
+    if hyph_filename then
+        HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_filename] = { lang_name, lang_tag }
     end
 end
 
@@ -388,15 +388,7 @@ When the book's language tag is not among our presets, no specific features will
         end,
         callback = function()
             local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
-            -- We will show the defaults for the current main language hyph dict
-            local alg_left_hyphen_min = 2
-            local alg_right_hyphen_min = 2
-            local hyph_alg = cre.getSelectedHyphDict()
-            local hyph_dict_info = HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_alg]
-            if hyph_dict_info then
-                alg_left_hyphen_min = hyph_dict_info[3] or 2
-                alg_right_hyphen_min = hyph_dict_info[4] or 2
-            end
+            local hyph_alg, alg_left_hyphen_min, alg_right_hyphen_min = cre.getSelectedHyphDict() -- luacheck: no unused
             local hyph_limits_widget = DoubleSpinWidget:new{
                 -- Min (1) and max (10) values are enforced by crengine
                 -- Note that when hitting "Use language defaults", we show the default

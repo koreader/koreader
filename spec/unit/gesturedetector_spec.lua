@@ -18,7 +18,7 @@ describe("gesturedetector module", function()
                                         ORIENTATION_PORTRAIT_ROTATED = 2,
                                         ORIENTATION_LANDSCAPE_ROTATED = 3,
                                      }
-            GestureDetector.screen.cur_rotation_mode = rotation_mode
+            GestureDetector.screen.getTouchRotation = function() return rotation_mode end
 
             return GestureDetector:adjustGesCoordinate(ges).direction
         end

@@ -178,6 +178,11 @@ function CervantesPowerD:calculateAutoWarmth()
                              end
                          end,
         })
+        if package.loaded["ui/uimanager"] ~= nil then
+            local Event = require("ui/event")
+            local UIManager = require("ui/uimanager")
+            UIManager:broadcastEvent(Event:new("BackgroundJobsUpdated"))
+        end
         self.autowarmth_job_running = true
     end
 end

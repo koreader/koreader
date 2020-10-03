@@ -25,7 +25,13 @@ function Ftp:downloadFile(item, address, user, pass, path, close)
     local response = FtpApi:ftpGet(url, "retr")
     if response ~= nil then
         path = util.fixUtf8(path, "_")
-        local file = io.open(path, "w")
+        local file, err = io.open(path, "w")
+        if not file then
+            UIManager:show(InfoMessage:new{
+                text = T(_("Could not save file to %1:\n%2"), BD.filepath(path), err),
+            })
+            return
+        end
         file:write(response)
         file:close()
         local __, filename = util.splitFilePathName(path)

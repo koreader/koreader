@@ -22,7 +22,7 @@ local function buildEntry(input_time, input_file)
         text = input_file:gsub(".*/", ""),
         file = file_path,
         dim = not file_exists, -- "dim", as expected by Menu
-        -- mandatory = file_exists and require("util").getFriendlySize(lfs.attributes(input_file, "size") or 0),
+        -- mandatory = file_exists and util.getFriendlySize(lfs.attributes(input_file, "size") or 0),
         mandatory_func = function() -- Show the last read time (rather than file size)
             local readerui_instance = require("apps/reader/readerui"):_getRunningInstance()
             local currently_opened_file = readerui_instance and readerui_instance.document.file

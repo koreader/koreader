@@ -11,7 +11,7 @@ local Screen = require("device").screen
 local BaseUtil = require("ffi/util")
 local util = require("util")
 local _ = require("gettext")
-local T = require("ffi/util").template
+local T = BaseUtil.template
 
 local FileManagerCollection = InputContainer:extend{
     coll_menu_title = _("Favorites"),

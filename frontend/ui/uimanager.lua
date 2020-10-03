@@ -159,13 +159,27 @@ function UIManager:init()
             -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
             if Device.screen_saver_mode then
                 self:suspend()
+            end
+        end
+        self.event_handlers["NotCharging"] = function()
+            -- We need to put the device into suspension, other things need to be done before it.
+            self:_afterNotCharging()
+            if Device.screen_saver_mode then
+                self:suspend()
+            end
+        end
+        self.event_handlers["UsbPlugIn"] = function()
+            self:_beforeCharging()
+            -- NOTE: Plug/unplug events will wake the device up, which is why we put it back to sleep.
+            if Device.screen_saver_mode then
+                self:suspend()
             else
                 -- Potentially start an USBMS session
                 local MassStorage = require("ui/elements/mass_storage")
                 MassStorage:start()
             end
         end
-        self.event_handlers["NotCharging"] = function()
+        self.event_handlers["UsbPlugOut"] = function()
             -- We need to put the device into suspension, other things need to be done before it.
             self:_afterNotCharging()
             if Device.screen_saver_mode then
@@ -322,7 +336,7 @@ function UIManager:init()
                 MassStorage:start()
             end
         end
-        self.event_handlers["USbPlugOut"] = function()
+        self.event_handlers["UsbPlugOut"] = function()
             self:_afterNotCharging()
             if Device.screen_saver_mode then
                 self:suspend()
@@ -1031,6 +1045,16 @@ function UIManager:_repaint()
         end
     end
 
+    -- Show IDs of covered widgets when debugging
+    --[[
+    if start_idx > 1 then
+        for i = 1, start_idx-1 do
+            local widget = self._window_stack[i]
+            logger.dbg("NOT painting widget:", widget.widget.name or widget.widget.id or tostring(widget))
+        end
+    end
+    --]]
+
     for i = start_idx, #self._window_stack do
         local widget = self._window_stack[i]
         -- paint if current widget or any widget underneath is dirty
@@ -1038,6 +1062,7 @@ function UIManager:_repaint()
             -- pass hint to widget that we got when setting widget dirty
             -- the widget can use this to decide which parts should be refreshed
             logger.dbg("painting widget:", widget.widget.name or widget.widget.id or tostring(widget))
+            Screen:beforePaint()
             widget.widget:paintTo(Screen.bb, widget.x, widget.y, self._dirty[widget.widget])
 
             -- and remove from list after painting
@@ -1109,6 +1134,7 @@ function UIManager:_repaint()
             refresh.region.w, refresh.region.h,
             refresh.dither)
     end
+    Screen:afterPaint()
     self._refresh_stack = {}
     self.refresh_counted = false
 end
@@ -1164,6 +1190,8 @@ function UIManager:handleInput()
     repeat
         wait_until, now = self:_checkTasks()
         --dbg("---------------------------------------------------")
+        --dbg("wait_until", wait_until)
+        --dbg("now", now)
         --dbg("exec stack", self._task_queue)
         --dbg("window stack", self._window_stack)
         --dbg("dirty stack", self._dirty)

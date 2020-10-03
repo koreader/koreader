@@ -4,6 +4,7 @@ local CloudStorage = require("apps/cloudstorage/cloudstorage")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
+local FFIUtil = require("ffi/util")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local PluginLoader = require("pluginloader")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
@@ -14,7 +15,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util  = require("util")
 local _ = require("gettext")
-local T = require("ffi/util").template
+local T = FFIUtil.template
 
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
@@ -246,11 +247,10 @@ function FileManagerMenu:setUpdateItemTable()
                     UIManager:show(ConfirmBox:new{
                         text = _("Clear cache/ and cr3cache/ ?"),
                         ok_callback = function()
-                            local purgeDir = require("ffi/util").purgeDir
                             local DataStorage = require("datastorage")
                             local cachedir = DataStorage:getDataDir() .. "/cache"
                             if lfs.attributes(cachedir, "mode") == "directory" then
-                                purgeDir(cachedir)
+                                FFIUtil.purgeDir(cachedir)
                             end
                             lfs.mkdir(cachedir)
                             -- Also remove from Cache objet references to
@@ -332,20 +332,18 @@ function FileManagerMenu:setUpdateItemTable()
         })
     end
     if not Device.should_restrict_JIT then
+        local Blitbuffer = require("ffi/blitbuffer")
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Disable C blitter"),
             enabled_func = function()
-                return lfs.attributes("libs/libblitbuffer.so", "mode") == "file"
+                return Blitbuffer.has_cblitbuffer
             end,
             checked_func = function()
                 return G_reader_settings:isTrue("dev_no_c_blitter")
             end,
             callback = function()
                 G_reader_settings:flipNilOrFalse("dev_no_c_blitter")
-                local InfoMessage = require("ui/widget/infomessage")
-                UIManager:show(InfoMessage:new{
-                    text = _("This will take effect on next restart."),
-                })
+                Blitbuffer:enableCBB(G_reader_settings:nilOrFalse("dev_no_c_blitter"))
             end,
         })
     end

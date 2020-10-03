@@ -413,6 +413,22 @@ function Document:getDrawnImagesStatistics()
     return self._drawn_images_count, self._drawn_images_surface_ratio
 end
 
+function Document:getPagePart(pageno, rect, rotation)
+    local canvas_size = CanvasContext:getSize()
+    local zoom = math.min(canvas_size.w*2 / rect.w, canvas_size.h*2 / rect.h)
+    -- it's really, really important to do math.floor, otherwise we get image projection
+    local scaled_rect = {
+        x = math.floor(rect.x * zoom),
+        y = math.floor(rect.y * zoom),
+        w = math.floor(rect.w * zoom),
+        h = math.floor(rect.h * zoom),
+    }
+    local tile = self:renderPage(pageno, scaled_rect, zoom, rotation, 1, 0)
+    local target = Blitbuffer.new(scaled_rect.w, scaled_rect.h, self.render_color and self.color_bb_type or nil)
+    target:blitFrom(tile.bb, 0, 0, scaled_rect.x, scaled_rect.y, scaled_rect.w, scaled_rect.h)
+    return target
+end
+
 function Document:getPageText(pageno)
     -- is this worth caching? not done yet.
     local page = self._document:openPage(pageno)

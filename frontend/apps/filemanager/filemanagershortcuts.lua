@@ -6,21 +6,16 @@ local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
 local util = require("ffi/util")
 local _ = require("gettext")
-local T = require("ffi/util").template
+local T = util.template
 
 local FileManagerShortcuts = InputContainer:extend{}
 
 function FileManagerShortcuts:updateItemTable()
     local item_table = {}
     local folder_shortcuts = G_reader_settings:readSetting("folder_shortcuts") or {}
-    table.insert(item_table, {
-        text = _("Add new folder shortcut"),
-        callback = function()
-            self:addNewFolder()
-        end,
-    })
     for _, item in ipairs(folder_shortcuts) do
         table.insert(item_table, {
             text = string.format("%s (%s)", item.text, item.folder),
@@ -50,8 +45,18 @@ function FileManagerShortcuts:updateItemTable()
         })
     end
 
+    table.sort(item_table, function(l, r)
+        return l.text < r.text
+    end)
+    table.insert(item_table, 1, {
+        text = _("Add new folder shortcut"),
+        callback = function()
+            self:addNewFolder()
+        end,
+    })
+
     -- try to stay on current page
-    local select_number = nil
+    local select_number
 
     if self.fm_bookmark.page and self.fm_bookmark.perpage then
         select_number = (self.fm_bookmark.page - 1) * self.fm_bookmark.perpage + 1

@@ -48,6 +48,8 @@ function AutoFrontlight:_schedule(settings_id)
             end
         end
     })
+    local Event = require("ui/event")
+    UIManager:broadcastEvent(Event:new("BackgroundJobsUpdated"))
 end
 
 function AutoFrontlight:_action()
