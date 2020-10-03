@@ -39,6 +39,7 @@ local HYPH_DICT_NAME_TO_LANG_NAME_TAG = {
 -- Update them when language tweaks and features are added to crengine/src/textlang.cpp
 local LANGUAGES = {
     -- lang-tag          aliases    features    menu title                  hyphenation file name
+    { "hy", {"arm", "hye", "hyw"},   "H   ",   _("Armenian"),               "Armenian.pattern" },
     { "eu",                    {},   "H   ",   _("Basque"),                 "Basque.pattern" },
     { "bg",               {"bul"},   "H   ",   _("Bulgarian"),              "Bulgarian.pattern" },
     { "ca",               {"cat"},   "H   ",   _("Catalan"),                "Catalan.pattern" },
@@ -54,6 +55,7 @@ local LANGUAGES = {
     { "et",               {"est"},   "H   ",   _("Estonian"),               "Estonian.pattern" },
     { "fi",               {"fin"},   "H   ",   _("Finnish"),                "Finnish.pattern" },
     { "fr",        {"fra", "fre"},   "Hb  ",   _("French"),                 "French.pattern" },
+    { "fur",                   {},   "H   ",   _("Friulian"),               "Friulian.pattern" },
     { "gl",               {"glg"},   "H   ",   _("Galician"),               "Galician.pattern" },
     { "ka",                    {},   "H   ",   _("Georgian"),               "Georgian.pattern" },
     { "de",               {"deu"},   "Hb  ",   _("German"),                 "German.pattern" },
@@ -70,7 +72,10 @@ local LANGUAGES = {
     { "no",               {"nor"},   "H   ",   _("Norwegian"),              "Norwegian.pattern" },
     { "oc",               {"oci"},   "H   ",   _("Occitan"),                "Occitan.pattern" },
     { "pl",               {"pol"},   "HB  ",   _("Polish"),                 "Polish.pattern" },
+    { "pms",                   {},   "H   ",   _("Piedmontese"),            "Piedmontese.pattern" },
+    { "pt-BR",                 {},   "HB  ",   _("Portuguese (BR)"),        "Portuguese_BR.pattern" },
     { "pt",               {"por"},   "HB  ",   _("Portuguese"),             "Portuguese.pattern" },
+    { "rm",               {"roh"},   "H   ",   _("Romansh"),                "Romansh.pattern" },
     { "ro",               {"ron"},   "H   ",   _("Romanian"),               "Romanian.pattern" },
     { "ru-GB",                 {},   "Hb  ",   _("Russian + English (UK)"), "Russian_EnGB.pattern" },
     { "ru-US",                 {},   "Hb  ",   _("Russian + English (US)"), "Russian_EnUS.pattern" },
@@ -83,6 +88,7 @@ local LANGUAGES = {
     { "tr",               {"tur"},   "H   ",   _("Turkish"),                "Turkish.pattern" },
     { "uk",               {"ukr"},   "H   ",   _("Ukrainian"),              "Ukrainian.pattern" },
     { "cy",               {"cym"},   "H   ",   _("Welsh"),                  "Welsh.pattern" },
+    { "zu",               {"zul"},   "H   ",   _("Zulu"),                   "Zulu.pattern" },
 }
 
 local DEFAULT_LANG_TAG = "en-US" -- English_US.pattern is loaded by default in crengine
