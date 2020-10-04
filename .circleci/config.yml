@@ -33,6 +33,7 @@ jobs:
       - save_cache:
           key: deps-{{ arch }}-{{ checksum ".ci/install.sh" }}-{{ checksum ".ci/helper_luarocks.sh" }}
           paths:
+            - "/home/ko/.ccache"
             - "/home/ko/bin"
             - "/home/ko/.luarocks"
             # compiled luarocks binaries
