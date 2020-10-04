@@ -7,7 +7,7 @@ jobs:
           EMULATE_READER: 1
           # this is for shellcheck 0.4.5 and lower; can be removed for 0.4.6
           LC_ALL: en_US.UTF8
-    parallelism: 1
+    parallelism: 2
     steps:
       - checkout
       - restore_cache:
@@ -16,9 +16,11 @@ jobs:
             - deps-{{ arch }}-{{ checksum ".ci/install.sh" }}-{{ checksum ".ci/helper_luarocks.sh" }}
       # need to init some stuff first or git will complain when sticking in base cache
       - run: git submodule init base && git submodule update base && pushd base && git submodule init && git submodule update && popd
+      # we can't use command output directly for cache check so we write it to git-rev-base
+      - run: pushd base && git_rev_base=$(git describe HEAD) && popd && echo $git_rev_base && echo $git_rev_base >git-rev-base
       - restore_cache:
           keys:
-            - ccache
+            - build-{{ arch }}-{{ checksum "git-rev-base" }}
       - run: echo 'export PATH=${HOME}/bin:${PATH}' >> $BASH_ENV
       - run:
           name: setup
@@ -48,9 +50,10 @@ jobs:
           command: .ci/build.sh
       # we want to save cache prior to testing so we don't have to clean it up
       - save_cache:
-          key: ccache
+          key: build-{{ arch }}-{{ checksum "git-rev-base" }}
           paths:
             - "/home/ko/.ccache"
+            - "base"
 
       # our lovely unit tests
       - run:
