@@ -7,7 +7,7 @@ jobs:
           EMULATE_READER: 1
           # this is for shellcheck 0.4.5 and lower; can be removed for 0.4.6
           LC_ALL: en_US.UTF8
-    parallelism: 2
+    parallelism: 1
     steps:
       - checkout
       - restore_cache:
