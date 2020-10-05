@@ -11,6 +11,11 @@ Example:
 
 local dump = require("dump")
 local isAndroid, android = pcall(require, "android")
+local isEmulator, crashlog = require("ffi/util").isSDL()
+    and not os.getenv("APPIMAGE")
+    and not os.getenv("KO_MULTIUSER")
+    and not os.getenv("UBUNTU_APPLICATION_ISOLATION")
+    and true, io.open("crash.log", "a+") or false
 
 local DEFAULT_DUMP_LVL = 10
 
@@ -60,8 +65,13 @@ local function log(log_lvl, dump_lvl, ...)
             android.LOGE(line)
         end
     else
-        io.stdout:write(os.date("%x-%X"), " ", LOG_PREFIX[log_lvl], line, "\n")
+        local msg = string.format("%s %s%s\n", os.date("%x-%X"), LOG_PREFIX[log_lvl], line)
+        io.stdout:write(msg)
         io.stdout:flush()
+        if isEmulator and crashlog then
+            crashlog:write(msg)
+            crashlog:flush()
+        end
     end
 end
 
