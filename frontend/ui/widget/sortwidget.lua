@@ -416,8 +416,9 @@ end
 function SortWidget:moveItem(diff)
     local move_to = self.marked + diff
     if move_to > 0 and move_to <= #self.item_table then
+        table.insert(self.item_table, move_to, table.remove(self.item_table, self.marked))
         self.show_page = math.ceil(move_to/self.items_per_page)
-        self:swapItems(self.marked, move_to)
+        self.marked = move_to
         self:_populateItems()
     end
 end
@@ -473,15 +474,6 @@ function SortWidget:_populateItems()
     UIManager:setDirty(self, function()
         return "ui", self.dimen
     end)
-end
-
-function SortWidget:swapItems(pos1, pos2)
-    if pos1 > 0 or pos2 <= #self.item_table then
-        local entry = self.item_table[pos1]
-        self.marked = pos2
-        self.item_table[pos1] = self.item_table[pos2]
-        self.item_table[pos2] = entry
-    end
 end
 
 function SortWidget:onAnyKeyPressed()
