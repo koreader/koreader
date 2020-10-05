@@ -120,7 +120,7 @@ function SortItemWidget:init()
         item_checkable = true
         item_checked = self.item.checked_func()
     end
-    local checkmark_widget = CheckMark:new{
+    self.checkmark_widget = CheckMark:new{
         checkable = item_checkable,
         checked = item_checked,
     }
@@ -138,7 +138,7 @@ function SortItemWidget:init()
             align = "center",
             CenterContainer:new{
                 dimen = Geom:new{ w = checked_widget:getSize().w },
-                checkmark_widget,
+                self.checkmark_widget,
             },
             TextWidget:new{
                 text = self.item.text,
@@ -150,8 +150,12 @@ function SortItemWidget:init()
     self[1].invert = self.invert
 end
 
-function SortItemWidget:onTap()
-    if self.show_parent.marked == self.index then
+function SortItemWidget:onTap(_, ges)
+    if self.item.checked_func and ges.pos:intersectWith(self.checkmark_widget.dimen) then
+        if self.item.callback then
+            self.item:callback()
+        end
+    elseif self.show_parent.marked == self.index then
         self.show_parent.marked = 0
     else
         self.show_parent.marked = self.index
