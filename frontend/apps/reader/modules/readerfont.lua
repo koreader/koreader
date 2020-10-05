@@ -3,6 +3,7 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
+local Font = require("ui/font")
 local Input = Device.input
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
@@ -74,6 +75,14 @@ function ReaderFont:init()
                 end
                 return text
             end,
+            font_func = function(size)
+                if G_reader_settings:nilOrTrue("font_menu_use_font_face") then
+                    local font_filename, font_faceindex = cre.getFontFaceFilenameAndFaceIndex(v)
+                    if font_filename and font_faceindex then
+                        return Font:getFace(font_filename, size, font_faceindex)
+                    end
+                end
+            end,
             callback = function()
                 self:setFont(v)
             end,
@@ -84,7 +93,6 @@ function ReaderFont:init()
                 return v == self.font_face
             end
         })
-        face_list[k] = {text = v}
     end
     self.ui.menu:registerToMainMenu(self)
 end
@@ -361,12 +369,24 @@ function ReaderFont:getFontSettingsTable()
     end
 
     table.insert(settings_table, {
+        text = _("Display font names with their own font"),
+        checked_func = function()
+            return G_reader_settings:nilOrTrue("font_menu_use_font_face")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrTrue("font_menu_use_font_face")
+        end,
+        help_text = _([[In the font menu, display each font name with its own font face.]]),
+        separator = true,
+    })
+
+    table.insert(settings_table, {
         text = _("Use additional fallback fonts"),
         checked_func = function()
             return G_reader_settings:nilOrTrue("additional_fallback_fonts")
         end,
         callback = function()
-        G_reader_settings:flipNilOrTrue("additional_fallback_fonts")
+            G_reader_settings:flipNilOrTrue("additional_fallback_fonts")
             self.ui.document:setupFallbackFontFaces()
             self.ui:handleEvent(Event:new("UpdatePos"))
         end,
