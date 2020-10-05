@@ -88,6 +88,23 @@ function TouchMenuItem:init()
     -- FrameContainer default paddings minus the checked widget width
     local text_max_width = self.dimen.w - 2*Size.padding.default - checked_widget:getSize().w
     local text = getMenuText(self.item)
+    local face = self.face
+    local forced_baseline, forced_height
+    if self.item.font_func then
+        -- A font_func() may be provided by ReaderFont to have each font name
+        -- displayed in its own font: we must tell TextWidget to use the default
+        -- font baseline and height for items to be correctly aligned without
+        -- variations due to each font different metrics.
+        face = self.item.font_func(self.face.orig_size)
+        if face then
+            local w = TextWidget:new{ text = "", face = self.face }
+            forced_baseline = w:getBaseline()
+            forced_height = w:getSize().h
+            w:free()
+        else
+            face = self.face
+        end
+    end
     self.item_frame = FrameContainer:new{
         width = self.dimen.w,
         bordersize = 0,
@@ -102,7 +119,9 @@ function TouchMenuItem:init()
                 text = text,
                 max_width = text_max_width,
                 fgcolor = item_enabled ~= false and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
-                face = self.face,
+                face = face,
+                forced_baseline = forced_baseline,
+                forced_height = forced_height,
             },
         },
     }

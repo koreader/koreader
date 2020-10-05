@@ -36,6 +36,12 @@ local TextWidget = Widget:new{
     truncate_with_ellipsis = true, -- when truncation at max_width needed, add "…"
     truncate_left = false, -- truncate on the right by default
 
+    -- Force a baseline and height to use instead of those obtained from the font used
+    -- (mostly only useful for TouchMenu to display font names in their own font, to
+    -- ensure they get correctly vertically aligned in the menu)
+    forced_baseline = nil,
+    forced_height = nil,
+
     -- for internal use
     _updated = nil,
     _face_adjusted = nil,
@@ -279,7 +285,7 @@ function TextWidget:getSize()
     self:updateSize()
     return Geom:new{
         w = self._length,
-        h = self._height,
+        h = self.forced_height or self._height,
     }
 end
 
@@ -338,7 +344,7 @@ function TextWidget:paintTo(bb, x, y)
         text_width = self.max_width
     end
     local pen_x = 0
-    local baseline = self._baseline_h
+    local baseline = self.forced_baseline or self._baseline_h
     for i, xglyph in ipairs(self._xshaping) do
         if pen_x >= text_width then
             break
