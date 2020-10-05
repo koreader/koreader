@@ -11,26 +11,12 @@ local ffi = require("ffi")
 local lfs = require("libs/libkoreader-lfs")
 local ffiUtil = require("ffi/util")
 local T = ffiUtil.template
-local C = ffi.C
 local _ = require("gettext")
 local N_ = _.ngettext
 local Screen = Device.screen
 local util = require("util")
 local getFileNameSuffix = util.getFileNameSuffix
 local getFriendlySize = util.getFriendlySize
-
-ffi.cdef[[
-int strcoll (const char *str1, const char *str2);
-]]
-
--- string sort function respecting LC_COLLATE
-local function strcoll(str1, str2)
-    return C.strcoll(str1, str2) < 0
-end
-
-local function kobostrcoll(str1, str2)
-    return str1 < str2
-end
 
 local FileChooser = Menu:extend{
     cface = Font:getFace("smallinfofont"),
@@ -129,24 +115,6 @@ function FileChooser:init()
         end
     end
 
-    local strcoll_func = strcoll
-    -- circumvent string collating in Kobo devices. See issue koreader/koreader#686
-    if Device:isKobo() then
-        strcoll_func = kobostrcoll
-    end
-    self.strcoll = function(a, b)
-        if a == nil and b == nil then
-            return false
-        elseif a == nil then
-            return true
-        elseif b == nil then
-            return false
-        elseif DALPHA_SORT_CASE_INSENSITIVE then
-            return strcoll_func(string.lower(a), string.lower(b))
-        else
-            return strcoll_func(a, b)
-        end
-    end
     self.item_table = self:genItemTableFromPath(self.path)
     Menu.init(self) -- call parent's init()
 end
@@ -161,7 +129,7 @@ function FileChooser:genItemTableFromPath(path)
     local sorting
     if self.collate == "strcoll" then
         sorting = function(a, b)
-            return self.strcoll(a.name, b.name)
+            return ffiUtil.strcoll(a.name, b.name)
         end
     elseif self.collate == "access" then
         sorting = function(a, b)
@@ -188,9 +156,9 @@ function FileChooser:genItemTableFromPath(path)
     elseif self.collate == "type" then
         sorting = function(a, b)
             if a.suffix == nil and b.suffix == nil then
-                return self.strcoll(a.name, b.name)
+                return ffiUtil.strcoll(a.name, b.name)
             else
-                return self.strcoll(a.suffix, b.suffix)
+                return ffiUtil.strcoll(a.suffix, b.suffix)
             end
         end
     elseif self.collate == "percent_unopened_first" or self.collate == "percent_unopened_last" then
@@ -304,7 +272,7 @@ function FileChooser:genItemTableFromPath(path)
     if self.collate == "strcoll_mixed" then
         sorting = function(a, b)
             if b.text == up_folder_arrow then return false end
-            return self.strcoll(a.text, b.text)
+            return ffiUtil.strcoll(a.text, b.text)
         end
         if self.reverse_collate then
             local sorting_unreversed = sorting
