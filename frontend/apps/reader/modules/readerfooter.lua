@@ -164,9 +164,8 @@ local footerTextGeneratorMap = {
     bookmark_count = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].bookmark_count
-        --retrieve bookmark count:
         local bookmark_count = footer.ui.bookmark:getNumberOfBookmarks()
-        -- if no bookmarks defined, don't show icon:
+        -- Don't show anything if there aren't any bookmarks
         if bookmark_count == 0 then
             return ""
         end
@@ -1665,7 +1664,11 @@ function ReaderFooter:genAllFooterText()
     -- sure they are laid out in our order (reversed in RTL),
     -- without ordering by the RTL Bidi algorithm.
     for _, gen in ipairs(self.footerTextGenerators) do
-        table.insert(info, BD.wrap(gen(self)))
+        -- Skip empty generators, so they don't generate bogus separators
+        local text = gen(self)
+        if text and text ~= "" then
+            table.insert(info, BD.wrap(text))
+        end
     end
     return table.concat(info, BD.wrap(separator))
 end
