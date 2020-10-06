@@ -47,7 +47,6 @@ local ReaderStatistics = Widget:extend{
     is_enabled = nil,
     convert_to_db = nil, -- true when migration to DB has been done
     pageturn_count = 0,
-    pageturn_ts = 0,
     mem_read_time = 0,
     mem_read_pages = 0,
     total_read_pages = 0,
@@ -212,7 +211,6 @@ end
 function ReaderStatistics:resetVolatileStats()
     -- Computed by onPageUpdate
     self.pageturn_count = 0
-    self.pageturn_ts = 0
     self.mem_read_time = 0
     self.mem_read_pages = 0
 
@@ -587,10 +585,13 @@ function ReaderStatistics:insertDB(id_book)
     local conn = SQ3.open(db_location)
     conn:exec('BEGIN')
     local stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?)")
-    for page, ts in pairs(self.pages_stat_ts) do
-        local duration = self.pages_stat_duration[page]
-        if duration then
-            stmt:reset():bind(id_book, page, ts, duration):step()
+    for page, ts_list in pairs(self.pages_stat_ts) do
+        for k, ts in ipairs(ts_list) do
+            -- Both pages_stat_ts & pages_stat_duration lists have stable, matching indices
+            local duration = self.pages_stat_duration[page][k]
+            if duration then
+                stmt:reset():bind(id_book, page, ts, duration):step()
+            end
         end
     end
     conn:exec('COMMIT')
@@ -627,8 +628,7 @@ function ReaderStatistics:insertDB(id_book)
 
     self:resetVolatileStats()
     -- last page must be added once more
-    self.pages_stat_ts[self.curr_page] = now_ts
-    self.pageturn_ts = now_ts
+    self.pages_stat_ts[self.curr_page] = { now_ts }
     conn:close()
 end
 
@@ -685,8 +685,7 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
                 self:resetVolatileStats()
                 self.start_current_period = TimeVal:now().sec
                 self.curr_page = self.ui:getCurrentPage()
-                self.pages_stat_ts[self.curr_page] = self.start_current_period
-                self.pageturn_ts = self.start_current_period
+                self.pages_stat_ts[self.curr_page] = { self.start_current_period }
             end
             self:saveSettings()
             if not self:isDocless() then
@@ -1896,21 +1895,21 @@ function ReaderStatistics:onPageUpdate(pageno)
     self.pageturn_count = self.pageturn_count + 1
     local now_ts = TimeVal:now().sec
 
-    -- Get the previous page's timestamp (if there is one)
-    local then_ts
-    if self.pages_stat_ts[self.curr_page] then
-        then_ts = self.pages_stat_ts[self.curr_page]
-    else
-        -- If we don't have a previous timestamp to compare to, abort early
+    -- Get the previous page's last timestamp (if there is one)
+    local curr_page_ts_list = self.pages_stat_ts[self.curr_page] or {}
+    local then_ts = curr_page_ts_list[#curr_page_ts_list]
+    -- If we don't have a previous timestamp to compare to, abort early
+    if not then_ts then
         logger.dbg("ReaderStatistics: No timestamp for previous page", self.curr_page)
-        self.pages_stat_ts[pageno] = now_ts
+        table.insert(curr_page_ts_list, now_ts)
+        self.pages_stat_ts[pageno] = curr_page_ts_list
         self.curr_page = pageno
-        self.pageturn_ts = now_ts
         return
     end
 
-    -- Compute the difference between now and the previous page's timestamp
-    local curr_duration = self.pages_stat_duration[self.curr_page] or 0
+    -- Compute the difference between now and the previous page's last timestamp
+    local curr_page_duration_list = self.pages_stat_duration[self.curr_page] or {}
+    local curr_duration = curr_page_duration_list[#curr_page_duration_list] or 0
     local diff_time = now_ts - then_ts
     if diff_time >= self.page_min_read_sec and diff_time <= self.page_max_read_sec then
         self.mem_read_time = self.mem_read_time + diff_time
@@ -1918,24 +1917,20 @@ function ReaderStatistics:onPageUpdate(pageno)
         if curr_duration == 0 then
             self.mem_read_pages = self.mem_read_pages + 1
         end
-        -- Update the reading duration for the current page for this session
-        self.pages_stat_duration[self.curr_page] = curr_duration + diff_time
+        -- Update the reading duration list for the current page
+        table.insert(curr_page_duration_list, curr_duration + diff_time)
+        self.pages_stat_duration[self.curr_page] = curr_page_duration_list
     elseif diff_time > self.page_max_read_sec then
         self.mem_read_time = self.mem_read_time + self.page_max_read_sec
         if curr_duration == 0 then
             self.mem_read_pages = self.mem_read_pages + 1
         end
-        self.pages_stat_duration[self.curr_page] = curr_duration + self.page_max_read_sec
+        table.insert(curr_page_duration_list, curr_duration + self.page_max_read_sec)
+        self.pages_stat_duration[self.curr_page] = curr_page_duration_list
     end
 
-    -- See if we'll want to flush volatile stats to the DB...
     -- We want a flush to db every 50 page turns
-    -- OR
-    -- We also want a flush to DB on the hour, to allow CalendarView to accurately track per-hour stats in the DB,
-    -- since we only keep track of a single timestamp per page in memory, unlike in the DB.
-    if self.pageturn_count >= PAGE_INSERT
-    or os.date("%H", now_ts) ~= os.date("%H", self.pageturn_ts)
-    then
+    if self.pageturn_count >= PAGE_INSERT then
         self:insertDB(self.id_curr_book)
         -- insertDB will call resetVolatileStats for us ;)
     end
@@ -1945,10 +1940,10 @@ function ReaderStatistics:onPageUpdate(pageno)
         self.avg_time = (self.total_read_time + self.mem_read_time) / (self.total_read_pages + self.mem_read_pages)
     end
 
-    -- We're done, update the current page's timestamp and the current page tracker
-    self.pages_stat_ts[pageno] = now_ts
+    -- We're done, update the current page's timestamp list and the current page tracker
+    table.insert(curr_page_ts_list, now_ts)
+    self.pages_stat_ts[pageno] = curr_page_ts_list
     self.curr_page = pageno
-    self.pageturn_ts = now_ts
 end
 
 -- For backward compatibility
@@ -2008,8 +2003,7 @@ end
 function ReaderStatistics:onResume()
     self.start_current_period = TimeVal:now().sec
     self:resetVolatileStats()
-    self.pages_stat_ts[self.self.curr_page] = self.start_current_period
-    self.pageturn_ts = self.start_current_period
+    self.pages_stat_ts[self.self.curr_page] = { self.start_current_period }
 end
 
 function ReaderStatistics:saveSettings()
