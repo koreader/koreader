@@ -201,6 +201,8 @@ function ReaderStatistics:onUpdateToc()
         -- Re-create empty entry for the book
         self.id_curr_book = self:getIdBookDB()
         --]]
+        --- @fixme: This does mean that you may end up with conflicting page numbers in the database...
+        ---         On the other hand, wiping the book off the db on every minor pagination change feels a bit harsh...
     end
 
     -- Update our copy of the page count
