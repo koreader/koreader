@@ -1901,8 +1901,7 @@ function ReaderStatistics:onPageUpdate(pageno)
     -- If we don't have a previous timestamp to compare to, abort early
     if not then_ts then
         logger.dbg("ReaderStatistics: No timestamp for previous page", self.curr_page)
-        table.insert(curr_page_ts_list, now_ts)
-        self.pages_stat_ts[pageno] = curr_page_ts_list
+        self.pages_stat_ts[pageno] = { now_ts }
         self.curr_page = pageno
         return
     end
