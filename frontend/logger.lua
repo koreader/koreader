@@ -12,6 +12,21 @@ Example:
 local dump = require("dump")
 local isAndroid, android = pcall(require, "android")
 
+local function hasOrNeedsCrashlog()
+    local fileExists
+    if require("ffi/util").isSDL() then
+        local file = io.open("crash.log", "r")
+        if file then
+            file:close()
+            fileExists = true
+        end
+    end
+    return fileExists and io.open("crash.log", "w+")
+end
+
+-- duplicate logs on crash.log
+local dup = hasOrNeedsCrashlog()
+
 local DEFAULT_DUMP_LVL = 10
 
 --- Supported logging levels
@@ -49,6 +64,7 @@ local function log(log_lvl, dump_lvl, ...)
             line = line .. " " .. tostring(v)
         end
     end
+
     if isAndroid then
         if log_lvl == "dbg" then
             android.LOGV(line)
@@ -60,8 +76,13 @@ local function log(log_lvl, dump_lvl, ...)
             android.LOGE(line)
         end
     else
-        io.stdout:write(os.date("%x-%X"), " ", LOG_PREFIX[log_lvl], line, "\n")
+        local msg = string.format("%s %s%s\n", os.date("%x-%X"), LOG_PREFIX[log_lvl], line)
+        io.stdout:write(msg)
         io.stdout:flush()
+        if dup then
+            dup:write(msg)
+            dup:flush()
+        end
     end
 end
 
