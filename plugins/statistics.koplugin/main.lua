@@ -1895,9 +1895,7 @@ function ReaderStatistics:onPageUpdate(pageno)
         return
     end
 
-    -- Increment the counter
     self.pageturn_count = self.pageturn_count + 1
-
     local now_ts = TimeVal:now().sec
 
     -- Get the previous page's timestamp (if there is one)
