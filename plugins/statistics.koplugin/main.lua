@@ -190,7 +190,7 @@ function ReaderStatistics:initData()
 end
 
 -- Reset the (volatile) stats on significant page count changes after a font size update (> 10%)
-function ReaderStatistics:onFontSizeUpdate()
+function ReaderStatistics:onSetFontSize()
     local new_pagecount = self.view.document:getPageCount()
 
     local page_diff = math.abs(new_pagecount - self.data.pages)
