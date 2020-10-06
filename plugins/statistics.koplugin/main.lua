@@ -1940,7 +1940,7 @@ function ReaderStatistics:onPageUpdate(pageno)
         duration = duration + self.page_max_read_sec
         self.read_pages_set[pageno] = true
     end
-    self.mem_read_pages = #self.read_pages_set
+    self.mem_read_pages = util.tableSize(self.read_pages_set)
 
     -- Update the total read duration for the *current* page for this session
     self.pages_stat_duration[self.curr_page] = duration
