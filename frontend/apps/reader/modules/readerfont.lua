@@ -209,7 +209,8 @@ function ReaderFont:onSetFontSize(new_size)
         timeout = 2,
     })
 
-    return true
+    -- Let it propagate, to allow stuff to react to font size changes!
+    --return true
 end
 
 function ReaderFont:onSetLineSpace(space)
