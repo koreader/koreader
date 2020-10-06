@@ -1900,7 +1900,7 @@ function ReaderStatistics:onPageUpdate(pageno)
 
     local now_ts = TimeVal:now().sec
 
-    -- Compute the difference between the previous page's timestamp (if there is one)
+    -- Get the previous page's timestamp (if there is one)
     local then_ts
     if self.pages_stat_ts[self.curr_page] then
         then_ts = self.pages_stat_ts[self.curr_page]
@@ -1915,6 +1915,7 @@ function ReaderStatistics:onPageUpdate(pageno)
         return
     end
 
+    -- Compute the difference between now and the previous page's timestamp
     local duration = self.pages_stat_duration[self.curr_page] or 0
     local diff_time = now_ts - then_ts
     if diff_time >= self.page_min_read_sec and diff_time <= self.page_max_read_sec then
@@ -1928,7 +1929,7 @@ function ReaderStatistics:onPageUpdate(pageno)
     end
     self.mem_read_pages = util.tableSize(self.read_pages_set)
 
-    -- Update the total read duration for the *current* page for this session
+    -- Update the total read duration for the *current* page for this session (will be 0 if below page_min_read_sec)
     self.pages_stat_duration[self.curr_page] = duration
 
     -- See if we'll want to flush volatile stats to the DB
@@ -1949,7 +1950,7 @@ function ReaderStatistics:onPageUpdate(pageno)
         -- insertDB will call resetVolatileStats for us ;)
     end
 
-    -- Update average time per page (if need be, insertDB will have updated the totals)
+    -- Update average time per page (if need be, insertDB will have updated the totals and cleared the volatiles)
     if self.total_read_pages > 0 or self.mem_read_pages > 0 then
         self.avg_time = (self.total_read_time + self.mem_read_time) / (self.total_read_pages + self.mem_read_pages)
     end
