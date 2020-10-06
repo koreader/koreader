@@ -1905,10 +1905,8 @@ function ReaderStatistics:onPageUpdate(pageno)
         return
     end
 
-    local curr_duration = data_tuple[2] or 0
-    -- Make sure our tuple is sane
-    data_tuple = { then_ts, curr_duration }
-
+    -- By now, we're sure that we actually have a tuple (and the rest of the code ensures they're sane, i.e., zero-initialized)
+    local curr_duration = data_tuple[2]
     -- Compute the difference between now and the previous page's last timestamp
     local diff_time = now_ts - then_ts
     if diff_time >= self.page_min_read_sec and diff_time <= self.page_max_read_sec then
