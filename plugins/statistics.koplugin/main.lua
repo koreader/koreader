@@ -1930,20 +1930,14 @@ function ReaderStatistics:onPageUpdate(pageno)
     -- Update the total read duration for the *current* page for this session (will be 0 if below page_min_read_sec)
     self.pages_stat_duration[self.curr_page] = duration
 
-    -- See if we'll want to flush volatile stats to the DB
-    local flush_stats = false
+    -- See if we'll want to flush volatile stats to the DB...
     -- We want a flush to db every 50 page turns
-    if self.pageturn_count >= PAGE_INSERT then
-        flush_stats = true
-    end
+    -- OR
     -- We also want a flush to DB on the hour, to allow CalendarView to accurately track per-hour stats in the DB,
     -- since we only keep track of a single timestamp per page in memory, unlike in the DB.
-    if os.date("%H", now_ts) ~= os.date("%H", self.pageturn_ts) then
-        flush_stats = true
-    end
-
-    -- Do we need a flush to db?
-    if flush_stats then
+    if self.pageturn_count >= PAGE_INSERT
+    or os.date("%H", now_ts) ~= os.date("%H", self.pageturn_ts)
+    then
         self:insertDB(self.id_curr_book)
         -- insertDB will call resetVolatileStats for us ;)
     end
