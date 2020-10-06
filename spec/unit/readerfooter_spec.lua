@@ -173,8 +173,8 @@ describe("Readerfooter module", function()
         footer:onUpdateFooter()
         local timeinfo = footer.textGeneratorMap.time(footer)
         local page_count = readerui.document:getPageCount()
-        -- stats has not been initialized here, so we get na TB and TC
-        assert.are.same('1 / '..page_count..' | '..timeinfo..' | ⇒ 0 | 0% | ⤠ 0% | ⏳ na | ⤻ na',
+        -- stats has not been initialized here, so we get N/A TB and TC
+        assert.are.same('1 / '..page_count..' | '..timeinfo..' | ⇒ 0 | 0% | ⤠ 0% | ⏳ N/A | ⤻ N/A',
                         footer.footer_text.text)
     end)
 
@@ -190,7 +190,7 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         readerui.view.footer:onUpdateFooter()
         local timeinfo = readerui.view.footer.textGeneratorMap.time(footer)
-        assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | 0% | ⤠ 50% | ⏳ na | ⤻ na',
+        assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | 0% | ⤠ 50% | ⏳ N/A | ⤻ N/A',
                         readerui.view.footer.footer_text.text)
     end)
 
@@ -209,7 +209,7 @@ describe("Readerfooter module", function()
         footer:resetLayout()
         footer:onUpdateFooter()
         local timeinfo = footer.textGeneratorMap.time(footer)
-        assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | 0% | ⤠ 50% | ⏳ na | ⤻ na',
+        assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | 0% | ⤠ 50% | ⏳ N/A | ⤻ N/A',
                         footer.footer_text.text)
 
         -- disable show all at once, page progress should be on the first
