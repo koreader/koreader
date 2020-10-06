@@ -49,7 +49,6 @@ local ReaderStatistics = Widget:extend{
     pageturn_count = 0,
     pageturn_ts = 0,
     mem_read_time = 0,
-    read_pages_set = {},
     mem_read_pages = 0,
     total_read_pages = 0,
     total_read_time = 0,
@@ -215,7 +214,6 @@ function ReaderStatistics:resetVolatileStats()
     self.pageturn_count = 0
     self.pageturn_ts = 0
     self.mem_read_time = 0
-    self.read_pages_set = {}
     self.mem_read_pages = 0
 
     -- Volatile storage pending flush to db
@@ -591,7 +589,7 @@ function ReaderStatistics:insertDB(id_book)
     local stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?)")
     for page, ts in pairs(self.pages_stat_ts) do
         local duration = self.pages_stat_duration[page]
-        if duration and duration > 0 then
+        if duration then
             stmt:reset():bind(id_book, page, ts, duration):step()
         end
     end
@@ -1917,16 +1915,20 @@ function ReaderStatistics:onPageUpdate(pageno)
     if diff_time >= self.page_min_read_sec and diff_time <= self.page_max_read_sec then
         self.mem_read_time = self.mem_read_time + diff_time
         duration = duration + diff_time
-        self.read_pages_set[pageno] = true
+        -- If the page hadn't been read already, count it as read
+        if not self.pages_stat_duration[self.curr_page] then
+            self.mem_read_pages = self.mem_read_pages + 1
+        end
+        -- Update the reading duration for the current page for this session
+        self.pages_stat_duration[self.curr_page] = duration
     elseif diff_time > self.page_max_read_sec then
         self.mem_read_time = self.mem_read_time + self.page_max_read_sec
         duration = duration + self.page_max_read_sec
-        self.read_pages_set[pageno] = true
+        if not self.pages_stat_duration[self.curr_page] then
+            self.mem_read_pages = self.mem_read_pages + 1
+        end
+        self.pages_stat_duration[self.curr_page] = duration
     end
-    self.mem_read_pages = util.tableSize(self.read_pages_set)
-
-    -- Update the total read duration for the *current* page for this session (will be 0 if below page_min_read_sec)
-    self.pages_stat_duration[self.curr_page] = duration
 
     -- See if we'll want to flush volatile stats to the DB...
     -- We want a flush to db every 50 page turns
