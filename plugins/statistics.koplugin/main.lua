@@ -116,8 +116,7 @@ function ReaderStatistics:init()
         return
     end
     self.start_current_period = TimeVal:now().sec
-    self.pages_stat_ts = {}
-    self.pages_stat_duration = {}
+    self:resetVolatileStats()
     local settings = G_reader_settings:readSetting("statistics") or {}
     self.page_min_read_sec = tonumber(settings.min_sec)
     self.page_max_read_sec = tonumber(settings.max_sec)
@@ -190,6 +189,18 @@ function ReaderStatistics:initData()
     else
         self.avg_time = 0
     end
+end
+
+function ReaderStatistics:resetVolatileStats()
+    -- Computed by onPageUpdate
+    self.pageturn_count = 0
+    self.mem_read_time = 0
+    self.read_pages_set = {}
+    self.mem_read_pages = 0
+
+    -- Volatile storage pending flush to db
+    self.pages_stat_ts = {}
+    self.pages_stat_duration = {}
 end
 
 function ReaderStatistics:getStatsBookStatus(id_curr_book, stat_enable)
@@ -594,8 +605,8 @@ function ReaderStatistics:insertDB(id_book)
     else
         self.total_read_time = 0
     end
-    self.pages_stat_ts = {}
-    self.pages_stat_duration = {}
+
+    self:resetVolatileStats()
     -- last page must be added once more
     self.pages_stat_ts[self.curr_page] = now_ts
     conn:close()
@@ -651,8 +662,7 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
             -- if was disabled have to get data from db
             if self.is_enabled and not self:isDocless() then
                 self:initData()
-                self.pages_stat_ts = {}
-                self.pages_stat_duration = {}
+                self:resetVolatileStats()
                 self.start_current_period = TimeVal:now().sec
                 self.curr_page = self.ui:getCurrentPage()
                 self.pages_stat_ts[self.curr_page] = self.start_current_period
@@ -1978,8 +1988,7 @@ end
 -- screensaver off
 function ReaderStatistics:onResume()
     self.start_current_period = TimeVal:now().sec
-    self.pages_stat_ts = {}
-    self.pages_stat_duration = {}
+    self:resetVolatileStats()
     self.pages_stat_ts[self.self.curr_page] = self.start_current_period
 end
 
