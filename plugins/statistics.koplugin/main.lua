@@ -532,6 +532,7 @@ function ReaderStatistics:getIdBookDB()
     local result = stmt:reset():bind(self.data.title, self.data.authors, self.data.md5):step()
     local nr_id = tonumber(result[1])
     if nr_id == 0 then
+        -- Not in the DB yet, initialize it
         stmt = conn:prepare("INSERT INTO book VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         stmt:reset():bind(self.data.title, self.data.authors, self.data.notes,
             TimeVal:now().sec, self.data.highlights, self.data.pages,
