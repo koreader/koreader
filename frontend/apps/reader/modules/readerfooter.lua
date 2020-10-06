@@ -1723,7 +1723,7 @@ function ReaderFooter:getAvgTimePerPage()
 end
 
 function ReaderFooter:getDataFromStatistics(title, pages)
-    local sec = 'na'
+    local sec = "N/A"
     local average_time_per_page = self:getAvgTimePerPage()
     if average_time_per_page then
         if self.settings.duration_format == "classic" then
