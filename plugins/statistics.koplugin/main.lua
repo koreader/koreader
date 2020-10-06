@@ -580,7 +580,7 @@ function ReaderStatistics:getIdBookDB()
 end
 
 function ReaderStatistics:insertDB(id_book)
-    if id_book == nil or util.tableSize(self.pages_stat_ts) < 2 then
+    if id_book == nil or self.mem_read_pages < 2 then
         return
     end
     local now_ts = TimeVal:now().sec
