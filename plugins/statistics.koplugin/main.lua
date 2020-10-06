@@ -212,6 +212,7 @@ end
 function ReaderStatistics:resetVolatileStats()
     -- Computed by onPageUpdate
     self.pageturn_count = 0
+    self.pageturn_ts = 0
     self.mem_read_time = 0
     self.read_pages_set = {}
     self.mem_read_pages = 0
@@ -628,6 +629,7 @@ function ReaderStatistics:insertDB(id_book)
     self:resetVolatileStats()
     -- last page must be added once more
     self.pages_stat_ts[self.curr_page] = now_ts
+    self.pageturn_ts = now_ts
     conn:close()
 end
 
@@ -685,6 +687,7 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
                 self.start_current_period = TimeVal:now().sec
                 self.curr_page = self.ui:getCurrentPage()
                 self.pages_stat_ts[self.curr_page] = self.start_current_period
+                self.pageturn_ts = self.start_current_period
             end
             self:saveSettings()
             if not self:isDocless() then
@@ -2020,6 +2023,7 @@ function ReaderStatistics:onResume()
     self.start_current_period = TimeVal:now().sec
     self:resetVolatileStats()
     self.pages_stat_ts[self.self.curr_page] = self.start_current_period
+    self.pageturn_ts = self.start_current_period
 end
 
 function ReaderStatistics:saveSettings()
