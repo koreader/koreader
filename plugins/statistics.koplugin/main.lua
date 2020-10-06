@@ -1902,6 +1902,7 @@ function ReaderStatistics:onPageUpdate(pageno)
 
     -- First page update of the session, just update the current page's timestamp
     if not self.curr_page then
+        logger.dbg("No previous page")
         self.pages_stat_ts[pageno] = now_ts
         self.curr_page = pageno
         self.pageturn_ts = now_ts
@@ -1916,6 +1917,7 @@ function ReaderStatistics:onPageUpdate(pageno)
 
     -- If we don't have a previous timestamp to compare to, abort early
     if not then_ts then
+        logger.dbg("No timestamp for previous page", self.curr_page)
         self.pages_stat_ts[pageno] = now_ts
         self.curr_page = pageno
         self.pageturn_ts = now_ts
