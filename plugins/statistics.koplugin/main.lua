@@ -195,6 +195,7 @@ function ReaderStatistics:onFontSizeUpdate()
 
     local page_diff = math.abs(new_pagecount - self.data.pages)
     if page_diff >= math.floor(PAGECOUNT_DIFF_THRESHOLD * self.data.pages) then
+        logger.dbg("Significant pagecount change, clearing volatile book statistics")
         -- Clear volatile stats for current book
         self:resetVolatileStats()
         -- NOTE: If we were to clear the DB stats, too:
