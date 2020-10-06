@@ -27,6 +27,7 @@ local T = FFIUtil.template
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
 local db_location = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
 local PAGE_INSERT = 50
+local PAGECOUNT_DIFF_THRESHOLD = 0.10
 local DEFAULT_MIN_READ_SEC = 5
 local DEFAULT_MAX_READ_SEC = 120
 local DEFAULT_CALENDAR_START_DAY_OF_WEEK = 2 -- Monday
@@ -192,7 +193,7 @@ function ReaderStatistics:onFontSizeUpdate()
     local new_pagecount = self.view.document:getPageCount()
 
     local page_diff = math.abs(new_pagecount - self.data.pages)
-    if page_diff >= math.floor(0.1 * self.data.pages) then
+    if page_diff >= math.floor(PAGECOUNT_DIFF_THRESHOLD * self.data.pages) then
         -- Clear DB & volatile stats for current book
         self:deleteBook(self.id_curr_book)
         self:resetVolatileStats()
