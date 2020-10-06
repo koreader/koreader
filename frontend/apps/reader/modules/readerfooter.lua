@@ -911,7 +911,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text = _("Hide empty items"),
-                help_text = _([[This will hide an item from the status bar if it were to display 0 or an off state.]]),
+                help_text = _([[This will hide values like 0 or off.]]),
                 checked_func = function()
                     return self.settings.hide_empty_generators
                 end,
