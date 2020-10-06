@@ -1867,21 +1867,24 @@ function ReaderStatistics:onPageUpdate(pageno)
     local mem_read_pages = 0
     local mem_read_time = 0
     if util.tableSize(self.pages_stats) > 1 then
-        mem_read_pages = util.tableSize(self.pages_stats) - 1
         local sorted_performance = {}
         for time, page in pairs(self.pages_stats) do
             table.insert(sorted_performance, time)
         end
         table.sort(sorted_performance)
+        local read_pages_set = {}
         local diff_time
         for i=1, #sorted_performance - 1 do
             diff_time = sorted_performance[i + 1] - sorted_performance[i]
             if diff_time <= self.page_max_read_sec and diff_time >= self.page_min_read_sec  then
                 mem_read_time = mem_read_time + diff_time
+                read_pages_set[self.pages_stats[sorted_performance[i]]] = true
             elseif diff_time > self.page_max_read_sec then
                 mem_read_time = mem_read_time + self.page_max_read_sec
+                read_pages_set[self.pages_stats[sorted_performance[i]]] = true
             end
         end
+        mem_read_pages = util.tableSize(read_pages_set)
     end
     -- every 50 pages we write stats to database
     if util.tableSize(self.pages_stats) % PAGE_INSERT == 0 then
