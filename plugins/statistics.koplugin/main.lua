@@ -46,10 +46,11 @@ local ReaderStatistics = Widget:extend{
     id_curr_book = nil,
     is_enabled = nil,
     convert_to_db = nil, -- true when migration to DB has been done
-    pageturn_count = 0
-    mem_read_time = 0
-    read_pages_set = {}
-    mem_read_pages = 0
+    pageturn_count = 0,
+    pageturn_ts = 0,
+    mem_read_time = 0,
+    read_pages_set = {},
+    mem_read_pages = 0,
     total_read_pages = 0,
     total_read_time = 0,
     avg_time = nil,
@@ -1899,6 +1900,7 @@ function ReaderStatistics:onPageUpdate(pageno)
     if not self.curr_page then
         self.pages_stat_ts[pageno] = now_ts
         self.curr_page = pageno
+        self.pageturn_ts = now_ts
         return
     end
 
@@ -1912,6 +1914,7 @@ function ReaderStatistics:onPageUpdate(pageno)
     if not then_ts then
         self.pages_stat_ts[pageno] = now_ts
         self.curr_page = pageno
+        self.pageturn_ts = now_ts
         return
     end
 
@@ -1931,13 +1934,21 @@ function ReaderStatistics:onPageUpdate(pageno)
     -- Update the total read duration for the *current* page for this session
     self.pages_stat_duration[self.curr_page] = duration
 
-    -- Every 50 page turns, dump stats to the DB
+    -- See if we'll want to flush volatile stats to the DB
+    local flush_stats = false
+    -- We want a flush to db every 50 page turns
     if self.pageturn_count >= PAGE_INSERT then
+        flush_stats = true
+    end
+    -- We also want a flush to DB on the hour, to allow CalendarView from accurately tracking per-hour stats in the DB
+    if os.date("%H", now_ts) ~= os.date("%H", self.pageturn_ts) then
+        flush_stats = true
+    end
+
+    -- Do we need a flush to db?
+    if flush_stats then
         self:insertDB(self.id_curr_book)
-        self.pageturn_count = 0
-        self.mem_read_time = 0
-        self.read_pages_set = {}
-        self.mem_read_pages = 0
+        -- insertDB will call resetVolatileStats for us ;)
     end
 
     -- Update average time per page (if need be, insertDB will have updated the totals)
@@ -1948,6 +1959,7 @@ function ReaderStatistics:onPageUpdate(pageno)
     -- We're done, update the current page's timestamp and the current page tracker
     self.pages_stat_ts[pageno] = now_ts
     self.curr_page = pageno
+    self.pageturn_ts = now_ts
 end
 
 -- For backward compatibility
