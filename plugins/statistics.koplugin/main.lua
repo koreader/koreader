@@ -54,7 +54,8 @@ local ReaderStatistics = Widget:extend{
     total_read_pages = 0,
     total_read_time = 0,
     avg_time = nil,
-    pages_stats = {},
+    pages_stat_ts = {},
+    pages_stat_duration = {},
     data = {
         title = "",
         authors = "",
@@ -115,7 +116,8 @@ function ReaderStatistics:init()
         return
     end
     self.start_current_period = TimeVal:now().sec
-    self.pages_stats = {}
+    self.pages_stat_ts = {}
+    self.pages_stat_duration = {}
     local settings = G_reader_settings:readSetting("statistics") or {}
     self.page_min_read_sec = tonumber(settings.min_sec)
     self.page_max_read_sec = tonumber(settings.max_sec)
@@ -548,26 +550,17 @@ function ReaderStatistics:getIdBookDB()
 end
 
 function ReaderStatistics:insertDB(id_book)
-    self.pages_stats[TimeVal:now().sec] = self.curr_page
-    if id_book == nil or util.tableSize(self.pages_stats) < 2 then
+    if id_book == nil or #self.pages_stat_ts < 2 then
         return
     end
-    local diff_time
+    local now_ts = TimeVal:now().sec
     local conn = SQ3.open(db_location)
-    local sorted_performance = {}
-    for time, pages in pairs(self.pages_stats) do
-        table.insert(sorted_performance, time)
-    end
-    table.sort(sorted_performance)
     conn:exec('BEGIN')
     local stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?)")
-    for i=1, #sorted_performance - 1 do
-        diff_time = sorted_performance[i+1] - sorted_performance[i]
-        if diff_time >= self.page_min_read_sec then
-            stmt:reset():bind(id_book,
-                self.pages_stats[sorted_performance[i]],
-                sorted_performance[i],
-                math.min(diff_time, self.page_max_read_sec)):step()
+    for page, ts in ipairs(self.pages_stat_ts) do
+        local duration = self.pages_stat_duration[k]
+        if duration and duration > 0 then
+            stmt:reset():bind(id_book, page, ts, duration):step()
         end
     end
     conn:exec('COMMIT')
@@ -589,7 +582,7 @@ function ReaderStatistics:insertDB(id_book)
         WHERE  id = ?
     ]]
     stmt = conn:prepare(sql_stmt)
-    stmt:reset():bind(TimeVal:now().sec, self.data.notes, self.data.highlights, total_read_time, total_read_pages,
+    stmt:reset():bind(now_ts, self.data.notes, self.data.highlights, total_read_time, total_read_pages,
         self.data.pages, id_book):step()
     if total_read_pages then
         self.total_read_pages = tonumber(total_read_pages)
@@ -601,9 +594,10 @@ function ReaderStatistics:insertDB(id_book)
     else
         self.total_read_time = 0
     end
-    self.pages_stats = {}
+    self.pages_stat_ts = {}
+    self.pages_stat_duration = {}
     -- last page must be added once more
-    self.pages_stats[TimeVal:now().sec] = self.curr_page
+    self.pages_stat_ts[self.curr_page] = now_ts
     conn:close()
 end
 
@@ -657,10 +651,11 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
             -- if was disabled have to get data from db
             if self.is_enabled and not self:isDocless() then
                 self:initData()
-                self.pages_stats = {}
+                self.pages_stat_ts = {}
+                self.pages_stat_duration = {}
                 self.start_current_period = TimeVal:now().sec
                 self.curr_page = self.ui:getCurrentPage()
-                self.pages_stats[self.start_current_period] = self.curr_page
+                self.pages_stat_ts[self.curr_page] = self.start_current_period
             end
             self:saveSettings()
             if not self:isDocless() then
@@ -1874,33 +1869,39 @@ function ReaderStatistics:onPageUpdate(pageno)
 
     -- First page update of the session, just update the current page's timestamp
     if not self.curr_page then
-        self.pages_stats[pageno] = now_ts
+        self.pages_stat_ts[pageno] = now_ts
         self.curr_page = pageno
         return
     end
 
     -- Compute the difference between the previous page's timestamp (if there is one)
     local then_ts
-    if self.pages_stats[self.curr_page] then
-        then_ts = self.pages_stats[self.curr_page]
+    if self.pages_stat_ts[self.curr_page] then
+        then_ts = self.pages_stat_ts[self.curr_page]
     end
 
     -- If we don't have a previous timestamp to compare to, abort early
     if not then_ts then
-        self.pages_stats[pageno] = now_ts
+        self.pages_stat_ts[pageno] = now_ts
         self.curr_page = pageno
         return
     end
 
+    local duration = self.pages_stat_duration[self.curr_page] or 0
     local diff_time = now_ts - then_ts
     if diff_time >= self.page_min_read_sec and diff_time <= self.page_max_read_sec then
         self.mem_read_time = self.mem_read_time + diff_time
+        duration = duration + diff_time
         self.read_pages_set[pageno] = true
     elseif diff_time > self.page_max_read_sec
         self.mem_read_time = self.mem_read_time + self.page_max_read_sec
+        duration = duration + self.page_max_read_sec
         self.read_pages_set[pageno] = true
     end
     self.mem_read_pages = #self.read_pages_set
+
+    -- Update the total read duration for the *current* page for this session
+    self.pages_stat_duration[self.curr_page] = duration
 
     -- Every 50 page turns, dump stats to the DB
     if self.pageturn_count >= PAGE_INSERT then
@@ -1917,7 +1918,7 @@ function ReaderStatistics:onPageUpdate(pageno)
     end
 
     -- We're done, update the current page's timestamp and the current page tracker
-    self.pages_stats[pageno] = now_ts
+    self.pages_stat_ts[pageno] = now_ts
     self.curr_page = pageno
 end
 
@@ -1977,8 +1978,9 @@ end
 -- screensaver off
 function ReaderStatistics:onResume()
     self.start_current_period = TimeVal:now().sec
-    self.pages_stats = {}
-    self.pages_stats[self.start_current_period] = self.curr_page
+    self.pages_stat_ts = {}
+    self.pages_stat_duration = {}
+    self.pages_stat_ts[self.self.curr_page] = self.start_current_period
 end
 
 function ReaderStatistics:saveSettings()
