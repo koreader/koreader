@@ -192,17 +192,13 @@ function ReaderStatistics:onUpdateToc()
     local new_pagecount = self.view.document:getPageCount()
 
     if new_pagecount ~= self.data.pages then
-        logger.info("ReaderStatistics: Pagecount change, clearing volatile book statistics")
-        -- Clear volatile stats for current book
-        self:resetVolatileStats()
-        -- NOTE: If we were to clear the DB stats, too:
-        --[[
-        self:deleteBook(self.id_curr_book)
-        -- Re-create empty entry for the book
-        self.id_curr_book = self:getIdBookDB()
-        --]]
-        --- @fixme: This does mean that you may end up with conflicting page numbers in the database...
-        ---         On the other hand, wiping the book off the db on every minor pagination change feels a bit harsh...
+        if self.id_curr_book then
+            logger.info("ReaderStatistics: Pagecount change, flushing volatile book statistics")
+            -- Flush volatile stats to DB for current book
+            self:insertDB(self.id_curr_book)
+            --- @fixme: This does mean that you may end up with conflicting page numbers in the database...
+            ---         On the other hand, wiping the book off the db on every minor pagination change feels a bit harsh...
+        end
     end
 
     -- Update our copy of the page count
