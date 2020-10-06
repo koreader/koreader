@@ -42,7 +42,7 @@ local ReaderStatistics = Widget:extend{
     calendar_show_histogram = true,
     calendar_browse_future_months = false,
     start_current_period = 0,
-    curr_page = nil,
+    curr_page = 0,
     id_curr_book = nil,
     is_enabled = nil,
     convert_to_db = nil, -- true when migration to DB has been done
@@ -1885,7 +1885,7 @@ end
 
 
 function ReaderStatistics:onPosUpdate(pos, pageno)
-    if not self.curr_page or self.curr_page ~= pageno then
+    if self.curr_page ~= pageno then
         self:onPageUpdate(pageno)
     end
 end
@@ -1900,15 +1900,6 @@ function ReaderStatistics:onPageUpdate(pageno)
 
     local now_ts = TimeVal:now().sec
 
-    -- First page update of the session, just update the current page's timestamp
-    if not self.curr_page then
-        logger.dbg("First PageUpdate of the statistics session")
-        self.pages_stat_ts[pageno] = now_ts
-        self.curr_page = pageno
-        self.pageturn_ts = now_ts
-        return
-    end
-
     -- Compute the difference between the previous page's timestamp (if there is one)
     local then_ts
     if self.pages_stat_ts[self.curr_page] then
@@ -1917,7 +1908,7 @@ function ReaderStatistics:onPageUpdate(pageno)
 
     -- If we don't have a previous timestamp to compare to, abort early
     if not then_ts then
-        logger.dbg("No timestamp for previous page", self.curr_page)
+        logger.dbg("ReaderStatistics: No timestamp for previous page", self.curr_page)
         self.pages_stat_ts[pageno] = now_ts
         self.curr_page = pageno
         self.pageturn_ts = now_ts
