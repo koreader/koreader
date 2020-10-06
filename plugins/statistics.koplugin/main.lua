@@ -188,17 +188,20 @@ function ReaderStatistics:initData()
     end
 end
 
--- Reset the stats on significant page count changes after a font size update (> 10%)
+-- Reset the (volatile) stats on significant page count changes after a font size update (> 10%)
 function ReaderStatistics:onFontSizeUpdate()
     local new_pagecount = self.view.document:getPageCount()
 
     local page_diff = math.abs(new_pagecount - self.data.pages)
     if page_diff >= math.floor(PAGECOUNT_DIFF_THRESHOLD * self.data.pages) then
-        -- Clear DB & volatile stats for current book
-        self:deleteBook(self.id_curr_book)
+        -- Clear volatile stats for current book
         self:resetVolatileStats()
+        -- NOTE: If we were to clear the DB stats, too:
+        --[[
+        self:deleteBook(self.id_curr_book)
         -- Re-create empty entry for the book
         self.id_curr_book = self:getIdBookDB()
+        --]]
     end
 
     -- Update our copy of the page count
