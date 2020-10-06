@@ -582,15 +582,19 @@ function ReaderStatistics:getIdBookDB()
 end
 
 function ReaderStatistics:insertDB(id_book)
-    if id_book == nil or #self.pages_stat_ts < 2 then
+    logger.info("ReaderStatistics:insertDB", id_book)
+    if id_book == nil or util.tableSize(self.pages_stat_ts) < 2 then
         return
     end
     local now_ts = TimeVal:now().sec
+    logger.info("now", now_ts)
     local conn = SQ3.open(db_location)
     conn:exec('BEGIN')
     local stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?)")
-    for page, ts in ipairs(self.pages_stat_ts) do
-        local duration = self.pages_stat_duration[k]
+    for page, ts in pairs(self.pages_stat_ts) do
+        logger.info("Iterating on page", page, "last opened @", ts)
+        local duration = self.pages_stat_duration[page]
+        logger.info("Duration is", duration)
         if duration and duration > 0 then
             stmt:reset():bind(id_book, page, ts, duration):step()
         end
@@ -1075,6 +1079,7 @@ function ReaderStatistics:getCurrentBookStats()
 end
 
 function ReaderStatistics:getCurrentStat(id_book)
+    logger.info("ReaderStatistics:getCurrentStat", id_book)
     if id_book == nil then
         return
     end
@@ -1939,6 +1944,7 @@ function ReaderStatistics:onPageUpdate(pageno)
 
     -- Update the total read duration for the *current* page for this session
     self.pages_stat_duration[self.curr_page] = duration
+    logger.info("Set read duration to", duration, "for page", self.curr_page)
 
     -- See if we'll want to flush volatile stats to the DB
     local flush_stats = false
