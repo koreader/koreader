@@ -27,7 +27,7 @@ local T = FFIUtil.template
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
 local db_location = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
 local PAGE_INSERT = 50
-local PAGECOUNT_DIFF_THRESHOLD = 0.10
+local PAGECOUNT_DIFF_THRESHOLD = 0.075
 local DEFAULT_MIN_READ_SEC = 5
 local DEFAULT_MAX_READ_SEC = 120
 local DEFAULT_CALENDAR_START_DAY_OF_WEEK = 2 -- Monday
@@ -189,7 +189,7 @@ function ReaderStatistics:initData()
     end
 end
 
--- Reset the (volatile) stats on significant page count changes after a font size update (> 10%)
+-- Reset the (volatile) stats on significant page count changes after a font size update
 function ReaderStatistics:onSetFontSize()
     local new_pagecount = self.view.document:getPageCount()
 
