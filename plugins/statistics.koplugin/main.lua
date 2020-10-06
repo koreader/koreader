@@ -27,7 +27,6 @@ local T = FFIUtil.template
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
 local db_location = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
 local PAGE_INSERT = 50
-local PAGECOUNT_DIFF_THRESHOLD = 0.075
 local DEFAULT_MIN_READ_SEC = 5
 local DEFAULT_MAX_READ_SEC = 120
 local DEFAULT_CALENDAR_START_DAY_OF_WEEK = 2 -- Monday
@@ -184,17 +183,16 @@ function ReaderStatistics:initData()
     else
         -- NOTE: Possibly less weird-looking than initializing this to 0?
         self.avg_time = math.floor(0.75 * self.page_max_read_sec)
-        logger.info("Initializing average time per page at 75% of the max value, i.e.,", self.avg_time)
+        logger.info("ReaderStatistics: Initializing average time per page at 75% of the max value, i.e.,", self.avg_time)
     end
 end
 
--- Reset the (volatile) stats on significant page count changes after a font size update
-function ReaderStatistics:onSetFontSize()
+-- Reset the (volatile) stats on page count changes (e.g., after a font size update)
+function ReaderStatistics:onUpdateToc()
     local new_pagecount = self.view.document:getPageCount()
 
-    local page_diff = math.abs(new_pagecount - self.data.pages)
-    if page_diff >= math.floor(PAGECOUNT_DIFF_THRESHOLD * math.max(self.data.pages, new_pagecount)) then
-        logger.dbg("Significant pagecount change, clearing volatile book statistics")
+    if new_pagecount ~= self.data.pages then
+        logger.info("ReaderStatistics: Pagecount change, clearing volatile book statistics")
         -- Clear volatile stats for current book
         self:resetVolatileStats()
         -- NOTE: If we were to clear the DB stats, too:

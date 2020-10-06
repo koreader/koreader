@@ -62,7 +62,9 @@ end
 
 function ReaderToc:onUpdateToc()
     self:resetToc()
-    return true
+
+    --- @note: Let this propagate, plugins/statistics uses it to react to changes in document pagination
+    --return true
 end
 
 function ReaderToc:onPageUpdate(pageno)
