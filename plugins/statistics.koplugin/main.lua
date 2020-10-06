@@ -1910,24 +1910,22 @@ function ReaderStatistics:onPageUpdate(pageno)
     end
 
     -- Compute the difference between now and the previous page's timestamp
-    local duration = self.pages_stat_duration[self.curr_page] or 0
+    local curr_duration = self.pages_stat_duration[self.curr_page] or 0
     local diff_time = now_ts - then_ts
     if diff_time >= self.page_min_read_sec and diff_time <= self.page_max_read_sec then
         self.mem_read_time = self.mem_read_time + diff_time
-        duration = duration + diff_time
         -- If the page hadn't been read already, count it as read
-        if not self.pages_stat_duration[self.curr_page] then
+        if curr_duration == 0 then
             self.mem_read_pages = self.mem_read_pages + 1
         end
         -- Update the reading duration for the current page for this session
-        self.pages_stat_duration[self.curr_page] = duration
+        self.pages_stat_duration[self.curr_page] = curr_duration + diff_time
     elseif diff_time > self.page_max_read_sec then
         self.mem_read_time = self.mem_read_time + self.page_max_read_sec
-        duration = duration + self.page_max_read_sec
-        if not self.pages_stat_duration[self.curr_page] then
+        if curr_duration == 0 then
             self.mem_read_pages = self.mem_read_pages + 1
         end
-        self.pages_stat_duration[self.curr_page] = duration
+        self.pages_stat_duration[self.curr_page] = curr_duration + self.page_max_read_sec
     end
 
     -- See if we'll want to flush volatile stats to the DB...
