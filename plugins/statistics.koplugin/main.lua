@@ -582,19 +582,15 @@ function ReaderStatistics:getIdBookDB()
 end
 
 function ReaderStatistics:insertDB(id_book)
-    logger.info("ReaderStatistics:insertDB", id_book)
     if id_book == nil or util.tableSize(self.pages_stat_ts) < 2 then
         return
     end
     local now_ts = TimeVal:now().sec
-    logger.info("now", now_ts)
     local conn = SQ3.open(db_location)
     conn:exec('BEGIN')
     local stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?)")
     for page, ts in pairs(self.pages_stat_ts) do
-        logger.info("Iterating on page", page, "last opened @", ts)
         local duration = self.pages_stat_duration[page]
-        logger.info("Duration is", duration)
         if duration and duration > 0 then
             stmt:reset():bind(id_book, page, ts, duration):step()
         end
@@ -1079,7 +1075,6 @@ function ReaderStatistics:getCurrentBookStats()
 end
 
 function ReaderStatistics:getCurrentStat(id_book)
-    logger.info("ReaderStatistics:getCurrentStat", id_book)
     if id_book == nil then
         return
     end
@@ -1907,7 +1902,7 @@ function ReaderStatistics:onPageUpdate(pageno)
 
     -- First page update of the session, just update the current page's timestamp
     if not self.curr_page then
-        logger.dbg("No previous page")
+        logger.dbg("First PageUpdate of the statistics session")
         self.pages_stat_ts[pageno] = now_ts
         self.curr_page = pageno
         self.pageturn_ts = now_ts
@@ -1944,7 +1939,6 @@ function ReaderStatistics:onPageUpdate(pageno)
 
     -- Update the total read duration for the *current* page for this session
     self.pages_stat_duration[self.curr_page] = duration
-    logger.info("Set read duration to", duration, "for page", self.curr_page)
 
     -- See if we'll want to flush volatile stats to the DB
     local flush_stats = false
@@ -1952,7 +1946,8 @@ function ReaderStatistics:onPageUpdate(pageno)
     if self.pageturn_count >= PAGE_INSERT then
         flush_stats = true
     end
-    -- We also want a flush to DB on the hour, to allow CalendarView from accurately tracking per-hour stats in the DB
+    -- We also want a flush to DB on the hour, to allow CalendarView to accurately track per-hour stats in the DB,
+    -- since we only keep track of a single timestamp per page in memory, unlike in the DB.
     if os.date("%H", now_ts) ~= os.date("%H", self.pageturn_ts) then
         flush_stats = true
     end
