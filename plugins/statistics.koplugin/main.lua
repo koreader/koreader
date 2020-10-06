@@ -1918,19 +1918,20 @@ function ReaderStatistics:onPageUpdate(pageno)
 
     -- By now, we're sure that we actually have a tuple (and the rest of the code ensures they're sane, i.e., zero-initialized)
     local curr_duration = data_tuple[2]
+    -- NOTE: If all goes well, given the earlier curr_page != pageno check, curr_duration should always be 0 here.
     -- Compute the difference between now and the previous page's last timestamp
     local diff_time = now_ts - then_ts
     if diff_time >= self.page_min_read_sec and diff_time <= self.page_max_read_sec then
         self.mem_read_time = self.mem_read_time + diff_time
-        -- If the page hadn't been read already, count it as read
-        if curr_duration == 0 then
+        -- If it's the first time we're computing a duration for this page, count it as read
+        if #page_data == 1 and curr_duration == 0 then
             self.mem_read_pages = self.mem_read_pages + 1
         end
         -- Update the tuple with the computed duration
         data_tuple[2] = curr_duration + diff_time
     elseif diff_time > self.page_max_read_sec then
         self.mem_read_time = self.mem_read_time + self.page_max_read_sec
-        if curr_duration == 0 then
+        if #page_data == 1 and curr_duration == 0 then
             self.mem_read_pages = self.mem_read_pages + 1
         end
         -- Update the tuple with the computed duration
