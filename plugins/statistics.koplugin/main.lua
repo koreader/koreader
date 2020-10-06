@@ -182,7 +182,9 @@ function ReaderStatistics:initData()
     if self.total_read_pages > 0 then
         self.avg_time = self.total_read_time / self.total_read_pages
     else
-        self.avg_time = 0
+        -- NOTE: Possibly less weird-looking than initializing this to 0?
+        self.avg_time = math.floor(0.75 * self.page_max_read_sec)
+        logger.info("Initializing average time per page at 75% of the max value, i.e.,", self.avg_time)
     end
 end
 
@@ -1967,7 +1969,7 @@ function ReaderStatistics:onPageUpdate(pageno)
     -- We're done, update the current page tracker
     self.curr_page = pageno
     -- And, in the new page's list, append a new tuple with the current timestamp and a placeholder duration
-    -- (duration will be computed next pageturn)
+    -- (duration will be computed on next pageturn)
     local new_page_data = self.page_stat[pageno] or {}
     table.insert(new_page_data, { now_ts, 0 })
     self.page_stat[pageno] = new_page_data
