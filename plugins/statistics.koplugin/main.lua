@@ -41,12 +41,16 @@ local ReaderStatistics = Widget:extend{
     calendar_show_histogram = true,
     calendar_browse_future_months = false,
     start_current_period = 0,
-    curr_page = 0,
+    curr_page = nil,
     id_curr_book = nil,
     curr_total_time = 0,
     curr_total_pages = 0,
     is_enabled = nil,
     convert_to_db = nil, -- true when migration to DB has been done
+    pageturn_count = 0
+    mem_read_time = 0
+    read_pages_set = {}
+    mem_read_pages = 0
     total_read_pages = 0,
     total_read_time = 0,
     avg_time = nil,
@@ -1853,7 +1857,7 @@ end
 
 
 function ReaderStatistics:onPosUpdate(pos, pageno)
-    if self.curr_page ~= pageno then
+    if not self.curr_page or self.curr_page ~= pageno then
         self:onPageUpdate(pageno)
     end
 end
@@ -1862,39 +1866,59 @@ function ReaderStatistics:onPageUpdate(pageno)
     if self:isDocless() or not self.is_enabled then
         return
     end
-    self.curr_page = pageno
-    self.pages_stats[TimeVal:now().sec] = pageno
-    local mem_read_pages = 0
-    local mem_read_time = 0
-    if util.tableSize(self.pages_stats) > 1 then
-        local sorted_performance = {}
-        for time, page in pairs(self.pages_stats) do
-            table.insert(sorted_performance, time)
-        end
-        table.sort(sorted_performance)
-        local read_pages_set = {}
-        local diff_time
-        for i=1, #sorted_performance - 1 do
-            diff_time = sorted_performance[i + 1] - sorted_performance[i]
-            if diff_time <= self.page_max_read_sec and diff_time >= self.page_min_read_sec  then
-                mem_read_time = mem_read_time + diff_time
-                read_pages_set[self.pages_stats[sorted_performance[i]]] = true
-            elseif diff_time > self.page_max_read_sec then
-                mem_read_time = mem_read_time + self.page_max_read_sec
-                read_pages_set[self.pages_stats[sorted_performance[i]]] = true
-            end
-        end
-        mem_read_pages = util.tableSize(read_pages_set)
+
+    -- Increment the counter
+    self.pageturn_count = self.pageturn_count + 1
+
+    local now_ts = TimeVal:now().sec
+
+    -- First page update of the session, just update the current page's timestamp
+    if not self.curr_page then
+        self.pages_stats[pageno] = now_ts
+        self.curr_page = pageno
+        return
     end
-    -- every 50 pages we write stats to database
-    if util.tableSize(self.pages_stats) % PAGE_INSERT == 0 then
+
+    -- Compute the difference between the previous page's timestamp (if there is one)
+    local then_ts
+    if self.pages_stats[self.curr_page] then
+        then_ts = self.pages_stats[self.curr_page]
+    end
+
+    -- If we don't have a previous timestamp to compare to, abort early
+    if not then_ts then
+        self.pages_stats[pageno] = now_ts
+        self.curr_page = pageno
+        return
+    end
+
+    local diff_time = now_ts - then_ts
+    if diff_time >= self.page_min_read_sec and diff_time <= self.page_max_read_sec then
+        self.mem_read_time = self.mem_read_time + diff_time
+        self.read_pages_set[pageno] = true
+    elseif diff_time > self.page_max_read_sec
+        self.mem_read_time = self.mem_read_time + self.page_max_read_sec
+        self.read_pages_set[pageno] = true
+    end
+    self.mem_read_pages = #self.read_pages_set
+
+    -- Every 50 page turns, dump stats to the DB
+    if self.pageturn_count >= PAGE_INSERT then
         self:insertDB(self.id_curr_book)
-        mem_read_pages = 0
-        mem_read_time = 0
+        self.pageturn_count = 0
+        self.mem_read_time = 0
+        self.read_pages_set = {}
+        self.mem_read_pages = 0
     end
-    if self.total_read_pages > 0 or mem_read_pages > 0 then
-        self.avg_time = (self.total_read_time + mem_read_time) / (self.total_read_pages + mem_read_pages)
+
+    -- Update average time per page (if need be, insertDB will have updated the totals)
+    if self.total_read_pages > 0 or self.mem_read_pages > 0 then
+        self.avg_time = (self.total_read_time + self.mem_read_time) / (self.total_read_pages + self.mem_read_pages)
     end
+
+    -- We're done, update the current page's timestamp and the current page tracker
+    self.pages_stats[pageno] = now_ts
+    self.curr_page = pageno
 end
 
 -- For backward compatibility
