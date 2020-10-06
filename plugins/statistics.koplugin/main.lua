@@ -1930,7 +1930,7 @@ function ReaderStatistics:onPageUpdate(pageno)
         self.mem_read_time = self.mem_read_time + diff_time
         duration = duration + diff_time
         self.read_pages_set[pageno] = true
-    elseif diff_time > self.page_max_read_sec
+    elseif diff_time > self.page_max_read_sec then
         self.mem_read_time = self.mem_read_time + self.page_max_read_sec
         duration = duration + self.page_max_read_sec
         self.read_pages_set[pageno] = true
