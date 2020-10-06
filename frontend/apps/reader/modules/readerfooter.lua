@@ -119,7 +119,11 @@ local footerTextGeneratorMap = {
                 return (prefix .. " %d"):format(powerd:frontlightIntensity())
             end
         else
-            return T(_("%1 Off"), prefix)
+            if footer.settings.hide_empty_generators then
+                return ""
+            else
+                return T(_("%1 Off"), prefix)
+            end
         end
     end,
     battery = function(footer)
@@ -165,8 +169,7 @@ local footerTextGeneratorMap = {
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].bookmark_count
         local bookmark_count = footer.ui.bookmark:getNumberOfBookmarks()
-        -- Don't show anything if there aren't any bookmarks
-        if bookmark_count == 0 then
+        if footer.settings.hide_empty_generators and bookmark_count == 0 then
             return ""
         end
         return prefix .. " " .. tostring(bookmark_count)
@@ -246,14 +249,22 @@ local footerTextGeneratorMap = {
             if NetworkMgr:isWifiOn() then
                 return symbol_prefix.icons.wifi_status
             else
-                return symbol_prefix.icons.wifi_status_off
+                if footer.settings.hide_empty_generators then
+                    return ""
+                else
+                    return symbol_prefix.icons.wifi_status_off
+                end
             end
         else
             local prefix = symbol_prefix[symbol_type].wifi_status
             if NetworkMgr:isWifiOn() then
                 return T(_("%1 On"), prefix)
             else
-                return T(_("%1 Off"), prefix)
+                if footer.settings.hide_empty_generators then
+                    return ""
+                else
+                    return T(_("%1 Off"), prefix)
+                end
             end
         end
     end,
@@ -273,7 +284,7 @@ local footerTextGeneratorMap = {
             end
             return BD.auto(fitted_title_text)
         else
-            return
+            return ""
         end
     end,
     book_chapter = function(footer)
@@ -292,7 +303,7 @@ local footerTextGeneratorMap = {
             end
             return BD.auto(fitted_chapter_text)
         else
-            return
+            return ""
         end
     end
 }
@@ -895,6 +906,17 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.bottom_horizontal_separator = not self.settings.bottom_horizontal_separator
+                    self:refreshFooter(true, true)
+                end,
+            },
+            {
+                text = _("Hide empty items"),
+                help_text = _([[This will hide values like 0 or off.]]),
+                checked_func = function()
+                    return self.settings.hide_empty_generators
+                end,
+                callback = function()
+                    self.settings.hide_empty_generators = not self.settings.hide_empty_generators
                     self:refreshFooter(true, true)
                 end,
             },
