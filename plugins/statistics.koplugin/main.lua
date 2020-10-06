@@ -1904,10 +1904,8 @@ function ReaderStatistics:onPageUpdate(pageno)
     local then_ts
     if self.pages_stat_ts[self.curr_page] then
         then_ts = self.pages_stat_ts[self.curr_page]
-    end
-
-    -- If we don't have a previous timestamp to compare to, abort early
-    if not then_ts then
+    else
+        -- If we don't have a previous timestamp to compare to, abort early
         logger.dbg("ReaderStatistics: No timestamp for previous page", self.curr_page)
         self.pages_stat_ts[pageno] = now_ts
         self.curr_page = pageno
