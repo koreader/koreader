@@ -52,8 +52,7 @@ local ReaderStatistics = Widget:extend{
     total_read_pages = 0,
     total_read_time = 0,
     avg_time = nil,
-    pages_stat_ts = {},
-    pages_stat_duration = {},
+    page_stat = {}, -- Dictionary, indexed by page (hash), contains a list (array) of { timestamp, duration } tuples.
     data = {
         title = "",
         authors = "",
@@ -215,8 +214,7 @@ function ReaderStatistics:resetVolatileStats()
     self.mem_read_pages = 0
 
     -- Volatile storage pending flush to db
-    self.pages_stat_ts = {}
-    self.pages_stat_duration = {}
+    self.page_stat = {}
 end
 
 function ReaderStatistics:getStatsBookStatus(id_curr_book, stat_enable)
@@ -585,11 +583,9 @@ function ReaderStatistics:insertDB(id_book)
     local conn = SQ3.open(db_location)
     conn:exec('BEGIN')
     local stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?)")
-    for page, ts_list in pairs(self.pages_stat_ts) do
-        for k, ts in ipairs(ts_list) do
-            -- Both pages_stat_ts & pages_stat_duration lists have stable, matching indices
-            local duration = self.pages_stat_duration[page][k]
-            if duration then
+    for page, data_list in pairs(self.page_stat) do
+        for ts, duration in ipairs(data_list) do
+            if duration > 0 then
                 stmt:reset():bind(id_book, page, ts, duration):step()
             end
         end
@@ -627,8 +623,8 @@ function ReaderStatistics:insertDB(id_book)
     end
 
     self:resetVolatileStats()
-    -- last page must be added once more
-    self.pages_stat_ts[self.curr_page] = { now_ts }
+    -- Re-seed the volatile stats with minimal data about the current page
+    self.page_stat[self.curr_page] = { { now_ts, 0 } }
     conn:close()
 end
 
@@ -685,7 +681,7 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
                 self:resetVolatileStats()
                 self.start_current_period = TimeVal:now().sec
                 self.curr_page = self.ui:getCurrentPage()
-                self.pages_stat_ts[self.curr_page] = { self.start_current_period }
+                self.page_stat[self.curr_page] = { { self.start_current_period, 0 } }
             end
             self:saveSettings()
             if not self:isDocless() then
@@ -1896,19 +1892,21 @@ function ReaderStatistics:onPageUpdate(pageno)
     local now_ts = TimeVal:now().sec
 
     -- Get the previous page's last timestamp (if there is one)
-    local curr_page_ts_list = self.pages_stat_ts[self.curr_page] or {}
-    local then_ts = curr_page_ts_list[#curr_page_ts_list]
+    local page_data = self.page_stat[self.curr_page] or {}
+    -- This is a list of tuples, in insertion order, we want the last one
+    local data_tuple = page_data[#page_data] or {}
+    -- Tuple layout is { timestamp, duration }
+    local then_ts = data_tuple[1]
     -- If we don't have a previous timestamp to compare to, abort early
     if not then_ts then
         logger.dbg("ReaderStatistics: No timestamp for previous page", self.curr_page)
-        self.pages_stat_ts[pageno] = { now_ts }
+        self.page_stat[pageno] = { { now_ts, 0 } }
         self.curr_page = pageno
         return
     end
 
     -- Compute the difference between now and the previous page's last timestamp
-    local curr_page_duration_list = self.pages_stat_duration[self.curr_page] or {}
-    local curr_duration = curr_page_duration_list[#curr_page_duration_list] or 0
+    local curr_duration = data_tuple[2] or 0
     local diff_time = now_ts - then_ts
     if diff_time >= self.page_min_read_sec and diff_time <= self.page_max_read_sec then
         self.mem_read_time = self.mem_read_time + diff_time
@@ -1916,16 +1914,21 @@ function ReaderStatistics:onPageUpdate(pageno)
         if curr_duration == 0 then
             self.mem_read_pages = self.mem_read_pages + 1
         end
-        -- Update the reading duration list for the current page
-        table.insert(curr_page_duration_list, curr_duration + diff_time)
-        self.pages_stat_duration[self.curr_page] = curr_page_duration_list
+        -- Create a new data tuple
+        local data = { now_ts, curr_duration + diff_time }
+        -- Update the current page's data list
+        table.insert(page_data, data)
+        self.page_stat[self.curr_page] = page_data
     elseif diff_time > self.page_max_read_sec then
         self.mem_read_time = self.mem_read_time + self.page_max_read_sec
         if curr_duration == 0 then
             self.mem_read_pages = self.mem_read_pages + 1
         end
-        table.insert(curr_page_duration_list, curr_duration + self.page_max_read_sec)
-        self.pages_stat_duration[self.curr_page] = curr_page_duration_list
+        -- Create a new data tuple
+        local data = { now_ts, curr_duration + self.page_max_read_sec }
+        -- Update the current page's data list
+        table.insert(page_data, data)
+        self.page_stat[self.curr_page] = page_data
     end
 
     -- We want a flush to db every 50 page turns
@@ -1939,9 +1942,7 @@ function ReaderStatistics:onPageUpdate(pageno)
         self.avg_time = (self.total_read_time + self.mem_read_time) / (self.total_read_pages + self.mem_read_pages)
     end
 
-    -- We're done, update the current page's timestamp list and the current page tracker
-    table.insert(curr_page_ts_list, now_ts)
-    self.pages_stat_ts[pageno] = curr_page_ts_list
+    -- We're done, update the current page tracker
     self.curr_page = pageno
 end
 
@@ -2002,7 +2003,7 @@ end
 function ReaderStatistics:onResume()
     self.start_current_period = TimeVal:now().sec
     self:resetVolatileStats()
-    self.pages_stat_ts[self.self.curr_page] = { self.start_current_period }
+    self.page_stat[self.self.curr_page] = { { self.start_current_period, 0 } }
 end
 
 function ReaderStatistics:saveSettings()
