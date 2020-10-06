@@ -217,7 +217,6 @@ function ReaderStatistics:resetVolatileStats()
 
     -- Volatile storage pending flush to db
     self.page_stat = {}
-    logger.info("ReaderStatistics:resetVolatileStats")
 end
 
 function ReaderStatistics:getStatsBookStatus(id_curr_book, stat_enable)
@@ -587,12 +586,10 @@ function ReaderStatistics:insertDB(id_book)
     conn:exec('BEGIN')
     local stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?)")
     for page, data_list in pairs(self.page_stat) do
-        logger.info("ReaderStatistics:insertDB: Iterating on page", page)
         for _, data_tuple in ipairs(data_list) do
             -- See self.page_stat declaration above about the tuple's layout
             local ts = data_tuple[1]
             local duration = data_tuple[2]
-            logger.info("ReaderStatistics:insertDB: opened @", ts, "read in", duration)
             -- Skip placeholder durations
             if duration > 0 then
                 stmt:reset():bind(id_book, page, ts, duration):step()
@@ -634,7 +631,6 @@ function ReaderStatistics:insertDB(id_book)
     self:resetVolatileStats()
     -- Re-seed the volatile stats with minimal data about the current page
     self.page_stat[self.curr_page] = { { now_ts, 0 } }
-    logger.info("ReaderStatistics:insertDB: Inserted a placeholder duration for page", self.curr_page, "@ ts", now_ts)
     conn:close()
 end
 
@@ -692,7 +688,6 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
                 self.start_current_period = TimeVal:now().sec
                 self.curr_page = self.ui:getCurrentPage()
                 self.page_stat[self.curr_page] = { { self.start_current_period, 0 } }
-                logger.info("ReaderStatistics:getStatisticEnabledMenuItem: Inserted a placeholder duration for page", self.curr_page, "@ ts", self.start_current_period)
             end
             self:saveSettings()
             if not self:isDocless() then
@@ -1899,8 +1894,6 @@ function ReaderStatistics:onPageUpdate(pageno)
         return
     end
 
-    logger.info("ReaderStatistics:onPageUpdate: From page", self.curr_page, "to page", pageno)
-
     -- We only care about *actual* page turns ;)
     if self.curr_page == pageno then
         return
@@ -1919,13 +1912,9 @@ function ReaderStatistics:onPageUpdate(pageno)
     if not then_ts then
         logger.dbg("ReaderStatistics: No timestamp for previous page", self.curr_page)
         self.page_stat[pageno] = { { now_ts, 0 } }
-        logger.info("ReaderStatistics:onPageUpdate: Inserted a placeholder duration for page", pageno, "@ ts", now_ts)
         self.curr_page = pageno
         return
     end
-
-    local dump = require("dump")
-    logger.info("self.page_stat[self.curr_page]:", dump(self.page_stat[self.curr_page]))
 
     -- By now, we're sure that we actually have a tuple (and the rest of the code ensures they're sane, i.e., zero-initialized)
     local curr_duration = data_tuple[2]
@@ -1959,13 +1948,6 @@ function ReaderStatistics:onPageUpdate(pageno)
         self.avg_time = (self.total_read_time + self.mem_read_time) / (self.total_read_pages + self.mem_read_pages)
     end
 
-    logger.info("data_tuple:", dump(data_tuple))
-    logger.info("page_data[#page_data]:", dump(page_data[#page_data]))
-    logger.info("page_data:", dump(page_data))
-    logger.info("self.page_stat[self.curr_page]:", dump(self.page_stat[self.curr_page]))
-
-    logger.info("self.page_stat[pageno]:", dump(self.page_stat[pageno]))
-
     -- We're done, update the current page tracker
     self.curr_page = pageno
     -- And, in the new page's list, append a new tuple with the current timestamp and a placeholder duration
@@ -1973,9 +1955,6 @@ function ReaderStatistics:onPageUpdate(pageno)
     local new_page_data = self.page_stat[pageno] or {}
     table.insert(new_page_data, { now_ts, 0 })
     self.page_stat[pageno] = new_page_data
-
-    logger.info("new_page_data:", dump(new_page_data))
-    logger.info("self.page_stat[pageno]:", dump(self.page_stat[pageno]))
 end
 
 -- For backward compatibility
@@ -2035,7 +2014,6 @@ end
 function ReaderStatistics:onResume()
     self.start_current_period = TimeVal:now().sec
     self:resetVolatileStats()
-    logger.info("ReaderStatistics:onResume: Inserted a placeholder duration for page", self.curr_page, "@ ts", self.start_current_period)
     self.page_stat[self.curr_page] = { { self.start_current_period, 0 } }
 end
 
