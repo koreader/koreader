@@ -1905,8 +1905,11 @@ function ReaderStatistics:onPageUpdate(pageno)
         return
     end
 
-    -- Compute the difference between now and the previous page's last timestamp
     local curr_duration = data_tuple[2] or 0
+    -- Make sure our tuple is sane
+    data_tuple = { then_ts, curr_duration }
+
+    -- Compute the difference between now and the previous page's last timestamp
     local diff_time = now_ts - then_ts
     if diff_time >= self.page_min_read_sec and diff_time <= self.page_max_read_sec then
         self.mem_read_time = self.mem_read_time + diff_time
@@ -1914,21 +1917,15 @@ function ReaderStatistics:onPageUpdate(pageno)
         if curr_duration == 0 then
             self.mem_read_pages = self.mem_read_pages + 1
         end
-        -- Create a new data tuple
-        local data = { now_ts, curr_duration + diff_time }
-        -- Update the current page's data list
-        table.insert(page_data, data)
-        self.page_stat[self.curr_page] = page_data
+        -- Update the tuple with the computed duration
+        data_tuple[2] = curr_duration + diff_time
     elseif diff_time > self.page_max_read_sec then
         self.mem_read_time = self.mem_read_time + self.page_max_read_sec
         if curr_duration == 0 then
             self.mem_read_pages = self.mem_read_pages + 1
         end
-        -- Create a new data tuple
-        local data = { now_ts, curr_duration + self.page_max_read_sec }
-        -- Update the current page's data list
-        table.insert(page_data, data)
-        self.page_stat[self.curr_page] = page_data
+        -- Update the tuple with the computed duration
+        data_tuple[2] = curr_duration + self.page_max_read_sec
     end
 
     -- We want a flush to db every 50 page turns
@@ -1944,6 +1941,10 @@ function ReaderStatistics:onPageUpdate(pageno)
 
     -- We're done, update the current page tracker
     self.curr_page = pageno
+    -- And, in the new page's list, append a new tuple with the current timestamp (duration will be computed next pageturn)
+    local new_page_data = self.page_stat[pageno] or {}
+    table.insert(new_page_data, { now_ts, 0 })
+    self.page_stat[pageno] = new_page_data
 end
 
 -- For backward compatibility
