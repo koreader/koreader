@@ -43,8 +43,6 @@ local ReaderStatistics = Widget:extend{
     start_current_period = 0,
     curr_page = nil,
     id_curr_book = nil,
-    curr_total_time = 0,
-    curr_total_pages = 0,
     is_enabled = nil,
     convert_to_db = nil, -- true when migration to DB has been done
     pageturn_count = 0
@@ -180,8 +178,6 @@ function ReaderStatistics:initData()
     -- Update these numbers to what's actually stored in the settings
     -- (not that "notes" is invalid and does not represent edited highlights)
     self.data.highlights, self.data.notes = self.ui.bookmark:getNumberOfHighlightsAndNotes()
-    self.curr_total_time = 0
-    self.curr_total_pages = 0
     self.id_curr_book = self:getIdBookDB()
     self.total_read_pages, self.total_read_time = self:getPageTimeTotalStats(self.id_curr_book)
     if self.total_read_pages > 0 then
@@ -539,7 +535,7 @@ function ReaderStatistics:getIdBookDB()
         stmt = conn:prepare("INSERT INTO book VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         stmt:reset():bind(self.data.title, self.data.authors, self.data.notes,
             TimeVal:now().sec, self.data.highlights, self.data.pages,
-            self.data.series, self.data.language, self.data.md5, self.curr_total_time, self.curr_total_pages):step()
+            self.data.series, self.data.language, self.data.md5, 0, 0):step()
         sql_stmt = [[
             SELECT last_insert_rowid() AS num;
         ]]
