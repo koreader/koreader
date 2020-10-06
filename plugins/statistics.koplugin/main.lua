@@ -1903,11 +1903,11 @@ function ReaderStatistics:onPageUpdate(pageno)
     local now_ts = TimeVal:now().sec
 
     -- Get the previous page's last timestamp (if there is one)
-    local page_data = self.page_stat[self.curr_page] or {}
+    local page_data = self.page_stat[self.curr_page]
     -- This is a list of tuples, in insertion order, we want the last one
-    local data_tuple = page_data[#page_data] or {}
+    local data_tuple = page_data and page_data[#page_data]
     -- Tuple layout is { timestamp, duration }
-    local then_ts = data_tuple[1]
+    local then_ts = data_tuple and data_tuple[1]
     -- If we don't have a previous timestamp to compare to, abort early
     if not then_ts then
         logger.dbg("ReaderStatistics: No timestamp for previous page", self.curr_page)
@@ -1952,9 +1952,12 @@ function ReaderStatistics:onPageUpdate(pageno)
     self.curr_page = pageno
     -- And, in the new page's list, append a new tuple with the current timestamp and a placeholder duration
     -- (duration will be computed on next pageturn)
-    local new_page_data = self.page_stat[pageno] or {}
-    table.insert(new_page_data, { now_ts, 0 })
-    self.page_stat[pageno] = new_page_data
+    local new_page_data = self.page_stat[pageno]
+    if new_page_data then
+        table.insert(new_page_data, { now_ts, 0 })
+    else
+        self.page_stat[pageno] = { { now_ts, 0 } }
+    end
 end
 
 -- For backward compatibility
