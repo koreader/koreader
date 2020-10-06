@@ -193,7 +193,7 @@ function ReaderStatistics:onSetFontSize()
     local new_pagecount = self.view.document:getPageCount()
 
     local page_diff = math.abs(new_pagecount - self.data.pages)
-    if page_diff >= math.floor(PAGECOUNT_DIFF_THRESHOLD * self.data.pages) then
+    if page_diff >= math.floor(PAGECOUNT_DIFF_THRESHOLD * math.max(self.data.pages, new_pagecount)) then
         logger.dbg("Significant pagecount change, clearing volatile book statistics")
         -- Clear volatile stats for current book
         self:resetVolatileStats()
