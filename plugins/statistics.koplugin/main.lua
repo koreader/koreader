@@ -26,7 +26,7 @@ local T = FFIUtil.template
 
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
 local db_location = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
-local PAGE_INSERT = 50
+local MAX_PAGETURNS_BEFORE_FLUSH = 50
 local DEFAULT_MIN_READ_SEC = 5
 local DEFAULT_MAX_READ_SEC = 120
 local DEFAULT_CALENDAR_START_DAY_OF_WEEK = 2 -- Monday
@@ -1939,7 +1939,7 @@ function ReaderStatistics:onPageUpdate(pageno)
     end
 
     -- We want a flush to db every 50 page turns
-    if self.pageturn_count >= PAGE_INSERT then
+    if self.pageturn_count >= MAX_PAGETURNS_BEFORE_FLUSH then
         self:insertDB(self.id_curr_book)
         -- insertDB will call resetVolatileStats for us ;)
     end
