@@ -33,6 +33,9 @@ local DEFAULT_MAX_READ_SEC = 120
 local DEFAULT_CALENDAR_START_DAY_OF_WEEK = 2 -- Monday
 local DEFAULT_CALENDAR_NB_BOOK_SPANS = 3
 
+-- Current DB schema version
+local DB_SCHEMA_VERSION = 1
+
 local ReaderStatistics = Widget:extend{
     name = "statistics",
     page_min_read_sec = DEFAULT_MIN_READ_SEC,
@@ -293,20 +296,10 @@ Do you want to create an empty database?
         end
 
         -- Check if we need to migrate to a newer schema
-        local db_version = conn:exec("PRAGMA user_version;")
+        local db_version = conn:rowexec("PRAGMA user_version;")
         if db_version < DB_SCHEMA_VERSION then
-            local info = InfoMessage:new{
-                    text = _([[
-Updating statistics database schema.
-Please wait…
-]])}
-                UIManager:show(info)
-                UIManager:forceRePaint()
-                self:upgradeDB(conn)
-                UIManager:close(info)
-                UIManager:forceRePaint()
-                UIManager:show(InfoMessage:new{
-                    text = _("Upgrade complete.\nTap to continue.") })
+            self:upgradeDB(conn)
+            UIManager:show(InfoMessage:new{text =_("Statistics database schema updated."), timeout = 3 })
         end
     else  -- Migrate stats for books in history from metadata.lua to sqlite database
         self.convert_to_db = true
@@ -363,9 +356,6 @@ function ReaderStatistics:partialMd5(file)
     return update()
 end
 
--- Current DB schema version
-local DB_SCHEMA_VERSION = 1
-
 function ReaderStatistics:createDB(conn)
     -- Make it WAL, if possible
     if Device:canUseWAL() then
@@ -406,7 +396,6 @@ function ReaderStatistics:createDB(conn)
     conn:exec(sql_stmt)
     -- DB schema version
     conn:exec(string.format("PRAGMA user_version=%d;", DB_SCHEMA_VERSION))
-    stmt:close()
 end
 
 function ReaderStatistics:upgradeDB(conn)
@@ -418,7 +407,6 @@ function ReaderStatistics:upgradeDB(conn)
     conn:exec(sql_stmt)
     -- Update DB schema version
     conn:exec(string.format("PRAGMA user_version=%d;", DB_SCHEMA_VERSION))
-    stmt:close()
 end
 
 function ReaderStatistics:addBookStatToDB(book_stats, conn)
