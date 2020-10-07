@@ -393,10 +393,10 @@ function ReaderStatistics:createDB(conn)
         CREATE TABLE IF NOT EXISTS page_stat
             (
                 id_book     integer,
-                page        integer NOT NULL,
-                start_time  integer NOT NULL,
-                period      integer NOT NULL,
-                total_pages integer NOT NULL,
+                page        integer NOT NULL DEFAULT 0,
+                start_time  integer NOT NULL DEFAULT 0,
+                period      integer NOT NULL DEFAULT 0,
+                total_pages integer NOT NULL DEFAULT 0,
                 UNIQUE (page, start_time),
                 FOREIGN KEY(id_book) REFERENCES book(id)
             );
@@ -411,14 +411,8 @@ end
 
 function ReaderStatistics:upgradeDB(conn)
     local sql_stmt = [[
-        ALTER TABLE book
-            (
-                ADD COLUMN progress blob
-            );
-        ALTER TABLE page_stat
-            (
-                ADD COLUMN total_pages integer NOT NULL
-            );
+        ALTER TABLE book ADD COLUMN progress blob;
+        ALTER TABLE page_stat ADD COLUMN total_pages integer NOT NULL DEFAULT 0;
         DROP TABLE info;
     ]]
     conn:exec(sql_stmt)
