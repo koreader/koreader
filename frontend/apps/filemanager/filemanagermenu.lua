@@ -17,11 +17,28 @@ local util  = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
 
+local crashlog = require("ui/elements/logviewer"):new{ file = "crash.log" }
+
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
     menu_items = {},
     registered_widgets = nil,
 }
+
+function FileManagerMenu:onShowCrashlog()
+    crashlog:show()
+    return true
+end
+
+function FileManagerMenu:onShowTailLog()
+    crashlog:show(G_reader_settings:readSetting("logviewer_tail_lines") or 20000)
+    return true
+end
+
+function FileManagerMenu:onTruncateLog()
+    crashlog:truncate()
+    return true
+end
 
 function FileManagerMenu:init()
     self.menu_items = {
@@ -300,6 +317,46 @@ function FileManagerMenu:setUpdateItemTable()
             },
         }
     }
+    if crashlog.exists then
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            text = _("Logs: show all"),
+            keep_menu_open = true,
+            callback = function() crashlog:show() end,
+        })
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            text_func = function()
+                return T(_("Logs: show last %1 lines"), crashlog:savedLines())
+            end,
+            keep_menu_open = true,
+            callback = function()
+                crashlog:show(crashlog:savedLines())
+            end,
+            hold_callback = function(touchmenu_instance)
+                local SpinWidget = require("ui/widget/spinwidget")
+                local items = SpinWidget:new{
+                    width = math.floor(Screen:getWidth() * 0.6),
+                    value = crashlog:savedLines(),
+                    value_min = 1000,
+                    value_step = 100,
+                    value_hold_step = 1000,
+                    value_max = 50000,
+                    default_value = 20000,
+                    title_text = _("Number of lines"),
+                    callback = function(spin)
+                        G_reader_settings:saveSetting("logviewer_tail_lines", spin.value)
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                }
+                UIManager:show(items)
+           end,
+        })
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            text = _("Logs: truncate"),
+            keep_menu_open = true,
+            callback = function() crashlog:truncate() end,
+        })
+    end
+
     if Device:isKobo() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Disable forced 8-bit pixel depth"),
