@@ -291,6 +291,9 @@ Do you want to create an empty database?
                 end,
             })
         end
+
+        -- Check if we need to migrate to a newer schema
+        -- NOTE: SQLite has an user_version pragma for that...
     else  -- Migrate stats for books in history from metadata.lua to sqlite database
         self.convert_to_db = true
         if not conn:exec("pragma table_info('book');") then
@@ -346,6 +349,9 @@ function ReaderStatistics:partialMd5(file)
     return update()
 end
 
+-- Current DB schema version
+local DB_SCHEMA_VERSION = 2
+
 function ReaderStatistics:createDB(conn)
     -- Make it WAL, if possible
     if Device:canUseWAL() then
@@ -367,28 +373,48 @@ function ReaderStatistics:createDB(conn)
                 language text,
                 md5 text,
                 total_read_time  integer,
-                total_read_pages integer
+                total_read_pages integer,
+                progress blob
             );
         CREATE TABLE IF NOT EXISTS page_stat
             (
-                id_book    integer,
-                page       integer NOT NULL,
-                start_time integer NOT NULL,
-                period     integer NOT NULL,
+                id_book     integer,
+                page        integer NOT NULL,
+                start_time  integer NOT NULL,
+                period      integer NOT NULL,
+                total_pages integer NOT NULL,
                 UNIQUE (page, start_time),
                 FOREIGN KEY(id_book) REFERENCES book(id)
-             );
+            );
         CREATE TABLE IF NOT EXISTS info
-             (
+            (
                  version integer
-             );
+            );
         CREATE INDEX IF NOT EXISTS page_stat_id_book ON page_stat(id_book);
         CREATE INDEX IF NOT EXISTS book_title_authors_md5 ON book(title, authors, md5);
     ]]
     conn:exec(sql_stmt)
-    --DB structure version - now is version 1
+    -- DB schema version
     local stmt = conn:prepare("INSERT INTO info values (?)")
-    stmt:reset():bind("1"):step()
+    stmt:reset():bind(DB_SCHEMA_VERSION):step()
+    stmt:close()
+end
+
+function ReaderStatistics:upgradeDB(conn)
+    local sql_stmt = [[
+        ALTER TABLE book
+            (
+                ADD COLUMN progress blob
+            );
+        ALTER TABLE page_stat
+            (
+                ADD COLUMN total_pages integer NOT NULL
+            );
+    ]]
+    conn:exec(sql_stmt)
+    -- Update DB schema version
+    local stmt = conn:prepare("INSERT INTO info values (?)")
+    stmt:reset():bind(DB_SCHEMA_VERSION):step()
     stmt:close()
 end
 
@@ -592,7 +618,16 @@ function ReaderStatistics:insertDB(id_book)
     local now_ts = TimeVal:now().sec
     local conn = SQ3.open(db_location)
     conn:exec('BEGIN')
-    local stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?)")
+    -- First, get the current state of the ‰ read progress bar fake bitmask
+    local sql_stmt = [[
+        SELECT progress
+        FROM   book
+        WHERE  id = '%s'
+    ]]
+    local progress_str = conn:rowexec(string.format(sql_stmt, id_book))
+    -- Make that an actual C array (unfortunately, of chars instead of bool to ease (de)serialization...)
+    local progress = ffi.new("char[1001]", progress_str)
+    local stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?, ?)")
     for page, data_list in pairs(self.page_stat) do
         for _, data_tuple in ipairs(data_list) do
             -- See self.page_stat declaration above about the tuple's layout
@@ -600,18 +635,40 @@ function ReaderStatistics:insertDB(id_book)
             local duration = data_tuple[2]
             -- Skip placeholder durations
             if duration > 0 then
-                stmt:reset():bind(id_book, page, ts, duration):step()
+                -- NOTE: The fact that we update self.data.pages *after* this call on layout changes
+                --       should ensure that it matches the layout in which said data was collected.
+                stmt:reset():bind(id_book, page, ts, duration, self.data.pages):step()
+                -- Convert that to a ‰ range, and mark it as read
+                local range_start = ((page - 1) / self.data.pages * 1000)
+                local range_end = (page / self.data.pages * 1000)
+                for i = range_start, range_end do
+                    progress[i] = "1"
+                end
             end
         end
     end
     conn:exec('COMMIT')
-    local sql_stmt = [[
+    sql_stmt = [[
         SELECT count(DISTINCT page),
                sum(period)
         FROM   page_stat
         WHERE  id_book = '%s'
     ]]
     local total_read_pages, total_read_time = conn:rowexec(string.format(sql_stmt, id_book))
+    -- FIXME: Skip if no scale change! (i.e., book's pages == self.data.pages)
+    -- Rescale total_read_pages according to the current layout...
+    local thousandths_per_page = 1 / self.data.pages * 1000
+    -- Count the read thousandths...
+    local read_thousandths = 0
+    for i = 0, 1000 do
+        if progress[i] == "1" then
+            read_thousandths = read_thousandths + 1
+        end
+    end
+    local rescaled_total_read_pages = math.floor(read_thousandths / thousandths_per_page + 0.5)
+    logger.dbg("ReaderStatistics:insertDB Rescaled total_read_pages from", total_read_pages, "to", rescaled_total_read_pages)
+    -- Dump the updated progress bitmask back into the DB
+    progress_str = ffi.string(progress, 1001)
     sql_stmt = [[
         UPDATE book
         SET    last_open = ?,
@@ -619,12 +676,13 @@ function ReaderStatistics:insertDB(id_book)
                highlights = ?,
                total_read_time = ?,
                total_read_pages = ?,
-               pages = ?
+               pages = ?,
+               progress = ?
         WHERE  id = ?
     ]]
     stmt = conn:prepare(sql_stmt)
-    stmt:reset():bind(now_ts, self.data.notes, self.data.highlights, total_read_time, total_read_pages,
-        self.data.pages, id_book):step()
+    stmt:reset():bind(now_ts, self.data.notes, self.data.highlights, total_read_time, rescaled_total_read_pages,
+        self.data.pages, progress_str, id_book):step()
     if total_read_pages then
         self.total_read_pages = tonumber(total_read_pages)
     else
