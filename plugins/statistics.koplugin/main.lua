@@ -18,6 +18,7 @@ local UIManager = require("ui/uimanager")
 local Widget = require("ui/widget/widget")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local ffi = require("ffi")
 local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
@@ -617,7 +618,7 @@ function ReaderStatistics:insertDB(id_book)
     ]]
     local progress_str = conn:rowexec(string.format(sql_stmt, id_book))
     -- Make that an actual C array (unfortunately, of chars instead of bool to ease (de)serialization...)
-    local progress = ffi.new("char[1001]", progress_str)
+    local progress = ffi.new("char[1001]", progress_str or 0)
     local stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?, ?)")
     for page, data_list in pairs(self.page_stat) do
         for _, data_tuple in ipairs(data_list) do
@@ -632,8 +633,9 @@ function ReaderStatistics:insertDB(id_book)
                 -- Convert that to a ‰ range, and mark it as read
                 local range_start = ((page - 1) / self.data.pages * 1000)
                 local range_end = (page / self.data.pages * 1000)
+                logger.info("Setting progress range from", range_start, "to", range_end, "for page", page)
                 for i = range_start, range_end do
-                    progress[i] = "1"
+                    progress[i] = 1
                 end
             end
         end
@@ -647,15 +649,17 @@ function ReaderStatistics:insertDB(id_book)
     ]]
     local total_read_pages, total_read_time = conn:rowexec(string.format(sql_stmt, id_book))
     -- FIXME: Skip if no scale change! (i.e., book's pages == self.data.pages)
+    logger.info("Rescaling pages read...")
     -- Rescale total_read_pages according to the current layout...
     local thousandths_per_page = 1 / self.data.pages * 1000
     -- Count the read thousandths...
     local read_thousandths = 0
     for i = 0, 1000 do
-        if progress[i] == "1" then
+        if progress[i] == 1 then
             read_thousandths = read_thousandths + 1
         end
     end
+    logger.info("Computed", read_thousandths, "thousandths as read")
     local rescaled_total_read_pages = math.floor(read_thousandths / thousandths_per_page + 0.5)
     logger.dbg("ReaderStatistics:insertDB Rescaled total_read_pages from", total_read_pages, "to", rescaled_total_read_pages)
     -- Dump the updated progress bitmask back into the DB
