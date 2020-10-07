@@ -3,8 +3,6 @@ local pl_keyboard = require("util").tableDeepCopy(require("ui/data/keyboardlayou
 
 local keys = pl_keyboard.keys
 
-local logger = require("logger")
-
 -- Umlaut keys on standard keyboard
 keys[1][3][5] = 'Ę'
 keys[1][3][6] = 'ę'
