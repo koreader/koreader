@@ -610,7 +610,7 @@ function ReaderStatistics:insertDB(id_book)
     local now_ts = TimeVal:now().sec
     local conn = SQ3.open(db_location)
     conn:exec('BEGIN')
-    -- First, get the current state of the ‰ read progress bar fake bitmask
+    -- First, get the current state of the ‰ read progress bar fake bitfield
     local sql_stmt = [[
         SELECT progress
         FROM   book
@@ -663,8 +663,8 @@ function ReaderStatistics:insertDB(id_book)
     local rescaled_total_read_pages = math.floor(read_permilles / permilles_per_page + 0.5)
     logger.dbg("ReaderStatistics:insertDB Rescaled total_read_pages from", total_read_pages, "to", rescaled_total_read_pages)
     -- FIXME: Actually update total_read_pages for the self. copy for the average time computation...
-    -- FIXME: Do the range scaling for every book after migration, as long as book pages == self.data.pages... (i.e., if progress is nil)
-    -- Dump the updated progress bitmask back into the DB
+    -- FIXME: Do the range scaling for every book after migration, as long as book's pages == self.data.pages... (i.e., if progress is nil)
+    -- Dump the updated progress "bitfield" back into the DB
     progress_str = SQ3.blob(ffi.string(progress, 1001))
     sql_stmt = [[
         UPDATE book
