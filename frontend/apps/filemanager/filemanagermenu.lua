@@ -31,7 +31,7 @@ function FileManagerMenu:onShowCrashlog()
 end
 
 function FileManagerMenu:onShowTailLog()
-    crashlog:show(G_reader_settings:readSetting("logviewer_tail_lines") or 20000)
+    crashlog:show(crashlog:savedLines())
     return true
 end
 

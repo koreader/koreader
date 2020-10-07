@@ -95,25 +95,25 @@ function LogViewer:update(lines, size)
         buttons_table = {
             {
                 {
-                    text = "<<",
+                    text = "▕◁",
                     callback = function()
                         self.textviewer.scroll_text_w:scrollToTop()
                     end,
                 },
                 {
-                    text = "<",
+                    text = "◁",
                     callback = function()
                         self.textviewer.scroll_text_w:scrollUp()
                     end,
                 },
                 {
-                    text = ">",
+                    text = "▷",
                     callback = function()
                         self.textviewer.scroll_text_w:scrollDown()
                     end,
                 },
                 {
-                    text = ">>",
+                    text = "▷▏",
                     callback = function()
                         self.textviewer.scroll_text_w:scrollToBottom()
                     end,
