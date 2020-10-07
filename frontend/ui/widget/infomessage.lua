@@ -60,6 +60,11 @@ local InfoMessage = InputContainer:new{
     icon_file = nil, -- use this file instead of "resources/info-i.png"
     alpha = false, -- does that icon have an alpha channel?
     dismiss_callback = function() end,
+    -- In case we'd like to use it to display some text we know a few more things about:
+    lang = nil,
+    para_direction_rtl = nil,
+    auto_para_direction = nil,
+
 }
 
 function InfoMessage:init()
@@ -123,12 +128,18 @@ function InfoMessage:init()
             width = text_width,
             height = self.height,
             dialog = self,
+            lang = self.lang,
+            para_direction_rtl = self.para_direction_rtl,
+            auto_para_direction = self.auto_para_direction,
         }
     else
         text_widget = TextBoxWidget:new{
             text = self.text,
             face = self.face,
             width = text_width,
+            lang = self.lang,
+            para_direction_rtl = self.para_direction_rtl,
+            auto_para_direction = self.auto_para_direction,
         }
     end
     local frame = FrameContainer:new{
