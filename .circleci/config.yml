@@ -3,6 +3,9 @@ jobs:
   build:
     docker:
       - image: koreader/koappimage:0.1.7
+        auth:
+          username: $DOCKER_USERNAME
+          password: $DOCKER_PASSWORD
         environment:
           EMULATE_READER: 1
           # this is for shellcheck 0.4.5 and lower; can be removed for 0.4.6
