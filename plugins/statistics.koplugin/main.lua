@@ -192,7 +192,12 @@ function ReaderStatistics:onUpdateToc()
     local new_pagecount = self.view.document:getPageCount()
 
     if new_pagecount ~= self.data.pages then
-        if self.id_curr_book then
+        -- NOTE: insertDB does the exact same check
+        if not self.id_curr_book or self.mem_read_pages < 2 then
+            logger.info("ReaderStatistics: Pagecount change, clearing volatile book statistics")
+            -- Clear volatile stats
+            self:resetVolatileStats()
+        else
             logger.info("ReaderStatistics: Pagecount change, flushing volatile book statistics")
             -- Flush volatile stats to DB for current book
             self:insertDB(self.id_curr_book)
