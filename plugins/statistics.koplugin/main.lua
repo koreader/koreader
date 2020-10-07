@@ -269,7 +269,7 @@ end
 function ReaderStatistics:checkInitDatabase()
     local conn = SQ3.open(db_location)
     if self.convert_to_db then      -- if conversion to sqlite DB has already been done
-        if not conn:exec("pragma table_info('book');") then
+        if not conn:exec("PRAGMA table_info('book');") then
             UIManager:show(ConfirmBox:new{
                 text = T(_([[
 Cannot open database in %1.
@@ -293,10 +293,24 @@ Do you want to create an empty database?
         end
 
         -- Check if we need to migrate to a newer schema
-        -- NOTE: SQLite has an user_version pragma for that...
+        local db_version = conn:exec("PRAGMA user_version;")
+        if db_version < DB_SCHEMA_VERSION then
+            local info = InfoMessage:new{
+                    text = _([[
+Updating statistics database schema.
+Please wait…
+]])}
+                UIManager:show(info)
+                UIManager:forceRePaint()
+                self:upgradeDB(conn)
+                UIManager:close(info)
+                UIManager:forceRePaint()
+                UIManager:show(InfoMessage:new{
+                    text = _("Upgrade complete.\nTap to continue.") })
+        end
     else  -- Migrate stats for books in history from metadata.lua to sqlite database
         self.convert_to_db = true
-        if not conn:exec("pragma table_info('book');") then
+        if not conn:exec("PRAGMA table_info('book');") then
             local filename_first_history, quickstart_filename, __
             if #ReadHistory.hist == 1 then
                 filename_first_history = ReadHistory.hist[1]["text"]
@@ -305,7 +319,7 @@ Do you want to create an empty database?
             end
             if #ReadHistory.hist > 1 or (#ReadHistory.hist == 1 and filename_first_history ~= quickstart_filename) then
                 local info = InfoMessage:new{
-                    text =_([[
+                    text = _([[
 New version of statistics plugin detected.
 Statistics data needs to be converted into the new database format.
 This may take a few minutes.
@@ -350,7 +364,7 @@ function ReaderStatistics:partialMd5(file)
 end
 
 -- Current DB schema version
-local DB_SCHEMA_VERSION = 2
+local DB_SCHEMA_VERSION = 1
 
 function ReaderStatistics:createDB(conn)
     -- Make it WAL, if possible
@@ -386,17 +400,12 @@ function ReaderStatistics:createDB(conn)
                 UNIQUE (page, start_time),
                 FOREIGN KEY(id_book) REFERENCES book(id)
             );
-        CREATE TABLE IF NOT EXISTS info
-            (
-                 version integer
-            );
         CREATE INDEX IF NOT EXISTS page_stat_id_book ON page_stat(id_book);
         CREATE INDEX IF NOT EXISTS book_title_authors_md5 ON book(title, authors, md5);
     ]]
     conn:exec(sql_stmt)
     -- DB schema version
-    local stmt = conn:prepare("INSERT INTO info values (?)")
-    stmt:reset():bind(DB_SCHEMA_VERSION):step()
+    conn:exec(string.format("PRAGMA user_version=%d;", DB_SCHEMA_VERSION))
     stmt:close()
 end
 
@@ -410,11 +419,11 @@ function ReaderStatistics:upgradeDB(conn)
             (
                 ADD COLUMN total_pages integer NOT NULL
             );
+        DROP TABLE info;
     ]]
     conn:exec(sql_stmt)
     -- Update DB schema version
-    local stmt = conn:prepare("INSERT INTO info values (?)")
-    stmt:reset():bind(DB_SCHEMA_VERSION):step()
+    conn:exec(string.format("PRAGMA user_version=%d;", DB_SCHEMA_VERSION))
     stmt:close()
 end
 
