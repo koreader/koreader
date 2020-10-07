@@ -662,8 +662,9 @@ function ReaderStatistics:insertDB(id_book)
     logger.info("Computed", read_thousandths, "thousandths as read")
     local rescaled_total_read_pages = math.floor(read_thousandths / thousandths_per_page + 0.5)
     logger.dbg("ReaderStatistics:insertDB Rescaled total_read_pages from", total_read_pages, "to", rescaled_total_read_pages)
+    -- FIXME: Actually update total_read_pages for the self. copy for the average time computation...
     -- Dump the updated progress bitmask back into the DB
-    progress_str = ffi.string(progress, 1001)
+    progress_str = SQ3.blob(ffi.string(progress, 1001))
     sql_stmt = [[
         UPDATE book
         SET    last_open = ?,
