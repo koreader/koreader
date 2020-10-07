@@ -197,7 +197,7 @@ function ReaderStatistics:onUpdateToc()
         if not self.id_curr_book or self.mem_read_pages < MIN_PAGES_READ_TO_FLUSH then
             logger.info("ReaderStatistics: Pagecount change, clearing volatile book statistics")
             -- Clear volatile stats
-            self:resetVolatileStats()
+            self:resetVolatileStats(TimeVal:now().sec)
         else
             logger.info("ReaderStatistics: Pagecount change, flushing volatile book statistics")
             -- Flush volatile stats to DB for current book
@@ -211,7 +211,7 @@ function ReaderStatistics:onUpdateToc()
     self.data.pages = new_pagecount
 end
 
-function ReaderStatistics:resetVolatileStats()
+function ReaderStatistics:resetVolatileStats(now_ts)
     -- Computed by onPageUpdate
     self.pageturn_count = 0
     self.mem_read_time = 0
@@ -219,6 +219,12 @@ function ReaderStatistics:resetVolatileStats()
 
     -- Volatile storage pending flush to db
     self.page_stat = {}
+
+    -- Re-seed the volatile stats with minimal data about the current page.
+    -- If a timestamp is passed, it's the caller's responsibility to ensure that self.curr_page is accurate.
+    if now_ts then
+        self.page_stat[self.curr_page] = { { now_ts, 0 } }
+    end
 end
 
 function ReaderStatistics:getStatsBookStatus(id_curr_book, stat_enable)
@@ -630,9 +636,7 @@ function ReaderStatistics:insertDB(id_book)
         self.total_read_time = 0
     end
 
-    self:resetVolatileStats()
-    -- Re-seed the volatile stats with minimal data about the current page
-    self.page_stat[self.curr_page] = { { now_ts, 0 } }
+    self:resetVolatileStats(now_ts)
     conn:close()
 end
 
@@ -686,10 +690,9 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
             -- if was disabled have to get data from db
             if self.is_enabled and not self:isDocless() then
                 self:initData()
-                self:resetVolatileStats()
                 self.start_current_period = TimeVal:now().sec
                 self.curr_page = self.ui:getCurrentPage()
-                self.page_stat[self.curr_page] = { { self.start_current_period, 0 } }
+                self:resetVolatileStats(self.start_current_period)
             end
             self:saveSettings()
             if not self:isDocless() then
@@ -2019,8 +2022,7 @@ end
 -- screensaver off
 function ReaderStatistics:onResume()
     self.start_current_period = TimeVal:now().sec
-    self:resetVolatileStats()
-    self.page_stat[self.curr_page] = { { self.start_current_period, 0 } }
+    self:resetVolatileStats(self.start_current_period)
 end
 
 function ReaderStatistics:saveSettings()
