@@ -27,6 +27,7 @@ local T = FFIUtil.template
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
 local db_location = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
 local MAX_PAGETURNS_BEFORE_FLUSH = 50
+local MIN_PAGES_READ_TO_FLUSH = 2
 local DEFAULT_MIN_READ_SEC = 5
 local DEFAULT_MAX_READ_SEC = 120
 local DEFAULT_CALENDAR_START_DAY_OF_WEEK = 2 -- Monday
@@ -193,7 +194,7 @@ function ReaderStatistics:onUpdateToc()
 
     if new_pagecount ~= self.data.pages then
         -- NOTE: insertDB does the exact same check
-        if not self.id_curr_book or self.mem_read_pages < 2 then
+        if not self.id_curr_book or self.mem_read_pages < MIN_PAGES_READ_TO_FLUSH then
             logger.info("ReaderStatistics: Pagecount change, clearing volatile book statistics")
             -- Clear volatile stats
             self:resetVolatileStats()
@@ -579,7 +580,7 @@ function ReaderStatistics:getIdBookDB()
 end
 
 function ReaderStatistics:insertDB(id_book)
-    if id_book == nil or self.mem_read_pages < 2 then
+    if id_book == nil or self.mem_read_pages < MIN_PAGES_READ_TO_FLUSH then
         return
     end
     local now_ts = TimeVal:now().sec
