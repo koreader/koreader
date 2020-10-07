@@ -631,6 +631,7 @@ function ReaderStatistics:insertDB(id_book)
                 --       should ensure that it matches the layout in which said data was collected.
                 stmt:reset():bind(id_book, page, ts, duration, self.data.pages):step()
                 -- Convert that to a ‰ range, and mark it as read
+                -- FIXME: Use optmath's round instead of adhoc'ing it
                 local range_start = math.floor(((page - 1) / self.data.pages * 1000) + 0.5)
                 local range_end = math.floor((page / self.data.pages * 1000) + 0.5)
                 logger.info("Setting progress range from", range_start, "to", range_end, "for page", page)
@@ -662,8 +663,8 @@ function ReaderStatistics:insertDB(id_book)
     logger.info("Computed", read_permilles, "permilles as read")
     local rescaled_total_read_pages = math.floor(read_permilles / permilles_per_page + 0.5)
     logger.dbg("ReaderStatistics:insertDB Rescaled total_read_pages from", total_read_pages, "to", rescaled_total_read_pages)
-    -- FIXME: Actually update total_read_pages for the self. copy for the average time computation...
-    -- FIXME: Do the range scaling for every book after migration, as long as book's pages == self.data.pages... (i.e., if progress is nil)
+    -- FIXME: Actually update total_read_pages with rescaled_total_read_pages for the self.total_read_pages copy used for the average time per page computation...
+    -- FIXME: Do the range scaling for every book after migration (i.e., if progress_str is nil on the first query), as long as book's pages == self.data.pages...
     -- Dump the updated progress "bitfield" back into the DB
     progress_str = SQ3.blob(ffi.string(progress, 1001))
     sql_stmt = [[
