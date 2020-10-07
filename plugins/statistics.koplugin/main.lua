@@ -631,8 +631,8 @@ function ReaderStatistics:insertDB(id_book)
                 --       should ensure that it matches the layout in which said data was collected.
                 stmt:reset():bind(id_book, page, ts, duration, self.data.pages):step()
                 -- Convert that to a ‰ range, and mark it as read
-                local range_start = ((page - 1) / self.data.pages * 1000)
-                local range_end = (page / self.data.pages * 1000)
+                local range_start = math.floor(((page - 1) / self.data.pages * 1000) + 0.5)
+                local range_end = math.floor((page / self.data.pages * 1000) + 0.5)
                 logger.info("Setting progress range from", range_start, "to", range_end, "for page", page)
                 for i = range_start, range_end do
                     progress[i] = 1
