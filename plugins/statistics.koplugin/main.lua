@@ -651,16 +651,16 @@ function ReaderStatistics:insertDB(id_book)
     -- FIXME: Skip if no scale change! (i.e., book's pages == self.data.pages)
     logger.info("Rescaling pages read...")
     -- Rescale total_read_pages according to the current layout...
-    local thousandths_per_page = 1 / self.data.pages * 1000
-    -- Count the read thousandths...
-    local read_thousandths = 0
+    local permilles_per_page = 1 / self.data.pages * 1000
+    -- Count the read permilles...
+    local read_permilles = 0
     for i = 0, 1000 do
         if progress[i] == 1 then
-            read_thousandths = read_thousandths + 1
+            read_permilles = read_permilles + 1
         end
     end
-    logger.info("Computed", read_thousandths, "thousandths as read")
-    local rescaled_total_read_pages = math.floor(read_thousandths / thousandths_per_page + 0.5)
+    logger.info("Computed", read_permilles, "permilles as read")
+    local rescaled_total_read_pages = math.floor(read_permilles / permilles_per_page + 0.5)
     logger.dbg("ReaderStatistics:insertDB Rescaled total_read_pages from", total_read_pages, "to", rescaled_total_read_pages)
     -- FIXME: Actually update total_read_pages for the self. copy for the average time computation...
     -- FIXME: Do the range scaling for every book after migration, as long as book pages == self.data.pages... (i.e., if progress is nil)
