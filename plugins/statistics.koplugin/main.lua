@@ -140,15 +140,15 @@ function ReaderStatistics:init()
     Screensaver.getReaderProgress = function()
         local readingprogress
         self:insertDB(self.id_curr_book)
-        local current_period, current_pages = self:getCurrentBookStats()
-        local today_period, today_pages = self:getTodayBookStats()
+        local current_duration, current_pages = self:getCurrentBookStats()
+        local today_duration, today_pages = self:getTodayBookStats()
         local dates_stats = self:getReadingProgressStats(7)
         if dates_stats then
             readingprogress = ReaderProgress:new{
                 dates = dates_stats,
-                current_period = current_period,
+                current_duration = current_duration,
                 current_pages = current_pages,
-                today_period = today_period,
+                today_duration = today_duration,
                 today_pages = today_pages,
                 readonly = true,
             }
@@ -250,7 +250,7 @@ function ReaderStatistics:getStatsBookStatus(id_curr_book, stat_enable)
     ]]
     local total_days = conn:rowexec(string.format(sql_stmt, id_curr_book))
     sql_stmt = [[
-        SELECT sum(period),
+        SELECT sum(duration),
                count(DISTINCT page)
         FROM   page_stat
         WHERE  id_book = '%s'
@@ -387,7 +387,7 @@ function ReaderStatistics:createDB(conn)
                 id_book     integer,
                 page        integer NOT NULL DEFAULT 0,
                 start_time  integer NOT NULL DEFAULT 0,
-                period      integer NOT NULL DEFAULT 0,
+                duration    integer NOT NULL DEFAULT 0,
                 total_pages integer NOT NULL DEFAULT 0,
                 UNIQUE (page, start_time),
                 FOREIGN KEY(id_book) REFERENCES book(id)
@@ -403,6 +403,7 @@ end
 function ReaderStatistics:upgradeDB(conn)
     local sql_stmt = [[
         ALTER TABLE book ADD COLUMN progress blob;
+        ALTER TABLE page_stat RENAME COLUMN period TO duration;
         ALTER TABLE page_stat ADD COLUMN total_pages integer NOT NULL DEFAULT 0;
         DROP TABLE info;
     ]]
@@ -493,7 +494,7 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
         conn:exec('COMMIT')
         sql_stmt = [[
             SELECT count(DISTINCT page),
-                   sum(period)
+                   sum(duration)
             FROM   page_stat
             WHERE  id_book = %s;
         ]]
@@ -645,7 +646,7 @@ function ReaderStatistics:insertDB(id_book)
     conn:exec('COMMIT')
     sql_stmt = [[
         SELECT count(DISTINCT page),
-               sum(period)
+               sum(duration)
         FROM   page_stat
         WHERE  id_book = '%s'
     ]]
@@ -912,15 +913,15 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                 keep_menu_open = true,
                 callback = function()
                     self:insertDB(self.id_curr_book)
-                    local current_period, current_pages = self:getCurrentBookStats()
-                    local today_period, today_pages = self:getTodayBookStats()
+                    local current_duration, current_pages = self:getCurrentBookStats()
+                    local today_duration, today_pages = self:getTodayBookStats()
                     local dates_stats = self:getReadingProgressStats(7)
                     if dates_stats then
                         UIManager:show(ReaderProgress:new{
                             dates = dates_stats,
-                            current_period = current_period,
+                            current_duration = current_duration,
                             current_pages = current_pages,
-                            today_period = today_period,
+                            today_duration = today_duration,
                             today_pages = today_pages,
                         })
                     else
@@ -1095,49 +1096,49 @@ function ReaderStatistics:getTodayBookStats()
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
         SELECT count(*),
-               sum(sum_period)
+               sum(sum_duration)
         FROM    (
-                     SELECT sum(period)      AS sum_period
+                     SELECT sum(duration)      AS sum_duration
                      FROM   page_stat
                      WHERE  start_time >= '%s'
                      GROUP  BY id_book, page
                 )
     ]]
-    local today_pages, today_period = conn:rowexec(string.format(sql_stmt, start_today_time))
+    local today_pages, today_duration = conn:rowexec(string.format(sql_stmt, start_today_time))
     if today_pages == nil then
         today_pages = 0
     end
-    if today_period == nil then
-        today_period = 0
+    if today_duration == nil then
+        today_duration = 0
     end
-    today_period = tonumber(today_period)
+    today_duration = tonumber(today_duration)
     today_pages = tonumber(today_pages)
     conn:close()
-    return today_period, today_pages
+    return today_duration, today_pages
 end
 
 function ReaderStatistics:getCurrentBookStats()
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
         SELECT count(*),
-               sum(sum_period)
+               sum(sum_duration)
         FROM   (
-                    SELECT sum(period)      AS sum_period
+                    SELECT sum(duration)      AS sum_duration
                     FROM   page_stat
                     WHERE  start_time >= '%s'
                     GROUP  BY id_book, page
                )
     ]]
-    local current_pages, current_period = conn:rowexec(string.format(sql_stmt, self.start_current_period))
+    local current_pages, current_duration = conn:rowexec(string.format(sql_stmt, self.start_current_period))
     if current_pages == nil then
         current_pages = 0
     end
-    if current_period == nil then
-        current_period = 0
+    if current_duration == nil then
+        current_duration = 0
     end
-    current_period = tonumber(current_period)
+    current_duration = tonumber(current_duration)
     current_pages = tonumber(current_pages)
-    return current_period, current_pages
+    return current_duration, current_pages
 end
 
 function ReaderStatistics:getCurrentStat(id_book)
@@ -1145,8 +1146,8 @@ function ReaderStatistics:getCurrentStat(id_book)
         return
     end
     self:insertDB(id_book)
-    local today_period, today_pages = self:getTodayBookStats()
-    local current_period, current_pages = self:getCurrentBookStats()
+    local today_duration, today_pages = self:getTodayBookStats()
+    local current_duration, current_pages = self:getCurrentBookStats()
 
     local conn = SQ3.open(db_location)
     local highlights, notes = conn:rowexec(string.format("SELECT highlights, notes  FROM book WHERE id = '%s';)", id_book)) -- luacheck: no unused
@@ -1162,7 +1163,7 @@ function ReaderStatistics:getCurrentStat(id_book)
     local total_days = conn:rowexec(string.format(sql_stmt, id_book))
 
     sql_stmt = [[
-        SELECT sum(period),
+        SELECT sum(duration),
                count(DISTINCT page),
                min(start_time)
         FROM   page_stat
@@ -1190,10 +1191,10 @@ function ReaderStatistics:getCurrentStat(id_book)
     return {
         -- Global statistics (may consider other books than current book)
         -- since last resume
-        { _("Time spent reading this session"), util.secondsToClock(current_period, false) },
+        { _("Time spent reading this session"), util.secondsToClock(current_duration, false) },
         { _("Pages read this session"), tonumber(current_pages) },
         -- today
-        { _("Time spent reading today"), util.secondsToClock(today_period, false) },
+        { _("Time spent reading today"), util.secondsToClock(today_duration, false) },
         { _("Pages read today"), tonumber(today_pages) },
         "----",
         -- Current book statistics
@@ -1251,7 +1252,7 @@ function ReaderStatistics:getBookStat(id_book)
     local total_days = conn:rowexec(string.format(sql_stmt, id_book))
 
     sql_stmt = [[
-        SELECT sum(period),
+        SELECT sum(duration),
                count(DISTINCT page),
                min(start_time)
         FROM   page_stat
@@ -1316,11 +1317,11 @@ local function sqlDaily()
     [[
             SELECT dates,
                    count(*)             AS pages,
-                   sum(sum_period)      AS periods,
+                   sum(sum_duration)    AS durations,
                    start_time
             FROM   (
                         SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates,
-                               sum(period)                                                   AS sum_period,
+                               sum(duration)                                                 AS sum_duration,
                                start_time
                         FROM   page_stat
                         WHERE  start_time >= '%s'
@@ -1336,11 +1337,11 @@ local function sqlWeekly()
     [[
             SELECT dates,
                    count(*)             AS pages,
-                   sum(sum_period)      AS periods,
+                   sum(sum_duration)    AS durations,
                    start_time
             FROM   (
                         SELECT strftime('%%Y-%%W', start_time, 'unixepoch', 'localtime')     AS dates,
-                               sum(period)                                                   AS sum_period,
+                               sum(duration)                                                 AS sum_duration,
                                start_time
                         FROM   page_stat
                         WHERE  start_time >= '%s'
@@ -1356,11 +1357,11 @@ local function sqlMonthly()
     [[
             SELECT dates,
                    count(*)             AS pages,
-                   sum(sum_period)      AS periods,
+                   sum(sum_duration)    AS durations,
                    start_time
             FROM   (
                         SELECT strftime('%%Y-%%m', start_time, 'unixepoch', 'localtime')     AS dates,
-                               sum(period)                                                   AS sum_period,
+                               sum(duration)                                                 AS sum_duration,
                                start_time
                         FROM   page_stat
                         WHERE  start_time >= '%s'
@@ -1543,11 +1544,11 @@ function ReaderStatistics:getDaysFromPeriod(period_begin, period_end)
     local sql_stmt_res_book = [[
         SELECT dates,
                count(*)             AS pages,
-               sum(sum_period)      AS periods,
+               sum(sum_duration)    AS durations,
                start_time
         FROM   (
                     SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates,
-                           sum(period)                                                   AS sum_period,
+                           sum(duration)                                                 AS sum_duration,
                            start_time
                     FROM   page_stat
                     WHERE  start_time >= '%s' AND start_time < '%s'
@@ -1591,7 +1592,7 @@ function ReaderStatistics:getBooksFromPeriod(period_begin, period_end, callback_
     local results = {}
     local sql_stmt_res_book = [[
         SELECT  book_tbl.title AS title,
-                sum(page_stat_tbl.period),
+                sum(page_stat_tbl.duration),
                 count(distinct page_stat_tbl.page),
                 book_tbl.id
         FROM    page_stat AS page_stat_tbl, book AS book_tbl
@@ -1642,7 +1643,7 @@ end
 
 function ReaderStatistics:getReadingProgressStats(sdays)
     local results = {}
-    local pages, period, date_read
+    local pages, duration, date_read
     local now_t = os.date("*t")
     local from_begin_day = now_t.hour *3600 + now_t.min*60 + now_t.sec
     local now_stamp = os.time()
@@ -1652,11 +1653,11 @@ function ReaderStatistics:getReadingProgressStats(sdays)
     local sql_stmt = [[
         SELECT dates,
                count(*)             AS pages,
-               sum(sum_period)      AS periods,
+               sum(sum_duration)    AS durations,
                start_time
         FROM   (
                     SELECT strftime('%%Y-%%m-%%d', start_time, 'unixepoch', 'localtime') AS dates,
-                           sum(period)                                                   AS sum_period,
+                           sum(duration)                                                 AS sum_duration,
                            start_time
                     FROM   page_stat
                     WHERE  start_time >= '%s'
@@ -1669,13 +1670,13 @@ function ReaderStatistics:getReadingProgressStats(sdays)
     if not result_book then return end
     for i = 1, sdays do
         pages = tonumber(result_book[2][i])
-        period = tonumber(result_book[3][i])
+        duration = tonumber(result_book[3][i])
         date_read = result_book[1][i]
         if pages == nil then pages = 0 end
-        if period == nil then period = 0 end
+        if duration == nil then duration = 0 end
         table.insert(results, {
             pages,
-            period,
+            duration,
             date_read
         })
     end
@@ -1689,7 +1690,7 @@ function ReaderStatistics:getDatesForBook(id_book)
     local sql_stmt = [[
         SELECT date(start_time, 'unixepoch', 'localtime') AS dates,
                count(DISTINCT page)                       AS pages,
-               sum(period)                                AS periods
+               sum(duration)                              AS durations
         FROM   page_stat
         WHERE  id_book = '%s'
         GROUP  BY Date(start_time, 'unixepoch', 'localtime')
@@ -1713,7 +1714,7 @@ function ReaderStatistics:getTotalStats()
     self:insertDB(self.id_curr_book)
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
-        SELECT sum(period)
+        SELECT sum(duration)
         FROM   page_stat
     ]]
     local total_books_time = conn:rowexec(sql_stmt)
@@ -1744,7 +1745,7 @@ function ReaderStatistics:getTotalStats()
         ]]
         local book_title = conn:rowexec(string.format(sql_stmt, id_book))
         sql_stmt = [[
-            SELECT sum(period)
+            SELECT sum(duration)
             FROM   page_stat
             WHERE  id_book = '%s'
         ]]
@@ -1840,7 +1841,7 @@ function ReaderStatistics:resetBook()
         ]]
         local book_title = conn:rowexec(string.format(sql_stmt, id_book))
         sql_stmt = [[
-            SELECT sum(period)
+            SELECT sum(duration)
             FROM   page_stat
             WHERE  id_book = '%s'
         ]]
@@ -2191,7 +2192,7 @@ function ReaderStatistics:getReadingRatioPerHourByDay(month)
         SELECT
             strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime') day,
             strftime('%H', start_time, 'unixepoch', 'localtime') hour,
-            sum(period)/3600.0 ratio
+            sum(duration)/3600.0 ratio
         FROM   page_stat
         WHERE  strftime('%Y-%m', start_time, 'unixepoch', 'localtime') = ?
         GROUP  BY
@@ -2220,7 +2221,7 @@ function ReaderStatistics:getReadBookByDay(month)
     local sql_stmt = [[
         SELECT
             strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime') day,
-            sum(period) duration,
+            sum(duration) durations,
             id_book book_id,
             book.title book_title
         FROM   page_stat
@@ -2230,7 +2231,7 @@ function ReaderStatistics:getReadBookByDay(month)
             strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime'),
             id_book,
             title
-        ORDER BY day, duration desc, book_id, book_title
+        ORDER BY day, durations desc, book_id, book_title
     ]]
     local conn = SQ3.open(db_location)
     local stmt = conn:prepare(sql_stmt)
@@ -2253,15 +2254,15 @@ end
 function ReaderStatistics:onShowReaderProgress()
     local readingprogress
     self:insertDB(self.id_curr_book)
-    local current_period, current_pages = self:getCurrentBookStats()
-    local today_period, today_pages = self:getTodayBookStats()
+    local current_duration, current_pages = self:getCurrentBookStats()
+    local today_duration, today_pages = self:getTodayBookStats()
     local dates_stats = self:getReadingProgressStats(7)
     if dates_stats then
         readingprogress = ReaderProgress:new{
             dates = dates_stats,
-            current_period = current_period,
+            current_duration = current_duration,
             current_pages = current_pages,
-            today_period = today_period,
+            today_duration = today_duration,
             today_pages = today_pages,
             --readonly = true,
         }
