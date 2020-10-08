@@ -183,6 +183,7 @@ function ReaderStatistics:initData()
     self.data.highlights, self.data.notes = self.ui.bookmark:getNumberOfHighlightsAndNotes()
     self.id_curr_book = self:getIdBookDB()
     self.total_read_pages, self.total_read_time = self:getPageTimeTotalStats(self.id_curr_book)
+    logger.info("self.total_read_pages:", self.total_read_pages, "self.total_read_time:", self.total_read_time)
     if self.total_read_pages > 0 then
         self.avg_time = self.total_read_time / self.total_read_pages
     else
@@ -649,6 +650,7 @@ function ReaderStatistics:insertDB(id_book)
         WHERE  id_book = '%s'
     ]]
     local total_read_pages, total_read_time = conn:rowexec(string.format(sql_stmt, id_book))
+    logger.info("total_read_pages:", total_read_pages, "total_read_time:", total_read_time)
     -- FIXME: Skip if no scale change! (i.e., book's pages == self.data.pages)
     logger.info("Rescaling pages read...")
     -- Rescale total_read_pages according to the current layout...
@@ -2050,7 +2052,14 @@ function ReaderStatistics:onPageUpdate(pageno)
         -- insertDB will call resetVolatileStats for us ;)
     end
 
+    logger.info("self.total_read_page:", self.total_read_pages, "self.total_read_time:", self.total_read_time)
+    logger.info("self.mem_read_pages:", self.mem_read_pages, "self.mem_read_time:", self.mem_read_time)
     -- Update average time per page (if need be, insertDB will have updated the totals and cleared the volatiles)
+    -- NOTE: Until insertDB runs, while total_read_pages only counts *distinct* pages,
+    --       and while mem_read_pages does the same, there may actually be an overlap between the two!
+    --       (i.e., the same page may be counted as read both in total and in mem, inflating the pagecount).
+    --       Only insertDB will actually check that the count (and as such average time) is actually accurate.
+    -- FIXME: In this context, shouldn't the average time per page actually account for re-reads as distinct pages?
     if self.total_read_pages > 0 or self.mem_read_pages > 0 then
         self.avg_time = (self.total_read_time + self.mem_read_time) / (self.total_read_pages + self.mem_read_pages)
     end
