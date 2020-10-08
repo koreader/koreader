@@ -214,6 +214,11 @@ function ReaderStatistics:onUpdateToc()
 
     -- Update our copy of the page count
     self.data.pages = new_pagecount
+
+    -- FIXME: Regardless of what we did, we need to update book's pages with the new pagecount to make the VIEW behave...
+    --        insertDB itself does it, but it runs *before* we update the var.
+    --        We'll probably be able to update the var first when switching to the VIEW approach,
+    --        but we'll still need an extra query in the cases where insertDB returns early (i.e., the resetVolatileStats branch).
 end
 
 function ReaderStatistics:resetVolatileStats(now_ts)
