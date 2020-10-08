@@ -1,6 +1,6 @@
 local Device = require("device")
 
-if not Device:isCervantes() and not Device:isKobo() and not Device:isSDL() and not Device:isSonyPRSTUX() then
+if not Device:isCervantes() and not Device:isKobo() and not Device:isRemarkable() and not Device:isSDL() and not Device:isSonyPRSTUX() then
     return { disabled = true, }
 end
 
