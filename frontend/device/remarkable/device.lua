@@ -15,6 +15,8 @@ local Remarkable = Generic:new{
     isTouchDevice = yes,
     hasFrontlight = no,
     display_dpi = 226,
+    -- It's a recent NXP SoC, I see no reason why HW inversion would be buggy there ;).
+    canHWInvert = yes,
     home_dir = "/mnt/root",
 }
 
