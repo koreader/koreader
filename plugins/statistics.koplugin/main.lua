@@ -668,6 +668,7 @@ function ReaderStatistics:insertDB(id_book)
     -- FIXME: Do the range scaling for every book after migration (i.e., if progress_str is nil on the first query), as long as book's pages == self.data.pages...
     --        Or simply unilaterally set total_pages to book's pages. It'll potentially be bogus, but as bogus as before, so, eh ;D.
     --        That would also solve the total_read_time conundrum.
+    --        And this also ensures we won't need to tweak queries in case we wanted to detect legacy/mixed/new schema books, since total_pages will always be set.
     -- Dump the updated progress "bitfield" back into the DB
     progress_str = SQ3.blob(ffi.string(progress, 1001))
     sql_stmt = [[
