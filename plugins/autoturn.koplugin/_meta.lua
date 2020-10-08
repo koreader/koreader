@@ -6,5 +6,4 @@ return {
 Automatically turns the page after a set period of time.
 
 Hold to set the scrolling distance.]]),
-    sorting_hint = "navi",
 }

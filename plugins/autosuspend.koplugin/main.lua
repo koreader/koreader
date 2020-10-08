@@ -134,6 +134,7 @@ end
 
 function AutoSuspend:addToMainMenu(menu_items)
     menu_items.autosuspend = {
+        sorting_hint = "device",
         text = _("Autosuspend timeout"),
         callback = function()
             local InfoMessage = require("ui/widget/infomessage")

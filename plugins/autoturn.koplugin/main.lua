@@ -112,6 +112,7 @@ end
 
 function AutoTurn:addToMainMenu(menu_items)
     menu_items.autoturn = {
+        sorting_hint = "navi",
         text_func = function() return self:_enabled() and T(_("Autoturn (%1 s)"), self.autoturn_sec)
             or _("Autoturn") end,
         checked_func = function() return self:_enabled() end,
