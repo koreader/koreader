@@ -664,7 +664,10 @@ function ReaderStatistics:insertDB(id_book)
     local rescaled_total_read_pages = math.floor(read_permilles / permilles_per_page + 0.5)
     logger.dbg("ReaderStatistics:insertDB Rescaled total_read_pages from", total_read_pages, "to", rescaled_total_read_pages)
     -- FIXME: Actually update total_read_pages with rescaled_total_read_pages for the self.total_read_pages copy used for the average time per page computation...
+    --        And if we dropped pages in the migration, drop them from the total_read_time count, too...
     -- FIXME: Do the range scaling for every book after migration (i.e., if progress_str is nil on the first query), as long as book's pages == self.data.pages...
+    --        Or simply unilaterally set total_pages to book's pages. It'll potentially be bogus, but as bogus as before, so, eh ;D.
+    --        That would also solve the total_read_time conundrum.
     -- Dump the updated progress "bitfield" back into the DB
     progress_str = SQ3.blob(ffi.string(progress, 1001))
     sql_stmt = [[
