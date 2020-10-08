@@ -8,6 +8,7 @@ local Remarkable = Generic:new{
     model = "reMarkable",
     isRemarkable = yes,
     hasKeys = yes,
+    needsScreenRefreshAfterResume = no,
     hasOTAUpdates = yes,
     canReboot = yes,
     canPowerOff = yes,
@@ -90,24 +91,6 @@ function Remarkable:setDateTime(year, month, day, hour, min, sec)
         command = string.format("timedatectl set-time '%d:%d'",hour, min)
     end
     return os.execute(command) == 0
-end
-
-function Remarkable:intoScreenSaver()
-    local Screensaver = require("ui/screensaver")
-    if self.screen_saver_mode == false then
-        Screensaver:show()
-    end
-    self.powerd:beforeSuspend()
-    self.screen_saver_mode = true
-end
-
-function Remarkable:outofScreenSaver()
-    if self.screen_saver_mode == true then
-        local Screensaver = require("ui/screensaver")
-        Screensaver:close()
-    end
-    self.powerd:afterResume()
-    self.screen_saver_mode = false
 end
 
 function Remarkable:suspend()
