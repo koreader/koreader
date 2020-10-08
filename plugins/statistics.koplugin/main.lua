@@ -1643,7 +1643,6 @@ end
 
 function ReaderStatistics:getReadingProgressStats(sdays)
     local results = {}
-    local pages, duration, date_read
     local now_t = os.date("*t")
     local from_begin_day = now_t.hour *3600 + now_t.min*60 + now_t.sec
     local now_stamp = os.time()
@@ -1669,9 +1668,9 @@ function ReaderStatistics:getReadingProgressStats(sdays)
     local result_book = conn:exec(string.format(sql_stmt, period_begin))
     if not result_book then return end
     for i = 1, sdays do
-        pages = tonumber(result_book[2][i])
-        duration = tonumber(result_book[3][i])
-        date_read = result_book[1][i]
+        local pages = tonumber(result_book[2][i])
+        local duration = tonumber(result_book[3][i])
+        local date_read = result_book[1][i]
         if pages == nil then pages = 0 end
         if duration == nil then duration = 0 end
         table.insert(results, {
