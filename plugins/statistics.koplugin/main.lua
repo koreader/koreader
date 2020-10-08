@@ -138,11 +138,11 @@ function ReaderStatistics:init()
         end
     end
     Screensaver.getReaderProgress = function()
-        local readingprogress
         self:insertDB(self.id_curr_book)
         local current_duration, current_pages = self:getCurrentBookStats()
         local today_duration, today_pages = self:getTodayBookStats()
         local dates_stats = self:getReadingProgressStats(7)
+        local readingprogress
         if dates_stats then
             readingprogress = ReaderProgress:new{
                 dates = dates_stats,
@@ -415,8 +415,6 @@ end
 function ReaderStatistics:addBookStatToDB(book_stats, conn)
     local id_book
     local last_open_book = 0
-    local start_open_page
-    local diff_time
     local total_read_pages = 0
     local total_read_time = 0
     local sql_stmt
@@ -472,12 +470,12 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
         if first_read_page > 1 then
             first_read_page = first_read_page - 1
         end
-        start_open_page = sorted_performance[1]
+        local start_open_page = sorted_performance[1]
         --first page
         stmt:reset():bind(id_book, first_read_page, start_open_page - avg_time, avg_time):step()
         for i=2, #sorted_performance do
             start_open_page = sorted_performance[i-1]
-            diff_time = sorted_performance[i] - sorted_performance[i-1]
+            local diff_time = sorted_performance[i] - sorted_performance[i-1]
             if diff_time <= self.page_max_read_sec then
                 stmt:reset():bind(id_book, book_stats.performance_in_pages[sorted_performance[i-1]],
                     start_open_page, diff_time):step()
@@ -780,8 +778,7 @@ function ReaderStatistics:addToMainMenu(menu_items)
                         end,
                         callback = function(touchmenu_instance)
                             local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
-                            local durations_widget
-                            durations_widget = DoubleSpinWidget:new{
+                            local durations_widget = DoubleSpinWidget:new{
                                 left_text = _("Min"),
                                 left_value = self.page_min_read_sec,
                                 left_default = DEFAULT_MIN_READ_SEC,
@@ -1449,17 +1446,15 @@ end
 --          book_mode = if true than show book in this period
 function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
     local results = {}
-    local year_begin, year_end, month_begin, month_end
-    local timestamp
     local now_t = os.date("*t")
     local from_begin_day = now_t.hour *3600 + now_t.min*60 + now_t.sec
     local now_stamp = os.time()
     local one_day = 86400 -- one day in seconds
-    local sql_stmt_res_book
     local period_begin = 0
     if sdays > 0 then
         period_begin = now_stamp - ((sdays-1) * one_day) - from_begin_day
     end
+    local sql_stmt_res_book
     if ptype == "daily" or ptype == "daily_weekday" then
         sql_stmt_res_book = sqlDaily()
     elseif ptype == "weekly" then
@@ -1475,8 +1470,8 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
         return {}
     end
     for i=1, #result_book.dates do
+        local timestamp = tonumber(result_book[4][i])
         local date_text
-        timestamp = tonumber(result_book[4][i])
         if ptype == "daily_weekday" then
             date_text = string.format("%s (%s)",
                 os.date("%Y-%m-%d", timestamp),
@@ -1491,8 +1486,10 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
             date_text = result_book[1][i]
         end
         if ptype == "monthly" then
-            year_begin = tonumber(os.date("%Y", timestamp))
-            month_begin = tonumber(os.date("%m", timestamp))
+            local year_begin = tonumber(os.date("%Y", timestamp))
+            local year_end
+            local month_begin = tonumber(os.date("%m", timestamp))
+            local month_end
             if month_begin == 12 then
                 year_end = year_begin + 1
                 month_end = 1
@@ -1734,7 +1731,6 @@ function ReaderStatistics:getTotalStats()
         nr_books = 0
     end
 
-    local total_time_book
     for i=1, nr_books do
         local id_book = tonumber(id_book_tbl[1][i])
         sql_stmt = [[
@@ -1748,7 +1744,7 @@ function ReaderStatistics:getTotalStats()
             FROM   page_stat
             WHERE  id_book = '%s'
         ]]
-        total_time_book = conn:rowexec(string.format(sql_stmt,id_book))
+        local total_time_book = conn:rowexec(string.format(sql_stmt,id_book))
         if total_time_book == nil then
             total_time_book = 0
         end
@@ -1813,7 +1809,6 @@ end
 
 function ReaderStatistics:resetBook()
     local total_stats = {}
-    local kv_reset_book
 
     self:insertDB(self.id_curr_book)
     local conn = SQ3.open(db_location)
@@ -1831,6 +1826,7 @@ function ReaderStatistics:resetBook()
     end
 
     local total_time_book
+    local kv_reset_book
     for i=1, nr_books do
         local id_book = tonumber(id_book_tbl[1][i])
         sql_stmt = [[
@@ -1870,7 +1866,7 @@ function ReaderStatistics:resetBook()
                                     break
                                 end
                             end
-                            --refresh window after delete item
+                            -- refresh window after delete item
                             kv_reset_book:_populateItems()
                         end,
                     })
@@ -2251,11 +2247,11 @@ function ReaderStatistics:getReadBookByDay(month)
 end
 
 function ReaderStatistics:onShowReaderProgress()
-    local readingprogress
     self:insertDB(self.id_curr_book)
     local current_duration, current_pages = self:getCurrentBookStats()
     local today_duration, today_pages = self:getTodayBookStats()
     local dates_stats = self:getReadingProgressStats(7)
+    local readingprogress
     if dates_stats then
         readingprogress = ReaderProgress:new{
             dates = dates_stats,
