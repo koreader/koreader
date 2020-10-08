@@ -579,7 +579,7 @@ function ReaderStatistics:getIdBookDB()
     local nr_id = tonumber(result[1])
     if nr_id == 0 then
         -- Not in the DB yet, initialize it
-        stmt = conn:prepare("INSERT INTO book VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        stmt = conn:prepare("INSERT INTO book VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)")
         stmt:reset():bind(self.data.title, self.data.authors, self.data.notes,
             TimeVal:now().sec, self.data.highlights, self.data.pages,
             self.data.series, self.data.language, self.data.md5, 0, 0):step()
@@ -1784,6 +1784,15 @@ function ReaderStatistics:genResetBookSubItemTable()
         end,
         separator = true,
     })
+    table.insert(sub_item_table, {
+        text = _("Reset statistics for current book"),
+        keep_menu_open = true,
+        callback = function()
+            self:resetCurrentBook()
+        end,
+        enabled_func = function() return not self:isDocless() and self.is_enabled and self.id_curr_book end,
+        separator = true,
+    })
     local reset_minutes = { 1, 5, 15, 30, 60 }
     for _, minutes in ipairs(reset_minutes) do
         local text = T(N_("Reset stats for books read for < 1 m",
@@ -1867,13 +1876,45 @@ function ReaderStatistics:resetBook()
             })
         end
     end
+    conn:close()
     kv_reset_book = KeyValuePage:new{
         title = _("Reset book statistics"),
         value_align = "right",
         kv_pairs = total_stats,
     }
     UIManager:show(kv_reset_book)
+end
+
+function ReaderStatistics:resetCurrentBook()
+    -- Flush to db first, so we get a resetVolatileStats
+    self:insertDB(self.id_curr_book)
+
+    local conn = SQ3.open(db_location)
+    local sql_stmt = [[
+        SELECT title
+        FROM   book
+        WHERE  id = '%s'
+    ]]
+    local book_title = conn:rowexec(string.format(sql_stmt, self.id_curr_book))
     conn:close()
+
+    UIManager:show(ConfirmBox:new{
+        text = T(_("Do you want to reset statistics for book:\n%1"), book_title),
+        cancel_text = _("Cancel"),
+        cancel_callback = function()
+            return
+        end,
+        ok_text = _("Reset"),
+        ok_callback = function()
+            self:deleteBook(self.id_curr_book)
+
+            -- We also need to reset the time/page/avg tracking
+            self.total_read_pages = 0
+            self.total_read_time = 0
+            self.avg_time = math.floor(0.75 * self.page_max_read_sec)
+            logger.info("ReaderStatistics: Initializing average time per page at 75% of the max value, i.e.,", self.avg_time)
+        end,
+    })
 end
 
 function ReaderStatistics:deleteBook(id_book)
