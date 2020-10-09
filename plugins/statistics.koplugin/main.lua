@@ -713,6 +713,10 @@ function ReaderStatistics:insertDB(id_book, updated_pagecount)
             if duration > 0 then
                 -- NOTE: The fact that we update self.data.pages *after* this call on layout changes
                 --       should ensure that it matches the layout in which said data was collected.
+                --       Said data is used to re-scale page numbers, regardless of the document layout,
+                --       at query time, via a fancy SQL view.
+                --       This allows the progress tracking to be accurate even in the face of wild
+                --       document layout changes (e.g., after font size changes).
                 stmt:reset():bind(id_book, page, ts, duration, self.data.pages):step()
             end
         end
@@ -1272,7 +1276,7 @@ function ReaderStatistics:getCurrentStat(id_book)
         { _("Pages read today"), tonumber(today_pages) },
         "----",
         -- Current book statistics
-        -- Include re-reads
+        -- Includes re-reads
         { _("Total time spent on this book"), util.secondsToClock(total_time_book, false) },
         -- Capped to self.page_max_read_sec per distinct page
         { _("Time spent reading this book"), util.secondsToClock(book_read_time, false) },
