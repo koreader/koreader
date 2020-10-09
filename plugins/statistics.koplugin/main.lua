@@ -182,13 +182,12 @@ function ReaderStatistics:initData()
     self.data.highlights, self.data.notes = self.ui.bookmark:getNumberOfHighlightsAndNotes()
     self.id_curr_book = self:getIdBookDB()
     self.total_read_pages, self.total_read_time = self:getPageTimeTotalStats(self.id_curr_book)
-    logger.info("self.total_read_pages:", self.total_read_pages, "self.total_read_time:", self.total_read_time)
     if self.total_read_pages > 0 then
         self.avg_time = self.total_read_time / self.total_read_pages
     else
         -- NOTE: Possibly less weird-looking than initializing this to 0?
-        self.avg_time = math.floor(0.75 * self.page_max_read_sec)
-        logger.info("ReaderStatistics: Initializing average time per page at 75% of the max value, i.e.,", self.avg_time)
+        self.avg_time = math.floor(0.50 * self.page_max_read_sec)
+        logger.info("ReaderStatistics: Initializing average time per page at 50% of the max value, i.e.,", self.avg_time)
     end
 end
 
@@ -734,7 +733,6 @@ function ReaderStatistics:insertDB(id_book, updated_pagecount)
         );
     ]]
     local total_read_pages, total_read_time = conn:rowexec(string.format(sql_stmt, self.page_max_read_sec, id_book))
-    logger.info("total_read_pages:", total_read_pages, "total_read_time:", total_read_time)
     sql_stmt = [[
         UPDATE book
         SET    last_open = ?,
@@ -2005,8 +2003,8 @@ function ReaderStatistics:resetCurrentBook()
             -- We also need to reset the time/page/avg tracking
             self.total_read_pages = 0
             self.total_read_time = 0
-            self.avg_time = math.floor(0.75 * self.page_max_read_sec)
-            logger.info("ReaderStatistics: Initializing average time per page at 75% of the max value, i.e.,", self.avg_time)
+            self.avg_time = math.floor(0.50 * self.page_max_read_sec)
+            logger.info("ReaderStatistics: Initializing average time per page at 50% of the max value, i.e.,", self.avg_time)
 
             -- And the current volatile stats
             self:resetVolatileStats(TimeVal:now().sec)
@@ -2150,8 +2148,6 @@ function ReaderStatistics:onPageUpdate(pageno)
         -- insertDB will call resetVolatileStats for us ;)
     end
 
-    logger.info("self.total_read_pages:", self.total_read_pages, "self.total_read_time:", self.total_read_time)
-    logger.info("self.mem_read_pages:", self.mem_read_pages, "self.mem_read_time:", self.mem_read_time)
     -- Update average time per page (if need be, insertDB will have updated the totals and cleared the volatiles)
     -- NOTE: Until insertDB runs, while total_read_pages only counts *distinct* pages,
     --       and while mem_read_pages does the same, there may actually be an overlap between the two!
