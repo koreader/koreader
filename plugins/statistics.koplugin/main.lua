@@ -428,6 +428,7 @@ function ReaderStatistics:createDB(conn)
     else
         conn:exec("PRAGMA journal_mode=TRUNCATE;")
     end
+
     local sql_stmt = [[
         -- book
         CREATE TABLE IF NOT EXISTS book
@@ -445,18 +446,22 @@ function ReaderStatistics:createDB(conn)
                 total_read_time  integer,
                 total_read_pages integer,
             );
+    ]]
+    conn:exec(sql_stmt)
 
-        -- page_stat_data
-        %s
+    -- page_stat_data
+    conn:exec(STATISTICS_DB_PAGE_STAT_DATA_SCHEMA)
 
+    sql_stmt = [[
         -- Indexes
         CREATE INDEX IF NOT EXISTS page_stat_data_id_book ON page_stat_data(id_book);
         CREATE INDEX IF NOT EXISTS book_title_authors_md5 ON book(title, authors, md5);
-
-        -- page_stat view
-        %s
     ]]
-    conn:exec(string.format(sql_stmt, STATISTICS_DB_PAGE_STAT_DATA_SCHEMA, STATISTICS_DB_PAGE_STAT_VIEW_SCHEMA))
+    conn:exec(sql_stmt)
+
+    -- page_stat view
+    conn:exec(STATISTICS_DB_PAGE_STAT_VIEW_SCHEMA)
+
     -- DB schema version
     conn:exec(string.format("PRAGMA user_version=%d;", DB_SCHEMA_VERSION))
 end
@@ -467,10 +472,13 @@ function ReaderStatistics:upgradeDB(conn)
         ALTER TABLE page_stat RENAME COLUMN period TO duration;
         -- We're now using the user_version PRAGMA to keep track of schema version
         DROP TABLE info;
+    ]]
+    conn:exec(sql_stmt)
 
-        -- Migrate page_stat content to page_stat_data, which we'll have to create first ;).
-        %s
+    -- Migrate page_stat content to page_stat_data, which we'll have to create first ;).
+    conn:exec(STATISTICS_DB_PAGE_STAT_DATA_SCHEMA)
 
+    sql_stmt = [[
         -- Migrate page_stat content to page_stat_data, and populate total_pages from book's pages while we're at it.
         -- NOTE: While doing a per-book migration could ensure a potentially more accurate page count,
         --       we need to populate total_pages *now*, or queries against unopened books would return completely bogus values...
@@ -486,11 +494,12 @@ function ReaderStatistics:upgradeDB(conn)
 
         -- Drop old page_stat table
         DROP TABLE IF EXISTS page_stat;
-
-        -- Create the new page_stat view stuff
-        %s
     ]]
-    conn:exec(string.format(sql_stmt, STATISTICS_DB_PAGE_STAT_DATA_SCHEMA, STATISTICS_DB_PAGE_STAT_VIEW_SCHEMA))
+    conn:exec(sql_stmt)
+
+    -- Create the new page_stat view stuff
+    conn:exec(STATISTICS_DB_PAGE_STAT_VIEW_SCHEMA)
+
     -- Update DB schema version
     conn:exec(string.format("PRAGMA user_version=%d;", DB_SCHEMA_VERSION))
 end
