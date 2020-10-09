@@ -108,10 +108,10 @@ end
 -- Build our most often used SQL queries according to columns
 local BOOKINFO_INSERT_SQL = "INSERT OR REPLACE INTO bookinfo " ..
                             "(" .. table.concat(BOOKINFO_COLS_SET, ",") .. ") " ..
-                            "VALUES (" .. table.concat(bookinfo_values_sql, ",") .. ")"
+                            "VALUES (" .. table.concat(bookinfo_values_sql, ",") .. ");"
 local BOOKINFO_SELECT_SQL = "SELECT " .. table.concat(BOOKINFO_COLS_SET, ",") .. " FROM bookinfo " ..
-                            "WHERE directory=? and filename=? and in_progress=0"
-local BOOKINFO_IN_PROGRESS_SQL = "SELECT in_progress, filename, unsupported FROM bookinfo WHERE directory=? and filename=?"
+                            "WHERE directory=? AND filename=? AND in_progress=0;"
+local BOOKINFO_IN_PROGRESS_SQL = "SELECT in_progress, filename, unsupported FROM bookinfo WHERE directory=? AND filename=?;"
 
 
 local BookInfoManager = {}
@@ -203,10 +203,10 @@ function BookInfoManager:compactDb()
     -- is bigger than available memory...)
     local prev_size = self:getDbSize()
     self:openDbConnection()
-    self.db_conn:exec("PRAGMA temp_store = 2") -- use memory for temp files
+    self.db_conn:exec("PRAGMA temp_store = 2;") -- use memory for temp files
     -- self.db_conn:exec("VACUUM")
     -- Catch possible "memory or disk is full" error
-    local ok, errmsg = pcall(self.db_conn.exec, self.db_conn, "VACUUM") -- this may take some time
+    local ok, errmsg = pcall(self.db_conn.exec, self.db_conn, "VACUUM;") -- this may take some time
     self:closeDbConnection()
     if not ok then
         return T(_("Failed compacting database: %1"), errmsg)
@@ -224,7 +224,7 @@ function BookInfoManager:loadSettings()
     end
     self.settings = {}
     self:openDbConnection()
-    local res = self.db_conn:exec("SELECT key, value FROM config")
+    local res = self.db_conn:exec("SELECT key, value FROM config";)
     local keys = res[1]
     local values = res[2]
     for i, key in ipairs(keys) do
@@ -247,7 +247,7 @@ function BookInfoManager:saveSetting(key, value)
         end
     end
     self:openDbConnection()
-    local query = "INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)"
+    local query = "INSERT OR REPLACE INTO config (key, value) VALUES (?, ?);"
     local stmt = self.db_conn:prepare(query)
     if value == false then -- convert false to NULL
         value = nil
@@ -486,7 +486,7 @@ function BookInfoManager:setBookInfoProperties(filepath, props)
     self:openDbConnection()
     -- Let's do multiple one-column UPDATE (easier than building
     -- a multiple columns UPDATE)
-    local base_query = "UPDATE bookinfo SET %s=? WHERE directory=? AND filename=?"
+    local base_query = "UPDATE bookinfo SET %s=? WHERE directory=? AND filename=?;"
     for k, v in pairs(props) do
         local this_prop_query = string.format(base_query, k) -- add column name to query
         local stmt = self.db_conn:prepare(this_prop_query)
@@ -502,7 +502,7 @@ end
 function BookInfoManager:deleteBookInfo(filepath)
     local directory, filename = util.splitFilePathName(filepath)
     self:openDbConnection()
-    local query = "DELETE FROM bookinfo WHERE directory=? AND filename=?"
+    local query = "DELETE FROM bookinfo WHERE directory=? AND filename=?;"
     local stmt = self.db_conn:prepare(query)
     stmt:bind(directory, filename)
     stmt:step() -- commited
@@ -511,7 +511,7 @@ end
 
 function BookInfoManager:removeNonExistantEntries()
     self:openDbConnection()
-    local res = self.db_conn:exec("SELECT bcid, directory || filename FROM bookinfo")
+    local res = self.db_conn:exec("SELECT bcid, directory || filename FROM bookinfo;")
     if not res then
         return _("Cache is empty. Nothing to prune.")
     end
@@ -523,7 +523,7 @@ function BookInfoManager:removeNonExistantEntries()
             table.insert(bcids_to_remove, tonumber(bcids[i]))
         end
     end
-    local query = "DELETE FROM bookinfo WHERE bcid=?"
+    local query = "DELETE FROM bookinfo WHERE bcid=?;"
     local stmt = self.db_conn:prepare(query)
     for i=1, #bcids_to_remove do
         stmt:bind(bcids_to_remove[i])
