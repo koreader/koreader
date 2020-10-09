@@ -1926,14 +1926,14 @@ end
 function ReaderStatistics:deleteBook(id_book)
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
-            DELETE from book
+            DELETE FROM book
             WHERE  id = ?;
         ]]
     local stmt = conn:prepare(sql_stmt)
     stmt:reset():bind(id_book):step()
 
     sql_stmt = [[
-            DELETE from page_stat
+            DELETE FROM page_stat
             WHERE  id_book = ?;
         ]]
     stmt = conn:prepare(sql_stmt)
@@ -1955,7 +1955,7 @@ function ReaderStatistics:deleteBooksByTotalDuration(max_total_duration_mn)
             local id_curr_book = self.id_curr_book or -1
             local conn = SQ3.open(db_location)
             local sql_stmt = [[
-                    DELETE from page_stat
+                    DELETE FROM page_stat
                     WHERE  id_book IN (
                       SELECT id FROM book WHERE id != ? AND (total_read_time IS NULL OR total_read_time < ?)
                     );
@@ -1963,7 +1963,7 @@ function ReaderStatistics:deleteBooksByTotalDuration(max_total_duration_mn)
             local stmt = conn:prepare(sql_stmt)
             stmt:reset():bind(id_curr_book, max_total_duration_sec):step()
             sql_stmt = [[
-                    DELETE from book
+                    DELETE FROM book
                     WHERE  id != ? AND (total_read_time IS NULL OR total_read_time < ?);
                 ]]
             stmt = conn:prepare(sql_stmt)
