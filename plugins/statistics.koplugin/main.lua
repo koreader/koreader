@@ -414,7 +414,8 @@ function ReaderStatistics:upgradeDB(conn)
 
         -- NOTE: While doing a per-book migration could ensure a potentially more accurate page count,
         --       we need to populate total_pages *now*, or queries against unopened books would return completely bogus values...
-        --       We'll just have to hope the current value of the column pages in the book table is not too horribly out of date ;).
+        --       We'll just have to hope the current value of the column pages in the book table is not too horribly out of date,
+        --       and not too horribly out of phase with the actual page count at the time the data was originally collected...
         -- Sidebar: UPDATE .. FROM requires SQLite >= 3.33 ;).
         UPDATE page_stat SET total_pages = book.pages FROM book WHERE book.id = page_stat.id_book;
     ]]
