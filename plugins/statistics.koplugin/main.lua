@@ -722,6 +722,7 @@ function ReaderStatistics:insertDB(id_book, updated_pagecount)
     -- NOTE: See the tail end of the discussions in #6761 for more context on the choice of this heuristic.
     --       Basically, we're counting distinct pages,
     --       while making sure the sum of durations per distinct page is clamped to self.page_max_read_sec
+    --       This is expressly tailored to a fairer computation of self.avg_time ;).
     sql_stmt = [[
         SELECT count(*),
                sum(durations)
@@ -1227,6 +1228,9 @@ function ReaderStatistics:getCurrentStat(id_book)
     ]]
     local total_days = conn:rowexec(string.format(sql_stmt, id_book))
 
+    -- NOTE: Here, we really want to account for the *full* amount of time spent reading this book.
+    --       The "Average time per page" entry is already re-using self.avg_time, which is computed slightly differently,
+    --       c.f., insertDB
     sql_stmt = [[
         SELECT sum(duration),
                count(DISTINCT page),
@@ -1316,6 +1320,7 @@ function ReaderStatistics:getBookStat(id_book)
     ]]
     local total_days = conn:rowexec(string.format(sql_stmt, id_book))
 
+    -- NOTE: Unlike getCurrentStat, we can't use selv.avg_time here, because this may not be the current book.
     sql_stmt = [[
         SELECT sum(duration),
                count(DISTINCT page),
