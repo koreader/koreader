@@ -2125,7 +2125,6 @@ function ReaderStatistics:onPageUpdate(pageno)
     --       and while mem_read_pages does the same, there may actually be an overlap between the two!
     --       (i.e., the same page may be counted as read both in total and in mem, inflating the pagecount).
     --       Only insertDB will actually check that the count (and as such average time) is actually accurate.
-    -- FIXME: In this context, shouldn't the average time per page actually account for re-reads as distinct pages?
     if self.total_read_pages > 0 or self.mem_read_pages > 0 then
         self.avg_time = (self.total_read_time + self.mem_read_time) / (self.total_read_pages + self.mem_read_pages)
     end
