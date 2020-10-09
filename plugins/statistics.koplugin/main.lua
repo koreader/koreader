@@ -1228,9 +1228,7 @@ function ReaderStatistics:getCurrentStat(id_book)
     ]]
     local total_days = conn:rowexec(string.format(sql_stmt, id_book))
 
-    -- NOTE: Here, we really want to account for the *full* amount of time spent reading this book.
-    --       The "Average time per page" entry is already re-using self.avg_time, which is computed slightly differently,
-    --       c.f., insertDB
+    -- NOTE: Here, we generally want to account for the *full* amount of time spent reading this book.
     sql_stmt = [[
         SELECT sum(duration),
                count(DISTINCT page),
@@ -1241,11 +1239,23 @@ function ReaderStatistics:getCurrentStat(id_book)
     local total_time_book, total_read_pages, first_open = conn:rowexec(string.format(sql_stmt, id_book))
     conn:close()
 
+    -- NOTE: But, as the "Average time per page" entry is already re-using self.avg_time,
+    --       which is computed slightly differently (c.f., insertDB), we'll be using this tweaked book read time
+    --       to compute the other time-based statistics...
+    local book_read_pages, book_read_time = self:getPageTimeTotalStats(id_book)
+    -- Warn if the book recap doesn't agree with the page_stat data...
+    if total_read_pages ~= book_read_pages then
+        logger.dbg("Tables disagree on the total amount of distinct pages read! page_stat says", total_read_pages, "while book says", book_read_pages, "id:", id_book)
+    end
+
     if total_time_book == nil then
         total_time_book = 0
     end
     if total_read_pages == nil then
         total_read_pages = 0
+    end
+    if book_read_time == nil then
+        book_read_time = 0
     end
     if first_open == nil then
         first_open = TimeVal:now().sec
@@ -1253,8 +1263,9 @@ function ReaderStatistics:getCurrentStat(id_book)
     self.data.pages = self.view.document:getPageCount()
     total_time_book = tonumber(total_time_book)
     total_read_pages = tonumber(total_read_pages)
+    book_read_time = tonumber(book_read_time)
     local time_to_read = (self.data.pages - self.view.state.page) * self.avg_time
-    local estimate_days_to_read = math.ceil(time_to_read/(total_time_book/tonumber(total_days)))
+    local estimate_days_to_read = math.ceil(time_to_read/(book_read_time/tonumber(total_days)))
     local estimate_end_of_read_date = os.date("%Y-%m-%d", tonumber(os.time() + estimate_days_to_read * 86400))
     local formatstr = "%.0f%%"
     return {
@@ -1267,11 +1278,14 @@ function ReaderStatistics:getCurrentStat(id_book)
         { _("Pages read today"), tonumber(today_pages) },
         "----",
         -- Current book statistics
-        { _("Time spent reading this book"), util.secondsToClock(total_time_book, false) },
+        -- Include re-reads
+        { _("Total time spent on this book"), util.secondsToClock(total_time_book, false) },
+        -- Capped to self.page_max_read_sec per distinct page
+        { _("Time spent reading this book"), util.secondsToClock(book_read_time, false) },
         -- per days
         { _("Reading started"), os.date("%Y-%m-%d (%H:%M)", tonumber(first_open))},
         { _("Days reading this book"), tonumber(total_days) },
-        { _("Average time per day"), util.secondsToClock(total_time_book/tonumber(total_days), false) },
+        { _("Average time per day"), util.secondsToClock(book_read_time/tonumber(total_days), false) },
         -- per page
         { _("Pages read"), tonumber(total_read_pages) },
         { _("Average time per page"), util.secondsToClock(self.avg_time, false) },
@@ -1320,7 +1334,7 @@ function ReaderStatistics:getBookStat(id_book)
     ]]
     local total_days = conn:rowexec(string.format(sql_stmt, id_book))
 
-    -- NOTE: Unlike getCurrentStat, we can't use selv.avg_time here, because this may not be the current book.
+    -- NOTE: Same general principle as getCurrentStat
     sql_stmt = [[
         SELECT sum(duration),
                count(DISTINCT page),
@@ -1331,30 +1345,41 @@ function ReaderStatistics:getBookStat(id_book)
     local total_time_book, total_read_pages, first_open = conn:rowexec(string.format(sql_stmt, id_book))
     conn:close()
 
+    local book_read_pages, book_read_time = self:getPageTimeTotalStats(id_book)
+    -- Warn if the book recap doesn't agree with the page_stat data...
+    if total_read_pages ~= book_read_pages then
+        logger.dbg("Tables disagree on the total amount of distinct pages read! page_stat says", total_read_pages, "while book says", book_read_pages, "id:", id_book)
+    end
+
     if total_time_book == nil then
         total_time_book = 0
     end
     if total_read_pages == nil then
         total_read_pages = 0
     end
+    if book_read_time == nil then
+        book_read_time = 0
+    end
     if first_open == nil then
         first_open = TimeVal:now().sec
     end
     total_time_book = tonumber(total_time_book)
     total_read_pages = tonumber(total_read_pages)
+    book_read_time = tonumber(book_read_time)
     pages = tonumber(pages)
     if pages == nil or pages == 0 then
         pages = 1
     end
-    local avg_time_per_page = total_time_book / total_read_pages
+    local avg_time_per_page = book_read_time / total_read_pages
     return {
         { _("Title"), title},
         { _("Authors"), authors},
         { _("Reading started"), os.date("%Y-%m-%d (%H:%M)", tonumber(first_open))},
         { _("Last read"), os.date("%Y-%m-%d (%H:%M)", tonumber(last_open))},
         { _("Days reading this book"), tonumber(total_days) },
-        { _("Time spent reading this book"), util.secondsToClock(total_time_book, false) },
-        { _("Average time per day"), util.secondsToClock(total_time_book/tonumber(total_days), false) },
+        { _("Total time spent on this book"), util.secondsToClock(total_time_book, false) },
+        { _("Time spent reading this book"), util.secondsToClock(book_read_time, false) },
+        { _("Average time per day"), util.secondsToClock(book_read_time/tonumber(total_days), false) },
         { _("Average time per page"), util.secondsToClock(avg_time_per_page, false) },
         -- These 2 ones are about page actually read (not the current page and % into book)
         { _("Read pages/Total pages"), total_read_pages .. "/" .. pages },
