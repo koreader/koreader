@@ -1919,6 +1919,9 @@ function ReaderStatistics:resetCurrentBook()
 
             -- And the current volatile stats
             self:resetVolatileStats()
+
+            -- And re-create the Book's data in the book table and get its new ID...
+            self.id_curr_book = self:getIdBookDB()
         end,
     })
 end
