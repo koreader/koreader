@@ -760,6 +760,7 @@ function ReaderStatistics:insertDB(id_book, updated_pagecount)
     else
         self.total_read_time = 0
     end
+    self.avg_time = self.total_read_time / self.total_read_pages
 
     self:resetVolatileStats(now_ts)
 end
