@@ -217,7 +217,7 @@ function Device:rescheduleSuspend()
     UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
 end
 
--- ONLY used for Kobo and PocketBook devices
+-- Only used on platforms where we handle suspend ourselves.
 function Device:onPowerEvent(ev)
     if self.screen_saver_mode then
         if ev == "Power" or ev == "Resume" then
@@ -228,10 +228,12 @@ function Device:onPowerEvent(ev)
                 logger.dbg("Resuming...")
                 local UIManager = require("ui/uimanager")
                 UIManager:unschedule(self.suspend)
-                local network_manager = require("ui/network/manager")
-                if network_manager.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
-                    network_manager:restoreWifiAsync()
-                    network_manager:scheduleConnectivityCheck()
+                if self:hasWifiManager() and not self:isEmulator() then
+                    local network_manager = require("ui/network/manager")
+                    if network_manager.wifi_was_on and G_reader_settings:isTrue("auto_restore_wifi") then
+                        network_manager:restoreWifiAsync()
+                        network_manager:scheduleConnectivityCheck()
+                    end
                 end
                 self:resume()
                 -- Restore to previous rotation mode, if need be.
@@ -289,22 +291,32 @@ function Device:onPowerEvent(ev)
             self.orig_rotation_mode = nil
         end
         require("ui/screensaver"):show()
+        -- NOTE: show() will return well before the refresh ioctl is even *sent*:
+        --       the only thing it's done is *enqueued* the refresh in UIManager's stack.
+        --       Which is why the actual suspension needs to be delayed by suspend_wait_timeout,
+        --       otherwise, we'd potentially suspend (or attempt to) too soon.
+        --       On platforms where suspension is done via a sysfs knob, that'd translate to a failed suspend,
+        --       and on platforms where we defer to a system tool, it'd probably suspend too early!
+        --       c.f., #6676
         if self:needsScreenRefreshAfterResume() then
             self.screen:refreshFull()
         end
         self.screen_saver_mode = true
         UIManager:scheduleIn(0.1, function()
-          local network_manager = require("ui/network/manager")
-          -- NOTE: wifi_was_on does not necessarily mean that Wi-Fi is *currently* on! It means *we* enabled it.
-          --       This is critical on Kobos (c.f., #3936), where it might still be on from KSM or Nickel,
-          --       without us being aware of it (i.e., wifi_was_on still unset or false),
-          --       because suspend will at best fail, and at worst deadlock the system if Wi-Fi is on,
-          --       regardless of who enabled it!
-          if network_manager:isWifiOn() then
-              network_manager:releaseIP()
-              network_manager:turnOffWifi()
-          end
-          UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
+            -- NOTE: This side of the check needs to be laxer, some platforms can handle Wi-Fi without WifiManager ;).
+            if self:hasWifiToggle() then
+                local network_manager = require("ui/network/manager")
+                -- NOTE: wifi_was_on does not necessarily mean that Wi-Fi is *currently* on! It means *we* enabled it.
+                --       This is critical on Kobos (c.f., #3936), where it might still be on from KSM or Nickel,
+                --       without us being aware of it (i.e., wifi_was_on still unset or false),
+                --       because suspend will at best fail, and at worst deadlock the system if Wi-Fi is on,
+                --       regardless of who enabled it!
+                if network_manager:isWifiOn() then
+                    network_manager:releaseIP()
+                    network_manager:turnOffWifi()
+                end
+            end
+            UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
         end)
     end
 end
