@@ -1254,16 +1254,12 @@ function ReaderStatistics:getCurrentStat(id_book)
     if total_read_pages == nil then
         total_read_pages = 0
     end
-    if book_read_time == nil then
-        book_read_time = 0
-    end
     if first_open == nil then
         first_open = TimeVal:now().sec
     end
     self.data.pages = self.view.document:getPageCount()
     total_time_book = tonumber(total_time_book)
     total_read_pages = tonumber(total_read_pages)
-    book_read_time = tonumber(book_read_time)
     local time_to_read = (self.data.pages - self.view.state.page) * self.avg_time
     local estimate_days_to_read = math.ceil(time_to_read/(book_read_time/tonumber(total_days)))
     local estimate_end_of_read_date = os.date("%Y-%m-%d", tonumber(os.time() + estimate_days_to_read * 86400))
@@ -1357,15 +1353,11 @@ function ReaderStatistics:getBookStat(id_book)
     if total_read_pages == nil then
         total_read_pages = 0
     end
-    if book_read_time == nil then
-        book_read_time = 0
-    end
     if first_open == nil then
         first_open = TimeVal:now().sec
     end
     total_time_book = tonumber(total_time_book)
     total_read_pages = tonumber(total_read_pages)
-    book_read_time = tonumber(book_read_time)
     pages = tonumber(pages)
     if pages == nil or pages == 0 then
         pages = 1
