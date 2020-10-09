@@ -710,14 +710,20 @@ function ReaderStatistics:insertDB(id_book, updated_pagecount)
         end
     end
     conn:exec('COMMIT;')
-    -- FIXME: Switch to clamp variant!
+    -- NOTE: See the tail end of the discussions in #6761 for more context on the choice of this heuristic.
+    --       Basically, we're counting distinct pages,
+    --       while making sure the sum of durations per distinct page is clamped to self.page_max_read_sec
     sql_stmt = [[
-        SELECT count(DISTINCT page),
-               sum(duration)
-        FROM   page_stat_data
-        WHERE  id_book = %d;
+        SELECT count(*),
+               sum(durations)
+        FROM (
+            SELECT min(sum(duration), %d) AS durations
+            FROM page_stat_data
+            WHERE id_book = %d
+            GROUP BY page
+        );
     ]]
-    local total_read_pages, total_read_time = conn:rowexec(string.format(sql_stmt, id_book))
+    local total_read_pages, total_read_time = conn:rowexec(string.format(sql_stmt, self.page_max_read_sec, id_book))
     logger.info("total_read_pages:", total_read_pages, "total_read_time:", total_read_time)
     sql_stmt = [[
         UPDATE book
