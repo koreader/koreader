@@ -363,6 +363,58 @@ function ReaderStatistics:partialMd5(file)
     return update()
 end
 
+-- Mainly so we don't duplicate the schema twice between the creation/upgrade codepaths
+local STATISTICS_DB_PAGE_STAT_DATA_SCHEMA = [[
+    CREATE TABLE IF NOT EXISTS page_stat_data
+        (
+            id_book     integer,
+            page        integer NOT NULL DEFAULT 0,
+            start_time  integer NOT NULL DEFAULT 0,
+            duration    integer NOT NULL DEFAULT 0,
+            total_pages integer NOT NULL DEFAULT 0,
+            UNIQUE (page, start_time),
+            FOREIGN KEY(id_book) REFERENCES book(id)
+        );
+]]
+
+local STATISTICS_DB_PAGE_STAT_VIEW_SCHEMA = [[
+    -- Create the numbers table, used as a source of extra rows when scaling pages in the page_stat view
+    CREATE TABLE IF NOT EXISTS numbers
+        (
+            number INTEGER PRIMARY KEY
+        );
+    WITH RECURSIVE counter AS
+        (
+            SELECT 1 as N UNION ALL
+            SELECT N + 1 FROM counter WHERE N < 1000
+        )
+        INSERT INTO numbers SELECT N AS number FROM counter;
+
+    -- Create the page_stat view
+    -- This view rescales data from the page_stat_data table to the current number of book pages
+    -- c.f., https://github.com/koreader/koreader/pull/6761#issuecomment-705660154
+    CREATE VIEW page_stat AS
+        SELECT id_book, first_page + idx - 1 AS page, start_time, duration / (last_page - first_page + 1) AS duration
+        FROM (
+            SELECT id_book, page, total_pages, pages, start_time, duration,
+
+                -- First page_number for this page after rescaling single row
+                ((page - 1) * pages) / total_pages + 1 AS first_page,
+
+                -- Last page_number for this page after rescaling single row
+                max(((page - 1) * pages) / total_pages + 1, (page * pages) / total_pages) AS last_page,
+
+                idx
+
+            FROM page_stat_data
+
+            JOIN book ON book.id = id_book
+
+            -- Duplicate rows for multiple pages as needed (as a result of rescaling)
+            JOIN (SELECT number as idx FROM numbers) AS N ON idx <= (last_page - first_page + 1)
+        );
+]]
+
 function ReaderStatistics:createDB(conn)
     -- Make it WAL, if possible
     if Device:canUseWAL() then
@@ -371,6 +423,7 @@ function ReaderStatistics:createDB(conn)
         conn:exec("PRAGMA journal_mode=TRUNCATE;")
     end
     local sql_stmt = [[
+        -- book
         CREATE TABLE IF NOT EXISTS book
             (
                 id integer PRIMARY KEY autoincrement,
@@ -385,41 +438,53 @@ function ReaderStatistics:createDB(conn)
                 md5 text,
                 total_read_time  integer,
                 total_read_pages integer,
-                progress blob
             );
-        CREATE TABLE IF NOT EXISTS page_stat
-            (
-                id_book     integer,
-                page        integer NOT NULL DEFAULT 0,
-                start_time  integer NOT NULL DEFAULT 0,
-                duration    integer NOT NULL DEFAULT 0,
-                total_pages integer NOT NULL DEFAULT 0,
-                UNIQUE (page, start_time),
-                FOREIGN KEY(id_book) REFERENCES book(id)
-            );
-        CREATE INDEX IF NOT EXISTS page_stat_id_book ON page_stat(id_book);
+
+        -- page_stat_data
+        %s
+
+        -- Indexes
+        CREATE INDEX IF NOT EXISTS page_stat_data_id_book ON page_stat_data(id_book);
         CREATE INDEX IF NOT EXISTS book_title_authors_md5 ON book(title, authors, md5);
+
+        -- page_stat view
+        %s
     ]]
-    conn:exec(sql_stmt)
+    conn:exec(string.format(sql_stmt, STATISTICS_DB_PAGE_STAT_DATA_SCHEMA, STATISTICS_DB_PAGE_STAT_VIEW_SCHEMA))
     -- DB schema version
     conn:exec(string.format("PRAGMA user_version=%d;", DB_SCHEMA_VERSION))
 end
 
 function ReaderStatistics:upgradeDB(conn)
     local sql_stmt = [[
-        ALTER TABLE book ADD COLUMN progress blob;
+        -- Start by updating the layout of the old page_stat table
         ALTER TABLE page_stat RENAME COLUMN period TO duration;
-        ALTER TABLE page_stat ADD COLUMN total_pages integer NOT NULL DEFAULT 0;
+        -- We're now using the user_version PRAGMA to keep track of schema version
         DROP TABLE info;
 
+        -- Migrate page_stat content to page_stat_data, which we'll have to create first ;).
+        %s
+
+        -- Migrate page_stat content to page_stat_data, and populate total_pages from book's pages while we're at it.
         -- NOTE: While doing a per-book migration could ensure a potentially more accurate page count,
         --       we need to populate total_pages *now*, or queries against unopened books would return completely bogus values...
         --       We'll just have to hope the current value of the column pages in the book table is not too horribly out of date,
         --       and not too horribly out of phase with the actual page count at the time the data was originally collected...
-        -- Sidebar: UPDATE .. FROM requires SQLite >= 3.33 ;).
-        UPDATE page_stat SET total_pages = book.pages FROM book WHERE book.id = page_stat.id_book;
+        INSERT INTO page_stat_data
+            SELECT id_book, page, start_time, duration, pages as total_pages FROM page_stat
+            LEFT JOIN book on book.id = id_book;
+
+        -- Update the index, too
+        DROP INDEX IF EXISTS page_stat_id_book;
+        CREATE INDEX IF NOT EXISTS page_stat_data_id_book ON page_stat_data(id_book);
+
+        -- Drop old page_stat table
+        DROP TABLE IF EXISTS page_stat;
+
+        -- Create the new page_stat view stuff
+        %s
     ]]
-    conn:exec(sql_stmt)
+    conn:exec(string.format(sql_stmt, STATISTICS_DB_PAGE_STAT_DATA_SCHEMA, STATISTICS_DB_PAGE_STAT_VIEW_SCHEMA))
     -- Update DB schema version
     conn:exec(string.format("PRAGMA user_version=%d;", DB_SCHEMA_VERSION))
 end
