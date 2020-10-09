@@ -303,20 +303,20 @@ function Device:onPowerEvent(ev)
         end
         self.screen_saver_mode = true
         UIManager:scheduleIn(0.1, function()
-          -- NOTE: This side of the check needs to be laxer, some platforms can handle Wi-Fi without WifiManager ;).
-          if self:hasWifiToggle() then
-            local network_manager = require("ui/network/manager")
-            -- NOTE: wifi_was_on does not necessarily mean that Wi-Fi is *currently* on! It means *we* enabled it.
-            --       This is critical on Kobos (c.f., #3936), where it might still be on from KSM or Nickel,
-            --       without us being aware of it (i.e., wifi_was_on still unset or false),
-            --       because suspend will at best fail, and at worst deadlock the system if Wi-Fi is on,
-            --       regardless of who enabled it!
-            if network_manager:isWifiOn() then
-                network_manager:releaseIP()
-                network_manager:turnOffWifi()
+            -- NOTE: This side of the check needs to be laxer, some platforms can handle Wi-Fi without WifiManager ;).
+            if self:hasWifiToggle() then
+                local network_manager = require("ui/network/manager")
+                -- NOTE: wifi_was_on does not necessarily mean that Wi-Fi is *currently* on! It means *we* enabled it.
+                --       This is critical on Kobos (c.f., #3936), where it might still be on from KSM or Nickel,
+                --       without us being aware of it (i.e., wifi_was_on still unset or false),
+                --       because suspend will at best fail, and at worst deadlock the system if Wi-Fi is on,
+                --       regardless of who enabled it!
+                if network_manager:isWifiOn() then
+                    network_manager:releaseIP()
+                    network_manager:turnOffWifi()
+                end
             end
-          end
-          UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
+            UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
         end)
     end
 end
