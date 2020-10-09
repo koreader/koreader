@@ -224,7 +224,7 @@ function BookInfoManager:loadSettings()
     end
     self.settings = {}
     self:openDbConnection()
-    local res = self.db_conn:exec("SELECT key, value FROM config";)
+    local res = self.db_conn:exec("SELECT key, value FROM config;")
     local keys = res[1]
     local values = res[2]
     for i, key in ipairs(keys) do
