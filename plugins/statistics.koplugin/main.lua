@@ -1932,7 +1932,7 @@ function ReaderStatistics:resetCurrentBook()
             logger.info("ReaderStatistics: Initializing average time per page at 75% of the max value, i.e.,", self.avg_time)
 
             -- And the current volatile stats
-            self:resetVolatileStats()
+            self:resetVolatileStats(TimeVal:now().sec)
 
             -- And re-create the Book's data in the book table and get its new ID...
             self.id_curr_book = self:getIdBookDB()
