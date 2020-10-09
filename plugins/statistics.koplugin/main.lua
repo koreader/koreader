@@ -726,7 +726,7 @@ function ReaderStatistics:insertDB(id_book, updated_pagecount)
     --       Basically, we're counting distinct pages,
     --       while making sure the sum of durations per distinct page is clamped to self.page_max_read_sec
     --       This is expressly tailored to a fairer computation of self.avg_time ;).
-    sql_stmt = [[
+    local sql_stmt = [[
         SELECT count(*),
                sum(durations)
         FROM (
@@ -748,7 +748,7 @@ function ReaderStatistics:insertDB(id_book, updated_pagecount)
         WHERE  id = ?;
     ]]
     stmt = conn:prepare(sql_stmt)
-    stmt:reset():bind(now_ts, self.data.notes, self.data.highlights, total_read_time, rescaled_total_read_pages,
+    stmt:reset():bind(now_ts, self.data.notes, self.data.highlights, total_read_time, total_read_pages,
         updated_pagecount and updated_pagecount or self.data.pages, id_book):step()
     stmt:close()
     conn:close()
@@ -846,7 +846,8 @@ function ReaderStatistics:addToMainMenu(menu_items)
                         end,
                         callback = function(touchmenu_instance)
                             local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
-                            local durations_widget = DoubleSpinWidget:new{
+                            local durations_widget
+                            durations_widget = DoubleSpinWidget:new{
                                 left_text = _("Min"),
                                 left_value = self.page_min_read_sec,
                                 left_default = DEFAULT_MIN_READ_SEC,
