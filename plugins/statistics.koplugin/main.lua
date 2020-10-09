@@ -604,7 +604,9 @@ function ReaderStatistics:getIdBookDB()
         result = stmt:reset():bind(self.data.title, self.data.authors, self.data.md5):step()
         id_book = result[1]
     end
+    stmt:close()
     conn:close()
+
     return tonumber(id_book)
 end
 
@@ -691,6 +693,9 @@ function ReaderStatistics:insertDB(id_book)
     stmt = conn:prepare(sql_stmt)
     stmt:reset():bind(now_ts, self.data.notes, self.data.highlights, total_read_time, rescaled_total_read_pages,
         self.data.pages, progress_str, id_book):step()
+    stmt:close()
+    conn:close()
+
     if total_read_pages then
         self.total_read_pages = tonumber(total_read_pages)
     else
@@ -703,7 +708,6 @@ function ReaderStatistics:insertDB(id_book)
     end
 
     self:resetVolatileStats(now_ts)
-    conn:close()
 end
 
 function ReaderStatistics:getPageTimeTotalStats(id_book)
@@ -718,6 +722,8 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
         WHERE  id = %d;
     ]]
     local total_pages, total_time = conn:rowexec(string.format(sql_stmt, id_book))
+    conn:close()
+
     if total_pages then
         total_pages = tonumber(total_pages)
     else
@@ -728,7 +734,6 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
     else
         total_time = 0
     end
-    conn:close()
     return total_pages, total_time
 end
 
@@ -1107,6 +1112,8 @@ function ReaderStatistics:getTodayBookStats()
                 );
     ]]
     local today_pages, today_duration = conn:rowexec(string.format(sql_stmt, start_today_time))
+    conn:close()
+
     if today_pages == nil then
         today_pages = 0
     end
@@ -1115,7 +1122,6 @@ function ReaderStatistics:getTodayBookStats()
     end
     today_duration = tonumber(today_duration)
     today_pages = tonumber(today_pages)
-    conn:close()
     return today_duration, today_pages
 end
 
@@ -1132,6 +1138,8 @@ function ReaderStatistics:getCurrentBookStats()
                );
     ]]
     local current_pages, current_duration = conn:rowexec(string.format(sql_stmt, self.start_current_period))
+    conn:close()
+
     if current_pages == nil then
         current_pages = 0
     end
@@ -1261,7 +1269,6 @@ function ReaderStatistics:getBookStat(id_book)
         WHERE  id_book = %d;
     ]]
     local total_time_book, total_read_pages, first_open = conn:rowexec(string.format(sql_stmt, id_book))
-
     conn:close()
 
     if total_time_book == nil then
@@ -1471,6 +1478,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
     local conn = SQ3.open(db_location)
     local result_book = conn:exec(string.format(sql_stmt_res_book, period_begin))
     conn:close()
+
     if result_book == nil then
         return {}
     end
@@ -1562,6 +1570,7 @@ function ReaderStatistics:getDaysFromPeriod(period_begin, period_end)
     local conn = SQ3.open(db_location)
     local result_book = conn:exec(string.format(sql_stmt_res_book, period_begin, period_end - 1))
     conn:close()
+
     if result_book == nil then
         return {}
     end
@@ -1605,6 +1614,7 @@ function ReaderStatistics:getBooksFromPeriod(period_begin, period_end, callback_
     local conn = SQ3.open(db_location)
     local result_book = conn:exec(string.format(sql_stmt_res_book, period_begin + 1, period_end))
     conn:close()
+
     if result_book == nil then
         return {}
     end
@@ -1668,6 +1678,8 @@ function ReaderStatistics:getReadingProgressStats(sdays)
         ORDER  BY dates DESC;
     ]]
     local result_book = conn:exec(string.format(sql_stmt, period_begin))
+    conn:close()
+
     if not result_book then return end
     for i = 1, sdays do
         local pages = tonumber(result_book[2][i])
@@ -1681,7 +1693,6 @@ function ReaderStatistics:getReadingProgressStats(sdays)
             date_read
         })
     end
-    conn:close()
     return results
 end
 
@@ -1699,6 +1710,7 @@ function ReaderStatistics:getDatesForBook(id_book)
     ]]
     local result_book = conn:exec(string.format(sql_stmt, id_book))
     conn:close()
+
     if result_book == nil then
         return {}
     end
@@ -1774,6 +1786,7 @@ function ReaderStatistics:getTotalStats()
         })
     end
     conn:close()
+
     return T(_("Total time spent reading: %1"), util.secondsToClock(total_books_time, false)), total_stats
 end
 
@@ -1880,6 +1893,7 @@ function ReaderStatistics:resetBook()
         end
     end
     conn:close()
+
     kv_reset_book = KeyValuePage:new{
         title = _("Reset book statistics"),
         value_align = "right",
