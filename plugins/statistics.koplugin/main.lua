@@ -411,6 +411,12 @@ function ReaderStatistics:upgradeDB(conn)
         ALTER TABLE page_stat RENAME COLUMN period TO duration;
         ALTER TABLE page_stat ADD COLUMN total_pages integer NOT NULL DEFAULT 0;
         DROP TABLE info;
+
+        -- NOTE: While doing a per-book migration could ensure a potentially more accurate page count,
+        --       we need to populate total_pages *now*, or queries against unopened books would return completely bogus values...
+        --       We'll just have to hope the current value of the column pages in the book table is not too horribly out of date ;).
+        -- Sidebar: UPDATE .. FROM requires SQLite >= 3.33 ;).
+        UPDATE page_stat SET total_pages = book.pages FROM book WHERE book.id = page_stat.id_book;
     ]]
     conn:exec(sql_stmt)
     -- Update DB schema version
@@ -603,21 +609,6 @@ function ReaderStatistics:getIdBookDB()
         stmt = conn:prepare(sql_stmt)
         result = stmt:reset():bind(self.data.title, self.data.authors, self.data.md5):step()
         id_book = result[1]
-
-        -- Also handle migration to the v2 database schema: populate page_stat's total_pages if need be,
-        -- and make sure book's pages count is accurate.
-        sql_stmt = [[
-            SELECT count(*),
-                   sum(total_pages)
-            FROM   page_stat
-            WHERE  id_book = %d;
-        ]]
-        local pages_collected, total_pages_sum = conn:rowexec(string.format(sql_stmt, id_book))
-        if pages_collected and pages_collected > 0 and total_pages_sum == 0 then
-            -- If the book has existing stats, but total_pages is still empty, set it to self.data.pages
-            -- NOTE: This is obviously not ideal, because the *current* page count may not match the pagecount
-            --       at the time the data was collected. We don't really have any better option, though ;).
-        end
     end
     stmt:close()
     conn:close()
