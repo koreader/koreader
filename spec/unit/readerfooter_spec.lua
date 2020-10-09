@@ -234,11 +234,11 @@ describe("Readerfooter module", function()
 
         -- disable percentage, book time to read should follow
         tapFooterMenu(fake_menu, "Progress percentage".." (⤠)")
-        assert.are.same('⏳ na', footer.footer_text.text)
+        assert.are.same('⏳ N/A', footer.footer_text.text)
 
         -- disable book time to read, chapter time to read should follow
         tapFooterMenu(fake_menu, "Book time to read".." (⏳)")
-        assert.are.same('⤻ na', footer.footer_text.text)
+        assert.are.same('⤻ N/A', footer.footer_text.text)
 
         -- disable chapter time to read, text should be empty
         tapFooterMenu(fake_menu, "Chapter time to read".." (⤻)")
@@ -246,7 +246,7 @@ describe("Readerfooter module", function()
 
         -- reenable chapter time to read, text should be chapter time to read
         tapFooterMenu(fake_menu, "Chapter time to read".." (⤻)")
-        assert.are.same('⤻ na', footer.footer_text.text)
+        assert.are.same('⤻ N/A', footer.footer_text.text)
     end)
 
     it("should rotate through different modes", function()
@@ -300,7 +300,7 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         local horizontal_margin = Screen:scaleBySize(10)*2
         footer:onUpdateFooter()
-        assert.is.same(354, footer.text_width)
+        assert.is.same(370, footer.text_width)
         assert.is.same(600, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
