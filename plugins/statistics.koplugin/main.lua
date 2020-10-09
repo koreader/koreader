@@ -18,7 +18,6 @@ local UIManager = require("ui/uimanager")
 local Widget = require("ui/widget/widget")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local ffi = require("ffi")
 local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
@@ -689,16 +688,7 @@ function ReaderStatistics:insertDB(id_book)
     local now_ts = TimeVal:now().sec
     local conn = SQ3.open(db_location)
     conn:exec('BEGIN;')
-    -- First, get the current state of the ‰ read progress bar fake bitfield
-    local sql_stmt = [[
-        SELECT progress
-        FROM   book
-        WHERE  id = %d;
-    ]]
-    local progress_str = conn:rowexec(string.format(sql_stmt, id_book))
-    -- Make that an actual C array (unfortunately, of chars instead of bool to ease (de)serialization...)
-    local progress = ffi.new("char[1001]", progress_str or 0)
-    local stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?, ?);")
+    local stmt = conn:prepare("INSERT OR IGNORE INTO page_stat_data VALUES(?, ?, ?, ?, ?);")
     for page, data_list in pairs(self.page_stat) do
         for _, data_tuple in ipairs(data_list) do
             -- See self.page_stat declaration above about the tuple's layout
@@ -709,48 +699,20 @@ function ReaderStatistics:insertDB(id_book)
                 -- NOTE: The fact that we update self.data.pages *after* this call on layout changes
                 --       should ensure that it matches the layout in which said data was collected.
                 stmt:reset():bind(id_book, page, ts, duration, self.data.pages):step()
-                -- Convert that to a ‰ range, and mark it as read
-                -- FIXME: Use optmath's round instead of adhoc'ing it
-                local range_start = math.floor(((page - 1) / self.data.pages * 1000) + 0.5)
-                local range_end = math.floor((page / self.data.pages * 1000) + 0.5)
-                logger.info("Setting progress range from", range_start, "to", range_end, "for page", page)
-                for i = range_start, range_end do
-                    progress[i] = 1
-                end
             end
         end
     end
     conn:exec('COMMIT;')
+    -- FIXME: Switch to clamp variant!
     sql_stmt = [[
         SELECT count(DISTINCT page),
                sum(duration)
-        FROM   page_stat
+        FROM   page_stat_data
         WHERE  id_book = %d;
     ]]
     local total_read_pages, total_read_time = conn:rowexec(string.format(sql_stmt, id_book))
     logger.info("total_read_pages:", total_read_pages, "total_read_time:", total_read_time)
-    -- FIXME: Skip if no scale change! (i.e., book's pages == self.data.pages)
-    logger.info("Rescaling pages read...")
-    -- Rescale total_read_pages according to the current layout...
-    local permilles_per_page = 1 / self.data.pages * 1000
-    -- Count the read permilles...
-    local read_permilles = 0
-    for i = 0, 1000 do
-        if progress[i] == 1 then
-            read_permilles = read_permilles + 1
-        end
-    end
-    logger.info("Computed", read_permilles, "permilles as read")
-    local rescaled_total_read_pages = math.floor(read_permilles / permilles_per_page + 0.5)
-    logger.dbg("ReaderStatistics:insertDB Rescaled total_read_pages from", total_read_pages, "to", rescaled_total_read_pages)
-    -- FIXME: Actually update total_read_pages with rescaled_total_read_pages for the self.total_read_pages copy used for the average time per page computation...
-    --        And if we dropped pages in the migration, drop them from the total_read_time count, too...
-    -- FIXME: Do the range scaling for every book after migration (i.e., if progress_str is nil on the first query), as long as book's pages == self.data.pages...
-    --        Or simply unilaterally set total_pages to book's pages. It'll potentially be bogus, but as bogus as before, so, eh ;D.
-    --        That would also solve the total_read_time conundrum.
-    --        And this also ensures we won't need to tweak queries in case we wanted to detect legacy/mixed/new schema books, since total_pages will always be set.
-    -- Dump the updated progress "bitfield" back into the DB
-    progress_str = SQ3.blob(ffi.string(progress, 1001))
+    -- FIXME: This, on the other hand, should set the *new* total pagecount (via a new optional arg)
     sql_stmt = [[
         UPDATE book
         SET    last_open = ?,
@@ -758,13 +720,12 @@ function ReaderStatistics:insertDB(id_book)
                highlights = ?,
                total_read_time = ?,
                total_read_pages = ?,
-               pages = ?,
-               progress = ?
+               pages = ?
         WHERE  id = ?;
     ]]
     stmt = conn:prepare(sql_stmt)
     stmt:reset():bind(now_ts, self.data.notes, self.data.highlights, total_read_time, rescaled_total_read_pages,
-        self.data.pages, progress_str, id_book):step()
+        self.data.pages, id_book):step()
     stmt:close()
     conn:close()
 
