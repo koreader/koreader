@@ -202,22 +202,29 @@ function ReaderStatistics:onUpdateToc()
             logger.info("ReaderStatistics: Pagecount change, clearing volatile book statistics")
             -- Clear volatile stats
             self:resetVolatileStats(TimeVal:now().sec)
+
+            -- Update the pagecount in the database to let the view do its job properly
+            if self.id_curr_book then
+                local conn = SQ3.open(db_location)
+                local sql_stmt = [[
+                    UPDATE book
+                    SET    pages = ?
+                    WHERE  id = ?;
+                ]]
+                local stmt = conn:prepare(sql_stmt)
+                stmt:reset():bind(new_pagecount, self.id_curr_book):step()
+                stmt:close()
+                conn:close()
+            end
         else
             logger.info("ReaderStatistics: Pagecount change, flushing volatile book statistics")
-            -- Flush volatile stats to DB for current book
-            self:insertDB(self.id_curr_book)
-            --- @fixme: This does mean that you may end up with conflicting page numbers in the database...
-            ---         On the other hand, wiping the book off the db on every minor pagination change feels a bit harsh...
+            -- Flush volatile stats to DB for current book, and update pagecount and average time per page stats
+            self:insertDB(self.id_curr_book, new_pagecount)
         end
     end
 
     -- Update our copy of the page count
     self.data.pages = new_pagecount
-
-    -- FIXME: Regardless of what we did, we need to update book's pages with the new pagecount to make the VIEW behave...
-    --        insertDB itself does it, but it runs *before* we update the var.
-    --        We'll probably be able to update the var first when switching to the VIEW approach,
-    --        but we'll still need an extra query in the cases where insertDB returns early (i.e., the resetVolatileStats branch).
 end
 
 function ReaderStatistics:resetVolatileStats(now_ts)
@@ -681,7 +688,7 @@ function ReaderStatistics:getIdBookDB()
     return tonumber(id_book)
 end
 
-function ReaderStatistics:insertDB(id_book)
+function ReaderStatistics:insertDB(id_book, updated_pagecount)
     if id_book == nil or self.mem_read_pages < MIN_PAGES_READ_TO_FLUSH then
         return
     end
@@ -712,7 +719,6 @@ function ReaderStatistics:insertDB(id_book)
     ]]
     local total_read_pages, total_read_time = conn:rowexec(string.format(sql_stmt, id_book))
     logger.info("total_read_pages:", total_read_pages, "total_read_time:", total_read_time)
-    -- FIXME: This, on the other hand, should set the *new* total pagecount (via a new optional arg)
     sql_stmt = [[
         UPDATE book
         SET    last_open = ?,
@@ -725,7 +731,7 @@ function ReaderStatistics:insertDB(id_book)
     ]]
     stmt = conn:prepare(sql_stmt)
     stmt:reset():bind(now_ts, self.data.notes, self.data.highlights, total_read_time, rescaled_total_read_pages,
-        self.data.pages, id_book):step()
+        updated_pagecount and updated_pagecount or self.data.pages, id_book):step()
     stmt:close()
     conn:close()
 
