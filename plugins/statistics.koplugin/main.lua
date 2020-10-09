@@ -432,7 +432,7 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
             FROM   book
             WHERE  title = ?
                 AND    authors = ?
-                AND    md5 = ?
+                AND    md5 = ?;
         ]]
         local stmt = conn:prepare(sql_stmt)
         local result = stmt:reset():bind(self.data.title, self.data.authors, self.data.md5):step()
@@ -465,8 +465,8 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
         end
         table.sort(sorted_performance)
 
-        conn:exec('BEGIN')
-        stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?)")
+        conn:exec('BEGIN;')
+        stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?);")
         local avg_time = math.ceil(book_stats.total_time_in_sec / read_pages)
         if avg_time > self.page_max_read_sec then
             avg_time = self.page_max_read_sec
@@ -494,7 +494,7 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
             sorted_performance[#sorted_performance], avg_time):step()
         --last open book
         last_open_book = sorted_performance[#sorted_performance] + avg_time
-        conn:exec('COMMIT')
+        conn:exec('COMMIT;')
         sql_stmt = [[
             SELECT count(DISTINCT page),
                    sum(duration)
@@ -1100,7 +1100,7 @@ function ReaderStatistics:getTodayBookStats()
         SELECT count(*),
                sum(sum_duration)
         FROM    (
-                     SELECT sum(duration)      AS sum_duration
+                     SELECT sum(duration)    AS sum_duration
                      FROM   page_stat
                      WHERE  start_time >= %d
                      GROUP  BY id_book, page
@@ -1125,7 +1125,7 @@ function ReaderStatistics:getCurrentBookStats()
         SELECT count(*),
                sum(sum_duration)
         FROM   (
-                    SELECT sum(duration)      AS sum_duration
+                    SELECT sum(duration)    AS sum_duration
                     FROM   page_stat
                     WHERE  start_time >= %d
                     GROUP  BY id_book, page
@@ -1924,14 +1924,14 @@ function ReaderStatistics:deleteBook(id_book)
     local conn = SQ3.open(db_location)
     local sql_stmt = [[
             DELETE from book
-            WHERE  id = ?
+            WHERE  id = ?;
         ]]
     local stmt = conn:prepare(sql_stmt)
     stmt:reset():bind(id_book):step()
 
     sql_stmt = [[
             DELETE from page_stat
-            WHERE  id_book = ?
+            WHERE  id_book = ?;
         ]]
     stmt = conn:prepare(sql_stmt)
     stmt:reset():bind(id_book):step()
@@ -1953,7 +1953,7 @@ function ReaderStatistics:deleteBooksByTotalDuration(max_total_duration_mn)
             local conn = SQ3.open(db_location)
             local sql_stmt = [[
                     DELETE from page_stat
-                    WHERE  id_book in (
+                    WHERE  id_book IN (
                       SELECT id FROM book WHERE id != ? AND (total_read_time IS NULL OR total_read_time < ?)
                     );
                 ]]
@@ -1975,7 +1975,7 @@ function ReaderStatistics:deleteBooksByTotalDuration(max_total_duration_mn)
             if max_total_duration_mn >= 30 and nb_deleted >= 10 then
                 -- Do a VACUUM to reduce db size (but not worth doing if not much was removed)
                 conn:exec("PRAGMA temp_store = 2;") -- use memory for temp files
-                local ok, errmsg = pcall(conn.exec, conn, "VACUUM") -- this may take some time
+                local ok, errmsg = pcall(conn.exec, conn, "VACUUM;") -- this may take some time
                 if not ok then
                     logger.warn("Failed compacting statistics database:", errmsg)
                 end
