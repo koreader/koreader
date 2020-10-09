@@ -992,13 +992,13 @@ function FileManager:getSortingMenuTable()
         end,
         sub_item_table = {
             set_collate_table("strcoll"),
+            set_collate_table("numeric"),
             set_collate_table("strcoll_mixed"),
             set_collate_table("access"),
             set_collate_table("change"),
             set_collate_table("modification"),
             set_collate_table("size"),
             set_collate_table("type"),
-            set_collate_table("numeric"),
             {
                 text_func =  get_collate_percent,
                 checked_func = function()
