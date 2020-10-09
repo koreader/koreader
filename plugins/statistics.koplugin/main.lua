@@ -603,6 +603,21 @@ function ReaderStatistics:getIdBookDB()
         stmt = conn:prepare(sql_stmt)
         result = stmt:reset():bind(self.data.title, self.data.authors, self.data.md5):step()
         id_book = result[1]
+
+        -- Also handle migration to the v2 database schema: populate page_stat's total_pages if need be,
+        -- and make sure book's pages count is accurate.
+        sql_stmt = [[
+            SELECT count(*),
+                   sum(total_pages)
+            FROM   page_stat
+            WHERE  id_book = %d;
+        ]]
+        local pages_collected, total_pages_sum = conn:rowexec(string.format(sql_stmt, id_book))
+        if pages_collected and pages_collected > 0 and total_pages_sum == 0 then
+            -- If the book has existing stats, but total_pages is still empty, set it to self.data.pages
+            -- NOTE: This is obviously not ideal, because the *current* page count may not match the pagecount
+            --       at the time the data was collected. We don't really have any better option, though ;).
+        end
     end
     stmt:close()
     conn:close()
