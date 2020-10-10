@@ -443,7 +443,7 @@ function ReaderStatistics:createDB(conn)
                 language text,
                 md5 text,
                 total_read_time  integer,
-                total_read_pages integer,
+                total_read_pages integer
             );
     ]]
     conn:exec(sql_stmt)
