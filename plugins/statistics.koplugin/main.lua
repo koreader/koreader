@@ -402,19 +402,13 @@ local STATISTICS_DB_PAGE_STAT_VIEW_SCHEMA = [[
         SELECT id_book, first_page + idx - 1 AS page, start_time, duration / (last_page - first_page + 1) AS duration
         FROM (
             SELECT id_book, page, total_pages, pages, start_time, duration,
-
                 -- First page_number for this page after rescaling single row
                 ((page - 1) * pages) / total_pages + 1 AS first_page,
-
                 -- Last page_number for this page after rescaling single row
                 max(((page - 1) * pages) / total_pages + 1, (page * pages) / total_pages) AS last_page,
-
                 idx
-
             FROM page_stat_data
-
             JOIN book ON book.id = id_book
-
             -- Duplicate rows for multiple pages as needed (as a result of rescaling)
             JOIN (SELECT number as idx FROM numbers) AS N ON idx <= (last_page - first_page + 1)
         );
