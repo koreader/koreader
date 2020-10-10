@@ -324,12 +324,12 @@ Do you want to create an empty database?
         end
 
         -- Check if we need to migrate to a newer schema
-        local db_version = conn:rowexec("PRAGMA user_version;")
-        if tonumber(db_version) < DB_SCHEMA_VERSION then
-            logger.info("ReaderStatistics: Migrating DB from schema", tonumber(db_version), "to schema", DB_SCHEMA_VERSION, "...")
+        local db_version = tonumber(conn:rowexec("PRAGMA user_version;"))
+        if db_version < DB_SCHEMA_VERSION then
+            logger.info("ReaderStatistics: Migrating DB from schema", db_version, "to schema", DB_SCHEMA_VERSION, "...")
             -- Backup the existing DB first
             conn:close()
-            local bkp_db_location = db_location .. ".bkp." .. tonumber(db_version) .. "-to-" .. DB_SCHEMA_VERSION
+            local bkp_db_location = db_location .. ".bkp." .. db_version .. "-to-" .. DB_SCHEMA_VERSION
             FFIUtil.copyFile(db_location, bkp_db_location)
             logger.info("ReaderStatistics: Old DB backed up as", bkp_db_location)
 
