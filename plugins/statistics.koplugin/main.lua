@@ -36,6 +36,28 @@ local DEFAULT_CALENDAR_NB_BOOK_SPANS = 3
 -- Current DB schema version
 local DB_SCHEMA_VERSION = 20201010
 
+-- This is the query used to compute the total time spent reading distinct pages of the book,
+-- capped at self.page_max_read_sec per distinct page.
+-- c.f., comments in insertDB
+local STATISTICS_SQL_BOOK_CAPPED_TOTALS_QUERY = [[
+    SELECT count(*),
+           sum(durations)
+    FROM (
+        SELECT min(sum(duration), %d) AS durations
+        FROM page_stat_data
+        WHERE id_book = %d
+        GROUP BY page
+    );
+]]
+
+-- As opposed to the uncapped version
+local STATISTICS_SQL_BOOK_TOTALS_QUERY = [[
+    SELECT count(DISTINCT page),
+           sum(duration)
+    FROM   page_stat
+    WHERE  id_book = %d;
+]]
+
 local ReaderStatistics = Widget:extend{
     name = "statistics",
     page_min_read_sec = DEFAULT_MIN_READ_SEC,
@@ -259,13 +281,7 @@ function ReaderStatistics:getStatsBookStatus(id_curr_book, stat_enable)
                );
     ]]
     local total_days = conn:rowexec(string.format(sql_stmt, id_curr_book))
-    sql_stmt = [[
-        SELECT sum(duration),
-               count(DISTINCT page)
-        FROM   page_stat
-        WHERE  id_book = %d;
-    ]]
-    local total_time_book, total_read_pages = conn:rowexec(string.format(sql_stmt, id_curr_book))
+    local total_read_pages, total_time_book = conn:rowexec(string.format(STATISTICS_SQL_BOOK_TOTALS_QUERY, id_curr_book))
     conn:close()
 
     if total_time_book == nil then
@@ -584,13 +600,7 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
         --last open book
         last_open_book = sorted_performance[#sorted_performance] + avg_time
         conn:exec('COMMIT;')
-        sql_stmt = [[
-            SELECT count(DISTINCT page),
-                   sum(duration)
-            FROM   page_stat
-            WHERE  id_book = %d;
-        ]]
-        total_read_pages, total_read_time = conn:rowexec(string.format(sql_stmt, tonumber(id_book)))
+        total_read_pages, total_read_time = conn:rowexec(string.format(STATISTICS_SQL_BOOK_TOTALS_QUERY, tonumber(id_book)))
         sql_stmt = [[
             UPDATE book
             SET    last_open = ?,
@@ -729,18 +739,10 @@ function ReaderStatistics:insertDB(id_book, updated_pagecount)
     --       Basically, we're counting distinct pages,
     --       while making sure the sum of durations per distinct page is clamped to self.page_max_read_sec
     --       This is expressly tailored to a fairer computation of self.avg_time ;).
+    local book_read_pages, book_read_time = conn:rowexec(string.format(STATISTICS_SQL_BOOK_CAPPED_TOTALS_QUERY, self.page_max_read_sec, id_book))
+    -- NOTE: What we cache in the book table is the plain uncapped sum (mainly for deleteBooksByTotalDuration's benefit)...
+    local total_read_pages, total_read_time = conn:rowexec(string.format(STATISTICS_SQL_BOOK_TOTALS_QUERY, id_book))
     local sql_stmt = [[
-        SELECT count(*),
-               sum(durations)
-        FROM (
-            SELECT min(sum(duration), %d) AS durations
-            FROM page_stat_data
-            WHERE id_book = %d
-            GROUP BY page
-        );
-    ]]
-    local total_read_pages, total_read_time = conn:rowexec(string.format(sql_stmt, self.page_max_read_sec, id_book))
-    sql_stmt = [[
         UPDATE book
         SET    last_open = ?,
                notes = ?,
@@ -756,13 +758,14 @@ function ReaderStatistics:insertDB(id_book, updated_pagecount)
     stmt:close()
     conn:close()
 
-    if total_read_pages then
-        self.total_read_pages = tonumber(total_read_pages)
+    -- NOTE: On the other hand, this is used for the average time estimate, so we use the capped variants here!
+    if book_read_pages then
+        self.total_read_pages = tonumber(book_read_pages)
     else
         self.total_read_pages = 0
     end
-    if total_read_time then
-        self.total_read_time = tonumber(total_read_time)
+    if book_read_time then
+        self.total_read_time = tonumber(book_read_time)
     else
         self.total_read_time = 0
     end
@@ -776,13 +779,8 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
         return
     end
     local conn = SQ3.open(db_location)
-    local sql_stmt = [[
-        SELECT total_read_pages,
-               total_read_time
-        FROM   book
-        WHERE  id = %d;
-    ]]
-    local total_pages, total_time = conn:rowexec(string.format(sql_stmt, id_book))
+    -- NOTE: Similarly, this one is used for time-based estimates and averages, so, use the capped variant
+    local total_pages, total_time = conn:rowexec(string.format(STATISTICS_SQL_BOOK_CAPPED_TOTALS_QUERY, id_book))
     conn:close()
 
     if total_pages then
