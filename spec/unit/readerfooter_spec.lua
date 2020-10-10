@@ -173,8 +173,8 @@ describe("Readerfooter module", function()
         footer:onUpdateFooter()
         local timeinfo = footer.textGeneratorMap.time(footer)
         local page_count = readerui.document:getPageCount()
-        -- stats has not been initialized here, so we get N/A TB and TC
-        assert.are.same('1 / '..page_count..' | '..timeinfo..' | ⇒ 0 | 0% | ⤠ 0% | ⏳ N/A | ⤻ N/A',
+        -- Stats have been initialized at defaults here
+        assert.are.same('1 / '..page_count..' | '..timeinfo..' | ⇒ 0 | 0% | ⤠ 0% | ⏳ 4h00 | ⤻ 0\'',
                         footer.footer_text.text)
     end)
 
@@ -190,7 +190,7 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         readerui.view.footer:onUpdateFooter()
         local timeinfo = readerui.view.footer.textGeneratorMap.time(footer)
-        assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | 0% | ⤠ 50% | ⏳ N/A | ⤻ N/A',
+        assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | 0% | ⤠ 50% | ⏳ 1\' | ⤻ 1\'',
                         readerui.view.footer.footer_text.text)
     end)
 
@@ -209,7 +209,7 @@ describe("Readerfooter module", function()
         footer:resetLayout()
         footer:onUpdateFooter()
         local timeinfo = footer.textGeneratorMap.time(footer)
-        assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | 0% | ⤠ 50% | ⏳ N/A | ⤻ N/A',
+        assert.are.same('1 / 2 | '..timeinfo..' | ⇒ 1 | 0% | ⤠ 50% | ⏳ 1\' | ⤻ 1\'',
                         footer.footer_text.text)
 
         -- disable show all at once, page progress should be on the first
@@ -234,11 +234,11 @@ describe("Readerfooter module", function()
 
         -- disable percentage, book time to read should follow
         tapFooterMenu(fake_menu, "Progress percentage".." (⤠)")
-        assert.are.same('⏳ N/A', footer.footer_text.text)
+        assert.are.same('⏳ 1\'', footer.footer_text.text)
 
         -- disable book time to read, chapter time to read should follow
         tapFooterMenu(fake_menu, "Book time to read".." (⏳)")
-        assert.are.same('⤻ N/A', footer.footer_text.text)
+        assert.are.same('⤻ 1\'', footer.footer_text.text)
 
         -- disable chapter time to read, text should be empty
         tapFooterMenu(fake_menu, "Chapter time to read".." (⤻)")
@@ -246,7 +246,7 @@ describe("Readerfooter module", function()
 
         -- reenable chapter time to read, text should be chapter time to read
         tapFooterMenu(fake_menu, "Chapter time to read".." (⤻)")
-        assert.are.same('⤻ N/A', footer.footer_text.text)
+        assert.are.same('⤻ 1\'', footer.footer_text.text)
     end)
 
     it("should rotate through different modes", function()
@@ -300,20 +300,20 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         local horizontal_margin = Screen:scaleBySize(10)*2
         footer:onUpdateFooter()
-        assert.is.same(370, footer.text_width)
+        assert.is.same(342, footer.text_width)
         assert.is.same(600, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
-        assert.is.same(210, footer.progress_bar.width)
+        assert.is.same(238, footer.progress_bar.width)
 
         local old_screen_getwidth = Screen.getWidth
         Screen.getWidth = function() return 900 end
         footer:resetLayout()
-        assert.is.same(370, footer.text_width)
+        assert.is.same(342, footer.text_width)
         assert.is.same(900, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
-        assert.is.same(510, footer.progress_bar.width)
+        assert.is.same(538, footer.progress_bar.width)
         Screen.getWidth = old_screen_getwidth
     end)
 
@@ -328,12 +328,12 @@ describe("Readerfooter module", function()
         }
         local footer = readerui.view.footer
         footer:onPageUpdate(1)
-        assert.are.same(202, footer.progress_bar.width)
-        assert.are.same(378, footer.text_width)
+        assert.are.same(208, footer.progress_bar.width)
+        assert.are.same(372, footer.text_width)
 
         footer:onPageUpdate(100)
-        assert.are.same(178, footer.progress_bar.width)
-        assert.are.same(402, footer.text_width)
+        assert.are.same(184, footer.progress_bar.width)
+        assert.are.same(396, footer.text_width)
     end)
 
     it("should support chapter markers", function()
