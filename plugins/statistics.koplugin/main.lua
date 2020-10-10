@@ -34,7 +34,7 @@ local DEFAULT_CALENDAR_START_DAY_OF_WEEK = 2 -- Monday
 local DEFAULT_CALENDAR_NB_BOOK_SPANS = 3
 
 -- Current DB schema version
-local DB_SCHEMA_VERSION = 1
+local DB_SCHEMA_VERSION = 20201010
 
 local ReaderStatistics = Widget:extend{
     name = "statistics",
