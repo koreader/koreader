@@ -471,8 +471,7 @@ function ReaderStatistics:createDB(conn)
     conn:exec(STATISTICS_DB_PAGE_STAT_DATA_SCHEMA)
 
     sql_stmt = [[
-        -- Indexes
-        CREATE INDEX IF NOT EXISTS page_stat_data_id_book ON page_stat_data(id_book);
+        -- Index
         CREATE INDEX IF NOT EXISTS book_title_authors_md5 ON book(title, authors, md5);
     ]]
     conn:exec(sql_stmt)
@@ -505,9 +504,6 @@ function ReaderStatistics:upgradeDB(conn)
         INSERT INTO page_stat_data
             SELECT id_book, page, start_time, duration, pages as total_pages FROM page_stat
             LEFT JOIN book on book.id = id_book;
-
-        -- Update the index, too
-        CREATE INDEX IF NOT EXISTS page_stat_data_id_book ON page_stat_data(id_book);
 
         -- Drop old page_stat table
         DROP INDEX IF EXISTS page_stat_id_book;
