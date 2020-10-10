@@ -1247,10 +1247,6 @@ function ReaderStatistics:getCurrentStat(id_book)
     --       which is computed slightly differently (c.f., insertDB), we'll be using this tweaked book read time
     --       to compute the other time-based statistics...
     local book_read_pages, book_read_time = self:getPageTimeTotalStats(id_book)
-    -- Warn if the book recap doesn't agree with the page_stat data...
-    if total_read_pages ~= book_read_pages then
-        logger.dbg("Tables disagree on the total amount of distinct pages read! page_stat says", total_read_pages, "while book says", book_read_pages, "id:", id_book)
-    end
 
     if total_time_book == nil then
         total_time_book = 0
@@ -1346,10 +1342,6 @@ function ReaderStatistics:getBookStat(id_book)
     conn:close()
 
     local book_read_pages, book_read_time = self:getPageTimeTotalStats(id_book)
-    -- Warn if the book recap doesn't agree with the page_stat data...
-    if total_read_pages ~= book_read_pages then
-        logger.dbg("Tables disagree on the total amount of distinct pages read! page_stat says", total_read_pages, "while book says", book_read_pages, "id:", id_book)
-    end
 
     if total_time_book == nil then
         total_time_book = 0
