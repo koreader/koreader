@@ -402,7 +402,7 @@ local STATISTICS_DB_PAGE_STAT_DATA_SCHEMA = [[
             start_time  integer NOT NULL DEFAULT 0,
             duration    integer NOT NULL DEFAULT 0,
             total_pages integer NOT NULL DEFAULT 0,
-            UNIQUE (page, start_time),
+            UNIQUE (id_book, page, start_time),
             FOREIGN KEY(id_book) REFERENCES book(id)
         );
 ]]
