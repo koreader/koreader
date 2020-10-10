@@ -44,7 +44,7 @@ local STATISTICS_SQL_BOOK_CAPPED_TOTALS_QUERY = [[
            sum(durations)
     FROM (
         SELECT min(sum(duration), %d) AS durations
-        FROM page_stat_data
+        FROM page_stat
         WHERE id_book = %d
         GROUP BY page
     );
