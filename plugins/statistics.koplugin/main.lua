@@ -337,6 +337,17 @@ Do you want to create an empty database?
             self:upgradeDB(conn)
             logger.info("ReaderStatistics: DB migration complete")
             UIManager:show(InfoMessage:new{text =_("Statistics database schema updated."), timeout = 3 })
+        elseif db_version > DB_SCHEMA_VERSION then
+            logger.warn("ReaderStatistics: You appear to be using a database with an unknown schema version:" db_version, "instead of", DB_SCHEMA_VERSION)
+            logger.warn("ReaderStatistics: Expect things to break in fun and interesting ways!")
+
+            -- We can't know what might happen, so, back the DB up...
+            conn:close()
+            local bkp_db_location = db_location .. ".bkp." .. db_version .. "-to-" .. DB_SCHEMA_VERSION
+            FFIUtil.copyFile(db_location, bkp_db_location)
+            logger.info("ReaderStatistics: Old DB backed up as", bkp_db_location)
+
+            conn = SQ3.open(db_location)
         end
     else  -- Migrate stats for books in history from metadata.lua to sqlite database
         self.convert_to_db = true
