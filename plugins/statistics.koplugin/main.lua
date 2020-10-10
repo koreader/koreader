@@ -74,8 +74,8 @@ local ReaderStatistics = Widget:extend{
     pageturn_count = 0,
     mem_read_time = 0,
     mem_read_pages = 0,
-    total_read_pages = 0,
-    total_read_time = 0,
+    book_read_pages = 0,
+    book_read_time = 0,
     avg_time = nil,
     page_stat = {}, -- Dictionary, indexed by page (hash), contains a list (array) of { timestamp, duration } tuples.
     data = {
@@ -203,9 +203,9 @@ function ReaderStatistics:initData()
     -- (not that "notes" is invalid and does not represent edited highlights)
     self.data.highlights, self.data.notes = self.ui.bookmark:getNumberOfHighlightsAndNotes()
     self.id_curr_book = self:getIdBookDB()
-    self.total_read_pages, self.total_read_time = self:getPageTimeTotalStats(self.id_curr_book)
-    if self.total_read_pages > 0 then
-        self.avg_time = self.total_read_time / self.total_read_pages
+    self.book_read_pages, self.book_read_time = self:getPageTimeTotalStats(self.id_curr_book)
+    if self.book_read_pages > 0 then
+        self.avg_time = self.book_read_time / self.book_read_pages
     else
         -- NOTE: Possibly less weird-looking than initializing this to 0?
         self.avg_time = math.floor(0.50 * self.page_max_read_sec)
@@ -760,16 +760,16 @@ function ReaderStatistics:insertDB(id_book, updated_pagecount)
 
     -- NOTE: On the other hand, this is used for the average time estimate, so we use the capped variants here!
     if book_read_pages then
-        self.total_read_pages = tonumber(book_read_pages)
+        self.book_read_pages = tonumber(book_read_pages)
     else
-        self.total_read_pages = 0
+        self.book_read_pages = 0
     end
     if book_read_time then
-        self.total_read_time = tonumber(book_read_time)
+        self.book_read_time = tonumber(book_read_time)
     else
-        self.total_read_time = 0
+        self.book_read_time = 0
     end
-    self.avg_time = self.total_read_time / self.total_read_pages
+    self.avg_time = self.book_read_time / self.book_read_pages
 
     self:resetVolatileStats(now_ts)
 end
@@ -1366,7 +1366,7 @@ function ReaderStatistics:getBookStat(id_book)
     if pages == nil or pages == 0 then
         pages = 1
     end
-    local avg_time_per_page = book_read_time / total_read_pages
+    local avg_time_per_page = book_read_time / book_read_pages
     return {
         { _("Title"), title},
         { _("Authors"), authors},
@@ -2007,8 +2007,8 @@ function ReaderStatistics:resetCurrentBook()
             self:deleteBook(self.id_curr_book)
 
             -- We also need to reset the time/page/avg tracking
-            self.total_read_pages = 0
-            self.total_read_time = 0
+            self.book_read_pages = 0
+            self.book_read_time = 0
             self.avg_time = math.floor(0.50 * self.page_max_read_sec)
             logger.info("ReaderStatistics: Initializing average time per page at 50% of the max value, i.e.,", self.avg_time)
 
@@ -2155,12 +2155,12 @@ function ReaderStatistics:onPageUpdate(pageno)
     end
 
     -- Update average time per page (if need be, insertDB will have updated the totals and cleared the volatiles)
-    -- NOTE: Until insertDB runs, while total_read_pages only counts *distinct* pages,
+    -- NOTE: Until insertDB runs, while book_read_pages only counts *distinct* pages,
     --       and while mem_read_pages does the same, there may actually be an overlap between the two!
     --       (i.e., the same page may be counted as read both in total and in mem, inflating the pagecount).
     --       Only insertDB will actually check that the count (and as such average time) is actually accurate.
-    if self.total_read_pages > 0 or self.mem_read_pages > 0 then
-        self.avg_time = (self.total_read_time + self.mem_read_time) / (self.total_read_pages + self.mem_read_pages)
+    if self.book_read_pages > 0 or self.mem_read_pages > 0 then
+        self.avg_time = (self.book_read_time + self.mem_read_time) / (self.book_read_pages + self.mem_read_pages)
     end
 
     -- We're done, update the current page tracker
