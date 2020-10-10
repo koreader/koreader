@@ -491,10 +491,10 @@ function ReaderStatistics:upgradeDB(conn)
             LEFT JOIN book on book.id = id_book;
 
         -- Update the index, too
-        DROP INDEX IF EXISTS page_stat_id_book;
         CREATE INDEX IF NOT EXISTS page_stat_data_id_book ON page_stat_data(id_book);
 
         -- Drop old page_stat table
+        DROP INDEX IF EXISTS page_stat_id_book;
         DROP TABLE IF EXISTS page_stat;
     ]]
     conn:exec(sql_stmt)
