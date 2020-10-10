@@ -735,6 +735,16 @@ function ReaderStatistics:insertDB(id_book, updated_pagecount)
         end
     end
     conn:exec('COMMIT;')
+
+    -- Update the new pagecount now, so that subsequent queries against the view are accurate
+    local sql_stmt = [[
+        UPDATE book
+        SET    pages = ?
+        WHERE  id = ?;
+    ]]
+    stmt = conn:prepare(sql_stmt)
+    stmt:reset():bind(updated_pagecount and updated_pagecount or self.data.pages, id_book):step()
+
     -- NOTE: See the tail end of the discussions in #6761 for more context on the choice of this heuristic.
     --       Basically, we're counting distinct pages,
     --       while making sure the sum of durations per distinct page is clamped to self.page_max_read_sec
@@ -742,19 +752,19 @@ function ReaderStatistics:insertDB(id_book, updated_pagecount)
     local book_read_pages, book_read_time = conn:rowexec(string.format(STATISTICS_SQL_BOOK_CAPPED_TOTALS_QUERY, self.page_max_read_sec, id_book))
     -- NOTE: What we cache in the book table is the plain uncapped sum (mainly for deleteBooksByTotalDuration's benefit)...
     local total_read_pages, total_read_time = conn:rowexec(string.format(STATISTICS_SQL_BOOK_TOTALS_QUERY, id_book))
-    local sql_stmt = [[
+
+    -- And now update the rest of the book table...
+    sql_stmt = [[
         UPDATE book
         SET    last_open = ?,
                notes = ?,
                highlights = ?,
                total_read_time = ?,
-               total_read_pages = ?,
-               pages = ?
+               total_read_pages = ?
         WHERE  id = ?;
     ]]
     stmt = conn:prepare(sql_stmt)
-    stmt:reset():bind(now_ts, self.data.notes, self.data.highlights, total_read_time, total_read_pages,
-        updated_pagecount and updated_pagecount or self.data.pages, id_book):step()
+    stmt:reset():bind(now_ts, self.data.notes, self.data.highlights, total_read_time, total_read_pages, id_book):step()
     stmt:close()
     conn:close()
 
