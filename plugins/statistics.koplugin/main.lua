@@ -790,7 +790,7 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
     end
     local conn = SQ3.open(db_location)
     -- NOTE: Similarly, this one is used for time-based estimates and averages, so, use the capped variant
-    local total_pages, total_time = conn:rowexec(string.format(STATISTICS_SQL_BOOK_CAPPED_TOTALS_QUERY, id_book))
+    local total_pages, total_time = conn:rowexec(string.format(STATISTICS_SQL_BOOK_CAPPED_TOTALS_QUERY, self.page_max_read_sec, id_book))
     conn:close()
 
     if total_pages then
