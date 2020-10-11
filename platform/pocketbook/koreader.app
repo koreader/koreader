@@ -133,8 +133,8 @@ while [ "${RETURN_VALUE}" -ne 0 ]; do
         # With a little notice at the top of the screen, on a big gray screen of death ;).
         "${KOREADER_DIR}/fbink" -q -b -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
         if [ ${CRASH_COUNT} -eq 1 ]; then
-            # Warn that we're waiting on a tap to continue...
-            "${KOREADER_DIR}/fbink" -q -b -O -m -y 2 "Tap the screen to continue."
+            # Warn that we're sleeping for a bit...
+            "${KOREADER_DIR}/fbink" -q -b -O -m -y 2 "KOReader will restart in 15 sec."
         fi
         # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
         # shellcheck disable=SC2039
