@@ -13,7 +13,6 @@ local ReaderProgress = require("readerprogress")
 local ReadHistory = require("readhistory")
 local Screensaver = require("ui/screensaver")
 local SQ3 = require("lua-ljsqlite3/init")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local Widget = require("ui/widget/widget")
 local lfs = require("libs/libkoreader-lfs")
@@ -136,7 +135,7 @@ function ReaderStatistics:init()
     if not self:isDocless() and self.ui.document.is_pic then
         return
     end
-    self.start_current_period = TimeVal:now().sec
+    self.start_current_period = os.time()
     self:resetVolatileStats()
     local settings = G_reader_settings:readSetting("statistics") or {}
     self.page_min_read_sec = tonumber(settings.min_sec)
@@ -670,7 +669,7 @@ function ReaderStatistics:getIdBookDB()
         -- Not in the DB yet, initialize it
         stmt = conn:prepare("INSERT INTO book VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);")
         stmt:reset():bind(self.data.title, self.data.authors, self.data.notes,
-            TimeVal:now().sec, self.data.highlights, self.data.pages,
+            os.time(), self.data.highlights, self.data.pages,
             self.data.series, self.data.language, self.data.md5, 0, 0):step()
         sql_stmt = [[
             SELECT last_insert_rowid() AS num;
@@ -698,7 +697,7 @@ function ReaderStatistics:insertDB(id_book, updated_pagecount)
     if not id_book then
         return
     end
-    local now_ts = TimeVal:now().sec
+    local now_ts = os.time()
     local conn = SQ3.open(db_location)
     conn:exec('BEGIN;')
     local stmt = conn:prepare("INSERT OR IGNORE INTO page_stat_data VALUES(?, ?, ?, ?, ?);")
@@ -815,7 +814,7 @@ function ReaderStatistics:getStatisticEnabledMenuItem()
             -- if was disabled have to get data from db
             if self.is_enabled and not self:isDocless() then
                 self:initData()
-                self.start_current_period = TimeVal:now().sec
+                self.start_current_period = os.time()
                 self.curr_page = self.ui:getCurrentPage()
                 self:resetVolatileStats(self.start_current_period)
             end
@@ -1250,7 +1249,7 @@ function ReaderStatistics:getCurrentStat(id_book)
         total_read_pages = 0
     end
     if first_open == nil then
-        first_open = TimeVal:now().sec
+        first_open = os.time()
     end
     self.data.pages = self.view.document:getPageCount()
     total_time_book = tonumber(total_time_book)
@@ -1345,7 +1344,7 @@ function ReaderStatistics:getBookStat(id_book)
         total_read_pages = 0
     end
     if first_open == nil then
-        first_open = TimeVal:now().sec
+        first_open = os.time()
     end
     total_time_book = tonumber(total_time_book)
     total_read_pages = tonumber(total_read_pages)
@@ -2000,7 +1999,7 @@ function ReaderStatistics:resetCurrentBook()
             logger.info("ReaderStatistics: Initializing average time per page at 50% of the max value, i.e.,", self.avg_time)
 
             -- And the current volatile stats
-            self:resetVolatileStats(TimeVal:now().sec)
+            self:resetVolatileStats(os.time())
 
             -- And re-create the Book's data in the book table and get its new ID...
             self.id_curr_book = self:getIdBookDB()
@@ -2097,7 +2096,7 @@ function ReaderStatistics:onPageUpdate(pageno)
     end
 
     self.pageturn_count = self.pageturn_count + 1
-    local now_ts = TimeVal:now().sec
+    local now_ts = os.time()
 
     -- Get the previous page's last timestamp (if there is one)
     local page_data = self.page_stat[self.curr_page]
@@ -2217,7 +2216,7 @@ end
 
 -- screensaver off
 function ReaderStatistics:onResume()
-    self.start_current_period = TimeVal:now().sec
+    self.start_current_period = os.time()
     self:resetVolatileStats(self.start_current_period)
 end
 
