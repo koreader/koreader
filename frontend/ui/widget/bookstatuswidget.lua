@@ -21,7 +21,6 @@ local RenderImage = require("ui/renderimage")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
-local TimeVal = require("ui/timeval")
 local ToggleSwitch = require("ui/widget/toggleswitch")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -231,9 +230,8 @@ function BookStatusWidget:genHeader(title)
 end
 
 function BookStatusWidget:onChangeBookStatus(option_name, option_value)
-    local curr_time = TimeVal:now()
     self.summary.status = option_name[option_value]
-    self.summary.modified = os.date("%Y-%m-%d", curr_time.sec)
+    self.summary.modified = os.date("%Y-%m-%d", os.time())
     self:saveSummary()
     return true
 end
