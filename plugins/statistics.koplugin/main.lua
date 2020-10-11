@@ -27,7 +27,6 @@ local T = FFIUtil.template
 local statistics_dir = DataStorage:getDataDir() .. "/statistics/"
 local db_location = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
 local MAX_PAGETURNS_BEFORE_FLUSH = 50
-local MIN_PAGES_READ_TO_FLUSH = 2
 local DEFAULT_MIN_READ_SEC = 5
 local DEFAULT_MAX_READ_SEC = 120
 local DEFAULT_CALENDAR_START_DAY_OF_WEEK = 2 -- Monday
@@ -218,30 +217,9 @@ function ReaderStatistics:onUpdateToc()
     local new_pagecount = self.view.document:getPageCount()
 
     if new_pagecount ~= self.data.pages then
-        -- NOTE: insertDB does the exact same check
-        if not self.id_curr_book or self.mem_read_pages < MIN_PAGES_READ_TO_FLUSH then
-            logger.info("ReaderStatistics: Pagecount change, clearing volatile book statistics")
-            -- Clear volatile stats
-            self:resetVolatileStats(TimeVal:now().sec)
-
-            -- Update the pagecount in the database to let the view do its job properly
-            if self.id_curr_book then
-                local conn = SQ3.open(db_location)
-                local sql_stmt = [[
-                    UPDATE book
-                    SET    pages = ?
-                    WHERE  id = ?;
-                ]]
-                local stmt = conn:prepare(sql_stmt)
-                stmt:reset():bind(new_pagecount, self.id_curr_book):step()
-                stmt:close()
-                conn:close()
-            end
-        else
-            logger.info("ReaderStatistics: Pagecount change, flushing volatile book statistics")
-            -- Flush volatile stats to DB for current book, and update pagecount and average time per page stats
-            self:insertDB(self.id_curr_book, new_pagecount)
-        end
+        logger.info("ReaderStatistics: Pagecount change, flushing volatile book statistics")
+        -- Flush volatile stats to DB for current book, and update pagecount and average time per page stats
+        self:insertDB(self.id_curr_book, new_pagecount)
     end
 
     -- Update our copy of the page count
@@ -717,7 +695,7 @@ function ReaderStatistics:getIdBookDB()
 end
 
 function ReaderStatistics:insertDB(id_book, updated_pagecount)
-    if id_book == nil or self.mem_read_pages < MIN_PAGES_READ_TO_FLUSH then
+    if not id_book then
         return
     end
     local now_ts = TimeVal:now().sec
