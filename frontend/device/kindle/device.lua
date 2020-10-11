@@ -412,9 +412,6 @@ function Kindle2:init()
 end
 
 function KindleDXG:init()
-    -- Blacklist the C BB before the first BB require...
-    self:blacklistCBB()
-
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -431,9 +428,6 @@ function KindleDXG:init()
 end
 
 function Kindle3:init()
-    -- Blacklist the C BB before the first BB require...
-    self:blacklistCBB()
-
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
@@ -451,9 +445,6 @@ function Kindle3:init()
 end
 
 function Kindle4:init()
-    -- Blacklist the C BB before the first BB require...
-    self:blacklistCBB()
-
     self.screen = require("ffi/framebuffer_einkfb"):new{device = self, debug = logger.dbg}
     self.powerd = require("device/kindle/powerd"):new{
         device = self,
