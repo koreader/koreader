@@ -1,3 +1,4 @@
+local Dispatcher = require("dispatcher")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LoginDialog = require("ui/widget/logindialog")
 local InfoMessage = require("ui/widget/infomessage")
@@ -97,6 +98,11 @@ local function validateUser(user, pass)
     end
 end
 
+function KOSync:onDispatcherRegisterActions()
+    Dispatcher:registerAction("kosync_push_progress", { category="none", event="KOSyncPushProgress", title=_("Push progress from this device"), rolling=true, paging=true,})
+    Dispatcher:registerAction("kosync_pull_progress", { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), rolling=true, paging=true, separator=true,})
+end
+
 function KOSync:onReaderReady()
     local settings = G_reader_settings:readSetting("kosync") or {}
     self.kosync_custom_server = settings.custom_server
@@ -112,6 +118,7 @@ function KOSync:onReaderReady()
         self:_onResume()
     end
     self:registerEvents()
+    self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
     -- Make sure checksum has been calculated at the very first time a document has been opened, to
     -- avoid document saving feature to impact the checksum, and eventually impact the document
