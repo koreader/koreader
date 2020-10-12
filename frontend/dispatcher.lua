@@ -3,26 +3,25 @@ Dispatcher module
 
 To add a new action an entry must be added to `settingsList` & `dispatcher_menu_order`
 This can also be done at runtime via `registerAction`
+    Dispatcher:registerAction("helloworld_action", {category="none", event="HelloWorld", title=_("Hello World"), filemanager=true,})
 
 `settingsList` contains the list of dispatchable settings,
 each setting contains:
-
-**category:** one of:
-   **none:** a direct event call
-   **arg:** a event that expects a gesture object or an argument
-   **absolutenumber:** event that sets a number
-   **incrementalnumber:** event that increments a number & accepts a gesture object
-   **string:** event with a list of arguments to chose from
-**event:** what to call.
-**title:** for use in ui.
-**section:** under which menu to display (currently: device, filemanager, rolling, paging)
-and optionally
-**min/max:** for number
-**default**
-**args:** allowed values for string.
-**toggle:** display name for args
-**separator:** put a separator after in the menu list
-
+    category: one of:
+        none: a direct event call
+        arg: a event that expects a gesture object or an argument
+        absolutenumber: event that sets a number
+        incrementalnumber: event that increments a number & accepts a gesture object
+        string: event with a list of arguments to chose from
+    event: what to call.
+    title: for use in ui.
+    section: under which menu to display (currently: device, filemanager, rolling, paging)
+    and optionally
+    min/max: for number
+    default
+    args: allowed values for string.
+    toggle: display name for args
+    separator: put a separator after in the menu list
 
 --]]--
 
