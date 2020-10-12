@@ -3,6 +3,7 @@ local DataStorage = require("datastorage")
 local dump = require("dump")
 local FT = require("ffi/freetype")
 local HB = require("ffi/harfbuzz")
+local util = require("util")
 local logger = require("logger")
 
 local FontList = {
@@ -136,36 +137,29 @@ local font_exts = {
     ["otf"] = true,
 }
 
-local function _readList(target, tinfo, mark, dir)
-    -- lfs.dir non-existent directory will give an error, weird!
-    local ok, iter, dir_obj = pcall(lfs.dir, dir)
-    if not ok then return end
-    for f in iter, dir_obj do
-        local attr = lfs.attributes(dir.."/"..f)
-        local mode = attr.mode
-        local path = dir.."/"..f
-        if mode == "directory" and f ~= "." and f ~= ".." then
-            _readList(target, tinfo, mark, path)
-        elseif mode == "file" or mode == "link" then
-            if string.sub(f, 1, 1) ~= "." then
-                local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
-                if font_exts[file_type] then
-                    if not isInFontsBlacklist(f) then
-                        table.insert(target, path)
-                    end
-                    mark[path] = true
-                    if (not tinfo[path]) or (tinfo[path].change ~= attr.change) then
-                        local fi = collectFaceInfo(path)
-                        if fi then
-                            fi.change = attr.change
-                            tinfo[path] = fi
-                            mark.cache_dirty = true
-                        end
-                    end
-                end
-            end
+function FontList:_readList(dir, mark)
+    util.findFiles(dir, function(path, file, attr)
+        -- See if we're interested
+        if file:sub(1,1) == "." then return end
+        local file_type = file:lower():match(".+%.([^.]+)") or ""
+        if not font_exts[file_type] then return end
+
+        -- Add it to the list
+        if not isInFontsBlacklist(file) then
+            table.insert(self.fontlist, path)
         end
-    end
+
+        -- And into cached info table
+        mark[path] = true
+        if self.fontinfo[path] and self.fontinfo[path].change == attr.change then
+            return
+        end
+        local fi = collectFaceInfo(path)
+        if not fi then return end
+        fi.change = attr.change
+        self.fontinfo[path] = fi
+        mark.cache_dirty = true
+    end)
 end
 
 function FontList:getFontList()
@@ -178,11 +172,13 @@ function FontList:getFontList()
         self.fontinfo = {}
     end
 
-    local mark = { cache_dirty = false } -- mark fonts we're seeing
-    _readList(self.fontlist, self.fontinfo, mark, self.fontdir)
+    -- used for marking fonts we're seeing
+    local mark = { cache_dirty = false }
+
+    self:_readList(self.fontdir, mark)
     -- multiple paths should be joined with semicolon
     for dir in string.gmatch(getExternalFontDir() or "", "([^;]+)") do
-        _readList(self.fontlist, self.fontinfo, mark, dir)
+        self:_readList(dir, mark)
     end
 
     -- clear fonts that no longer exist
