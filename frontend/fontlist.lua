@@ -5,6 +5,7 @@ local FT = require("ffi/freetype")
 local HB = require("ffi/harfbuzz")
 local util = require("util")
 local logger = require("logger")
+local dbg = require("dbg")
 
 local FontList = {
     fontdir = "./fonts",
@@ -151,7 +152,7 @@ function FontList:_readList(dir, mark)
 
         -- And into cached info table
         mark[path] = true
-        if self.fontinfo[path] and self.fontinfo[path].change == attr.change then
+        if self.fontinfo[path] and (self.fontinfo[path].change == attr.change) then
             return
         end
         local fi = collectFaceInfo(path)
@@ -165,7 +166,7 @@ end
 function FontList:getFontList()
     if #self.fontlist > 0 then return self.fontlist end
 
-    local cache_file = DataStorage:getDataDir() .. "/cache/fontinfo.lua"
+    local cache_file = DataStorage:getDataDir() .. "/cache/fontinfo.dat"
     local ok
     ok, self.fontinfo = pcall(dofile, cache_file)
     if not ok or not self.fontinfo then
@@ -182,17 +183,24 @@ function FontList:getFontList()
     end
 
     -- clear fonts that no longer exist
-    for k in pairs(self.fontinfo) do
+    for k, _ in pairs(self.fontinfo) do
         if not mark[k] then
             self.fontinfo[k] = nil
             mark.cache_dirty = true
         end
     end
 
-    if mark.cache_dirty then
-        -- write back changes if there are some
+    if dbg.is_verbose then
+        -- when verbose debug is on, always dump the cache in plain text (to inspect the db output)
         local cache = io.open(cache_file, "w")
-        cache:write(dump(self.fontinfo))
+        cache:write("return " .. dump(self.fontinfo))
+        cache:close()
+    elseif mark.cache_dirty then
+        -- otherwise dump the db in binary (more compact), and only if something has changed
+        local bc = load("return " .. dump(self.fontinfo))
+        bc = string.dump(bc, true)
+        local cache = io.open(cache_file, "wb")
+        cache:write(bc)
         cache:close()
     end
 
