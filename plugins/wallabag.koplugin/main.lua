@@ -4,6 +4,7 @@
 
 local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
+local Dispatcher = require("dispatcher")
 local DocSettings = require("docsettings")
 local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
@@ -38,6 +39,10 @@ local Wallabag = WidgetContainer:new{
     name = "wallabag",
 }
 
+function Wallabag:onDispatcherRegisterActions()
+    Dispatcher:registerAction("wallabag_download", { category="none", event="SynchronizeWallabag", title=_("Wallabag retrieval"), device=true,})
+end
+
 function Wallabag:init()
     self.token_expiry = 0
     -- default values so that user doesn't have to explicitely set them
@@ -50,6 +55,7 @@ function Wallabag:init()
     self.ignore_tags = ""
     self.articles_per_sync = 30
 
+    self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
     self.wb_settings = self.readSettings()
     self.server_url = self.wb_settings.data.wallabag.server_url
