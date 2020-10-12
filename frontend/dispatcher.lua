@@ -1,12 +1,13 @@
 --[[--
-Dispatcher module
+This module is responsible for dispatching events.
 
 To add a new action an entry must be added to `settingsList` & `dispatcher_menu_order`
-This can also be done at runtime via `registerAction`
+This can also be done at runtime via @{registerAction}.
+
     Dispatcher:registerAction("helloworld_action", {category="none", event="HelloWorld", title=_("Hello World"), filemanager=true,})
 
-`settingsList` contains the list of dispatchable settings,
-each setting contains:
+`settingsList` contains the list of dispatchable settings. Each setting contains:
+
     category: one of:
         none: a direct event call
         arg: a event that expects a gesture object or an argument
@@ -346,11 +347,15 @@ function Dispatcher:init()
 end
 
 --[[--
-    Adds settings at runtime.
-    see helloworld plugin for an example.
+Adds settings at runtime.
 
-    @param name: the key to use in the table
-    @param value: a table per settingsList above.
+see helloworld plugin for an example.
+
+@param name
+the key to use in the table
+
+@param value
+a table per settingsList above.
 --]]--
 function Dispatcher:registerAction(name, value)
     if settingsList[name] == nil then
