@@ -1,8 +1,15 @@
 local CanvasContext = require("document/canvascontext")
+local DataStorage = require("datastorage")
+local dump = require("dump")
+local FT = require("ffi/freetype")
+local HB = require("ffi/harfbuzz")
+local logger = require("logger")
 
 local FontList = {
     fontdir = "./fonts",
     fontlist = {},
+    fontinfo = {},
+    fontnames = {},
 }
 
 --[[
@@ -95,21 +102,65 @@ local function getExternalFontDir()
     end
 end
 
-local function _readList(target, dir)
+-- Query FreeType/HarfBuzz about font metadata
+local function collectFaceInfo(path)
+    local res = {}
+    local n = FT.getFaceCount(path)
+    if not n then
+        return
+    end
+    for i=0, n-1 do
+        local ok, face = pcall(FT.newFace, path, nil, i)
+        if not ok then
+            return nil
+        end
+
+        local fres = face:getInfo()
+        local hbface = HB.hb_ft_face_create_referenced(face)
+        fres.names = hbface:getNames()
+        fres.scripts, fres.langs = hbface:getCoverage()
+        fres.path = path
+        fres.index = i
+        table.insert(res, fres)
+
+        hbface:destroy()
+        face:done()
+    end
+    return res
+end
+
+local font_exts = {
+    ["ttf"] = true,
+    ["ttc"] = true,
+    ["cff"] = true,
+    ["otf"] = true,
+}
+
+local function _readList(target, tinfo, mark, dir)
     -- lfs.dir non-existent directory will give an error, weird!
     local ok, iter, dir_obj = pcall(lfs.dir, dir)
     if not ok then return end
     for f in iter, dir_obj do
-        local mode = lfs.attributes(dir.."/"..f, "mode")
+        local attr = lfs.attributes(dir.."/"..f)
+        local mode = attr.mode
+        local path = dir.."/"..f
         if mode == "directory" and f ~= "." and f ~= ".." then
-            _readList(target, dir.."/"..f)
+            _readList(target, tinfo, mark, path)
         elseif mode == "file" or mode == "link" then
             if string.sub(f, 1, 1) ~= "." then
                 local file_type = string.lower(string.match(f, ".+%.([^.]+)") or "")
-                if file_type == "ttf" or file_type == "ttc"
-                    or file_type == "cff" or file_type == "otf" then
+                if font_exts[file_type] then
                     if not isInFontsBlacklist(f) then
-                        table.insert(target, dir.."/"..f)
+                        table.insert(target, path)
+                    end
+                    mark[path] = true
+                    if (not tinfo[path]) or (tinfo[path].change ~= attr.change) then
+                        local fi = collectFaceInfo(path)
+                        if fi then
+                            fi.change = attr.change
+                            tinfo[path] = fi
+                            mark.cache_dirty = true
+                        end
                     end
                 end
             end
@@ -119,13 +170,64 @@ end
 
 function FontList:getFontList()
     if #self.fontlist > 0 then return self.fontlist end
-    _readList(self.fontlist, self.fontdir)
+
+    local cache_file = DataStorage:getDataDir() .. "/cache/fontinfo.lua"
+    local ok
+    ok, self.fontinfo = pcall(dofile, cache_file)
+    if not ok or not self.fontinfo then
+        self.fontinfo = {}
+    end
+
+    local mark = { cache_dirty = false } -- mark fonts we're seeing
+    _readList(self.fontlist, self.fontinfo, mark, self.fontdir)
     -- multiple paths should be joined with semicolon
     for dir in string.gmatch(getExternalFontDir() or "", "([^;]+)") do
-        _readList(self.fontlist, dir)
+        _readList(self.fontlist, self.fontinfo, mark, dir)
     end
+
+    -- clear fonts that no longer exist
+    for k in pairs(self.fontinfo) do
+        if not mark[k] then
+            self.fontinfo[k] = nil
+            mark.cache_dirty = true
+        end
+    end
+
+    if mark.cache_dirty then
+        -- write back changes if there are some
+        local cache = io.open(cache_file, "w")
+        cache:write(dump(self.fontinfo))
+        cache:close()
+    end
+
+    local names = self.fontnames
+    for _,coll in pairs(self.fontinfo) do
+        for _,v in ipairs(coll) do
+            local nlist = names[v.name] or {}
+            assert(v.name)
+            if #nlist == 0 then
+                logger.dbg("FONTNAMES ADD: ", v.name)
+            end
+            names[v.name] = nlist
+            table.insert(nlist, v)
+        end
+    end
+
     table.sort(self.fontlist)
     return self.fontlist
+end
+
+-- Try to determine the localized font name
+function FontList:getLocalizedFontName(file, index)
+    local lang = G_reader_settings:readSetting("language")
+    if not lang then return end
+    lang = lang:lower():gsub("_","-")
+    local altname = self.fontinfo[file]
+    altname = altname and altname[index+1]
+    altname = altname and altname.names and (altname.names[lang] or altname.names[lang:match("%w+")])
+    altname = altname and (altname[tonumber(HB.HB_OT_NAME_ID_FULL_NAME)] or altname[tonumber(HB.HB_OT_NAME_ID_FONT_FAMILY)])
+    if not altname then return end -- ensure nil
+    return altname
 end
 
 return FontList

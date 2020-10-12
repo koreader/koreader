@@ -4,6 +4,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local Font = require("ui/font")
+local FontList = require("fontlist")
 local Input = Device.input
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
@@ -66,7 +67,8 @@ function ReaderFont:init()
                 -- defaults are hardcoded in credocument.lua
                 local default_font = G_reader_settings:readSetting("cre_font") or self.ui.document.default_font
                 local fallback_font = G_reader_settings:readSetting("fallback_font") or self.ui.document.fallback_fonts[1]
-                local text = v
+                local text = FontList:getLocalizedFontName(cre.getFontFaceFilenameAndFaceIndex(v)) or v
+
                 if v == default_font then
                     text = text .. "   ★"
                 end
