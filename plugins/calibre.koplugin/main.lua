@@ -10,6 +10,7 @@
 local BD = require("ui/bidi")
 local CalibreSearch = require("search")
 local CalibreWireless = require("wireless")
+local Dispatcher = require("dispatcher")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local UIManager = require("ui/uimanager")
@@ -57,8 +58,15 @@ function Calibre:closeWirelessConnection()
     end
 end
 
+function Calibre:onDispatcherRegisterActions()
+    Dispatcher:registerAction("calibre_search", { category="none", event="CalibreSearch", title=_("Search in calibre metadata"), device=true,})
+    Dispatcher:registerAction("calibre_browse_tags", { category="none", event="CalibreBrowseTags", title=_("Browse all calibre tags"), device=true,})
+    Dispatcher:registerAction("calibre_browse_series", { category="none", event="CalibreBrowseSeries", title=_("Browse all calibre series"), device=true, separator=true,})
+end
+
 function Calibre:init()
     CalibreWireless:init()
+    self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 end
 

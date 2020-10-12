@@ -1,3 +1,7 @@
+--[[--
+    Dispatcher module
+--]]--
+
 local CreOptions = require("ui/data/creoptions")
 local Device = require("device")
 local Event = require("ui/event")
@@ -73,12 +77,6 @@ local settingsList = {
     toggle_flash_on_chapter_boundaries = { category="none", event="ToggleFlashOnChapterBoundaries", title=_("Toggle flashing on chapter boundaries"), device=true, condition=Device:hasEinkScreen(),},
     set_no_flash_on_second_chapter_page = { category="string", event="SetNoFlashOnSecondChapterPage", title=_("Never flash on chapter's 2nd page"), device=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("On"), _("Off")},},
     toggle_no_flash_on_second_chapter_page = { category="none", event="ToggleNoFlashOnSecondChapterPage", title=_("Toggle flashing on chapter's 2nd page"), device=true, condition=Device:hasEinkScreen(), separator=true,},
-    wallabag_download = { category="none", event="SynchronizeWallabag", title=_("Wallabag retrieval"), device=true,},
-    calibre_search = { category="none", event="CalibreSearch", title=_("Search in calibre metadata"), device=true,},
-    calibre_browse_tags = { category="none", event="CalibreBrowseTags", title=_("Browse all calibre tags"), device=true,},
-    calibre_browse_series = { category="none", event="CalibreBrowseSeries", title=_("Browse all calibre series"), device=true, separator=true,},
-    show_terminal = { category = "none", event = "TerminalStart", title = _("Show terminal"), device = true, },
-    edit_last_edited_file = { category = "none", event = "OpenLastEditedFile", title = _("Texteditor: open last file"), device = true, separator = true, },
     favorites = { category="none", event="ShowColl", arg="favorites", title=_("Favorites"), device=true,},
 
     -- filemanager settings
@@ -113,8 +111,6 @@ local settingsList = {
     toggle_inverse_reading_order = { category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), rolling=true, paging=true,},
     cycle_highlight_action = { category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), rolling=true, paging=true,},
     cycle_highlight_style = { category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), rolling=true, paging=true,},
-    kosync_push_progress = { category="none", event="KOSyncPushProgress", title=_("Push progress from this device"), rolling=true, paging=true,},
-    kosync_pull_progress = { category="none", event="KOSyncPullProgress", title=_("Pull progress from other devices"), rolling=true, paging=true, separator=true,},
     page_jmp = { category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Go %1 pages"), rolling=true, paging=true,},
     panel_zoom_toggle = { category="none", event="TogglePanelZoomSetting", title=_("Toggle panel zoom"), paging=true, separator=true,},
 
@@ -205,14 +201,6 @@ local dispatcher_menu_order = {
     "wifi_off",
     "toggle_wifi",
 
-    "wallabag_download",
-    "calibre_search",
-    "calibre_browse_tags",
-    "calibre_browse_series",
-
-    "show_terminal",
-    "edit_last_edited_file",
-
     "rotation_mode",
 
     -- filemanager
@@ -262,9 +250,6 @@ local dispatcher_menu_order = {
     "cycle_highlight_action",
     "cycle_highlight_style",
     "panel_zoom_toggle",
-
-    "kosync_push_progress",
-    "kosync_pull_progress",
 
     "visible_pages",
 
@@ -332,11 +317,29 @@ function Dispatcher:init()
     for i=1,#CreOptions do
         parseoptions(CreOptions, i)
     end
+    UIManager:broadcastEvent(Event:new("DispatcherRegisterActions"))
     Dispatcher.initialized = true
+end
+
+--[[--
+    add settings at runtime
+    @param name: the key to use in the table
+    @param value: a table per settingsList above.
+    see helloworld plugin for an example.
+--]]--
+function Dispatcher:registerAction(name, value)
+    if settingsList[name] == nil then
+        settingsList[name] = value
+        table.insert(dispatcher_menu_order, name)
+    end
+    return true
 end
 
 -- Returns a display name for the item.
 function Dispatcher:getNameFromItem(item, location, settings)
+    if settingsList[item] == nil then
+        return _("Unknown item")
+    end
     local amount
     if location[settings] ~= nil and location[settings][item] ~= nil then
         amount = location[settings][item]
@@ -542,7 +545,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             checked_func = function()
                 if location[settings] ~= nil then
                     for k, _ in pairs(location[settings]) do
-                        if settingsList[k][section[1]] == true and
+                        if settingsList[k] ~= nil and settingsList[k][section[1]] == true and
                             (settingsList[k].condition == nil or settingsList[k].condition)
                         then return true end
                     end
@@ -551,7 +554,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             hold_callback = function(touchmenu_instance)
                 if location[settings] ~= nil then
                     for k, _ in pairs(location[settings]) do
-                        if settingsList[k][section[1]] == true then
+                        if settingsList[k] ~= nil and settingsList[k][section[1]] == true then
                             location[settings][k] = nil
                             caller.updated = true
                         end
@@ -573,7 +576,7 @@ arguments are:
 --]]--
 function Dispatcher:execute(ui, settings, gesture)
     for k, v in pairs(settings) do
-        if settingsList[k].conditions == nil or settingsList[k].conditions == true then
+        if settingsList[k] ~= nil and (settingsList[k].conditions == nil or settingsList[k].conditions == true) then
             if settingsList[k].category == "none" then
                 if settingsList[k].arg ~= nil then
                     ui:handleEvent(Event:new(settingsList[k].event, settingsList[k].arg))

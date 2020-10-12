@@ -1,6 +1,7 @@
 local ButtonDialog = require("ui/widget/buttondialog")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local DataStorage = require("datastorage")
+local Dispatcher = require("dispatcher")
 local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -30,7 +31,12 @@ local Terminal = WidgetContainer:new{
     source = "terminal",
 }
 
+function Terminal:onDispatcherRegisterActions()
+    Dispatcher:registerAction("show_terminal", { category = "none", event = "TerminalStart", title = _("Show terminal"), device = true, })
+end
+
 function Terminal:init()
+    self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
     self.shortcuts = self.settings:readSetting("shortcuts") or {}
 end

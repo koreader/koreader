@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local Dispatcher = require("dispatcher")
 local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -29,7 +30,12 @@ local TextEditor = WidgetContainer:new{
     min_file_size_warn = 200000, -- warn/ask when opening files bigger than this
 }
 
+function TextEditor:onDispatcherRegisterActions()
+    Dispatcher:registerAction("edit_last_edited_file", { category = "none", event = "OpenLastEditedFile", title = _("Texteditor: open last file"), device = true, separator = true, })
+end
+
 function TextEditor:init()
+    self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 end
 
