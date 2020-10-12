@@ -2199,10 +2199,12 @@ function ReaderStatistics:onAddNote()
     self.data.notes = self.data.notes + 1
 end
 
+-- Triggered by auto_save_settings_interval_minutes
 function ReaderStatistics:onSaveSettings()
     self:saveSettings()
     if not self:isDocless() then
         self.ui.doc_settings:saveSetting("stats", self.data)
+        self:insertDB(self.id_curr_book)
     end
 end
 
