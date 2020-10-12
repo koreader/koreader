@@ -1,5 +1,29 @@
 --[[--
 Dispatcher module
+
+To add a new action an entry must be added to `settingsList` & `dispatcher_menu_order`
+This can also be done at runtime via `registerAction`
+
+`settingsList` contains the list of dispatchable settings,
+each setting contains:
+
+**category:** one of:
+   **none:** a direct event call
+   **arg:** a event that expects a gesture object or an argument
+   **absolutenumber:** event that sets a number
+   **incrementalnumber:** event that increments a number & accepts a gesture object
+   **string:** event with a list of arguments to chose from
+**event:** what to call.
+**title:** for use in ui.
+**section:** under which menu to display (currently: device, filemanager, rolling, paging)
+and optionally
+**min/max:** for number
+**default**
+**args:** allowed values for string.
+**toggle:** display name for args
+**separator:** put a separator after in the menu list
+
+
 --]]--
 
 local CreOptions = require("ui/data/creoptions")
@@ -15,25 +39,7 @@ local Dispatcher = {
     initialized = false,
 }
 
---[[
-contains a list of a dispatchable settings
-each setting contains:
-    category: one of
-       none: a direct event call
-       arg: a event that expects a gesture object or an argument
-       absolutenumber: event that sets a number
-       incrementalnumber: event that increments a number & accepts a gesture object
-       string: event with a list of arguments to chose from
-    event: what to call.
-    title: for use in ui.
-    section: under which menu to display (currently: device, filemanager, rolling, paging)
-and optionally
-    min/max: for number
-    default
-    args: allowed values for string.
-    toggle: display name for args
-    separator: put a separator after in the menu list
---]]--
+-- See above for description.
 local settingsList = {
     -- Device settings
     show_frontlight_dialog = { category="none", event="ShowFlDialog", title=_("Show frontlight dialog"), device=true, condition=Device:hasFrontlight(),},
