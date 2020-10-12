@@ -1,5 +1,5 @@
 --[[--
-    Dispatcher module
+Dispatcher module
 --]]--
 
 local CreOptions = require("ui/data/creoptions")
@@ -15,7 +15,7 @@ local Dispatcher = {
     initialized = false,
 }
 
---[[--
+--[[
 contains a list of a dispatchable settings
 each setting contains:
     category: one of
@@ -341,10 +341,11 @@ function Dispatcher:init()
 end
 
 --[[--
-    add settings at runtime
+    Adds settings at runtime.
+    see helloworld plugin for an example.
+
     @param name: the key to use in the table
     @param value: a table per settingsList above.
-    see helloworld plugin for an example.
 --]]--
 function Dispatcher:RegisterAction(name, value)
     if settingsList[name] == nil then
