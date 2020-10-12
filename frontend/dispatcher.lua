@@ -1,3 +1,7 @@
+--[[--
+    Dispatcher module
+--]]--
+
 local CreOptions = require("ui/data/creoptions")
 local Device = require("device")
 local Event = require("ui/event")
@@ -332,11 +336,29 @@ function Dispatcher:init()
     for i=1,#CreOptions do
         parseoptions(CreOptions, i)
     end
+    UIManager:broadcastEvent(Event:new("DispatcherRegisterActions"))
     Dispatcher.initialized = true
+end
+
+--[[--
+    add settings at runtime
+    @param name: the key to use in the table
+    @param value: a table per settingsList above.
+    see helloworld plugin for an example.
+--]]--
+function Dispatcher:RegisterAction(name, value)
+    if settingsList[name] == nil then
+        settingsList[name] = value
+        table.insert(dispatcher_menu_order, name)
+    end
+    return true
 end
 
 -- Returns a display name for the item.
 function Dispatcher:getNameFromItem(item, location, settings)
+    if settingsList[item] == nil then
+        return _("Unknown item")
+    end
     local amount
     if location[settings] ~= nil and location[settings][item] ~= nil then
         amount = location[settings][item]
@@ -542,7 +564,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             checked_func = function()
                 if location[settings] ~= nil then
                     for k, _ in pairs(location[settings]) do
-                        if settingsList[k][section[1]] == true and
+                        if settingsList[k] ~= nil and settingsList[k][section[1]] == true and
                             (settingsList[k].condition == nil or settingsList[k].condition)
                         then return true end
                     end
@@ -551,7 +573,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
             hold_callback = function(touchmenu_instance)
                 if location[settings] ~= nil then
                     for k, _ in pairs(location[settings]) do
-                        if settingsList[k][section[1]] == true then
+                        if settingsList[k] ~= nil and settingsList[k][section[1]] == true then
                             location[settings][k] = nil
                             caller.updated = true
                         end
@@ -573,7 +595,7 @@ arguments are:
 --]]--
 function Dispatcher:execute(ui, settings, gesture)
     for k, v in pairs(settings) do
-        if settingsList[k].conditions == nil or settingsList[k].conditions == true then
+        if settingsList[k] ~= nil and (settingsList[k].conditions == nil or settingsList[k].conditions == true) then
             if settingsList[k].category == "none" then
                 if settingsList[k].arg ~= nil then
                     ui:handleEvent(Event:new(settingsList[k].event, settingsList[k].arg))
