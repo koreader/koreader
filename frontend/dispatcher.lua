@@ -1,5 +1,28 @@
 --[[--
-    Dispatcher module
+This module is responsible for dispatching events.
+
+To add a new action an entry must be added to `settingsList` & `dispatcher_menu_order`
+This can also be done at runtime via @{registerAction}().
+
+`settingsList` contains the list of dispatchable settings.
+
+Each setting contains:
+
+* category: one of:
+    * none: a direct event call
+    * arg: a event that expects a gesture object or an argument
+    * absolutenumber: event that sets a number
+    * incrementalnumber: event that increments a number & accepts a gesture object
+    * string: event with a list of arguments to chose from
+* event: what to call.
+* title: for use in ui.
+* section: under which menu to display (currently: device, filemanager, rolling, paging)
+    and optionally
+* min/max: for number
+* default
+* args: allowed values for string.
+* toggle: display name for args
+* separator: put a separator after in the menu list
 --]]--
 
 local CreOptions = require("ui/data/creoptions")
@@ -15,25 +38,7 @@ local Dispatcher = {
     initialized = false,
 }
 
---[[--
-contains a list of a dispatchable settings
-each setting contains:
-    category: one of
-       none: a direct event call
-       arg: a event that expects a gesture object or an argument
-       absolutenumber: event that sets a number
-       incrementalnumber: event that increments a number & accepts a gesture object
-       string: event with a list of arguments to chose from
-    event: what to call.
-    title: for use in ui.
-    section: under which menu to display (currently: device, filemanager, rolling, paging)
-and optionally
-    min/max: for number
-    default
-    args: allowed values for string.
-    toggle: display name for args
-    separator: put a separator after in the menu list
---]]--
+-- See above for description.
 local settingsList = {
     -- Device settings
     show_frontlight_dialog = { category="none", event="ShowFlDialog", title=_("Show frontlight dialog"), device=true, condition=Device:hasFrontlight(),},
@@ -322,10 +327,20 @@ function Dispatcher:init()
 end
 
 --[[--
-    add settings at runtime
-    @param name: the key to use in the table
-    @param value: a table per settingsList above.
-    see helloworld plugin for an example.
+Adds settings at runtime.
+
+@usage
+    function Hello:onDispatcherRegisterActions()
+        Dispatcher:registerAction("helloworld_action", {category="none", event="HelloWorld", title=_("Hello World"), filemanager=true,})
+    end
+
+    function Hello:init()
+        self:onDispatcherRegisterActions()
+    end
+
+
+@param name the key to use in the table
+@param value a table per settingsList above
 --]]--
 function Dispatcher:registerAction(name, value)
     if settingsList[name] == nil then

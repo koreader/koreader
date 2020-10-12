@@ -1,10 +1,12 @@
---[[
-    This module implements functions for loading, saving and editing calibre metadata files.
+--[[--
+This module implements functions for loading, saving and editing calibre metadata files.
 
-    Calibre uses JSON to store metadata on device after each wired transfer.
-    In wireless transfers calibre sends the same metadata to the client, which is in charge
-    of storing it.
---]]
+Calibre uses JSON to store metadata on device after each wired transfer.
+In wireless transfers calibre sends the same metadata to the client, which is in charge
+of storing it.
+
+@module koplugin.calibre.metadata
+--]]--
 
 local rapidjson = require("rapidjson")
 local logger = require("logger")

@@ -1,3 +1,9 @@
+--[[--
+This is a debug plugin to test Plugin functionality.
+
+@module koplugin.HelloWorld
+--]]--
+
 -- This is a debug plugin, remove the following if block to enable it
 if true then
     return { disabled = true, }
