@@ -347,7 +347,7 @@ end
     @param name: the key to use in the table
     @param value: a table per settingsList above.
 --]]--
-function Dispatcher:RegisterAction(name, value)
+function Dispatcher:registerAction(name, value)
     if settingsList[name] == nil then
         settingsList[name] = value
         table.insert(dispatcher_menu_order, name)
