@@ -68,7 +68,10 @@ function ReaderFont:init()
                 -- defaults are hardcoded in credocument.lua
                 local default_font = G_reader_settings:readSetting("cre_font") or self.ui.document.default_font
                 local fallback_font = G_reader_settings:readSetting("fallback_font") or self.ui.document.fallback_fonts[1]
-                local text = FontList:getLocalizedFontName(font_filename, font_faceindex) or v
+                local text = v
+                if font_filename and font_faceindex then
+                    text = FontList:getLocalizedFontName(font_filename, font_faceindex) or text
+                end
 
                 if v == default_font then
                     text = text .. "   ★"
