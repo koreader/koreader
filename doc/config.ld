@@ -20,7 +20,12 @@ format = 'markdown'
 sort_modules = true
 file = {
     '../frontend',
+    '../plugins',
     '../base/ffi',
     '../platform/android/luajit-launcher/assets',
-    exclude = {'../base/ffi/sha2.lua'},
+    exclude = {'../base/ffi/sha2.lua',
+        '../plugins/evernote.koplugin/slt2.lua',
+        '../plugins/newsdownloader.koplugin/lib/handler.lua',
+        '../plugins/newsdownloader.koplugin/lib/xml.lua',
+    },
 }
