@@ -146,9 +146,17 @@ function Device:init()
                     local new_size = this.device.screen:getSize()
                     logger.info("Resizing screen to", new_size)
                     local Event = require("ui/event")
+                    local FileManager = require("apps/filemanager/filemanager")
                     UIManager:broadcastEvent(Event:new("SetDimensions", new_size))
                     UIManager:broadcastEvent(Event:new("ScreenResize", new_size))
                     UIManager:broadcastEvent(Event:new("RedrawCurrentPage"))
+                    if FileManager.instance then
+                        FileManager.instance:reinit(FileManager.instance.path,
+                            FileManager.instance.focused_file)
+                        UIManager:setDirty(FileManager.instance.banner, function()
+                            return "ui", FileManager.instance.banner.dimen
+                        end)
+                    end
                 end
                 -- to-do: keyboard connected, disconnected
             elseif ev.code == C.APP_CMD_RESUME then
