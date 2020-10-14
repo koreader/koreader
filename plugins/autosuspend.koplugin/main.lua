@@ -1,6 +1,11 @@
 local Device = require("device")
 
-if not Device:isCervantes() and not Device:isKobo() and not Device:isRemarkable() and not Device:isSDL() and not Device:isSonyPRSTUX() then
+if not Device:isCervantes() and
+    not Device:isKobo() and
+    not Device:isRemarkable() and
+    not Device:isSDL() and
+    not Device:isSonyPRSTUX() and
+    not Device:isPocketBook() then
     return { disabled = true, }
 end
 
@@ -21,6 +26,7 @@ local AutoSuspend = WidgetContainer:new{
     autoshutdown_timeout_seconds = G_reader_settings:readSetting("autoshutdown_timeout_seconds") or default_autoshutdown_timeout_seconds,
     settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/koboautosuspend.lua"),
     last_action_sec = os.time(),
+    standby_prevented = false,
 }
 
 function AutoSuspend:_readTimeoutSecFrom(settings)
@@ -60,7 +66,7 @@ function AutoSuspend:_schedule()
 
     local delay_suspend, delay_shutdown
 
-    if PluginShare.pause_auto_suspend then
+    if PluginShare.pause_auto_suspend or Device.standby_prevented or Device.powerd:isCharging() then
         delay_suspend = self.auto_suspend_sec
         delay_shutdown = self.autoshutdown_timeout_seconds
     else
@@ -68,12 +74,13 @@ function AutoSuspend:_schedule()
         delay_shutdown = self.last_action_sec + self.autoshutdown_timeout_seconds - os.time()
     end
 
-    if delay_suspend <= 0 then
-        logger.dbg("AutoSuspend: will suspend the device")
-        UIManager:suspend()
-    elseif delay_shutdown <= 0 then
+    -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
+    if delay_shutdown <= 0 then
         logger.dbg("AutoSuspend: initiating shutdown")
         UIManager:poweroff_action()
+    elseif delay_suspend <= 0 then
+        logger.dbg("AutoSuspend: will suspend the device")
+        UIManager:suspend()
     else
         if self:_enabled() then
             logger.dbg("AutoSuspend: schedule suspend at ", os.time() + delay_suspend)
@@ -100,6 +107,7 @@ function AutoSuspend:_start()
 end
 
 function AutoSuspend:init()
+    if Device:isPocketBook() and not Device:canSuspend() then return end
     UIManager.event_hook:registerWidget("InputEvent", self)
     self.auto_suspend_sec = self:_readTimeoutSec()
     self:_unschedule()
@@ -130,6 +138,14 @@ function AutoSuspend:onResume()
         Device.wakeup_mgr:removeTask(nil, nil, UIManager.poweroff_action)
     end
     self:_start()
+end
+
+function AutoSuspend:onAllowStandby()
+    self.standby_prevented = false
+end
+
+function AutoSuspend:onPreventStandby()
+    self.standby_prevented = true
 end
 
 function AutoSuspend:addToMainMenu(menu_items)
@@ -167,6 +183,7 @@ function AutoSuspend:addToMainMenu(menu_items)
     }
     if not (Device:canPowerOff() or Device:isEmulator()) then return end
     menu_items.autoshutdown = {
+        sorting_hint = "device",
         text = _("Autoshutdown timeout"),
         callback = function()
             local InfoMessage = require("ui/widget/infomessage")

@@ -42,6 +42,19 @@ local PocketBook = Generic:new{
     -- NTX chipsets *should* work (PB631), but in case it doesn't on your device, set this to "no" in here.
     canHWInvert = yes,
 
+    -- If we can access the necessary devices, input events can be handled directly.
+    -- This improves latency (~40ms), as well as power usage - we can spend more time asleep,
+    -- instead of busy looping at 50Hz the way inkview insists on doing.
+    -- In case this method fails (no root), we fallback to classic inkview api.
+    raw_input = nil, --[[{
+        -- value or function to adjust touch matrix orientiation.
+        touch_rotation = -3+4,
+        -- Works same as input.event_map, but for raw input EV_KEY translation
+        keymap = { [scan] = event },
+    }]]
+    -- Runtime state: whether raw input is actually used
+    is_using_raw_input = nil,
+
     -- Private per-model kludges
     _fb_init = function() end,
     _model_init = function() end,
@@ -69,6 +82,9 @@ local function isB288(fb)
 end
 
 function PocketBook:init()
+    local raw_input = self.raw_input
+    local touch_rotation = raw_input and raw_input.touch_rotation or 0
+
     self.screen = require("ffi/framebuffer_mxcfb"):new {
         device = self,
         debug = logger.dbg,
@@ -87,8 +103,14 @@ function PocketBook:init()
             end
             return self._fb_init(fb, finfo, vinfo)
         end,
+        -- raw touch input orientiation is different from the screen
+        getTouchRotation = function(fb)
+            if type(touch_rotation) == "function" then
+                return touch_rotation(self, fb:getRotationMode())
+            end
+            return (4 + fb:getRotationMode() + touch_rotation) % 4
+        end,
     }
-    self.powerd = require("device/pocketbook/powerd"):new{device = self}
 
     -- Whenever we lose focus, but also get suspended for real (we can't reliably tell atm),
     -- plugins need to be notified to stop doing foreground stuff, and vice versa. To this end,
@@ -98,7 +120,8 @@ function PocketBook:init()
 
     self.input = require("device/input"):new{
         device = self,
-        event_map = {
+        raw_input = raw_input,
+        event_map = setmetatable({
             [C.KEY_MENU] = "Menu",
             [C.KEY_PREV] = "LPgBack",
             [C.KEY_NEXT] = "LPgFwd",
@@ -107,7 +130,7 @@ function PocketBook:init()
             [C.KEY_LEFT] = "Left",
             [C.KEY_RIGHT] = "Right",
             [C.KEY_OK] = "Press",
-        },
+        }, {__index=raw_input and raw_input.keymap or {}}),
         handleMiscEv = function(this, ev)
             local ui = require("ui/uimanager")
             if ev.code == C.EVT_HIDE or ev.code == C.EVT_BACKGROUND then
@@ -156,7 +179,17 @@ function PocketBook:init()
     end)
 
     self._model_init()
-    self.input.open()
+    if (not self.input.raw_input) or (not pcall(self.input.open, self.input, self.raw_input)) then
+        inkview.OpenScreen()
+        -- Raw mode open failed (no permissions?), so we'll run the usual way.
+        -- Disable touch coordinate translation as inkview will do that.
+        self.input.raw_input = nil
+        self.input:open()
+        touch_rotation = 0
+    else
+        self.canSuspend = yes
+    end
+    self.powerd = require("device/pocketbook/powerd"):new{device = self}
     self:setAutoStandby(true)
     Generic.init(self)
 end
@@ -236,6 +269,10 @@ end
 
 function PocketBook:powerOff()
     inkview.PowerOff()
+end
+
+function PocketBook:suspend()
+    inkview.SendGlobalRequest(C.REQ_KEYLOCK)
 end
 
 function PocketBook:reboot()
@@ -464,6 +501,14 @@ local PocketBook740_2 = PocketBook:new{
     isAlwaysPortrait = yes,
     usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
+    raw_input = {
+        touch_rotation = -1,
+        keymap = {
+            [115] = "Menu",
+            [109] = "LPgFwd",
+            [104] = "LPgBack",
+        }
+    }
 }
 
 -- PocketBook Color Lux (801)
