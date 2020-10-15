@@ -339,7 +339,7 @@ function ReaderProgress:genSummaryDay(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = util.secondsToClock(self.current_period, true),
+                text = util.secondsToClock(self.current_duration, true),
                 face = self.medium_font_face,
             },
         },
@@ -353,7 +353,7 @@ function ReaderProgress:genSummaryDay(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = util.secondsToClock(self.today_period, true),
+                text = util.secondsToClock(self.today_duration, true),
                 face = self.medium_font_face,
             },
         },
