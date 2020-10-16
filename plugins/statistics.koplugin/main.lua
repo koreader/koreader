@@ -1240,7 +1240,7 @@ function ReaderStatistics:getCurrentStat(id_book)
     -- NOTE: But, as the "Average time per page" entry is already re-using self.avg_time,
     --       which is computed slightly differently (c.f., insertDB), we'll be using this tweaked book read time
     --       to compute the other time-based statistics...
-    local book_read_pages, book_read_time = self:getPageTimeTotalStats(id_book)
+    local _, book_read_time = self:getPageTimeTotalStats(id_book)
 
     if total_time_book == nil then
         total_time_book = 0
