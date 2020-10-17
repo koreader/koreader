@@ -294,6 +294,76 @@ function GestureDetector:getInterval(type)
     end
 end
 
+function GestureDetector:beforeScreenRefresh()
+    -- Some devices got event timestamps mangled, and interval checking
+    -- might be messy after a full screen refresh that might block for
+    -- a few 100ms: some event happening during this blocking screen
+    -- refresh might get as timestamp the time *after* the screen
+    -- refresh has ended. We can't set the original timestamp on such
+    -- event, but we might try to ensure tap_inteval works somehow
+    -- as expected in such cases.
+    if self._needs_refresh_tap_correction == false then
+        return
+    end
+    if self._needs_refresh_tap_correction == nil and (self.last_taps[0] ~= nil or self.last_taps[1] ~= nil) then
+        -- We got a tap previously: input is set up. See if it adjusts
+        -- time values, probably always setting them to TimeVal:now().
+        -- If it doesn't, we get real time hardware event time values
+        -- and we won't need any correction
+        local ev = { time = 123 }
+        self.input:eventAdjustHook(ev)
+        if ev.time == 123 then
+            -- unchanged: no adjustment, no correction needed
+            self._needs_refresh_tap_correction = false
+            logger.dbg("tap bounce timeval correction not needed")
+            return
+        else
+            self._needs_refresh_tap_correction = true
+            logger.dbg("tap bounce timeval correction needed")
+        end
+    end
+    self._needs_check_after_refresh = nil
+    if ges_tap_interval > 0 and (self.last_taps[0] ~= nil or self.last_taps[1] ~= nil) then
+        local now = TimeVal:now()
+        local tap_interval = TimeVal:new({ usec = ges_tap_interval })
+        if self.last_taps[0] ~= nil and self.last_taps[0].timev > now - tap_interval then
+            -- Interval since last tap not yet expired, we'll need to
+            -- check after screen refresh if it has expired
+            if not self._needs_check_after_refresh then
+                self._needs_check_after_refresh = {}
+            end
+            self._needs_check_after_refresh[0] = true
+        end
+        if self.last_taps[1] ~= nil and self.last_taps[1].timev > now - tap_interval then
+            if not self._needs_check_after_refresh then
+                self._needs_check_after_refresh = {}
+            end
+            self._needs_check_after_refresh[1] = true
+        end
+    end
+end
+
+function GestureDetector:afterScreenRefresh()
+    if self._needs_check_after_refresh then
+        -- We might get soon a tap with a timestamp after now, but that
+        -- might have originated during the refresh time.
+        -- If tap_interval has expired, we just want to extend it for
+        -- about 10ms so it can catch these events.
+        local now = TimeVal:now()
+        local tap_interval = TimeVal:new({ usec = ges_tap_interval })
+        if self._needs_check_after_refresh[0] and self.last_taps[0] ~= nil and self.last_taps[0].timev < now - tap_interval then
+            -- Interval since last tap has expired: make it expire in 10ms
+            self.last_taps[0].timev = now - tap_interval + TimeVal:new({ usec = 10000 })
+            logger.dbg("tap_interval 0 expired during refresh: extending it")
+        end
+        if self._needs_check_after_refresh[1] and self.last_taps[1] ~= nil and self.last_taps[1].timev < now - tap_interval then
+            self.last_taps[1].timev = now - tap_interval + TimeVal:new({ usec = 10000 })
+            logger.dbg("tap_interval 1 expired during refresh: extending it")
+        end
+        self._needs_check_after_refresh = nil
+    end
+end
+
 function GestureDetector:clearStates()
     self:clearState(0)
     self:clearState(1)
