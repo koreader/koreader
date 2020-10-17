@@ -390,10 +390,10 @@ function GestureDetector:handleDoubleTap(tev)
     -- is triggered when: ges_tap_interval <= delay < ges_double_tap_interval)
     if self.last_taps[slot] ~= nil and self:isTapBounce(self.last_taps[slot], cur_tap) then
         logger.dbg("tap bounce detected in slot", slot, "ignored")
-        -- Simply ignore it, keep all timers and states as if this did not happen,
-        -- except for hold timers (set at touch event to detect long press, that we
-        -- cancel if there's a 2nd tap release)
-        self.hold_timer_id[slot] = nil
+        -- Simply ignore it, and clear state as this is the end of a touch event
+        -- (this doesn't clear self.last_taps[slot], so a 3rd tap can be detected
+        -- as a double tap)
+        self:clearState(slot)
         return
     end
 
