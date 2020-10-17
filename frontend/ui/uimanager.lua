@@ -1321,6 +1321,8 @@ function UIManager:suspend()
         self.event_handlers["Suspend"]()
     elseif Device:isKindle() then
         Device.powerd:toggleSuspend()
+    elseif Device.isPocketBook() and Device.canSuspend() then
+        Device:suspend()
     end
 end
 

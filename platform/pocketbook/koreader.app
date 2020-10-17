@@ -14,6 +14,9 @@ if [ "${INSTANCE_PID}" != "" ] && [ -e "/proc/${INSTANCE_PID}" ]; then
     exec /usr/bin/iv2sh SetActiveTask "${INSTANCE_PID}" 0
 fi
 
+# try to bring in raw device input (on rooted devices)
+/mnt/secure/su /bin/chmod 644 /dev/input/*
+
 # we're first, so publish our instance
 echo $$ >/tmp/koreader.pid
 
