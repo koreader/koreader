@@ -477,7 +477,7 @@ Default value: %1]]), Screen.low_pan_rate and 5.0 or 30.0),
                     local items = SpinWidget:new{
                         title_text = _("Tap interval"),
                         info_text = T(_([[
-Another tap made in this interval after a first tap will be considered a bounce and ignored.
+Any other taps made within this interval after a first tap will be considered accidental and ignored.
 
 The interval value is in milliseconds and can range from 0 (0 second) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.TAP_INTERVAL/1000),
@@ -506,7 +506,7 @@ Default value: %1]]), GestureDetector.TAP_INTERVAL/1000),
                     local items = SpinWidget:new{
                         title_text = _("Double tap interval"),
                         info_text = T(_([[
-When double tap is enabled, this sets the time to wait for the second tap. Only after this interval has ellapsed will a single tap be emitted.
+When double tap is enabled, this sets the time to wait for the second tap. A single tap will take at least this long to be detected.
 
 The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.DOUBLE_TAP_INTERVAL/1000),
