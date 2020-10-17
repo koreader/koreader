@@ -74,17 +74,19 @@ mkfifo "/tmp/nickel-hardware-status"
 # Flush buffers to disk, who knows.
 sync
 
+# Handle the sdcard:
+# We need to unmount it ourselves, or Nickel wigs out and shows an "unrecognized FS" popup until the next fake sd add event.
+# The following udev trigger should then ensure there's a single sd add event enqueued in the FIFO for it to process,
+# ensuring it gets sanely detected and remounted RO.
+if [ -e "/dev/mmcblk1p1" ]; then
+    umount /mnt/sd
+fi
+
 # And finally, simply restart nickel.
 # We don't care about horribly legacy stuff, because if people switch between nickel and KOReader in the first place, I assume they're using a decently recent enough FW version.
 # Last tested on an H2O & a Forma running FW 4.7.x - 4.24.x
 /usr/local/Kobo/hindenburg &
 LIBC_FATAL_STDERR_=1 /usr/local/Kobo/nickel -platform kobo -skipFontLoad &
 [ "${PLATFORM}" != "freescale" ] && udevadm trigger &
-
-# Handle the sdcard, as the udev trigger flood isn't enough. That won't prevent the "unrecognized" popup, though.
-# NOTE: Nickel will remount it RO on its own.
-if [ -e "/dev/mmcblk1p1" ]; then
-    echo sd add /dev/mmcblk1p1 >>/tmp/nickel-hardware-status &
-fi
 
 return 0
