@@ -47,24 +47,31 @@ local TimeVal = require("ui/timeval")
 local logger = require("logger")
 local util = require("util")
 
--- all the time parameters are in milliseconds
-local ges_tap_interval = G_reader_settings:readSetting("ges_tap_interval") or 50 * 1000
-local ges_double_tap_interval = G_reader_settings:readSetting("ges_double_tap_interval") or 300 * 1000
-local ges_two_finger_tap_duration = G_reader_settings:readSetting("ges_two_finger_tap_duration") or 300 * 1000
-local ges_hold_interval = G_reader_settings:readSetting("ges_hold_interval") or 500 * 1000
-local ges_pan_delayed_interval = G_reader_settings:readSetting("ges_pan_delayed_interval") or 500 * 1000
-local ges_swipe_interval = G_reader_settings:readSetting("ges_swipe_interval") or 900 * 1000
+-- default values (all the time parameters are in microseconds)
+local TAP_INTERVAL = 0 * 1000
+local DOUBLE_TAP_INTERVAL = 300 * 1000
+local TWO_FINGER_TAP_DURATION = 300 * 1000
+local HOLD_INTERVAL = 500 * 1000
+local PAN_DELAYED_INTERVAL = 500 * 1000
+local SWIPE_INTERVAL = 900 * 1000
+-- current values
+local ges_tap_interval = G_reader_settings:readSetting("ges_tap_interval") or TAP_INTERVAL
+local ges_double_tap_interval = G_reader_settings:readSetting("ges_double_tap_interval") or DOUBLE_TAP_INTERVAL
+local ges_two_finger_tap_duration = G_reader_settings:readSetting("ges_two_finger_tap_duration") or TWO_FINGER_TAP_DURATION
+local ges_hold_interval = G_reader_settings:readSetting("ges_hold_interval") or HOLD_INTERVAL
+local ges_pan_delayed_interval = G_reader_settings:readSetting("ges_pan_delayed_interval") or PAN_DELAYED_INTERVAL
+local ges_swipe_interval = G_reader_settings:readSetting("ges_swipe_interval") or SWIPE_INTERVAL
 
 local GestureDetector = {
     -- must be initialized with the Input singleton class
     input = nil,
-    -- default values (all the time parameters are in milliseconds)
-    TAP_INTERVAL = 50 * 1000,
-    DOUBLE_TAP_INTERVAL = 300 * 1000,
-    TWO_FINGER_TAP_DURATION = 300 * 1000,
-    HOLD_INTERVAL = 500 * 1000,
-    PAN_DELAYED_INTERVAL = 500 * 1000,
-    SWIPE_INTERVAL = 900 * 1000,
+    -- default values (accessed for display by plugins/gestures.koplugin)
+    TAP_INTERVAL = TAP_INTERVAL,
+    DOUBLE_TAP_INTERVAL = DOUBLE_TAP_INTERVAL,
+    TWO_FINGER_TAP_DURATION = TWO_FINGER_TAP_DURATION,
+    HOLD_INTERVAL = HOLD_INTERVAL,
+    PAN_DELAYED_INTERVAL = PAN_DELAYED_INTERVAL,
+    SWIPE_INTERVAL = SWIPE_INTERVAL,
     -- pinch/spread direction table
     DIRECTION_TABLE = {
         east = "horizontal",
@@ -388,7 +395,7 @@ function GestureDetector:handleDoubleTap(tev)
 
     -- We do tap bounce detection even when double tap is enabled (so, double tap
     -- is triggered when: ges_tap_interval <= delay < ges_double_tap_interval)
-    if self.last_taps[slot] ~= nil and self:isTapBounce(self.last_taps[slot], cur_tap) then
+    if ges_tap_interval > 0 and self.last_taps[slot] ~= nil and self:isTapBounce(self.last_taps[slot], cur_tap) then
         logger.dbg("tap bounce detected in slot", slot, "ignored")
         -- Simply ignore it, and clear state as this is the end of a touch event
         -- (this doesn't clear self.last_taps[slot], so a 3rd tap can be detected
