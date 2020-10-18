@@ -1,6 +1,5 @@
 local Generic = require("device/generic/device")
 local Geom = require("ui/geometry")
-local TimeVal = require("ui/timeval")
 local WakeupMgr = require("device/wakeupmgr")
 local logger = require("logger")
 local util = require("ffi/util")
@@ -59,10 +58,6 @@ local KoboTrilogy = Kobo:new{
     model = "Kobo_trilogy",
     needsTouchScreenProbe = yes,
     touch_switch_xy = false,
-    -- Some Kobo Touch models' kernel does not generate touch event with epoch
-    -- timestamp. This flag will probe for those models and setup event adjust
-    -- hook accordingly
-    touch_probe_ev_epoch_time = true,
     hasKeys = yes,
     hasMultitouch = no,
 }
@@ -80,7 +75,6 @@ local KoboPixie = Kobo:new{
 local KoboDaylight = Kobo:new{
     model = "Kobo_daylight",
     hasFrontlight = yes,
-    touch_probe_ev_epoch_time = true,
     touch_phoenix_protocol = true,
     display_dpi = 300,
     hasNaturalLight = yes,
@@ -136,7 +130,6 @@ local KoboSnow = Kobo:new{
     hasFrontlight = yes,
     touch_snow_protocol = true,
     touch_mirrored_x = false,
-    touch_probe_ev_epoch_time = true,
     display_dpi = 265,
     hasNaturalLight = yes,
     frontlight_settings = {
@@ -164,7 +157,6 @@ local KoboSnowRev2 = Kobo:new{
 local KoboStar = Kobo:new{
     model = "Kobo_star",
     hasFrontlight = yes,
-    touch_probe_ev_epoch_time = true,
     touch_phoenix_protocol = true,
     display_dpi = 212,
 }
@@ -174,7 +166,6 @@ local KoboStar = Kobo:new{
 local KoboStarRev2 = Kobo:new{
     model = "Kobo_star_r2",
     hasFrontlight = yes,
-    touch_probe_ev_epoch_time = true,
     touch_phoenix_protocol = true,
     display_dpi = 212,
 }
@@ -273,24 +264,6 @@ local KoboLuna = Kobo:new{
     display_dpi = 212,
 }
 
--- This function will update itself after the first touch event
-local probeEvEpochTime
-probeEvEpochTime = function(self, ev)
-    local now = TimeVal:now()
-    -- This check should work as long as main UI loop is not blocked for more
-    -- than 10 minute before handling the first touch event.
-    if ev.time.sec <= now.sec - 600 then
-        -- time is seconds since boot, force it to epoch
-        probeEvEpochTime = function(_, _ev)
-            _ev.time = TimeVal:now()
-        end
-        ev.time = now
-    else
-        -- time is already epoch time, no need to do anything
-        probeEvEpochTime = function(_, _) end
-    end
-end
-
 function Kobo:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg, is_always_portrait = self.isAlwaysPortrait()}
     if self.screen.fb_bpp == 32 then
@@ -347,15 +320,6 @@ function Kobo:init()
     else
         -- if touch probe is required, we postpone EventAdjustHook
         -- initialization to when self:touchScreenProbe is called
-        -- Except we may need bits of EventAdjustHook for stuff to be functional, so,
-        -- re-order things in the most horrible way possible!
-        if self.touch_probe_ev_epoch_time then
-            self.input:registerEventAdjustHook(function(_, ev)
-                probeEvEpochTime(_, ev)
-            end)
-            -- And don't do it again during the real initEventAdjustHooks ;)
-            self.touch_probe_ev_epoch_time = nil
-        end
         self.touchScreenProbe = function()
             -- if user has not set KOBO_TOUCH_MIRRORED yet
             if KOBO_TOUCH_MIRRORED == nil then
@@ -455,7 +419,6 @@ function Kobo:supportsScreensaver() return true end
 local ABS_MT_TRACKING_ID = 57
 local EV_ABS = 3
 local adjustTouchAlyssum = function(self, ev)
-    ev.time = TimeVal:now()
     if ev.type == EV_ABS and ev.code == ABS_MT_TRACKING_ID then
         ev.value = ev.value - 1
     end
@@ -486,12 +449,6 @@ function Kobo:initEventAdjustHooks()
 
     if self.touch_snow_protocol then
         self.input.snow_protocol = true
-    end
-
-    if self.touch_probe_ev_epoch_time then
-        self.input:registerEventAdjustHook(function(_, ev)
-            probeEvEpochTime(_, ev)
-        end)
     end
 
     if self.touch_phoenix_protocol then
