@@ -1127,12 +1127,10 @@ function UIManager:_repaint()
             refresh.region.w = ALIGN_UP(refresh.region.w + (x_fixup * 2), 8)
             refresh.region.h = ALIGN_UP(refresh.region.h + (y_fixup * 2), 8)
         end
-        Input.gesture_detector:beforeScreenRefresh()
         Screen[refresh_methods[refresh.mode]](Screen,
             refresh.region.x, refresh.region.y,
             refresh.region.w, refresh.region.h,
             refresh.dither)
-        Input.gesture_detector:afterScreenRefresh()
     end
     Screen:afterPaint()
     self._refresh_stack = {}
