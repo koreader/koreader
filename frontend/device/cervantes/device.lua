@@ -1,5 +1,4 @@
 local Generic = require("device/generic/device")
-local TimeVal = require("ui/timeval")
 local logger = require("logger")
 
 local function yes() return true end
@@ -56,7 +55,6 @@ local Cervantes = Generic:new{
     touch_legacy = true, -- SingleTouch input events
     touch_switch_xy = true,
     touch_mirrored_x = true,
-    touch_probe_ev_epoch_time = true,
     hasOTAUpdates = yes,
     hasFastWifiStatusQuery = yes,
     hasKeys = yes,
@@ -119,37 +117,16 @@ local Cervantes4 = Cervantes:new{
 }
 
 -- input events
-local probeEvEpochTime
--- this function will update itself after the first touch event
-probeEvEpochTime = function(self, ev)
-    local now = TimeVal:now()
-    -- This check should work as long as main UI loop is not blocked for more
-    -- than 10 minute before handling the first touch event.
-    if ev.time.sec <= now.sec - 600 then
-        -- time is seconds since boot, force it to epoch
-        probeEvEpochTime = function(_, _ev)
-            _ev.time = TimeVal:now()
-        end
-        ev.time = now
-    else
-        -- time is already epoch time, no need to do anything
-        probeEvEpochTime = function(_, _) end
-    end
-end
 function Cervantes:initEventAdjustHooks()
     if self.touch_switch_xy then
         self.input:registerEventAdjustHook(self.input.adjustTouchSwitchXY)
     end
+
     if self.touch_mirrored_x then
         self.input:registerEventAdjustHook(
             self.input.adjustTouchMirrorX,
             self.screen:getWidth()
         )
-    end
-    if self.touch_probe_ev_epoch_time then
-        self.input:registerEventAdjustHook(function(_, ev)
-            probeEvEpochTime(_, ev)
-        end)
     end
 
     if self.touch_legacy then
