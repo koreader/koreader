@@ -102,7 +102,7 @@ end
 function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
         local now_ts = os.time()
-        logger.dbg("AutoSuspend: start at ", now_ts)
+        logger.dbg("AutoSuspend: start at", now_ts)
         self.last_action_sec = now_ts
         self:_schedule()
     end
