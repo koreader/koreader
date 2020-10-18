@@ -66,8 +66,7 @@ if lsmod | grep -q sdio_wifi_pwr; then
     rmmod sdio_wifi_pwr
 fi
 
-# Recreate Nickel's FIFO ourselves, otherwise, udev may attempt to write to it before Nickel creates it,
-# and Nickel doesn't handle that well (i.e., it doesn't unlink first, the FIFO isn't created, it's now a regular file, hilarity ensues).
+# Recreate Nickel's FIFO ourselves, like rcS does, because udev *will* write to it!
 # Plus, we actually *do* want the stuff udev writes in there to be processed by Nickel, anyway.
 rm -f "/tmp/nickel-hardware-status"
 mkfifo "/tmp/nickel-hardware-status"
@@ -75,9 +74,17 @@ mkfifo "/tmp/nickel-hardware-status"
 # Flush buffers to disk, who knows.
 sync
 
+# Handle the sdcard:
+# We need to unmount it ourselves, or Nickel wigs out and shows an "unrecognized FS" popup until the next fake sd add event.
+# The following udev trigger should then ensure there's a single sd add event enqueued in the FIFO for it to process,
+# ensuring it gets sanely detected and remounted RO.
+if [ -e "/dev/mmcblk1p1" ]; then
+    umount /mnt/sd
+fi
+
 # And finally, simply restart nickel.
 # We don't care about horribly legacy stuff, because if people switch between nickel and KOReader in the first place, I assume they're using a decently recent enough FW version.
-# Last tested on an H2O & a Forma running FW 4.7.x - 4.23.x
+# Last tested on an H2O & a Forma running FW 4.7.x - 4.24.x
 /usr/local/Kobo/hindenburg &
 LIBC_FATAL_STDERR_=1 /usr/local/Kobo/nickel -platform kobo -skipFontLoad &
 [ "${PLATFORM}" != "freescale" ] && udevadm trigger &
