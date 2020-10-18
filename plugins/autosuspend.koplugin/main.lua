@@ -70,8 +70,9 @@ function AutoSuspend:_schedule()
         delay_suspend = self.auto_suspend_sec
         delay_shutdown = self.autoshutdown_timeout_seconds
     else
-        delay_suspend = self.last_action_sec + self.auto_suspend_sec - os.time()
-        delay_shutdown = self.last_action_sec + self.autoshutdown_timeout_seconds - os.time()
+        local now_ts = os.time()
+        delay_suspend = self.last_action_sec + self.auto_suspend_sec - now_ts
+        delay_shutdown = self.last_action_sec + self.autoshutdown_timeout_seconds - now_ts
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
@@ -83,11 +84,11 @@ function AutoSuspend:_schedule()
         UIManager:suspend()
     else
         if self:_enabled() then
-            logger.dbg("AutoSuspend: schedule suspend at ", os.time() + delay_suspend)
+            logger.dbg("AutoSuspend: schedule suspend in", delay_suspend)
             UIManager:scheduleIn(delay_suspend, self._schedule, self)
         end
         if self:_enabledShutdown() then
-            logger.dbg("AutoSuspend: schedule shutdown at ", os.time() + delay_shutdown)
+            logger.dbg("AutoSuspend: schedule shutdown in", delay_shutdown)
             UIManager:scheduleIn(delay_shutdown, self._schedule, self)
         end
     end
@@ -100,8 +101,9 @@ end
 
 function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
-        logger.dbg("AutoSuspend: start at ", os.time())
-        self.last_action_sec = os.time()
+        local now_ts = os.time()
+        logger.dbg("AutoSuspend: start at ", now_ts)
+        self.last_action_sec = now_ts
         self:_schedule()
     end
 end

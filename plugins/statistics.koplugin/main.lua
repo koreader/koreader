@@ -1241,6 +1241,7 @@ function ReaderStatistics:getCurrentStat(id_book)
     --       which is computed slightly differently (c.f., insertDB), we'll be using this tweaked book read time
     --       to compute the other time-based statistics...
     local __, book_read_time = self:getPageTimeTotalStats(id_book)
+    local now_ts = os.time()
 
     if total_time_book == nil then
         total_time_book = 0
@@ -1249,14 +1250,14 @@ function ReaderStatistics:getCurrentStat(id_book)
         total_read_pages = 0
     end
     if first_open == nil then
-        first_open = os.time()
+        first_open = now_ts
     end
     self.data.pages = self.view.document:getPageCount()
     total_time_book = tonumber(total_time_book)
     total_read_pages = tonumber(total_read_pages)
     local time_to_read = (self.data.pages - self.view.state.page) * self.avg_time
     local estimate_days_to_read = math.ceil(time_to_read/(book_read_time/tonumber(total_days)))
-    local estimate_end_of_read_date = os.date("%Y-%m-%d", tonumber(os.time() + estimate_days_to_read * 86400))
+    local estimate_end_of_read_date = os.date("%Y-%m-%d", tonumber(now_ts + estimate_days_to_read * 86400))
     local formatstr = "%.0f%%"
     return {
         -- Global statistics (may consider other books than current book)

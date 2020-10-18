@@ -41,10 +41,10 @@ function AutoTurn:_schedule(settings_id)
             logger.dbg("AutoTurn: go to next page")
             self.ui:handleEvent(Event:new("GotoViewRel", self.autoturn_distance))
         end
-        logger.dbg("AutoTurn: schedule at ", os.time() + self.autoturn_sec)
+        logger.dbg("AutoTurn: schedule in", self.autoturn_sec)
         UIManager:scheduleIn(self.autoturn_sec, function() self:_schedule(settings_id) end)
     else
-        logger.dbg("AutoTurn: schedule at ", os.time() + delay)
+        logger.dbg("AutoTurn: schedule in", delay)
         UIManager:scheduleIn(delay, function() self:_schedule(settings_id) end)
     end
 end
@@ -57,9 +57,10 @@ end
 
 function AutoTurn:_start()
     if self:_enabled() then
-        logger.dbg("AutoTurn: start at ", os.time())
+        local now_ts = os.time()
+        logger.dbg("AutoTurn: start at ", now_ts)
         PluginShare.pause_auto_suspend = true
-        self.last_action_sec = os.time()
+        self.last_action_sec = now_ts
         self:_schedule(self.settings_id)
 
         local text
