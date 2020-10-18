@@ -449,13 +449,14 @@ function CalendarView:init()
     outer_padding = math.floor((self.dimen.w - 7*self.day_width - 6*self.inner_padding) / 2)
     self.content_width = self.dimen.w - 2*outer_padding
 
+    local now_ts = os.time()
     if not MIN_MONTH then
         local min_ts = self.reader_statistics:getFirstTimestamp()
-        if not min_ts then min_ts = os.time() end
+        if not min_ts then min_ts = now_ts end
         MIN_MONTH = os.date("%Y-%m", min_ts)
     end
     self.min_month = MIN_MONTH
-    self.max_month = os.date("%Y-%m", os.time())
+    self.max_month = os.date("%Y-%m", now_ts)
     if not self.cur_month then
         self.cur_month = self.max_month
     end

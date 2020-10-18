@@ -927,11 +927,11 @@ function ReaderView:checkAutoSaveSettings()
     if not interval then -- no auto save
         return
     end
-    if os.time() - self.settings_last_save_ts >= interval*60 then
-        self.settings_last_save_ts = os.time()
+    local now_ts = os.time()
+    if now_ts - self.settings_last_save_ts >= interval*60 then
+        self.settings_last_save_ts = now_ts
         UIManager:nextTick(function()
             self.ui:saveSettings()
-            self.settings_last_save_ts = os.time() -- re-set when saving done
         end)
     end
 end

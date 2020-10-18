@@ -1132,7 +1132,12 @@ function UIManager:_repaint()
             refresh.region.w, refresh.region.h,
             refresh.dither)
     end
-    Screen:afterPaint()
+
+    -- Don't trigger afterPaint if we did not, in fact, paint anything
+    if dirty then
+        Screen:afterPaint()
+    end
+
     self._refresh_stack = {}
     self.refresh_counted = false
 end

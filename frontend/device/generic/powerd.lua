@@ -133,9 +133,10 @@ function BasePowerD:setIntensity(intensity)
 end
 
 function BasePowerD:getCapacity()
-    if os.time() - self.last_capacity_pull_time >= 60 then
+    local now_ts = os.time()
+    if now_ts - self.last_capacity_pull_time >= 60 then
         self.battCapacity = self:getCapacityHW()
-        self.last_capacity_pull_time = os.time()
+        self.last_capacity_pull_time = now_ts
     end
     return self.battCapacity
 end
