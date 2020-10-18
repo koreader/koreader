@@ -47,22 +47,31 @@ local TimeVal = require("ui/timeval")
 local logger = require("logger")
 local util = require("util")
 
--- all the time parameters are in us
-local ges_double_tap_interval = G_reader_settings:readSetting("ges_double_tap_interval") or 300 * 1000
-local ges_two_finger_tap_duration = G_reader_settings:readSetting("ges_two_finger_tap_duration") or 300 * 1000
-local ges_hold_interval = G_reader_settings:readSetting("ges_hold_interval") or 500 * 1000
-local ges_pan_delayed_interval = G_reader_settings:readSetting("ges_pan_delayed_interval") or 500 * 1000
-local ges_swipe_interval = G_reader_settings:readSetting("ges_swipe_interval") or 900 * 1000
+-- default values (all the time parameters are in microseconds)
+local TAP_INTERVAL = 0 * 1000
+local DOUBLE_TAP_INTERVAL = 300 * 1000
+local TWO_FINGER_TAP_DURATION = 300 * 1000
+local HOLD_INTERVAL = 500 * 1000
+local PAN_DELAYED_INTERVAL = 500 * 1000
+local SWIPE_INTERVAL = 900 * 1000
+-- current values
+local ges_tap_interval = G_reader_settings:readSetting("ges_tap_interval") or TAP_INTERVAL
+local ges_double_tap_interval = G_reader_settings:readSetting("ges_double_tap_interval") or DOUBLE_TAP_INTERVAL
+local ges_two_finger_tap_duration = G_reader_settings:readSetting("ges_two_finger_tap_duration") or TWO_FINGER_TAP_DURATION
+local ges_hold_interval = G_reader_settings:readSetting("ges_hold_interval") or HOLD_INTERVAL
+local ges_pan_delayed_interval = G_reader_settings:readSetting("ges_pan_delayed_interval") or PAN_DELAYED_INTERVAL
+local ges_swipe_interval = G_reader_settings:readSetting("ges_swipe_interval") or SWIPE_INTERVAL
 
 local GestureDetector = {
     -- must be initialized with the Input singleton class
     input = nil,
-    -- default values (all the time parameters are in us)
-    DOUBLE_TAP_INTERVAL = 300 * 1000,
-    TWO_FINGER_TAP_DURATION = 300 * 1000,
-    HOLD_INTERVAL = 500 * 1000,
-    PAN_DELAYED_INTERVAL = 500 * 1000,
-    SWIPE_INTERVAL = 900 * 1000,
+    -- default values (accessed for display by plugins/gestures.koplugin)
+    TAP_INTERVAL = TAP_INTERVAL,
+    DOUBLE_TAP_INTERVAL = DOUBLE_TAP_INTERVAL,
+    TWO_FINGER_TAP_DURATION = TWO_FINGER_TAP_DURATION,
+    HOLD_INTERVAL = HOLD_INTERVAL,
+    PAN_DELAYED_INTERVAL = PAN_DELAYED_INTERVAL,
+    SWIPE_INTERVAL = SWIPE_INTERVAL,
     -- pinch/spread direction table
     DIRECTION_TABLE = {
         east = "horizontal",
@@ -103,6 +112,7 @@ function GestureDetector:init()
     -- distance parameters
     self.TWO_FINGER_TAP_REGION = 20 * scaler
     self.DOUBLE_TAP_DISTANCE = 50 * scaler
+    self.SINGLE_TAP_BOUNCE_DISTANCE = self.DOUBLE_TAP_DISTANCE
     self.PAN_THRESHOLD = self.DOUBLE_TAP_DISTANCE
     self.MULTISWIPE_THRESHOLD = self.DOUBLE_TAP_DISTANCE
 end
@@ -144,6 +154,15 @@ end
 --[[
 tap2 is the later tap
 --]]
+function GestureDetector:isTapBounce(tap1, tap2)
+    local tv_diff = tap2.timev - tap1.timev
+    return (
+        math.abs(tap1.x - tap2.x) < self.SINGLE_TAP_BOUNCE_DISTANCE and
+        math.abs(tap1.y - tap2.y) < self.SINGLE_TAP_BOUNCE_DISTANCE and
+        (tv_diff.sec == 0 and (tv_diff.usec) < ges_tap_interval)
+    )
+end
+
 function GestureDetector:isDoubleTap(tap1, tap2)
     local tv_diff = tap2.timev - tap1.timev
     return (
@@ -244,7 +263,9 @@ function GestureDetector:clearState(slot)
 end
 
 function GestureDetector:setNewInterval(type, interval)
-    if type == "ges_double_tap_interval" then
+    if type == "ges_tap_interval" then
+        ges_tap_interval = interval
+    elseif type == "ges_double_tap_interval" then
         ges_double_tap_interval = interval
     elseif type == "ges_two_finger_tap_duration" then
         ges_two_finger_tap_duration = interval
@@ -258,7 +279,9 @@ function GestureDetector:setNewInterval(type, interval)
 end
 
 function GestureDetector:getInterval(type)
-    if type == "ges_double_tap_interval" then
+    if type == "ges_tap_interval" then
+        return ges_tap_interval
+    elseif type == "ges_double_tap_interval" then
         return ges_double_tap_interval
     elseif type == "ges_two_finger_tap_duration" then
         return ges_two_finger_tap_duration
@@ -330,6 +353,8 @@ function GestureDetector:tapState(tev)
                 self:clearState(slot)
             end
         elseif self.last_tevs[slot] ~= nil then
+            -- Normal single tap seems to always go thru here
+            -- (the next 'else' might be there for edge cases)
             return self:handleDoubleTap(tev)
         else
             -- last tev in this slot is cleared by last two finger tap
@@ -368,6 +393,17 @@ function GestureDetector:handleDoubleTap(tev)
         timev = tev.timev,
     }
 
+    -- We do tap bounce detection even when double tap is enabled (so, double tap
+    -- is triggered when: ges_tap_interval <= delay < ges_double_tap_interval)
+    if ges_tap_interval > 0 and self.last_taps[slot] ~= nil and self:isTapBounce(self.last_taps[slot], cur_tap) then
+        logger.dbg("tap bounce detected in slot", slot, ": ignored")
+        -- Simply ignore it, and clear state as this is the end of a touch event
+        -- (this doesn't clear self.last_taps[slot], so a 3rd tap can be detected
+        -- as a double tap)
+        self:clearState(slot)
+        return
+    end
+
     if not self.input.disable_double_tap and self.last_taps[slot] ~= nil and
                 self:isDoubleTap(self.last_taps[slot], cur_tap) then
         -- it is a double tap
@@ -381,16 +417,27 @@ function GestureDetector:handleDoubleTap(tev)
     -- set current tap to last tap
     self.last_taps[slot] = cur_tap
 
-    logger.dbg("set up tap timer")
+    if self.input.disable_double_tap then
+        -- We can send the event immediately (no need for the
+        -- timer stuff needed for double tap support)
+        logger.dbg("single tap detected in slot", slot, ges_ev.pos)
+        self:clearState(slot)
+        return ges_ev
+    end
+
+    -- Double tap enabled: we can't send this single tap immediately as it
+    -- may be the start of a double tap. We'll send it as a single tap after
+    -- a timer if no second tap happened in the double tap delay.
+    logger.dbg("set up single/double tap timer")
     -- deadline should be calculated by adding current tap time and the interval
     local deadline = cur_tap.timev + TimeVal:new{
         sec = 0,
         usec = not self.input.disable_double_tap and ges_double_tap_interval or 0,
     }
     self.input:setTimeout(function()
-        logger.dbg("in tap timer", self.last_taps[slot] ~= nil)
+        logger.dbg("in single/double tap timer", self.last_taps[slot] ~= nil)
         -- double tap will set last_tap to nil so if it is not, then
-        -- user must only tapped once
+        -- user has not double-tap'ed: it's a single tap
         if self.last_taps[slot] ~= nil then
             self.last_taps[slot] = nil
             -- we are using closure here
