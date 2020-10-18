@@ -27,9 +27,9 @@ function AutoTurn:_schedule(settings_id)
         return
     end
     if self.settings_id ~= settings_id then
-        logger.dbg("AutoTurn:_schedule registered settings_id ",
+        logger.dbg("AutoTurn:_schedule registered settings_id",
                    settings_id,
-                   " does not equal to current one ",
+                   "does not equal to current one",
                    self.settings_id)
         return
     end
@@ -52,13 +52,13 @@ end
 function AutoTurn:_deprecateLastTask()
     PluginShare.pause_auto_suspend = false
     self.settings_id = self.settings_id + 1
-    logger.dbg("AutoTurn: deprecateLastTask ", self.settings_id)
+    logger.dbg("AutoTurn: deprecateLastTask", self.settings_id)
 end
 
 function AutoTurn:_start()
     if self:_enabled() then
         local now_ts = os.time()
-        logger.dbg("AutoTurn: start at ", now_ts)
+        logger.dbg("AutoTurn: start at", now_ts)
         PluginShare.pause_auto_suspend = true
         self.last_action_sec = now_ts
         self:_schedule(self.settings_id)
