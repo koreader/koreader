@@ -83,8 +83,6 @@ describe("device module", function()
 
             assert.is.same("Kobo_trilogy", kobo_dev.model)
             assert.truthy(kobo_dev:needsTouchScreenProbe())
-            -- This gets reset to nil during Kobo:init() since #4450
-            assert.falsy(kobo_dev.touch_probe_ev_epoch_time)
             G_reader_settings:saveSetting("kobo_touch_switch_xy", true)
             kobo_dev:touchScreenProbe()
             local x, y = Screen:getWidth()-5, 10
@@ -117,6 +115,11 @@ describe("device module", function()
         end)
 
         it("should setup eventAdjustHooks properly for trilogy with non-epoch ev time", function()
+            -- This has no more value since #6798 as ev time can now stay
+            -- non-epoch. Adjustments are made on first event handled, and
+            -- have only effects when handling long-press (so, the long-press
+            -- for dict lookup tests with test this).
+            -- We just check here it still works with non-epoch ev time, as previous test
             os.getenv.invokes(function(key)
                 if key == "PRODUCT" then
                     return "trilogy"
@@ -132,8 +135,6 @@ describe("device module", function()
 
             assert.is.same("Kobo_trilogy", kobo_dev.model)
             assert.truthy(kobo_dev:needsTouchScreenProbe())
-            -- This gets reset to nil during Kobo:init() since #4450
-            assert.falsy(kobo_dev.touch_probe_ev_epoch_time)
             kobo_dev:touchScreenProbe()
             local x, y = Screen:getWidth()-5, 10
             local EV_ABS = 3
@@ -142,21 +143,22 @@ describe("device module", function()
             local ev_x = {
                 type = EV_ABS,
                 code = ABS_X,
-                value = x,
+                value = y,
                 time = {sec = 1000}
             }
             local ev_y = {
                 type = EV_ABS,
                 code = ABS_Y,
-                value = y,
+                value = Screen:getWidth()-x,
                 time = {sec = 1000}
             }
 
             kobo_dev.input:eventAdjustHook(ev_x)
             kobo_dev.input:eventAdjustHook(ev_y)
-            local cur_sec = TimeVal:now().sec
-            assert.truthy(cur_sec - ev_x.time.sec < 10)
-            assert.truthy(cur_sec - ev_y.time.sec < 10)
+            assert.is.same(x, ev_y.value)
+            assert.is.same(ABS_X, ev_y.code)
+            assert.is.same(y, ev_x.value)
+            assert.is.same(ABS_Y, ev_x.code)
 
             -- reset eventAdjustHook
             kobo_dev.input.eventAdjustHook = function() end

@@ -1,6 +1,5 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local PluginShare = require("pluginshare")
-local TimeVal = require("ui/timeval")
 local ffi = require("ffi")
 local logger = require("logger")
 
@@ -32,9 +31,6 @@ local EV_ABS = 3
 local SYN_REPORT = 0
 local SYN_MT_REPORT = 2
 local adjustTouchEvt = function(self, ev)
-    ev.time = TimeVal:now()
-    logger.dbg('updated time to ',ev.time)
-
     if ev.type == EV_ABS and ev.code == ABS_MT_TOUCH_MAJOR then
         ev.code = ABS_MT_TRACKING_ID
         if ev.value ~= 0 then
