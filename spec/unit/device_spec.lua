@@ -119,6 +119,7 @@ describe("device module", function()
             -- non-epoch. Adjustments are made on first event handled, and
             -- have only effects when handling long-press (so, the long-press
             -- for dict lookup tests with test this).
+            -- We just check here it still works with non-epoch ev time, as previous test
             os.getenv.invokes(function(key)
                 if key == "PRODUCT" then
                     return "trilogy"
@@ -142,13 +143,13 @@ describe("device module", function()
             local ev_x = {
                 type = EV_ABS,
                 code = ABS_X,
-                value = x,
+                value = y,
                 time = {sec = 1000}
             }
             local ev_y = {
                 type = EV_ABS,
                 code = ABS_Y,
-                value = y,
+                value = Screen:getWidth()-x,
                 time = {sec = 1000}
             }
 
