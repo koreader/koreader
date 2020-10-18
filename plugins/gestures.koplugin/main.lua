@@ -437,6 +437,7 @@ function Gestures:addIntervals(menu_items)
         sub_item_table = {
             {
                 text = _("Text selection rate"),
+                keep_menu_open = true,
                 callback = function()
                     local SpinWidget = require("ui/widget/spinwidget")
                     local current_value = G_reader_settings:readSetting("hold_pan_rate")
@@ -444,18 +445,19 @@ function Gestures:addIntervals(menu_items)
                         current_value = Screen.low_pan_rate and 5.0 or 30.0
                     end
                     local items = SpinWidget:new{
-                        text = T(_([[
+                        title_text = _("Text selection rate"),
+                        info_text = T(_([[
 The rate is how often screen will be refreshed per second while selecting text.
 Higher values mean faster screen updates, but also use more CPU.
+
 Default value: %1]]), Screen.low_pan_rate and 5.0 or 30.0),
-                        width = math.floor(Screen:getWidth() * 0.6),
+                        width = math.floor(Screen:getWidth() * 0.75),
                         value = current_value,
                         value_min = 1.0,
                         value_max = 60.0,
                         value_step = 1,
                         value_hold_step = 15,
                         ok_text = _("Set rate"),
-                        title_text = _("Text selection rate"),
                         default_value = Screen.low_pan_rate and 5.0 or 30.0,
                         callback = function(spin)
                             G_reader_settings:saveSetting("hold_pan_rate", spin.value)
@@ -467,23 +469,54 @@ Default value: %1]]), Screen.low_pan_rate and 5.0 or 30.0),
                 separator = true,
             },
             {
-                text = _("Double tap interval"),
+                text = _("Tap interval"),
+                keep_menu_open = true,
                 callback = function()
                     local SpinWidget = require("ui/widget/spinwidget")
                     local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
-                        text = T(_([[
-Set double tap interval in milliseconds.
-The interval value can range from 100 (0.1 seconds) to 2000 (2 seconds).
+                        title_text = _("Tap interval"),
+                        info_text = T(_([[
+Any other taps made within this interval after a first tap will be considered accidental and ignored.
+
+The interval value is in milliseconds and can range from 0 (0 second) to 2000 (2 seconds).
+Default value: %1]]), GestureDetector.TAP_INTERVAL/1000),
+                        width = math.floor(Screen:getWidth() * 0.75),
+                        value = GestureDetector:getInterval("ges_tap_interval")/1000,
+                        value_min = 0,
+                        value_max = 2000,
+                        value_step = 50,
+                        value_hold_step = 200,
+                        ok_text = _("Set interval"),
+                        default_value = GestureDetector.TAP_INTERVAL/1000,
+                        callback = function(spin)
+                            G_reader_settings:saveSetting("ges_tap_interval", spin.value*1000)
+                            GestureDetector:setNewInterval("ges_tap_interval", spin.value*1000)
+                        end
+                    }
+                    UIManager:show(items)
+                end,
+            },
+            {
+                text = _("Double tap interval"),
+                keep_menu_open = true,
+                callback = function()
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local GestureDetector = require("device/gesturedetector")
+                    local items = SpinWidget:new{
+                        title_text = _("Double tap interval"),
+                        info_text = T(_([[
+When double tap is enabled, this sets the time to wait for the second tap. A single tap will take at least this long to be detected.
+
+The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.DOUBLE_TAP_INTERVAL/1000),
-                        width = math.floor(Screen:getWidth() * 0.6),
+                        width = math.floor(Screen:getWidth() * 0.75),
                         value = GestureDetector:getInterval("ges_double_tap_interval")/1000,
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
                         value_hold_step = 500,
                         ok_text = _("Set interval"),
-                        title_text = _("Double tap interval"),
                         default_value = GestureDetector.DOUBLE_TAP_INTERVAL/1000,
                         callback = function(spin)
                             G_reader_settings:saveSetting("ges_double_tap_interval", spin.value*1000)
@@ -495,22 +528,24 @@ Default value: %1]]), GestureDetector.DOUBLE_TAP_INTERVAL/1000),
             },
             {
                 text = _("Two finger tap duration"),
+                keep_menu_open = true,
                 callback = function()
                     local SpinWidget = require("ui/widget/spinwidget")
                     local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
-                        text = T(_([[
-Set two finger tap duration in milliseconds.
-The duration value can range from 100 (0.1 seconds) to 2000 (2 seconds).
+                        title_text = _("Two finger tap duration"),
+                        info_text = T(_([[
+This sets the allowed duration of any of the two fingers touch/release for the combined event to be considered a two finger tap.
+
+The duration value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.TWO_FINGER_TAP_DURATION/1000),
-                        width = math.floor(Screen:getWidth() * 0.6),
+                        width = math.floor(Screen:getWidth() * 0.75),
                         value = GestureDetector:getInterval("ges_two_finger_tap_duration")/1000,
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
                         value_hold_step = 500,
                         ok_text = _("Set duration"),
-                        title_text = _("Two finger tap duration"),
                         default_value = GestureDetector.TWO_FINGER_TAP_DURATION/1000,
                         callback = function(spin)
                             G_reader_settings:saveSetting("ges_two_finger_tap_duration", spin.value*1000)
@@ -522,22 +557,24 @@ Default value: %1]]), GestureDetector.TWO_FINGER_TAP_DURATION/1000),
             },
             {
                 text = _("Hold interval"),
+                keep_menu_open = true,
                 callback = function()
                     local SpinWidget = require("ui/widget/spinwidget")
                     local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
-                        text = T(_([[
-Set hold interval in milliseconds.
-The interval value can range from 100 (0.1 seconds) to 2000 (2 seconds).
+                        title_text = _("Hold interval"),
+                        info_text = T(_([[
+If a touch is not released in this interval, it is considered a hold (or long-press). On document's text, single word selection is then triggered.
+
+The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.HOLD_INTERVAL/1000),
-                        width = math.floor(Screen:getWidth() * 0.6),
+                        width = math.floor(Screen:getWidth() * 0.75),
                         value = GestureDetector:getInterval("ges_hold_interval")/1000,
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
                         value_hold_step = 500,
                         ok_text = _("Set interval"),
-                        title_text = _("Hold interval"),
                         default_value = GestureDetector.HOLD_INTERVAL/1000,
                         callback = function(spin)
                             G_reader_settings:saveSetting("ges_hold_interval", spin.value*1000)
@@ -549,22 +586,24 @@ Default value: %1]]), GestureDetector.HOLD_INTERVAL/1000),
             },
             {
                 text = _("Pan delay interval"),
+                keep_menu_open = true,
                 callback = function()
                     local SpinWidget = require("ui/widget/spinwidget")
                     local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
-                        text = T(_([[
-Set pan delay interval in milliseconds.
-The interval value can range from 100 (0.1 seconds) to 2000 (2 seconds).
+                        title_text = _("Pan delay interval"),
+                        info_text = T(_([[
+This is used where necessary to reduce potential activation of panning when swiping is intended (e.g., for the menu or for multiswipe).
+
+The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.PAN_DELAYED_INTERVAL/1000),
-                        width = math.floor(Screen:getWidth() * 0.6),
+                        width = math.floor(Screen:getWidth() * 0.75),
                         value = GestureDetector:getInterval("ges_pan_delayed_interval")/1000,
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
                         value_hold_step = 500,
                         ok_text = _("Set interval"),
-                        title_text = _("Pan delay interval"),
                         default_value = GestureDetector.PAN_DELAYED_INTERVAL/1000,
                         callback = function(spin)
                             G_reader_settings:saveSetting("ges_pan_delayed_interval", spin.value*1000)
@@ -576,22 +615,24 @@ Default value: %1]]), GestureDetector.PAN_DELAYED_INTERVAL/1000),
             },
             {
                 text = _("Swipe interval"),
+                keep_menu_open = true,
                 callback = function()
                     local SpinWidget = require("ui/widget/spinwidget")
                     local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
-                        text = T(_([[
-Set swipe interval in milliseconds.
-The interval value can range from 100 (0.1 seconds) to 2000 (2 seconds).
+                        title_text = _("Swipe interval"),
+                        info_text = T(_([[
+This sets the maximum delay between the start and the end of a swipe for it to be considered a swipe. Above this interval, it's considered panning.
+
+The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.SWIPE_INTERVAL/1000),
-                        width = math.floor(Screen:getWidth() * 0.6),
+                        width = math.floor(Screen:getWidth() * 0.75),
                         value = GestureDetector:getInterval("ges_swipe_interval")/1000,
                         value_min = 100,
                         value_max = 2000,
                         value_step = 100,
                         value_hold_step = 500,
                         ok_text = _("Set interval"),
-                        title_text = _("Swipe interval"),
                         default_value = GestureDetector.SWIPE_INTERVAL/1000,
                         callback = function(spin)
                             G_reader_settings:saveSetting("ges_swipe_interval", spin.value*1000)
