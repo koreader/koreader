@@ -430,7 +430,7 @@ function GestureDetector:handleDoubleTap(tev)
     -- a timer if no second tap happened in the double tap delay.
     logger.dbg("set up single/double tap timer")
     -- deadline should be calculated by adding current tap time and the interval
-    local deadline = cur_tap.timev + TimeVal:new{
+    local deadline = TimeVal:now() + TimeVal:new{
         sec = 0,
         usec = not self.input.disable_double_tap and ges_double_tap_interval or 0,
     }
@@ -457,7 +457,7 @@ function GestureDetector:handleNonTap(tev)
         -- we return nil in this case
         self.states[slot] = self.tapState
         logger.dbg("set up hold timer")
-        local deadline = tev.timev + TimeVal:new{
+        local deadline = TimeVal:now() + TimeVal:new{
             sec = 0, usec = ges_hold_interval
         }
         -- Be sure the following setTimeout only react to this tapState

@@ -455,7 +455,7 @@ function Kobo:supportsScreensaver() return true end
 local ABS_MT_TRACKING_ID = 57
 local EV_ABS = 3
 local adjustTouchAlyssum = function(self, ev)
-    ev.time = TimeVal:now()
+    -- ev.time = TimeVal:now()
     if ev.type == EV_ABS and ev.code == ABS_MT_TRACKING_ID then
         ev.value = ev.value - 1
     end
