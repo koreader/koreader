@@ -15,8 +15,6 @@ local Screensaver = require("ui/screensaver")
 local SQ3 = require("lua-ljsqlite3/init")
 local UIManager = require("ui/uimanager")
 local Widget = require("ui/widget/widget")
-local ffi = require("ffi")
-local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -308,23 +306,14 @@ Do you want to create an empty database?
             logger.info("ReaderStatistics: Migrating DB from schema", db_version, "to schema", DB_SCHEMA_VERSION, "...")
             -- Backup the existing DB first
             conn:close()
-            local bkp_base_location = db_location .. ".bkp." .. db_version .. "-to-" .. DB_SCHEMA_VERSION
-            local bkp_db_location = bkp_base_location
+            local bkp_db_location = db_location .. ".bkp." .. db_version .. "-to-" .. DB_SCHEMA_VERSION
             -- Don't overwrite an existing backup
-            local bkp_rev = 1
-            while C.access(bkp_db_location, C.F_OK) == 0 do
-                -- File already exists, try another filename...
-                bkp_db_location = bkp_base_location .. "-r" .. bkp_rev
-                bkp_rev = bkp_rev + 1
-
-                -- Give up after a while
-                if bkp_rev > 10 then
-                    logger.warn("ReaderStatistics: Found more than 10 revisions of this specific DB backup, overwriting the final one!")
-                    break
-                end
+            if lfs.attributes(bkp_db_location, "mode") == "file" then
+                logger.warn("ReaderStatistics: A DB backup from schema", db_version, "to schema", DB_SCHEMA_VERSION, "already exists!")
+            else
+                FFIUtil.copyFile(db_location, bkp_db_location)
+                logger.info("ReaderStatistics: Old DB backed up as", bkp_db_location)
             end
-            FFIUtil.copyFile(db_location, bkp_db_location)
-            logger.info("ReaderStatistics: Old DB backed up as", bkp_db_location)
 
             conn = SQ3.open(db_location)
             self:upgradeDB(conn)
@@ -336,23 +325,14 @@ Do you want to create an empty database?
 
             -- We can't know what might happen, so, back the DB up...
             conn:close()
-            local bkp_base_location = db_location .. ".bkp." .. db_version .. "-to-" .. DB_SCHEMA_VERSION
-            local bkp_db_location = bkp_base_location
+            local bkp_db_location = db_location .. ".bkp." .. db_version .. "-to-" .. DB_SCHEMA_VERSION
             -- Don't overwrite an existing backup
-            local bkp_rev = 1
-            while C.access(bkp_db_location, C.F_OK) == 0 do
-                -- File already exists, try another filename...
-                bkp_db_location = bkp_base_location .. "-r" .. bkp_rev
-                bkp_rev = bkp_rev + 1
-
-                -- Give up after a while
-                if bkp_rev > 10 then
-                    logger.warn("ReaderStatistics: Found more than 10 revisions of this specific DB backup, overwriting the final one!")
-                    break
-                end
+            if lfs.attributes(bkp_db_location, "mode") == "file" then
+                logger.warn("ReaderStatistics: A DB backup from schema", db_version, "to schema", DB_SCHEMA_VERSION, "already exists!")
+            else
+                FFIUtil.copyFile(db_location, bkp_db_location)
+                logger.info("ReaderStatistics: Old DB backed up as", bkp_db_location)
             end
-            FFIUtil.copyFile(db_location, bkp_db_location)
-            logger.info("ReaderStatistics: Old DB backed up as", bkp_db_location)
 
             conn = SQ3.open(db_location)
         end
