@@ -307,8 +307,13 @@ Do you want to create an empty database?
             -- Backup the existing DB first
             conn:close()
             local bkp_db_location = db_location .. ".bkp." .. db_version .. "-to-" .. DB_SCHEMA_VERSION
-            FFIUtil.copyFile(db_location, bkp_db_location)
-            logger.info("ReaderStatistics: Old DB backed up as", bkp_db_location)
+            -- Don't overwrite an existing backup
+            if lfs.attributes(bkp_db_location, "mode") == "file" then
+                logger.warn("ReaderStatistics: A DB backup from schema", db_version, "to schema", DB_SCHEMA_VERSION, "already exists!")
+            else
+                FFIUtil.copyFile(db_location, bkp_db_location)
+                logger.info("ReaderStatistics: Old DB backed up as", bkp_db_location)
+            end
 
             conn = SQ3.open(db_location)
             self:upgradeDB(conn)
@@ -321,8 +326,13 @@ Do you want to create an empty database?
             -- We can't know what might happen, so, back the DB up...
             conn:close()
             local bkp_db_location = db_location .. ".bkp." .. db_version .. "-to-" .. DB_SCHEMA_VERSION
-            FFIUtil.copyFile(db_location, bkp_db_location)
-            logger.info("ReaderStatistics: Old DB backed up as", bkp_db_location)
+            -- Don't overwrite an existing backup
+            if lfs.attributes(bkp_db_location, "mode") == "file" then
+                logger.warn("ReaderStatistics: A DB backup from schema", db_version, "to schema", DB_SCHEMA_VERSION, "already exists!")
+            else
+                FFIUtil.copyFile(db_location, bkp_db_location)
+                logger.info("ReaderStatistics: Old DB backed up as", bkp_db_location)
+            end
 
             conn = SQ3.open(db_location)
         end
@@ -491,7 +501,7 @@ function ReaderStatistics:upgradeDB(conn)
         --       and not too horribly out of phase with the actual page count at the time the data was originally collected...
         INSERT INTO page_stat_data
             SELECT id_book, page, start_time, duration, pages as total_pages FROM page_stat
-            LEFT JOIN book on book.id = id_book;
+            JOIN book on book.id = id_book;
 
         -- Drop old page_stat table
         DROP INDEX IF EXISTS page_stat_id_book;
