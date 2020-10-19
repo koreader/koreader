@@ -520,8 +520,8 @@ function ReaderStatistics:upgradeDB(conn)
         --       We'll just have to hope the current value of the column pages in the book table is not too horribly out of date,
         --       and not too horribly out of phase with the actual page count at the time the data was originally collected...
         INSERT INTO page_stat_data
-            SELECT id_book, page, start_time, duration, IFNULL(pages, 0) as total_pages FROM page_stat
-            LEFT JOIN book on book.id = id_book;
+            SELECT id_book, page, start_time, duration, pages as total_pages FROM page_stat
+            JOIN book on book.id = id_book;
 
         -- Drop old page_stat table
         DROP INDEX IF EXISTS page_stat_id_book;
