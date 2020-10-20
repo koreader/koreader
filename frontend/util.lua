@@ -580,6 +580,28 @@ function util.getFilesystemType(path)
     return type
 end
 
+--- Recursively scan directory for files inside
+-- @string path
+-- @function callback(fullpath, name, attr)
+function util.findFiles(dir, cb)
+    local function scan(current)
+        local ok, iter, dir_obj = pcall(lfs.dir, current)
+        if not ok then return end
+        for f in iter, dir_obj do
+            local path = current.."/"..f
+            local attr = lfs.attributes(path)
+            if attr.mode == "directory" then
+                if f ~= "." and f ~= ".." then
+                    scan(path)
+                end
+            else
+                cb(path, f, attr)
+            end
+        end
+    end
+    scan(dir)
+end
+
 --- Checks if directory is empty.
 ---- @string path
 ---- @treturn bool
