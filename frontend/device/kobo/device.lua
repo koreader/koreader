@@ -773,7 +773,7 @@ function Kobo:toggleChargingLED(toggle)
 
     -- c.f., strace -fittvyy -e trace=ioctl,file,signal,ipc,desc -s 256 -o /tmp/nickel.log -p $(pidof -s nickel) &
     -- This was observed on a Forma, so I'm mildly hopeful that it's safe on other Mk. 7 devices ;).
-    if toggle = true then
+    if toggle == true then
         -- NOTE: Technically, Nickel forces a toggle off before that, too.
         f:write("ch 4")
         f:flush()
