@@ -422,7 +422,7 @@ local STATISTICS_DB_PAGE_STAT_VIEW_SCHEMA = [[
     -- Create the page_stat view
     -- This view rescales data from the page_stat_data table to the current number of book pages
     -- c.f., https://github.com/koreader/koreader/pull/6761#issuecomment-705660154
-    CREATE VIEW page_stat AS
+    CREATE VIEW IF NOT EXISTS page_stat AS
         SELECT id_book, first_page + idx - 1 AS page, start_time, duration / (last_page - first_page + 1) AS duration
         FROM (
             SELECT id_book, page, total_pages, pages, start_time, duration,
@@ -487,7 +487,7 @@ function ReaderStatistics:upgradeDB(conn)
         -- Start by updating the layout of the old page_stat table
         ALTER TABLE page_stat RENAME COLUMN period TO duration;
         -- We're now using the user_version PRAGMA to keep track of schema version
-        DROP TABLE info;
+        DROP TABLE IF EXISTS info;
     ]]
     conn:exec(sql_stmt)
 
