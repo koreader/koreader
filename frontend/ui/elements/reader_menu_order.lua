@@ -62,12 +62,13 @@ local order = {
         "keyboard_layout",
         "time",
         "battery",
+        "charging_led", -- if Device:canToggleChargingLED()
         "autostandby",
         "autosuspend",
         "autoshutdown",
         "ignore_sleepcover",
         "ignore_open_sleepcover",
-        "mass_storage_settings",
+        "mass_storage_settings", -- if Device:canToggleMassStorage()
         "file_ext_assoc",
         "screenshot",
     },

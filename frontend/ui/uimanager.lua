@@ -1312,12 +1312,16 @@ function UIManager:_afterResume()
 end
 
 function UIManager:_beforeCharging()
-    Device:toggleChargingLED(true)
+    if G_reader_settings:nilOrTrue("enable_charging_led") then
+        Device:toggleChargingLED(true)
+    end
     self:broadcastEvent(Event:new("Charging"))
 end
 
 function UIManager:_afterNotCharging()
-    Device:toggleChargingLED(false)
+    if G_reader_settings:nilOrTrue("enable_charging_led") then
+        Device:toggleChargingLED(false)
+    end
     self:broadcastEvent(Event:new("NotCharging"))
 end
 
