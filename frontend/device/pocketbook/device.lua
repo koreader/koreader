@@ -91,7 +91,7 @@ function PocketBook:init()
             if fb:isB288() then
                 logger.dbg("mxcfb: Disabling hwinvert on B288 chipset")
                 self.canHWInvert = no
-                -- GL16 glitches with hwinvert
+                -- GL16 glitches with hwrot
                 if fb.wf_level == 3 then
                     logger.dbg("mxcfb: Disabling hwrot on fast waveforms (B288 glitch)")
                     fb.forced_rotation = nil
