@@ -403,6 +403,7 @@ local STATISTICS_DB_PAGE_STAT_DATA_SCHEMA = [[
             UNIQUE (id_book, page, start_time),
             FOREIGN KEY(id_book) REFERENCES book(id)
         );
+    CREATE INDEX IF NOT EXISTS page_stat_data_start_time ON page_stat_data(start_time);
 ]]
 
 local STATISTICS_DB_PAGE_STAT_VIEW_SCHEMA = [[
