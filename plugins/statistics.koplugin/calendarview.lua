@@ -96,6 +96,9 @@ function HistogramWidget:paintTo(bb, x, y)
         local i_w = self.item_widths[n]
         local ratio = self.ratios and self.ratios[n] or 0
         local i_h = Math.round(ratio * self.height)
+        if i_h == 0 and ratio > 0 then -- show at least 1px
+            i_h = 1
+        end
         local i_y = self.height - i_h
         if i_h > 0 then
             bb:paintRect(x + i_x, y + i_y, i_w, i_h, self.color)

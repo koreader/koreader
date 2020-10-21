@@ -2285,13 +2285,22 @@ function ReaderStatistics:getFirstTimestamp()
 end
 
 function ReaderStatistics:getReadingRatioPerHourByDay(month)
+    -- We used to have in the SQL statement (with ? = 'YYYY-MM'):
+    --   WHERE  strftime('%Y-%m', start_time, 'unixepoch', 'localtime') = ?
+    -- but strftime()ing all start_time is slow.
+    -- Comverting the month into timestamp boundaries, and just comparing
+    -- integers, can be 5 times faster.
+    -- We let SQLite compute these timestamp boundaries from the provided
+    -- month; we need the start of the month to be a real date:
+    month = month.."-01"
     local sql_stmt = [[
         SELECT
             strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime') day,
             strftime('%H', start_time, 'unixepoch', 'localtime') hour,
             sum(duration)/3600.0 ratio
         FROM   page_stat
-        WHERE  strftime('%Y-%m', start_time, 'unixepoch', 'localtime') = ?
+        WHERE  start_time >= strftime('%s', ?, 'utc')
+          AND  start_time < strftime('%s', ?, 'utc', '33 days', 'start of month')
         GROUP  BY
             strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime'),
             strftime('%H', start_time, 'unixepoch', 'localtime')
@@ -2299,7 +2308,7 @@ function ReaderStatistics:getReadingRatioPerHourByDay(month)
     ]]
     local conn = SQ3.open(db_location)
     local stmt = conn:prepare(sql_stmt)
-    local res, nb = stmt:reset():bind(month):resultset("i")
+    local res, nb = stmt:reset():bind(month, month):resultset("i")
     stmt:close()
     conn:close()
     local per_day = {}
@@ -2315,6 +2324,7 @@ function ReaderStatistics:getReadingRatioPerHourByDay(month)
 end
 
 function ReaderStatistics:getReadBookByDay(month)
+    month = month.."-01"
     local sql_stmt = [[
         SELECT
             strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime') day,
@@ -2323,7 +2333,8 @@ function ReaderStatistics:getReadBookByDay(month)
             book.title book_title
         FROM   page_stat
         JOIN   book ON book.id = page_stat.id_book
-        WHERE  strftime('%Y-%m', start_time, 'unixepoch', 'localtime') = ?
+        WHERE  start_time >= strftime('%s', ?, 'utc')
+          AND  start_time < strftime('%s', ?, 'utc', '33 days', 'start of month')
         GROUP  BY
             strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime'),
             id_book,
@@ -2332,7 +2343,7 @@ function ReaderStatistics:getReadBookByDay(month)
     ]]
     local conn = SQ3.open(db_location)
     local stmt = conn:prepare(sql_stmt)
-    local res, nb = stmt:reset():bind(month):resultset("i")
+    local res, nb = stmt:reset():bind(month, month):resultset("i")
     stmt:close()
     conn:close()
     local per_day = {}
