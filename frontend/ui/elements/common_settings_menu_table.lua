@@ -48,6 +48,19 @@ if Device:canToggleMassStorage() then
     common_settings.mass_storage_actions = MassStorage:getActionsMenuTable()
 end
 
+if Device:canToggleChargingLED() then
+    -- Charging LED settings
+    common_settings.charging_led = {
+        text = _("Turn on the power LED when charging"),
+        checked_func = function()
+            return G_reader_settings:nilOrTrue("enable_charging_led")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrTrue("enable_charging_led")
+        end
+    }
+end
+
 -- Associate OS level file extensions (must be off by default, because we're not associated initially)
 if Device:canAssociateFileExtensions() then
     common_settings.file_ext_assoc = {

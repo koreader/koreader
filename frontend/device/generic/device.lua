@@ -56,6 +56,7 @@ local Device = {
     canToggleGSensor = no,
     isGSensorLocked = no,
     canToggleMassStorage = no,
+    canToggleChargingLED = no,
     canUseWAL = yes, -- requires mmap'ed I/O on the target FS
     canRestart = yes,
     canSuspend = yes,
@@ -411,6 +412,9 @@ function Device:lockGSensor(toggle)
         end
     end
 end
+
+-- Device specific method for toggling the charging LED
+function Device:toggleChargingLED(toggle) end
 
 --[[
 prepare for application shutdown
