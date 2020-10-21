@@ -1312,10 +1312,12 @@ function UIManager:_afterResume()
 end
 
 function UIManager:_beforeCharging()
+    Device:toggleChargingLED(true)
     self:broadcastEvent(Event:new("Charging"))
 end
 
 function UIManager:_afterNotCharging()
+    Device:toggleChargingLED(false)
     self:broadcastEvent(Event:new("NotCharging"))
 end
 

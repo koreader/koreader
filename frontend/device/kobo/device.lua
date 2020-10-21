@@ -189,6 +189,7 @@ local KoboPika = Kobo:new{
 -- Kobo Clara HD:
 local KoboNova = Kobo:new{
     model = "Kobo_nova",
+    canToggleChargingLED = yes,
     hasFrontlight = yes,
     touch_snow_protocol = true,
     display_dpi = 300,
@@ -213,6 +214,7 @@ local KoboNova = Kobo:new{
 --       There's also a CM_ROTARY_ENABLE command, but which seems to do as much nothing as the STATUS one...
 local KoboFrost = Kobo:new{
     model = "Kobo_frost",
+    canToggleChargingLED = yes,
     hasFrontlight = yes,
     hasKeys = yes,
     hasGSensor = yes,
@@ -236,6 +238,7 @@ local KoboFrost = Kobo:new{
 -- NOTE: Assume the same quirks as the Forma apply.
 local KoboStorm = Kobo:new{
     model = "Kobo_storm",
+    canToggleChargingLED = yes,
     hasFrontlight = yes,
     hasKeys = yes,
     hasGSensor = yes,
@@ -259,6 +262,7 @@ local KoboStorm = Kobo:new{
 --- @fixme: Untested, assume it's Clara-ish for now.
 local KoboLuna = Kobo:new{
     model = "Kobo_luna",
+    canToggleChargingLED = yes,
     hasFrontlight = yes,
     touch_snow_protocol = true,
     display_dpi = 212,
@@ -338,6 +342,12 @@ function Kobo:init()
             self:initEventAdjustHooks()
         end
     end
+
+    -- We have no way of querying the current state of the charging LED, so, our only sane choices are:
+    -- * Do nothing
+    -- * Turn it off on startup
+    -- I've chosen the latter, as I find it vaguely saner, more useful, and it matches Nickel's behavior (I think).
+    self:toggleChargingLED(false)
 end
 
 function Kobo:setDateTime(year, month, day, hour, min, sec)
@@ -738,6 +748,61 @@ function Kobo:toggleGSensor(toggle)
             self.input:toggleMiscEvNTX(toggle)
         end
     end
+end
+
+function Kobo:toggleChargingLED(toggle)
+    if not self:canToggleChargingLED() then
+        return
+    end
+
+    -- We have no way of querying the current state from the HW!
+    if toggle == nil then
+        return
+    end
+
+    -- NOTE: While most/all Kobos actually have a charging LED, and it can usually be fiddled with in a similar fashion,
+    --       we've seen *extremely* weird behavior in the past when playing with it on older devices.
+    --       In fact, Nickel itself doesn't provide this feature on said older devices
+    --       (when it does, it's an option in the Energy saving settings),
+    --       which is why we also limit ourselves to "true" Mk. 7 devices.
+    local f = io.open("/sys/devices/platform/ntx_led/lit", "w")
+    if not f then
+        logger.err("cannot open /sys/devices/platform/ntx_led/lit for writing!")
+        return false
+    end
+
+    -- c.f., strace -fittvyy -e trace=ioctl,file,signal,ipc,desc -s 256 -o /tmp/nickel.log -p $(pidof -s nickel) &
+    -- This was observed on a Forma, so I'm mildly hopeful that it's safe on other Mk. 7 devices ;).
+    if toggle = true then
+        -- NOTE: Technically, Nickel forces a toggle off before that, too.
+        f:write("ch 4")
+        f:flush()
+        f:write("cur 1")
+        f:flush()
+        f:write("dc 63")
+        f:flush()
+    else
+        f:write("ch 3")
+        f:flush()
+        f:write("cur 1")
+        f:flush()
+        f:write("dc 0")
+        f:flush()
+        f:write("ch 4")
+        f:flush()
+        f:write("cur 1")
+        f:flush()
+        f:write("dc 0")
+        f:flush()
+        f:write("ch 5")
+        f:flush()
+        f:write("cur 1")
+        f:flush()
+        f:write("dc 0")
+        f:flush()
+    end
+
+    io.close(f)
 end
 
 -------------- device probe ------------
