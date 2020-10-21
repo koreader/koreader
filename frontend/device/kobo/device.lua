@@ -761,7 +761,7 @@ function Kobo:toggleChargingLED(toggle)
     end
 
     -- NOTE: While most/all Kobos actually have a charging LED, and it can usually be fiddled with in a similar fashion,
-    --       we've seen *extremely* weird behavior in the past when playing with it on older devices.
+    --       we've seen *extremely* weird behavior in the past when playing with it on older devices (c.f., #5479).
     --       In fact, Nickel itself doesn't provide this feature on said older devices
     --       (when it does, it's an option in the Energy saving settings),
     --       which is why we also limit ourselves to "true" Mk. 7 devices.
