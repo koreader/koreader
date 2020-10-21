@@ -510,6 +510,13 @@ function ReaderStatistics:upgradeDB(conn)
     ]]
     conn:exec(sql_stmt)
 
+    -- Get back the space taken by the deleted page_stat table
+    conn:exec("PRAGMA temp_store = 2;") -- use memory for temp files
+    local ok, errmsg = pcall(conn.exec, conn, "VACUUM;") -- this may take some time
+    if not ok then
+        logger.warn("Failed compacting statistics database:", errmsg)
+    end
+
     -- Create the new page_stat view stuff
     conn:exec(STATISTICS_DB_PAGE_STAT_VIEW_SCHEMA)
 
