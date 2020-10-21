@@ -775,6 +775,7 @@ function Kobo:toggleChargingLED(toggle)
     -- This was observed on a Forma, so I'm mildly hopeful that it's safe on other Mk. 7 devices ;).
     if toggle == true then
         -- NOTE: Technically, Nickel forces a toggle off before that, too.
+        --       But since we do that on startup, it shouldn't be necessary here...
         f:write("ch 4")
         f:flush()
         f:write("cur 1")
