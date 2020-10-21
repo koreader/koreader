@@ -2299,8 +2299,8 @@ function ReaderStatistics:getReadingRatioPerHourByDay(month)
             strftime('%H', start_time, 'unixepoch', 'localtime') hour,
             sum(duration)/3600.0 ratio
         FROM   page_stat
-        WHERE  start_time >= strftime('%s', ?, 'utc')
-          AND  start_time < strftime('%s', ?, 'utc', '33 days', 'start of month')
+        WHERE  start_time BETWEEN strftime('%s', ?, 'utc')
+                              AND strftime('%s', ?, 'utc', '+33 days', 'start of month', '-1 second')
         GROUP  BY
             strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime'),
             strftime('%H', start_time, 'unixepoch', 'localtime')
@@ -2333,8 +2333,8 @@ function ReaderStatistics:getReadBookByDay(month)
             book.title book_title
         FROM   page_stat
         JOIN   book ON book.id = page_stat.id_book
-        WHERE  start_time >= strftime('%s', ?, 'utc')
-          AND  start_time < strftime('%s', ?, 'utc', '33 days', 'start of month')
+        WHERE  start_time BETWEEN strftime('%s', ?, 'utc')
+                              AND strftime('%s', ?, 'utc', '+33 days', 'start of month', '-1 second')
         GROUP  BY
             strftime('%Y-%m-%d', start_time, 'unixepoch', 'localtime'),
             id_book,
