@@ -254,7 +254,7 @@ pbupdate: all
 	mkdir -p $(INSTALL_DIR)/applications
 	mkdir -p $(INSTALL_DIR)/system/bin
 	cp $(POCKETBOOK_DIR)/koreader.app $(INSTALL_DIR)/applications
-	cp $(POCKETBOOK_DIR)/system_koreader.app $(INSTALL_DIR)/system/bin
+	cp $(POCKETBOOK_DIR)/system_koreader.app $(INSTALL_DIR)/system/bin/koreader.app
 	cp $(COMMON_DIR)/spinning_zsync $(INSTALL_DIR)/koreader
 	cp -rfL $(INSTALL_DIR)/koreader $(INSTALL_DIR)/applications
 	find $(INSTALL_DIR)/applications/koreader \
