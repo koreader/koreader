@@ -27,6 +27,9 @@ local eink_settings_table = {
 
 if Device:hasEinkScreen() then
     table.insert(eink_settings_table.sub_item_table, 1, require("ui/elements/refresh_menu_table"))
+    if (Screen.wf_level_max or 0) > 0 then
+        table.insert(eink_settings_table.sub_item_table, require("ui/elements/waveform_level"))
+    end
 end
 
 return eink_settings_table

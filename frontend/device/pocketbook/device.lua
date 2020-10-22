@@ -74,13 +74,6 @@ local function tryOpenBook()
     end
 end
 
-local function isB288(fb)
-    -- No real header exists for this, see https://github.com/koreader/koreader-base/issues/1202/
-    local B288_POLL_FOR_UPDATE_COMPLETE = 0x80044655
-    -- On NXT that has a real MXC driver, it returns -EINVAL
-    return C.ioctl(fb.fd, B288_POLL_FOR_UPDATE_COMPLETE, ffi.new("uint32_t[1]")) == 0
-end
-
 function PocketBook:init()
     local raw_input = self.raw_input
     local touch_rotation = raw_input and raw_input.touch_rotation or 0
@@ -88,17 +81,24 @@ function PocketBook:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new {
         device = self,
         debug = logger.dbg,
+        wf_level = G_reader_settings:readSetting("wf_level") or 0,
         fbinfoOverride = function(fb, finfo, vinfo)
             -- Device model caps *can* set both to indicate that either will work to get correct orientation.
             -- But for FB backend, the flags are mutually exclusive, so we nuke one of em later.
             fb.is_always_portrait = self.isAlwaysPortrait()
             fb.forced_rotation = self.usingForcedRotation()
-            -- Tweak combination of alwaysPortrait/hwRot/hwInvert flags depending on probed HW.
-            if isB288(fb) then
-                logger.dbg("mxcfb: Detected B288 chipset, disabling HW rotation and invert")
-                fb.forced_rotation = nil
+            -- Tweak combination of alwaysPortrait/hwRot/hwInvert flags depending on probed HW and wf settings.
+            if fb:isB288() then
+                logger.dbg("mxcfb: Disabling hwinvert on B288 chipset")
                 self.canHWInvert = no
-            elseif fb.forced_rotation then
+                -- GL16 glitches with hwrot
+                if fb.wf_level == 3 then
+                    logger.dbg("mxcfb: Disabling hwrot on fast waveforms (B288 glitch)")
+                    fb.forced_rotation = nil
+                end
+            end
+            -- if hwrot is still on, nuke swrot
+            if fb.forced_rotation then
                 fb.is_always_portrait = false
             end
             return self._fb_init(fb, finfo, vinfo)
