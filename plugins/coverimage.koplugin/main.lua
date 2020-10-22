@@ -1,6 +1,6 @@
 local Device = require("device")
 
-if Device.isKindle == nil and Device.isKobo == nil then
+if not Device.isAndroid() and not Device.isEmulator() then
     return { disabled = true }
 end
 
@@ -136,7 +136,7 @@ function CoverImage:addToMainMenu(menu_items)
             -- menu entry: restore
             {
                 text_func = function()
-                    return _("Restore image on exit")
+                    return _("Restore image on book closing")
                 end,
                 checked_func = function()
                     return self:_restore()
