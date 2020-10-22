@@ -319,12 +319,10 @@ Do you want to create an empty database?
 
             if db_version < 20201010 then
                 self:upgradeDBto20201010(conn)
-                db_version = tonumber(conn:rowexec("PRAGMA user_version;"))
             end
 
             if db_version < 20201022 then
                 self:upgradeDBto20201022(conn)
-                --db_version = tonumber(conn:rowexec("PRAGMA user_version;"))
             end
 
             -- Get back the space taken by the deleted page_stat table
