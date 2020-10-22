@@ -135,8 +135,7 @@ function Device:init()
             if ev.code == C.APP_CMD_SAVE_STATE then
                 return "SaveState"
             elseif ev.code == C.APP_CMD_DESTROY then
-                self:exit()
-                os.exit()
+                UIManager:quit()
             elseif ev.code == C.APP_CMD_GAINED_FOCUS
                 or ev.code == C.APP_CMD_INIT_WINDOW
                 or ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
