@@ -62,7 +62,7 @@ function CoverImage:onReaderReady(doc_settings)
             if not lfs.attributes(self.cover_image_path ..".bak") then
                 os.rename(self.cover_image_path, self.cover_image_path .. ".bak" )
             end
-            Device.screen.bb.writePNG(image, self.cover_image_path, false)
+            image:writePNG(self.cover_image_path, false)
         end
     end
 end
