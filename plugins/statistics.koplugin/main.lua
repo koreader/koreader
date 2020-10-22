@@ -32,7 +32,7 @@ local DEFAULT_CALENDAR_START_DAY_OF_WEEK = 2 -- Monday
 local DEFAULT_CALENDAR_NB_BOOK_SPANS = 3
 
 -- Current DB schema version
-local DB_SCHEMA_VERSION = 20201010
+local DB_SCHEMA_VERSION = 20201022
 
 -- This is the query used to compute the total time spent reading distinct pages of the book,
 -- capped at self.page_max_read_sec per distinct page.
@@ -316,7 +316,22 @@ Do you want to create an empty database?
             end
 
             conn = SQ3.open(db_location)
-            self:upgradeDB(conn)
+
+            if db_version < 20201010 then
+                self:upgradeDBto20201010(conn)
+            end
+
+            if db_version < 20201022 then
+                self:upgradeDBto20201022(conn)
+            end
+
+            -- Get back the space taken by the deleted page_stat table
+            conn:exec("PRAGMA temp_store = 2;") -- use memory for temp files
+            local ok, errmsg = pcall(conn.exec, conn, "VACUUM;") -- this may take some time
+            if not ok then
+                logger.warn("Failed compacting statistics database:", errmsg)
+            end
+
             logger.info("ReaderStatistics: DB migration complete")
             UIManager:show(InfoMessage:new{text =_("Statistics database schema updated."), timeout = 3 })
         elseif db_version > DB_SCHEMA_VERSION then
@@ -403,6 +418,9 @@ local STATISTICS_DB_PAGE_STAT_DATA_SCHEMA = [[
             UNIQUE (id_book, page, start_time),
             FOREIGN KEY(id_book) REFERENCES book(id)
         );
+]]
+
+local STATISTICS_DB_PAGE_STAT_DATA_INDEX = [[
     CREATE INDEX IF NOT EXISTS page_stat_data_start_time ON page_stat_data(start_time);
 ]]
 
@@ -422,7 +440,7 @@ local STATISTICS_DB_PAGE_STAT_VIEW_SCHEMA = [[
     -- Create the page_stat view
     -- This view rescales data from the page_stat_data table to the current number of book pages
     -- c.f., https://github.com/koreader/koreader/pull/6761#issuecomment-705660154
-    CREATE VIEW page_stat AS
+    CREATE VIEW IF NOT EXISTS page_stat AS
         SELECT id_book, first_page + idx - 1 AS page, start_time, duration / (last_page - first_page + 1) AS duration
         FROM (
             SELECT id_book, page, total_pages, pages, start_time, duration,
@@ -465,15 +483,15 @@ function ReaderStatistics:createDB(conn)
             );
     ]]
     conn:exec(sql_stmt)
-
-    -- page_stat_data
-    conn:exec(STATISTICS_DB_PAGE_STAT_DATA_SCHEMA)
-
+    -- Index
     sql_stmt = [[
-        -- Index
         CREATE INDEX IF NOT EXISTS book_title_authors_md5 ON book(title, authors, md5);
     ]]
     conn:exec(sql_stmt)
+
+    -- page_stat_data
+    conn:exec(STATISTICS_DB_PAGE_STAT_DATA_SCHEMA)
+    conn:exec(STATISTICS_DB_PAGE_STAT_DATA_INDEX)
 
     -- page_stat view
     conn:exec(STATISTICS_DB_PAGE_STAT_VIEW_SCHEMA)
@@ -482,12 +500,12 @@ function ReaderStatistics:createDB(conn)
     conn:exec(string.format("PRAGMA user_version=%d;", DB_SCHEMA_VERSION))
 end
 
-function ReaderStatistics:upgradeDB(conn)
+function ReaderStatistics:upgradeDBto20201010(conn)
     local sql_stmt = [[
         -- Start by updating the layout of the old page_stat table
         ALTER TABLE page_stat RENAME COLUMN period TO duration;
         -- We're now using the user_version PRAGMA to keep track of schema version
-        DROP TABLE info;
+        DROP TABLE IF EXISTS info;
     ]]
     conn:exec(sql_stmt)
 
@@ -510,18 +528,18 @@ function ReaderStatistics:upgradeDB(conn)
     ]]
     conn:exec(sql_stmt)
 
-    -- Get back the space taken by the deleted page_stat table
-    conn:exec("PRAGMA temp_store = 2;") -- use memory for temp files
-    local ok, errmsg = pcall(conn.exec, conn, "VACUUM;") -- this may take some time
-    if not ok then
-        logger.warn("Failed compacting statistics database:", errmsg)
-    end
-
     -- Create the new page_stat view stuff
     conn:exec(STATISTICS_DB_PAGE_STAT_VIEW_SCHEMA)
 
     -- Update DB schema version
-    conn:exec(string.format("PRAGMA user_version=%d;", DB_SCHEMA_VERSION))
+    conn:exec("PRAGMA user_version=20201010;")
+end
+
+function ReaderStatistics:upgradeDBto20201022(conn)
+    conn:exec(STATISTICS_DB_PAGE_STAT_DATA_INDEX)
+
+    -- Update DB schema version
+    conn:exec("PRAGMA user_version=20201022;")
 end
 
 function ReaderStatistics:addBookStatToDB(book_stats, conn)
