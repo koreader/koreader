@@ -19,8 +19,21 @@ local PdfDocument = Document:new{
     provider_name = "MuPDF",
 }
 
+local function userFont(ctx, name, bold, italic, exact)
+end
+
+local function cjkFont(ctx, name, ordering, serif)
+end
+
+local function fallbackFont(ctx, script, language, serif, bold, italic)
+end
+
+
 function PdfDocument:init()
-    if not pdf then pdf = require("ffi/mupdf") end
+    if not pdf then
+        pdf = require("ffi/mupdf")
+        pdf:setFontCallbacks(userFont, cjkFont, fallbackFont)
+    end
     -- mupdf.color has to stay false for kopt to work correctly
     -- and be accurate (including its job about showing highlight
     -- boxes). We will turn it on and off in PdfDocument:preRenderPage()
@@ -190,19 +203,26 @@ function PdfDocument:saveHighlight(pageno, item)
     self.is_edited = true
     -- will also need mupdf_h.lua to be evaluated once
     -- but this is guaranteed at this point
-    local n = #item.pboxes
-    local quadpoints = ffi.new("float[?]", 8*n)
-    for i=1, n do
-        -- The order must be left bottom, right bottom, left top, right top.
-        -- https://bugs.ghostscript.com/show_bug.cgi?id=695130
-        quadpoints[8*i-8] = item.pboxes[i].x
-        quadpoints[8*i-7] = item.pboxes[i].y + item.pboxes[i].h
-        quadpoints[8*i-6] = item.pboxes[i].x + item.pboxes[i].w
-        quadpoints[8*i-5] = item.pboxes[i].y + item.pboxes[i].h
-        quadpoints[8*i-4] = item.pboxes[i].x
-        quadpoints[8*i-3] = item.pboxes[i].y
-        quadpoints[8*i-2] = item.pboxes[i].x + item.pboxes[i].w
-        quadpoints[8*i-1] = item.pboxes[i].y
+    local quadpoints = ffi.new("fz_quad[?]", #item.pboxes)
+    for i, pb in ipairs(item.pboxes) do
+        quadpoints[i-1] = ffi.new("fz_quad", {
+            ul = {
+                x = pb.x,
+                y = pb.y,
+            },
+            ur = {
+                x = pb.x + pb.w,
+                y = pb.y,
+            },
+            ll = {
+                x = pb.x,
+                y = pb.y + pb.h,
+            },
+            lr = {
+                x = pb.x + pb.w,
+                y = pb.y + pb.h,
+            },
+        })
     end
     local page = self._document:openPage(pageno)
     local annot_type = C.PDF_ANNOT_HIGHLIGHT
@@ -211,9 +231,9 @@ function PdfDocument:saveHighlight(pageno, item)
     elseif item.drawer == "underscore" then
         annot_type = C.PDF_ANNOT_UNDERLINE
     elseif item.drawer == "strikeout" then
-        annot_type = C.PDF_ANNOT_STRIKEOUT
+        annot_type = C.PDF_ANNOT_STRIKE_OUT
     end
-    page:addMarkupAnnotation(quadpoints, n, annot_type)
+    page:addMarkupAnnotation(quadpoints, #item.pboxes, annot_type)
     page:close()
 end
 

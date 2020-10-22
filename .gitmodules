@@ -1,6 +1,6 @@
 [submodule "koreader-base"]
 	path = base
-	url = https://github.com/koreader/koreader-base.git
+	url = https://github.com/ezdiy/koreader-base
 [submodule "platform/android/luajit-launcher"]
 	path = platform/android/luajit-launcher
 	url = https://github.com/koreader/android-luajit-launcher.git
@@ -13,7 +13,7 @@
 	shallow = true
 [submodule "resources/fonts"]
 	path = resources/fonts
-	url = https://github.com/koreader/koreader-fonts.git
+	url = https://github.com/ezdiy/koreader-fonts
 	shallow = true
 [submodule "l10n"]
 	path = l10n
