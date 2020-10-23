@@ -4,6 +4,7 @@ if not Device.isAndroid() and not Device.isEmulator() then
     return { disabled = true }
 end
 
+local DocSettings = require("docsettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
@@ -24,6 +25,17 @@ function CoverImage:_restore()
     return self.enabled and self.restore
 end
 
+-- check if settings of lastfile prohibits creation of cover image
+function CoverImage:excluded()
+    local lastfile = G_reader_settings:readSetting("lastfile")
+    local exclude_ss = false -- consider it not excluded if there's no docsetting
+    if DocSettings:hasSidecarFile(lastfile) then
+        local doc_settings = DocSettings:open(lastfile)
+        exclude_ss = doc_settings:readSetting("exclude_cover_image")
+    end
+    return exclude_ss or false
+end
+
 function CoverImage:init()
     self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or "Cover.png"
     self.enabled = G_reader_settings:isTrue("cover_image_enabled")
@@ -37,7 +49,7 @@ function CoverImage:onCloseDocument()
     -- Try to restore the state before start of KOReader.
     -- If KOReader gets updated during operation (at least on Android) the backup survives.
     -- Under normal conditions this should not happen.
-    if self.restore then
+    if self.restore and not self.excluded() then
         -- Delete image unconditionally, so if no backup exists, there will be no cover file.
         -- This is useful on Tolino to use the system sleep image after KOReader exit.
         if lfs.attributes(self.cover_image_path) then
@@ -53,7 +65,7 @@ end
 
 function CoverImage:onReaderReady(doc_settings)
    logger.dbg("CoverImage: onReaderReady")
-   if self.enabled and self.ui and self.ui.document then
+   if self.enabled and self.ui and self.ui.document and not self.excluded() then
         local lfs = require("libs/libkoreader-lfs")
         local image = self.ui.document:getCoverPageImage()
         if image then
@@ -146,6 +158,27 @@ function CoverImage:addToMainMenu(menu_items)
                     G_reader_settings:saveSetting("cover_image_restore", self.restore)
                 end,
             },
+            -- menu entry: exclude this cover
+            {
+                text_func = function()
+                    return _("Exclude this cover image")
+                end,
+                checked_func = function()
+                    return self.ui and self.ui.doc_settings and self.ui.doc_settings:readSetting("exclude_cover_image") == true
+                end,
+                callback = function()
+                    if CoverImage:excluded() then
+                        self.ui.doc_settings:saveSetting("exclude_cover_image", false)
+                        self.ui:saveSettings() -- save here, because self:onReaderReady needs it
+                        self:onReaderReady(self.ui.doc_settings)
+                    else
+                        self:onCloseDocument() -- do this before self.ui:saveSettings()
+                        self.ui.doc_settings:saveSetting("exclude_cover_image", true)
+                        self.ui:saveSettings()
+                    end
+                end,
+                added_by_readermenu_flag = true,
+            }
         },
     }
 end
