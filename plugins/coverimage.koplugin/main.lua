@@ -30,8 +30,12 @@ function CoverImage:excluded()
     local lastfile = G_reader_settings:readSetting("lastfile")
     local exclude_ss = false -- consider it not excluded if there's no docsetting
     if DocSettings:hasSidecarFile(lastfile) then
-        local doc_settings = DocSettings:open(lastfile)
-        exclude_ss = doc_settings:readSetting("exclude_cover_image")
+        if self and self.ui then
+            exclude_ss = self.ui.doc_settings:readSetting("exclude_cover_image")
+        else
+            local doc_settings = DocSettings:open(lastfile)
+            exclude_ss = doc_settings:readSetting("exclude_cover_image")
+        end
     end
     return exclude_ss or false
 end
