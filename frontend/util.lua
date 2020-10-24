@@ -594,7 +594,7 @@ function util.findFiles(dir, cb)
                 if f ~= "." and f ~= ".." then
                     scan(path)
                 end
-            else
+            elseif attr.mode == "file" or attr.mode == "link" then
                 cb(path, f, attr)
             end
         end
