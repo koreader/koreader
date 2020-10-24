@@ -117,15 +117,17 @@ local function collectFaceInfo(path)
             return nil
         end
 
-        local fres = face:getInfo()
-        local hbface = HB.hb_ft_face_create_referenced(face)
-        fres.names = hbface:getNames()
-        fres.scripts, fres.langs = hbface:getCoverage()
-        fres.path = path
-        fres.index = i
-        table.insert(res, fres)
-
-        hbface:destroy()
+        -- If family_name is missing, it's probably too broken to be useful
+        if face.family_name ~= nil then
+            local fres = face:getInfo()
+            local hbface = HB.hb_ft_face_create_referenced(face)
+            fres.names = hbface:getNames()
+            fres.scripts, fres.langs = hbface:getCoverage()
+            fres.path = path
+            fres.index = i
+            table.insert(res, fres)
+            hbface:destroy()
+        end
         face:done()
     end
     return res
