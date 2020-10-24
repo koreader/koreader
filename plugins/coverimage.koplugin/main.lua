@@ -25,21 +25,6 @@ function CoverImage:_restore()
     return self.enabled and self.restore
 end
 
--- check if settings of lastfile prohibits creation of cover image
-function CoverImage:excluded()
-    local lastfile = G_reader_settings:readSetting("lastfile")
-    local exclude_ss = false -- consider it not excluded if there's no docsetting
-    if DocSettings:hasSidecarFile(lastfile) then
-        if self and self.ui then
-            exclude_ss = self.ui.doc_settings:readSetting("exclude_cover_image")
-        else
-            local doc_settings = DocSettings:open(lastfile)
-            exclude_ss = doc_settings:readSetting("exclude_cover_image")
-        end
-    end
-    return exclude_ss or false
-end
-
 function CoverImage:init()
     self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or "Cover.png"
     self.enabled = G_reader_settings:isTrue("cover_image_enabled")
@@ -47,35 +32,37 @@ function CoverImage:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
+function CoverImage:cleanUpImage()
+    local lfs = require("libs/libkoreader-lfs")
+    local has_bak = lfs.attributes(self.cover_image_path .. ".bak")
+    -- Delete image if backup exists, the backup could contain a user defined sleep image
+    if lfs.attributes(self.cover_image_path) and has_bak then
+        os.remove(self.cover_image_path)
+    end
+    -- Restore backup if it exists, so we can use the last image.
+    -- On Tolino a user defined /sdcard/suspend_others.jgp can be used as screensaver on system sleep.
+    if has_bak then
+        os.rename(self.cover_image_path .. ".bak", self.cover_image_path)
+    end
+end
+
 function CoverImage:onCloseDocument()
     logger.dbg("CoverImage: onCloseDocument")
-    local lfs = require("libs/libkoreader-lfs")
-    -- Try to restore the state before start of KOReader.
-    -- If KOReader gets updated during operation (at least on Android) the backup survives.
-    -- Under normal conditions this should not happen.
-    if self.restore and not self.excluded() then
-        -- Delete image unconditionally, so if no backup exists, there will be no cover file.
-        -- This is useful on Tolino to use the system sleep image after KOReader exit.
-        if lfs.attributes(self.cover_image_path) then
-            os.remove(self.cover_image_path)
-        end
-        -- Restore backup if it exists, so we can use the last image.
-        -- On Tolino a user defined /sdcard/tolino_others.jgp can be used as screensaver on system sleep.
-        if lfs.attributes(self.cover_image_path ..".bak") then
-            os.rename(self.cover_image_path .. ".bak", self.cover_image_path)
-        end
+    -- Try to restore the state before the opening of a document.
+    if self.restore then
+        self:cleanUpImage()
     end
 end
 
 function CoverImage:onReaderReady(doc_settings)
    logger.dbg("CoverImage: onReaderReady")
-   if self.enabled and self.ui and self.ui.document and not self.excluded() then
+   if self.enabled and not doc_settings:readSetting("exclude_cover_image") then
         local lfs = require("libs/libkoreader-lfs")
         local image = self.ui.document:getCoverPageImage()
         if image then
             -- Do not override an existing backup, as this only exists on a crash or abnormal update of KOReader.
             -- This is very usefull, if an image shall be used as a system screensaver (e.g. on Tolino as /sdcard/suspend_other.jpg)
-            if not lfs.attributes(self.cover_image_path ..".bak") then
+            if not lfs.attributes(self.cover_image_path .. ".bak") then
                 os.rename(self.cover_image_path, self.cover_image_path .. ".bak" )
             end
             image:writePNG(self.cover_image_path, false)
@@ -85,7 +72,6 @@ end
 
 function CoverImage:addToMainMenu(menu_items)
     menu_items.coverimage = {
---        sorting_hint = "device", -- maybe this plugin is better situated in device?
         sorting_hint = "document",
         text_func = function()
             return _("Cover Image")
@@ -146,7 +132,8 @@ function CoverImage:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.enabled = not self.enabled
-                    G_reader_settings:saveSetting("cover_image_restore", self.enabled)
+                    G_reader_settings:saveSetting("cover_image_enabled", self.enabled)
+                    G_reader_settings:flush()
                 end,
             },
             -- menu entry: restore
@@ -160,28 +147,28 @@ function CoverImage:addToMainMenu(menu_items)
                 callback = function()
                     self.restore = not self.restore and self.enabled
                     G_reader_settings:saveSetting("cover_image_restore", self.restore)
+                    G_reader_settings:flush()
                 end,
+                separator = true,
             },
             -- menu entry: exclude this cover
             {
                 text_func = function()
-                    return _("Exclude this cover image")
+                    return _("Exclude cover image of this document")
                 end,
                 checked_func = function()
                     return self.ui and self.ui.doc_settings and self.ui.doc_settings:readSetting("exclude_cover_image") == true
                 end,
                 callback = function()
-                    if CoverImage:excluded() then
+                    if self.ui.doc_settings:readSetting("exclude_cover_image") == true then
                         self.ui.doc_settings:saveSetting("exclude_cover_image", false)
-                        self.ui:saveSettings() -- save here, because self:onReaderReady needs it
                         self:onReaderReady(self.ui.doc_settings)
                     else
-                        self:onCloseDocument() -- do this before self.ui:saveSettings()
                         self.ui.doc_settings:saveSetting("exclude_cover_image", true)
-                        self.ui:saveSettings()
+                        self:cleanUpImage()
                     end
+                    self.ui:saveSettings()
                 end,
-                added_by_readermenu_flag = true,
             }
         },
     }
