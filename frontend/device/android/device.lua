@@ -227,8 +227,9 @@ function Device:init()
         local timeout = G_reader_settings:readSetting("android_screen_timeout")
         if timeout then
             if timeout == C.AKEEP_SCREEN_ON_ENABLED
-            or (timeout > C.AKEEP_SCREEN_ON_DISABLED
-                and android.settings.canWrite()) then
+                or timeout > C.AKEEP_SCREEN_ON_DISABLED
+                and android.settings.hasPermission("settings")
+            then
                 android.timeout.set(timeout)
             end
         end

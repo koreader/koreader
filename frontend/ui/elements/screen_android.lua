@@ -37,7 +37,7 @@ local function canModifyTimeout(timeout)
     if timeout == system or timeout == screenOn then
         return true
     else
-        return android.settings.canWrite()
+        return android.settings.hasPermission("settings")
     end
 end
 
@@ -51,16 +51,12 @@ local function saveAndApplyTimeout(timeout)
 end
 
 local function requestWriteSettings()
-    local UIManager = require("ui/uimanager")
-    local ConfirmBox = require("ui/widget/confirmbox")
-    UIManager:show(ConfirmBox:new{
-        text = _("Allow KOReader to modify system settings?\n\nYou will be prompted with a permission management screen. You'll need to give KOReader permission and then restart the program."),
-        ok_text = _("Allow"),
-        ok_callback = function()
-            UIManager:scheduleIn(1, function() UIManager:quit() end)
-            android.settings.requestWritePermission()
-        end,
-    })
+    local text = _([[
+Allow KOReader to modify system settings?
+
+You will be prompted with a permission management screen. You'll need to give KOReader permission and then restart the program.]])
+
+    android.settings.requestPermission("settings", text, _("Allow"), _("Cancel"))
 end
 
 local ScreenHelper = {}
@@ -172,11 +168,11 @@ function ScreenHelper:getTimeoutMenuTable()
             },
         }
 
-    if not android.settings.canWrite() then
+    if not android.settings.hasPermission("settings") then
         table.insert(t, 1, {
             text = _("Allow system settings override"),
-            enabled_func = function() return not android.settings.canWrite() end,
-            checked_func = function() return android.settings.canWrite() end,
+            enabled_func = function() return not android.settings.hasPermission("settings") end,
+            checked_func = function() return android.settings.hasPermission("settings") end,
             callback = function() requestWriteSettings() end,
             separator = true,
         })
