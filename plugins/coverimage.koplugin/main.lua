@@ -4,7 +4,6 @@ if not Device.isAndroid() and not Device.isEmulator() then
     return { disabled = true }
 end
 
-local DocSettings = require("docsettings")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
@@ -33,23 +32,25 @@ function CoverImage:init()
 end
 
 function CoverImage:cleanUpImage()
-    local lfs = require("libs/libkoreader-lfs")
-    -- Delete image the backup (if it exits) will contain a user defined sleep image
-    if lfs.attributes(self.cover_image_path) then
-        os.remove(self.cover_image_path)
-    end
-    -- On Tolino a user defined /sdcard/suspend_others.jgp can be used as screensaver on system sleep.
-    -- Restore backup if it exists, so we can use it as sleep image
-    -- If no backup exists, there is no file and the native sleep image is used
-    local bak_file_name = self.cover_image_path .. ".bak"
-    if lfs.attributes(bak_file_name) then
-        os.rename(bak_file_name, self.cover_image_path)
+    if not self.ui.doc_settings:readSetting("exclude_cover_image") == true then
+        local lfs = require("libs/libkoreader-lfs")
+        -- Delete image the backup (if it exits) will contain a user defined sleep image
+        if lfs.attributes(self.cover_image_path) then
+            os.remove(self.cover_image_path)
+        end
+        -- On Tolino a user defined /sdcard/suspend_others.jgp can be used as screensaver on system sleep.
+        -- Restore backup if it exists, so we can use it as sleep image
+        -- If no backup exists, there is no file and the native sleep image is used
+        local bak_file_name = self.cover_image_path .. ".bak"
+        if lfs.attributes(bak_file_name) then
+            os.rename(bak_file_name, self.cover_image_path)
+        end
     end
 end
 
 function CoverImage:onCloseDocument()
     logger.dbg("CoverImage: onCloseDocument")
-    -- Try to restore the state before the opening of a document.
+    -- Try to restore the state before opening of a document.
     if self.restore then
         self:cleanUpImage()
     end
@@ -57,7 +58,7 @@ end
 
 function CoverImage:onReaderReady(doc_settings)
    logger.dbg("CoverImage: onReaderReady")
-   if self.enabled and not doc_settings:readSetting("exclude_cover_image") then
+   if self.enabled and not doc_settings:readSetting("exclude_cover_image") == true then
         local lfs = require("libs/libkoreader-lfs")
         local image = self.ui.document:getCoverPageImage()
         if image then
@@ -108,10 +109,13 @@ function CoverImage:addToMainMenu(menu_items)
                                     text = _("Save"),
                                     is_enter_default = true,
                                     callback = function()
-                                        self.cover_image_path = sample_input:getInputText()
-                                        G_reader_settings:saveSetting("cover_image_path", self.cover_image_path)
-                                        self.enabled = true
-                                        G_reader_settings:saveSetting("cover_image_enabled", true)
+                                        local new_cover_image_path = sample_input:getInputText()
+                                        if new_cover_image_path ~= self.cover_image_path then
+                                            self:cleanUpImage() -- with old filename
+                                            self.cover_image_path = new_cover_image_path -- update filename
+                                            G_reader_settings:saveSetting("cover_image_path", self.cover_image_path)
+                                            self:onReaderReady(self.ui.doc_settings) -- with new filename
+                                        end
                                         UIManager:close(sample_input)
                                         menu:updateItems()
                                     end,
@@ -126,7 +130,7 @@ function CoverImage:addToMainMenu(menu_items)
             -- menu entry: enable
             {
                 text_func = function()
-                    return _("Save cover on book opening")
+                    return _("Save book cover")
                 end,
                 checked_func = function()
                     return self:_enabled()
@@ -134,6 +138,14 @@ function CoverImage:addToMainMenu(menu_items)
                 callback = function()
                     self.enabled = not self.enabled
                     G_reader_settings:saveSetting("cover_image_enabled", self.enabled)
+                    if self.enabled then
+                        self.restore = true
+                        self:onReaderReady(self.ui.doc_settings)
+                    else
+                        self.restore = false
+                        self:cleanUpImage()
+                    end
+                    G_reader_settings:saveSetting("cover_image_restore", self.restore)
                 end,
             },
             -- menu entry: restore
@@ -163,8 +175,10 @@ function CoverImage:addToMainMenu(menu_items)
                         self.ui.doc_settings:saveSetting("exclude_cover_image", false)
                         self:onReaderReady(self.ui.doc_settings)
                     else
+                        if self.enabled then
+                            self:cleanUpImage()
+                        end
                         self.ui.doc_settings:saveSetting("exclude_cover_image", true)
-                        self:cleanUpImage()
                     end
                     self.ui:saveSettings()
                 end,
