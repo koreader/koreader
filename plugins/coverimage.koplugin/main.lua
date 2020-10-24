@@ -34,15 +34,16 @@ end
 
 function CoverImage:cleanUpImage()
     local lfs = require("libs/libkoreader-lfs")
-    local has_bak = lfs.attributes(self.cover_image_path .. ".bak")
-    -- Delete image if backup exists, the backup could contain a user defined sleep image
-    if lfs.attributes(self.cover_image_path) and has_bak then
+    -- Delete image the backup (if it exits) will contain a user defined sleep image
+    if lfs.attributes(self.cover_image_path) then
         os.remove(self.cover_image_path)
     end
-    -- Restore backup if it exists, so we can use the last image.
     -- On Tolino a user defined /sdcard/suspend_others.jgp can be used as screensaver on system sleep.
-    if has_bak then
-        os.rename(self.cover_image_path .. ".bak", self.cover_image_path)
+    -- Restore backup if it exists, so we can use it as sleep image
+    -- If no backup exists, there is no file and the native sleep image is used
+    local bak_file_name = self.cover_image_path .. ".bak"
+    if lfs.attributes(bak_file_name) then
+        os.rename(bak_file_name, self.cover_image_path)
     end
 end
 
@@ -133,7 +134,6 @@ function CoverImage:addToMainMenu(menu_items)
                 callback = function()
                     self.enabled = not self.enabled
                     G_reader_settings:saveSetting("cover_image_enabled", self.enabled)
-                    G_reader_settings:flush()
                 end,
             },
             -- menu entry: restore
@@ -147,7 +147,6 @@ function CoverImage:addToMainMenu(menu_items)
                 callback = function()
                     self.restore = not self.restore and self.enabled
                     G_reader_settings:saveSetting("cover_image_restore", self.restore)
-                    G_reader_settings:flush()
                 end,
                 separator = true,
             },
