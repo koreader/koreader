@@ -47,6 +47,7 @@ local order = {
         "autoshutdown",
         "ignore_sleepcover",
         "ignore_open_sleepcover",
+        "ignore_battery_optimizations",
         "mass_storage_settings", -- if Device:canToggleMassStorage()
         "file_ext_assoc",
         "screenshot",
