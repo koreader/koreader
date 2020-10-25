@@ -799,7 +799,7 @@ end
 Get word and word box around `pos`.
 --]]
 function KoptInterface:getWordFromBoxes(boxes, pos)
-    if not pos or #boxes == 0 then return {} end
+    if not pos or not boxes or #boxes == 0 then return {} end
     local i, j = getWordBoxIndices(boxes, pos)
     local lb = boxes[i]
     local wb = boxes[i][j]
