@@ -87,6 +87,9 @@ function CoverImage:addToMainMenu(menu_items)
                 text_func = function()
                     return self.cover_image_path and _("Set system screensaver image")
                 end,
+                checked_func = function()
+                    return self.cover_image_path ~= ""
+                end,
                 keep_menu_open = true,
                 callback = function(menu)
                     local InputDialog = require("ui/widget/inputdialog")
@@ -176,6 +179,9 @@ function CoverImage:addToMainMenu(menu_items)
             {
                 text_func = function()
                     return self.cover_image_path and _("Set fallback image when no cover or excl. book")
+                end,
+                checked_func = function()
+                    return self.cover_image_fallback_path ~= ""
                 end,
                 keep_menu_open = true,
                 callback = function(menu)
