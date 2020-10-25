@@ -434,14 +434,14 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
             table.remove(self._window_stack, i)
             dirty = true
         else
-            -- If anything else on the stack not already hidden by a fullscreen widget was dithered, honor the hint
+            -- If anything else on the stack not already hidden by (i.e., below) a fullscreen widget was dithered, honor the hint
             if self._window_stack[i].widget.dithered and not is_covered then
                 refreshdither = true
                 logger.dbg("Lower widget", self._window_stack[i].widget.name or self._window_stack[i].widget.id or tostring(self._window_stack[i].widget), "was dithered, honoring the dithering hint")
             end
 
-            -- If something covers the full screen, remember it, so we don't bother calling setDirty on hidden widgets in the following dirty loop.
-            -- _repaint already does that to skip the actual paintTo calls, so this ensures we limit the refresh queue to stuff that will actually get painted.
+            -- Remember the uppermost widget that covers the full screen, so we don't bother calling setDirty on hidden (i.e., lower) widgets in the following dirty loop.
+            -- _repaint already does that later on to skip the actual paintTo calls, so this ensures we limit the refresh queue to stuff that will actually get painted.
             if not is_covered and self._window_stack[i].widget.covers_fullscreen then
                 is_covered = true
                 start_idx = i
