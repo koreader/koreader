@@ -425,7 +425,7 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     -- make it disabled by default and check if any widget wants it disabled or enabled
     Input.disable_double_tap = true
     local requested_disable_double_tap = nil
-    local something_covers_fullscreen = false
+    local is_covered = false
     local start_idx = 1
     -- then remove all references to that widget on stack and refresh
     for i = #self._window_stack, 1, -1 do
@@ -435,15 +435,15 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
             dirty = true
         else
             -- If anything else on the stack not already hidden by a fullscreen widget was dithered, honor the hint
-            if self._window_stack[i].widget.dithered and not something_covers_fullscreen then
+            if self._window_stack[i].widget.dithered and not is_covered then
                 refreshdither = true
                 logger.dbg("Lower widget", self._window_stack[i].widget.name or self._window_stack[i].widget.id or tostring(self._window_stack[i].widget), "was dithered, honoring the dithering hint")
             end
 
             -- If something covers the full screen, remember it, so we don't bother calling setDirty on hidden widgets in the following dirty loop.
             -- _repaint already does that to skip the actual paintTo calls, so this ensures we limit the refresh queue to stuff that will actually get painted.
-            if not something_covers_fullscreen and self._window_stack[i].widget.covers_fullscreen then
-                something_covers_fullscreen = true
+            if not is_covered and self._window_stack[i].widget.covers_fullscreen then
+                is_covered = true
                 start_idx = i
                 logger.dbg("Lower widget", self._window_stack[i].widget.name or self._window_stack[i].widget.id or tostring(self._window_stack[i].widget), "covers the full screen")
                 if i > 1 then
@@ -461,7 +461,7 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
         Input.disable_double_tap = requested_disable_double_tap
     end
     if dirty and not widget.invisible then
-        -- schedule visible remaining widgets to be painted
+        -- schedule the remaining visible (i.e., uncovered) widgets to be painted
         for i = start_idx, #self._window_stack do
             self:setDirty(self._window_stack[i].widget)
         end
