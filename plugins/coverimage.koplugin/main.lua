@@ -25,6 +25,14 @@ function CoverImage:_fallback()
     return self.fallback
 end
 
+function CoverImage:dubiousFallbackImage()
+    UIManager:show(InfoMessage:new{
+        text = T(_("\"%1\" \nis not a valid image file!\nPlease correct fallback image in Cover-Image"), self.cover_image_fallback_path),
+        show_icon = true,
+        timeout = 10,
+    })
+end
+
 function CoverImage:init()
     self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or "Cover.png"
     self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or "Cover_fallback.png"
@@ -37,11 +45,7 @@ function CoverImage:cleanUpImage()
     if self.cover_image_fallback_path == "" or not self.fallback then
         os.remove(self.cover_image_path)
     elseif lfs.attributes(self.cover_image_fallback_path, "mode") ~= "file" then
-        UIManager:show(InfoMessage:new{
-            text = T(_("\"%1\" \nis not a valid image file!\nPlease correct fallback image in Cover-Image"), self.cover_image_fallback_path),
-            show_icon = true,
-            timeout = 10,
-        })
+        self:dubiousFallbackImage()
         os.remove(self.cover_image_path)
     else
         os.execute("cp " ..self.cover_image_fallback_path .. " " .. self.cover_image_path)
@@ -85,11 +89,12 @@ function CoverImage:addToMainMenu(menu_items)
             -- menu entry: filename dialog
             {
                 text_func = function()
-                    return self.cover_image_path and _("Set system screensaver image")
+                    return _("Set system screensaver image")
                 end,
                 checked_func = function()
                     return self.cover_image_path ~= ""
                 end,
+                help_text = _("This is the filename, where the cover of the actual book is stored to."),
                 keep_menu_open = true,
                 callback = function(menu)
                     local InputDialog = require("ui/widget/inputdialog")
@@ -143,6 +148,9 @@ function CoverImage:addToMainMenu(menu_items)
                 checked_func = function()
                     return self:_enabled()
                 end,
+                enabled_func = function()
+                    return self.cover_image_path ~= ""
+                end,
                 callback = function()
                     if self.cover_image_path ~= "" then
                         self.enabled = not self.enabled
@@ -178,11 +186,12 @@ function CoverImage:addToMainMenu(menu_items)
             -- menu entry: set fallback image
             {
                 text_func = function()
-                    return self.cover_image_path and _("Set fallback image when no cover or excl. book")
+                    return _("Set fallback image when no cover or excl. book")
                 end,
                 checked_func = function()
-                    return self.cover_image_fallback_path ~= ""
+                    return lfs.attributes(self.cover_image_fallback_path, "mode") == "file"
                 end,
+                help_text =  _("File to use as cover image, when no cover is wanted or book is excluded.\nLeave it blank to use nothing."),
                 keep_menu_open = true,
                 callback = function(menu)
                     local InputDialog = require("ui/widget/inputdialog")
@@ -207,6 +216,9 @@ function CoverImage:addToMainMenu(menu_items)
                                     callback = function()
                                         self.cover_image_fallback_path = sample_input:getInputText()
                                         G_reader_settings:saveSetting("cover_image_fallback_path", self.cover_image_fallback_path)
+                                        if lfs.attributes(self.cover_image_fallback_path, "mode") ~= "file" then
+                                            self:dubiousFallbackImage()
+                                        end
                                         UIManager:close(sample_input)
                                         menu:updateItems()
                                     end,
