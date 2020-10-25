@@ -21,37 +21,37 @@ function CoverImage:_enabled()
     return self.enabled
 end
 
-function CoverImage:_restore()
-    return self.restore
+function CoverImage:_fallback()
+    return self.fallback
 end
 
 function CoverImage:init()
     self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or "Cover.png"
-    self.cover_restore_image_path = G_reader_settings:readSetting("cover_restore_image_path") or "Cover_restore.png"
+    self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or "Cover_fallback.png"
     self.enabled = G_reader_settings:isTrue("cover_image_enabled")
-    self.restore = G_reader_settings:isTrue("cover_image_restore")
+    self.fallback = G_reader_settings:isTrue("cover_image_fallback")
     self.ui.menu:registerToMainMenu(self)
 end
 
 function CoverImage:cleanUpImage()
-    if self.cover_restore_image_path == "" then
+    if self.cover_image_fallback_path == "" then
         os.remove(self.cover_image_path)
-    elseif lfs.attributes(self.cover_restore_image_path, "mode") ~= "file" then
+    elseif lfs.attributes(self.cover_image_fallback_path, "mode") ~= "file" then
         logger.dbg("xxxxxxxxxxxxxxxxxx")
         UIManager:show(InfoMessage:new{
-            text = T(_("\"%1\" \nis not a valid image file!\nPlease correct it in Cover Image."), self.cover_restore_image_path),
+            text = T(_("\"%1\" \nis not a valid image file!\nPlease correct fallback image in Cover-Image"), self.cover_image_fallback_path),
             show_icon = true,
             timeout = 10,
         })
         os.remove(self.cover_image_path)
     else
-        os.execute("cp " ..self.cover_restore_image_path .. " " .. self.cover_image_path)
+        os.execute("cp " ..self.cover_image_fallback_path .. " " .. self.cover_image_path)
     end
 end
 
 function CoverImage:onCloseDocument()
     logger.dbg("CoverImage: onCloseDocument")
-    if self.restore then
+    if self.fallback then
         self:cleanUpImage()
     end
 end
@@ -86,15 +86,14 @@ function CoverImage:addToMainMenu(menu_items)
             -- menu entry: filename dialog
             {
                 text_func = function()
-                    return self.cover_image_path and T(_("Cover Image: %1"), self.cover_image_path)
-                        or _("Cover Image: none")
+                    return self.cover_image_path and _("Set system screensaver image")
                 end,
                 keep_menu_open = true,
                 callback = function(menu)
                     local InputDialog = require("ui/widget/inputdialog")
                     local sample_input
                     sample_input = InputDialog:new{
-                        title = _("Filename for Cover-Image"),
+                        title = _("Set system screensaver image path"),
                         input = self.cover_image_path,
                         input_type = "string",
                         description = _("You can enter the filename of the cover image here."),
@@ -137,7 +136,7 @@ function CoverImage:addToMainMenu(menu_items)
             -- menu entry: enable
             {
                 text_func = function()
-                    return _("Save book cover")
+                    return _("Save current book cover as screensaver image")
                 end,
                 checked_func = function()
                     return self:_enabled()
@@ -157,7 +156,7 @@ function CoverImage:addToMainMenu(menu_items)
             -- menu entry: exclude this cover
             {
                 text_func = function()
-                    return _("Exclude cover image of this document")
+                    return _("Exclude this book cover")
                 end,
                 checked_func = function()
                     return self.ui and self.ui.doc_settings and self.ui.doc_settings:readSetting("exclude_cover_image") == true
@@ -174,21 +173,20 @@ function CoverImage:addToMainMenu(menu_items)
                 end,
                 separator = true,
             },
-            -- menu entry: filename dialog
+            -- menu entry: set fallback image
             {
                 text_func = function()
-                    return self.cover_image_path and T(_("Restore image from: %1"), self.cover_restore_image_path)
-                        or _("Restore image from system")
+                    return self.cover_image_path and _("Set fallback image when no cover")
                 end,
                 keep_menu_open = true,
                 callback = function(menu)
                     local InputDialog = require("ui/widget/inputdialog")
                     local sample_input
                     sample_input = InputDialog:new{
-                        title = _("Filename of restore image"),
-                        input = self.cover_restore_image_path,
+                        title = _("Filename of fallback image"),
+                        input = self.cover_image_fallback_path,
                         input_type = "string",
-                        description = _("You can enter the filename of the restore image here.\n" ..
+                        description = _("You can enter the filename of the fallback image here.\n" ..
                             "Leave it empty to clean up on close"),
                         buttons = {
                             {
@@ -202,8 +200,8 @@ function CoverImage:addToMainMenu(menu_items)
                                     text = _("Save"),
                                     is_enter_default = true,
                                     callback = function()
-                                        self.cover_restore_image_path = sample_input:getInputText()
-                                        G_reader_settings:saveSetting("cover_restore_image_path", self.cover_restore_image_path)
+                                        self.cover_image_fallback_path = sample_input:getInputText()
+                                        G_reader_settings:saveSetting("cover_image_fallback_path", self.cover_image_fallback_path)
                                         UIManager:close(sample_input)
                                         menu:updateItems()
                                     end,
@@ -215,17 +213,17 @@ function CoverImage:addToMainMenu(menu_items)
                     sample_input:onShowKeyboard()
                 end
             },
-            -- menu entry: restore
+            -- menu entry: fallback
             {
                 text_func = function()
-                    return _("Restore image on book closing")
+                    return _("Use fallback image when leaving book")
                 end,
                 checked_func = function()
-                    return self:_restore()
+                    return self:_fallback()
                 end,
                 callback = function()
-                    self.restore = not self.restore
-                    G_reader_settings:saveSetting("cover_image_restore", self.restore)
+                    self.fallback = not self.fallback
+                    G_reader_settings:saveSetting("cover_image_fallback", self.fallback)
                 end,
                 separator = true,
             },
