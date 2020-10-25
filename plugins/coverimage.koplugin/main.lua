@@ -34,10 +34,9 @@ function CoverImage:init()
 end
 
 function CoverImage:cleanUpImage()
-    if self.cover_image_fallback_path == "" then
+    if self.cover_image_fallback_path == "" or not self.fallback then
         os.remove(self.cover_image_path)
     elseif lfs.attributes(self.cover_image_fallback_path, "mode") ~= "file" then
-        logger.dbg("xxxxxxxxxxxxxxxxxx")
         UIManager:show(InfoMessage:new{
             text = T(_("\"%1\" \nis not a valid image file!\nPlease correct fallback image in Cover-Image"), self.cover_image_fallback_path),
             show_icon = true,
@@ -80,7 +79,7 @@ function CoverImage:addToMainMenu(menu_items)
             return _("Cover Image")
         end,
         checked_func = function()
-            return self:_enabled()
+            return self.enabled or self.fallback
         end,
         sub_item_table = {
             -- menu entry: filename dialog
@@ -176,7 +175,7 @@ function CoverImage:addToMainMenu(menu_items)
             -- menu entry: set fallback image
             {
                 text_func = function()
-                    return self.cover_image_path and _("Set fallback image when no cover")
+                    return self.cover_image_path and _("Set fallback image when no cover or excl. book")
                 end,
                 keep_menu_open = true,
                 callback = function(menu)
@@ -187,7 +186,7 @@ function CoverImage:addToMainMenu(menu_items)
                         input = self.cover_image_fallback_path,
                         input_type = "string",
                         description = _("You can enter the filename of the fallback image here.\n" ..
-                            "Leave it empty to clean up on close"),
+                            "Leave it empty to clean up on close."),
                         buttons = {
                             {
                                 {
@@ -224,6 +223,8 @@ function CoverImage:addToMainMenu(menu_items)
                 callback = function()
                     self.fallback = not self.fallback
                     G_reader_settings:saveSetting("cover_image_fallback", self.fallback)
+                    self:cleanUpImage()
+                    self:onReaderReady(self.ui.doc_settings)
                 end,
                 separator = true,
             },
