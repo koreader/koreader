@@ -46,7 +46,6 @@ local Geom = require("ui/geometry")
 local TimeVal = require("ui/timeval")
 local logger = require("logger")
 local util = require("util")
-local dump = require("dump")
 
 -- default values (all the time parameters are in microseconds)
 local TAP_INTERVAL = 0 * 1000
@@ -249,7 +248,6 @@ Warning! this method won't update self.state, you need to do it
 in each state method!
 --]]
 function GestureDetector:switchState(state_new, tev, param)
-    print("GestureDetector:switchState", state_new, dump(tev), param)
     --- @todo Do we need to check whether state is valid?    (houqp)
     return self[state_new](self, tev, param)
 end
@@ -302,7 +300,6 @@ function GestureDetector:clearStates()
 end
 
 function GestureDetector:initialState(tev)
-    print("GestureDetector:initialState", dump(tev))
     local slot = tev.slot
     if tev.id then
         -- an event ends
@@ -378,7 +375,6 @@ function GestureDetector:tapState(tev)
 end
 
 function GestureDetector:handleDoubleTap(tev)
-    print("GestureDetector:handleDoubleTap", dump(tev))
     local slot = tev.slot
     local ges_ev = {
         -- default to single tap
@@ -458,7 +454,6 @@ function GestureDetector:handleDoubleTap(tev)
 end
 
 function GestureDetector:handleNonTap(tev)
-    print("GestureDetector:handleNonTap", dump(tev))
     local slot = tev.slot
     if self.states[slot] ~= self.tapState then
         -- switched from other state, probably from initialState
@@ -548,7 +543,6 @@ function GestureDetector:panState(tev)
 end
 
 function GestureDetector:handleSwipe(tev)
-    print("GestureDetector:handleSwipe", dump(tev))
     local slot = tev.slot
     local swipe_direction, swipe_distance = self:getPath(slot)
     local start_pos = Geom:new{
@@ -592,7 +586,6 @@ function GestureDetector:handleSwipe(tev)
 end
 
 function GestureDetector:handlePan(tev)
-    print("GestureDetector:handlePan", dump(tev))
     local slot = tev.slot
     if self.detectings[0] and self.detectings[1] then
         return self:handleTwoFingerPan(tev)
@@ -694,7 +687,6 @@ function GestureDetector:handlePan(tev)
 end
 
 function GestureDetector:handleTwoFingerPan(tev)
-    print("GestureDetector:handleTwoFingerPan", dump(tev))
     -- triggering slot
     local tslot = tev.slot
     -- reference slot
@@ -755,7 +747,6 @@ function GestureDetector:handleTwoFingerPan(tev)
 end
 
 function GestureDetector:handlePanRelease(tev)
-    print("GestureDetector:handlePanRelease", dump(tev))
     local slot = tev.slot
     local release_pos = Geom:new{
         x = self.last_tevs[slot].x,
