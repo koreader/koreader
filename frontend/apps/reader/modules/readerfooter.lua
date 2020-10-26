@@ -675,18 +675,11 @@ function ReaderFooter:getHeight(before_paint)
     print("self.footer_text.height:", self.footer_text.height)
     print("self.footer_text:getSize().h:", self.footer_text:getSize().h)
     print("self.text_container:getSize().h:", self.text_container:getSize().h)
+    print("return", self.footer_content:getSize().h)
     if self.footer_content then
-        if self.view.footer_visible then
-            -- NOTE: self.footer_content is self.vertical_frame + self.bottom_padding
-            print("Visible:", self.footer_content:getSize().h)
-            print("Visible:", self.vertical_frame:getSize().h, "+", self.bottom_padding)
-            return self.footer_content:getSize().h
-        else
-            -- When going invisible, the text is no longer visible, so the content's frame's height is off by text_contianer's height
-            print("Invisible:", self.footer_content:getSize().h, "+", self.height)
-            print("Invisible:", self.vertical_frame:getSize().h, "+", self.bottom_padding)
-            return self.footer_content:getSize().h + self.text_container:getSize().h
-        end
+        -- NOTE: self.footer_content is self.vertical_frame + self.bottom_padding,
+        --       self.vertical_frame includes self.text_container (which includes self.footer_text)
+        return self.footer_content:getSize().h
     else
         return 0
     end
