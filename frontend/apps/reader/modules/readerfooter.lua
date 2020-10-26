@@ -672,7 +672,7 @@ function ReaderFooter:resetLayout(force_reset)
     self._saved_screen_height = new_screen_height
 end
 
-function ReaderFooter:getHeight(before_paint)
+function ReaderFooter:getHeight()
     if self.footer_content then
         -- NOTE: self.footer_content is self.vertical_frame + self.bottom_padding,
         --       self.vertical_frame includes self.text_container (which includes self.footer_text)
