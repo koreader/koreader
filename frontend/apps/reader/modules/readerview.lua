@@ -810,7 +810,9 @@ function ReaderView:onReaderFooterVisibilityChange()
     -- NOTE: recalculate is a wee bit too much: it'll reset the in-page offsets, so, simply mangle visible_area's height ourselves...
     --       The downside is that things are a wee bit wonky until the next recalculate (i.e., the next page).
     --       But I'm not really sure how to handle that without losing the offsets...
+    print("self.visible_area.y:", self.visible_area.y)
     print("self.visible_area.h:", self.visible_area.h)
+    print("self.state.offset.y:", self.state.offset.y)
     if not self.ui.view.footer.settings.reclaim_height then
         if self.ui.view.footer_visible then
             print("Visible")
@@ -821,6 +823,7 @@ function ReaderView:onReaderFooterVisibilityChange()
         end
     end
     print("->", self.visible_area.h)
+    self.ui:handleEvent(Event:new("ViewRecalculate", self.visible_area, self.page_area))
 end
 
 function ReaderView:onGammaUpdate(gamma)
