@@ -461,6 +461,7 @@ function ReaderFooter:init()
     }
     -- all width related values will be initialized in self:resetLayout()
     self.text_width = 0
+    self.footer_text.height = 0
     self.progress_bar = ProgressWidget:new{
         width = nil,
         height = nil,
@@ -491,8 +492,10 @@ function ReaderFooter:init()
         self.view.footer_visible = (self.mode ~= self.mode_list.off)
         self:updateFooterTextGenerator()
         if self.settings.progress_bar_position and self.has_no_mode then
-            self.footer_container.dimen.h = 0
             self.footer_text.height = 0
+            if self.settings.disable_progress_bar then
+                self.footer_container.dimen.h = 0
+            end
         end
     else
         self:applyFooterMode()
@@ -500,6 +503,8 @@ function ReaderFooter:init()
     if self.settings.auto_refresh_time then
         self:setupAutoRefreshTime()
     end
+
+    self.visibility_change = nil
 end
 
 function ReaderFooter:updateFooterContainer()
@@ -664,14 +669,23 @@ function ReaderFooter:resetLayout(force_reset)
     self._saved_screen_height = new_screen_height
 end
 
-function ReaderFooter:getHeight()
+function ReaderFooter:getHeight(before_paint)
+    print("ReaderFooter:getHeight")
+    print("self.height:", self.height)
+    print("self.footer_text.height:", self.footer_text.height)
+    print("self.footer_text:getSize().h:", self.footer_text:getSize().h)
+    print("self.text_container:getSize().h:", self.text_container:getSize().h)
     if self.footer_content then
         if self.view.footer_visible then
             -- NOTE: self.footer_content is self.vertical_frame + self.bottom_padding
+            print("Visible:", self.footer_content:getSize().h)
+            print("Visible:", self.vertical_frame:getSize().h, "+", self.bottom_padding)
             return self.footer_content:getSize().h
         else
-            -- When going invisible, the text is no longer visible, so the content's frame's height is off by self.height
-            return self.footer_content:getSize().h + self.height
+            -- When going invisible, the text is no longer visible, so the content's frame's height is off by text_contianer's height
+            print("Invisible:", self.footer_content:getSize().h, "+", self.height)
+            print("Invisible:", self.vertical_frame:getSize().h, "+", self.bottom_padding)
+            return self.footer_content:getSize().h + self.text_container:getSize().h
         end
     else
         return 0
@@ -811,7 +825,9 @@ function ReaderFooter:addToMainMenu(menu_items)
                 self.reclaim_height = self.settings.reclaim_height or false
                 -- refresh margins position
                 if self.has_no_mode then
-                    self.footer_container.dimen.h = 0
+                    if self.settings.disable_progress_bar then
+                        self.footer_container.dimen.h = 0
+                    end
                     self.footer_text.height = 0
                     should_signal = true
                     self.genFooterText = footerTextGeneratorMap.empty
@@ -1770,6 +1786,8 @@ end
 function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
     -- footer is invisible, we need neither a repaint nor a recompute, go away.
     if not self.view.footer_visible and not force_repaint and not force_recompute then
+        self.text_width = 0
+        self.footer_text.height = 0
         return
     end
     local text = self:genFooterText()
@@ -1783,22 +1801,26 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             self.footer_text.height = 0
         else
             self.text_width = self.footer_text:getSize().w
+            self.footer_text.height = self.footer_text:getSize().h
         end
         self.progress_bar.width = 0
     elseif self.settings.progress_bar_position then
-        if text == "" then
-            self.footer_container.dimen.h = 0
+        if self.has_no_mode or text == "" then
+            self.text_width = 0
             self.footer_text.height = 0
         end
         self.progress_bar.width = math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width)
         self.text_width = self.footer_text:getSize().w
+        self.footer_text.height = self.footer_text:getSize().h
     else
         if self.has_no_mode or text == "" then
             self.text_width = 0
+            self.footer_text.height = 0
         else
             local text_max_available_ratio = (100 - self.settings.progress_bar_min_width_pct) / 100
             self.footer_text:setMaxWidth(math.floor(text_max_available_ratio * self._saved_screen_width - 2 * self.settings.progress_margin_width))
             self.text_width = self.footer_text:getSize().w + self.text_left_margin
+            self.footer_text.height = self.footer_text:getSize().h
         end
         self.progress_bar.width = math.floor(
             self._saved_screen_width - self.text_width - self.settings.progress_margin_width*2)
@@ -1821,6 +1843,12 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
     -- NOTE: That's assuming using "fast" for pans was a good idea, which, it turned out, not so much ;).
     -- NOTE: We skip repaints on page turns/pos update, as that's redundant (and slow).
     if force_repaint then
+        -- If there was a visibility change, notify ReaderView
+        if self.visibility_change then
+            self.ui:handleEvent(Event:new("ReaderFooterVisibilityChange", percentage))
+            self.visibility_change = nil
+        end
+
         -- NOTE: Getting the dimensions of the widget is impossible without having drawn it first,
         --       so, we'll fudge it if need be...
         --       i.e., when it's no longer visible, because there's nothing to draw ;).
@@ -1949,7 +1977,7 @@ function ReaderFooter:applyFooterMode(mode)
         -- NOTE: _updateFooterText does a resetLayout, but not a forced one!
         self:resetLayout(true)
         -- Notify ReaderView to recalculate the visible_area!
-        self.ui:handleEvent(Event:new("ReaderFooterVisibilityChange", percentage))
+        self.visibility_change = true
     end
 end
 
