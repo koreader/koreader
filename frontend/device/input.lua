@@ -12,6 +12,7 @@ local framebuffer = require("ffi/framebuffer")
 local input = require("ffi/input")
 local logger = require("logger")
 local _ = require("gettext")
+local dump = require("dump")
 
 -- luacheck: push
 -- luacheck: ignore
@@ -545,11 +546,18 @@ function Input:handleTouchEvPhoenix(ev)
     --            input_mt_sync (elan_touch_data.input);
     if ev.type == EV_ABS then
         if #self.MTSlots == 0 then
+            print("Insert self.cur_slot in MTSlots")
             table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
         end
         if ev.code == ABS_MT_TRACKING_ID then
+            print("self.cur_slot", self.cur_slot)
+            print("self.ev_slots", dump(self.ev_slots))
+            print("addSlotIfChanged", ev.value)
             self:addSlotIfChanged(ev.value)
             self:setCurrentMtSlot("id", ev.value)
+            print("self.cur_slot", self.cur_slot)
+            print("self.MTSlots", dump(self.MTSlots))
+            print("self.ev_slots", dump(self.ev_slots))
         elseif ev.code == ABS_MT_TOUCH_MAJOR and ev.value == 0 then
             self:setCurrentMtSlot("id", -1)
         elseif ev.code == ABS_MT_POSITION_X then
@@ -559,7 +567,9 @@ function Input:handleTouchEvPhoenix(ev)
         end
     elseif ev.type == EV_SYN then
         if ev.code == SYN_REPORT then
+            print("report self.MTSlots", dump(self.MTSlots))
             for _, MTSlot in pairs(self.MTSlots) do
+                print("report slot", dump(MTSlot))
                 self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
             end
             -- feed ev in all slots to state machine
@@ -744,6 +754,7 @@ end
 
 function Input:addSlotIfChanged(value)
     if self.cur_slot ~= value then
+        print("Adding slot", value)
         table.insert(self.MTSlots, self:getMtSlot(value))
     end
     self.cur_slot = value

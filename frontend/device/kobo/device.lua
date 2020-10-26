@@ -91,6 +91,8 @@ local KoboDahlia = Kobo:new{
     hasFrontlight = yes,
     hasMultitouch = no,
     touch_phoenix_protocol = true,
+    -- There's no slot 0, the first fingers gets assigned slot 1, and the second slot 2
+    main_finger_slot = 1,
     display_dpi = 265,
     -- the bezel covers the top 11 pixels:
     viewport = Geom:new{x=0, y=11, w=1080, h=1429},
@@ -309,6 +311,16 @@ function Kobo:init()
         }
     }
     self.wakeup_mgr = WakeupMgr:new()
+
+    -- Tweak initial slot, if necessary
+    if self.main_finger_slot then
+        self.input.cur_slot = self.main_finger_slot
+        self.input.ev_slots = {
+            [self.main_finger_slot] = {
+                slot = self.main_finger_slot,
+            }
+        }
+    end
 
     Generic.init(self)
 
