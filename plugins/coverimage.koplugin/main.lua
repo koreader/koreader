@@ -90,18 +90,14 @@ function CoverImage:addToMainMenu(menu_items)
     menu_items.coverimage = {
 --        sorting_hint = "document",
         sorting_hint = "screen",
-        text_func = function()
-            return _("Cover Image")
-        end,
+        text = _("Cover Image"),
         checked_func = function()
             return self.enabled or self.fallback
         end,
         sub_item_table = {
             -- menu entry: about cover image
             {
-                text_func = function()
-                    return _("About cover image")
-                end,
+                text = _("About cover image"),
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
@@ -112,9 +108,7 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: filename dialog
             {
-                text_func = function()
-                    return _("Set system screensaver image")
-                end,
+                text = _("Set system screensaver image"),
                 checked_func = function()
                     return self.cover_image_path ~= ""
                 end,
@@ -166,9 +160,7 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: enable
             {
-                text_func = function()
-                    return _("Save current book cover as screensaver image")
-                end,
+                text = _("Save current book cover as screensaver image"),
                 checked_func = function()
                     return self:_enabled()
                 end,
@@ -189,9 +181,7 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: exclude this cover
             {
-                text_func = function()
-                    return _("Exclude this book cover")
-                end,
+                text = _("Exclude this book cover"),
                 checked_func = function()
                     return self.ui and self.ui.doc_settings and self.ui.doc_settings:readSetting("exclude_cover_image") == true
                 end,
@@ -209,9 +199,7 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: set fallback image
             {
-                text_func = function()
-                    return _("Set fallback image when no cover or excl. book")
-                end,
+                text = _("Set fallback image when no cover or excl. book"),
                 checked_func = function()
                     return lfs.attributes(self.cover_image_fallback_path, "mode") == "file"
                 end,
@@ -252,13 +240,11 @@ function CoverImage:addToMainMenu(menu_items)
                     }
                     UIManager:show(sample_input)
                     sample_input:onShowKeyboard()
-                end
+                end,
             },
             -- menu entry: fallback
             {
-                text_func = function()
-                    return _("Use fallback image when leaving book")
-                end,
+                text = _("Use fallback image when leaving book"),
                 checked_func = function()
                     return self:_fallback()
                 end,
