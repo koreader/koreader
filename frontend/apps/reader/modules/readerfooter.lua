@@ -665,8 +665,14 @@ function ReaderFooter:resetLayout(force_reset)
 end
 
 function ReaderFooter:getHeight()
+    print("ReaderFooter:getHeight", self.footer_content:getSize().h, self.vertical_frame:getSize().h, self.bottom_padding)
     if self.footer_content then
-        return self.footer_content:getSize().h
+        if self.view.footer_visible then
+            return self.vertical_frame:getSize().h + self.bottom_padding
+        else
+            -- When going invisible, the text is no longer visible, so the frame's height is off by self.height
+            return self.vertical_frame:getSize().h + self.height + self.bottom_padding
+        end
     else
         return 0
     end
@@ -1830,6 +1836,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
                 refresh_dim.h = self.vertical_frame:getSize().h + self.height + self.bottom_padding
             end
             refresh_dim.y = self._saved_screen_height - refresh_dim.h
+            print("_updateFooterText ->", self:getHeight())
         end
         -- If we're making the footer visible (or it already is), we don't need to repaint ReaderUI behind it
         if self.view.footer_visible then
