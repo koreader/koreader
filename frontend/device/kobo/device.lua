@@ -92,7 +92,7 @@ local KoboDahlia = Kobo:new{
     -- NOTE: The hardware can technically track 2 different fingers, but we don't seem to be able to figure it out...
     hasMultitouch = no,
     touch_phoenix_protocol = true,
-    -- There's no slot 0, the first fingers gets assigned slot 1, and the second slot 2
+    -- There's no slot 0, the first finger gets assigned slot 1, and the second slot 2
     main_finger_slot = 1,
     display_dpi = 265,
     -- the bezel covers the top 11 pixels:
