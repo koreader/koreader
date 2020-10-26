@@ -793,7 +793,7 @@ end
 
 function ReaderView:onReaderFooterVisibilityChange()
     -- NOTE: Simply relying on recalculate would be a wee bit too much: it'd reset the in-page offsets,
-    --       which isn't necessary, since the footer is at the bottom of the screen ;).
+    --       which would be wrong, and is also not necessary, since the footer is at the bottom of the screen ;).
     --       So, simply mangle visible_area's height ourselves...
     if not self.ui.view.footer.settings.reclaim_height then
         -- NOTE: Yes, this means that toggling reclaim_height requires a page switch (for a proper recalculate).
