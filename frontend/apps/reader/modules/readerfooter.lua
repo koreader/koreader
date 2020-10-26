@@ -673,12 +673,6 @@ function ReaderFooter:resetLayout(force_reset)
 end
 
 function ReaderFooter:getHeight(before_paint)
-    print("ReaderFooter:getHeight")
-    print("self.height:", self.height)
-    print("self.footer_text.height:", self.footer_text.height)
-    print("self.footer_text:getSize().h:", self.footer_text:getSize().h)
-    print("self.text_container:getSize().h:", self.text_container:getSize().h)
-    print("return", self.footer_content:getSize().h)
     if self.footer_content then
         -- NOTE: self.footer_content is self.vertical_frame + self.bottom_padding,
         --       self.vertical_frame includes self.text_container (which includes self.footer_text)
@@ -1972,7 +1966,7 @@ function ReaderFooter:applyFooterMode(mode)
         self:updateFooterContainer()
         -- NOTE: _updateFooterText does a resetLayout, but not a forced one!
         self:resetLayout(true)
-        -- Notify ReaderView to recalculate the visible_area!
+        -- Flag _updateFooterText to notify ReaderView to recalculate the visible_area!
         self.visibility_change = true
     end
 end

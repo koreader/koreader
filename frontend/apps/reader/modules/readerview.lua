@@ -300,7 +300,6 @@ function ReaderView:drawPageBackground(bb, x, y)
 end
 
 function ReaderView:drawPageSurround(bb, x, y)
-    print("ReaderView:drawPageSurround", self.dimen.h, self.visible_area.h, self.ui.view.footer:getHeight())
     if self.dimen.h > self.visible_area.h then
         bb:paintRect(x, y, self.dimen.w, self.state.offset.y, self.outer_page_color)
         local bottom_margin = y + self.visible_area.h + self.state.offset.y
@@ -559,7 +558,6 @@ end
 This method is supposed to be only used by ReaderPaging
 --]]
 function ReaderView:recalculate()
-    print("ReaderView:recalculate")
     -- Start by resetting the dithering flag early, so it doesn't carry over from the previous page.
     self.dialog.dithered = nil
 
@@ -570,12 +568,9 @@ function ReaderView:recalculate()
             self.state.rotation)
         -- reset our size
         self.visible_area:setSizeTo(self.dimen)
-        print("ReaderView:recalculate", self.visible_area.h, self.ui.view.footer:getHeight())
         if self.ui.view.footer_visible and not self.ui.view.footer.settings.reclaim_height then
-            print("Do not draw under footer")
             self.visible_area.h = self.visible_area.h - self.ui.view.footer:getHeight()
         end
-        print("ReaderView:recalculate ->", self.visible_area.h)
         if self.ui.document.configurable.writing_direction == 0 then
             -- starts from left top of page_area
             self.visible_area.x = self.page_area.x
@@ -600,14 +595,11 @@ function ReaderView:recalculate()
     self.state.offset = Geom:new{x = 0, y = 0}
     if self.dimen.h > self.visible_area.h then
         if self.ui.view.footer_visible and not self.ui.view.footer.settings.reclaim_height then
-            print("Do not draw under footer")
             self.state.offset.y = (self.dimen.h - (self.visible_area.h + self.ui.view.footer:getHeight())) / 2
         else
-            print("Draw under footer")
             self.state.offset.y = (self.dimen.h - self.visible_area.h) / 2
         end
     end
-    print("ReaderView:recalculate:", self.state.offset.y)
     if self.dimen.w > self.visible_area.w then
         self.state.offset.x = (self.dimen.w - self.visible_area.w) / 2
     end
@@ -800,24 +792,18 @@ function ReaderView:onRotationUpdate(rotation)
 end
 
 function ReaderView:onReaderFooterVisibilityChange()
-    print("ReaderView:onReaderFooterVisibilityChange")
-
     -- NOTE: Simply relying on recalculate would be a wee bit too much: it'd reset the in-page offsets,
     --       which isn't necessary, since the footer is at the bottom of the screen ;).
     --       So, simply mangle visible_area's height ourselves...
-    print("self.visible_area.y:", self.visible_area.y)
-    print("self.visible_area.h:", self.visible_area.h)
-    print("self.state.offset.y:", self.state.offset.y)
     if not self.ui.view.footer.settings.reclaim_height then
+        -- NOTE: Yes, this means that toggling reclaim_height requires a page switch (for a proper recalculate).
+        --       Thankfully, most of the time, the quirks are barely noticeable ;).
         if self.ui.view.footer_visible then
-            print("Visible")
             self.visible_area.h = self.visible_area.h - self.ui.view.footer:getHeight()
         else
-            print("Invisible")
             self.visible_area.h = self.visible_area.h + self.ui.view.footer:getHeight()
         end
     end
-    print("->", self.visible_area.h)
     self.ui:handleEvent(Event:new("ViewRecalculate", self.visible_area, self.page_area))
 end
 
