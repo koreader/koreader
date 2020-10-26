@@ -2221,19 +2221,23 @@ function ReaderStatistics:onCloseDocument()
 end
 
 function ReaderStatistics:onAddHighlight()
-    self.data.highlights = self.data.highlights + 1
-    return true
+    if self.is_enabled then
+        self.data.highlights = self.data.highlights + 1
+    end
 end
 
 function ReaderStatistics:onDelHighlight()
-    if self.data.highlights > 0 then
-        self.data.highlights = self.data.highlights - 1
+    if self.is_enabled then
+        if self.data.highlights > 0 then
+            self.data.highlights = self.data.highlights - 1
+        end
     end
-    return true
 end
 
 function ReaderStatistics:onAddNote()
-    self.data.notes = self.data.notes + 1
+    if self.is_enabled then
+        self.data.notes = self.data.notes + 1
+    end
 end
 
 -- Triggered by auto_save_settings_interval_minutes
