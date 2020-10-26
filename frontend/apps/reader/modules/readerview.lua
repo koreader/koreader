@@ -572,6 +572,7 @@ function ReaderView:recalculate(skip_repaint)
         self.visible_area:setSizeTo(self.dimen)
         print("ReaderView:recalculate", self.visible_area.h, self.ui.view.footer:getHeight())
         if self.ui.view.footer_visible and not self.ui.view.footer.settings.reclaim_height then
+            print("Do not draw under footer")
             self.visible_area.h = self.visible_area.h - self.ui.view.footer:getHeight()
         end
         print("ReaderView:recalculate ->", self.visible_area.h)
@@ -599,8 +600,10 @@ function ReaderView:recalculate(skip_repaint)
     self.state.offset = Geom:new{x = 0, y = 0}
     if self.dimen.h > self.visible_area.h then
         if self.ui.view.footer_visible and not self.ui.view.footer.settings.reclaim_height then
+            print("Do not draw under footer")
             self.state.offset.y = (self.dimen.h - (self.visible_area.h + self.ui.view.footer:getHeight())) / 2
         else
+            print("Draw under footer")
             self.state.offset.y = (self.dimen.h - self.visible_area.h) / 2
         end
     end
@@ -802,7 +805,22 @@ end
 function ReaderView:onReaderFooterVisibilityChange()
     print("ReaderView:onReaderFooterVisibilityChange")
     -- NOTE: We'll skip the setDirty call in this case, because ReaderFooter already takes care of repainting ReaderUI as-needed.
-    self:recalculate(true)
+    --self:recalculate(true)
+
+    -- NOTE: recalculate is a wee bit too much: it'll reset the in-page offsets, so, simply mangle visible_area's height ourselves...
+    --       The downside is that things are a wee bit wonky until the next recalculate (i.e., the next page).
+    --       But I'm not really sure how to handle that without losing the offsets...
+    print("self.visible_area.h:", self.visible_area.h)
+    if not self.ui.view.footer.settings.reclaim_height then
+        if self.ui.view.footer_visible then
+            print("Visible")
+            self.visible_area.h = self.visible_area.h - self.ui.view.footer:getHeight()
+        else
+            print("Invisible")
+            self.visible_area.h = self.visible_area.h + self.ui.view.footer:getHeight()
+        end
+    end
+    print("->", self.visible_area.h)
 end
 
 function ReaderView:onGammaUpdate(gamma)
