@@ -571,7 +571,7 @@ function ReaderView:recalculate(skip_repaint)
         -- reset our size
         self.visible_area:setSizeTo(self.dimen)
         print("ReaderView:recalculate", self.visible_area.h, self.ui.view.footer:getHeight())
-        if self.ui.view.footer_visible then
+        if self.ui.view.footer_visible and not self.ui.view.footer.settings.reclaim_height then
             self.visible_area.h = self.visible_area.h - self.ui.view.footer:getHeight()
         end
         print("ReaderView:recalculate ->", self.visible_area.h)
@@ -598,7 +598,7 @@ function ReaderView:recalculate(skip_repaint)
     end
     self.state.offset = Geom:new{x = 0, y = 0}
     if self.dimen.h > self.visible_area.h then
-        if self.ui.view.footer_visible then
+        if self.ui.view.footer_visible and not self.ui.view.footer.settings.reclaim_height then
             self.state.offset.y = (self.dimen.h - (self.visible_area.h + self.ui.view.footer:getHeight())) / 2
         else
             self.state.offset.y = (self.dimen.h - self.visible_area.h) / 2

@@ -263,7 +263,7 @@ function ReaderZooming:getZoom(pageno)
     -- calculate zoom value:
     local zoom_w = self.dimen.w
     local zoom_h = self.dimen.h
-    if self.ui.view.footer_visible then
+    if self.ui.view.footer_visible and not self.ui.view.footer.settings.reclaim_height then
         zoom_h = zoom_h - self.ui.view.footer:getHeight()
     end
     if self.rotation % 180 == 0 then
