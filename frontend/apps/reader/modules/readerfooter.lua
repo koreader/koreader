@@ -1817,9 +1817,10 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
     if force_repaint then
         -- NOTE: Getting the dimensions of the widget is impossible without having drawn it first,
         --       so, we'll fudge it if need be...
+        --       i.e., when it's no longer visible, because there's nothing to draw ;).
         local refresh_dim = self.footer_content.dimen
-        -- No content yet...
-        if not refresh_dim then
+        -- No more content...
+        if not self.view.footer_visible and not refresh_dim then
             -- So, instead, compute self.footer_content's height ourselves: i.e., self.vertical_frame + self.bottom_padding...
             refresh_dim = self.dimen
             if self.view.footer_visible then
@@ -1835,11 +1836,13 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             -- Unfortunately, it's not a modal (we never show() it), so it's not in the window stack,
             -- instead, it's baked inside ReaderUI, so it gets slightly trickier...
             -- NOTE: self.view.footer -> self ;).
-            UIManager:setDirty(self.view.footer, function()
-                return "ui", refresh_dim
-            end)
+
             -- c.f., ReaderView:paintTo()
             UIManager:widgetRepaint(self.view.footer, 0, 0)
+            -- We've painted it first to ensure self.footer_content.dimen is sane
+            UIManager:setDirty(self.view.footer, function()
+                return "ui", self.footer_content.dimen
+            end)
         else
             UIManager:setDirty(self.view.dialog, function()
                 return "ui", refresh_dim
