@@ -792,19 +792,22 @@ function ReaderView:onRotationUpdate(rotation)
 end
 
 function ReaderView:onReaderFooterVisibilityChange()
-    -- NOTE: Simply relying on recalculate would be a wee bit too much: it'd reset the in-page offsets,
-    --       which would be wrong, and is also not necessary, since the footer is at the bottom of the screen ;).
-    --       So, simply mangle visible_area's height ourselves...
-    if not self.ui.view.footer.settings.reclaim_height then
-        -- NOTE: Yes, this means that toggling reclaim_height requires a page switch (for a proper recalculate).
-        --       Thankfully, most of the time, the quirks are barely noticeable ;).
-        if self.ui.view.footer_visible then
-            self.visible_area.h = self.visible_area.h - self.ui.view.footer:getHeight()
-        else
-            self.visible_area.h = self.visible_area.h + self.ui.view.footer:getHeight()
+    -- Don't bother ReaderRolling with this nonsense, the footer's height is NOT handled via visible_area there ;)
+    if self.ui.document.info.has_pages and self.state.page then
+        -- NOTE: Simply relying on recalculate would be a wee bit too much: it'd reset the in-page offsets,
+        --       which would be wrong, and is also not necessary, since the footer is at the bottom of the screen ;).
+        --       So, simply mangle visible_area's height ourselves...
+        if not self.ui.view.footer.settings.reclaim_height then
+            -- NOTE: Yes, this means that toggling reclaim_height requires a page switch (for a proper recalculate).
+            --       Thankfully, most of the time, the quirks are barely noticeable ;).
+            if self.ui.view.footer_visible then
+                self.visible_area.h = self.visible_area.h - self.ui.view.footer:getHeight()
+            else
+                self.visible_area.h = self.visible_area.h + self.ui.view.footer:getHeight()
+            end
         end
+        self.ui:handleEvent(Event:new("ViewRecalculate", self.visible_area, self.page_area))
     end
-    self.ui:handleEvent(Event:new("ViewRecalculate", self.visible_area, self.page_area))
 end
 
 function ReaderView:onGammaUpdate(gamma)
