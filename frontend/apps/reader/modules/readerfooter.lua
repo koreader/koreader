@@ -1948,6 +1948,8 @@ function ReaderFooter:applyFooterMode(mode)
         self:updateFooterContainer()
         -- NOTE: _updateFooterText does a resetLayout, but not a forced one!
         self:resetLayout(true)
+        -- Notify ReaderView to recalculate the visible_area!
+        self.ui:handleEvent(Event:new("ReaderFooterVisibilityChange", percentage))
     end
 end
 

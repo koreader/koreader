@@ -300,6 +300,7 @@ function ReaderView:drawPageBackground(bb, x, y)
 end
 
 function ReaderView:drawPageSurround(bb, x, y)
+    print("ReaderView:drawPageSurround", self.dimen.h, self.visible_area.h, self.ui.view.footer:getHeight())
     if self.dimen.h > self.visible_area.h then
         bb:paintRect(x, y, self.dimen.w, self.state.offset.y, self.outer_page_color)
         local bottom_margin = y + self.visible_area.h + self.state.offset.y
@@ -557,7 +558,8 @@ end
 --[[
 This method is supposed to be only used by ReaderPaging
 --]]
-function ReaderView:recalculate()
+function ReaderView:recalculate(skip_repaint)
+    print("ReaderView:recalculate")
     -- Start by resetting the dithering flag early, so it doesn't carry over from the previous page.
     self.dialog.dithered = nil
 
@@ -568,9 +570,11 @@ function ReaderView:recalculate()
             self.state.rotation)
         -- reset our size
         self.visible_area:setSizeTo(self.dimen)
+        print("ReaderView:recalculate", self.visible_area.h, self.ui.view.footer:getHeight())
         if self.ui.view.footer_visible then
             self.visible_area.h = self.visible_area.h - self.ui.view.footer:getHeight()
         end
+        print("ReaderView:recalculate ->", self.visible_area.h)
         if self.ui.document.configurable.writing_direction == 0 then
             -- starts from left top of page_area
             self.visible_area.x = self.page_area.x
@@ -600,12 +604,16 @@ function ReaderView:recalculate()
             self.state.offset.y = (self.dimen.h - self.visible_area.h) / 2
         end
     end
+    print("ReaderView:recalculate:", self.state.offset.y)
     if self.dimen.w > self.visible_area.w then
         self.state.offset.x = (self.dimen.w - self.visible_area.w) / 2
     end
+    -- If necessary (i.e., basically always except when triggered via onReaderFooterVisibilityChange),
     -- flag a repaint so self:paintTo will be called
     -- NOTE: This is also unfortunately called during panning, essentially making sure we'll never be using "fast" for pans ;).
-    UIManager:setDirty(self.dialog, "partial")
+    if not skip_repaint then
+        UIManager:setDirty(self.dialog, "partial")
+    end
 end
 
 function ReaderView:PanningUpdate(dx, dy)
@@ -789,6 +797,12 @@ end
 function ReaderView:onRotationUpdate(rotation)
     self.state.rotation = rotation
     self:recalculate()
+end
+
+function ReaderView:onReaderFooterVisibilityChange()
+    print("ReaderView:onReaderFooterVisibilityChange")
+    -- NOTE: We'll skip the setDirty call in this case, because ReaderFooter already takes care of repainting ReaderUI as-needed.
+    self:recalculate(true)
 end
 
 function ReaderView:onGammaUpdate(gamma)
