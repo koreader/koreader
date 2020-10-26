@@ -586,11 +586,9 @@ function ReaderFooter:setupAutoRefreshTime()
         self.autoRefreshTime = function()
             -- Only actually repaint the footer if nothing's being shown over ReaderUI (#6616)
             if UIManager:getTopWidget() == "ReaderUI" then
+                -- And that only if it's actually visible
                 if self.view.footer_visible then
                     self:onUpdateFooter(true)
-                else
-                    -- Just keep it up to date, don't refresh
-                    self:onUpdateFooter()
                 end
             else
                 logger.dbg("Skipping ReaderFooter repaint, because ReaderUI is not the top-level widget")
