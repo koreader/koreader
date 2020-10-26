@@ -558,7 +558,7 @@ end
 --[[
 This method is supposed to be only used by ReaderPaging
 --]]
-function ReaderView:recalculate(skip_repaint)
+function ReaderView:recalculate()
     print("ReaderView:recalculate")
     -- Start by resetting the dithering flag early, so it doesn't carry over from the previous page.
     self.dialog.dithered = nil
@@ -611,12 +611,9 @@ function ReaderView:recalculate(skip_repaint)
     if self.dimen.w > self.visible_area.w then
         self.state.offset.x = (self.dimen.w - self.visible_area.w) / 2
     end
-    -- If necessary (i.e., basically always except when triggered via onReaderFooterVisibilityChange),
-    -- flag a repaint so self:paintTo will be called
+    -- Flag a repaint so self:paintTo will be called
     -- NOTE: This is also unfortunately called during panning, essentially making sure we'll never be using "fast" for pans ;).
-    if not skip_repaint then
-        UIManager:setDirty(self.dialog, "partial")
-    end
+    UIManager:setDirty(self.dialog, "partial")
 end
 
 function ReaderView:PanningUpdate(dx, dy)
@@ -804,12 +801,10 @@ end
 
 function ReaderView:onReaderFooterVisibilityChange()
     print("ReaderView:onReaderFooterVisibilityChange")
-    -- NOTE: We'll skip the setDirty call in this case, because ReaderFooter already takes care of repainting ReaderUI as-needed.
-    --self:recalculate(true)
 
-    -- NOTE: recalculate is a wee bit too much: it'll reset the in-page offsets, so, simply mangle visible_area's height ourselves...
-    --       The downside is that things are a wee bit wonky until the next recalculate (i.e., the next page).
-    --       But I'm not really sure how to handle that without losing the offsets...
+    -- NOTE: Simply relying on recalculate would be a wee bit too much: it'd reset the in-page offsets,
+    --       which isn't necessary, since the footer is at the bottom of the screen ;).
+    --       So, simply mangle visible_area's height ourselves...
     print("self.visible_area.y:", self.visible_area.y)
     print("self.visible_area.h:", self.visible_area.h)
     print("self.state.offset.y:", self.state.offset.y)
