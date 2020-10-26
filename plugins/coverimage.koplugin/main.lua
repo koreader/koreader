@@ -76,9 +76,20 @@ function CoverImage:showWrongPath( path )
     })
 end
 
+local about_text = _([[
+This plugin saves the current book cover to a file, so it can be used as a screensaver, if your android version and firmware supports it (e.g: Tolinos).
+
+If enabled the cover image of the actual file is stored to the selected screensaver file. Certain books can be excluded.
+
+If fallback is activated, the fallback file will be copied to the screensaver file on book closing. If the filename is empty or the file does not exist the system screensaver is used.
+
+If fallback is not activated the screensaver image remains on closing a book.
+    ]])
+
 function CoverImage:addToMainMenu(menu_items)
     menu_items.coverimage = {
-        sorting_hint = "document",
+--        sorting_hint = "document",
+        sorting_hint = "screen",
         text_func = function()
             return _("Cover Image")
         end,
@@ -86,6 +97,19 @@ function CoverImage:addToMainMenu(menu_items)
             return self.enabled or self.fallback
         end,
         sub_item_table = {
+            -- menu entry: about cover image
+            {
+                text_func = function()
+                    return _("About cover image")
+                end,
+                keep_menu_open = true,
+                callback = function()
+                    UIManager:show(InfoMessage:new{
+                        text = about_text,
+                    })
+                end,
+                separator = true,
+            },
             -- menu entry: filename dialog
             {
                 text_func = function()
@@ -138,7 +162,7 @@ function CoverImage:addToMainMenu(menu_items)
                     }
                     UIManager:show(sample_input)
                     sample_input:onShowKeyboard()
-                end
+                end,
             },
             -- menu entry: enable
             {
@@ -161,7 +185,7 @@ function CoverImage:addToMainMenu(menu_items)
                             self:cleanUpImage()
                         end
                     end
-                end
+                end,
             },
             -- menu entry: exclude this cover
             {
