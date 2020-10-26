@@ -1776,8 +1776,6 @@ end
 function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
     -- footer is invisible, we need neither a repaint nor a recompute, go away.
     if not self.view.footer_visible and not force_repaint and not force_recompute then
-        self.text_width = 0
-        self.footer_text.height = 0
         return
     end
     local text = self:genFooterText()
