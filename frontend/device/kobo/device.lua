@@ -89,6 +89,7 @@ local KoboDaylight = Kobo:new{
 local KoboDahlia = Kobo:new{
     model = "Kobo_dahlia",
     hasFrontlight = yes,
+    -- NOTE: The hardware can technically track 2 different fingers, but we don't seem to be able to figure it out...
     hasMultitouch = no,
     touch_phoenix_protocol = true,
     -- There's no slot 0, the first fingers gets assigned slot 1, and the second slot 2
