@@ -665,13 +665,13 @@ function ReaderFooter:resetLayout(force_reset)
 end
 
 function ReaderFooter:getHeight()
-    print("ReaderFooter:getHeight", self.footer_content:getSize().h, self.vertical_frame:getSize().h, self.bottom_padding)
     if self.footer_content then
         if self.view.footer_visible then
-            return self.vertical_frame:getSize().h + self.bottom_padding
+            -- NOTE: self.footer_content is self.vertical_frame + self.bottom_padding
+            return self.footer_content:getSize().h
         else
-            -- When going invisible, the text is no longer visible, so the frame's height is off by self.height
-            return self.vertical_frame:getSize().h + self.height + self.bottom_padding
+            -- When going invisible, the text is no longer visible, so the content's frame's height is off by self.height
+            return self.footer_content:getSize().h + self.height
         end
     else
         return 0
@@ -1827,16 +1827,10 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
         local refresh_dim = self.footer_content.dimen
         -- No more content...
         if not self.view.footer_visible and not refresh_dim then
-            -- So, instead, compute self.footer_content's height ourselves: i.e., self.vertical_frame + self.bottom_padding...
+            -- So, instead, rely on self:getHeight to compute self.footer_content's height early...
             refresh_dim = self.dimen
-            if self.view.footer_visible then
-                refresh_dim.h = self.vertical_frame:getSize().h + self.bottom_padding
-            else
-                -- When going invisible, the text is no longer visible, so the frame's height is off by self.height
-                refresh_dim.h = self.vertical_frame:getSize().h + self.height + self.bottom_padding
-            end
+            refresh_dim.h = self:getHeight()
             refresh_dim.y = self._saved_screen_height - refresh_dim.h
-            print("_updateFooterText ->", self:getHeight())
         end
         -- If we're making the footer visible (or it already is), we don't need to repaint ReaderUI behind it
         if self.view.footer_visible then
