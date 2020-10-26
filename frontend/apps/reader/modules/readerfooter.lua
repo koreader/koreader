@@ -1796,10 +1796,11 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
         if self.has_no_mode or text == "" then
             self.text_width = 0
             self.footer_text.height = 0
+        else
+            self.text_width = self.footer_text:getSize().w
+            self.footer_text.height = self.footer_text:getSize().h
         end
         self.progress_bar.width = math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width)
-        self.text_width = self.footer_text:getSize().w
-        self.footer_text.height = self.footer_text:getSize().h
     else
         if self.has_no_mode or text == "" then
             self.text_width = 0
