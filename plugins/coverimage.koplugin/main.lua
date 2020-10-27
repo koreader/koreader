@@ -269,8 +269,8 @@ function CoverImage:addToMainMenu(menu_items)
                 callback = function()
                     self.fallback = not self.fallback
                     G_reader_settings:saveSetting("cover_image_fallback", self.fallback)
-                    self:cleanUpImage()
-                    self:onReaderReady(self.ui.doc_settings)
+--                    self:cleanUpImage()
+--                    self:onReaderReady(self.ui.doc_settings)
                 end,
                 separator = true,
             },
