@@ -9,6 +9,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -16,6 +17,14 @@ local CoverImage = WidgetContainer:new{
     name = 'coverimage',
     is_doc_only = true,
 }
+
+function CoverImage:init()
+    self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or "Cover.png"
+    self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or "Cover_fallback.png"
+    self.enabled = G_reader_settings:isTrue("cover_image_enabled")
+    self.fallback = G_reader_settings:isTrue("cover_image_fallback")
+    self.ui.menu:registerToMainMenu(self)
+end
 
 function CoverImage:_enabled()
     return self.enabled
@@ -33,12 +42,11 @@ function CoverImage:dubiousFallbackImage()
     })
 end
 
-function CoverImage:init()
-    self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or "Cover.png"
-    self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or "Cover_fallback.png"
-    self.enabled = G_reader_settings:isTrue("cover_image_enabled")
-    self.fallback = G_reader_settings:isTrue("cover_image_fallback")
-    self.ui.menu:registerToMainMenu(self)
+function CoverImage:showWrongPath( path )
+    UIManager:show(InfoMessage:new{
+        text = T(_("Path of \"%1\" is not accessible.\nPlease correct it."), path),
+        show_icon = true,
+    })
 end
 
 function CoverImage:cleanUpImage()
@@ -69,22 +77,33 @@ function CoverImage:onReaderReady(doc_settings)
     end
 end
 
-function CoverImage:showWrongPath( path )
-    UIManager:show(InfoMessage:new{
-        text = T(_("Path \"%1\" is not accessible."), path),
-        show_icon = true,
-    })
-end
-
 local about_text = _([[
 This plugin saves the current book cover to a file, so it can be used as a screensaver, if your android version and firmware supports it (e.g: Tolinos).
 
 If enabled the cover image of the actual file is stored to the selected screensaver file. Certain books can be excluded.
 
-If fallback is activated, the fallback file will be copied to the screensaver file on book closing. If the filename is empty or the file does not exist the system screensaver is used.
+If fallback is activated, the fallback file will be copied to the screensaver file on book closing.
+If the filename is empty or the file does not exist, the cover file will be deleted and system screensaver is used.
 
-If fallback is not activated the screensaver image remains on closing a book.
-    ]])
+If fallback is not activated the screensaver image remains after closing a book.]])
+
+local function isValidPath(name)
+    local path, _ = util.splitFilePathName(name)
+    if Device.isValidPath then -- on Android
+        if Device.isValidPath(name) then
+            return true
+        else -- test if name is a symlink to Sandbox
+            path = path:gsub("/$", "") -- lua does not like trailing slash
+            if lfs.symlinkattributes(path, "mode") == "link" then
+                return Device.isValidPath(lfs.symlinkattributes(path, "target"))
+            else
+                return false
+            end
+        end
+    else -- on emulator
+        return util.pathExists(path) -- pathExists wants trailing slash
+    end
+end
 
 function CoverImage:addToMainMenu(menu_items)
     menu_items.coverimage = {
@@ -110,7 +129,7 @@ function CoverImage:addToMainMenu(menu_items)
             {
                 text = _("Set system screensaver image"),
                 checked_func = function()
-                    return self.cover_image_path ~= ""
+                    return self.cover_image_path ~= "" and isValidPath(self.cover_image_path)
                 end,
                 help_text = _("This is the filename, where the cover of the actual book is stored to."),
                 keep_menu_open = true,
@@ -139,8 +158,7 @@ function CoverImage:addToMainMenu(menu_items)
                                             self:cleanUpImage() -- with old filename
                                             self.cover_image_path = new_cover_image_path -- update filename
                                             G_reader_settings:saveSetting("cover_image_path", self.cover_image_path)
-                                            if self.cover_image_path ~= "" or Device.isValidPath
-                                                and not Device.isValidPath(self.cover_image_path) then
+                                            if self.cover_image_path ~= "" and isValidPath(self.cover_image_path) then
                                                 self:onReaderReady(self.ui.doc_settings) -- with new filename
                                             else
                                                 self.enabled = false
@@ -162,10 +180,10 @@ function CoverImage:addToMainMenu(menu_items)
             {
                 text = _("Save current book cover as screensaver image"),
                 checked_func = function()
-                    return self:_enabled()
+                    return self:_enabled() and isValidPath(self.cover_image_path)
                 end,
                 enabled_func = function()
-                    return self.cover_image_path ~= ""
+                    return self.cover_image_path ~= "" and isValidPath(self.cover_image_path)
                 end,
                 callback = function()
                     if self.cover_image_path ~= "" then
