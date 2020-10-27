@@ -568,7 +568,7 @@ function ReaderView:recalculate()
             self.state.rotation)
         -- reset our size
         self.visible_area:setSizeTo(self.dimen)
-        if self.ui.view.footer_visible then
+        if self.ui.view.footer_visible and not self.ui.view.footer.settings.reclaim_height then
             self.visible_area.h = self.visible_area.h - self.ui.view.footer:getHeight()
         end
         if self.ui.document.configurable.writing_direction == 0 then
@@ -594,7 +594,7 @@ function ReaderView:recalculate()
     end
     self.state.offset = Geom:new{x = 0, y = 0}
     if self.dimen.h > self.visible_area.h then
-        if self.ui.view.footer_visible then
+        if self.ui.view.footer_visible and not self.ui.view.footer.settings.reclaim_height then
             self.state.offset.y = (self.dimen.h - (self.visible_area.h + self.ui.view.footer:getHeight())) / 2
         else
             self.state.offset.y = (self.dimen.h - self.visible_area.h) / 2
@@ -603,7 +603,7 @@ function ReaderView:recalculate()
     if self.dimen.w > self.visible_area.w then
         self.state.offset.x = (self.dimen.w - self.visible_area.w) / 2
     end
-    -- flag a repaint so self:paintTo will be called
+    -- Flag a repaint so self:paintTo will be called
     -- NOTE: This is also unfortunately called during panning, essentially making sure we'll never be using "fast" for pans ;).
     UIManager:setDirty(self.dialog, "partial")
 end
@@ -789,6 +789,25 @@ end
 function ReaderView:onRotationUpdate(rotation)
     self.state.rotation = rotation
     self:recalculate()
+end
+
+function ReaderView:onReaderFooterVisibilityChange()
+    -- Don't bother ReaderRolling with this nonsense, the footer's height is NOT handled via visible_area there ;)
+    if self.ui.document.info.has_pages and self.state.page then
+        -- NOTE: Simply relying on recalculate would be a wee bit too much: it'd reset the in-page offsets,
+        --       which would be wrong, and is also not necessary, since the footer is at the bottom of the screen ;).
+        --       So, simply mangle visible_area's height ourselves...
+        if not self.ui.view.footer.settings.reclaim_height then
+            -- NOTE: Yes, this means that toggling reclaim_height requires a page switch (for a proper recalculate).
+            --       Thankfully, most of the time, the quirks are barely noticeable ;).
+            if self.ui.view.footer_visible then
+                self.visible_area.h = self.visible_area.h - self.ui.view.footer:getHeight()
+            else
+                self.visible_area.h = self.visible_area.h + self.ui.view.footer:getHeight()
+            end
+        end
+        self.ui:handleEvent(Event:new("ViewRecalculate", self.visible_area, self.page_area))
+    end
 end
 
 function ReaderView:onGammaUpdate(gamma)

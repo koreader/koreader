@@ -693,7 +693,7 @@ end
 function ReaderRolling:onGotoViewRel(diff)
     logger.dbg("goto relative screen:", diff, ", in mode: ", self.view.view_mode)
     if self.view.view_mode == "scroll" then
-        local footer_height = (self.view.footer_visible and 1 or 0) * self.view.footer:getHeight()
+        local footer_height = ((self.view.footer_visible and not self.view.footer.settings.reclaim_height) and 1 or 0) * self.view.footer:getHeight()
         local page_visible_height = self.ui.dimen.h - footer_height
         local pan_diff = diff * page_visible_height
         if self.show_overlap_enable then
@@ -869,7 +869,7 @@ function ReaderRolling:_gotoPos(new_pos, do_dim_area)
     if new_pos > max_pos then new_pos = max_pos end
     -- adjust dim_area according to new_pos
     if self.view.view_mode ~= "page" and self.show_overlap_enable and do_dim_area then
-        local footer_height = (self.view.footer_visible and 1 or 0) * self.view.footer:getHeight()
+        local footer_height = ((self.view.footer_visible and not self.view.footer.settings.reclaim_height) and 1 or 0) * self.view.footer:getHeight()
         local page_visible_height = self.ui.dimen.h - footer_height
         local panned_step = new_pos - self.current_pos
         self.view.dim_area.x = 0

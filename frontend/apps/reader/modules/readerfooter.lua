@@ -461,6 +461,7 @@ function ReaderFooter:init()
     }
     -- all width related values will be initialized in self:resetLayout()
     self.text_width = 0
+    self.footer_text.height = 0
     self.progress_bar = ProgressWidget:new{
         width = nil,
         height = nil,
@@ -491,8 +492,10 @@ function ReaderFooter:init()
         self.view.footer_visible = (self.mode ~= self.mode_list.off)
         self:updateFooterTextGenerator()
         if self.settings.progress_bar_position and self.has_no_mode then
-            self.footer_container.dimen.h = 0
             self.footer_text.height = 0
+            if self.settings.disable_progress_bar then
+                self.footer_container.dimen.h = 0
+            end
         end
     else
         self:applyFooterMode()
@@ -500,6 +503,8 @@ function ReaderFooter:init()
     if self.settings.auto_refresh_time then
         self:setupAutoRefreshTime()
     end
+
+    self.visibility_change = nil
 end
 
 function ReaderFooter:updateFooterContainer()
@@ -581,7 +586,10 @@ function ReaderFooter:setupAutoRefreshTime()
         self.autoRefreshTime = function()
             -- Only actually repaint the footer if nothing's being shown over ReaderUI (#6616)
             if UIManager:getTopWidget() == "ReaderUI" then
-                self:onUpdateFooter(true)
+                -- And that only if it's actually visible
+                if self.view.footer_visible then
+                    self:onUpdateFooter(true)
+                end
             else
                 logger.dbg("Skipping ReaderFooter repaint, because ReaderUI is not the top-level widget")
                 -- NOTE: We *do* keep its content up-to-date, though
@@ -666,6 +674,8 @@ end
 
 function ReaderFooter:getHeight()
     if self.footer_content then
+        -- NOTE: self.footer_content is self.vertical_frame + self.bottom_padding,
+        --       self.vertical_frame includes self.text_container (which includes self.footer_text)
         return self.footer_content:getSize().h
     else
         return 0
@@ -805,7 +815,9 @@ function ReaderFooter:addToMainMenu(menu_items)
                 self.reclaim_height = self.settings.reclaim_height or false
                 -- refresh margins position
                 if self.has_no_mode then
-                    self.footer_container.dimen.h = 0
+                    if self.settings.disable_progress_bar then
+                        self.footer_container.dimen.h = 0
+                    end
                     self.footer_text.height = 0
                     should_signal = true
                     self.genFooterText = footerTextGeneratorMap.empty
@@ -1777,22 +1789,27 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             self.footer_text.height = 0
         else
             self.text_width = self.footer_text:getSize().w
+            self.footer_text.height = self.footer_text:getSize().h
         end
         self.progress_bar.width = 0
     elseif self.settings.progress_bar_position then
-        if text == "" then
-            self.footer_container.dimen.h = 0
+        if self.has_no_mode or text == "" then
+            self.text_width = 0
             self.footer_text.height = 0
+        else
+            self.text_width = self.footer_text:getSize().w
+            self.footer_text.height = self.footer_text:getSize().h
         end
         self.progress_bar.width = math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width)
-        self.text_width = self.footer_text:getSize().w
     else
         if self.has_no_mode or text == "" then
             self.text_width = 0
+            self.footer_text.height = 0
         else
             local text_max_available_ratio = (100 - self.settings.progress_bar_min_width_pct) / 100
             self.footer_text:setMaxWidth(math.floor(text_max_available_ratio * self._saved_screen_width - 2 * self.settings.progress_margin_width))
             self.text_width = self.footer_text:getSize().w + self.text_left_margin
+            self.footer_text.height = self.footer_text:getSize().h
         end
         self.progress_bar.width = math.floor(
             self._saved_screen_width - self.text_width - self.settings.progress_margin_width*2)
@@ -1815,19 +1832,21 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
     -- NOTE: That's assuming using "fast" for pans was a good idea, which, it turned out, not so much ;).
     -- NOTE: We skip repaints on page turns/pos update, as that's redundant (and slow).
     if force_repaint then
+        -- If there was a visibility change, notify ReaderView
+        if self.visibility_change then
+            self.ui:handleEvent(Event:new("ReaderFooterVisibilityChange"))
+            self.visibility_change = nil
+        end
+
         -- NOTE: Getting the dimensions of the widget is impossible without having drawn it first,
         --       so, we'll fudge it if need be...
+        --       i.e., when it's no longer visible, because there's nothing to draw ;).
         local refresh_dim = self.footer_content.dimen
-        -- No content yet...
-        if not refresh_dim then
-            -- So, instead, compute self.footer_content's height ourselves: i.e., self.vertical_frame + self.bottom_padding...
+        -- No more content...
+        if not self.view.footer_visible and not refresh_dim then
+            -- So, instead, rely on self:getHeight to compute self.footer_content's height early...
             refresh_dim = self.dimen
-            if self.view.footer_visible then
-                refresh_dim.h = self.vertical_frame:getSize().h + self.bottom_padding
-            else
-                -- When going invisible, the text is no longer visible, so the frame's height is off by self.height
-                refresh_dim.h = self.vertical_frame:getSize().h + self.height + self.bottom_padding
-            end
+            refresh_dim.h = self:getHeight()
             refresh_dim.y = self._saved_screen_height - refresh_dim.h
         end
         -- If we're making the footer visible (or it already is), we don't need to repaint ReaderUI behind it
@@ -1835,11 +1854,13 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             -- Unfortunately, it's not a modal (we never show() it), so it's not in the window stack,
             -- instead, it's baked inside ReaderUI, so it gets slightly trickier...
             -- NOTE: self.view.footer -> self ;).
-            UIManager:setDirty(self.view.footer, function()
-                return "ui", refresh_dim
-            end)
+
             -- c.f., ReaderView:paintTo()
             UIManager:widgetRepaint(self.view.footer, 0, 0)
+            -- We've painted it first to ensure self.footer_content.dimen is sane
+            UIManager:setDirty(self.view.footer, function()
+                return "ui", self.footer_content.dimen
+            end)
         else
             UIManager:setDirty(self.view.dialog, function()
                 return "ui", refresh_dim
@@ -1944,6 +1965,8 @@ function ReaderFooter:applyFooterMode(mode)
         self:updateFooterContainer()
         -- NOTE: _updateFooterText does a resetLayout, but not a forced one!
         self:resetLayout(true)
+        -- Flag _updateFooterText to notify ReaderView to recalculate the visible_area!
+        self.visibility_change = true
     end
 end
 
