@@ -375,18 +375,11 @@ function Device:canExecuteScript(file)
     end
 end
 
-function Device:isValidPath(name)
-    local path, _ = util.splitFilePathName(name)
-    if android.isPathInsideSandbox(name) then
+function Device:isValidPath(path)
+    if path:find("^/sdcard") ~= nil then
         return true
-    else -- test if name is a symlink to the sandbox
-        path = path:gsub("/$", "") -- lua does not like trailing slash
-        if lfs.symlinkattributes(path, "mode") == "link" then
-            return android.isPathInsideSandbox(lfs.symlinkattributes(path, "target"))
-        else
-            return false
-        end
     end
+    return android.isPathInsideSandbox(path)
 end
 
 --swallow all events
