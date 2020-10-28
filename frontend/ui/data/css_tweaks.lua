@@ -785,14 +785,14 @@ ol.references > li > .mw-cite-backlink { display: none; }
                 ]],
                 separator = true,
             },
-            -- We can add other classic class names to the 2 following
+            -- We can add other classic classnames to the 2 following
             -- tweaks (except when named 'calibreN', as the N number is
             -- usually random across books).
             {
                 id = "footnote-inpage_classic_classnames";
                 title = _("In-page classic classname footnotes"),
                 description = _([[
-Show footnotes with classic class names at the bottom of pages.
+Show footnotes with classic classnames at the bottom of pages.
 This tweak can be duplicated as a user style tweak when books contain footnotes wrapped with other class names.]]),
                 css = [[
 .footnote, .footnotes, .fn,
@@ -808,7 +808,7 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
                 id = "footnote-inpage_classic_classnames_smaller";
                 title = _("In-page classic classname footnotes (smaller)"),
                 description = _([[
-Show footnotes with classic classname at the bottom of pages.
+Show footnotes with classic classnames at the bottom of pages.
 This tweak can be duplicated as a user style tweak when books contain footnotes wrapped with other class names.]]),
                 css = [[
 .footnote, .footnotes, .fn,
