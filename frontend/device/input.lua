@@ -126,6 +126,7 @@ local Input = {
 
     timer_callbacks = {},
     disable_double_tap = true,
+    tap_interval_override = nil,
 
     -- keyboard state:
     modifiers = {

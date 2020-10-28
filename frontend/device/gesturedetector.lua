@@ -154,12 +154,12 @@ end
 --[[
 tap2 is the later tap
 --]]
-function GestureDetector:isTapBounce(tap1, tap2)
+function GestureDetector:isTapBounce(tap1, tap2, interval)
     local tv_diff = tap2.timev - tap1.timev
     return (
         math.abs(tap1.x - tap2.x) < self.SINGLE_TAP_BOUNCE_DISTANCE and
         math.abs(tap1.y - tap2.y) < self.SINGLE_TAP_BOUNCE_DISTANCE and
-        (tv_diff.sec == 0 and (tv_diff.usec) < ges_tap_interval)
+        (tv_diff.sec == 0 and (tv_diff.usec) < interval)
     )
 end
 
@@ -393,9 +393,11 @@ function GestureDetector:handleDoubleTap(tev)
         timev = tev.timev,
     }
 
+    -- Tap interval / bounce detection may be tweaked by widget (i.e. VirtualKeyboard)
+    local tap_interval = self.input.tap_interval_override or ges_tap_interval
     -- We do tap bounce detection even when double tap is enabled (so, double tap
     -- is triggered when: ges_tap_interval <= delay < ges_double_tap_interval)
-    if ges_tap_interval > 0 and self.last_taps[slot] ~= nil and self:isTapBounce(self.last_taps[slot], cur_tap) then
+    if tap_interval > 0 and self.last_taps[slot] ~= nil and self:isTapBounce(self.last_taps[slot], cur_tap, tap_interval) then
         logger.dbg("tap bounce detected in slot", slot, ": ignored")
         -- Simply ignore it, and clear state as this is the end of a touch event
         -- (this doesn't clear self.last_taps[slot], so a 3rd tap can be detected

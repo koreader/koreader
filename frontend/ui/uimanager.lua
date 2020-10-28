@@ -399,6 +399,8 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     else
         Input.disable_double_tap = true
     end
+    -- a widget may override tap interval (when it doesn't, nil restores the default)
+    Input.tap_interval_override = widget.tap_interval_override
 end
 
 --[[--
@@ -459,6 +461,10 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     end
     if requested_disable_double_tap ~= nil then
         Input.disable_double_tap = requested_disable_double_tap
+    end
+    if #self._window_stack > 0 then
+        -- set tap interval override to what the topmost widget specifies (when it doesn't, nil restores the default)
+        Input.tap_interval_override = self._window_stack[#self._window_stack].widget.tap_interval_override
     end
     if dirty and not widget.invisible then
         -- schedule the remaining visible (i.e., uncovered) widgets to be painted

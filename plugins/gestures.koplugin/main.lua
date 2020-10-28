@@ -498,6 +498,33 @@ Default value: %1]]), GestureDetector.TAP_INTERVAL/1000),
                 end,
             },
             {
+                text = _("Tap interval on keyboard"),
+                keep_menu_open = true,
+                callback = function()
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local items = SpinWidget:new{
+                        title_text = _("Tap interval on keyboard"),
+                        info_text = _([[
+Any other taps made within this interval after a first tap will be considered accidental and ignored.
+
+The interval value is in milliseconds and can range from 0 (0 second) to 2000 (2 seconds).
+Default value: 0]]),
+                        width = math.floor(Screen:getWidth() * 0.75),
+                        value = (G_reader_settings:readSetting("ges_tap_interval_on_keyboard") or 0)/1000,
+                        value_min = 0,
+                        value_max = 2000,
+                        value_step = 50,
+                        value_hold_step = 200,
+                        ok_text = _("Set interval"),
+                        default_value = 0,
+                        callback = function(spin)
+                            G_reader_settings:saveSetting("ges_tap_interval_on_keyboard", spin.value*1000)
+                        end
+                    }
+                    UIManager:show(items)
+                end,
+            },
+            {
                 text = _("Double tap interval"),
                 keep_menu_open = true,
                 callback = function()
