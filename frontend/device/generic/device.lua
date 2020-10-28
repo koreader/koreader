@@ -487,9 +487,7 @@ function Device:canExecuteScript(file)
     end
 end
 
-function Device:isValidPath(name)
-    local path, _ = util.splitFilePathName(name)
-    -- pathExists wants trailing slash
+function Device:isValidPath(path)
     return util.pathExists(path)
 end
 
