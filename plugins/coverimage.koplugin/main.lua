@@ -87,24 +87,6 @@ If the filename is empty or the file does not exist, the cover file will be dele
 
 If fallback is not activated the screensaver image remains after closing a book.]])
 
-local function isValidPath(name)
-    local path, _ = util.splitFilePathName(name)
-    if Device.isValidPath then -- on Android
-        if Device.isValidPath(name) then
-            return true
-        else -- test if name is a symlink to Sandbox
-            path = path:gsub("/$", "") -- lua does not like trailing slash
-            if lfs.symlinkattributes(path, "mode") == "link" then
-                return Device.isValidPath(lfs.symlinkattributes(path, "target"))
-            else
-                return false
-            end
-        end
-    else -- on emulator
-        return util.pathExists(path) -- pathExists wants trailing slash
-    end
-end
-
 function CoverImage:addToMainMenu(menu_items)
     menu_items.coverimage = {
 --        sorting_hint = "document",
@@ -129,7 +111,7 @@ function CoverImage:addToMainMenu(menu_items)
             {
                 text = _("Set system screensaver image"),
                 checked_func = function()
-                    return self.cover_image_path ~= "" and isValidPath(self.cover_image_path)
+                    return self.cover_image_path ~= "" and Device:isValidPath(self.cover_image_path)
                 end,
                 help_text = _("This is the filename, where the cover of the actual book is stored to."),
                 keep_menu_open = true,
@@ -158,7 +140,7 @@ function CoverImage:addToMainMenu(menu_items)
                                             self:cleanUpImage() -- with old filename
                                             self.cover_image_path = new_cover_image_path -- update filename
                                             G_reader_settings:saveSetting("cover_image_path", self.cover_image_path)
-                                            if self.cover_image_path ~= "" and isValidPath(self.cover_image_path) then
+                                            if self.cover_image_path ~= "" and Device:isValidPath(self.cover_image_path) then
                                                 self:onReaderReady(self.ui.doc_settings) -- with new filename
                                             else
                                                 self.enabled = false
@@ -180,10 +162,10 @@ function CoverImage:addToMainMenu(menu_items)
             {
                 text = _("Save current book cover as screensaver image"),
                 checked_func = function()
-                    return self:_enabled() and isValidPath(self.cover_image_path)
+                    return self:_enabled() and Device:isValidPath(self.cover_image_path)
                 end,
                 enabled_func = function()
-                    return self.cover_image_path ~= "" and isValidPath(self.cover_image_path)
+                    return self.cover_image_path ~= "" and Device:isValidPath(self.cover_image_path)
                 end,
                 callback = function()
                     if self.cover_image_path ~= "" then
@@ -269,8 +251,6 @@ function CoverImage:addToMainMenu(menu_items)
                 callback = function()
                     self.fallback = not self.fallback
                     G_reader_settings:saveSetting("cover_image_fallback", self.fallback)
---                    self:cleanUpImage()
---                    self:onReaderReady(self.ui.doc_settings)
                 end,
                 separator = true,
             },

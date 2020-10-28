@@ -94,7 +94,6 @@ local Device = Generic:new{
     end,
     canImportFiles = function() return android.app.activity.sdkVersion >= 19 end,
     importFile = function(path) android.importFile(path) end,
-    isValidPath = function(path) return android.isPathInsideSandbox(path) end,
     canShareText = yes,
     doShareText = function(text) android.sendText(text) end,
 
@@ -373,6 +372,20 @@ function Device:canExecuteScript(file)
     local file_ext = string.lower(util.getFileNameSuffix(file))
     if android.prop.flavor ~= "fdroid" and file_ext == "sh"  then
         return true
+    end
+end
+
+function Device:isValidPath(name)
+    local path, _ = util.splitFilePathName(name)
+    if android.isPathInsideSandbox(name) then
+        return true
+    else -- test if name is a symlink to the sandbox
+        path = path:gsub("/$", "") -- lua does not like trailing slash
+        if lfs.symlinkattributes(path, "mode") == "link" then
+            return android.isPathInsideSandbox(lfs.symlinkattributes(path, "target"))
+        else
+            return false
+        end
     end
 end
 
