@@ -13,6 +13,12 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
+local function pathOk(filename)
+    filename = filename:gsub("/$", "")
+    local path = util.splitFilePathName(filename)
+    return Device:isValidPath(path)
+end
+
 local CoverImage = WidgetContainer:new{
     name = 'coverimage',
     is_doc_only = true,
@@ -56,7 +62,7 @@ function CoverImage:cleanUpImage()
         self:dubiousFallbackImage()
         os.remove(self.cover_image_path)
     else
-        os.execute("cp " ..self.cover_image_fallback_path .. " " .. self.cover_image_path)
+        os.execute("cp " .. self.cover_image_fallback_path .. " " .. self.cover_image_path)
     end
 end
 
@@ -73,6 +79,7 @@ function CoverImage:onReaderReady(doc_settings)
         local image = self.ui.document:getCoverPageImage()
         if image then
             image:writePNG(self.cover_image_path, false)
+            logger.dbg("CoverImage: image written to " .. self.cover_image_path)
         end
     end
 end
@@ -111,7 +118,7 @@ function CoverImage:addToMainMenu(menu_items)
             {
                 text = _("Set system screensaver image"),
                 checked_func = function()
-                    return self.cover_image_path ~= "" and Device:isValidPath(self.cover_image_path)
+                    return self.cover_image_path ~= "" and pathOk(self.cover_image_path)
                 end,
                 help_text = _("This is the filename, where the cover of the actual book is stored to."),
                 keep_menu_open = true,
@@ -140,7 +147,7 @@ function CoverImage:addToMainMenu(menu_items)
                                             self:cleanUpImage() -- with old filename
                                             self.cover_image_path = new_cover_image_path -- update filename
                                             G_reader_settings:saveSetting("cover_image_path", self.cover_image_path)
-                                            if self.cover_image_path ~= "" and Device:isValidPath(self.cover_image_path) then
+                                            if self.cover_image_path ~= "" and pathOk(self.cover_image_path) then
                                                 self:onReaderReady(self.ui.doc_settings) -- with new filename
                                             else
                                                 self.enabled = false
@@ -162,10 +169,10 @@ function CoverImage:addToMainMenu(menu_items)
             {
                 text = _("Save current book cover as screensaver image"),
                 checked_func = function()
-                    return self:_enabled() and Device:isValidPath(self.cover_image_path)
+                    return self:_enabled() and pathOk(self.cover_image_path)
                 end,
                 enabled_func = function()
-                    return self.cover_image_path ~= "" and Device:isValidPath(self.cover_image_path)
+                    return self.cover_image_path ~= "" and pathOk(self.cover_image_path)
                 end,
                 callback = function()
                     if self.cover_image_path ~= "" then
