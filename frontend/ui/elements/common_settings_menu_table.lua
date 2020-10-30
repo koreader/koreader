@@ -276,11 +276,11 @@ if Device:isAndroid() then
             checked_func = function() return not android.settings.hasPermission("battery") end,
             callback = function()
                 local text = _([[
-Do you want to go to android battery optimization settings?
+Go to Android battery optimization settings?
 
 You will be prompted with a permission management screen.
 
-Please don't change settings unless you know what you're doing]])
+Please don't change any settings unless you know what you're doing.]])
 
                 android.settings.requestPermission("battery", text, _("OK"), _("Cancel"))
             end,
