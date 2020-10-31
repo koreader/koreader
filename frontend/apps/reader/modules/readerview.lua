@@ -668,13 +668,25 @@ function ReaderView:getViewContext()
 end
 
 function ReaderView:restoreViewContext(ctx)
+    -- The format of the context is different depending on page_scroll.
+    -- If we're asked to restore the other format, just ignore it
+    -- (our only caller, ReaderPaging:onRestoreBookLocation(), will
+    -- at least change to the page of the context, which is all that
+    -- can be done when restoring from a different mode)
     if self.page_scroll then
-        self.page_states = ctx
+        if ctx[1] and ctx[1].visible_area then
+            self.page_states = ctx
+            return true
+        end
     else
-        self.state = ctx[1]
-        self.visible_area = ctx[2]
-        self.page_area = ctx[3]
+        if ctx[1] and ctx[1].pos then
+            self.state = ctx[1]
+            self.visible_area = ctx[2]
+            self.page_area = ctx[3]
+            return true
+        end
     end
+    return false
 end
 
 function ReaderView:onSetRotationMode(rotation)
