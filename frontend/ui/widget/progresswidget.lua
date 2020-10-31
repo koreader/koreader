@@ -11,7 +11,8 @@ Configurable attributes:
  * bordersize
  * bordercolor
  * bgcolor
- * rectcolor  -- infill color
+ * altcolor   -- alternate backrgound color for "alt" pages
+ * rectdim    -- dim amount for infill
  * ticks (list)  -- default to nil, use this if you want to insert markers
  * tick_width
  * last  -- maximum tick, used with ticks
@@ -42,13 +43,15 @@ local ProgressWidget = Widget:new{
     bordersize = Screen:scaleBySize(1),
     bordercolor = Blitbuffer.COLOR_BLACK,
     bgcolor = Blitbuffer.COLOR_WHITE,
-    rectcolor = Blitbuffer.COLOR_DIM_GRAY,
+    altcolor = Blitbuffer.COLOR_LIGHT_GRAY,
+    rectdim = 2/3,
     percentage = nil,
     ticks = nil,
     tick_width = Screen:scaleBySize(3),
     last = nil,
     fill_from_right = false,
     allow_mirroring = true,
+    alt = nil, -- table with alternate pages to mark with different color (in the form {{ini1, len1}, {ini2, len2}, ...})
     _mirroredUI = BD.mirroredUILayout(),
     _orig_margin_v = nil,
     _orig_bordersize = nil,
@@ -73,27 +76,52 @@ function ProgressWidget:paintTo(bb, x, y)
     bb:paintBorder(x, y,
                    my_size.w, my_size.h,
                    self.bordersize, self.bordercolor, self.radius)
+    -- background for alternate pages (e.g. non-linear flows)
+    if self.alt and self.alt[1] ~= nil then
+        local bar_width = (my_size.w-2*self.margin_h)
+        local y_pos = y + self.margin_v + self.bordersize
+        local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
+        for i=1, #self.alt do
+            local tick_x = bar_width*((self.alt[i][1]-1)/self.last)
+            local width = bar_width*(self.alt[i][2]/self.last)
+            width = math.ceil(tick_x + width)
+            tick_x = math.floor(tick_x)
+            width = width - tick_x
+            if self._mirroredUI then
+                tick_x = bar_width - tick_x - width
+            end
+            bb:paintRect(
+                x + self.margin_h + tick_x,
+                y_pos,
+                width,
+                bar_height,
+                self.altcolor)
+        end
+    end
     -- paint percentage infill
+    -- note that "lightenRect" is misleading, it actualy darkens stuff
     if self.percentage >= 0 and self.percentage <= 1 then
         if self.fill_from_right or (self._mirroredUI and not self.fill_from_right) then
-            bb:paintRect(x+self.margin_h + math.ceil((my_size.w-2*self.margin_h)*(1-self.percentage)),
+            bb:lightenRect(x+self.margin_h + math.ceil((my_size.w-2*self.margin_h)*(1-self.percentage)),
                     math.ceil(y+self.margin_v+self.bordersize),
                     math.ceil((my_size.w-2*self.margin_h)*self.percentage),
                     my_size.h-2*(self.margin_v+self.bordersize),
-                    self.rectcolor)
+                    self.rectdim)
         else
-            bb:paintRect(x+self.margin_h,
+            bb:lightenRect(x+self.margin_h,
                     math.ceil(y+self.margin_v+self.bordersize),
                     math.ceil((my_size.w-2*self.margin_h)*self.percentage),
-                    my_size.h-2*(self.margin_v+self.bordersize), self.rectcolor)
+                    my_size.h-2*(self.margin_v+self.bordersize),
+                    self.rectdim)
         end
     end
+    -- ticks
     if self.ticks and self.last and self.last > 0 then
         local bar_width = (my_size.w-2*self.margin_h)
         local y_pos = y + self.margin_v + self.bordersize
         local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
-        for i=1, #self.ticks do
-            local tick_x = bar_width*(self.ticks[i]/self.last)
+        for i, tick in ipairs(self.ticks) do
+            local tick_x = bar_width*(tick/self.last)
             if self._mirroredUI then
                 tick_x = bar_width - tick_x
             end

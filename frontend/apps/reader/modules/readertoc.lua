@@ -62,6 +62,7 @@ end
 
 function ReaderToc:onUpdateToc()
     self:resetToc()
+    self.ui:handleEvent(Event:new("TocReset"))
 
     --- @note: Let this propagate, plugins/statistics uses it to react to changes in document pagination
     --return true
@@ -168,25 +169,35 @@ function ReaderToc:validateAndFixToc()
             nb_bogus = nb_bogus + 1
             -- See how many pages we'd need fixing on either side
             local nb_prev = 0
+            local nb_prev_main = 0
             for j = i-1, first, -1 do
                 local ppage = toc[j].fixed_page or toc[j].page
                 if ppage <= page then
                     break
                 else
                     nb_prev = nb_prev + 1
+                    if self.ui.document:getPageFlow(ppage) == 0 then
+                        nb_prev_main = nb_prev_main + 1
+                    end
                 end
             end
-            local nb_next = 1
-            for j = i+1, last do
+            local nb_next = 0
+            local nb_next_main = 0
+            for j = i, last do
                 local npage = toc[j].fixed_page or toc[j].page
                 if npage >= cur_page then
                     break
                 else
                     nb_next = nb_next + 1
+                    if self.ui.document:getPageFlow(npage) == 0 then
+                        nb_next_main = nb_next_main + 1
+                    end
                 end
             end
             logger.dbg("BOGUS TOC:", i, page, "<", i-1, cur_page, "-", nb_prev, nb_next)
-            if nb_prev <= nb_next then -- less changes when fixing previous pages
+            -- Note: by comparing only the entries that belong to the main (linear) flow
+            -- we give priority to moving non-linear bogus entries
+            if nb_prev_main <= nb_next_main then -- less changes when fixing previous pages
                 local fixed_page
                 if i-nb_prev-1 >= 1 then
                     fixed_page = toc[i-nb_prev-1].fixed_page or toc[i-nb_prev-1].page
@@ -436,21 +447,46 @@ function ReaderToc:isChapterEnd(cur_pageno)
 end
 
 function ReaderToc:getChapterPagesLeft(pageno)
-    --if self:isChapterEnd(pageno) then return 0 end
-    local next_chapter = self:getNextChapter(pageno)
-    if next_chapter then
-        next_chapter = next_chapter - pageno - 1
+    if self.ui.document:hasHiddenFlows() then
+        -- Count pages until new chapter
+        local pages_left = 0
+        local test_page = self.ui.document:getNextPage(pageno)
+        while test_page > 0 do
+            pages_left = pages_left + 1
+            if self:isChapterStart(test_page) then
+                return pages_left - 1
+            end
+            test_page = self.ui.document:getNextPage(test_page)
+        end
+    else
+        local next_chapter = self:getNextChapter(pageno)
+        if next_chapter then
+            next_chapter = next_chapter - pageno - 1
+        end
+        return next_chapter
     end
-    return next_chapter
 end
 
 function ReaderToc:getChapterPagesDone(pageno)
     if self:isChapterStart(pageno) then return 0 end
-    local previous_chapter = self:getPreviousChapter(pageno)
-    if previous_chapter then
-        previous_chapter = pageno - previous_chapter
+    if self.ui.document:hasHiddenFlows() then
+        -- Count pages until chapter start
+        local pages_done = 0
+        local test_page = self.ui.document:getPrevPage(pageno)
+        while test_page > 0 do
+            pages_done = pages_done + 1
+            if self:isChapterStart(test_page) then
+                return pages_done
+            end
+            test_page = self.ui.document:getPrevPage(test_page)
+        end
+    else
+        local previous_chapter = self:getPreviousChapter(pageno)
+        if previous_chapter then
+            previous_chapter = pageno - previous_chapter
+        end
+        return previous_chapter
     end
-    return previous_chapter
 end
 
 function ReaderToc:updateCurrentNode()
@@ -489,7 +525,34 @@ function ReaderToc:onShowToc()
         for _,v in ipairs(self.toc) do
             v.text = self.toc_indent:rep(v.depth-1)..self:cleanUpTocTitle(v.title)
             v.mandatory = v.page
-            if v.orig_page then -- bogus page fixed: show original page number
+            if self.ui.document:hasHiddenFlows() then
+                local flow = self.ui.document:getPageFlow(v.page)
+                if v.orig_page then -- bogus page fixed: show original page number
+                    -- This is an ugly piece of code, which can result in an ugly TOC,
+                    -- but it shouldn't be needed very often, only when bogus page numbers
+                    -- are fixed, and then showing everything gets complicated
+                    local orig_flow = self.ui.document:getPageFlow(v.orig_page)
+                    if flow == 0 and orig_flow == flow then
+                        v.mandatory = T("(%1) %2", self.ui.document:getPageNumberInFlow(v.orig_page), self.ui.document:getPageNumberInFlow(v.page))
+                    elseif flow == 0 and orig_flow ~= flow then
+                        v.mandatory = T("[%1]%2", self.ui.document:getPageNumberInFlow(v.orig_page), self.ui.document:getPageFlow(v.orig_page))
+                    elseif flow > 0 and orig_flow == flow then
+                        v.mandatory = T("[(%1) %2]%3", self.ui.document:getPageNumberInFlow(v.orig_page),
+                                                       self.ui.document:getPageNumberInFlow(v.page), self.ui.document:getPageFlow(v.page))
+                    else
+                        v.mandatory = T("([%1]%2) [%3]%4", self.ui.document:getPageNumberInFlow(v.orig_page), self.ui.document:getPageFlow(v.orig_page),
+                                                           self.ui.document:getPageNumberInFlow(v.page), self.ui.document:getPageFlow(v.page))
+                    end
+                else
+                    -- Plain numbers for the linear entries,
+                    -- for non-linear entries we use the same syntax as in the Go to dialog
+                    if flow == 0 then
+                        v.mandatory = self.ui.document:getPageNumberInFlow(v.page)
+                    else
+                        v.mandatory = T("[%1]%2", self.ui.document:getPageNumberInFlow(v.page), self.ui.document:getPageFlow(v.page))
+                    end
+                end
+            elseif v.orig_page then -- bogus page fixed: show original page number
                 v.mandatory = T("(%1) %2", v.orig_page, v.page)
             end
             if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then

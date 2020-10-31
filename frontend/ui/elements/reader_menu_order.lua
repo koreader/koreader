@@ -16,6 +16,7 @@ local order = {
         "toggle_bookmark",
         "bookmark_browsing_mode",
         "page_map",
+        "hide_nonlinear_flows",
         "----------------------------",
         "go_to",
         "skim_to",
