@@ -764,7 +764,7 @@ function ReaderRolling:onUpdatePos()
     -- so updatePos() has good info and can reposition
     -- the previous xpointer accurately:
     self.ui.document:getCurrentPos()
-    -- Otherwise, _readMetadata() would do that, but the positionning
+    -- Otherwise, _readMetadata() would do that, but the positioning
     -- would not work as expected, for some reason (it worked
     -- previously because of some bad setDirty() in ConfigDialog widgets
     -- that were triggering a full repaint of crengine (so, the needed

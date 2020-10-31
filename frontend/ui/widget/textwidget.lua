@@ -141,7 +141,7 @@ function TextWidget:updateSize()
     -- We never need to draw/size more than one screen width, so limit computation
     -- to that width in case we are given some huge string
     local tsize = RenderText:sizeUtf8Text(0, Screen:getWidth(), self.face, self._text_to_draw, true, self.bold)
-    -- As text length includes last glyph pen "advance" (for positionning
+    -- As text length includes last glyph pen "advance" (for positioning
     -- next char), it's best to use math.floor() instead of math.ceil()
     -- to get rid of a fraction of it in case this text is to be
     -- horizontally centered
