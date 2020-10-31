@@ -98,7 +98,7 @@ local ImageWidget = Widget:new{
     -- Whether to use former blitbuffer:scale() (default to using MuPDF)
     use_legacy_image_scaling = G_reader_settings:isTrue("legacy_image_scaling"),
 
-    -- For initial positionning, if (possibly scaled) image overflows width/height
+    -- For initial positioning, if (possibly scaled) image overflows width/height
     center_x_ratio = 0.5, -- default is centered on image's center
     center_y_ratio = 0.5,
 
@@ -258,7 +258,7 @@ function ImageWidget:_render()
     end
     bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
 
-    -- deal with positionning
+    -- deal with positioning
     if self.width and self.height then
         -- if image is bigger than paint area, allow center_ratio variation
         -- around 0.5 so we can pan till image border

@@ -332,7 +332,7 @@ function TextBoxWidget:_splitToLines()
             end
             if line.hard_newline_at_eot and not line.next_start_offset then
                 -- Add an empty line to reprensent the \n at end of text
-                -- and allow positionning cursor after it
+                -- and allow positioning cursor after it
                 self.vertical_string_list[ln+1] = {
                     offset = size+1,
                     end_offset = nil,
@@ -483,7 +483,7 @@ function TextBoxWidget:_getLinePads(vertical_string)
     return pads
 end
 
--- XText: shape a line into positionned glyphs
+-- XText: shape a line into positioned glyphs
 function TextBoxWidget:_shapeLine(line)
     -- line is an item from self.vertical_string_list
     if line._shaped then
@@ -494,7 +494,7 @@ function TextBoxWidget:_shapeLine(line)
         -- Empty line (first check above is for hard newline at end of file,
         -- second check is for hard newline while not at end of file).
         -- We need to set a direction on this line, so the cursor can be
-        -- positionned accordingly, on the left or on the right of the line
+        -- positioned accordingly, on the left or on the right of the line
         -- (for convenience, we have an empty line inherit the direction
         -- of the previous line if non-empty)
         local offset = line.offset
@@ -721,7 +721,7 @@ function TextBoxWidget:_shapeLine(line)
         xglyph.w = xglyph.x1 - xglyph.x0
         -- Because of glyph substitution and merging (one to many, many to one, many to many,
         -- with advance or zero-advance...), glyphs may not always be fine to position
-        -- the cursor caret. For X/Y/Charpos positionning/guessing, we'll ignore
+        -- the cursor caret. For X/Y/Charpos positioning/guessing, we'll ignore
         -- glyphs that are not cluster_start, and we build here the full cluster x0/x1/w
         -- by merging them from all glyphs part of this cluster
         if xglyph.is_cluster_start then
@@ -732,7 +732,7 @@ function TextBoxWidget:_shapeLine(line)
                 prev_cluster_start_xglyph.w = prev_cluster_start_xglyph.x1 - prev_cluster_start_xglyph.x0
             end
             -- We don't update/decrease prev_cluster_start_xglyph.x0, even if one of its glyph
-            -- has a backward advance that go back the 1st glyph x0, to not mess positionning.
+            -- has a backward advance that go back the 1st glyph x0, to not mess positioning.
         end
         if xglyph.is_tab then
             xglyph.no_drawing = true
