@@ -367,8 +367,7 @@ common_settings.back_in_reader = {
                          back_to_exit_str[back_to_exit][2])
             end,
             checked_func = function()
-                local back_in_reader = G_reader_settings:readSetting("back_in_reader")
-                return back_in_reader == nil or back_in_reader == "default"
+                return G_reader_settings:readSetting("back_in_reader") == "default"
             end,
             callback = function()
                 G_reader_settings:saveSetting("back_in_reader", "default")
@@ -386,7 +385,8 @@ common_settings.back_in_reader = {
         {
             text = _("Go to previous location"),
             checked_func = function()
-                return G_reader_settings:readSetting("back_in_reader") == "previous_location"
+                local back_in_reader = G_reader_settings:readSetting("back_in_reader")
+                return back_in_reader == "previous_location" or back_in_reader == nil
             end,
             callback = function()
                 G_reader_settings:saveSetting("back_in_reader", "previous_location")

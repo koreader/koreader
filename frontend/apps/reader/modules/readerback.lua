@@ -118,7 +118,7 @@ ReaderBack.onViewRecalculate = ReaderBack._onViewPossiblyUpdated
 ReaderBack.onPagePositionUpdated = ReaderBack._onViewPossiblyUpdated
 
 function ReaderBack:onBack()
-    local back_in_reader = G_reader_settings:readSetting("back_in_reader") or "default"
+    local back_in_reader = G_reader_settings:readSetting("back_in_reader") or "previous_location"
     local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
 
     if back_in_reader == "previous_read_page" then
