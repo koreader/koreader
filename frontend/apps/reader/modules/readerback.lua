@@ -104,7 +104,7 @@ function ReaderBack:_onViewPossiblyUpdated()
 end
 
 -- Hook to events that do/may change page/view (more than one of these events
--- might be send on a single page turn/scroll, _addPreviousLocationToStack()
+-- may be sent on a single page turn/scroll, _addPreviousLocationToStack()
 -- will ignore those for the same book location):
 -- Called after initial page is set up
 ReaderBack.onReaderReady = ReaderBack._onViewPossiblyUpdated
@@ -149,7 +149,7 @@ function ReaderBack:onBack()
             self.back_resist = nil
         end
     elseif back_in_reader == "previous_location" then
-        -- ReaderLink maintain its own location_stack of less frequent jumps
+        -- ReaderLink maintains its own location_stack of less frequent jumps
         -- (links or TOC entries followed, skim document...)
         if back_to_exit == "disable" then
             -- Let ReaderLink always show its notification if empty
