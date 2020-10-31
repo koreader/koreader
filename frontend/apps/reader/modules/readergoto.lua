@@ -62,6 +62,12 @@ function ReaderGoto:onShowGotoDialog()
     self.goto_dialog = InputDialog:new{
         title = dialog_title,
         input_hint = input_hint,
+        description = self.document:hasFlows() and
+            _([[
+x for an absolute page number
+[x] for a page number in the main (linear) flow
+[x]y for a page number in the non-linear fragment y]])
+            or nil,
         buttons = {
             {
                 {
@@ -134,20 +140,42 @@ function ReaderGoto:gotoPage()
             end
         end
         self:close()
+    elseif self.ui.document:hasFlows() then
+        -- if there are hidden flows, we accept the syntax [x]y
+        -- for page number x in flow number y (y defaults to 0 if not present)
+        local flow
+        number, flow = string.match(page_number, "^ *%[(%d+)%](%d*) *$")
+        flow = tonumber(flow) or 0
+        number = tonumber(number)
+        if number then
+            if self.ui.document.flows[flow] ~= nil then
+                for i=self.ui.document:getFirstPageInFlow(flow), self.ui.document:getPageCount() do
+                    if self.ui.document:getPagenNumberInFlow(i) == number and
+                       self.ui.document:getPageFlow(i) == flow then
+                        self.ui:handleEvent(Event:new("GotoPage", i))
+                        self:close()
+                        break
+                    end
+                end
+            end
+        end
     end
 end
 
 function ReaderGoto:onGoToBeginning()
-    self.ui.link:addCurrentLocationToStack()
-    self.ui:handleEvent(Event:new("GotoPage", 1))
+    local new_page = self.ui.document:getNextPage(0)
+    if new_page then
+        self.ui.link:addCurrentLocationToStack()
+        self.ui:handleEvent(Event:new("GotoPage", new_page))
+    end
     return true
 end
 
 function ReaderGoto:onGoToEnd()
-    local endpage = self.document:getPageCount()
-    if endpage then
+    local new_page = self.ui.document:getPrevPage(0)
+    if new_page then
         self.ui.link:addCurrentLocationToStack()
-        self.ui:handleEvent(Event:new("GotoPage", endpage))
+        self.ui:handleEvent(Event:new("GotoPage", new_page))
     end
     return true
 end

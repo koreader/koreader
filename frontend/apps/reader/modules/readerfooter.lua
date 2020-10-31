@@ -191,7 +191,16 @@ local footerTextGeneratorMap = {
                 return ("%s / %s"):format(footer.ui.pagemap:getCurrentPageLabel(true),
                                           footer.ui.pagemap:getLastPageLabel(true))
             end
-            return ("%d / %d"):format(footer.pageno, footer.pages)
+            if footer.ui.document:hasFlows() then
+                -- i.e., if we are hiding non-linear fragments and there's anything to hide,
+                if footer.flow == 0 then
+                    return ("%d // %d"):format(footer.pageno, footer.pages)
+                else
+                    return ("[%d / %d]%d"):format(footer.pageno, footer.pages, footer.flow)
+                end
+            else
+                return ("%d / %d"):format(footer.pageno, footer.pages)
+            end
         elseif footer.position then
             return ("%d / %d"):format(footer.position, footer.doc_height)
         end
@@ -199,31 +208,32 @@ local footerTextGeneratorMap = {
     pages_left = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].pages_left
-        local left = footer.ui.toc:getChapterPagesLeft(footer.pageno)
+        local left = footer.ui.toc:getChapterPagesLeft(footer.ui:getCurrentPage())
         return prefix .. " " .. (left and left or footer.pages - footer.pageno)
     end,
     percentage = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].percentage
         local digits = footer.settings.progress_pct_format or "0"
-        local string_percentage
-        if not prefix then
-            string_percentage = "%." .. digits .. "f%%"
-        else
-            string_percentage = prefix .. " %." .. digits .. "f%%"
+        local string_percentage = "%." .. digits .. "f%%"
+        if footer.flow ~= 0 then
+            string_percentage = "[" .. string_percentage .. "]"
+        end
+        if prefix then
+            string_percentage = prefix .. " " .. string_percentage
         end
         return string_percentage:format(footer.progress_bar.percentage * 100)
     end,
     book_time_to_read = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].book_time_to_read
-        local current_page = footer.ui:getCurrentPage()
-        return footer:getDataFromStatistics(prefix .. " ", footer.pages - current_page)
+        local left = footer.ui.document:getTotalPagesLeft(footer.ui:getCurrentPage())
+        return footer:getDataFromStatistics(prefix .. " ", left)
     end,
     chapter_time_to_read = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].chapter_time_to_read
-        local left = footer.ui.toc:getChapterPagesLeft(footer.pageno)
+        local left = footer.ui.toc:getChapterPagesLeft(footer.ui:getCurrentPage())
         return footer:getDataFromStatistics(
             prefix .. " ", (left and left or footer.pages - footer.pageno))
     end,
@@ -288,7 +298,7 @@ local footerTextGeneratorMap = {
         end
     end,
     book_chapter = function(footer)
-        local chapter_title = footer.ui.toc:getTocTitleByPage(footer.pageno)
+        local chapter_title = footer.ui.toc:getTocTitleByPage(footer.ui:getCurrentPage())
         if chapter_title and chapter_title ~= "" then
             local chapter_widget = TextWidget:new{
                 text = chapter_title,
@@ -438,6 +448,7 @@ function ReaderFooter:init()
         return
     end
 
+    self.flow = 0
     self.pageno = self.view.state.page
     self.has_no_mode = true
     self.reclaim_height = self.settings.reclaim_height or false
@@ -1711,7 +1722,7 @@ function ReaderFooter:setTocMarkers(reset)
     if self.settings.disable_progress_bar or self.settings.progress_style_thin then return end
     if reset then
         self.progress_bar.ticks = nil
-        self.pages = self.view.document:getPageCount()
+        self.pages = self.view.document:getTotalPagesInFlow(self.flow)
     end
     if self.settings.toc_markers then
         self.progress_bar.tick_width = Screen:scaleBySize(self.settings.toc_markers_width)
@@ -1720,9 +1731,16 @@ function ReaderFooter:setTocMarkers(reset)
         end
         self.progress_bar.ticks = {}
         if self.ui.toc then
-            self.progress_bar.ticks = self.ui.toc:getTocTicksFlattened()
+            -- filter the ticks to show only those in the current flow
+            for i,j in pairs(self.ui.toc:getTocTicksFlattened()) do
+                if self.view.document:getPageFlow(j) == self.flow then
+                    self.progress_bar.ticks[i] = self.view.document:getPageNumberInFlow(j)
+                else
+                    self.progress_bar.ticks[i] = nil
+                end
+            end
         end
-        self.progress_bar.last = self.pages or self.view.document:getPageCount()
+        self.progress_bar.last = self.pages or self.view.document:getTotalPagesInFlow(self.flow)
     else
         self.progress_bar.ticks = nil
     end
@@ -1869,10 +1887,22 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
     end
 end
 
+function ReaderFooter:onChangeViewMode()
+    self:onPageUpdate()
+    self:setTocMarkers(true)
+end
+
 function ReaderFooter:onPageUpdate(pageno)
-    self.pageno = pageno
-    self.pages = self.view.document:getPageCount()
-    self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
+    local page = pageno ~= nil and pageno or self.view.state.page
+    local new_flow = self.view.document:getPageFlow(page)
+    -- make sure the chapter ticks are updated if we change flows
+    if new_flow ~= self.flow or pageno == nil then
+        self.flow = new_flow
+        self:setTocMarkers(true)
+    end
+    self.pageno = self.view.document:getPageNumberInFlow(page)
+    self.pages = self.view.document:getTotalPagesInFlow(self.flow)
+    self.ui.doc_settings:saveSetting("doc_pages", self.view.document:getPageCount()) -- for Book information
     self:updateFooterPage()
 end
 
@@ -1880,9 +1910,15 @@ function ReaderFooter:onPosUpdate(pos, pageno)
     self.position = pos
     self.doc_height = self.view.document.info.doc_height
     if pageno then
-        self.pageno = pageno
-        self.pages = self.view.document:getPageCount()
-        self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
+        local new_flow = self.view.document:getPageFlow(pageno)
+        -- make sure the chapter ticks are updated if we change flows
+        if new_flow ~= self.flow then
+            self.flow = new_flow
+            self:setTocMarkers(true)
+        end
+        self.pageno = self.view.document:getPageNumberInFlow(page)
+        self.pages = self.view.document:getTotalPagesInFlow(self.flow)
+        self.ui.doc_settings:saveSetting("doc_pages", self.view.document:getPageCount()) -- for Book information
     end
     self:updateFooterPos()
 end

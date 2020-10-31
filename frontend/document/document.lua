@@ -188,6 +188,44 @@ function Document:getPageCount()
     return self.info.number_of_pages
 end
 
+-- Some functions that look quite silly, but they can be
+-- overridden for document types that support separate flows
+-- (e.g. CreDocument)
+function Document:getNextPage(page)
+    local new_page = page + 1
+    return (new_page > 0 and new_page < self:getPageCount()) and new_page or 0
+end
+
+function Document:getPrevPage(page)
+    if page == 0 then return self:getPageCount() end
+    local new_page = page - 1
+    return (new_page > 0 and new_page < self:getPageCount()) and new_page or 0
+end
+
+function Document:getTotalPagesLeft(page)
+    return self:getPageCount() - page
+end
+
+function Document:getPageFlow(page)
+    return 0
+end
+
+function Document:getFirstInFlow(flow)
+    return 1
+end
+
+function Document:getTotalPagesInFlow(flow)
+    return self:getPageCount()
+end
+
+function Document:getPageNumberInFlow(page)
+    return page
+end
+
+function Document:hasFlows()
+    return false
+end
+
 -- calculates page dimensions
 function Document:getPageDimensions(pageno, zoom, rotation)
     local native_dimen = self:getNativePageDimensions(pageno):copy()

@@ -26,6 +26,7 @@ local order = {
     typeset = {
         "set_render_style",
         "style_tweaks",
+        "hide_nonlinear",
         "----------------------------",
         "change_font",
         "typography",

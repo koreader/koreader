@@ -11,6 +11,7 @@ Configurable attributes:
  * bordersize
  * bordercolor
  * bgcolor
+ * nlcolor    -- color for the non-linear fragment tags
  * rectcolor  -- infill color
  * ticks (list)  -- default to nil, use this if you want to insert markers
  * tick_width
@@ -42,6 +43,7 @@ local ProgressWidget = Widget:new{
     bordersize = Screen:scaleBySize(1),
     bordercolor = Blitbuffer.COLOR_BLACK,
     bgcolor = Blitbuffer.COLOR_WHITE,
+    nlcolor = Blitbuffer.COLOR_LIGHT_GRAY,
     rectcolor = Blitbuffer.COLOR_DIM_GRAY,
     percentage = nil,
     ticks = nil,
@@ -90,8 +92,8 @@ function ProgressWidget:paintTo(bb, x, y)
         local bar_width = (my_size.w-2*self.margin_h)
         local y_pos = y + self.margin_v + self.bordersize
         local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
-        for i=1, #self.ticks do
-            local tick_x = bar_width*(self.ticks[i]/self.last)
+        for i,tick in pairs(self.ticks) do
+            local tick_x = bar_width*((tick-0.5)/self.last)
             if self._mirroredUI then
                 tick_x = bar_width - tick_x
             end
@@ -101,6 +103,28 @@ function ProgressWidget:paintTo(bb, x, y)
                 self.tick_width,
                 bar_height,
                 self.bordercolor)
+        end
+    end
+    if self.flows and self.flows[1] ~= nil then
+        local bar_width = (my_size.w-2*self.margin_h)
+        local y_pos = y + self.margin_v + self.bordersize
+        local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
+        local bit_height = bar_height/3
+        for i=1, #self.flows do
+            local tick_x = bar_width*((self.flows[i][1]-1)/self.last)
+            local width = bar_width*((self.flows[i][2])/self.last)
+            width = math.ceil(tick_x + width)
+            tick_x = math.floor(tick_x)
+            width = width - tick_x
+            if self._mirroredUI then
+                tick_x = bar_width - tick_x - width
+            end
+            bb:paintRect(
+                x + self.margin_h + tick_x,
+                y_pos + (bar_height-bit_height)/2,
+                width,
+                bit_height,
+                self.nlcolor)
         end
     end
 end

@@ -55,7 +55,8 @@ local ReaderRolling = InputContainer:new{
     -- With visible_pages=2, in 2-pages mode, ensure the first
     -- page is always odd or even (odd is logical to avoid a
     -- same page when turning first 2-pages set of document)
-    odd_or_even_first_page = 1 -- 1 = odd, 2 = even, nil or others = free
+    odd_or_even_first_page = 1, -- 1 = odd, 2 = even, nil or others = free
+    hide_nonlinear = nil,
 }
 
 function ReaderRolling:init()
@@ -206,7 +207,7 @@ function ReaderRolling:onReadSettings(config)
         self.setupXpointer = function()
             self.xpointer = self.ui.document:getXPointer()
             if self.view.view_mode == "page" then
-                self.ui:handleEvent(Event:new("PageUpdate", 1))
+                self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getNextPage(0)))
             end
         end
     end
@@ -229,6 +230,12 @@ function ReaderRolling:onReadSettings(config)
     self.visible_pages = config:readSetting("visible_pages") or
         G_reader_settings:readSetting("copt_visible_pages") or 1
     self.ui.document:setVisiblePageCount(self.visible_pages)
+
+    self.hide_nonlinear = config:readSetting("hide_nonlinear")
+    if self.hide_nonlinear == nil then
+        self.hide_nonlinear = G_reader_settings:isTrue("hide_nonlinear")
+    end
+    self.ui.document:setHideNonlinear(self.hide_nonlinear)
 
     -- Set a callback to allow showing load and rendering progress
     -- (this callback will be cleaned up by cre.cpp closeDocument(),
@@ -302,6 +309,7 @@ function ReaderRolling:onSaveSettings()
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
     self.ui.doc_settings:saveSetting("visible_pages", self.visible_pages)
+    self.ui.doc_settings:saveSetting("hide_nonlinear", self.hide_nonlinear)
 end
 
 function ReaderRolling:onReaderReady()
@@ -457,6 +465,30 @@ You can set how many lines are shown.]])
         help_text = _([[When page overlap is enabled, some lines from the previous pages are shown on the next page.]]),
         sub_item_table = page_overlap_menu,
     }
+    local hide_nonlinear_text = _("When this option is enabled, if a document contains non-linear fragments, \z
+                                   they will be hidden from the normal page flow, \z
+                                   but they are still accessible through links, Toc or Go to. \z
+                                   This currently works only in single-page, non-scrolling mode.")
+    menu_items.hide_nonlinear = {
+        text = _("Hide non-linear fragments"),
+        enabled_func = function() return self.view.view_mode == "page" and self.ui.document:getVisiblePageCount() == 1 end,
+        checked_func = function() return self.hide_nonlinear end,
+        callback = function()
+            self.ui:handleEvent(Event:new("ToggleHideNonlinear"))
+        end,
+        hold_callback = function()
+            UIManager:show(ConfirmBox:new{
+                text = T(
+                    hide_nonlinear_text .. _("\n\nSet default hide non-linear fragments to %1?"),
+                    self.hide_nonlinear and _("enabled") or _("disabled")
+                ),
+                ok_callback = function()
+                    G_reader_settings:saveSetting("hide_nonlinear", self.hide_nonlinear)
+                end,
+            })
+        end,
+        help_text = hide_nonlinear_text,
+    }
 end
 
 function ReaderRolling:getLastPercent()
@@ -526,8 +558,13 @@ end
 function ReaderRolling:onGotoNextChapter()
     local visible_page_count = self.ui.document:getVisiblePageCount()
     local pageno = self.current_page + (visible_page_count > 1 and 1 or 0)
-    local new_page = self.ui.toc:getNextChapter(pageno, 0)
-    if new_page then
+    -- Find next chapter start
+    local new_page = self.ui.document:getNextPage(pageno)
+    while new_page > 0 do
+        if self.ui.toc:isChapterStart(new_page) then break end
+        new_page = self.ui.document:getNextPage(new_page)
+    end
+    if new_page > 0 then
         self.ui.link:addCurrentLocationToStack()
         self:onGotoPage(new_page)
     end
@@ -536,8 +573,13 @@ end
 
 function ReaderRolling:onGotoPrevChapter()
     local pageno = self.current_page
-    local new_page = self.ui.toc:getPreviousChapter(pageno, 0)
-    if new_page then
+    -- Find previous chapter start
+    local new_page = self.ui.document:getPrevPage(pageno)
+    while new_page > 0 do
+        if self.ui.toc:isChapterStart(new_page) then break end
+        new_page = self.ui.document:getPrevPage(new_page)
+    end
+    if new_page > 0 then
         self.ui.link:addCurrentLocationToStack()
         self:onGotoPage(new_page)
     end
@@ -721,7 +763,17 @@ function ReaderRolling:onGotoViewRel(diff)
         else
             diff = math.floor(diff)
         end
-        self:_gotoPage(self.current_page + diff*page_count)
+        local new_page = self.current_page
+        local test_page = 0
+        for i=1, math.abs(diff*page_count) do
+            if diff > 0 then
+                test_page = self.ui.document:getNextPage(new_page)
+            else
+                test_page = self.ui.document:getPrevPage(new_page)
+            end
+            if test_page > 0 then new_page = test_page end
+        end
+        self:_gotoPage(new_page)
         if diff > 0 and old_page == self.current_page then
             self.ui:handleEvent(Event:new("EndOfBook"))
         end
@@ -808,7 +860,6 @@ function ReaderRolling:onChangeViewMode()
     self.old_doc_height = self.ui.document.info.doc_height
     self.old_page = self.ui.document.info.number_of_pages
     self.ui:handleEvent(Event:new("UpdateToc"))
-    self.view.footer:setTocMarkers(true)
     if self.xpointer then
         self:_gotoXPointer(self.xpointer)
         -- Ensure a whole screen refresh is always enqueued
@@ -1025,6 +1076,9 @@ function ReaderRolling:handleEngineCallback(ev, ...)
         -- file or re-rendering)
         self:showEngineProgress(1 - args[1]/100) -- unfill progress
     elseif ev == "OnDocumentReady" or ev == "OnSaveCacheFileEnd" then
+        if ev == "OnDocumentReady" then
+            self.ui.document:cacheFlows()
+        end
         self:showEngineProgress() -- cleanup
     elseif ev == "OnLoadFileError" then
         logger.warn("Cre error loading file:", args[1])
@@ -1308,6 +1362,14 @@ Note that %1 (out of %2) xpaths from your bookmarks and highlights have been nor
             end)
         end,
     })
+end
+
+function ReaderRolling:onToggleHideNonlinear()
+    self.hide_nonlinear = not self.hide_nonlinear
+    self.ui.document:setHideNonlinear(self.hide_nonlinear)
+    self.ui.document:render()
+    self.ui:handleEvent(Event:new("UpdateToc"))
+    self.ui:handleEvent(Event:new("ChangeViewMode"))
 end
 
 -- Duplicated in ReaderPaging
