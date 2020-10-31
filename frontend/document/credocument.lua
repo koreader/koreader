@@ -1290,7 +1290,7 @@ function CreDocument:setupCallCache()
             -- gotoXPointer() is for cre internal fixup, we always use gotoPage/Pos
             -- (goBack, goForward, gotoLink are not used)
 
-            -- For some, we prefer no cache (if they costs nothing, return some huge
+            -- For some, we prefer no cache (if they cost nothing, return some huge
             -- data that we'd rather not cache, are called with many different args,
             -- or we'd rather have up to date crengine state)
             elseif name == "getCurrentPage" then no_wrap = true

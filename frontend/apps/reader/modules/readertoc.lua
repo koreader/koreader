@@ -185,7 +185,7 @@ function ReaderToc:validateAndFixToc()
                     nb_next = nb_next + 1
                 end
             end
-            logger.dbg("BOGUS TOC:", i, page, ">", i-1, cur_page, "-", nb_prev, nb_next)
+            logger.dbg("BOGUS TOC:", i, page, "<", i-1, cur_page, "-", nb_prev, nb_next)
             if nb_prev <= nb_next then -- less changes when fixing previous pages
                 local fixed_page
                 if i-nb_prev-1 >= 1 then
