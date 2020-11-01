@@ -17,11 +17,18 @@ local util  = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
 
+local crashlog = require("ui/elements/logviewer"):new{ file = "crash.log" }
+
 local FileManagerMenu = InputContainer:extend{
     tab_item_table = nil,
     menu_items = {},
     registered_widgets = nil,
 }
+
+function FileManagerMenu:onShowCrashlog()
+    crashlog:show()
+    return true
+end
 
 function FileManagerMenu:init()
     self.menu_items = {
@@ -300,6 +307,14 @@ function FileManagerMenu:setUpdateItemTable()
             },
         }
     }
+    if crashlog:exists() then
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            text = _("Show crash.log"),
+            keep_menu_open = true,
+            callback = function() crashlog:show() end,
+        })
+    end
+
     if Device:isKobo() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Disable forced 8-bit pixel depth"),

@@ -10,7 +10,12 @@ Example:
 ]]
 
 local dump = require("dump")
+local isSDL = require("ffi/util").isSDL()
 local isAndroid, android = pcall(require, "android")
+
+-- write to crash.log on SDL platform based on environment.
+-- on other platforms crash.log is generated redirecting stdout in init shell scripts.
+local logfile = isSDL and os.getenv("EMULATE_CRASH_LOG") and io.open("crash.log", "w+")
 
 local DEFAULT_DUMP_LVL = 10
 
@@ -60,8 +65,13 @@ local function log(log_lvl, dump_lvl, ...)
             android.LOGE(line)
         end
     else
-        io.stdout:write(os.date("%x-%X"), " ", LOG_PREFIX[log_lvl], line, "\n")
+        local msg = string.format("%s %s%s\n", os.date("%x-%X"), LOG_PREFIX[log_lvl], line)
+        io.stdout:write(msg)
         io.stdout:flush()
+        if logfile then
+            logfile:write(msg)
+            logfile:flush()
+        end
     end
 end
 
