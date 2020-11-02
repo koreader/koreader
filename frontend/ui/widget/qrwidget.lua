@@ -6,6 +6,7 @@ local ImageWidget = require("ui/widget/imagewidget")
 local RenderImage = require("ui/renderimage")
 local logger = require("logger")
 local qrencode = require("qrencode")
+local _ = require("gettext")
 
 local QRWidget = ImageWidget:extend{
     scale_factor = 0,
@@ -14,17 +15,25 @@ local QRWidget = ImageWidget:extend{
 }
 
 function QRWidget:init()
-    local ok, ret = qrencode.qrcode(self.text:sub(1, 2953))
+    local text = self.text
+    if #text > 2953 then
+        local truncated = _('... (truncated...)')
+        text = text:sub(1, 2953 - #truncated) .. truncated
+    end
+    local ok, ret = qrencode.qrcode(text)
     if not ok then
         logger.info("QRWidget: failed to generate QR code.")
         return
     else
         -- We generate pbm data
-        local qr = {"P1\n", 2*#ret[1], " ", 2*#ret, "\n"}
+        local scaling = 4
+        local qr = {"P1\n", scaling*#ret[1], " ", scaling*#ret, "\n"}
         for _, col in ipairs(ret) do
-            for i = 1, 2 do
+            for i = 1, scaling do
                 for _, lgn in ipairs(col) do
-                    table.insert(qr, lgn > 0 and "1 1 " or "0 0 ")
+                    for j = 1, scaling do
+                        table.insert(qr, lgn > 0 and "1 " or "0 ")
+                    end
                 end
                 table.insert(qr, "\n")
             end

@@ -62,8 +62,8 @@ function QRMessage:init()
 
     local image_widget = QRWidget:new{
         text = self.text,
-        width = self.width and .9 * self.width,
-        height = self.height and .9 * self.height,
+        width = self.width and math.floor(0.9 * self.width),
+        height = self.height and math.floor(0.9 * self.height),
         alpha = self.alpha,
         scale_factor = self.scale_factor,
     }
@@ -73,7 +73,7 @@ function QRMessage:init()
 
     local frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
-        padding = .05 * math.min(width, height),
+        padding = math.floor(0.05 * math.min(width, height)),
         image_widget,
     }
     self[1] = CenterContainer:new{
