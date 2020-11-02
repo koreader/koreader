@@ -2,8 +2,8 @@
 QRWidget shows a QR code for a given text.
 ]]
 
+local Blitbuffer = require("ffi/blitbuffer")
 local ImageWidget = require("ui/widget/imagewidget")
-local RenderImage = require("ui/renderimage")
 local logger = require("logger")
 local qrencode = require("qrencode")
 local _ = require("gettext")
@@ -20,36 +20,23 @@ function QRWidget:init()
         local truncated = _('... (truncated...)')
         text = text:sub(1, 2953 - #truncated) .. truncated
     end
-    local ok, ret = qrencode.qrcode(text)
+    local ok, grid = qrencode.qrcode(text)
     if not ok then
         logger.info("QRWidget: failed to generate QR code.")
         return
     else
-        -- We generate pbm data
-        local scaling = 4
-        local qr = {"P1\n", scaling*#ret[1], " ", scaling*#ret, "\n"}
-        for _, col in ipairs(ret) do
-            for i = 1, scaling do
-                for _, lgn in ipairs(col) do
-                    for j = 1, scaling do
-                        table.insert(qr, lgn > 0 and "1 " or "0 ")
-                    end
+        local scale = 5
+        local grid_size = scale * #grid
+        local bb = Blitbuffer.new(grid_size, grid_size)
+        local white = Blitbuffer.COLOR_WHITE
+        for x, col in ipairs(grid) do
+            for y, lgn in ipairs(col) do
+                if lgn < 0 then
+                    bb:paintRect((x - 1) * scale, (y - 1) * scale, scale, scale, white)
                 end
-                table.insert(qr, "\n")
             end
         end
-        qr = table.concat(qr, '')
-        local square_size
-        if self.width then
-            if self.height then
-                square_size = math.min(self.width, self.height)
-            else
-                square_size = self.width
-            end
-        elseif self.height then
-            square_size = self.height
-        end
-        self.image = RenderImage:renderImageData(qr, #qr, square_size, square_size)
+        self.image = bb
     end
 end
 
