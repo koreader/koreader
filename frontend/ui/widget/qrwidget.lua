@@ -29,8 +29,8 @@ function QRWidget:init()
         local grid_size = scale * #grid
         local bb = Blitbuffer.new(grid_size, grid_size)
         local white = Blitbuffer.COLOR_WHITE
-        for x, col in ipairs(grid) do
-            for y, lgn in ipairs(col) do
+        for x, col in pairs(grid) do
+            for y, lgn in pairs(col) do
                 if lgn < 0 then
                     bb:paintRect((x - 1) * scale, (y - 1) * scale, scale, scale, white)
                 end
