@@ -3,6 +3,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Dispatcher = require("dispatcher")
 local Font = require("ui/font")
+local QRMessage = require("ui/widget/qrmessage")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("luasettings")
@@ -476,6 +477,18 @@ function TextEditor:editFile(file_path, readonly)
                             timeout = 2,
                         })
                     end
+                end,
+            },
+        }} or {{
+            {
+                text = _("QR"),
+                callback = function()
+                    local dim = math.min(Screen:getWidth(), Screen:getHeight()) * .8
+                    UIManager:show(QRMessage:new{
+                        text = input:getInputText(),
+                        height = dim,
+                        width = dim
+                    })
                 end,
             },
         }},
