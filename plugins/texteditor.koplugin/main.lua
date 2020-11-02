@@ -484,7 +484,6 @@ function TextEditor:editFile(file_path, readonly)
         table.insert(buttons_first_row, {
             text = _("QR"),
             callback = function()
-                local dim = math.min(Screen:getWidth(), Screen:getHeight())
                 UIManager:show(QRMessage:new{
                     text = input:getInputText(),
                     height = Screen:getHeight(),
