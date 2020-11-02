@@ -64,6 +64,7 @@ function TextEditor:loadSettings()
     end
     self.auto_para_direction = self.settings:readSetting("auto_para_direction") or true
     self.force_ltr_para_direction = self.settings:readSetting("force_ltr_para_direction") or false
+    self.qr_code_export = self.settings:readSetting("qr_code_export") or true
 end
 
 function TextEditor:onFlushSettings()
@@ -75,6 +76,7 @@ function TextEditor:onFlushSettings()
         self.settings:saveSetting("font_size", self.font_size)
         self.settings:saveSetting("auto_para_direction", self.auto_para_direction)
         self.settings:saveSetting("force_ltr_para_direction", self.force_ltr_para_direction)
+        self.settings:saveSetting("qr_code_export", self.qr_code_export)
         self.settings:flush()
     end
 end
@@ -151,6 +153,17 @@ Enable this if you are mostly editing code, HTML, CSS…]]),
                     end,
                     callback = function()
                         self.force_ltr_para_direction = not self.force_ltr_para_direction
+                    end,
+                },
+                {
+                    text = _("Enable QR code export"),
+                    help_text = _([[
+Export text to QR code, that can be scanned, for example, by a phone.]]),
+                    checked_func = function()
+                        return self.qr_code_export
+                    end,
+                    callback = function()
+                        self.qr_code_export = not self.qr_code_export
                     end,
                 },
             },
@@ -448,6 +461,38 @@ function TextEditor:editFile(file_path, readonly)
     if self.force_ltr_para_direction then
         para_direction_rtl = false -- force LTR
     end
+    local buttons_first_row = {}  -- First button on first row, that will be filled with Reset|Save|Close
+    if is_lua then
+        table.insert(buttons_first_row, {
+            text = _("Check Lua"),
+            callback = function()
+                local parse_error = util.checkLuaSyntax(input:getInputText())
+                if parse_error then
+                    UIManager:show(InfoMessage:new{
+                        text = T(_("Lua syntax check failed:\n\n%1"), parse_error)
+                    })
+                else
+                    UIManager:show(Notification:new{
+                        text = T(_("Lua syntax OK")),
+                        timeout = 2,
+                    })
+                end
+            end,
+        })
+    end
+    if self.qr_code_export then
+        table.insert(buttons_first_row, {
+            text = _("QR"),
+            callback = function()
+                local dim = math.min(Screen:getWidth(), Screen:getHeight())
+                UIManager:show(QRMessage:new{
+                    text = input:getInputText(),
+                    height = Screen:getHeight(),
+                    width = Screen:getWidth()
+                })
+            end,
+        })
+    end
     input = InputDialog:new{
         title =  filename,
         input = self:readFileContent(file_path),
@@ -461,37 +506,7 @@ function TextEditor:editFile(file_path, readonly)
         readonly = readonly,
         add_nav_bar = true,
         scroll_by_pan = true,
-        buttons = is_lua and {{
-            -- First button on first row, that will be filled with Reset|Save|Close
-            {
-                text = _("Check Lua"),
-                callback = function()
-                    local parse_error = util.checkLuaSyntax(input:getInputText())
-                    if parse_error then
-                        UIManager:show(InfoMessage:new{
-                            text = T(_("Lua syntax check failed:\n\n%1"), parse_error)
-                        })
-                    else
-                        UIManager:show(Notification:new{
-                            text = T(_("Lua syntax OK")),
-                            timeout = 2,
-                        })
-                    end
-                end,
-            },
-        }} or {{
-            {
-                text = _("QR"),
-                callback = function()
-                    local dim = math.min(Screen:getWidth(), Screen:getHeight()) * .8
-                    UIManager:show(QRMessage:new{
-                        text = input:getInputText(),
-                        height = dim,
-                        width = dim
-                    })
-                end,
-            },
-        }},
+        buttons = {buttons_first_row},
         -- Set/save view and cursor position callback
         view_pos_callback = function(top_line_num, charpos)
             -- This same callback is called with no argument to get initial position,
