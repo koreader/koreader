@@ -39,17 +39,17 @@ function QRWidget:init()
             end
         end
         qr = table.concat(qr, '')
-        local dim
+        local square_size
         if self.width then
             if self.height then
-                dim = math.min(self.width, self.height)
+                square_size = math.min(self.width, self.height)
             else
-                dim = self.width
+                square_size = self.width
             end
         elseif self.height then
-            dim = self.height
+            square_size = self.height
         end
-        self.image = RenderImage:renderImageData(qr, #qr, dim, dim)
+        self.image = RenderImage:renderImageData(qr, #qr, square_size, square_size)
     end
 end
 
