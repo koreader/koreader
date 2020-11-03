@@ -4,6 +4,7 @@ QRWidget shows a QR code for a given text.
 
 local Blitbuffer = require("ffi/blitbuffer")
 local ImageWidget = require("ui/widget/imagewidget")
+local Screen = require("device").screen
 local logger = require("logger")
 local qrencode = require("ffi/qrencode")
 local _ = require("gettext")
@@ -17,7 +18,7 @@ local QRWidget = ImageWidget:extend{
 function QRWidget:init()
     local text = self.text
     if #text > 2953 then
-        local truncated = _('... (truncated...)')
+        local truncated = _("... (truncated...)")
         text = text:sub(1, 2953 - #truncated) .. truncated
     end
     local ok, grid = qrencode.qrcode(text)
@@ -25,7 +26,7 @@ function QRWidget:init()
         logger.info("QRWidget: failed to generate QR code.")
         return
     else
-        local scale = 5
+        local scale = Screen:scaleBySize(5)
         local grid_size = scale * #grid
         local bb = Blitbuffer.new(grid_size, grid_size)
         local white = Blitbuffer.COLOR_WHITE

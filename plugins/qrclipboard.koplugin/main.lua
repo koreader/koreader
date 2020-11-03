@@ -9,7 +9,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 
 local QRClipboard = WidgetContainer:new{
-    name = 'qrclipboard',
+    name = "qrclipboard",
     is_doc_only = false,
 }
 

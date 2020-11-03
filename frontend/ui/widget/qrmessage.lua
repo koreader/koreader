@@ -28,6 +28,8 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local Input = Device.input
 local Screen = Device.screen
+local Size = require("ui/size")
+local logger = require("logger")
 
 local QRMessage = InputContainer:new{
     modal = true,
@@ -60,10 +62,13 @@ function QRMessage:init()
         }
     end
 
+    local padding = Size.padding.fullscreen
+    logger.info("PADDING:", padding)
+
     local image_widget = QRWidget:new{
         text = self.text,
-        width = self.width and math.floor(0.9 * self.width),
-        height = self.height and math.floor(0.9 * self.height),
+        width = self.width and (self.width - 2 * padding),
+        height = self.height and (self.height - 2 * padding),
         alpha = self.alpha,
         scale_factor = self.scale_factor,
     }
@@ -73,7 +78,7 @@ function QRMessage:init()
 
     local frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
-        padding = math.floor(0.05 * math.min(width, height)),
+        padding = padding,
         image_widget,
     }
     self[1] = CenterContainer:new{
@@ -104,17 +109,11 @@ function QRMessage:onAnyKeyPressed()
     -- triggered by our defined key events
     self.dismiss_callback()
     UIManager:close(self)
-    if self.readonly ~= true then
-        return true
-    end
 end
 
 function QRMessage:onTapClose()
     self.dismiss_callback()
     UIManager:close(self)
-    if self.readonly ~= true then
-        return true
-    end
 end
 
 return QRMessage
