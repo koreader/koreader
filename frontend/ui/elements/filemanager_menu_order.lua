@@ -106,6 +106,7 @@ local order = {
         "send2ebook",
         "text_editor",
         "profiles",
+        "qrclipboard",
         "----------------------------",
         "more_tools",
     },
