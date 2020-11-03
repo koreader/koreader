@@ -26,7 +26,18 @@ function QRWidget:init()
         logger.info("QRWidget: failed to generate QR code.")
         return
     else
-        local scale = Screen:scaleBySize(5)
+        local scale
+        if self.width then
+            if self.height then
+                scale = math.min(self.width, self.height)/#grid
+            else
+                scale = self.width/#grid
+            end
+        elseif self.height then
+            scale = self.height/#grid
+        else scale = 2
+        end
+        scale = Screen:scaleBySize(scale)
         local grid_size = scale * #grid
         local bb = Blitbuffer.new(grid_size, grid_size)
         local white = Blitbuffer.COLOR_WHITE
