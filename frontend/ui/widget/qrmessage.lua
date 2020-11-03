@@ -29,7 +29,6 @@ local UIManager = require("ui/uimanager")
 local Input = Device.input
 local Screen = Device.screen
 local Size = require("ui/size")
-local logger = require("logger")
 
 local QRMessage = InputContainer:new{
     modal = true,
@@ -63,7 +62,6 @@ function QRMessage:init()
     end
 
     local padding = Size.padding.fullscreen
-    logger.info("PADDING:", padding)
 
     local image_widget = QRWidget:new{
         text = self.text,
