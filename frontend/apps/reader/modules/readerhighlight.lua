@@ -6,6 +6,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
+local QRMessage = require("ui/widget/qrmessage")
 local TimeVal = require("ui/timeval")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
@@ -575,6 +576,19 @@ function ReaderHighlight:onShowHighlightMenu()
                 end,
             },
         },
+        {
+            {
+                text = _("QR"),
+                enabled = Device:hasClipboard(),
+                callback = function()
+                    UIManager:show(QRMessage:new{
+                        text = self.selected_text.text,
+                        width = Device.screen:getWidth(),
+                        height = Device.screen:getHeight()
+                    })
+                end,
+            },
+        }
     }
     if self.selected_link ~= nil then
         table.insert(highlight_buttons, { -- for now, a single button in an added row
