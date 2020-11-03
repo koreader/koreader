@@ -356,14 +356,52 @@ common_settings.back_in_filemanager = {
         },
     },
 }
-common_settings.enable_back_history = {
-    text = _("Enable back history"),
-    checked_func = function()
-        return G_reader_settings:nilOrTrue("enable_back_history")
-    end,
-    callback = function()
-        G_reader_settings:flipNilOrTrue("enable_back_history")
-    end,
+common_settings.back_in_reader = {
+    -- All these options are managed by ReaderBack
+    text = _("Back in reader"),
+    sub_item_table = {
+        {
+            text_func = function()
+                local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
+                return T(_("Back to exit (%1)"),
+                         back_to_exit_str[back_to_exit][2])
+            end,
+            checked_func = function()
+                return G_reader_settings:readSetting("back_in_reader") == "default"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("back_in_reader", "default")
+            end,
+        },
+        {
+            text = _("Go to file browser"),
+            checked_func = function()
+                return G_reader_settings:readSetting("back_in_reader") == "filebrowser"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("back_in_reader", "filebrowser")
+            end,
+        },
+        {
+            text = _("Go to previous location"),
+            checked_func = function()
+                local back_in_reader = G_reader_settings:readSetting("back_in_reader")
+                return back_in_reader == "previous_location" or back_in_reader == nil
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("back_in_reader", "previous_location")
+            end,
+        },
+        {
+            text = _("Go to previous read page"),
+            checked_func = function()
+                return G_reader_settings:readSetting("back_in_reader") == "previous_read_page"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("back_in_reader", "previous_read_page")
+            end,
+        },
+    },
 }
 if Device:hasKeys() then
     common_settings.invert_page_turn_buttons = {

@@ -292,6 +292,7 @@ book, the page view will be roughly the same.
 function ReaderPaging:setPagePosition(page, pos)
     logger.dbg("set page position", pos)
     self.page_positions[page] = pos
+    self.ui:handleEvent(Event:new("PagePositionUpdated"))
 end
 
 --[[
@@ -532,16 +533,34 @@ end
 
 function ReaderPaging:onRestoreBookLocation(saved_location)
     if self.view.page_scroll then
-        self.view:restoreViewContext(saved_location)
-        self:_gotoPage(self.view.page_states[1].page, "scrolling")
+        if self.view:restoreViewContext(saved_location) then
+            self:_gotoPage(saved_location[1].page, "scrolling")
+        else
+            -- If context is unusable (not from scroll mode), trigger
+            -- this to go at least to its page and redraw it
+            self.ui:handleEvent(Event:new("PageUpdate", saved_location[1].page))
+        end
     else
-        -- gotoPage will emit PageUpdate event, which will trigger recalculate
+        -- gotoPage may emit PageUpdate event, which will trigger recalculate
         -- in ReaderView and resets the view context. So we need to call
-        -- restoreViewContext after gotoPage
+        -- restoreViewContext after gotoPage.
+        -- But if we're restoring to the same page, it will not emit
+        -- PageUpdate event - so we need to do it for a correct redrawing
+        local send_PageUpdate = saved_location[1].page == self.current_page
         self:_gotoPage(saved_location[1].page)
-        self.view:restoreViewContext(saved_location)
+        if not self.view:restoreViewContext(saved_location) then
+            -- If context is unusable (not from page mode), also
+            -- send PageUpdate event to go to its page and redraw it
+            send_PageUpdate = true
+        end
+        if send_PageUpdate then
+            self.ui:handleEvent(Event:new("PageUpdate", saved_location[1].page))
+        end
     end
     self:setPagePosition(self:getTopPage(), self:getTopPosition())
+    -- In some cases (same page, different offset), doing the above
+    -- might not redraw the screen. Ensure it is.
+    UIManager:setDirty(self.view.dialog, "partial")
     return true
 end
 

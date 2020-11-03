@@ -41,11 +41,8 @@ function ReaderLink:init()
             doc = "go to selected page link",
             event = "GotoSelectedPageLink",
         }
-        self.key_events.GoBackLink = {
-            { "Back" },
-            doc = "go back from link",
-            event = "GoBackLink",
-        }
+        -- "Back" is handled by ReaderBack, which will call our onGoBackLink()
+        -- when G_reader_settings:readSetting("back_in_reader") == "previous_location"
     end
     if Device:isTouchDevice() then
         self.ui:registerTouchZones({

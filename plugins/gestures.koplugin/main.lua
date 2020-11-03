@@ -479,7 +479,7 @@ Default value: %1]]), Screen.low_pan_rate and 5.0 or 30.0),
                         info_text = T(_([[
 Any other taps made within this interval after a first tap will be considered accidental and ignored.
 
-The interval value is in milliseconds and can range from 0 (0 second) to 2000 (2 seconds).
+The interval value is in milliseconds and can range from 0 (0 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.TAP_INTERVAL/1000),
                         width = math.floor(Screen:getWidth() * 0.75),
                         value = GestureDetector:getInterval("ges_tap_interval")/1000,
@@ -507,7 +507,7 @@ Default value: %1]]), GestureDetector.TAP_INTERVAL/1000),
                         info_text = _([[
 Any other taps made within this interval after a first tap will be considered accidental and ignored.
 
-The interval value is in milliseconds and can range from 0 (0 second) to 2000 (2 seconds).
+The interval value is in milliseconds and can range from 0 (0 seconds) to 2000 (2 seconds).
 Default value: 0]]),
                         width = math.floor(Screen:getWidth() * 0.75),
                         value = (G_reader_settings:readSetting("ges_tap_interval_on_keyboard") or 0)/1000,

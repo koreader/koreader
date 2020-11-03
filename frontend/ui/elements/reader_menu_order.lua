@@ -75,7 +75,7 @@ local order = {
     navigation = {
         "back_to_exit",
         "back_in_filemanager",
-        "enable_back_history",
+        "back_in_reader",
         "android_volume_keys",
         "android_camera_key",
         "android_haptic_feedback",
