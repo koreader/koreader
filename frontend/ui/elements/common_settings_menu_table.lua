@@ -268,6 +268,24 @@ if Device:isAndroid() then
             callback = function() require("ui/elements/screen_android"):toggleFullscreen() end,
         }
     end
+
+    -- ignore battery optimization
+    if Device.firmware_rev >= 23 then
+        common_settings.ignore_battery_optimizations = {
+            text = _("Battery optimizations"),
+            checked_func = function() return not android.settings.hasPermission("battery") end,
+            callback = function()
+                local text = _([[
+Go to Android battery optimization settings?
+
+You will be prompted with a permission management screen.
+
+Please don't change any settings unless you know what you're doing.]])
+
+                android.settings.requestPermission("battery", text, _("OK"), _("Cancel"))
+            end,
+        }
+    end
 end
 
 if Device:isTouchDevice() then
