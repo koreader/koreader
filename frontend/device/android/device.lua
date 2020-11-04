@@ -382,6 +382,11 @@ function Device:isValidPath(path)
     return android.isPathInsideSandbox(path)
 end
 
+function Device:isValidFile(filename)
+    local path, name = util.splitFilePathName(filename)
+    return Device:isValidPath(path) and name ~= "" and lfs.attributes(filename, "mode") ~= "directory"
+end
+
 --swallow all events
 local function processEvents()
     local events = ffi.new("int[1]")
