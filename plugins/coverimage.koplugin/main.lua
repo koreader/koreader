@@ -14,9 +14,8 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 
 local function pathOk(filename)
-    filename = filename:gsub("/$", "")
-    local path = util.splitFilePathName(filename)
-    return Device:isValidPath(path)
+    local path, name = util.splitFilePathName(filename)
+    return Device:isValidPath(path) and name ~= "" and lfs.attributes(filename, "mode") ~= "directory"
 end
 
 local CoverImage = WidgetContainer:new{
@@ -25,8 +24,8 @@ local CoverImage = WidgetContainer:new{
 }
 
 function CoverImage:init()
-    self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or "Cover.png"
-    self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or "Cover_fallback.png"
+    self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or "cover.png"
+    self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or "cover_fallback.png"
     self.enabled = G_reader_settings:isTrue("cover_image_enabled")
     self.fallback = G_reader_settings:isTrue("cover_image_fallback")
     self.ui.menu:registerToMainMenu(self)
@@ -40,17 +39,9 @@ function CoverImage:_fallback()
     return self.fallback
 end
 
-function CoverImage:dubiousFallbackImage()
-    UIManager:show(InfoMessage:new{
-        text = T(_("\"%1\" \nis not a valid image file!\nPlease correct fallback image in Cover-Image"), self.cover_image_fallback_path),
-        show_icon = true,
-        timeout = 10,
-    })
-end
-
 function CoverImage:showWrongPath( path )
     UIManager:show(InfoMessage:new{
-        text = T(_("Path of \"%1\" is not accessible.\nPlease correct it."), path),
+        text = T(_("\"%1\" is not a valid file."), path),
         show_icon = true,
     })
 end
@@ -59,10 +50,14 @@ function CoverImage:cleanUpImage()
     if self.cover_image_fallback_path == "" or not self.fallback then
         os.remove(self.cover_image_path)
     elseif lfs.attributes(self.cover_image_fallback_path, "mode") ~= "file" then
-        self:dubiousFallbackImage()
+        UIManager:show(InfoMessage:new{
+            text = T(_("\"%1\" \nis not a valid image file!\nA valid fallback image is required in Cover-Image"), self.cover_image_fallback_path),
+            show_icon = true,
+            timeout = 10,
+        })
         os.remove(self.cover_image_path)
     else
-        os.execute("cp " .. self.cover_image_fallback_path .. " " .. self.cover_image_path)
+        os.execute("cp \"" .. self.cover_image_fallback_path .. "\" \"" .. self.cover_image_path .. "\"")
     end
 end
 
@@ -85,20 +80,20 @@ function CoverImage:onReaderReady(doc_settings)
 end
 
 local about_text = _([[
-This plugin saves the current book cover to a file, so it can be used as a screensaver, if your android version and firmware supports it (e.g: Tolinos).
+This plugin saves the current book cover to a file. That file can be used as a screensaver on certain Android devices, such as Tolinos.
 
-If enabled the cover image of the actual file is stored to the selected screensaver file. Certain books can be excluded.
+If enabled, the cover image of the actual file is stored in the selected screensaver file. Books can be excluded if desired.
 
 If fallback is activated, the fallback file will be copied to the screensaver file on book closing.
-If the filename is empty or the file does not exist, the cover file will be deleted and system screensaver is used.
+If the filename is empty or the file doesn't exist, the cover file will be deleted and the system screensaver will be used instead.
 
-If fallback is not activated the screensaver image remains after closing a book.]])
+If the fallback image isn't activated, the screensaver image will stay in place after closing a book.]])
 
 function CoverImage:addToMainMenu(menu_items)
     menu_items.coverimage = {
 --        sorting_hint = "document",
         sorting_hint = "screen",
-        text = _("Cover Image"),
+        text = _("Save cover image"),
         checked_func = function()
             return self.enabled or self.fallback
         end,
@@ -120,13 +115,13 @@ function CoverImage:addToMainMenu(menu_items)
                 checked_func = function()
                     return self.cover_image_path ~= "" and pathOk(self.cover_image_path)
                 end,
-                help_text = _("This is the filename, where the cover of the actual book is stored to."),
+                help_text = _("The cover of the current book will be stored in this file."),
                 keep_menu_open = true,
                 callback = function(menu)
                     local InputDialog = require("ui/widget/inputdialog")
                     local sample_input
                     sample_input = InputDialog:new{
-                        title = _("Set system screensaver image path"),
+                        title = _("Screensaver image filename"),
                         input = self.cover_image_path,
                         input_type = "string",
                         description = _("You can enter the filename of the cover image here."),
@@ -167,7 +162,7 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: enable
             {
-                text = _("Save current book cover as screensaver image"),
+                text = _("Save book cover"),
                 checked_func = function()
                     return self:_enabled() and pathOk(self.cover_image_path)
                 end,
@@ -206,21 +201,20 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: set fallback image
             {
-                text = _("Set fallback image when no cover or excl. book"),
+                text = _("Set fallback image"),
                 checked_func = function()
                     return lfs.attributes(self.cover_image_fallback_path, "mode") == "file"
                 end,
-                help_text =  _("File to use as cover image, when no cover is wanted or book is excluded.\nLeave it blank to use nothing."),
+                help_text =  _("File to use when no cover is wanted (found ???) or book is excluded.\nLeave this blank to turn off the fallback image."),
                 keep_menu_open = true,
                 callback = function(menu)
                     local InputDialog = require("ui/widget/inputdialog")
                     local sample_input
                     sample_input = InputDialog:new{
-                        title = _("Filename of fallback image"),
+                        title = _("Fallback image filename"),
                         input = self.cover_image_fallback_path,
                         input_type = "string",
-                        description = _("You can enter the filename of the fallback image here.\n" ..
-                            "Leave it empty to clean up on close."),
+                        description = _("Leave this empty to remove the cover when the document is closed."),
                         buttons = {
                             {
                                 {
@@ -236,7 +230,12 @@ function CoverImage:addToMainMenu(menu_items)
                                         self.cover_image_fallback_path = sample_input:getInputText()
                                         G_reader_settings:saveSetting("cover_image_fallback_path", self.cover_image_fallback_path)
                                         if lfs.attributes(self.cover_image_fallback_path, "mode") ~= "file" then
-                                            self:dubiousFallbackImage()
+                                            UIManager:show(InfoMessage:new{
+                                                text = T(_("\"%1\" \nis not a valid image file!\nA valid fallback image is required in Cover-Image"),
+                                                    self.cover_image_fallback_path),
+                                                show_icon = true,
+                                                timeout = 10,
+                                            })
                                         end
                                         UIManager:close(sample_input)
                                         menu:updateItems()
@@ -251,7 +250,7 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: fallback
             {
-                text = _("Use fallback image when leaving book"),
+                text = _("Turn on fallback image"),
                 checked_func = function()
                     return self:_fallback()
                 end,
