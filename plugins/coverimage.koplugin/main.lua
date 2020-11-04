@@ -7,6 +7,7 @@ end
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
@@ -19,7 +20,7 @@ local function pathOk(filename)
 end
 
 local CoverImage = WidgetContainer:new{
-    name = 'coverimage',
+    name = "coverimage",
     is_doc_only = true,
 }
 
@@ -56,8 +57,8 @@ function CoverImage:cleanUpImage()
             timeout = 10,
         })
         os.remove(self.cover_image_path)
-    else
-        os.execute("cp \"" .. self.cover_image_fallback_path .. "\" \"" .. self.cover_image_path .. "\"")
+    elseif Device:isValidFile(self.cover_image_path) then
+        ffiutil.copyFile(self.cover_image_fallback_path, self.cover_image_path)
     end
 end
 
