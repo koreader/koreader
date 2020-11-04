@@ -57,7 +57,7 @@ function CoverImage:cleanUpImage()
             timeout = 10,
         })
         os.remove(self.cover_image_path)
-    elseif Device:isValidFile(self.cover_image_path) then
+    elseif pathOk(self.cover_image_path) then
         ffiutil.copyFile(self.cover_image_fallback_path, self.cover_image_path)
     end
 end
