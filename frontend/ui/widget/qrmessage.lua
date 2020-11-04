@@ -38,7 +38,7 @@ local QRMessage = InputContainer:new{
     height = nil,  -- The height. Keep it nil to use original height.
     dismiss_callback = function() end,
     alpha = nil,
-    scale_factor = nil,
+    scale_factor = 1,
 }
 
 function QRMessage:init()
