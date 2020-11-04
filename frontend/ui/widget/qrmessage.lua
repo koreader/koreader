@@ -38,7 +38,7 @@ local QRMessage = InputContainer:new{
     height = nil,  -- The height. Keep it nil to use original height.
     dismiss_callback = function() end,
     alpha = nil,
-    scale_factor = 0,
+    scale_factor = nil,
 }
 
 function QRMessage:init()
@@ -70,9 +70,6 @@ function QRMessage:init()
         alpha = self.alpha,
         scale_factor = self.scale_factor,
     }
-
-    local width = self.width or Screen:getWidth()
-    local height = self.height or Screen:getHeight()
 
     local frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,

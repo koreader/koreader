@@ -10,7 +10,7 @@ local qrencode = require("ffi/qrencode")
 local _ = require("gettext")
 
 local QRWidget = ImageWidget:extend{
-    scale_factor = 0,
+    scale_factor = nil,
     text = ""
     -- see ImageWidget for other options.
 }
@@ -27,7 +27,9 @@ function QRWidget:init()
         return
     else
         local scale
-        if self.width then
+        if self.scale_factor then
+            scale = self.scale_factor
+        elseif self.width then
             if self.height then
                 scale = math.min(self.width, self.height)/#grid
             else
@@ -35,9 +37,9 @@ function QRWidget:init()
             end
         elseif self.height then
             scale = self.height/#grid
-        else scale = 2
+        else scale = 1
         end
-        scale = Screen:scaleBySize(scale)
+        scale = math.floor(scale)
         local grid_size = scale * #grid
         local bb = Blitbuffer.new(grid_size, grid_size)
         local white = Blitbuffer.COLOR_WHITE
