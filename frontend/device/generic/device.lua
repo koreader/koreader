@@ -491,9 +491,4 @@ function Device:isValidPath(path)
     return util.pathExists(path)
 end
 
-function Device:isValidFile(filename)
-    local path, name = util.splitFilePathName(filename)
-    return Device:isValidPath(path) and name ~= "" and lfs.attributes(filename, "mode") ~= "directory"
-end
-
 return Device
