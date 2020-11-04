@@ -4,7 +4,6 @@ QRWidget shows a QR code for a given text.
 
 local Blitbuffer = require("ffi/blitbuffer")
 local ImageWidget = require("ui/widget/imagewidget")
-local Screen = require("device").screen
 local logger = require("logger")
 local qrencode = require("ffi/qrencode")
 local _ = require("gettext")
