@@ -46,6 +46,7 @@ function PluginLoader:loadPlugins()
     if extra_paths then
         if type(extra_paths) == "string" then
             extra_paths = { extra_paths }
+            G_reader_settings:saveSetting("extra_plugin_paths", extra_paths)
         end
         if type(extra_paths) == "table" then
             for _,extra_path in ipairs(extra_paths) do
