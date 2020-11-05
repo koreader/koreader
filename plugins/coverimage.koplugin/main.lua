@@ -19,7 +19,7 @@ local function pathOk(filename)
     if not Device:isValidPath(path) then -- isValidPath expects a trailing slash
         return false, T(_("Path \"%1\" isn't in a writable location."), path)
     elseif not util.pathExists(path:gsub("/$", "")) then -- pathExists expects no trailing slash
-        return false, T(_("The path \"%1\" doesn't exist"), path)
+        return false, T(_("The path \"%1\" doesn't exist."), path)
     elseif name == "" then
         return false, _("Please enter a filename at the end of the path.")
     elseif lfs.attributes(filename, "mode") == "directory" then
