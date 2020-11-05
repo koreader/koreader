@@ -376,9 +376,6 @@ function Device:canExecuteScript(file)
 end
 
 function Device:isValidPath(path)
-    if path:find("^/sdcard") ~= nil then
-        return true
-    end
     return android.isPathInsideSandbox(path)
 end
 

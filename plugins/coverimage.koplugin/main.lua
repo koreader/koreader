@@ -16,7 +16,17 @@ local T = require("ffi/util").template
 
 local function pathOk(filename)
     local path, name = util.splitFilePathName(filename)
-    return Device:isValidPath(path) and name ~= "" and lfs.attributes(filename, "mode") ~= "directory"
+    if not Device:isValidPath(path) then -- isValidPath expects a trailing slash
+        return false, T(_("Path \"%1\" isn't in a writable location."), path)
+    elseif not util.pathExists(path:gsub("/$", "")) then -- pathExists expects no trailing slash
+        return false, T(_("The path \"%1\" doesn't exist"), path)
+    elseif name == "" then
+        return false, _("Please enter a filename at the end of the path.")
+    elseif lfs.attributes(filename, "mode") == "directory" then
+        return false, T(_("The path \"%1\" must point to a file, but it points to a directory."), filename)
+    end
+
+    return true
 end
 
 local CoverImage = WidgetContainer:new{
@@ -38,13 +48,6 @@ end
 
 function CoverImage:_fallback()
     return self.fallback
-end
-
-function CoverImage:showWrongPath( path )
-    UIManager:show(InfoMessage:new{
-        text = T(_("\"%1\" is not a valid file."), path),
-        show_icon = true,
-    })
 end
 
 function CoverImage:cleanUpImage()
@@ -143,11 +146,15 @@ function CoverImage:addToMainMenu(menu_items)
                                             self:cleanUpImage() -- with old filename
                                             self.cover_image_path = new_cover_image_path -- update filename
                                             G_reader_settings:saveSetting("cover_image_path", self.cover_image_path)
-                                            if self.cover_image_path ~= "" and pathOk(self.cover_image_path) then
+                                            local is_path_ok, is_path_ok_message = pathOk(self.cover_image_path)
+                                            if self.cover_image_path ~= "" and is_path_ok then
                                                 self:onReaderReady(self.ui.doc_settings) -- with new filename
                                             else
                                                 self.enabled = false
-                                                CoverImage:showWrongPath(self.cover_image_path)
+                                                UIManager:show(InfoMessage:new{
+                                                    text = is_path_ok_message,
+                                                    show_icon = true,
+                                                })
                                             end
                                         end
                                         UIManager:close(sample_input)
