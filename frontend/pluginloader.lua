@@ -52,7 +52,6 @@ function PluginLoader:loadPlugins()
                 local extra_path_mode = lfs.attributes(extra_path, "mode")
                 if extra_path_mode == "directory" and extra_path ~= DEFAULT_PLUGIN_PATH then
                     table.insert(lookup_path_list, extra_path)
-                    logger.dbg("\n", "PLUGINS:", extra_path, "\n")
                 end
             end
         else
