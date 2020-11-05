@@ -500,7 +500,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
 end
 
 local _extra_highlight_buttons = {}
-function ReaderHighlight:addToHighlightMenu(fn_button)
+function ReaderHighlight:addToHighlightDialog(fn_button)
     -- fn_button is a function that takes the ReaderHighlight as argument,
     -- and returns a table describing the button to be added.
     table.insert(_extra_highlight_buttons, fn_button)
