@@ -72,7 +72,6 @@ local order = {
         "mass_storage_settings", -- if Device:canToggleMassStorage()
         "file_ext_assoc",
         "screenshot",
-        "pluginloader",
     },
     navigation = {
         "back_to_exit",

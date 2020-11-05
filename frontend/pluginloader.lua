@@ -1,13 +1,5 @@
-local BD = require("ui/bidi")
-local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
-local DataStorage = require("datastorage")
-local DownloadMgr = require("ui/downloadmgr")
-local InfoMessage = require("ui/widget/infomessage")
-local T = require("ffi/util").template
-local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local _ = require("gettext")
 
 local DEFAULT_PLUGIN_PATH = "plugins"
 local OBSOLETE_PLUGINS = {
@@ -46,7 +38,6 @@ function PluginLoader:loadPlugins()
     if extra_paths then
         if type(extra_paths) == "string" then
             extra_paths = { extra_paths }
-            G_reader_settings:saveSetting("extra_plugin_paths", extra_paths)
         end
         if type(extra_paths) == "table" then
             for _,extra_path in ipairs(extra_paths) do
@@ -59,7 +50,7 @@ function PluginLoader:loadPlugins()
             logger.err("extra_plugin_paths config only accepts string or table value")
         end
     else
-        local datadir = DataStorage:getDataDir()
+        local datadir = require("datastorage"):getDataDir()
         if datadir ~= "." then
             G_reader_settings:saveSetting("extra_plugin_paths", { datadir .. "/plugins/" })
         end
@@ -163,6 +154,8 @@ function PluginLoader:genPluginManagerSubItem()
                 return plugin.enable
             end,
             callback = function()
+                local InfoMessage = require("ui/widget/infomessage")
+                local UIManager = require("ui/uimanager")
                 local _ = require("gettext")
                 local plugins_disabled = G_reader_settings:readSetting("plugins_disabled") or {}
                 plugin.enable = not plugin.enable
@@ -193,71 +186,6 @@ function PluginLoader:createPluginInstance(plugin, attr)
         logger.err('Failed to initialize', plugin.name, 'plugin: ', re)
         return nil, re
     end
-end
-
-function PluginLoader:chooseFolder(extra_plugin_paths_changed)
-    local buttons = {}
-    local extra_plugin_paths = G_reader_settings:readSetting("extra_plugin_paths") or {}
-    local function save_extra_plugin_paths()
-        G_reader_settings:saveSetting("extra_plugin_paths", extra_plugin_paths)
-        self:chooseFolder(true)
-    end
-    for idx, path in ipairs(extra_plugin_paths) do
-        table.insert(buttons, {
-            {
-                text = _("-"),
-                callback = function()
-                    UIManager:close(self.choose_dialog)
-                    table.remove(extra_plugin_paths, idx)
-                    save_extra_plugin_paths()
-                end
-            },
-            {
-                text = _(BD.dirpath(path)),
-                callback = function()
-                    UIManager:close(self.choose_dialog)
-                    DownloadMgr:new{
-                        onConfirm = function(new_path)
-                            extra_plugin_paths[idx] = new_path .. "/"
-                            save_extra_plugin_paths()
-                        end,
-                    }:chooseDir()
-                end,
-            }
-        })
-    end
-    table.insert(buttons, {
-        {
-            text = _("+"),
-            callback = function()
-                UIManager:close(self.choose_dialog)
-                DownloadMgr:new{
-                    onConfirm = function(new_path)
-                        table.insert(extra_plugin_paths, new_path .. "/")
-                        save_extra_plugin_paths()
-                    end,
-                }:chooseDir()
-            end,
-        }
-    })
-    table.insert(buttons, {
-        {
-            text = _("Close"),
-            callback = function()
-                if extra_plugin_paths_changed then
-                    UIManager:show(InfoMessage:new{
-                        text = _("This will take effect on next restart."),
-                    })
-                end
-                UIManager:close(self.choose_dialog)
-            end,
-        }
-    })
-    self.choose_dialog = ButtonDialogTitle:new{
-        title = T(_("Current plugin paths")),
-        buttons = buttons
-    }
-    UIManager:show(self.choose_dialog)
 end
 
 return PluginLoader
