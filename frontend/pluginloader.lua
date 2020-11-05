@@ -50,9 +50,9 @@ function PluginLoader:loadPlugins()
             logger.err("extra_plugin_paths config only accepts string or table value")
         end
     else
-        local datadir = require("datastorage"):getDataDir()
-        if datadir ~= "." then
-            G_reader_settings:saveSetting("extra_plugin_paths", { datadir .. "/plugins/" })
+        local data_dir = require("datastorage"):getDataDir()
+        if data_dir ~= "." then
+            G_reader_settings:saveSetting("extra_plugin_paths", { data_dir .. "/plugins/" })
         end
     end
 
