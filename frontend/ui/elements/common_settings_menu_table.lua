@@ -721,4 +721,12 @@ common_settings.screenshot = {
     end,
 }
 
+common_settings.pluginloader = {
+    text = _("Extra plugin paths"),
+    callback = function()
+        local PluginLoader = require("pluginloader")
+        PluginLoader:chooseFolder()
+    end,
+}
+
 return common_settings
