@@ -3,6 +3,7 @@ local Device = require("device")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
 local Input = Device.input
 local Screen = Device.screen
@@ -17,7 +18,9 @@ local Clock = InputContainer:new{
     width = Screen:getWidth(),
     height = Screen:getHeight(),
     scale_factor = 0,
-    dismiss_callback = function() end,
+    dismiss_callback = function()
+        PluginShare.pause_auto_suspend = false
+    end,
 }
 
 function Clock:init()
@@ -76,6 +79,7 @@ function Clock:onShow()
     if self.timeout then
         UIManager:scheduleIn(self.timeout, function() UIManager:close(self) end)
     end
+    PluginShare.pause_auto_suspend = true
     return true
 end
 
