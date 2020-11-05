@@ -499,6 +499,13 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
     return true
 end
 
+local _extra_highlight_buttons = {}
+function ReaderHighlight:addToHighlightMenu(fn_button)
+    -- fn_button is a function that takes the ReaderHighlight as argument,
+    -- and returns a table describing the button to be added.
+    table.insert(_extra_highlight_buttons, fn_button)
+end
+
 function ReaderHighlight:onShowHighlightMenu()
     local highlight_buttons = {
         {
@@ -600,6 +607,13 @@ function ReaderHighlight:onShowHighlightMenu()
                 end,
             },
         })
+    end
+
+    for _, fn_button in ipairs(_extra_highlight_buttons) do
+        if #highlight_buttons[#highlight_buttons] > 1 then
+            table.insert(highlight_buttons, {})
+        end
+        table.insert(highlight_buttons[#highlight_buttons], fn_button(self))
     end
 
     self.highlight_dialog = ButtonDialog:new{
