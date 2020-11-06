@@ -16,7 +16,9 @@ local C_ = _.pgettext
 local T = require("ffi/util").template
 local Screen = Device.screen
 
-local ReaderHighlight = InputContainer:new{}
+local ReaderHighlight = InputContainer:new{
+    _extra_highlight_buttons = {}
+}
 
 function ReaderHighlight:init()
     self.ui:registerPostInitCallback(function()
@@ -499,15 +501,14 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
     return true
 end
 
-local _extra_highlight_buttons = {}
 function ReaderHighlight:addToHighlightDialog(idx, fn_button)
     -- fn_button is a function that takes the ReaderHighlight as argument,
     -- and returns a table describing the button to be added.
-    _extra_highlight_buttons[idx] = fn_button
+   self._extra_highlight_buttons[idx] = fn_button
 end
 
 function ReaderHighlight:removeFromHighlightDialog(idx)
-	_extra_highlight_buttons[idx] = nil
+	self._extra_highlight_buttons[idx] = nil
 end
 
 function ReaderHighlight:onShowHighlightMenu()
@@ -613,7 +614,7 @@ function ReaderHighlight:onShowHighlightMenu()
         })
     end
 
-    for _, fn_button in util.opairs(_extra_highlight_buttons) do
+    for _, fn_button in util.opairs(self._extra_highlight_buttons) do
         if #highlight_buttons[#highlight_buttons] > 1 then
             table.insert(highlight_buttons, {})
         end
