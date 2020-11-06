@@ -24,8 +24,13 @@ local function _toggleSetting(name)
 end
 
 function DeviceListener:onToggleNightMode()
+    print("DeviceListener:onToggleNightMode")
     local night_mode = G_reader_settings:isTrue("night_mode")
     Screen:toggleNightMode()
+    -- Make sure CRe will bypass the call cache
+    if self.ui and self.ui.document and self.ui.document.info and self.ui.document.info.has_pages == false then
+        self.ui.document:setNightMode(not night_mode)
+    end
     UIManager:setDirty("all", "full")
     UIManager:ToggleNightMode(not night_mode)
     G_reader_settings:saveSetting("night_mode", not night_mode)
