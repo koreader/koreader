@@ -2043,7 +2043,6 @@ function ReaderFooter:onHoldFooter()
         self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
         return true
     end
-    return false
 end
 
 function ReaderFooter:setVisible(visible)
