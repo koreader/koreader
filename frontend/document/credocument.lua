@@ -25,7 +25,7 @@ local CreDocument = Document:new{
     _view_mode = nil,
     _smooth_scaling = false,
     _nightmode_images = true,
-    _nightmode = Screen.night_mode,
+    _nightmode = false,
 
     line_space_percent = 100,
     default_font = "Noto Serif",
