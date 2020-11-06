@@ -504,11 +504,13 @@ end
 function ReaderHighlight:addToHighlightDialog(idx, fn_button)
     -- fn_button is a function that takes the ReaderHighlight as argument,
     -- and returns a table describing the button to be added.
-   self._extra_highlight_buttons[idx] = fn_button
+    self._extra_highlight_buttons[idx] = fn_button
 end
 
 function ReaderHighlight:removeFromHighlightDialog(idx)
-	self._extra_highlight_buttons[idx] = nil
+    local button = self._extra_highlight_buttons[idx]
+    self._extra_highlight_buttons[idx] = nil
+    return button
 end
 
 function ReaderHighlight:onShowHighlightMenu()
