@@ -401,7 +401,6 @@ function CreDocument:getNextVisibleChar(xp)
 end
 
 function CreDocument:drawCurrentView(target, x, y, rect, pos)
-    print("CreDocument:drawCurrentView", target, x, y, rect, pos)
     if self.buffer and (self.buffer.w ~= rect.w or self.buffer.h ~= rect.h) then
         self.buffer:free()
         self.buffer = nil
@@ -423,21 +422,16 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
     -- We also honor the current smooth scaling setting,
     -- as well as the global SW dithering setting.
 
-    print("CreDocument:drawCurrentView w/ night_mode:", self._nightmode)
-    local start_ts = FFIUtil.getTimestamp()
+    --local start_ts = FFIUtil.getTimestamp()
     self._drawn_images_count, self._drawn_images_surface_ratio =
         self._document:drawCurrentPage(self.buffer, self.render_color, self._nightmode and self._nightmode_images, self._smooth_scaling, Screen.sw_dithering)
-    local end_ts = FFIUtil.getTimestamp()
-    print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (end_ts - start_ts) * 1000))
+    --local end_ts = FFIUtil.getTimestamp()
+    --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (end_ts - start_ts) * 1000))
 
-    start_ts = FFIUtil.getTimestamp()
+    --start_ts = FFIUtil.getTimestamp()
     target:blitFrom(self.buffer, x, y, 0, 0, rect.w, rect.h)
-    end_ts = FFIUtil.getTimestamp()
-    print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", (end_ts - start_ts) * 1000))
-
-    if self._toggled_nightmode then
-        self._toggled_nightmode = false
-    end
+    --end_ts = FFIUtil.getTimestamp()
+    --print(string.format("CreDocument:drawCurrentView: Blitting took  %9.3f ms", (end_ts - start_ts) * 1000))
 end
 
 function CreDocument:drawCurrentViewByPos(target, x, y, rect, pos)
@@ -1065,7 +1059,6 @@ end
 -- either globally, or per page/pos for those whose result may depend on
 -- current page number or y-position.
 function CreDocument:setupCallCache()
-    print("CreDocument:setupCallCache")
     if not G_reader_settings:nilOrTrue("use_cre_call_cache") then
         logger.dbg("CreDocument: not using cre call cache")
         return
@@ -1074,7 +1067,7 @@ function CreDocument:setupCallCache()
     local do_stats = G_reader_settings:isTrue("use_cre_call_cache_log_stats")
     -- Tune these when debugging
     local do_stats_include_not_cached = false
-    local do_log = true
+    local do_log = false
 
     -- Beware below for luacheck warnings "shadowing upvalue argument 'self'":
     -- the 'self' we got and use here, and the one we may get implicitely
@@ -1085,7 +1078,6 @@ function CreDocument:setupCallCache()
 
     -- reset full cache
     self._callCacheReset = function()
-        print("_callCacheReset")
         self._call_cache = {}
         self._call_cache_tags_lru = {}
     end
@@ -1286,6 +1278,8 @@ function CreDocument:setupCallCache()
             -- These may have crengine do native highlight or unhighlight
             -- (we could keep the original buffer and use a scratch buffer while
             -- these are used, but not worth bothering)
+            -- The only real interest would be for clearSelection, which can trigger
+            -- without actual content change (e.g., toggling menus/footer).
             elseif name == "clearSelection" then add_buffer_trash = true
             elseif name == "highlightXPointer" then add_buffer_trash = true
             elseif name == "getWordFromPosition" then add_buffer_trash = true
@@ -1417,21 +1411,15 @@ function CreDocument:setupCallCache()
     self.drawCurrentView = function(_self, target, x, y, rect, pos)
         local do_draw = false
         local current_tag = self._callCacheGetCurrentTag()
-        if do_log then logger.dbg("Current tag", current_tag) end
         local current_buffer_tag = self._callCacheGet("current_buffer_tag")
-        if do_log then logger.dbg("current_buffer_tag", current_buffer_tag or "nil") end
         if _self.buffer and (_self.buffer.w ~= rect.w or _self.buffer.h ~= rect.h) then
             do_draw = true
-            if do_log then logger.dbg("Full draw because buffer geometry change") end
         elseif not _self.buffer then
             do_draw = true
-            if do_log then logger.dbg("Full draw because new buffer") end
         elseif not current_buffer_tag then
             do_draw = true
-            if do_log then logger.dbg("Full draw because no current buffer tag") end
         elseif current_buffer_tag ~= current_tag then
             do_draw = true
-            if do_log then logger.dbg("Full draw because different buffer tag", current_buffer_tag, current_tag) end
         end
         local starttime = FFIUtil.getTimestamp()
         if do_draw then
@@ -1439,8 +1427,6 @@ function CreDocument:setupCallCache()
             CreDocument.drawCurrentView(_self, target, x, y, rect, pos)
             addStatMiss("drawCurrentView", starttime)
             self._callCacheSet("current_buffer_tag", current_tag)
-            if do_log then logger.dbg("Setting current_buffer_tag to", current_tag) end
-            if do_log then logger.dbg("Checking current_buffer_tag:", self._callCacheGet("current_buffer_tag") or "nil") end
         else
             if do_log then logger.dbg("callCache: ---------- drawCurrentView: light draw") end
             target:blitFrom(_self.buffer, x, y, 0, 0, rect.w, rect.h)

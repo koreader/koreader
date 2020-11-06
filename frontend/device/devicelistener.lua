@@ -24,7 +24,6 @@ local function _toggleSetting(name)
 end
 
 function DeviceListener:onToggleNightMode()
-    print("DeviceListener:onToggleNightMode")
     local night_mode = G_reader_settings:isTrue("night_mode")
     Screen:toggleNightMode()
     -- Make sure CRe will bypass the call cache
