@@ -49,6 +49,11 @@ function PluginLoader:loadPlugins()
         else
             logger.err("extra_plugin_paths config only accepts string or table value")
         end
+    else
+        local data_dir = require("datastorage"):getDataDir()
+        if data_dir ~= "." then
+            G_reader_settings:saveSetting("extra_plugin_paths", { data_dir .. "/plugins/" })
+        end
     end
 
     -- keep reference to old value so they can be restored later
