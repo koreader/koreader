@@ -2041,8 +2041,9 @@ function ReaderFooter:onHoldFooter()
     if self.mode == self.mode_list.off then return end
     if self.settings.skim_widget_on_hold then
         self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
+        return true
     end
-    return true
+    return false
 end
 
 function ReaderFooter:setVisible(visible)
