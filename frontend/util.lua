@@ -330,24 +330,6 @@ function util.tableSize(t)
     return count
 end
 
---- Like pairs, but with sorted keys.
----- @param t Lua table
----- @param fn Lua function
----- @treturn Lua function iterator on table t
-function util.opairs(t, fn)
-    local _t = {}
-    for k in pairs(t) do
-        _t[#_t + 1] = k
-    end
-    table.sort(_t, fn)
-    local i = 0
-    return function()
-        i = i + 1
-        local k = _t[i]
-        if k then return k, t[k] end
-    end
-end
-
 --- Append all elements from t2 into t1.
 ---- @param t1 Lua table
 ---- @param t2 Lua table

@@ -11,6 +11,7 @@ local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util = require("util")
+local ffiUtil = require("ffi/util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
@@ -144,7 +145,7 @@ function ReaderHighlight:init()
     end
 
     if Device:canShareText() then
-        self:addToHighlightDialog("09_follow_link", function(_self)
+        self:addToHighlightDialog("10_share_text", function(_self)
             return {
                 text = _("Share text"),
                 callback = function()
@@ -618,10 +619,6 @@ function ReaderHighlight:addToHighlightDialog(idx, fn_button)
     -- fn_button is a function that takes the ReaderHighlight instance
     -- as argument, and returns a table describing the button to be added.
     self._highlight_buttons[idx] = fn_button
-    local n = 0
-    for _ in pairs(self._highlight_buttons) do
-        n = n + 1
-    end
 end
 
 function ReaderHighlight:removeFromHighlightDialog(idx)
@@ -634,12 +631,12 @@ function ReaderHighlight:onShowHighlightMenu()
     local highlight_buttons = {{}}
 
     local columns = 2
-    for _, fn_button in util.opairs(self._highlight_buttons) do
-        logger.dbg("ReaderHighlight", _, #highlight_buttons, #highlight_buttons[#highlight_buttons])
+    for idx, fn_button in ffiUtil.orderedPairs(self._highlight_buttons) do
         if #highlight_buttons[#highlight_buttons] >= columns then
             table.insert(highlight_buttons, {})
         end
         table.insert(highlight_buttons[#highlight_buttons], fn_button(self))
+        logger.dbg("ReaderHighlight", idx..": line "..#highlight_buttons..", col "..#highlight_buttons[#highlight_buttons])
     end
 
     self.highlight_dialog = ButtonDialog:new{
