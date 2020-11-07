@@ -383,7 +383,7 @@ function CreDocument:cacheFlows()
     -- and page_in_flow[flows[0][1]] must be 1, because it is the first
     self.flows = {}
     self.page_in_flow = {}
-    if self:hasNonLinearFlows() then
+    if self:hasNonLinearFlows() and self.hide_nonlinear_flows then
         for i=1,self:getPageCount() do
             flow = self:getPageFlow(i)
             if self.flows[flow] ~= nil then

@@ -473,10 +473,12 @@ You can set how many lines are shown.]])
         local hide_nonlinear_text = _("When this option is enabled, if a document contains non-linear fragments, they will be hidden from the normal page flow, but they are still accessible through links, Toc or Go to. This currently works only in single-page, non-scrolling mode.")
         menu_items.hide_nonlinear_flows = {
             text = _("Hide non-linear fragments"),
-            enabled_func = function() return self.view.view_mode == "page" and self.ui.document:getVisiblePageCount() == 1 end,
+            enabled_func = function()
+                return self.view.view_mode == "page" and self.ui.document:getVisiblePageCount() == 1
+            end,
             checked_func = function() return self.hide_nonlinear_flows end,
             callback = function()
-                self.ui:handleEvent(Event:new("ToggleHideNonlinear"))
+                self:onToggleHideNonlinear()
             end,
             hold_callback = function()
                 UIManager:show(ConfirmBox:new{
@@ -561,15 +563,16 @@ end
 function ReaderRolling:onGotoNextChapter()
     local visible_page_count = self.ui.document:getVisiblePageCount()
     local pageno = self.current_page + (visible_page_count > 1 and 1 or 0)
+    local new_page
     if self.ui.document:hasHiddenFlows() then
         -- Find next chapter start
-        local new_page = self.ui.document:getNextPage(pageno)
+        new_page = self.ui.document:getNextPage(pageno)
         while new_page > 0 do
             if self.ui.toc:isChapterStart(new_page) then break end
             new_page = self.ui.document:getNextPage(new_page)
         end
     else
-        local new_page = self.ui.toc:getNextChapter(pageno) or 0
+        new_page = self.ui.toc:getNextChapter(pageno) or 0
     end
     if new_page > 0 then
         self.ui.link:addCurrentLocationToStack()
@@ -580,15 +583,16 @@ end
 
 function ReaderRolling:onGotoPrevChapter()
     local pageno = self.current_page
+    local new_page
     if self.ui.document:hasHiddenFlows() then
         -- Find previous chapter start
-        local new_page = self.ui.document:getPrevPage(pageno)
+        new_page = self.ui.document:getPrevPage(pageno)
         while new_page > 0 do
             if self.ui.toc:isChapterStart(new_page) then break end
             new_page = self.ui.document:getPrevPage(new_page)
         end
     else
-        local new_page = self.ui.toc:getPrevChapter(pageno) or 0
+        new_page = self.ui.toc:getPrevChapter(pageno) or 0
     end
     if new_page > 0 then
         self.ui.link:addCurrentLocationToStack()
@@ -783,7 +787,9 @@ function ReaderRolling:onGotoViewRel(diff)
                 else
                     test_page = self.ui.document:getPrevPage(new_page)
                 end
-                if test_page > 0 then new_page = test_page end
+                if test_page > 0 then
+                    new_page = test_page
+                end
             end
         else
             new_page = new_page + diff*page_count
@@ -1380,8 +1386,12 @@ end
 function ReaderRolling:onToggleHideNonlinear()
     self.hide_nonlinear_flows = not self.hide_nonlinear_flows
     self.ui.document:setHideNonlinearFlows(self.hide_nonlinear_flows)
+    -- The document may change due to forced pagebreaks between flows being
+    -- added or removed, so we need to find our location
     self:onUpdatePos()
-    self:onChangeViewMode()
+    -- Even if the document doesn't change, the footer needs updating,
+    -- and TOC markers may come or go.
+    self.ui:handleEvent(Event:new("UpdateToc"))
 end
 
 -- Duplicated in ReaderPaging

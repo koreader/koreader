@@ -62,7 +62,7 @@ end
 
 function ReaderToc:onUpdateToc()
     self:resetToc()
-    self.ui:handleEvent(Event:new("TocUpdated"))
+    self.ui:handleEvent(Event:new("TocReset"))
 
     --- @note: Let this propagate, plugins/statistics uses it to react to changes in document pagination
     --return true
@@ -455,7 +455,7 @@ function ReaderToc:getChapterPagesLeft(pageno)
         while test_page > 0 do
             pages_left = pages_left + 1
             if self:isChapterStart(test_page) then
-                return pages_left
+                return pages_left - 1
             end
             test_page = self.ui.document:getNextPage(test_page)
         end

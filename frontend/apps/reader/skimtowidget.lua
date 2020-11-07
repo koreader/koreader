@@ -92,7 +92,7 @@ function SkimToWidget:init()
         ticks = self.ticks_flattened,
         tick_width = Size.line.medium,
         last = self.page_count,
-        flows = self.ui.document.flows,
+        alt = self.ui.document.flows,
     }
     self.skimto_progress = FrameContainer:new{
         padding = Size.padding.button,

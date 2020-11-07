@@ -1734,16 +1734,14 @@ function ReaderFooter:setTocMarkers(reset)
         if self.progress_bar.ticks ~= nil then -- already computed
             return
         end
-        self.progress_bar.ticks = {}
         if self.view.document:hasHiddenFlows() and self.pageno then
             local flow = self.view.document:getPageFlow(self.pageno)
+            self.progress_bar.ticks = {}
             if self.ui.toc then
                 -- filter the ticks to show only those in the current flow
-                for i,j in ipairs(self.ui.toc:getTocTicksFlattened()) do
-                    if self.view.document:getPageFlow(j) == flow then
-                        self.progress_bar.ticks[i] = self.view.document:getPageNumberInFlow(j)
-                    else
-                        self.progress_bar.ticks[i] = nil
+                for n, pageno in ipairs(self.ui.toc:getTocTicksFlattened()) do
+                    if self.view.document:getPageFlow(pageno) == flow then
+                        table.insert(self.progress_bar.ticks, self.view.document:getPageNumberInFlow(pageno))
                     end
                 end
             end
@@ -1907,7 +1905,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
     end
 end
 
-function ReaderFooter:onTocUpdated()
+function ReaderFooter:onTocReset()
     self:setTocMarkers(true)
     self:onUpdateFooter()
 end
@@ -1915,7 +1913,7 @@ end
 function ReaderFooter:onPageUpdate(pageno)
     local toc_markers_update = false
     if self.ui.document:hasHiddenFlows() then
-        local flow = not self.pageno or self.ui.document:getPageFlow(self.pageno)
+        local flow = self.pageno and self.ui.document:getPageFlow(self.pageno)
         local new_flow = pageno and self.ui.document:getPageFlow(pageno)
         if pageno and new_flow ~= flow then
             toc_markers_update = true

@@ -149,9 +149,11 @@ function ReaderGoto:gotoPage()
         number = tonumber(number)
         if number then
             if self.ui.document.flows[flow] ~= nil then
+                if number < 1 or number > self.ui.document:getTotalPagesInFlow(flow) then
+                    return
+                end
                 for i=self.ui.document:getFirstPageInFlow(flow), self.ui.document:getPageCount() do
-                    if self.ui.document:getPagenNumberInFlow(i) == number and
-                       self.ui.document:getPageFlow(i) == flow then
+                    if self.ui.document:getPagenNumberInFlow(i) == number and self.ui.document:getPageFlow(i) == flow then
                         self.ui:handleEvent(Event:new("GotoPage", i))
                         self:close()
                         break

@@ -11,7 +11,7 @@ Configurable attributes:
  * bordersize
  * bordercolor
  * bgcolor
- * nlcolor    -- color for the non-linear fragment tags
+ * altcolor   -- alternate backrgound color for "alt" pages
  * rectdim    -- dim amount for infill
  * ticks (list)  -- default to nil, use this if you want to insert markers
  * tick_width
@@ -43,7 +43,7 @@ local ProgressWidget = Widget:new{
     bordersize = Screen:scaleBySize(1),
     bordercolor = Blitbuffer.COLOR_BLACK,
     bgcolor = Blitbuffer.COLOR_WHITE,
-    nlcolor = Blitbuffer.COLOR_LIGHT_GRAY,
+    altcolor = Blitbuffer.COLOR_LIGHT_GRAY,
     rectdim = 2/3,
     percentage = nil,
     ticks = nil,
@@ -52,6 +52,7 @@ local ProgressWidget = Widget:new{
     fill_from_right = false,
     allow_mirroring = true,
     _mirroredUI = BD.mirroredUILayout(),
+    alt = nil, -- table with alternate pages to mark with different color (in the form {{ini1, len1}, {ini2, len2}, ...})
 }
 
 function ProgressWidget:getSize()
@@ -73,14 +74,14 @@ function ProgressWidget:paintTo(bb, x, y)
     bb:paintBorder(x, y,
                    my_size.w, my_size.h,
                    self.bordersize, self.bordercolor, self.radius)
-    -- background for non-linear flows
-    if self.flows and self.flows[1] ~= nil then
+    -- background for alternate pages (e.g. non-linear flows)
+    if self.alt and self.alt[1] ~= nil then
         local bar_width = (my_size.w-2*self.margin_h)
         local y_pos = y + self.margin_v + self.bordersize
         local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
-        for i=1, #self.flows do
-            local tick_x = bar_width*((self.flows[i][1]-1)/self.last)
-            local width = bar_width*(self.flows[i][2]/self.last)
+        for i=1, #self.alt do
+            local tick_x = bar_width*((self.alt[i][1]-1)/self.last)
+            local width = bar_width*(self.alt[i][2]/self.last)
             width = math.ceil(tick_x + width)
             tick_x = math.floor(tick_x)
             width = width - tick_x
@@ -92,7 +93,7 @@ function ProgressWidget:paintTo(bb, x, y)
                 y_pos,
                 width,
                 bar_height,
-                self.nlcolor)
+                self.altcolor)
         end
     end
     -- paint percentage infill
@@ -117,7 +118,7 @@ function ProgressWidget:paintTo(bb, x, y)
         local bar_width = (my_size.w-2*self.margin_h)
         local y_pos = y + self.margin_v + self.bordersize
         local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
-        for i,tick in pairs(self.ticks) do
+        for i,tick in ipairs(self.ticks) do
             local tick_x = bar_width*(tick/self.last)
             if self._mirroredUI then
                 tick_x = bar_width - tick_x
