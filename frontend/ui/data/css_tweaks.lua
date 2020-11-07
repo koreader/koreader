@@ -520,35 +520,35 @@ table, tcaption, tr, th, td { border: black solid 1px; border-collapse: collapse
         {
             id = "a_black";
             title = _("Links always black"),
-            css = [[a { color: black !important; }]],
+            css = [[a, a * { color: black !important; }]],
         },
         {
             id = "a_blue";
             title = _("Links always blue"),
-            css = [[a { color: blue !important; }]],
+            css = [[a, a * { color: blue !important; }]],
             separator = true,
         },
         {
             id = "a_bold";
             title = _("Links always bold"),
-            css = [[a { font-weight: bold !important; }]],
+            css = [[a, a * { font-weight: bold !important; }]],
         },
         {
             id = "a_not_bold";
             title = _("Links never bold"),
-            css = [[a { font-weight: normal !important; }]],
+            css = [[a, a * { font-weight: normal !important; }]],
             separator = true,
         },
         {
             id = "a_underline";
             title = _("Links always underlined"),
-            css = [[a[href] { text-decoration: underline !important; }]],
+            css = [[a[href], a[href] * { text-decoration: underline !important; }]],
             -- Have it apply only on real links with a href=, not on anchors
         },
         {
             id = "a_not_underline";
             title = _("Links never underlined"),
-            css = [[a { text-decoration: none !important; }]],
+            css = [[a, a * { text-decoration: none !important; }]],
         },
     },
     {
