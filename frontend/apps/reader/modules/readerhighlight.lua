@@ -315,7 +315,8 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
         if items then
             for i = 1, #items do
                 print("looping on item", i, "of", #items, "for page", page)
-                local pos0, pos1 = items[i].pos0, items[i].pos1
+                local item = items[i]
+                local pos0, pos1 = item.pos0, item.pos1
                 -- document:getScreenBoxesFromPositions() is expensive, so we
                 -- first check this item is on current page
                 if not cur_view_top then

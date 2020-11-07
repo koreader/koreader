@@ -492,8 +492,7 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
     -- clear that cache when page layout change or highlights are added
     -- or removed).
     local cur_view_top, cur_view_bottom
-    for page, _ in pairs(self.highlight.saved) do
-        local items = self.highlight.saved[page]
+    for page, items in pairs(self.highlight.saved) do
         if not items then items = {} end
         for j = 1, #items do
             local item = items[j]
