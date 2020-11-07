@@ -62,7 +62,7 @@ function ReaderGoto:onShowGotoDialog()
     self.goto_dialog = InputDialog:new{
         title = dialog_title,
         input_hint = input_hint,
-        description = self.document:hasFlows() and
+        description = self.document:hasHiddenFlows() and
             _([[
 x for an absolute page number
 [x] for a page number in the main (linear) flow
@@ -140,7 +140,7 @@ function ReaderGoto:gotoPage()
             end
         end
         self:close()
-    elseif self.ui.document:hasFlows() then
+    elseif self.ui.document:hasHiddenFlows() then
         -- if there are hidden flows, we accept the syntax [x]y
         -- for page number x in flow number y (y defaults to 0 if not present)
         local flow

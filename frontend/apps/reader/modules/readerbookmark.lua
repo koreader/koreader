@@ -256,10 +256,12 @@ function ReaderBookmark:onShowBookmark()
                 page = self.ui.pagemap:getXPointerPageLabel(page, true)
             else
                 page = self.ui.document:getPageFromXPointer(page)
-                local flow = self.ui.document:getPageFlow(page)
-                page = self.ui.document:getPageNumberInFlow(page)
-                if flow > 0 then
-                    page = T("[%1]%2", page, flow)
+                if self.ui.document:hasHiddenFlows() then
+                    local flow = self.ui.document:getPageFlow(page)
+                    page = self.ui.document:getPageNumberInFlow(page)
+                    if flow > 0 then
+                        page = T("[%1]%2", page, flow)
+                    end
                 end
             end
         end
@@ -490,10 +492,12 @@ function ReaderBookmark:updateBookmark(item)
     for i=1, #self.bookmarks do
         if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
             local page = self.ui.document:getPageFromXPointer(item.updated_highlight.pos0)
-            local flow = self.ui.document:getPageFlow(page)
-            page = self.ui.document:getPageNumberInFlow(page)
-            if flow > 0 then
-                page = T("[%1]%2", page, flow)
+            if self.ui.document:hasHiddenFlows() then
+                local flow = self.ui.document:getPageFlow(page)
+                page = self.ui.document:getPageNumberInFlow(page)
+                if flow > 0 then
+                    page = T("[%1]%2", page, flow)
+                end
             end
             local new_text = item.updated_highlight.text
             self.bookmarks[i].page = item.updated_highlight.pos0
@@ -521,10 +525,12 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                     local page = item.page
                     if not self.ui.document.info.has_pages then
                         page = self.ui.document:getPageFromXPointer(page)
-                        local flow = self.ui.document:getPageFlow(page)
-                        page = self.ui.document:getPageNumberInFlow(page)
-                        if flow > 0 then
-                            page = T("[%1]%2", page, flow)
+                        if self.ui.document:hasHiddenFlows() then
+                            local flow = self.ui.document:getPageFlow(page)
+                            page = self.ui.document:getPageNumberInFlow(page)
+                            if flow > 0 then
+                                page = T("[%1]%2", page, flow)
+                            end
                         end
                     end
                     item.text = T(_("Page %1 %2 @ %3"), page, item.notes, item.datetime)

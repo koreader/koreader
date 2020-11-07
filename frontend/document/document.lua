@@ -191,6 +191,14 @@ end
 -- Some functions that look quite silly, but they can be
 -- overridden for document types that support separate flows
 -- (e.g. CreDocument)
+function Document:hasNonLinearFlows()
+    return false
+end
+
+function Document:hasHiddenFlows()
+    return false
+end
+
 function Document:getNextPage(page)
     local new_page = page + 1
     return (new_page > 0 and new_page < self:getPageCount()) and new_page or 0
@@ -220,10 +228,6 @@ end
 
 function Document:getPageNumberInFlow(page)
     return page
-end
-
-function Document:hasFlows()
-    return false
 end
 
 -- calculates page dimensions

@@ -12,7 +12,7 @@ Configurable attributes:
  * bordercolor
  * bgcolor
  * nlcolor    -- color for the non-linear fragment tags
- * rectcolor  -- infill color
+ * rectdim    -- dim amount for infill
  * ticks (list)  -- default to nil, use this if you want to insert markers
  * tick_width
  * last  -- maximum tick, used with ticks
@@ -44,7 +44,7 @@ local ProgressWidget = Widget:new{
     bordercolor = Blitbuffer.COLOR_BLACK,
     bgcolor = Blitbuffer.COLOR_WHITE,
     nlcolor = Blitbuffer.COLOR_LIGHT_GRAY,
-    rectcolor = Blitbuffer.COLOR_DIM_GRAY,
+    rectdim = 2/3,
     percentage = nil,
     ticks = nil,
     tick_width = Screen:scaleBySize(3),
@@ -73,27 +73,52 @@ function ProgressWidget:paintTo(bb, x, y)
     bb:paintBorder(x, y,
                    my_size.w, my_size.h,
                    self.bordersize, self.bordercolor, self.radius)
+    -- background for non-linear flows
+    if self.flows and self.flows[1] ~= nil then
+        local bar_width = (my_size.w-2*self.margin_h)
+        local y_pos = y + self.margin_v + self.bordersize
+        local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
+        for i=1, #self.flows do
+            local tick_x = bar_width*((self.flows[i][1]-1)/self.last)
+            local width = bar_width*(self.flows[i][2]/self.last)
+            width = math.ceil(tick_x + width)
+            tick_x = math.floor(tick_x)
+            width = width - tick_x
+            if self._mirroredUI then
+                tick_x = bar_width - tick_x - width
+            end
+            bb:paintRect(
+                x + self.margin_h + tick_x,
+                y_pos,
+                width,
+                bar_height,
+                self.nlcolor)
+        end
+    end
     -- paint percentage infill
+    -- note that "lightenRect" is misleading, it actualy darkens stuff
     if self.percentage >= 0 and self.percentage <= 1 then
         if self.fill_from_right or (self._mirroredUI and not self.fill_from_right) then
-            bb:paintRect(x+self.margin_h + math.ceil((my_size.w-2*self.margin_h)*(1-self.percentage)),
+            bb:lightenRect(x+self.margin_h + math.ceil((my_size.w-2*self.margin_h)*(1-self.percentage)),
                     math.ceil(y+self.margin_v+self.bordersize),
                     math.ceil((my_size.w-2*self.margin_h)*self.percentage),
                     my_size.h-2*(self.margin_v+self.bordersize),
-                    self.rectcolor)
+                    self.rectdim)
         else
-            bb:paintRect(x+self.margin_h,
+            bb:lightenRect(x+self.margin_h,
                     math.ceil(y+self.margin_v+self.bordersize),
                     math.ceil((my_size.w-2*self.margin_h)*self.percentage),
-                    my_size.h-2*(self.margin_v+self.bordersize), self.rectcolor)
+                    my_size.h-2*(self.margin_v+self.bordersize),
+                    self.rectdim)
         end
     end
+    -- ticks
     if self.ticks and self.last and self.last > 0 then
         local bar_width = (my_size.w-2*self.margin_h)
         local y_pos = y + self.margin_v + self.bordersize
         local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
         for i,tick in pairs(self.ticks) do
-            local tick_x = bar_width*((tick-0.5)/self.last)
+            local tick_x = bar_width*(tick/self.last)
             if self._mirroredUI then
                 tick_x = bar_width - tick_x
             end
@@ -103,28 +128,6 @@ function ProgressWidget:paintTo(bb, x, y)
                 self.tick_width,
                 bar_height,
                 self.bordercolor)
-        end
-    end
-    if self.flows and self.flows[1] ~= nil then
-        local bar_width = (my_size.w-2*self.margin_h)
-        local y_pos = y + self.margin_v + self.bordersize
-        local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
-        local bit_height = bar_height/3
-        for i=1, #self.flows do
-            local tick_x = bar_width*((self.flows[i][1]-1)/self.last)
-            local width = bar_width*((self.flows[i][2])/self.last)
-            width = math.ceil(tick_x + width)
-            tick_x = math.floor(tick_x)
-            width = width - tick_x
-            if self._mirroredUI then
-                tick_x = bar_width - tick_x - width
-            end
-            bb:paintRect(
-                x + self.margin_h + tick_x,
-                y_pos + (bar_height-bit_height)/2,
-                width,
-                bit_height,
-                self.nlcolor)
         end
     end
 end

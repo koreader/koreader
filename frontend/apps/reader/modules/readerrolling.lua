@@ -56,7 +56,7 @@ local ReaderRolling = InputContainer:new{
     -- page is always odd or even (odd is logical to avoid a
     -- same page when turning first 2-pages set of document)
     odd_or_even_first_page = 1, -- 1 = odd, 2 = even, nil or others = free
-    hide_nonlinear = nil,
+    hide_nonlinear_flows = nil,
 }
 
 function ReaderRolling:init()
@@ -231,11 +231,11 @@ function ReaderRolling:onReadSettings(config)
         G_reader_settings:readSetting("copt_visible_pages") or 1
     self.ui.document:setVisiblePageCount(self.visible_pages)
 
-    self.hide_nonlinear = config:readSetting("hide_nonlinear")
-    if self.hide_nonlinear == nil then
-        self.hide_nonlinear = G_reader_settings:isTrue("hide_nonlinear")
+    self.hide_nonlinear_flows = config:readSetting("hide_nonlinear_flows")
+    if self.hide_nonlinear_flows == nil then
+        self.hide_nonlinear_flows = G_reader_settings:isTrue("hide_nonlinear_flows")
     end
-    self.ui.document:setHideNonlinear(self.hide_nonlinear)
+    self.ui.document:setHideNonlinearFlows(self.hide_nonlinear_flows)
 
     -- Set a callback to allow showing load and rendering progress
     -- (this callback will be cleaned up by cre.cpp closeDocument(),
@@ -309,12 +309,16 @@ function ReaderRolling:onSaveSettings()
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
     self.ui.doc_settings:saveSetting("visible_pages", self.visible_pages)
-    self.ui.doc_settings:saveSetting("hide_nonlinear", self.hide_nonlinear)
+    self.ui.doc_settings:saveSetting("hide_nonlinear_flows", self.hide_nonlinear_flows)
 end
 
 function ReaderRolling:onReaderReady()
     self:setupTouchZones()
     self.setupXpointer()
+    if self.hide_nonlinear_flows then
+        self.ui.document:cacheFlows()
+        self.ui:handleEvent(Event:new("UpdateToc"))
+    end
 end
 
 function ReaderRolling:setupTouchZones()
@@ -465,30 +469,29 @@ You can set how many lines are shown.]])
         help_text = _([[When page overlap is enabled, some lines from the previous pages are shown on the next page.]]),
         sub_item_table = page_overlap_menu,
     }
-    local hide_nonlinear_text = _("When this option is enabled, if a document contains non-linear fragments, \z
-                                   they will be hidden from the normal page flow, \z
-                                   but they are still accessible through links, Toc or Go to. \z
-                                   This currently works only in single-page, non-scrolling mode.")
-    menu_items.hide_nonlinear = {
-        text = _("Hide non-linear fragments"),
-        enabled_func = function() return self.view.view_mode == "page" and self.ui.document:getVisiblePageCount() == 1 end,
-        checked_func = function() return self.hide_nonlinear end,
-        callback = function()
-            self.ui:handleEvent(Event:new("ToggleHideNonlinear"))
-        end,
-        hold_callback = function()
-            UIManager:show(ConfirmBox:new{
-                text = T(
-                    hide_nonlinear_text .. _("\n\nSet default hide non-linear fragments to %1?"),
-                    self.hide_nonlinear and _("enabled") or _("disabled")
-                ),
-                ok_callback = function()
-                    G_reader_settings:saveSetting("hide_nonlinear", self.hide_nonlinear)
-                end,
-            })
-        end,
-        help_text = hide_nonlinear_text,
-    }
+    if self.view.document:hasNonLinearFlows() then
+        local hide_nonlinear_text = _("When this option is enabled, if a document contains non-linear fragments, they will be hidden from the normal page flow, but they are still accessible through links, Toc or Go to. This currently works only in single-page, non-scrolling mode.")
+        menu_items.hide_nonlinear_flows = {
+            text = _("Hide non-linear fragments"),
+            enabled_func = function() return self.view.view_mode == "page" and self.ui.document:getVisiblePageCount() == 1 end,
+            checked_func = function() return self.hide_nonlinear_flows end,
+            callback = function()
+                self.ui:handleEvent(Event:new("ToggleHideNonlinear"))
+            end,
+            hold_callback = function()
+                UIManager:show(ConfirmBox:new{
+                    text = T(
+                        hide_nonlinear_text .. _("\n\nSet default hide non-linear fragments to %1?"),
+                        self.hide_nonlinear_flows and _("enabled") or _("disabled")
+                    ),
+                    ok_callback = function()
+                        G_reader_settings:saveSetting("hide_nonlinear_flows", self.hide_nonlinear_flows)
+                    end,
+                })
+            end,
+            help_text = hide_nonlinear_text,
+        }
+    end
 end
 
 function ReaderRolling:getLastPercent()
@@ -558,11 +561,15 @@ end
 function ReaderRolling:onGotoNextChapter()
     local visible_page_count = self.ui.document:getVisiblePageCount()
     local pageno = self.current_page + (visible_page_count > 1 and 1 or 0)
-    -- Find next chapter start
-    local new_page = self.ui.document:getNextPage(pageno)
-    while new_page > 0 do
-        if self.ui.toc:isChapterStart(new_page) then break end
-        new_page = self.ui.document:getNextPage(new_page)
+    if self.ui.document:hasHiddenFlows() then
+        -- Find next chapter start
+        local new_page = self.ui.document:getNextPage(pageno)
+        while new_page > 0 do
+            if self.ui.toc:isChapterStart(new_page) then break end
+            new_page = self.ui.document:getNextPage(new_page)
+        end
+    else
+        local new_page = self.ui.toc:getNextChapter(pageno) or 0
     end
     if new_page > 0 then
         self.ui.link:addCurrentLocationToStack()
@@ -573,11 +580,15 @@ end
 
 function ReaderRolling:onGotoPrevChapter()
     local pageno = self.current_page
-    -- Find previous chapter start
-    local new_page = self.ui.document:getPrevPage(pageno)
-    while new_page > 0 do
-        if self.ui.toc:isChapterStart(new_page) then break end
-        new_page = self.ui.document:getPrevPage(new_page)
+    if self.ui.document:hasHiddenFlows() then
+        -- Find previous chapter start
+        local new_page = self.ui.document:getPrevPage(pageno)
+        while new_page > 0 do
+            if self.ui.toc:isChapterStart(new_page) then break end
+            new_page = self.ui.document:getPrevPage(new_page)
+        end
+    else
+        local new_page = self.ui.toc:getPrevChapter(pageno) or 0
     end
     if new_page > 0 then
         self.ui.link:addCurrentLocationToStack()
@@ -764,14 +775,18 @@ function ReaderRolling:onGotoViewRel(diff)
             diff = math.floor(diff)
         end
         local new_page = self.current_page
-        local test_page = 0
-        for i=1, math.abs(diff*page_count) do
-            if diff > 0 then
-                test_page = self.ui.document:getNextPage(new_page)
-            else
-                test_page = self.ui.document:getPrevPage(new_page)
+        if self.ui.document:hasHiddenFlows() then
+            local test_page = 0
+            for i=1, math.abs(diff*page_count) do
+                if diff > 0 then
+                    test_page = self.ui.document:getNextPage(new_page)
+                else
+                    test_page = self.ui.document:getPrevPage(new_page)
+                end
+                if test_page > 0 then new_page = test_page end
             end
-            if test_page > 0 then new_page = test_page end
+        else
+            new_page = new_page + diff*page_count
         end
         self:_gotoPage(new_page)
         if diff > 0 and old_page == self.current_page then
@@ -835,12 +850,13 @@ function ReaderRolling:updatePos()
     local new_height = self.ui.document.info.doc_height
     local new_page = self.ui.document.info.number_of_pages
     if self.old_doc_height ~= new_height or self.old_page ~= new_page then
+        if self.hide_nonlinear_flows then
+            self.ui.document:cacheFlows()
+        end
         self:_gotoXPointer(self.xpointer)
         self.old_doc_height = new_height
         self.old_page = new_page
         self.ui:handleEvent(Event:new("UpdateToc"))
-        self.view.footer:setTocMarkers(true)
-        self.view.footer:onUpdateFooter()
     end
     self:updateTopStatusBarMarkers()
     UIManager:setDirty(self.view.dialog, "partial")
@@ -1076,9 +1092,6 @@ function ReaderRolling:handleEngineCallback(ev, ...)
         -- file or re-rendering)
         self:showEngineProgress(1 - args[1]/100) -- unfill progress
     elseif ev == "OnDocumentReady" or ev == "OnSaveCacheFileEnd" then
-        if ev == "OnDocumentReady" then
-            self.ui.document:cacheFlows()
-        end
         self:showEngineProgress() -- cleanup
     elseif ev == "OnLoadFileError" then
         logger.warn("Cre error loading file:", args[1])
@@ -1365,11 +1378,10 @@ Note that %1 (out of %2) xpaths from your bookmarks and highlights have been nor
 end
 
 function ReaderRolling:onToggleHideNonlinear()
-    self.hide_nonlinear = not self.hide_nonlinear
-    self.ui.document:setHideNonlinear(self.hide_nonlinear)
-    self.ui.document:render()
-    self.ui:handleEvent(Event:new("UpdateToc"))
-    self.ui:handleEvent(Event:new("ChangeViewMode"))
+    self.hide_nonlinear_flows = not self.hide_nonlinear_flows
+    self.ui.document:setHideNonlinearFlows(self.hide_nonlinear_flows)
+    self:onUpdatePos()
+    self:onChangeViewMode()
 end
 
 -- Duplicated in ReaderPaging

@@ -59,7 +59,7 @@ local CreDocument = Document:new{
     provider = "crengine",
     provider_name = "Cool Reader Engine",
 
-    hide_nonlinear = false,
+    hide_nonlinear_flows = false,
     flows = {},
     page_in_flow = {},
 }
@@ -287,10 +287,10 @@ function CreDocument:updateColorRendering()
     end
 end
 
-function CreDocument:setHideNonlinear(hide_nonlinear)
-    if hide_nonlinear ~= self.hide_nonlinear and self._document:hasNonLinearFlows() then
-        self.hide_nonlinear = hide_nonlinear
-        self._document:setIntProperty("crengine.doc.nonlinear.pagebreak.force", self.hide_nonlinear and 1 or 0)
+function CreDocument:setHideNonlinearFlows(hide_nonlinear_flows)
+    if hide_nonlinear_flows ~= self.hide_nonlinear_flows then
+        self.hide_nonlinear_flows = hide_nonlinear_flows
+        self._document:setIntProperty("crengine.doc.nonlinear.pagebreak.force", self.hide_nonlinear_flows and 1 or 0)
         self:cacheFlows()
     end
 end
@@ -299,12 +299,22 @@ function CreDocument:getPageCount()
     return self._document:getPages()
 end
 
+-- Whether the document has any non-linear flow to care about
+function CreDocument:hasNonLinearFlows()
+    return self._document:hasNonLinearFlows()
+end
+
+-- Whether non-linear flows (if any) will be hidden
+function CreDocument:hasHiddenFlows()
+    return self.flows[1] ~= nil
+end
+
 -- Get the next/prev page number, skipping non-linear flows,
 -- i.e. the next/prev page that is either in the current
 -- flow or in the linear flow (flow 0)
 -- If "page" is 0, these give the initial and final linear pages
 function CreDocument:getNextPage(page)
-    if self:hasFlows() then
+    if self:hasHiddenFlows() then
         if page < 0 then return 0 end
         local flow = page > 0 and self:getPageFlow(page) or 0
         for test_page=page+1, self:getPageCount() do
@@ -320,10 +330,11 @@ function CreDocument:getNextPage(page)
 end
 
 function CreDocument:getPrevPage(page)
-    if self:hasFlows() then
+    if self:hasHiddenFlows() then
         if page > self:getPageCount()+1 then return 0 end
         local flow = page > 0 and self:getPageFlow(page) or 0
-        for test_page=(page==0) and self:getPageCount() or page-1, 1, -1 do
+        local start = (page==0) and self:getPageCount() or page - 1
+        for test_page=start, 1, -1 do
             local test_page_flow = self:getPageFlow(test_page)
             if test_page_flow == flow or test_page_flow == 0 then
                 return test_page
@@ -336,9 +347,9 @@ function CreDocument:getPrevPage(page)
 end
 
 function CreDocument:getPageFlow(page)
-    -- Only report non-linear pages if "hide_nonlinear" is enabled, and in 1-page mode,
+    -- Only report non-linear pages if "hide_nonlinear_flows" is enabled, and in 1-page mode,
     -- otherwise all pages are linear (flow 0)
-    if self.hide_nonlinear and self._view_mode == self.PAGE_VIEW_MODE and self:getVisiblePageCount() == 1 then
+    if self.hide_nonlinear_flows and self._view_mode == self.PAGE_VIEW_MODE and self:getVisiblePageCount() == 1 then
         return self._document:getPageFlow(page)
     else
         return 0
@@ -354,15 +365,11 @@ function CreDocument:getTotalPagesInFlow(flow)
 end
 
 function CreDocument:getPageNumberInFlow(page)
-    if self:hasFlows() then
+    if self:hasHiddenFlows() then
         return self.page_in_flow[page]
     else
         return page
     end
-end
-
-function CreDocument:hasFlows()
-    return self.flows[1] ~= nil
 end
 
 function CreDocument:cacheFlows()
@@ -376,8 +383,7 @@ function CreDocument:cacheFlows()
     -- and page_in_flow[flows[0][1]] must be 1, because it is the first
     self.flows = {}
     self.page_in_flow = {}
-    if self._document:hasNonLinearFlows() then
-        print("hasNonLinearFlows true")
+    if self:hasNonLinearFlows() then
         for i=1,self:getPageCount() do
             flow = self:getPageFlow(i)
             if self.flows[flow] ~= nil then
@@ -388,13 +394,12 @@ function CreDocument:cacheFlows()
             self.page_in_flow[i] = self.flows[flow][2]
         end
     else
-        print("hasNonLinearFlows false")
         self.flows[0] = {1, self:getPageCount()}
     end
 end
 
 function CreDocument:getTotalPagesLeft(pageno)
-    if self:hasFlows() then
+    if self:hasHiddenFlows() then
         local test_page = pageno
         local pages_left = 0
         test_page = self:getNextPage(test_page)
@@ -887,7 +892,9 @@ function CreDocument:setViewMode(new_mode)
             self._view_mode = self.PAGE_VIEW_MODE
         end
         self._document:setViewMode(self._view_mode)
-        self:cacheFlows()
+        if self.hide_nonlinear_flows then
+            self:cacheFlows()
+        end
     end
 end
 
@@ -1422,6 +1429,8 @@ function CreDocument:setupCallCache()
             elseif name == "getTextFromXPointer" then no_wrap = true
             elseif name == "getTextFromXPointers" then no_wrap = true
             elseif name == "getPageCount" then no_wrap = true
+            elseif name == "getPrevPage" then no_wrap = true
+            elseif name == "getNextPage" then no_wrap = true
             elseif name == "getPageFlow" then no_wrap = true
             elseif name == "getPageOffsetX" then no_wrap = true
             elseif name == "getNextVisibleWordStart" then no_wrap = true
