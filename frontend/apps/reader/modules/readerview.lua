@@ -469,20 +469,21 @@ function ReaderView:drawPageSavedHighlight(bb, x, y)
     local pages = self:getCurrentPageList()
     for _, page in pairs(pages) do
         local items = self.highlight.saved[page]
-        if not items then items = {} end
-        for i = 1, #items do
-            local item = items[i]
-            local pos0, pos1 = item.pos0, item.pos1
-            local boxes = self.ui.document:getPageBoxesFromPositions(page, pos0, pos1)
-            if boxes then
-                for _, box in pairs(boxes) do
-                    local rect = self:pageToScreenTransform(page, box)
-                    if rect then
-                        self:drawHighlightRect(bb, x, y, rect, item.drawer or self.highlight.saved_drawer)
-                    end
-                end -- end for each box
-            end -- end if boxes
-        end -- end for each highlight
+        if items then
+            for i = 1, #items do
+                local item = items[i]
+                local pos0, pos1 = item.pos0, item.pos1
+                local boxes = self.ui.document:getPageBoxesFromPositions(page, pos0, pos1)
+                if boxes then
+                    for _, box in pairs(boxes) do
+                        local rect = self:pageToScreenTransform(page, box)
+                        if rect then
+                            self:drawHighlightRect(bb, x, y, rect, item.drawer or self.highlight.saved_drawer)
+                        end
+                    end -- end for each box
+                end -- end if boxes
+            end -- end for each highlight
+        end
     end -- end for each page
 end
 
@@ -493,39 +494,40 @@ function ReaderView:drawXPointerSavedHighlight(bb, x, y)
     -- or removed).
     local cur_view_top, cur_view_bottom
     for page, items in pairs(self.highlight.saved) do
-        if not items then items = {} end
-        for j = 1, #items do
-            local item = items[j]
-            local pos0, pos1 = item.pos0, item.pos1
-            -- document:getScreenBoxesFromPositions() is expensive, so we
-            -- first check this item is on current page
-            if not cur_view_top then
-                -- Even in page mode, it's safer to use pos and ui.dimen.h
-                -- than pages' xpointers pos, even if ui.dimen.h is a bit
-                -- larger than pages' heights
-                cur_view_top = self.ui.document:getCurrentPos()
-                if self.view_mode == "page" and self.ui.document:getVisiblePageCount() > 1 then
-                    cur_view_bottom = cur_view_top + 2 * self.ui.dimen.h
-                else
-                    cur_view_bottom = cur_view_top + self.ui.dimen.h
+        if items then
+            for j = 1, #items do
+                local item = items[j]
+                local pos0, pos1 = item.pos0, item.pos1
+                -- document:getScreenBoxesFromPositions() is expensive, so we
+                -- first check this item is on current page
+                if not cur_view_top then
+                    -- Even in page mode, it's safer to use pos and ui.dimen.h
+                    -- than pages' xpointers pos, even if ui.dimen.h is a bit
+                    -- larger than pages' heights
+                    cur_view_top = self.ui.document:getCurrentPos()
+                    if self.view_mode == "page" and self.ui.document:getVisiblePageCount() > 1 then
+                        cur_view_bottom = cur_view_top + 2 * self.ui.dimen.h
+                    else
+                        cur_view_bottom = cur_view_top + self.ui.dimen.h
+                    end
                 end
-            end
-            local spos0 = self.ui.document:getPosFromXPointer(pos0)
-            local spos1 = self.ui.document:getPosFromXPointer(pos1)
-            local start_pos = math.min(spos0, spos1)
-            local end_pos = math.max(spos0, spos1)
-            if start_pos <= cur_view_bottom and end_pos >= cur_view_top then
-                local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1, true) -- get_segments=true
-                if boxes then
-                    for _, box in pairs(boxes) do
-                        local rect = self:pageToScreenTransform(page, box)
-                        if rect then
-                            self:drawHighlightRect(bb, x, y, rect, item.drawer or self.highlight.saved_drawer)
-                        end
-                    end -- end for each box
-                end -- end if boxes
-            end
-        end -- end for each highlight
+                local spos0 = self.ui.document:getPosFromXPointer(pos0)
+                local spos1 = self.ui.document:getPosFromXPointer(pos1)
+                local start_pos = math.min(spos0, spos1)
+                local end_pos = math.max(spos0, spos1)
+                if start_pos <= cur_view_bottom and end_pos >= cur_view_top then
+                    local boxes = self.ui.document:getScreenBoxesFromPositions(pos0, pos1, true) -- get_segments=true
+                    if boxes then
+                        for _, box in pairs(boxes) do
+                            local rect = self:pageToScreenTransform(page, box)
+                            if rect then
+                                self:drawHighlightRect(bb, x, y, rect, item.drawer or self.highlight.saved_drawer)
+                            end
+                        end -- end for each box
+                    end -- end if boxes
+                end
+            end -- end for each highlight
+        end
     end -- end for all saved highlight
 end
 
