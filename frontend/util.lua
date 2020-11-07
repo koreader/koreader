@@ -337,7 +337,7 @@ end
 function util.opairs(t, fn)
     local _t = {}
     for k in pairs(t) do
-        _t[#t + 1] = k
+        _t[#_t + 1] = k
     end
     table.sort(_t, fn)
     local i = 0

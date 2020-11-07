@@ -17,10 +17,146 @@ local T = require("ffi/util").template
 local Screen = Device.screen
 
 local ReaderHighlight = InputContainer:new{
-    _extra_highlight_buttons = {}
 }
 
+local function inside_box(pos, box)
+    if pos then
+        local x, y = pos.x, pos.y
+        if box.x <= x and box.y <= y
+            and box.x + box.w >= x
+            and box.y + box.h >= y then
+            return true
+        end
+    end
+end
+
+local function cleanupSelectedText(text)
+    -- Trim spaces and new lines at start and end
+    text = text:gsub("^[\n%s]*", "")
+    text = text:gsub("[\n%s]*$", "")
+    -- Trim spaces around newlines
+    text = text:gsub("%s*\n%s*", "\n")
+    -- Trim consecutive spaces (that would probably have collapsed
+    -- in rendered CreDocuments)
+    text = text:gsub("%s%s+", " ")
+    return text
+end
+
 function ReaderHighlight:init()
+    self._highlight_buttons = {
+        ["01_highlight"] = function(_self)
+            return {
+                text = _("Highlight"),
+                callback = function()
+                    _self:saveHighlight()
+                    _self:onClose()
+                end,
+                enabled = _self.hold_pos ~= nil,
+            }
+        end,
+        ["02_add_note"] = function(_self)
+            return {
+                text = _("Add Note"),
+                callback = function()
+                    _self:addNote()
+                    _self:onClose()
+                end,
+                enabled = _self.hold_pos ~= nil,
+            }
+        end,
+        ["03_copy"] = function(_self)
+            return {
+                text = C_("Text", "Copy"),
+                enabled = Device:hasClipboard(),
+                callback = function()
+                    Device.input.setClipboardText(cleanupSelectedText(_self.selected_text.text))
+                end,
+            }
+        end,
+        ["05_wikipedia"] = function(_self)
+            return {
+                text = _("Wikipedia"),
+                callback = function()
+                    UIManager:scheduleIn(0.1, function()
+                        _self:lookupWikipedia()
+                        -- We don't call _self:onClose(), we need the highlight
+                        -- to still be there, as we may Highlight it from the
+                        -- dict lookup widget
+                    end)
+                end,
+            }
+        end,
+        ["06_dictionary"] = function(_self)
+            return {
+                text = _("Dictionary"),
+                callback = function()
+                    _self:onHighlightDictLookup()
+                    -- We don't call _self:onClose(), same reason as above
+                end,
+            }
+        end,
+        ["07_translate"] = function(_self)
+            return {
+                text = _("Translate"),
+                callback = function()
+                    _self:translate(_self.selected_text)
+                    -- We don't call _self:onClose(), so one can still see
+                    -- the highlighted text when moving the translated
+                    -- text window, and also if NetworkMgr:promptWifiOn()
+                    -- is needed, so the user can just tap again on this
+                    -- button and does not need to select the text again.
+                end,
+            }
+        end,
+        ["08_search"] = function(_self)
+            return {
+                text = _("Search"),
+                callback = function()
+                    _self:onHighlightSearch()
+                    _self:onClose()
+                end,
+            }
+        end,
+    }
+
+    if not self.ui.document.info.has_pages then
+        self:addToHighlightDialog("04_view_html", function(_self)
+            return {
+                text = _("View HTML"),
+                callback = function()
+                    _self:viewSelectionHTML()
+                end,
+            }
+        end)
+    end
+
+    if self.selected_link ~= nil then
+        self:addToHighlightDialog("09_follow_link", function(_self)
+            return {
+                text = _("Follow Link"),
+                callback = function()
+                    local link = _self.selected_link.link or _self.selected_link
+                    _self.ui.link:onGotoLink(link)
+                    _self:onClose()
+                end,
+            }
+        end)
+    end
+
+    if Device:canShareText() then
+        self:addToHighlightDialog("09_follow_link", function(_self)
+            return {
+                text = _("Share text"),
+                callback = function()
+                    local text = cleanupSelectedText(_self.selected_text.text)
+                    -- call self:onClose() before calling the android framework
+                    _self:onClose()
+                    Device.doShareText(text)
+                end,
+            }
+        end)
+    end
+
     self.ui:registerPostInitCallback(function()
         self.ui.menu:registerToMainMenu(self)
     end)
@@ -233,29 +369,6 @@ function ReaderHighlight:onTap(_, ges)
             return self:onTapXPointerSavedHighlight(ges)
         end
     end
-end
-
-local function inside_box(pos, box)
-    if pos then
-        local x, y = pos.x, pos.y
-        if box.x <= x and box.y <= y
-            and box.x + box.w >= x
-            and box.y + box.h >= y then
-            return true
-        end
-    end
-end
-
-local function cleanupSelectedText(text)
-    -- Trim spaces and new lines at start and end
-    text = text:gsub("^[\n%s]*", "")
-    text = text:gsub("[\n%s]*$", "")
-    -- Trim spaces around newlines
-    text = text:gsub("%s*\n%s*", "\n")
-    -- Trim consecutive spaces (that would probably have collapsed
-    -- in rendered CreDocuments)
-    text = text:gsub("%s%s+", " ")
-    return text
 end
 
 function ReaderHighlight:onTapPageSavedHighlight(ges)
@@ -502,122 +615,28 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
 end
 
 function ReaderHighlight:addToHighlightDialog(idx, fn_button)
-    -- fn_button is a function that takes the ReaderHighlight as argument,
-    -- and returns a table describing the button to be added.
-    self._extra_highlight_buttons[idx] = fn_button
+    -- fn_button is a function that takes the ReaderHighlight instance
+    -- as argument, and returns a table describing the button to be added.
+    self._highlight_buttons[idx] = fn_button
+    local n = 0
+    for _ in pairs(self._highlight_buttons) do
+        n = n + 1
+    end
 end
 
 function ReaderHighlight:removeFromHighlightDialog(idx)
-    local button = self._extra_highlight_buttons[idx]
-    self._extra_highlight_buttons[idx] = nil
+    local button = self._highlight_buttons[idx]
+    self._highlight_buttons[idx] = nil
     return button
 end
 
 function ReaderHighlight:onShowHighlightMenu()
-    local highlight_buttons = {
-        {
-            {
-                text = _("Highlight"),
-                callback = function()
-                    self:saveHighlight()
-                    self:onClose()
-                end,
-                enabled = self.hold_pos ~= nil,
-            },
-            {
-                text = _("Add Note"),
-                callback = function()
-                    self:addNote()
-                    self:onClose()
-                end,
-                enabled = self.hold_pos ~= nil,
-            },
-        },
-        {
-            {
-                text = C_("Text", "Copy"),
-                enabled = Device:hasClipboard(),
-                callback = function()
-                    Device.input.setClipboardText(cleanupSelectedText(self.selected_text.text))
-                end,
-            },
-            {
-                text = _("View HTML"),
-                enabled = not self.ui.document.info.has_pages,
-                callback = function()
-                    self:viewSelectionHTML()
-                end,
-            },
-        },
-        {
-            {
-                text = _("Wikipedia"),
-                callback = function()
-                    UIManager:scheduleIn(0.1, function()
-                        self:lookupWikipedia()
-                        -- We don't call self:onClose(), we need the highlight
-                        -- to still be there, as we may Highlight it from the
-                        -- dict lookup widget
-                    end)
-                end,
-            },
-            {
-                text = _("Dictionary"),
-                callback = function()
-                    self:onHighlightDictLookup()
-                    -- We don't call self:onClose(), same reason as above
-                end,
-            },
-        },
-        {
-            {
-                text = _("Translate"),
-                callback = function()
-                    self:translate(self.selected_text)
-                    -- We don't call self:onClose(), so one can still see
-                    -- the highlighted text when moving the translated
-                    -- text window, and also if NetworkMgr:promptWifiOn()
-                    -- is needed, so the user can just tap again on this
-                    -- button and does not need to select the text again.
-                end,
-            },
-            {
-                text = _("Search"),
-                callback = function()
-                    self:onHighlightSearch()
-                    UIManager:close(self.highlight_dialog)
-                end,
-            },
-        },
-    }
-    if self.selected_link ~= nil then
-        table.insert(highlight_buttons, { -- for now, a single button in an added row
-            {
-                text = _("Follow Link"),
-                callback = function()
-                    local link = self.selected_link.link or self.selected_link
-                    self.ui.link:onGotoLink(link)
-                    self:onClose()
-                end,
-            },
-        })
-    end
-    if Device:canShareText() then
-            table.insert(highlight_buttons, {
-            {
-                text = _("Share text"),
-                callback = function()
-                    local text = cleanupSelectedText(self.selected_text.text)
-                    -- call self:onClose() before calling the android framework
-                    self:onClose()
-                    Device.doShareText(text)
-                end,
-            },
-        })
-    end
+    local highlight_buttons = {{}}
 
-    for _, fn_button in util.opairs(self._extra_highlight_buttons) do
-        if #highlight_buttons[#highlight_buttons] > 1 then
+    local columns = 2
+    for _, fn_button in util.opairs(self._highlight_buttons) do
+        logger.dbg("ReaderHighlight", _, #highlight_buttons, #highlight_buttons[#highlight_buttons])
+        if #highlight_buttons[#highlight_buttons] >= columns then
             table.insert(highlight_buttons, {})
         end
         table.insert(highlight_buttons[#highlight_buttons], fn_button(self))
