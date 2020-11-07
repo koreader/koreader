@@ -9,6 +9,7 @@ local Notification = require("ui/widget/notification")
 local TimeVal = require("ui/timeval")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
+local dump = require("dump")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -192,6 +193,7 @@ function ReaderHighlight:getClearId()
 end
 
 function ReaderHighlight:clear(clear_id)
+    print("ReaderHighlight:clear", clear_id or "nil")
     if clear_id then -- should be provided by delayed call to clear()
         if clear_id ~= self.clear_id then
             -- if clear_id is no more valid, highlight has already been
@@ -214,6 +216,7 @@ function ReaderHighlight:clear(clear_id)
         self.hold_pos = nil
         self.selected_text = nil
         UIManager:setDirty(self.dialog, "ui")
+        print("Cleared something, refreshing ReaderUI")
         return true
     end
 end
@@ -227,9 +230,18 @@ function ReaderHighlight:onTap(_, ges)
     -- We only actually need to clear if we have something to clear in the first place.
     -- (We mainly want to avoid CRe's clearSelection,
     -- which may incur a redraw as it invalidates the cache, c.f., #6854)
-    local cleared_nothing = self.hold_pos and not self:clear()
-    -- But we *do* want to be able to tap on existing highlights ;)
-    if cleared_nothing or ges then
+    print("ReaderHighlight:onTap")
+    print("ges =", ges or "nil")
+    print("self.hold_pos =", self.hold_pos or "nil")
+    -- ReaderHighlight:clear can only return true if self.hold_pos was set anyway
+    local cleared = self.hold_pos and self:clear()
+    print("cleared =", cleared)
+    if ges then
+        print(dump(ges))
+    end
+    -- We only care about potential taps on existing highlights, not on taps that closed a highlight menu.
+    if not cleared and ges and ges.ges == "tap" then
+        print("Do the thing")
         if self.ui.document.info.has_pages then
             return self:onTapPageSavedHighlight(ges)
         else
@@ -290,10 +302,11 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
     -- or removed).
     local cur_view_top, cur_view_bottom
     local pos = self.view:screenToPageTransform(ges.pos)
-    for page, _ in pairs(self.view.highlight.saved) do
-        local items = self.view.highlight.saved[page]
+    for page, items in pairs(self.view.highlight.saved) do
+        print("looping on highlights from page", page)
         if items then
             for i = 1, #items do
+                print("looping on item", i, "of", #items)
                 local pos0, pos1 = items[i].pos0, items[i].pos1
                 -- document:getScreenBoxesFromPositions() is expensive, so we
                 -- first check this item is on current page
@@ -1348,6 +1361,10 @@ function ReaderHighlight:deleteHighlight(page, i, bookmark_item)
     self.ui:handleEvent(Event:new("DelHighlight"))
     logger.dbg("delete highlight", page, i)
     local removed = table.remove(self.view.highlight.saved[page], i)
+    -- Clear the hash if there aren't any more highlights on this page
+    if #self.view.highlight.saved[page] == 0 then
+        self.view.highlight.saved[page] = nil
+    end
     if bookmark_item then
         self.ui.bookmark:removeBookmark(bookmark_item)
     else
