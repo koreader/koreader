@@ -306,7 +306,9 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
     --       it's stored under the hash of its *starting* point,
     --       so we can't just check the current page, hence the giant hashwalk of death...
     --       We can't even limit the walk to page <= pos.page,
-    --       because pos.page isn't super accurate in continuous mode...
+    --       because pos.page isn't super accurate in continuous mode
+    --       (it's the page number for what's it the topleft corner of the screen,
+    --       i.e., often a bit earlier)...
     print("Current page ought to be", pos.page)
     for page, items in pairs(self.view.highlight.saved) do
         print("looping on highlights from page", page)
