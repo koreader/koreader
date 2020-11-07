@@ -1067,7 +1067,7 @@ function CreDocument:setupCallCache()
     local do_stats = G_reader_settings:isTrue("use_cre_call_cache_log_stats")
     -- Tune these when debugging
     local do_stats_include_not_cached = false
-    local do_log = true
+    local do_log = false
 
     -- Beware below for luacheck warnings "shadowing upvalue argument 'self'":
     -- the 'self' we got and use here, and the one we may get implicitely
