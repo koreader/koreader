@@ -45,6 +45,8 @@ end
 
 function ReaderHighlight:init()
     self._highlight_buttons = {
+        -- highlight and add_note are for the document itself,
+        -- so we put them first.
         ["01_highlight"] = function(_self)
             return {
                 text = _("Highlight"),
@@ -65,6 +67,8 @@ function ReaderHighlight:init()
                 enabled = _self.hold_pos ~= nil,
             }
         end,
+        -- copy and search are internal functions that don't depend on anything,
+        -- hence the second line.
         ["03_copy"] = function(_self)
             return {
                 text = C_("Text", "Copy"),
@@ -74,6 +78,17 @@ function ReaderHighlight:init()
                 end,
             }
         end,
+        ["04_search"] = function(_self)
+            return {
+                text = _("Search"),
+                callback = function()
+                    _self:onHighlightSearch()
+                    _self:onClose()
+                end,
+            }
+        end,
+        -- then information lookup functions, putting on the left those that
+        -- depend on an internet connection.
         ["05_wikipedia"] = function(_self)
             return {
                 text = _("Wikipedia"),
@@ -109,19 +124,11 @@ function ReaderHighlight:init()
                 end,
             }
         end,
-        ["08_search"] = function(_self)
-            return {
-                text = _("Search"),
-                callback = function()
-                    _self:onHighlightSearch()
-                    _self:onClose()
-                end,
-            }
-        end,
     }
 
+    -- Text export functions if applicable.
     if not self.ui.document.info.has_pages then
-        self:addToHighlightDialog("04_view_html", function(_self)
+        self:addToHighlightDialog("08_view_html", function(_self)
             return {
                 text = _("View HTML"),
                 callback = function()
@@ -131,28 +138,29 @@ function ReaderHighlight:init()
         end)
     end
 
+    if Device:canShareText() then
+        self:addToHighlightDialog("09_share_text", function(_self)
+            return {
+                text = _("Share Text"),
+                callback = function()
+                    local text = cleanupSelectedText(_self.selected_text.text)
+                    -- call self:onClose() before calling the android framework
+                    _self:onClose()
+                    Device.doShareText(text)
+                end,
+            }
+        end)
+    end
+
+    -- Links
     if self.selected_link ~= nil then
-        self:addToHighlightDialog("09_follow_link", function(_self)
+        self:addToHighlightDialog("10_follow_link", function(_self)
             return {
                 text = _("Follow Link"),
                 callback = function()
                     local link = _self.selected_link.link or _self.selected_link
                     _self.ui.link:onGotoLink(link)
                     _self:onClose()
-                end,
-            }
-        end)
-    end
-
-    if Device:canShareText() then
-        self:addToHighlightDialog("10_share_text", function(_self)
-            return {
-                text = _("Share text"),
-                callback = function()
-                    local text = cleanupSelectedText(_self.selected_text.text)
-                    -- call self:onClose() before calling the android framework
-                    _self:onClose()
-                    Device.doShareText(text)
                 end,
             }
         end)
