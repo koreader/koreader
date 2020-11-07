@@ -1355,8 +1355,9 @@ end
 function ReaderHighlight:deleteHighlight(page, i, bookmark_item)
     self.ui:handleEvent(Event:new("DelHighlight"))
     logger.dbg("delete highlight", page, i)
+    -- The per-page table is a pure array
     local removed = table.remove(self.view.highlight.saved[page], i)
-    -- Clear the hash if there aren't any more highlights on this page
+    -- But the main, outer table is a hash, so clear the table for this page if there are no longer any highlights on it
     if #self.view.highlight.saved[page] == 0 then
         self.view.highlight.saved[page] = nil
     end
