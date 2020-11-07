@@ -302,11 +302,17 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
     -- or removed).
     local cur_view_top, cur_view_bottom
     local pos = self.view:screenToPageTransform(ges.pos)
+    -- NOTE: By now, pos.page is set, but if a highlight spans across multiple pages,
+    --       it's stored under the hash of its *starting* point,
+    --       so we can't just check the current page, hence the giant hashwalk of death...
+    --       We can't even limit the walk to page <= pos.page,
+    --       because pos.page isn't super accurate in continuous mode...
+    print("Current page ought to be", pos.page)
     for page, items in pairs(self.view.highlight.saved) do
         print("looping on highlights from page", page)
         if items then
             for i = 1, #items do
-                print("looping on item", i, "of", #items)
+                print("looping on item", i, "of", #items, "for page", page)
                 local pos0, pos1 = items[i].pos0, items[i].pos1
                 -- document:getScreenBoxesFromPositions() is expensive, so we
                 -- first check this item is on current page
