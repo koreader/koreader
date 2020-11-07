@@ -9,7 +9,6 @@ local Notification = require("ui/widget/notification")
 local TimeVal = require("ui/timeval")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
-local dump = require("dump")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -216,7 +215,6 @@ function ReaderHighlight:clear(clear_id)
         self.hold_pos = nil
         self.selected_text = nil
         UIManager:setDirty(self.dialog, "ui")
-        print("Cleared something, refreshing ReaderUI")
         return true
     end
 end
@@ -230,18 +228,10 @@ function ReaderHighlight:onTap(_, ges)
     -- We only actually need to clear if we have something to clear in the first place.
     -- (We mainly want to avoid CRe's clearSelection,
     -- which may incur a redraw as it invalidates the cache, c.f., #6854)
-    print("ReaderHighlight:onTap")
-    print("ges =", ges or "nil")
-    print("self.hold_pos =", self.hold_pos or "nil")
-    -- ReaderHighlight:clear can only return true if self.hold_pos was set anyway
+    -- ReaderHighlight:clear can only return true if self.hold_pos was set anyway.
     local cleared = self.hold_pos and self:clear()
-    print("cleared =", cleared)
-    if ges then
-        print(dump(ges))
-    end
     -- We only care about potential taps on existing highlights, not on taps that closed a highlight menu.
     if not cleared and ges and ges.ges == "tap" then
-        print("Do the thing")
         if self.ui.document.info.has_pages then
             return self:onTapPageSavedHighlight(ges)
         else
@@ -309,12 +299,9 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
     --       because pos.page isn't super accurate in continuous mode
     --       (it's the page number for what's it the topleft corner of the screen,
     --       i.e., often a bit earlier)...
-    print("Current page ought to be", pos.page)
     for page, items in pairs(self.view.highlight.saved) do
-        print("looping on highlights from page", page)
         if items then
             for i = 1, #items do
-                print("looping on item", i, "of", #items, "for page", page)
                 local item = items[i]
                 local pos0, pos1 = item.pos0, item.pos1
                 -- document:getScreenBoxesFromPositions() is expensive, so we
