@@ -192,7 +192,6 @@ function ReaderHighlight:getClearId()
 end
 
 function ReaderHighlight:clear(clear_id)
-    print("ReaderHighlight:clear", clear_id or "nil")
     if clear_id then -- should be provided by delayed call to clear()
         if clear_id ~= self.clear_id then
             -- if clear_id is no more valid, highlight has already been
