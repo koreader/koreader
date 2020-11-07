@@ -1067,7 +1067,7 @@ function CreDocument:setupCallCache()
     local do_stats = G_reader_settings:isTrue("use_cre_call_cache_log_stats")
     -- Tune these when debugging
     local do_stats_include_not_cached = false
-    local do_log = false
+    local do_log = true
 
     -- Beware below for luacheck warnings "shadowing upvalue argument 'self'":
     -- the 'self' we got and use here, and the one we may get implicitely
@@ -1278,8 +1278,6 @@ function CreDocument:setupCallCache()
             -- These may have crengine do native highlight or unhighlight
             -- (we could keep the original buffer and use a scratch buffer while
             -- these are used, but not worth bothering)
-            -- The only real interest would be for clearSelection, which can trigger
-            -- without actual content change (e.g., toggling menus/footer).
             elseif name == "clearSelection" then add_buffer_trash = true
             elseif name == "highlightXPointer" then add_buffer_trash = true
             elseif name == "getWordFromPosition" then add_buffer_trash = true

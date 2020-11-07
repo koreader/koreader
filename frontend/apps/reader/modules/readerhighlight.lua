@@ -192,6 +192,7 @@ function ReaderHighlight:getClearId()
 end
 
 function ReaderHighlight:clear(clear_id)
+    print("ReaderHighlight:clear", clear_id or "nil")
     if clear_id then -- should be provided by delayed call to clear()
         if clear_id ~= self.clear_id then
             -- if clear_id is no more valid, highlight has already been
@@ -224,7 +225,14 @@ function ReaderHighlight:onClearHighlight()
 end
 
 function ReaderHighlight:onTap(_, ges)
-    if not self:clear() and ges then
+    print("ReaderHighlight:onTap", self.hold_pos, ges)
+    -- We only actually need to clear if we have something to clear in the first place.
+    -- (We mainly want to avoid CRe's clearSelection,
+    -- which may incur a redraw as it invalidates the cache, c.f., #6854)
+    local cleared_nothing = self.hold_pos and not self:clear()
+    -- But we *do* want to be able to tap on existing highlights ;)
+    if cleared_nothing or ges then
+        print("Actual tap, checking if it was on a HL")
         if self.ui.document.info.has_pages then
             return self:onTapPageSavedHighlight(ges)
         else
@@ -643,6 +651,7 @@ function ReaderHighlight:onPanelZoom(arg, ges)
 end
 
 function ReaderHighlight:onHold(arg, ges)
+    print("ReaderHighlight:onHold")
     if self.document.info.has_pages and self.panel_zoom_enabled then
         return self:onPanelZoom(arg, ges)
     end
@@ -709,6 +718,7 @@ function ReaderHighlight:onHold(arg, ges)
 end
 
 function ReaderHighlight:onHoldPan(_, ges)
+    print("ReaderHighlight:onHoldPan")
     if self.hold_pos == nil then
         logger.dbg("no previous hold position")
         self:_resetHoldTimer(true)
@@ -1039,6 +1049,7 @@ function ReaderHighlight:onTranslateText(text)
 end
 
 function ReaderHighlight:onHoldRelease()
+    print("ReaderHighlight:onHoldRelease")
     local long_final_hold = false
     if self.hold_last_tv then
         local hold_duration = TimeVal.now() - self.hold_last_tv
