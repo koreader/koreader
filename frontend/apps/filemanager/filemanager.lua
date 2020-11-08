@@ -460,6 +460,7 @@ function FileManager:init()
         ui = self
     }
     self.active_widgets = { Screenshoter:new{ prefix = 'FileManager' } }
+    table.insert(self, self.active_widgets[1])
     table.insert(self, self.menu)
     table.insert(self, FileManagerHistory:new{
         ui = self,

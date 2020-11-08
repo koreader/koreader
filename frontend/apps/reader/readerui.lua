@@ -81,7 +81,10 @@ local ReaderUI = InputContainer:new{
 function ReaderUI:registerModule(name, ui_module, always_active)
     if name then self[name] = ui_module end
     ui_module.name = "reader" .. name
-    table.insert(always_active and self.active_widgets or self, ui_module)
+    if always_active then
+        table.insert(self.active_widgets, ui_module)
+    end
+    table.insert(self, ui_module)
 end
 
 function ReaderUI:registerPostInitCallback(callback)
