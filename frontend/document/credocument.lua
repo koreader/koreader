@@ -877,11 +877,6 @@ function CreDocument:setNightmodeImages(toggle)
     self._nightmode_images = toggle
 end
 
--- no-op that will be wrapped by setupCallCache
-function CreDocument:resetCallCache()
-    logger.dbg("CreDocument: reset call cache")
-end
-
 function CreDocument:setFloatingPunctuation(enabled)
     --- @fixme occasional segmentation fault when toggling floating punctuation
     logger.dbg("CreDocument: set floating punctuation", enabled)
@@ -1053,6 +1048,9 @@ function CreDocument:register(registry)
     registry:addProvider("sh", "application/x-shellscript", self, 90)
     registry:addProvider("py", "text/x-python", self, 90)
 end
+
+-- no-op that will be wrapped by setupCallCache
+function CreDocument:resetCallCache() end
 
 -- Optimise usage of some of the above methods by caching their results,
 -- either globally, or per page/pos for those whose result may depend on
