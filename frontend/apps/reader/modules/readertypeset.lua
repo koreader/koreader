@@ -108,7 +108,6 @@ function ReaderTypeset:onReadSettings(config)
     end
     self:toggleImageScaling(self.smooth_scaling)
 
-    self.ui.document:setNightMode(Screen.night_mode)
     -- default to automagic nightmode-friendly handling of images
     self.nightmode_images = config:readSetting("nightmode_images")
     if self.nightmode_images == nil then

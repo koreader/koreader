@@ -25,7 +25,6 @@ local CreDocument = Document:new{
     _view_mode = nil,
     _smooth_scaling = false,
     _nightmode_images = true,
-    _nightmode = false,
 
     line_space_percent = 100,
     default_font = "Noto Serif",
@@ -424,7 +423,7 @@ function CreDocument:drawCurrentView(target, x, y, rect, pos)
 
     --local start_ts = FFIUtil.getTimestamp()
     self._drawn_images_count, self._drawn_images_surface_ratio =
-        self._document:drawCurrentPage(self.buffer, self.render_color, self._nightmode and self._nightmode_images, self._smooth_scaling, Screen.sw_dithering)
+        self._document:drawCurrentPage(self.buffer, self.render_color, Screen.night_mode and self._nightmode_images, self._smooth_scaling, Screen.sw_dithering)
     --local end_ts = FFIUtil.getTimestamp()
     --print(string.format("CreDocument:drawCurrentView: Rendering took %9.3f ms", (end_ts - start_ts) * 1000))
 
@@ -878,9 +877,9 @@ function CreDocument:setNightmodeImages(toggle)
     self._nightmode_images = toggle
 end
 
-function CreDocument:setNightMode(toggle)
-    logger.dbg("CreDocument: set nightmode", toggle)
-    self._nightmode = toggle
+function CreDocument:resetCallCache()
+    logger.dbg("CreDocument: reset call cache")
+    self._callCacheReset()
 end
 
 function CreDocument:setFloatingPunctuation(enabled)
