@@ -83,6 +83,7 @@ local settingsList = {
     set_no_flash_on_second_chapter_page = { category="string", event="SetNoFlashOnSecondChapterPage", title=_("Never flash on chapter's 2nd page"), device=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("On"), _("Off")},},
     toggle_no_flash_on_second_chapter_page = { category="none", event="ToggleNoFlashOnSecondChapterPage", title=_("Toggle flashing on chapter's 2nd page"), device=true, condition=Device:hasEinkScreen(), separator=true,},
     favorites = { category="none", event="ShowColl", arg="favorites", title=_("Favorites"), device=true,},
+    screenshot = { category="none", event="Screenshot", title=_("Screenshot"), device=true, separator=true,},
 
     -- filemanager settings
     folder_up = { category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
@@ -207,6 +208,7 @@ local dispatcher_menu_order = {
     "toggle_wifi",
 
     "rotation_mode",
+    "screenshot",
 
     -- filemanager
     "folder_up",

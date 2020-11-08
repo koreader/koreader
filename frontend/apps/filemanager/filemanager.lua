@@ -459,7 +459,11 @@ function FileManager:init()
     self.menu = FileManagerMenu:new{
         ui = self
     }
-    self.active_widgets = { Screenshoter:new{ prefix = 'FileManager' } }
+
+    local screenshoter = Screenshoter:new{ prefix = 'FileManager' }
+    table.insert(self, screenshoter) -- for regular events
+    self.active_widgets = { screenshoter } -- to get events even when hidden
+
     table.insert(self, self.menu)
     table.insert(self, FileManagerHistory:new{
         ui = self,
