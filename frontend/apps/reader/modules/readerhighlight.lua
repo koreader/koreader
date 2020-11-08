@@ -224,7 +224,13 @@ function ReaderHighlight:onClearHighlight()
 end
 
 function ReaderHighlight:onTap(_, ges)
-    if not self:clear() and ges then
+    -- We only actually need to clear if we have something to clear in the first place.
+    -- (We mainly want to avoid CRe's clearSelection,
+    -- which may incur a redraw as it invalidates the cache, c.f., #6854)
+    -- ReaderHighlight:clear can only return true if self.hold_pos was set anyway.
+    local cleared = self.hold_pos and self:clear()
+    -- We only care about potential taps on existing highlights, not on taps that closed a highlight menu.
+    if not cleared and ges then
         if self.ui.document.info.has_pages then
             return self:onTapPageSavedHighlight(ges)
         else
@@ -285,11 +291,18 @@ function ReaderHighlight:onTapXPointerSavedHighlight(ges)
     -- or removed).
     local cur_view_top, cur_view_bottom
     local pos = self.view:screenToPageTransform(ges.pos)
-    for page, _ in pairs(self.view.highlight.saved) do
-        local items = self.view.highlight.saved[page]
+    -- NOTE: By now, pos.page is set, but if a highlight spans across multiple pages,
+    --       it's stored under the hash of its *starting* point,
+    --       so we can't just check the current page, hence the giant hashwalk of death...
+    --       We can't even limit the walk to page <= pos.page,
+    --       because pos.page isn't super accurate in continuous mode
+    --       (it's the page number for what's it the topleft corner of the screen,
+    --       i.e., often a bit earlier)...
+    for page, items in pairs(self.view.highlight.saved) do
         if items then
             for i = 1, #items do
-                local pos0, pos1 = items[i].pos0, items[i].pos1
+                local item = items[i]
+                local pos0, pos1 = item.pos0, item.pos1
                 -- document:getScreenBoxesFromPositions() is expensive, so we
                 -- first check this item is on current page
                 if not cur_view_top then
@@ -1342,7 +1355,12 @@ end
 function ReaderHighlight:deleteHighlight(page, i, bookmark_item)
     self.ui:handleEvent(Event:new("DelHighlight"))
     logger.dbg("delete highlight", page, i)
+    -- The per-page table is a pure array
     local removed = table.remove(self.view.highlight.saved[page], i)
+    -- But the main, outer table is a hash, so clear the table for this page if there are no longer any highlights on it
+    if #self.view.highlight.saved[page] == 0 then
+        self.view.highlight.saved[page] = nil
+    end
     if bookmark_item then
         self.ui.bookmark:removeBookmark(bookmark_item)
     else
