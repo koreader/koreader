@@ -314,11 +314,10 @@ end
 
 function ReaderRolling:onReaderReady()
     self:setupTouchZones()
-    self.setupXpointer()
     if self.hide_nonlinear_flows then
         self.ui.document:cacheFlows()
-        self.ui:handleEvent(Event:new("UpdateToc"))
     end
+    self.setupXpointer()
 end
 
 function ReaderRolling:setupTouchZones()

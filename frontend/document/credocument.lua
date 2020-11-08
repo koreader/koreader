@@ -62,6 +62,7 @@ local CreDocument = Document:new{
     hide_nonlinear_flows = false,
     flows = {},
     page_in_flow = {},
+    last_linear_page = nil,
 }
 
 -- NuPogodi, 20.05.12: inspect the zipfile content
@@ -316,11 +317,15 @@ end
 function CreDocument:getNextPage(page)
     if self:hasHiddenFlows() then
         if page < 0 then return 0 end
+        local last_linear_page = self:getLastLinearPage()
         local flow = page > 0 and self:getPageFlow(page) or 0
         for test_page=page+1, self:getPageCount() do
             local test_page_flow = self:getPageFlow(test_page)
             if test_page_flow == flow or test_page_flow == 0 then
                 return test_page
+            end
+            if test_page_flow ~= flow and test_page > last_linear_page then
+                break
             end
         end
         return 0
@@ -332,12 +337,16 @@ end
 function CreDocument:getPrevPage(page)
     if self:hasHiddenFlows() then
         if page > self:getPageCount()+1 then return 0 end
+        local first_linear_page = self:getFirstPageInFlow(0)
         local flow = page > 0 and self:getPageFlow(page) or 0
         local start = (page==0) and self:getPageCount() or page - 1
         for test_page=start, 1, -1 do
             local test_page_flow = self:getPageFlow(test_page)
             if test_page_flow == flow or test_page_flow == 0 then
                 return test_page
+            end
+            if test_page_flow ~= flow and test_page < first_linear_page then
+                break
             end
         end
         return 0
@@ -356,7 +365,11 @@ function CreDocument:getPageFlow(page)
     end
 end
 
-function CreDocument:getFirstInFlow(flow)
+function CreDocument:getLastLinearPage()
+    return self.last_linear_page
+end
+
+function CreDocument:getFirstPageInFlow(flow)
     return self.flows[flow][1]
 end
 
@@ -374,7 +387,9 @@ end
 
 function CreDocument:cacheFlows()
     -- Build the cache tables "flows" and "page_in_flow", if there are
-    -- any non-linear flows in the source document.
+    -- any non-linear flows in the source document. Also set the value
+    -- of "last_linear_page", to possibly speed up counting in documents
+    -- with many non-linear pages at the end.
     -- flows[i] contains {ini, num}, where ini is the first page in flow i,
     --          and num is the total number of pages in the flow.
     -- page_in_flow[i] contains the number of page i with its flow.
@@ -392,9 +407,13 @@ function CreDocument:cacheFlows()
                 self.flows[flow] = {i, 1}
             end
             self.page_in_flow[i] = self.flows[flow][2]
+            if flow == 0 then
+                self.last_linear_page = i
+            end
         end
     else
-        self.flows[0] = {1, self:getPageCount()}
+        self.last_linear_page = self:getPageCount()
+        self.flows[0] = {1, self.last_linear_page}
     end
 end
 
@@ -1432,6 +1451,7 @@ function CreDocument:setupCallCache()
             elseif name == "getPrevPage" then no_wrap = true
             elseif name == "getNextPage" then no_wrap = true
             elseif name == "getPageFlow" then no_wrap = true
+            elseif name == "getLastLinearPage" then no_wrap = true
             elseif name == "getPageOffsetX" then no_wrap = true
             elseif name == "getNextVisibleWordStart" then no_wrap = true
             elseif name == "getNextVisibleWordEnd" then no_wrap = true

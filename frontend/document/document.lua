@@ -218,7 +218,7 @@ function Document:getPageFlow(page)
     return 0
 end
 
-function Document:getFirstInFlow(flow)
+function Document:getFirstPageInFlow(flow)
     return 1
 end
 
