@@ -65,6 +65,16 @@ function CoverImage:cleanUpImage()
     end
 end
 
+function CoverImage:createCoverImage(doc_settings)
+   if self.enabled and not doc_settings:readSetting("exclude_cover_image") == true then
+        local image = self.ui.document:getCoverPageImage()
+        if image then
+            image:writePNG(self.cover_image_path, false)
+            logger.dbg("CoverImage: image written to " .. self.cover_image_path)
+        end
+    end
+end
+
 function CoverImage:onCloseDocument()
     logger.dbg("CoverImage: onCloseDocument")
     if self.fallback then
@@ -73,14 +83,8 @@ function CoverImage:onCloseDocument()
 end
 
 function CoverImage:onReaderReady(doc_settings)
-   logger.dbg("CoverImage: onReaderReady")
-   if self.enabled and not doc_settings:readSetting("exclude_cover_image") == true then
-        local image = self.ui.document:getCoverPageImage()
-        if image then
-            image:writePNG(self.cover_image_path, false)
-            logger.dbg("CoverImage: image written to " .. self.cover_image_path)
-        end
-    end
+    logger.dbg("CoverImage: onReaderReady")
+    self:createCoverImage(doc_settings)
 end
 
 local about_text = _([[
@@ -148,7 +152,7 @@ function CoverImage:addToMainMenu(menu_items)
                                             G_reader_settings:saveSetting("cover_image_path", self.cover_image_path)
                                             local is_path_ok, is_path_ok_message = pathOk(self.cover_image_path)
                                             if self.cover_image_path ~= "" and is_path_ok then
-                                                self:onReaderReady(self.ui.doc_settings) -- with new filename
+                                                self:createCoverImage(self.ui.doc_settings) -- with new filename
                                             else
                                                 self.enabled = false
                                                 UIManager:show(InfoMessage:new{
@@ -182,7 +186,7 @@ function CoverImage:addToMainMenu(menu_items)
                         self.enabled = not self.enabled
                         G_reader_settings:saveSetting("cover_image_enabled", self.enabled)
                         if self.enabled then
-                            self:onReaderReady(self.ui.doc_settings)
+                            self:createCoverImage(self.ui.doc_settings)
                         else
                             self:cleanUpImage()
                         end
@@ -198,7 +202,7 @@ function CoverImage:addToMainMenu(menu_items)
                 callback = function()
                     if self.ui.doc_settings:readSetting("exclude_cover_image") == true then
                         self.ui.doc_settings:saveSetting("exclude_cover_image", false)
-                        self:onReaderReady(self.ui.doc_settings)
+                        self:createCoverImage(self.ui.doc_settings)
                     else
                         self.ui.doc_settings:saveSetting("exclude_cover_image", true)
                         self:cleanUpImage()
