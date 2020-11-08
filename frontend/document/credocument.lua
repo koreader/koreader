@@ -877,9 +877,9 @@ function CreDocument:setNightmodeImages(toggle)
     self._nightmode_images = toggle
 end
 
+-- no-op that will be wrapped by setupCallCache
 function CreDocument:resetCallCache()
     logger.dbg("CreDocument: reset call cache")
-    self._callCacheReset()
 end
 
 function CreDocument:setFloatingPunctuation(enabled)
@@ -1273,6 +1273,7 @@ function CreDocument:setupCallCache()
             elseif name:sub(1,6) == "update" then add_reset = true
             elseif name:sub(1,6) == "enable" then add_reset = true
             elseif name == "zoomFont" then add_reset = true -- not used by koreader
+            elseif name == "resetCallCache" then add_reset = true
 
             -- These may have crengine do native highlight or unhighlight
             -- (we could keep the original buffer and use a scratch buffer while
