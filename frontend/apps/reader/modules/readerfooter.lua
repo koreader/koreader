@@ -945,7 +945,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Hold (footer) to skim"),
+                text = _("Hold footer to skim"),
                 checked_func = function()
                     return self.settings.skim_widget_on_hold
                 end,
