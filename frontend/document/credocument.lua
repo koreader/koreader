@@ -319,7 +319,7 @@ function CreDocument:getNextPage(page)
         if page < 0 or page >= self:getPageCount() then
             return 0
         elseif page == 0 then
-            return self.getLastLinearPage()
+            return self.getFirstPageInFlow(0)
         end
         local flow = self:getPageFlow(page)
         local start_page = page + 1
@@ -351,7 +351,7 @@ function CreDocument:getPrevPage(page)
         if page < 0 or page > self:getPageCount() then
             return 0
         elseif page == 0 then
-            return self.getFirstPageInFlow(0)
+            return self.getLastLinearPage()
         end
         local flow = self:getPageFlow(page)
         local start_page = page - 1
