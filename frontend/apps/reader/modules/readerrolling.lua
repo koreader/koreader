@@ -468,7 +468,7 @@ You can set how many lines are shown.]])
         help_text = _([[When page overlap is enabled, some lines from the previous pages are shown on the next page.]]),
         sub_item_table = page_overlap_menu,
     }
-    if self.view.document:hasNonLinearFlows() then
+    if self.ui.document:hasNonLinearFlows() then
         local hide_nonlinear_text = _("When this option is enabled, if a document contains non-linear fragments, they will be hidden from the normal page flow, but they are still accessible through links, Toc or Go to. This currently works only in single-page, non-scrolling mode.")
         menu_items.hide_nonlinear_flows = {
             text = _("Hide non-linear fragments"),

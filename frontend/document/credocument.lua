@@ -316,15 +316,27 @@ end
 -- If "page" is 0, these give the initial and final linear pages
 function CreDocument:getNextPage(page)
     if self:hasHiddenFlows() then
-        if page < 0 then return 0 end
-        local last_linear_page = self:getLastLinearPage()
-        local flow = page > 0 and self:getPageFlow(page) or 0
-        for test_page=page+1, self:getPageCount() do
+        if page < 0 or page >= self:getPageCount() then
+            return 0
+        elseif page == 0 then
+            return self.getLastLinearPage()
+        end
+        local flow = self:getPageFlow(page)
+        local start_page = page + 1
+        local end_page = self:getLastLinearPage()
+        local test_page = start_page
+        -- max to ensure at least one iteration
+        -- (in case the current flow goes after all linear pages)
+        while test_page <= math.max(end_page, start_page) do
             local test_page_flow = self:getPageFlow(test_page)
             if test_page_flow == flow or test_page_flow == 0 then
+                -- same flow as current, or linear flow, this is a "good" page
                 return test_page
-            end
-            if test_page_flow ~= flow and test_page > last_linear_page then
+            elseif test_page_flow > 0 then
+                -- some other non-linear flow, skip all pages in this flow
+                test_page = test_page + self:getTotalPagesInFlow(test_page_flow)
+            else
+                -- went beyond the last page
                 break
             end
         end
@@ -336,16 +348,27 @@ end
 
 function CreDocument:getPrevPage(page)
     if self:hasHiddenFlows() then
-        if page > self:getPageCount()+1 then return 0 end
-        local first_linear_page = self:getFirstPageInFlow(0)
-        local flow = page > 0 and self:getPageFlow(page) or 0
-        local start = (page==0) and self:getPageCount() or page - 1
-        for test_page=start, 1, -1 do
+        if page < 0 or page > self:getPageCount() then
+            return 0
+        elseif page == 0 then
+            return self.getFirstPageInFlow(0)
+        end
+        local flow = self:getPageFlow(page)
+        local start_page = page - 1
+        local end_page = self:getFirstPageInFlow(0)
+        local test_page = start_page
+        -- min to ensure at least one iteration
+        -- (in case the current flow goes before all linear pages)
+        while test_page >= math.min(end_page, start_page) do
             local test_page_flow = self:getPageFlow(test_page)
             if test_page_flow == flow or test_page_flow == 0 then
+                -- same flow as current, or linear flow, this is a "good" page
                 return test_page
-            end
-            if test_page_flow ~= flow and test_page < first_linear_page then
+            elseif test_page_flow > 0 then
+                -- some other non-linear flow, skip all pages in this flow
+                test_page = self:getFirstPageInFlow(test_page_flow) - 1
+            else
+                -- went beyond the first page
                 break
             end
         end
