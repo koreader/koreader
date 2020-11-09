@@ -24,6 +24,7 @@ file = {
     '../base/ffi',
     '../platform/android/luajit-launcher/assets',
     exclude = {'../base/ffi/sha2.lua',
+        '../base/ffi/qrencode.lua',
         '../plugins/evernote.koplugin/slt2.lua',
         '../plugins/newsdownloader.koplugin/lib/handler.lua',
         '../plugins/newsdownloader.koplugin/lib/xml.lua',

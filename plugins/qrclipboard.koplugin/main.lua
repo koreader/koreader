@@ -1,5 +1,7 @@
 --[[--
 This plugin generates a QR code from clipboard content.
+
+@module koplugin.QRClipboard
 --]]--
 
 local Device = require("device")
