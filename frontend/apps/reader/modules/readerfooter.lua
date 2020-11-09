@@ -428,6 +428,9 @@ function ReaderFooter:init()
     if not self.settings.book_chapter_max_width_pct then
         self.settings.book_chapter_max_width_pct = 30
     end
+    if self.settings.skim_widget_on_hold == nil then
+        self.settings.skim_widget_on_hold = true
+    end
     self.mode_list = {}
     for i = 0, #self.mode_index do
         self.mode_list[self.mode_index[i]] = i
@@ -939,6 +942,16 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.lock_tap = not self.settings.lock_tap
+                end,
+            },
+            {
+                text = _("Hold (footer) to skim"),
+                checked_func = function()
+                    return self.settings.skim_widget_on_hold
+                end,
+                callback = function()
+                    self.settings.skim_widget_on_hold = not self.settings.skim_widget_on_hold
+                    G_reader_settings:saveSetting("footer", self.settings)
                 end,
             },
             {
@@ -2026,8 +2039,10 @@ end
 
 function ReaderFooter:onHoldFooter()
     if self.mode == self.mode_list.off then return end
-    self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
-    return true
+    if self.settings.skim_widget_on_hold then
+        self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
+        return true
+    end
 end
 
 function ReaderFooter:setVisible(visible)
