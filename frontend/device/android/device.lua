@@ -94,7 +94,6 @@ local Device = Generic:new{
     end,
     canImportFiles = function() return android.app.activity.sdkVersion >= 19 end,
     importFile = function(path) android.importFile(path) end,
-    isValidPath = function(path) return android.isPathInsideSandbox(path) end,
     canShareText = yes,
     doShareText = function(text) android.sendText(text) end,
 
@@ -374,6 +373,10 @@ function Device:canExecuteScript(file)
     if android.prop.flavor ~= "fdroid" and file_ext == "sh"  then
         return true
     end
+end
+
+function Device:isValidPath(path)
+    return android.isPathInsideSandbox(path)
 end
 
 --swallow all events

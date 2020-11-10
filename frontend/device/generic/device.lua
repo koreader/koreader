@@ -487,4 +487,8 @@ function Device:canExecuteScript(file)
     end
 end
 
+function Device:isValidPath(path)
+    return util.pathExists(path)
+end
+
 return Device
