@@ -1388,6 +1388,13 @@ function ReaderRolling:onToggleHideNonlinear()
     -- The document may change due to forced pagebreaks between flows being
     -- added or removed, so we need to find our location
     self:onUpdatePos()
+    -- When disabling hide_nonlinear_flows, we must ensure that the
+    -- flow and call caches are cleared, to get the right page numbers,
+    -- which may have changed (when enabling it, this is already done
+    -- automatically by updatePos)
+    if not self.hide_nonlinear then
+        self.ui.document:cacheFlows()
+    end
     -- Even if the document doesn't change, the footer needs updating,
     -- and TOC markers may come or go.
     self.ui:handleEvent(Event:new("UpdateToc"))

@@ -469,8 +469,8 @@ function ReaderToc:getChapterPagesLeft(pageno)
 end
 
 function ReaderToc:getChapterPagesDone(pageno)
+    if self:isChapterStart(pageno) then return 0 end
     if self.ui.document:hasHiddenFlows() then
-        if self:isChapterStart(pageno) then return 0 end
         local flow = self.ui.document:getPageFlow(pageno)
         -- Count pages until chapter start
         local pages_done = 0

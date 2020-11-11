@@ -292,7 +292,6 @@ function CreDocument:setHideNonlinearFlows(hide_nonlinear_flows)
     if hide_nonlinear_flows ~= self.hide_nonlinear_flows then
         self.hide_nonlinear_flows = hide_nonlinear_flows
         self._document:setIntProperty("crengine.doc.nonlinear.pagebreak.force", self.hide_nonlinear_flows and 1 or 0)
-        self:cacheFlows()
     end
 end
 
@@ -319,7 +318,7 @@ function CreDocument:getNextPage(page)
         if page < 0 or page >= self:getPageCount() then
             return 0
         elseif page == 0 then
-            return self.getFirstPageInFlow(0)
+            return self:getFirstPageInFlow(0)
         end
         local flow = self:getPageFlow(page)
         local start_page = page + 1
@@ -351,7 +350,7 @@ function CreDocument:getPrevPage(page)
         if page < 0 or page > self:getPageCount() then
             return 0
         elseif page == 0 then
-            return self.getLastLinearPage()
+            return self:getLastLinearPage()
         end
         local flow = self:getPageFlow(page)
         local start_page = page - 1
@@ -1439,6 +1438,7 @@ function CreDocument:setupCallCache()
             elseif name:sub(1,6) == "update" then add_reset = true
             elseif name:sub(1,6) == "enable" then add_reset = true
             elseif name == "zoomFont" then add_reset = true -- not used by koreader
+            elseif name == "cacheFlows" then add_reset = true
 
             -- These may have crengine do native highlight or unhighlight
             -- (we could keep the original buffer and use a scratch buffer while
@@ -1470,11 +1470,6 @@ function CreDocument:setupCallCache()
             elseif name == "getImageFromPosition" then no_wrap = true
             elseif name == "getTextFromXPointer" then no_wrap = true
             elseif name == "getTextFromXPointers" then no_wrap = true
-            elseif name == "getPageCount" then no_wrap = true
-            elseif name == "getPrevPage" then no_wrap = true
-            elseif name == "getNextPage" then no_wrap = true
-            elseif name == "getPageFlow" then no_wrap = true
-            elseif name == "getLastLinearPage" then no_wrap = true
             elseif name == "getPageOffsetX" then no_wrap = true
             elseif name == "getNextVisibleWordStart" then no_wrap = true
             elseif name == "getNextVisibleWordEnd" then no_wrap = true
