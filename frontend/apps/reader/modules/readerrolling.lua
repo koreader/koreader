@@ -1392,7 +1392,7 @@ function ReaderRolling:onToggleHideNonlinear()
     -- flow and call caches are cleared, to get the right page numbers,
     -- which may have changed (when enabling it, this is already done
     -- automatically by updatePos)
-    if not self.hide_nonlinear then
+    if not self.hide_nonlinear_flows then
         self.ui.document:cacheFlows()
     end
     -- Even if the document doesn't change, the footer needs updating,
