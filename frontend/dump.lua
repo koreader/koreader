@@ -28,16 +28,14 @@ local function _serialize(what, outt, indent, max_lv, history)
         local new_history = { what, unpack(history) }
         local didrun = false
         insert(outt, "{")
-        for k, v in pairs(what) do
-            if didrun then
-                insert(outt, ",")
-            end
+        for k, v in _pairs(what) do
             insert(outt, "\n")
             insert(outt, string.rep(indent_prefix, indent+1))
             insert(outt, "[")
             _serialize(k, outt, indent+1, max_lv, new_history)
             insert(outt, "] = ")
             _serialize(v, outt, indent+1, max_lv, new_history)
+            insert(outt, ",")
             didrun = true
         end
         if didrun then
