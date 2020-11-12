@@ -439,18 +439,34 @@ function CreDocument:cacheFlows()
     end
 end
 
-function CreDocument:getTotalPagesLeft(pageno)
+function CreDocument:getTotalPagesLeft(page)
     if self:hasHiddenFlows() then
-        local test_page = pageno
         local pages_left = 0
-        test_page = self:getNextPage(test_page)
-        while test_page > 0 do
-            pages_left = pages_left + 1
-            test_page = self:getNextPage(test_page)
+        local last_linear = self:getLastLinearPage()
+        if page > last_linear then
+            -- If beyond the last linear page, count only the pages in the current flow
+            local flow = self:getPageFlow(page)
+            pages_left = self:getTotalPagesInFlow(flow) - self:getPageNumberInFlow(page)
+        else
+            -- Otherwise, count all pages until the last linear,
+            -- except the flows that start (and end) between
+            -- the current page and the last linear
+            pages_left = last_linear - page
+            for flow, tab in ipairs(self.flows) do
+                -- tab[1] is the initial page of the flow
+                -- tab[2] is the total number of pages in the flow
+                if tab[1] > last_linear then
+                     break
+                end
+                -- strict >, to make sure we include pages in the current flow
+                if tab[1] > page then
+                     pages_left = pages_left - tab[2]
+                end
+            end
         end
         return pages_left
     else
-        return Document.getTotalPagesLeft(self, pageno)
+        return Document.getTotalPagesLeft(self, page)
     end
 end
 
@@ -1480,6 +1496,11 @@ function CreDocument:setupCallCache()
             elseif name == "getCacheFilePath" then no_wrap = true
             elseif name == "getStatistics" then no_wrap = true
             elseif name == "getNormalizedXPointer" then no_wrap = true
+            elseif name == "getNextPage" then no_wrap = true
+            elseif name == "getPrevPage" then no_wrap = true
+            elseif name == "getPageFlow" then no_wrap = true
+            elseif name == "getPageNumberInFlow" then no_wrap = true
+            elseif name == "getTotalPagesLeft" then no_wrap = true
 
             -- Some get* have different results by page/pos
             elseif name == "getLinkFromPosition" then cache_by_tag = true

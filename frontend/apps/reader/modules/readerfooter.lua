@@ -1727,30 +1727,43 @@ function ReaderFooter:setTocMarkers(reset)
     if self.settings.disable_progress_bar or self.settings.progress_style_thin then return end
     if reset then
         self.progress_bar.ticks = nil
-        self.pages = self.view.document:getPageCount()
+        self.pages = self.ui.document:getPageCount()
     end
     if self.settings.toc_markers then
         self.progress_bar.tick_width = Screen:scaleBySize(self.settings.toc_markers_width)
         if self.progress_bar.ticks ~= nil then -- already computed
             return
         end
-        if self.view.document:hasHiddenFlows() and self.pageno then
-            local flow = self.view.document:getPageFlow(self.pageno)
+        if self.ui.document:hasHiddenFlows() and self.pageno then
+            local flow = self.ui.document:getPageFlow(self.pageno)
             self.progress_bar.ticks = {}
             if self.ui.toc then
                 -- filter the ticks to show only those in the current flow
                 for n, pageno in ipairs(self.ui.toc:getTocTicksFlattened()) do
-                    if self.view.document:getPageFlow(pageno) == flow then
-                        table.insert(self.progress_bar.ticks, self.view.document:getPageNumberInFlow(pageno))
+                    if self.ui.document:getPageFlow(pageno) == flow then
+                        table.insert(self.progress_bar.ticks, self.ui.document:getPageNumberInFlow(pageno))
                     end
                 end
             end
-            self.progress_bar.last = self.view.document:getTotalPagesInFlow(flow)
+            self.progress_bar.last = self.ui.document:getTotalPagesInFlow(flow)
         else
             if self.ui.toc then
                 self.progress_bar.ticks = self.ui.toc:getTocTicksFlattened()
             end
-            self.progress_bar.last = self.pages or self.view.document:getPageCount()
+            if self.view.view_mode == "page" then
+                self.progress_bar.last = self.pages or self.ui.document:getPageCount()
+            else
+                -- in scroll mode, convert pages to positions
+                if self.ui.toc then
+                    self.progress_bar.ticks = {}
+                    for n, pageno in ipairs(self.ui.toc:getTocTicksFlattened()) do
+                        local idx = self.ui.toc:getTocIndexByPage(pageno)
+                        local pos = self.ui.document:getPosFromXPointer(self.ui.toc.toc[idx].xpointer)
+                        table.insert(self.progress_bar.ticks, pos)
+                    end
+                end
+                self.progress_bar.last = self.doc_height or self.ui.document.info.doc_height
+            end
         end
     else
         self.progress_bar.ticks = nil
@@ -1907,7 +1920,11 @@ end
 
 function ReaderFooter:onTocReset()
     self:setTocMarkers(true)
-    self:onUpdateFooter()
+    if self.view.view_mode == "page" then
+        self:updateFooterPage()
+    else
+        self:updateFooterPos()
+    end
 end
 
 function ReaderFooter:onPageUpdate(pageno)
@@ -1920,7 +1937,7 @@ function ReaderFooter:onPageUpdate(pageno)
         end
     end
     self.pageno = pageno
-    self.pages = self.view.document:getPageCount()
+    self.pages = self.ui.document:getPageCount()
     if toc_markers_update then
         self:setTocMarkers(true)
     end
@@ -1930,10 +1947,10 @@ end
 
 function ReaderFooter:onPosUpdate(pos, pageno)
     self.position = pos
-    self.doc_height = self.view.document.info.doc_height
+    self.doc_height = self.ui.document.info.doc_height
     if pageno then
         self.pageno = pageno
-        self.pages = self.view.document:getPageCount()
+        self.pages = self.ui.document:getPageCount()
         self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
     end
     self:updateFooterPos()
@@ -2102,7 +2119,7 @@ function ReaderFooter:refreshFooter(refresh, signal)
     -- We *do* need to ensure we at least re-compute the footer layout, though, especially when going from visible to invisible...
     self:onUpdateFooter(refresh and not signal, refresh and signal)
     if signal then
-        self.ui:handleEvent(Event:new("SetPageBottomMargin", self.view.document.configurable.b_page_margin))
+        self.ui:handleEvent(Event:new("SetPageBottomMargin", self.ui.document.configurable.b_page_margin))
     end
 end
 

@@ -152,12 +152,19 @@ function ReaderGoto:gotoPage()
                 if number < 1 or number > self.ui.document:getTotalPagesInFlow(flow) then
                     return
                 end
-                for i=self.ui.document:getFirstPageInFlow(flow), self.ui.document:getPageCount() do
-                    if self.ui.document:getPagenNumberInFlow(i) == number and self.ui.document:getPageFlow(i) == flow then
-                        self.ui:handleEvent(Event:new("GotoPage", i))
-                        self:close()
-                        break
+                local page = 0
+                -- in flow 0 (linear), we count pages skipping non-linear flows,
+                -- in a non-linear flow the target page is immediate
+                if flow == 0 then
+                    for i=1, number do
+                        page = self.ui.document:getNextPage(page)
                     end
+                else
+                    page = self.ui.document:getFirstPageInFlow(flow) + number - 1
+                end
+                if page > 0 then
+                    self.ui:handleEvent(Event:new("GotoPage", page))
+                    self:close()
                 end
             end
         end
