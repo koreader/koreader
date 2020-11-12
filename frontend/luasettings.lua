@@ -198,7 +198,7 @@ function LuaSettings:flush()
     if f_out ~= nil then
         os.setlocale('C', 'numeric')
         f_out:write("-- we can read Lua syntax here!\nreturn ")
-        f_out:write(dump(self.data))
+        f_out:write(dump(self.data, nil, true))
         f_out:write("\n")
         ffiutil.fsyncOpenedFile(f_out) -- force flush to the storage device
         f_out:close()

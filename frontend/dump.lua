@@ -6,7 +6,7 @@ local isUbuntuTouch = os.getenv("UBUNTU_APPLICATION_ISOLATION") ~= nil
 local insert = table.insert
 local indent_prefix = "    "
 
-local function _serialize(what, outt, indent, max_lv, history)
+local function _serialize(what, outt, indent, max_lv, history, _pairs)
     if not max_lv then
         max_lv = math.huge
     end
@@ -28,16 +28,14 @@ local function _serialize(what, outt, indent, max_lv, history)
         local new_history = { what, unpack(history) }
         local didrun = false
         insert(outt, "{")
-        for k, v in pairs(what) do
-            if didrun then
-                insert(outt, ",")
-            end
+        for k, v in _pairs(what) do
             insert(outt, "\n")
             insert(outt, string.rep(indent_prefix, indent+1))
             insert(outt, "[")
-            _serialize(k, outt, indent+1, max_lv, new_history)
+            _serialize(k, outt, indent+1, max_lv, new_history, _pairs)
             insert(outt, "] = ")
-            _serialize(v, outt, indent+1, max_lv, new_history)
+            _serialize(v, outt, indent+1, max_lv, new_history, _pairs)
+            insert(outt, ",")
             didrun = true
         end
         if didrun then
@@ -73,9 +71,10 @@ You can optionally specify a maximum recursion depth in `max_lv`.
 @param data the object you want serialized (table, string, number, boolean, nil)
 @param max_lv optional maximum recursion depth
 --]]
-local function dump(data, max_lv)
+local function dump(data, max_lv, ordered)
     local out = {}
-    _serialize(data, out, 0, max_lv)
+    local _pairs = ordered and require("ffi/util").orderedPairs or pairs
+    _serialize(data, out, 0, max_lv, nil, _pairs)
     return table.concat(out)
 end
 
