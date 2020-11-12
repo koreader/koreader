@@ -379,8 +379,7 @@ androidupdate: all
 		-xr!*NOTICE$ \
 		-xr!*README.md$ \
 		-xr!*koreader.icns$ \
-		-xr!*.git$ \
-		-xr!*.gitignore$
+		-xr'!.*'
 
 	# make the android APK
 	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) $(if $(KODEBUG), debug, release) \
