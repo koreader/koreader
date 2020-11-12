@@ -358,14 +358,28 @@ androidupdate: all
 	# assets are compressed manually and stored inside the APK.
 	cd $(INSTALL_DIR)/koreader && 7z a -l -mx=9 -mfb=256 -mmt=on \
 		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).zip * \
+		-xr!*cache$ \
+		-xr!*clipboard$ \
+		-xr!*data/dict$ \
+		-xr!*data/tessdata$ \
+		-xr!*history$ \
+		-xr!*l10n/templates$ \
+		-xr!*ota$ \
 		-xr!*resources/fonts* \
 		-xr!*resources/icons/src* \
+		-xr!*rocks/bin$ \
+		-xr!*rocks/lib/luarocks$ \
+		-xr!*screenshots$ \
 		-xr!*share/man* \
 		-xr!*spec$ \
+		-xr!*tools$ \
 		-xr!*COPYING$ \
+		-xr!*Makefile$ \
+		-xr!*NOTES.txt$ \
+		-xr!*NOTICE$ \
 		-xr!*README.md$ \
-		-xr!git$ \
-		-xr!gitiginore$ 
+		-xr!*koreader.icns$ \
+		-xr'!.*'
 
 	# make the android APK
 	$(MAKE) -C $(ANDROID_LAUNCHER_DIR) $(if $(KODEBUG), debug, release) \
