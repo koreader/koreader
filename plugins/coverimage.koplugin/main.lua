@@ -55,7 +55,7 @@ function CoverImage:cleanUpImage()
         os.remove(self.cover_image_path)
     elseif lfs.attributes(self.cover_image_fallback_path, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
-            text = T(_("\"%1\" \nis not a valid image file!\nA valid fallback image is required in Cover-Image"), self.cover_image_fallback_path),
+            text = T(_("\"%1\" \nis not a valid image file!\nA valid fallback image is required in Cover-Image."), self.cover_image_fallback_path),
             show_icon = true,
             timeout = 10,
         })
