@@ -2119,8 +2119,4 @@ function ReaderFooter:onScreenResize()
     self:resetLayout(true)
 end
 
-function ReaderFooter:onBookmarksChanged()
-    self:onUpdateFooter(true)
-end
-
 return ReaderFooter

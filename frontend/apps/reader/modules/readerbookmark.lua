@@ -182,10 +182,10 @@ function ReaderBookmark:onToggleBookmark()
         pn_or_xp = self.ui.document:getXPointer()
     end
     self:toggleBookmark(pn_or_xp)
+    self.view.footer:onUpdateFooter(true)
     self.ui:handleEvent(Event:new("SetDogearVisibility",
                                   not self.view.dogear_visible))
     UIManager:setDirty(self.view.dialog, "ui")
-    self.ui:handleEvent(Event:new("BookmarksChanged"))
     return true
 end
 
@@ -419,7 +419,7 @@ function ReaderBookmark:addBookmark(item)
         end
     end
     table.insert(self.bookmarks, _middle + direction, item)
-    self.ui:handleEvent(Event:new("BookmarksChanged"))
+    self.view.footer:onUpdateFooter(true)
 end
 
 -- binary search of sorted bookmarks
@@ -462,9 +462,9 @@ function ReaderBookmark:removeBookmark(item)
         _middle = math.floor((_start + _end)/2)
         local v = self.bookmarks[_middle]
         if item.datetime == v.datetime and item.page == v.page then
-            local retval = table.remove(self.bookmarks, _middle)
-            self.ui:handleEvent(Event:new("BookmarksChanged"))
-            return retval
+            table.remove(self.bookmarks, _middle)
+            self.view.footer:onUpdateFooter(true)
+            return
         elseif self:isBookmarkInPageOrder(item, v) then
             _end = _middle - 1
         else
@@ -479,9 +479,9 @@ function ReaderBookmark:removeBookmark(item)
     for i=1, #self.bookmarks do
         local v = self.bookmarks[i]
         if item.datetime == v.datetime and item.page == v.page then
-            local retval = table.remove(self.bookmarks, i)
-            self.ui:handleEvent(Event:new("BookmarksChanged"))
-            return retval
+            table.remove(self.bookmarks, i)
+            self.view.footer:onUpdateFooter(true)
+            return
         end
     end
     logger.warn("removeBookmark: full scan search didn't find bookmark")
