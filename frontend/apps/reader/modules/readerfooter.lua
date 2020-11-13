@@ -2119,4 +2119,10 @@ function ReaderFooter:onScreenResize()
     self:resetLayout(true)
 end
 
+function ReaderFooter:onBookmarksChanged()
+    if self.settings.frontlight then
+        self:onUpdateFooter(true)
+    end
+end
+
 return ReaderFooter

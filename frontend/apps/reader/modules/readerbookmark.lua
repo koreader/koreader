@@ -185,6 +185,7 @@ function ReaderBookmark:onToggleBookmark()
     self.ui:handleEvent(Event:new("SetDogearVisibility",
                                   not self.view.dogear_visible))
     UIManager:setDirty(self.view.dialog, "ui")
+    UIManager:broadcastEvent(Event:new("BookmarksChanged"))
     return true
 end
 
