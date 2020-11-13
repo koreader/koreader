@@ -23,6 +23,7 @@ local isAndroid, android = pcall(require, "android")
 local logger = require("logger")
 
 local GetText = {
+    context = {},
     translation = {},
     current_lang = "C",
     dirname = "l10n",
