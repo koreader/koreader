@@ -2120,9 +2120,7 @@ function ReaderFooter:onScreenResize()
 end
 
 function ReaderFooter:onBookmarksChanged()
-    if self.settings.frontlight then
-        self:onUpdateFooter(true)
-    end
+    self:onUpdateFooter(true)
 end
 
 return ReaderFooter
