@@ -445,7 +445,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
 
     # Did we request a reboot/shutdown?
     if [ ${RETURN_VALUE} -eq ${KO_RC_HALT} ]; then
-        break;
+        break
     fi
 done
 
