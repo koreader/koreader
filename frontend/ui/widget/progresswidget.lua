@@ -15,6 +15,8 @@ Configurable attributes:
  * ticks (list)  -- default to nil, use this if you want to insert markers
  * tick_width
  * last  -- maximum tick, used with ticks
+ * margin_v_orig   -- margin_v before adjusting
+ * bordersize_orig -- bordersize before adjusting
 
 Example:
 
@@ -50,6 +52,8 @@ local ProgressWidget = Widget:new{
     fill_from_right = false,
     allow_mirroring = true,
     _mirroredUI = BD.mirroredUILayout(),
+    margin_v_orig = nil,
+    bordersize_orig = nil,
 }
 
 function ProgressWidget:getSize()
@@ -124,26 +128,44 @@ function ProgressWidget:getPercentageFromPosition(pos)
     return x / width
 end
 
+function ProgressWidget:setHeight(height)
+    self.height = Screen:scaleBySize(height)
+    -- Adjust vertical margin and border size to ensure there's
+    -- at least 1 pixel left for the actual bar
+    self.margin_v_orig = self.margin_v_orig or self.margin_v
+    self.bordersize_orig = self.bordersize_orig or self.bordersize
+    local margin_v_min = self.margin_v_orig > 0 and 1 or 0
+    local bordersize_min = self.bordersize_orig > 0 and 1 or 0
+    self.margin_v = math.min(self.margin_v_orig, math.floor((self.height - 2*self.bordersize_orig - 1) / 2))
+    self.margin_v = math.max(self.margin_v, margin_v_min)
+    self.bordersize = math.min(self.bordersize_orig, math.floor((self.height - 2*self.margin_v - 1) / 2))
+    self.bordersize = math.max(self.bordersize, bordersize_min)
+end
+
 function ProgressWidget:updateStyle(thick, height)
     if thick then
-        if height then
-            self.height = Screen:scaleBySize(height)
-        end
         self.margin_h = Screen:scaleBySize(3)
         self.margin_v = Screen:scaleBySize(1)
         self.bordersize = Screen:scaleBySize(1)
         self.radius = Screen:scaleBySize(2)
         self.bgcolor = Blitbuffer.COLOR_WHITE
-    else
+        self.margin_v_orig = nil
+        self.bordersize_orig = nil
         if height then
-            self.height = Screen:scaleBySize(height)
+            self:setHeight(height)
         end
+    else
         self.margin_h = 0
         self.margin_v = 0
         self.bordersize = 0
         self.radius = 0
         self.bgcolor = Blitbuffer.COLOR_GRAY
         self.ticks = nil
+        self.margin_v_orig = nil
+        self.bordersize_orig = nil
+        if height then
+            self:setHeight(height)
+        end
     end
 end
 
