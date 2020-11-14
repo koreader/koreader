@@ -50,6 +50,8 @@ local ProgressWidget = Widget:new{
     fill_from_right = false,
     allow_mirroring = true,
     _mirroredUI = BD.mirroredUILayout(),
+    _orig_margin_v = nil,
+    _orig_bordersize = nil,
 }
 
 function ProgressWidget:getSize()
@@ -124,26 +126,44 @@ function ProgressWidget:getPercentageFromPosition(pos)
     return x / width
 end
 
+function ProgressWidget:setHeight(height)
+    self.height = Screen:scaleBySize(height)
+    -- Adjust vertical margin and border size to ensure there's
+    -- at least 1 pixel left for the actual bar
+    self._orig_margin_v = self._orig_margin_v or self.margin_v
+    self._orig_bordersize = self._orig_bordersize or self.bordersize
+    local margin_v_min = self._orig_margin_v > 0 and 1 or 0
+    local bordersize_min = self._orig_bordersize > 0 and 1 or 0
+    self.margin_v = math.min(self._orig_margin_v, math.floor((self.height - 2*self._orig_bordersize - 1) / 2))
+    self.margin_v = math.max(self.margin_v, margin_v_min)
+    self.bordersize = math.min(self._orig_bordersize, math.floor((self.height - 2*self.margin_v - 1) / 2))
+    self.bordersize = math.max(self.bordersize, bordersize_min)
+end
+
 function ProgressWidget:updateStyle(thick, height)
     if thick then
-        if height then
-            self.height = Screen:scaleBySize(height)
-        end
         self.margin_h = Screen:scaleBySize(3)
         self.margin_v = Screen:scaleBySize(1)
         self.bordersize = Screen:scaleBySize(1)
         self.radius = Screen:scaleBySize(2)
         self.bgcolor = Blitbuffer.COLOR_WHITE
-    else
+        self._orig_margin_v = nil
+        self._orig_bordersize = nil
         if height then
-            self.height = Screen:scaleBySize(height)
+            self:setHeight(height)
         end
+    else
         self.margin_h = 0
         self.margin_v = 0
         self.bordersize = 0
         self.radius = 0
         self.bgcolor = Blitbuffer.COLOR_GRAY
         self.ticks = nil
+        self._orig_margin_v = nil
+        self._orig_bordersize = nil
+        if height then
+            self:setHeight(height)
+        end
     end
 end
 

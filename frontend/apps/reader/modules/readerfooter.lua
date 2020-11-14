@@ -660,7 +660,7 @@ function ReaderFooter:resetLayout(force_reset)
     else
         bar_height = self.settings.progress_style_thick_height or PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT
     end
-    self.progress_bar.height = Screen:scaleBySize(bar_height)
+    self.progress_bar:setHeight(bar_height)
 
     self.horizontal_group:resetLayout()
     self.footer_positioner.dimen.w = new_screen_width
