@@ -64,6 +64,7 @@ function UIManager:init()
         end
         UIManager:nextTick(function()
             Device:saveSettings()
+            self._exit_code = 88
             self:broadcastEvent(Event:new("Close"))
             Device:powerOff()
         end)
@@ -77,6 +78,7 @@ function UIManager:init()
         end
         UIManager:nextTick(function()
             Device:saveSettings()
+            self._exit_code = 88
             self:broadcastEvent(Event:new("Close"))
             Device:reboot()
         end)

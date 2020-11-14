@@ -266,6 +266,7 @@ CRASH_PREV_TS=0
 # List of supported special return codes
 KO_RC_RESTART=85
 KO_RC_USBMS=86
+KO_RC_HALT=88
 # Because we *want* an initial fbdepth pass ;).
 RETURN_VALUE=${KO_RC_RESTART}
 while [ ${RETURN_VALUE} -ne 0 ]; do
@@ -282,7 +283,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
     RETURN_VALUE=$?
 
     # Did we crash?
-    if [ ${RETURN_VALUE} -ne 0 ] && [ ${RETURN_VALUE} -ne ${KO_RC_RESTART} ] && [ ${RETURN_VALUE} -ne ${KO_RC_USBMS} ]; then
+    if [ ${RETURN_VALUE} -ne 0 ] && [ ${RETURN_VALUE} -ne ${KO_RC_RESTART} ] && [ ${RETURN_VALUE} -ne ${KO_RC_USBMS} ] && [ ${RETURN_VALUE} -ne ${KO_RC_HALT} ]; then
         # Increment the crash counter
         CRASH_COUNT=$((CRASH_COUNT + 1))
         CRASH_TS=$(date +'%s')
@@ -441,6 +442,11 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         fi
         rm -rf "${USBMS_HOME}"
     fi
+
+    # Did we request a reboot/shutdown?
+    if [ ${RETURN_VALUE} -eq ${KO_RC_HALT} ]; then
+        break;
+    fi
 done
 
 # Restore original fb bitdepth if need be...
@@ -458,26 +464,29 @@ if [ -n "${ORIG_CPUFREQ_GOV}" ]; then
     echo "${ORIG_CPUFREQ_GOV}" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 fi
 
-if [ "${VIA_NICKEL}" = "true" ]; then
-    if [ "${FROM_KFMON}" = "true" ]; then
-        # KFMon is the only launcher that has a toggle to either reboot or restart Nickel on exit
-        if grep -q "reboot_on_exit=false" "/mnt/onboard/.adds/kfmon/config/koreader.ini" 2>/dev/null; then
-            # KFMon asked us to restart nickel on exit (default since KFMon 0.9.5)
-            ./nickel.sh &
+# If we requested a reboot/shutdown, no need to bother with this...
+if [ ${RETURN_VALUE} -ne ${KO_RC_HALT} ]; then
+    if [ "${VIA_NICKEL}" = "true" ]; then
+        if [ "${FROM_KFMON}" = "true" ]; then
+            # KFMon is the only launcher that has a toggle to either reboot or restart Nickel on exit
+            if grep -q "reboot_on_exit=false" "/mnt/onboard/.adds/kfmon/config/koreader.ini" 2>/dev/null; then
+                # KFMon asked us to restart nickel on exit (default since KFMon 0.9.5)
+                ./nickel.sh &
+            else
+                # KFMon asked us to restart the device on exit
+                /sbin/reboot
+            fi
         else
-            # KFMon asked us to restart the device on exit
-            /sbin/reboot
+            # Otherwise, just restart Nickel
+            ./nickel.sh &
         fi
     else
-        # Otherwise, just restart Nickel
-        ./nickel.sh &
-    fi
-else
-    # if we were called from advboot then we must reboot to go to the menu
-    # NOTE: This is actually achieved by checking if KSM or a KSM-related script is running:
-    #       This might lead to false-positives if you use neither KSM nor advboot to launch KOReader *without nickel running*.
-    if ! pgrep -f kbmenu >/dev/null 2>&1; then
-        /sbin/reboot
+        # if we were called from advboot then we must reboot to go to the menu
+        # NOTE: This is actually achieved by checking if KSM or a KSM-related script is running:
+        #       This might lead to false-positives if you use neither KSM nor advboot to launch KOReader *without nickel running*.
+        if ! pgrep -f kbmenu >/dev/null 2>&1; then
+            /sbin/reboot
+        fi
     fi
 fi
 
