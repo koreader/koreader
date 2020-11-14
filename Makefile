@@ -356,8 +356,8 @@ androidupdate: all
 	-rm $(INSTALL_DIR)/koreader/libs/libluajit.so
 
 	# assets are compressed manually and stored inside the APK.
-	cd $(INSTALL_DIR)/koreader && 7z a -l -mx=9 -mfb=256 -mmt=on \
-		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).zip * \
+	cd $(INSTALL_DIR)/koreader && 7z a -l -m0=lzma2 -mx=9 \
+		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).7z * \
 		-xr!*cache$ \
 		-xr!*clipboard$ \
 		-xr!*data/dict$ \
