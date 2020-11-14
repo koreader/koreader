@@ -4,9 +4,11 @@ if not Device.isAndroid() and not Device.isEmulator() then
     return { disabled = true }
 end
 
+local Blitbuffer = require("ffi/blitbuffer")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local RenderImage = require("ui/renderimage")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -67,9 +69,33 @@ end
 
 function CoverImage:createCoverImage(doc_settings)
    if self.enabled and not doc_settings:readSetting("exclude_cover_image") == true then
-        local image = self.ui.document:getCoverPageImage()
-        if image then
+        local cover_image = self.ui.document:getCoverPageImage()
+        if cover_image then
+            local s_w, s_h = Device.screen:getWidth(), Device.screen:getHeight()
+            local i_w, i_h = cover_image:getWidth(), cover_image:getHeight()
+            local scale_factor = math.min(s_w / i_w, s_h / i_h)
+
+            if scale_factor == 1 then
+                cover_image:writePNG(self.cover_image_path, false)
+                return
+            end
+
+            local scaled_w, scaled_h = i_w * scale_factor, i_h * scale_factor
+            local cover_image = RenderImage:scaleBlitBuffer(cover_image, scaled_w, scaled_h)
+
+            -- new buffer with screen dimensions,
+            local image = Blitbuffer.new( s_w, s_h, cover_image:getType() )
+            image:fill( Blitbuffer.COLOR_BLACK )
+
+            -- copy scaled image to buffer
+            if s_w > scaled_w then -- move right
+                image:blitFrom(cover_image, math.floor( (s_w - scaled_w) / 2 ), 0, 0, 0, scaled_w, scaled_h)
+            else -- move down
+                image:blitFrom(cover_image, 0, math.floor( (s_h - scaled_h) / 2 ), 0, 0, scaled_w, scaled_h)
+            end
             image:writePNG(self.cover_image_path, false)
+            image:free()
+            cover_image:free()
             logger.dbg("CoverImage: image written to " .. self.cover_image_path)
         end
     end
