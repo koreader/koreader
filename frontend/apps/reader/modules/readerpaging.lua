@@ -903,6 +903,67 @@ function ReaderPaging:onGotoPageRel(diff)
             return true
         end
 
+    elseif self.zoom_mode:find("hpanning") then
+        -- zoom mode for horizontal panning
+
+        local page_area, old_va = self.page_area, self.visible_area
+
+        -- @todo replace hardcoded 0.6 by a configurable factor
+        x_pan_off = Math.roundAwayFromZero(self.visible_area.w * 0.6 * diff)
+        y_pan_off = Math.roundAwayFromZero(self.visible_area.h * 0.6 * diff)
+        new_va.x = self.visible_area.x + x_pan_off
+        new_va.y = self.visible_area.y
+        if not page_area:contains(new_va) then
+            -- we're leaving the page area
+            if new_va.x < page_area.x then
+                -- we're crossing the beginning of the line, going backwards
+                if old_va.x > page_area.x then
+                    -- we're not at the beginning of the line, so let's go to it
+                    self.view:PanningUpdate(-page_area.w, 0)
+                else
+                    -- we're at the beginning of the line, so let's switch to previous line
+                    new_va.y = new_va.y + y_pan_off
+                    if new_va.y > page_area.y then
+                        self.view:PanningUpdate(page_area.w, y_pan_off)
+                    else  -- we're crossing the beginning of the page
+                        if old_va.y > page_area.y then
+                            -- we aren't at the beginnig of the page, so let's go to it
+                            self.view:PanningUpdate(page_area.w, -page_area.h)
+                        else  -- we are at the beginning of the page, so let's go to previous page
+                            self:_gotoPage(self.current_page + diff)
+                            self.view:PanningUpdate(page_area.w, page_area.h)
+                        end
+                    end
+                end
+            else  -- we're crossing the end of the line, going forward
+                if old_va.x + old_va.w < page_area.x + page_area.w then
+                    -- we aren't at the end of the line, so let's go to it
+                    self.view:PanningUpdate(page_area.w, 0)
+                else  -- we are at the end of the line, so let's switch to next line
+                    new_va.y = old_va.y + y_pan_off
+                    if new_va.y + new_va.h < page_area.y + page_area.h then
+                        self.view:PanningUpdate(-page_area.w, y_pan_off)
+                    else
+                        -- we're crossing the end of the page
+                        if old_va.y + old_va.h < page_area.y + page_area.h then
+                        -- we are beyond the end of the page, so let's go to it
+                            self.view:PanningUpdate(-page_area.w, page_area.h)
+                        else  -- we are at the end of the page, so let's switch to next page
+                            local new_page = self.current_page + diff
+                            if new_page > self.number_of_pages then
+                                self.ui:handleEvent(Event:new("EndOfBook"))
+                            else
+                                self:_gotoPage(new_page)
+                            end
+                        end
+                    end
+                end
+            end
+        else
+            self.view:PanningUpdate(x_pan_off, 0)
+        end
+        return true  -- we're done
+
     elseif self.zoom_mode ~= "free" then  -- do nothing in "free" zoom mode
         -- must be fit content or page zoom mode
         if self.visible_area.w == self.page_area.w then
