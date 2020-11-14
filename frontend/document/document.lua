@@ -201,17 +201,17 @@ end
 
 function Document:getNextPage(page)
     local new_page = page + 1
-    return (new_page > 0 and new_page < self:getPageCount()) and new_page or 0
+    return (new_page > 0 and new_page < self.info.number_of_pages) and new_page or 0
 end
 
 function Document:getPrevPage(page)
-    if page == 0 then return self:getPageCount() end
+    if page == 0 then return self.info.number_of_pages end
     local new_page = page - 1
-    return (new_page > 0 and new_page < self:getPageCount()) and new_page or 0
+    return (new_page > 0 and new_page < self.info.number_of_pages) and new_page or 0
 end
 
 function Document:getTotalPagesLeft(page)
-    return self:getPageCount() - page
+    return self.info.number_of_pages - page
 end
 
 function Document:getPageFlow(page)
@@ -223,7 +223,7 @@ function Document:getFirstPageInFlow(flow)
 end
 
 function Document:getTotalPagesInFlow(flow)
-    return self:getPageCount()
+    return self.info.number_of_pages
 end
 
 function Document:getPageNumberInFlow(page)
