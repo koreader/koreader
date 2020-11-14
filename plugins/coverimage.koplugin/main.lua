@@ -38,10 +38,12 @@ local CoverImage = WidgetContainer:new{
 
 function CoverImage:init()
     self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or "cover.png"
+    self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "none"
     self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or "cover_fallback.png"
     self.enabled = G_reader_settings:isTrue("cover_image_enabled")
     self.fallback = G_reader_settings:isTrue("cover_image_fallback")
     self.ui.menu:registerToMainMenu(self)
+
 end
 
 function CoverImage:_enabled()
@@ -75,7 +77,7 @@ function CoverImage:createCoverImage(doc_settings)
             local i_w, i_h = cover_image:getWidth(), cover_image:getHeight()
             local scale_factor = math.min(s_w / i_w, s_h / i_h)
 
-            if scale_factor == 1 then
+            if scale_factor == 1 or self.cover_image_background == "none" then
                 cover_image:writePNG(self.cover_image_path, false)
                 return
             end
@@ -85,7 +87,14 @@ function CoverImage:createCoverImage(doc_settings)
 
             -- new buffer with screen dimensions,
             local image = Blitbuffer.new( s_w, s_h, cover_image:getType() )
-            image:fill( Blitbuffer.COLOR_BLACK )
+            logger.err("xxxxxxxxxxxxxxxxxxxxxxxx " .. self.cover_image_background)
+            if self.cover_image_background == "black" then
+                image:fill(Blitbuffer.COLOR_BLACK)
+            elseif self.cover_image_background == "white" then
+                image:fill(Blitbuffer.COLOR_WHITE)
+            elseif self.cover_image_background == "gray" then
+                image:fill(Blitbuffer.COLOR_GRAY)
+            end
 
             -- copy scaled image to buffer
             if s_w > scaled_w then -- move right
@@ -218,6 +227,70 @@ function CoverImage:addToMainMenu(menu_items)
                         end
                     end
                 end,
+            },
+            -- menu entry: scale book cover
+            {
+                text = _("Scale book cover"),
+                help_text = _("If disabled, the cover will have to be scaled by the OS.\nDisabling is the fastest method, but doesn't work on all devices."),
+                checked_func = function()
+                    return self.ui and self.ui.doc_settings and self.cover_image_background ~= "none"
+                end,
+                enabled_func = function()
+                    return self.enabled
+                end,
+                sub_item_table = {
+                    {
+                        text = _("Black background"),
+                        checked_func = function()
+                            return self.cover_image_background == "black"
+                        end,
+                        callback = function()
+                            if self.cover_image_background == "black" then
+                                self.cover_image_background = "none"
+                            else
+                                self.cover_image_background = "black"
+                            end
+                            self.ui.doc_settings:saveSetting("cover_image_background", self.cover_image_background )
+                            if self.enabled then
+                                self:createCoverImage(self.ui.doc_settings)
+                            end
+                        end
+                    },
+                    {
+                        text = _("White background"),
+                        checked_func = function()
+                            return self.cover_image_background == "white"
+                        end,
+                        callback = function()
+                            if self.cover_image_background == "white" then
+                                self.cover_image_background = "none"
+                            else
+                                self.cover_image_background = "white"
+                            end
+                            self.ui.doc_settings:saveSetting("cover_image_background", self.cover_image_background )
+                            if self.enabled then
+                                self:createCoverImage(self.ui.doc_settings)
+                            end
+                        end
+                    },
+                    {
+                        text = _("Gray background"),
+                        checked_func = function()
+                            return self.cover_image_background == "gray"
+                        end,
+                        callback = function()
+                            if self.cover_image_background == "gray" then
+                                self.cover_image_background = "none"
+                            else
+                                self.cover_image_background = "gray"
+                            end
+                            self.ui.doc_settings:saveSetting("cover_image_background", self.cover_image_background )
+                            if self.enabled then
+                                self:createCoverImage(self.ui.doc_settings)
+                            end
+                        end
+                    },
+                }
             },
             -- menu entry: exclude this cover
             {
