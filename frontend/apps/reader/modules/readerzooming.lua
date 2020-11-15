@@ -6,6 +6,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -18,6 +19,13 @@ local ReaderZooming = InputContainer:new{
     -- default to nil so we can trigger ZoomModeUpdate events on start up
     zoom_mode = nil,
     DEFAULT_ZOOM_MODE = "pagewidth",
+    -- for column or hpanning modes: fit to width/zoom_factor,
+    -- with overlap of zoom_pan_h_overlap % (horizontally)
+    -- and zoom_pan_v_overlap % (vertically).
+    -- In column mode, zoom_factor is the number of columns.
+    zoom_factor = 2,
+    zoom_pan_h_overlap = 40,
+    zoom_pan_v_overlap = 40,
     current_page = 1,
     rotation = 0,
     paged_modes = {
@@ -26,6 +34,10 @@ local ReaderZooming = InputContainer:new{
         contentheight = _("Zoom to fit content height works best with page view."),
         content = _("Zoom to fit content works best with page view."),
     },
+    panned_modes = {
+        column = _("In most cases, with column zoom mode, you'll want to set page view."),
+        hpanning = _("Zoom for horizontal panning only works in page view."),
+    }
 }
 
 function ReaderZooming:init()
@@ -79,7 +91,7 @@ function ReaderZooming:init()
             ZoomToFitLines = {
                 { "Shift", "H" },
                 doc = "zoom for horizontal panning",
-                event = "SetZoomMode", args = "lne"
+                event = "SetZoomMode", args = "hpanning"
             },
         }
     end
@@ -91,10 +103,22 @@ function ReaderZooming:onReadSettings(config)
                     G_reader_settings:readSetting("zoom_mode") or
                     self.DEFAULT_ZOOM_MODE
     self:setZoomMode(zoom_mode, true) -- avoid informative message on load
+    self.zoom_factor = config:readSetting("zoom_factor") or
+                    G_reader_settings:readSetting("zoom_factor") or
+                    self.zoom_factor
+    self.zoom_pan_h_overlap = config:readSetting("zoom_pan_h_overlap") or
+                    G_reader_settings:readSetting("zoom_pan_h_overlap") or
+                    self.zoom_pan_h_overlap
+    self.zoom_pan_v_overlap = config:readSetting("zoom_pan_v_overlap") or
+                    G_reader_settings:readSetting("zoom_pan_v_overlap") or
+                    self.zoom_pan_v_overlap
 end
 
 function ReaderZooming:onSaveSettings()
     self.ui.doc_settings:saveSetting("zoom_mode", self.orig_zoom_mode or self.zoom_mode)
+    self.ui.doc_settings:saveSetting("zoom_factor", self.zoom_factor)
+    self.ui.doc_settings:saveSetting("zoom_pan_h_overlap", self.zoom_pan_h_overlap)
+    self.ui.doc_settings:saveSetting("zoom_pan_v_overlap", self.zoom_pan_v_overlap)
 end
 
 function ReaderZooming:onSpread(arg, ges)
@@ -290,10 +314,9 @@ function ReaderZooming:getZoom(pageno)
     elseif self.zoom_mode == "contentwidth" or self.zoom_mode == "pagewidth" then
         zoom = zoom_w
     elseif self.zoom_mode == "column" then
-        zoom = zoom_w * 2
+        zoom = zoom_w * self.zoom_factor
     elseif self.zoom_mode == "hpanning" then
-        -- @todo replace hardcoded by a configurable factor
-        zoom = zoom_w * 2
+        zoom = zoom_w * (self.zoom_factor or G_reader_settings:readSetting("zoom_factor") or self.zoom_factor)
     elseif self.zoom_mode == "contentheight" or self.zoom_mode == "pageheight" then
         zoom = zoom_h
     elseif self.zoom_mode == "free" then
@@ -354,14 +377,28 @@ function ReaderZooming:genSetZoomModeCallBack(mode)
 end
 
 function ReaderZooming:setZoomMode(mode, no_warning)
-    if not no_warning and self.ui.view.page_scroll and self.paged_modes[mode] then
-        UIManager:show(InfoMessage:new{
-            text = T(_([[
+    if not no_warning and self.ui.view.page_scroll then
+        local message
+        if self.paged_modes[mode] then
+            message = T(
+                _([[
 %1
 
-In combination with continuous view (scroll mode), this can cause unexpected vertical shifts when turning pages.]]), self.paged_modes[mode]),
-            timeout = 5,
-        })
+In combination with continuous view (scroll mode), this can cause unexpected vertical shifts when turning pages.]]),
+                self.paged_modes[mode]
+            )
+        elseif self.panned_modes[mode] then
+            message = T(
+                _([[
+%1
+
+You should enable it instead of continuous view (scroll mode).]]),
+                self.panned_modes[mode]
+            )
+        end
+        if message then
+            UIManager:show(InfoMessage:new{text = message, timeout = 5})
+        end
     end
 
     self.ui:handleEvent(Event:new("SetZoomMode", mode))
@@ -386,6 +423,52 @@ function ReaderZooming:addToMainMenu(menu_items)
                 separator = separator,
             }
         end
+        local zoom_factor_menu_item = {
+            text = _("Zoom factor"),
+            callback = function(touchmenu_instance)
+                local items = SpinWidget:new{
+                    width = math.floor(Screen:getWidth() * 0.3),
+                    value = self.zoom_factor,
+                    value_min = self.zoom_mode == "column" and 2 or 1.5,
+                    value_max = 10,
+                    value_step = self.zoom_mode == "column" and 1 or 0.1,
+                    value_hold_step = 1,
+                    precision = "%.1f",
+                    ok_text = _("Set zoom factor"),
+                    title_text = _("Set zoom factor"),
+                    callback = function(spin)
+                        self.zoom_factor = spin.value
+                        self.ui:handleEvent(Event:new("RedrawCurrentPage"))
+                        touchmenu_instance:updateItems()
+                    end
+                }
+                UIManager:show(items)
+            end
+        }
+        local function getZoomPanMenuItem(text, param, separator)
+            return {
+                text = text,
+                separator = separator,
+                callback = function(touchmenu_instance)
+                    local items = SpinWidget:new{
+                        width = math.floor(Screen:getWidth() * 0.6),
+                        value = self[param],
+                        value_min = 0,
+                        value_max = 90,
+                        value_step = 1,
+                        value_hold_step = 10,
+                        ok_text = _("Set"),
+                        title_text = text,
+                        callback = function(spin)
+                            self[param] = spin.value
+                            self.ui:handleEvent(Event:new("ZoomPanUpdate", {[param] = spin.value}))
+                            touchmenu_instance:updateItems()
+                        end
+                    }
+                    UIManager:show(items)
+                end
+            }
+        end
         menu_items.switch_zoom_mode = {
             text = _("Switch zoom mode"),
             enabled_func = function()
@@ -396,10 +479,21 @@ function ReaderZooming:addToMainMenu(menu_items)
                 getZoomModeMenuItem(_("Zoom to fit content height"), "contentheight", true),
                 getZoomModeMenuItem(_("Zoom to fit page width"), "pagewidth"),
                 getZoomModeMenuItem(_("Zoom to fit page height"), "pageheight", true),
+                getZoomModeMenuItem(_("Zoom to fit content"), "content"),
+                getZoomModeMenuItem(_("Zoom to fit page"), "page", true),
                 getZoomModeMenuItem(_("Zoom to fit column"), "column"),
                 getZoomModeMenuItem(_("Zoom for horizontal panning"), "hpanning"),
-                getZoomModeMenuItem(_("Zoom to fit content"), "content"),
-                getZoomModeMenuItem(_("Zoom to fit page"), "page"),
+                {
+                    text = _("Pan zoom settings"),
+                    enabled_func = function()
+                        return self.zoom_mode == "column" or self.zoom_mode == "hpanning"
+                    end,
+                    sub_item_table = {
+                        zoom_factor_menu_item,
+                        getZoomPanMenuItem(_("Horizontal"), "zoom_pan_h_overlap"),
+                        getZoomPanMenuItem(_("Vertical"), "zoom_pan_v_overlap"),
+                    }
+                }
             }
         }
     end

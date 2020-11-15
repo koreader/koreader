@@ -193,6 +193,12 @@ function ReaderPaging:onReadSettings(config)
     if self.inverse_reading_order == nil then
         self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
     end
+    self.zoom_pan_h_overlap = config:readSetting("zoom_pan_h_overlap") or
+                            G_reader_settings:readSetting("zoom_pan_h_overlap") or
+                            require("apps/reader/modules/readerzooming").zoom_pan_h_overlap
+    self.zoom_pan_v_overlap = config:readSetting("zoom_pan_v_overlap") or
+                            G_reader_settings:readSetting("zoom_pan_v_overlap") or
+                            require("apps/reader/modules/readerzooming").zoom_pan_v_overlap
 end
 
 function ReaderPaging:onSaveSettings()
@@ -473,6 +479,13 @@ end
 function ReaderPaging:onZoomModeUpdate(new_mode)
     -- we need to remember zoom mode to handle page turn event
     self.zoom_mode = new_mode
+end
+
+function ReaderPaging:onZoomPanUpdate(new_pan)
+    -- we need to remember zoom pan overlap to handle page turn event
+    for k, v in pairs(new_pan) do
+        self[k] = v
+    end
 end
 
 function ReaderPaging:onPageUpdate(new_page_no, orig_mode)
@@ -908,9 +921,10 @@ function ReaderPaging:onGotoPageRel(diff)
 
         local page_area, old_va = self.page_area, self.visible_area
 
-        -- @todo replace hardcoded 0.6 by a configurable factor
-        x_pan_off = Math.roundAwayFromZero(self.visible_area.w * 0.6 * diff)
-        y_pan_off = Math.roundAwayFromZero(self.visible_area.h * 0.6 * diff)
+        local h_progress = 1 - self.zoom_pan_h_overlap / 100
+        local v_progress = 1 - self.zoom_pan_v_overlap / 100
+        x_pan_off = Math.roundAwayFromZero(self.visible_area.w * h_progress * diff)
+        y_pan_off = Math.roundAwayFromZero(self.visible_area.h * v_progress * diff)
         new_va.x = self.visible_area.x + x_pan_off
         new_va.y = self.visible_area.y
         if not page_area:contains(new_va) then
