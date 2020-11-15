@@ -38,7 +38,7 @@ local CoverImage = WidgetContainer:new{
 
 function CoverImage:init()
     self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or "cover.png"
-    self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "none"
+    self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "black"
     self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or "cover_fallback.png"
     self.enabled = G_reader_settings:isTrue("cover_image_enabled")
     self.fallback = G_reader_settings:isTrue("cover_image_fallback")
@@ -82,14 +82,12 @@ function CoverImage:createCoverImage(doc_settings)
                 return
             end
 
-            local scaled_w, scaled_h = i_w * scale_factor, i_h * scale_factor
+            local scaled_w, scaled_h = math.floor(i_w * scale_factor), math.floor(i_h * scale_factor)
             local cover_image = RenderImage:scaleBlitBuffer(cover_image, scaled_w, scaled_h)
 
             -- new buffer with screen dimensions,
-            local image = Blitbuffer.new( s_w, s_h, cover_image:getType() )
-            if self.cover_image_background == "black" then
---                image:fill(Blitbuffer.COLOR_BLACK) -- not necessary, as BB are zero-initialized
-            elseif self.cover_image_background == "white" then
+            local image = Blitbuffer.new( s_w, s_h, cover_image:getType() ) -- new buffer, filled with black
+            if self.cover_image_background == "white" then
                 image:fill(Blitbuffer.COLOR_WHITE)
             elseif self.cover_image_background == "gray" then
                 image:fill(Blitbuffer.COLOR_GRAY)
