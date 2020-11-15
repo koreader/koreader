@@ -77,7 +77,7 @@ function CoverImage:createCoverImage(doc_settings)
             local i_w, i_h = cover_image:getWidth(), cover_image:getHeight()
             local scale_factor = math.min(s_w / i_w, s_h / i_h)
 
-            if scale_factor == 1 or self.cover_image_background == "none" then
+            if self.cover_image_background == "none" or scale_factor == 1 then
                 cover_image:writePNG(self.cover_image_path, false)
                 return
             end
@@ -87,9 +87,8 @@ function CoverImage:createCoverImage(doc_settings)
 
             -- new buffer with screen dimensions,
             local image = Blitbuffer.new( s_w, s_h, cover_image:getType() )
-            logger.err("xxxxxxxxxxxxxxxxxxxxxxxx " .. self.cover_image_background)
             if self.cover_image_background == "black" then
-                image:fill(Blitbuffer.COLOR_BLACK)
+--                image:fill(Blitbuffer.COLOR_BLACK) -- not necessary, as BB are zero-initialized
             elseif self.cover_image_background == "white" then
                 image:fill(Blitbuffer.COLOR_WHITE)
             elseif self.cover_image_background == "gray" then
@@ -231,7 +230,7 @@ function CoverImage:addToMainMenu(menu_items)
             -- menu entry: scale book cover
             {
                 text = _("Scale book cover"),
-                help_text = _("If disabled, the cover will have to be scaled by the OS.\nDisabling is the fastest method, but doesn't work on all devices."),
+                help_text = _("If disabled, the cover will have to be scaled by the FW.\nDisabling is the fastest method, but doesn't work on all devices."),
                 checked_func = function()
                     return self.ui and self.ui.doc_settings and self.cover_image_background ~= "none"
                 end,
