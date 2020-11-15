@@ -232,7 +232,7 @@ function CoverImage:addToMainMenu(menu_items)
                 text = _("Scale book cover"),
                 help_text = _("If disabled, the cover will have to be scaled by the FW.\nDisabling is the fastest method, but doesn't work on all devices."),
                 checked_func = function()
-                    return self.ui and self.ui.doc_settings and self.cover_image_background ~= "none"
+                    return self.cover_image_background ~= "none"
                 end,
                 enabled_func = function()
                     return self.enabled
