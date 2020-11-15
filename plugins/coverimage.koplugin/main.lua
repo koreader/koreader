@@ -1,3 +1,5 @@
+-- plugin for saving a cover image to a file and scale it to fit the screen
+
 local Device = require("device")
 
 if not Device.isAndroid() and not Device.isEmulator() then
@@ -247,7 +249,7 @@ function CoverImage:addToMainMenu(menu_items)
                             else
                                 self.cover_image_background = "black"
                             end
-                            self.ui.doc_settings:saveSetting("cover_image_background", self.cover_image_background )
+                            G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
                             if self.enabled then
                                 self:createCoverImage(self.ui.doc_settings)
                             end
@@ -264,7 +266,7 @@ function CoverImage:addToMainMenu(menu_items)
                             else
                                 self.cover_image_background = "white"
                             end
-                            self.ui.doc_settings:saveSetting("cover_image_background", self.cover_image_background )
+                            G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
                             if self.enabled then
                                 self:createCoverImage(self.ui.doc_settings)
                             end
@@ -281,7 +283,7 @@ function CoverImage:addToMainMenu(menu_items)
                             else
                                 self.cover_image_background = "gray"
                             end
-                            self.ui.doc_settings:saveSetting("cover_image_background", self.cover_image_background )
+                            G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
                             if self.enabled then
                                 self:createCoverImage(self.ui.doc_settings)
                             end
