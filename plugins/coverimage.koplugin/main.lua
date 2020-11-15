@@ -244,11 +244,7 @@ function CoverImage:addToMainMenu(menu_items)
                             return self.cover_image_background == "black"
                         end,
                         callback = function()
-                            if self.cover_image_background == "black" then
-                                self.cover_image_background = "none"
-                            else
-                                self.cover_image_background = "black"
-                            end
+                            self.cover_image_background = self.cover_image_background == "black" and "none" or "black"
                             G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
                             if self.enabled then
                                 self:createCoverImage(self.ui.doc_settings)
@@ -261,11 +257,7 @@ function CoverImage:addToMainMenu(menu_items)
                             return self.cover_image_background == "white"
                         end,
                         callback = function()
-                            if self.cover_image_background == "white" then
-                                self.cover_image_background = "none"
-                            else
-                                self.cover_image_background = "white"
-                            end
+                            self.cover_image_background = self.cover_image_background == "white" and "none" or "white"
                             G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
                             if self.enabled then
                                 self:createCoverImage(self.ui.doc_settings)
@@ -278,11 +270,7 @@ function CoverImage:addToMainMenu(menu_items)
                             return self.cover_image_background == "gray"
                         end,
                         callback = function()
-                            if self.cover_image_background == "gray" then
-                                self.cover_image_background = "none"
-                            else
-                                self.cover_image_background = "gray"
-                            end
+                            self.cover_image_background = self.cover_image_background == "gray" and "none" or "gray"
                             G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
                             if self.enabled then
                                 self:createCoverImage(self.ui.doc_settings)
