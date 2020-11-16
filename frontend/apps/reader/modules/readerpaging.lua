@@ -193,12 +193,18 @@ function ReaderPaging:onReadSettings(config)
     if self.inverse_reading_order == nil then
         self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
     end
-    self.zoom_pan_h_overlap = config:readSetting("zoom_pan_h_overlap") or
-                            G_reader_settings:readSetting("zoom_pan_h_overlap") or
-                            require("apps/reader/modules/readerzooming").zoom_pan_h_overlap
-    self.zoom_pan_v_overlap = config:readSetting("zoom_pan_v_overlap") or
-                            G_reader_settings:readSetting("zoom_pan_v_overlap") or
-                            require("apps/reader/modules/readerzooming").zoom_pan_v_overlap
+    for _, setting in ipairs{
+            "zoom_factor",
+            "zoom_pan_h_overlap",
+            "zoom_pan_v_overlap",
+            "zoom_pan_right_to_left",
+            "zoom_pan_bottom_to_top",
+            "zoom_pan_direction_vertical",
+    } do
+        self[setting] = config:readSetting(setting) or
+                        G_reader_settings:readSetting(setting) or
+                        self[setting]
+    end
 end
 
 function ReaderPaging:onSaveSettings()
@@ -916,54 +922,68 @@ function ReaderPaging:onGotoPageRel(diff)
             return true
         end
 
-    elseif self.zoom_mode:find("hpanning") then
-        -- zoom mode for horizontal panning
+    elseif self.zoom_mode:find("pan") then
+        -- pan zoom mode
+        logger.dbg("ZOOM: Pan mode")
 
+        local panning_update = {x = nil, y = nil}
         local page_area, old_va = self.page_area, self.visible_area
-
+        local x, y, w, h, left = "x", "y", "w", "h", "left"
         local h_progress = 1 - self.zoom_pan_h_overlap / 100
         local v_progress = 1 - self.zoom_pan_v_overlap / 100
-        x_pan_off = Math.roundAwayFromZero(self.visible_area.w * h_progress * diff)
-        y_pan_off = Math.roundAwayFromZero(self.visible_area.h * v_progress * diff)
-        new_va.x = self.visible_area.x + x_pan_off
-        new_va.y = self.visible_area.y
-        if not page_area:contains(new_va) then
+        local page_diff = diff
+
+        if self.zoom_pan_direction_vertical then  -- invert axes
+            y, x, h, w, left = x, y, w, h, "top"
+            h_progress = 1 - self.zoom_pan_v_overlap / 100
+            v_progress = 1 - self.zoom_pan_h_overlap / 100
+        end
+
+        if self.zoom_pan_right_to_left then diff = -diff end
+
+        x_pan_off = Math.roundAwayFromZero(self.visible_area[w] * h_progress * diff)
+        y_pan_off = Math.roundAwayFromZero(self.visible_area[h] * v_progress * diff)
+        new_va[x] = self.visible_area[x] + x_pan_off
+        new_va[y] = self.visible_area[y]
+        local page_contains_area, overtaken = page_area:contains(new_va)
+        if not page_contains_area then
             -- we're leaving the page area
-            if new_va.x < page_area.x then
+            if overtaken[left] then
                 -- we're crossing the beginning of the line, going backwards
-                if old_va.x > page_area.x then
+                if old_va[x] > page_area[x] then
                     -- we're not at the beginning of the line, so let's go to it
-                    self.view:PanningUpdate(-page_area.w, 0)
+                    panning_update[x], panning_update[y] = -page_area[w], 0
                 else
                     -- we're at the beginning of the line, so let's switch to previous line
-                    new_va.y = new_va.y + y_pan_off
-                    if new_va.y > page_area.y then
-                        self.view:PanningUpdate(page_area.w, y_pan_off)
+                    new_va[x], new_va[y] = (page_area[x] + page_area[w] - new_va[w]), (new_va[y] + y_pan_off)
+                    if page_area:contains(new_va) then
+                        panning_update[x], panning_update[y] = page_area[w], y_pan_off
                     else  -- we're crossing the beginning of the page
-                        if old_va.y > page_area.y then
+                        if old_va[y] > page_area[y] then
                             -- we aren't at the beginnig of the page, so let's go to it
-                            self.view:PanningUpdate(page_area.w, -page_area.h)
+                            panning_update[x], panning_update[y] = page_area[w], -page_area[h]
                         else  -- we are at the beginning of the page, so let's go to previous page
-                            self:_gotoPage(self.current_page + diff)
-                            self.view:PanningUpdate(page_area.w, page_area.h)
+                            self:_gotoPage(self.current_page + page_diff)
+                            panning_update[x], panning_update[y] = page_area[w], page_area[h]
                         end
                     end
                 end
             else  -- we're crossing the end of the line, going forward
-                if old_va.x + old_va.w < page_area.x + page_area.w then
+                if old_va[x] + old_va[w] < page_area[x] + page_area[w] then
                     -- we aren't at the end of the line, so let's go to it
-                    self.view:PanningUpdate(page_area.w, 0)
+                    panning_update[x], panning_update[y] = page_area[w], 0
                 else  -- we are at the end of the line, so let's switch to next line
-                    new_va.y = old_va.y + y_pan_off
-                    if new_va.y + new_va.h < page_area.y + page_area.h then
-                        self.view:PanningUpdate(-page_area.w, y_pan_off)
+                    new_va[x], new_va[y] = page_area[x], (old_va[y] + y_pan_off)
+                    if page_area:contains(new_va) then
+                        panning_update[x], panning_update[y] = -page_area[w], y_pan_off
                     else
                         -- we're crossing the end of the page
-                        if old_va.y + old_va.h < page_area.y + page_area.h then
-                        -- we are beyond the end of the page, so let's go to it
-                            self.view:PanningUpdate(-page_area.w, page_area.h)
+                        if old_va[x] + old_va[w] < page_area[x] + page_area[w] then
+                            -- we are beyond the end of the page, so let's go to it
+                            panning_update[x], panning_update[y] = -page_area[w], page_area[h]
                         else  -- we are at the end of the page, so let's switch to next page
-                            local new_page = self.current_page + diff
+                            panning_update[x], panning_update[y] = -page_area[w], -page_area[h]
+                            local new_page = self.current_page + page_diff
                             if new_page > self.number_of_pages then
                                 self.ui:handleEvent(Event:new("EndOfBook"))
                             else
@@ -974,8 +994,9 @@ function ReaderPaging:onGotoPageRel(diff)
                 end
             end
         else
-            self.view:PanningUpdate(x_pan_off, 0)
+            panning_update[x], panning_update[y] = x_pan_off, 0
         end
+        self.view:PanningUpdate(panning_update.x, panning_update.y)
         return true  -- we're done
 
     elseif self.zoom_mode ~= "free" then  -- do nothing in "free" zoom mode
@@ -1039,7 +1060,7 @@ function ReaderPaging:onGotoPageRel(diff)
         if math.abs(panned_y) < 1 then
             panned_y = 0
         end
-        -- singal panning update
+        -- signal panning update
         self.view:PanningUpdate(panned_x, panned_y)
         -- update dime area in ReaderView
         if self.show_overlap_enable then

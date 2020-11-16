@@ -572,13 +572,19 @@ function ReaderView:recalculate()
         if self.ui.view.footer_visible and not self.ui.view.footer.settings.reclaim_height then
             self.visible_area.h = self.visible_area.h - self.ui.view.footer:getHeight()
         end
-        if self.ui.document.configurable.writing_direction == 0 then
-            -- starts from left top of page_area
+        if self.ui.document.configurable.writing_direction == 0
+                and not self.ui.doc_settings:readSetting("zoom_pan_right_to_left") then
+            -- starts from left of page_area
             self.visible_area.x = self.page_area.x
-            self.visible_area.y = self.page_area.y
         else
-            -- start from right top of page_area
+            -- start from right of page_area
             self.visible_area.x = self.page_area.x + self.page_area.w - self.visible_area.w
+        end
+        if self.ui.doc_settings:readSetting("zoom_pan_bottom_to_top") then
+            -- starts from bottom of page_area
+            self.visible_area.y = self.page_area.y + self.page_area.h - self.visible_area.h
+        else
+            -- starts from top of page_area
             self.visible_area.y = self.page_area.y
         end
         if not self.page_scroll then
