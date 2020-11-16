@@ -406,21 +406,17 @@ function ReaderZooming:setZoomMode(mode, no_warning)
     if not no_warning and self.ui.view.page_scroll then
         local message
         if self.paged_modes[mode] then
-            message = T(
-                _([[
+            message = T(_([[
 %1
 
 In combination with continuous view (scroll mode), this can cause unexpected vertical shifts when turning pages.]]),
-                self.paged_modes[mode]
-            )
+                self.paged_modes[mode])
         elseif self.panned_modes[mode] then
-            message = T(
-                _([[
+            message = T(_([[
 %1
 
 You should enable it instead of continuous view (scroll mode).]]),
-                self.panned_modes[mode]
-            )
+                self.panned_modes[mode])
         end
         if message then
             UIManager:show(InfoMessage:new{text = message, timeout = 5})
