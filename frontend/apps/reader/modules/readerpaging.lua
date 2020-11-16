@@ -925,82 +925,112 @@ function ReaderPaging:onGotoPageRel(diff)
     elseif self.zoom_mode:find("pan") then
         -- pan zoom mode
 
-        local panning_update = {x = nil, y = nil}
         local page_area, old_va = self.page_area, self.visible_area
         local x, y, w, h = "x", "y", "w", "h"
-        local left = "left"
+        local left = self.zoom_pan_right_to_left and "right" or "left"
         local h_progress = 1 - self.zoom_pan_h_overlap / 100
         local v_progress = 1 - self.zoom_pan_v_overlap / 100
-        local page_diff = diff
-        local y_diff = diff
+        local x_diff = self.zoom_pan_right_to_left and -diff or diff
+        local y_diff = self.zoom_pan_bottom_to_top and -diff or diff
 
         if self.zoom_pan_direction_vertical then  -- invert axes
             y, x, h, w = x, y, w, h
-            left = "top"
+            left = self.zoom_pan_bottom_to_top and "bottom" or "top"
             h_progress = 1 - self.zoom_pan_v_overlap / 100
             v_progress = 1 - self.zoom_pan_h_overlap / 100
         end
 
-        if self.zoom_pan_right_to_left then diff = -diff end
-
-        if self.zoom_pan_bottom_to_top then y_diff = -y_diff end
-
-        x_pan_off = Math.roundAwayFromZero(self.visible_area[w] * h_progress * diff)
+        x_pan_off = Math.roundAwayFromZero(self.visible_area[w] * h_progress * x_diff)
         y_pan_off = Math.roundAwayFromZero(self.visible_area[h] * v_progress * y_diff)
-        new_va[x] = self.visible_area[x] + x_pan_off
-        new_va[y] = self.visible_area[y]
+        new_va[x] = old_va[x] + x_pan_off
+        new_va[y] = old_va[y]
+
+        local function at_line_beginning()
+            return old_va[x] <= page_area[x]
+        end
+        local function at_line_end()
+            return old_va[x] + old_va[w] >= page_area[x] + page_area[w]
+        end
+        local function at_page_beginning()
+            return old_va[y] <= page_area[y]
+        end
+        local function at_page_end()
+            return old_va[y] + old_va[h] >= page_area[y] + page_area[h]
+        end
+        local function goto_line_beginning()
+            new_va[x] = page_area[x]
+        end
+        local function goto_line_end()
+            new_va[x] = page_area[x] + page_area[w] - old_va[w]
+        end
+        local function goto_next_line()
+            new_va[y] = old_va[y] + y_pan_off
+        end
+        local function goto_page_beginning()
+            new_va[y] = page_area[y]
+        end
+        local function goto_page_end()
+            new_va[y] = page_area[y] + page_area[h] - old_va[h]
+        end
+        local function goto_next_page(direction)
+            direction = direction or 1
+            local new_page = self.current_page + direction * diff
+            if new_page > self.number_of_pages then
+                self.ui:handleEvent(Event:new("EndOfBook"))
+            else
+                self:_gotoPage(new_page)
+            end
+        end
+
+        if self.zoom_pan_right_to_left then
+            at_line_beginning, at_line_end = at_line_end, at_line_beginning
+            goto_line_beginning, goto_line_end = goto_line_end, goto_line_beginning
+        end
+
+        if self.zoom_pan_bottom_to_top then
+            at_page_beginning, at_page_end = at_page_end, at_page_beginning
+            goto_page_beginning, goto_page_end = goto_page_end, goto_page_beginning
+        end
+
         local page_contains_area, overtaken = page_area:contains(new_va)
         if not page_contains_area then
             -- we're leaving the page area
             if overtaken[left] then
-                -- we're crossing the beginning of the line, going backwards
-                if old_va[x] > page_area[x] then
-                    -- we're not at the beginning of the line, so let's go to it
-                    panning_update[x], panning_update[y] = -page_area[w], 0
+                -- we're going to cross line beginning, going backwards
+                if not at_line_beginning() then
+                    goto_line_beginning()
                 else
-                    -- we're at the beginning of the line, so let's switch to previous line
-                    new_va[x], new_va[y] = (page_area[x] + page_area[w] - new_va[w]), (new_va[y] + y_pan_off)
-                    if page_area:contains(new_va) then
-                        panning_update[x], panning_update[y] = page_area[w], y_pan_off
-                    else  -- we're crossing the beginning of the page
-                        if old_va[y] > page_area[y] then
-                            -- we aren't at the beginnig of the page, so let's go to it
-                            panning_update[x], panning_update[y] = page_area[w], -page_area[h]
-                        else  -- we are at the beginning of the page, so let's go to previous page
-                            self:_gotoPage(self.current_page + page_diff)
-                            panning_update[x], panning_update[y] = page_area[w], page_area[h]
+                    goto_next_line()  -- as y_pan_off < 0, this will go backwards
+                    goto_line_end()
+                    if not page_area:contains(new_va) then
+                        goto_line_end()
+                        if not at_page_beginning() then
+                            goto_page_beginning()
+                        else
+                            goto_next_page()  -- as diff = < 1, this will go backwards
+                            goto_page_end()
                         end
                     end
                 end
-            else  -- we're crossing the end of the line, going forward
-                if old_va[x] + old_va[w] < page_area[x] + page_area[w] then
-                    -- we aren't at the end of the line, so let's go to it
-                    panning_update[x], panning_update[y] = page_area[w], 0
-                else  -- we are at the end of the line, so let's switch to next line
-                    new_va[x], new_va[y] = page_area[x], (old_va[y] + y_pan_off)
-                    if page_area:contains(new_va) then
-                        panning_update[x], panning_update[y] = -page_area[w], y_pan_off
-                    else
-                        -- we're crossing the end of the page
-                        if old_va[y] + old_va[h] < page_area[y] + page_area[h] then
-                            -- we are beyond the end of the page, so let's go to it
-                            panning_update[x], panning_update[y] = -page_area[w], page_area[h]
-                        else  -- we are at the end of the page, so let's switch to next page
-                            panning_update[x], panning_update[y] = -page_area[w], -page_area[h]
-                            local new_page = self.current_page + page_diff
-                            if new_page > self.number_of_pages then
-                                self.ui:handleEvent(Event:new("EndOfBook"))
-                            else
-                                self:_gotoPage(new_page)
-                            end
+            else  -- we're going to cross line end, going forward
+                if not at_line_end() then
+                    goto_line_end()
+                else
+                    goto_next_line()
+                    goto_line_beginning()
+                    if not page_area:contains(new_va) then
+                        goto_line_beginning()
+                        if not at_page_end() then
+                            goto_page_end()
+                        else
+                            goto_next_page()
+                            goto_page_beginning()
                         end
                     end
                 end
             end
-        else
-            panning_update[x], panning_update[y] = x_pan_off, 0
         end
-        self.view:PanningUpdate(panning_update.x, panning_update.y)
+        self.view:PanningUpdate(new_va.x - old_va.x, new_va.y - old_va.y)
         return true  -- we're done
 
     elseif self.zoom_mode ~= "free" then  -- do nothing in "free" zoom mode
