@@ -192,10 +192,19 @@ ReaderPageMap.onSetStatusLine = ReaderPageMap.updateVisibleLabels
 
 function ReaderPageMap:onShowPageList()
     -- build up item_table
+    local cur_page = self.ui.document:getCurrentPage()
+    local cur_page_idx = 0
     local page_list = self.ui.document:getPageMap()
     for k, v in ipairs(page_list) do
         v.text = v.label
         v.mandatory = v.page
+        if v.page <= cur_page then
+            cur_page_idx = k
+        end
+    end
+    if cur_page_idx > 0 then
+        -- Have Menu jump to the current page and show it in bold
+        page_list.current = cur_page_idx
     end
 
     local pl_menu = Menu:new{
