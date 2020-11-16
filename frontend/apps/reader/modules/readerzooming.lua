@@ -337,9 +337,7 @@ function ReaderZooming:getZoom(pageno)
         end
     elseif self.zoom_mode == "contentwidth" or self.zoom_mode == "pagewidth" then
         zoom = zoom_w
-    elseif self.zoom_mode == "column" then
-        zoom = zoom_w * self.zoom_factor
-    elseif self.zoom_mode == "pan" then
+    elseif self.zoom_mode == "pan" or self.zoom_mode == "column" then
         local zoom_factor = self.ui.doc_settings:readSetting("zoom_factor")
                             or G_reader_settings:readSetting("zoom_factor")
                             or self.zoom_factor
@@ -447,28 +445,37 @@ function ReaderZooming:addToMainMenu(menu_items)
                 separator = separator,
             }
         end
-        local zoom_factor_menu_item = {
-            text = _("Zoom factor"),
-            callback = function(touchmenu_instance)
-                local items = SpinWidget:new{
-                    width = math.floor(Screen:getWidth() * 0.6),
-                    value = self.zoom_factor,
-                    value_min = self.zoom_mode == "column" and 2 or 1.5,
-                    value_max = 10,
-                    value_step = self.zoom_mode == "column" and 1 or 0.1,
-                    value_hold_step = 1,
-                    precision = "%.1f",
-                    ok_text = _("Set zoom factor"),
-                    title_text = _("Set zoom factor"),
-                    callback = function(spin)
-                        self.zoom_factor = spin.value
-                        self.ui:handleEvent(Event:new("ZoomPanUpdate", {zoom_factor = spin.value}))
-                        self.ui:handleEvent(Event:new("PageUpdate"))
-                    end
-                }
-                UIManager:show(items)
-            end
-        }
+        local function zoomFactorMenuItem(text, title_text)
+            return {
+                text = text,
+                callback = function(touchmenu_instance)
+                    local items = SpinWidget:new{
+                        width = math.floor(Screen:getWidth() * 0.6),
+                        value = self.zoom_factor,
+                        value_min = self.zoom_mode == "column" and 2 or 1.5,
+                        value_max = 10,
+                        value_step = self.zoom_mode == "column" and 1 or 0.1,
+                        value_hold_step = 1,
+                        precision = "%.1f",
+                        ok_text = title_text,
+                        title_text = title_text,
+                        callback = function(spin)
+                            self.zoom_factor = spin.value
+                            local update_args = {zoom_factor = spin.value}
+                            if self.zoom_mode == "column" then
+                                self.zoom_pan_direction_vertical = true
+                                self.zoom_pan_h_overlap = 0
+                                update_args.zoom_pan_direction_vertical = true
+                                update_args.zoom_pan_h_overlap = 0
+                            end
+                            self.ui:handleEvent(Event:new("ZoomPanUpdate", update_args))
+                            self.ui:handleEvent(Event:new("RedrawCurrentPage"))
+                        end
+                    }
+                    UIManager:show(items)
+                end
+            }
+        end
         local function getZoomPanMenuItem(text, setting, separator)
             return {
                 text = text,
@@ -486,7 +493,7 @@ function ReaderZooming:addToMainMenu(menu_items)
                         callback = function(spin)
                             self[setting] = spin.value
                             self.ui:handleEvent(Event:new("ZoomPanUpdate", {[setting] = spin.value}))
-                            self.ui:handleEvent(Event:new("PageUpdate"))
+                            self.ui:handleEvent(Event:new("RedrawCurrentPage"))
                         end
                     }
                     UIManager:show(items)
@@ -524,18 +531,31 @@ function ReaderZooming:addToMainMenu(menu_items)
                 getZoomModeMenuItem(_("Zoom to fit column"), "column"),
                 getZoomModeMenuItem(_("Pan zoom"), "pan"),
                 {
-                    text = _("Pan zoom settings"),
+                    text_func = function()
+                        return self.zoom_mode == "column" and _("Column settings") or _("Pan zoom settings")
+                    end,
                     enabled_func = function()
                         return self.zoom_mode == "column" or self.zoom_mode == "pan"
                     end,
-                    sub_item_table = {
-                        zoom_factor_menu_item,
-                        getZoomPanMenuItem(_("Horizontal overlap"), "zoom_pan_h_overlap"),
-                        getZoomPanMenuItem(_("Vertical overlap"), "zoom_pan_v_overlap"),
-                        getZoomPanCheckboxItem(_("Column mode"), "zoom_pan_direction_vertical"),
-                        getZoomPanCheckboxItem(_("Right to left"), "zoom_pan_right_to_left"),
-                        getZoomPanCheckboxItem(_("Bottom to top"), "zoom_pan_bottom_to_top"),
-                    }
+                    sub_item_table_func = function()
+                        if self.zoom_mode == "pan" then
+                            return {
+                                zoomFactorMenuItem(_("Zoom factor"), _("Set zoom factor")),
+                                getZoomPanMenuItem(_("Horizontal overlap"), "zoom_pan_h_overlap"),
+                                getZoomPanMenuItem(_("Vertical overlap"), "zoom_pan_v_overlap"),
+                                getZoomPanCheckboxItem(_("Column mode"), "zoom_pan_direction_vertical"),
+                                getZoomPanCheckboxItem(_("Right to left"), "zoom_pan_right_to_left"),
+                                getZoomPanCheckboxItem(_("Bottom to top"), "zoom_pan_bottom_to_top"),
+                            }
+                        else
+                            return {
+                                zoomFactorMenuItem(_("Column number"), _("Set column number")),
+                                getZoomPanMenuItem(_("Vertical overlap"), "zoom_pan_v_overlap"),
+                                getZoomPanCheckboxItem(_("Right to left"), "zoom_pan_right_to_left"),
+                                getZoomPanCheckboxItem(_("Bottom to top"), "zoom_pan_bottom_to_top"),
+                            }
+                        end
+                    end
                 }
             }
         }

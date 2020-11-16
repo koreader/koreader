@@ -866,63 +866,8 @@ function ReaderPaging:onGotoPageRel(diff)
         -- negative x panning if writing direction is right to left
         local direction = self.ui.document.configurable.writing_direction
         x_pan_off = self.visible_area.w * diff * (direction == 1 and -1 or 1)
-    elseif self.zoom_mode:find("column") then
-        -- zoom mode for two-column navigation
 
-        y_pan_off = self.visible_area.h * diff
-        y_pan_off = Math.roundAwayFromZero(y_pan_off)
-        new_va.x = Math.roundAwayFromZero(self.visible_area.x)
-        new_va.y = Math.roundAwayFromZero(self.visible_area.y+y_pan_off)
-        -- intra-column navigation (vertical), this is the default behavior
-        -- if we do not reach the end of a column
-
-        if new_va:notIntersectWith(self.page_area) then
-            -- if we leave the page, we must either switch to the other column
-            -- or switch to another page (we are crossing the end of a column)
-
-            x_pan_off = self.visible_area.w * diff
-            x_pan_off = Math.roundAwayFromZero(x_pan_off)
-            new_va.x = Math.roundAwayFromZero(self.visible_area.x+x_pan_off)
-            new_va.y = Math.roundAwayFromZero(self.visible_area.y)
-            -- inter-column displacement (horizontal)
-
-            if new_va:notIntersectWith(self.page_area) then
-              -- if we leave the page with horizontal displacement, then we are
-              -- already in the border column, we must turn the page
-
-              local new_page = self.current_page + diff
-              if diff > 0 and new_page == self.number_of_pages + 1 then
-                  self.ui:handleEvent(Event:new("EndOfBook"))
-              else
-                  self:_gotoPage(new_page)
-              end
-
-              if  y_pan_off < 0 then
-                  -- if we are going back to previous page, reset view area
-                  -- to bottom right of previous page, end of second column
-                  self.view:PanningUpdate(self.page_area.w, self.page_area.h)
-              end
-
-            else
-              -- if we do not leave the page with horizontal displacement,
-              -- it means that we can stay on this page and switch column
-
-              if diff > 0 then
-                -- end of first column, set view area to the top right of
-                -- current page, beginning of second column
-                self.view:PanningUpdate(self.page_area.w, -self.page_area.h)
-              else
-                -- move backwards to the first column, set the view area to the
-                -- bottom left of the current page
-                self.view:PanningUpdate(-self.page_area.w, self.page_area.h)
-              end
-            end
-
-            -- if we are here, the panning has already been updated so return
-            return true
-        end
-
-    elseif self.zoom_mode:find("pan") then
+    elseif self.zoom_mode == "pan" or self.zoom_mode == "column" then
         -- pan zoom mode
 
         local page_area, old_va = self.page_area, self.visible_area
