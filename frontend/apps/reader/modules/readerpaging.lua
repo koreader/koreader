@@ -928,21 +928,26 @@ function ReaderPaging:onGotoPageRel(diff)
 
         local panning_update = {x = nil, y = nil}
         local page_area, old_va = self.page_area, self.visible_area
-        local x, y, w, h, left = "x", "y", "w", "h", "left"
+        local x, y, w, h = "x", "y", "w", "h"
+        local left = "left"
         local h_progress = 1 - self.zoom_pan_h_overlap / 100
         local v_progress = 1 - self.zoom_pan_v_overlap / 100
         local page_diff = diff
+        local y_diff = diff
 
         if self.zoom_pan_direction_vertical then  -- invert axes
-            y, x, h, w, left = x, y, w, h, "top"
+            y, x, h, w = x, y, w, h
+            left = "top"
             h_progress = 1 - self.zoom_pan_v_overlap / 100
             v_progress = 1 - self.zoom_pan_h_overlap / 100
         end
 
         if self.zoom_pan_right_to_left then diff = -diff end
 
+        if self.zoom_pan_bottom_to_top then y_diff = -y_diff end
+
         x_pan_off = Math.roundAwayFromZero(self.visible_area[w] * h_progress * diff)
-        y_pan_off = Math.roundAwayFromZero(self.visible_area[h] * v_progress * diff)
+        y_pan_off = Math.roundAwayFromZero(self.visible_area[h] * v_progress * y_diff)
         new_va[x] = self.visible_area[x] + x_pan_off
         new_va[y] = self.visible_area[y]
         local page_contains_area, overtaken = page_area:contains(new_va)

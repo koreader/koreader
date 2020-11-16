@@ -248,7 +248,6 @@ function Geom:contains(rect_b)
         right = rect_b.x + rect_b.w > self.x + self.w,
     }
 end
--- ]]
 
 --[[--
 Checks for equality.
