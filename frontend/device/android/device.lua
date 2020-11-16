@@ -102,7 +102,7 @@ local Device = Generic:new{
     doExternalDictLookup = function (self, text, method, callback)
         external.when_back_callback = callback
         local _, app, action = external:checkMethod("dict", method)
-        if app and action then
+        if action then
             android.dictLookup(text, app, action)
         end
     end,

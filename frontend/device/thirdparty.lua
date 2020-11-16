@@ -25,16 +25,11 @@ function M:new(o)
         if ok then
             o[role.."s"] = user_dicts
             o.is_user_list = true
-        else
-            local t = o[role.."s"]
-            for i, value in ipairs(t or {}) do
-                local app = value[4]
-                if o:check(app) then
-                    value[3] = true
-                end
-            end
-            if t then
-                self[role.."s"] = t
+        end
+        for i, value in ipairs(o[role.."s"] or {}) do
+            local app = value[4]
+            if app and o:check(app) then
+                value[3] = true
             end
         end
     end
