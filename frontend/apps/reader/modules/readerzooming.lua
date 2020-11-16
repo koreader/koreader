@@ -21,6 +21,9 @@ local ReaderZooming = InputContainer:new{
         contentwidth = "contentwidth",
         contentheight = "contentheight",
         column = "column",
+        pagewidth = "pagewidth",
+        pageheight = "pageheight",
+        page = "page",
         pan = "pan",
     },
     -- default to nil so we can trigger ZoomModeUpdate events on start up
@@ -459,7 +462,8 @@ function ReaderZooming:addToMainMenu(menu_items)
                     title_text = _("Set zoom factor"),
                     callback = function(spin)
                         self.zoom_factor = spin.value
-                        self.ui:handleEvent(Event:new("RedrawCurrentPage"))
+                        self.ui:handleEvent(Event:new("ZoomPanUpdate", {zoom_factor = spin.value}))
+                        self.ui:handleEvent(Event:new("PageUpdate"))
                     end
                 }
                 UIManager:show(items)
@@ -482,6 +486,7 @@ function ReaderZooming:addToMainMenu(menu_items)
                         callback = function(spin)
                             self[setting] = spin.value
                             self.ui:handleEvent(Event:new("ZoomPanUpdate", {[setting] = spin.value}))
+                            self.ui:handleEvent(Event:new("PageUpdate"))
                         end
                     }
                     UIManager:show(items)

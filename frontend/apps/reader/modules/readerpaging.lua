@@ -927,7 +927,6 @@ function ReaderPaging:onGotoPageRel(diff)
 
         local page_area, old_va = self.page_area, self.visible_area
         local x, y, w, h = "x", "y", "w", "h"
-        local left = self.zoom_pan_right_to_left and "right" or "left"
         local h_progress = 1 - self.zoom_pan_h_overlap / 100
         local v_progress = 1 - self.zoom_pan_v_overlap / 100
         local x_diff = self.zoom_pan_right_to_left and -diff or diff
@@ -935,7 +934,6 @@ function ReaderPaging:onGotoPageRel(diff)
 
         if self.zoom_pan_direction_vertical then  -- invert axes
             y, x, h, w = x, y, w, h
-            left = self.zoom_pan_bottom_to_top and "bottom" or "top"
             h_progress = 1 - self.zoom_pan_v_overlap / 100
             v_progress = 1 - self.zoom_pan_h_overlap / 100
         end
@@ -992,10 +990,10 @@ function ReaderPaging:onGotoPageRel(diff)
             goto_page_beginning, goto_page_end = goto_page_end, goto_page_beginning
         end
 
-        local page_contains_area, overtaken = page_area:contains(new_va)
+        local page_contains_area = page_area:contains(new_va)
         if not page_contains_area then
             -- we're leaving the page area
-            if overtaken[left] then
+            if diff < 0 then
                 -- we're going to cross line beginning, going backwards
                 if not at_line_beginning() then
                     goto_line_beginning()
@@ -1007,7 +1005,7 @@ function ReaderPaging:onGotoPageRel(diff)
                         if not at_page_beginning() then
                             goto_page_beginning()
                         else
-                            goto_next_page()  -- as diff = < 1, this will go backwards
+                            goto_next_page()  -- as diff < 0, this will go backwards
                             goto_page_end()
                         end
                     end
