@@ -233,7 +233,6 @@ Works for dimensions, too. For points, it is basically an equality check.
 ]]
 
 function Geom:contains(rect_b)
-    require("logger").dbg("GEOM", "\nrect_b", rect_b, "\nself", self)
     if self.x <= rect_b.x
     and self.y <= rect_b.y
     and self.x + self.w >= rect_b.x + rect_b.w

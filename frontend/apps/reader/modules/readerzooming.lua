@@ -45,7 +45,7 @@ local ReaderZooming = InputContainer:new{
         content = _("Zoom to fit content works best with page view."),
     },
     panned_modes = {
-        column = _("In most cases, with column zoom mode, you'll want to set page view."),
+        column = _("Page view normally works best with column zoom mode."),
         pan = _("Pan zoom only works in page view."),
     }
 }
@@ -340,7 +340,6 @@ function ReaderZooming:getZoom(pageno)
         local zoom_factor = self.ui.doc_settings:readSetting("zoom_factor")
                             or G_reader_settings:readSetting("zoom_factor")
                             or self.zoom_factor
-        logger.dbg("ZOOM rz", zoom_factor)
         zoom = zoom_w * zoom_factor
     elseif self.zoom_mode == "contentheight" or self.zoom_mode == "pageheight" then
         zoom = zoom_h
