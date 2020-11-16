@@ -821,6 +821,8 @@ function DictQuickLookup:onSwipe(arg, ges)
             self:changeToPrevDict()
         else
             if self.refresh_callback then self.refresh_callback() end
+            -- update footer (time & battery)
+            self.ui:handleEvent(Event:new("UpdateFooter", true))
             -- trigger a full-screen HQ flashing refresh
             UIManager:setDirty(nil, "full")
             -- a long diagonal swipe may also be used for taking a screenshot,
