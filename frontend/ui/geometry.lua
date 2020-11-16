@@ -240,12 +240,7 @@ function Geom:contains(rect_b)
     then
         return true
     end
-    return false, {
-        top = rect_b.y < self.y,
-        bottom = rect_b.y + rect_b.h > self.y + self.h,
-        left = rect_b.x < self.x,
-        right = rect_b.x + rect_b.w > self.x + self.w,
-    }
+    return false
 end
 
 --[[--
