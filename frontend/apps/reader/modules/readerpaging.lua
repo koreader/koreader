@@ -203,7 +203,7 @@ function ReaderPaging:onReadSettings(config)
     } do
         self[setting] = config:readSetting(setting) or
                         G_reader_settings:readSetting(setting) or
-                        self[setting]
+                        require("apps/reader/modules/readerzooming")[setting]
     end
 end
 
@@ -924,7 +924,6 @@ function ReaderPaging:onGotoPageRel(diff)
 
     elseif self.zoom_mode:find("pan") then
         -- pan zoom mode
-        logger.dbg("ZOOM: Pan mode")
 
         local panning_update = {x = nil, y = nil}
         local page_area, old_va = self.page_area, self.visible_area
@@ -983,7 +982,7 @@ function ReaderPaging:onGotoPageRel(diff)
                         panning_update[x], panning_update[y] = -page_area[w], y_pan_off
                     else
                         -- we're crossing the end of the page
-                        if old_va[x] + old_va[w] < page_area[x] + page_area[w] then
+                        if old_va[y] + old_va[h] < page_area[y] + page_area[h] then
                             -- we are beyond the end of the page, so let's go to it
                             panning_update[x], panning_update[y] = -page_area[w], page_area[h]
                         else  -- we are at the end of the page, so let's switch to next page
