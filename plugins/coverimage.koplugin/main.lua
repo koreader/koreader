@@ -81,11 +81,12 @@ function CoverImage:createCoverImage(doc_settings)
 
             if self.cover_image_background == "none" or scale_factor == 1 then
                 cover_image:writePNG(self.cover_image_path, false)
+                cover_image:free()
                 return
             end
 
             local scaled_w, scaled_h = math.floor(i_w * scale_factor), math.floor(i_h * scale_factor)
-            local cover_image = RenderImage:scaleBlitBuffer(cover_image, scaled_w, scaled_h)
+            cover_image = RenderImage:scaleBlitBuffer(cover_image, scaled_w, scaled_h)
 
             -- new buffer with screen dimensions,
             local image = Blitbuffer.new( s_w, s_h, cover_image:getType() ) -- new buffer, filled with black
@@ -101,9 +102,9 @@ function CoverImage:createCoverImage(doc_settings)
             else -- move down
                 image:blitFrom(cover_image, 0, math.floor( (s_h - scaled_h) / 2 ), 0, 0, scaled_w, scaled_h)
             end
+            cover_image:free()
             image:writePNG(self.cover_image_path, false)
             image:free()
-            cover_image:free()
             logger.dbg("CoverImage: image written to " .. self.cover_image_path)
         end
     end
