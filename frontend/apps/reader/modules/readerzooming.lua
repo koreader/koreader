@@ -576,6 +576,9 @@ function ReaderZooming:onZoomFactorChange()
 end
 
 function ReaderZooming:onZoomPanUpdate(settings)
+    if settings.zoom_pan_right_to_left then
+        self.ui.document.configurable.writing_direction = 1
+    end
     for k, v in pairs(settings) do
         self.ui.doc_settings:saveSetting(k, v)
     end
