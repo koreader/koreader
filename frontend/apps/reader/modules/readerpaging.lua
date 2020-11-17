@@ -879,8 +879,7 @@ function ReaderPaging:onGotoPageRel(diff)
 
         if self.zoom_pan_direction_vertical then  -- invert axes
             y, x, h, w = x, y, w, h
-            h_progress = 1 - self.zoom_pan_v_overlap / 100
-            v_progress = 1 - self.zoom_pan_h_overlap / 100
+            h_progress, v_progress = v_progress, h_progress
         end
 
         x_pan_off = Math.roundAwayFromZero(self.visible_area[w] * h_progress * x_diff)
@@ -913,7 +912,7 @@ function ReaderPaging:onGotoPageRel(diff)
             new_va[y] = page_area[y]
         end
         local function goto_page_end()
-            new_va[y] = page_area[y] - old_va[h] + self.page_area[h]  -- page may have changed here, hence self
+            new_va[y] = self.page_area[y] + self.page_area[h] - old_va[h]  -- page may have changed here, hence self
         end
         local function goto_next_page(direction)
             direction = direction or 1
