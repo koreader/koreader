@@ -193,6 +193,7 @@ function ReaderPaging:onReadSettings(config)
     if self.inverse_reading_order == nil then
         self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
     end
+    local ReaderZooming = require("apps/reader/modules/readerzooming")
     for _, setting in ipairs{
             "zoom_factor",
             "zoom_pan_h_overlap",
@@ -203,7 +204,7 @@ function ReaderPaging:onReadSettings(config)
     } do
         self[setting] = config:readSetting(setting) or
                         G_reader_settings:readSetting(setting) or
-                        require("apps/reader/modules/readerzooming")[setting]
+                        ReaderZooming[setting]
     end
 end
 
