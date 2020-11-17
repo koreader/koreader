@@ -350,6 +350,22 @@ function util.arrayReverse(t)
     end
 end
 
+-- Test whether t contains a value equal to v
+-- (or such a value that callback returns true),
+-- and if so, return the index.
+---- @param t Lua table
+---- @param v
+---- @function callback(v1, v2)
+function util.arrayContains(t, v, cb)
+    cb = cb or function(v1, v2) return v1 == v2 end
+    for _k, _v in ipairs(t) do
+        if cb(_v, v) then
+            return _k
+        end
+    end
+    return false
+end
+
 -- Merge t2 into t1, overwriting existing elements if they already exist
 -- Probably not safe with nested tables (c.f., https://stackoverflow.com/q/1283388)
 ---- @param t1 Lua table

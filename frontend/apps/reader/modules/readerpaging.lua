@@ -913,7 +913,7 @@ function ReaderPaging:onGotoPageRel(diff)
             new_va[y] = page_area[y]
         end
         local function goto_page_end()
-            new_va[y] = page_area[y] + page_area[h] - old_va[h]
+            new_va[y] = page_area[y] - old_va[h] + self.page_area[h]  -- page may have changed here, hence self
         end
         local function goto_next_page(direction)
             direction = direction or 1
