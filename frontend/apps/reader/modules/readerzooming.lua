@@ -17,14 +17,14 @@ local T = require("ffi/util").template
 local ReaderZooming = InputContainer:new{
     zoom = 1.0,
     available_zoom_modes = {
-        content = "content",
-        contentwidth = "contentwidth",
-        contentheight = "contentheight",
-        column = "column",
-        pagewidth = "pagewidth",
-        pageheight = "pageheight",
-        page = "page",
-        pan = "pan",
+        "contentwidth",
+        "contentheight",
+        "pagewidth",
+        "pageheight",
+        "content",
+        "page",
+        "column",
+        "pan",
     },
     -- default to nil so we can trigger ZoomModeUpdate events on start up
     zoom_mode = nil,
@@ -402,7 +402,18 @@ function ReaderZooming:genSetZoomModeCallBack(mode)
 end
 
 function ReaderZooming:setZoomMode(mode, no_warning)
-    mode = self.available_zoom_modes[mode] or self.DEFAULT_ZOOM_MODE
+    mode = require("util").arrayContains(self.available_zoom_modes, mode) and mode or self.DEFAULT_ZOOM_MODE
+    if mode == "column" then
+        local zoom_factor = math.max(2, math.floor(self.zoom_factor))
+        self.zoom_factor = zoom_factor
+        self.zoom_pan_direction_vertical = true
+        self.zoom_pan_h_overlap = 0
+        self.ui:handleEvent(Event:new("ZoomPanUpdate", {
+            zoom_factor = zoom_factor,
+            zoom_pan_direction_vertical = true,
+            zoom_pan_h_overlap = 0,
+        }))
+    end
     if not no_warning and self.ui.view.page_scroll then
         local message
         if self.paged_modes[mode] then
@@ -427,6 +438,27 @@ You should enable it instead of continuous view (scroll mode).]]),
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
 end
 
+function ReaderZooming:_zoomFactorChange(title_text)
+    UIManager:show(
+        SpinWidget:new{
+            width = math.floor(Screen:getWidth() * 0.6),
+            value = self.zoom_factor,
+            value_min = self.zoom_mode == "column" and 2 or 1.5,
+            value_max = 10,
+            value_step = self.zoom_mode == "column" and 1 or 0.1,
+            value_hold_step = 1,
+            precision = self.zoom_mode == "pan" and "%.1f" or nil,
+            ok_text = title_text,
+            title_text = title_text,
+            callback = function(spin)
+                self.zoom_factor = spin.value
+                self.ui:handleEvent(Event:new("ZoomPanUpdate", {zoom_factor = spin.value}))
+                self.ui:handleEvent(Event:new("RedrawCurrentPage"))
+            end
+        }
+    )
+end
+
 function ReaderZooming:addToMainMenu(menu_items)
     if self.ui.document.info.has_pages then
         local function getZoomModeMenuItem(text, mode, separator)
@@ -449,30 +481,7 @@ function ReaderZooming:addToMainMenu(menu_items)
             return {
                 text = text,
                 callback = function(touchmenu_instance)
-                    local items = SpinWidget:new{
-                        width = math.floor(Screen:getWidth() * 0.6),
-                        value = self.zoom_factor,
-                        value_min = self.zoom_mode == "column" and 2 or 1.5,
-                        value_max = 10,
-                        value_step = self.zoom_mode == "column" and 1 or 0.1,
-                        value_hold_step = 1,
-                        precision = "%.1f",
-                        ok_text = title_text,
-                        title_text = title_text,
-                        callback = function(spin)
-                            self.zoom_factor = spin.value
-                            local update_args = {zoom_factor = spin.value}
-                            if self.zoom_mode == "column" then
-                                self.zoom_pan_direction_vertical = true
-                                self.zoom_pan_h_overlap = 0
-                                update_args.zoom_pan_direction_vertical = true
-                                update_args.zoom_pan_h_overlap = 0
-                            end
-                            self.ui:handleEvent(Event:new("ZoomPanUpdate", update_args))
-                            self.ui:handleEvent(Event:new("RedrawCurrentPage"))
-                        end
-                    }
-                    UIManager:show(items)
+                    self:_zoomFactorChange(title_text)
                 end
             }
         end
@@ -559,6 +568,16 @@ function ReaderZooming:addToMainMenu(menu_items)
                 }
             }
         }
+    end
+end
+
+function ReaderZooming:onZoomFactorChange()
+    self:_zoomFactorChange(self.zoom_mode == "column" and _("Set column number") or _("Set Zoom factor"))
+end
+
+function ReaderZooming:onZoomPanUpdate(settings)
+    for k, v in pairs(settings) do
+        self.ui.doc_settings:saveSetting(k, v)
     end
 end
 
