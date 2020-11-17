@@ -198,7 +198,6 @@ function ReaderPaging:onReadSettings(config)
             "zoom_factor",
             "zoom_pan_h_overlap",
             "zoom_pan_v_overlap",
-            "zoom_pan_right_to_left",
             "zoom_pan_bottom_to_top",
             "zoom_pan_direction_vertical",
     } do
@@ -875,7 +874,7 @@ function ReaderPaging:onGotoPageRel(diff)
         local x, y, w, h = "x", "y", "w", "h"
         local h_progress = 1 - self.zoom_pan_h_overlap / 100
         local v_progress = 1 - self.zoom_pan_v_overlap / 100
-        local x_diff = self.zoom_pan_right_to_left and -diff or diff
+        local x_diff = self.ui.document.configurable.writing_direction == 1 and -diff or diff
         local y_diff = self.zoom_pan_bottom_to_top and -diff or diff
 
         if self.zoom_pan_direction_vertical then  -- invert axes
@@ -925,7 +924,7 @@ function ReaderPaging:onGotoPageRel(diff)
             end
         end
 
-        if self.zoom_pan_right_to_left then
+        if self.ui.document.configurable.writing_direction == 1 then
             at_line_beginning, at_line_end = at_line_end, at_line_beginning
             goto_line_beginning, goto_line_end = goto_line_end, goto_line_beginning
         end

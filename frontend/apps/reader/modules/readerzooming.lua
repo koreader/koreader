@@ -36,7 +36,6 @@ local ReaderZooming = InputContainer:new{
     zoom_factor = 2,
     zoom_pan_h_overlap = 40,
     zoom_pan_v_overlap = 40,
-    zoom_pan_right_to_left = nil,  -- true for right-to-left
     zoom_pan_bottom_to_top = nil,  -- true for bottom-to-top
     zoom_pan_direction_vertical = nil, -- true for column mode
     current_page = 1,
@@ -120,7 +119,6 @@ function ReaderZooming:onReadSettings(config)
             "zoom_factor",
             "zoom_pan_h_overlap",
             "zoom_pan_v_overlap",
-            "zoom_pan_right_to_left",
             "zoom_pan_bottom_to_top",
             "zoom_pan_direction_vertical",
     } do
@@ -136,7 +134,6 @@ function ReaderZooming:onSaveSettings()
             "zoom_factor",
             "zoom_pan_h_overlap",
             "zoom_pan_v_overlap",
-            "zoom_pan_right_to_left",
             "zoom_pan_bottom_to_top",
             "zoom_pan_direction_vertical",
     } do
@@ -453,7 +450,6 @@ function ReaderZooming:_zoomFactorChange(title_text)
             callback = function(spin)
                 self.zoom_factor = spin.value
                 self.ui:handleEvent(Event:new("ZoomPanUpdate", {zoom_factor = spin.value}))
-                self.ui:handleEvent(Event:new("RedrawCurrentPage"))
             end
         }
     )
@@ -500,9 +496,7 @@ function ReaderZooming:addToMainMenu(menu_items)
                         ok_text = _("Set"),
                         title_text = text,
                         callback = function(spin)
-                            self[setting] = spin.value
                             self.ui:handleEvent(Event:new("ZoomPanUpdate", {[setting] = spin.value}))
-                            self.ui:handleEvent(Event:new("RedrawCurrentPage"))
                         end
                     }
                     UIManager:show(items)
@@ -516,8 +510,7 @@ function ReaderZooming:addToMainMenu(menu_items)
                     return self[setting] == true
                 end,
                 callback = function()
-                    self[setting] = not self[setting]
-                    self.ui:handleEvent(Event:new("ZoomPanUpdate", {[setting] = self[setting]}))
+                    self.ui:handleEvent(Event:new("ZoomPanUpdate", {[setting] = not self[setting]}))
                 end,
                 hold_callback = function(touchmenu_instance)
                     G_reader_settings:saveSetting(setting, self[setting])
@@ -525,6 +518,19 @@ function ReaderZooming:addToMainMenu(menu_items)
                 separator = separator,
             }
         end
+        local rtl_option_item = {
+            text = _("Right to left"),
+            checked_func = function()
+                return self.ui.document.configurable.writing_direction == 1
+            end,
+            callback = function()
+                self.ui.document.configurable.writing_direction = (self.ui.document.configurable.writing_direction + 1) % 2
+                self.ui:handleEvent(Event:new("ZoomPanUpdate", {}))
+            end,
+            hold_callback = function(touchmenu_instance)
+                G_reader_settings:saveSetting("writing_direction", self.ui.document.configurable.writing_direction)
+            end,
+        }
         menu_items.switch_zoom_mode = {
             text = _("Switch zoom mode"),
             enabled_func = function()
@@ -553,14 +559,14 @@ function ReaderZooming:addToMainMenu(menu_items)
                                 getZoomPanMenuItem(_("Horizontal overlap"), "zoom_pan_h_overlap"),
                                 getZoomPanMenuItem(_("Vertical overlap"), "zoom_pan_v_overlap"),
                                 getZoomPanCheckboxItem(_("Column mode"), "zoom_pan_direction_vertical"),
-                                getZoomPanCheckboxItem(_("Right to left"), "zoom_pan_right_to_left"),
+                                rtl_option_item,
                                 getZoomPanCheckboxItem(_("Bottom to top"), "zoom_pan_bottom_to_top"),
                             }
                         else
                             return {
                                 zoomFactorMenuItem(_("Column number"), _("Set column number")),
                                 getZoomPanMenuItem(_("Vertical overlap"), "zoom_pan_v_overlap"),
-                                getZoomPanCheckboxItem(_("Right to left"), "zoom_pan_right_to_left"),
+                                rtl_option_item,
                                 getZoomPanCheckboxItem(_("Bottom to top"), "zoom_pan_bottom_to_top"),
                             }
                         end
@@ -576,12 +582,11 @@ function ReaderZooming:onZoomFactorChange()
 end
 
 function ReaderZooming:onZoomPanUpdate(settings)
-    if settings.zoom_pan_right_to_left then
-        self.ui.document.configurable.writing_direction = 1
-    end
     for k, v in pairs(settings) do
+        self[k] = v
         self.ui.doc_settings:saveSetting(k, v)
     end
+    self.ui:handleEvent(Event:new("RedrawCurrentPage"))
 end
 
 function ReaderZooming:makeDefault(zoom_mode, touchmenu_instance)
