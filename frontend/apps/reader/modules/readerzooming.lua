@@ -46,10 +46,6 @@ local ReaderZooming = InputContainer:new{
         contentheight = _("Zoom to fit content height works best with page view."),
         content = _("Zoom to fit content works best with page view."),
     },
-    panned_modes = {
-        column = _("Page view normally works best with column zoom mode."),
-        pan = _("Pan zoom only works in page view."),
-    }
 }
 
 function ReaderZooming:init()
@@ -122,11 +118,9 @@ function ReaderZooming:onReadSettings(config)
             "zoom_pan_bottom_to_top",
             "zoom_pan_direction_vertical",
     } do
-        local value = config:readSetting(setting) or
+        self[setting] = config:readSetting(setting) or
                     G_reader_settings:readSetting(setting) or
                     self[setting]
-        self[setting] = value
-        self.ui.document.configurable[setting] = value
     end
 end
 
@@ -421,12 +415,11 @@ function ReaderZooming:setZoomMode(mode, no_warning)
 
 In combination with continuous view (scroll mode), this can cause unexpected vertical shifts when turning pages.]]),
                 self.paged_modes[mode])
-        elseif self.panned_modes[mode] then
-            message = T(_([[
-%1
+        elseif self.zoom_mode == "pan" then
+            message = _([[
+"Pan zoom works best with page view."
 
-You should enable it instead of continuous view (scroll mode).]]),
-                self.panned_modes[mode])
+You should enable it instead of continuous view (scroll mode).]])
         end
         if message then
             UIManager:show(InfoMessage:new{text = message, timeout = 5})
@@ -523,14 +516,14 @@ function ReaderZooming:addToMainMenu(menu_items)
         local rtl_option_item = {
             text = _("Right to left"),
             checked_func = function()
-                return self.ui.document.configurable.inverse_reading_order
+                return self.ui.document.configurable.writing_direction == 1
             end,
             callback = function()
-                self.ui.document.configurable.inverse_reading_order = not self.ui.document.configurable.inverse_reading_order
+                self.ui.document.configurable.writing_direction = (self.ui.document.configurable.writing_direction + 1) % 2
                 self.ui:handleEvent(Event:new("ZoomPanUpdate", {}))
             end,
             hold_callback = function(touchmenu_instance)
-                G_reader_settings:saveSetting("inverse_reading_order", self.ui.document.configurable.inverse_reading_order)
+                G_reader_settings:saveSetting("kopt_writing_direction", self.ui.document.configurable.writing_direction)
             end,
         }
         menu_items.switch_zoom_mode = {
@@ -586,7 +579,6 @@ end
 function ReaderZooming:onZoomPanUpdate(settings)
     for k, v in pairs(settings) do
         self[k] = v
-        self.ui.document.configurable[k] = v
         self.ui.doc_settings:saveSetting(k, v)
     end
     self.ui:handleEvent(Event:new("RedrawCurrentPage"))
