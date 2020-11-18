@@ -1,12 +1,16 @@
+-- plugin for saving a cover image to a file and scale it to fit the screen
+
 local Device = require("device")
 
 if not Device.isAndroid() and not Device.isEmulator() then
     return { disabled = true }
 end
 
+local Blitbuffer = require("ffi/blitbuffer")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local RenderImage = require("ui/renderimage")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -36,10 +40,12 @@ local CoverImage = WidgetContainer:new{
 
 function CoverImage:init()
     self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or "cover.png"
+    self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "black"
     self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or "cover_fallback.png"
     self.enabled = G_reader_settings:isTrue("cover_image_enabled")
     self.fallback = G_reader_settings:isTrue("cover_image_fallback")
     self.ui.menu:registerToMainMenu(self)
+
 end
 
 function CoverImage:_enabled()
@@ -67,9 +73,38 @@ end
 
 function CoverImage:createCoverImage(doc_settings)
    if self.enabled and not doc_settings:readSetting("exclude_cover_image") == true then
-        local image = self.ui.document:getCoverPageImage()
-        if image then
+        local cover_image = self.ui.document:getCoverPageImage()
+        if cover_image then
+            local s_w, s_h = Device.screen:getWidth(), Device.screen:getHeight()
+            local i_w, i_h = cover_image:getWidth(), cover_image:getHeight()
+            local scale_factor = math.min(s_w / i_w, s_h / i_h)
+
+            if self.cover_image_background == "none" or scale_factor == 1 then
+                cover_image:writePNG(self.cover_image_path, false)
+                cover_image:free()
+                return
+            end
+
+            local scaled_w, scaled_h = math.floor(i_w * scale_factor), math.floor(i_h * scale_factor)
+            cover_image = RenderImage:scaleBlitBuffer(cover_image, scaled_w, scaled_h)
+
+            -- new buffer with screen dimensions,
+            local image = Blitbuffer.new( s_w, s_h, cover_image:getType() ) -- new buffer, filled with black
+            if self.cover_image_background == "white" then
+                image:fill(Blitbuffer.COLOR_WHITE)
+            elseif self.cover_image_background == "gray" then
+                image:fill(Blitbuffer.COLOR_GRAY)
+            end
+
+            -- copy scaled image to buffer
+            if s_w > scaled_w then -- move right
+                image:blitFrom(cover_image, math.floor( (s_w - scaled_w) / 2 ), 0, 0, 0, scaled_w, scaled_h)
+            else -- move down
+                image:blitFrom(cover_image, 0, math.floor( (s_h - scaled_h) / 2 ), 0, 0, scaled_w, scaled_h)
+            end
+            cover_image:free()
             image:writePNG(self.cover_image_path, false)
+            image:free()
             logger.dbg("CoverImage: image written to " .. self.cover_image_path)
         end
     end
@@ -192,6 +227,67 @@ function CoverImage:addToMainMenu(menu_items)
                         end
                     end
                 end,
+            },
+            -- menu entry: scale book cover
+            {
+                text = _("Size and background"),
+                enabled_func = function()
+                    return self.enabled
+                end,
+                sub_item_table = {
+                    {
+                        text = _("Scale, black background"),
+                        checked_func = function()
+                            return self.cover_image_background == "black"
+                        end,
+                        callback = function()
+                            self.cover_image_background = "black"
+                            G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
+                            if self.enabled then
+                                self:createCoverImage(self.ui.doc_settings)
+                            end
+                        end
+                    },
+                    {
+                        text = _("Scale, white background"),
+                        checked_func = function()
+                            return self.cover_image_background == "white"
+                        end,
+                        callback = function()
+                            self.cover_image_background = "white"
+                            G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
+                            if self.enabled then
+                                self:createCoverImage(self.ui.doc_settings)
+                            end
+                        end
+                    },
+                    {
+                        text = _("Scale, gray background"),
+                        checked_func = function()
+                            return self.cover_image_background == "gray"
+                        end,
+                        callback = function()
+                            self.cover_image_background = "gray"
+                            G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
+                            if self.enabled then
+                                self:createCoverImage(self.ui.doc_settings)
+                            end
+                        end
+                    },
+                    {
+                        text = _("Original image"),
+                        checked_func = function()
+                            return self.cover_image_background == "none"
+                        end,
+                        callback = function()
+                            self.cover_image_background = "none"
+                            G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
+                            if self.enabled then
+                                self:createCoverImage(self.ui.doc_settings)
+                            end
+                        end
+                    },
+                }
             },
             -- menu entry: exclude this cover
             {
