@@ -230,13 +230,13 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: scale book cover
             {
-                text = _("Stretching and background"),
+                text = _("Size and background"),
                 enabled_func = function()
                     return self.enabled
                 end,
                 sub_item_table = {
                     {
-                        text = _("Black background"),
+                        text = _("Scale, black background"),
                         checked_func = function()
                             return self.cover_image_background == "black"
                         end,
@@ -249,7 +249,7 @@ function CoverImage:addToMainMenu(menu_items)
                         end
                     },
                     {
-                        text = _("White background"),
+                        text = _("Scale, white background"),
                         checked_func = function()
                             return self.cover_image_background == "white"
                         end,
@@ -262,7 +262,7 @@ function CoverImage:addToMainMenu(menu_items)
                         end
                     },
                     {
-                        text = _("Gray background"),
+                        text = _("Scale, gray background"),
                         checked_func = function()
                             return self.cover_image_background == "gray"
                         end,
@@ -275,7 +275,7 @@ function CoverImage:addToMainMenu(menu_items)
                         end
                     },
                     {
-                        text = _("Stretch to fit screen"),
+                        text = _("Original image"),
                         checked_func = function()
                             return self.cover_image_background == "none"
                         end,
