@@ -23,16 +23,14 @@ local ReaderZooming = InputContainer:new{
         "pageheight",
         "content",
         "page",
-        "column",
         "pan",
     },
     -- default to nil so we can trigger ZoomModeUpdate events on start up
     zoom_mode = nil,
     DEFAULT_ZOOM_MODE = "pagewidth",
-    -- for column or pan modes: fit to width/zoom_factor,
+    -- for pan mode: fit to width/zoom_factor,
     -- with overlap of zoom_pan_h_overlap % (horizontally)
     -- and zoom_pan_v_overlap % (vertically).
-    -- In column mode, zoom_factor is the number of columns.
     zoom_factor = 2,
     zoom_pan_h_overlap = 40,
     zoom_pan_v_overlap = 40,
@@ -91,11 +89,6 @@ function ReaderZooming:init()
                 doc = "zoom to fit content height",
                 event = "SetZoomMode", args = "contentheight"
             },
-            ZoomToFitColumn = {
-                { "Shift", "C" },
-                doc = "zoom to fit column",
-                event = "SetZoomMode", args = "colu"
-            },
             ZoomToFitLines = {
                 { "Shift", "H" },
                 doc = "pan zoom",
@@ -111,13 +104,13 @@ function ReaderZooming:onReadSettings(config)
                     or G_reader_settings:readSetting("zoom_mode")
                     or self.DEFAULT_ZOOM_MODE
     self:setZoomMode(zoom_mode, true) -- avoid informative message on load
-    for _, setting in ipairs{
+    for _, setting in ipairs({
             "zoom_factor",
             "zoom_pan_h_overlap",
             "zoom_pan_v_overlap",
             "zoom_pan_bottom_to_top",
             "zoom_pan_direction_vertical",
-    } do
+    }) do
         self[setting] = config:readSetting(setting) or
                     G_reader_settings:readSetting(setting) or
                     self[setting]
@@ -126,13 +119,13 @@ end
 
 function ReaderZooming:onSaveSettings()
     self.ui.doc_settings:saveSetting("zoom_mode", self.orig_zoom_mode or self.zoom_mode)
-    for _, setting in ipairs{
+    for _, setting in ipairs({
             "zoom_factor",
             "zoom_pan_h_overlap",
             "zoom_pan_v_overlap",
             "zoom_pan_bottom_to_top",
             "zoom_pan_direction_vertical",
-    } do
+    }) do
         self.ui.doc_settings:saveSetting(setting, self[setting])
     end
 end
@@ -291,7 +284,6 @@ function ReaderZooming:getZoom(pageno)
     if self.zoom_mode == "content"
     or self.zoom_mode == "contentwidth"
     or self.zoom_mode == "contentheight"
-    or self.zoom_mode == "column"
     or self.zoom_mode == "pan" then
         local ubbox_dimen = self.ui.document:getUsedBBoxDimensions(pageno, 1)
         -- if bbox is larger than the native page dimension render the full page
@@ -330,7 +322,7 @@ function ReaderZooming:getZoom(pageno)
         end
     elseif self.zoom_mode == "contentwidth" or self.zoom_mode == "pagewidth" then
         zoom = zoom_w
-    elseif self.zoom_mode == "pan" or self.zoom_mode == "column" then
+    elseif self.zoom_mode == "pan" then
         local zoom_factor = self.ui.doc_settings:readSetting("zoom_factor")
                             or G_reader_settings:readSetting("zoom_factor")
                             or self.zoom_factor
@@ -395,8 +387,8 @@ function ReaderZooming:genSetZoomModeCallBack(mode)
 end
 
 function ReaderZooming:setZoomMode(mode, no_warning)
-    mode = require("util").arrayContains(self.available_zoom_modes, mode) and mode or self.DEFAULT_ZOOM_MODE
     if mode == "column" then
+        mode = "pan"
         local zoom_factor = math.max(2, math.floor(self.zoom_factor))
         self.zoom_factor = zoom_factor
         self.zoom_pan_direction_vertical = true
@@ -407,6 +399,7 @@ function ReaderZooming:setZoomMode(mode, no_warning)
             zoom_pan_h_overlap = 0,
         }))
     end
+    mode = require("util").arrayContains(self.available_zoom_modes, mode) and mode or self.DEFAULT_ZOOM_MODE
     if not no_warning and self.ui.view.page_scroll then
         local message
         if self.paged_modes[mode] then
@@ -430,21 +423,23 @@ You should enable it instead of continuous view (scroll mode).]])
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
 end
 
-function ReaderZooming:_zoomFactorChange(title_text)
+function ReaderZooming:_zoomFactorChange()
+    local title_text = _("Set Zoom factor")
     UIManager:show(
         SpinWidget:new{
             width = math.floor(Screen:getWidth() * 0.6),
             value = self.zoom_factor,
-            value_min = self.zoom_mode == "column" and 2 or 1.5,
+            value_min = 0.1,
             value_max = 10,
-            value_step = self.zoom_mode == "column" and 1 or 0.1,
+            value_step = 0.1,
             value_hold_step = 1,
-            precision = self.zoom_mode == "pan" and "%.1f" or nil,
+            precision = "%.1f",
             ok_text = title_text,
             title_text = title_text,
             callback = function(spin)
                 self.zoom_factor = spin.value
                 self.ui:handleEvent(Event:new("ZoomPanUpdate", {zoom_factor = spin.value}))
+                self.ui:handleEvent(Event:new("RedrawCurrentPage"))
             end
         }
     )
@@ -468,11 +463,11 @@ function ReaderZooming:addToMainMenu(menu_items)
                 separator = separator,
             }
         end
-        local function zoomFactorMenuItem(text, title_text)
+        local function zoomFactorMenuItem(text)
             return {
                 text = text,
                 callback = function(touchmenu_instance)
-                    self:_zoomFactorChange(title_text)
+                    self:_zoomFactorChange()
                 end
             }
         end
@@ -538,34 +533,20 @@ function ReaderZooming:addToMainMenu(menu_items)
                 getZoomModeMenuItem(_("Zoom to fit page height"), "pageheight", true),
                 getZoomModeMenuItem(_("Zoom to fit content"), "content"),
                 getZoomModeMenuItem(_("Zoom to fit page"), "page", true),
-                getZoomModeMenuItem(_("Zoom to fit column"), "column"),
                 getZoomModeMenuItem(_("Pan zoom"), "pan"),
                 {
-                    text_func = function()
-                        return self.zoom_mode == "column" and _("Column settings") or _("Pan zoom settings")
-                    end,
+                    text = _("Pan zoom settings"),
                     enabled_func = function()
-                        return self.zoom_mode == "column" or self.zoom_mode == "pan"
+                        return self.zoom_mode == "pan"
                     end,
-                    sub_item_table_func = function()
-                        if self.zoom_mode == "pan" then
-                            return {
-                                zoomFactorMenuItem(_("Zoom factor"), _("Set zoom factor")),
-                                getZoomPanMenuItem(_("Horizontal overlap"), "zoom_pan_h_overlap"),
-                                getZoomPanMenuItem(_("Vertical overlap"), "zoom_pan_v_overlap"),
-                                getZoomPanCheckboxItem(_("Column mode"), "zoom_pan_direction_vertical"),
-                                rtl_option_item,
-                                getZoomPanCheckboxItem(_("Bottom to top"), "zoom_pan_bottom_to_top"),
-                            }
-                        else
-                            return {
-                                zoomFactorMenuItem(_("Column number"), _("Set column number")),
-                                getZoomPanMenuItem(_("Vertical overlap"), "zoom_pan_v_overlap"),
-                                rtl_option_item,
-                                getZoomPanCheckboxItem(_("Bottom to top"), "zoom_pan_bottom_to_top"),
-                            }
-                        end
-                    end
+                    sub_item_table = {
+                        zoomFactorMenuItem(_("Zoom factor")),
+                        getZoomPanMenuItem(_("Horizontal overlap"), "zoom_pan_h_overlap"),
+                        getZoomPanMenuItem(_("Vertical overlap"), "zoom_pan_v_overlap"),
+                        getZoomPanCheckboxItem(_("Column mode"), "zoom_pan_direction_vertical"),
+                        rtl_option_item,
+                        getZoomPanCheckboxItem(_("Bottom to top"), "zoom_pan_bottom_to_top"),
+                    },
                 }
             }
         }
@@ -573,7 +554,7 @@ function ReaderZooming:addToMainMenu(menu_items)
 end
 
 function ReaderZooming:onZoomFactorChange()
-    self:_zoomFactorChange(self.zoom_mode == "column" and _("Set column number") or _("Set Zoom factor"))
+    self:_zoomFactorChange()
 end
 
 function ReaderZooming:onZoomPanUpdate(settings)
@@ -581,7 +562,6 @@ function ReaderZooming:onZoomPanUpdate(settings)
         self[k] = v
         self.ui.doc_settings:saveSetting(k, v)
     end
-    self.ui:handleEvent(Event:new("RedrawCurrentPage"))
 end
 
 function ReaderZooming:makeDefault(zoom_mode, touchmenu_instance)

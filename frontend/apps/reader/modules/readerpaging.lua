@@ -193,6 +193,15 @@ function ReaderPaging:onReadSettings(config)
     if self.inverse_reading_order == nil then
         self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
     end
+    local ReaderZooming = require("apps/reader/modules/readerzooming")
+    for _, v in ipairs({
+        "zoom_pan_h_overlap",
+        "zoom_pan_v_overlap",
+        "zoom_pan_bottom_to_top",
+        "zoom_pan_direction_vertical",
+    }) do
+        self[v] = config:readSetting(v) or G_reader_settings:readSetting(v) or ReaderZooming[v]
+    end
 end
 
 function ReaderPaging:onSaveSettings()
@@ -473,6 +482,22 @@ end
 function ReaderPaging:onZoomModeUpdate(new_mode)
     -- we need to remember zoom mode to handle page turn event
     self.zoom_mode = new_mode
+end
+
+function ReaderPaging:onZoomPanUpdate(settings)
+    local _settings = {
+        "zoom_pan_h_overlap",
+        "zoom_pan_v_overlap",
+        "zoom_pan_bottom_to_top",
+        "zoom_pan_direction_vertical",
+    }
+    for k, v in pairs(settings) do
+        if require("util").arrayContains(_settings, k) then
+            self[k] = v
+            self.ui.doc_settings:saveSetting(k, v)
+        end
+    end
+    self.ui:handleEvent(Event:new("RedrawCurrentPage"))
 end
 
 function ReaderPaging:onPageUpdate(new_page_no, orig_mode)
@@ -848,18 +873,19 @@ function ReaderPaging:onGotoPageRel(diff)
         -- negative x panning if writing direction is right to left
         x_pan_off = self.visible_area.w * diff * (right_to_left and -1 or 1)
 
-    elseif self.zoom_mode == "pan" or self.zoom_mode == "column" then
+    elseif self.zoom_mode == "pan" then
         -- pan zoom mode
 
-        local bottom_to_top = self.ui.doc_settings:readSetting("zoom_pan_bottom_to_top")
-        local h_progress = 1 - self.ui.doc_settings:readSetting("zoom_pan_h_overlap") / 100
-        local v_progress = 1 - self.ui.doc_settings:readSetting("zoom_pan_v_overlap") / 100
+        logger.dbg("ZOOM:", self.ui.document.view)
+        local bottom_to_top = self.zoom_pan_bottom_to_top
+        local h_progress = 1 - self.zoom_pan_h_overlap / 100
+        local v_progress = 1 - self.zoom_pan_v_overlap / 100
         local old_va = self.visible_area
         local x, y, w, h = "x", "y", "w", "h"
         local x_diff = diff
         local y_diff = diff
 
-        if self.ui.doc_settings:readSetting("zoom_pan_direction_vertical") then  -- invert axes
+        if self.zoom_pan_direction_vertical then  -- invert axes
             y, x, h, w = x, y, w, h
             h_progress, v_progress = v_progress, h_progress
             if right_to_left then
