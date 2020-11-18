@@ -273,10 +273,10 @@ function Document:getUsedBBoxDimensions(pageno, zoom, rotation)
     -- clipping page bbox
     if bbox.x0 < 0 then bbox.x0 = 0 end
     if bbox.y0 < 0 then bbox.y0 = 0 end
-    if bbox.x1 < 0 then bbox.x1 = 0 end
-    if bbox.y1 < 0 then bbox.y1 = 0 end
+    if bbox.x1 and bbox.x1 < 0 then bbox.x1 = 0 end
+    if bbox.y1 and bbox.y1 < 0 then bbox.y1 = 0 end
     local ubbox_dimen
-    if (bbox.x0 >= bbox.x1) or (bbox.y0 >= bbox.y1) then
+    if (not bbox.x1 or bbox.x0 >= bbox.x1) or (not bbox.y1 or bbox.y0 >= bbox.y1) then
         -- if document's bbox info is corrupted, we use the page size
         ubbox_dimen = self:getPageDimensions(pageno, zoom, rotation)
     else
