@@ -193,18 +193,6 @@ function ReaderPaging:onReadSettings(config)
     if self.inverse_reading_order == nil then
         self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
     end
-    local ReaderZooming = require("apps/reader/modules/readerzooming")
-    for _, setting in ipairs{
-            "zoom_factor",
-            "zoom_pan_h_overlap",
-            "zoom_pan_v_overlap",
-            "zoom_pan_bottom_to_top",
-            "zoom_pan_direction_vertical",
-    } do
-        self[setting] = config:readSetting(setting) or
-                        G_reader_settings:readSetting(setting) or
-                        ReaderZooming[setting]
-    end
 end
 
 function ReaderPaging:onSaveSettings()
@@ -870,27 +858,29 @@ function ReaderPaging:onGotoPageRel(diff)
     elseif self.zoom_mode == "pan" or self.zoom_mode == "column" then
         -- pan zoom mode
 
+        local right_to_left = self.ui.document.configurable.inverse_reading_order
+        local bottom_to_top = self.ui.document.configurable.zoom_pan_bottom_to_top
+        local h_progress = 1 - self.ui.document.configurable.zoom_pan_h_overlap / 100
+        local v_progress = 1 - self.ui.document.configurable.zoom_pan_v_overlap / 100
         local old_va = self.visible_area
         local x, y, w, h = "x", "y", "w", "h"
-        local h_progress = 1 - self.zoom_pan_h_overlap / 100
-        local v_progress = 1 - self.zoom_pan_v_overlap / 100
         local x_diff = diff
         local y_diff = diff
 
-        if self.zoom_pan_direction_vertical then  -- invert axes
+        if self.ui.document.configurable.zoom_pan_direction_vertical then  -- invert axes
             y, x, h, w = x, y, w, h
             h_progress, v_progress = v_progress, h_progress
-            if self.ui.document.configurable.writing_direction == 1 then
+            if right_to_left then
                 x_diff, y_diff = -x_diff, -y_diff
             end
-            if self.zoom_pan_bottom_to_top then
+            if bottom_to_top then
                 x_diff = -x_diff
             end
-        elseif self.zoom_pan_bottom_to_top then
+        elseif bottom_to_top then
                 y_diff = -y_diff
         end
 
-        if self.ui.document.configurable.writing_direction == 1 then
+        if right_to_left then
             x_diff = -x_diff
         end
 
