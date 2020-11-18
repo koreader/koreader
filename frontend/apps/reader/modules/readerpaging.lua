@@ -475,13 +475,6 @@ function ReaderPaging:onZoomModeUpdate(new_mode)
     self.zoom_mode = new_mode
 end
 
-function ReaderPaging:onZoomPanUpdate(new_pan)
-    -- we need to remember zoom pan overlap to handle page turn event
-    for k, v in pairs(new_pan) do
-        self[k] = v
-    end
-end
-
 function ReaderPaging:onPageUpdate(new_page_no, orig_mode)
     self.current_page = new_page_no
     if self.view.page_scroll and orig_mode ~= "scrolling" then
@@ -847,27 +840,26 @@ function ReaderPaging:onGotoPageRel(diff)
     logger.dbg("goto relative page:", diff)
     local new_va = self.visible_area:copy()
     local x_pan_off, y_pan_off = 0, 0
+    local right_to_left = (self.ui.document.configurable.writing_direction == 1)
 
     if self.zoom_mode:find("width") then
         y_pan_off = self.visible_area.h * diff
     elseif self.zoom_mode:find("height") then
         -- negative x panning if writing direction is right to left
-        local direction = self.ui.document.configurable.writing_direction
-        x_pan_off = self.visible_area.w * diff * (direction == 1 and -1 or 1)
+        x_pan_off = self.visible_area.w * diff * (right_to_left and -1 or 1)
 
     elseif self.zoom_mode == "pan" or self.zoom_mode == "column" then
         -- pan zoom mode
 
-        local right_to_left = self.ui.document.configurable.inverse_reading_order
-        local bottom_to_top = self.ui.document.configurable.zoom_pan_bottom_to_top
-        local h_progress = 1 - self.ui.document.configurable.zoom_pan_h_overlap / 100
-        local v_progress = 1 - self.ui.document.configurable.zoom_pan_v_overlap / 100
+        local bottom_to_top = self.ui.doc_settings:readSetting("zoom_pan_bottom_to_top")
+        local h_progress = 1 - self.ui.doc_settings:readSetting("zoom_pan_h_overlap") / 100
+        local v_progress = 1 - self.ui.doc_settings:readSetting("zoom_pan_v_overlap") / 100
         local old_va = self.visible_area
         local x, y, w, h = "x", "y", "w", "h"
         local x_diff = diff
         local y_diff = diff
 
-        if self.ui.document.configurable.zoom_pan_direction_vertical then  -- invert axes
+        if self.ui.doc_settings:readSetting("zoom_pan_direction_vertical") then  -- invert axes
             y, x, h, w = x, y, w, h
             h_progress, v_progress = v_progress, h_progress
             if right_to_left then
@@ -889,7 +881,6 @@ function ReaderPaging:onGotoPageRel(diff)
 
         local function at_end(axe)
             local len = axe == x and w or h
-            logger.dbg("ZOOM:", x_pan_off, y_pan_off, axe, len, old_va, self.page_area)
             return old_va[axe] + old_va[len] >= self.page_area[axe] + self.page_area[len]
                 or old_va[axe] <= self.page_area[axe]
         end
@@ -905,7 +896,6 @@ function ReaderPaging:onGotoPageRel(diff)
             goto_end(x, -x_diff)
         end
         local function goto_next_page()
-            logger.dbg("ZOOM", diff)
             local new_page = self.current_page + diff
             if new_page > self.number_of_pages then
                 self.ui:handleEvent(Event:new("EndOfBook"))
