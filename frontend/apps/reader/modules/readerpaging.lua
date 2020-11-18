@@ -870,104 +870,78 @@ function ReaderPaging:onGotoPageRel(diff)
     elseif self.zoom_mode == "pan" or self.zoom_mode == "column" then
         -- pan zoom mode
 
-        local page_area, old_va = self.page_area, self.visible_area
+        local old_va = self.visible_area
         local x, y, w, h = "x", "y", "w", "h"
         local h_progress = 1 - self.zoom_pan_h_overlap / 100
         local v_progress = 1 - self.zoom_pan_v_overlap / 100
-        local x_diff = self.ui.document.configurable.writing_direction == 1 and -diff or diff
-        local y_diff = self.zoom_pan_bottom_to_top and -diff or diff
+        local x_diff = diff
+        local y_diff = diff
 
         if self.zoom_pan_direction_vertical then  -- invert axes
             y, x, h, w = x, y, w, h
             h_progress, v_progress = v_progress, h_progress
+            if self.ui.document.configurable.writing_direction == 1 then
+                x_diff, y_diff = -x_diff, -y_diff
+            end
+            if self.zoom_pan_bottom_to_top then
+                x_diff = -x_diff
+            end
+        elseif self.zoom_pan_bottom_to_top then
+                y_diff = -y_diff
+        end
+
+        if self.ui.document.configurable.writing_direction == 1 then
+            x_diff = -x_diff
         end
 
         x_pan_off = Math.roundAwayFromZero(self.visible_area[w] * h_progress * x_diff)
         y_pan_off = Math.roundAwayFromZero(self.visible_area[h] * v_progress * y_diff)
-        new_va[x] = old_va[x] + x_pan_off
-        new_va[y] = old_va[y]
 
-        local function at_line_beginning()
-            return old_va[x] <= page_area[x]
+        local function at_end(axe)
+            local len = axe == x and w or h
+            logger.dbg("ZOOM:", x_pan_off, y_pan_off, axe, len, old_va, self.page_area)
+            return old_va[axe] + old_va[len] >= self.page_area[axe] + self.page_area[len]
+                or old_va[axe] <= self.page_area[axe]
         end
-        local function at_line_end()
-            return old_va[x] + old_va[w] >= page_area[x] + page_area[w]
-        end
-        local function at_page_beginning()
-            return old_va[y] <= page_area[y]
-        end
-        local function at_page_end()
-            return old_va[y] + old_va[h] >= page_area[y] + page_area[h]
-        end
-        local function goto_line_beginning()
-            new_va[x] = page_area[x]
-        end
-        local function goto_line_end()
-            new_va[x] = page_area[x] + page_area[w] - old_va[w]
+        local function goto_end(axe, _diff)
+            local len = axe == x and w or h
+            _diff = _diff or (axe == x and x_diff or y_diff)
+            new_va[axe] = _diff > 0
+                        and old_va[axe] + self.page_area[len] - old_va[len]
+                        or self.page_area[x]
         end
         local function goto_next_line()
             new_va[y] = old_va[y] + y_pan_off
+            goto_end(x, -x_diff)
         end
-        local function goto_page_beginning()
-            new_va[y] = page_area[y]
-        end
-        local function goto_page_end()
-            new_va[y] = self.page_area[y] + self.page_area[h] - old_va[h]  -- page may have changed here, hence self
-        end
-        local function goto_next_page(direction)
-            direction = direction or 1
-            local new_page = self.current_page + direction * diff
+        local function goto_next_page()
+            logger.dbg("ZOOM", diff)
+            local new_page = self.current_page + diff
             if new_page > self.number_of_pages then
                 self.ui:handleEvent(Event:new("EndOfBook"))
-            else
+                goto_end(y)
+                goto_end(x)
+            elseif new_page > 0 then
                 self:_gotoPage(new_page)
+                goto_end(y, -y_diff)
+            else
+                goto_end(x)
             end
         end
 
-        if self.ui.document.configurable.writing_direction == 1 then
-            at_line_beginning, at_line_end = at_line_end, at_line_beginning
-            goto_line_beginning, goto_line_end = goto_line_end, goto_line_beginning
-        end
+        new_va[x] = old_va[x] + x_pan_off
+        new_va[y] = old_va[y]
 
-        if self.zoom_pan_bottom_to_top then
-            at_page_beginning, at_page_end = at_page_end, at_page_beginning
-            goto_page_beginning, goto_page_end = goto_page_end, goto_page_beginning
-        end
-
-        local page_contains_area = page_area:contains(new_va)
-        if not page_contains_area then
-            -- we're leaving the page area
-            if diff < 0 then
-                -- we're going to cross line beginning, going backwards
-                if not at_line_beginning() then
-                    goto_line_beginning()
-                else
-                    goto_next_line()  -- as y_pan_off < 0, this will go backwards
-                    goto_line_end()
-                    if not page_area:contains(new_va) then
-                        goto_line_end()
-                        if not at_page_beginning() then
-                            goto_page_beginning()
-                        else
-                            goto_next_page()  -- as diff < 0, this will go backwards
-                            goto_page_end()
-                        end
-                    end
-                end
-            else  -- we're going to cross line end, going forward
-                if not at_line_end() then
-                    goto_line_end()
-                else
-                    goto_next_line()
-                    goto_line_beginning()
-                    if not page_area:contains(new_va) then
-                        goto_line_beginning()
-                        if not at_page_end() then
-                            goto_page_end()
-                        else
-                            goto_next_page()
-                            goto_page_beginning()
-                        end
+        if not self.page_area:contains(new_va) then
+            if not at_end(x) then
+                goto_end(x)
+            else
+                goto_next_line()
+                if not self.page_area:contains(new_va) then
+                    if not at_end(y) then
+                        goto_end(y)
+                    else
+                        goto_next_page()
                     end
                 end
             end

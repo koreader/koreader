@@ -524,7 +524,10 @@ function ReaderZooming:addToMainMenu(menu_items)
                 return self.ui.document.configurable.writing_direction == 1
             end,
             callback = function()
-                self.ui.document.configurable.writing_direction = (self.ui.document.configurable.writing_direction + 1) % 2
+                -- writing_direction is absent in case of images
+                self.ui.document.configurable.writing_direction = self.ui.document.configurable.writing_direction
+                                                    and (self.ui.document.configurable.writing_direction + 1) % 2
+                                                    or 1
                 self.ui:handleEvent(Event:new("ZoomPanUpdate", {}))
             end,
             hold_callback = function(touchmenu_instance)
