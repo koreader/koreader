@@ -663,7 +663,7 @@ function ReaderFooter:resetLayout(force_reset)
     else
         bar_height = self.settings.progress_style_thick_height or PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT
     end
-    self.progress_bar.height = Screen:scaleBySize(bar_height)
+    self.progress_bar:setHeight(bar_height)
 
     self.horizontal_group:resetLayout()
     self.footer_positioner.dimen.w = new_screen_width
@@ -1833,7 +1833,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
     else
         bar_height = self.settings.progress_style_thick_height or PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT
     end
-    self.progress_bar.height = Screen:scaleBySize(bar_height)
+    self.progress_bar:setHeight(bar_height)
 
     if self.separator_line then
         self.separator_line.dimen.w = self._saved_screen_width - 2 * self.horizontal_margin
