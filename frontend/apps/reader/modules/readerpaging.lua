@@ -884,6 +884,7 @@ function ReaderPaging:onGotoPageRel(diff)
         local x_diff = diff
         local y_diff = diff
 
+        -- Adjust directions according to settings
         if self.zoom_pan_direction_vertical then  -- invert axes
             y, x, h, w = x, y, w, h
             h_progress, v_progress = v_progress, h_progress
@@ -896,7 +897,6 @@ function ReaderPaging:onGotoPageRel(diff)
         elseif bottom_to_top then
             y_diff = -y_diff
         end
-
         if right_to_left then
             x_diff = -x_diff
         end
@@ -904,7 +904,11 @@ function ReaderPaging:onGotoPageRel(diff)
         x_pan_off = Math.roundAwayFromZero(self.visible_area[w] * h_progress * x_diff)
         y_pan_off = Math.roundAwayFromZero(self.visible_area[h] * v_progress * y_diff)
 
+        -- Auxiliary functions to (as much as possible) keep things clear
+        -- If going backwards (diff < 0) "end" is equivalent to "beginning", "next" to "previous";
+        -- in column mode, "line" is equivalent to "column".
         local function at_end(axis)
+            -- returns true if we're at the end of line (axis = x) or page (axis = y)
             local len, _diff
             if axis == x then
                 len, _diff = w, x_diff
@@ -914,12 +918,13 @@ function ReaderPaging:onGotoPageRel(diff)
             return old_va[axis] + old_va[len] + _diff > self.page_area[axis] + self.page_area[len]
                 or old_va[axis] + _diff < self.page_area[axis]
         end
-        local function goto_end(axe, _diff)
-            local len = axe == x and w or h
-            _diff = _diff or (axe == x and x_diff or y_diff)
-            new_va[axe] = _diff > 0
-                        and old_va[axe] + self.page_area[len] - old_va[len]
-                        or self.page_area[axe]
+        local function goto_end(axis, _diff)
+            -- updates view area to the end of line (axis = x) or page (axis = y)
+            local len = axis == x and w or h
+            _diff = _diff or (axis == x and x_diff or y_diff)
+            new_va[axis] = _diff > 0
+                        and old_va[axis] + self.page_area[len] - old_va[len]
+                        or self.page_area[axis]
         end
         local function goto_next_line()
             new_va[y] = old_va[y] + y_pan_off
@@ -939,9 +944,11 @@ function ReaderPaging:onGotoPageRel(diff)
             end
         end
 
+        -- Move the view area towerds line end
         new_va[x] = old_va[x] + x_pan_off
         new_va[y] = old_va[y]
 
+        -- Handle cases when the view area gets out of page boundaries
         if not self.page_area:contains(new_va) then
             if not at_end(x) then
                 goto_end(x)
@@ -956,7 +963,27 @@ function ReaderPaging:onGotoPageRel(diff)
                 end
             end
         end
-        self.view:PanningUpdate(new_va.x - old_va.x, new_va.y - old_va.y)
+
+        -- signal panning update
+        local panned_x, panned_y = (new_va.x - old_va.x), (new_va.y - old_va.y)
+        self.view:PanningUpdate(panned_x, panned_y)
+
+        -- update dime area in ReaderView
+        if self.show_overlap_enable then
+            self.view.dim_area.h = new_va.h - math.abs(panned_y)
+            self.view.dim_area.w = new_va.w - math.abs(panned_x)
+            if panned_y < 0 then
+                self.view.dim_area.y = new_va.y - panned_y
+            else
+                self.view.dim_area.y = 0
+            end
+            if panned_x < 0 then
+                self.view.dim_area.x = new_va.x - panned_x
+            else
+                self.view.dim_area.x = 0
+            end
+        end
+
         return true  -- we're done
 
     elseif self.zoom_mode ~= "free" then  -- do nothing in "free" zoom mode
