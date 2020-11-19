@@ -894,7 +894,7 @@ function ReaderPaging:onGotoPageRel(diff)
                 x_diff = -x_diff
             end
         elseif bottom_to_top then
-                y_diff = -y_diff
+            y_diff = -y_diff
         end
 
         if right_to_left then
@@ -919,7 +919,7 @@ function ReaderPaging:onGotoPageRel(diff)
             _diff = _diff or (axe == x and x_diff or y_diff)
             new_va[axe] = _diff > 0
                         and old_va[axe] + self.page_area[len] - old_va[len]
-                        or self.page_area[x]
+                        or self.page_area[axe]
         end
         local function goto_next_line()
             new_va[y] = old_va[y] + y_pan_off
