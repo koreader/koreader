@@ -482,7 +482,7 @@ You can set how many lines are shown.]])
             hold_callback = function()
                 UIManager:show(ConfirmBox:new{
                     text = T(
-                        hide_nonlinear_text .. _("\n\nSet default hide non-linear fragments to %1?"),
+                        hide_nonlinear_text .. "\n\n" .. _("Set default hide non-linear fragments to %1?"),
                         self.hide_nonlinear_flows and _("enabled") or _("disabled")
                     ),
                     ok_callback = function()
