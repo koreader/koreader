@@ -346,7 +346,7 @@ function ReaderZooming:getZoom(pageno)
             if zoom < 0 then return 0 end
         end
     end
-    return zoom
+    return zoom, zoom_w
 end
 
 function ReaderZooming:getRegionalZoomCenter(pageno, pos)
@@ -420,10 +420,11 @@ end
 
 function ReaderZooming:_zoomFactorChange()
     local title_text = _("Set Zoom factor")
+    local zoom, zoom_w = self:getZoom(self.current_page)
     UIManager:show(
         SpinWidget:new{
             width = math.floor(Screen:getWidth() * 0.6),
-            value = self.zoom_factor,
+            value = zoom / zoom_w,
             value_min = 0.1,
             value_max = 10,
             value_step = 0.1,
@@ -432,6 +433,7 @@ function ReaderZooming:_zoomFactorChange()
             ok_text = title_text,
             title_text = title_text,
             callback = function(spin)
+                self:setZoomMode("pan")
                 self.ui:handleEvent(Event:new("ZoomPanUpdate", {zoom_factor = spin.value}))
                 self.ui:handleEvent(Event:new("RedrawCurrentPage"))
             end
@@ -527,12 +529,8 @@ function ReaderZooming:addToMainMenu(menu_items)
                 getZoomModeMenuItem(_("Zoom to fit page height"), "pageheight", true),
                 getZoomModeMenuItem(_("Zoom to fit content"), "content"),
                 getZoomModeMenuItem(_("Zoom to fit page"), "page", true),
-                getZoomModeMenuItem(_("Multicolumn / comics"), "pan"),
                 {
-                    text = _("Pan zoom settings"),
-                    enabled_func = function()
-                        return self.zoom_mode == "pan"
-                    end,
+                    text = _("Advanced"),
                     sub_item_table = {
                         zoomFactorMenuItem(_("Zoom factor")),
                         getZoomPanMenuItem(_("Horizontal overlap"), "zoom_pan_h_overlap"),
