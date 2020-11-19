@@ -532,7 +532,7 @@ function ReaderZooming:addToMainMenu(menu_items)
                 getZoomModeMenuItem(_("Zoom to fit page height"), "pageheight", true),
                 getZoomModeMenuItem(_("Zoom to fit content"), "content"),
                 getZoomModeMenuItem(_("Zoom to fit page"), "page", true),
-                getZoomModeMenuItem(_("Pan zoom"), "pan"),
+                getZoomModeMenuItem(_("Multi-column / comics"), "pan"),
                 {
                     text = _("Pan zoom settings"),
                     enabled_func = function()
