@@ -876,7 +876,6 @@ function ReaderPaging:onGotoPageRel(diff)
     elseif self.zoom_mode == "pan" then
         -- pan zoom mode
 
-        logger.dbg("ZOOM:", self.ui.document.view)
         local bottom_to_top = self.zoom_pan_bottom_to_top
         local h_progress = 1 - self.zoom_pan_h_overlap / 100
         local v_progress = 1 - self.zoom_pan_v_overlap / 100
@@ -906,9 +905,14 @@ function ReaderPaging:onGotoPageRel(diff)
         y_pan_off = Math.roundAwayFromZero(self.visible_area[h] * v_progress * y_diff)
 
         local function at_end(axe)
-            local len = axe == x and w or h
-            return old_va[axe] + old_va[len] >= self.page_area[axe] + self.page_area[len]
-                or old_va[axe] <= self.page_area[axe]
+            local len, _diff
+            if axe == x then
+                len, _diff = w, x_diff
+            else
+                len, _diff = h, y_diff
+            end
+            return old_va[axe] + old_va[len] + _diff > self.page_area[axe] + self.page_area[len]
+                or old_va[axe] + _diff < self.page_area[axe]
         end
         local function goto_end(axe, _diff)
             local len = axe == x and w or h
