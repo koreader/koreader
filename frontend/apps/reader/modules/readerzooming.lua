@@ -437,7 +437,6 @@ function ReaderZooming:_zoomFactorChange()
             ok_text = title_text,
             title_text = title_text,
             callback = function(spin)
-                self.zoom_factor = spin.value
                 self.ui:handleEvent(Event:new("ZoomPanUpdate", {zoom_factor = spin.value}))
                 self.ui:handleEvent(Event:new("RedrawCurrentPage"))
             end
