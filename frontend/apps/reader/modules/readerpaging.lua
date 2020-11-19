@@ -904,15 +904,15 @@ function ReaderPaging:onGotoPageRel(diff)
         x_pan_off = Math.roundAwayFromZero(self.visible_area[w] * h_progress * x_diff)
         y_pan_off = Math.roundAwayFromZero(self.visible_area[h] * v_progress * y_diff)
 
-        local function at_end(axe)
+        local function at_end(axis)
             local len, _diff
-            if axe == x then
+            if axis == x then
                 len, _diff = w, x_diff
             else
                 len, _diff = h, y_diff
             end
-            return old_va[axe] + old_va[len] + _diff > self.page_area[axe] + self.page_area[len]
-                or old_va[axe] + _diff < self.page_area[axe]
+            return old_va[axis] + old_va[len] + _diff > self.page_area[axis] + self.page_area[len]
+                or old_va[axis] + _diff < self.page_area[axis]
         end
         local function goto_end(axe, _diff)
             local len = axe == x and w or h
