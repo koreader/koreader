@@ -32,6 +32,13 @@ local ReaderZooming = InputContainer:new{
     -- with overlap of zoom_pan_h_overlap % (horizontally)
     -- and zoom_pan_v_overlap % (vertically).
     zoom_factor = 2,
+    zoom_pan_settings = {
+        "zoom_factor",
+        "zoom_pan_h_overlap",
+        "zoom_pan_v_overlap",
+        "zoom_pan_bottom_to_top",
+        "zoom_pan_direction_vertical",
+    },
     zoom_pan_h_overlap = 40,
     zoom_pan_v_overlap = 40,
     zoom_pan_bottom_to_top = nil,  -- true for bottom-to-top
@@ -104,13 +111,7 @@ function ReaderZooming:onReadSettings(config)
                     or G_reader_settings:readSetting("zoom_mode")
                     or self.DEFAULT_ZOOM_MODE
     self:setZoomMode(zoom_mode, true) -- avoid informative message on load
-    for _, setting in ipairs({
-            "zoom_factor",
-            "zoom_pan_h_overlap",
-            "zoom_pan_v_overlap",
-            "zoom_pan_bottom_to_top",
-            "zoom_pan_direction_vertical",
-    }) do
+    for _, setting in ipairs(self.zoom_pan_settings) do
         self[setting] = config:readSetting(setting) or
                     G_reader_settings:readSetting(setting) or
                     self[setting]
@@ -119,13 +120,7 @@ end
 
 function ReaderZooming:onSaveSettings()
     self.ui.doc_settings:saveSetting("zoom_mode", self.orig_zoom_mode or self.zoom_mode)
-    for _, setting in ipairs({
-            "zoom_factor",
-            "zoom_pan_h_overlap",
-            "zoom_pan_v_overlap",
-            "zoom_pan_bottom_to_top",
-            "zoom_pan_direction_vertical",
-    }) do
+    for _, setting in ipairs(self.zoom_pan_settings) do
         self.ui.doc_settings:saveSetting(setting, self[setting])
     end
 end
