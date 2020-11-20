@@ -504,7 +504,6 @@ function ReaderFooter:init()
         self.mode = self.mode_list.off
         self.view.footer_visible = false
         self:resetLayout()
-        self.footer_container.dimen.h = 0
         self.footer_text.height = 0
     end
     if self.settings.all_at_once then
@@ -512,9 +511,6 @@ function ReaderFooter:init()
         self:updateFooterTextGenerator()
         if self.settings.progress_bar_position and self.has_no_mode then
             self.footer_text.height = 0
-            if self.settings.disable_progress_bar then
-                self.footer_container.dimen.h = 0
-            end
         end
     else
         self:applyFooterMode()
@@ -839,9 +835,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 self.reclaim_height = self.settings.reclaim_height or false
                 -- refresh margins position
                 if self.has_no_mode then
-                    if self.settings.disable_progress_bar then
-                        self.footer_container.dimen.h = 0
-                    end
                     self.footer_text.height = 0
                     should_signal = true
                     self.genFooterText = footerTextGeneratorMap.empty
@@ -1852,12 +1845,12 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
     if self.settings.disable_progress_bar then
         if self.has_no_mode or text == "" then
             self.text_width = 0
-            self.footer_container.dimen.h = 0
             self.footer_text.height = 0
         else
             self.text_width = self.footer_text:getSize().w
             self.footer_text.height = self.footer_text:getSize().h
         end
+        self.progress_bar.height = 0
         self.progress_bar.width = 0
     elseif self.settings.progress_bar_position then
         if self.has_no_mode or text == "" then
