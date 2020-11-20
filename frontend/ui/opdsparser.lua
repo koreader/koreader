@@ -31,15 +31,17 @@ local function unescape(str)
 end
 
 function OPDSParser:createFlatXTable(xlex, curr_element)
+    print("OPDSParser:createFlatXTable", xlex, curr_element)
     curr_element = curr_element or {}
 
-    local curr_attr_name;
-    local attr_count = 0;
+    local curr_attr_name
+    local attr_count = 0
 
     -- start reading the thing
-    local txt
     for event, offset, size in xlex:Lexemes() do
-        txt = ffi.string(xlex.buf + offset, size)
+        print("event, offset, size:", event, offset, size)
+        local txt = ffi.string(xlex.buf + offset, size)
+        print("txt:", txt)
         if event == luxl.EVENT_START then
             if txt ~= "xml" then
                 -- does current element already have something
@@ -61,7 +63,7 @@ function OPDSParser:createFlatXTable(xlex, curr_element)
             curr_attr_name = unescape(txt)
         elseif event == luxl.EVENT_ATTR_VAL then
             curr_element[curr_attr_name] = unescape(txt)
-            attr_count = attr_count + 1;
+            attr_count = attr_count + 1
             curr_attr_name = nil
         elseif event == luxl.EVENT_TEXT then
             curr_element = unescape(txt)
@@ -73,6 +75,11 @@ function OPDSParser:createFlatXTable(xlex, curr_element)
 end
 
 function OPDSParser:parse(text)
+    print("OPDSParser:parse")
+    print("Orig text:")
+    print(text)
+    -- Murder Calibre's whole "content" block, because it's not XML, it's XHTML, and luxl doesn't like it one bit...
+    text = text:gsub('<content type="xhtml">(.-)%</content>', '')
     -- luxl cannot properly handle xml comments and we need first remove them
     text = text:gsub("<!--.--->", "")
     -- luxl prefers <br />, other two forms are valid in HTML,
@@ -86,7 +93,11 @@ function OPDSParser:parse(text)
     text = text:gsub("<!%[CDATA%[(.-)%]%]>", function (s)
         return s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;" } )
     end )
+    print("text:")
+    print(text)
     local xlex = luxl.new(text, #text)
+    print("xlex:")
+    print(xlex)
     return assert(self:createFlatXTable(xlex))
 end
 
