@@ -390,7 +390,7 @@ function OPDSBrowser:getCatalog(item_url, username, password)
     if not ok and catalog then
         logger.info("cannot get catalog info from", item_url, catalog)
         UIManager:show(InfoMessage:new{
-            text = T(_("Cannot get catalog info from %1"), (BD.url(item_url) or "")),
+            text = T(_("Cannot get catalog info from %1"), (item_url and BD.url(item_url) or "nil")),
         })
         return
     end
