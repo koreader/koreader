@@ -313,7 +313,6 @@ function CoverImage:addToMainMenu(menu_items)
                 checked_func = function()
                     return lfs.attributes(self.cover_image_fallback_path, "mode") == "file"
                 end,
-                help_text =  _("File to use when no cover is wanted (found ???) or book is excluded.\nLeave this blank to turn off the fallback image."),
                 keep_menu_open = true,
                 callback = function(menu)
                     local InputDialog = require("ui/widget/inputdialog")
@@ -337,7 +336,8 @@ function CoverImage:addToMainMenu(menu_items)
                                     callback = function()
                                         self.cover_image_fallback_path = sample_input:getInputText()
                                         G_reader_settings:saveSetting("cover_image_fallback_path", self.cover_image_fallback_path)
-                                        if lfs.attributes(self.cover_image_fallback_path, "mode") ~= "file" then
+                                        if lfs.attributes(self.cover_image_fallback_path, "mode") ~= "file"
+                                            and self.cover_image_fallback_path ~= "" then
                                             UIManager:show(InfoMessage:new{
                                                 text = T(_("\"%1\" \nis not a valid image file!\nA valid fallback image is required in Cover-Image"),
                                                     self.cover_image_fallback_path),
