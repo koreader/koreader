@@ -1,83 +1,22 @@
 local BBoxWidget = require("ui/widget/bboxwidget")
 local Blitbuffer = require("ffi/blitbuffer")
-local Button = require("ui/widget/button")
+local ButtonTable = require("ui/widget/buttontable")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local Event = require("ui/event")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local HorizontalSpan = require("ui/widget/horizontalspan")
-local LeftContainer = require("ui/widget/container/leftcontainer")
 local Math = require("optmath")
-local RightContainer = require("ui/widget/container/rightcontainer")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local Screen = require("device").screen
 local _ = require("gettext")
 
-local PageCropDialog = VerticalGroup:new{
-    ok_text = _("OK"),
-    cancel_text = _("Cancel"),
-    ok_callback = function() end,
-    cancel_callback = function() end,
-    button_width = math.floor(Screen:scaleBySize(70)),
-}
-
-function PageCropDialog:init()
-    local horizontal_group = HorizontalGroup:new{}
-    local ok_button = Button:new{
-        text = self.ok_text,
-        callback = self.ok_callback,
-        width = self.button_width,
-        text_font_face = "cfont",
-        text_font_size = 20,
-        show_parent = self,
-    }
-    local cancel_button = Button:new{
-        text = self.cancel_text,
-        callback = self.cancel_callback,
-        width = self.button_width,
-        text_font_face = "cfont",
-        text_font_size = 20,
-        show_parent = self,
-    }
-    local ok_container = RightContainer:new{
-        dimen = Geom:new{ w = math.floor(Screen:getWidth()*0.33), h = math.floor(Screen:getHeight()/12)},
-        ok_button,
-    }
-    local cancel_container = LeftContainer:new{
-        dimen = Geom:new{ w = math.floor(Screen:getWidth()*0.33), h = math.floor(Screen:getHeight()/12)},
-        cancel_button,
-    }
-    table.insert(horizontal_group, ok_container)
-    table.insert(horizontal_group, HorizontalSpan:new{ width = math.floor(Screen:getWidth()*0.34)})
-    table.insert(horizontal_group, cancel_container)
-    self[2] = FrameContainer:new{
-        horizontal_group,
-        background = Blitbuffer.COLOR_WHITE,
-        bordersize = 0,
-        padding = 0,
-    }
-end
-
-function PageCropDialog:onCloseWidget()
-    UIManager:setDirty(nil, function()
-        return "partial", self[1].dimen:combine(self[2].dimen)
-    end)
-    return true
-end
-
-function PageCropDialog:onShow()
-    UIManager:setDirty(self, function()
-        return "ui", self[1].dimen:combine(self[2].dimen)
-    end)
-    return true
-end
-
 local ReaderCropping = InputContainer:new{}
 
 function ReaderCropping:onPageCrop(mode)
     self.ui:handleEvent(Event:new("CloseConfigMenu"))
+
     -- backup original zoom mode as cropping use "page" zoom mode
     self.orig_zoom_mode = self.view.zoom_mode
     if mode == "auto" then
@@ -96,6 +35,9 @@ function ReaderCropping:onPageCrop(mode)
     -- backup original view bgcolor
     self.orig_view_bgcolor = self.view.outer_page_color
     self.view.outer_page_color = Blitbuffer.COLOR_DARK_GRAY
+    -- backup original footer visibility
+    self.orig_view_footer_visibility = self.view.footer_visible
+    self.view.footer_visible = false
     -- backup original page scroll
     self.orig_page_scroll = self.view.page_scroll
     self.view.page_scroll = false
@@ -111,20 +53,59 @@ function ReaderCropping:onPageCrop(mode)
     else
         self.ui:handleEvent(Event:new("SetZoomMode", "page", "cropping"))
     end
-    self.ui:handleEvent(Event:new("SetDimensions",
-        Geom:new{w = Screen:getWidth(), h = math.floor(Screen:getHeight()*11/12)})
-    )
+
+    -- prepare bottom buttons so we know the size available for the page above it
+    local button_table = ButtonTable:new{
+        width = Screen:getWidth(),
+        button_font_face = "cfont",
+        button_font_size = 20,
+        buttons = {{
+            {
+                text = _("Cancel"),
+                callback = function() self:onCancelPageCrop() end,
+            },
+            {
+                text = _("Apply crop"),
+                callback = function() self:onConfirmPageCrop() end,
+            },
+        }},
+        zero_sep = true,
+        show_parent = self,
+    }
+    local button_container = FrameContainer:new{
+        margin = 0,
+        bordersize = 0,
+        padding = 0,
+        background = Blitbuffer.COLOR_WHITE,
+        CenterContainer:new{
+            dimen = Geom:new{
+                w = Screen:getWidth(),
+                h = button_table:getSize().h,
+            },
+            button_table,
+        }
+    }
+    -- height available for page
+    local page_container_h = Screen:getHeight() - button_table:getSize().h
+    local page_dimen = Geom:new{
+        w = Screen:getWidth(),
+        h = page_container_h,
+    }
+    -- resize document view to the available size
+    self.ui:handleEvent(Event:new("SetDimensions", page_dimen))
+
+    -- finalize crop dialog
     self.bbox_widget = BBoxWidget:new{
-        crop = self,
         ui = self.ui,
         view = self.view,
         document = self.document,
     }
-    self.crop_dialog = PageCropDialog:new{
+    self.crop_dialog = VerticalGroup:new{
+        align = "left",
         self.bbox_widget,
-        ok_callback = function() self:onConfirmPageCrop() end,
-        cancel_callback = function() self:onCancelPageCrop() end,
+        button_container,
     }
+
     UIManager:show(self.crop_dialog)
     return true
 end
@@ -152,6 +133,8 @@ function ReaderCropping:exitPageCrop(confirmed)
     self.ui:handleEvent(Event:new("RestoreHinting"))
     -- restore page scroll
     self.view.page_scroll = self.orig_page_scroll
+    -- restore footer visibility
+    self.view.footer_visible = self.orig_view_footer_visibility
     -- restore view bgcolor
     self.view.outer_page_color = self.orig_view_bgcolor
     -- restore reflow mode
