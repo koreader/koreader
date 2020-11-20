@@ -2118,19 +2118,15 @@ end
 function ReaderFooter:refreshFooter(refresh, signal)
     self:updateFooterContainer()
     self:resetLayout(true)
-    -- With CRe, if we signal, the event we send will trigger a full repaint anyway, so we should be able to skip this one.
+    -- If we signal, the event we send will trigger a full repaint anyway, so we should be able to skip this one.
     -- We *do* need to ensure we at least re-compute the footer layout, though, especially when going from visible to invisible...
-    if self.ui.document.provider == "crengine" then
-        self:onUpdateFooter(refresh and not signal, refresh and signal)
-        if signal then
+    self:onUpdateFooter(refresh and not signal, refresh and signal)
+    if signal then
+        if self.ui.document.provider == "crengine" then
+            -- This will ultimately trigger an UpdatePos, hence a ReaderUI repaint.
             self.ui:handleEvent(Event:new("SetPageBottomMargin", self.ui.document.configurable.b_page_margin))
-        end
-    else
-        -- Otherwise, we do need a real refresh *now*, as only with CRe will SetPageBottomMargin ultimately trigger an UpdatePos...
-        self:onUpdateFooter(refresh, refresh and signal)
-        -- And, if signal, we need to repaint ReaderUI, too, in case the new footer is smaller than in its previous state.
-        if signal then
-            --self.ui:handleEvent(Event:new("RedrawCurrentPage", self.ui.document.configurable.b_page_margin))
+        else
+            -- No fancy chain of events outside of CRe, just ask for a ReaderUI repaint ourselves ;).
             UIManager:setDirty(self.view.dialog, "partial")
         end
     end
