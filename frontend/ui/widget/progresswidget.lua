@@ -155,7 +155,6 @@ function ProgressWidget:getPercentageFromPosition(pos)
 end
 
 function ProgressWidget:setHeight(height)
-    print("ProgressWidget:setHeight", height)
     self.height = Screen:scaleBySize(height)
     -- Adjust vertical margin and border size to ensure there's
     -- at least 1 pixel left for the actual bar

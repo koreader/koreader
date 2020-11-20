@@ -692,7 +692,6 @@ function ReaderFooter:resetLayout(force_reset)
 end
 
 function ReaderFooter:getHeight()
-    print("ReaderFooter:getHeight")
     if self.footer_content then
         -- NOTE: self.footer_content is self.vertical_frame + self.bottom_padding,
         --       self.vertical_frame includes self.text_container (which includes self.footer_text)
@@ -1896,7 +1895,6 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             -- So, instead, rely on self:getHeight to compute self.footer_content's height early...
             refresh_dim = self.dimen
             refresh_dim.h = self:getHeight()
-            print("self:getHeight ->", refresh_dim.h)
             refresh_dim.y = self._saved_screen_height - refresh_dim.h
         end
         -- If we're making the footer visible (or it already is), we don't need to repaint ReaderUI behind it
