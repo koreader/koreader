@@ -65,7 +65,7 @@ function ReaderCropping:onPageCrop(mode)
                 callback = function() self:onCancelPageCrop() end,
             },
             {
-                text = _("OK"),
+                text = _("Apply crop"),
                 callback = function() self:onConfirmPageCrop() end,
             },
         }},
