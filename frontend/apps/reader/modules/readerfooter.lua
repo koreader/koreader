@@ -840,8 +840,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                     self.genFooterText = footerTextGeneratorMap.empty
                     self.mode = self.mode_list.off
                 elseif prev_has_no_mode then
-                    self.footer_container.dimen.h = self.height
-                    self.footer_text.height = self.height
                     if self.settings.all_at_once then
                         self.mode = self.mode_list.page_progress
                         self:applyFooterMode()
@@ -1379,8 +1377,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 callback = function()
                     self.settings.disable_progress_bar = not self.settings.disable_progress_bar
                     if not self.settings.disable_progress_bar then
-                        self.footer_container.dimen.h = self.height
-                        self.footer_text.height = self.height
                         self:setTocMarkers()
                         self.mode = self.mode_list.page_progress
                         self:applyFooterMode()
