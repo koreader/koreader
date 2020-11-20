@@ -226,7 +226,6 @@ local STATE_FUNCS = {}
 local function next_char(ps, state, verbose)
     local i = ps.ix
     if i >= ps.bufsz then
-        print("luxl:next_char i >= ps.bufsz", i, ps.bufsz)
         return EVENT_END_DOC, 0, i, state
     end
     ps.i = i
@@ -341,10 +340,6 @@ local luxl = {
 }
 local luxl_mt = { __index = luxl }
 
-function luxl_err_handler(index, state, c)
-    print("luxl:ErrHandler @", index, state, c)
-end
-
 function luxl.new(buffer, bufflen)
     local newone = {
         buf = ffi.cast("const uint8_t *", buffer); -- pointer to "uint8_t *" buffer (0 based)
@@ -355,7 +350,7 @@ function luxl.new(buffer, bufflen)
         markix = 0;            -- offset of current item of interest
         marksz = 0;            -- size of current item of interest
         MsgHandler = nil;      -- Routine to handle messages
-        ErrHandler = luxl_err_handler;      -- Routine to call when there's an error
+        ErrHandler = nil;      -- Routine to call when there's an error
         EventHandler = nil;
         ps = ffi.new('struct parse_state', {
             buf = buffer,
@@ -414,9 +409,6 @@ function luxl:GetNext()
         event, state_f, c = next_char(ps, state_f, self.MsgHandler)
         -- update state id.
         self.state = STATE_FUNCS[state_f]
-        print("luxl:GetNext self.state:", self.state)
-        print("luxl:GetNext event:", event)
-        print("luxl:GetNext c:", c)
         if not event then
             -- handle error
             -- default to start state

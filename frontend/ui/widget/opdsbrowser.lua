@@ -23,8 +23,6 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local dump = require("dump")
-
 local CatalogCacheItem = CacheItem:new{
     size = 1024,  -- fixed size for catalog item
 }
@@ -308,7 +306,6 @@ function OPDSBrowser:genItemTableFromRoot()
 end
 
 function OPDSBrowser:fetchFeed(item_url, username, password, method)
-    print("OPDSBrowser:fetchFeed", item_url, username, password, method)
     local request, sink = {}, {}
     local parsed = url.parse(item_url)
     local hostname = parsed.host
@@ -364,7 +361,6 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
 end
 
 function OPDSBrowser:parseFeed(item_url, username, password)
-    print("OPDSBrowser:parseFeed", item_url, username, password)
     local feed
     local feed_last_modified = self:fetchFeed(item_url, username, password, "HEAD")
     local hash = "opds|catalog|" .. item_url
@@ -385,13 +381,11 @@ function OPDSBrowser:parseFeed(item_url, username, password)
         end
     end
     if feed then
-        print("Pre-parse:", dump(feed))
         return OPDSParser:parse(feed)
     end
 end
 
 function OPDSBrowser:getCatalog(item_url, username, password)
-    print("OPDSBrowser:getCatalog", item_url, username, password)
     local ok, catalog = pcall(self.parseFeed, self, item_url, username, password)
     if not ok and catalog then
         logger.info("cannot get catalog info from", item_url or "nil", catalog)
@@ -407,7 +401,6 @@ function OPDSBrowser:getCatalog(item_url, username, password)
 end
 
 function OPDSBrowser:genItemTableFromURL(item_url, username, password)
-    print("OPDSBrowser:genItemTableFromURL", item_url, username, password)
     local catalog = self:getCatalog(item_url, username, password)
     return self:genItemTableFromCatalog(catalog, item_url, username, password)
 end
@@ -525,7 +518,6 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
 end
 
 function OPDSBrowser:updateCatalog(item_url, username, password)
-    print("OPDSBrowser:updateCatalog", item_url, username, password)
     local menu_table = self:genItemTableFromURL(item_url, username, password)
     if #menu_table > 0 then
         self:switchItemTable(nil, menu_table)
@@ -537,7 +529,6 @@ function OPDSBrowser:updateCatalog(item_url, username, password)
 end
 
 function OPDSBrowser:appendCatalog(item_url, username, password)
-    print("OPDSBrowser:appendCatalog", item_url, username, password)
     local new_table = self:genItemTableFromURL(item_url, username, password)
     if #new_table == 0 then return false end
 
@@ -697,7 +688,6 @@ function OPDSBrowser:browse(browse_url, username, password)
 end
 
 function OPDSBrowser:browseSearchable(browse_url, username, password)
-    print("OPDSBrowser:browseSearchable", browse_url, username, password)
     self.search_server_dialog = InputDialog:new{
         title = _("Search OPDS catalog"),
         input = "",
@@ -721,7 +711,6 @@ function OPDSBrowser:browseSearchable(browse_url, username, password)
                         UIManager:close(self.search_server_dialog)
                         local search = self.search_server_dialog:getInputText():gsub(" ", "+")
                         local searched_url = browse_url:gsub("%%s", search)
-                        print("OPDSBrowser:browseSearchable on Search", searched_url, search)
                         self:browse(searched_url, username, password)
                     end,
                 },
@@ -745,12 +734,10 @@ function OPDSBrowser:onMenuSelect(item)
         local connect_callback
         if item.searchable then
             connect_callback = function()
-                print("OPDSBrowser:onMenuSelect() on searchable item ->", item.url)
                 self:browseSearchable(item.url, item.username, item.password)
             end
         else
             connect_callback = function()
-                print("OPDSBrowser:onMenuSelect() on !searchable item ->", item.url)
                 self:browse(item.url, item.username, item.password)
             end
         end
@@ -876,7 +863,6 @@ function OPDSBrowser:onReturn()
         local path = self.paths[#self.paths]
         if path then
             -- return to last path
-            print("OPDSBrowser:onReturn to path.url:", path.url)
             self:updateCatalog(path.url, path.username, path.password)
         else
             -- return to root path, we simply reinit opdsbrowser
@@ -893,7 +879,6 @@ function OPDSBrowser:onNext()
     while page_num == self.page_num do
         local hrefs = self.item_table.hrefs
         if hrefs and hrefs.next then
-            print("OPDSBrowser:onNext: hrefs.next", hrefs.next)
             if not self:appendCatalog(hrefs.next, self.item_table.username, self.item_table.password) then
                 break  -- reach end of paging
             end

@@ -31,7 +31,6 @@ local function unescape(str)
 end
 
 function OPDSParser:createFlatXTable(xlex, curr_element)
-    print("OPDSParser:createFlatXTable", xlex, curr_element)
     curr_element = curr_element or {}
 
     local curr_attr_name
@@ -39,9 +38,7 @@ function OPDSParser:createFlatXTable(xlex, curr_element)
 
     -- start reading the thing
     for event, offset, size in xlex:Lexemes() do
-        print("event, offset, size:", event, offset, size)
         local txt = ffi.string(xlex.buf + offset, size)
-        print("txt:", txt)
         if event == luxl.EVENT_START then
             if txt ~= "xml" then
                 -- does current element already have something
@@ -75,9 +72,6 @@ function OPDSParser:createFlatXTable(xlex, curr_element)
 end
 
 function OPDSParser:parse(text)
-    print("OPDSParser:parse")
-    print("Orig text:")
-    print(text)
     -- Murder Calibre's whole "content" block, because it's not XML, it's XHTML, and luxl doesn't like it one bit...
     text = text:gsub('<content type="xhtml">(.-)%</content>', '')
     -- luxl cannot properly handle xml comments and we need first remove them
@@ -93,11 +87,7 @@ function OPDSParser:parse(text)
     text = text:gsub("<!%[CDATA%[(.-)%]%]>", function (s)
         return s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;" } )
     end )
-    print("text:")
-    print(text)
     local xlex = luxl.new(text, #text)
-    print("xlex:")
-    print(xlex)
     return assert(self:createFlatXTable(xlex))
 end
 
