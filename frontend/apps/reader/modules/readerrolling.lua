@@ -469,7 +469,7 @@ You can set how many lines are shown.]])
         sub_item_table = page_overlap_menu,
     }
     if self.ui.document:hasNonLinearFlows() then
-        local hide_nonlinear_text = _("When this option is enabled, if a document contains non-linear fragments, they will be hidden from the normal page flow, but they are still accessible through links, Toc or Go to. This currently works only in single-page, non-scrolling mode.")
+        local hide_nonlinear_text = _("When hide non-linear fragments is enabled, any non-linear fragments will be hidden from the normal page flow. Such fragments will always remain accessible through links, the table of contents and the 'Go to' dialog. This only works in single-page mode.")
         menu_items.hide_nonlinear_flows = {
             text = _("Hide non-linear fragments"),
             enabled_func = function()
@@ -482,7 +482,7 @@ You can set how many lines are shown.]])
             hold_callback = function()
                 UIManager:show(ConfirmBox:new{
                     text = T(
-                        hide_nonlinear_text .. _("\n\nSet default hide non-linear fragments to %1?"),
+                        hide_nonlinear_text .. "\n\n" .. _("Set default hide non-linear fragments to %1?"),
                         self.hide_nonlinear_flows and _("enabled") or _("disabled")
                     ),
                     ok_callback = function()
