@@ -673,13 +673,17 @@ function ReaderFooter:resetLayout(force_reset)
     if self.separator_line then
         self.separator_line.dimen.w = new_screen_width - 2 * self.horizontal_margin
     end
-    local bar_height
-    if self.settings.progress_style_thin then
-        bar_height = self.settings.progress_style_thin_height or PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT
+    if self.settings.disable_progress_bar then
+        self.progress_bar.height = 0
     else
-        bar_height = self.settings.progress_style_thick_height or PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT
+        local bar_height
+        if self.settings.progress_style_thin then
+            bar_height = self.settings.progress_style_thin_height or PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT
+        else
+            bar_height = self.settings.progress_style_thick_height or PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT
+        end
+        self.progress_bar:setHeight(bar_height)
     end
-    self.progress_bar:setHeight(bar_height)
 
     self.horizontal_group:resetLayout()
     self.footer_positioner.dimen.w = new_screen_width
