@@ -692,6 +692,7 @@ function ReaderFooter:resetLayout(force_reset)
 end
 
 function ReaderFooter:getHeight()
+    print("ReaderFooter:getHeight")
     if self.footer_content then
         -- NOTE: self.footer_content is self.vertical_frame + self.bottom_padding,
         --       self.vertical_frame includes self.text_container (which includes self.footer_text)
@@ -1876,13 +1877,6 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
         self.progress_bar.width = math.floor(
             self._saved_screen_width - self.text_width - self.settings.progress_margin_width*2)
     end
-    local bar_height
-    if self.settings.progress_style_thin then
-        bar_height = self.settings.progress_style_thin_height or PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT
-    else
-        bar_height = self.settings.progress_style_thick_height or PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT
-    end
-    self.progress_bar:setHeight(bar_height)
 
     if self.separator_line then
         self.separator_line.dimen.w = self._saved_screen_width - 2 * self.horizontal_margin
@@ -1909,6 +1903,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             -- So, instead, rely on self:getHeight to compute self.footer_content's height early...
             refresh_dim = self.dimen
             refresh_dim.h = self:getHeight()
+            print("self:getHeight ->", refresh_dim.h)
             refresh_dim.y = self._saved_screen_height - refresh_dim.h
         end
         -- If we're making the footer visible (or it already is), we don't need to repaint ReaderUI behind it
