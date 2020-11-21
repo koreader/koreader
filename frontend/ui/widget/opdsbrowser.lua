@@ -498,7 +498,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                 end
             end
             if author then
-                item.text = title .. "\n" .. author
+                item.text = title .. " - " .. author
             end
         end
         item.title = title
