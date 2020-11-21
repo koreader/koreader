@@ -43,6 +43,38 @@ local KoptOptions = {
         icon = "resources/icons/appbar.crop.large.png",
         options = {
             {
+                name = "trim_page",
+                name_text = S.PAGE_CROP,
+                -- manual=0, auto=1, semi-auto=2, none=3
+                -- ordered from least to max cropping done or possible
+                toggle = {S.NONE, S.AUTO, S.SEMIAUTO, S.MANUAL},
+                alternate = false,
+                values = {3, 1, 2, 0},
+                default_value = DKOPTREADER_CONFIG_TRIM_PAGE,
+                enabled_func = Device.isTouchDevice,
+                event = "PageCrop",
+                args = {"none", "auto", "semi-auto", "manual"},
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Allows cropping blank page margins in the original document.
+This might be needed on scanned documents, that may have speckles or fingerprints in the margins, to be able to use zoom to fit content width.
+- 'none' does not cut the original document margins.
+- 'auto' finds content area automatically.
+- 'semi-auto" finds content area automatically, inside some larger area defined manually.
+- 'manual" uses the area defined manually as-is.
+
+In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd page number, and once on an even page number (these areas will then be used for all odd, or even, page numbers).]]),
+            },
+            {
+                name = "page_margin",
+                name_text = S.PAGE_MARGIN,
+                toggle = {S.SMALL, S.MEDIUM, S.LARGE},
+                values = {0.05, 0.10, 0.25},
+                default_value = DKOPTREADER_CONFIG_PAGE_MARGIN,
+                event = "MarginUpdate",
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set margins to be applied after page-crop and zoom modes are applied.]]),
+            },
+            {
                 name = "zoom_mode",
                 name_text = _("Zoom to fit"),
                 toggle = {_("width"), _("height"), _("columns"), _("rows"), _("overlap")},
@@ -76,38 +108,6 @@ local KoptOptions = {
                 args = {7, 6, 5, 4, 3, 2, 1, 0},
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set zoom direction.]]),
-            },
-            {
-                name = "trim_page",
-                name_text = S.PAGE_CROP,
-                -- manual=0, auto=1, semi-auto=2, none=3
-                -- ordered from least to max cropping done or possible
-                toggle = {S.NONE, S.AUTO, S.SEMIAUTO, S.MANUAL},
-                alternate = false,
-                values = {3, 1, 2, 0},
-                default_value = DKOPTREADER_CONFIG_TRIM_PAGE,
-                enabled_func = Device.isTouchDevice,
-                event = "PageCrop",
-                args = {"none", "auto", "semi-auto", "manual"},
-                name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[Allows cropping blank page margins in the original document.
-This might be needed on scanned documents, that may have speckles or fingerprints in the margins, to be able to use zoom to fit content width.
-- 'none' does not cut the original document margins.
-- 'auto' finds content area automatically.
-- 'semi-auto" finds content area automatically, inside some larger area defined manually.
-- 'manual" uses the area defined manually as-is.
-
-In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd page number, and once on an even page number (these areas will then be used for all odd, or even, page numbers).]]),
-            },
-            {
-                name = "page_margin",
-                name_text = S.PAGE_MARGIN,
-                toggle = {S.SMALL, S.MEDIUM, S.LARGE},
-                values = {0.05, 0.10, 0.25},
-                default_value = DKOPTREADER_CONFIG_PAGE_MARGIN,
-                event = "MarginUpdate",
-                name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[Set margins to be applied after page-crop and zoom modes are applied.]]),
             },
         }
     },
