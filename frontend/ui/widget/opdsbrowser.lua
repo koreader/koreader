@@ -78,7 +78,7 @@ function OPDSBrowser:init()
         servers = {
           {
             title = "Project Gutenberg",
-            url = "http://m.gutenberg.org/ebooks.opds/?format=opds",
+            url = "https://m.gutenberg.org/ebooks.opds/?format=opds",
           },
           {
             title = "Project Gutenberg [Searchable]",
@@ -91,7 +91,7 @@ function OPDSBrowser:init()
           },
           {
              title = "ManyBooks",
-             url = "http://manybooks.net/opds/index.php",
+             url = "https://manybooks.net/opds/index.php",
           },
           {
              title = "Internet Archive",
@@ -99,11 +99,11 @@ function OPDSBrowser:init()
           },
           {
              title = "Flibusta (Russian)",
-             url = "http://www.flibusta.is/opds",
+             url = "https://www.flibusta.is/opds",
           },
           {
              title = "Flibusta [Ru] [Searchable]",
-             url = "http://www.flibusta.is/opds/search?searchTerm=%s",
+             url = "https://www.flibusta.is/opds/search?searchTerm=%s",
              searchable = true,
           },
           {
