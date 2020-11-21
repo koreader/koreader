@@ -77,7 +77,7 @@ function OPDSParser:parse(text)
     -- There's also a high probability of finding orphaned tags or badly nested ones in there, which will screw everything up.
     text = text:gsub('<content type="xhtml">.-</content>', '')
     -- luxl cannot properly handle xml comments and we need first remove them
-    text = text:gsub("<!--.--->", "")
+    text = text:gsub("<!%-%-.-%-%->", "")
     -- luxl prefers <br />, other two forms are valid in HTML, but will kick luxl's ass
     text = text:gsub("<br>", "<br />")
     text = text:gsub("<br/>", "<br />")
