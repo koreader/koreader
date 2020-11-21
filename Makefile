@@ -355,6 +355,10 @@ androidupdate: all
 	# in runtime luajit-launcher's libluajit.so will be loaded
 	-rm $(INSTALL_DIR)/koreader/libs/libluajit.so
 
+	# shared libraries are stored as raw assets
+	rm -rf $(ANDROID_LAUNCHER_DIR)assets/libs
+	cp -pR $(INSTALL_DIR)/koreader/libs $(ANDROID_LAUNCHER_DIR)/assets
+
 	# assets are compressed manually and stored inside the APK.
 	cd $(INSTALL_DIR)/koreader && 7z a -l -m0=lzma2 -mx=9 \
 		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).7z * \
@@ -364,6 +368,7 @@ androidupdate: all
 		-xr!*data/tessdata$ \
 		-xr!*history$ \
 		-xr!*l10n/templates$ \
+		-xr!*libs$ \
 		-xr!*ota$ \
 		-xr!*resources/fonts* \
 		-xr!*resources/icons/src* \
