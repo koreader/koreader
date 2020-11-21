@@ -73,7 +73,7 @@ end
 
 function OPDSParser:parse(text)
     -- Murder Calibre's whole "content" block, because it's not XML, it's XHTML, and luxl doesn't like it one bit...
-    text = text:gsub('<content type="xhtml">(.-)%</content>', '')
+    text = text:gsub('<content type="xhtml">.-</content>', '')
     -- luxl cannot properly handle xml comments and we need first remove them
     text = text:gsub("<!--.--->", "")
     -- luxl prefers <br />, other two forms are valid in HTML,
