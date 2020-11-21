@@ -74,7 +74,7 @@ end
 function OPDSParser:parse(text)
     -- Murder Calibre's whole "content" block, because luxl doesn't really deal well with various XHTML quirks,
     -- as the list of crappy replacements below attests to...
-    -- There's also a high probability of finding orphaned tags in there, which will screw everything up.
+    -- There's also a high probability of finding orphaned tags or badly nested ones in there, which will screw everything up.
     text = text:gsub('<content type="xhtml">.-</content>', '')
     -- luxl cannot properly handle xml comments and we need first remove them
     text = text:gsub("<!--.--->", "")
