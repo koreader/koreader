@@ -86,6 +86,8 @@ function OPDSParser:parse(text)
     text = text:gsub("<hr/>", "<hr />")
     -- It's also allergic to orphaned <em/> (As opposed to a balanced <em></em> pair)...
     text = text:gsub("<em/>", "")
+    -- Let's assume it might also happen to strong...
+    text = text:gsub("<strong/>", "")
     -- some OPDS catalogs wrap text in a CDATA section, remove it as it causes parsing problems
     text = text:gsub("<!%[CDATA%[(.-)%]%]>", function (s)
         return s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;" } )
