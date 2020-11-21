@@ -45,8 +45,6 @@ local KoptOptions = {
             {
                 name = "zoom_mode",
                 name_text = _("Zoom to fit"),
-                -- manual=0, auto=1, semi-auto=2, none=3
-                -- ordered from least to max cropping done or possible
                 toggle = {_("width"), _("height"), _("columns"), _("rows"), _("overlap")},
                 alternate = false,
                 values = {4, 3, 2, 1, 0},
@@ -60,15 +58,21 @@ local KoptOptions = {
             {
                 name = "zoom_direction",
                 name_text = _("Zoom direction"),
-                -- manual=0, auto=1, semi-auto=2, none=3
-                -- ordered from least to max cropping done or possible
-                toggle = {_("LRTB"), _("TBLR"), _("RLTB"), _("TBRL"), _("LRBT"), _("BTLR"), _("RLBT"), _("BTRL")},
+                -- toggle = {_("LRTB"), _("TBLR"), _("RLTB"), _("TBRL"), _("LRBT"), _("BTLR"), _("RLBT"), _("BTRL")},
+                item_icons = {
+                    "resources/icons/direction.LRTB.png",
+                    "resources/icons/direction.TBLR.png",
+                    "resources/icons/direction.LRBT.png",
+                    "resources/icons/direction.BTLR.png",
+                    "resources/icons/direction.BTRL.png",
+                    "resources/icons/direction.RLBT.png",
+                    "resources/icons/direction.TBRL.png",
+                    "resources/icons/direction.RLTB.png",
+                },
                 alternate = false,
                 values = {7, 6, 5, 4, 3, 2, 1, 0},
                 default_value = 7,
-                enabled_func = Device.isTouchDevice,
                 event = "SetZoomPan",
-                -- args = {"lrtb", "tblr", "rltb", "tbrl", "lrbt", "btlr", "lrbt", "btlr"},
                 args = {7, 6, 5, 4, 3, 2, 1, 0},
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set zoom direction.]]),

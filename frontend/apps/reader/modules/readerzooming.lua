@@ -604,12 +604,12 @@ function ReaderZooming:onSetZoomPan(settings, no_redraw)
         local zoom_direction = {
             [7] = {right_to_left = false, zoom_pan_bottom_to_top = false, zoom_pan_direction_vertical = false},
             [6] = {right_to_left = false, zoom_pan_bottom_to_top = false, zoom_pan_direction_vertical = true },
-            [5] = {right_to_left = true,  zoom_pan_bottom_to_top = false, zoom_pan_direction_vertical = false},
-            [4] = {right_to_left = true,  zoom_pan_bottom_to_top = false, zoom_pan_direction_vertical = true },
-            [3] = {right_to_left = false, zoom_pan_bottom_to_top = true,  zoom_pan_direction_vertical = false},
-            [2] = {right_to_left = false, zoom_pan_bottom_to_top = true,  zoom_pan_direction_vertical = true },
-            [1] = {right_to_left = true,  zoom_pan_bottom_to_top = true,  zoom_pan_direction_vertical = false},
-            [0] = {right_to_left = true,  zoom_pan_bottom_to_top = true,  zoom_pan_direction_vertical = true },
+            [5] = {right_to_left = false, zoom_pan_bottom_to_top = true,  zoom_pan_direction_vertical = false},
+            [4] = {right_to_left = false, zoom_pan_bottom_to_top = true,  zoom_pan_direction_vertical = true },
+            [3] = {right_to_left = true,  zoom_pan_bottom_to_top = true,  zoom_pan_direction_vertical = true },
+            [2] = {right_to_left = true,  zoom_pan_bottom_to_top = true,  zoom_pan_direction_vertical = false},
+            [1] = {right_to_left = true,  zoom_pan_bottom_to_top = false, zoom_pan_direction_vertical = true },
+            [0] = {right_to_left = true,  zoom_pan_bottom_to_top = false, zoom_pan_direction_vertical = false},
         }
         settings = zoom_direction[settings]
     end
