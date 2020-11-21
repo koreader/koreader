@@ -44,7 +44,7 @@ local KoptOptions = {
         options = {
             {
                 name = "zoom_mode",
-                name_text = _("Zoom"),
+                name_text = _("Zoom to fit"),
                 -- manual=0, auto=1, semi-auto=2, none=3
                 -- ordered from least to max cropping done or possible
                 toggle = {_("width"), _("height"), _("columns"), _("rows"), _("overlap")},
