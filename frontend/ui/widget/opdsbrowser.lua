@@ -87,7 +87,7 @@ function OPDSBrowser:init()
           },
           {
              title = "Feedbooks",
-             url = "http://www.feedbooks.com/publicdomain/catalog.atom",
+             url = "https://catalog.feedbooks.com/catalog/public_domain.atom",
           },
           {
              title = "ManyBooks",
