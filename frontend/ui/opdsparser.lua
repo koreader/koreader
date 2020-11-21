@@ -72,17 +72,20 @@ function OPDSParser:createFlatXTable(xlex, curr_element)
 end
 
 function OPDSParser:parse(text)
-    -- Murder Calibre's whole "content" block, because it's not XML, it's XHTML, and luxl doesn't like it one bit...
+    -- Murder Calibre's whole "content" block, because luxl doesn't really deal well with various XHTML quirks,
+    -- and orphaned tags, as the list of crappy replacements below attests to...
     text = text:gsub('<content type="xhtml">.-</content>', '')
     -- luxl cannot properly handle xml comments and we need first remove them
     text = text:gsub("<!--.--->", "")
-    -- luxl prefers <br />, other two forms are valid in HTML,
+    -- luxl prefers <br />, other two forms are valid in HTML, but will kick luxl's ass
     -- but will kick the ass of luxl
     text = text:gsub("<br>", "<br />")
     text = text:gsub("<br/>", "<br />")
     -- Same deal with hr
     text = text:gsub("<hr>", "<hr />")
     text = text:gsub("<hr/>", "<hr />")
+    -- It's also allergic to orphaned <em/> (As opposed to a balanced <em></em> pair)...
+    text = text:gsub("<em/>", "")
     -- some OPDS catalogs wrap text in a CDATA section, remove it as it causes parsing problems
     text = text:gsub("<!%[CDATA%[(.-)%]%]>", function (s)
         return s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;" } )
