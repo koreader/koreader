@@ -76,9 +76,9 @@ function OPDSParser:parse(text)
     -- as the list of crappy replacements below attests to...
     -- There's also a high probability of finding orphaned tags or badly nested ones in there, which will screw everything up.
     text = text:gsub('<content type="xhtml">.-</content>', '')
-    -- luxl cannot properly handle xml comments and we need first remove them
+    -- luxl doesn't handle XML comments, so strip them
     text = text:gsub("<!%-%-.-%-%->", "")
-    -- luxl prefers <br />, other two forms are valid in HTML, but will kick luxl's ass
+    -- luxl prefers <br />, the other two forms are valid in HTML, but will kick luxl's ass
     text = text:gsub("<br>", "<br />")
     text = text:gsub("<br/>", "<br />")
     -- Same deal with hr
@@ -88,7 +88,7 @@ function OPDSParser:parse(text)
     text = text:gsub("<em/>", "")
     -- Let's assume it might also happen to strong...
     text = text:gsub("<strong/>", "")
-    -- some OPDS catalogs wrap text in a CDATA section, remove it as it causes parsing problems
+    -- Some OPDS catalogs wrap text in a CDATA section, remove it as it causes parsing problems
     text = text:gsub("<!%[CDATA%[(.-)%]%]>", function (s)
         return s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;" } )
     end )
