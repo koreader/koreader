@@ -196,9 +196,7 @@ function ReaderPaging:onReadSettings(config)
         self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
     end
     for _, v in ipairs(ReaderZooming.zoom_pan_settings) do
-        if v ~= "zoom_factor" then
-            self[v] = config:readSetting(v) or G_reader_settings:readSetting(v) or ReaderZooming[v]
-        end
+        self[v] = config:readSetting(v) or G_reader_settings:readSetting(v) or ReaderZooming[v]
     end
 end
 
@@ -482,7 +480,7 @@ function ReaderPaging:onZoomModeUpdate(new_mode)
     self.zoom_mode = new_mode
 end
 
-function ReaderPaging:onZoomPanUpdate(settings)
+function ReaderPaging:onZoomPanUpdate(settings, no_redraw)
     for k, v in pairs(settings) do
         if k ~= "zoom_factor" then
             if util.arrayContains(ReaderZooming.zoom_pan_settings, k) then
@@ -491,7 +489,9 @@ function ReaderPaging:onZoomPanUpdate(settings)
             end
         end
     end
-    self.ui:handleEvent(Event:new("RedrawCurrentPage"))
+    if not no_redraw then
+        self.ui:handleEvent(Event:new("RedrawCurrentPage"))
+    end
 end
 
 function ReaderPaging:onPageUpdate(new_page_no, orig_mode)
@@ -859,7 +859,7 @@ function ReaderPaging:onGotoPageRel(diff)
     logger.dbg("goto relative page:", diff)
     local new_va = self.visible_area:copy()
     local x_pan_off, y_pan_off = 0, 0
-    local right_to_left = (self.ui.document.configurable.writing_direction == 1)
+    local right_to_left = (self.ui.document.configurable.writing_direction > 0)
     local bottom_to_top = self.zoom_pan_bottom_to_top
     local h_progress = 1 - self.zoom_pan_h_overlap / 100
     local v_progress = 1 - self.zoom_pan_v_overlap / 100

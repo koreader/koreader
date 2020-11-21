@@ -43,6 +43,37 @@ local KoptOptions = {
         icon = "resources/icons/appbar.crop.large.png",
         options = {
             {
+                name = "zoom_mode",
+                name_text = _("Zoom"),
+                -- manual=0, auto=1, semi-auto=2, none=3
+                -- ordered from least to max cropping done or possible
+                toggle = {_("width"), _("height"), _("columns"), _("rows"), _("overlap")},
+                alternate = false,
+                values = {4, 3, 2, 1, 0},
+                default_value = 4,
+                enabled_func = Device.isTouchDevice,
+                event = "DefineZoomMode",
+                args = {"contentwidth", "contentheight", "n_columns", "n_rows", "overlap"},
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set zoom mode.]]),
+            },
+            {
+                name = "zoom_direction",
+                name_text = _("Zoom direction"),
+                -- manual=0, auto=1, semi-auto=2, none=3
+                -- ordered from least to max cropping done or possible
+                toggle = {_("LRTB"), _("TBLR"), _("RLTB"), _("TBRL"), _("LRBT"), _("BTLR"), _("RLBT"), _("BTRL")},
+                alternate = false,
+                values = {7, 6, 5, 4, 3, 2, 1, 0},
+                default_value = 7,
+                enabled_func = Device.isTouchDevice,
+                event = "SetZoomPan",
+                -- args = {"lrtb", "tblr", "rltb", "tbrl", "lrbt", "btlr", "lrbt", "btlr"},
+                args = {7, 6, 5, 4, 3, 2, 1, 0},
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set zoom direction.]]),
+            },
+            {
                 name = "trim_page",
                 name_text = S.PAGE_CROP,
                 -- manual=0, auto=1, semi-auto=2, none=3
@@ -314,9 +345,6 @@ This can also be used to remove some gray background or to convert a grayscale o
                 toggle = {S.LTR, S.RTL, S.TBRTL},
                 values = {0, 1, 2},
                 default_value = 0,
-                enabled_func = function(configurable)
-                    return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
-                end,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[In reflow mode, sets the original text direction. This needs to be set to RTL to correctly extract and reflow RTL languages like Arabic or Hebrew.]]),
             },

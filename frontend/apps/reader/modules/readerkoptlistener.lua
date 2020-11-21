@@ -1,5 +1,7 @@
 local EventListener = require("ui/widget/eventlistener")
 local Event = require("ui/event")
+local ReaderZooming = require("apps/reader/modules/readerzooming")
+local util = require("util")
 
 local ReaderKoptListener = EventListener:new{}
 
@@ -14,9 +16,13 @@ end
 
 function ReaderKoptListener:onReadSettings(config)
     -- normal zoom mode is zoom mode used in non-reflow mode.
-    self.normal_zoom_mode = config:readSetting("normal_zoom_mode") or
-                    G_reader_settings:readSetting("zoom_mode") or "page"
-    self:setZoomMode(self.normal_zoom_mode)
+    local normal_zoom_mode = config:readSetting("normal_zoom_mode") or
+                    G_reader_settings:readSetting("zoom_mode") or "contentwidth"
+    normal_zoom_mode = util.arrayContains(ReaderZooming.available_zoom_modes, normal_zoom_mode)
+                    and normal_zoom_mode
+                    or "contentwidth"
+    self.normal_zoom_mode = normal_zoom_mode
+    self:setZoomMode(normal_zoom_mode)
     self.document.configurable.contrast = config:readSetting("kopt_contrast") or
                     G_reader_settings:readSetting("kopt_contrast") or 1.0
     self.ui:handleEvent(Event:new("GammaUpdate", 1/self.document.configurable.contrast))
