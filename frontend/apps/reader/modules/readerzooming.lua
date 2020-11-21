@@ -9,6 +9,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
@@ -27,7 +28,7 @@ local ReaderZooming = InputContainer:new{
     },
     -- default to nil so we can trigger ZoomModeUpdate events on start up
     zoom_mode = nil,
-    DEFAULT_ZOOM_MODE = "pagewidth",
+    DEFAULT_ZOOM_MODE = "contentwidth",
     -- for pan mode: fit to width/zoom_factor,
     -- with overlap of zoom_pan_h_overlap % (horizontally)
     -- and zoom_pan_v_overlap % (vertically).
@@ -110,6 +111,10 @@ function ReaderZooming:onReadSettings(config)
     local zoom_mode = config:readSetting("zoom_mode")
                     or G_reader_settings:readSetting("zoom_mode")
                     or self.DEFAULT_ZOOM_MODE
+    zoom_mode = util.arrayContains(self.available_zoom_modes, zoom_mode)
+                                and zoom_mode
+                                or self.DEFAULT_ZOOM_MODE
+    logger.dbg("ZOOM: ici ", zoom_mode)
     self:setZoomMode(zoom_mode, true) -- avoid informative message on load
     for _, setting in ipairs(self.zoom_pan_settings) do
         self[setting] = config:readSetting(setting) or
@@ -194,6 +199,32 @@ function ReaderZooming:onZoom(direction)
     return true
 end
 
+function ReaderZooming:onDefineZoomMode(new_mode)
+    logger.dbg("ZOOM:", new_mode)
+    if new_mode == "column" then
+        new_mode = "pan"
+        local zoom_factor = math.max(2, self.zoom_factor and math.floor(self.zoom_factor))
+        self.zoom_factor = zoom_factor
+        self.zoom_pan_direction_vertical = true
+        self.zoom_pan_h_overlap = 0
+        self.ui:handleEvent(Event:new("SetZoomPan", {
+            zoom_factor = zoom_factor,
+            zoom_pan_direction_vertical = true,
+            zoom_pan_h_overlap = 0,
+        }, true))
+    elseif new_mode == "overlap" then
+        new_mode = "pan"
+    elseif new_mode == "n_columns" then
+        self.zoom_mode = "pan"
+        self:_zoomFactorChange("Set column number", "columns")
+    elseif new_mode == "n_rows" then
+        self.new_mode = "pan"
+        self:_zoomFactorChange("Set row number", "rows")
+    end
+    new_mode = require("util").arrayContains(self.available_zoom_modes, new_mode) and new_mode or self.DEFAULT_ZOOM_MODE
+    self.ui:handleEvent(Event:new("SetZoomMode", new_mode))
+end
+
 function ReaderZooming:onSetZoomMode(new_mode)
     self.view.zoom_mode = new_mode
     if self.zoom_mode ~= new_mode then
@@ -201,7 +232,9 @@ function ReaderZooming:onSetZoomMode(new_mode)
         self.ui:handleEvent(Event:new("ZoomModeUpdate", new_mode))
         self.zoom_mode = new_mode
         self:setZoom()
-        self.ui:handleEvent(Event:new("InitScrollPageStates", new_mode))
+        if new_mode == "pan" then
+            self.ui:handleEvent(Event:new("SetScrollMode", false))
+        end
     end
 end
 
@@ -274,8 +307,10 @@ end
 
 function ReaderZooming:getZoom(pageno)
     -- check if we're in bbox mode and work on bbox if that's the case
+    logger.dbg("ZOOM: zoom_factor", self.zoom_factor)
     local zoom = nil
     local page_size = self.ui.document:getNativePageDimensions(pageno)
+    logger.dbg("ZOOM mode:", self.zoom_mode)
     if self.zoom_mode == "content"
     or self.zoom_mode == "contentwidth"
     or self.zoom_mode == "contentheight"
@@ -346,7 +381,7 @@ function ReaderZooming:getZoom(pageno)
             if zoom < 0 then return 0 end
         end
     end
-    return zoom, zoom_w
+    return zoom, zoom_w, zoom_h
 end
 
 function ReaderZooming:getRegionalZoomCenter(pageno, pos)
@@ -382,19 +417,6 @@ function ReaderZooming:genSetZoomModeCallBack(mode)
 end
 
 function ReaderZooming:setZoomMode(mode, no_warning)
-    if mode == "column" then
-        mode = "pan"
-        local zoom_factor = math.max(2, math.floor(self.zoom_factor))
-        self.zoom_factor = zoom_factor
-        self.zoom_pan_direction_vertical = true
-        self.zoom_pan_h_overlap = 0
-        self.ui:handleEvent(Event:new("ZoomPanUpdate", {
-            zoom_factor = zoom_factor,
-            zoom_pan_direction_vertical = true,
-            zoom_pan_h_overlap = 0,
-        }))
-    end
-    mode = require("util").arrayContains(self.available_zoom_modes, mode) and mode or self.DEFAULT_ZOOM_MODE
     if not no_warning and self.ui.view.page_scroll then
         local message
         if self.paged_modes[mode] then
@@ -418,13 +440,44 @@ You should enable it instead of continuous view (scroll mode).]])
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
 end
 
-function ReaderZooming:_zoomFactorChange()
-    local title_text = _("Set Zoom factor")
-    local zoom, zoom_w = self:getZoom(self.current_page)
+local function _getOverlapFactorForNum(n, overlap)
+    -- Auxiliary function to "distribute" an overlap between tiles
+    overlap = overlap * (n - 1) / n
+    return (100 / (100 - overlap))
+end
+
+function ReaderZooming:getNumberOf(what)
+    -- Number of columns (if what ~= "rows") or rows (if what == "rows")
+    local zoom, zoom_w, zoom_h = self:getZoom(self.current_page)
+    return zoom / (what == "rows" and zoom_h or zoom_w)
+end
+
+function ReaderZooming:setNumberOf(what, num, overlap)
+    -- Sets number of columns (if what ~= "rows") or rows (if what == "rows")
+    self:setZoomMode("pan")
+    local _, zoom_w, zoom_h = self:getZoom(self.current_page)
+    local overlap_factor = overlap and _getOverlapFactorForNum(num, overlap)
+    local zoom_factor = num / overlap_factor
+    if what == "rows" then
+        zoom_factor = zoom_factor * zoom_h / zoom_w
+    end
+    logger.dbg("ZOOM: après", zoom_factor, overlap_factor)
+    self.ui:handleEvent(Event:new("SetZoomPan", {zoom_factor = zoom_factor}))
+    self.ui:handleEvent(Event:new("RedrawCurrentPage"))
+end
+
+function ReaderZooming:_zoomFactorChange(title_text, direction, precision)
+    local num = self:getNumberOf(direction)
+    local zoom_factor, overlap
+    if direction == "columns" or direction == "rows" then
+        overlap = (direction == "columns" and self.zoom_pan_v_overlap or self.zoom_pan_h_overlap)
+        zoom_factor = (overlap - 100 * num) / (overlap - 100)  -- Thanks Xcas for this one...
+        logger.dbg("ZOOM avant", zoom_factor)
+    end
     UIManager:show(
         SpinWidget:new{
             width = math.floor(Screen:getWidth() * 0.6),
-            value = zoom / zoom_w,
+            value = zoom_factor,
             value_min = 0.1,
             value_max = 10,
             value_step = 0.1,
@@ -433,9 +486,8 @@ function ReaderZooming:_zoomFactorChange()
             ok_text = title_text,
             title_text = title_text,
             callback = function(spin)
-                self:setZoomMode("pan")
-                self.ui:handleEvent(Event:new("ZoomPanUpdate", {zoom_factor = spin.value}))
-                self.ui:handleEvent(Event:new("RedrawCurrentPage"))
+                zoom_factor = spin.value
+                self:setNumberOf(direction, zoom_factor, overlap)
             end
         }
     )
@@ -463,7 +515,7 @@ function ReaderZooming:addToMainMenu(menu_items)
             return {
                 text = text,
                 callback = function(touchmenu_instance)
-                    self:_zoomFactorChange()
+                    self:_zoomFactorChange(_("Set Zoom factor"), false, "%.1f")
                 end
             }
         end
@@ -482,7 +534,7 @@ function ReaderZooming:addToMainMenu(menu_items)
                         ok_text = _("Set"),
                         title_text = text,
                         callback = function(spin)
-                            self.ui:handleEvent(Event:new("ZoomPanUpdate", {[setting] = spin.value}))
+                            self.ui:handleEvent(Event:new("SetZoomPan", {[setting] = spin.value}))
                         end
                     }
                     UIManager:show(items)
@@ -496,7 +548,7 @@ function ReaderZooming:addToMainMenu(menu_items)
                     return self[setting] == true
                 end,
                 callback = function()
-                    self.ui:handleEvent(Event:new("ZoomPanUpdate", {[setting] = not self[setting]}))
+                    self.ui:handleEvent(Event:new("SetZoomPan", {[setting] = not self[setting]}))
                 end,
                 hold_callback = function(touchmenu_instance)
                     G_reader_settings:saveSetting(setting, self[setting])
@@ -546,14 +598,32 @@ function ReaderZooming:addToMainMenu(menu_items)
 end
 
 function ReaderZooming:onZoomFactorChange()
-    self:_zoomFactorChange()
+    self:_zoomFactorChange(_("Set Zoom factor"), false, "%.1f")
 end
 
-function ReaderZooming:onZoomPanUpdate(settings)
-    for k, v in pairs(settings) do
-        self[k] = v
-        self.ui.doc_settings:saveSetting(k, v)
+function ReaderZooming:onSetZoomPan(settings, no_redraw)
+    if type(settings) == "number" then
+        local zoom_direction = {
+            [7] = {right_to_left = false, zoom_pan_bottom_to_top = false, zoom_pan_direction_vertical = false},
+            [6] = {right_to_left = false, zoom_pan_bottom_to_top = false, zoom_pan_direction_vertical = true },
+            [5] = {right_to_left = true,  zoom_pan_bottom_to_top = false, zoom_pan_direction_vertical = false},
+            [4] = {right_to_left = true,  zoom_pan_bottom_to_top = false, zoom_pan_direction_vertical = true },
+            [3] = {right_to_left = false, zoom_pan_bottom_to_top = true,  zoom_pan_direction_vertical = false},
+            [2] = {right_to_left = false, zoom_pan_bottom_to_top = true,  zoom_pan_direction_vertical = true },
+            [1] = {right_to_left = true,  zoom_pan_bottom_to_top = true,  zoom_pan_direction_vertical = false},
+            [0] = {right_to_left = true,  zoom_pan_bottom_to_top = true,  zoom_pan_direction_vertical = true },
+        }
+        settings = zoom_direction[settings]
     end
+    for k, v in pairs(settings) do
+        if k == "right_to_left" then
+            self.ui.document.configurable.writing_direction = v and 1 or 0
+        else
+            self[k] = v
+            self.ui.doc_settings:saveSetting(k, v)
+        end
+    end
+    self.ui:handleEvent(Event:new("ZoomPanUpdate", settings, no_redraw))
 end
 
 function ReaderZooming:makeDefault(zoom_mode, touchmenu_instance)
