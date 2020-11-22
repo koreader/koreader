@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local Device = require("device")
+local Event = require("ui/event")
 local S = require("ui/data/strings")
 local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
@@ -74,23 +75,92 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set margins to be applied after page-crop and zoom modes are applied.]]),
             },
+        }
+    },
+    {
+        icon = "resources/icons/appbar.magnifier.png",
+        options = {
             {
-                name = "zoom_mode",
+                name = "zoom_overlap_h",
+                name_text = "Horizontal overlap",
+                buttonprogress = true,
+                values = {0, 12, 24, 36, 48, 60, 72, 84},
+                default_pos = 4,
+                default_value = 36,
+                show_func = function(config)
+                    return config and config.zoom_mode_genus < 3
+                end,
+                event = "DefineZoomMode",
+                args =   {0, 12, 24, 36, 48, 60, 72, 84},
+                labels = {0, 12, 24, 36, 48, 60, 72, 84},
+                name_text_hold_callback = function(_, _, _, ui)
+                    ui:handleEvent(Event:new("DefineZoomMode", "set_zoom_overlap_h"))
+                end,
+                help_text = _([[Set horizontal zoom overlap (between columns).]]),
+            },
+            {
+                name = "zoom_overlap_v",
+                name_text = "Vertical overlap",
+                buttonprogress = true,
+                values = {0, 12, 24, 36, 48, 60, 72, 84},
+                default_pos = 4,
+                default_value = 36,
+                show_func = function(config)
+                    return config and config.zoom_mode_genus < 3
+                end,
+                event = "DefineZoomMode",
+                args =   {0, 12, 24, 36, 48, 60, 72, 84},
+                labels = {0, 12, 24, 36, 48, 60, 72, 84},
+                name_text_hold_callback = function(_, _, _, ui)
+                    ui:handleEvent(Event:new("DefineZoomMode", "set_zoom_overlap_v"))
+                end,
+                help_text = _([[Set vertical zoom overlap (between lines).]]),
+            },
+            {
+                name = "zoom_mode_species",
+                name_text = "",
+                toggle = {_("full"), _("width"), _("height")},
+                alternate = false,
+                values = {2, 1, 0},
+                default_value = 2,
+                show_func = function(config) return config and config.zoom_mode_genus > 2 end,
+                event = "DefineZoomMode",
+                args = {"full", "width", "height"},
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set zoom mode.]]),
+            },
+            {
+                name = "zoom_range_number",
+                name_text = "Number",
+                buttonprogress = true,
+                values = {1, 2, 3, 4, 5, 6, 7, 8},
+                default_pos = 2,
+                default_value = 2,
+                show_func = function(config)
+                    return config and config.zoom_mode_genus < 3
+                                and config.zoom_mode_genus ~= 0
+                end,
+                event = "DefineZoomMode",
+                args =   {1, 2, 3, 4, 5, 6, 7, 8},
+                labels = {1, 2, 3, 4, 5, 6, 7, 8},
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set zoom mode.]]),
+            },
+            {
+                name = "zoom_mode_genus",
                 name_text = _("Zoom to fit"),
-                toggle = {_("width"), _("height"), _("columns"), _("rows"), _("overlap")},
+                toggle = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
                 alternate = false,
                 values = {4, 3, 2, 1, 0},
                 default_value = 4,
-                enabled_func = Device.isTouchDevice,
                 event = "DefineZoomMode",
-                args = {"contentwidth", "contentheight", "n_columns", "n_rows", "overlap"},
+                args = {"page", "content", "columns", "rows", "manual"},
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set zoom mode.]]),
             },
             {
                 name = "zoom_direction",
-                name_text = _("Zoom direction"),
-                -- toggle = {_("LRTB"), _("TBLR"), _("RLTB"), _("TBRL"), _("LRBT"), _("BTLR"), _("RLBT"), _("BTRL")},
+                name_text = _("Direction"),
                 item_icons = {
                     "resources/icons/direction.LRTB.png",
                     "resources/icons/direction.TBLR.png",
@@ -104,7 +174,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 alternate = false,
                 values = {7, 6, 5, 4, 3, 2, 1, 0},
                 default_value = 7,
-                event = "SetZoomPan",
+                event = "DefineZoomMode",
                 args = {7, 6, 5, 4, 3, 2, 1, 0},
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set zoom direction.]]),

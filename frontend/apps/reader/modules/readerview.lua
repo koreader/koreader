@@ -744,9 +744,6 @@ In combination with zoom to fit page, page height, content height or content, co
     self.page_scroll = page_scroll
     if not page_scroll then
         self.ui.document.configurable.page_scroll = 0
-    elseif self.zoom_mode == "pan" then
-        self.ui.document.configurable.zoom_mode = 4
-        self.ui:handleEvent(Event:new("SetZoomMode", "contentwidth"))
     end
     self:recalculate()
     self.ui:handleEvent(Event:new("InitScrollPageStates"))

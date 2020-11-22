@@ -860,9 +860,9 @@ function ReaderPaging:onGotoPageRel(diff)
     local new_va = self.visible_area:copy()
     local x_pan_off, y_pan_off = 0, 0
     local right_to_left = (self.ui.document.configurable.writing_direction > 0)
-    local bottom_to_top = self.zoom_pan_bottom_to_top
-    local h_progress = 1 - self.zoom_pan_h_overlap / 100
-    local v_progress = 1 - self.zoom_pan_v_overlap / 100
+    local bottom_to_top = self.zoom_bottom_to_top
+    local h_progress = 1 - self.zoom_overlap_h / 100
+    local v_progress = 1 - self.zoom_overlap_v / 100
     local old_va = self.visible_area
     local old_page = self.current_page
     local x, y, w, h = "x", "y", "w", "h"
@@ -870,7 +870,7 @@ function ReaderPaging:onGotoPageRel(diff)
     local y_diff = diff
 
     -- Adjust directions according to settings
-    if self.zoom_pan_direction_vertical then  -- invert axes
+    if self.zoom_direction_vertical then  -- invert axes
         y, x, h, w = x, y, w, h
         h_progress, v_progress = v_progress, h_progress
         if right_to_left then
