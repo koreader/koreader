@@ -236,7 +236,7 @@ function ConfigOption:init()
         local show = self.options[c].show
         -- Prefer show_func over show if there's one
         if self.options[c].show_func then
-            show = self.options[c].show_func()
+            show = self.options[c].show_func(self.config.configurable, self.config.document)
         end
         if show ~= false and show_default then
             local name_align = self.options[c].name_align_right and self.options[c].name_align_right or default_name_align_right
@@ -288,7 +288,7 @@ function ConfigOption:init()
                     hold_callback = function()
                         if self.options[c].name_text_hold_callback then
                             self.options[c].name_text_hold_callback(self.config.configurable, self.options[c],
-                                self.config.config_options.prefix)
+                                self.config.config_options.prefix, self.config.ui)
                         end
                     end,
                 }
