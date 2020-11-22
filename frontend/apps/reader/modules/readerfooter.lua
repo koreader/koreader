@@ -504,7 +504,6 @@ function ReaderFooter:init()
         self.mode = self.mode_list.off
         self.view.footer_visible = false
         self:resetLayout()
-        self.footer_container.dimen.h = 0
         self.footer_text.height = 0
     end
     if self.settings.all_at_once then
@@ -512,9 +511,6 @@ function ReaderFooter:init()
         self:updateFooterTextGenerator()
         if self.settings.progress_bar_position and self.has_no_mode then
             self.footer_text.height = 0
-            if self.settings.disable_progress_bar then
-                self.footer_container.dimen.h = 0
-            end
         end
     else
         self:applyFooterMode()
@@ -673,13 +669,17 @@ function ReaderFooter:resetLayout(force_reset)
     if self.separator_line then
         self.separator_line.dimen.w = new_screen_width - 2 * self.horizontal_margin
     end
-    local bar_height
-    if self.settings.progress_style_thin then
-        bar_height = self.settings.progress_style_thin_height or PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT
+    if self.settings.disable_progress_bar then
+        self.progress_bar.height = 0
     else
-        bar_height = self.settings.progress_style_thick_height or PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT
+        local bar_height
+        if self.settings.progress_style_thin then
+            bar_height = self.settings.progress_style_thin_height or PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT
+        else
+            bar_height = self.settings.progress_style_thick_height or PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT
+        end
+        self.progress_bar:setHeight(bar_height)
     end
-    self.progress_bar:setHeight(bar_height)
 
     self.horizontal_group:resetLayout()
     self.footer_positioner.dimen.w = new_screen_width
@@ -834,16 +834,11 @@ function ReaderFooter:addToMainMenu(menu_items)
                 self.reclaim_height = self.settings.reclaim_height or false
                 -- refresh margins position
                 if self.has_no_mode then
-                    if self.settings.disable_progress_bar then
-                        self.footer_container.dimen.h = 0
-                    end
                     self.footer_text.height = 0
                     should_signal = true
                     self.genFooterText = footerTextGeneratorMap.empty
                     self.mode = self.mode_list.off
                 elseif prev_has_no_mode then
-                    self.footer_container.dimen.h = self.height
-                    self.footer_text.height = self.height
                     if self.settings.all_at_once then
                         self.mode = self.mode_list.page_progress
                         self:applyFooterMode()
@@ -1381,8 +1376,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 callback = function()
                     self.settings.disable_progress_bar = not self.settings.disable_progress_bar
                     if not self.settings.disable_progress_bar then
-                        self.footer_container.dimen.h = self.height
-                        self.footer_text.height = self.height
                         self:setTocMarkers()
                         self.mode = self.mode_list.page_progress
                         self:applyFooterMode()
@@ -1847,12 +1840,12 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
     if self.settings.disable_progress_bar then
         if self.has_no_mode or text == "" then
             self.text_width = 0
-            self.footer_container.dimen.h = 0
             self.footer_text.height = 0
         else
             self.text_width = self.footer_text:getSize().w
             self.footer_text.height = self.footer_text:getSize().h
         end
+        self.progress_bar.height = 0
         self.progress_bar.width = 0
     elseif self.settings.progress_bar_position then
         if self.has_no_mode or text == "" then
@@ -1876,13 +1869,6 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
         self.progress_bar.width = math.floor(
             self._saved_screen_width - self.text_width - self.settings.progress_margin_width*2)
     end
-    local bar_height
-    if self.settings.progress_style_thin then
-        bar_height = self.settings.progress_style_thin_height or PROGRESS_BAR_STYLE_THIN_DEFAULT_HEIGHT
-    else
-        bar_height = self.settings.progress_style_thick_height or PROGRESS_BAR_STYLE_THICK_DEFAULT_HEIGHT
-    end
-    self.progress_bar:setHeight(bar_height)
 
     if self.separator_line then
         self.separator_line.dimen.w = self._saved_screen_width - 2 * self.horizontal_margin
@@ -2134,7 +2120,13 @@ function ReaderFooter:refreshFooter(refresh, signal)
     -- We *do* need to ensure we at least re-compute the footer layout, though, especially when going from visible to invisible...
     self:onUpdateFooter(refresh and not signal, refresh and signal)
     if signal then
-        self.ui:handleEvent(Event:new("SetPageBottomMargin", self.ui.document.configurable.b_page_margin))
+        if self.ui.document.provider == "crengine" then
+            -- This will ultimately trigger an UpdatePos, hence a ReaderUI repaint.
+            self.ui:handleEvent(Event:new("SetPageBottomMargin", self.ui.document.configurable.b_page_margin))
+        else
+            -- No fancy chain of events outside of CRe, just ask for a ReaderUI repaint ourselves ;).
+            UIManager:setDirty(self.view.dialog, "partial")
+        end
     end
 end
 
