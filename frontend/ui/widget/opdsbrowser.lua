@@ -78,7 +78,7 @@ function OPDSBrowser:init()
         servers = {
           {
             title = "Project Gutenberg",
-            url = "http://m.gutenberg.org/ebooks.opds/?format=opds",
+            url = "https://m.gutenberg.org/ebooks.opds/?format=opds",
           },
           {
             title = "Project Gutenberg [Searchable]",
@@ -87,11 +87,11 @@ function OPDSBrowser:init()
           },
           {
              title = "Feedbooks",
-             url = "http://www.feedbooks.com/publicdomain/catalog.atom",
+             url = "https://catalog.feedbooks.com/catalog/public_domain.atom",
           },
           {
              title = "ManyBooks",
-             url = "http://manybooks.net/opds/index.php",
+             url = "https://manybooks.net/opds/index.php",
           },
           {
              title = "Internet Archive",
@@ -99,11 +99,11 @@ function OPDSBrowser:init()
           },
           {
              title = "Flibusta (Russian)",
-             url = "http://www.flibusta.is/opds",
+             url = "https://www.flibusta.is/opds",
           },
           {
              title = "Flibusta [Ru] [Searchable]",
-             url = "http://www.flibusta.is/opds/search?searchTerm=%s",
+             url = "https://www.flibusta.is/opds/search?searchTerm=%s",
              searchable = true,
           },
           {
@@ -388,9 +388,9 @@ end
 function OPDSBrowser:getCatalog(item_url, username, password)
     local ok, catalog = pcall(self.parseFeed, self, item_url, username, password)
     if not ok and catalog then
-        logger.info("cannot get catalog info from", item_url, catalog)
+        logger.info("cannot get catalog info from", item_url or "nil", catalog)
         UIManager:show(InfoMessage:new{
-            text = T(_("Cannot get catalog info from %1"), (BD.url(item_url) or "")),
+            text = T(_("Cannot get catalog info from %1"), (item_url and BD.url(item_url) or "nil")),
         })
         return
     end
@@ -498,7 +498,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                 end
             end
             if author then
-                item.text = title .. "\n" .. author
+                item.text = title .. " - " .. author
             end
         end
         item.title = title
@@ -676,7 +676,7 @@ function OPDSBrowser:showDownloads(item)
 end
 
 function OPDSBrowser:browse(browse_url, username, password)
-    logger.dbg("Browse opds url", browse_url)
+    logger.dbg("Browse opds url", browse_url or "nil")
     table.insert(self.paths, {
         url = browse_url,
         username = username,

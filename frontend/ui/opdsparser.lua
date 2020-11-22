@@ -33,13 +33,12 @@ end
 function OPDSParser:createFlatXTable(xlex, curr_element)
     curr_element = curr_element or {}
 
-    local curr_attr_name;
-    local attr_count = 0;
+    local curr_attr_name
+    local attr_count = 0
 
     -- start reading the thing
-    local txt
     for event, offset, size in xlex:Lexemes() do
-        txt = ffi.string(xlex.buf + offset, size)
+        local txt = ffi.string(xlex.buf + offset, size)
         if event == luxl.EVENT_START then
             if txt ~= "xml" then
                 -- does current element already have something
@@ -61,7 +60,7 @@ function OPDSParser:createFlatXTable(xlex, curr_element)
             curr_attr_name = unescape(txt)
         elseif event == luxl.EVENT_ATTR_VAL then
             curr_element[curr_attr_name] = unescape(txt)
-            attr_count = attr_count + 1;
+            attr_count = attr_count + 1
             curr_attr_name = nil
         elseif event == luxl.EVENT_TEXT then
             curr_element = unescape(txt)
@@ -73,16 +72,23 @@ function OPDSParser:createFlatXTable(xlex, curr_element)
 end
 
 function OPDSParser:parse(text)
-    -- luxl cannot properly handle xml comments and we need first remove them
-    text = text:gsub("<!--.--->", "")
-    -- luxl prefers <br />, other two forms are valid in HTML,
-    -- but will kick the ass of luxl
+    -- Murder Calibre's whole "content" block, because luxl doesn't really deal well with various XHTML quirks,
+    -- as the list of crappy replacements below attests to...
+    -- There's also a high probability of finding orphaned tags or badly nested ones in there, which will screw everything up.
+    text = text:gsub('<content type="xhtml">.-</content>', '')
+    -- luxl doesn't handle XML comments, so strip them
+    text = text:gsub("<!%-%-.-%-%->", "")
+    -- luxl prefers <br />, the other two forms are valid in HTML, but will kick luxl's ass
     text = text:gsub("<br>", "<br />")
     text = text:gsub("<br/>", "<br />")
     -- Same deal with hr
     text = text:gsub("<hr>", "<hr />")
     text = text:gsub("<hr/>", "<hr />")
-    -- some OPDS catalogs wrap text in a CDATA section, remove it as it causes parsing problems
+    -- It's also allergic to orphaned <em/> (As opposed to a balanced <em></em> pair)...
+    text = text:gsub("<em/>", "")
+    -- Let's assume it might also happen to strong...
+    text = text:gsub("<strong/>", "")
+    -- Some OPDS catalogs wrap text in a CDATA section, remove it as it causes parsing problems
     text = text:gsub("<!%[CDATA%[(.-)%]%]>", function (s)
         return s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;" } )
     end )
