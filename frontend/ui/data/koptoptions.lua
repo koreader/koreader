@@ -84,6 +84,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 name = "zoom_overlap_h",
                 name_text = "Horizontal overlap",
                 buttonprogress = true,
+                fine_tune = true,
                 values = {0, 12, 24, 36, 48, 60, 72, 84},
                 default_pos = 4,
                 default_value = 36,
@@ -102,6 +103,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 name = "zoom_overlap_v",
                 name_text = "Vertical overlap",
                 buttonprogress = true,
+                fine_tune = true,
                 values = {0, 12, 24, 36, 48, 60, 72, 84},
                 default_pos = 4,
                 default_value = 36,
@@ -111,9 +113,6 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 event = "DefineZoomMode",
                 args =   {0, 12, 24, 36, 48, 60, 72, 84},
                 labels = {0, 12, 24, 36, 48, 60, 72, 84},
-                name_text_hold_callback = function(_, _, _, ui)
-                    ui:handleEvent(Event:new("DefineZoomMode", "set_zoom_overlap_v"))
-                end,
                 help_text = _([[Set vertical zoom overlap (between lines).]]),
             },
             {
@@ -133,23 +132,49 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 name = "zoom_range_number",
                 name_text = "Number",
                 buttonprogress = true,
-                values = {1, 2, 3, 4, 5, 6, 7, 8},
+                more_options = true,
+                more_options_param = {value_step = 0.1, precision = "%.1f",},
+                values = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
                 default_pos = 2,
                 default_value = 2,
                 show_func = function(config)
-                    return config and config.zoom_mode_genus < 3
-                                and config.zoom_mode_genus ~= 0
+                    return config and config.zoom_mode_genus < 3 and config.zoom_mode_genus > 0
                 end,
                 event = "DefineZoomMode",
-                args =   {1, 2, 3, 4, 5, 6, 7, 8},
-                labels = {1, 2, 3, 4, 5, 6, 7, 8},
+                args =   {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
+                labels = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set zoom mode.]]),
+            },
+            {
+                name = "zoom_factor",
+                name_text = "Factor",
+                buttonprogress = true,
+                more_options = true,
+                more_options_param = {value_step = 0.1, precision = "%.1f",},
+                values = {0.7, 1.0, 1.3, 1.6, 2.0, 2.5, 3.0, 4.0},
+                default_pos = 2,
+                default_value = 1.6,
+                show_func = function(config)
+                    return config and config.zoom_mode_genus < 1
+                end,
+                event = "DefineZoomMode",
+                args =   {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
+                labels = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set zoom mode.]]),
             },
             {
                 name = "zoom_mode_genus",
                 name_text = _("Zoom to fit"),
-                toggle = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
+                -- toggle = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
+                item_icons = {
+                    "resources/icons/zoom.page.png",
+                    "resources/icons/appbar.column.one.png",
+                    "resources/icons/zoom.direction.columns.png",
+                    "resources/icons/zoom.direction.rows.png",
+                    "resources/icons/zoom.manual.png",
+                },
                 alternate = false,
                 values = {4, 3, 2, 1, 0},
                 default_value = 4,
