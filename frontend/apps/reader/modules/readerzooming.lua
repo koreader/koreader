@@ -280,6 +280,26 @@ function ReaderZooming:onDefineZoomMode(btn)
         self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
     end
     self.ui:handleEvent(Event:new("SetZoomMode", zoom_mode))
+    if tonumber(btn) then
+        UIManager:show(InfoMessage:new{
+            timeout = 1.5,
+            text = T(_([[
+    Zoom set to:
+
+    mode: %1
+    number of columns: %2
+    number of rows: %4
+    horizontal overlap: %3 %
+    vertical overlap: %5 %
+    zoom factor: %6.]]),
+                zoom_mode,
+                ("%.2f"):format(self:getNumberOf("columns", settings.zoom_overlap_h)),
+                settings.zoom_overlap_h,
+                ("%.2f"):format(self:getNumberOf("rows", settings.zoom_overlap_v)),
+                settings.zoom_overlap_v,
+                ("%.2f"):format(self:getNumberOf("columns"))),
+        })
+    end
 end
 
 function ReaderZooming:onSetZoomMode(new_mode)
