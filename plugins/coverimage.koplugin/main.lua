@@ -33,6 +33,11 @@ local function pathOk(filename)
     return true
 end
 
+local function getExtension(filename)
+    local _, name = util.splitFilePathName(filename)
+    return util.getFileNameSuffix(name):lower()
+end
+
 local CoverImage = WidgetContainer:new{
     name = "coverimage",
     is_doc_only = true,
@@ -40,6 +45,8 @@ local CoverImage = WidgetContainer:new{
 
 function CoverImage:init()
     self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or "cover.png"
+    self.cover_image_format = G_reader_settings:readSetting("cover_image_format") or "auto"
+    self.cover_image_extension = getExtension(self.cover_image_path)
     self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "black"
     self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or "cover_fallback.png"
     self.enabled = G_reader_settings:isTrue("cover_image_enabled")
@@ -80,7 +87,9 @@ function CoverImage:createCoverImage(doc_settings)
             local scale_factor = math.min(s_w / i_w, s_h / i_h)
 
             if self.cover_image_background == "none" or scale_factor == 1 then
+                local start_time = os.clock()
                 cover_image:writePNG(self.cover_image_path, false)
+                require("logger").err("xxxxxxxxxxxxxxxxx time=" .. (os.clock()-start_time))
                 cover_image:free()
                 return
             end
@@ -103,7 +112,18 @@ function CoverImage:createCoverImage(doc_settings)
                 image:blitFrom(cover_image, 0, math.floor( (s_h - scaled_h) / 2 ), 0, 0, scaled_w, scaled_h)
             end
             cover_image:free()
-            image:writePNG(self.cover_image_path, false)
+
+            local start_time = os.clock()
+            if self.cover_image_format == "auto" then
+                image:writeToFile(self.cover_image_path, self.cover_image_extension)
+            else
+                image:writeToFile(self.cover_image_path, self.cover_image_format)
+            end
+
+--            image:writePNG(self.cover_image_path, false)
+--            image:writeBMP(self.cover_image_path)
+            require("logger").err("xxxxxxxxxxxxxxxxx time=" .. (os.clock()-start_time))
+
             image:free()
             logger.dbg("CoverImage: image written to " .. self.cover_image_path)
         end
@@ -196,6 +216,7 @@ function CoverImage:addToMainMenu(menu_items)
                                                 })
                                             end
                                         end
+                                        self.cover_image_extension = getExtension(self.cover_image_path)
                                         UIManager:close(sample_input)
                                         menu:updateItems()
                                     end,
@@ -230,7 +251,7 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: scale book cover
             {
-                text = _("Size and background"),
+                text = _("Size, background and format"),
                 enabled_func = function()
                     return self.enabled
                 end,
@@ -241,12 +262,13 @@ function CoverImage:addToMainMenu(menu_items)
                             return self.cover_image_background == "black"
                         end,
                         callback = function()
+                            local old_background = self.cover_image_background
                             self.cover_image_background = "black"
                             G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
-                            if self.enabled then
+                            if self.enabled and old_background ~= self.cover_image_background then
                                 self:createCoverImage(self.ui.doc_settings)
                             end
-                        end
+                        end,
                     },
                     {
                         text = _("Scale, white background"),
@@ -254,12 +276,13 @@ function CoverImage:addToMainMenu(menu_items)
                             return self.cover_image_background == "white"
                         end,
                         callback = function()
+                            local old_background = self.cover_image_background
                             self.cover_image_background = "white"
                             G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
-                            if self.enabled then
+                            if self.enabled and old_background ~= self.cover_image_background then
                                 self:createCoverImage(self.ui.doc_settings)
                             end
-                        end
+                        end,
                     },
                     {
                         text = _("Scale, gray background"),
@@ -267,25 +290,72 @@ function CoverImage:addToMainMenu(menu_items)
                             return self.cover_image_background == "gray"
                         end,
                         callback = function()
+                            local old_background = self.cover_image_background
                             self.cover_image_background = "gray"
                             G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
-                            if self.enabled then
+                            if self.enabled and old_background ~= self.cover_image_background then
                                 self:createCoverImage(self.ui.doc_settings)
                             end
-                        end
+                        end,
                     },
                     {
                         text = _("Original image"),
                         checked_func = function()
-                            return self.cover_image_background == "none"
+                            return self.cover_image_format == "none"
                         end,
                         callback = function()
+                            local old_background = self.cover_image_background
                             self.cover_image_background = "none"
                             G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
-                            if self.enabled then
+                            if self.enabled and old_background ~= self.cover_image_background then
                                 self:createCoverImage(self.ui.doc_settings)
                             end
-                        end
+                        end,
+                        separator = true,
+                    },
+                    -- menu entries: File format
+                    {
+                        text = _("File format derived from filename"),
+                        help_text = _("If the file format is not supported, then PNG will be used."),
+                        checked_func = function()
+                            return self.cover_image_format == "auto"
+                        end,
+                        callback = function()
+                            local old_cover_image_format = self.cover_image_format
+                            self.cover_image_format = "auto"
+                            G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
+                            if self.enabled and old_cover_image_format ~= self.cover_image_format then
+                                self:createCoverImage(self.ui.doc_settings)
+                            end
+                        end,
+                    },
+                    {
+                        text = _("PNG file format"),
+                        checked_func = function()
+                            return self.cover_image_format == "png"
+                        end,
+                        callback = function()
+                            local old_cover_image_format = self.cover_image_format
+                            self.cover_image_format = "png"
+                            G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
+                            if self.enabled and old_cover_image_format ~= self.cover_image_format then
+                                self:createCoverImage(self.ui.doc_settings)
+                            end
+                        end,
+                    },
+                    {
+                        text = _("BMP file format"),
+                        checked_func = function()
+                            return self.cover_image_format == "bmp"
+                        end,
+                        callback = function()
+                            local old_cover_image_format = self.cover_image_format
+                            self.cover_image_format = "bmp"
+                            G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
+                            if self.enabled and old_cover_image_format ~= self.cover_image_format then
+                                self:createCoverImage(self.ui.doc_settings)
+                            end
+                        end,
                     },
                 }
             },
