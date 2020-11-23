@@ -573,7 +573,8 @@ function ConfigOption:init()
                     callback = function(arg)
                         if arg == "-" or arg == "+" then
                             self.config:onConfigFineTuneChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].delay_repaint)
+                                self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].delay_repaint,
+                                self.options[c].fine_tune_param)
                         elseif arg == "⋮" then
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, arg, self.options[c].name_text, self.options[c].delay_repaint, self.options[c].more_options_param)
@@ -597,6 +598,7 @@ function ConfigOption:init()
                     show_parrent = self.config,
                     enabled = enabled,
                     fine_tune = self.options[c].fine_tune,
+                    fine_tune_param = self.options[c].fine_tune_param,
                     more_options = self.options[c].more_options,
                     more_options_param = self.options[c].more_options_param,
                 }
@@ -963,7 +965,7 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
 end
 
 -- Tweaked variant used with the fine_tune variant of buttonprogress (direction can only be "-" or "+")
-function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, direction, delay_repaint)
+function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, direction, delay_repaint, params)
     UIManager:tickAfterNext(function()
         -- Repainting may be delayed depending on options
         local refresh_dialog_func = function()
@@ -994,6 +996,7 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
         end
         if values then
             local value
+            local step = params.value_step or 1
             if direction == "-" then
                 value = self.configurable[name] or values[1]
                 if type(value) == "table" then
@@ -1001,7 +1004,7 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
                     -- to one of the original preset values tables
                     local updated = {}
                     for i=1, #value do
-                        local v = value[i] - 1
+                        local v = value[i] - step
                         if v < 0 then
                             v = 0
                         end
@@ -1009,7 +1012,7 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
                     end
                     value = updated
                 else
-                    value = value - 1
+                    value = value - step
                     if value < 0 then
                         value = 0
                     end
@@ -1019,11 +1022,11 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
                 if type(value) == "table" then
                     local updated = {}
                     for i=1, #value do
-                        table.insert(updated, value[i] + 1)
+                        table.insert(updated, value[i] + step)
                     end
                     value = updated
                 else
-                    value = value + 1
+                    value = value + step
                 end
             end
             self:onConfigChoice(name, value)

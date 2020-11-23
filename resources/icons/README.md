@@ -9,3 +9,15 @@ Start from an RGB copy of the image if you end up with a 256c or sRGB PNG (check
 
 See https://www.mobileread.com/forums/showpost.php?p=3728291&postcount=17 for more details ;).
 
+
+Zoom direction icons are generated from direction.LRBT.png with:
+
+```bash
+convert direction.LRBT.png -rotate 90 direction.TBLR.png
+convert direction.LRBT.png -rotate 180 direction.RLTB.png
+convert direction.LRBT.png -rotate -90 direction.BTRL.png
+convert direction.BTRL.png -flop direction.BTLR.png
+convert direction.LRBT.png -flop direction.RLBT.png
+convert direction.RLTB.png -flop direction.LRTB.png
+convert direction.TBLR.png -flop direction.TBRL.png
+```
