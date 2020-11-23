@@ -201,6 +201,7 @@ function ReaderZooming:onZoom(direction)
 end
 
 function ReaderZooming:onDefineZoomMode(btn)
+    local config = self.ui.document.configurable
     local settings = ({
         [7] = {right_to_left = false, zoom_bottom_to_top = false, zoom_direction_vertical = false},
         [6] = {right_to_left = false, zoom_bottom_to_top = false, zoom_direction_vertical = true },
@@ -210,22 +211,23 @@ function ReaderZooming:onDefineZoomMode(btn)
         [2] = {right_to_left = true,  zoom_bottom_to_top = true,  zoom_direction_vertical = false},
         [1] = {right_to_left = true,  zoom_bottom_to_top = false, zoom_direction_vertical = true },
         [0] = {right_to_left = true,  zoom_bottom_to_top = false, zoom_direction_vertical = false},
-    })[self.ui.document.configurable.zoom_direction]
-    local zoom_range_number = self.ui.document.configurable.zoom_range_number
+    })[config.zoom_direction]
+    local zoom_range_number = config.zoom_range_number
+    local zoom_factor = config.zoom_factor
     local zoom_mode_genus = ({
         [4] = "page",
         [3] = "content",
         [2] = "columns",
         [1] = "rows",
         [0] = "manual",
-    })[self.ui.document.configurable.zoom_mode_genus]
+    })[config.zoom_mode_genus]
     local zoom_mode_species = ({
         [2] = "",
         [1] = "width",
         [0] = "height",
-    })[self.ui.document.configurable.zoom_mode_species]
-    settings.zoom_overlap_h = self.ui.document.configurable.zoom_overlap_h
-    settings.zoom_overlap_v = self.ui.document.configurable.zoom_overlap_v
+    })[config.zoom_mode_species]
+    settings.zoom_overlap_h = config.zoom_overlap_h
+    settings.zoom_overlap_v = config.zoom_overlap_v
     if btn == "set_zoom_overlap_h" then
         self:_zoomPanChange(_("Set horizontal overlap"), "zoom_overlap_h")
         settings.zoom_overlap_h = self.zoom_overlap_h
@@ -246,27 +248,33 @@ function ReaderZooming:onDefineZoomMode(btn)
 
     if settings.right_to_left then
         if settings.zoom_bottom_to_top then
-            self.ui.document.configurable.writing_direction = 2
+            config.writing_direction = 2
         else
-            self.ui.document.configurable.writing_direction = 1
+            config.writing_direction = 1
         end
     else
-        self.ui.document.configurable.writing_direction = 0
+        config.writing_direction = 0
     end
     settings.right_to_left = nil
 
     if zoom_mode == "columns" or zoom_mode == "rows" then
-        self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
-        settings.zoom_factor = self:setNumberOf(
-            zoom_mode,
-            zoom_range_number,
-            zoom_mode == "columns" and settings.zoom_overlap_h or settings.zoom_overlap_v
-        )
-    elseif zoom_mode == "manual" then
-        self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
-        if btn == "manual" then
-            settings.zoom_factor = self:_zoomFactorChange(_("Set zoom factor"))
+        if btn == "columns" or btn == "rows" then
+            config.zoom_range_number = self:getNumberOf(zoom_mode)
+        else
+            self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
+            settings.zoom_factor = self:setNumberOf(
+                zoom_mode,
+                zoom_range_number,
+                zoom_mode == "columns" and settings.zoom_overlap_h or settings.zoom_overlap_v
+            )
         end
+    elseif zoom_mode == "manual" then
+        if btn == "manual" then
+            config.zoom_factor = self:getNumberOf("columns")
+        else
+            self:setNumberOf("columns", zoom_factor)
+        end
+        self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
     end
     self.ui:handleEvent(Event:new("SetZoomMode", zoom_mode))
 end
@@ -488,10 +496,15 @@ local function _getOverlapFactorForNum(n, overlap)
     return (100 / (100 - overlap))
 end
 
-function ReaderZooming:getNumberOf(what)
+function ReaderZooming:getNumberOf(what, overlap)
     -- Number of columns (if what ~= "rows") or rows (if what == "rows")
     local zoom, zoom_w, zoom_h = self:getZoom(self.current_page)
-    return zoom / (what == "rows" and zoom_h or zoom_w)
+    local zoom_factor = zoom / (what == "rows" and zoom_h or zoom_w)
+    if overlap then
+        overlap = (what == "rows" and self.zoom_overlap_v or self.zoom_overlap_h)
+        zoom_factor = (overlap - 100 * zoom_factor) / (overlap - 100)  -- Thanks Xcas for this one...
+    end
+    return zoom_factor
 end
 
 function ReaderZooming:setNumberOf(what, num, overlap)
@@ -507,12 +520,7 @@ function ReaderZooming:setNumberOf(what, num, overlap)
 end
 
 function ReaderZooming:_zoomFactorChange(title_text, direction, precision)
-    local zoom_factor = self:getNumberOf(direction)
-    local overlap
-    if direction == "columns" or direction == "rows" then
-        overlap = (direction == "columns" and self.zoom_overlap_h or self.zoom_overlap_v)
-        zoom_factor = (overlap - 100 * zoom_factor) / (overlap - 100)  -- Thanks Xcas for this one...
-    end
+    local zoom_factor, overlap = self:getNumberOf(direction)
     UIManager:show(SpinWidget:new{
         width = math.floor(Screen:getWidth() * 0.6),
         value = zoom_factor,
