@@ -186,6 +186,9 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             {
                 name = "zoom_direction",
                 name_text = _("Direction"),
+                enabled_func = function(config)
+                    return config.zoom_mode_genus < 3
+                end,
                 item_icons = {
                     "resources/icons/direction.LRTB.png",
                     "resources/icons/direction.TBLR.png",
