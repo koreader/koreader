@@ -78,7 +78,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
         }
     },
     {
-        icon = "resources/icons/appbar.magnifier.png",
+        icon = "resources/icons/appbar.magnify.zoom.png",
         options = {
             {
                 name = "zoom_overlap_h",
@@ -94,9 +94,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 event = "DefineZoomMode",
                 args =   {0, 12, 24, 36, 48, 60, 72, 84},
                 labels = {0, 12, 24, 36, 48, 60, 72, 84},
-                name_text_hold_callback = function(_, _, _, ui)
-                    ui:handleEvent(Event:new("DefineZoomMode", "set_zoom_overlap_h"))
-                end,
+                name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set horizontal zoom overlap (between columns).]]),
             },
             {
@@ -132,8 +130,8 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 name = "zoom_range_number",
                 name_text = "Number",
                 buttonprogress = true,
-                more_options = true,
-                more_options_param = {value_step = 0.1, precision = "%.1f",},
+                fine_tune = true,
+                fine_tune_param = {value_step = 0.1},
                 values = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
                 default_pos = 2,
                 default_value = 2,
@@ -170,9 +168,9 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 -- toggle = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
                 item_icons = {
                     "resources/icons/zoom.page.png",
-                    "resources/icons/appbar.column.one.png",
-                    "resources/icons/zoom.direction.columns.png",
-                    "resources/icons/zoom.direction.rows.png",
+                    "resources/icons/zoom.content.png",
+                    "resources/icons/zoom.direction.column.png",
+                    "resources/icons/zoom.direction.row.png",
                     "resources/icons/zoom.manual.png",
                 },
                 alternate = false,
