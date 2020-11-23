@@ -996,7 +996,7 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
         end
         if values then
             local value
-            local step = params.value_step or 1
+            local step = params and params.value_step or 1
             if direction == "-" then
                 value = self.configurable[name] or values[1]
                 if type(value) == "table" then

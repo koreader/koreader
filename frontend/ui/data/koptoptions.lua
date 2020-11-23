@@ -111,7 +111,8 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 event = "DefineZoomMode",
                 args =   {0, 12, 24, 36, 48, 60, 72, 84},
                 labels = {0, 12, 24, 36, 48, 60, 72, 84},
-                help_text = _([[Set vertical zoom overlap (between lines).]]),
+                name_text_hold_callback = optionsutil.showValues,
+                args =   {0, 12, 24, 36, 48, 60, 72, 84},
             },
             {
                 name = "zoom_mode_species",
