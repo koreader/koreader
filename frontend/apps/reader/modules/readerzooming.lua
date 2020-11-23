@@ -259,7 +259,10 @@ function ReaderZooming:onDefineZoomMode(btn)
 
     if zoom_mode == "columns" or zoom_mode == "rows" then
         if btn == "columns" or btn == "rows" then
-            config.zoom_range_number = self:getNumberOf(zoom_mode)
+            config.zoom_range_number = self:getNumberOf(
+                zoom_mode,
+                btn == "columns" and settings.zoom_overlap_h or settings.zoom_overlap_v
+            )
         else
             self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
             settings.zoom_factor = self:setNumberOf(
