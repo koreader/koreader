@@ -56,7 +56,7 @@ if [ "${current_cpufreq_gov}" != "interactive" ]; then
                 #       The flip may originally have been switched by the sdio_wifi_pwr module itself,
                 #       via ntx_wifi_power_ctrl @ arch/arm/mach-mx5/mx50_ntx_io.c (which is also the CM_WIFI_CTRL (208) ntx_io ioctl),
                 #       but the code in the published H2O kernel sources actually does the reverse, and is commented out ;).
-                #       It now appears to be entirely handled by Nickel, right *before* loading/unloading that module.
+                #       It is now entirely handled by Nickel, right *before* loading/unloading that module.
                 #       (There's also a bug(?) where that behavior is inverted for the *first* Wi-Fi session after a cold boot...)
                 if grep -q "sdio_wifi_pwr" "/proc/modules"; then
                     # Wi-Fi is enabled, make sure DVFS is on
