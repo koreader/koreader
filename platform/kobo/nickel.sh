@@ -12,7 +12,6 @@ cd /
 unset OLDPWD
 unset LC_ALL TESSDATA_PREFIX STARDICT_DATA_DIR EXT_FONT_DIR
 unset KOREADER_DIR KO_NO_CBB KO_DONT_GRAB_INPUT
-unset CPUFREQ_DVFS CPUFREQ_CONSERVATIVE
 
 # Ensures fmon will restart. Note that we don't have to worry about reaping this, nickel kills on-animator.sh on start.
 (
@@ -63,9 +62,21 @@ if grep -q "sdio_wifi_pwr" "/proc/modules"; then
     # c.f., #2394?
     usleep 250000
     rmmod "${WIFI_MODULE}"
+
+    if [ -n "${CPUFREQ_DVFS}" ]; then
+        echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+        if [ -n "${CPUFREQ_CONSERVATIVE}" ]; then
+            echo "conservative" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+        else
+            echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+            cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+        fi
+    fi
     usleep 250000
     rmmod sdio_wifi_pwr
 fi
+
+unset CPUFREQ_DVFS CPUFREQ_CONSERVATIVE
 
 # Recreate Nickel's FIFO ourselves, like rcS does, because udev *will* write to it!
 # Plus, we actually *do* want the stuff udev writes in there to be processed by Nickel, anyway.
