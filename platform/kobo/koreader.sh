@@ -20,6 +20,9 @@ fi
 IFS= read -r current_cpufreq_gov <"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 # NOTE: What's available depends on the HW, so, we'll have to take it step by step...
 #       Roughly follow Nickel's behavior, and prefer interactive, then ondemand, and finally dvfs.
+#       In practice, this should boil down to either interactive or dvfs, as, AFAICT,
+#       every kernel that supports interactive also supports ondemand,
+#       and they were both enabled at the same time (on Mk. 6).
 if [ "${current_cpufreq_gov}" != "interactive" ]; then
     if grep -q "interactive" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
         ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
