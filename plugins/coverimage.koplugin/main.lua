@@ -2,6 +2,8 @@
 
 local Device = require("device")
 
+-- see https://github.com/koreader/koreader/issues/6899#issuecomment-732664106
+-- for necessary changes on Remarkable to reduce ghosting on poweroff
 if not Device.isAndroid() and not Device.isEmulator()
     and not Device.isRemarkable() then
     return { disabled = true }
