@@ -1,6 +1,5 @@
 local BD = require("ui/bidi")
 local Device = require("device")
-local Event = require("ui/event")
 local S = require("ui/data/strings")
 local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
@@ -112,7 +111,6 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 args =   {0, 12, 24, 36, 48, 60, 72, 84},
                 labels = {0, 12, 24, 36, 48, 60, 72, 84},
                 name_text_hold_callback = optionsutil.showValues,
-                args =   {0, 12, 24, 36, 48, 60, 72, 84},
             },
             {
                 name = "zoom_mode_species",
