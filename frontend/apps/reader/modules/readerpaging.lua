@@ -480,20 +480,6 @@ function ReaderPaging:onZoomModeUpdate(new_mode)
     self.zoom_mode = new_mode
 end
 
-function ReaderPaging:onZoomPanUpdate(settings, no_redraw)
-    for k, v in pairs(settings) do
-        if k ~= "zoom_factor" then
-            if util.arrayContains(ReaderZooming.zoom_pan_settings, k) then
-                self[k] = v
-                self.ui.doc_settings:saveSetting(k, v)
-            end
-        end
-    end
-    if not no_redraw then
-        self.ui:handleEvent(Event:new("RedrawCurrentPage"))
-    end
-end
-
 function ReaderPaging:onPageUpdate(new_page_no, orig_mode)
     self.current_page = new_page_no
     if self.view.page_scroll and orig_mode ~= "scrolling" then
@@ -860,9 +846,9 @@ function ReaderPaging:onGotoPageRel(diff)
     local new_va = self.visible_area:copy()
     local x_pan_off, y_pan_off = 0, 0
     local right_to_left = (self.ui.document.configurable.writing_direction > 0)
-    local bottom_to_top = self.zoom_bottom_to_top
-    local h_progress = 1 - self.zoom_overlap_h / 100
-    local v_progress = 1 - self.zoom_overlap_v / 100
+    local bottom_to_top = self.ui.zooming.zoom_bottom_to_top
+    local h_progress = 1 - self.ui.zooming.zoom_overlap_h / 100
+    local v_progress = 1 - self.ui.zooming.zoom_overlap_v / 100
     local old_va = self.visible_area
     local old_page = self.current_page
     local x, y, w, h = "x", "y", "w", "h"

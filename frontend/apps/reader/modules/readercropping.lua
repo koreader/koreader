@@ -25,9 +25,6 @@ function ReaderCropping:onPageCrop(mode)
         end
         return
     elseif mode == "none" then
-        if self.document.configurable.text_wrap ~= 1 then
-            self.ui:handleEvent(Event:new("SetZoomMode", "pagewidth", "cropping"))
-        end
         return
     end
     -- backup original view dimen
@@ -51,7 +48,7 @@ function ReaderCropping:onPageCrop(mode)
         -- mode, just force readerview to recalculate visible_area
         self.view:recalculate()
     else
-        self.ui:handleEvent(Event:new("SetZoomMode", "page", "cropping"))
+        self.ui:handleEvent(Event:new("SetZoomMode", "page"))
     end
 
     -- prepare bottom buttons so we know the size available for the page above it
@@ -152,11 +149,12 @@ end
 
 function ReaderCropping:setCropZoomMode(confirmed)
     if confirmed then
-        -- if original zoom mode is not "content", set zoom mode to "contentwidth"
+        -- if original zoom mode is "page???", set zoom mode to "content???"
+        local zoom_mode_species = self.orig_zoom_mode:match("page(.*)")
         self:setZoomMode(
-            self.orig_zoom_mode:find("content")
-            and self.orig_zoom_mode
-            or "contentwidth")
+            zoom_mode_species
+            and "content"..zoom_mode_species
+            or self.orig_zoom_mode)
         self.ui:handleEvent(Event:new("InitScrollPageStates"))
     else
         self:setZoomMode(self.orig_zoom_mode)

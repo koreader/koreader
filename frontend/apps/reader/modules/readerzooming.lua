@@ -200,7 +200,7 @@ function ReaderZooming:onZoom(direction)
     return true
 end
 
-function ReaderZooming:onDefineZoomMode(btn)
+function ReaderZooming:onDefineZoom(btn)
     local config = self.ui.document.configurable
     local settings = ({
         [7] = {right_to_left = false, zoom_bottom_to_top = false, zoom_direction_vertical = false},
@@ -258,12 +258,7 @@ function ReaderZooming:onDefineZoomMode(btn)
     settings.right_to_left = nil
 
     if zoom_mode == "columns" or zoom_mode == "rows" then
-        if btn == "columns" or btn == "rows" then
-            config.zoom_range_number = self:getNumberOf(
-                zoom_mode,
-                btn == "columns" and settings.zoom_overlap_h or settings.zoom_overlap_v
-            )
-        else
+        if btn ~= "columns" and btn ~= "rows" then
             self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
             settings.zoom_factor = self:setNumberOf(
                 zoom_mode,
@@ -280,9 +275,15 @@ function ReaderZooming:onDefineZoomMode(btn)
         self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
     end
     self.ui:handleEvent(Event:new("SetZoomMode", zoom_mode))
+    if btn == "columns" or btn == "rows" then
+        config.zoom_range_number = self:getNumberOf(
+            zoom_mode,
+            btn == "columns" and settings.zoom_overlap_h or settings.zoom_overlap_v
+        )
+    end
     if tonumber(btn) then
         UIManager:show(InfoMessage:new{
-            timeout = 1.5,
+            timeout = 2,
             text = T(_([[
     Zoom set to:
 
@@ -388,7 +389,7 @@ function ReaderZooming:getZoom(pageno)
     -- check if we're in bbox mode and work on bbox if that's the case
     local zoom
     local page_size = self.ui.document:getNativePageDimensions(pageno)
-    if not self.zoom_mode:match("^page") then
+    if not (self.zoom_mode:match("^page") or self.ui.document.configurable.trim_page == 3) then
         local ubbox_dimen = self.ui.document:getUsedBBoxDimensions(pageno, 1)
         -- if bbox is larger than the native page dimension render the full page
         -- See discussion in koreader/koreader#970.
@@ -634,7 +635,7 @@ function ReaderZooming:addToMainMenu(menu_items)
             end,
             callback = function()
                 self.ui.document.configurable.writing_direction = (self.ui.document.configurable.writing_direction + 1) % 2
-                self.ui:handleEvent(Event:new("ZoomPanUpdate", {}))
+                self.ui:handleEvent(Event:new("SetZoomPan"))
             end,
             hold_callback = function(touchmenu_instance)
                 G_reader_settings:saveSetting("kopt_writing_direction", self.ui.document.configurable.writing_direction)
@@ -681,7 +682,13 @@ function ReaderZooming:onSetZoomPan(settings, no_redraw)
             self.ui.doc_settings:saveSetting(k, v)
         end
     end
-    self.ui:handleEvent(Event:new("ZoomPanUpdate", settings, no_redraw))
+    if not no_redraw then
+        self.ui:handleEvent(Event:new("RedrawCurrentPage"))
+    end
+end
+
+function ReaderZooming:onBBoxUpdate()
+    self:onDefineZoom()
 end
 
 function ReaderZooming:makeDefault(zoom_mode, touchmenu_instance)

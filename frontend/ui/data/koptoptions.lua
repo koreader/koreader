@@ -90,7 +90,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 show_func = function(config)
                     return config and config.zoom_mode_genus < 3
                 end,
-                event = "DefineZoomMode",
+                event = "DefineZoom",
                 args =   {0, 12, 24, 36, 48, 60, 72, 84},
                 labels = {0, 12, 24, 36, 48, 60, 72, 84},
                 name_text_hold_callback = optionsutil.showValues,
@@ -107,7 +107,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 show_func = function(config)
                     return config and config.zoom_mode_genus < 3
                 end,
-                event = "DefineZoomMode",
+                event = "DefineZoom",
                 args =   {0, 12, 24, 36, 48, 60, 72, 84},
                 labels = {0, 12, 24, 36, 48, 60, 72, 84},
                 name_text_hold_callback = optionsutil.showValues,
@@ -120,7 +120,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 values = {2, 1, 0},
                 default_value = 2,
                 show_func = function(config) return config and config.zoom_mode_genus > 2 end,
-                event = "DefineZoomMode",
+                event = "DefineZoom",
                 args = {"full", "width", "height"},
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set zoom mode.]]),
@@ -137,7 +137,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 show_func = function(config)
                     return config and config.zoom_mode_genus < 3 and config.zoom_mode_genus > 0
                 end,
-                event = "DefineZoomMode",
+                event = "DefineZoom",
                 args =   {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
                 labels = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
                 name_text_hold_callback = optionsutil.showValues,
@@ -155,7 +155,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 show_func = function(config)
                     return config and config.zoom_mode_genus < 1
                 end,
-                event = "DefineZoomMode",
+                event = "DefineZoom",
                 args =   {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
                 labels = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
                 name_text_hold_callback = optionsutil.showValues,
@@ -175,7 +175,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 alternate = false,
                 values = {4, 3, 2, 1, 0},
                 default_value = 4,
-                event = "DefineZoomMode",
+                event = "DefineZoom",
                 args = {"page", "content", "columns", "rows", "manual"},
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set zoom mode.]]),
@@ -199,7 +199,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 alternate = false,
                 values = {7, 6, 5, 4, 3, 2, 1, 0},
                 default_value = 7,
-                event = "DefineZoomMode",
+                event = "DefineZoom",
                 args = {7, 6, 5, 4, 3, 2, 1, 0},
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set zoom direction.]]),
