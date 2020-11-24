@@ -2,7 +2,8 @@
 
 local Device = require("device")
 
-if not Device.isAndroid() and not Device.isEmulator() then
+if not Device.isAndroid() and not Device.isEmulator()
+    and not Device.isRemarkable() then
     return { disabled = true }
 end
 
