@@ -43,7 +43,7 @@ if [ "${current_cpufreq_gov}" != "interactive" ]; then
                     export CPUFREQ_CONSERVATIVE="true"
                     echo "conservative" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
                     # NOTE: The knobs survive a governor switch, which is why we do this now ;).
-                    echo  "2" >"/sys/devices/system/cpu/cpufreq/conservative/sampling_down_factor"
+                    echo "2"  >"/sys/devices/system/cpu/cpufreq/conservative/sampling_down_factor"
                     echo "50" >"/sys/devices/system/cpu/cpufreq/conservative/freq_step"
                     echo "11" >"/sys/devices/system/cpu/cpufreq/conservative/down_threshold"
                     echo "12" >"/sys/devices/system/cpu/cpufreq/conservative/up_threshold"
