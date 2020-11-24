@@ -53,13 +53,11 @@ if [ "${current_cpufreq_gov}" != "interactive" ]; then
 
                 # NOTE: Now, here comes the freaky stuff... On a H2O, DVFS is only enabled when Wi-Fi is *on*.
                 #       When it's off, DVFS is off, which pegs the CPU @ max clock given that DVFS means the userspace governor.
-                #       The flip is switched by the sdio_wifi_pwr module, via ntx_wifi_power_ctrl @ arch/arm/mach-mx5/mx50_ntx_io.c
-                #       (which is also the CM_WIFI_CTRL (208) ntx_io ioctl...)
-                #       (That behavior also happens to be inverted for the *first* Wi-Fi session after a cold boot...)
-                #       And possibly some black magic somewhere, because when enabling Wi-Fi in Nickel, then killing it in KOReader,
-                #       while that does trigger ntx_wifi_power_ctrl, it does not affect DVFS...
-                #       (Also, the observed behavior in Nickel is in direct contradiction with the published H2O kernel sources,
-                #       but what else is new...)
+                #       The flip may originally have been switched by the sdio_wifi_pwr module itself,
+                #       via ntx_wifi_power_ctrl @ arch/arm/mach-mx5/mx50_ntx_io.c (which is also the CM_WIFI_CTRL (208) ntx_io ioctl),
+                #       but the code in the published H2O kernel sources actually does the reverse, and is commented out ;).
+                #       It now appears to be entirely handled by Nickel, right *before* loading/unloading that module.
+                #       (There's also a bug(?) where that behavior is inverted for the *first* Wi-Fi session after a cold boot...)
                 if grep -q "sdio_wifi_pwr" "/proc/modules"; then
                     # Wi-Fi is enabled, make sure DVFS is on
                     echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
