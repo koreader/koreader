@@ -18,19 +18,37 @@ fi
 
 # Attempt to switch to a sensible CPUFreq governor when that's not already the case...
 IFS= read -r current_cpufreq_gov <"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-# NOTE: We're being fairly conservative here, because what's used and what's available varies depending on HW...
-if [ "${current_cpufreq_gov}" != "ondemand" ] && [ "${current_cpufreq_gov}" != "interactive" ]; then
-    # NOTE: Go with ondemand, because it's likely to be the lowest common denominator.
-    #       Plus, interactive is hard to tune right, and only really interesting when it's a recent version,
-    #       which I somehow doubt is the case anywhere here...
-    if grep -q ondemand /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors; then
+# NOTE: What's available depends on the HW, so, we'll have to take it step by step...
+#       Roughly follow Nickel's behavior, and prefer interactive, then ondemand, and finally dvfs.
+if [ "${current_cpufreq_gov}" != "interactive" ]; then
+    if grep -q "interactive" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
         ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
-        echo "ondemand" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+        echo "interactive" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+    elif [ "${current_cpufreq_gov}" != "ondemand" ]; then
+        if grep -q "ondemand" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
+            ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
+            echo "ondemand" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+        elif [ -e "/sys/devices/platform/mxc_dvfs_core.0/enable" ]; then
+            ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
+            echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+            # NOTE: Now, here comes the freaky stuff... On a H2O, DVFS is only enabled when Wi-Fi is *on*.
+            #       When it's off, DVFS is off, which pegs the CPU @ max clock.
+            #       The flip is switched by the sdio_wifi_pwr module, via ntx_wifi_power_ctrl @ arch/arm/mach-mx5/mx50_ntx_io.c
+            #       (which is also the CM_WIFI_CTRL (208) ntx_io ioctl...)
+            if grep -q "sdio_wifi_pwr" "/proc/modules"; then
+                # Wi-Fi is enabled, make sure DVFS is on
+                echo "1" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+            else
+                # Wi-Fi is disabled, make sure DVFS is off, and enjoy burning though your battery...
+                echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+                # The kernel should already be taking care of that...
+                cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+            fi
+            # NOTE: And, no, unfortunately, we don't have any better choice than that on those kernels,
+            #       the only other governors available are conservative, powersave & performance (c.f., #4114)...
+        fi
     fi
 fi
-# NOTE: That doesn't actually help us poor userspace plebs, but, short of switching to performance,
-#       I don't really have a golden bullet here... (conservative's rubberbanding is terrible, so that's a hard pass).
-#       All I can say is that userspace is a terrible idea and behaves *very* strangely (c.f., #4114).
 
 # update to new version from OTA directory
 ko_update_check() {
@@ -462,6 +480,8 @@ fi
 # Restore original CPUFreq governor if need be...
 if [ -n "${ORIG_CPUFREQ_GOV}" ]; then
     echo "${ORIG_CPUFREQ_GOV}" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+
+    # NOTE: Leave DVFS alone, it'll be flipped by sdio_wifi_pwr...
 fi
 
 # If we requested a reboot/shutdown, no need to bother with this...
