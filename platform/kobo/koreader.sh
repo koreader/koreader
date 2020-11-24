@@ -47,10 +47,10 @@ if [ "${current_cpufreq_gov}" != "interactive" ]; then
             # NOTE: And, no, unfortunately, we don't have any better choice than that on those kernels,
             #       the only other governors available are conservative, powersave & performance (c.f., #4114)...
             #       conservative *might* be usable, with severe tweaking, e.g.,
-            #       echo "15" >"/sys/devices/system/cpu/cpufreq/conservative/down_threshold"
+            #       echo "11" >"/sys/devices/system/cpu/cpufreq/conservative/down_threshold"
             #       echo "50" >"/sys/devices/system/cpu/cpufreq/conservative/freq_step"
-            #       echo "5"  >"/sys/devices/system/cpu/cpufreq/conservative/sampling_down_factor"
-            #       echo "50" >"/sys/devices/system/cpu/cpufreq/conservative/up_threshold"
+            #       echo "4"  >"/sys/devices/system/cpu/cpufreq/conservative/sampling_down_factor"
+            #       echo "12" >"/sys/devices/system/cpu/cpufreq/conservative/up_threshold"
             #       It's simply a tad too slow on the uptake, unlike interactive,
             #       and the default sampling_rate cannot be tweaked lower to help alleviate that...
 
