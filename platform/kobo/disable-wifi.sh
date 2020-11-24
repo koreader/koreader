@@ -45,6 +45,16 @@ if grep -q "${WIFI_MODULE}" "/proc/modules"; then
     rmmod "${WIFI_MODULE}"
 fi
 if grep -q "sdio_wifi_pwr" "/proc/modules"; then
+    # Handle the shitty DVFS switcheroo...
+    if [ -n "${CPUFREQ_DVFS}" ]; then
+        echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+        if [ -n "${CPUFREQ_CONSERVATIVE}" ]; then
+            echo "conservative" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+        else
+            echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+            cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+        fi
+    fi
     usleep 250000
     rmmod sdio_wifi_pwr
 fi

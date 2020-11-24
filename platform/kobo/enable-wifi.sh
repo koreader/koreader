@@ -14,7 +14,17 @@ for fd in /proc/"$$"/fd/*; do
 done
 
 # Load wifi modules and enable wifi.
-grep -q "sdio_wifi_pwr" "/proc/modules" || insmod "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko"
+if ! grep -q "sdio_wifi_pwr" "/proc/modules"; then
+    if [ -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
+        # Handle the shitty DVFS switcheroo...
+        if [ -n "${CPUFREQ_DVFS}" ]; then
+            echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+            echo "1" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+        fi
+
+        insmod "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko"
+    fi
+fi
 # Moar sleep!
 usleep 250000
 # NOTE: Used to be exported in WIFI_MODULE_PATH before FW 4.23
