@@ -19,7 +19,7 @@ fi
 # Attempt to switch to a sensible CPUFreq governor when that's not already the case...
 IFS= read -r current_cpufreq_gov <"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 # NOTE: What's available depends on the HW, so, we'll have to take it step by step...
-#       Roughly follow Nickel's behavior (which prefers interactive), and prefer interactive, then ondemand, and finally dvfs.
+#       Roughly follow Nickel's behavior (which prefers interactive), and prefer interactive, then ondemand, and finally conservative/dvfs.
 if [ "${current_cpufreq_gov}" != "interactive" ]; then
     if grep -q "interactive" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
         ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
@@ -512,7 +512,7 @@ fi
 if [ -n "${ORIG_CPUFREQ_GOV}" ]; then
     echo "${ORIG_CPUFREQ_GOV}" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 
-    # NOTE: Leave DVFS alone, it'll be flipped by sdio_wifi_pwr...
+    # NOTE: Leave DVFS alone, it'll be handled by Nickel if necessary.
 fi
 
 # If we requested a reboot/shutdown, no need to bother with this...
