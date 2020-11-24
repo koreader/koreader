@@ -8,7 +8,7 @@ source "${CI_DIR}/common.sh"
 mapfile -t shellscript_locations < <({ git grep -lE '^#!(/usr)?/bin/(env )?(bash|sh)' && git submodule --quiet foreach '[ "$path" = "base" -o "$path" = "platform/android/luajit-launcher" ] || git grep -lE "^#!(/usr)?/bin/(env )?(bash|sh)" | sed "s|^|$path/|"' && git ls-files ./*.sh; } | sort | uniq)
 
 SHELLSCRIPT_ERROR=0
-SHFMT_OPTIONS="-i 4 -ci -kp"
+SHFMT_OPTIONS="-i 4 -ci"
 
 for shellscript in "${shellscript_locations[@]}"; do
     echo -e "${ANSI_GREEN}Running shellcheck on ${shellscript}"
