@@ -95,7 +95,13 @@ function Remarkable:setDateTime(year, month, day, hour, min, sec)
     return os.execute(command) == 0
 end
 
+function Remarkable:_clearScreen()
+    self.screen:clear()
+    self.screen:refreshFull()
+end
+
 function Remarkable:suspend()
+    self:_clearScreen()
     os.execute("systemctl suspend")
 end
 
@@ -103,10 +109,12 @@ function Remarkable:resume()
 end
 
 function Remarkable:powerOff()
+    self:_clearScreen()
     os.execute("systemctl poweroff")
 end
 
 function Remarkable:reboot()
+    self:_clearScreen()
     os.execute("systemctl reboot")
 end
 
