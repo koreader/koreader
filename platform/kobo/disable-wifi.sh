@@ -40,11 +40,11 @@ ifconfig "${INTERFACE}" down
 
 # Some sleep in between may avoid system getting hung
 # (we test if a module is actually loaded to avoid unneeded sleeps)
-if lsmod | grep -q "${WIFI_MODULE}"; then
+if grep -q "${WIFI_MODULE}" "/proc/modules"; then
     usleep 250000
     rmmod "${WIFI_MODULE}"
 fi
-if lsmod | grep -q sdio_wifi_pwr; then
+if grep -q "sdio_wifi_pwr" "/proc/modules"; then
     usleep 250000
     rmmod sdio_wifi_pwr
 fi

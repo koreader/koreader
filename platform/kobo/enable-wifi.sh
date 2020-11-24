@@ -14,11 +14,11 @@ for fd in /proc/"$$"/fd/*; do
 done
 
 # Load wifi modules and enable wifi.
-lsmod | grep -q sdio_wifi_pwr || insmod "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko"
+grep -q "sdio_wifi_pwr" "/proc/modules" || insmod "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko"
 # Moar sleep!
 usleep 250000
 # NOTE: Used to be exported in WIFI_MODULE_PATH before FW 4.23
-lsmod | grep -q "${WIFI_MODULE}" || insmod "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko"
+grep -q "${WIFI_MODULE}" "/proc/modules" || insmod "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko"
 # Race-y as hell, don't try to optimize this!
 sleep 1
 

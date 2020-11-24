@@ -23,7 +23,7 @@ unset KOREADER_DIR KO_NO_CBB KO_DONT_GRAB_INPUT
 
 # Make sure we kill the Wi-Fi first, because nickel apparently doesn't like it if it's up... (cf. #1520)
 # NOTE: That check is possibly wrong on PLATFORM == freescale (because I don't know if the sdio_wifi_pwr module exists there), but we don't terribly care about that.
-if lsmod | grep -q sdio_wifi_pwr; then
+if grep -q "sdio_wifi_pwr" "/proc/modules"; then
     killall -q -TERM restore-wifi-async.sh enable-wifi.sh obtain-ip.sh
     cp -a "/etc/resolv.conf" "/tmp/resolv.ko"
     old_hash="$(md5sum "/etc/resolv.conf" | cut -f1 -d' ')"
@@ -84,7 +84,7 @@ fi
 
 # And finally, simply restart nickel.
 # We don't care about horribly legacy stuff, because if people switch between nickel and KOReader in the first place, I assume they're using a decently recent enough FW version.
-# Last tested on an H2O & a Forma running FW 4.7.x - 4.24.x
+# Last tested on an H2O & a Forma running FW 4.7.x - 4.25.x
 /usr/local/Kobo/hindenburg &
 LIBC_FATAL_STDERR_=1 /usr/local/Kobo/nickel -platform kobo -skipFontLoad &
 [ "${PLATFORM}" != "freescale" ] && udevadm trigger &
