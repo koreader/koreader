@@ -12,6 +12,7 @@ cd /
 unset OLDPWD
 unset LC_ALL TESSDATA_PREFIX STARDICT_DATA_DIR EXT_FONT_DIR
 unset KOREADER_DIR KO_NO_CBB KO_DONT_GRAB_INPUT
+unset CPUFREQ_DVFS CPUFREQ_CONSERVATIVE
 
 # Ensures fmon will restart. Note that we don't have to worry about reaping this, nickel kills on-animator.sh on start.
 (

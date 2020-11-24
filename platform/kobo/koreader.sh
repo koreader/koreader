@@ -19,48 +19,66 @@ fi
 # Attempt to switch to a sensible CPUFreq governor when that's not already the case...
 IFS= read -r current_cpufreq_gov <"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 # NOTE: What's available depends on the HW, so, we'll have to take it step by step...
-#       Roughly follow Nickel's behavior, and prefer interactive, then ondemand, and finally dvfs.
-#       In practice, this should boil down to either interactive or dvfs, as, AFAICT,
-#       every kernel that supports interactive also supports ondemand,
-#       and they were both enabled at the same time (on Mk. 6).
+#       Roughly follow Nickel's behavior (which prefers interactive), and prefer interactive, then ondemand, and finally dvfs.
 if [ "${current_cpufreq_gov}" != "interactive" ]; then
     if grep -q "interactive" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
         ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
         echo "interactive" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
     elif [ "${current_cpufreq_gov}" != "ondemand" ]; then
         if grep -q "ondemand" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
+            # NOTE: This should never really happen: every kernel that supports ondemand already supports interactive ;).
+            #       They were both introduced on Mk. 6
             ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
             echo "ondemand" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
         elif [ -e "/sys/devices/platform/mxc_dvfs_core.0/enable" ]; then
-            ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
-            echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-            # NOTE: Now, here comes the freaky stuff... On a H2O, DVFS is only enabled when Wi-Fi is *on*.
-            #       When it's off, DVFS is off, which pegs the CPU @ max clock.
-            #       The flip is switched by the sdio_wifi_pwr module, via ntx_wifi_power_ctrl @ arch/arm/mach-mx5/mx50_ntx_io.c
-            #       (which is also the CM_WIFI_CTRL (208) ntx_io ioctl...)
-            #       And possibly some black magic somewhere, because enabling Wi-Fi in Nickel, but killing Wi-Fi in KOReader,
-            #       while it does trigger ntx_wifi_power_ctrl, does not affect DVFS...
-            #       (Also, the observed behavior in Nickel is in direct contradiction with the published H2O kernel sources,
-            #       but what else is new...)
-            if grep -q "sdio_wifi_pwr" "/proc/modules"; then
-                # Wi-Fi is enabled, make sure DVFS is on
-                echo "1" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
-            else
-                # Wi-Fi is disabled, make sure DVFS is off, and enjoy burning though your battery...
-                echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
-                # The kernel should already be taking care of that...
-                cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
-            fi
-            # NOTE: And, no, unfortunately, we don't have any better choice than that on those kernels,
-            #       the only other governors available are conservative, powersave & performance (c.f., #4114)...
-            #       conservative *might* be usable, with severe tweaking, e.g.,
-            #       echo "11" >"/sys/devices/system/cpu/cpufreq/conservative/down_threshold"
-            #       echo "50" >"/sys/devices/system/cpu/cpufreq/conservative/freq_step"
-            #       echo "2"  >"/sys/devices/system/cpu/cpufreq/conservative/sampling_down_factor"
-            #       echo "12" >"/sys/devices/system/cpu/cpufreq/conservative/up_threshold"
-            #       It's simply a tad too slow on the uptake, unlike interactive,
-            #       and the default sampling_rate cannot be tweaked lower to help alleviate that...
+            # The rest of this block assumes userspace is available...
+            if grep -q "userspace" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
+                ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
+                export CPUFREQ_DVFS="true"
 
+                # If we can use conservative, do so, but we'll tweak it a bit to make it somewhat useful given our load patterns...
+                # We unfortunately don't have any better choices on those kernels,
+                # the only other governors available are conservative, powersave & performance (c.f., #4114)...
+                if grep -q "conservative" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
+                    export CPUFREQ_CONSERVATIVE="true"
+                    echo "conservative" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                    # NOTE: The knobs survive a governor switch, which is why we do this now ;).
+                    echo "2"  >"/sys/devices/system/cpu/cpufreq/conservative/sampling_down_factor"
+                    echo "50" >"/sys/devices/system/cpu/cpufreq/conservative/freq_step"
+                    echo "11" >"/sys/devices/system/cpu/cpufreq/conservative/down_threshold"
+                    echo "12" >"/sys/devices/system/cpu/cpufreq/conservative/up_threshold"
+                    # NOTE: The default sampling_rate is a bit high for my tastes,
+                    #       but it unfortunately defaults to its lowest possible setting...
+                fi
+
+                # NOTE: Now, here comes the freaky stuff... On a H2O, DVFS is only enabled when Wi-Fi is *on*.
+                #       When it's off, DVFS is off, which pegs the CPU @ max clock given that DVFS means the userspace governor.
+                #       The flip is switched by the sdio_wifi_pwr module, via ntx_wifi_power_ctrl @ arch/arm/mach-mx5/mx50_ntx_io.c
+                #       (which is also the CM_WIFI_CTRL (208) ntx_io ioctl...)
+                #       (That behavior also happens to be inverted for the *first* Wi-Fi session after a cold boot...)
+                #       And possibly some black magic somewhere, because when enabling Wi-Fi in Nickel, then killing it in KOReader,
+                #       while that does trigger ntx_wifi_power_ctrl, it does not affect DVFS...
+                #       (Also, the observed behavior in Nickel is in direct contradiction with the published H2O kernel sources,
+                #       but what else is new...)
+                if grep -q "sdio_wifi_pwr" "/proc/modules"; then
+                    # Wi-Fi is enabled, make sure DVFS is on
+                    echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                    echo "1" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+                else
+                    # Wi-Fi is disabled, make sure DVFS is off
+                    echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+
+                    # Switch to conservative to avoid being stuck at max clock if we can...
+                    if [ -n "${CPUFREQ_CONSERVATIVE}" ]; then
+                        echo "conservative" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                    else
+                        # Otherwise, we'll be pegged at max clock...
+                        echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                        # The kernel should already be taking care of that...
+                        cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+                    fi
+                fi
+            fi
         fi
     fi
 fi
