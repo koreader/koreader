@@ -35,6 +35,10 @@ if [ "${current_cpufreq_gov}" != "interactive" ]; then
             #       When it's off, DVFS is off, which pegs the CPU @ max clock.
             #       The flip is switched by the sdio_wifi_pwr module, via ntx_wifi_power_ctrl @ arch/arm/mach-mx5/mx50_ntx_io.c
             #       (which is also the CM_WIFI_CTRL (208) ntx_io ioctl...)
+            #       And possibly some black magic somewhere, because enabling Wi-Fi in Nickel, but killing Wi-Fi in KOReader,
+            #       while it does trigger ntx_wifi_power_ctrl, does not affect DVFS...
+            #       (Also, the observed behavior in Nickel is in direct contradiction with the published H2O kernel sources,
+            #       but what else is new...)
             if grep -q "sdio_wifi_pwr" "/proc/modules"; then
                 # Wi-Fi is enabled, make sure DVFS is on
                 echo "1" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
@@ -49,7 +53,7 @@ if [ "${current_cpufreq_gov}" != "interactive" ]; then
             #       conservative *might* be usable, with severe tweaking, e.g.,
             #       echo "11" >"/sys/devices/system/cpu/cpufreq/conservative/down_threshold"
             #       echo "50" >"/sys/devices/system/cpu/cpufreq/conservative/freq_step"
-            #       echo "4"  >"/sys/devices/system/cpu/cpufreq/conservative/sampling_down_factor"
+            #       echo "2"  >"/sys/devices/system/cpu/cpufreq/conservative/sampling_down_factor"
             #       echo "12" >"/sys/devices/system/cpu/cpufreq/conservative/up_threshold"
             #       It's simply a tad too slow on the uptake, unlike interactive,
             #       and the default sampling_rate cannot be tweaked lower to help alleviate that...
