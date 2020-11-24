@@ -66,6 +66,7 @@ local LANGUAGES = {
     { "it",               {"ita"},   "H   ",   _("Italian"),                "Italian.pattern" },
     { "ja",                    {},   "    ",   _("Japanese") },
     { "ko",                    {},   "    ",   _("Korean") },
+    { "la",               {"lat"},   "H   ",   _("Latin"),                  "Latin.pattern" },
     { "lv",               {"lav"},   "H   ",   _("Latvian"),                "Latvian.pattern" },
     { "lt",               {"lit"},   "H   ",   _("Lithuanian"),             "Lithuanian.pattern" },
     { "mk",                  {""},   "H   ",   _("Macedonian"),             "Macedonian.pattern" },
