@@ -301,7 +301,7 @@ function CoverImage:addToMainMenu(menu_items)
                     {
                         text = _("Original image"),
                         checked_func = function()
-                            return self.cover_image_format == "none"
+                            return self.cover_image_background == "none"
                         end,
                         callback = function()
                             local old_background = self.cover_image_background
