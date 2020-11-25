@@ -18,19 +18,68 @@ fi
 
 # Attempt to switch to a sensible CPUFreq governor when that's not already the case...
 IFS= read -r current_cpufreq_gov <"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-# NOTE: We're being fairly conservative here, because what's used and what's available varies depending on HW...
-if [ "${current_cpufreq_gov}" != "ondemand" ] && [ "${current_cpufreq_gov}" != "interactive" ]; then
-    # NOTE: Go with ondemand, because it's likely to be the lowest common denominator.
-    #       Plus, interactive is hard to tune right, and only really interesting when it's a recent version,
-    #       which I somehow doubt is the case anywhere here...
-    if grep -q ondemand /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors; then
+# NOTE: What's available depends on the HW, so, we'll have to take it step by step...
+#       Roughly follow Nickel's behavior (which prefers interactive), and prefer interactive, then ondemand, and finally conservative/dvfs.
+if [ "${current_cpufreq_gov}" != "interactive" ]; then
+    if grep -q "interactive" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
         ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
-        echo "ondemand" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+        echo "interactive" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+    elif [ "${current_cpufreq_gov}" != "ondemand" ]; then
+        if grep -q "ondemand" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
+            # NOTE: This should never really happen: every kernel that supports ondemand already supports interactive ;).
+            #       They were both introduced on Mk. 6
+            ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
+            echo "ondemand" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+        elif [ -e "/sys/devices/platform/mxc_dvfs_core.0/enable" ]; then
+            # The rest of this block assumes userspace is available...
+            if grep -q "userspace" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
+                ORIG_CPUFREQ_GOV="${current_cpufreq_gov}"
+                export CPUFREQ_DVFS="true"
+
+                # If we can use conservative, do so, but we'll tweak it a bit to make it somewhat useful given our load patterns...
+                # We unfortunately don't have any better choices on those kernels,
+                # the only other governors available are powersave & performance (c.f., #4114)...
+                if grep -q "conservative" "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"; then
+                    export CPUFREQ_CONSERVATIVE="true"
+                    echo "conservative" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                    # NOTE: The knobs survive a governor switch, which is why we do this now ;).
+                    echo "2" >"/sys/devices/system/cpu/cpufreq/conservative/sampling_down_factor"
+                    echo "50" >"/sys/devices/system/cpu/cpufreq/conservative/freq_step"
+                    echo "11" >"/sys/devices/system/cpu/cpufreq/conservative/down_threshold"
+                    echo "12" >"/sys/devices/system/cpu/cpufreq/conservative/up_threshold"
+                    # NOTE: The default sampling_rate is a bit high for my tastes,
+                    #       but it unfortunately defaults to its lowest possible setting...
+                fi
+
+                # NOTE: Now, here comes the freaky stuff... On a H2O, DVFS is only enabled when Wi-Fi is *on*.
+                #       When it's off, DVFS is off, which pegs the CPU @ max clock given that DVFS means the userspace governor.
+                #       The flip may originally have been switched by the sdio_wifi_pwr module itself,
+                #       via ntx_wifi_power_ctrl @ arch/arm/mach-mx5/mx50_ntx_io.c (which is also the CM_WIFI_CTRL (208) ntx_io ioctl),
+                #       but the code in the published H2O kernel sources actually does the reverse, and is commented out ;).
+                #       It is now entirely handled by Nickel, right *before* loading/unloading that module.
+                #       (There's also a bug(?) where that behavior is inverted for the *first* Wi-Fi session after a cold boot...)
+                if grep -q "sdio_wifi_pwr" "/proc/modules"; then
+                    # Wi-Fi is enabled, make sure DVFS is on
+                    echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                    echo "1" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+                else
+                    # Wi-Fi is disabled, make sure DVFS is off
+                    echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+
+                    # Switch to conservative to avoid being stuck at max clock if we can...
+                    if [ -n "${CPUFREQ_CONSERVATIVE}" ]; then
+                        echo "conservative" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                    else
+                        # Otherwise, we'll be pegged at max clock...
+                        echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+                        # The kernel should already be taking care of that...
+                        cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+                    fi
+                fi
+            fi
+        fi
     fi
 fi
-# NOTE: That doesn't actually help us poor userspace plebs, but, short of switching to performance,
-#       I don't really have a golden bullet here... (conservative's rubberbanding is terrible, so that's a hard pass).
-#       All I can say is that userspace is a terrible idea and behaves *very* strangely (c.f., #4114).
 
 # update to new version from OTA directory
 ko_update_check() {
@@ -462,6 +511,8 @@ fi
 # Restore original CPUFreq governor if need be...
 if [ -n "${ORIG_CPUFREQ_GOV}" ]; then
     echo "${ORIG_CPUFREQ_GOV}" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+
+    # NOTE: Leave DVFS alone, it'll be handled by Nickel if necessary.
 fi
 
 # If we requested a reboot/shutdown, no need to bother with this...

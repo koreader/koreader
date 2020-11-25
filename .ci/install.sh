@@ -60,8 +60,8 @@ else
 fi
 
 # install shfmt
-SHFMT_URL="https://github.com/mvdan/sh/releases/download/v3.0.1/shfmt_v3.0.1_linux_amd64"
-if [ "$(shfmt --version)" != "v3.0.1" ]; then
+SHFMT_URL="https://github.com/mvdan/sh/releases/download/v3.2.0/shfmt_v3.2.0_linux_amd64"
+if [ "$(shfmt --version)" != "v3.2.0" ]; then
     curl -sSL "${SHFMT_URL}" -o "${HOME}/bin/shfmt"
     chmod +x "${HOME}/bin/shfmt"
 else
