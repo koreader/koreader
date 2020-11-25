@@ -112,6 +112,7 @@ function OptionIconItem:init()
     }
     self[1] = FrameContainer:new{
         padding = 0,
+        padding_top = self.underline_padding,
         padding_left = self.padding_left,
         padding_right = self.padding_right,
         bordersize = 0,
@@ -476,21 +477,25 @@ function ConfigOption:init()
             -- Icons (ex: columns, text align, with PDF)
             if self.options[c].item_icons then
                 local items_count = #self.options[c].item_icons
-                local first_item = OptionIconItem:new{
-                    icon = ImageWidget:new{
-                        file = self.options[c].item_icons[1]
-                    }
-                }
-                local max_item_spacing = (option_widget_width -
-                        first_item:getSize().w * items_count) / items_count
+                local icon_max_height = option_height
+                local icon_max_width = math.floor(option_widget_width / items_count)
+                local icon_size = math.min(icon_max_height, icon_max_width)
+                local max_item_spacing = (option_widget_width - icon_size * items_count) / items_count
                 local horizontal_half_padding = math.min(max_item_spacing, item_spacing_width) / 2
+                -- Our icons have a bottom padding that makes 10% to 20% of their height (5-9px in our 48px images)
+                -- We don't want the underline to be that far away from the image content,
+                -- so we use some negative padding to eat a bit on their padding.
+                local underline_padding = - math.floor(0.05 * icon_size)
                 for d = 1, #self.options[c].item_icons do
                     local option_item = OptionIconItem:new{
                         icon = ImageWidget:new{
                             file = self.options[c].item_icons[d],
                             dim = not enabled,
+                            width = icon_size,
+                            height = icon_size,
+                            scale_factor = 0, -- scale to fit width and height
                         },
-                        underline_padding = -padding_button,
+                        underline_padding = underline_padding,
                         padding_left = d > 1 and horizontal_half_padding,
                         padding_right = d < #self.options[c].item_icons and horizontal_half_padding,
                         color = d == current_item and (enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY) or Blitbuffer.COLOR_WHITE,
