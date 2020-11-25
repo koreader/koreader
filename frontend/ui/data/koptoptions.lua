@@ -77,7 +77,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
         }
     },
     {
-        icon = "resources/icons/appbar.magnify.zoom.png",
+        icon = "resources/icons/appbar.page.fit.png",
         options = {
             {
                 name = "zoom_overlap_h",
