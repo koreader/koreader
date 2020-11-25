@@ -99,14 +99,13 @@ function ReaderZooming:init()
                 doc = "zoom to fit content height",
                 event = "SetZoomMode", args = "contentheight"
             },
-            ZoomToFitLines = {
-                { "Shift", "H" },
-                doc = "pan zoom",
+            ZoomManual = {
+                { "Shift", "M" },
+                doc = "manual zoom mode",
                 event = "SetZoomMode", args = "manual"
             },
         }
     end
-    self.ui.menu:registerToMainMenu(self)
 end
 
 function ReaderZooming:onReadSettings(config)
@@ -576,97 +575,6 @@ function ReaderZooming:_zoomPanChange(text, setting)
             self.ui:handleEvent(Event:new("SetZoomPan", {[setting] = spin.value}))
         end
     })
-end
-
-function ReaderZooming:addToMainMenu(menu_items)
-    if self.ui.document.info.has_pages then
-        local function getZoomModeMenuItem(text, mode, separator)
-            return {
-                text_func = function()
-                    local default_zoom_mode = G_reader_settings:readSetting("zoom_mode") or self.DEFAULT_ZOOM_MODE
-                    return text .. (mode == default_zoom_mode and "   ★" or "")
-                end,
-                checked_func = function()
-                    return self.zoom_mode == mode
-                end,
-                callback = self:genSetZoomModeCallBack(mode),
-                hold_callback = function(touchmenu_instance)
-                    self:makeDefault(mode, touchmenu_instance)
-                end,
-                separator = separator,
-            }
-        end
-        local function zoomFactorMenuItem(text)
-            return {
-                text = text,
-                callback = function(touchmenu_instance)
-                    self:_zoomFactorChange(_("Set Zoom factor"), false, "%.1f")
-                end
-            }
-        end
-        local function getZoomPanMenuItem(text, setting, separator)
-            return {
-                text = text,
-                separator = separator,
-                callback = function(touchmenu_instance)
-                    self:_zoomPanChange(text, setting)
-                end
-            }
-        end
-        local function getZoomPanCheckboxItem(text, setting, separator)
-            return {
-                text = text,
-                checked_func = function()
-                    return self[setting] == true
-                end,
-                callback = function()
-                    self.ui:handleEvent(Event:new("SetZoomPan", {[setting] = not self[setting]}))
-                end,
-                hold_callback = function(touchmenu_instance)
-                    G_reader_settings:saveSetting(setting, self[setting])
-                end,
-                separator = separator,
-            }
-        end
-        local rtl_option_item = {
-            text = _("Right to left"),
-            checked_func = function()
-                return self.ui.document.configurable.writing_direction == 1
-            end,
-            callback = function()
-                self.ui.document.configurable.writing_direction = (self.ui.document.configurable.writing_direction + 1) % 2
-                self.ui:handleEvent(Event:new("SetZoomPan"))
-            end,
-            hold_callback = function(touchmenu_instance)
-                G_reader_settings:saveSetting("kopt_writing_direction", self.ui.document.configurable.writing_direction)
-            end,
-        }
-        menu_items.switch_zoom_mode = {
-            text = _("Switch zoom mode"),
-            enabled_func = function()
-                return self.ui.document.configurable.text_wrap ~= 1
-            end,
-            sub_item_table = {
-                getZoomModeMenuItem(_("Zoom to fit content width"), "contentwidth"),
-                getZoomModeMenuItem(_("Zoom to fit content height"), "contentheight", true),
-                getZoomModeMenuItem(_("Zoom to fit page width"), "pagewidth"),
-                getZoomModeMenuItem(_("Zoom to fit page height"), "pageheight", true),
-                getZoomModeMenuItem(_("Zoom to fit content"), "content"),
-                getZoomModeMenuItem(_("Zoom to fit page"), "page", true),
-                {
-                    text = _("Advanced"),
-                    sub_item_table = {
-                        zoomFactorMenuItem(_("Zoom factor")),
-                        getZoomPanMenuItem(_("Horizontal overlap"), "zoom_overlap_h"),
-                        getZoomPanMenuItem(_("Vertical overlap"), "zoom_overlap_v"),
-                        getZoomPanCheckboxItem(_("Column mode"), "zoom_direction_vertical"),
-                        rtl_option_item,
-                        getZoomPanCheckboxItem(_("Bottom to top"), "zoom_bottom_to_top"),
-                    },
-                }
-            }
-        }
-    end
 end
 
 function ReaderZooming:onZoomFactorChange()

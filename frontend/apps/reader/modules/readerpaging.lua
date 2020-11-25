@@ -10,7 +10,6 @@ local ReaderZooming = require("apps/reader/modules/readerzooming")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
 local logger = require("logger")
-local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
