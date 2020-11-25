@@ -855,7 +855,7 @@ function ReaderPaging:onGotoPageRel(diff)
     local y_diff = diff
 
     -- Adjust directions according to settings
-    if self.zoom_direction_vertical then  -- invert axes
+    if self.ui.zooming.zoom_direction_vertical then  -- invert axes
         y, x, h, w = x, y, w, h
         h_progress, v_progress = v_progress, h_progress
         if right_to_left then

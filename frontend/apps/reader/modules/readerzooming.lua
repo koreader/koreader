@@ -583,12 +583,7 @@ end
 
 function ReaderZooming:onSetZoomPan(settings, no_redraw)
     for k, v in pairs(settings) do
-        if k == "right_to_left" then
-            self.ui.document.configurable.writing_direction = v and 1 or 0
-        else
-            self[k] = v
-            self.ui.doc_settings:saveSetting(k, v)
-        end
+        self[k] = v
     end
     if not no_redraw then
         self.ui:handleEvent(Event:new("RedrawCurrentPage"))
