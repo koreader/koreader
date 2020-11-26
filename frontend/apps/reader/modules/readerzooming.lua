@@ -584,6 +584,7 @@ end
 function ReaderZooming:onSetZoomPan(settings, no_redraw)
     for k, v in pairs(settings) do
         self[k] = v
+        self.ui.doc_settings:saveSetting(k, v)
     end
     if not no_redraw then
         self.ui:handleEvent(Event:new("RedrawCurrentPage"))
