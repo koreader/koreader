@@ -80,6 +80,7 @@ local SUPPORTED_LANGUAGES = {
     ky = _("Kyrgyz"),
     lo = _("Lao"),
     la = _("Latin"),
+    ["la-lit"] = _("Latin (liturgical)"),
     lv = _("Latvian"),
     lt = _("Lithuanian"),
     lb = _("Luxembourgish"),
