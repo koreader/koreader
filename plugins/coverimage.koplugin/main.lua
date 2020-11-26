@@ -87,9 +87,8 @@ function CoverImage:createCoverImage(doc_settings)
             local scale_factor = math.min(s_w / i_w, s_h / i_h)
 
             if self.cover_image_background == "none" or scale_factor == 1 then
-                local start_time = os.clock()
-                cover_image:writePNG(self.cover_image_path, false)
-                require("logger").err("xxxxxxxxxxxxxxxxx time=" .. (os.clock()-start_time))
+                local act_format = self.cover_image_format == "auto" and self.cover_image_extension or self.cover_image_format
+                cover_image:writeToFile(self.cover_image_path, act_format)
                 cover_image:free()
                 return
             end
@@ -98,7 +97,7 @@ function CoverImage:createCoverImage(doc_settings)
             cover_image = RenderImage:scaleBlitBuffer(cover_image, scaled_w, scaled_h)
 
             -- new buffer with screen dimensions,
-            local image = Blitbuffer.new( s_w, s_h, cover_image:getType() ) -- new buffer, filled with black
+            local image = Blitbuffer.new(s_w, s_h, cover_image:getType()) -- new buffer, filled with black
             if self.cover_image_background == "white" then
                 image:fill(Blitbuffer.COLOR_WHITE)
             elseif self.cover_image_background == "gray" then
@@ -107,22 +106,14 @@ function CoverImage:createCoverImage(doc_settings)
 
             -- copy scaled image to buffer
             if s_w > scaled_w then -- move right
-                image:blitFrom(cover_image, math.floor( (s_w - scaled_w) / 2 ), 0, 0, 0, scaled_w, scaled_h)
+                image:blitFrom(cover_image, math.floor((s_w - scaled_w) / 2), 0, 0, 0, scaled_w, scaled_h)
             else -- move down
-                image:blitFrom(cover_image, 0, math.floor( (s_h - scaled_h) / 2 ), 0, 0, scaled_w, scaled_h)
+                image:blitFrom(cover_image, 0, math.floor((s_h - scaled_h) / 2), 0, 0, scaled_w, scaled_h)
             end
             cover_image:free()
 
-            local start_time = os.clock()
-            if self.cover_image_format == "auto" then
-                image:writeToFile(self.cover_image_path, self.cover_image_extension)
-            else
-                image:writeToFile(self.cover_image_path, self.cover_image_format)
-            end
-
---            image:writePNG(self.cover_image_path, false)
---            image:writeBMP(self.cover_image_path)
-            require("logger").err("xxxxxxxxxxxxxxxxx time=" .. (os.clock()-start_time))
+            local act_format = self.cover_image_format == "auto" and self.cover_image_extension or self.cover_image_format
+            image:writeToFile(self.cover_image_path, act_format)
 
             image:free()
             logger.dbg("CoverImage: image written to " .. self.cover_image_path)
