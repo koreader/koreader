@@ -145,18 +145,22 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             },
             {
                 name = "zoom_factor",
-                name_text = "Factor",
-                toggle =  {_("0.1"), _("1"), _("2"), _("5"), _("10"), _("20"), _("50"), _("100")},
+                name_text = "Zoom factor",
+                toggle =  {_("0.7"), _("1"), _("1.5"), _("2"), _("3"), _("5"), _("10"), _("20")},
                 more_options = true,
-                more_options_param = {value_step = 0.1, precision = "%.1f",},
-                values = {0.1, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0},
+                more_options_param = {
+                    value_step = 0.1, value_hold_step = 1,
+                    value_min = 0.1, value_max = 1000,
+                    precision = "%.1f",
+                },
+                values = {0.7, 1.0, 1.5, 2.0, 3.0, 5.0, 10.0, 20.0},
                 default_pos = 3,
-                default_value = 2.0,
+                default_value = 1.5,
                 show_func = function(config)
                     return config and config.zoom_mode_genus < 1
                 end,
                 event = "DefineZoom",
-                args = {0.1, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0},
+                args = {0.7, 1.0, 1.5, 2.0, 3.0, 5.0, 10.0, 20.0},
                 name_text_hold_callback = optionsutil.showValues,
             },
             {

@@ -387,7 +387,7 @@ function ReaderZooming:getZoom(pageno)
     -- check if we're in bbox mode and work on bbox if that's the case
     local zoom
     local page_size = self.ui.document:getNativePageDimensions(pageno)
-    if not (self.zoom_mode:match("^page") or self.ui.document.configurable.trim_page == 3) then
+    if not (self.zoom_mode and self.zoom_mode:match("^page") or self.ui.document.configurable.trim_page == 3) then
         local ubbox_dimen = self.ui.document:getUsedBBoxDimensions(pageno, 1)
         -- if bbox is larger than the native page dimension render the full page
         -- See discussion in koreader/koreader#970.
