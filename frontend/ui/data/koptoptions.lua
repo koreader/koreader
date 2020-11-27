@@ -138,7 +138,6 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 end,
                 name_text_true_values = true,
                 show_true_value_func = function(str)
-                    require("logger").dbg("ZOOM", str)
                     return string.format("%.1f", str)
                 end,
                 toggle =  {_("1"), _("2"), _("3"), _("4"), _("5"), _("6"), _("7"), _("8")},
@@ -164,7 +163,6 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 name_text = _("Zoom factor"),
                 name_text_true_values = true,
                 show_true_value_func = function(str)
-                    require("logger").dbg("ZOOM", str)
                     return string.format("%.1f", str)
                 end,
                 toggle =  {_("0.7"), _("1"), _("1.5"), _("2"), _("3"), _("5"), _("10"), _("20")},
