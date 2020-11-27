@@ -73,7 +73,7 @@ FOLLOW_LINK_TIMEOUT = 0.5
 -- w: tap zone width in proportion to screen width
 -- h: tap zone height in proportion to screen height
 DTAP_ZONE_MENU = {x = 1/8, y = 0, w = 3/4, h = 1/3}
-DTAP_ZONE_CONFIG = {x = 1/8, y = 7/8, w = 3/4, h = 1/8}
+DTAP_ZONE_CONFIG = {x = 1/8, y = 3/4, w = 3/4, h = 1/4}
 DTAP_ZONE_MINIBAR = {x = 0, y = 12/13, w = 1, h = 1/13}
 DTAP_ZONE_FORWARD = {x = 1/4, y = 0, w = 3/4, h = 1}
 DTAP_ZONE_BACKWARD = {x = 0, y = 0, w = 1/4, h = 1}
