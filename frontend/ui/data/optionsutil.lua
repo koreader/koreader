@@ -99,16 +99,19 @@ function optionsutil.showValues(configurable, option, prefix)
         help_text = T("\n%1\n", option.help_text)
     end
     local text
+    local name_text = option.name_text_func
+                      and option.name_text_func(configurable)
+                       or option.name_text
     if option.name_text_true_values and option.toggle and option.values then
         if value_default then
-            text = T(_("%1\n%2\nCurrent value: %3 (%4)\nDefault value: %5 (%6)"), option.name_text, help_text,
+            text = T(_("%1\n%2\nCurrent value: %3 (%4)\nDefault value: %5 (%6)"), name_text, help_text,
                                             current, value_current, default, value_default)
         else
-            text = T(_("%1\n%2\nCurrent value: %3 (%4)\nDefault value: %5"), option.name_text, help_text,
+            text = T(_("%1\n%2\nCurrent value: %3 (%4)\nDefault value: %5"), name_text, help_text,
                                             current, value_current, default)
         end
     else
-        text = T(_("%1\n%2\nCurrent value: %3\nDefault value: %4"), option.name_text, help_text, current, default)
+        text = T(_("%1\n%2\nCurrent value: %3\nDefault value: %4"), name_text, help_text, current, default)
     end
     UIManager:show(InfoMessage:new{ text=text })
 end

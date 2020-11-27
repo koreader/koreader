@@ -199,12 +199,14 @@ function ConfigOption:init()
         local show = self.options[c].show
         -- Prefer show_func over show if there's one
         if self.options[c].show_func then
-            show = self.options[c].show_func()
+            show = self.options[c].show_func(self.config.configurable, self.config.document)
         end
         if show ~= false and show_default then
             local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "cfont"
             local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
-            local text = self.options[c].name_text
+            local text = self.options[c].name_text_func
+                         and self.options[c].name_text_func(self.config.configurable, self.config.document)
+                          or self.options[c].name_text
             local face = Font:getFace(name_font_face, name_font_size)
             local txt_width = 0
             if text ~= nil then
@@ -263,20 +265,22 @@ function ConfigOption:init()
             local horizontal_group = HorizontalGroup:new{}
 
             -- Deal with the name on the left
-            if self.options[c].name_text then
+            local name_text = self.options[c].name_text_func
+                              and self.options[c].name_text_func(self.config.configurable, self.config.document)
+                               or self.options[c].name_text
+            if name_text then
                 -- the horizontal padding on the left will be ensured by the RightContainer
                 local name_widget_width = math.floor(name_align * Screen:getWidth())
                 -- We don't remove default_option_hpadding from name_text_max_width
                 -- to give more to text and avoid truncation: as it is right aligned,
                 -- the text can grow on the left, padding_small is enough.
                 local name_text_max_width = name_widget_width - 2*padding_small
-                local text = self.options[c].name_text
                 local face = Font:getFace(name_font_face, name_font_size)
                 local option_name_container = RightContainer:new{
                     dimen = Geom:new{ w = name_widget_width, h = option_height},
                 }
                 local option_name = Button:new{
-                    text = text,
+                    text = name_text,
                     max_width = name_text_max_width,
                     bordersize = 0,
                     face = face,
@@ -462,7 +466,7 @@ function ConfigOption:init()
                     option_items[d] = option_item
                     option_item.items = option_items
                     option_item.name = self.options[c].name
-                    option_item.name_text = self.options[c].name_text
+                    option_item.name_text = name_text
                     option_item.item_text = self.options[c].item_text
                     option_item.values = self.options[c].values
                     option_item.args = self.options[c].args
@@ -504,7 +508,7 @@ function ConfigOption:init()
                     option_items[d] = option_item
                     option_item.items = option_items
                     option_item.name = self.options[c].name
-                    option_item.name_text = self.options[c].name_text
+                    option_item.name_text = name_text
                     option_item.values = self.options[c].values
                     option_item.args = self.options[c].args
                     option_item.event = self.options[c].event
@@ -533,7 +537,7 @@ function ConfigOption:init()
                     font_face = item_font_face,
                     font_size = item_font_size,
                     name = self.options[c].name,
-                    name_text = self.options[c].name_text,
+                    name_text = name_text,
                     toggle = self.options[c].toggle,
                     alternate = self.options[c].alternate,
                     values = self.options[c].values,
@@ -550,7 +554,7 @@ function ConfigOption:init()
                                 self.options[c].more_options_param.show_true_value_func = self.options[c].show_true_value_func
                             end
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, arg, self.options[c].name_text, self.options[c].delay_repaint, self.options[c].more_options_param)
+                                self.options[c].event, arg, name_text, self.options[c].delay_repaint, self.options[c].more_options_param)
                         end
                     end
                 }
@@ -582,7 +586,7 @@ function ConfigOption:init()
                                 self.options[c].fine_tune_param)
                         elseif arg == "⋮" then
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, arg, self.options[c].name_text, self.options[c].delay_repaint, self.options[c].more_options_param)
+                                self.options[c].event, arg, name_text, self.options[c].delay_repaint, self.options[c].more_options_param)
                         else
                             self.config:onConfigChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].delay_repaint)
@@ -593,10 +597,10 @@ function ConfigOption:init()
                     end,
                     hold_callback = function(arg)
                         if arg == "-" or arg == "+" then
-                            self.config:onMakeFineTuneDefault(self.options[c].name, self.options[c].name_text, self.options[c].values,
+                            self.config:onMakeFineTuneDefault(self.options[c].name, name_text, self.options[c].values,
                                 self.options[c].labels or self.options[c].args, arg)
                         elseif arg ~= "⋮" then
-                            self.config:onMakeDefault(self.options[c].name, self.options[c].name_text, self.options[c].values,
+                            self.config:onMakeDefault(self.options[c].name, name_text, self.options[c].values,
                                 self.options[c].labels or self.options[c].args, arg)
                         end
                     end,

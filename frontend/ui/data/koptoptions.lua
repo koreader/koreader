@@ -128,7 +128,14 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             },
             {
                 name = "zoom_range_number",
-                name_text = "Number",
+                name_text_func = function(config)
+                    if config then
+                        if config.zoom_mode_genus == 1 then return _("Rows")
+                        elseif config.zoom_mode_genus == 2 then return _("Columns")
+                        end
+                    end
+                    return _("Number")
+                end,
                 toggle =  {_("1"), _("2"), _("3"), _("4"), _("5"), _("6"), _("7"), _("8")},
                 more_options = true,
                 more_options_param = {value_step = 0.1, precision = "%.1f",},
