@@ -136,6 +136,11 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                     end
                     return _("Number")
                 end,
+                name_text_true_values = true,
+                show_true_value_func = function(str)
+                    require("logger").dbg("ZOOM", str)
+                    return string.format("%.1f", str)
+                end,
                 toggle =  {_("1"), _("2"), _("3"), _("4"), _("5"), _("6"), _("7"), _("8")},
                 more_options = true,
                 more_options_param = {
@@ -152,11 +157,16 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 event = "DefineZoom",
                 args =   {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[Set number of columns or rows the page should be splitted into.]]),
+                help_text = _([[Set the number of columns or rows into which to split the page.]]),
             },
             {
                 name = "zoom_factor",
                 name_text = _("Zoom factor"),
+                name_text_true_values = true,
+                show_true_value_func = function(str)
+                    require("logger").dbg("ZOOM", str)
+                    return string.format("%.1f", str)
+                end,
                 toggle =  {_("0.7"), _("1"), _("1.5"), _("2"), _("3"), _("5"), _("10"), _("20")},
                 more_options = true,
                 more_options_param = {
