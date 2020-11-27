@@ -93,6 +93,7 @@ local Device = Generic:new{
         return android.openLink(link) == 0
     end,
     canImportFiles = function() return android.app.activity.sdkVersion >= 19 end,
+    hasExternalSD = function() return android.getExternalSdPath() end,
     importFile = function(path) android.importFile(path) end,
     canShareText = yes,
     doShareText = function(text) android.sendText(text) end,
