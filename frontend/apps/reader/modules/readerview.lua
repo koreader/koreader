@@ -959,10 +959,12 @@ function ReaderView:checkAutoSaveSettings()
     if not interval then -- no auto save
         return
     end
+
     local now_ts = os.time()
     if now_ts - self.settings_last_save_ts >= interval*60 then
         self.settings_last_save_ts = now_ts
-        UIManager:nextTick(function()
+        -- I/O, delay until after the pageturn
+        UIManager:tickAfterNext(function()
             self.ui:saveSettings()
         end)
     end
