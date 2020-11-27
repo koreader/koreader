@@ -825,7 +825,7 @@ function Kobo:isStartupScriptUpToDate()
     local new_script = os.getenv("KOREADER_DIR") .. "/" .. "koreader.sh"
 
     local md5 = require("ffi/MD5")
-    return (md5.sumFile(current_script) == md5.sumFile(new_script))
+    return md5.sumFile(current_script) == md5.sumFile(new_script)
 end
 
 -------------- device probe ------------
