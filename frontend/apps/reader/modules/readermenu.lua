@@ -262,15 +262,18 @@ dbg:guard(ReaderMenu, 'setUpdateItemTable',
 
 function ReaderMenu:exitOrRestart(callback)
     if self.menu_container then self:onTapCloseMenu() end
+
+    -- Only restart sets a callback, which suits us just fine for this check ;)
+    if callback and not Device:isStartupScriptUpToDate() then
+        UIManager:show(InfoMessage:new{
+            text = _("KOReader's startup script has been updated. You'll need to completely exit KOReader to finalize the update."),
+        })
+        return
+    end
+
     UIManager:nextTick(function()
         self.ui:onClose()
         if callback ~= nil then
-            -- Only restart sets a callback, which suits us just fine for this check ;)
-            if not Device:isStartupScriptUpToDate() then
-                UIManager:show(InfoMessage:new{
-                    text = _("KOReader's startup script has been updated. You'll need to completely exit KOReader to finalize the update."),
-                })
-            end
             -- show an empty widget so that the callback always happens
             local Widget = require("ui/widget/widget")
             local widget = Widget:new{

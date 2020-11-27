@@ -574,6 +574,7 @@ function FileManagerMenu:exitOrRestart(callback)
         UIManager:show(InfoMessage:new{
             text = _("KOReader's startup script has been updated. You'll need to completely exit KOReader to finalize the update."),
         })
+        return
     end
 
     self.ui:onClose()
