@@ -339,7 +339,7 @@ function util.arrayAppend(t1, t2)
     end
 end
 
--- Reverse array elements in-place in table t
+--- Reverse array elements in-place in table t
 ---- @param t Lua table
 function util.arrayReverse(t)
     local i, j = 1, #t
@@ -350,9 +350,9 @@ function util.arrayReverse(t)
     end
 end
 
--- Test whether t contains a value equal to v
--- (or such a value that callback returns true),
--- and if so, return the index.
+--- Test whether t contains a value equal to v
+--- (or such a value that callback returns true),
+--- and if so, return the index.
 ---- @param t Lua table
 ---- @param v
 ---- @function callback(v1, v2)

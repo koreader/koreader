@@ -220,11 +220,11 @@ function ReaderZooming:onDefineZoom(btn)
         [1] = "rows",
         [0] = "manual",
     })[config.zoom_mode_genus]
-    local zoom_mode_species = ({
+    local zoom_mode_type = ({
         [2] = "",
         [1] = "width",
         [0] = "height",
-    })[config.zoom_mode_species]
+    })[config.zoom_mode_type]
     settings.zoom_overlap_h = config.zoom_overlap_h
     settings.zoom_overlap_v = config.zoom_overlap_v
     if btn == "set_zoom_overlap_h" then
@@ -237,7 +237,7 @@ function ReaderZooming:onDefineZoom(btn)
 
     local zoom_mode
     if zoom_mode_genus == "page" or zoom_mode_genus == "content" then
-        zoom_mode = zoom_mode_genus..zoom_mode_species
+        zoom_mode = zoom_mode_genus..zoom_mode_type
     else
         zoom_mode = zoom_mode_genus
         self.ui:handleEvent(Event:new("SetScrollMode", false))
@@ -291,7 +291,7 @@ function ReaderZooming:onDefineZoom(btn)
     number of rows: %4
     horizontal overlap: %3 %
     vertical overlap: %5 %
-    zoom factor: %6.]]),
+    zoom factor: %6]]),
                 zoom_mode,
                 ("%.2f"):format(self:getNumberOf("columns", settings.zoom_overlap_h)),
                 settings.zoom_overlap_h,
@@ -497,12 +497,12 @@ function ReaderZooming:setZoomMode(mode, no_warning)
 %1
 
 In combination with continuous view (scroll mode), this can cause unexpected vertical shifts when turning pages.]]),
-                self.paged_modes[mode])
+                        self.paged_modes[mode])
         elseif self.zoom_mode == "manual" then
             message = _([[
-"Pan zoom works best with page view."
+"Manual zoom works best with page view."
 
-You should enable it instead of continuous view (scroll mode).]])
+Please enable page view instead of continuous view (scroll mode).]])
         end
         if message then
             UIManager:show(InfoMessage:new{text = message, timeout = 5})
