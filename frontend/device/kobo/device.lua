@@ -819,6 +819,15 @@ function Kobo:toggleChargingLED(toggle)
     io.close(f)
 end
 
+function Kobo:isStartupScriptUpToDate()
+    -- Compare the hash of the *active* script (i.e., the one in /tmp) to the *potential* one (i.e., the one in KOREADER_DIR)
+    local current_script = "/tmp/koreader.sh"
+    local new_script = os.getenv("KOREADER_DIR") .. "/" .. "koreader.sh"
+
+    local md5 = require("ffi/MD5")
+    return (md5.sumFile(current_script) == md5.sumFile(new_script))
+end
+
 -------------- device probe ------------
 
 local codename = Kobo:getCodeName()

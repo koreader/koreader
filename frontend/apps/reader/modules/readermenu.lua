@@ -4,6 +4,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local InfoMessage = require("ui/widget/infomessage")
 local Screensaver = require("ui/screensaver")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
@@ -264,6 +265,12 @@ function ReaderMenu:exitOrRestart(callback)
     UIManager:nextTick(function()
         self.ui:onClose()
         if callback ~= nil then
+            -- Only restart sets a callback, which suits us just fine for this check ;)
+            if not Device:isStartupScriptUpToDate() then
+                UIManager:show(InfoMessage:new{
+                    text = _("KOReader's startup script has been updated. You'll need to completely exit KOReader to finalize the update."),
+                })
+            end
             -- show an empty widget so that the callback always happens
             local Widget = require("ui/widget/widget")
             local widget = Widget:new{
