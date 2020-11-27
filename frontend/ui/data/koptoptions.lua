@@ -199,7 +199,8 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 event = "DefineZoom",
                 args = {7, 6, 5, 4, 3, 2, 1, 0},
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[How to move on the page: left to right or reverse, top to bottom or reverse.]]),
+                help_text = _([[Set how paging and swiping forward should move the view on the page:
+left to right or reverse, top to bottom or reverse.]]),
             },
         }
     },

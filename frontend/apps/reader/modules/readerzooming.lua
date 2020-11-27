@@ -283,8 +283,7 @@ function ReaderZooming:onDefineZoom(btn)
     if tonumber(btn) then
         UIManager:show(InfoMessage:new{
             timeout = 2,
-            text = T(_([[
-    Zoom set to:
+            text = T(_([[Zoom set to:
 
     mode: %1
     number of columns: %2
