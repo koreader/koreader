@@ -6,7 +6,6 @@ local Device = require("device")
 local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local InfoMessage = require("ui/widget/infomessage")
 local PluginLoader = require("pluginloader")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
 local UIManager = require("ui/uimanager")
@@ -566,13 +565,17 @@ dbg:guard(FileManagerMenu, 'setUpdateItemTable',
         end
     end)
 
-function FileManagerMenu:exitOrRestart(callback)
+function FileManagerMenu:exitOrRestart(callback, force)
     UIManager:close(self.menu_container)
 
     -- Only restart sets a callback, which suits us just fine for this check ;)
-    if callback and not Device:isStartupScriptUpToDate() then
-        UIManager:show(InfoMessage:new{
+    if callback and not force and not Device:isStartupScriptUpToDate() then
+        UIManager:show(ConfirmBox:new{
             text = _("KOReader's startup script has been updated. You'll need to completely exit KOReader to finalize the update."),
+            ok_text = _("Restart anyway"),
+            ok_callback = function()
+                self:exitOrRestart(callback, true)
+            end,
         })
         return
     end
