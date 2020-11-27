@@ -641,11 +641,37 @@ function FileManager:tapPlus()
         table.insert(buttons, 3, {
             {
                 text = _("Import files here"),
-                enabled = Device.isValidPath(self.file_chooser.path),
+                enabled = Device:isValidPath(self.file_chooser.path),
                 callback = function()
                     local current_dir = self.file_chooser.path
                     UIManager:close(self.file_dialog)
                     Device.importFile(current_dir)
+                end,
+            },
+        })
+    end
+
+    if Device:hasExternalSD() then
+        table.insert(buttons, 4, {
+            {
+                text_func = function()
+                    if Device:isValidPath(self.file_chooser.path) then
+                        return _("Switch to SDCard")
+                    else
+                        return _("Switch to internal storage")
+                    end
+                end,
+                callback = function()
+                    if Device:isValidPath(self.file_chooser.path) then
+                        local ok, sd_path = Device:hasExternalSD()
+                        UIManager:close(self.file_dialog)
+                        if ok then
+                            self.file_chooser:changeToPath(sd_path)
+                        end
+                    else
+                        UIManager:close(self.file_dialog)
+                        self.file_chooser:changeToPath(Device.home_dir)
+                    end
                 end,
             },
         })
