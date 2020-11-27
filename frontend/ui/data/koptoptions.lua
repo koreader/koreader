@@ -81,7 +81,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
         options = {
             {
                 name = "zoom_overlap_h",
-                name_text = "Horizontal overlap",
+                name_text = _("Horizontal overlap"),
                 buttonprogress = true,
                 fine_tune = true,
                 values = {0, 12, 24, 36, 48, 60, 72, 84},
@@ -98,7 +98,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             },
             {
                 name = "zoom_overlap_v",
-                name_text = "Vertical overlap",
+                name_text = _("Vertical overlap"),
                 buttonprogress = true,
                 fine_tune = true,
                 values = {0, 12, 24, 36, 48, 60, 72, 84},
@@ -115,7 +115,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             },
             {
                 name = "zoom_mode_type",
-                name_text = "Fit",
+                name_text = _("Fit"),
                 toggle = {_("full"), _("width"), _("height")},
                 alternate = false,
                 values = {2, 1, 0},
@@ -138,7 +138,11 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 end,
                 toggle =  {_("1"), _("2"), _("3"), _("4"), _("5"), _("6"), _("7"), _("8")},
                 more_options = true,
-                more_options_param = {value_step = 0.1, precision = "%.1f",},
+                more_options_param = {
+                    value_step = 0.1, value_hold_step = 1,
+                    value_min = 0.1, value_max = 1000,
+                    precision = "%.1f",
+                },
                 values = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
                 default_pos = 2,
                 default_value = 2,
@@ -152,7 +156,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             },
             {
                 name = "zoom_factor",
-                name_text = "Zoom factor",
+                name_text = _("Zoom factor"),
                 toggle =  {_("0.7"), _("1"), _("1.5"), _("2"), _("3"), _("5"), _("10"), _("20")},
                 more_options = true,
                 more_options_param = {
