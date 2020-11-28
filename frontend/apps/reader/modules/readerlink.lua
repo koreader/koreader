@@ -56,16 +56,17 @@ function ReaderLink:init()
                 overrides = {
                     -- Tap on links have priority over everything (it can
                     -- be disabled with "Tap to follow links" menu item)
-                    "tap_forward",
-                    "tap_backward",
-                    "readermenu_tap",
-                    "readerconfigmenu_tap",
                     "readerhighlight_tap",
-                    "readerfooter_tap",
                     "tap_top_left_corner",
                     "tap_top_right_corner",
                     "tap_left_bottom_corner",
                     "tap_right_bottom_corner",
+                    "readerfooter_tap",
+                    "readerconfigmenu_tap",
+                    "readermenu_ext_tap",
+                    "readermenu_tap",
+                    "tap_forward",
+                    "tap_backward",
                 },
                 handler = function(ges) return self:onTap(_, ges) end,
             },

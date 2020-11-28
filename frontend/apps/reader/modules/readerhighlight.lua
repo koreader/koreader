@@ -192,15 +192,16 @@ function ReaderHighlight:setupTouchZones()
                 -- Tap on existing highlights have priority over
                 -- everything but tap on links (as links can be
                 -- part of some highlighted text)
-                "tap_forward",
-                "tap_backward",
-                "readermenu_tap",
-                "readerconfigmenu_tap",
-                "readerfooter_tap",
                 "tap_top_left_corner",
                 "tap_top_right_corner",
                 "tap_left_bottom_corner",
                 "tap_right_bottom_corner",
+                "readerfooter_tap",
+                "readerconfigmenu_tap",
+                "readermenu_ext_tap",
+                "readermenu_tap",
+                "tap_forward",
+                "tap_backward",
             },
             handler = function(ges) return self:onTap(nil, ges) end
         },

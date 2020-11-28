@@ -830,11 +830,12 @@ function Gestures:setupGesture(ges)
         }
     else
         overrides_tap_corner = {
-            "tap_backward",
-            "tap_forward",
-            "readermenu_tap",
-            "readerconfigmenu_tap",
             "readerfooter_tap",
+            "readerconfigmenu_tap",
+            "readermenu_ext_tap",
+            "readermenu_tap",
+            "tap_forward",
+            "tap_backward",
         }
         overrides_hold_corner = {
             -- As hold corners are "ignored" by default, and we have
@@ -844,17 +845,19 @@ function Gestures:setupGesture(ges)
             "readerfooter_hold",
         }
         overrides_vertical_edge = {
+            "readerconfigmenu_swipe",
+            "readermenu_ext_swipe",
+            "readermenu_swipe",
             "paging_swipe",
             "rolling_swipe",
-            "readermenu_swipe",
-            "readerconfigmenu_swipe",
         }
         overrides_horizontal_edge = {
             "swipe_link",
+            "readerconfigmenu_swipe",
+            "readermenu_ext_swipe",
+            "readermenu_swipe",
             "paging_swipe",
             "rolling_swipe",
-            "readermenu_swipe",
-            "readerconfigmenu_swipe",
         }
         overrides_pan = {
             "paging_swipe",
@@ -1039,8 +1042,8 @@ function Gestures:setupGesture(ges)
             }
         else
             overrides = {
-                "rolling_swipe",
                 "paging_swipe",
+                "rolling_swipe",
             }
         end
     elseif ges == "spread_gesture" then
