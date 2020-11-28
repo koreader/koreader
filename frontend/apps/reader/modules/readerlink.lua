@@ -62,6 +62,7 @@ function ReaderLink:init()
                     "tap_left_bottom_corner",
                     "tap_right_bottom_corner",
                     "readerfooter_tap",
+                    "readerconfigmenu_ext_tap",
                     "readerconfigmenu_tap",
                     "readermenu_ext_tap",
                     "readermenu_tap",

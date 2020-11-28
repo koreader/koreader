@@ -51,6 +51,18 @@ function ReaderConfig:initGesListener()
             handler = function() return self:onTapShowConfigMenu() end,
         },
         {
+            id = "readerconfigmenu_ext_tap",
+            ges = "tap",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_CONFIG_EXT.x, ratio_y = DTAP_ZONE_CONFIG_EXT.y,
+                ratio_w = DTAP_ZONE_CONFIG_EXT.w, ratio_h = DTAP_ZONE_CONFIG_EXT.h,
+            },
+            overrides = {
+                "readerconfigmenu_tap",
+            },
+            handler = function() return self:onTapShowConfigMenu() end,
+        },
+        {
             id = "readerconfigmenu_swipe",
             ges = "swipe",
             screen_zone = {
@@ -64,6 +76,18 @@ function ReaderConfig:initGesListener()
             handler = function(ges) return self:onSwipeShowConfigMenu(ges) end,
         },
         {
+            id = "readerconfigmenu_ext_swipe",
+            ges = "swipe",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_CONFIG_EXT.x, ratio_y = DTAP_ZONE_CONFIG_EXT.y,
+                ratio_w = DTAP_ZONE_CONFIG_EXT.w, ratio_h = DTAP_ZONE_CONFIG_EXT.h,
+            },
+            overrides = {
+                "readerconfigmenu_swipe",
+            },
+            handler = function(ges) return self:onSwipeShowConfigMenu(ges) end,
+        },
+        {
             id = "readerconfigmenu_pan",
             ges = "pan",
             screen_zone = {
@@ -73,6 +97,18 @@ function ReaderConfig:initGesListener()
             overrides = {
                 "rolling_pan",
                 "paging_pan",
+            },
+            handler = function(ges) return self:onSwipeShowConfigMenu(ges) end,
+        },
+        {
+            id = "readerconfigmenu_ext_pan",
+            ges = "pan",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_CONFIG_EXT.x, ratio_y = DTAP_ZONE_CONFIG_EXT.y,
+                ratio_w = DTAP_ZONE_CONFIG_EXT.w, ratio_h = DTAP_ZONE_CONFIG_EXT.h,
+            },
+            overrides = {
+                "readerconfigmenu_pan",
             },
             handler = function(ges) return self:onSwipeShowConfigMenu(ges) end,
         },

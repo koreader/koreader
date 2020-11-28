@@ -833,6 +833,7 @@ function Gestures:setupGesture(ges)
     else
         overrides_tap_corner = {
             "readerfooter_tap",
+            "readerconfigmenu_ext_tap",
             "readerconfigmenu_tap",
             "readermenu_ext_tap",
             "readermenu_tap",
@@ -847,6 +848,7 @@ function Gestures:setupGesture(ges)
             "readerfooter_hold",
         }
         overrides_vertical_edge = {
+            "readerconfigmenu_ext_swipe",
             "readerconfigmenu_swipe",
             "readermenu_ext_swipe",
             "readermenu_swipe",
@@ -855,6 +857,7 @@ function Gestures:setupGesture(ges)
         }
         overrides_horizontal_edge = {
             "swipe_link",
+            "readerconfigmenu_ext_swipe",
             "readerconfigmenu_swipe",
             "readermenu_ext_swipe",
             "readermenu_swipe",
