@@ -106,8 +106,6 @@ function FileManagerMenu:initGesListener()
             },
             overrides = {
                 "filemanager_swipe",
-                "rolling_swipe",
-                "paging_swipe",
             },
             handler = function(ges) return self:onSwipeShowMenu(ges) end,
         },

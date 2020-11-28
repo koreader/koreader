@@ -110,8 +110,6 @@ function ReaderMenu:onReaderReady()
             },
             overrides = {
                 "readermenu_tap",
-                "tap_forward",
-                "tap_backward",
             },
             handler = function(ges) return self:onTapShowMenu(ges) end,
         },
@@ -137,8 +135,6 @@ function ReaderMenu:onReaderReady()
             },
             overrides = {
                 "readermenu_swipe",
-                "rolling_swipe",
-                "paging_swipe",
             },
             handler = function(ges) return self:onSwipeShowMenu(ges) end,
         },
@@ -164,8 +160,6 @@ function ReaderMenu:onReaderReady()
             },
             overrides = {
                 "readermenu_pan",
-                "rolling_pan",
-                "paging_pan",
             },
             handler = function(ges) return self:onSwipeShowMenu(ges) end,
         },
