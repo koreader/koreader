@@ -468,10 +468,14 @@ This can also be used to remove some gray background or to convert a grayscale o
                 enabled_func = function(configurable)
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
                 end,
-                --- @translators LTR is left to right, which is the regular European writing direction.
-                --- @translators RTL is right to left, which is the regular writing direction in languages like Hebrew, Arabic, Persian and Urdu.
-                --- @translators TBRTL is top-to-bottom-right-to-left, which is a traditional Chinese/Japanese writing direction.
-                toggle = {_("LTR"), _("RTL"), _("TBRTL")},
+                toggle = {
+                    --- @translators LTR is left to right, which is the regular European writing direction.
+                    _("LTR"),
+                    --- @translators RTL is right to left, which is the regular writing direction in languages like Hebrew, Arabic, Persian and Urdu.
+                    _("RTL"),
+                    --- @translators TBRTL is top-to-bottom-right-to-left, which is a traditional Chinese/Japanese writing direction.
+                    _("TBRTL"),
+                },
                 values = {0, 1, 2},
                 default_value = 0,
                 name_text_hold_callback = optionsutil.showValues,
