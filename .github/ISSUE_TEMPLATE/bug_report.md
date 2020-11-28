@@ -23,7 +23,7 @@ normally be found in the KOReader directory:
 * `.adds/koreader/` directory for Kobo
 * `applications/koreader/` directory for Pocketbook
 
-Android won't have a crash.log file because Google restricts what apps can log, so you'll need to obtain logs using `adb logcat KOReader:I ActivityManager:* AndroidRuntime:* *:F`.
+Android won't have a crash.log file because Google restricts what apps can log, so you'll need to obtain logs using `adb logcat KOReader:I ActivityManager:* AndroidRuntime:* DEBUG:* *:F`.
 
 
 Please try to include the relevant sections in your issue description.
