@@ -2173,8 +2173,12 @@ function ReaderStatistics:onPageUpdate(pageno)
 
     -- We want a flush to db every 50 page turns
     if self.pageturn_count >= MAX_PAGETURNS_BEFORE_FLUSH then
-        self:insertDB(self.id_curr_book)
-        -- insertDB will call resetVolatileStats for us ;)
+        -- I/O, delay until after the pageturn, but reset the count now, to avoid potentially scheduling multiple inserts...
+        self.pageturn_count = 0
+        UIManager:tickAfterNext(function()
+            self:insertDB(self.id_curr_book)
+            -- insertDB will call resetVolatileStats for us ;)
+        end)
     end
 
     -- Update average time per page (if need be, insertDB will have updated the totals and cleared the volatiles)
