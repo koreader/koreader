@@ -77,6 +77,157 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
         }
     },
     {
+        icon = "resources/icons/appbar.page.fit.png",
+        options = {
+            {
+                name = "zoom_overlap_h",
+                name_text = _("Horizontal overlap"),
+                buttonprogress = true,
+                fine_tune = true,
+                values = {0, 12, 24, 36, 48, 60, 72, 84},
+                default_pos = 4,
+                default_value = 36,
+                show_func = function(config)
+                    return config and config.zoom_mode_genus < 3
+                end,
+                event = "DefineZoom",
+                args =   {0, 12, 24, 36, 48, 60, 72, 84},
+                labels = {0, 12, 24, 36, 48, 60, 72, 84},
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set horizontal zoom overlap (between columns).]]),
+            },
+            {
+                name = "zoom_overlap_v",
+                name_text = _("Vertical overlap"),
+                buttonprogress = true,
+                fine_tune = true,
+                values = {0, 12, 24, 36, 48, 60, 72, 84},
+                default_pos = 4,
+                default_value = 36,
+                show_func = function(config)
+                    return config and config.zoom_mode_genus < 3
+                end,
+                event = "DefineZoom",
+                args =   {0, 12, 24, 36, 48, 60, 72, 84},
+                labels = {0, 12, 24, 36, 48, 60, 72, 84},
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set vertical zoom overlap (between lines).]]),
+            },
+            {
+                name = "zoom_mode_type",
+                name_text = _("Fit"),
+                toggle = {_("full"), _("width"), _("height")},
+                alternate = false,
+                values = {2, 1, 0},
+                default_value = 2,
+                show_func = function(config) return config and config.zoom_mode_genus > 2 end,
+                event = "DefineZoom",
+                args = {"full", "width", "height"},
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set what to fit.]]),
+            },
+            {
+                name = "zoom_range_number",
+                name_text_func = function(config)
+                    if config then
+                        if config.zoom_mode_genus == 1 then return _("Rows")
+                        elseif config.zoom_mode_genus == 2 then return _("Columns")
+                        end
+                    end
+                    return _("Number")
+                end,
+                name_text_true_values = true,
+                show_true_value_func = function(str)
+                    return string.format("%.1f", str)
+                end,
+                toggle =  {_("1"), _("2"), _("3"), _("4"), _("5"), _("6"), _("7"), _("8")},
+                more_options = true,
+                more_options_param = {
+                    value_step = 0.1, value_hold_step = 1,
+                    value_min = 0.1, value_max = 1000,
+                    precision = "%.1f",
+                },
+                values = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
+                default_pos = 2,
+                default_value = 2,
+                show_func = function(config)
+                    return config and config.zoom_mode_genus < 3 and config.zoom_mode_genus > 0
+                end,
+                event = "DefineZoom",
+                args =   {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set the number of columns or rows into which to split the page.]]),
+            },
+            {
+                name = "zoom_factor",
+                name_text = _("Zoom factor"),
+                name_text_true_values = true,
+                show_true_value_func = function(str)
+                    return string.format("%.1f", str)
+                end,
+                toggle =  {_("0.7"), _("1"), _("1.5"), _("2"), _("3"), _("5"), _("10"), _("20")},
+                more_options = true,
+                more_options_param = {
+                    value_step = 0.1, value_hold_step = 1,
+                    value_min = 0.1, value_max = 1000,
+                    precision = "%.1f",
+                },
+                values = {0.7, 1.0, 1.5, 2.0, 3.0, 5.0, 10.0, 20.0},
+                default_pos = 3,
+                default_value = 1.5,
+                show_func = function(config)
+                    return config and config.zoom_mode_genus < 1
+                end,
+                event = "DefineZoom",
+                args = {0.7, 1.0, 1.5, 2.0, 3.0, 5.0, 10.0, 20.0},
+                name_text_hold_callback = optionsutil.showValues,
+            },
+            {
+                name = "zoom_mode_genus",
+                name_text = _("Zoom to"),
+                -- toggle = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
+                item_icons = {
+                    "resources/icons/zoom.page.png",
+                    "resources/icons/zoom.content.png",
+                    "resources/icons/zoom.direction.column.png",
+                    "resources/icons/zoom.direction.row.png",
+                    "resources/icons/zoom.manual.png",
+                },
+                alternate = false,
+                values = {4, 3, 2, 1, 0},
+                default_value = 4,
+                event = "DefineZoom",
+                args = {"page", "content", "columns", "rows", "manual"},
+                name_text_hold_callback = optionsutil.showValues,
+            },
+            {
+                name = "zoom_direction",
+                name_text = _("Direction"),
+                enabled_func = function(config)
+                    return config.zoom_mode_genus < 3
+                end,
+                item_icons = {
+                    "resources/icons/direction.LRTB.png",
+                    "resources/icons/direction.TBLR.png",
+                    "resources/icons/direction.LRBT.png",
+                    "resources/icons/direction.BTLR.png",
+                    "resources/icons/direction.BTRL.png",
+                    "resources/icons/direction.RLBT.png",
+                    "resources/icons/direction.TBRL.png",
+                    "resources/icons/direction.RLTB.png",
+                },
+                alternate = false,
+                values = {7, 6, 5, 4, 3, 2, 1, 0},
+                default_value = 7,
+                event = "DefineZoom",
+                args = {7, 6, 5, 4, 3, 2, 1, 0},
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Set how paging and swiping forward should move the view on the page:
+left to right or reverse, top to bottom or reverse.]]),
+            },
+        }
+    },
+    {
         icon = "resources/icons/appbar.column.two.large.png",
         options = {
             {
@@ -311,12 +462,12 @@ This can also be used to remove some gray background or to convert a grayscale o
             {
                 name = "writing_direction",
                 name_text = S.WRITING_DIR,
-                toggle = {S.LTR, S.RTL, S.TBRTL},
-                values = {0, 1, 2},
-                default_value = 0,
                 enabled_func = function(configurable)
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
                 end,
+                toggle = {S.LTR, S.RTL, S.TBRTL},
+                values = {0, 1, 2},
+                default_value = 0,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[In reflow mode, sets the original text direction. This needs to be set to RTL to correctly extract and reflow RTL languages like Arabic or Hebrew.]]),
             },

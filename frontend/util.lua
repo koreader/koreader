@@ -339,7 +339,7 @@ function util.arrayAppend(t1, t2)
     end
 end
 
--- Reverse array elements in-place in table t
+--- Reverse array elements in-place in table t
 ---- @param t Lua table
 function util.arrayReverse(t)
     local i, j = 1, #t
@@ -348,6 +348,22 @@ function util.arrayReverse(t)
         i = i + 1
         j = j - 1
     end
+end
+
+--- Test whether t contains a value equal to v
+--- (or such a value that callback returns true),
+--- and if so, return the index.
+---- @param t Lua table
+---- @param v
+---- @function callback(v1, v2)
+function util.arrayContains(t, v, cb)
+    cb = cb or function(v1, v2) return v1 == v2 end
+    for _k, _v in ipairs(t) do
+        if cb(_v, v) then
+            return _k
+        end
+    end
+    return false
 end
 
 -- Merge t2 into t1, overwriting existing elements if they already exist

@@ -112,6 +112,7 @@ function OptionIconItem:init()
     }
     self[1] = FrameContainer:new{
         padding = 0,
+        padding_top = self.underline_padding,
         padding_left = self.padding_left,
         padding_right = self.padding_right,
         bordersize = 0,
@@ -198,12 +199,14 @@ function ConfigOption:init()
         local show = self.options[c].show
         -- Prefer show_func over show if there's one
         if self.options[c].show_func then
-            show = self.options[c].show_func()
+            show = self.options[c].show_func(self.config.configurable, self.config.document)
         end
         if show ~= false and show_default then
             local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "cfont"
             local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size
-            local text = self.options[c].name_text
+            local text = self.options[c].name_text_func
+                         and self.options[c].name_text_func(self.config.configurable, self.config.document)
+                          or self.options[c].name_text
             local face = Font:getFace(name_font_face, name_font_size)
             local txt_width = 0
             if text ~= nil then
@@ -236,7 +239,7 @@ function ConfigOption:init()
         local show = self.options[c].show
         -- Prefer show_func over show if there's one
         if self.options[c].show_func then
-            show = self.options[c].show_func()
+            show = self.options[c].show_func(self.config.configurable, self.config.document)
         end
         if show ~= false and show_default then
             local name_align = self.options[c].name_align_right and self.options[c].name_align_right or default_name_align_right
@@ -262,20 +265,22 @@ function ConfigOption:init()
             local horizontal_group = HorizontalGroup:new{}
 
             -- Deal with the name on the left
-            if self.options[c].name_text then
+            local name_text = self.options[c].name_text_func
+                              and self.options[c].name_text_func(self.config.configurable, self.config.document)
+                               or self.options[c].name_text
+            if name_text then
                 -- the horizontal padding on the left will be ensured by the RightContainer
                 local name_widget_width = math.floor(name_align * Screen:getWidth())
                 -- We don't remove default_option_hpadding from name_text_max_width
                 -- to give more to text and avoid truncation: as it is right aligned,
                 -- the text can grow on the left, padding_small is enough.
                 local name_text_max_width = name_widget_width - 2*padding_small
-                local text = self.options[c].name_text
                 local face = Font:getFace(name_font_face, name_font_size)
                 local option_name_container = RightContainer:new{
                     dimen = Geom:new{ w = name_widget_width, h = option_height},
                 }
                 local option_name = Button:new{
-                    text = text,
+                    text = name_text,
                     max_width = name_text_max_width,
                     bordersize = 0,
                     face = face,
@@ -461,7 +466,7 @@ function ConfigOption:init()
                     option_items[d] = option_item
                     option_item.items = option_items
                     option_item.name = self.options[c].name
-                    option_item.name_text = self.options[c].name_text
+                    option_item.name_text = name_text
                     option_item.item_text = self.options[c].item_text
                     option_item.values = self.options[c].values
                     option_item.args = self.options[c].args
@@ -476,21 +481,25 @@ function ConfigOption:init()
             -- Icons (ex: columns, text align, with PDF)
             if self.options[c].item_icons then
                 local items_count = #self.options[c].item_icons
-                local first_item = OptionIconItem:new{
-                    icon = ImageWidget:new{
-                        file = self.options[c].item_icons[1]
-                    }
-                }
-                local max_item_spacing = (option_widget_width -
-                        first_item:getSize().w * items_count) / items_count
+                local icon_max_height = option_height
+                local icon_max_width = math.floor(option_widget_width / items_count)
+                local icon_size = math.min(icon_max_height, icon_max_width)
+                local max_item_spacing = (option_widget_width - icon_size * items_count) / items_count
                 local horizontal_half_padding = math.min(max_item_spacing, item_spacing_width) / 2
+                -- Our icons have a bottom padding that makes 10% to 20% of their height (5-9px in our 48px images)
+                -- We don't want the underline to be that far away from the image content,
+                -- so we use some negative padding to eat a bit on their padding.
+                local underline_padding = - math.floor(0.05 * icon_size)
                 for d = 1, #self.options[c].item_icons do
                     local option_item = OptionIconItem:new{
                         icon = ImageWidget:new{
                             file = self.options[c].item_icons[d],
                             dim = not enabled,
+                            width = icon_size,
+                            height = icon_size,
+                            scale_factor = 0, -- scale to fit width and height
                         },
-                        underline_padding = -padding_button,
+                        underline_padding = underline_padding,
                         padding_left = d > 1 and horizontal_half_padding,
                         padding_right = d < #self.options[c].item_icons and horizontal_half_padding,
                         color = d == current_item and (enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY) or Blitbuffer.COLOR_WHITE,
@@ -499,7 +508,7 @@ function ConfigOption:init()
                     option_items[d] = option_item
                     option_item.items = option_items
                     option_item.name = self.options[c].name
-                    option_item.name_text = self.options[c].name_text
+                    option_item.name_text = name_text
                     option_item.values = self.options[c].values
                     option_item.args = self.options[c].args
                     option_item.event = self.options[c].event
@@ -528,7 +537,7 @@ function ConfigOption:init()
                     font_face = item_font_face,
                     font_size = item_font_size,
                     name = self.options[c].name,
-                    name_text = self.options[c].name_text,
+                    name_text = name_text,
                     toggle = self.options[c].toggle,
                     alternate = self.options[c].alternate,
                     values = self.options[c].values,
@@ -545,7 +554,7 @@ function ConfigOption:init()
                                 self.options[c].more_options_param.show_true_value_func = self.options[c].show_true_value_func
                             end
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, arg, self.options[c].name_text, self.options[c].delay_repaint, self.options[c].more_options_param)
+                                self.options[c].event, arg, name_text, self.options[c].delay_repaint, self.options[c].more_options_param)
                         end
                     end
                 }
@@ -573,10 +582,11 @@ function ConfigOption:init()
                     callback = function(arg)
                         if arg == "-" or arg == "+" then
                             self.config:onConfigFineTuneChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].delay_repaint)
+                                self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].delay_repaint,
+                                self.options[c].fine_tune_param)
                         elseif arg == "⋮" then
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, arg, self.options[c].name_text, self.options[c].delay_repaint, self.options[c].more_options_param)
+                                self.options[c].event, arg, name_text, self.options[c].delay_repaint, self.options[c].more_options_param)
                         else
                             self.config:onConfigChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].delay_repaint)
@@ -587,16 +597,17 @@ function ConfigOption:init()
                     end,
                     hold_callback = function(arg)
                         if arg == "-" or arg == "+" then
-                            self.config:onMakeFineTuneDefault(self.options[c].name, self.options[c].name_text, self.options[c].values,
+                            self.config:onMakeFineTuneDefault(self.options[c].name, name_text, self.options[c].values,
                                 self.options[c].labels or self.options[c].args, arg)
                         elseif arg ~= "⋮" then
-                            self.config:onMakeDefault(self.options[c].name, self.options[c].name_text, self.options[c].values,
+                            self.config:onMakeDefault(self.options[c].name, name_text, self.options[c].values,
                                 self.options[c].labels or self.options[c].args, arg)
                         end
                     end,
                     show_parrent = self.config,
                     enabled = enabled,
                     fine_tune = self.options[c].fine_tune,
+                    fine_tune_param = self.options[c].fine_tune_param,
                     more_options = self.options[c].more_options,
                     more_options_param = self.options[c].more_options_param,
                 }
@@ -963,7 +974,7 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
 end
 
 -- Tweaked variant used with the fine_tune variant of buttonprogress (direction can only be "-" or "+")
-function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, direction, delay_repaint)
+function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, direction, delay_repaint, params)
     UIManager:tickAfterNext(function()
         -- Repainting may be delayed depending on options
         local refresh_dialog_func = function()
@@ -994,6 +1005,7 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
         end
         if values then
             local value
+            local step = params and params.value_step or 1
             if direction == "-" then
                 value = self.configurable[name] or values[1]
                 if type(value) == "table" then
@@ -1001,7 +1013,7 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
                     -- to one of the original preset values tables
                     local updated = {}
                     for i=1, #value do
-                        local v = value[i] - 1
+                        local v = value[i] - step
                         if v < 0 then
                             v = 0
                         end
@@ -1009,7 +1021,7 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
                     end
                     value = updated
                 else
-                    value = value - 1
+                    value = value - step
                     if value < 0 then
                         value = 0
                     end
@@ -1019,11 +1031,11 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
                 if type(value) == "table" then
                     local updated = {}
                     for i=1, #value do
-                        table.insert(updated, value[i] + 1)
+                        table.insert(updated, value[i] + step)
                     end
                     value = updated
                 else
-                    value = value + 1
+                    value = value + step
                 end
             end
             self:onConfigChoice(name, value)

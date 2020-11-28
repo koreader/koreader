@@ -573,12 +573,17 @@ function ReaderView:recalculate()
             self.visible_area.h = self.visible_area.h - self.ui.view.footer:getHeight()
         end
         if self.ui.document.configurable.writing_direction == 0 then
-            -- starts from left top of page_area
+            -- starts from left of page_area
             self.visible_area.x = self.page_area.x
-            self.visible_area.y = self.page_area.y
         else
-            -- start from right top of page_area
+            -- start from right of page_area
             self.visible_area.x = self.page_area.x + self.page_area.w - self.visible_area.w
+        end
+        if self.ui.zooming.zoom_bottom_to_top then
+            -- starts from bottom of page_area
+            self.visible_area.y = self.page_area.y + self.page_area.h - self.visible_area.h
+        else
+            -- starts from top of page_area
             self.visible_area.y = self.page_area.y
         end
         if not self.page_scroll then
@@ -736,6 +741,9 @@ In combination with zoom to fit page, page height, content height or content, co
     end
 
     self.page_scroll = page_scroll
+    if not page_scroll then
+        self.ui.document.configurable.page_scroll = 0
+    end
     self:recalculate()
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
 end
