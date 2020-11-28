@@ -491,4 +491,9 @@ function Device:isValidPath(path)
     return util.pathExists(path)
 end
 
+-- Device specific method to check if the startup script has been updated
+function Device:isStartupScriptUpToDate()
+    return true
+end
+
 return Device

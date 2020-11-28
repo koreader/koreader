@@ -100,6 +100,11 @@ ko_update_check() {
             mv "${NEWUPDATE}" "${INSTALLED}"
             ./fbink -q -y -6 -pm "Update successful :)"
             ./fbink -q -y -5 -pm "KOReader will start momentarily . . ."
+
+            # Warn if the startup script has been updated...
+            if [ "$(md5sum "/tmp/koreader.sh" | cut -f1 -d' ')" != "$(md5sum "${KOREADER_DIR}/koreader.sh" | cut -f1 -d' ')" ]; then
+                ./fbink -q -pmMh "Update contains a startup script update!"
+            fi
         else
             # Uh oh...
             ./fbink -q -y -6 -pmh "Update failed :("

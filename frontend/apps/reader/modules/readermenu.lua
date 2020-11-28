@@ -259,8 +259,21 @@ dbg:guard(ReaderMenu, 'setUpdateItemTable',
         end
     end)
 
-function ReaderMenu:exitOrRestart(callback)
+function ReaderMenu:exitOrRestart(callback, force)
     if self.menu_container then self:onTapCloseMenu() end
+
+    -- Only restart sets a callback, which suits us just fine for this check ;)
+    if callback and not force and not Device:isStartupScriptUpToDate() then
+        UIManager:show(ConfirmBox:new{
+            text = _("KOReader's startup script has been updated. You'll need to completely exit KOReader to finalize the update."),
+            ok_text = _("Restart anyway"),
+            ok_callback = function()
+                self:exitOrRestart(callback, true)
+            end,
+        })
+        return
+    end
+
     UIManager:nextTick(function()
         self.ui:onClose()
         if callback ~= nil then
