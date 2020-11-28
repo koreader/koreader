@@ -1,9 +1,9 @@
-local _ = require("gettext")
-local C_ = _.pgettext
 local Device = require("device")
 local Event = require("ui/event")
 local FileManager = require("apps/filemanager/filemanager")
 local UIManager = require("ui/uimanager")
+local _ = require("gettext")
+local C_ = _.pgettext
 local Screen = Device.screen
 
 return {

@@ -430,8 +430,8 @@ This can also be used to remove some gray background or to convert a grayscale o
             },
             {
                 name = "quality",
-                name_text = _("Render Quality"),
-                toggle = {_("low"), _("default"), _("high")},
+                name_text = C_("Quality", "Render Quality"),
+                toggle = {C_("Quality", "low"), C_("Quality", "default"), C_("Quality", "high")},
                 values={0.5, 1.0, 1.5},
                 default_value = DKOPTREADER_CONFIG_RENDER_QUALITY,
                 advanced = true,
