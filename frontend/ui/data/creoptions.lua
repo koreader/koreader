@@ -1,8 +1,8 @@
 local Device = require("device")
 local Screen = Device.screen
-local S = require("ui/data/strings")
 local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
+local C_ = _.pgettext
 
 -- Get font size numbers as a table of strings
 local tableOfNumbersToTableOfStrings = function(numbers)
@@ -21,8 +21,8 @@ local CreOptions = {
         options = {
             {
                 name = "rotation_mode",
-                name_text = S.SCREEN_MODE,
-                toggle = {S.LANDSCAPE_ROTATED, S.PORTRAIT, S.LANDSCAPE, S.PORTRAIT_ROTATED},
+                name_text = _("Rotation"),
+                toggle = {C_("Rotation", "⤹ 90°"), C_("Rotation", "↑ 0°"), C_("Rotation", "⤸ 90°"), C_("Rotation", "↓ 180°")},
                 alternate = false,
                 values = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
                 args = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
@@ -33,8 +33,8 @@ local CreOptions = {
             },
             {
                 name = "visible_pages",
-                name_text = S.DUAL_PAGES,
-                toggle = {S.OFF, S.ON},
+                name_text = _("Dual Pages"),
+                toggle = {_("off"), _("on")},
                 values = {1, 2},
                 default_value = 1,
                 args = {1, 2},
@@ -63,7 +63,7 @@ Note that this may not be ensured under some conditions: in scroll mode, when a 
         options = {
             {
                 name = "h_page_margins",
-                name_text = S.H_PAGE_MARGINS,
+                name_text = _("L/R Margins"),
                 buttonprogress = true,
                 fine_tune = true,
                 values = {
@@ -96,8 +96,8 @@ Note that this may not be ensured under some conditions: in scroll mode, when a 
             },
             {
                 name = "sync_t_b_page_margins",
-                name_text = S.SYNC_T_B_PAGE_MARGINS,
-                toggle = {S.OFF, S.ON},
+                name_text = _("Sync T/B Margins"),
+                toggle = {_("off"), _("on")},
                 values = {0, 1},
                 default_value = 0,
                 event = "SyncPageTopBottomMargins",
@@ -113,7 +113,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
             },
             {
                 name = "t_page_margin",
-                name_text = S.T_PAGE_MARGIN,
+                name_text = _("Top Margin"),
                 buttonprogress = true,
                 fine_tune = true,
                 values = {
@@ -146,7 +146,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
             },
             {
                 name = "b_page_margin",
-                name_text = S.B_PAGE_MARGIN,
+                name_text = _("Bottom Margin"),
                 buttonprogress = true,
                 fine_tune = true,
                 values = {
@@ -185,8 +185,8 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
         options = {
             {
                 name = "view_mode",
-                name_text = S.VIEW_MODE,
-                toggle = {S.VIEW_PAGE, S.VIEW_SCROLL},
+                name_text = _("View Mode"),
+                toggle = {_("page"), _("continuous")},
                 values = {0, 1},
                 default_value = 0,
                 args = {"page", "scroll"},
@@ -198,8 +198,8 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
             },
             {
                 name = "block_rendering_mode",
-                name_text = S.BLOCK_RENDERING_MODE,
-                toggle = {S.LEGACY, S.FLAT, S.BOOK, S.WEB},
+                name_text = _("Render Mode"),
+                toggle = {_("legacy"), _("flat"), _("book"), _("web")},
                 values = {0, 1, 2, 3},
                 default_value = 2,
                 args = {0, 1, 2, 3},
@@ -214,12 +214,12 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
             },
             {
                 name = "render_dpi",
-                name_text = S.ZOOM_DPI,
+                name_text = _("Zoom (dpi)"),
                 more_options = true,
                 more_options_param = {
                     value_hold_step = 20,
                 },
-                toggle = {S.OFF, "48", "96¹’¹", "167", "212", "300"},
+                toggle = {_("off"), "48", "96¹’¹", "167", "212", "300"},
                 values = {0, 48, 96, 167, 212, 300},
                 default_value = 96,
                 args = {0, 48, 96, 167, 212, 300},
@@ -234,7 +234,7 @@ Note that your selected font size is not affected by this setting.]]),
             },
             {
                 name = "line_spacing",
-                name_text = S.LINE_SPACING,
+                name_text = _("Line Spacing"),
                 buttonprogress = true,
                 values = {
                     DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_TINY,
@@ -301,9 +301,9 @@ Note that your selected font size is not affected by this setting.]]),
             },
             {
                 name = "font_fine_tune",
-                name_text = S.FONT_SIZE,
-                toggle = Device:isTouchDevice() and {S.DECREASE, S.INCREASE} or nil,
-                item_text = not Device:isTouchDevice() and {S.DECREASE, S.INCREASE} or nil,
+                name_text = _("Font Size"),
+                toggle = Device:isTouchDevice() and {_("decrease"), _("increase")} or nil,
+                item_text = not Device:isTouchDevice() and {_("decrease"), _("increase")} or nil,
                 more_options = true,
                 more_options_param = {
                     value_min = 12,
@@ -329,7 +329,7 @@ Note that your selected font size is not affected by this setting.]]),
             },
             {
                 name = "word_spacing",
-                name_text = S.WORD_SPACING,
+                name_text = _("Word Spacing"),
                 more_options = true,
                 more_options_param = {
                     name = "word_spacing",
@@ -349,7 +349,7 @@ Note that your selected font size is not affected by this setting.]]),
                     right_hold_step = 10,
                     event = "SetWordSpacing",
                 },
-                toggle = {S.SMALL, S.MEDIUM, S.LARGE},
+                toggle = {_("small"), _("medium"), _("large")},
                 values = {
                     DCREREADER_CONFIG_WORD_SPACING_SMALL,
                     DCREREADER_CONFIG_WORD_SPACING_MEDIUM,
@@ -371,7 +371,7 @@ Note that your selected font size is not affected by this setting.]]),
             },
             {
                 name = "word_expansion",
-                name_text = S.WORD_EXPANSION,
+                name_text = _("Word Expansion"),
                 more_options = true,
                 more_options_param = {
                     value_min = 0,
@@ -383,7 +383,7 @@ Note that your selected font size is not affected by this setting.]]),
                     info_text = _([[Set max word expansion as a % of the font size.]]),
                     event = "SetWordExpansion",
                 },
-                toggle = {S.NONE, S.SOME, S.MORE},
+                toggle = {_("none"), _("some"), _("more")},
                 values = {
                     DCREREADER_CONFIG_WORD_EXPANSION_NONE,
                     DCREREADER_CONFIG_WORD_EXPANSION_SOME,
@@ -410,8 +410,8 @@ Note that your selected font size is not affected by this setting.]]),
         options = {
             {
                 name = "font_weight",
-                name_text = S.FONT_WEIGHT,
-                toggle = {S.REGULAR, S.BOLD},
+                name_text = _("Font Weight"),
+                toggle = {_("regular"), _("bold")},
                 values = {0, 1},
                 default_value = 0,
                 args = {0, 1},
@@ -420,7 +420,7 @@ Note that your selected font size is not affected by this setting.]]),
             },
             {
                 name = "font_gamma",
-                name_text = S.CONTRAST,
+                name_text = _("Contrast"),
                 buttonprogress = true,
                 default_value = 15, -- gamma = 1.0
                 default_pos = 2,
@@ -446,8 +446,8 @@ Note that your selected font size is not affected by this setting.]]),
             },
             {
                 name = "font_hinting",
-                name_text = S.FONT_HINT,
-                toggle = {S.OFF, S.NATIVE, S.AUTO},
+                name_text = _("Font Hinting"),
+                toggle = {_("off"), _("native"), _("auto")},
                 values = {0, 1, 2},
                 default_value = 2,
                 args = {0, 1, 2},
@@ -461,8 +461,8 @@ Note that your selected font size is not affected by this setting.]]),
             },
             {
                 name = "font_kerning",
-                name_text = S.FONT_KERNING,
-                toggle = {S.OFF, S.FAST, S.GOOD, S.BEST},
+                name_text = _("Font Kerning"),
+                toggle = {_("off"), _("fast"), _("good"), _("best")},
                 values = {0, 1, 2, 3},
                 default_value = 3,
                 args = {0, 1, 2, 3},
@@ -484,8 +484,8 @@ Note that your selected font size is not affected by this setting.]]),
         options = {
             {
                 name = "status_line",
-                name_text = S.ALT_STATUS_BAR,
-                toggle = {S.OFF, S.ON},
+                name_text = _("Alt Status Bar"),
+                toggle = {_("off"), _("on")},
                 values = {1, 0},
                 default_value = 1, -- Note that 1 means KOReader (bottom) status bar only
                 args = {1, 0},
@@ -498,8 +498,8 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
             },
             {
                 name = "embedded_css",
-                name_text = S.EMBEDDED_STYLE,
-                toggle = {S.OFF, S.ON},
+                name_text = _("Embedded Style"),
+                toggle = {_("off"), _("on")},
                 values = {0, 1},
                 default_value = 1,
                 args = {false, true},
@@ -511,8 +511,8 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
             },
             {
                 name = "embedded_fonts",
-                name_text = S.EMBEDDED_FONTS,
-                toggle = {S.OFF, S.ON},
+                name_text = _("Embedded Fonts"),
+                toggle = {_("off"), _("on")},
                 values = {0, 1},
                 default_value = 1,
                 args = {false, true},
@@ -527,8 +527,8 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
             },
             {
                 name = "smooth_scaling",
-                name_text = S.IMAGE_SCALING,
-                toggle = {S.FAST, S.BEST},
+                name_text = _("Image Scaling"),
+                toggle = {_("fast"), _("best")},
                 values = {0, 1},
                 default_value = 0,
                 args = {false, true},
@@ -540,8 +540,8 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
             },
             {
                 name = "nightmode_images",
-                name_text = S.NIGHTMODE_IMAGES,
-                toggle = {S.ON, S.OFF},
+                name_text = _("Invert Images"),
+                toggle = {_("on"), _("off")},
                 values = {1, 0},
                 default_value = 1,
                 args = {true, false},
