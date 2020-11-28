@@ -298,7 +298,13 @@ left to right or reverse, top to bottom or reverse.]]),
                 enabled_func = function(configurable)
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
                 end,
-                labels = {_("auto"), _("left"), _("center"), _("right"), _("justify")},
+                labels = {
+                    C_("Alignment", "auto"),
+                    C_("Alignment", "left"),
+                    C_("Alignment", "center"),
+                    C_("Alignment", "right"),
+                    C_("Alignment", "justify"),
+                },
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[In reflow mode, sets the text alignment.
 The first option ("auto") tries to automatically align reflowed text as it is in the original document.]]),
