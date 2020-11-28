@@ -823,9 +823,11 @@ function Gestures:setupGesture(ges)
     local overrides_swipe_pan, overrides_swipe_pan_release
     if self.is_docless then
         overrides_tap_corner = {
+            "filemanager_ext_tap",
             "filemanager_tap",
         }
         overrides_horizontal_edge = {
+            "filemanager_ext_swipe",
             "filemanager_swipe",
         }
     else
@@ -1037,8 +1039,10 @@ function Gestures:setupGesture(ges)
         distance = "short"
         if self.is_docless then
             overrides = {
+                "filemanager_ext_tap",
                 "filemanager_tap",
-                "filemanager_swipe"
+                "filemanager_ext_swipe",
+                "filemanager_swipe",
             }
         else
             overrides = {
