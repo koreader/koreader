@@ -1,10 +1,10 @@
-local _ = require("gettext")
 local Device = require("device")
 local Event = require("ui/event")
 local FileManager = require("apps/filemanager/filemanager")
 local UIManager = require("ui/uimanager")
+local _ = require("gettext")
+local C_ = _.pgettext
 local Screen = Device.screen
-local S = require("ui/data/strings")
 
 return {
     text = _("Rotation"),
@@ -63,7 +63,7 @@ When unchecked, the default rotation of the file browser and the default/saved r
         if FileManager.instance then
             table.insert(rotation_table, {
                 text_func = function()
-                    local text = S.LANDSCAPE_ROTATED
+                    local text = C_("Rotation", "⤹ 90°")
                     if G_reader_settings:readSetting("fm_rotation_mode") == Screen.ORIENTATION_LANDSCAPE_ROTATED then
                         text = text .. "   ★"
                     end
@@ -83,7 +83,7 @@ When unchecked, the default rotation of the file browser and the default/saved r
             })
             table.insert(rotation_table, {
                 text_func = function()
-                    local text = S.PORTRAIT
+                    local text = C_("Rotation", "↑ 0°")
                     if G_reader_settings:readSetting("fm_rotation_mode") == Screen.ORIENTATION_PORTRAIT then
                         text = text .. "   ★"
                     end
@@ -103,7 +103,7 @@ When unchecked, the default rotation of the file browser and the default/saved r
             })
             table.insert(rotation_table, {
                 text_func = function()
-                    local text = S.LANDSCAPE
+                    local text = C_("Rotation", "⤸ 90°")
                     if G_reader_settings:readSetting("fm_rotation_mode") == Screen.ORIENTATION_LANDSCAPE then
                         text = text .. "   ★"
                     end
@@ -123,7 +123,7 @@ When unchecked, the default rotation of the file browser and the default/saved r
             })
             table.insert(rotation_table, {
                 text_func = function()
-                    local text = S.PORTRAIT_ROTATED
+                    local text = C_("Rotation", "↓ 180°")
                     if G_reader_settings:readSetting("fm_rotation_mode") == Screen.ORIENTATION_PORTRAIT_ROTATED then
                         text = text .. "   ★"
                     end
