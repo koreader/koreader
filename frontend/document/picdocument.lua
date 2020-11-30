@@ -50,9 +50,9 @@ end
 
 function PicDocument:register(registry)
     registry:addProvider("gif", "image/gif", self, 100)
-    registry:addProvider("jpg", "image/jpeg", self, 100)
-    registry:addProvider("jpeg", "image/jpeg", self, 100)
-    registry:addProvider("png", "image/png", self, 100)
+    registry:addProvider("jpg", "image/jpeg", self, 80)
+    registry:addProvider("jpeg", "image/jpeg", self, 80)
+    registry:addProvider("png", "image/png", self, 80)
 end
 
 return PicDocument
