@@ -603,14 +603,19 @@ function ReaderLink:onGotoLink(link, neglect_current_location, allow_footnote_po
             if anchor then
                 display_filename = display_filename .. anchor
             end
-            UIManager:show(ConfirmBox:new{
-                text = T(_("Would you like to read this local document?\n\n%1\n"), BD.filepath(display_filename)),
-                ok_callback = function()
-                    UIManager:scheduleIn(0.1, function()
-                        self.ui:switchDocument(linked_filename)
-                    end)
-                end
-            })
+            require("logger").dbg("ASU prov", self.document.provider)
+            if self.document.provider ~= "bigepub" then
+                UIManager:show(ConfirmBox:new{
+                    text = T(_("Would you like to read this local document?\n\n%1\n"), BD.filepath(display_filename)),
+                    ok_callback = function()
+                        UIManager:scheduleIn(0.1, function()
+                            self.ui:switchDocument(linked_filename)
+                        end)
+                    end
+                })
+            else
+                self.ui:switchDocument(linked_filename)
+            end
         else
             UIManager:show(InfoMessage:new{
                 text = T(_("Link to unsupported local file:\n%1"), BD.url(link_url)),
