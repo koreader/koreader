@@ -844,7 +844,7 @@ function ReaderPaging:onGotoPageRel(diff)
     logger.dbg("goto relative page:", diff)
     local new_va = self.visible_area:copy()
     local x_pan_off, y_pan_off = 0, 0
-    local right_to_left = (self.ui.document.configurable.writing_direction > 0)
+    local right_to_left = self.ui.document.configurable.writing_direction and self.ui.document.configurable.writing_direction > 0
     local bottom_to_top = self.ui.zooming.zoom_bottom_to_top
     local h_progress = 1 - self.ui.zooming.zoom_overlap_h / 100
     local v_progress = 1 - self.ui.zooming.zoom_overlap_v / 100
