@@ -499,7 +499,7 @@ In combination with continuous view (scroll mode), this can cause unexpected ver
                         self.paged_modes[mode])
         elseif self.zoom_mode == "manual" then
             message = _([[
-"Manual zoom works best with page view."
+Manual zoom works best with page view.
 
 Please enable page view instead of continuous view (scroll mode).]])
         end
