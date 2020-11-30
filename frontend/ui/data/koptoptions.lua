@@ -140,7 +140,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 show_true_value_func = function(str)
                     return string.format("%.1f", str)
                 end,
-                toggle =  {_("1"), _("2"), _("3"), _("4"), _("5"), _("6"), _("7"), _("8")},
+                toggle =  {"1", "2", "3", "4", "5", "6", "7", "8"},
                 more_options = true,
                 more_options_param = {
                     value_step = 0.1, value_hold_step = 1,
@@ -165,7 +165,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 show_true_value_func = function(str)
                     return string.format("%.1f", str)
                 end,
-                toggle =  {_("0.7"), _("1"), _("1.5"), _("2"), _("3"), _("5"), _("10"), _("20")},
+                toggle =  {_("0.7"), "1", _("1.5"), "2", "3", "5", "10", "20"},
                 more_options = true,
                 more_options_param = {
                     value_step = 0.1, value_hold_step = 1,
