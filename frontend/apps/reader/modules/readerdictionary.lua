@@ -857,7 +857,7 @@ function ReaderDictionary:showDict(word, results, box, link)
         }
         if self.lookup_progress_msg then
             -- If we have a lookup InfoMessage, and it's taller than us, make it refresh on close
-            if self.lookup_progress_msg[1][1].dimen.h >= self.dict_window.height then
+            if self.lookup_progress_msg[1][1] and self.lookup_progress_msg[1][1].dimen and self.lookup_progress_msg[1][1].dimen.h >= self.dict_window.height then
                 self.lookup_progress_msg.no_refresh_on_close = nil
             end
         end
