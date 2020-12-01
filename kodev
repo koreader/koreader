@@ -105,15 +105,38 @@ function setup_env() {
         # for android adb install
         KODEBUG_SUFFIX=-debug
     fi
-    files=()
+    local files=()
     while IFS=  read -r -d $'\0'; do
         files+=("$REPLY")
     done < <(find . -maxdepth 1 -name 'koreader-emulator-*' -print0 | ${SETUP_ENV_GREP_COMMAND})
     assert_ret_zero $? "Emulator not found. Please build it first."
+    local idx=0
     # Warn if multiple matches were found
-    test ${#files[@]} -eq 1
-    assert_ret_zero $? "Multiple emulator builds found! Pare that down to one."
-    EMU_DIR="${files[0]}/koreader"
+    if [ ${#files[@]} -gt 1 ]; then
+        echo "Multiple emulator builds found:"
+        local ts=()
+        # Store list of ts at the same index
+        for i in ${!files[@]}; do
+            local file="${files[${i}]}/koreader"
+            if [ -d "${file}/koreader" ]; then
+                echo "${file} (last modified on $(date -c %y "${file}"))"
+                ts[${i}]="$(date -c %Y "${file}")"
+            fi
+        done
+        # Sort the list of ts
+        local sorted_ts=()
+        IFS=$'\n' read -d '' -r -a sorted_ts < <(printf '%s\n' "${ts[@]}" | sort -r)
+        # Find the id of the most recent ts
+        for i in ${!ts[@]}; do
+            if [ "${ts[${i}]}" == "${sorted_ts[0]}" ]; then
+                idx="${i}"
+                break
+            fi
+        done
+        # Recap
+        echo "Picking the most recent one: ${files[${idx}]}/koreader"
+    fi
+    EMU_DIR="${files[${idx}]}/koreader"
     export EMU_DIR
     LD_LIBRARY_PATH=$(realpath "${EMU_DIR}")/libs:${LD_LIBRARY_PATH}
     export LD_LIBRARY_PATH
