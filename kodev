@@ -105,7 +105,10 @@ function setup_env() {
         # for android adb install
         KODEBUG_SUFFIX=-debug
     fi
-    readarray -d '' files < <(find . -maxdepth 1 -name 'koreader-emulator-*' -print0 | ${SETUP_ENV_GREP_COMMAND})
+    files=()
+    while IFS=  read -r -d $'\0'; do
+        files+=("$REPLY")
+    done < <(find . -maxdepth 1 -name 'koreader-emulator-*' -print0 | ${SETUP_ENV_GREP_COMMAND})
     assert_ret_zero $? "Emulator not found. Please build it first."
     # Warn if multiple matches were found
     test ${#files[@]} -eq 1
