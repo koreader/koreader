@@ -118,9 +118,9 @@ function setup_env() {
         # Store list of ts at the same index
         for i in "${!files[@]}"; do
             local file="${files[${i}]}/koreader"
-            if [ -d "${file}/koreader" ]; then
-                echo "${file} (last modified on $(date -c %y "${file}"))"
-                ts[${i}]="$(date -c %Y "${file}")"
+            if [ -d "${file}" ]; then
+                echo "${file} (last modified on $(stat -c %y "${file}"))"
+                ts[${i}]="$(stat -c %Y "${file}")"
             fi
         done
         # Sort the list of ts
