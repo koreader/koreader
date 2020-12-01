@@ -230,7 +230,12 @@ function DictQuickLookup:update()
     if self.is_fullpage or G_reader_settings:isTrue("dict_largewindow") then
         -- bigger window if fullpage being shown - this will let
         -- some room anyway for footer display (time, battery...)
-        self.height = Screen:getHeight()
+        -- In Landscape, we have less room available for the UI bits, so, chop it off some more
+        if Screen:getHeight() < Screen:getWidth() then
+            self.height = Screen:getHeight() - Screen:scaleBySize(80)
+        else
+            self.height = Screen:getHeight()
+        end
         self.width = Screen:getWidth() - Screen:scaleBySize(40)
     else
         -- smaller window otherwise
