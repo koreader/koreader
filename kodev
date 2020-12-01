@@ -109,6 +109,7 @@ function setup_env() {
     while IFS= read -r -d $'\0'; do
         files+=("${REPLY}")
     done < <(find . -maxdepth 1 -name 'koreader-emulator-*' -print0 | ${SETUP_ENV_GREP_COMMAND})
+    test ${#files[@]} -gt 0
     assert_ret_zero $? "Emulator not found. Please build it first."
     local idx=0
     # Warn if multiple matches were found
