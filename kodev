@@ -107,7 +107,7 @@ function setup_env() {
     fi
     local files=()
     while IFS=  read -r -d $'\0'; do
-        files+=("$REPLY")
+        files+=("${REPLY}")
     done < <(find . -maxdepth 1 -name 'koreader-emulator-*' -print0 | ${SETUP_ENV_GREP_COMMAND})
     assert_ret_zero $? "Emulator not found. Please build it first."
     local idx=0
@@ -116,7 +116,7 @@ function setup_env() {
         echo "Multiple emulator builds found:"
         local ts=()
         # Store list of ts at the same index
-        for i in ${!files[@]}; do
+        for i in "${!files[@]}"; do
             local file="${files[${i}]}/koreader"
             if [ -d "${file}/koreader" ]; then
                 echo "${file} (last modified on $(date -c %y "${file}"))"
@@ -127,7 +127,7 @@ function setup_env() {
         local sorted_ts=()
         IFS=$'\n' read -d '' -r -a sorted_ts < <(printf '%s\n' "${ts[@]}" | sort -r)
         # Find the id of the most recent ts
-        for i in ${!ts[@]}; do
+        for i in "${!ts[@]}"; do
             if [ "${ts[${i}]}" == "${sorted_ts[0]}" ]; then
                 idx="${i}"
                 break
