@@ -107,6 +107,9 @@ function setup_env() {
     fi
     readarray -d '' files < <(find . -maxdepth 1 -name 'koreader-emulator-*' -print0 | ${SETUP_ENV_GREP_COMMAND})
     assert_ret_zero $? "Emulator not found. Please build it first."
+    # Warn if multiple match were found
+    test ${#files[@]} -eq 1
+    assert_ret_zero $? "Multiple emulator builds found! Pare that down to one."
     EMU_DIR="${files[0]}/koreader"
     export EMU_DIR
     LD_LIBRARY_PATH=$(realpath "${EMU_DIR}")/libs:${LD_LIBRARY_PATH}
