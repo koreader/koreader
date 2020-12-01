@@ -126,7 +126,7 @@ function setup_env() {
         # Sort the list of ts
         local sorted_ts=()
         IFS=$'\n' read -d '' -r -a sorted_ts < <(printf '%s\n' "${ts[@]}" | sort -r)
-        # Find the id of the most recent ts
+        # Find the id of the most recent ts (spoiler: it's going to be the one currently targeted by this invocation of kodev)
         for i in "${!ts[@]}"; do
             if [ "${ts[${i}]}" == "${sorted_ts[0]}" ]; then
                 idx="${i}"
