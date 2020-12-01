@@ -231,7 +231,7 @@ function DictQuickLookup:update()
         -- bigger window if fullpage being shown - this will let
         -- some room anyway for footer display (time, battery...)
         -- In Landscape, we have less room available for the UI bits, so, chop it off some more
-        if Screen:getHeight() < Screen:getWidth() then
+        if Screen:getScreenMode() == "landscape" then
             self.height = Screen:getHeight() - Screen:scaleBySize(80)
         else
             self.height = Screen:getHeight()
