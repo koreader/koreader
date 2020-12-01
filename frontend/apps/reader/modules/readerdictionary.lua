@@ -647,9 +647,9 @@ end
 
 function ReaderDictionary:showLookupInfo(word)
     local text = T(self.lookup_msg, word)
-    self.lookup_progress_msg = InfoMessage:new{text=text}
+    self.lookup_progress_msg = InfoMessage:new{text=text, no_refresh_on_close=true}
     UIManager:show(self.lookup_progress_msg)
-    UIManager:forceRePaint()
+    -- UIManager:forceRePaint()
 end
 
 function ReaderDictionary:dismissLookupInfo()

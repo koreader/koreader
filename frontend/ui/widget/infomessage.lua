@@ -64,7 +64,8 @@ local InfoMessage = InputContainer:new{
     lang = nil,
     para_direction_rtl = nil,
     auto_para_direction = nil,
-
+    -- Don't call setDirty when closing the widget
+    no_refresh_on_close = nil,
 }
 
 function InfoMessage:init()
@@ -185,6 +186,10 @@ function InfoMessage:init()
 end
 
 function InfoMessage:onCloseWidget()
+    if self.no_refresh_on_close then
+        return true
+    end
+
     UIManager:setDirty(nil, function()
         return "ui", self[1][1].dimen
     end)
