@@ -77,7 +77,7 @@ function ButtonProgressWidget:update()
         local margin = button_margin
         local extra_border_size = 0
         local button = Button:new{
-            text = "-",
+            text = "−",
             radius = 0,
             margin = margin,
             padding = button_padding,
