@@ -89,7 +89,12 @@ function CoverImage:createCoverImage(doc_settings)
 
             if self.cover_image_background == "none" or scale_factor == 1 then
                 local act_format = self.cover_image_format == "auto" and self.cover_image_extension or self.cover_image_format
-                cover_image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality)
+                if not cover_image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality) then
+                    UIManager:show(InfoMessage:new{
+                        text = T(_"Error writing file\n") .. self.cover_image_path,
+                        show_icon = true,
+                    })
+                end
                 cover_image:free()
                 return
             end
