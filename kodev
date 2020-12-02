@@ -99,15 +99,45 @@ EOL
 }
 
 function setup_env() {
-    SETUP_ENV_GREP_COMMAND="grep -v debug"
+    SETUP_ENV_GREP_COMMAND="grep -z -v debug"
     if [ -n "${KODEBUG}" ]; then
-        SETUP_ENV_GREP_COMMAND="grep debug"
+        SETUP_ENV_GREP_COMMAND="grep -z debug"
         # for android adb install
         KODEBUG_SUFFIX=-debug
     fi
-    files=$(find . -maxdepth 1 -name 'koreader-emulator-*' | ${SETUP_ENV_GREP_COMMAND})/koreader
+    local files=()
+    while IFS= read -r -d $'\0'; do
+        files+=("${REPLY}")
+    done < <(find . -maxdepth 1 -name 'koreader-emulator-*' -print0 | ${SETUP_ENV_GREP_COMMAND})
+    test ${#files[@]} -gt 0
     assert_ret_zero $? "Emulator not found. Please build it first."
-    EMU_DIR=${files[0]}
+    local idx=0
+    # Warn if multiple matches were found
+    if [ ${#files[@]} -gt 1 ]; then
+        echo "Multiple emulator builds found:"
+        local ts=()
+        # Store list of ts at the same index
+        for i in "${!files[@]}"; do
+            local file="${files[${i}]}/koreader"
+            if [ -d "${file}" ]; then
+                echo "${file} (last modified on $(stat -c %y "${file}"))"
+                ts[${i}]="$(stat -c %Y "${file}")"
+            fi
+        done
+        # Sort the list of ts
+        local sorted_ts=()
+        IFS=$'\n' read -d '' -r -a sorted_ts < <(printf '%s\n' "${ts[@]}" | sort -r)
+        # Find the id of the most recent ts (spoiler: it's going to be the one currently targeted by this invocation of kodev)
+        for i in "${!ts[@]}"; do
+            if [ "${ts[${i}]}" == "${sorted_ts[0]}" ]; then
+                idx="${i}"
+                break
+            fi
+        done
+        # Recap
+        echo "Picking the most recent one: ${files[${idx}]}/koreader"
+    fi
+    EMU_DIR="${files[${idx}]}/koreader"
     export EMU_DIR
     LD_LIBRARY_PATH=$(realpath "${EMU_DIR}")/libs:${LD_LIBRARY_PATH}
     export LD_LIBRARY_PATH
