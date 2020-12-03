@@ -647,9 +647,9 @@ end
 
 function ReaderDictionary:showLookupInfo(word)
     local text = T(self.lookup_msg, word)
-    self.lookup_progress_msg = InfoMessage:new{text=text}
+    self.lookup_progress_msg = InfoMessage:new{text=text, no_refresh_on_close=true}
     UIManager:show(self.lookup_progress_msg)
-    UIManager:forceRePaint()
+    -- UIManager:forceRePaint()
 end
 
 function ReaderDictionary:dismissLookupInfo()
@@ -827,7 +827,6 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
 end
 
 function ReaderDictionary:showDict(word, results, box, link)
-    self:dismissLookupInfo()
     if results and results[1] then
         logger.dbg("showing quick lookup window", word, results)
         self.dict_window = DictQuickLookup:new{
@@ -856,7 +855,19 @@ function ReaderDictionary:showDict(word, results, box, link)
                 self:onHtmlDictionaryLinkTapped(dictionary, html_link)
             end,
         }
+        if self.lookup_progress_msg then
+            -- If we have a lookup InfoMessage, and it's taller than us, make it refresh on close
+            if self.lookup_progress_msg[1][1] and self.lookup_progress_msg[1][1].dimen and self.lookup_progress_msg[1][1].dimen.h >= self.dict_window.height then
+                self.lookup_progress_msg.no_refresh_on_close = nil
+            end
+        end
         table.insert(self.dict_window_list, self.dict_window)
+        UIManager:show(self.dict_window)
+    end
+
+    -- Delay the dismiss, so we can flip the no_refresh_on_close flag if the InfoMessage is taller than the DictQuickLookup...
+    self:dismissLookupInfo()
+    if results and results[1] then
         UIManager:show(self.dict_window)
     end
 end
