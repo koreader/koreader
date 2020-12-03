@@ -102,6 +102,18 @@ function ReaderMenu:onReaderReady()
             handler = function(ges) return self:onTapShowMenu(ges) end,
         },
         {
+            id = "readermenu_ext_tap",
+            ges = "tap",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_MENU_EXT.x, ratio_y = DTAP_ZONE_MENU_EXT.y,
+                ratio_w = DTAP_ZONE_MENU_EXT.w, ratio_h = DTAP_ZONE_MENU_EXT.h,
+            },
+            overrides = {
+                "readermenu_tap",
+            },
+            handler = function(ges) return self:onTapShowMenu(ges) end,
+        },
+        {
             id = "readermenu_swipe",
             ges = "swipe",
             screen_zone = {
@@ -115,6 +127,18 @@ function ReaderMenu:onReaderReady()
             handler = function(ges) return self:onSwipeShowMenu(ges) end,
         },
         {
+            id = "readermenu_ext_swipe",
+            ges = "swipe",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_MENU_EXT.x, ratio_y = DTAP_ZONE_MENU_EXT.y,
+                ratio_w = DTAP_ZONE_MENU_EXT.w, ratio_h = DTAP_ZONE_MENU_EXT.h,
+            },
+            overrides = {
+                "readermenu_swipe",
+            },
+            handler = function(ges) return self:onSwipeShowMenu(ges) end,
+        },
+        {
             id = "readermenu_pan",
             ges = "pan",
             screen_zone = {
@@ -124,6 +148,18 @@ function ReaderMenu:onReaderReady()
             overrides = {
                 "rolling_pan",
                 "paging_pan",
+            },
+            handler = function(ges) return self:onSwipeShowMenu(ges) end,
+        },
+        {
+            id = "readermenu_ext_pan",
+            ges = "pan",
+            screen_zone = {
+                ratio_x = DTAP_ZONE_MENU_EXT.x, ratio_y = DTAP_ZONE_MENU_EXT.y,
+                ratio_w = DTAP_ZONE_MENU_EXT.w, ratio_h = DTAP_ZONE_MENU_EXT.h,
+            },
+            overrides = {
+                "readermenu_pan",
             },
             handler = function(ges) return self:onSwipeShowMenu(ges) end,
         },

@@ -632,9 +632,10 @@ function ReaderFooter:setupTouchZones()
             screen_zone = footer_screen_zone,
             handler = function(ges) return self:onTapFooter(ges) end,
             overrides = {
+                "readerconfigmenu_ext_tap",
+                "readerconfigmenu_tap",
                 "tap_forward",
                 "tap_backward",
-                "readerconfigmenu_tap",
             },
             -- (Low priority: tap on existing highlights
             -- or links have priority)

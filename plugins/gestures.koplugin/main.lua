@@ -823,18 +823,22 @@ function Gestures:setupGesture(ges)
     local overrides_swipe_pan, overrides_swipe_pan_release
     if self.is_docless then
         overrides_tap_corner = {
+            "filemanager_ext_tap",
             "filemanager_tap",
         }
         overrides_horizontal_edge = {
+            "filemanager_ext_swipe",
             "filemanager_swipe",
         }
     else
         overrides_tap_corner = {
-            "tap_backward",
-            "tap_forward",
-            "readermenu_tap",
-            "readerconfigmenu_tap",
             "readerfooter_tap",
+            "readerconfigmenu_ext_tap",
+            "readerconfigmenu_tap",
+            "readermenu_ext_tap",
+            "readermenu_tap",
+            "tap_forward",
+            "tap_backward",
         }
         overrides_hold_corner = {
             -- As hold corners are "ignored" by default, and we have
@@ -844,17 +848,21 @@ function Gestures:setupGesture(ges)
             "readerfooter_hold",
         }
         overrides_vertical_edge = {
+            "readerconfigmenu_ext_swipe",
+            "readerconfigmenu_swipe",
+            "readermenu_ext_swipe",
+            "readermenu_swipe",
             "paging_swipe",
             "rolling_swipe",
-            "readermenu_swipe",
-            "readerconfigmenu_swipe",
         }
         overrides_horizontal_edge = {
             "swipe_link",
+            "readerconfigmenu_ext_swipe",
+            "readerconfigmenu_swipe",
+            "readermenu_ext_swipe",
+            "readermenu_swipe",
             "paging_swipe",
             "rolling_swipe",
-            "readermenu_swipe",
-            "readerconfigmenu_swipe",
         }
         overrides_pan = {
             "paging_swipe",
@@ -1034,13 +1042,15 @@ function Gestures:setupGesture(ges)
         distance = "short"
         if self.is_docless then
             overrides = {
+                "filemanager_ext_tap",
                 "filemanager_tap",
-                "filemanager_swipe"
+                "filemanager_ext_swipe",
+                "filemanager_swipe",
             }
         else
             overrides = {
-                "rolling_swipe",
                 "paging_swipe",
+                "rolling_swipe",
             }
         end
     elseif ges == "spread_gesture" then
