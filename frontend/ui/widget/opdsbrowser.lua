@@ -568,12 +568,11 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
                     password    = item.password
                 }
             elseif parsed.scheme == "https" then
-                local auth = string.format("%s:%s", item.username, item.password)
+                local auth = (item.username and item.password) and string.format("%s:%s", item.username, item.password) or nil
                 local hostname = parsed.host
-
                 dummy, c = http.request {
                     url         = remote_url,
-                    headers     = { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname },
+                    headers     = auth and { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname } or nil,
                     sink        = ltn12.sink.file(io.open(local_path, "w")),
                 }
             else
