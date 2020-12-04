@@ -26,7 +26,7 @@ ifeq ($(TARGET), android)
 	PATH:=$(ANDROID_TOOLCHAIN)/bin:$(PATH)
 endif
 
-MACHINE=$(shell PATH=$(PATH) $(CC) -dumpmachine 2>/dev/null)
+MACHINE=$(shell PATH='$(PATH)' $(CC) -dumpmachine 2>/dev/null)
 ifdef KODEBUG
 	MACHINE:=$(MACHINE)-debug
 	KODEDUG_SUFFIX:=-debug
