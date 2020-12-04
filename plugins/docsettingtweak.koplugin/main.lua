@@ -11,7 +11,7 @@ local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("util")
 
 local DocSettingTweak = WidgetContainer:new{
-    name = 'docsettingtweak',
+    name = "docsettingtweak",
 }
 
 local directory_defaults_name = "directory_defaults.lua"

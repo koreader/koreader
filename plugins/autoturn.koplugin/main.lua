@@ -8,7 +8,7 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 
 local AutoTurn = WidgetContainer:new{
-    name = 'autoturn',
+    name = "autoturn",
     is_doc_only = true,
     autoturn_sec = G_reader_settings:readSetting("autoturn_timeout_seconds") or 0,
     autoturn_distance = G_reader_settings:readSetting("autoturn_distance") or 1,

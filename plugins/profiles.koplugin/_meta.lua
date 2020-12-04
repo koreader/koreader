@@ -1,6 +1,6 @@
 local _ = require("gettext")
 return {
-    name = 'profiles',
+    name = "profiles",
     fullname = _("Profiles"),
     description = _([[This plugin allows combining multiple settings to make switchable 'profiles'.]]),
 }
