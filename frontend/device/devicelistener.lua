@@ -85,7 +85,7 @@ if Device:hasFrontlight() then
             local steps_fl_big_scale = { 0.1, 0.1, 0.2, 0.4, 0.7, 1.1, 1.6, 2.2, 2.9, 3.7, 4.6, 5.6, 6.7, 7.9, 9.2, 10.6, }
             local steps_fl_small_scale = { 1.0, 1.0, 2.0, 3.0, 4.0, 6.0, 8.1, 11.3 }
             local steps_fl = steps_fl_big_scale
-            if (min - max) < 50  then
+            if (max - min) < 50  then
                 steps_fl = steps_fl_small_scale
             end
             local gestureScale
