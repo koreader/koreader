@@ -195,15 +195,17 @@ end
 -- @number zoom requested zoom
 -- @treturn BlitBuffer
 function RenderImage:renderSVGImageFile(filename, width, height, zoom)
-    -- For now (with our old MuPDF 1.13), NanoSVG is the best renderer
-    -- Note that both renderers currently enforce keeping the image's
-    -- original aspect ratio.
-    if false then
-        return self:renderSVGImageFileWithMupdf(filename, width, height, zoom)
-    else
+    if self.RENDER_SVG_WITH_NANOSVG then
         return self:renderSVGImageFileWithNanoSVG(filename, width, height, zoom)
+    else
+        return self:renderSVGImageFileWithMupdf(filename, width, height, zoom)
     end
 end
+
+-- For now (with our old MuPDF 1.13), NanoSVG is the best renderer
+-- Note that both renderers currently enforce keeping the image's
+-- original aspect ratio.
+RenderImage.RENDER_SVG_WITH_NANOSVG = true
 
 function RenderImage:renderSVGImageFileWithNanoSVG(filename, width, height, zoom)
     if not NnSVG then
@@ -281,8 +283,8 @@ function RenderImage:renderSVGImageFileWithMupdf(filename, width, height, zoom)
     -- local bb = page:draw_new(dc, width, height, 0, 0)
     -- MuPDF or our FFI may fail on some icons (appbar.page.fit),
     -- avoid a crash and return a blank and black image
-    local ok, bb = pcall(page.draw_new, page, dc, width, height, 0, 0)
-    if not ok then
+    local rendered, bb = pcall(page.draw_new, page, dc, width, height, 0, 0)
+    if not rendered then
         logger.warn("MuPDF renderSVG error:", bb)
         bb = Blitbuffer.new(width, height, Blitbuffer.TYPE_BBRGB32)
     end
