@@ -44,9 +44,10 @@ local CoverImage = WidgetContainer:new{
 }
 
 function CoverImage:init()
-    self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or "cover.png"
+    self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or "cover.jpg"
     self.cover_image_format = G_reader_settings:readSetting("cover_image_format") or "auto"
     self.cover_image_extension = getExtension(self.cover_image_path)
+    self.cover_image_quality = G_reader_settings:readSetting("cover_image_quality") or 75
     self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "black"
     self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or "cover_fallback.png"
     self.enabled = G_reader_settings:isTrue("cover_image_enabled")
@@ -88,7 +89,12 @@ function CoverImage:createCoverImage(doc_settings)
 
             if self.cover_image_background == "none" or scale_factor == 1 then
                 local act_format = self.cover_image_format == "auto" and self.cover_image_extension or self.cover_image_format
-                cover_image:writeToFile(self.cover_image_path, act_format)
+                if not cover_image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality) then
+                    UIManager:show(InfoMessage:new{
+                        text = T(_"Error writing file\n") .. self.cover_image_path,
+                        show_icon = true,
+                    })
+                end
                 cover_image:free()
                 return
             end
@@ -113,7 +119,12 @@ function CoverImage:createCoverImage(doc_settings)
             cover_image:free()
 
             local act_format = self.cover_image_format == "auto" and self.cover_image_extension or self.cover_image_format
-            image:writeToFile(self.cover_image_path, act_format)
+            if not image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality) then
+                UIManager:show(InfoMessage:new{
+                    text = T(_"Error writing file\n") .. self.cover_image_path,
+                    show_icon = true,
+                    })
+            end
 
             image:free()
             logger.dbg("CoverImage: image written to " .. self.cover_image_path)
@@ -314,6 +325,20 @@ function CoverImage:addToMainMenu(menu_items)
                         callback = function()
                             local old_cover_image_format = self.cover_image_format
                             self.cover_image_format = "auto"
+                            G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
+                            if self.enabled and old_cover_image_format ~= self.cover_image_format then
+                                self:createCoverImage(self.ui.doc_settings)
+                            end
+                        end,
+                    },
+                    {
+                        text = _("JPG file format"),
+                        checked_func = function()
+                            return self.cover_image_format == "jpg"
+                        end,
+                        callback = function()
+                            local old_cover_image_format = self.cover_image_format
+                            self.cover_image_format = "jpg"
                             G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
                             if self.enabled and old_cover_image_format ~= self.cover_image_format then
                                 self:createCoverImage(self.ui.doc_settings)
