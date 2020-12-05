@@ -2,12 +2,15 @@
 Image rendering module.
 ]]
 
+local Blitbuffer = require("ffi/blitbuffer")
+local Math = require("optmath")
 local ffi = require("ffi")
 local logger = require("logger")
 
 -- Will be loaded when needed
 local Mupdf = nil
 local Pic = nil
+local NnSVG = nil
 
 local RenderImage = {}
 
@@ -182,6 +185,112 @@ function RenderImage:scaleBlitBuffer(bb, width, height, free_orig_bb)
         bb:free()
     end
     return scaled_bb
+end
+
+--- Renders SVG image file as a BlitBuffer with the best renderer
+--
+-- @string filename image file path
+-- @int width requested width
+-- @int height requested height
+-- @number zoom requested zoom
+-- @treturn BlitBuffer
+function RenderImage:renderSVGImageFile(filename, width, height, zoom)
+    if self.RENDER_SVG_WITH_NANOSVG then
+        return self:renderSVGImageFileWithNanoSVG(filename, width, height, zoom)
+    else
+        return self:renderSVGImageFileWithMupdf(filename, width, height, zoom)
+    end
+end
+
+-- For now (with our old MuPDF 1.13), NanoSVG is the best renderer
+-- Note that both renderers currently enforce keeping the image's
+-- original aspect ratio.
+RenderImage.RENDER_SVG_WITH_NANOSVG = true
+
+function RenderImage:renderSVGImageFileWithNanoSVG(filename, width, height, zoom)
+    if not NnSVG then
+        NnSVG = require("libs/libkoreader-nnsvg")
+    end
+    local svg_image = NnSVG.new(filename)
+    local native_w, native_h = svg_image:getSize()
+    if not zoom then
+        if width and height then
+            -- Original aspect ratio will be kept, we might have
+            -- to center the SVG inside the target width/height
+            zoom = math.min(width/native_w, height/native_h)
+        elseif width then
+            zoom = width/native_w
+        elseif height then
+            zoom = height/native_h
+        else
+            zoom = 1
+        end
+    end
+    -- (Be sure we use integers; using floats can cause glitches)
+    local inner_w = math.ceil(zoom * native_w)
+    local inner_h = math.ceil(zoom * native_h)
+    local offset_x = 0
+    local offset_y = 0
+    if not width then
+        width = inner_w
+    elseif inner_w < width then
+        offset_x = Math.round((width - inner_w) / 2)
+    end
+    if not height then
+        height = inner_h
+    elseif inner_h < height then
+        offset_y = Math.round((height - inner_h) / 2)
+    end
+    logger.dbg("renderSVG", filename, zoom, native_w, native_h, ">", width, height, offset_x, offset_y)
+    local bb = Blitbuffer.new(width, height, Blitbuffer.TYPE_BBRGB32)
+    svg_image:drawTo(bb, zoom, offset_x, offset_y)
+    svg_image:free()
+    return bb
+end
+
+function RenderImage:renderSVGImageFileWithMupdf(filename, width, height, zoom)
+    local ok, document = pcall(Mupdf.openDocument, filename)
+    if not ok then
+        return
+    end
+    -- document:layoutDocument(width, height, 20) -- does not change anything
+    if document:getPages() <= 0 then
+        return
+    end
+    local page = document:openPage(1)
+    local DrawContext = require("ffi/drawcontext")
+    local dc = DrawContext.new()
+    local native_w, native_h = page:getSize(dc)
+    if not zoom then
+        if width and height then
+            zoom = math.min(width/native_w, height/native_h)
+        elseif width then
+            zoom = width/native_w
+        elseif height then
+            zoom = height/native_h
+        else
+            zoom = 1
+        end
+    end
+    if not width or not height then
+        width = zoom * native_w
+        height = zoom * native_h
+    end
+    width = math.ceil(width)
+    height = math.ceil(height)
+    logger.dbg("renderSVG", filename, zoom, native_w, native_h, ">", width, height)
+    dc:setZoom(zoom)
+    -- local bb = page:draw_new(dc, width, height, 0, 0)
+    -- MuPDF or our FFI may fail on some icons (appbar.page.fit),
+    -- avoid a crash and return a blank and black image
+    local rendered, bb = pcall(page.draw_new, page, dc, width, height, 0, 0)
+    if not rendered then
+        logger.warn("MuPDF renderSVG error:", bb)
+        bb = Blitbuffer.new(width, height, Blitbuffer.TYPE_BBRGB32)
+    end
+    page:close()
+    document:close()
+    return bb
 end
 
 return RenderImage

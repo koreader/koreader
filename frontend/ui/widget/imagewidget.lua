@@ -127,10 +127,32 @@ function ImageWidget:_loadimage()
     self._bb_disposable = self.image_disposable
 end
 
+local ICONS_ALT_SVG_DIR = false
+-- Uncomment to use SVG icons from one of these directories
+-- ICONS_ALT_SVG_DIR = "resources/icons/src/"
+-- ICONS_ALT_SVG_DIR = "resources/icons/svg/"
+
 function ImageWidget:_loadfile()
+    if ICONS_ALT_SVG_DIR then
+        -- Pick the SVG version if one exists when a png icon file path is provided
+        local dir, name = self.file:match("^(resources/icons/)([^/]*).png$")
+        if dir and name then
+            local svg_file = ICONS_ALT_SVG_DIR .. name .. ".svg"
+            if lfs.attributes(svg_file, "mode") ~= "file" then
+                svg_file = svg_file:gsub(".large", "") -- Try with this removed
+                if lfs.attributes(svg_file, "mode") ~= "file" then
+                    svg_file = nil -- no alt svg available
+                end
+            end
+            if svg_file then
+                logger.dbg("using alt SVG", svg_file)
+                self.file = svg_file
+            end
+        end
+    end
     local itype = string.lower(string.match(self.file, ".+%.([^.]+)") or "")
-    if itype == "png" or itype == "jpg" or itype == "jpeg"
-            or itype == "tiff" or itype == "tif" or itype == "gif" then
+    if itype == "svg" or itype == "png" or itype == "jpg" or itype == "jpeg"
+            or itype == "gif" or itype == "tiff" or itype == "tif" then
         -- In our use cases for files (icons), we either provide width and height,
         -- or just scale_for_dpi, and scale_factor should stay nil.
         -- Other combinations will result in double scaling, and unexpected results.
@@ -157,10 +179,24 @@ function ImageWidget:_loadfile()
             self._bb = cache.bb
             self._bb_disposable = false -- don't touch or free a cached _bb
         else
-            self._bb = RenderImage:renderImageFile(self.file, false, width, height)
-            if scale_for_dpi_here then
-                local bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
-                self._bb = RenderImage:scaleBlitBuffer(self._bb, math.floor(bb_w * DPI_SCALE), math.floor(bb_h * DPI_SCALE))
+            if itype == "svg" then
+                local zoom
+                if scale_for_dpi_here then
+                    zoom = DPI_SCALE
+                elseif self.scale_factor == 0 then
+                    -- renderSVGImageFile() keeps aspect ratio by default
+                    width = self.width
+                    height = self.height
+                end
+                -- local start_ts = require("ffi/util").getTimestamp() -- Uncomment for timing things
+                self._bb = RenderImage:renderSVGImageFile(self.file, width, height, zoom)
+                -- logger.info(string.format("  SVG rendering %.6f s", require("ffi/util").getDuration(start_ts)), self.file, zoom or "", width, height)
+            else
+                self._bb = RenderImage:renderImageFile(self.file, false, width, height)
+                if scale_for_dpi_here then
+                    local bb_w, bb_h = self._bb:getWidth(), self._bb:getHeight()
+                    self._bb = RenderImage:scaleBlitBuffer(self._bb, math.floor(bb_w * DPI_SCALE), math.floor(bb_h * DPI_SCALE))
+                end
             end
             if not self.file_do_cache then
                 self._bb_disposable = true -- we made it, we can modify and free it
