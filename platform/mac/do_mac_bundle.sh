@@ -17,10 +17,6 @@
 
 COPYRIGHT="Copyright © $(date +"%Y") KOReader"
 
-command_exists() {
-    type "$1" >/dev/null 2>/dev/null
-}
-
 if [ -z "${1}" ]; then
     echo "${0}: can't find KOReader build, please specify a path"
     exit 1
@@ -185,15 +181,7 @@ for path in l10n/*; do
     fi
 done
 
-# package as DMG if create-dmg is available
-# reduces size from 80MB to 40MB
+# package as 7z reduces size from 80MB to 30MB
 mv "${APP_PATH}" "${APP_BUNDLE}.app"
-
-if command_exists "create-dmg"; then
-    # create KOReader-$VERSION.dmg with KOReader.app inside
-    create-dmg "${APP_BUNDLE}.app" --overwrite
-    rm -rf "${APP_BUNDLE}.app"
-else
-    # rename as KOReader-$VERSION.app
-    mv -v "${APP_BUNDLE}.app" "${APP_BUNDLE}-${VERSION}.app"
-fi
+7z a -l -m0=lzma2 -mx=9 "${APP_BUNDLE}-${VERSION}.7z" "${APP_BUNDLE}.app"
+rm -rfv "${APP_BUNDLE}.app"
