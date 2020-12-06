@@ -814,7 +814,7 @@ end
 function util.splitFilePathName(file)
     if file == nil or file == "" then return "", "" end
     if string.find(file, "/") == nil then return "", file end
-    return file:match'(.*/)(.*)'
+    return file:match("(.*/)(.*)")
 end
 
 --- Splits a file name into its pure file name and suffix
@@ -823,7 +823,7 @@ end
 function util.splitFileNameSuffix(file)
     if file == nil or file == "" then return "", "" end
     if string.find(file, "%.") == nil then return file, "" end
-    return file:match'(.*)%.(.*)'
+    return file:match("(.*)%.(.*)")
 end
 
 --- Gets file extension
