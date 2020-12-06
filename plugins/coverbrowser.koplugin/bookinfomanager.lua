@@ -10,15 +10,13 @@ local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
+local zstd = require("ffi/zstd")
 local _ = require("gettext")
 local N_ = _.ngettext
 local T = FFIUtil.template
 
--- Util functions needed by this plugin, but that may be added to existing base/ffi/ files
-local xutil = require("xutil")
-
 -- Database definition
-local BOOKINFO_DB_VERSION = "2-20170701"
+local BOOKINFO_DB_VERSION = "2-20201207"
 local BOOKINFO_DB_SCHEMA = [[
     -- For caching book cover and metadata
     CREATE TABLE IF NOT EXISTS bookinfo (
@@ -59,8 +57,7 @@ local BOOKINFO_DB_SCHEMA = [[
         cover_h             INTEGER,  -- blitbuffer height
         cover_btype         INTEGER,  -- blitbuffer type (internal)
         cover_bpitch        INTEGER,  -- blitbuffer pitch (internal)
-        cover_datalen       INTEGER,  -- blitbuffer uncompressed data length
-        cover_dataz         BLOB      -- blitbuffer data compressed with zlib
+        cover_data          BLOB      -- blitbuffer data compressed with zstd
     );
     CREATE UNIQUE INDEX IF NOT EXISTS dir_filename ON bookinfo(directory, filename);
 
@@ -96,8 +93,7 @@ local BOOKINFO_COLS_SET = {
         "cover_h",
         "cover_btype",
         "cover_bpitch",
-        "cover_datalen",
-        "cover_dataz",
+        "cover_data",
     }
 
 local bookinfo_values_sql = {} -- for "VALUES (?, ?, ?,...)" insert sql part
@@ -313,8 +309,8 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
             if bookinfo["has_cover"] then
                 bookinfo["cover_w"] = tonumber(row[num])
                 bookinfo["cover_h"] = tonumber(row[num+1])
-                local cover_data = xutil.zlib_uncompress(row[num+5], row[num+4])
-                row[num+5] = nil -- release memory used by cover_dataz
+                local cover_data = zstd.zstd_uncompress(row[num+4])
+                row[num+4] = nil -- release memory used by cover_data
                 -- Blitbuffer.fromstring() expects : w, h, bb_type, bb_data, pitch
                 bookinfo["cover_bb"] = Blitbuffer.fromstring(row[num], row[num+1], row[num+2], cover_data, row[num+3])
                 -- release memory used by uncompressed data:
@@ -453,12 +449,11 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                     dbrow.cover_bpitch = tonumber(cover_bb.stride)
                     local cover_data = Blitbuffer.tostring(cover_bb)
                     cover_bb:free() -- free bb before compressing to save memory
-                    dbrow.cover_datalen = cover_data:len()
-                    local cover_dataz = xutil.zlib_compress(cover_data)
+                    local cover_data_zstd = zstd.zstd_compress(cover_data)
                     -- release memory used by uncompressed data:
                     cover_data = nil -- luacheck: no unused
-                    dbrow.cover_dataz = SQ3.blob(cover_dataz) -- cast to blob for sqlite
-                    logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cbb_w, "x", cbb_h, ", compressed from", dbrow.cover_datalen, "to", cover_dataz:len())
+                    dbrow.cover_data = SQ3.blob(cover_data_zstd) -- cast to blob for sqlite
+                    logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cbb_w, "x", cbb_h, ", compressed from", dbrow.cover_datalen, "to", #cover_data_zstd)
                 end
             end
         end
