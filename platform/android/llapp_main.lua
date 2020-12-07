@@ -68,7 +68,6 @@ end
 --- @todo Take care of this on extraction instead.
 -- Cf. <https://github.com/koreader/koreader/issues/5347#issuecomment-529476693>.
 android.execute("chmod", "755", "./sdcv")
-android.execute("chmod", "755", "./tar")
 
 -- set TESSDATA_PREFIX env var
 C.setenv("TESSDATA_PREFIX", path.."/koreader/data", 1)

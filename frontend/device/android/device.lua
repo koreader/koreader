@@ -435,6 +435,21 @@ function Device:showLightDialog()
     end
 end
 
+function Device:unpackArchive(archive, extract_to)
+    require("dbg").dassert(type(archive) == "string")
+    local BD = require("ui/bidi")
+    if archive:match("%.tar%.bz2$") or archive:match("%.tar%.gz$") or archive:match("%.tar%.lz$") or archive:match("%.tgz$") then
+        local ok = android.untar(archive, extract_to)
+        if ok then
+            return true
+        else
+            return false, T(_("Extracting archive failed:\n\n%1", BD.filepath(archive)))
+        end
+    else
+        return false, T(_("Couldn't extract archive:\n\n%1\n\nUnrecognized filename extension."), BD.filepath(archive))
+    end
+end
+
 android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",
     android.prop.version, getCodename(), Device.firmware_rev, android.prop.flavor))
 

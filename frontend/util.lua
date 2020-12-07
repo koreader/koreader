@@ -1171,28 +1171,6 @@ function util.checkLuaSyntax(lua_text)
     return err
 end
 
---- Unpack an archive.
--- Extract the contents of an archive, detecting its format by
--- filename extension. Inspired by luarocks archive_unpack()
--- @param archive string: Filename of archive.
--- @param extract_to string: Destination directory.
--- @return boolean or (boolean, string): true on success, false and an error message on failure.
-function util.unpackArchive(archive, extract_to)
-    dbg.dassert(type(archive) == "string")
-
-    local BD = require("ui/bidi")
-    local ok
-    if archive:match("%.tar%.bz2$") or archive:match("%.tar%.gz$") or archive:match("%.tar%.lz$") or archive:match("%.tgz$") then
-        ok = os.execute(("./tar xf %q -C %q"):format(archive, extract_to))
-    else
-        return false, T(_("Couldn't extract archive:\n\n%1\n\nUnrecognized filename extension."), BD.filepath(archive))
-    end
-    if not ok then
-        return false, T(_("Extracting archive failed:\n\n%1", BD.filepath(archive)))
-    end
-    return true
-end
-
 -- Simple startsWith / endsWith string helpers
 -- c.f., http://lua-users.org/wiki/StringRecipes
 -- @param str string: source string
