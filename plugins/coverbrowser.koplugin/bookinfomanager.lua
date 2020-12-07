@@ -16,7 +16,7 @@ local N_ = _.ngettext
 local T = FFIUtil.template
 
 -- Database definition
-local BOOKINFO_DB_VERSION = "2-20201207"
+local BOOKINFO_DB_VERSION = "2-20201208"
 local BOOKINFO_DB_SCHEMA = [[
     -- For caching book cover and metadata
     CREATE TABLE IF NOT EXISTS bookinfo (
@@ -55,9 +55,9 @@ local BOOKINFO_DB_SCHEMA = [[
         -- Cover image
         cover_w             INTEGER,  -- blitbuffer width
         cover_h             INTEGER,  -- blitbuffer height
-        cover_btype         INTEGER,  -- blitbuffer type (internal)
-        cover_bpitch        INTEGER,  -- blitbuffer pitch (internal)
-        cover_data          BLOB      -- blitbuffer data compressed with zstd
+        cover_bb_type       INTEGER,  -- blitbuffer type (internal)
+        cover_bb_stride     INTEGER,  -- blitbuffer stride (internal)
+        cover_bb_data       BLOB      -- blitbuffer data compressed with zstd
     );
     CREATE UNIQUE INDEX IF NOT EXISTS dir_filename ON bookinfo(directory, filename);
 
@@ -91,9 +91,9 @@ local BOOKINFO_COLS_SET = {
         "description",
         "cover_w",
         "cover_h",
-        "cover_btype",
-        "cover_bpitch",
-        "cover_data",
+        "cover_bb_type",
+        "cover_bb_stride",
+        "cover_bb_data",
     }
 
 local bookinfo_values_sql = {} -- for "VALUES (?, ?, ?,...)" insert sql part
@@ -310,8 +310,7 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
                 bookinfo["cover_w"] = tonumber(row[num])
                 bookinfo["cover_h"] = tonumber(row[num+1])
                 local bbtype = tonumber(row[num+2])
-                -- FIXME: Update to "stride" to match the BB rename...
-                local bbpitch = tonumber(row[num+3])
+                local bbstride = tonumber(row[num+3])
                 -- This is a blob_mt table! Essentially, a (ptr, size) tuple.
                 local cover_blob = row[num+4]
                 -- The pointer returned by SQLite is only valid until the next step/reset/finalize!
@@ -319,7 +318,7 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
                 local cover_data, _ = zstd.zstd_uncompress(cover_blob[1], cover_blob[2])
                 -- FIXME: We could arguably check that the returned size equals stride*height...
                 -- That one, on the other hand, is on the heap, so we can use it without making a copy.
-                local cover_bb = Blitbuffer.new(bookinfo["cover_w"], bookinfo["cover_h"], bbtype, cover_data, bbpitch, bookinfo["cover_w"])
+                local cover_bb = Blitbuffer.new(bookinfo["cover_w"], bookinfo["cover_h"], bbtype, cover_data, bbstride, bookinfo["cover_w"])
                 -- Mark its data pointer as safe to free() on GC
                 cover_bb:setAllocated(1)
                 bookinfo["cover_bb"] = cover_bb
@@ -453,12 +452,12 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                     end
                     dbrow.cover_w = cover_bb.width
                     dbrow.cover_h = cover_bb.height
-                    dbrow.cover_btype = cover_bb:getType()
-                    dbrow.cover_bpitch = tonumber(cover_bb.stride)
+                    dbrow.cover_bb_type = cover_bb:getType()
+                    dbrow.cover_bb_stride = tonumber(cover_bb.stride)
                     local cover_size = cover_bb.stride * cover_bb.height
                     local cover_zst_ptr, cover_zst_size = zstd.zstd_compress(cover_bb.data, cover_size)
-                    dbrow.cover_data = SQ3.blob(cover_zst_ptr, cover_zst_size) -- cast to blob for sqlite
-                    logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cbb_w, "x", cbb_h, ", compressed from", cover_size, "to", cover_zst_size)
+                    dbrow.cover_bb_data = SQ3.blob(cover_zst_ptr, cover_zst_size) -- cast to blob for sqlite
+                    logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cover_bb.width, "x", cover_bb.height, ", compressed from", cover_size, "to", cover_zst_size)
                 end
             end
         end
