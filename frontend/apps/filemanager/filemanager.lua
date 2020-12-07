@@ -122,7 +122,6 @@ function FileManager:init()
         padding_right = Size.padding.large,
         padding_bottom = 0,
         callback = function() self:onShowPlusMenu() end,
-        hold_callback = function() self:onShowPlusMenu() end,
     }
 
     self.path_text = TextWidget:new{
