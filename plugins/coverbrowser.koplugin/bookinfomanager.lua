@@ -285,7 +285,7 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
 
     self:openDbConnection()
     local row = self.get_stmt:bind(directory, filename):step()
-    -- NOTE: We do not reset right now because we're querying a BLOB query,
+    -- NOTE: We do not reset right now because we'll be querying a BLOB,
     --       so we need the data it points to to still be there ;).
 
     if not row then -- filepath not in db
@@ -317,7 +317,7 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
                 local cover_blob = row[num+4]
                 -- The pointer returned by SQLite is only valid until the next step/reset/finalize!
                 -- (which means its memory management is entirely in the hands of SQLite)
-                local cover_data, _ = zstd.zstd_uncompress(cover_blob[1], cover_blob[2])
+                local cover_data, _ = zstd.zstd_uncompress_ctx(cover_blob[1], cover_blob[2])
                 -- FIXME: We could arguably check that the returned size equals stride*height...
                 -- That one, on the other hand, is on the heap, so we can use it without making a copy.
                 local cover_bb = Blitbuffer.new(bookinfo["cover_w"], bookinfo["cover_h"], bbtype, cover_data, bbstride, bookinfo["cover_w"])
