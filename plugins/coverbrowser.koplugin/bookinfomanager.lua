@@ -309,12 +309,20 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
             if bookinfo["has_cover"] then
                 bookinfo["cover_w"] = tonumber(row[num])
                 bookinfo["cover_h"] = tonumber(row[num+1])
-                local cover_data = zstd.zstd_uncompress(row[num+4])
-                row[num+4] = nil -- release memory used by cover_data
-                -- Blitbuffer.fromstring() expects : w, h, bb_type, bb_data, pitch
-                bookinfo["cover_bb"] = Blitbuffer.fromstring(row[num], row[num+1], row[num+2], cover_data, row[num+3])
-                -- release memory used by uncompressed data:
-                cover_data = nil -- luacheck: no unused
+                local bbtype = tonumber(row[num+2])
+                -- FIXME: Update to "stride" to match the BB rename...
+                local bbpitch = tonumber(row[num+3])
+                -- This is a blob_mt table! Essentially, a (ptr, size) tuple.
+                local cover_blob = row[num+4]
+                -- The pointer returned by SQLite is only valid until the next step/reset/finalize!
+                -- (which means its memory management is entirely in the hands of SQLite)
+                local cover_data, _ = zstd.zstd_uncompress(cover_blob[1], cover_blob[2])
+                -- FIXME: We could arguably check that the returned size equals stride*height...
+                -- That one, on the other hand, is on the heap, so we can use it without making a copy.
+                local cover_bb = Blitbuffer.new(bookinfo["cover_w"], bookinfo["cover_h"], bbtype, cover_data, bbpitch, bookinfo["cover_w"])
+                -- Mark its data pointer as safe to free() on GC
+                cover_bb:setAllocated(1)
+                bookinfo["cover_bb"] = cover_bb
             end
             break
         end
@@ -443,17 +451,14 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                         cbb_h = math.min(math.floor(cbb_h * scale_factor)+1, spec_max_cover_h)
                         cover_bb = RenderImage:scaleBlitBuffer(cover_bb, cbb_w, cbb_h, true)
                     end
-                    dbrow.cover_w = cbb_w
-                    dbrow.cover_h = cbb_h
+                    dbrow.cover_w = cover_bb.width
+                    dbrow.cover_h = cover_bb.height
                     dbrow.cover_btype = cover_bb:getType()
                     dbrow.cover_bpitch = tonumber(cover_bb.stride)
-                    local cover_data = Blitbuffer.tostring(cover_bb)
-                    cover_bb:free() -- free bb before compressing to save memory
-                    local cover_data_zstd = zstd.zstd_compress(cover_data)
-                    -- release memory used by uncompressed data:
-                    cover_data = nil -- luacheck: no unused
-                    dbrow.cover_data = SQ3.blob(cover_data_zstd) -- cast to blob for sqlite
-                    logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cbb_w, "x", cbb_h, ", compressed from", dbrow.cover_datalen, "to", #cover_data_zstd)
+                    local cover_size = cover_bb.stride * cover_bb.height)
+                    local cover_zst_ptr, cover_zst_size = zstd.zstd_compress(cover_bb.data, cover_size)
+                    dbrow.cover_data = SQ3.blob(cover_zst_ptr, cover_zst_size) -- cast to blob for sqlite
+                    logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cbb_w, "x", cbb_h, ", compressed from", cover_size, "to", cover_zst_size)
                 end
             end
         end
