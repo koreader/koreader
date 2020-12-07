@@ -458,6 +458,8 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                     local cover_zst_ptr, cover_zst_size = zstd.zstd_compress(cover_bb.data, cover_size)
                     dbrow.cover_bb_data = SQ3.blob(cover_zst_ptr, cover_zst_size) -- cast to blob for sqlite
                     logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cover_bb.w, "x", cover_bb.h, ", compressed from", tonumber(cover_size), "to", tonumber(cover_zst_size))
+                    -- We're done with the uncompressed bb now, and the compressed one has been managed by SQLite ;)
+                    cover_bb:free()
                 end
             end
         end
