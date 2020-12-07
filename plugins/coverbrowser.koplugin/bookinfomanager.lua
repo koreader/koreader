@@ -450,14 +450,14 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                         cbb_h = math.min(math.floor(cbb_h * scale_factor)+1, spec_max_cover_h)
                         cover_bb = RenderImage:scaleBlitBuffer(cover_bb, cbb_w, cbb_h, true)
                     end
-                    dbrow.cover_w = cover_bb.width
-                    dbrow.cover_h = cover_bb.height
+                    dbrow.cover_w = cover_bb.w
+                    dbrow.cover_h = cover_bb.h
                     dbrow.cover_bb_type = cover_bb:getType()
                     dbrow.cover_bb_stride = tonumber(cover_bb.stride)
                     local cover_size = cover_bb.stride * cover_bb.height
                     local cover_zst_ptr, cover_zst_size = zstd.zstd_compress(cover_bb.data, cover_size)
                     dbrow.cover_bb_data = SQ3.blob(cover_zst_ptr, cover_zst_size) -- cast to blob for sqlite
-                    logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cover_bb.width, "x", cover_bb.height, ", compressed from", cover_size, "to", cover_zst_size)
+                    logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cover_bb.w, "x", cover_bb.h, ", compressed from", cover_size, "to", cover_zst_size)
                 end
             end
         end
