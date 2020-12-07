@@ -285,9 +285,11 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
 
     self:openDbConnection()
     local row = self.get_stmt:bind(directory, filename):step()
-    self.get_stmt:clearbind():reset() -- get ready for next query
+    -- NOTE: We do not reset right now because we're querying a BLOB query,
+    --       so we need the data it points to to still be there ;).
 
     if not row then -- filepath not in db
+        self.get_stmt:clearbind():reset() -- get ready for next query
         return nil
     end
 
@@ -326,6 +328,8 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
             break
         end
     end
+
+    self.get_stmt:clearbind():reset() -- get ready for next query
     return bookinfo
 end
 
