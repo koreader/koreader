@@ -7,6 +7,7 @@ This module defines stubs for common methods.
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local function yes() return true end
 local function no() return false end
