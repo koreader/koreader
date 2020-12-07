@@ -479,19 +479,22 @@ function FileManager:init()
     table.insert(self, DeviceListener:new{ ui = self })
 
     -- koreader plugins
-    for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
-        if not plugin_module.is_doc_only then
-            local ok, plugin_or_err = PluginLoader:createPluginInstance(
-                plugin_module, { ui = self, })
-            -- Keep references to the modules which do not register into menu.
-            if ok then
-                local name = plugin_module.name
-                if name then self[name] = plugin_or_err end
-                table.insert(self, plugin_or_err)
-                logger.info("FM loaded plugin", name,
-                            "at", plugin_module.path)
+    if not self._plugins_loaded then
+        for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
+            if not plugin_module.is_doc_only then
+                local ok, plugin_or_err = PluginLoader:createPluginInstance(
+                    plugin_module, { ui = self, })
+                -- Keep references to the modules which do not register into menu.
+                if ok then
+                    local name = plugin_module.name
+                    if name then self[name] = plugin_or_err end
+                    table.insert(self, plugin_or_err)
+                    logger.info("FM loaded plugin", name,
+                                "at", plugin_module.path)
+                end
             end
         end
+        self._plugins_loaded = true
     end
 
     if Device:hasWifiToggle() then
