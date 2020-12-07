@@ -4,7 +4,7 @@ local Device = require("device")
 return {
     gesture_fm = {
         tap_top_left_corner = nil,
-        tap_top_right_corner = {show_plus_menu = true,},
+        tap_top_right_corner = nil,
         tap_right_bottom_corner = nil,
         tap_left_bottom_corner = Device:hasFrontlight() and {toggle_frontlight = true,} or nil,
         hold_top_left_corner = nil,

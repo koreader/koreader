@@ -121,8 +121,7 @@ function FileManager:init()
         padding_left = Size.padding.large,
         padding_right = Size.padding.large,
         padding_bottom = 0,
-        callback = nil, -- top right corner callback handled by gesture manager
-        hold_callback = nil, -- top right corner hold_callback handled by gesture manager
+        callback = function() self:onShowPlusMenu() end,
     }
 
     self.path_text = TextWidget:new{
