@@ -454,7 +454,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                     dbrow.cover_h = cover_bb.h
                     dbrow.cover_bb_type = cover_bb:getType()
                     dbrow.cover_bb_stride = tonumber(cover_bb.stride)
-                    local cover_size = cover_bb.stride * cover_bb.height
+                    local cover_size = cover_bb.stride * cover_bb.h
                     local cover_zst_ptr, cover_zst_size = zstd.zstd_compress(cover_bb.data, cover_size)
                     dbrow.cover_bb_data = SQ3.blob(cover_zst_ptr, cover_zst_size) -- cast to blob for sqlite
                     logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cover_bb.w, "x", cover_bb.h, ", compressed from", cover_size, "to", cover_zst_size)
