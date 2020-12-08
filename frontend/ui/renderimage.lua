@@ -102,7 +102,7 @@ function RenderImage:renderGifImageDataWithGifLib(data, size, want_frames, width
     if want_frames and nb_frames > 1 then
         -- Returns a regular table, with functions (returning the BlitBuffer)
         -- as values. Users will have to check via type() and call them.
-        -- (our luajit does not support __len via metatable, otherwise we
+        -- (The __len metamethod is a Lua 5.2 feature, otherwise we
         -- could have used setmetatable to avoid creating all the functions)
         local frames = {}
         -- As we don't cache the bb we build on the fly, let caller know it
@@ -118,27 +118,30 @@ function RenderImage:renderGifImageDataWithGifLib(data, size, want_frames, width
             end)
         end
         -- We can't close our GifDocument as long as we may fetch some
-        -- frame: we need to delay it till 'frames' is no more used.
+        -- frame: we need to delay it till 'frames' is no longer used.
         frames.gif_close_needed = true
-        -- Should happen with that, but __gc seems never called...
-        frames = setmetatable(frames, {
-            __gc = function()
-                logger.dbg("frames.gc() called, closing GifDocument")
-                if frames.gif_close_needed then
-                    gif:close()
-                    frames.gif_close_needed = nil
-                end
-            end
-        })
-        -- so, also set this method, so that ImageViewer can explicitely
-        -- call it onClose.
-        frames.free = function()
-            logger.dbg("frames.free() called, closing GifDocument")
-            if frames.gif_close_needed then
-                gif:close()
-                frames.gif_close_needed = nil
+        -- Since frames is a plain table, __gc won't work on Lua 5.1/LuaJIT,
+        -- not without a little help from the newproxy hack...
+        frames.gif = gif
+        local frames_mt = {}
+        function frames_mt:__gc()
+            logger.dbg("frames.gc() called, closing GifDocument", self.gif)
+            if self.gif_close_needed then
+                self.gif:close()
+                self.gif_close_needed = nil
             end
         end
+        -- Much like our other stuff, when we're puzzled about __gc, we do it manually!
+        -- So, also set this method, so that ImageViewer can explicitely call it onClose.
+        function frames:free()
+            logger.dbg("frames.free() called, closing GifDocument", self.gif)
+            if self.gif_close_needed then
+                self.gif:close()
+                self.gif_close_needed = nil
+            end
+        end
+        local setmetatable = require("ffi/__gc")
+        frames = setmetatable(frames, frames_mt)
         return frames
     else
         local page = gif:openPage(1)

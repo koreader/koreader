@@ -719,7 +719,7 @@ function ImageViewer:onCloseWidget()
     end
     -- also clean _images_list if it provides a method for that
     if self._images_list and self._images_list_disposable and self._images_list.free then
-        self._images_list.free()
+        self._images_list:free()
     end
     -- NOTE: Assume there's no image beneath us, so, no dithering request
     UIManager:setDirty(nil, function()
