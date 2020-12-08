@@ -317,8 +317,10 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
                 local cover_blob = row[num+4]
                 -- The pointer returned by SQLite is only valid until the next step/reset/finalize!
                 -- (which means its memory management is entirely in the hands of SQLite)
-                local cover_data, _ = zstd.zstd_uncompress_ctx(cover_blob[1], cover_blob[2])
-                -- FIXME: We could arguably check that the returned size equals stride*height...
+                local cover_data, cover_size = zstd.zstd_uncompress_ctx(cover_blob[1], cover_blob[2])
+                -- Double-check that the size of the uncompressed BB is as expected...
+                local expected_cover_size = bbstride * bookinfo["cover_h"]
+                assert(cover_size == expected_cover_size, "Uncompressed a " .. tonumber(cover_size) .. "b BB instead of the expected " .. tonumber(expected_cover_size) .. "b")
                 -- That one, on the other hand, is on the heap, so we can use it without making a copy.
                 local cover_bb = Blitbuffer.new(bookinfo["cover_w"], bookinfo["cover_h"], bbtype, cover_data, bbstride, bookinfo["cover_w"])
                 -- Mark its data pointer as safe to free() on GC
