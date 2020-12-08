@@ -295,7 +295,7 @@ function ReaderHighlight:genPanelZoomMenu()
             separator = true,
         },
         {
-            text = _("Fallback text selection"),
+            text = _("Fallback to text selection"),
             checked_func = function()
                 return self.fallback_text_selection
             end,
@@ -303,7 +303,7 @@ function ReaderHighlight:genPanelZoomMenu()
                 self:onToggleFallbackTextSelection()
             end,
             hold_callback = function()
-                G_reader_settings:saveSetting("fallback_text_selection", self.fallback_text_selection)
+                G_reader_settings:saveSetting("panel_zoom_fallback_text_selection", self.fallback_text_selection)
             end,
             separator = true,
         },
@@ -724,7 +724,8 @@ end
 function ReaderHighlight:onHold(arg, ges)
     if self.document.info.has_pages and self.panel_zoom_enabled then
         local res = self:onPanelZoom(arg, ges)
-        if not self.fallback_text_selection or res then
+        -- TODO: make sure it cover all situations
+        if res and not self.fallback_text_selection then
             return res
         end
     end
@@ -1464,7 +1465,7 @@ function ReaderHighlight:onReadSettings(config)
         end
         self.fallback_text_selection = config:readSetting("fallback_text_selection")
         if self.fallback_text_selection == nil then
-            self.fallback_text_selection = G_reader_settings:readSetting("fallback_text_selection") or false
+            self.fallback_text_selection = G_reader_settings:readSetting("panel_zoom_fallback_text_selection") or false
         end
     end
 end
