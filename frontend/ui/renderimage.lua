@@ -102,7 +102,7 @@ function RenderImage:renderGifImageDataWithGifLib(data, size, want_frames, width
     if want_frames and nb_frames > 1 then
         -- Returns a regular table, with functions (returning the BlitBuffer)
         -- as values. Users will have to check via type() and call them.
-        -- (our luajit does not support __len via metatable, otherwise we
+        -- (The __len metamethod is a Lua 5.2 feature, otherwise we
         -- could have used setmetatable to avoid creating all the functions)
         local frames = {}
         -- As we don't cache the bb we build on the fly, let caller know it
