@@ -16,7 +16,7 @@ local N_ = _.ngettext
 local T = FFIUtil.template
 
 -- Database definition
-local BOOKINFO_DB_VERSION = "2-20201208"
+local BOOKINFO_DB_VERSION = "20201208"
 local BOOKINFO_DB_SCHEMA = [[
     -- For caching book cover and metadata
     CREATE TABLE IF NOT EXISTS bookinfo (
@@ -27,6 +27,8 @@ local BOOKINFO_DB_SCHEMA = [[
         -- File location and filename
         directory           TEXT NOT NULL, -- split by dir/name so we can get all files in a directory
         filename            TEXT NOT NULL, -- and can implement pruning of no more existing files
+        filesize            INTEGER NOT NULL, -- size in bytes at extraction time
+        filemtime           INTEGER NOT NULL, -- mtime at extraction time
 
         -- Extraction status and result
         in_progress         INTEGER,  -- 0 (done), >0 : nb of tries (to avoid re-doing extractions that crashed us)
@@ -74,6 +76,8 @@ local BOOKINFO_DB_SCHEMA = [[
 local BOOKINFO_COLS_SET = {
         "directory",
         "filename",
+        "filesize",
+        "filemtime",
         "in_progress",
         "unsupported",
         "cover_fetched",
@@ -270,6 +274,10 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
         return {
             directory = directory,
             filename = filename,
+            --[[
+            filesize = lfs.attributes(filepath, "size"),
+            filemtime = lfs.attributes(filepath, "modification"),
+            --]]
             in_progress = 0,
             cover_fetched = "Y",
             has_meta = nil,
@@ -476,6 +484,10 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
     if not loaded then
         dbrow.unsupported = _("not readable by engine")
         dbrow.cover_fetched = 'Y' -- so we don't try again if we're called later if cover_specs
+    else
+        -- Store stat info for successfully loaded documents
+        dbrow.filesize = lfs.attributes(filepath, "size"),
+        dbrow.filemtime = lfs.attributes(filepath, "modification"),
     end
     dbrow.in_progress = 0 -- extraction completed (successful or definitive failure)
     for num, col in ipairs(BOOKINFO_COLS_SET) do
