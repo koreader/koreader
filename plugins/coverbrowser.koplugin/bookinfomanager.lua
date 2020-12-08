@@ -16,7 +16,7 @@ local N_ = _.ngettext
 local T = FFIUtil.template
 
 -- Database definition
-local BOOKINFO_DB_VERSION = "20201208"
+local BOOKINFO_DB_VERSION = 20201209
 local BOOKINFO_DB_SCHEMA = [[
     -- To cache book cover and metadata
     CREATE TABLE IF NOT EXISTS bookinfo (
@@ -27,8 +27,8 @@ local BOOKINFO_DB_SCHEMA = [[
         -- File location and filename
         directory           TEXT NOT NULL, -- split by dir/name so we can get all files in a directory
         filename            TEXT NOT NULL, -- and can implement pruning of deleted files
-        filesize            INTEGER NOT NULL, -- size in bytes at extraction time
-        filemtime           INTEGER NOT NULL, -- mtime at extraction time
+        filesize            INTEGER,       -- size in bytes at extraction time (if successful)
+        filemtime           INTEGER,       -- mtime at extraction time (if successful)
 
         -- Extraction status and result
         in_progress         INTEGER,  -- 0 (done), >0 : nb of tries (to avoid retrying failed extractions forever)
@@ -224,10 +224,12 @@ function BookInfoManager:loadSettings()
     self.settings = {}
     self:openDbConnection()
     local res = self.db_conn:exec("SELECT key, value FROM config;")
-    local keys = res[1]
-    local values = res[2]
-    for i, key in ipairs(keys) do
-        self.settings[key] = values[i]
+    if res then
+        local keys = res[1]
+        local values = res[2]
+        for i, key in ipairs(keys) do
+            self.settings[key] = values[i]
+        end
     end
 end
 
@@ -485,8 +487,8 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
         dbrow.cover_fetched = 'Y' -- so we don't try again if we're called later if cover_specs
     else
         -- Store stat info for successfully loaded documents
-        dbrow.filesize = lfs.attributes(filepath, "size"),
-        dbrow.filemtime = lfs.attributes(filepath, "modification"),
+        dbrow.filesize = lfs.attributes(filepath, "size")
+        dbrow.filemtime = lfs.attributes(filepath, "modification")
     end
     dbrow.in_progress = 0 -- extraction completed (successful or definitive failure)
     for num, col in ipairs(BOOKINFO_COLS_SET) do
