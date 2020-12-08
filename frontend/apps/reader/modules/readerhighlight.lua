@@ -262,20 +262,6 @@ local highlight_style = {
     invert = _("Invert"),
 }
 
-local function getPanelZoomSupportedExt()
-    local default_supported_ext = {
-        cbz = true,
-        cbt = true,
-    }
-    return G_reader_settings:readSetting("panel_zoom_ext") or default_supported_ext
-end
-
-local function isPanelZoomSupported(file)
-    local filetype = util.getFileNameSuffix(file)
-    local supported_filetypes = getPanelZoomSupportedExt()
-    return supported_filetypes[filetype]
-end
-
 function ReaderHighlight:genPanelZoomMenu()
     return {
         {
@@ -288,9 +274,22 @@ function ReaderHighlight:genPanelZoomMenu()
             end,
             hold_callback = function()
                 local ext = util.getFileNameSuffix(self.ui.document.file)
-                local supported_ext = getPanelZoomSupportedExt()
-                supported_ext[ext] = not supported_ext[ext]
-                G_reader_settings:saveSetting("panel_zoom_ext", supported_ext)
+                local curr_val = G_reader_settings:getSettingForExt("panel_zoom_enabled", ext)
+                G_reader_settings:saveSettingForExt("panel_zoom_enabled", not curr_val, ext)
+            end,
+            separator = true,
+        },
+        {
+            text = _("Fall back to text selection"),
+            checked_func = function()
+                return self.panel_zoom_fallback_to_text_selection
+            end,
+            callback = function()
+                self:onToggleFallbackTextSelection()
+            end,
+            hold_callback = function()
+                local ext = util.getFileNameSuffix(self.ui.document.file)
+                G_reader_settings:saveSettingForExt("panel_zoom_fallback_to_text_selection", self.panel_zoom_fallback_to_text_selection, ext)
             end,
             separator = true,
         },
@@ -682,6 +681,11 @@ function ReaderHighlight:onTogglePanelZoomSetting(arg, ges)
     self.panel_zoom_enabled = not self.panel_zoom_enabled
 end
 
+function ReaderHighlight:onToggleFallbackTextSelection(arg, ges)
+    if not self.document.info.has_pages then return end
+    self.panel_zoom_fallback_to_text_selection = not self.panel_zoom_fallback_to_text_selection
+end
+
 function ReaderHighlight:onPanelZoom(arg, ges)
     self:clear()
     local hold_pos = self.view:screenToPageTransform(ges.pos)
@@ -698,13 +702,18 @@ function ReaderHighlight:onPanelZoom(arg, ges)
             fullscreen = true,
         }
         UIManager:show(imgviewer)
+        return true
     end
-    return true
+    return false
 end
 
 function ReaderHighlight:onHold(arg, ges)
     if self.document.info.has_pages and self.panel_zoom_enabled then
-        return self:onPanelZoom(arg, ges)
+        local res = self:onPanelZoom(arg, ges)
+        -- TODO: make sure it cover all situations
+        if res and not self.panel_zoom_fallback_to_text_selection then
+            return res
+        end
     end
 
     -- disable hold gesture if highlighting is disabled
@@ -1436,9 +1445,16 @@ function ReaderHighlight:onReadSettings(config)
 
     -- panel zoom settings isn't supported in EPUB
     if self.document.info.has_pages then
+        local ext = util.getFileNameSuffix(self.ui.document.file)
+        G_reader_settings:initializeExtSettings("panel_zoom_enabled", {cbz = true, cbt = true})
+        G_reader_settings:initializeExtSettings("panel_zoom_fallback_to_text_selection", {pdf = true})
         self.panel_zoom_enabled = config:readSetting("panel_zoom_enabled")
         if self.panel_zoom_enabled == nil then
-            self.panel_zoom_enabled = isPanelZoomSupported(self.ui.document.file)
+            self.panel_zoom_enabled = G_reader_settings:getSettingForExt("panel_zoom_enabled", ext) or false
+        end
+        self.panel_zoom_fallback_to_text_selection = config:readSetting("panel_zoom_fallback_to_text_selection")
+        if self.panel_zoom_fallback_to_text_selection == nil then
+            self.panel_zoom_fallback_to_text_selection = G_reader_settings:getSettingForExt("panel_zoom_fallback_to_text_selection", ext) or false
         end
     end
 end
