@@ -294,6 +294,19 @@ function ReaderHighlight:genPanelZoomMenu()
             end,
             separator = true,
         },
+        {
+            text = _("Fallback text selection"),
+            checked_func = function()
+                return self.fallback_text_selection
+            end,
+            callback = function()
+                self:onToggleFallbackTextSelection()
+            end,
+            hold_callback = function()
+                G_reader_settings:saveSetting("fallback_text_selection", self.fallback_text_selection)
+            end,
+            separator = true,
+        },
     }
 end
 
@@ -682,6 +695,11 @@ function ReaderHighlight:onTogglePanelZoomSetting(arg, ges)
     self.panel_zoom_enabled = not self.panel_zoom_enabled
 end
 
+function ReaderHighlight:onToggleFallbackTextSelection(arg, ges)
+    if not self.document.info.has_pages then return end
+    self.fallback_text_selection = not self.fallback_text_selection
+end
+
 function ReaderHighlight:onPanelZoom(arg, ges)
     self:clear()
     local hold_pos = self.view:screenToPageTransform(ges.pos)
@@ -698,13 +716,17 @@ function ReaderHighlight:onPanelZoom(arg, ges)
             fullscreen = true,
         }
         UIManager:show(imgviewer)
+        return true
     end
-    return true
+    return false
 end
 
 function ReaderHighlight:onHold(arg, ges)
     if self.document.info.has_pages and self.panel_zoom_enabled then
-        return self:onPanelZoom(arg, ges)
+        local res = self:onPanelZoom(arg, ges)
+        if not self.fallback_text_selection or res then
+            return res
+        end
     end
 
     -- disable hold gesture if highlighting is disabled
@@ -1439,6 +1461,10 @@ function ReaderHighlight:onReadSettings(config)
         self.panel_zoom_enabled = config:readSetting("panel_zoom_enabled")
         if self.panel_zoom_enabled == nil then
             self.panel_zoom_enabled = isPanelZoomSupported(self.ui.document.file)
+        end
+        self.fallback_text_selection = config:readSetting("fallback_text_selection")
+        if self.fallback_text_selection == nil then
+            self.fallback_text_selection = G_reader_settings:readSetting("fallback_text_selection") or false
         end
     end
 end
