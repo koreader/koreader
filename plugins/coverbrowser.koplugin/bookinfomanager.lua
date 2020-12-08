@@ -18,22 +18,22 @@ local T = FFIUtil.template
 -- Database definition
 local BOOKINFO_DB_VERSION = "20201208"
 local BOOKINFO_DB_SCHEMA = [[
-    -- For caching book cover and metadata
+    -- To cache book cover and metadata
     CREATE TABLE IF NOT EXISTS bookinfo (
         -- Internal book cache id
-        -- (not to be used to identify a book, it may change for a same book)
+        -- (not to be used to identify a book, it may change)
         bcid                INTEGER PRIMARY KEY AUTOINCREMENT,
 
         -- File location and filename
         directory           TEXT NOT NULL, -- split by dir/name so we can get all files in a directory
-        filename            TEXT NOT NULL, -- and can implement pruning of no more existing files
+        filename            TEXT NOT NULL, -- and can implement pruning of deleted files
         filesize            INTEGER NOT NULL, -- size in bytes at extraction time
         filemtime           INTEGER NOT NULL, -- mtime at extraction time
 
         -- Extraction status and result
-        in_progress         INTEGER,  -- 0 (done), >0 : nb of tries (to avoid re-doing extractions that crashed us)
+        in_progress         INTEGER,  -- 0 (done), >0 : nb of tries (to avoid retrying failed extractions forever)
         unsupported         TEXT,     -- NULL if supported / reason for being unsupported
-        cover_fetched       TEXT,     -- NULL / 'Y' = action of fetching cover was made (whether we got one or not)
+        cover_fetched       TEXT,     -- NULL / 'Y' = we tried to fetch a cover (but we may not have gotten one)
         has_meta            TEXT,     -- NULL / 'Y' = has metadata (title, authors...)
         has_cover           TEXT,     -- NULL / 'Y' = has cover image (cover_*)
         cover_sizetag       TEXT,     -- 'M' (Medium, MosaicMenuItem) / 's' (small, ListMenuItem)
@@ -63,14 +63,11 @@ local BOOKINFO_DB_SCHEMA = [[
     );
     CREATE UNIQUE INDEX IF NOT EXISTS dir_filename ON bookinfo(directory, filename);
 
-    -- For keeping track of DB schema version
+    -- To keep track of CoverBrowser settings
     CREATE TABLE IF NOT EXISTS config (
         key TEXT PRIMARY KEY,
         value TEXT
     );
-    -- this will not override previous version value, so we'll get the old one if old schema
-    INSERT OR IGNORE INTO config VALUES ('version', ']] .. BOOKINFO_DB_VERSION .. [[');
-
 ]]
 
 local BOOKINFO_COLS_SET = {
@@ -150,16 +147,18 @@ function BookInfoManager:createDB()
     -- Less error cases to check if we do it that way
     -- Create it (noop if already there)
     db_conn:exec(BOOKINFO_DB_SCHEMA)
-    -- Check version (not updated by previous exec if already there)
-    local res = db_conn:exec("SELECT value FROM config where key='version';")
-    if res[1][1] ~= BOOKINFO_DB_VERSION then
-        logger.warn("BookInfo cache DB schema updated from version", res[1][1], "to version", BOOKINFO_DB_VERSION)
+    -- Check version
+    local db_version = tonumber(db_conn:rowexec("PRAGMA user_version;"))
+    if db_version < BOOKINFO_DB_VERSION then
+        logger.warn("BookInfo cache DB schema updated from version", db_version, "to version", BOOKINFO_DB_VERSION)
         logger.warn("Deleting existing", self.db_location, "to recreate it")
         db_conn:close()
         os.remove(self.db_location)
         -- Re-create it
         db_conn = SQ3.open(self.db_location)
         db_conn:exec(BOOKINFO_DB_SCHEMA)
+        -- Update version
+        db_conn:exec(string.format("PRAGMA user_version=%d;", BOOKINFO_DB_VERSION))
     end
     db_conn:close()
     self.db_created = true
