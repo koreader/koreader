@@ -487,8 +487,9 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
         dbrow.cover_fetched = 'Y' -- so we don't try again if we're called later if cover_specs
     else
         -- Store stat info for successfully loaded documents
-        dbrow.filesize = lfs.attributes(filepath, "size")
-        dbrow.filemtime = lfs.attributes(filepath, "modification")
+        local file_attr = lfs.attributes(filepath)
+        dbrow.filesize = file_attr.size
+        dbrow.filemtime = file_attr.modification
     end
     dbrow.in_progress = 0 -- extraction completed (successful or definitive failure)
     for num, col in ipairs(BOOKINFO_COLS_SET) do
