@@ -118,25 +118,29 @@ function RenderImage:renderGifImageDataWithGifLib(data, size, want_frames, width
             end)
         end
         -- We can't close our GifDocument as long as we may fetch some
-        -- frame: we need to delay it till 'frames' is no more used.
+        -- frame: we need to delay it till 'frames' is no longer used.
         frames.gif_close_needed = true
-        -- Should happen with that, but __gc seems never called...
-        frames = setmetatable(frames, {
-            __gc = function()
-                logger.dbg("frames.gc() called, closing GifDocument")
-                if frames.gif_close_needed then
-                    gif:close()
-                    frames.gif_close_needed = nil
-                end
+        -- Since frames is a plain table, __gc won't work on Lua 5.1/LuaJIT,
+        -- not without a little help from the newproxy hack...
+        frames.gif = gif
+        local frames_mt = {}
+        frames_mt.__gc = function(self)
+            print("frames.gc() called, closing GifDocument")
+            if self.gif_close_needed then
+                self.gif:close()
+                self.gif_close_needed = nil
             end
-        })
-        -- so, also set this method, so that ImageViewer can explicitely
-        -- call it onClose.
-        frames.free = function()
-            logger.dbg("frames.free() called, closing GifDocument")
-            if frames.gif_close_needed then
-                gif:close()
-                frames.gif_close_needed = nil
+        end
+        local setmetatable = require("ffi/__gc")
+        frames = setmetatable(frames, frames_mt)
+        -- Much like our other stuff, when we're puzzled about __gc, we do it manually!
+        -- So, also set this method, so that ImageViewer can explicitely call it onClose.
+        frames.free = function(self)
+            print(debug.traceback())
+            logger.dbg("frames.free() called, closing GifDocument", self, frames)
+            if self.gif_close_needed then
+                self.gif:close()
+                self.gif_close_needed = nil
             end
         end
         return frames
