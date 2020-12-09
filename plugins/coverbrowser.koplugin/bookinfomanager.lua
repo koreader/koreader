@@ -27,8 +27,8 @@ local BOOKINFO_DB_SCHEMA = [[
         -- File location and filename
         directory           TEXT NOT NULL, -- split by dir/name so we can get all files in a directory
         filename            TEXT NOT NULL, -- and can implement pruning of deleted files
-        filesize            INTEGER,       -- size in bytes at extraction time (if successful)
-        filemtime           INTEGER,       -- mtime at extraction time (if successful)
+        filesize            INTEGER,       -- size in bytes at most recent extraction time
+        filemtime           INTEGER,       -- mtime at most recent extraction time
 
         -- Extraction status and result
         in_progress         INTEGER,  -- 0 (done), >0 : nb of tries (to avoid retrying failed extractions forever)
@@ -413,6 +413,11 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
         return -- Last insert done for this book, we're giving up
     end
 
+    -- Update this on each extraction attempt. Might be useful to reset the counter in case file gets updated.
+    local file_attr = lfs.attributes(filepath)
+    dbrow.filesize = file_attr.size
+    dbrow.filemtime = file_attr.modification
+
     -- Proceed with extracting info
     local document = DocumentRegistry:openDocument(filepath)
     local loaded = true
@@ -485,11 +490,6 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
     if not loaded then
         dbrow.unsupported = _("not readable by engine")
         dbrow.cover_fetched = 'Y' -- so we don't try again if we're called later if cover_specs
-    else
-        -- Store stat info for successfully loaded documents
-        local file_attr = lfs.attributes(filepath)
-        dbrow.filesize = file_attr.size
-        dbrow.filemtime = file_attr.modification
     end
     dbrow.in_progress = 0 -- extraction completed (successful or definitive failure)
     for num, col in ipairs(BOOKINFO_COLS_SET) do
