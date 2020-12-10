@@ -198,9 +198,14 @@ function ConfigOption:init()
         local show_default = not self.options[c].advanced or show_advanced
         local show = self.options[c].show
         -- Prefer show_func over show if there's one
+        -- Or may be not, as show_func is always used to show/hide some widget depending
+        -- on the value of another widget: it's best to keep it accounted for the names
+        -- max width, and avoid stuff moving when toggling options.
+        --[[
         if self.options[c].show_func then
             show = self.options[c].show_func(self.config.configurable, self.config.document)
         end
+        ]]--
         if show ~= false and show_default then
             local name_font_face = self.options[c].name_font_face and self.options[c].name_font_face or "cfont"
             local name_font_size = self.options[c].name_font_size and self.options[c].name_font_size or default_name_font_size

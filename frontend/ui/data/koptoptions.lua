@@ -551,7 +551,7 @@ if BD.mirroredUILayout() then
     -- be mirrored - but that's not enough: we need to swap LEFT and RIGHT,
     -- so they appear in a more expected and balanced order to RTL users:
     -- {JUSTIFY, LEFT, CENTER, RIGHT, AUTO}
-    local j = KoptOptions[3].options[5]
+    local j = KoptOptions[4].options[5]
     assert(j.name == "justification")
     j.item_icons[2], j.item_icons[4] = j.item_icons[4], j.item_icons[2]
     j.values[2], j.values[4] = j.values[4], j.values[2]
