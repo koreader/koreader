@@ -231,14 +231,14 @@ if jit.os == "Windows" then
         local time
         if twelve_hour_clock then
             if os.date("%p", seconds) == "AM" then
-                -- @translators This is the time in the morning in the 12-hour clock (%I is the hour, %M the minute).
+                -- @translators This is the time in the morning using a 12-hour clock (%I is the hour, %M the minute).
                 time = os.date(_("%I:%M AM"), seconds)
             else
-                -- @translators This is the time in the morning in the 12-hour clock (%I is the hour, %M the minute).
+                -- @translators This is the time in the afternoon using a 12-hour clock (%I is the hour, %M the minute).
                 time = os.date(_("%I:%M PM"), seconds)
             end
         else
-            -- @translators This is the time in the 24-hour clock (%H is the hour, %M the minute).
+            -- @translators This is the time using a 24-hour clock (%H is the hour, %M the minute).
             time = os.date(_("%H:%M"), seconds)
         end
         return time
@@ -248,14 +248,14 @@ else
         local time
         if twelve_hour_clock then
             if os.date("%p", seconds) == "AM" then
-                -- @translators This is the time in the morning in the 12-hour clock (%-I is the hour, %M the minute).
+                -- @translators This is the time in the morning using a 12-hour clock (%-I is the hour, %M the minute).
                 time = os.date(_("%-I:%M AM"), seconds)
             else
-                -- @translators This is the time in the morning in the 12-hour clock (%-I is the hour, %M the minute).
+                -- @translators This is the time in the afternoon using a 12-hour clock (%-I is the hour, %M the minute).
                 time = os.date(_("%-I:%M PM"), seconds)
             end
         else
-            -- @translators This is the time in the 24-hour clock (%-H is the hour, %M the minute).
+            -- @translators This is the time using a 24-hour clock (%-H is the hour, %M the minute).
             time = os.date(_("%-H:%M"), seconds)
         end
         return time
