@@ -486,7 +486,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                 --           except getSeriesNumber does an atoi, so it'd murder decimal values.
                 --           So, instead, parse how it formats the whole thing as a string ;).
                 if string.find(props.series, "#") then
-                    dbrow.series, dbrow.series_index = props.series:match'(.*)#(.*)'
+                    dbrow.series, dbrow.series_index = props.series:match'(.*) #(.*)'
                     if dbrow.series_index then
                         -- We're inserting via a bind method, so make sure we feed it a Lua number, because it's a REAL in the db.
                         dbrow.series_index = tonumber(dbrow.series_index)
