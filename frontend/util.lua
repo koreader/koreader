@@ -228,37 +228,33 @@ end
 ---        They are otherwise supported on Linux, BSD & Bionic, so, just special-case Windows...
 if jit.os == "Windows" then
     function util.secondsToHour(seconds, twelve_hour_clock)
-        local time
         if twelve_hour_clock then
             if os.date("%p", seconds) == "AM" then
                 -- @translators This is the time in the morning using a 12-hour clock (%I is the hour, %M the minute).
-                time = os.date(_("%I:%M AM"), seconds)
+                return os.date(_("%I:%M AM"), seconds)
             else
                 -- @translators This is the time in the afternoon using a 12-hour clock (%I is the hour, %M the minute).
-                time = os.date(_("%I:%M PM"), seconds)
+                return os.date(_("%I:%M PM"), seconds)
             end
         else
             -- @translators This is the time using a 24-hour clock (%H is the hour, %M the minute).
-            time = os.date(_("%H:%M"), seconds)
+            return os.date(_("%H:%M"), seconds)
         end
-        return time
     end
 else
     function util.secondsToHour(seconds, twelve_hour_clock)
-        local time
         if twelve_hour_clock then
             if os.date("%p", seconds) == "AM" then
                 -- @translators This is the time in the morning using a 12-hour clock (%-I is the hour, %M the minute).
-                time = os.date(_("%-I:%M AM"), seconds)
+                return os.date(_("%-I:%M AM"), seconds)
             else
                 -- @translators This is the time in the afternoon using a 12-hour clock (%-I is the hour, %M the minute).
-                time = os.date(_("%-I:%M PM"), seconds)
+                return os.date(_("%-I:%M PM"), seconds)
             end
         else
             -- @translators This is the time using a 24-hour clock (%-H is the hour, %M the minute).
-            time = os.date(_("%-H:%M"), seconds)
+            return os.date(_("%-H:%M"), seconds)
         end
-        return time
     end
 end
 
