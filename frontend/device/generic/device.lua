@@ -7,6 +7,7 @@ This module defines stubs for common methods.
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local function yes() return true end
 local function no() return false end
@@ -495,6 +496,31 @@ end
 -- Device specific method to check if the startup script has been updated
 function Device:isStartupScriptUpToDate()
     return true
+end
+
+--- Unpack an archive.
+-- Extract the contents of an archive, detecting its format by
+-- filename extension. Inspired by luarocks archive_unpack()
+-- @param archive string: Filename of archive.
+-- @param extract_to string: Destination directory.
+-- @return boolean or (boolean, string): true on success, false and an error message on failure.
+function Device:unpackArchive(archive, extract_to)
+    require("dbg").dassert(type(archive) == "string")
+    local BD = require("ui/bidi")
+    local ok
+    if archive:match("%.tar%.bz2$") or archive:match("%.tar%.gz$") or archive:match("%.tar%.lz$") or archive:match("%.tgz$") then
+        ok = self:untar(archive, extract_to)
+    else
+        return false, T(_("Couldn't extract archive:\n\n%1\n\nUnrecognized filename extension."), BD.filepath(archive))
+    end
+    if not ok then
+        return false, T(_("Extracting archive failed:\n\n%1"), BD.filepath(archive))
+    end
+    return true
+end
+
+function Device:untar(archive, extract_to)
+    return os.execute(("./tar xf %q -C %q"):format(archive, extract_to))
 end
 
 return Device
