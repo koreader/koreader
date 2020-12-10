@@ -37,7 +37,7 @@ local function buildEntry(input_time, input_file)
                 -- we fallback to it no sidecar file)
                 last_read_ts = DocSettings:getLastSaveTime(file_path) or input_time
             end
-            return util.secondsToDate(last_read_ts, G_reader_settings:nilOrTrue("twelve_hour_clock"))
+            return util.secondsToDate(last_read_ts, G_reader_settings:isTrue("twelve_hour_clock"))
         end,
         callback = function()
             local ReaderUI = require("apps/reader/readerui")

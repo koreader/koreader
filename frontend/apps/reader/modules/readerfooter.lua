@@ -177,7 +177,7 @@ local footerTextGeneratorMap = {
     time = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].time
-        local clock = util.secondsToHour(os.time(), G_reader_settings:nilOrTrue("twelve_hour_clock"))
+        local clock = util.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock"))
         if not prefix then
             return clock
         else

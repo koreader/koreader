@@ -77,10 +77,10 @@ common_settings.time = {
         text = _("12-hour clock"),
         keep_menu_open = true,
         checked_func = function()
-            return G_reader_settings:nilOrTrue("twelve_hour_clock")
+            return G_reader_settings:isTrue("twelve_hour_clock")
         end,
         callback = function()
-            G_reader_settings:flipNilOrTrue("twelve_hour_clock")
+            G_reader_settings:flipNilOrFalse("twelve_hour_clock")
         end,
         }
     }
