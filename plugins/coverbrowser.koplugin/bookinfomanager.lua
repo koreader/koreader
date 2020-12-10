@@ -4,6 +4,7 @@ local DataStorage = require("datastorage")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local FFIUtil = require("ffi/util")
+local InfoMessage = require("ui/widget/infomessage")
 local RenderImage = require("ui/renderimage")
 local SQ3 = require("lua-ljsqlite3/init")
 local UIManager = require("ui/uimanager")
@@ -173,6 +174,9 @@ function BookInfoManager:createDB()
 
         -- Update version
         db_conn:exec(string.format("PRAGMA user_version=%d;", BOOKINFO_DB_VERSION))
+
+        -- Say hi!
+        UIManager:show(InfoMessage:new{text =_("BookInfo cache database schema updated."), timeout = 3 })
     end
     db_conn:close()
     self.db_created = true
