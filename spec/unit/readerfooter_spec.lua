@@ -305,20 +305,20 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         local horizontal_margin = Screen:scaleBySize(10)*2
         footer:onUpdateFooter()
-        assert.is.same(370, footer.text_width)
+        assert.is.same(387, footer.text_width)
         assert.is.same(600, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
-        assert.is.same(210, footer.progress_bar.width)
+        assert.is.same(193, footer.progress_bar.width)
 
         local old_screen_getwidth = Screen.getWidth
         Screen.getWidth = function() return 900 end
         footer:resetLayout()
-        assert.is.same(370, footer.text_width)
+        assert.is.same(387, footer.text_width)
         assert.is.same(900, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
-        assert.is.same(510, footer.progress_bar.width)
+        assert.is.same(493, footer.progress_bar.width)
         Screen.getWidth = old_screen_getwidth
     end)
 
@@ -333,12 +333,12 @@ describe("Readerfooter module", function()
         }
         local footer = readerui.view.footer
         footer:onPageUpdate(1)
-        assert.are.same(202, footer.progress_bar.width)
-        assert.are.same(378, footer.text_width)
+        assert.are.same(185, footer.progress_bar.width)
+        assert.are.same(395, footer.text_width)
 
         footer:onPageUpdate(100)
-        assert.are.same(178, footer.progress_bar.width)
-        assert.are.same(402, footer.text_width)
+        assert.are.same(161, footer.progress_bar.width)
+        assert.are.same(419, footer.text_width)
     end)
 
     it("should support chapter markers", function()
