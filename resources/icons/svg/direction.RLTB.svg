@@ -17,7 +17,7 @@
    stroke-linejoin="round"
    xml:space="preserve"
    id="svg84"
-   sodipodi:docname="direction.LRBT.svg"
+   sodipodi:docname="direction.RLTB.svg"
    inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
    inkscape:export-filename="/home/john/src/koreader/resources/icons/direction.LRBT.png"
    inkscape:export-xdpi="96"
@@ -25,7 +25,7 @@
    id="defs12" /><metadata
    id="metadata88"><rdf:RDF><cc:Work
        rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
-         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><sodipodi:namedview
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata><sodipodi:namedview
    pagecolor="#ffffff"
    bordercolor="#666666"
    borderopacity="1"
@@ -41,8 +41,8 @@
    showguides="true"
    units="px"
    inkscape:zoom="3.8989082"
-   inkscape:cx="-44.596801"
-   inkscape:cy="69.721834"
+   inkscape:cx="-49.998051"
+   inkscape:cy="96.945268"
    inkscape:window-x="1440"
    inkscape:window-y="18"
    inkscape:window-maximized="0"
@@ -76,9 +76,9 @@
      id="guide1279" /></sodipodi:namedview>
  <g
    id="g849"
-   transform="matrix(0,1,1,0,119.06227,-288.77156)"
-   inkscape:transform-center-x="52.916666"
-   inkscape:transform-center-y="13.229457"><path
+   transform="matrix(0,-1,-1,0,3690.9373,3887.105)"
+   inkscape:transform-center-x="-52.916665"
+   inkscape:transform-center-y="-13.229453"><path
      style="fill:none;stroke:#000000;stroke-width:105.833;stroke-linecap:butt;stroke-linejoin:bevel;stroke-opacity:1"
      d="m 976.68856,939.271 2e-4,2063.7498"
      id="path899"

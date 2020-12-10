@@ -17,7 +17,7 @@
    stroke-linejoin="round"
    xml:space="preserve"
    id="svg84"
-   sodipodi:docname="direction.LRBT.svg"
+   sodipodi:docname="direction.RLBT.svg"
    inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
    inkscape:export-filename="/home/john/src/koreader/resources/icons/direction.LRBT.png"
    inkscape:export-xdpi="96"
@@ -40,9 +40,9 @@
    showgrid="true"
    showguides="true"
    units="px"
-   inkscape:zoom="3.8989082"
-   inkscape:cx="-44.596801"
-   inkscape:cy="69.721834"
+   inkscape:zoom="11.027778"
+   inkscape:cx="94.9841"
+   inkscape:cy="96.745918"
    inkscape:window-x="1440"
    inkscape:window-y="18"
    inkscape:window-maximized="0"
@@ -62,10 +62,10 @@
      originx="0"
      originy="0"
      empspacing="4" /><sodipodi:guide
-     position="846.66669,899.58336"
+     position="3227.9168,846.66669"
      orientation="0,-1"
      id="guide1273" /><sodipodi:guide
-     position="3069.1667,3122.0834"
+     position="3106.7901,3175.0001"
      orientation="0,-1"
      id="guide1275" /><sodipodi:guide
      position="740.83326,3810.0006"
@@ -76,9 +76,9 @@
      id="guide1279" /></sodipodi:namedview>
  <g
    id="g849"
-   transform="matrix(0,1,1,0,119.06227,-288.77156)"
-   inkscape:transform-center-x="52.916666"
-   inkscape:transform-center-y="13.229457"><path
+   transform="rotate(90,1989.8546,1701.0831)"
+   inkscape:transform-center-x="-52.916697"
+   inkscape:transform-center-y="13.229417"><path
      style="fill:none;stroke:#000000;stroke-width:105.833;stroke-linecap:butt;stroke-linejoin:bevel;stroke-opacity:1"
      d="m 976.68856,939.271 2e-4,2063.7498"
      id="path899"

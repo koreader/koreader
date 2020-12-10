@@ -17,7 +17,7 @@
    stroke-linejoin="round"
    xml:space="preserve"
    id="svg84"
-   sodipodi:docname="direction.LRBT.svg"
+   sodipodi:docname="direction.LRTB.svg"
    inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
    inkscape:export-filename="/home/john/src/koreader/resources/icons/direction.LRBT.png"
    inkscape:export-xdpi="96"
@@ -76,9 +76,9 @@
      id="guide1279" /></sodipodi:namedview>
  <g
    id="g849"
-   transform="matrix(0,1,1,0,119.06227,-288.77156)"
+   transform="rotate(-90,2003.0836,1884.0214)"
    inkscape:transform-center-x="52.916666"
-   inkscape:transform-center-y="13.229457"><path
+   inkscape:transform-center-y="-13.229453"><path
      style="fill:none;stroke:#000000;stroke-width:105.833;stroke-linecap:butt;stroke-linejoin:bevel;stroke-opacity:1"
      d="m 976.68856,939.271 2e-4,2063.7498"
      id="path899"
