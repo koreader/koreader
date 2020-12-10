@@ -596,9 +596,7 @@ function MosaicMenuItem:update()
                 local title_add, authors_add
                 if bookinfo.series then
                     if bookinfo.series_index then
-                        -- Truncate decimal series indexes (#4.0 => #4)
-                        local index = string.format("%d", bookinfo.series_index)
-                        bookinfo.series = BD.auto(bookinfo.series .. " #" .. index)
+                        bookinfo.series = BD.auto(bookinfo.series .. " #" .. bookinfo.series_index)
                     else
                         bookinfo.series = BD.auto(bookinfo.series)
                     end
