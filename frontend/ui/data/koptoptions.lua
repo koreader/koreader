@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
 local Device = require("device")
 local optionsutil = require("ui/data/optionsutil")
+local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local Screen = Device.screen
@@ -551,11 +552,21 @@ if BD.mirroredUILayout() then
     -- be mirrored - but that's not enough: we need to swap LEFT and RIGHT,
     -- so they appear in a more expected and balanced order to RTL users:
     -- {JUSTIFY, LEFT, CENTER, RIGHT, AUTO}
-    local j = KoptOptions[3].options[5]
+    local j = KoptOptions[4].options[5]
     assert(j.name == "justification")
     j.item_icons[2], j.item_icons[4] = j.item_icons[4], j.item_icons[2]
     j.values[2], j.values[4] = j.values[4], j.values[2]
     j.labels[2], j.labels[4] = j.labels[4], j.labels[2]
+    -- The zoom direction items will be mirrored, but we want them to
+    -- stay as is, as the RTL diretions are at the end of the arrays.
+    -- By reverting the mirroring, RTL directions will be on the right,
+    -- so, at the start of the options for a RTL reader.
+    j = KoptOptions[3].options[7]
+    assert(j.name == "zoom_direction")
+    util.arrayReverse(j.item_icons)
+    util.arrayReverse(j.values)
+    util.arrayReverse(j.args)
+    j.default_value = 0
 end
 
 return KoptOptions
