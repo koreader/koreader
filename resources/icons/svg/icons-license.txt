@@ -1,0 +1,41 @@
+
+
+Derived from MaterialDesignLight
+by Austin Andrews
+https://github.com/Templarian/MaterialDesignLight
+(SIL Open Font License 1.1)
+
+* appbar.align.auto
+* appbar.align.center
+* appbar.align.left
+* appbar.align.justify
+* appbar.align.right
+* appbar.arrow.enter
+* appbar.arrrow.left.up
+* appbar.column.one
+* appbar.column.two
+* appbar.column.two.large
+* appbar.column.three
+* appbar.crop.large
+* appbar.grade.b.large
+* appbar.home
+* appbar.magnify.browse
+* appbar.magnify.zoom
+* appbar.page.corner.bookmark
+* appbar.page.fit
+* appbar.page.text
+* appbar.plus
+* appbar.settings.large
+* appbar.settings
+* appbar.text.size.large
+* appbar.transform.rotate.right.large
+* appbar.wifi
+* menu-icon
+
+
+Derived from MaterialDesignLight
+by Austin Andrews
+https://github.com/Templarian/MaterialDesign
+(https://www.apache.org/licenses/LICENSE-2.0)
+* appbar.cabinet.files
+* appbar.tools

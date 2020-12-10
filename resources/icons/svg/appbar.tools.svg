@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   id="mdi-tools"
+   width="144"
+   height="144"
+   viewBox="0 0 144 144"
+   sodipodi:docname="appbar.tools.svg"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
+   inkscape:export-filename="/home/john/src/koreader/resources/icons/appbar.tools.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96">
+  <metadata
+     id="metadata1684">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs1682" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1080"
+     id="namedview1680"
+     showgrid="false"
+     inkscape:zoom="2.2708333"
+     inkscape:cx="33.979568"
+     inkscape:cy="102.7264"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="mdi-tools"
+     inkscape:snap-page="true"
+     inkscape:document-rotation="0" />
+  <path
+     d="m 121.40365,114.7031 -7.26614,7.26615 c -1.99582,1.98398 -5.21915,1.98398 -7.21497,0 L 46.132521,61.281567 c -1.663992,0.482067 -3.384813,0.740188 -5.117008,0.767552 C 26.971235,62.039171 17.108841,48.210867 21.673237,34.928993 l 12.997192,12.997191 2.712016,-2.712013 7.266143,-7.266146 2.712016,-2.712013 L 34.363409,22.23882 c 13.281875,-4.564396 27.110099,5.297996 27.120127,19.34228 -0.02728,1.732193 -0.285488,3.453013 -0.767551,5.117003 l 60.687665,60.790017 c 1.98399,1.99582 1.98399,5.21916 0,7.21498 m -99.372223,-7.21498 c -1.983983,1.99582 -1.983983,5.21916 0,7.21498 l 7.266147,7.26615 c 1.995824,1.98398 5.219155,1.98398 7.214979,0 L 64.502569,94.030399 50.021444,79.549275 Z M 112.65358,21.113078 92.185563,31.347088 V 41.5811 L 81.081661,52.684999 91.315672,62.919007 102.41957,51.815108 h 10.23401 l 10.23401,-20.46802 z"
+     id="path1677"
+     style="fill:none;stroke:#000000;stroke-width:3.5;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+     sodipodi:nodetypes="ccccccccccccccccccccccccccccccc" />
+</svg>
