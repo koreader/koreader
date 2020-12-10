@@ -810,11 +810,11 @@ end
 --- If the given path has a trailing /, returns the entire path as the directory
 --- path and "" as the file name.
 ---- @string file
----- @treturn string path, filename
+---- @treturn string directory, filename
 function util.splitFilePathName(file)
     if file == nil or file == "" then return "", "" end
     if string.find(file, "/") == nil then return "", file end
-    return string.gsub(file, "(.*/)(.*)", "%1"), string.gsub(file, ".*/", "")
+    return file:match'(.*/)(.*)'
 end
 
 --- Splits a file name into its pure file name and suffix
@@ -823,7 +823,7 @@ end
 function util.splitFileNameSuffix(file)
     if file == nil or file == "" then return "", "" end
     if string.find(file, "%.") == nil then return file, "" end
-    return string.gsub(file, "(.*)%.(.*)", "%1"), string.gsub(file, ".*%.", "")
+    return file:match'(.*)%.(.*)'
 end
 
 --- Gets file extension
@@ -835,7 +835,7 @@ function util.getFileNameSuffix(file)
 end
 
 --- Companion helper function that returns the script's language,
---- based on the filme extension.
+--- based on the file extension.
 ---- @string filename
 ---- @treturn string (lowercase) (or nil if not Device:canExecuteScript(file))
 function util.getScriptType(file)
