@@ -816,7 +816,7 @@ function util.getFileNameSuffix(file)
 end
 
 --- Companion helper function that returns the script's language,
---- based on the filme extension.
+--- based on the file extension.
 ---- @string filename
 ---- @treturn string (lowercase) (or nil if not Device:canExecuteScript(file))
 function util.getScriptType(file)
