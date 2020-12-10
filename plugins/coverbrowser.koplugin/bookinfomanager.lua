@@ -152,11 +152,25 @@ function BookInfoManager:createDB()
     if db_version < BOOKINFO_DB_VERSION then
         logger.warn("BookInfo cache DB schema updated from version", db_version, "to version", BOOKINFO_DB_VERSION)
         logger.warn("Deleting existing", self.db_location, "to recreate it")
+
+        -- We'll try to preserve settings, though
+        self:loadSettings(db_conn)
+
         db_conn:close()
         os.remove(self.db_location)
+
         -- Re-create it
         db_conn = SQ3.open(self.db_location)
         db_conn:exec(BOOKINFO_DB_SCHEMA)
+
+        -- Restore non-deprecated settings
+        for k, v in pairs(self.settings[key]) do
+            if k ~= "version" then
+                self:saveSetting(k, v, true)
+            end
+        end
+        self:loadSettings(db_conn)
+
         -- Update version
         db_conn:exec(string.format("PRAGMA user_version=%d;", BOOKINFO_DB_VERSION))
     end
@@ -215,15 +229,23 @@ function BookInfoManager:compactDb()
 end
 
 -- Settings management, stored in 'config' table
-function BookInfoManager:loadSettings()
+function BookInfoManager:loadSettings(db_conn)
     if lfs.attributes(self.db_location, "mode") ~= "file" then
         -- no db, empty config
         self.settings = {}
         return
     end
     self.settings = {}
-    self:openDbConnection()
-    local res = self.db_conn:exec("SELECT key, value FROM config;")
+
+    local my_db_conn
+    if db_conn then
+        my_db_conn = db_conn
+    else
+        self:openDbConnection()
+        my_db_conn = self.db_conn
+    end
+
+    local res = my_db_conn:exec("SELECT key, value FROM config;")
     if res then
         local keys = res[1]
         local values = res[2]
@@ -240,7 +262,7 @@ function BookInfoManager:getSetting(key)
     return self.settings[key]
 end
 
-function BookInfoManager:saveSetting(key, value)
+function BookInfoManager:saveSetting(key, value, skip_reload)
     if not value or value == false or value == "" then
         if lfs.attributes(self.db_location, "mode") ~= "file" then
             -- If no db created, no need to save (and create db) an empty value
@@ -258,8 +280,11 @@ function BookInfoManager:saveSetting(key, value)
     stmt:bind(key, value)
     stmt:step() -- commited
     stmt:clearbind():reset() -- cleanup
-    -- Reload settings, so we may get (or not if it failed) what we just saved
-    self:loadSettings()
+
+    -- Optionally, reload settings, so we may get (or not if it failed) what we just saved
+    if not skip_reload then
+        self:loadSettings()
+    end
 end
 
 -- Bookinfo management
