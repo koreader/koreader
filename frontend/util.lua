@@ -262,7 +262,6 @@ else
     end
 end
 
-
 --- Converts timestamp to a date string
 ---- @int seconds number of seconds
 ---- @bool twelve_hour_clock
