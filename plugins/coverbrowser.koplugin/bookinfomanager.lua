@@ -164,7 +164,7 @@ function BookInfoManager:createDB()
         db_conn:exec(BOOKINFO_DB_SCHEMA)
 
         -- Restore non-deprecated settings
-        for k, v in pairs(self.settings[key]) do
+        for k, v in pairs(self.settings) do
             if k ~= "version" then
                 self:saveSetting(k, v, true)
             end
