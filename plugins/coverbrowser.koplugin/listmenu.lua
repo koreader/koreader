@@ -540,9 +540,13 @@ function ListMenuItem:update()
             end
             -- add Series metadata if requested
             if bookinfo.series then
-                -- Shorten calibre series decimal number (#4.0 => #4)
-                bookinfo.series = bookinfo.series:gsub("(#%d+)%.0$", "%1")
-                bookinfo.series = BD.auto(bookinfo.series)
+                if bookinfo.series_index then
+                    -- Truncate decimal series indexes (#4.0 => #4)
+                    local index = string.format("%d", bookinfo.series_index)
+                    bookinfo.series = BD.auto(bookinfo.series .. " #" .. index)
+                else
+                    bookinfo.series = BD.auto(bookinfo.series)
+                end
                 if series_mode == "append_series_to_title" then
                     if title then
                         title = title .. " - " .. bookinfo.series
