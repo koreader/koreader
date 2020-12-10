@@ -17,7 +17,7 @@ local N_ = _.ngettext
 local T = FFIUtil.template
 
 -- Database definition
-local BOOKINFO_DB_VERSION = 20201209
+local BOOKINFO_DB_VERSION = 20201210
 local BOOKINFO_DB_SCHEMA = [[
     -- To cache book cover and metadata
     CREATE TABLE IF NOT EXISTS bookinfo (
@@ -51,6 +51,7 @@ local BOOKINFO_DB_SCHEMA = [[
         title               TEXT,
         authors             TEXT,
         series              TEXT,
+        series_index        REAL,
         language            TEXT,
         keywords            TEXT,
         description         TEXT,
@@ -88,6 +89,7 @@ local BOOKINFO_COLS_SET = {
         "title",
         "authors",
         "series",
+        "series_index",
         "language",
         "keywords",
         "description",
@@ -475,7 +477,27 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
             end
             if props.title and props.title ~= "" then dbrow.title = props.title end
             if props.authors and props.authors ~= "" then dbrow.authors = props.authors end
-            if props.series and props.series ~= "" then dbrow.series = props.series end
+            if props.series and props.series ~= "" then
+                -- NOTE: If there's a series index in there, split it off to series_index, and only store the name in series.
+                --       This property is currently only set by:
+                --         * DjVu, for which I couldn't find a real standard for metadata fields
+                --           (we currently use Series for this field, c.f., https://exiftool.org/TagNames/DjVu.html).
+                --         * CRe, which could offer us a split getSeriesName & getSeriesNumber...
+                --           except getSeriesNumber does an atoi, so it'd murder decimal values.
+                --           So, instead, parse how it formats the whole thing as a string ;).
+                if string.find(props.series, "#") then
+                    dbrow.series, dbrow.series_index = props.series:match'(.*)#(.*)')
+                    if dbrow.series_index then
+                        -- We're inserting via a bind method, so make sure we feed it a Lua number, because it's a REAL in the db.
+                        dbrow.series_index = tonumber(dbrow.series_index)
+                    else
+                        -- In the unlilkey event the octothorp is actually the final character of the name, don't strip it
+                        dbrow.series = props.series
+                    end
+                else
+                    dbrow.series = props.series
+                end
+            end
             if props.language and props.language ~= "" then dbrow.language = props.language end
             if props.keywords and props.keywords ~= "" then dbrow.keywords = props.keywords end
             if props.description and props.description ~= "" then dbrow.description = props.description end
