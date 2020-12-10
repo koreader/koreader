@@ -157,8 +157,11 @@ function BookInfo:show(file, book_props)
     local series = book_props.series
     if series == "" or series == nil then
         series = _("N/A")
-    else -- Shorten calibre series decimal number (#4.0 => #4)
-        series = series:gsub("(#%d+)%.0$", "%1")
+    else
+        -- If we were fed a BookInfo book_props (e.g., covermenu), series index is in a separate field
+        if book_props.series_index then
+            series = book_props.series .. " #" .. book_props.series_index
+        end
     end
     table.insert(kv_pairs, { _("Series:"), BD.auto(series) })
 
