@@ -974,7 +974,7 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
         return false
     end
 
-    local ok, error = util.unpackArchive(download_location, self.data_dir)
+    local ok, error = Device:unpackArchive(download_location, self.data_dir)
 
     if ok then
         available_ifos = false

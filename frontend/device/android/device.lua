@@ -435,6 +435,10 @@ function Device:showLightDialog()
     end
 end
 
+function Device:untar(archive, extract_to)
+    return android.untar(archive, extract_to)
+end
+
 android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",
     android.prop.version, getCodename(), Device.firmware_rev, android.prop.flavor))
 
