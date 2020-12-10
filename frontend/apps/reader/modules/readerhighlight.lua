@@ -295,15 +295,15 @@ function ReaderHighlight:genPanelZoomMenu()
             separator = true,
         },
         {
-            text = _("Fallback to text selection"),
+            text = _("Fall back to text selection"),
             checked_func = function()
-                return self.fallback_text_selection
+                return self.panel_zoom_fallback_to_text_selection
             end,
             callback = function()
                 self:onToggleFallbackTextSelection()
             end,
             hold_callback = function()
-                G_reader_settings:saveSetting("panel_zoom_fallback_text_selection", self.fallback_text_selection)
+                G_reader_settings:saveSetting("panel_zoom_fallback_text_selection", self.panel_zoom_fallback_to_text_selection)
             end,
             separator = true,
         },
@@ -697,7 +697,7 @@ end
 
 function ReaderHighlight:onToggleFallbackTextSelection(arg, ges)
     if not self.document.info.has_pages then return end
-    self.fallback_text_selection = not self.fallback_text_selection
+    self.panel_zoom_fallback_to_text_selection = not self.panel_zoom_fallback_to_text_selection
 end
 
 function ReaderHighlight:onPanelZoom(arg, ges)
@@ -725,7 +725,7 @@ function ReaderHighlight:onHold(arg, ges)
     if self.document.info.has_pages and self.panel_zoom_enabled then
         local res = self:onPanelZoom(arg, ges)
         -- TODO: make sure it cover all situations
-        if res and not self.fallback_text_selection then
+        if res and not self.panel_zoom_fallback_to_text_selection then
             return res
         end
     end
@@ -1463,9 +1463,9 @@ function ReaderHighlight:onReadSettings(config)
         if self.panel_zoom_enabled == nil then
             self.panel_zoom_enabled = isPanelZoomSupported(self.ui.document.file)
         end
-        self.fallback_text_selection = config:readSetting("fallback_text_selection")
-        if self.fallback_text_selection == nil then
-            self.fallback_text_selection = G_reader_settings:readSetting("panel_zoom_fallback_text_selection") or false
+        self.panel_zoom_fallback_to_text_selection = config:readSetting("fallback_text_selection")
+        if self.panel_zoom_fallback_to_text_selection == nil then
+            self.panel_zoom_fallback_to_text_selection = G_reader_settings:readSetting("panel_zoom_fallback_text_selection") or false
         end
     end
 end
