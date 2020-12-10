@@ -224,19 +224,36 @@ end
 ---- @int seconds number of seconds
 ---- @bool twelve_hour_clock
 ---- @treturn string hour string
+--- @note: The MS CRT doesn't support %l & %k (as they're not technically C99 or POSIX).
+---        They are otherwise supported on BSD & Bionic, so, just special-case Windows...
+local _util_twelve_am_fmt
+local _util_twelve_pm_fmt
+local _util_twentyfour_fmt
+if jit.os == "Windows" then
+    -- @translators This is the time in the morning in the 12-hour clock (%I is the hour, %M the minute).
+    _util_twelve_am_fmt = _("%I:%M AM")
+    -- @translators This is the time in the morning in the 12-hour clock (%I is the hour, %M the minute).
+    _util_twelve_pm_fmt = _("%I:%M PM")
+    -- @translators This is the time in the 24-hour clock (%H is the hour, %M the minute).
+    _util_twentyfour_fmt = _("%H:%M")
+else
+    -- @translators This is the time in the morning in the 12-hour clock (%l is the hour, %M the minute).
+    _util_twelve_am_fmt = _("%l:%M AM")
+    -- @translators This is the time in the morning in the 12-hour clock (%l is the hour, %M the minute).
+    _util_twelve_pm_fmt = _("%l:%M PM")
+    -- @translators This is the time in the 24-hour clock (%k is the hour, %M the minute).
+    _util_twentyfour_fmt = _("%k:%M")
+end
 function util.secondsToHour(seconds, twelve_hour_clock)
     local time
     if twelve_hour_clock then
         if os.date("%p", seconds) == "AM" then
-            -- @translators This is the time in the morning in the 12-hour clock (%l is the hour, %M the minute).
-            time = util.ltrim(os.date(_("%l:%M AM"), seconds))
+            time = util.ltrim(os.date(_util_twelve_am_fmt, seconds))
         else
-            -- @translators This is the time in the afternoon in the 12-hour clock (%l is the hour, %M the minute).
-            time = util.ltrim(os.date(_("%l:%M PM"), seconds))
+            time = util.ltrim(os.date(_util_twelve_pm_fmt, seconds))
         end
     else
-        -- @translators This is the time in the 24-hour clock (%k is the hour, %M the minute).
-        time = util.ltrim(os.date(_("%k:%M"), seconds))
+        time = util.ltrim(os.date(_util_twentyfour_fmt, seconds))
     end
     return time
 end
