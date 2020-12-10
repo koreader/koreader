@@ -17,7 +17,7 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v2
         with:
-          fetch-depth: 200
+          fetch-depth: 0
 
       - name: Homebrew install dependencies
         # Compared to the README, adds ccache for faster compilation times and removes sh5sum to prevent some conflict with coreutils
