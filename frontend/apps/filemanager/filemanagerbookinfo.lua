@@ -166,6 +166,10 @@ function BookInfo:show(file, book_props)
             -- But here, if we have a plain doc_props series with an index, drop empty decimals from round integers.
             if string.find(book_props.series, "#") then
                 series = book_props.series:match("(.*#%d+)%.0+$")
+                if series == nil then
+                    -- No match (no decimal? No empty decimals?) -> keep everything as-is.
+                    series = book_props.series
+                end
             end
         end
     end
