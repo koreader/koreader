@@ -160,7 +160,13 @@ function BookInfo:show(file, book_props)
     else
         -- If we were fed a BookInfo book_props (e.g., covermenu), series index is in a separate field
         if book_props.series_index then
+            -- Here, we're assured that series_index is a Lua number, so round integers are automatically displayed without decimals
             series = book_props.series .. " #" .. book_props.series_index
+        else
+            -- But here, if we have a plain doc_props series with an index, drop empty decimals from round integers.
+            if string.find(book_props.series, "#") then
+                series = book_props.series:match("(.*#%d+)%.0+$")
+            end
         end
     end
     table.insert(kv_pairs, { _("Series:"), BD.auto(series) })
