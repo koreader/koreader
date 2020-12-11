@@ -915,7 +915,7 @@ TARGET:
             exit 0
             ;;
         android)
-            adb logcat 'luajit-launcher:D KOReader:D *:S'
+            adb logcat 'KOReader:I ActivityManager:* AndroidRuntime:* DEBUG:* *:F'
             ;;
         *)
             echo "Unsupported target: $1."
