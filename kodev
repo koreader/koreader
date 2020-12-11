@@ -586,7 +586,7 @@ OPTIONS:
                              supported model: kobo-forma, kobo-aura-one, kobo-h2o, kindle3, hidpi
     -g X, --gdb=X            run with debugger (default: nemiver)
     -p, --graph              graph memory use (requires gnuplot)
-    -v X, --valgrind=X       run with valgrind (default: valgrind --tool=memcheck --trace-children=yes --leak-check=full --track-origins=yes --show-reachable=yes)
+    -v X, --valgrind=X       run with valgrind (default: \"valgrind --tool=memcheck --trace-children=yes --leak-check=full --track-origins=yes --show-reachable=yes\")
     -c, --callgrind          run with valgrind's callgrind (valgrind --tool=callgrind --trace-children=yes)
 
 TARGET:
@@ -693,6 +693,7 @@ TARGET:
                 if [ -n "${VALUE##*[!0-9]*}" ]; then
                     screen_height=${VALUE}
                 else
+                    echo "ERROR: Invalid value: \"${VALUE}\""
                     echo "${RUN_HELP_MSG}"
                     exit 1
                 fi
