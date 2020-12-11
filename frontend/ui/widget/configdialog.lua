@@ -681,7 +681,7 @@ function MenuBar:init()
     local icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE)
     local icon_height = icon_width
     local icons_width = (icon_width + 2*icon_sep_width) * #config_options
-    local icons_height = icon_height
+    local bar_height = icon_height + 2*Size.padding.default
     for c = 1, #config_options do
         local menu_icon = IconButton:new{
             show_parent = self.config_dialog,
@@ -713,14 +713,14 @@ function MenuBar:init()
         background = Blitbuffer.COLOR_BLACK,
         dimen = Geom:new{
             w = icon_sep_width,
-            h = icons_height,
+            h = bar_height,
         }
     }
     local icon_sep_white = LineWidget:new{
         background = Blitbuffer.COLOR_WHITE,
         dimen = Geom:new{
             w = icon_sep_width,
-            h = icons_height,
+            h = bar_height,
         }
     }
     local spacing = HorizontalSpan:new{
@@ -774,7 +774,7 @@ function MenuBar:init()
     table.insert(menu_bar, spacing)
     table.insert(line_bar, spacing_line)
 
-    self.dimen = Geom:new{ w = Screen:getWidth(), h = icons_height}
+    self.dimen = Geom:new{ w = Screen:getWidth(), h = bar_height}
     local vertical_menu = VerticalGroup:new{
         line_bar,
         menu_bar,
@@ -864,6 +864,7 @@ function ConfigDialog:update()
     }
     self.dialog_frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
+        padding_bottom = 0, -- ensured by MenuBar
         VerticalGroup:new{
             self.config_panel,
             self.config_menubar,

@@ -233,7 +233,7 @@ function TouchMenuBar:init()
     local content_width = icon_width * #self.icons + icons_sep_width
     local spacing_width = (self.width - content_width)/(#self.icons*2)
     local icon_padding = math.min(spacing_width, Screen:scaleBySize(16))
-    self.height = icon_height + Size.span.vertical_large
+    self.height = icon_height + 2*Size.padding.default
     self.show_parent = self.show_parent or self
     self.bar_icon_group = HorizontalGroup:new{}
     -- build up image widget for menu icon bar
@@ -393,7 +393,7 @@ local TouchMenu = FocusManager:new{
     item_table = nil,
     item_height = Size.item.height_large,
     bordersize = Size.border.window,
-    padding = Size.padding.default,
+    padding = Size.padding.default, -- (not used at top)
     fface = Font:getFace("ffont"),
     width = nil,
     height = nil,
@@ -527,6 +527,7 @@ function TouchMenu:init()
 
     self.menu_frame = FrameContainer:new{
         padding = self.padding,
+        padding_top = 0, -- ensured by TouchMenuBar
         bordersize = self.bordersize,
         background = Blitbuffer.COLOR_WHITE,
         -- menubar and footer will be inserted in
@@ -677,7 +678,7 @@ function TouchMenu:updateItems()
 
     -- recalculate dimen based on new layout
     self.dimen.w = self.width
-    self.dimen.h = self.item_group:getSize().h + self.bordersize*2 + self.padding*2
+    self.dimen.h = self.item_group:getSize().h + self.bordersize*2 + self.padding -- (no padding at top)
     self.selected = { x = self.cur_tab, y = 1 } -- reset the position of the focusmanager
 
     -- NOTE: We use a slightly ugly hack to detect a brand new menu vs. a tab switch,
