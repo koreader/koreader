@@ -185,15 +185,10 @@ for path in l10n/*; do
     fi
 done
 
-# package as DMG if create-dmg is available
-# reduces size from 80MB to 40MB
 mv "${APP_PATH}" "${APP_BUNDLE}.app"
 
-if command_exists "create-dmg"; then
-    # create KOReader-$VERSION.dmg with KOReader.app inside
-    create-dmg "${APP_BUNDLE}.app" --overwrite
-    rm -rf "${APP_BUNDLE}.app"
-else
-    # rename as KOReader-$VERSION.app
-    mv -v "${APP_BUNDLE}.app" "${APP_BUNDLE}-${VERSION}.app"
+# package as 7z reduces size from 80MB to 30MB
+if command_exists "7z"; then
+    7z a -l -m0=lzma2 -mx=9 "${APP_BUNDLE}-${VERSION}.7z" "${APP_BUNDLE}.app"
+    rm -rfv "${APP_BUNDLE}.app"
 fi
