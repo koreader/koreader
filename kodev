@@ -189,6 +189,7 @@ ${SUPPORTED_TARGETS}"
 
     opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
 
+    # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "${BUILD_HELP_MSG}"
         exit ${E_OPTERR}
@@ -340,6 +341,7 @@ ${SUPPORTED_TARGETS}"
 
     opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
 
+    # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "${CLEAN_HELP_MSG}"
         exit ${E_OPTERR}
@@ -471,6 +473,7 @@ ${SUPPORTED_RELEASE_TARGETS}"
 
     opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
 
+    # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "${RELEASE_HELP_MSG}"
         exit ${E_OPTERR}
@@ -642,6 +645,7 @@ TARGET:
 
     opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
 
+    # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "${RUN_HELP_MSG}"
         exit ${E_OPTERR}
@@ -893,6 +897,7 @@ OPTIONS:
 
     opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
 
+    # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "${TEST_HELP_MSG}"
         exit ${E_OPTERR}
@@ -987,6 +992,7 @@ OPTIONS:
 
     opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
 
+    # shellcheck disable=SC2181
     if [[ $? -ne 0 ]]; then
         echo "${COV_HELP_MSG}"
         exit ${E_OPTERR}
