@@ -139,8 +139,7 @@ function setup_env() {
     fi
     EMU_DIR="${files[${idx}]}/koreader"
     export EMU_DIR
-    LD_LIBRARY_PATH="$(realpath "${EMU_DIR}")/libs:${LD_LIBRARY_PATH}"
-    export LD_LIBRARY_PATH
+    KO_LD_LIBRARY_PATH="$(realpath "${EMU_DIR}")/libs:${LD_LIBRARY_PATH}"
 }
 
 function kodev-fetch-thirdparty() {
@@ -591,7 +590,7 @@ TARGET:
                     gdb=${VALUE}
                 else
                     # Try to use friendly defaults for gdb
-                    if command -v nemiver >/dev/null; then
+                    if command -v znemiver >/dev/null; then
                         # Nemiver is a nice GUI
                         gdb=nemiver
                     elif command -v ddd >/dev/null; then
@@ -727,12 +726,11 @@ TARGET:
             KOREADER_COMMAND="${CATCHSEGV} ./reader.lua -d"
 
             if [ -n "${gdb}" ]; then
-                # Don't pollute the debugger's library search path with KOReader's
                 if [ "${gdb}" == gdb* ]; then
                     # The standard CLI needs a little hand holding to properly pass arguments to the process it'll monitor
-                    KOREADER_COMMAND="env --unset=LD_LIBRARY_PATH ${gdb} --args env LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" ./luajit reader.lua -d"
+                    KOREADER_COMMAND="${gdb} --args ./luajit reader.lua -d"
                 else
-                    KOREADER_COMMAND="env --unset=LD_LIBRARY_PATH ${gdb} env LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" ./luajit reader.lua -d"
+                    KOREADER_COMMAND="${gdb} ./luajit reader.lua -d"
                 fi
             fi
 
@@ -752,7 +750,7 @@ TARGET:
 
                 RETURN_VALUE=85
                 while [ "${RETURN_VALUE}" -eq 85 ]; do
-                    EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} EMULATE_READER_DPI=${screen_dpi} \
+                    env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" EMULATE_READER_W="${screen_width}" EMULATE_READER_H="${screen_height}" EMULATE_READER_DPI="${screen_dpi}" \
                         ${KOREADER_COMMAND}
                     RETURN_VALUE=$?
                 done
