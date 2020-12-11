@@ -164,7 +164,7 @@ function BookInfo:show(file, book_props)
             series = book_props.series .. " #" .. book_props.series_index
         else
             -- But here, if we have a plain doc_props series with an index, drop empty decimals from round integers.
-            series = book_props.series:gsub("(.*#%d+)%.0+$", "%1")
+            series = book_props.series:gsub("(#%d+)%.0+$", "%1")
         end
     end
     table.insert(kv_pairs, { _("Series:"), BD.auto(series) })
