@@ -491,7 +491,8 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                         -- We're inserting via a bind method, so make sure we feed it a Lua number, because it's a REAL in the db.
                         dbrow.series_index = tonumber(dbrow.series_index)
                     else
-                        -- In the unlilkey event the octothorp is actually the final character of the name, don't strip it
+                        -- If the index pattern didn't match (e.g., nothing after the octothrop, or a string),
+                        -- restore the full thing as the series name.
                         dbrow.series = props.series
                     end
                 else
