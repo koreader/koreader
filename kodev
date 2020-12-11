@@ -589,8 +589,8 @@ TARGET:
 
     declare opt
     declare -r E_OPTERR=85
-    declare -r short_opts="tbng:pv:cw:h:d:s:H"
-    declare -r long_opts="disable-touch,no-build,gdb:,graph,valgrind:,callgrind,screen-width:,screen-height:,screen-dpi:,simulate:,help"
+    declare -r short_opts="tbng::pv::cw:h:d:s:H"
+    declare -r long_opts="disable-touch,no-build,gdb::,graph,valgrind::,callgrind,screen-width:,screen-height:,screen-dpi:,simulate:,help"
 
     opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
 
@@ -625,7 +625,6 @@ TARGET:
             -g | --gdb)
                 if [ -n "${VALUE}" ]; then
                     gdb="${VALUE}"
-                    shift
                 else
                     # Try to use friendly defaults for gdb
                     if command -v nemiver >/dev/null; then
@@ -645,6 +644,7 @@ TARGET:
                         exit 1
                     fi
                 fi
+                shift
                 ;;
             -p | --graph)
                 graph_memory=1
@@ -652,7 +652,6 @@ TARGET:
             -v | --valgrind)
                 if [ -n "${VALUE}" ]; then
                     valgrind="${VALUE}"
-                    shift
                 else
                     # Try to use sensible defaults for valgrind
                     if command -v valgrind >/dev/null; then
@@ -662,6 +661,7 @@ TARGET:
                         exit 1
                     fi
                 fi
+                shift
                 ;;
             -c | --callgrind)
                 # Try to use sensible defaults for valgrind
