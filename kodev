@@ -563,7 +563,8 @@ OPTIONS:
                              supported model: kobo-aura-one, kindle3, hidpi
     --gdb=X                  run with debugger (default: nemiver)
     --graph                  graph memory use (requires gnuplot)
-    --valgrind=X             run with valgrind (default: valgrind --trace-children=yes)
+    --valgrind=X             run with valgrind (default: valgrind --tool=memcheck --trace-children=yes --leak-check=full --track-origins=yes --show-reachable=yes)
+    --callgrind              run with valgrind's callgrind (valgrind --tool=callgrind --trace-children=yes)
 
 TARGET:
 
@@ -622,6 +623,15 @@ TARGET:
                         echo "Couldn't find valgrind."
                         exit 1
                     fi
+                fi
+                ;;
+            --callgrind)
+                # Try to use sensible defaults for valgrind
+                if command -v valgrind >/dev/null; then
+                    valgrind="valgrind --tool=callgrind --trace-children=yes"
+                else
+                    echo "Couldn't find valgrind."
+                    exit 1
                 fi
                 ;;
             -w | --screen-width)
