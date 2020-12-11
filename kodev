@@ -751,6 +751,7 @@ TARGET:
 
                 RETURN_VALUE=85
                 while [ "${RETURN_VALUE}" -eq 85 ]; do
+                    # shellcheck disable=SC2086
                     env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" EMULATE_READER_W="${screen_width}" EMULATE_READER_H="${screen_height}" EMULATE_READER_DPI="${screen_dpi}" \
                         ${KOREADER_COMMAND}
                     RETURN_VALUE=$?
