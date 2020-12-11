@@ -62,9 +62,9 @@ function TextEditor:loadSettings()
     if self.settings:readSetting("monospace_font") then
         self.monospace_font = self.settings:readSetting("monospace_font")
     end
-    self.auto_para_direction = self.settings:readSetting("auto_para_direction") or true
-    self.force_ltr_para_direction = self.settings:readSetting("force_ltr_para_direction") or false
-    self.qr_code_export = self.settings:readSetting("qr_code_export") or true
+    self.auto_para_direction = self.settings:nilOrTrue("auto_para_direction")
+    self.force_ltr_para_direction = self.settings:isTrue("force_ltr_para_direction")
+    self.qr_code_export = self.settings:nilOrTrue("qr_code_export")
 end
 
 function TextEditor:onFlushSettings()
