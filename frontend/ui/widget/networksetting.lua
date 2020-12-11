@@ -103,6 +103,7 @@ function MinimalPaginator:setProgress(progress) self.progress = progress end
 local NetworkItem = InputContainer:new{
     dimen = nil,
     height = Screen:scaleBySize(44),
+    icon_size = Screen:scaleBySize(32),
     width = nil,
     info = nil,
     background = Blitbuffer.COLOR_WHITE,
@@ -137,6 +138,8 @@ function NetworkItem:init()
                 ImageWidget:new{
                     alpha = true,
                     file = wifi_icon_path,
+                    width = icon_size,
+                    height = icon_size,
                 },
                 horizontal_space,
                 TextWidget:new{
