@@ -164,13 +164,7 @@ function BookInfo:show(file, book_props)
             series = book_props.series .. " #" .. book_props.series_index
         else
             -- But here, if we have a plain doc_props series with an index, drop empty decimals from round integers.
-            if string.find(book_props.series, "#") then
-                series = book_props.series:match("(.*#%d+)%.0+$")
-                if series == nil then
-                    -- No match (no decimal? No empty decimals?) -> keep everything as-is.
-                    series = book_props.series
-                end
-            end
+            series = book_props.series:gsub("(.*#%d+)%.0+$", "%1")
         end
     end
     table.insert(kv_pairs, { _("Series:"), BD.auto(series) })
