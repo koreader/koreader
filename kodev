@@ -963,7 +963,7 @@ OPTIONS:
 
         echo "Running tests in" "${test_path}"
         env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" \
-        busted --lua="./luajit" "${opts}" \
+            busted --lua="./luajit" "${opts}" \
             --output=gtest \
             --lpath="${test_path_basedir}/?.lua" \
             --exclude-tags=notest "${test_path}"
@@ -1041,7 +1041,7 @@ OPTIONS:
         if [ "${show_previous}" -eq 0 ]; then
             echo "Running tests in" ${test_path}
             env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" \
-            busted --lua="./luajit" \
+                busted --lua="./luajit" \
                 --sort-files \
                 -o "./spec/${target}/unit/verbose_print" \
                 --coverage \
@@ -1157,7 +1157,7 @@ case "${1}" in
         kodev-build
         pushd "${EMU_DIR}" && {
             env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" \
-            ./luajit -i setupkoenv.lua
+                ./luajit -i setupkoenv.lua
         } && popd || exit
         ;;
     log)
