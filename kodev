@@ -804,7 +804,7 @@ TARGET:
                 gnuplot_wrapper "--parent $$" "reader.lua"
             fi
 
-            KOREADER_COMMAND="./reader.lua -d"
+            KOREADER_COMMAND="env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" ./reader.lua -d"
 
             # run with catchsegv by default when it is available
             # see https://github.com/koreader/koreader/issues/2878#issuecomment-326796777
@@ -813,7 +813,7 @@ TARGET:
             fi
 
             if [ -n "${valgrind}" ]; then
-                KOREADER_COMMAND="${valgrind} ./luajit reader.lua -d"
+                KOREADER_COMMAND="${valgrind} env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" ./luajit reader.lua -d"
             fi
 
             echo "[*] Running KOReader with arguments: $*..."
@@ -829,9 +829,9 @@ TARGET:
                     # We don't want to stack valgrind/catchsegv on top of GDB ;).
                     if [[ "${gdb}" == gdb* ]]; then
                         # The standard CLI needs a little hand holding to properly pass arguments to the process it'll monitor
-                        KOREADER_COMMAND="${gdb} --args ./luajit reader.lua -d ${args}"
+                        KOREADER_COMMAND="${gdb} --args env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" ./luajit reader.lua -d ${args}"
                     else
-                        KOREADER_COMMAND="${gdb} ./luajit reader.lua -d ${args}"
+                        KOREADER_COMMAND="${gdb} env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" ./luajit reader.lua -d ${args}"
                     fi
                 else
                     KOREADER_COMMAND="${KOREADER_COMMAND} ${args}"
@@ -840,7 +840,7 @@ TARGET:
                 RETURN_VALUE=85
                 while [ "${RETURN_VALUE}" -eq 85 ]; do
                     # shellcheck disable=SC2086
-                    env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" EMULATE_READER_W="${screen_width}" EMULATE_READER_H="${screen_height}" EMULATE_READER_DPI="${screen_dpi}" \
+                    env EMULATE_READER_W="${screen_width}" EMULATE_READER_H="${screen_height}" EMULATE_READER_DPI="${screen_dpi}" \
                         ${KOREADER_COMMAND}
                     RETURN_VALUE=$?
                 done
