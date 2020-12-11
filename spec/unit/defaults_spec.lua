@@ -8,7 +8,7 @@ describe("defaults module", function()
 
     it("should load all defaults from defaults.lua", function()
         Defaults:init()
-        assert.is_same(100, #Defaults.defaults_name)
+        assert.is_same(101, #Defaults.defaults_name)
     end)
 
     it("should save changes to defaults.persistent.lua", function()
@@ -16,7 +16,7 @@ describe("defaults module", function()
         os.remove(persistent_filename)
 
         -- To see indices and help updating this when new settings are added:
-        -- for i=1, 100 do print(i.." ".. Defaults.defaults_name[i]) end
+        -- for i=1, 101 do print(i.." ".. Defaults.defaults_name[i]) end
 
         -- not in persistent but checked in defaults
         Defaults.changed[20] = true
@@ -24,8 +24,8 @@ describe("defaults module", function()
         Defaults.changed[56] = true
         Defaults.changed[85] = true
         Defaults:saveSettings()
-        assert.is_same(100, #Defaults.defaults_name)
-        assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[85])
+        assert.is_same(101, #Defaults.defaults_name)
+        assert.is_same("DTAP_ZONE_BACKWARD", Defaults.defaults_name[86])
         assert.is_same("DCREREADER_CONFIG_WORD_SPACING_LARGE", Defaults.defaults_name[50])
         assert.is_same("DCREREADER_CONFIG_H_MARGIN_SIZES_XXX_LARGE", Defaults.defaults_name[20])
         dofile(persistent_filename)
@@ -43,8 +43,8 @@ describe("defaults module", function()
             h = 0.25,
             w = 0.75
         }
-        Defaults.changed[85] = true
-        Defaults.defaults_value[85] = {
+        Defaults.changed[86] = true
+        Defaults.defaults_value[86] = {
             y = 10,
             x = 10.125,
             h = 20.25,
@@ -85,8 +85,8 @@ DHINTCOUNT = 2
 
         -- in persistent
         Defaults:init()
-        Defaults.changed[57] = true
-        Defaults.defaults_value[57] = 1
+        Defaults.changed[58] = true
+        Defaults.defaults_value[58] = 1
         Defaults:saveSettings()
         dofile(persistent_filename)
         assert.Equals(DCREREADER_VIEW_MODE, "page")

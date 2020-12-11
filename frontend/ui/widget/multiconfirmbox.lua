@@ -81,7 +81,9 @@ function MultiConfirmBox:init()
         align = "center",
         ImageWidget:new{
             file = "resources/info-i.png",
-            scale_for_dpi = true,
+            width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
+            height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
+            alpha = true,
         },
         HorizontalSpan:new{ width = Size.span.horizontal_default },
         TextBoxWidget:new{

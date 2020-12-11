@@ -11,15 +11,15 @@ local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local Screen = Device.screen
 
 local IconButton = InputContainer:new{
     icon_file = "resources/info-confirm.png",
     dimen = nil,
     -- show_parent is used for UIManager:setDirty, so we can trigger repaint
     show_parent = nil,
-    width = nil,
-    height = nil,
-    scale_for_dpi = true,
+    width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
+    height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
     padding = 0,
     padding_top = nil,
     padding_right = nil,
@@ -32,7 +32,6 @@ local IconButton = InputContainer:new{
 function IconButton:init()
     self.image = ImageWidget:new{
         file = self.icon_file,
-        scale_for_dpi = self.scale_for_dpi,
         width = self.width,
         height = self.height,
     }

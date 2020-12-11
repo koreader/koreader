@@ -104,10 +104,14 @@ function ReaderView:addWidgets()
         view = self,
         ui = self.ui,
     }
+    local arrow_size = Screen:scaleBySize(16)
     self.arrow = AlphaContainer:new{
         alpha = 0.6,
         ImageWidget:new{
             file = "resources/icons/appbar.control.expand.png",
+            width = arrow_size,
+            height = arrow_size,
+            alpha = true,
         }
     }
     self[1] = self.dogear

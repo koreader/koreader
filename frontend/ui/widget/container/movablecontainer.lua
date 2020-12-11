@@ -13,7 +13,7 @@ position, Hold will toggle between full opacity and 0.7 transparency.
 This container's content is expected to not change its width and height.
 ]]
 
-local BlitBuffer = require("ffi/blitbuffer")
+local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
@@ -114,8 +114,8 @@ function MovableContainer:paintTo(bb, x, y)
 
     if self.alpha then
         -- Create private blitbuffer for our child widget to paint to
-        local private_bb = BlitBuffer.new(bb:getWidth(), bb:getHeight(), bb:getType())
-        private_bb:fill(BlitBuffer.COLOR_WHITE) -- for round corners' outside to not stay black
+        local private_bb = Blitbuffer.new(bb:getWidth(), bb:getHeight(), bb:getType())
+        private_bb:fill(Blitbuffer.COLOR_WHITE) -- for round corners' outside to not stay black
         self[1]:paintTo(private_bb, self.dimen.x, self.dimen.y)
         -- And blend our private blitbuffer over the original bb
         bb:addblitFrom(private_bb, self.dimen.x, self.dimen.y, self.dimen.x, self.dimen.y,

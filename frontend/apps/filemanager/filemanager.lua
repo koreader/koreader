@@ -98,10 +98,9 @@ function FileManager:init()
         })
     end
     self.show_parent = self.show_parent or self
-    local icon_size = Screen:scaleBySize(35)
+    local icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE)
     local home_button = IconButton:new{
         icon_file = "resources/icons/appbar.home.png",
-        scale_for_dpi = false,
         width = icon_size,
         height = icon_size,
         padding = Size.padding.default,
@@ -114,7 +113,6 @@ function FileManager:init()
 
     local plus_button = IconButton:new{
         icon_file = "resources/icons/appbar.plus.png",
-        scale_for_dpi = false,
         width = icon_size,
         height = icon_size,
         padding = Size.padding.default,

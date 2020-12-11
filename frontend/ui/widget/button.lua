@@ -28,11 +28,14 @@ local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
+local Screen = Device.screen
 
 local Button = InputContainer:new{
     text = nil, -- mandatory
     text_func = nil,
     icon = nil,
+    icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
+    icon_height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
     icon_rotation_angle = 0,
     preselect = false,
     callback = nil,
@@ -78,7 +81,8 @@ function Button:init()
             file = self.icon,
             rotation_angle = self.icon_rotation_angle,
             dim = not self.enabled,
-            scale_for_dpi = true,
+            width = self.icon_width,
+            height = self.icon_height,
         }
     end
     local widget_size = self.label_widget:getSize()

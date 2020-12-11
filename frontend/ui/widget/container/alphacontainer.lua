@@ -17,7 +17,7 @@ Example:
     }
 --]]
 
-local BlitBuffer = require("ffi/blitbuffer")
+local Blitbuffer = require("ffi/blitbuffer")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
 local AlphaContainer = WidgetContainer:new{
@@ -48,7 +48,7 @@ function AlphaContainer:paintTo(bb, x, y)
             private_bb:free() -- free the one we're going to replace
         end
         -- create private blitbuffer for our child widget to paint to
-        private_bb = BlitBuffer.new(contentSize.w, contentSize.h, bb:getType())
+        private_bb = Blitbuffer.new(contentSize.w, contentSize.h, bb:getType())
         self.private_bb = private_bb
 
         -- save what is below our painting area
@@ -59,13 +59,13 @@ function AlphaContainer:paintTo(bb, x, y)
             if self.background_bb then
                 self.background_bb:free() -- free the one we're going to replace
             end
-            self.background_bb = BlitBuffer.new(contentSize.w, contentSize.h, bb:getType())
+            self.background_bb = Blitbuffer.new(contentSize.w, contentSize.h, bb:getType())
         end
         self.background_bb:blitFrom(bb, 0, 0, x, y)
     end
 
     -- now have our childs paint to the private blitbuffer
-    --- @todo should we clean before painting?
+    private_bb:fill(Blitbuffer.COLOR_WHITE)
     self[1]:paintTo(private_bb, 0, 0)
 
     -- blit the private blitbuffer to our parent blitbuffer

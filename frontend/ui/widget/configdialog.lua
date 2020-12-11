@@ -180,6 +180,7 @@ function ConfigOption:init()
     local default_item_font_size = 16 -- font size for letters, toggles and buttonprogress
     local default_items_spacing = 40  -- spacing between letters (font sizes) and icons
     local default_option_height = 50  -- height of each line
+    local max_icon_height = Screen:scaleBySize(DGENERIC_ICON_SIZE)  -- max height of icons
     -- The next ones are already scaleBySize()'d:
     local default_option_vpadding = Size.padding.large -- vertical padding at top and bottom
     local default_option_hpadding = Size.padding.fullscreen
@@ -486,7 +487,7 @@ function ConfigOption:init()
             -- Icons (ex: columns, text align, with PDF)
             if self.options[c].item_icons then
                 local items_count = #self.options[c].item_icons
-                local icon_max_height = option_height
+                local icon_max_height = math.min(option_height, max_icon_height)
                 local icon_max_width = math.floor(option_widget_width / items_count)
                 local icon_size = math.min(icon_max_height, icon_max_width)
                 local max_item_spacing = (option_widget_width - icon_size * items_count) / items_count
@@ -677,7 +678,7 @@ function MenuBar:init()
     local line_thickness = Size.line.thick
     local config_options = self.config_dialog.config_options
     local menu_items = {}
-    local icon_width = Screen:scaleBySize(40)
+    local icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE)
     local icon_height = icon_width
     local icons_width = (icon_width + 2*icon_sep_width) * #config_options
     local icons_height = icon_height
@@ -687,7 +688,6 @@ function MenuBar:init()
             icon_file = config_options[c].icon,
             width = icon_width,
             height = icon_height,
-            scale_for_dpi = false,
             callback = function()
                 self.config_dialog:handleEvent(Event:new("ShowConfigPanel", c))
             end,

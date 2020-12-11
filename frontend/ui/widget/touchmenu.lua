@@ -227,7 +227,7 @@ function TouchMenuBar:init()
     local icon_sep_width = Size.span.vertical_default
     local icons_sep_width = icon_sep_width * (#self.icons + 1)
     -- we assume all icons are of the same width
-    local icon_width = Screen:scaleBySize(40)
+    local icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE)
     local icon_height = icon_width
     -- content_width is the width of all the icon images
     local content_width = icon_width * #self.icons + icons_sep_width
@@ -255,7 +255,6 @@ function TouchMenuBar:init()
             icon_file = v,
             width = icon_width,
             height = icon_height,
-            scale_for_dpi = false,
             callback = nil,
             padding_left = icon_padding,
             padding_right = icon_padding,

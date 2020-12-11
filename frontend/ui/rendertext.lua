@@ -6,7 +6,7 @@ local bit = require("bit")
 local Font = require("ui/font")
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
-local BlitBuffer = require("ffi/blitbuffer")
+local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local logger = require("logger")
 
@@ -207,7 +207,7 @@ end
 -- @string text text to render
 -- @bool[opt=false] kerning whether the text should be measured with kerning
 -- @bool[opt=false] bold whether the text should be measured as bold
--- @tparam[opt=BlitBuffer.COLOR_BLACK] BlitBuffer.COLOR fgcolor foreground color
+-- @tparam[opt=Blitbuffer.COLOR_BLACK] Blitbuffer.COLOR fgcolor foreground color
 -- @int[opt=nil] width maximum rendering width
 -- @tparam[opt] table char_pads array of integers, nb of pixels to add, one for each utf8 char in text
 -- @return int width of rendered bitmap
@@ -218,7 +218,7 @@ function RenderText:renderUtf8Text(dest_bb, x, baseline, face, text, kerning, bo
     end
 
     if not fgcolor then
-        fgcolor = BlitBuffer.COLOR_BLACK
+        fgcolor = Blitbuffer.COLOR_BLACK
     end
 
     -- may still need more adaptive pen placement when kerning,

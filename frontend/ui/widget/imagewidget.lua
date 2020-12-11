@@ -130,12 +130,15 @@ end
 local ICONS_ALT_SVG_DIR = false
 -- Uncomment to use SVG icons from one of these directories
 -- ICONS_ALT_SVG_DIR = "resources/icons/src/"
--- ICONS_ALT_SVG_DIR = "resources/icons/svg/"
+ICONS_ALT_SVG_DIR = "resources/icons/svg/"
 
 function ImageWidget:_loadfile()
     if ICONS_ALT_SVG_DIR then
         -- Pick the SVG version if one exists when a png icon file path is provided
         local dir, name = self.file:match("^(resources/icons/)([^/]*).png$")
+        if not name then -- some are in this upper dir
+            dir, name = self.file:match("^(resources/)([^/]*).png$")
+        end
         if dir and name then
             local svg_file = ICONS_ALT_SVG_DIR .. name .. ".svg"
             if lfs.attributes(svg_file, "mode") ~= "file" then
@@ -147,6 +150,7 @@ function ImageWidget:_loadfile()
             if svg_file then
                 logger.dbg("using alt SVG", svg_file)
                 self.file = svg_file
+                self.alpha = true
             end
         end
     end

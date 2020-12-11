@@ -58,7 +58,7 @@ local InfoMessage = InputContainer:new{
     -- Whether the icon should be shown. If it is false, self.image will be ignored.
     show_icon = true,
     icon_file = nil, -- use this file instead of "resources/info-i.png"
-    alpha = false, -- does that icon have an alpha channel?
+    alpha = nil, -- if image or icon have an alpha channel (default to true for icons, false for images
     dismiss_callback = function() end,
     -- In case we'd like to use it to display some text we know a few more things about:
     lang = nil,
@@ -98,13 +98,14 @@ function InfoMessage:init()
                 image = self.image,
                 width = self.image_width,
                 height = self.image_height,
-                alpha = self.alpha,
+                alpha = self.alpha ~= nil and self.alpha or false, -- default to false
             }
         else
             image_widget = ImageWidget:new{
                 file = self.icon_file or "resources/info-i.png",
-                scale_for_dpi = true,
-                alpha = self.alpha,
+                width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
+                height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
+                alpha = self.alpha == nil and true or self.alpha, -- default to true
             }
         end
     else
