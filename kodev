@@ -957,6 +957,7 @@ OPTIONS:
         fi
 
         echo "Running tests in" "${test_path}"
+        env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" \
         busted --lua="./luajit" "${opts}" \
             --output=gtest \
             --lpath="${test_path_basedir}/?.lua" \
@@ -970,23 +971,40 @@ usage: cov <OPTIONS>
 
 OPTIONS:
 
-    --show-previous     show coverage stats from previous run
-    --full              show full coverage report (down to each line)
-    --no-debug          no debugging symbols (default for target devices)
+    -f, --full              show full coverage report (down to each line)
+    -s, --show-previous     show coverage stats from previous run
+    -n, --no-debug          no debugging symbols (default for target devices)
     "
+
+    # Defaults
     show_full=0
     show_previous=0
-    while [[ "${1}" == '-'* ]]; do
-        PARAM=$(echo "${1}" | awk -F= '{print $1}')
-        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+
+    declare opt
+    declare -r E_OPTERR=85
+    declare -r short_opts="fsn"
+    declare -r long_opts="full,show-previous,no-debug"
+
+    opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
+
+    if [[ $? -ne 0 ]]; then
+        echo "${COV_HELP_MSG}"
+        exit ${E_OPTERR}
+    fi
+
+    eval set -- "${opt}"
+
+    while true; do
+        PARAM="${1}"
+        VALUE="${2}"
         case "${PARAM}" in
-            --full)
+            -f | --full)
                 show_full=1
                 ;;
-            --show-previous)
+            -s | --show-previous)
                 show_previous=1
                 ;;
-            --no-debug)
+            -n | --no-debug)
                 export KODEBUG=
                 KODEBUG_NO_DEFAULT=1
                 ;;
@@ -994,14 +1012,18 @@ OPTIONS:
                 echo "${COV_HELP_MSG}"
                 exit 0
                 ;;
+            --)
+                break
+                ;;
             *)
                 echo "ERROR: unknown option \"${PARAM}\""
                 echo "${COV_HELP_MSG}"
-                exit 1
+                exit 8
                 ;;
         esac
         shift
     done
+    shift
 
     set -e
     check_submodules && kodev-build
@@ -1012,6 +1034,7 @@ OPTIONS:
         test_path="./spec/${target}/unit"
         if [ "${show_previous}" -eq 0 ]; then
             echo "Running tests in" ${test_path}
+            env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" \
             busted --lua="./luajit" \
                 --sort-files \
                 -o "./spec/${target}/unit/verbose_print" \
