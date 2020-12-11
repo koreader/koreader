@@ -590,15 +590,15 @@ TARGET:
                     gdb=${VALUE}
                 else
                     # Try to use friendly defaults for gdb
-                    if command -v znemiver >/dev/null; then
+                    if command -v nemiver >/dev/null; then
                         # Nemiver is a nice GUI
-                        gdb=nemiver
+                        gdb="nemiver"
                     elif command -v ddd >/dev/null; then
                         # DDD is a slightly less nice GUI
-                        gdb=ddd
+                        gdb="ddd"
                     elif command -v cgdb >/dev/null; then
                         # cgdb is a nice curses-based gdb front
-                        gdb=cgdb
+                        gdb="cgdb"
                     elif command -v gdb >/dev/null; then
                         # gdb -tui is a slightly less nice terminal user interface
                         gdb="gdb -tui"
@@ -720,19 +720,10 @@ TARGET:
             # run with catchsegv by default when it is available
             # see https://github.com/koreader/koreader/issues/2878#issuecomment-326796777
             if command -v catchsegv >/dev/null; then
-                CATCHSEGV=$(command -v catchsegv)
+                CATCHSEGV="$(command -v catchsegv)"
             fi
 
             KOREADER_COMMAND="${CATCHSEGV} ./reader.lua -d"
-
-            if [ -n "${gdb}" ]; then
-                if [ "${gdb}" == gdb* ]; then
-                    # The standard CLI needs a little hand holding to properly pass arguments to the process it'll monitor
-                    KOREADER_COMMAND="${gdb} --args ./luajit reader.lua -d"
-                else
-                    KOREADER_COMMAND="${gdb} ./luajit reader.lua -d"
-                fi
-            fi
 
             if [ -n "${valgrind}" ]; then
                 KOREADER_COMMAND="${valgrind} ./luajit reader.lua -d"
@@ -741,12 +732,22 @@ TARGET:
             echo "[*] Running KOReader with arguments: $*..."
             pushd "${EMU_DIR}" && {
                 if [ $# -lt 1 ]; then
-                    args=${CURDIR}/test
+                    args="${CURDIR}/test"
                 else
                     args="$*"
                     [[ "${args}" != /* ]] && args="${CURDIR}/${args}"
                 fi
-                KOREADER_COMMAND="${KOREADER_COMMAND} ${args}"
+
+                if [ -n "${gdb}" ]; then
+                    if [[ "${gdb}" == gdb* ]]; then
+                        # The standard CLI needs a little hand holding to properly pass arguments to the process it'll monitor
+                        KOREADER_COMMAND="${gdb} --args ./luajit reader.lua -d ${args}"
+                    else
+                        KOREADER_COMMAND="${gdb} ./luajit reader.lua -d ${args}"
+                    fi
+                else
+                    KOREADER_COMMAND="${KOREADER_COMMAND} ${args}"
+                fi
 
                 RETURN_VALUE=85
                 while [ "${RETURN_VALUE}" -eq 85 ]; do
