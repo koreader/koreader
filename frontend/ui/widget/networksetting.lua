@@ -138,8 +138,8 @@ function NetworkItem:init()
                 ImageWidget:new{
                     alpha = true,
                     file = wifi_icon_path,
-                    width = icon_size,
-                    height = icon_size,
+                    width = self.icon_size,
+                    height = self.icon_size,
                 },
                 horizontal_space,
                 TextWidget:new{
