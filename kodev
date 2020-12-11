@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -x
-
 is_mac() {
     if [ "$(uname -s)" != "Darwin" ]; then
         echo "You need a mac to build this package"
@@ -177,7 +175,7 @@ usage: build <OPTIONS> <TARGET>
 
 OPTIONS:
 
-    -v, --verbose   Build in verbose mode.
+    -v, --verbose   make the buildsystem more verbose
     -d, --debug     include debugging symbols (default for emulator)
     -n, --no-debug  no debugging symbols (default for target devices)
 
@@ -335,26 +333,44 @@ usage: clean <TARGET>
 TARGET:
 ${SUPPORTED_TARGETS}"
 
-    while [[ "${1}" == '-'* ]]; do
-        PARAM=$(echo "${1}" | awk -F= '{print $1}')
-        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+    declare opt
+    declare -r E_OPTERR=85
+    declare -r short_opts="nd"
+    declare -r long_opts="no-debug,debug"
+
+    opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
+
+    if [[ $? -ne 0 ]]; then
+        echo "${CLEAN_HELP_MSG}"
+        exit ${E_OPTERR}
+    fi
+
+    eval set -- "${opt}"
+
+    while true; do
+        PARAM="${1}"
+        VALUE="${2}"
         case "${PARAM}" in
-            --no-debug)
+            -n | --no-debug)
                 export KODEBUG=
                 KODEBUG_NO_DEFAULT=1
                 ;;
-            --debug)
+            -d | --debug)
                 export KODEBUG=1
                 KODEBUG_NO_DEFAULT=1
+                ;;
+            --)
+                break
                 ;;
             *)
                 echo "ERROR: unknown option \"${PARAM}\""
                 echo "${BUILD_HELP_MSG}"
-                exit 1
+                exit 8
                 ;;
         esac
-        shift 1
+        shift
     done
+    shift
 
     case "${1}" in
         -h | --help)
@@ -434,8 +450,9 @@ usage: release <OPTIONS> <TARGET>
 
 OPTIONS:
 
-    --debug               debug-enabled release (for remote gdb)
-    --ignore-translation  do not fetch translation for release
+    -d, --debug               debug-enabled release (for remote gdb)
+    -i, --ignore-translation  do not fetch translation for release
+    -v, --verbose             make the buildsystem more verbose
 
 TARGET:
 ${SUPPORTED_RELEASE_TARGETS}"
@@ -444,16 +461,31 @@ ${SUPPORTED_RELEASE_TARGETS}"
         exit 1
     }
 
+    # Defaults
     ignore_translation=0
 
-    while [[ "${1}" == '-'* ]]; do
-        PARAM=$(echo "${1}" | awk -F= '{print $1}')
-        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+    declare opt
+    declare -r E_OPTERR=85
+    declare -r short_opts="divh"
+    declare -r long_opts="debug,ignore-translation,verbose,help"
+
+    opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
+
+    if [[ $? -ne 0 ]]; then
+        echo "${RELEASE_HELP_MSG}"
+        exit ${E_OPTERR}
+    fi
+
+    eval set -- "${opt}"
+
+    while true; do
+        PARAM="${1}"
+        VALUE="${2}"
         case "${PARAM}" in
-            --debug)
+            -d | --debug)
                 export KODEBUG=1
                 ;;
-            --ignore-translation)
+            -i | --ignore-translation)
                 ignore_translation=1
                 ;;
             -v | --verbose)
@@ -463,14 +495,18 @@ ${SUPPORTED_RELEASE_TARGETS}"
                 echo "${RELEASE_HELP_MSG}"
                 exit 0
                 ;;
+            --)
+                break
+                ;;
             *)
                 echo "ERROR: unknown option \"${PARAM}\""
                 echo "${RELEASE_HELP_MSG}"
                 exit 1
                 ;;
         esac
-        shift 1
+        shift
     done
+    shift
 
     check_submodules
     if [ "${ignore_translation}" -eq 0 ]; then
@@ -518,7 +554,7 @@ ${SUPPORTED_RELEASE_TARGETS}"
             }
             ANDROID_HOME=$(dirname "$(dirname "$(command -v android)")")
             export ANDROID_HOME
-            export PATH=${PATH}:${NDK}
+            export PATH="${PATH}:${NDK}"
             make TARGET=android update
             ;;
         pocketbook)
@@ -612,14 +648,6 @@ TARGET:
     fi
 
     eval set -- "${opt}"
-
-    #-----------------------------------------------
-    echo "++ Test: Number of arguments: [${#}]"
-    echo '++ Test: Looping through "$@"'
-    for a in "${@}"; do
-        echo "  ++ [${a}]"
-    done
-    #-----------------------------------------------
 
     while true; do
         PARAM="${1}"
@@ -752,14 +780,6 @@ TARGET:
         shift
     done
     shift
-
-    #----------------------------------------------------------------------
-    echo "++ Test: Number of arguments after \"--\" is [${#}] They are: [${@}]"
-    echo '++ Test: Looping through "$@"'
-    for a in "$@"; do
-        echo "  ++ [$a]"
-    done
-    #----------------------------------------------------------------------
 
     case "${1}" in
         android)
