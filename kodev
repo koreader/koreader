@@ -881,35 +881,56 @@ usage: test <OPTIONS> [front|base] <TEST_NAME>
 
 OPTIONS:
 
-    --tags=TAGS     only run tests with given tags
-    --no-debug      no debugging symbols (default for target devices)
+    -p, --graph         graph memory use (requires gnuplot)
+    -n, --no-debug      no debugging symbols (default for target devices)
+    -t, --tags=TAGS     only run tests with given tags
     "
-    while [[ "${1}" == '-'* ]]; do
-        PARAM=$(echo "${1}" | awk -F= '{print $1}')
-        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+
+    declare opt
+    declare -r E_OPTERR=85
+    declare -r short_opts="pt:nh"
+    declare -r long_opts="graph,tags:,no-debug,help"
+
+    opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
+
+    if [[ $? -ne 0 ]]; then
+        echo "${TEST_HELP_MSG}"
+        exit ${E_OPTERR}
+    fi
+
+    eval set -- "${opt}"
+
+    while true; do
+        PARAM="${1}"
+        VALUE="${2}"
         case "${PARAM}" in
-            --graph)
+            -p | --graph)
                 graph_memory=1
                 ;;
-            --no-debug)
+            -n | --no-debug)
                 export KODEBUG=
                 KODEBUG_NO_DEFAULT=1
                 ;;
-            --tags)
+            -t | --tags)
                 opts="--tags=${VALUE}"
+                shift
                 ;;
             -h | --help)
                 echo "${TEST_HELP_MSG}"
                 exit 0
                 ;;
+            --)
+                break
+                ;;
             *)
                 echo "ERROR: unknown option \"${PARAM}\""
                 echo "${TEST_HELP_MSG}"
-                exit 1
+                exit 8
                 ;;
         esac
         shift
     done
+    shift
 
     [ $# -lt 1 ] && {
         echo "${TEST_HELP_MSG}"
