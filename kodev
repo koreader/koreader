@@ -617,7 +617,7 @@ TARGET:
                 else
                     # Try to use sensible defaults for valgrind
                     if command -v valgrind >/dev/null; then
-                        valgrind="valgrind --trace-children=yes"
+                        valgrind="valgrind --tool=memcheck --trace-children=yes --leak-check=full --track-origins=yes --show-reachable=yes"
                     else
                         echo "Couldn't find valgrind."
                         exit 1
