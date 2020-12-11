@@ -139,7 +139,7 @@ function setup_env() {
     fi
     EMU_DIR="${files[${idx}]}/koreader"
     export EMU_DIR
-    LD_LIBRARY_PATH=$(realpath "${EMU_DIR}")/libs:${LD_LIBRARY_PATH}
+    LD_LIBRARY_PATH="$(realpath "${EMU_DIR}")/libs:${LD_LIBRARY_PATH}"
     export LD_LIBRARY_PATH
 }
 
@@ -727,7 +727,13 @@ TARGET:
             KOREADER_COMMAND="${CATCHSEGV} ./reader.lua -d"
 
             if [ -n "${gdb}" ]; then
-                KOREADER_COMMAND="${gdb} ./luajit reader.lua -d"
+                # Don't pollute the debugger's library search path with KOReader's
+                if [ "${gdb}" == gdb* ]; then
+                    # The standard CLI needs a little hand holding to properly pass arguments to the process it'll monitor
+                    KOREADER_COMMAND="env --unset=LD_LIBRARY_PATH ${gdb} --args env LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" ./luajit reader.lua -d"
+                else
+                    KOREADER_COMMAND="env --unset=LD_LIBRARY_PATH ${gdb} env LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" ./luajit reader.lua -d"
+                fi
             fi
 
             if [ -n "${valgrind}" ]; then
