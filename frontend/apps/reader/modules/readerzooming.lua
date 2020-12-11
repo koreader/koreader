@@ -53,6 +53,7 @@ local ReaderZooming = InputContainer:new{
         pageheight = _("Zoom to fit page height works best with page view."),
         contentheight = _("Zoom to fit content height works best with page view."),
         content = _("Zoom to fit content works best with page view."),
+        columns = _("Zoom to fit columns works best with page view."),
     },
 }
 
