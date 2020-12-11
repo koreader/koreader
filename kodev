@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -x
+
 is_mac() {
     if [ "$(uname -s)" != "Darwin" ]; then
         echo "You need a mac to build this package"
@@ -189,9 +191,9 @@ ${SUPPORTED_TARGETS}"
 
     opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
 
-    if [[ ($? -ne 0) || ($# -eq 0) ]]; then
+    if [[ $? -ne 0 ]]; then
         echo "${BUILD_HELP_MSG}"
-        exit $E_OPTERR
+        exit ${E_OPTERR}
     fi
 
     eval set -- "${opt}"
@@ -215,6 +217,9 @@ ${SUPPORTED_TARGETS}"
                 export KODEBUG=1
                 KODEBUG_NO_DEFAULT=1
                 ;;
+            --)
+                break
+                ;;
             *)
                 echo "ERROR: unknown option \"${PARAM}\""
                 echo "${BUILD_HELP_MSG}"
@@ -223,6 +228,7 @@ ${SUPPORTED_TARGETS}"
         esac
         shift
     done
+    shift
 
     check_submodules
     case "${1}" in
@@ -570,42 +576,68 @@ usage: run <OPTIONS> <TARGET>
 
 OPTIONS:
 
-    -h=X, --screen-height=X  set height of the emulator screen (default: 720)
-    -w=X, --screen-width=X   set width of the emulator screen (default: 540)
-    -d=X, --screen-dpi=X     set DPI of the emulator screen (default: 160)
-    --no-build               run reader without rebuilding
-    --no-debug               no debugging symbols (requires rebuilding)
-    --disable-touch          use this if you want to simulate keyboard only devices
-    -s=FOO --simulate=FOO    simulate dimension and other specs for a given device model
-                             supported model: kobo-aura-one, kindle3, hidpi
-    --gdb=X                  run with debugger (default: nemiver)
-    --graph                  graph memory use (requires gnuplot)
-    --valgrind=X             run with valgrind (default: valgrind --tool=memcheck --trace-children=yes --leak-check=full --track-origins=yes --show-reachable=yes)
-    --callgrind              run with valgrind's callgrind (valgrind --tool=callgrind --trace-children=yes)
+    -h X, --screen-height=X  set height of the emulator screen (default: 720)
+    -w X, --screen-width=X   set width of the emulator screen (default: 540)
+    -d X, --screen-dpi=X     set DPI of the emulator screen (default: 160)
+    -b, --no-build           run reader without rebuilding
+    -n, --no-debug           no debugging symbols (requires rebuilding)
+    -t, --disable-touch      use this if you want to simulate keyboard only devices
+    -s FOO --simulate=FOO    simulate dimension and other specs for a given device model
+                             supported model: kobo-forma, kobo-aura-one, kobo-h2o, kindle3, hidpi
+    -g X, --gdb=X            run with debugger (default: nemiver)
+    -p, --graph              graph memory use (requires gnuplot)
+    -v X, --valgrind=X       run with valgrind (default: valgrind --tool=memcheck --trace-children=yes --leak-check=full --track-origins=yes --show-reachable=yes)
+    -c, --callgrind          run with valgrind's callgrind (valgrind --tool=callgrind --trace-children=yes)
 
 TARGET:
 
     android         install and run KOReader on an Android device connected through ADB
     "
+
+    # Defaults
     screen_width=540
     screen_height=720
     export KODEBUG=1
-    while [[ "${1}" == '-'* ]]; do
-        PARAM=$(echo "${1}" | awk -F= '{print $1}')
-        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+
+    declare opt
+    declare -r E_OPTERR=85
+    declare -r short_opts="tbng:pv:cw:h:d:s:H"
+    declare -r long_opts="disable-touch,no-build,gdb:,graph,valgrind:,callgrind,screen-width:,screen-height:,screen-dpi:,simulate:,help"
+
+    opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
+
+    if [[ $? -ne 0 ]]; then
+        echo "${RUN_HELP_MSG}"
+        exit ${E_OPTERR}
+    fi
+
+    eval set -- "${opt}"
+
+    #-----------------------------------------------
+    echo "++ Test: Number of arguments: [${#}]"
+    echo '++ Test: Looping through "$@"'
+    for a in "${@}"; do
+        echo "  ++ [${a}]"
+    done
+    #-----------------------------------------------
+
+    while true; do
+        PARAM="${1}"
+        VALUE="${2}"
         case "${PARAM}" in
-            --disable-touch)
+            -t | --disable-touch)
                 export DISABLE_TOUCH=1
                 ;;
-            --no-build)
+            -b | --no-build)
                 no_build=1
                 ;;
-            --no-debug)
+            -n | --no-debug)
                 export KODEBUG=
                 ;;
-            --gdb)
+            -g | --gdb)
                 if [ -n "${VALUE}" ]; then
-                    gdb=${VALUE}
+                    gdb="${VALUE}"
+                    shift
                 else
                     # Try to use friendly defaults for gdb
                     if command -v nemiver >/dev/null; then
@@ -626,12 +658,13 @@ TARGET:
                     fi
                 fi
                 ;;
-            --graph)
+            -p | --graph)
                 graph_memory=1
                 ;;
-            --valgrind)
+            -v | --valgrind)
                 if [ -n "${VALUE}" ]; then
-                    valgrind=${VALUE}
+                    valgrind="${VALUE}"
+                    shift
                 else
                     # Try to use sensible defaults for valgrind
                     if command -v valgrind >/dev/null; then
@@ -642,7 +675,7 @@ TARGET:
                     fi
                 fi
                 ;;
-            --callgrind)
+            -c | --callgrind)
                 # Try to use sensible defaults for valgrind
                 if command -v valgrind >/dev/null; then
                     valgrind="valgrind --tool=callgrind --trace-children=yes"
@@ -653,6 +686,7 @@ TARGET:
                 ;;
             -w | --screen-width)
                 screen_width=${VALUE}
+                shift
                 ;;
             -h | --screen-height)
                 # simple numeric check due to overlap between -h for help and height
@@ -662,21 +696,33 @@ TARGET:
                     echo "${RUN_HELP_MSG}"
                     exit 1
                 fi
+                shift
                 ;;
             -d | --screen-dpi)
                 screen_dpi=${VALUE}
+                shift
                 ;;
             -s | --simulate)
-                device_model=${VALUE}
+                device_model="${VALUE}"
                 case "${device_model}" in
                     kindle3)
                         screen_width=600
                         screen_height=800
                         ;;
+                    kobo-forma)
+                        screen_width=1440
+                        screen_height=1920
+                        screen_dpi=300
+                        ;;
                     kobo-aura-one)
                         screen_width=1404
                         screen_height=1872
                         screen_dpi=300
+                        ;;
+                    kobo-h2o)
+                        screen_width=1080
+                        screen_height=1429
+                        screen_dpi=265
                         ;;
                     hidpi)
                         screen_width=1500
@@ -687,19 +733,32 @@ TARGET:
                         echo "ERROR: spec unknown for ${device_model}."
                         ;;
                 esac
+                shift
                 ;;
-            --help)
+            -H | --help)
                 echo "${RUN_HELP_MSG}"
                 exit 0
+                ;;
+            --)
+                break
                 ;;
             *)
                 echo "ERROR: unknown option \"${PARAM}\""
                 echo "${RUN_HELP_MSG}"
-                exit 1
+                exit 8
                 ;;
         esac
         shift
     done
+    shift
+
+    #----------------------------------------------------------------------
+    echo "++ Test: Number of arguments after \"--\" is [${#}] They are: [${@}]"
+    echo '++ Test: Looping through "$@"'
+    for a in "$@"; do
+        echo "  ++ [$a]"
+    done
+    #----------------------------------------------------------------------
 
     case "${1}" in
         android)
