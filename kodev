@@ -1099,6 +1099,7 @@ Supported commands:
     check               Run luacheck static-analysis
     cov                 Run busted tests for coverage
     wbuilder            Run wbuilder.lua script (useful for building new UI widget)
+    prompt              Run a LuaJIT shell within KOReader's environment
 "
 [ $# -lt 1 ] && {
     echo "Missing command."
@@ -1149,6 +1150,7 @@ case "${1}" in
     prompt)
         kodev-build
         pushd "${EMU_DIR}" && {
+            env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" \
             ./luajit -i setupkoenv.lua
         } && popd || exit
         ;;
@@ -1156,13 +1158,13 @@ case "${1}" in
         shift 1
         kodev-log "$@"
         ;;
-    --help | -h)
+    -h | --help)
         echo "${HELP_MSG}"
         exit 0
         ;;
     *)
         echo "Unknown command: $1."
         echo "${HELP_MSG}"
-        exit 1
+        exit 8
         ;;
 esac
