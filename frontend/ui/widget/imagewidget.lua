@@ -127,7 +127,7 @@ function ImageWidget:_loadimage()
     self._bb_disposable = self.image_disposable
 end
 
-local ICONS_ALT_SVG_DIR = false
+local ICONS_ALT_SVG_DIR = false -- luacheck: ignore
 -- Uncomment to use SVG icons from one of these directories
 -- ICONS_ALT_SVG_DIR = "resources/icons/src/"
 ICONS_ALT_SVG_DIR = "resources/icons/svg/"
