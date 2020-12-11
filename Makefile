@@ -552,6 +552,9 @@ else ifeq ($(TARGET), debian-armel)
 else ifeq ($(TARGET), debian-armhf)
 	make debianupdate
 	$(CURDIR)/platform/debian/do_debian_package.sh $(INSTALL_DIR) armhf
+else ifeq ($(TARGET), debian-arm64)
+	make debianupdate
+	$(CURDIR)/platform/debian/do_debian_package.sh $(INSTALL_DIR) arm64
 else ifeq ($(TARGET), macos)
 	make macosupdate
 	$(CURDIR)/platform/mac/do_mac_bundle.sh $(INSTALL_DIR)
