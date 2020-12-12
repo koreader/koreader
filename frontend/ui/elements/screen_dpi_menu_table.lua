@@ -3,7 +3,7 @@ local Device = require("device")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local function isAutoDPI() return Device.screen_dpi_override == nil end
+local function isAutoDPI() return Screen.dpi_override == nil end
 
 local function dpi() return Screen:getDPI() end
 

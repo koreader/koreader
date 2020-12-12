@@ -205,9 +205,12 @@ function Device:init()
 end
 
 function Device:setScreenDPI(dpi_override)
-    self.screen:setDPI(dpi_override)
+    if dpi_override then
+        self.screen:setDPI(dpi_override)
+    else
+        self.screen:clearDPI(dpi_override)
+    end
     self.input.gesture_detector:init()
-    self.screen_dpi_override = dpi_override
 end
 
 function Device:getPowerDevice()
