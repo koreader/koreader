@@ -42,7 +42,7 @@ DBACKGROUND_COLOR = 0
 DOUTER_PAGE_COLOR = 0
 
 -- generic icon size
-DGENERIC_ICON_SIZE = 48
+DGENERIC_ICON_SIZE = 40
 
 -- supported view mode includes: "scroll" and "page"
 DCREREADER_VIEW_MODE = "page"

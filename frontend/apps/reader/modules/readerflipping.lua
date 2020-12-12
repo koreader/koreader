@@ -9,8 +9,12 @@ local ReaderFlipping = InputContainer:new{
 }
 
 function ReaderFlipping:init()
+    local icon_size = Screen:scaleBySize(32)
     local widget = ImageWidget:new{
         file = "resources/icons/appbar.book.open.png",
+        width = icon_size,
+        height = icon_size,
+        alpha = true,
     }
     self[1] = LeftContainer:new{
         dimen = Geom:new{w = Screen:getWidth(), h = widget:getSize().h},
