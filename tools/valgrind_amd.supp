@@ -1,0 +1,18 @@
+{
+    ignore_sdl2
+    Memcheck:Leak
+    ...
+    obj:*/libSDL2-*.so.*
+}
+{
+    ignore_radeon_dri
+    Memcheck:Leak
+    ...
+    obj:*/radeonsi_dri.so
+}
+{
+    ignore_llvm
+    Memcheck:Leak
+    ...
+    obj:*/libLLVM-*.so
+}
