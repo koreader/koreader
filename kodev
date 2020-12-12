@@ -627,6 +627,7 @@ OPTIONS:
     -p, --graph              graph memory use (requires gnuplot)
     -v X, --valgrind=X       run with valgrind (default: \"valgrind --tool=memcheck --trace-children=yes --leak-check=full --track-origins=yes --show-reachable=yes\")
     -c, --callgrind          run with valgrind's callgrind (valgrind --tool=callgrind --trace-children=yes)
+    -r, --sane-return        force KOReader to exit sanely, instead of calling os.exit. This ensures a saner teardown of the Lua state. (enabled by default when running under valgrind/gdb).
 
 TARGET:
 
@@ -643,8 +644,8 @@ TARGET:
 
     declare opt
     declare -r E_OPTERR=85
-    declare -r short_opts="tbng::pv::cw:h:d:s:H"
-    declare -r long_opts="disable-touch,no-build,gdb::,graph,valgrind::,callgrind,screen-width:,screen-height:,screen-dpi:,simulate:,help"
+    declare -r short_opts="tbng::pv::cw:h:d:s:rH"
+    declare -r long_opts="disable-touch,no-build,gdb::,graph,valgrind::,callgrind,screen-width:,screen-height:,screen-dpi:,simulate:,sane-return,help"
 
     opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
 
@@ -670,6 +671,7 @@ TARGET:
                 export KODEBUG=
                 ;;
             -g | --gdb)
+                export SANE_RETURN=1
                 if [ -n "${VALUE}" ]; then
                     gdb="${VALUE}"
                 else
@@ -697,6 +699,7 @@ TARGET:
                 graph_memory=1
                 ;;
             -v | --valgrind)
+                export SANE_RETURN=1
                 if [ -n "${VALUE}" ]; then
                     valgrind="${VALUE}"
                 else
@@ -711,6 +714,7 @@ TARGET:
                 shift
                 ;;
             -c | --callgrind)
+                export SANE_RETURN=1
                 # Try to use sensible defaults for valgrind
                 if command -v valgrind >/dev/null; then
                     valgrind="valgrind --tool=callgrind --trace-children=yes"
@@ -769,6 +773,10 @@ TARGET:
                         echo "ERROR: spec unknown for ${device_model}."
                         ;;
                 esac
+                shift
+                ;;
+            -r | --sane-return)
+                export SANE_RETURN=1
                 shift
                 ;;
             -H | --help)
@@ -831,7 +839,13 @@ TARGET:
                 gnuplot_wrapper "--parent $$" "reader.lua"
             fi
 
-            KOREADER_COMMAND="env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./reader.lua -d"
+            if [ -n "${SANE_RETURN}" ]; then
+                KOREADER_ARGS="-d -t"
+            else
+                KOREADER_ARGS="-d"
+            fi
+
+            KOREADER_COMMAND="env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./reader.lua ${KOREADER_ARGS}"
 
             # run with catchsegv by default when it is available
             # see https://github.com/koreader/koreader/issues/2878#issuecomment-326796777
@@ -840,7 +854,7 @@ TARGET:
             fi
 
             if [ -n "${valgrind}" ]; then
-                KOREADER_COMMAND="${valgrind} env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./luajit reader.lua -d"
+                KOREADER_COMMAND="${valgrind} env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./luajit reader.lua ${KOREADER_ARGS}"
             fi
 
             echo "[*] Running KOReader with arguments: $*..."
@@ -856,9 +870,9 @@ TARGET:
                     # We don't want to stack valgrind/catchsegv on top of GDB ;).
                     if [[ "${gdb}" == gdb* ]]; then
                         # The standard CLI needs a little hand holding to properly pass arguments to the process it'll monitor
-                        KOREADER_COMMAND="${gdb} --args env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./luajit reader.lua -d ${args}"
+                        KOREADER_COMMAND="${gdb} --args env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./luajit reader.lua ${KOREADER_ARGS} ${args}"
                     else
-                        KOREADER_COMMAND="${gdb} env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./luajit reader.lua -d ${args}"
+                        KOREADER_COMMAND="${gdb} env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./luajit reader.lua ${KOREADER_ARGS} ${args}"
                     fi
                 else
                     KOREADER_COMMAND="${KOREADER_COMMAND} ${args}"
