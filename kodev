@@ -633,6 +633,9 @@ TARGET:
     android         install and run KOReader on an Android device connected through ADB
     "
 
+    # NOTE: Speaking of Valgrind, if your libdrm/mesa isn't built w/ valgrind markings, there's a Valgrind suppression file for AMD cards in the tools folder.
+    #       Just append --suppressions=${PWD/tools/valgrind_amd.supp to your valgrind command.
+
     # Defaults
     screen_width=540
     screen_height=720
