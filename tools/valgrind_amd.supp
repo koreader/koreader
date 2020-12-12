@@ -16,3 +16,21 @@
     ...
     obj:*/libLLVM-*.so
 }
+{
+    ignore_x11
+    Memcheck:Leak
+    ...
+    obj:*/libX11.so.*
+}
+{
+    ignore_glx_mesa
+    Memcheck:Leak
+    ...
+    obj:*/libGLX_mesa.so.*
+}
+{
+    ignore_dbus
+    Memcheck:Leak
+    ...
+    obj:*/libdbus-1.so.*
+}
