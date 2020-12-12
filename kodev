@@ -195,7 +195,8 @@ ${SUPPORTED_TARGETS}"
 
     while true; do
         PARAM="${1}"
-        VALUE="${2}"
+        # Support using an = assignment with short options (e.g., -f=blah instead of -f blah).
+        VALUE="${2/#=/}"
         case "${PARAM}" in
             -v | --verbose)
                 export VERBOSE=1
@@ -340,7 +341,8 @@ ${SUPPORTED_TARGETS}"
 
     while true; do
         PARAM="${1}"
-        VALUE="${2}"
+        # Support using an = assignment with short options (e.g., -f=blah instead of -f blah).
+        VALUE="${2/#=/}"
         case "${PARAM}" in
             -n | --no-debug)
                 export KODEBUG=
@@ -466,7 +468,8 @@ ${SUPPORTED_RELEASE_TARGETS}"
 
     while true; do
         PARAM="${1}"
-        VALUE="${2}"
+        # Support using an = assignment with short options (e.g., -f=blah instead of -f blah).
+        VALUE="${2/#=/}"
         case "${PARAM}" in
             -d | --debug)
                 export KODEBUG=1
@@ -635,7 +638,8 @@ TARGET:
 
     while true; do
         PARAM="${1}"
-        VALUE="${2}"
+        # Support using an = assignment with short options (e.g., -f=blah instead of -f blah).
+        VALUE="${2/#=/}"
         case "${PARAM}" in
             -t | --disable-touch)
                 export DISABLE_TOUCH=1
@@ -910,7 +914,8 @@ OPTIONS:
 
     while true; do
         PARAM="${1}"
-        VALUE="${2}"
+        # Support using an = assignment with short options (e.g., -f=blah instead of -f blah).
+        VALUE="${2/#=/}"
         case "${PARAM}" in
             -p | --graph)
                 graph_memory=1
@@ -1002,7 +1007,8 @@ OPTIONS:
 
     while true; do
         PARAM="${1}"
-        VALUE="${2}"
+        # Support using an = assignment with short options (e.g., -f=blah instead of -f blah).
+        VALUE="${2/#=/}"
         case "${PARAM}" in
             -f | --full)
                 show_full=1
