@@ -187,10 +187,7 @@ ${SUPPORTED_TARGETS}"
     declare -r short_opts="vhnd"
     declare -r long_opts="verbose,help,no-debug,debug"
 
-    opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
-
-    # shellcheck disable=SC2181
-    if [[ $? -ne 0 ]]; then
+    if ! opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}"); then
         echo "${BUILD_HELP_MSG}"
         exit ${E_OPTERR}
     fi
@@ -339,10 +336,7 @@ ${SUPPORTED_TARGETS}"
     declare -r short_opts="nd"
     declare -r long_opts="no-debug,debug"
 
-    opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
-
-    # shellcheck disable=SC2181
-    if [[ $? -ne 0 ]]; then
+    if ! opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}"); then
         echo "${CLEAN_HELP_MSG}"
         exit ${E_OPTERR}
     fi
@@ -471,10 +465,7 @@ ${SUPPORTED_RELEASE_TARGETS}"
     declare -r short_opts="divh"
     declare -r long_opts="debug,ignore-translation,verbose,help"
 
-    opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
-
-    # shellcheck disable=SC2181
-    if [[ $? -ne 0 ]]; then
+    if ! opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}"); then
         echo "${RELEASE_HELP_MSG}"
         exit ${E_OPTERR}
     fi
@@ -647,10 +638,7 @@ TARGET:
     declare -r short_opts="tbng::pv::cw:h:d:s:rH"
     declare -r long_opts="disable-touch,no-build,gdb::,graph,valgrind::,callgrind,screen-width:,screen-height:,screen-dpi:,simulate:,sane-return,help"
 
-    opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
-
-    # shellcheck disable=SC2181
-    if [[ $? -ne 0 ]]; then
+    if ! opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}"); then
         echo "${RUN_HELP_MSG}"
         exit ${E_OPTERR}
     fi
@@ -914,10 +902,7 @@ OPTIONS:
     declare -r short_opts="pt:nh"
     declare -r long_opts="graph,tags:,no-debug,help"
 
-    opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
-
-    # shellcheck disable=SC2181
-    if [[ $? -ne 0 ]]; then
+    if ! opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}"); then
         echo "${TEST_HELP_MSG}"
         exit ${E_OPTERR}
     fi
@@ -1009,10 +994,7 @@ OPTIONS:
     declare -r short_opts="fsn"
     declare -r long_opts="full,show-previous,no-debug"
 
-    opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}")
-
-    # shellcheck disable=SC2181
-    if [[ $? -ne 0 ]]; then
+    if ! opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}"); then
         echo "${COV_HELP_MSG}"
         exit ${E_OPTERR}
     fi
