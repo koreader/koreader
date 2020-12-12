@@ -878,6 +878,8 @@ TARGET:
             if [ -n "${graph_memory}" ]; then
                 capture_ctrl_c
             fi
+
+            exit ${RETURN_VALUE}
             ;;
     esac
 }
