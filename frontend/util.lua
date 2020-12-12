@@ -224,21 +224,40 @@ end
 ---- @int seconds number of seconds
 ---- @bool twelve_hour_clock
 ---- @treturn string hour string
-function util.secondsToHour(seconds, twelve_hour_clock)
-    local time
-    if twelve_hour_clock then
-        if os.date("%p", seconds) == "AM" then
-            -- @translators This is the time in the morning in the 12-hour clock (%I is the hour, %M the minute).
-            time = os.date(_("%I:%M AM"), seconds)
+--- @note: The MS CRT doesn't support either %l & %k, or the - format modifier (as they're not technically C99 or POSIX).
+---        They are otherwise supported on Linux, BSD & Bionic, so, just special-case Windows...
+---        We *could* arguably feed the os.date output to gsub("^0(%d)(.*)$", "%1%2"), but, while unlikely,
+---        it's conceivable that a translator would put something other that the hour at the front of the string ;).
+if jit.os == "Windows" then
+    function util.secondsToHour(seconds, twelve_hour_clock)
+        if twelve_hour_clock then
+            if os.date("%p", seconds) == "AM" then
+                -- @translators This is the time in the morning using a 12-hour clock (%I is the hour, %M the minute).
+                return os.date(_("%I:%M AM"), seconds)
+            else
+                -- @translators This is the time in the afternoon using a 12-hour clock (%I is the hour, %M the minute).
+                return os.date(_("%I:%M PM"), seconds)
+            end
         else
-            -- @translators This is the time in the afternoon in the 12-hour clock (%I is the hour, %M the minute).
-            time = os.date(_("%I:%M PM"), seconds)
+            -- @translators This is the time using a 24-hour clock (%H is the hour, %M the minute).
+            return os.date(_("%H:%M"), seconds)
         end
-    else
-        -- @translators This is the time in the 24-hour clock (%H is the hour, %M the minute).
-        time = os.date(_("%H:%M"), seconds)
     end
-    return time
+else
+    function util.secondsToHour(seconds, twelve_hour_clock)
+        if twelve_hour_clock then
+            if os.date("%p", seconds) == "AM" then
+                -- @translators This is the time in the morning using a 12-hour clock (%-I is the hour, %M the minute).
+                return os.date(_("%-I:%M AM"), seconds)
+            else
+                -- @translators This is the time in the afternoon using a 12-hour clock (%-I is the hour, %M the minute).
+                return os.date(_("%-I:%M PM"), seconds)
+            end
+        else
+            -- @translators This is the time using a 24-hour clock (%-H is the hour, %M the minute).
+            return os.date(_("%-H:%M"), seconds)
+        end
+    end
 end
 
 --- Converts timestamp to a date string

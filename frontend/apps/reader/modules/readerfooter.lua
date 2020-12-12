@@ -177,7 +177,7 @@ local footerTextGeneratorMap = {
     time = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].time
-        local clock = util.secondsToHour(os.time(), footer.settings.time_format == "12")
+        local clock = util.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock"))
         if not prefix then
             return clock
         else
@@ -1286,43 +1286,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                     },
                 },
-            },
-            {
-                text = _("Time format"),
-                sub_item_table = {
-                    {
-                        text_func = function()
-                            local footer = {}
-                            footer.settings = {}
-                            footer.settings.time_format = "24"
-                            footer.settings.item_prefix = self.settings.item_prefix or "icons"
-                            return T(_("24-hour (%1)"),footerTextGeneratorMap.time(footer))
-                        end,
-                        checked_func = function()
-                            return self.settings.time_format == "24" or self.settings.time_format == nil
-                        end,
-                        callback = function()
-                            self.settings.time_format = "24"
-                            self:refreshFooter(true)
-                        end,
-                    },
-                    {
-                        text_func = function()
-                            local footer = {}
-                            footer.settings = {}
-                            footer.settings.time_format = "12"
-                            footer.settings.item_prefix = self.settings.item_prefix or "icons"
-                            return T(_("12-hour (%1)"),footerTextGeneratorMap.time(footer))
-                        end,
-                        checked_func = function()
-                            return self.settings.time_format == "12"
-                        end,
-                        callback = function()
-                            self.settings.time_format = "12"
-                            self:refreshFooter(true)
-                        end,
-                    },
-                }
             },
             {
                 text = _("Duration format"),
