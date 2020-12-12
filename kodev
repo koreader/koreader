@@ -613,7 +613,7 @@ OPTIONS:
     -n, --no-debug           no debugging symbols (requires rebuilding)
     -t, --disable-touch      use this if you want to simulate keyboard only devices
     -s FOO --simulate=FOO    simulate dimension and other specs for a given device model
-                             supported model: kobo-forma, kobo-aura-one, kobo-h2o, kindle3, hidpi
+                             supported model: hidpi, kobo-forma, kobo-aura-one, kobo-clara, kindle-paperwhite, kobo-h2o, legacy-paperwhite, kindle
     -g X, --gdb=X            run with debugger (default: nemiver)
     -p, --graph              graph memory use (requires gnuplot)
     -v X, --valgrind=X       run with valgrind (default: \"valgrind --tool=memcheck --trace-children=yes --leak-check=full --track-origins=yes --show-reachable=yes\")
@@ -733,9 +733,15 @@ TARGET:
             -s | --simulate)
                 device_model="${VALUE}"
                 case "${device_model}" in
-                    kindle3)
+                    kindle)
                         screen_width=600
                         screen_height=800
+                        screen_dpi=167
+                        ;;
+                    legacy-paperwhite)
+                        screen_width=758
+                        screen_height=1024
+                        screen_dpi=212
                         ;;
                     kobo-forma)
                         screen_width=1440
@@ -745,6 +751,11 @@ TARGET:
                     kobo-aura-one)
                         screen_width=1404
                         screen_height=1872
+                        screen_dpi=300
+                        ;;
+                    kobo-clara | kindle-paperwhite)
+                        screen_width=1072
+                        screen_height=1448
                         screen_dpi=300
                         ;;
                     kobo-h2o)
