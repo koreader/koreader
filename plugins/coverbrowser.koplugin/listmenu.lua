@@ -203,7 +203,7 @@ function ListMenuItem:update()
     -- We'll draw a border around cover images, it may not be
     -- needed with some covers, but it's nicer when cover is
     -- a pure white background (like rendered text page)
-    local border_size = 1
+    local border_size = Size.border.thin
     local max_img_w = dimen.h - 2*border_size -- width = height, squared
     local max_img_h = dimen.h - 2*border_size
     local cover_specs = {
