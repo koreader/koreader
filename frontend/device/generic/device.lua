@@ -205,11 +205,8 @@ function Device:init()
 end
 
 function Device:setScreenDPI(dpi_override)
-    if dpi_override then
-        self.screen:setDPI(dpi_override)
-    else
-        self.screen:clearDPI(dpi_override)
-    end
+    -- Passing a nil resets to defaults and clears the override flag
+    self.screen:setDPI(dpi_override)
     self.input.gesture_detector:init()
 end
 
