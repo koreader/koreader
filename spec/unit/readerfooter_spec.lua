@@ -4,7 +4,8 @@ describe("Readerfooter module", function()
     local tapFooterMenu
 
     local function is_am()
-        return os.date("%p") == "AM"
+        -- Technically only an issue for 1 digit results from %-H, e.g., anything below 10:00 AM
+        return tonumber(os.date("%H")) < 10
     end
 
     setup(function()
