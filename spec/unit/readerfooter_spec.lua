@@ -305,20 +305,21 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         local horizontal_margin = Screen:scaleBySize(10)*2
         footer:onUpdateFooter()
-        assert.is.same(370, footer.text_width)
+        -- Account for trimming of the leading 0 in the AM (AM on the lef side of the assert)
+        assert.is_true(footer.text_width == 362 or footer.text_width == 370)
         assert.is.same(600, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
-        assert.is.same(210, footer.progress_bar.width)
+        assert.is_true(footer.progress_bar.width == 218 or footer.progress_bar.width == 210)
 
         local old_screen_getwidth = Screen.getWidth
         Screen.getWidth = function() return 900 end
         footer:resetLayout()
-        assert.is.same(370, footer.text_width)
+        assert.is_true(footer.text_width == 362 or footer.text_width == 370)
         assert.is.same(900, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
-        assert.is.same(510, footer.progress_bar.width)
+        assert.is_true(footer.progress_bar.width == 517 or footer.progress_bar.width == 510)
         Screen.getWidth = old_screen_getwidth
     end)
 
