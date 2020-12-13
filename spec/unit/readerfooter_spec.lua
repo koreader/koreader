@@ -3,6 +3,10 @@ describe("Readerfooter module", function()
     local purgeDir, Screen
     local tapFooterMenu
 
+    local function is_am()
+        return os.date("%p") == "AM"
+    end
+
     setup(function()
         require("commonrequire")
         package.unloadAll()
@@ -305,21 +309,25 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         local horizontal_margin = Screen:scaleBySize(10)*2
         footer:onUpdateFooter()
-        -- Account for trimming of the leading 0 in the AM (AM on the lef side of the assert)
-        assert.is_true(footer.text_width == 362 or footer.text_width == 370)
+        -- Account for trimming of the leading 0 in the AM
+        local expected = is_am() and 362 or 370
+        assert.is.same(expected, footer.text_width)
         assert.is.same(600, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
-        assert.is_true(footer.progress_bar.width == 218 or footer.progress_bar.width == 210)
+        expected = is_am() and 218 or 210
+        assert.is.same(expected, footer.progress_bar.width)
 
         local old_screen_getwidth = Screen.getWidth
         Screen.getWidth = function() return 900 end
         footer:resetLayout()
-        assert.is_true(footer.text_width == 362 or footer.text_width == 370)
+        expected = is_am() and 362 or 370
+        assert.is.same(expected, footer.text_width)
         assert.is.same(900, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
-        assert.is_true(footer.progress_bar.width == 517 or footer.progress_bar.width == 510)
+        expected = is_am() and 518 or 510
+        assert.is.same(expected, footer.progress_bar.width)
         Screen.getWidth = old_screen_getwidth
     end)
 
