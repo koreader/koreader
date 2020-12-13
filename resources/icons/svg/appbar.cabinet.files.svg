@@ -9,9 +9,9 @@
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    version="1.1"
    id="mdi-tools"
-   width="144"
-   height="144"
-   viewBox="0 0 144 144"
+   width="48"
+   height="48"
+   viewBox="0 0 48 48"
    sodipodi:docname="appbar.cabinet.files.svg"
    inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
    inkscape:export-filename="/home/john/src/koreader/resources/icons/appbar.cabinet.files.png"
@@ -25,7 +25,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -40,15 +40,15 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1135"
-     inkscape:window-height="896"
+     inkscape:window-width="1914"
+     inkscape:window-height="1004"
      id="namedview1680"
      showgrid="true"
      inkscape:zoom="1"
-     inkscape:cx="73.507821"
-     inkscape:cy="1.4051114"
+     inkscape:cx="24"
+     inkscape:cy="24"
      inkscape:window-x="0"
-     inkscape:window-y="162"
+     inkscape:window-y="54"
      inkscape:window-maximized="0"
      inkscape:current-layer="mdi-tools"
      inkscape:snap-page="false"
@@ -56,28 +56,28 @@
     <inkscape:grid
        type="xygrid"
        id="grid16"
-       originx="26.099999"
-       originy="18" />
+       originx="0"
+       originy="0" />
   </sodipodi:namedview>
   <rect
-     style="fill:none;stroke:#000000;stroke-width:4.00107"
+     style="fill:none;stroke:#000000;stroke-width:2"
      id="rect20"
-     width="69.998924"
-     height="103.99893"
-     x="37.000538"
-     y="20.000534"
-     ry="2.9994659" />
+     width="24"
+     height="34"
+     x="12"
+     y="7"
+     ry="0.98060471" />
   <path
-     style="fill:none;stroke:#000000;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-     d="M 36.599994,72.000004 H 105.69526"
+     style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     d="M 12,24.000002 H 36"
      id="path22"
      sodipodi:nodetypes="cc" />
   <path
-     style="fill:none;stroke:#000000;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-     d="m 63.099999,86 h 20"
+     style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     d="m 21,29 h 6"
      id="path835" />
   <path
-     style="fill:none;stroke:#000000;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-     d="m 62.099999,34 h 20"
+     style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     d="m 21,11 h 6"
      id="path835-3" />
 </svg>
