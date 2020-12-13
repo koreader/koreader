@@ -342,12 +342,16 @@ describe("Readerfooter module", function()
         }
         local footer = readerui.view.footer
         footer:onPageUpdate(1)
-        assert.are.same(202, footer.progress_bar.width)
-        assert.are.same(378, footer.text_width)
+        local expected = is_am() and 210 or 202
+        assert.are.same(expected, footer.progress_bar.width)
+        expected = is_am() and 370 or 378
+        assert.are.same(expected, footer.text_width)
 
         footer:onPageUpdate(100)
-        assert.are.same(178, footer.progress_bar.width)
-        assert.are.same(402, footer.text_width)
+        expected = is_am() and 186 or 178
+        assert.are.same(expected, footer.progress_bar.width)
+        expected = is_am() and 394 or 402
+        assert.are.same(expected, footer.text_width)
     end)
 
     it("should support chapter markers", function()
