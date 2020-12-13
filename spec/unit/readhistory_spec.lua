@@ -5,7 +5,6 @@ describe("ReadHistory module", function()
     local mkdir
     local realpath
     local reload
-    local usleep
     local lfs
     local now = 61
 
@@ -61,7 +60,6 @@ describe("ReadHistory module", function()
         mkdir = require("libs/libkoreader-lfs").mkdir
         realpath = require("ffi/util").realpath
         reload = function() return package.reload("readhistory") end
-        usleep = require("ffi/util").usleep
         lfs = require("libs/libkoreader-lfs")
 
         mkdir(joinPath(DataStorage:getDataDir(), "testdata"))
