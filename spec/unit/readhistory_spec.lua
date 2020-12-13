@@ -160,7 +160,8 @@ describe("ReadHistory module", function()
         touch(test_file("b"))
         touch(test_file("c"))
         local h = reload()
-        -- NOTE: Identical timestamps to neuter sorting by mtime, instead alphabetical order kicks in.
+        -- NOTE: Identical timestamps to neuter sorting by mtime, instead alphabetical order kicks in (c.f., ReadHistory:_sort)
+        --       This goes for basically the rest of the tests.
         now = now + 61
         h:addItem(test_file("a"), now)
         h:addItem(test_file("b"), now)
