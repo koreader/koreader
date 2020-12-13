@@ -160,11 +160,10 @@ describe("ReadHistory module", function()
         touch(test_file("b"))
         touch(test_file("c"))
         local h = reload()
+        -- NOTE: Identical timestamps to neuter sorting by mtime, instead alphabetical order kicks in.
         now = now + 61
         h:addItem(test_file("a"), now)
-        now = now + 61
         h:addItem(test_file("b"), now)
-        now = now + 61
         h:addItem(test_file("c"), now)
         h:removeItem(h.hist[1])
         assert_item_is(h, 1, "b")
@@ -184,9 +183,7 @@ describe("ReadHistory module", function()
         local h = reload()
         now = now + 61
         h:addItem(test_file("a"), now)
-        now = now + 61
         h:addItem(test_file("b"), now)
-        now = now + 61
         h:addItem(test_file("c"), now)
         h:removeItem(h.hist[2])
         assert_item_is(h, 1, "a")
@@ -204,9 +201,7 @@ describe("ReadHistory module", function()
         local h = reload()
         now = now + 61
         h:addItem(test_file("a"), now)
-        now = now + 61
         h:addItem(test_file("b"), now)
-        now = now + 61
         h:addItem(test_file("c"), now)
         h:removeItem(h.hist[3])
         assert_item_is(h, 1, "a")
@@ -227,11 +222,8 @@ describe("ReadHistory module", function()
         local h = reload()
         now = now + 61
         h:addItem(test_file("a"), now)
-        now = now + 61
         h:addItem(test_file("b"), now)
-        now = now + 61
         h:addItem(test_file("c"), now)
-        now = now + 61
         h:addItem(test_file("d"), now)
         h:removeItem(h.hist[3])  -- remove c
         h:removeItem(h.hist[2])  -- remove b
@@ -253,13 +245,9 @@ describe("ReadHistory module", function()
         local h = reload()
         now = now + 61
         h:addItem(test_file("a"), now)
-        now = now + 61
         h:addItem(test_file("b"), now)
-        now = now + 61
         h:addItem(test_file("c"), now)
-        now = now + 61
         h:addItem(test_file("d"), now)
-        now = now + 61
         h:addItem(test_file("e"), now)
         h:removeItem(h.hist[2])  -- remove b
         h:removeItem(h.hist[2])  -- remove c
@@ -323,7 +311,6 @@ describe("ReadHistory module", function()
         local h = reload()
         now = now + 61
         h:addItem(test_file("a"), now)
-        now = now + 61
         h:addItem(test_file("b"), now)
         mv(file("history.lua"), file("history.backup"))
 
@@ -348,7 +335,6 @@ describe("ReadHistory module", function()
         local h = reload()
         now = now + 61
         h:addItem(test_file("a"), now)
-        now = now + 61
         h:addItem(test_file("b"), now)
 
         rm(test_file("a"))
@@ -368,7 +354,6 @@ describe("ReadHistory module", function()
         local h = reload()
         now = now + 61
         h:addItem(test_file("a"), now)
-        now = now + 61
         h:addItem(test_file("b"), now)
 
         rm(test_file("a"))
