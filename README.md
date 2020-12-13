@@ -75,15 +75,6 @@ Right now we only support [liberapay](https://liberapay.com/KOReader) donations,
 [![Last commit][badge-last-commit]][link-gh-commits]
 [![Commit activity][badge-commit-activity]][link-gh-insights]
 
-[![0](https://sourcerer.io/fame/Frenzie/koreader/koreader/images/0)](https://sourcerer.io/fame/Frenzie/koreader/koreader/links/0)
-[![1](https://sourcerer.io/fame/Frenzie/koreader/koreader/images/1)](https://sourcerer.io/fame/Frenzie/koreader/koreader/links/1)
-[![2](https://sourcerer.io/fame/Frenzie/koreader/koreader/images/2)](https://sourcerer.io/fame/Frenzie/koreader/koreader/links/2)
-[![3](https://sourcerer.io/fame/Frenzie/koreader/koreader/images/3)](https://sourcerer.io/fame/Frenzie/koreader/koreader/links/3)
-[![4](https://sourcerer.io/fame/Frenzie/koreader/koreader/images/4)](https://sourcerer.io/fame/Frenzie/koreader/koreader/links/4)
-[![5](https://sourcerer.io/fame/Frenzie/koreader/koreader/images/5)](https://sourcerer.io/fame/Frenzie/koreader/koreader/links/5)
-[![6](https://sourcerer.io/fame/Frenzie/koreader/koreader/images/6)](https://sourcerer.io/fame/Frenzie/koreader/koreader/links/6)
-[![7](https://sourcerer.io/fame/Frenzie/koreader/koreader/images/7)](https://sourcerer.io/fame/Frenzie/koreader/koreader/links/7)
-
 [badge-bountysource]:https://img.shields.io/bountysource/team/koreader/activity?color=red
 [badge-circleci]:https://circleci.com/gh/koreader/koreader.svg?style=shield
 [badge-coverage]:https://codecov.io/gh/koreader/koreader/branch/master/graph/badge.svg
