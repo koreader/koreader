@@ -3,7 +3,7 @@ local Device = require("device")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local function isAutoDPI() return Device.screen_dpi_override == nil end
+local function isAutoDPI() return Screen.dpi_override == nil end
 
 local function dpi() return Screen:getDPI() end
 
@@ -16,7 +16,9 @@ local function setDPI(_dpi)
         text = _dpi and T(_("DPI set to %1. This will take effect after restarting."), _dpi)
                or _("DPI set to auto. This will take effect after restarting."),
     })
+    -- If this is set to nil, reader.lua doesn't call setScreenDPI
     G_reader_settings:saveSetting("screen_dpi", _dpi)
+    -- Passing a nil properly resets to defaults/auto
     Device:setScreenDPI(_dpi)
 end
 
