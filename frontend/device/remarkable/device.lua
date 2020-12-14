@@ -19,6 +19,7 @@ local Remarkable = Generic:new{
     canHWInvert = no,
     home_dir = "/home/root",
 }
+
 local Remarkable1 = Remarkable:new{
     model = "reMarkable",
     mt_width = 767, -- unscaled_size_check: ignore
@@ -28,6 +29,7 @@ local Remarkable1 = Remarkable:new{
     input_buttons = "/dev/input/event2",
     powerd = "device/remarkable/powerd_rm1",
 }
+
 local Remarkable2 = Remarkable:new{
     model = "reMarkable 2",
     invertX = no,
@@ -39,18 +41,6 @@ local Remarkable2 = Remarkable:new{
     powerd = "device/remarkable/powerd_rm2",
 }
 
-local function isRM2()
-    local f = io.open("/sys/devices/soc0/machine")
-    if f then
-        local deviceType = f:read("*all") 
-        logger.info("device:", deviceType)
-
-        if deviceType == "reMarkable 2" then
-            return true
-        end
-    end
-    return false
-end
 
 local EV_ABS = 3
 local ABS_X = 00
@@ -84,6 +74,7 @@ local adjustAbsEvt = function(self, ev)
     end
 end
 
+
 function Remarkable:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
     self.powerd = require(self.powerd):new{device = self}
@@ -95,17 +86,18 @@ function Remarkable:init()
     self.input.open(self.input_wacom) -- Wacom
     self.input.open(self.input_ts) -- Touchscreen
     self.input.open(self.input_buttons) -- Buttons
-    
+
     self.input:registerEventAdjustHook(adjustAbsEvt)
 
     if self.invertX() then
-        self.input:registerEventAdjustHook(self.input.adjustTouchMirrorX,self.mt_width)
+        self.input:registerEventAdjustHook(self.input.adjustTouchMirrorX, self.mt_width)
     end
+
     local mt_scale_x = self.mt_width / screen_width
     local mt_scale_y = self.mt_height / screen_height
 
     self.input:registerEventAdjustHook(self.input.adjustTouchMirrorY, self.mt_height)
-    self.input:registerEventAdjustHook(self.input.adjustTouchScale,{x=mt_scale_x, y=mt_scale_y })
+    self.input:registerEventAdjustHook(self.input.adjustTouchScale, {x=mt_scale_x, y=mt_scale_y})
 
     -- USB plug/unplug, battery charge/not charging are generated as fake events
     self.input.open("fake_events")
@@ -153,10 +145,15 @@ function Remarkable:reboot()
     os.execute("systemctl reboot")
 end
 
-if isRM2() then
+local f = io.open("/sys/devices/soc0/machine")
+if not f then error("missing sysfs entry for a remarkable") end
+
+local deviceType = f:read("*all") 
+if deviceType == "reMarkable 2" then
     if not os.getenv("RM2FB_SHIM") then
-        error("remarkabl 2 requires RM2FB to work")
+        error("reMarkable2 requires RM2FB to work")
     end
+
     return Remarkable2
 else 
     return Remarkable1
