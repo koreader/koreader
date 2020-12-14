@@ -78,16 +78,11 @@ function OPDSParser:parse(text)
     text = text:gsub('<content type="xhtml">.-</content>', '')
     -- luxl doesn't handle XML comments, so strip them
     text = text:gsub("<!%-%-.-%-%->", "")
-    -- luxl prefers <br />, the other two forms are valid in HTML, but will kick luxl's ass
+    -- luxl is also particular about the syntax for self-closing, empty & orphaned tags...
+    text = text:gsub("<(%l+)/>", "<%1 />")
+    -- We also need to handle the slash-less variants for br & hr...
     text = text:gsub("<br>", "<br />")
-    text = text:gsub("<br/>", "<br />")
-    -- Same deal with hr
     text = text:gsub("<hr>", "<hr />")
-    text = text:gsub("<hr/>", "<hr />")
-    -- It's also allergic to orphaned <em/> (As opposed to a balanced <em></em> pair)...
-    text = text:gsub("<em/>", "")
-    -- Let's assume it might also happen to strong...
-    text = text:gsub("<strong/>", "")
     -- Some OPDS catalogs wrap text in a CDATA section, remove it as it causes parsing problems
     text = text:gsub("<!%[CDATA%[(.-)%]%]>", function (s)
         return s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;" } )
