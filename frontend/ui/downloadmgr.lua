@@ -14,7 +14,8 @@ Example:
                     -- reinitialize dialog
                 end)
             end,
-    }:chooseDir()
+        }:chooseDir()
+    end
 ]]
 
 local PathChooser = require("ui/widget/pathchooser")
@@ -37,10 +38,15 @@ end
 
 --- Displays a PathChooser widget for picking a (download) directory.
 -- @treturn string path chosen by the user
-function DownloadMgr:chooseDir()
-    local lastdir = G_reader_settings:readSetting("lastdir")
-    local download_dir = G_reader_settings:readSetting("download_dir")
-    local path = download_dir and util.realpath(download_dir .. "/..") or lastdir
+function DownloadMgr:chooseDir(dir)
+    local path
+    if not dir then
+        local lastdir = G_reader_settings:readSetting("lastdir")
+        local download_dir = G_reader_settings:readSetting("download_dir")
+        path = download_dir and util.realpath(download_dir .. "/..") or lastdir
+    else
+        path = dir
+    end
     local path_chooser = PathChooser:new{
         title = self.title or true, -- use default title if none provided
         select_directory = true,
