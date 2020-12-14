@@ -81,8 +81,7 @@ function OPDSParser:parse(text)
     -- luxl is also particular about the syntax for self-closing, empty & orphaned tags...
     text = text:gsub("<(%l+)/>", "<%1 />")
     -- We also need to handle the slash-less variants for br & hr...
-    text = text:gsub("<br>", "<br />")
-    text = text:gsub("<hr>", "<hr />")
+    text = text:gsub("<([bh]r)>", "<%1 />")
     -- Some OPDS catalogs wrap text in a CDATA section, remove it as it causes parsing problems
     text = text:gsub("<!%[CDATA%[(.-)%]%]>", function (s)
         return s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;" } )
