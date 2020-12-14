@@ -79,7 +79,7 @@ function OPDSParser:parse(text)
     -- luxl doesn't handle XML comments, so strip them
     text = text:gsub("<!%-%-.-%-%->", "")
     -- luxl is also particular about the syntax for self-closing, empty & orphaned tags...
-    text = text:gsub("<(%a+)/>", "<%1 />")
+    text = text:gsub("<(%l+)/>", "<%1 />")
     -- We also need to handle the slash-less variants for br & hr...
     text = text:gsub("<br>", "<br />")
     text = text:gsub("<hr>", "<hr />")
