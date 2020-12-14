@@ -483,14 +483,8 @@ function CalibreSearch:prompt(message)
         ok_text = _("Scan") .. " " .. rootdir,
         ok_callback = function()
             self.libraries = {}
-            self.last_scan = {}
-            self:findCalibre(rootdir)
-            local paths = ""
-            for i, dir in ipairs(self.last_scan) do
-                self.libraries[dir.path] = true
-                paths = paths .. "\n" .. i .. ": " .. dir.path
-            end
-            local count = #self.last_scan
+            local count, paths = self:scan(rootdir)
+
             -- append current wireless dir if it wasn't found on the scan
             -- this will happen if it is in a nested dir.
             local inbox_dir = G_reader_settings:readSetting("inbox_dir")
@@ -501,6 +495,15 @@ function CalibreSearch:prompt(message)
                     paths = paths .. "\n" .. count .. ": " .. inbox_dir
                 end
             end
+
+            -- append libraries in different volumes
+            local ok, sd_path = Device:hasExternalSD()
+            if ok then
+                local sd_count, sd_paths = self:scan(sd_path)
+                count = count + sd_count
+                paths = paths .. "\n" .. _("SD card") .. ": " .. sd_paths
+            end
+
             util.dumpTable(self.libraries, self.user_libraries)
             self:invalidateCache()
             self.books = self:getMetadata()
@@ -513,6 +516,17 @@ function CalibreSearch:prompt(message)
             UIManager:show(InfoMessage:new{ text = info_text })
         end,
     })
+end
+
+function CalibreSearch:scan(rootdir)
+    self.last_scan = {}
+    self:findCalibre(rootdir)
+    local paths = ""
+    for i, dir in ipairs(self.last_scan) do
+        self.libraries[dir.path] = true
+        paths = paths .. "\n" .. i .. ": " .. dir.path
+    end
+    return #self.last_scan, paths
 end
 
 -- find all calibre libraries under a given root dir

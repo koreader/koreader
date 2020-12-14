@@ -6,6 +6,7 @@
 local BD = require("ui/bidi")
 local CalibreMetadata = require("metadata")
 local ConfirmBox = require("ui/widget/confirmbox")
+local Device = require("device")
 local FFIUtil = require("ffi/util")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
@@ -165,7 +166,13 @@ end
 
 -- will callback initCalibreMQ if inbox is confirmed to be set
 function CalibreWireless:setInboxDir(host, port)
+    local force_chooser_dir
+    if Device:isAndroid() then
+        force_chooser_dir = Device.home_dir
+    end
+
     local calibre_device = self
+
     require("ui/downloadmgr"):new{
         onConfirm = function(inbox)
             local driver = CalibreMetadata:getDeviceInfo(inbox, "device_name")
@@ -200,7 +207,7 @@ Do you want to continue? ]]), driver),
                 save_and_resume()
             end
         end,
-    }:chooseDir()
+    }:chooseDir(force_chooser_dir)
 end
 
 function CalibreWireless:connect()
