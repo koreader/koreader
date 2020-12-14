@@ -59,8 +59,8 @@ end
 
 local Remarkable2 = Remarkable:new{
     model = "reMarkable 2",
-    mt_width = 1403,
-    mt_height = 1871,
+    mt_width = 1403, -- unscaled_size_check: ignore
+    mt_height = 1871, -- unscaled_size_check: ignore
     input_wacom = "/dev/input/event1",
     input_ts = "/dev/input/event2",
     input_buttons = "/dev/input/event0",
@@ -168,7 +168,6 @@ if not f then error("missing sysfs entry for a remarkable") end
 
 local deviceType = f:read("*line") 
 if deviceType == "reMarkable 2.0" then
-    logger.info("rm2 ", deviceType)
     if not os.getenv("RM2FB_SHIM") then
         error("reMarkable2 requires RM2FB to work (https://github.com/ddvk/remarkable2-framebuffer)")
     end
