@@ -5,7 +5,6 @@ local function yes() return true end
 local function no() return false end
 
 local Remarkable = Generic:new{
-    model = "reMarkable 2",
     isRemarkable = yes,
     hasKeys = yes,
     needsScreenRefreshAfterResume = no,
@@ -13,12 +12,45 @@ local Remarkable = Generic:new{
     canReboot = yes,
     canPowerOff = yes,
     isTouchDevice = yes,
+    invertX = yes,
     hasFrontlight = no,
     display_dpi = 226,
     -- Despite the SoC supporting it, it's finicky in practice (#6772)
     canHWInvert = no,
     home_dir = "/home/root",
 }
+local Remarkable1 = Remarkable:new{
+    model = "reMarkable",
+    mt_width = 767, -- unscaled_size_check: ignore
+    mt_height = 1023, -- unscaled_size_check: ignore
+    input_wacom = "/dev/input/event0",
+    input_ts = "/dev/input/event1",
+    input_buttons = "/dev/input/event2",
+    powerd = "device/remarkable/powerd_rm1",
+}
+local Remarkable2 = Remarkable:new{
+    model = "reMarkable 2",
+    invertX = no,
+    mt_width = 1403,
+    mt_height = 1871,
+    input_wacom = "/dev/input/event1",
+    input_ts = "/dev/input/event2",
+    input_buttons = "/dev/input/event0",
+    powerd = "device/remarkable/powerd_rm2",
+}
+
+local function isRM2()
+    local f = io.open("/sys/devices/soc0/machine")
+    if f then
+        local deviceType = f:read("*all") 
+        logger.info("device:", deviceType)
+
+        if deviceType == "reMarkable 2" then
+            return true
+        end
+    end
+    return false
+end
 
 local EV_ABS = 3
 local ABS_X = 00
@@ -32,22 +64,12 @@ local wacom_width = 15725 -- unscaled_size_check: ignore
 local wacom_height = 20967 -- unscaled_size_check: ignore
 local wacom_scale_x = screen_width / wacom_width
 local wacom_scale_y = screen_height / wacom_height
-local mt_width = 1403 -- unscaled_size_check: ignore
-local mt_height = 1871 -- unscaled_size_check: ignore
-local mt_scale_x = screen_width / mt_width
-local mt_scale_y = screen_height / mt_height
 local TimeVal = require('ui/timeval')
-local adjustTouchEvt = function(self, ev)
+
+local adjustAbsEvt = function(self, ev)
+    -- for the rm2
     ev.time = TimeVal:now()
     if ev.type == EV_ABS then
-        -- Mirror X and scale up both X & Y as touch input is different res from
-        -- display
-        if ev.code == ABS_MT_POSITION_X then
-            ev.value = ev.value * mt_scale_x
-        end
-        if ev.code == ABS_MT_POSITION_Y then
-            ev.value = (mt_height - ev.value) * mt_scale_y
-        end
         -- The Wacom input layer is non-multi-touch and
         -- uses its own scaling factor.
         -- The X and Y coordinates are swapped, and the (real) Y
@@ -64,16 +86,27 @@ end
 
 function Remarkable:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
-    self.powerd = require("device/remarkable/powerd"):new{device = self}
+    self.powerd = require(self.powerd):new{device = self}
     self.input = require("device/input"):new{
         device = self,
         event_map = require("device/remarkable/event_map"),
     }
 
-    self.input.open("/dev/input/event1") -- Wacom
-    self.input.open("/dev/input/event2") -- Touchscreen
-    self.input.open("/dev/input/event0") -- Buttons
-    self.input:registerEventAdjustHook(adjustTouchEvt)
+    self.input.open(self.input_wacom) -- Wacom
+    self.input.open(self.input_ts) -- Touchscreen
+    self.input.open(self.input_buttons) -- Buttons
+    
+    self.input:registerEventAdjustHook(adjustAbsEvt)
+
+    if self.invertX() then
+        self.input:registerEventAdjustHook(self.input.adjustTouchMirrorX,self.mt_width)
+    end
+    local mt_scale_x = self.mt_width / screen_width
+    local mt_scale_y = self.mt_height / screen_height
+
+    self.input:registerEventAdjustHook(self.input.adjustTouchMirrorY, self.mt_height)
+    self.input:registerEventAdjustHook(self.input.adjustTouchScale,{x=mt_scale_x, y=mt_scale_y })
+
     -- USB plug/unplug, battery charge/not charging are generated as fake events
     self.input.open("fake_events")
 
@@ -120,5 +153,11 @@ function Remarkable:reboot()
     os.execute("systemctl reboot")
 end
 
-return Remarkable
-
+if isRM2() then
+    if not os.getenv("RM2FB_SHIM") then
+        error("remarkabl 2 requires RM2FB to work")
+    end
+    return Remarkable2
+else 
+    return Remarkable1
+end
