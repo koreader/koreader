@@ -6,6 +6,7 @@ local function no() return false end
 
 local Remarkable = Generic:new{
     isRemarkable = yes,
+    model = "reMarkable",
     hasKeys = yes,
     needsScreenRefreshAfterResume = no,
     hasOTAUpdates = yes,
@@ -21,24 +22,27 @@ local Remarkable = Generic:new{
 }
 
 local Remarkable1 = Remarkable:new{
-    model = "reMarkable",
     mt_width = 767, -- unscaled_size_check: ignore
     mt_height = 1023, -- unscaled_size_check: ignore
     input_wacom = "/dev/input/event0",
     input_ts = "/dev/input/event1",
     input_buttons = "/dev/input/event2",
-    powerd = "device/remarkable/powerd_rm1",
+    -- TODO: older firmware doesn't have the -0 on the end of the file path
+    battery_path = "/sys/class/power_supply/bq27441-0/capacity",
+    status_path = "/sys/class/power_supply/bq27441-0/status",
 }
 
 local Remarkable2 = Remarkable:new{
     model = "reMarkable 2",
+    home_dir = "/mnt/root",
     invertX = no,
     mt_width = 1403,
     mt_height = 1871,
     input_wacom = "/dev/input/event1",
     input_ts = "/dev/input/event2",
     input_buttons = "/dev/input/event0",
-    powerd = "device/remarkable/powerd_rm2",
+    battery_path = "/sys/class/power_supply/max77818_battery/capacity",
+    status_path = "/sys/class/power_supply/max77818-charger/status",
 }
 
 
@@ -77,7 +81,11 @@ end
 
 function Remarkable:init()
     self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg}
-    self.powerd = require(self.powerd):new{device = self}
+    self.powerd = require("device/remarkable/powerd"):new{
+        device = self,
+        capacity_file = self.battery_path,
+        status_file = self.status_path,
+    }
     self.input = require("device/input"):new{
         device = self,
         event_map = require("device/remarkable/event_map"),
