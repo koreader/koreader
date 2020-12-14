@@ -14,9 +14,9 @@ https://github.com/Templarian/MaterialDesignLight
 * appbar.arrrow.left.up
 * appbar.column.one
 * appbar.column.two
-* appbar.column.two.large
+* appbar.page.paragraphs
 * appbar.column.three
-* appbar.crop.large
+* appbar.crop
 * appbar.contrast
 * appbar.home
 * appbar.magnify.browse
@@ -25,10 +25,9 @@ https://github.com/Templarian/MaterialDesignLight
 * appbar.page.fit
 * appbar.page.text
 * appbar.plus
-* appbar.settings.large
 * appbar.settings
-* appbar.text.size.large
-* appbar.transform.rotate.right.large
+* appbar.text.size
+* appbar.transform.rotate.right
 * appbar.wifi
 * menu-icon
 * notice-question
