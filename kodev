@@ -780,7 +780,6 @@ TARGET:
                 ;;
             -r | --sane-return)
                 export SANE_RETURN=1
-                shift
                 ;;
             -H | --help)
                 echo "${RUN_HELP_MSG}"
