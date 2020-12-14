@@ -533,7 +533,6 @@ function OPDSBrowser:appendCatalog(item_url, username, password)
     if #new_table == 0 then return false end
 
     for _, item in ipairs(new_table) do
-        logger.dbg("item:", item)
         table.insert(self.item_table, item)
     end
     self.item_table.hrefs = new_table.hrefs
