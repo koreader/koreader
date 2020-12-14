@@ -1,12 +1,12 @@
 local BasePowerD = require("device/generic/powerd")
 
 -- TODO older firmware doesn't have the -0 on the end of the file path
-local base_path = '/sys/class/power_supply/bq27441-0/'
+local base_path = '/sys/class/power_supply/max77818'
 
 local Remarkable_PowerD = BasePowerD:new{
     is_charging = nil,
-    capacity_file = base_path .. 'capacity',
-    status_file = base_path .. 'status'
+    capacity_file = base_path .. '_battery/capacity',
+    status_file = base_path .. '-charger/status'
 }
 
 function Remarkable_PowerD:init()

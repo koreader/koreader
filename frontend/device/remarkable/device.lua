@@ -5,7 +5,7 @@ local function yes() return true end
 local function no() return false end
 
 local Remarkable = Generic:new{
-    model = "reMarkable",
+    model = "reMarkable 2",
     isRemarkable = yes,
     hasKeys = yes,
     needsScreenRefreshAfterResume = no,
@@ -17,7 +17,7 @@ local Remarkable = Generic:new{
     display_dpi = 226,
     -- Despite the SoC supporting it, it's finicky in practice (#6772)
     canHWInvert = no,
-    home_dir = "/mnt/root",
+    home_dir = "/home/root",
 }
 
 local EV_ABS = 3
@@ -32,16 +32,18 @@ local wacom_width = 15725 -- unscaled_size_check: ignore
 local wacom_height = 20967 -- unscaled_size_check: ignore
 local wacom_scale_x = screen_width / wacom_width
 local wacom_scale_y = screen_height / wacom_height
-local mt_width = 767 -- unscaled_size_check: ignore
-local mt_height = 1023 -- unscaled_size_check: ignore
+local mt_width = 1403 -- unscaled_size_check: ignore
+local mt_height = 1871 -- unscaled_size_check: ignore
 local mt_scale_x = screen_width / mt_width
 local mt_scale_y = screen_height / mt_height
+local TimeVal = require('ui/timeval')
 local adjustTouchEvt = function(self, ev)
+    ev.time = TimeVal:now()
     if ev.type == EV_ABS then
         -- Mirror X and scale up both X & Y as touch input is different res from
         -- display
         if ev.code == ABS_MT_POSITION_X then
-            ev.value = (mt_width - ev.value) * mt_scale_x
+            ev.value = ev.value * mt_scale_x
         end
         if ev.code == ABS_MT_POSITION_Y then
             ev.value = (mt_height - ev.value) * mt_scale_y
@@ -68,9 +70,9 @@ function Remarkable:init()
         event_map = require("device/remarkable/event_map"),
     }
 
-    self.input.open("/dev/input/event0") -- Wacom
-    self.input.open("/dev/input/event1") -- Touchscreen
-    self.input.open("/dev/input/event2") -- Buttons
+    self.input.open("/dev/input/event1") -- Wacom
+    self.input.open("/dev/input/event2") -- Touchscreen
+    self.input.open("/dev/input/event0") -- Buttons
     self.input:registerEventAdjustHook(adjustTouchEvt)
     -- USB plug/unplug, battery charge/not charging are generated as fake events
     self.input.open("fake_events")
