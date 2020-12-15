@@ -7,7 +7,7 @@ describe("ImageWidget module", function()
 
     it("should render without error", function()
         local imgw = ImageWidget:new{
-            file = "resources/icons/appbar.chevron.up.png"
+            file = "resources/koreader.png"
         }
         imgw:_render()
         assert(imgw._bb)

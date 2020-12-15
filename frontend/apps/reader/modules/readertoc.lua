@@ -567,7 +567,7 @@ function ReaderToc:onShowToc()
     local icon_size = math.floor(Screen:getHeight() / items_per_page * 2/5)
     local button_width = icon_size * 2
     self.expand_button = Button:new{
-        icon = "resources/icons/appbar.control.expand.png",
+        icon = "control.expand.svg",
         icon_rotation_angle = BD.mirroredUILayout() and 180 or 0,
         width = button_width,
         icon_width = icon_size,
@@ -577,7 +577,7 @@ function ReaderToc:onShowToc()
     }
 
     self.collapse_button = Button:new{
-        icon = "resources/icons/appbar.control.collapse.png",
+        icon = "control.collapse.svg",
         width = button_width,
         icon_width = icon_size,
         icon_height = icon_size,

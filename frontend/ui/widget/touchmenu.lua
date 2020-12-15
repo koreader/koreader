@@ -252,7 +252,7 @@ function TouchMenuBar:init()
     for k, v in ipairs(self.icons) do
         local ib = IconButton:new{
             show_parent = self.show_parent,
-            icon_file = v,
+            icon = v,
             width = icon_width,
             height = icon_height,
             callback = nil,
@@ -380,6 +380,11 @@ function TouchMenuBar:switchToTab(index)
     if index > #self.icon_widgets then
         index = #self.icon_widgets
     end
+    if self.menu.tab_item_table[index] and self.menu.tab_item_table[index].remember == false then
+        -- Don't auto-activate those that should not be
+        -- remembered (FM plus menu on non-touch devices)
+        index = 1
+    end
     self.icon_widgets[index].callback()
 end
 
@@ -461,8 +466,8 @@ function TouchMenu:init()
         align = "center",
     }
     -- group for page info
-    local chevron_left = "resources/icons/appbar.chevron.left.png"
-    local chevron_right = "resources/icons/appbar.chevron.right.png"
+    local chevron_left = "chevron.left.svg"
+    local chevron_right = "chevron.right.svg"
     if BD.mirroredUILayout() then
         chevron_left, chevron_right = chevron_right, chevron_left
     end
@@ -501,7 +506,7 @@ function TouchMenu:init()
     }
     local footer_width = self.width - self.padding*2
     local up_button = IconButton:new{
-        icon_file = "resources/icons/appbar.chevron.up.png",
+        icon = "chevron.up.svg",
         show_parent = self.show_parent,
         padding_left = math.floor(footer_width*0.33*0.1),
         padding_right = math.floor(footer_width*0.33*0.1),

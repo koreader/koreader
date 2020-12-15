@@ -100,7 +100,7 @@ function FileManager:init()
     self.show_parent = self.show_parent or self
     local icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE)
     local home_button = IconButton:new{
-        icon_file = "resources/icons/appbar.home.png",
+        icon = "home.svg",
         width = icon_size,
         height = icon_size,
         padding = Size.padding.default,
@@ -112,7 +112,7 @@ function FileManager:init()
     }
 
     local plus_button = IconButton:new{
-        icon_file = "resources/icons/appbar.plus.png",
+        icon = "plus.svg",
         width = icon_size,
         height = icon_size,
         padding = Size.padding.default,
@@ -340,7 +340,7 @@ function FileManager:init()
                                 --- @note: Lua 5.1 returns the raw return value from the os's system call. Counteract this madness.
                                 UIManager:show(InfoMessage:new{
                                     text = T(_("The script returned a non-zero status code: %1!"), bit.rshift(rv, 8)),
-                                    icon_file = "resources/info-warn.png",
+                                    icon = "notice-warning.svg",
                                 })
                             end
                         end)

@@ -10,6 +10,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local IconWidget = require("ui/widget/iconwidget")
 local ImageWidget = require("ui/widget/imagewidget")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -846,8 +847,8 @@ function MosaicMenu:_recalculateDimen()
         if corner_mark then
             corner_mark:free()
         end
-        corner_mark = ImageWidget:new{
-            file = "resources/icons/dogear.png",
+        corner_mark = IconWidget:new{
+            icon = "dogear.opaque.svg",
             rotation_angle = BD.mirroredUILayout() and 180 or 270,
             width = corner_mark_size,
             height = corner_mark_size,

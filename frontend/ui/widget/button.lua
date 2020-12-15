@@ -22,7 +22,7 @@ local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
-local ImageWidget = require("ui/widget/imagewidget")
+local IconWidget = require("ui/widget/iconwidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -77,8 +77,8 @@ function Button:init()
             face = Font:getFace(self.text_font_face, self.text_font_size)
         }
     else
-        self.label_widget = ImageWidget:new{
-            file = self.icon,
+        self.label_widget = IconWidget:new{
+            icon = self.icon,
             rotation_angle = self.icon_rotation_angle,
             dim = not self.enabled,
             width = self.icon_width,

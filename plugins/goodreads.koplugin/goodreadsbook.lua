@@ -202,7 +202,7 @@ function GoodreadsBook:genBookInfoGroup()
         })
     else
         table.insert(book_info_group, ImageWidget:new{
-            file = "resources/goodreadsnophoto.png",
+            file = "plugins/goodreads.koplugin/goodreadsnophoto.png",
             width = img_width,
             height = img_height,
         })

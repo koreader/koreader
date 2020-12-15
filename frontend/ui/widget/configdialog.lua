@@ -15,7 +15,7 @@ local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local IconButton = require("ui/widget/iconbutton")
-local ImageWidget = require("ui/widget/imagewidget")
+local IconWidget = require("ui/widget/iconwidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local RightContainer = require("ui/widget/container/rightcontainer")
@@ -498,12 +498,11 @@ function ConfigOption:init()
                 local underline_padding = - math.floor(0.05 * icon_size)
                 for d = 1, #self.options[c].item_icons do
                     local option_item = OptionIconItem:new{
-                        icon = ImageWidget:new{
-                            file = self.options[c].item_icons[d],
+                        icon = IconWidget:new{
+                            icon = self.options[c].item_icons[d],
                             dim = not enabled,
                             width = icon_size,
                             height = icon_size,
-                            scale_factor = 0, -- scale to fit width and height
                         },
                         underline_padding = underline_padding,
                         padding_left = d > 1 and horizontal_half_padding,
@@ -685,7 +684,7 @@ function MenuBar:init()
     for c = 1, #config_options do
         local menu_icon = IconButton:new{
             show_parent = self.config_dialog,
-            icon_file = config_options[c].icon,
+            icon = config_options[c].icon,
             width = icon_width,
             height = icon_height,
             callback = function()

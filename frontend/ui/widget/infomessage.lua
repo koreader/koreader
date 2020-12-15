@@ -31,6 +31,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local IconWidget = require("ui/widget/iconwidget")
 local ImageWidget = require("ui/widget/imagewidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local MovableContainer = require("ui/widget/container/movablecontainer")
@@ -57,7 +58,7 @@ local InfoMessage = InputContainer:new{
     image_height = nil,  -- The image height if image is used. Keep it nil to use original height.
     -- Whether the icon should be shown. If it is false, self.image will be ignored.
     show_icon = true,
-    icon_file = nil, -- use this file instead of "resources/info-i.png"
+    icon = "notice-info.svg",
     alpha = nil, -- if image or icon have an alpha channel (default to true for icons, false for images
     dismiss_callback = function() end,
     -- In case we'd like to use it to display some text we know a few more things about:
@@ -101,10 +102,8 @@ function InfoMessage:init()
                 alpha = self.alpha ~= nil and self.alpha or false, -- default to false
             }
         else
-            image_widget = ImageWidget:new{
-                file = self.icon_file or "resources/info-i.png",
-                width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
-                height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
+            image_widget = IconWidget:new{
+                icon = self.icon,
                 alpha = self.alpha == nil and true or self.alpha, -- default to true
             }
         end
