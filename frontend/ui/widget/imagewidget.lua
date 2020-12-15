@@ -156,6 +156,7 @@ function ImageWidget:_loadfile()
             -- hit cache
             self._bb = cache.bb
             self._bb_disposable = false -- don't touch or free a cached _bb
+            self._is_straight_alpha = cache.is_straight_alpha
         else
             if itype == "svg" then
                 local zoom
@@ -166,7 +167,10 @@ function ImageWidget:_loadfile()
                     width = self.width
                     height = self.height
                 end
-                self._bb = RenderImage:renderSVGImageFile(self.file, width, height, zoom)
+                -- If NanoSVG is used by renderSVGImageFile, we'll get self._is_straight_alpha=true,
+                -- and paintTo() must use alphablitFrom() instead of pmulalphablitFrom() (which is
+                -- fine for everything MuPDF renders out)
+                self._bb, self._is_straight_alpha = RenderImage:renderSVGImageFile(self.file, width, height, zoom)
             else
                 self._bb = RenderImage:renderImageFile(self.file, false, width, height)
                 if scale_for_dpi_here then
@@ -180,7 +184,10 @@ function ImageWidget:_loadfile()
                 self._bb_disposable = false -- don't touch or free a cached _bb
                 -- cache this image
                 logger.dbg("cache", hash)
-                cache = ImageCacheItem:new{ bb = self._bb }
+                cache = ImageCacheItem:new{
+                    bb = self._bb,
+                    is_straight_alpha = self._is_straight_alpha,
+                }
                 cache.size = cache.bb.stride * cache.bb.h
                 ImageCache:insert(hash, cache)
             end
@@ -374,7 +381,9 @@ function ImageWidget:paintTo(bb, x, y)
         local bbtype = self._bb:getType()
         if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then
             -- NOTE: MuPDF feeds us premultiplied alpha (and we don't care w/ GifLib, as alpha is all or nothing).
-            if Screen.sw_dithering and not self.is_icon then
+            if self._is_straight_alpha then -- but NanoSVG feeds us straight alpha
+                bb:alphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+            elseif Screen.sw_dithering and not self.is_icon then
                 bb:ditherpmulalphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
             else
                 bb:pmulalphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
