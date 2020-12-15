@@ -29,7 +29,6 @@ local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local Widget = require("ui/widget/widget")
 local logger = require("logger")
-local util  = require("util")
 
 -- DPI_SCALE can't change without a restart, so let's compute it now
 local function get_dpi_scale()
@@ -167,9 +166,7 @@ function ImageWidget:_loadfile()
                     width = self.width
                     height = self.height
                 end
-                -- local start_ts = require("ffi/util").getTimestamp() -- Uncomment for timing things
                 self._bb = RenderImage:renderSVGImageFile(self.file, width, height, zoom)
-                -- logger.info(string.format("  SVG rendering %.6f s", require("ffi/util").getDuration(start_ts)), self.file, zoom or "", width, height)
             else
                 self._bb = RenderImage:renderImageFile(self.file, false, width, height)
                 if scale_for_dpi_here then
