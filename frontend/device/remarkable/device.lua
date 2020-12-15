@@ -1,8 +1,10 @@
 local Generic = require("device/generic/device") -- <= look at this file!
+local TimeVal = require("ui/timeval")
 local logger = require("logger")
 
 local function yes() return true end
 local function no() return false end
+
 local EV_ABS = 3
 local ABS_X = 00
 local ABS_Y = 01
@@ -15,7 +17,6 @@ local wacom_width = 15725 -- unscaled_size_check: ignore
 local wacom_height = 20967 -- unscaled_size_check: ignore
 local wacom_scale_x = screen_width / wacom_width
 local wacom_scale_y = screen_height / wacom_height
-local TimeVal = require('ui/timeval')
 
 local Remarkable = Generic:new{
     isRemarkable = yes,
