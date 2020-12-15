@@ -111,7 +111,6 @@ function ReaderView:addWidgets()
             icon = "control.expand.svg",
             width = arrow_size,
             height = arrow_size,
-            alpha = true,
         }
     }
     self[1] = self.dogear
