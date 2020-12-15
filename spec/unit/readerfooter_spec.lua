@@ -3,6 +3,11 @@ describe("Readerfooter module", function()
     local purgeDir, Screen
     local tapFooterMenu
 
+    local function is_am()
+        -- Technically only an issue for 1 digit results from %-H, e.g., anything below 10:00 AM
+        return tonumber(os.date("%H")) < 10
+    end
+
     setup(function()
         require("commonrequire")
         package.unloadAll()
@@ -305,20 +310,25 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         local horizontal_margin = Screen:scaleBySize(10)*2
         footer:onUpdateFooter()
-        assert.is.same(370, footer.text_width)
+        -- Account for trimming of the leading 0 in the AM
+        local expected = is_am() and 362 or 370
+        assert.is.same(expected, footer.text_width)
         assert.is.same(600, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
-        assert.is.same(210, footer.progress_bar.width)
+        expected = is_am() and 218 or 210
+        assert.is.same(expected, footer.progress_bar.width)
 
         local old_screen_getwidth = Screen.getWidth
         Screen.getWidth = function() return 900 end
         footer:resetLayout()
-        assert.is.same(370, footer.text_width)
+        expected = is_am() and 362 or 370
+        assert.is.same(expected, footer.text_width)
         assert.is.same(900, footer.progress_bar.width
                             + footer.text_width
                             + horizontal_margin)
-        assert.is.same(510, footer.progress_bar.width)
+        expected = is_am() and 518 or 510
+        assert.is.same(expected, footer.progress_bar.width)
         Screen.getWidth = old_screen_getwidth
     end)
 
@@ -333,12 +343,16 @@ describe("Readerfooter module", function()
         }
         local footer = readerui.view.footer
         footer:onPageUpdate(1)
-        assert.are.same(202, footer.progress_bar.width)
-        assert.are.same(378, footer.text_width)
+        local expected = is_am() and 210 or 202
+        assert.are.same(expected, footer.progress_bar.width)
+        expected = is_am() and 370 or 378
+        assert.are.same(expected, footer.text_width)
 
         footer:onPageUpdate(100)
-        assert.are.same(178, footer.progress_bar.width)
-        assert.are.same(402, footer.text_width)
+        expected = is_am() and 186 or 178
+        assert.are.same(expected, footer.progress_bar.width)
+        expected = is_am() and 394 or 402
+        assert.are.same(expected, footer.text_width)
     end)
 
     it("should support chapter markers", function()

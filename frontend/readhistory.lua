@@ -263,10 +263,10 @@ function ReadHistory:removeItem(item, idx)
     self:ensureLastFile()
 end
 
-function ReadHistory:addItem(file)
+function ReadHistory:addItem(file, ts)
     assert(self ~= nil)
     if file ~= nil and lfs.attributes(file, "mode") == "file" then
-        local now = os.time()
+        local now = ts or os.time()
         table.insert(self.hist, 1, buildEntry(now, file))
         --- @todo (zijiehe): We do not need to sort if we can use binary insert and
         -- binary search.

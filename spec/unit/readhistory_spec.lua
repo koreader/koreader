@@ -5,7 +5,8 @@ describe("ReadHistory module", function()
     local mkdir
     local realpath
     local reload
-    local usleep
+    local lfs
+    local now = 61
 
     local function file(name)
         return joinPath(DataStorage:getDataDir(), name)
@@ -32,8 +33,12 @@ describe("ReadHistory module", function()
     end
 
     local function touch(filename)
+        -- Create file if need be
         local f = io.open(filename, "w")
         f:close()
+        -- Increment by 61s every time we're called
+        now = now + 61
+        lfs.touch(filename, now, now)
     end
 
     local function assert_item_is(h, i, name, fileRemoved)
@@ -55,7 +60,7 @@ describe("ReadHistory module", function()
         mkdir = require("libs/libkoreader-lfs").mkdir
         realpath = require("ffi/util").realpath
         reload = function() return package.reload("readhistory") end
-        usleep = require("ffi/util").usleep
+        lfs = require("libs/libkoreader-lfs")
 
         mkdir(joinPath(DataStorage:getDataDir(), "testdata"))
     end)
@@ -73,9 +78,10 @@ describe("ReadHistory module", function()
         rm(file("history.lua"))
         local h = reload()
         touch(test_file("a"))
-        h:addItem(test_file("a"))
+        now = now + 61
+        h:addItem(test_file("a"), now)
         h = reload()
-        assert.is.same(#h.hist, 1)
+        assert.is.same(1, #h.hist)
         assert_item_is(h, 1, "a")
         rm(test_file("a"))
     end)
@@ -85,11 +91,11 @@ describe("ReadHistory module", function()
         touch(test_file("a"))
         touch(test_file("b"))
         local h = reload()
-        h:addItem(test_file("a"))
-        usleep(1000000)
+        now = now + 61
+        h:addItem(test_file("a"), now)
         touch(legacy_history_file("b"))
         h = reload()
-        assert.is.same(#h.hist, 2)
+        assert.is.same(2, #h.hist)
         assert_item_is(h, 1, "b")
         assert_item_is(h, 2, "a")
         rm(legacy_history_file("b"))
@@ -106,19 +112,17 @@ describe("ReadHistory module", function()
         touch(test_file("e"))
         touch(test_file("f"))
         local h = reload()
-        h:addItem(test_file("f"))
-        usleep(1000000)
+        now = now + 61
+        h:addItem(test_file("f"), now)
         touch(legacy_history_file("c"))
-        usleep(1000000)
         touch(legacy_history_file("b"))
-        usleep(1000000)
-        h:addItem(test_file("d"))
-        usleep(1000000)
+        now = now + 61
+        h:addItem(test_file("d"), now)
         touch(legacy_history_file("a"))
-        usleep(1000000)
-        h:addItem(test_file("e"))
+        now = now + 61
+        h:addItem(test_file("e"), now)
         h = reload()
-        assert.is.same(#h.hist, 6)
+        assert.is.same(6, #h.hist)
         assert_item_is(h, 1, "e")
         assert_item_is(h, 2, "a")
         assert_item_is(h, 3, "d")
@@ -141,8 +145,9 @@ describe("ReadHistory module", function()
         rm(file("history.lua"))
         touch(test_file("a"))
         local h = reload()
-        h:addItem(test_file("a"))
-        assert.is.same(#h.hist, 1)
+        now = now + 61
+        h:addItem(test_file("a"), now)
+        assert.is.same(1, #h.hist)
         assert_item_is(h, 1, "a")
         rm(test_file("a"))
     end)
@@ -153,9 +158,12 @@ describe("ReadHistory module", function()
         touch(test_file("b"))
         touch(test_file("c"))
         local h = reload()
-        h:addItem(test_file("a"))
-        h:addItem(test_file("b"))
-        h:addItem(test_file("c"))
+        -- NOTE: Identical timestamps to neuter sorting by mtime, instead alphabetical order kicks in (c.f., ReadHistory:_sort)
+        --       This goes for basically the rest of the tests.
+        now = now + 61
+        h:addItem(test_file("a"), now)
+        h:addItem(test_file("b"), now)
+        h:addItem(test_file("c"), now)
         h:removeItem(h.hist[1])
         assert_item_is(h, 1, "b")
         assert_item_is(h, 2, "c")
@@ -172,9 +180,10 @@ describe("ReadHistory module", function()
         touch(test_file("b"))
         touch(test_file("c"))
         local h = reload()
-        h:addItem(test_file("a"))
-        h:addItem(test_file("b"))
-        h:addItem(test_file("c"))
+        now = now + 61
+        h:addItem(test_file("a"), now)
+        h:addItem(test_file("b"), now)
+        h:addItem(test_file("c"), now)
         h:removeItem(h.hist[2])
         assert_item_is(h, 1, "a")
         assert_item_is(h, 2, "c")
@@ -189,9 +198,10 @@ describe("ReadHistory module", function()
         touch(test_file("b"))
         touch(test_file("c"))
         local h = reload()
-        h:addItem(test_file("a"))
-        h:addItem(test_file("b"))
-        h:addItem(test_file("c"))
+        now = now + 61
+        h:addItem(test_file("a"), now)
+        h:addItem(test_file("b"), now)
+        h:addItem(test_file("c"), now)
         h:removeItem(h.hist[3])
         assert_item_is(h, 1, "a")
         assert_item_is(h, 2, "b")
@@ -209,10 +219,11 @@ describe("ReadHistory module", function()
         touch(test_file("c"))
         touch(test_file("d"))
         local h = reload()
-        h:addItem(test_file("a"))
-        h:addItem(test_file("b"))
-        h:addItem(test_file("c"))
-        h:addItem(test_file("d"))
+        now = now + 61
+        h:addItem(test_file("a"), now)
+        h:addItem(test_file("b"), now)
+        h:addItem(test_file("c"), now)
+        h:addItem(test_file("d"), now)
         h:removeItem(h.hist[3])  -- remove c
         h:removeItem(h.hist[2])  -- remove b
         assert_item_is(h, 1, "a")
@@ -231,11 +242,12 @@ describe("ReadHistory module", function()
         touch(test_file("d"))
         touch(test_file("e"))
         local h = reload()
-        h:addItem(test_file("a"))
-        h:addItem(test_file("b"))
-        h:addItem(test_file("c"))
-        h:addItem(test_file("d"))
-        h:addItem(test_file("e"))
+        now = now + 61
+        h:addItem(test_file("a"), now)
+        h:addItem(test_file("b"), now)
+        h:addItem(test_file("c"), now)
+        h:addItem(test_file("d"), now)
+        h:addItem(test_file("e"), now)
         h:removeItem(h.hist[2])  -- remove b
         h:removeItem(h.hist[2])  -- remove c
         h:removeItem(h.hist[3])  -- remove e
@@ -253,12 +265,15 @@ describe("ReadHistory module", function()
         touch(test_file("a"))
         touch(test_file("b"))
         local h = reload()
-        h:addItem(test_file("b"))
-        h:addItem(test_file("b"))
+        now = now + 61
+        h:addItem(test_file("b"), now)
+        now = now + 61
+        h:addItem(test_file("b"), now)
         touch(legacy_history_file("a"))
-        h:addItem(test_file("a"))  -- ensure a is before b
+        now = now + 61
+        h:addItem(test_file("a"), now)  -- ensure a is before b
         h = reload()
-        assert.is.same(#h.hist, 2)
+        assert.is.same(2, #h.hist)
         assert_item_is(h, 1, "a")
         assert_item_is(h, 2, "b")
 
@@ -293,16 +308,17 @@ describe("ReadHistory module", function()
         touch(test_file("a"))
         touch(test_file("b"))
         local h = reload()
-        h:addItem(test_file("a"))
-        h:addItem(test_file("b"))
+        now = now + 61
+        h:addItem(test_file("a"), now)
+        h:addItem(test_file("b"), now)
         mv(file("history.lua"), file("history.backup"))
 
         h = reload()
-        assert.is.same(#h.hist, 0)
+        assert.is.same(0, #h.hist)
         mv(file("history.backup"), file("history.lua"))
         h:reload()
 
-        assert.is.same(#h.hist, 2)
+        assert.is.same(2, #h.hist)
         assert_item_is(h, 1, "a")
         assert_item_is(h, 2, "b")
 
@@ -316,13 +332,14 @@ describe("ReadHistory module", function()
         touch(test_file("a"))
         touch(test_file("b"))
         local h = reload()
-        h:addItem(test_file("a"))
-        h:addItem(test_file("b"))
+        now = now + 61
+        h:addItem(test_file("a"), now)
+        h:addItem(test_file("b"), now)
 
         rm(test_file("a"))
 
         h:reload()
-        assert.is.same(#h.hist, 1)
+        assert.is.same(1, #h.hist)
         assert_item_is(h, 1, "b")
 
         rm(test_file("b"))
@@ -334,13 +351,14 @@ describe("ReadHistory module", function()
         touch(test_file("a"))
         touch(test_file("b"))
         local h = reload()
-        h:addItem(test_file("a"))
-        h:addItem(test_file("b"))
+        now = now + 61
+        h:addItem(test_file("a"), now)
+        h:addItem(test_file("b"), now)
 
         rm(test_file("a"))
 
         h:reload()
-        assert.is.same(#h.hist, 2)
+        assert.is.same(2, #h.hist)
         assert_item_is(h, 1, "a", true)
         assert_item_is(h, 2, "b")
 
