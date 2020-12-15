@@ -30,7 +30,7 @@ function FileManagerMenu:init()
         },
         -- items in top menu
         filemanager_settings = {
-            icon = "appbar.cabinet.files.svg",
+            icon = "appbar.filebrowser.svg",
         },
         setting = {
             icon = "appbar.settings.svg",
@@ -39,7 +39,7 @@ function FileManagerMenu:init()
             icon = "appbar.tools.svg",
         },
         search = {
-            icon = "appbar.magnify.browse.svg",
+            icon = "appbar.search.svg",
         },
         main = {
             icon = "appbar.menu.svg",

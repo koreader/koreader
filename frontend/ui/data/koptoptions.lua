@@ -24,7 +24,7 @@ local KoptOptions = {
     prefix = 'kopt',
     needs_redraw_on_change = true,
     {
-        icon = "appbar.transform.rotate.right.svg",
+        icon = "appbar.rotation.svg",
         options = {
             {
                 name = "rotation_mode",
@@ -78,7 +78,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
         }
     },
     {
-        icon = "appbar.page.fit.svg",
+        icon = "appbar.pagefit.svg",
         options = {
             {
                 name = "zoom_overlap_h",
@@ -229,7 +229,7 @@ left to right or reverse, top to bottom or reverse.]]),
         }
     },
     {
-        icon = "appbar.page.paragraphs.svg",
+        icon = "appbar.pageview.svg",
         options = {
             {
                 name = "page_scroll",
@@ -313,7 +313,7 @@ The first option ("auto") tries to automatically align reflowed text as it is in
         }
     },
     {
-        icon = "appbar.page.text.svg",
+        icon = "appbar.textsize.svg",
         options = {
             {
                 name = "font_size",

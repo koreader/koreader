@@ -17,7 +17,7 @@ end
 local CreOptions = {
     prefix = 'copt',
     {
-        icon = "appbar.transform.rotate.right.svg",
+        icon = "appbar.rotation.svg",
         options = {
             {
                 name = "rotation_mode",
@@ -181,7 +181,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
         }
     },
     {
-        icon = "appbar.page.paragraphs.svg",
+        icon = "appbar.pageview.svg",
         options = {
             {
                 name = "view_mode",
@@ -286,7 +286,7 @@ Note that your selected font size is not affected by this setting.]]),
         }
     },
     {
-        icon = "appbar.text.size.svg",
+        icon = "appbar.textsize.svg",
         options = {
             {
                 name = "font_size",

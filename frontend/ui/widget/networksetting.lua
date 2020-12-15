@@ -117,9 +117,9 @@ function NetworkItem:init()
 
     local wifi_icon
     if string.find(self.info.flags, "WPA") then
-        wifi_icon = "wifi.secure.%d.medium.svg"
+        wifi_icon = "wifi.secure.%d.svg"
     else
-        wifi_icon = "wifi.open.%d.medium.svg"
+        wifi_icon = "wifi.open.%d.svg"
     end
     if self.info.signal_quality == 0 or self.info.signal_quality == 100 then
         wifi_icon = string.format(wifi_icon, self.info.signal_quality)

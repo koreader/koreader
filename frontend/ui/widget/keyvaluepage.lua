@@ -352,7 +352,7 @@ function KeyValuePage:init()
     -- return button
     --- @todo: alternative icon if BD.mirroredUILayout()
     self.page_return_arrow = Button:new{
-        icon = "arrow.left.up.svg",
+        icon = "back.top.svg",
         callback = function() self:onReturn() end,
         bordersize = 0,
         show_parent = self,

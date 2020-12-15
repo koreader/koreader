@@ -777,7 +777,7 @@ function Menu:init()
 
     -- return button
     self.page_return_arrow = Button:new{
-        icon = "arrow.left.up.svg",
+        icon = "back.top.svg",
         callback = function()
             if self.onReturn then self:onReturn() end
         end,

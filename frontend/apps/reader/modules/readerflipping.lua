@@ -11,7 +11,7 @@ local ReaderFlipping = InputContainer:new{
 function ReaderFlipping:init()
     local icon_size = Screen:scaleBySize(32)
     local widget = IconWidget:new{
-        icon = "appbar.book.open.svg",
+        icon = "book.opened.svg",
         width = icon_size,
         height = icon_size,
     }

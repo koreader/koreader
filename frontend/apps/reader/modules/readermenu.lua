@@ -26,10 +26,10 @@ function ReaderMenu:init()
         },
         -- items in top menu
         navi = {
-            icon = "appbar.page.corner.bookmark.svg",
+            icon = "appbar.navigation.svg",
         },
         typeset = {
-            icon = "appbar.page.text.svg",
+            icon = "appbar.typeset.svg",
         },
         setting = {
             icon = "appbar.settings.svg",
@@ -38,10 +38,10 @@ function ReaderMenu:init()
             icon = "appbar.tools.svg",
         },
         search = {
-            icon = "appbar.magnify.browse.svg",
+            icon = "appbar.search.svg",
         },
         filemanager = {
-            icon = "appbar.cabinet.files.svg",
+            icon = "appbar.filebrowser.svg",
             remember = false,
             callback = function()
                 self:onTapCloseMenu()
