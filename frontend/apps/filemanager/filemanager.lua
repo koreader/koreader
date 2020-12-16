@@ -481,9 +481,6 @@ function FileManager:setupLayout()
 end
 
 function FileManager:init()
-    print("FileManager:init")
-    print(debug.traceback())
-
     self:setupLayout()
 
     local screenshoter = Screenshoter:new{ prefix = 'FileManager' }
@@ -503,7 +500,6 @@ function FileManager:init()
     table.insert(self, ReaderWikipedia:new{ ui = self })
     table.insert(self, ReaderDeviceStatus:new{ ui = self })
     table.insert(self, DeviceListener:new{ ui = self })
-    print("Registering DeviceListener in FM")
 
     -- koreader plugins
     for _, plugin_module in ipairs(PluginLoader:loadPlugins()) do
