@@ -220,15 +220,15 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
     end
 end
 
---- Converts timestamp to an hour string
----- @int seconds number of seconds
----- @bool twelve_hour_clock
----- @treturn string hour string
---- @note: The MS CRT doesn't support either %l & %k, or the - format modifier (as they're not technically C99 or POSIX).
----        They are otherwise supported on Linux, BSD & Bionic, so, just special-case Windows...
----        We *could* arguably feed the os.date output to gsub("^0(%d)(.*)$", "%1%2"), but, while unlikely,
----        it's conceivable that a translator would put something other that the hour at the front of the string ;).
 if jit.os == "Windows" then
+    --- Converts timestamp to an hour string
+    ---- @int seconds number of seconds
+    ---- @bool twelve_hour_clock
+    ---- @treturn string hour string
+    ---- @note: The MS CRT doesn't support either %l & %k, or the - format modifier (as they're not technically C99 or POSIX).
+    ----        They are otherwise supported on Linux, BSD & Bionic, so, just special-case Windows...
+    ----        We *could* arguably feed the os.date output to gsub("^0(%d)(.*)$", "%1%2"), but, while unlikely,
+    ----        it's conceivable that a translator would put something other that the hour at the front of the string ;).
     function util.secondsToHour(seconds, twelve_hour_clock)
         if twelve_hour_clock then
             if os.date("%p", seconds) == "AM" then
