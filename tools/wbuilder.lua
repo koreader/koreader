@@ -271,7 +271,7 @@ touch_menu = TouchMenu:new{
     width = Screen:getWidth(),
     tab_item_table = {
         {
-            icon = "appbar.pokeball.svg",
+            icon = "appbar.pokeball",
             {
                 text = "item1",
                 callback = function() end,
@@ -310,7 +310,7 @@ touch_menu = TouchMenu:new{
             },
         },
         {
-            icon = "appbar.page.corner.bookmark.svg",
+            icon = "appbar.page.corner.bookmark",
             {
                 text = "item10",
                 callback = function() end,
@@ -321,7 +321,7 @@ touch_menu = TouchMenu:new{
             },
         },
         {
-            icon = "home.svg",
+            icon = "home",
             callback = function() DEBUG("hello world!") end
         }
     },

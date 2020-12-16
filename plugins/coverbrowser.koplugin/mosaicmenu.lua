@@ -848,7 +848,7 @@ function MosaicMenu:_recalculateDimen()
             corner_mark:free()
         end
         corner_mark = IconWidget:new{
-            icon = "dogear.opaque.svg",
+            icon = "dogear.opaque",
             rotation_angle = BD.mirroredUILayout() and 180 or 270,
             width = corner_mark_size,
             height = corner_mark_size,

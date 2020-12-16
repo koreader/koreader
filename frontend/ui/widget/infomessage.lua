@@ -58,7 +58,7 @@ local InfoMessage = InputContainer:new{
     image_height = nil,  -- The image height if image is used. Keep it nil to use original height.
     -- Whether the icon should be shown. If it is false, self.image will be ignored.
     show_icon = true,
-    icon = "notice-info.svg",
+    icon = "notice-info",
     alpha = nil, -- if image or icon have an alpha channel (default to true for icons, false for images
     dismiss_callback = function() end,
     -- In case we'd like to use it to display some text we know a few more things about:

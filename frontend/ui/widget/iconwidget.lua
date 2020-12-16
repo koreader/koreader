@@ -6,6 +6,7 @@ local DataStorage = require("datastorage")
 local ImageWidget = require("ui/widget/imagewidget")
 local Screen = require("device").screen
 
+-- Directories to look for icons by name, with any of the accepted suffixes
 local ICONS_DIRS = {}
 local user_icons_dir = DataStorage:getSettingsDir() .. "/icons"
 if lfs.attributes(user_icons_dir, "mode") == "directory" then
@@ -17,9 +18,14 @@ table.insert(ICONS_DIRS, "resources/icons/mdlight")
 table.insert(ICONS_DIRS, "resources/icons")
 table.insert(ICONS_DIRS, "resources")
 
-local ICONS_PATH = {}
+-- Supported icon suffixes
+local ICONS_EXTS = { ".svg", ".png" }
+
 -- Show this icon instead of crashing if we can't find any icon
 local ICON_NOT_FOUND = "resources/icons/icon-not-found.svg"
+
+-- Icon filepath location cache
+local ICONS_PATH = {}
 
 local IconWidget = ImageWidget:extend{
     -- The icon filename should be provided without any path
@@ -43,9 +49,14 @@ function IconWidget:init()
     if not self.file then
         -- Not yet seen, look for it
         for _, dir in ipairs(ICONS_DIRS) do
-            local path = dir .. "/" .. self.icon
-            if lfs.attributes(path, "mode") == "file" then
-                self.file = path
+            for __, ext in ipairs(ICONS_EXTS) do
+                local path = dir .. "/" .. self.icon .. ext
+                if lfs.attributes(path, "mode") == "file" then
+                    self.file = path
+                    break
+                end
+            end
+            if self.file then
                 break
             end
         end

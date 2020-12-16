@@ -30,19 +30,19 @@ function FileManagerMenu:init()
         },
         -- items in top menu
         filemanager_settings = {
-            icon = "appbar.filebrowser.svg",
+            icon = "appbar.filebrowser",
         },
         setting = {
-            icon = "appbar.settings.svg",
+            icon = "appbar.settings",
         },
         tools = {
-            icon = "appbar.tools.svg",
+            icon = "appbar.tools",
         },
         search = {
-            icon = "appbar.search.svg",
+            icon = "appbar.search",
         },
         main = {
-            icon = "appbar.menu.svg",
+            icon = "appbar.menu",
         },
     }
 
@@ -566,7 +566,7 @@ function FileManagerMenu:setUpdateItemTable()
         -- add a shortcut on non touch-device
         -- because this menu is not accessible otherwise
         self.menu_items.plus_menu = {
-            icon = "plus.svg",
+            icon = "plus",
             remember = false,
             callback = function()
                 self:onCloseFileManagerMenu()

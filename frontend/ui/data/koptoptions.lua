@@ -24,7 +24,7 @@ local KoptOptions = {
     prefix = 'kopt',
     needs_redraw_on_change = true,
     {
-        icon = "appbar.rotation.svg",
+        icon = "appbar.rotation",
         options = {
             {
                 name = "rotation_mode",
@@ -41,7 +41,7 @@ local KoptOptions = {
         }
     },
     {
-        icon = "appbar.crop.svg",
+        icon = "appbar.crop",
         options = {
             {
                 name = "trim_page",
@@ -78,7 +78,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
         }
     },
     {
-        icon = "appbar.pagefit.svg",
+        icon = "appbar.pagefit",
         options = {
             {
                 name = "zoom_overlap_h",
@@ -188,11 +188,11 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 name_text = _("Zoom to"),
                 -- toggle = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
                 item_icons = {
-                    "zoom.page.svg",
-                    "zoom.content.svg",
-                    "zoom.column.svg",
-                    "zoom.row.svg",
-                    "zoom.manual.svg",
+                    "zoom.page",
+                    "zoom.content",
+                    "zoom.column",
+                    "zoom.row",
+                    "zoom.manual",
                 },
                 alternate = false,
                 values = {4, 3, 2, 1, 0},
@@ -208,14 +208,14 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                     return config.zoom_mode_genus < 3
                 end,
                 item_icons = {
-                    "direction.LRTB.svg",
-                    "direction.TBLR.svg",
-                    "direction.LRBT.svg",
-                    "direction.BTLR.svg",
-                    "direction.BTRL.svg",
-                    "direction.RLBT.svg",
-                    "direction.TBRL.svg",
-                    "direction.RLTB.svg",
+                    "direction.LRTB",
+                    "direction.TBLR",
+                    "direction.LRBT",
+                    "direction.BTLR",
+                    "direction.BTRL",
+                    "direction.RLBT",
+                    "direction.TBRL",
+                    "direction.RLTB",
                 },
                 alternate = false,
                 values = {7, 6, 5, 4, 3, 2, 1, 0},
@@ -229,7 +229,7 @@ left to right or reverse, top to bottom or reverse.]]),
         }
     },
     {
-        icon = "appbar.pageview.svg",
+        icon = "appbar.pageview",
         options = {
             {
                 name = "page_scroll",
@@ -287,11 +287,11 @@ left to right or reverse, top to bottom or reverse.]]),
                 --- @translators Text alignment. Options given as icons: left, right, center, justify.
                 name_text = _("Alignment"),
                 item_icons = {
-                    "align.auto.svg",
-                    "align.left.svg",
-                    "align.center.svg",
-                    "align.right.svg",
-                    "align.justify.svg",
+                    "align.auto",
+                    "align.left",
+                    "align.center",
+                    "align.right",
+                    "align.justify",
                 },
                 values = {-1,0,1,2,3},
                 default_value = DKOPTREADER_CONFIG_JUSTIFICATION,
@@ -313,7 +313,7 @@ The first option ("auto") tries to automatically align reflowed text as it is in
         }
     },
     {
-        icon = "appbar.textsize.svg",
+        icon = "appbar.textsize",
         options = {
             {
                 name = "font_size",
@@ -391,7 +391,7 @@ Some of the other settings are only available when reflow mode is enabled.]]),
         }
     },
     {
-        icon = "appbar.contrast.svg",
+        icon = "appbar.contrast",
         options = {
             {
                 name = "contrast",
@@ -445,7 +445,7 @@ This can also be used to remove some gray background or to convert a grayscale o
         }
     },
     {
-        icon = "appbar.settings.svg",
+        icon = "appbar.settings",
         options = {
             {
                 name="doc_language",
@@ -530,9 +530,9 @@ This can also be used to remove some gray background or to convert a grayscale o
                 name = "max_columns",
                 name_text = _("Document Columns"),
                 item_icons = {
-                    "column.one.svg",
-                    "column.two.svg",
-                    "column.three.svg",
+                    "column.one",
+                    "column.two",
+                    "column.three",
                 },
                 values = {1,2,3},
                 default_value = DKOPTREADER_CONFIG_MAX_COLUMNS,

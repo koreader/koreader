@@ -17,7 +17,7 @@ end
 local CreOptions = {
     prefix = 'copt',
     {
-        icon = "appbar.rotation.svg",
+        icon = "appbar.rotation",
         options = {
             {
                 name = "rotation_mode",
@@ -59,7 +59,7 @@ Note that this may not be ensured under some conditions: in scroll mode, when a 
         }
     },
     {
-        icon = "appbar.crop.svg",
+        icon = "appbar.crop",
         options = {
             {
                 name = "h_page_margins",
@@ -181,7 +181,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
         }
     },
     {
-        icon = "appbar.pageview.svg",
+        icon = "appbar.pageview",
         options = {
             {
                 name = "view_mode",
@@ -286,7 +286,7 @@ Note that your selected font size is not affected by this setting.]]),
         }
     },
     {
-        icon = "appbar.textsize.svg",
+        icon = "appbar.textsize",
         options = {
             {
                 name = "font_size",
@@ -406,7 +406,7 @@ Note that your selected font size is not affected by this setting.]]),
         }
     },
     {
-        icon = "appbar.contrast.svg",
+        icon = "appbar.contrast",
         options = {
             {
                 name = "font_weight",
@@ -480,7 +480,7 @@ Note that your selected font size is not affected by this setting.]]),
         }
     },
     {
-        icon = "appbar.settings.svg",
+        icon = "appbar.settings",
         options = {
             {
                 name = "status_line",

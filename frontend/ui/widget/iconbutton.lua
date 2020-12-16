@@ -14,7 +14,7 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
 
 local IconButton = InputContainer:new{
-    icon = "notice-warning.svg",
+    icon = "notice-warning",
     dimen = nil,
     -- show_parent is used for UIManager:setDirty, so we can trigger repaint
     show_parent = nil,

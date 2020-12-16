@@ -80,7 +80,7 @@ function MultiConfirmBox:init()
     local content = HorizontalGroup:new{
         align = "center",
         IconWidget:new{
-            icon = "notice-question.svg",
+            icon = "notice-question",
         },
         HorizontalSpan:new{ width = Size.span.horizontal_default },
         TextBoxWidget:new{

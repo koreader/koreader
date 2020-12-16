@@ -33,7 +33,7 @@ function ReaderDogear:setupDogear(new_dogear_size)
         self[1] = RightContainer:new{
             dimen = Geom:new{w = Screen:getWidth(), h = self.dogear_size},
             IconWidget:new{
-                icon = "dogear.opaque.svg",
+                icon = "dogear.opaque",
                 rotation_angle = BD.mirroredUILayout() and 90 or 0,
                 width = self.dogear_size,
                 height = self.dogear_size,

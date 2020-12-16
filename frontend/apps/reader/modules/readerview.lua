@@ -108,7 +108,7 @@ function ReaderView:addWidgets()
     self.arrow = AlphaContainer:new{
         alpha = 0.6,
         IconWidget:new{
-            icon = "control.expand.svg",
+            icon = "control.expand",
             width = arrow_size,
             height = arrow_size,
         }

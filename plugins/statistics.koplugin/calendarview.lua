@@ -465,10 +465,10 @@ function CalendarView:init()
     end
 
     -- group for page info
-    local chevron_left = "chevron.left.svg"
-    local chevron_right = "chevron.right.svg"
-    local chevron_first = "chevron.first.svg"
-    local chevron_last = "chevron.last.svg"
+    local chevron_left = "chevron.left"
+    local chevron_right = "chevron.right"
+    local chevron_first = "chevron.first"
+    local chevron_last = "chevron.last"
     if BD.mirroredUILayout() then
         chevron_left, chevron_right = chevron_right, chevron_left
         chevron_first, chevron_last = chevron_last, chevron_first

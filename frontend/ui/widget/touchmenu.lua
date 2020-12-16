@@ -466,8 +466,8 @@ function TouchMenu:init()
         align = "center",
     }
     -- group for page info
-    local chevron_left = "chevron.left.svg"
-    local chevron_right = "chevron.right.svg"
+    local chevron_left = "chevron.left"
+    local chevron_right = "chevron.right"
     if BD.mirroredUILayout() then
         chevron_left, chevron_right = chevron_right, chevron_left
     end
@@ -506,7 +506,7 @@ function TouchMenu:init()
     }
     local footer_width = self.width - self.padding*2
     local up_button = IconButton:new{
-        icon = "chevron.up.svg",
+        icon = "chevron.up",
         show_parent = self.show_parent,
         padding_left = math.floor(footer_width*0.33*0.1),
         padding_right = math.floor(footer_width*0.33*0.1),

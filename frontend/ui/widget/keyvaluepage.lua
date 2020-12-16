@@ -352,16 +352,16 @@ function KeyValuePage:init()
     -- return button
     --- @todo: alternative icon if BD.mirroredUILayout()
     self.page_return_arrow = Button:new{
-        icon = "back.top.svg",
+        icon = "back.top",
         callback = function() self:onReturn() end,
         bordersize = 0,
         show_parent = self,
     }
     -- group for page info
-    local chevron_left = "chevron.left.svg"
-    local chevron_right = "chevron.right.svg"
-    local chevron_first = "chevron.first.svg"
-    local chevron_last = "chevron.last.svg"
+    local chevron_left = "chevron.left"
+    local chevron_right = "chevron.right"
+    local chevron_first = "chevron.first"
+    local chevron_last = "chevron.last"
     if BD.mirroredUILayout() then
         chevron_left, chevron_right = chevron_right, chevron_left
         chevron_first, chevron_last = chevron_last, chevron_first
