@@ -375,28 +375,29 @@ function ImageWidget:paintTo(bb, x, y)
         h = size.h
     }
     logger.dbg("blitFrom", x, y, self._offset_x, self._offset_y, size.w, size.h)
-    -- (Don't dither when rendering our icons)
+    local do_alpha = false
     if self.alpha == true then
         -- Only actually try to alpha-blend if the image really has an alpha channel...
         local bbtype = self._bb:getType()
         if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then
-            -- NOTE: MuPDF feeds us premultiplied alpha (and we don't care w/ GifLib, as alpha is all or nothing).
-            if self._is_straight_alpha then -- but NanoSVG feeds us straight alpha
-                bb:alphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
-            elseif Screen.sw_dithering and not self.is_icon then
+            do_alpha = true
+        end
+    end
+    if do_alpha then
+        -- NOTE: MuPDF feeds us premultiplied alpha (and we don't care w/ GifLib, as alpha is all or nothing),
+        -- but NanoSVG feeds us straight alpha
+        if self._is_straight_alpha then
+            -- todo: if Screen.sw_dithering then use bb:ditheralphablitFrom() when it's available
+            bb:alphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+        else
+            if Screen.sw_dithering then
                 bb:ditherpmulalphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
             else
                 bb:pmulalphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
             end
-        else
-            if Screen.sw_dithering and not self.is_icon then
-                bb:ditherblitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
-            else
-                bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
-            end
         end
     else
-        if Screen.sw_dithering and not self.is_icon then
+        if Screen.sw_dithering then
             bb:ditherblitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
         else
             bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
