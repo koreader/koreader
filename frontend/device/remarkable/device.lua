@@ -168,12 +168,16 @@ local f = io.open("/sys/devices/soc0/machine")
 if not f then error("missing sysfs entry for a remarkable") end
 
 local deviceType = f:read("*line") 
+f:close()
+
+logger.info("deviceType: ", deviceType)
+
 if deviceType == "reMarkable 2.0" then
     if not os.getenv("RM2FB_SHIM") then
         error("reMarkable2 requires RM2FB to work (https://github.com/ddvk/remarkable2-framebuffer)")
     end
 
     return Remarkable2
-else 
+else
     return Remarkable1
 end
