@@ -387,7 +387,7 @@ function ImageWidget:paintTo(bb, x, y)
         -- NOTE: MuPDF feeds us premultiplied alpha (and we don't care w/ GifLib, as alpha is all or nothing),
         -- but NanoSVG feeds us straight alpha
         if self._is_straight_alpha then
-            -- todo: if Screen.sw_dithering then use bb:ditheralphablitFrom() when it's available
+            --- @todo if Screen.sw_dithering then use bb:ditheralphablitFrom() when it's available
             bb:alphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
         else
             if Screen.sw_dithering then
