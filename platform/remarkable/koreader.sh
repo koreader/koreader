@@ -1,11 +1,19 @@
 #!/bin/sh
 export LC_ALL="en_US.UTF-8"
-
 # working directory of koreader
 KOREADER_DIR="${0%/*}"
 
 # we're always starting from our working directory
 cd "${KOREADER_DIR}" || exit
+
+# reMarkable 2 check
+if [ "reMarkable 2.0" == "$(</sys/devices/soc0/machine)" ]; then
+    if [ -z $RM2FB_SHIM ]; then
+        echo "reMarkable 2 requires RM2FB to work, visit https://github.com/ddvk/remarkable2-framebuffer for instructions how to setup"
+        exit 1
+    fi
+    export KO_DONT_GRAB_INPUT=1
+fi
 
 # update to new version from OTA directory
 ko_update_check() {
