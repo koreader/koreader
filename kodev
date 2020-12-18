@@ -8,21 +8,21 @@ is_mac() {
 }
 
 CURDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VERSION=$(git describe HEAD)
+VERSION="$(git describe HEAD)"
 # Only append date if we're not on a whole version, like v2018.11
-if echo "${VERSION}" | grep -; then
-    VERSION=${VERSION}_$(git describe HEAD | xargs git show -s --format=format:"%cd" --date=short)
+if echo "${VERSION}" | grep -q -- "-"; then
+    VERSION="${VERSION}_$(git describe HEAD | xargs git show -s --format=format:"%cd" --date=short)"
 fi
 
 # Default Android build to arm.
 ANDROID_ARCH="${ANDROID_ARCH:-arm}"
 
 # Default to Android 4.0+; required for NDK 15 but with a custom NDK the strict minimum is 9.
-NDKABI=${NDKABI:-14}
+NDKABI="${NDKABI:-14}"
 export NDKABI
 
 # Default android flavor
-ANDROID_FLAVOR=${ANDROID_FLAVOR:-rocks}
+ANDROID_FLAVOR="${ANDROID_FLAVOR:-rocks}"
 export ANDROID_FLAVOR
 
 function assert_ret_zero() {
@@ -46,7 +46,7 @@ function check_submodules() {
 function gnuplot_wrapper() {
     # inspired by https://gist.github.com/nicolasazrak/32d68ed6c845a095f75f037ecc2f0436
     trap capture_ctrl_c INT
-    TEMP_DIR=$(mktemp --directory /tmp/tmp.koreaderXXX)
+    TEMP_DIR="$(mktemp --directory /tmp/tmp.koreaderXXX)"
     LOG="${TEMP_DIR}/memory.log"
     SCRIPT_PNG="${TEMP_DIR}/script_png.p"
     SCRIPT_SHOW="${TEMP_DIR}/script_show.p"
@@ -139,8 +139,9 @@ function setup_env() {
     fi
     EMU_DIR="${files[${idx}]}/koreader"
     export EMU_DIR
-    LD_LIBRARY_PATH=$(realpath "${EMU_DIR}")/libs:${LD_LIBRARY_PATH}
-    export LD_LIBRARY_PATH
+    KO_LD_LIBRARY_PATH="$(realpath "${EMU_DIR}")/libs:${LD_LIBRARY_PATH}"
+    # Don't export it to avoid messing with tools (e.g., debuggers).
+    # We'll pass it to LuaJIT via env
 }
 
 function kodev-fetch-thirdparty() {
@@ -174,16 +175,29 @@ usage: build <OPTIONS> <TARGET>
 
 OPTIONS:
 
-    -v, --verbose   Build in verbose mode.
-    --debug         include debugging symbols (default for emulator)
-    --no-debug      no debugging symbols (default for target devices)
+    -v, --verbose   make the buildsystem more verbose
+    -d, --debug     include debugging symbols (default for emulator)
+    -n, --no-debug  no debugging symbols (default for target devices)
 
 TARGET:
 ${SUPPORTED_TARGETS}"
 
-    while [[ "${1}" == '-'* ]]; do
-        PARAM=$(echo "${1}" | awk -F= '{print $1}')
-        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+    declare opt
+    declare -r E_OPTERR=85
+    declare -r short_opts="vhnd"
+    declare -r long_opts="verbose,help,no-debug,debug"
+
+    if ! opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}"); then
+        echo "${BUILD_HELP_MSG}"
+        exit ${E_OPTERR}
+    fi
+
+    eval set -- "${opt}"
+
+    while true; do
+        PARAM="${1}"
+        # Support using an = assignment with short options (e.g., -f=blah instead of -f blah).
+        VALUE="${2/#=/}"
         case "${PARAM}" in
             -v | --verbose)
                 export VERBOSE=1
@@ -192,22 +206,26 @@ ${SUPPORTED_TARGETS}"
                 echo "${BUILD_HELP_MSG}"
                 exit 0
                 ;;
-            --no-debug)
+            -n | --no-debug)
                 export KODEBUG=
                 KODEBUG_NO_DEFAULT=1
                 ;;
-            --debug)
+            -d | --debug)
                 export KODEBUG=1
                 KODEBUG_NO_DEFAULT=1
+                ;;
+            --)
+                break
                 ;;
             *)
                 echo "ERROR: unknown option \"${PARAM}\""
                 echo "${BUILD_HELP_MSG}"
-                exit 1
+                exit 8
                 ;;
         esac
-        shift 1
+        shift
     done
+    shift
 
     check_submodules
     case "${1}" in
@@ -314,26 +332,43 @@ usage: clean <TARGET>
 TARGET:
 ${SUPPORTED_TARGETS}"
 
-    while [[ "${1}" == '-'* ]]; do
-        PARAM=$(echo "${1}" | awk -F= '{print $1}')
-        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+    declare opt
+    declare -r E_OPTERR=85
+    declare -r short_opts="nd"
+    declare -r long_opts="no-debug,debug"
+
+    if ! opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}"); then
+        echo "${CLEAN_HELP_MSG}"
+        exit ${E_OPTERR}
+    fi
+
+    eval set -- "${opt}"
+
+    while true; do
+        PARAM="${1}"
+        # Support using an = assignment with short options (e.g., -f=blah instead of -f blah).
+        VALUE="${2/#=/}"
         case "${PARAM}" in
-            --no-debug)
+            -n | --no-debug)
                 export KODEBUG=
                 KODEBUG_NO_DEFAULT=1
                 ;;
-            --debug)
+            -d | --debug)
                 export KODEBUG=1
                 KODEBUG_NO_DEFAULT=1
+                ;;
+            --)
+                break
                 ;;
             *)
                 echo "ERROR: unknown option \"${PARAM}\""
                 echo "${BUILD_HELP_MSG}"
-                exit 1
+                exit 8
                 ;;
         esac
-        shift 1
+        shift
     done
+    shift
 
     case "${1}" in
         -h | --help)
@@ -394,8 +429,9 @@ ${SUPPORTED_TARGETS}"
             make TARGET=win32 clean
             ;;
         *)
-            if [ -z "${KODEBUG_NO_DEFAULT}" ]; then # no explicit --debug / --no-debug
-                # builds a debug build by default, like kodev-run
+            if [ -z "${KODEBUG_NO_DEFAULT}" ]; then
+                # No explicit --debug / --no-debug
+                # Builds a debug build by default, like kodev-run
                 export KODEBUG=1
             fi
 
@@ -412,8 +448,9 @@ usage: release <OPTIONS> <TARGET>
 
 OPTIONS:
 
-    --debug               debug-enabled release (for remote gdb)
-    --ignore-translation  do not fetch translation for release
+    -d, --debug               debug-enabled release (for remote gdb)
+    -i, --ignore-translation  do not fetch translation for release
+    -v, --verbose             make the buildsystem more verbose
 
 TARGET:
 ${SUPPORTED_RELEASE_TARGETS}"
@@ -422,16 +459,30 @@ ${SUPPORTED_RELEASE_TARGETS}"
         exit 1
     }
 
+    # Defaults
     ignore_translation=0
 
-    while [[ "${1}" == '-'* ]]; do
-        PARAM=$(echo "${1}" | awk -F= '{print $1}')
-        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+    declare opt
+    declare -r E_OPTERR=85
+    declare -r short_opts="divh"
+    declare -r long_opts="debug,ignore-translation,verbose,help"
+
+    if ! opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}"); then
+        echo "${RELEASE_HELP_MSG}"
+        exit ${E_OPTERR}
+    fi
+
+    eval set -- "${opt}"
+
+    while true; do
+        PARAM="${1}"
+        # Support using an = assignment with short options (e.g., -f=blah instead of -f blah).
+        VALUE="${2/#=/}"
         case "${PARAM}" in
-            --debug)
+            -d | --debug)
                 export KODEBUG=1
                 ;;
-            --ignore-translation)
+            -i | --ignore-translation)
                 ignore_translation=1
                 ;;
             -v | --verbose)
@@ -441,14 +492,18 @@ ${SUPPORTED_RELEASE_TARGETS}"
                 echo "${RELEASE_HELP_MSG}"
                 exit 0
                 ;;
+            --)
+                break
+                ;;
             *)
                 echo "ERROR: unknown option \"${PARAM}\""
                 echo "${RELEASE_HELP_MSG}"
                 exit 1
                 ;;
         esac
-        shift 1
+        shift
     done
+    shift
 
     check_submodules
     if [ "${ignore_translation}" -eq 0 ]; then
@@ -496,7 +551,7 @@ ${SUPPORTED_RELEASE_TARGETS}"
             }
             ANDROID_HOME=$(dirname "$(dirname "$(command -v android)")")
             export ANDROID_HOME
-            export PATH=${PATH}:${NDK}
+            export PATH="${PATH}:${NDK}"
             make TARGET=android update
             ;;
         pocketbook)
@@ -554,52 +609,74 @@ usage: run <OPTIONS> <TARGET>
 
 OPTIONS:
 
-    -h=X, --screen-height=X  set height of the emulator screen (default: 720)
-    -w=X, --screen-width=X   set width of the emulator screen (default: 540)
-    -d=X, --screen-dpi=X     set DPI of the emulator screen (default: 160)
-    --no-build               run reader without rebuilding
-    --no-debug               no debugging symbols (requires rebuilding)
-    --disable-touch          use this if you want to simulate keyboard only devices
-    -s=FOO --simulate=FOO    simulate dimension and other specs for a given device model
-                             supported model: kobo-aura-one, kindle3, hidpi
-    --gdb=X                  run with debugger (default: nemiver)
-    --graph                  graph memory use (requires gnuplot)
-    --valgrind=X             run with valgrind (default: valgrind --trace-children=yes)
+    -h X, --screen-height=X  set height of the emulator screen (default: 720)
+    -w X, --screen-width=X   set width of the emulator screen (default: 540)
+    -d X, --screen-dpi=X     set DPI of the emulator screen (default: 160)
+    -b, --no-build           run reader without rebuilding
+    -n, --no-debug           no debugging symbols (requires rebuilding)
+    -t, --disable-touch      use this if you want to simulate keyboard only devices
+    -s FOO --simulate=FOO    simulate dimension and other specs for a given device model
+                             supported model: hidpi, kobo-forma, kobo-aura-one, kobo-clara, kindle-paperwhite, kobo-h2o, legacy-paperwhite, kindle
+    -g X, --gdb=X            run with debugger (default: nemiver)
+    -p, --graph              graph memory use (requires gnuplot)
+    -v X, --valgrind=X       run with valgrind (default: \"valgrind --tool=memcheck --trace-children=yes --leak-check=full --track-origins=yes --show-reachable=yes\")
+    -c, --callgrind          run with valgrind's callgrind (valgrind --tool=callgrind --trace-children=yes)
+    -r, --sane-return        force KOReader to exit sanely, instead of calling os.exit. This ensures a saner teardown of the Lua state. (enabled by default when running under valgrind/gdb).
 
 TARGET:
 
     android         install and run KOReader on an Android device connected through ADB
     "
+
+    # NOTE: Speaking of Valgrind, if your libdrm/mesa isn't built w/ valgrind markings, there's a Valgrind suppression file for AMD cards in the tools folder.
+    #       Just append --suppressions=${PWD/tools/valgrind_amd.supp to your valgrind command.
+
+    # Defaults
     screen_width=540
     screen_height=720
     export KODEBUG=1
-    while [[ "${1}" == '-'* ]]; do
-        PARAM=$(echo "${1}" | awk -F= '{print $1}')
-        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+
+    declare opt
+    declare -r E_OPTERR=85
+    declare -r short_opts="tbng::pv::cw:h:d:s:rH"
+    declare -r long_opts="disable-touch,no-build,gdb::,graph,valgrind::,callgrind,screen-width:,screen-height:,screen-dpi:,simulate:,sane-return,help"
+
+    if ! opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}"); then
+        echo "${RUN_HELP_MSG}"
+        exit ${E_OPTERR}
+    fi
+
+    eval set -- "${opt}"
+
+    while true; do
+        PARAM="${1}"
+        # Support using an = assignment with short options (e.g., -f=blah instead of -f blah).
+        VALUE="${2/#=/}"
         case "${PARAM}" in
-            --disable-touch)
+            -t | --disable-touch)
                 export DISABLE_TOUCH=1
                 ;;
-            --no-build)
+            -b | --no-build)
                 no_build=1
                 ;;
-            --no-debug)
+            -n | --no-debug)
                 export KODEBUG=
                 ;;
-            --gdb)
+            -g | --gdb)
+                export SANE_RETURN=1
                 if [ -n "${VALUE}" ]; then
-                    gdb=${VALUE}
+                    gdb="${VALUE}"
                 else
                     # Try to use friendly defaults for gdb
                     if command -v nemiver >/dev/null; then
                         # Nemiver is a nice GUI
-                        gdb=nemiver
+                        gdb="nemiver"
                     elif command -v ddd >/dev/null; then
                         # DDD is a slightly less nice GUI
-                        gdb=ddd
+                        gdb="ddd"
                     elif command -v cgdb >/dev/null; then
                         # cgdb is a nice curses-based gdb front
-                        gdb=cgdb
+                        gdb="cgdb"
                     elif command -v gdb >/dev/null; then
                         # gdb -tui is a slightly less nice terminal user interface
                         gdb="gdb -tui"
@@ -608,49 +685,87 @@ TARGET:
                         exit 1
                     fi
                 fi
+                shift
                 ;;
-            --graph)
+            -p | --graph)
                 graph_memory=1
                 ;;
-            --valgrind)
+            -v | --valgrind)
+                export SANE_RETURN=1
                 if [ -n "${VALUE}" ]; then
-                    valgrind=${VALUE}
+                    valgrind="${VALUE}"
                 else
                     # Try to use sensible defaults for valgrind
                     if command -v valgrind >/dev/null; then
-                        valgrind="valgrind --trace-children=yes"
+                        valgrind="valgrind --tool=memcheck --trace-children=yes --leak-check=full --track-origins=yes --show-reachable=yes"
                     else
                         echo "Couldn't find valgrind."
                         exit 1
                     fi
                 fi
+                shift
+                ;;
+            -c | --callgrind)
+                export SANE_RETURN=1
+                # Try to use sensible defaults for valgrind
+                if command -v valgrind >/dev/null; then
+                    valgrind="valgrind --tool=callgrind --trace-children=yes"
+                else
+                    echo "Couldn't find valgrind."
+                    exit 1
+                fi
                 ;;
             -w | --screen-width)
                 screen_width=${VALUE}
+                shift
                 ;;
             -h | --screen-height)
                 # simple numeric check due to overlap between -h for help and height
                 if [ -n "${VALUE##*[!0-9]*}" ]; then
                     screen_height=${VALUE}
                 else
+                    echo "ERROR: Invalid value: \"${VALUE}\""
                     echo "${RUN_HELP_MSG}"
                     exit 1
                 fi
+                shift
                 ;;
             -d | --screen-dpi)
                 screen_dpi=${VALUE}
+                shift
                 ;;
             -s | --simulate)
-                device_model=${VALUE}
+                device_model="${VALUE}"
                 case "${device_model}" in
-                    kindle3)
+                    kindle)
                         screen_width=600
                         screen_height=800
+                        screen_dpi=167
+                        ;;
+                    legacy-paperwhite)
+                        screen_width=758
+                        screen_height=1024
+                        screen_dpi=212
+                        ;;
+                    kobo-forma)
+                        screen_width=1440
+                        screen_height=1920
+                        screen_dpi=300
                         ;;
                     kobo-aura-one)
                         screen_width=1404
                         screen_height=1872
                         screen_dpi=300
+                        ;;
+                    kobo-clara | kindle-paperwhite)
+                        screen_width=1072
+                        screen_height=1448
+                        screen_dpi=300
+                        ;;
+                    kobo-h2o)
+                        screen_width=1080
+                        screen_height=1429
+                        screen_dpi=265
                         ;;
                     hidpi)
                         screen_width=1500
@@ -661,19 +776,27 @@ TARGET:
                         echo "ERROR: spec unknown for ${device_model}."
                         ;;
                 esac
+                shift
                 ;;
-            --help)
+            -r | --sane-return)
+                export SANE_RETURN=1
+                ;;
+            -H | --help)
                 echo "${RUN_HELP_MSG}"
                 exit 0
+                ;;
+            --)
+                break
                 ;;
             *)
                 echo "ERROR: unknown option \"${PARAM}\""
                 echo "${RUN_HELP_MSG}"
-                exit 1
+                exit 8
                 ;;
         esac
         shift
     done
+    shift
 
     case "${1}" in
         android)
@@ -718,35 +841,49 @@ TARGET:
                 gnuplot_wrapper "--parent $$" "reader.lua"
             fi
 
+            if [ -n "${SANE_RETURN}" ]; then
+                KOREADER_ARGS="-d -t"
+            else
+                KOREADER_ARGS="-d"
+            fi
+
+            KOREADER_COMMAND="env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./reader.lua ${KOREADER_ARGS}"
+
             # run with catchsegv by default when it is available
             # see https://github.com/koreader/koreader/issues/2878#issuecomment-326796777
             if command -v catchsegv >/dev/null; then
-                CATCHSEGV=$(command -v catchsegv)
-            fi
-
-            KOREADER_COMMAND="${CATCHSEGV} ./reader.lua -d"
-
-            if [ -n "${gdb}" ]; then
-                KOREADER_COMMAND="${gdb} ./luajit reader.lua -d"
+                KOREADER_COMMAND="$(command -v catchsegv) ${KOREADER_COMMAND}"
             fi
 
             if [ -n "${valgrind}" ]; then
-                KOREADER_COMMAND="${valgrind} ./luajit reader.lua -d"
+                KOREADER_COMMAND="${valgrind} env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./luajit reader.lua ${KOREADER_ARGS}"
             fi
 
             echo "[*] Running KOReader with arguments: $*..."
             pushd "${EMU_DIR}" && {
                 if [ $# -lt 1 ]; then
-                    args=${CURDIR}/test
+                    args="${CURDIR}/test"
                 else
                     args="$*"
                     [[ "${args}" != /* ]] && args="${CURDIR}/${args}"
                 fi
-                KOREADER_COMMAND="${KOREADER_COMMAND} ${args}"
+
+                if [ -n "${gdb}" ]; then
+                    # We don't want to stack valgrind/catchsegv on top of GDB ;).
+                    if [[ "${gdb}" == gdb* ]]; then
+                        # The standard CLI needs a little hand holding to properly pass arguments to the process it'll monitor
+                        KOREADER_COMMAND="${gdb} --args env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./luajit reader.lua ${KOREADER_ARGS} ${args}"
+                    else
+                        KOREADER_COMMAND="${gdb} env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./luajit reader.lua ${KOREADER_ARGS} ${args}"
+                    fi
+                else
+                    KOREADER_COMMAND="${KOREADER_COMMAND} ${args}"
+                fi
 
                 RETURN_VALUE=85
                 while [ "${RETURN_VALUE}" -eq 85 ]; do
-                    EMULATE_READER_W=${screen_width} EMULATE_READER_H=${screen_height} EMULATE_READER_DPI=${screen_dpi} \
+                    # shellcheck disable=SC2086
+                    env EMULATE_READER_W="${screen_width}" EMULATE_READER_H="${screen_height}" EMULATE_READER_DPI="${screen_dpi}" \
                         ${KOREADER_COMMAND}
                     RETURN_VALUE=$?
                 done
@@ -755,6 +892,8 @@ TARGET:
             if [ -n "${graph_memory}" ]; then
                 capture_ctrl_c
             fi
+
+            exit ${RETURN_VALUE}
             ;;
     esac
 }
@@ -767,35 +906,55 @@ usage: test <OPTIONS> [front|base] <TEST_NAME>
 
 OPTIONS:
 
-    --tags=TAGS     only run tests with given tags
-    --no-debug      no debugging symbols (default for target devices)
+    -p, --graph         graph memory use (requires gnuplot)
+    -n, --no-debug      no debugging symbols (default for target devices)
+    -t, --tags=TAGS     only run tests with given tags
     "
-    while [[ "${1}" == '-'* ]]; do
-        PARAM=$(echo "${1}" | awk -F= '{print $1}')
-        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+
+    declare opt
+    declare -r E_OPTERR=85
+    declare -r short_opts="pt:nh"
+    declare -r long_opts="graph,tags:,no-debug,help"
+
+    if ! opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}"); then
+        echo "${TEST_HELP_MSG}"
+        exit ${E_OPTERR}
+    fi
+
+    eval set -- "${opt}"
+
+    while true; do
+        PARAM="${1}"
+        # Support using an = assignment with short options (e.g., -f=blah instead of -f blah).
+        VALUE="${2/#=/}"
         case "${PARAM}" in
-            --graph)
+            -p | --graph)
                 graph_memory=1
                 ;;
-            --no-debug)
+            -n | --no-debug)
                 export KODEBUG=
                 KODEBUG_NO_DEFAULT=1
                 ;;
-            --tags)
+            -t | --tags)
                 opts="--tags=${VALUE}"
+                shift
                 ;;
             -h | --help)
                 echo "${TEST_HELP_MSG}"
                 exit 0
                 ;;
+            --)
+                break
+                ;;
             *)
                 echo "ERROR: unknown option \"${PARAM}\""
                 echo "${TEST_HELP_MSG}"
-                exit 1
+                exit 8
                 ;;
         esac
         shift
     done
+    shift
 
     [ $# -lt 1 ] && {
         echo "${TEST_HELP_MSG}"
@@ -822,7 +981,8 @@ OPTIONS:
         fi
 
         echo "Running tests in" "${test_path}"
-        busted --lua="./luajit" "${opts}" \
+        env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" \
+            busted --lua="./luajit" "${opts}" \
             --output=gtest \
             --lpath="${test_path_basedir}/?.lua" \
             --exclude-tags=notest "${test_path}"
@@ -835,23 +995,39 @@ usage: cov <OPTIONS>
 
 OPTIONS:
 
-    --show-previous     show coverage stats from previous run
-    --full              show full coverage report (down to each line)
-    --no-debug          no debugging symbols (default for target devices)
+    -f, --full              show full coverage report (down to each line)
+    -s, --show-previous     show coverage stats from previous run
+    -n, --no-debug          no debugging symbols (default for target devices)
     "
+
+    # Defaults
     show_full=0
     show_previous=0
-    while [[ "${1}" == '-'* ]]; do
-        PARAM=$(echo "${1}" | awk -F= '{print $1}')
-        VALUE=$(echo "${1}" | awk -F= '{print $2}')
+
+    declare opt
+    declare -r E_OPTERR=85
+    declare -r short_opts="fsn"
+    declare -r long_opts="full,show-previous,no-debug"
+
+    if ! opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}"); then
+        echo "${COV_HELP_MSG}"
+        exit ${E_OPTERR}
+    fi
+
+    eval set -- "${opt}"
+
+    while true; do
+        PARAM="${1}"
+        # Support using an = assignment with short options (e.g., -f=blah instead of -f blah).
+        VALUE="${2/#=/}"
         case "${PARAM}" in
-            --full)
+            -f | --full)
                 show_full=1
                 ;;
-            --show-previous)
+            -s | --show-previous)
                 show_previous=1
                 ;;
-            --no-debug)
+            -n | --no-debug)
                 export KODEBUG=
                 KODEBUG_NO_DEFAULT=1
                 ;;
@@ -859,14 +1035,18 @@ OPTIONS:
                 echo "${COV_HELP_MSG}"
                 exit 0
                 ;;
+            --)
+                break
+                ;;
             *)
                 echo "ERROR: unknown option \"${PARAM}\""
                 echo "${COV_HELP_MSG}"
-                exit 1
+                exit 8
                 ;;
         esac
         shift
     done
+    shift
 
     set -e
     check_submodules && kodev-build
@@ -877,7 +1057,8 @@ OPTIONS:
         test_path="./spec/${target}/unit"
         if [ "${show_previous}" -eq 0 ]; then
             echo "Running tests in" ${test_path}
-            busted --lua="./luajit" \
+            env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" \
+                busted --lua="./luajit" \
                 --sort-files \
                 -o "./spec/${target}/unit/verbose_print" \
                 --coverage \
@@ -915,7 +1096,7 @@ TARGET:
             exit 0
             ;;
         android)
-            adb logcat 'luajit-launcher:D KOReader:D *:S'
+            adb logcat 'KOReader:I ActivityManager:* AndroidRuntime:* DEBUG:* *:F'
             ;;
         *)
             echo "Unsupported target: $1."
@@ -941,6 +1122,7 @@ Supported commands:
     check               Run luacheck static-analysis
     cov                 Run busted tests for coverage
     wbuilder            Run wbuilder.lua script (useful for building new UI widget)
+    prompt              Run a LuaJIT shell within KOReader's environment
 "
 [ $# -lt 1 ] && {
     echo "Missing command."
@@ -991,20 +1173,21 @@ case "${1}" in
     prompt)
         kodev-build
         pushd "${EMU_DIR}" && {
-            ./luajit -i setupkoenv.lua
+            env LD_LIBRARY_PATH="${KO_LD_LIBRARY_PATH}" \
+                ./luajit -i setupkoenv.lua
         } && popd || exit
         ;;
     log)
         shift 1
         kodev-log "$@"
         ;;
-    --help | -h)
+    -h | --help)
         echo "${HELP_MSG}"
         exit 0
         ;;
     *)
         echo "Unknown command: $1."
         echo "${HELP_MSG}"
-        exit 1
+        exit 8
         ;;
 esac
