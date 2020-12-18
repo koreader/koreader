@@ -167,7 +167,7 @@ end
 local f = io.open("/sys/devices/soc0/machine")
 if not f then error("missing sysfs entry for a remarkable") end
 
-local deviceType = f:read("*line") 
+local deviceType = f:read("*line")
 f:close()
 
 logger.info("deviceType: ", deviceType)
