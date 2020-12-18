@@ -222,13 +222,15 @@ function ReaderUI:init()
                 document = self.document,
             })
         end
-        -- activity indicator when some configurations take long take to affect
-        self:registerModule("activityindicator", ReaderActivityIndicator:new{
-            dialog = self.dialog,
-            view = self.view,
-            ui = self,
-            document = self.document,
-        })
+        -- activity indicator for when some settings take time to take effect (Kindle under KPV)
+        if not ReaderActivityIndicator:isStub() then
+            self:registerModule("activityindicator", ReaderActivityIndicator:new{
+                dialog = self.dialog,
+                view = self.view,
+                ui = self,
+                document = self.document,
+            })
+        end
     end
     -- for page specific controller
     if self.document.info.has_pages then

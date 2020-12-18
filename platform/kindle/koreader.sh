@@ -236,7 +236,7 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
         FW_VERSION="$(grep '^Kindle 5' /etc/prettyversion.txt 2>&1 | sed -n -r 's/^(Kindle)([[:blank:]]*)([[:digit:]\.]*)(.*?)$/\3/p')"
         # NOTE: We want to disable the status bar (at the very least). Unfortunately, the soft hide/unhide method doesn't work properly anymore since FW 5.6.5...
         if [ "$(version "${FW_VERSION}")" -ge "$(version "5.6.5")" ]; then
-            PILLOW_HARD_DISABLED="yes"
+            export PILLOW_HARD_DISABLED="yes"
             # FIXME: So we resort to killing pillow completely on FW >= 5.6.5...
             logmsg "Disabling pillow . . ."
             lipc-set-prop com.lab126.pillow disableEnablePillow disable
@@ -262,7 +262,7 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
             logmsg "Hiding the status bar . . ."
             # NOTE: One more great find from eureka (http://www.mobileread.com/forums/showpost.php?p=2454141&postcount=34)
             lipc-set-prop com.lab126.pillow interrogatePillow '{"pillowId": "default_status_bar", "function": "nativeBridge.hideMe();"}'
-            PILLOW_SOFT_DISABLED="yes"
+            export PILLOW_SOFT_DISABLED="yes"
         fi
         # NOTE: We don't need to sleep at all if we've already SIGSTOPped awesome ;)
         if [ "${NO_SLEEP}" = "no" ] && [ "${AWESOME_STOPPED}" = "no" ]; then
