@@ -68,6 +68,9 @@ describe("Evernote plugin module", function()
     }
 
     end)
+    teardown(function()
+        readerui:onClose()
+    end)
 
     it("should write clippings to txt file", function ()
         local file_mock = mock( {

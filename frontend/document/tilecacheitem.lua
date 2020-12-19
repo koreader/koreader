@@ -15,7 +15,7 @@ end
 function TileCacheItem:dump(filename)
     logger.dbg("dumping tile cache to", filename, self.excerpt)
     return serial.dump(self.size, self.excerpt, self.pageno,
-            self.bb.w, self.bb.h, self.bb.stride, self.bb:getType(),
+            self.bb.w, self.bb.h, tonumber(self.bb.stride), self.bb:getType(),
             Blitbuffer.tostring(self.bb), filename)
 end
 

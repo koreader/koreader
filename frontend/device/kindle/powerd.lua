@@ -125,13 +125,6 @@ function KindlePowerD:isChargingHW()
     return is_charging == 1
 end
 
-function KindlePowerD:__gc()
-    if self.lipc_handle then
-        self.lipc_handle:close()
-        self.lipc_handle = nil
-    end
-end
-
 function KindlePowerD:_readFLIntensity()
     return self:read_int_file(self.fl_intensity_file)
 end
@@ -158,6 +151,14 @@ function KindlePowerD:toggleSuspend()
         self.lipc_handle:set_int_property("com.lab126.powerd", "powerButton", 1)
     else
         os.execute("powerd_test -p")
+    end
+end
+
+--- @fixme: This won't ever fire, as KindlePowerD is already a metatable on a plain table.
+function KindlePowerD:__gc()
+    if self.lipc_handle then
+        self.lipc_handle:close()
+        self.lipc_handle = nil
     end
 end
 

@@ -4,36 +4,37 @@ local DataStorage = require("datastorage")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
 local FFIUtil = require("ffi/util")
+local InfoMessage = require("ui/widget/infomessage")
 local RenderImage = require("ui/renderimage")
 local SQ3 = require("lua-ljsqlite3/init")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
+local zstd = require("ffi/zstd")
 local _ = require("gettext")
 local N_ = _.ngettext
 local T = FFIUtil.template
 
--- Util functions needed by this plugin, but that may be added to existing base/ffi/ files
-local xutil = require("xutil")
-
 -- Database definition
-local BOOKINFO_DB_VERSION = "2-20170701"
+local BOOKINFO_DB_VERSION = 20201210
 local BOOKINFO_DB_SCHEMA = [[
-    -- For caching book cover and metadata
+    -- To cache book cover and metadata
     CREATE TABLE IF NOT EXISTS bookinfo (
         -- Internal book cache id
-        -- (not to be used to identify a book, it may change for a same book)
+        -- (not to be used to identify a book, it may change)
         bcid                INTEGER PRIMARY KEY AUTOINCREMENT,
 
         -- File location and filename
         directory           TEXT NOT NULL, -- split by dir/name so we can get all files in a directory
-        filename            TEXT NOT NULL, -- and can implement pruning of no more existing files
+        filename            TEXT NOT NULL, -- and can implement pruning of deleted files
+        filesize            INTEGER,       -- size in bytes at most recent extraction time
+        filemtime           INTEGER,       -- mtime at most recent extraction time
 
         -- Extraction status and result
-        in_progress         INTEGER,  -- 0 (done), >0 : nb of tries (to avoid re-doing extractions that crashed us)
+        in_progress         INTEGER,  -- 0 (done), >0 : nb of tries (to avoid retrying failed extractions forever)
         unsupported         TEXT,     -- NULL if supported / reason for being unsupported
-        cover_fetched       TEXT,     -- NULL / 'Y' = action of fetching cover was made (whether we got one or not)
+        cover_fetched       TEXT,     -- NULL / 'Y' = we tried to fetch a cover (but we may not have gotten one)
         has_meta            TEXT,     -- NULL / 'Y' = has metadata (title, authors...)
         has_cover           TEXT,     -- NULL / 'Y' = has cover image (cover_*)
         cover_sizetag       TEXT,     -- 'M' (Medium, MosaicMenuItem) / 's' (small, ListMenuItem)
@@ -50,6 +51,7 @@ local BOOKINFO_DB_SCHEMA = [[
         title               TEXT,
         authors             TEXT,
         series              TEXT,
+        series_index        REAL,
         language            TEXT,
         keywords            TEXT,
         description         TEXT,
@@ -57,26 +59,24 @@ local BOOKINFO_DB_SCHEMA = [[
         -- Cover image
         cover_w             INTEGER,  -- blitbuffer width
         cover_h             INTEGER,  -- blitbuffer height
-        cover_btype         INTEGER,  -- blitbuffer type (internal)
-        cover_bpitch        INTEGER,  -- blitbuffer pitch (internal)
-        cover_datalen       INTEGER,  -- blitbuffer uncompressed data length
-        cover_dataz         BLOB      -- blitbuffer data compressed with zlib
+        cover_bb_type       INTEGER,  -- blitbuffer type (internal)
+        cover_bb_stride     INTEGER,  -- blitbuffer stride (internal)
+        cover_bb_data       BLOB      -- blitbuffer data compressed with zstd
     );
     CREATE UNIQUE INDEX IF NOT EXISTS dir_filename ON bookinfo(directory, filename);
 
-    -- For keeping track of DB schema version
+    -- To keep track of CoverBrowser settings
     CREATE TABLE IF NOT EXISTS config (
         key TEXT PRIMARY KEY,
         value TEXT
     );
-    -- this will not override previous version value, so we'll get the old one if old schema
-    INSERT OR IGNORE INTO config VALUES ('version', ']] .. BOOKINFO_DB_VERSION .. [[');
-
 ]]
 
 local BOOKINFO_COLS_SET = {
         "directory",
         "filename",
+        "filesize",
+        "filemtime",
         "in_progress",
         "unsupported",
         "cover_fetched",
@@ -89,15 +89,15 @@ local BOOKINFO_COLS_SET = {
         "title",
         "authors",
         "series",
+        "series_index",
         "language",
         "keywords",
         "description",
         "cover_w",
         "cover_h",
-        "cover_btype",
-        "cover_bpitch",
-        "cover_datalen",
-        "cover_dataz",
+        "cover_bb_type",
+        "cover_bb_stride",
+        "cover_bb_data",
     }
 
 local bookinfo_values_sql = {} -- for "VALUES (?, ?, ?,...)" insert sql part
@@ -150,16 +150,35 @@ function BookInfoManager:createDB()
     -- Less error cases to check if we do it that way
     -- Create it (noop if already there)
     db_conn:exec(BOOKINFO_DB_SCHEMA)
-    -- Check version (not updated by previous exec if already there)
-    local res = db_conn:exec("SELECT value FROM config where key='version';")
-    if res[1][1] ~= BOOKINFO_DB_VERSION then
-        logger.warn("BookInfo cache DB schema updated from version", res[1][1], "to version", BOOKINFO_DB_VERSION)
+    -- Check version
+    local db_version = tonumber(db_conn:rowexec("PRAGMA user_version;"))
+    if db_version < BOOKINFO_DB_VERSION then
+        logger.warn("BookInfo cache DB schema updated from version", db_version, "to version", BOOKINFO_DB_VERSION)
         logger.warn("Deleting existing", self.db_location, "to recreate it")
+
+        -- We'll try to preserve settings, though
+        self:loadSettings(db_conn)
+
         db_conn:close()
         os.remove(self.db_location)
+
         -- Re-create it
         db_conn = SQ3.open(self.db_location)
         db_conn:exec(BOOKINFO_DB_SCHEMA)
+
+        -- Restore non-deprecated settings
+        for k, v in pairs(self.settings) do
+            if k ~= "version" then
+                self:saveSetting(k, v, true)
+            end
+        end
+        self:loadSettings(db_conn)
+
+        -- Update version
+        db_conn:exec(string.format("PRAGMA user_version=%d;", BOOKINFO_DB_VERSION))
+
+        -- Say hi!
+        UIManager:show(InfoMessage:new{text =_("BookInfo cache database schema updated."), timeout = 3 })
     end
     db_conn:close()
     self.db_created = true
@@ -216,19 +235,29 @@ function BookInfoManager:compactDb()
 end
 
 -- Settings management, stored in 'config' table
-function BookInfoManager:loadSettings()
+function BookInfoManager:loadSettings(db_conn)
     if lfs.attributes(self.db_location, "mode") ~= "file" then
         -- no db, empty config
         self.settings = {}
         return
     end
     self.settings = {}
-    self:openDbConnection()
-    local res = self.db_conn:exec("SELECT key, value FROM config;")
-    local keys = res[1]
-    local values = res[2]
-    for i, key in ipairs(keys) do
-        self.settings[key] = values[i]
+
+    local my_db_conn
+    if db_conn then
+        my_db_conn = db_conn
+    else
+        self:openDbConnection()
+        my_db_conn = self.db_conn
+    end
+
+    local res = my_db_conn:exec("SELECT key, value FROM config;")
+    if res then
+        local keys = res[1]
+        local values = res[2]
+        for i, key in ipairs(keys) do
+            self.settings[key] = values[i]
+        end
     end
 end
 
@@ -239,7 +268,7 @@ function BookInfoManager:getSetting(key)
     return self.settings[key]
 end
 
-function BookInfoManager:saveSetting(key, value)
+function BookInfoManager:saveSetting(key, value, skip_reload)
     if not value or value == false or value == "" then
         if lfs.attributes(self.db_location, "mode") ~= "file" then
             -- If no db created, no need to save (and create db) an empty value
@@ -257,8 +286,11 @@ function BookInfoManager:saveSetting(key, value)
     stmt:bind(key, value)
     stmt:step() -- commited
     stmt:clearbind():reset() -- cleanup
-    -- Reload settings, so we may get (or not if it failed) what we just saved
-    self:loadSettings()
+
+    -- Optionally, reload settings, so we may get (or not if it failed) what we just saved
+    if not skip_reload then
+        self:loadSettings()
+    end
 end
 
 -- Bookinfo management
@@ -274,6 +306,10 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
         return {
             directory = directory,
             filename = filename,
+            --[[
+            filesize = lfs.attributes(filepath, "size"),
+            filemtime = lfs.attributes(filepath, "modification"),
+            --]]
             in_progress = 0,
             cover_fetched = "Y",
             has_meta = nil,
@@ -289,9 +325,11 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
 
     self:openDbConnection()
     local row = self.get_stmt:bind(directory, filename):step()
-    self.get_stmt:clearbind():reset() -- get ready for next query
+    -- NOTE: We do not reset right now because we'll be querying a BLOB,
+    --       so we need the data it points to to still be there ;).
 
     if not row then -- filepath not in db
+        self.get_stmt:clearbind():reset() -- get ready for next query
         return nil
     end
 
@@ -313,16 +351,27 @@ function BookInfoManager:getBookInfo(filepath, get_cover)
             if bookinfo["has_cover"] then
                 bookinfo["cover_w"] = tonumber(row[num])
                 bookinfo["cover_h"] = tonumber(row[num+1])
-                local cover_data = xutil.zlib_uncompress(row[num+5], row[num+4])
-                row[num+5] = nil -- release memory used by cover_dataz
-                -- Blitbuffer.fromstring() expects : w, h, bb_type, bb_data, pitch
-                bookinfo["cover_bb"] = Blitbuffer.fromstring(row[num], row[num+1], row[num+2], cover_data, row[num+3])
-                -- release memory used by uncompressed data:
-                cover_data = nil -- luacheck: no unused
+                local bbtype = tonumber(row[num+2])
+                local bbstride = tonumber(row[num+3])
+                -- This is a blob_mt table! Essentially, a (ptr, size) tuple.
+                local cover_blob = row[num+4]
+                -- The pointer returned by SQLite is only valid until the next step/reset/finalize!
+                -- (which means its memory management is entirely in the hands of SQLite)
+                local cover_data, cover_size = zstd.zstd_uncompress_ctx(cover_blob[1], cover_blob[2])
+                -- Double-check that the size of the uncompressed BB is as expected...
+                local expected_cover_size = bbstride * bookinfo["cover_h"]
+                assert(cover_size == expected_cover_size, "Uncompressed a " .. tonumber(cover_size) .. "b BB instead of the expected " .. tonumber(expected_cover_size) .. "b")
+                -- That one, on the other hand, is on the heap, so we can use it without making a copy.
+                local cover_bb = Blitbuffer.new(bookinfo["cover_w"], bookinfo["cover_h"], bbtype, cover_data, bbstride, bookinfo["cover_w"])
+                -- Mark its data pointer as safe to free() on GC
+                cover_bb:setAllocated(1)
+                bookinfo["cover_bb"] = cover_bb
             end
             break
         end
     end
+
+    self.get_stmt:clearbind():reset() -- get ready for next query
     return bookinfo
 end
 
@@ -395,6 +444,11 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
         return -- Last insert done for this book, we're giving up
     end
 
+    -- Update this on each extraction attempt. Might be useful to reset the counter in case file gets updated.
+    local file_attr = lfs.attributes(filepath)
+    dbrow.filesize = file_attr.size
+    dbrow.filemtime = file_attr.modification
+
     -- Proceed with extracting info
     local document = DocumentRegistry:openDocument(filepath)
     local loaded = true
@@ -423,7 +477,28 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
             end
             if props.title and props.title ~= "" then dbrow.title = props.title end
             if props.authors and props.authors ~= "" then dbrow.authors = props.authors end
-            if props.series and props.series ~= "" then dbrow.series = props.series end
+            if props.series and props.series ~= "" then
+                -- NOTE: If there's a series index in there, split it off to series_index, and only store the name in series.
+                --       This property is currently only set by:
+                --         * DjVu, for which I couldn't find a real standard for metadata fields
+                --           (we currently use Series for this field, c.f., https://exiftool.org/TagNames/DjVu.html).
+                --         * CRe, which could offer us a split getSeriesName & getSeriesNumber...
+                --           except getSeriesNumber does an atoi, so it'd murder decimal values.
+                --           So, instead, parse how it formats the whole thing as a string ;).
+                if string.find(props.series, "#") then
+                    dbrow.series, dbrow.series_index = props.series:match("(.*) #(%d+%.?%d-)$")
+                    if dbrow.series_index then
+                        -- We're inserting via a bind method, so make sure we feed it a Lua number, because it's a REAL in the db.
+                        dbrow.series_index = tonumber(dbrow.series_index)
+                    else
+                        -- If the index pattern didn't match (e.g., nothing after the octothorp, or a string),
+                        -- restore the full thing as the series name.
+                        dbrow.series = props.series
+                    end
+                else
+                    dbrow.series = props.series
+                end
+            end
             if props.language and props.language ~= "" then dbrow.language = props.language end
             if props.keywords and props.keywords ~= "" then dbrow.keywords = props.keywords end
             if props.description and props.description ~= "" then dbrow.description = props.description end
@@ -447,18 +522,16 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                         cbb_h = math.min(math.floor(cbb_h * scale_factor)+1, spec_max_cover_h)
                         cover_bb = RenderImage:scaleBlitBuffer(cover_bb, cbb_w, cbb_h, true)
                     end
-                    dbrow.cover_w = cbb_w
-                    dbrow.cover_h = cbb_h
-                    dbrow.cover_btype = cover_bb:getType()
-                    dbrow.cover_bpitch = cover_bb.stride
-                    local cover_data = Blitbuffer.tostring(cover_bb)
-                    cover_bb:free() -- free bb before compressing to save memory
-                    dbrow.cover_datalen = cover_data:len()
-                    local cover_dataz = xutil.zlib_compress(cover_data)
-                    -- release memory used by uncompressed data:
-                    cover_data = nil -- luacheck: no unused
-                    dbrow.cover_dataz = SQ3.blob(cover_dataz) -- cast to blob for sqlite
-                    logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cbb_w, "x", cbb_h, ", compressed from", dbrow.cover_datalen, "to", cover_dataz:len())
+                    dbrow.cover_w = cover_bb.w
+                    dbrow.cover_h = cover_bb.h
+                    dbrow.cover_bb_type = cover_bb:getType()
+                    dbrow.cover_bb_stride = tonumber(cover_bb.stride)
+                    local cover_size = cover_bb.stride * cover_bb.h
+                    local cover_zst_ptr, cover_zst_size = zstd.zstd_compress(cover_bb.data, cover_size)
+                    dbrow.cover_bb_data = SQ3.blob(cover_zst_ptr, cover_zst_size) -- cast to blob for sqlite
+                    logger.dbg("cover for", filename, "scaled by", scale_factor, "=>", cover_bb.w, "x", cover_bb.h, ", compressed from", tonumber(cover_size), "to", tonumber(cover_zst_size))
+                    -- We're done with the uncompressed bb now, and the compressed one has been managed by SQLite ;)
+                    cover_bb:free()
                 end
             end
         end
@@ -684,7 +757,6 @@ end
 -- Batch extraction
 function BookInfoManager:extractBooksInDirectory(path, cover_specs)
     local Geom = require("ui/geometry")
-    local InfoMessage = require("ui/widget/infomessage")
     local TopContainer = require("ui/widget/container/topcontainer")
     local Trapper = require("ui/trapper")
     local Screen = require("device").screen

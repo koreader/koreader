@@ -10,6 +10,12 @@ describe("Readertoc module", function()
         DEBUG = require("dbg")
 
         local sample_epub = "spec/front/unit/data/juliet.epub"
+        -- Clear settings from previous tests
+        local DocSettings = require("docsettings")
+        local doc_settings = DocSettings:open(sample_epub)
+        doc_settings:close()
+        doc_settings:purge()
+
         readerui = ReaderUI:new{
             dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_epub),
@@ -97,6 +103,10 @@ describe("Readertoc module", function()
             assert.are.same(12, #toc.collapsed_toc)
             toc:collapseToc(18)
             assert.are.same(7, #toc.collapsed_toc)
+
+            --- @note: Delay the teardown 'til the last test, because of course the tests rely on incremental state changes across tests...
+            readerui:closeDocument()
+            readerui:onClose()
         end)
     end)
 end)

@@ -10,6 +10,9 @@ describe("Cache module", function()
         local sample_pdf = "spec/front/unit/data/sample.pdf"
         doc = DocumentRegistry:openDocument(sample_pdf)
     end)
+    teardown(function()
+        doc:close()
+    end)
 
     it("should clear cache", function()
         Cache:clear()
