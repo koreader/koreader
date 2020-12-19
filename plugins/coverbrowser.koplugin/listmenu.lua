@@ -9,6 +9,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local IconWidget = require("ui/widget/iconwidget")
 local ImageWidget = require("ui/widget/imagewidget")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -203,7 +204,7 @@ function ListMenuItem:update()
     -- We'll draw a border around cover images, it may not be
     -- needed with some covers, but it's nicer when cover is
     -- a pure white background (like rendered text page)
-    local border_size = 1
+    local border_size = Size.border.thin
     local max_img_w = dimen.h - 2*border_size -- width = height, squared
     local max_img_h = dimen.h - 2*border_size
     local cover_specs = {
@@ -478,8 +479,8 @@ function ListMenuItem:update()
                 if corner_mark then
                     corner_mark:free()
                 end
-                corner_mark = ImageWidget:new{
-                    file = "resources/icons/dogear.png",
+                corner_mark = IconWidget:new{
+                    icon = "dogear.opaque",
                     rotation_angle = BD.mirroredUILayout() and 180 or 270,
                     width = corner_mark_size,
                     height = corner_mark_size,

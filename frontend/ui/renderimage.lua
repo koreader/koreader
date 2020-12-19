@@ -248,7 +248,7 @@ function RenderImage:renderSVGImageFileWithNanoSVG(filename, width, height, zoom
     local bb = Blitbuffer.new(width, height, Blitbuffer.TYPE_BBRGB32)
     svg_image:drawTo(bb, zoom, offset_x, offset_y)
     svg_image:free()
-    return bb
+    return bb, true -- is_straight_alpha=true
 end
 
 function RenderImage:renderSVGImageFileWithMupdf(filename, width, height, zoom)
@@ -293,7 +293,7 @@ function RenderImage:renderSVGImageFileWithMupdf(filename, width, height, zoom)
     end
     page:close()
     document:close()
-    return bb
+    return bb -- pre-multiplied alpha: no is_straight_alpha=true
 end
 
 return RenderImage

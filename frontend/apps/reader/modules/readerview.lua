@@ -8,7 +8,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
-local ImageWidget = require("ui/widget/imagewidget")
+local IconWidget = require("ui/widget/iconwidget")
 local InfoMessage = require("ui/widget/infomessage")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ReaderDogear = require("apps/reader/modules/readerdogear")
@@ -104,10 +104,13 @@ function ReaderView:addWidgets()
         view = self,
         ui = self.ui,
     }
+    local arrow_size = Screen:scaleBySize(16)
     self.arrow = AlphaContainer:new{
         alpha = 0.6,
-        ImageWidget:new{
-            file = "resources/icons/appbar.control.expand.png",
+        IconWidget:new{
+            icon = "control.expand",
+            width = arrow_size,
+            height = arrow_size,
         }
     }
     self[1] = self.dogear
@@ -124,7 +127,7 @@ Register a view UI widget module for document browsing.
 @usage
 local ImageWidget = require("ui/widget/imagewidget")
 local dummy_image = ImageWidget:new{
-    file = "resources/icons/appbar.control.expand.png",
+    file = "resources/koreader.png",
 }
 -- the image will be painted on all book pages
 readerui.view:registerViewModule('dummy_image', dummy_image)

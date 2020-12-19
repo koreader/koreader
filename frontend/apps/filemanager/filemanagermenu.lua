@@ -30,19 +30,19 @@ function FileManagerMenu:init()
         },
         -- items in top menu
         filemanager_settings = {
-            icon = "resources/icons/appbar.cabinet.files.png",
+            icon = "appbar.filebrowser",
         },
         setting = {
-            icon = "resources/icons/appbar.settings.png",
+            icon = "appbar.settings",
         },
         tools = {
-            icon = "resources/icons/appbar.tools.png",
+            icon = "appbar.tools",
         },
         search = {
-            icon = "resources/icons/appbar.magnify.browse.png",
+            icon = "appbar.search",
         },
         main = {
-            icon = "resources/icons/menu-icon.png",
+            icon = "appbar.menu",
         },
     }
 
@@ -563,10 +563,10 @@ function FileManagerMenu:setUpdateItemTable()
         self.menu_items.restart_koreader = nil
     end
     if not Device:isTouchDevice() then
-        --add a shortcut on non touch-device
-        --because this menu is not accessible otherwise
+        -- add a shortcut on non touch-device
+        -- because this menu is not accessible otherwise
         self.menu_items.plus_menu = {
-            icon = "resources/icons/appbar.plus.png",
+            icon = "plus",
             remember = false,
             callback = function()
                 self:onCloseFileManagerMenu()

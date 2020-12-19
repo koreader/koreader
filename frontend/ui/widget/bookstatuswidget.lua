@@ -91,7 +91,7 @@ function BookStatusWidget:init()
     end
 
     self.star = Button:new{
-        icon = "resources/icons/stats.star.empty.png",
+        icon = "star.empty",
         bordersize = 0,
         radius = 0,
         margin = 0,
@@ -256,7 +256,7 @@ function BookStatusWidget:setStar(num)
 
         for i = 1, num do
             table.insert(stars_group, self.star:new{
-                icon = "resources/icons/stats.star.full.png",
+                icon = "star.full",
                 callback = function() self:setStar(i) end
             })
         end

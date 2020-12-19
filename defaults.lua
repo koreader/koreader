@@ -41,6 +41,9 @@ DBACKGROUND_COLOR = 0
 -- outer page colour in scroll mode: 8 = gray, 0 = white, 15 = black
 DOUTER_PAGE_COLOR = 0
 
+-- generic icon size
+DGENERIC_ICON_SIZE = 40
+
 -- supported view mode includes: "scroll" and "page"
 DCREREADER_VIEW_MODE = "page"
 

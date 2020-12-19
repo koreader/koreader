@@ -26,22 +26,22 @@ function ReaderMenu:init()
         },
         -- items in top menu
         navi = {
-            icon = "resources/icons/appbar.page.corner.bookmark.png",
+            icon = "appbar.navigation",
         },
         typeset = {
-            icon = "resources/icons/appbar.page.text.png",
+            icon = "appbar.typeset",
         },
         setting = {
-            icon = "resources/icons/appbar.settings.png",
+            icon = "appbar.settings",
         },
         tools = {
-            icon = "resources/icons/appbar.tools.png",
+            icon = "appbar.tools",
         },
         search = {
-            icon = "resources/icons/appbar.magnify.browse.png",
+            icon = "appbar.search",
         },
         filemanager = {
-            icon = "resources/icons/appbar.cabinet.files.png",
+            icon = "appbar.filebrowser",
             remember = false,
             callback = function()
                 self:onTapCloseMenu()
@@ -50,7 +50,7 @@ function ReaderMenu:init()
             end,
         },
         main = {
-            icon = "resources/icons/menu-icon.png",
+            icon = "appbar.menu",
         }
     }
 
