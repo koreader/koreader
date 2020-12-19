@@ -19,6 +19,8 @@ describe("ReaderScreenshot module", function()
 
     teardown(function()
         readerui:handleEvent(Event:new("SetRotationMode", Screen.ORIENTATION_PORTRAIT))
+        readerui:closeDocument()
+        readerui:onClose()
     end)
 
     it("should get screenshot in portrait", function()

@@ -74,6 +74,10 @@ describe("Readerhighlight module", function()
                 document = DocumentRegistry:openDocument(sample_epub),
             }
         end)
+        teardown(function()
+            readerui:closeDocument()
+            readerui:onClose()
+        end)
         before_each(function()
             UIManager:quit()
             readerui.rolling:onGotoPage(page)
@@ -116,6 +120,10 @@ describe("Readerhighlight module", function()
                 document = DocumentRegistry:openDocument(sample_pdf),
             }
             readerui:handleEvent(Event:new("SetScrollMode", false))
+        end)
+        teardown(function()
+            readerui:closeDocument()
+            readerui:onClose()
         end)
         describe("for scanned page with text layer", function()
             before_each(function()
@@ -200,6 +208,10 @@ describe("Readerhighlight module", function()
                 document = DocumentRegistry:openDocument(sample_pdf),
             }
             readerui:handleEvent(Event:new("SetScrollMode", true))
+        end)
+        teardown(function()
+            readerui:closeDocument()
+            readerui:onClose()
         end)
         describe("for scanned page with text layer", function()
             before_each(function()

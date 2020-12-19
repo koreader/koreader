@@ -19,6 +19,10 @@ describe("Readerdictionary module", function()
         rolling = readerui.rolling
         dictionary = readerui.dictionary
     end)
+    teardown(function()
+        readerui:closeDocument()
+        readerui:onClose()
+    end)
     it("should show quick lookup window", function()
         local name = "screenshots/reader_dictionary.png"
         UIManager:quit()

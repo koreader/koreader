@@ -125,19 +125,6 @@ function KindlePowerD:isChargingHW()
     return is_charging == 1
 end
 
-local KindlePowerD_mt = {}
-function KindlePowerD_mt:__gc()
-    if self.lipc_handle then
-        self.lipc_handle:close()
-        self.lipc_handle = nil
-    end
-end
-
--- Funky ass newproxy() workaround to make __gc work on a plain table in Lua 5.1/LuaJIT
--- c.f., https://github.com/katlogic/__gc
-local setmetatable = require("ffi/__gc")
-setmetatable(KindlePowerD, KindlePowerD_mt)
-
 function KindlePowerD:_readFLIntensity()
     return self:read_int_file(self.fl_intensity_file)
 end
@@ -164,6 +151,14 @@ function KindlePowerD:toggleSuspend()
         self.lipc_handle:set_int_property("com.lab126.powerd", "powerButton", 1)
     else
         os.execute("powerd_test -p")
+    end
+end
+
+--- @fixme: This won't ever fire, as KindlePowerD is already a metatable on a plain table.
+function KindlePowerD:__gc()
+    if self.lipc_handle then
+        self.lipc_handle:close()
+        self.lipc_handle = nil
     end
 end
 

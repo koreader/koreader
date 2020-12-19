@@ -141,7 +141,7 @@ function RenderImage:renderGifImageDataWithGifLib(data, size, want_frames, width
             end
         end
         local setmetatable = require("ffi/__gc")
-        frames = setmetatable(frames, frames_mt)
+        setmetatable(frames, frames_mt)
         return frames
     else
         local page = gif:openPage(1)
