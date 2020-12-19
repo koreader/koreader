@@ -178,6 +178,45 @@ function ImageWidget:_loadfile()
                     self._bb = RenderImage:scaleBlitBuffer(self._bb, math.floor(bb_w * DPI_SCALE), math.floor(bb_h * DPI_SCALE))
                 end
             end
+
+            -- Now, if that was *also* one of our icons, and it has an alpha channel,
+            -- compose it against a background-colored BB now, and cache *that*.
+            -- This helps us avoid repeating alpha-blending steps down the line,
+            -- and also ensures icon highlights/unhilights behave sensibly.
+            if self.is_icon then
+                local bbtype = self._bb:getType()
+                if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then
+                    local icon_bb = Blitbuffer.new(self._bb.w, self._bb.h, Screen.bb:getType())
+                    --- @note: Should match the background color. Which is currently hard-coded as white ;).
+                    ---        See the note below in paintTo for how to make the dim flag behave in case
+                    ---        this no longer actually is white ;).
+                    icon_bb:fill(Blitbuffer.COLOR_WHITE)
+
+                    -- And now simply compose the icon on top of that, with dithering if necessary
+                    -- Remembering that NanoSVG feeds us straight alpha, unlike MµPDF
+                    if self._is_straight_alpha then
+                        if Screen.sw_dithering then
+                            icon_bb:ditheralphablitFrom(self._bb, 0, 0, 0, 0, icon_bb.w, icon_bb.h)
+                        else
+                            icon_bb:alphablitFrom(self._bb, 0, 0, 0, 0, icon_bb.w, icon_bb.h)
+                        end
+                    else
+                        if Screen.sw_dithering then
+                            icon_bb:ditherpmulalphablitFrom(self._bb, 0, 0, 0, 0, icon_bb.w, icon_bb.h)
+                        else
+                            icon_bb:pmulalphablitFrom(self._bb, 0, 0, 0, 0, icon_bb.w, icon_bb.h)
+                        end
+                    end
+
+                    -- Free the original icon w/ an alpha-channel, keep the flattened one
+                    self._bb:free()
+                    self._bb = icon_bb
+
+                    -- There's no longer an alpha channel ;)
+                    self._is_straight_alpha = nil
+                end
+            end
+
             if not self.file_do_cache then
                 self._bb_disposable = true -- we made it, we can modify and free it
             else
@@ -385,19 +424,23 @@ function ImageWidget:paintTo(bb, x, y)
     end
     if do_alpha then
         -- NOTE: MuPDF feeds us premultiplied alpha (and we don't care w/ GifLib, as alpha is all or nothing),
-        -- but NanoSVG feeds us straight alpha
+        --       while NanoSVG feeds us straight alpha
         if self._is_straight_alpha then
-            --- @todo if Screen.sw_dithering then use bb:ditheralphablitFrom() when it's available
-            bb:alphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+            -- NOTE: Our icons are already preprocessed properly, either at encoding time, or at caching time.
+            if Screen.sw_dithering and not self.is_icon then
+                bb:ditheralphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+            else
+                bb:alphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
+            end
         else
-            if Screen.sw_dithering then
+            if Screen.sw_dithering and not self.is_icon then
                 bb:ditherpmulalphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
             else
                 bb:pmulalphablitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
             end
         end
     else
-        if Screen.sw_dithering then
+        if Screen.sw_dithering and not self.is_icon then
             bb:ditherblitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
         else
             bb:blitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h)
@@ -406,13 +449,27 @@ function ImageWidget:paintTo(bb, x, y)
     if self.invert then
         bb:invertRect(x, y, size.w, size.h)
     end
+    --- @note: This is mainly geared at black icons/text on a *white* background,
+    ---        otherwise the background color itself will shift.
+    ---        i.e., this actually *lightens* the rectangle, but since it's aimed at black,
+    ---        it makes it gray, dimmer; hence the name.
+    ---        TL;DR: If we one day want that to work for icons on a non-white background,
+    ---        a better solution would probably be to take the icon pixmap as an alpha-mask,
+    ---        (which simply involves blending it onto a white background, then inverting the result),
+    ---        and colorBlit it a dim gray onto the target bb.
+    ---        This would require the *original* transparent icon, not the flattened one in the cache.
+    ---        c.f., https://github.com/koreader/koreader/pull/6937#issuecomment-748372429 for a PoC
     if self.dim then
         bb:dimRect(x, y, size.w, size.h)
     end
-    -- If in night mode, invert all rendered images, so the original is
+    -- In night mode, invert all rendered images, so the original is
     -- displayed when the whole screen is inverted by night mode.
-    -- Except for our black & white icon files, that we do want inverted
-    -- in night mode.
+    -- Except for our *black & white* icons: we do *NOT* want to invert them again:
+    -- they should match the UI's text/backgound.
+    --- @note: As for *color* icons, we really *ought* to invert them here,
+    ---        but we currently don't, as we don't really trickle down
+    ---        a way to discriminate them from the B&W ones.
+    ---        Currently, this is *only* the KOReader icon in Help, AFAIK.
     if Screen.night_mode and not self.is_icon then
         bb:invertRect(x, y, size.w, size.h)
     end
