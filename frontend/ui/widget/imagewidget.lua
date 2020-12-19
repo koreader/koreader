@@ -419,10 +419,7 @@ function ImageWidget:paintTo(bb, x, y)
         -- Only actually try to alpha-blend if the image really has an alpha channel...
         local bbtype = self._bb:getType()
         if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then
-            -- NOTE: Icons are flattened at caching time!
-            if not self.is_icon then
-                do_alpha = true
-            end
+            do_alpha = true
         end
     end
     if do_alpha then

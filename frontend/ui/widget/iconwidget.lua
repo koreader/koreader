@@ -35,7 +35,7 @@ local IconWidget = ImageWidget:extend{
     -- be overriden by callers.
     width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
     height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
-    alpha = true, -- our icons have a transparent background
+    alpha = false, --- @note: our icons have a transparent background, but we flatten them at caching time.
     is_icon = true, -- avoid dithering in ImageWidget:paintTo()
 }
 
