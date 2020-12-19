@@ -383,7 +383,6 @@ androidupdate: all
 		-xr!*NOTES.txt$ \
 		-xr!*NOTICE$ \
 		-xr!*README.md$ \
-		-xr!*koreader.icns$ \
 		-xr'!.*'
 
 	# make the android APK
@@ -427,7 +426,7 @@ macosupdate: all
 		$(INSTALL_DIR)/bundle/Contents/MacOS \
 		$(INSTALL_DIR)/bundle/Contents/Resources
 
-	cp resources/koreader.icns $(INSTALL_DIR)/bundle/Contents/Resources/icon.icns
+	cp -pv $(MACOS_DIR)/koreader.icns $(INSTALL_DIR)/bundle/Contents/Resources/icon.icns
 	cp -LR $(INSTALL_DIR)/koreader $(INSTALL_DIR)/bundle/Contents
 	cp -pRv $(MACOS_DIR)/menu.xml $(INSTALL_DIR)/bundle/Contents/MainMenu.xib
 	ibtool --compile "$(INSTALL_DIR)/bundle/Contents/Resources/Base.lproj/MainMenu.nib" "$(INSTALL_DIR)/bundle/Contents/MainMenu.xib"

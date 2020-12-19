@@ -51,7 +51,7 @@ function TouchProbe:init()
         },
     }
     self.image_widget = ImageWidget:new{
-        file = "resources/kobo-touch-probe.png",
+        file = "tools/kobo-touch-probe.png",
     }
     local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
     local img_w, img_h = self.image_widget:getSize().w, self.image_widget:getSize().h
