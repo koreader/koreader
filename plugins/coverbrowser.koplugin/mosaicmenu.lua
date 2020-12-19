@@ -10,6 +10,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local IconWidget = require("ui/widget/iconwidget")
 local ImageWidget = require("ui/widget/imagewidget")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -97,7 +98,7 @@ local FakeCover = FrameContainer:new{
     height = nil,
     margin = 0,
     padding = 0,
-    bordersize = Size.line.thin,
+    bordersize = Size.border.thin,
     dim = nil,
     -- Provided filename, title and authors should not be BD wrapped
     filename = nil,
@@ -437,7 +438,7 @@ function MosaicMenuItem:update()
     -- We'll draw a border around cover images, it may not be
     -- needed with some covers, but it's nicer when cover is
     -- a pure white background (like rendered text page)
-    local border_size = 1
+    local border_size = Size.border.thin
     local max_img_w = dimen.w - 2*border_size
     local max_img_h = dimen.h - 2*border_size
     local cover_specs = {
@@ -459,7 +460,7 @@ function MosaicMenuItem:update()
         -- Directory : rounded corners
         local margin = Screen:scaleBySize(5) -- make directories less wide
         local padding = Screen:scaleBySize(5)
-        border_size = Screen:scaleBySize(2) -- make directories' borders larger
+        border_size = Size.border.thick -- make directories' borders larger
         local dimen_in = Geom:new{
             w = dimen.w - (margin + padding + border_size)*2,
             h = dimen.h - (margin + padding + border_size)*2
@@ -848,8 +849,8 @@ function MosaicMenu:_recalculateDimen()
         if corner_mark then
             corner_mark:free()
         end
-        corner_mark = ImageWidget:new{
-            file = "resources/icons/dogear.png",
+        corner_mark = IconWidget:new{
+            icon = "dogear.opaque",
             rotation_angle = BD.mirroredUILayout() and 180 or 270,
             width = corner_mark_size,
             height = corner_mark_size,

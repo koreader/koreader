@@ -240,8 +240,8 @@ function DoubleKeyValuePage:init()
         text_font_bold = false,
     }
     -- group for page info
-    local chevron_left = "resources/icons/appbar.chevron.left.png"
-    local chevron_right = "resources/icons/appbar.chevron.right.png"
+    local chevron_left = "chevron.left"
+    local chevron_right = "chevron.right"
     if BD.mirroredUILayout() then
         chevron_left, chevron_right = chevron_right, chevron_left
     end

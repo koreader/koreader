@@ -658,10 +658,10 @@ function Menu:init()
     -- group for items
     self.item_group = VerticalGroup:new{}
     -- group for page info
-    local chevron_left = "resources/icons/appbar.chevron.left.png"
-    local chevron_right = "resources/icons/appbar.chevron.right.png"
-    local chevron_first = "resources/icons/appbar.chevron.first.png"
-    local chevron_last = "resources/icons/appbar.chevron.last.png"
+    local chevron_left = "chevron.left"
+    local chevron_right = "chevron.right"
+    local chevron_first = "chevron.first"
+    local chevron_last = "chevron.last"
     if BD.mirroredUILayout() then
         chevron_left, chevron_right = chevron_right, chevron_left
         chevron_first, chevron_last = chevron_last, chevron_first
@@ -777,7 +777,7 @@ function Menu:init()
 
     -- return button
     self.page_return_arrow = Button:new{
-        icon = "resources/icons/appbar.arrow.left.up.png",
+        icon = "back.top",
         callback = function()
             if self.onReturn then self:onReturn() end
         end,

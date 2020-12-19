@@ -561,22 +561,31 @@ function ReaderToc:onShowToc()
         end
     end
 
-    -- update collapsible state
+    -- Estimate expand/collapse icon size
+    local items_per_page = G_reader_settings:readSetting("items_per_page") or 14
+    -- *2/5 to acount for Menu top title and bottom icons, and add some air between consecutive icons
+    local icon_size = math.floor(Screen:getHeight() / items_per_page * 2/5)
+    local button_width = icon_size * 2
     self.expand_button = Button:new{
-        icon = "resources/icons/appbar.control.expand.png",
+        icon = "control.expand",
         icon_rotation_angle = BD.mirroredUILayout() and 180 or 0,
-        width = Screen:scaleBySize(30),
+        width = button_width,
+        icon_width = icon_size,
+        icon_height = icon_size,
         bordersize = 0,
         show_parent = self,
     }
 
     self.collapse_button = Button:new{
-        icon = "resources/icons/appbar.control.collapse.png",
-        width = Screen:scaleBySize(30),
+        icon = "control.collapse",
+        width = button_width,
+        icon_width = icon_size,
+        icon_height = icon_size,
         bordersize = 0,
         show_parent = self,
     }
 
+    -- update collapsible state
     if #self.toc > 0 and #self.collapsed_toc == 0 then
         local depth = 0
         for i = #self.toc, 1, -1 do
@@ -608,7 +617,7 @@ function ReaderToc:onShowToc()
         cface = Font:getFace("x_smallinfofont"),
         single_line = true,
         align_baselines = true,
-        perpage = G_reader_settings:readSetting("items_per_page") or 14,
+        perpage = items_per_page,
         line_color = require("ffi/blitbuffer").COLOR_WHITE,
         on_close_ges = {
             GestureRange:new{

@@ -15,7 +15,7 @@ local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local IconButton = require("ui/widget/iconbutton")
-local ImageWidget = require("ui/widget/imagewidget")
+local IconWidget = require("ui/widget/iconwidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local RightContainer = require("ui/widget/container/rightcontainer")
@@ -180,6 +180,7 @@ function ConfigOption:init()
     local default_item_font_size = 16 -- font size for letters, toggles and buttonprogress
     local default_items_spacing = 40  -- spacing between letters (font sizes) and icons
     local default_option_height = 50  -- height of each line
+    local max_icon_height = Screen:scaleBySize(DGENERIC_ICON_SIZE)  -- max height of icons
     -- The next ones are already scaleBySize()'d:
     local default_option_vpadding = Size.padding.large -- vertical padding at top and bottom
     local default_option_hpadding = Size.padding.fullscreen
@@ -486,7 +487,7 @@ function ConfigOption:init()
             -- Icons (ex: columns, text align, with PDF)
             if self.options[c].item_icons then
                 local items_count = #self.options[c].item_icons
-                local icon_max_height = option_height
+                local icon_max_height = math.min(option_height, max_icon_height)
                 local icon_max_width = math.floor(option_widget_width / items_count)
                 local icon_size = math.min(icon_max_height, icon_max_width)
                 local max_item_spacing = (option_widget_width - icon_size * items_count) / items_count
@@ -497,12 +498,11 @@ function ConfigOption:init()
                 local underline_padding = - math.floor(0.05 * icon_size)
                 for d = 1, #self.options[c].item_icons do
                     local option_item = OptionIconItem:new{
-                        icon = ImageWidget:new{
-                            file = self.options[c].item_icons[d],
+                        icon = IconWidget:new{
+                            icon = self.options[c].item_icons[d],
                             dim = not enabled,
                             width = icon_size,
                             height = icon_size,
-                            scale_factor = 0, -- scale to fit width and height
                         },
                         underline_padding = underline_padding,
                         padding_left = d > 1 and horizontal_half_padding,
@@ -677,17 +677,16 @@ function MenuBar:init()
     local line_thickness = Size.line.thick
     local config_options = self.config_dialog.config_options
     local menu_items = {}
-    local icon_width = Screen:scaleBySize(40)
+    local icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE)
     local icon_height = icon_width
     local icons_width = (icon_width + 2*icon_sep_width) * #config_options
-    local icons_height = icon_height
+    local bar_height = icon_height + 2*Size.padding.default
     for c = 1, #config_options do
         local menu_icon = IconButton:new{
             show_parent = self.config_dialog,
-            icon_file = config_options[c].icon,
+            icon = config_options[c].icon,
             width = icon_width,
             height = icon_height,
-            scale_for_dpi = false,
             callback = function()
                 self.config_dialog:handleEvent(Event:new("ShowConfigPanel", c))
             end,
@@ -713,14 +712,14 @@ function MenuBar:init()
         background = Blitbuffer.COLOR_BLACK,
         dimen = Geom:new{
             w = icon_sep_width,
-            h = icons_height,
+            h = bar_height,
         }
     }
     local icon_sep_white = LineWidget:new{
         background = Blitbuffer.COLOR_WHITE,
         dimen = Geom:new{
             w = icon_sep_width,
-            h = icons_height,
+            h = bar_height,
         }
     }
     local spacing = HorizontalSpan:new{
@@ -774,7 +773,7 @@ function MenuBar:init()
     table.insert(menu_bar, spacing)
     table.insert(line_bar, spacing_line)
 
-    self.dimen = Geom:new{ w = Screen:getWidth(), h = icons_height}
+    self.dimen = Geom:new{ w = Screen:getWidth(), h = bar_height}
     local vertical_menu = VerticalGroup:new{
         line_bar,
         menu_bar,
@@ -864,6 +863,7 @@ function ConfigDialog:update()
     }
     self.dialog_frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
+        padding_bottom = 0, -- ensured by MenuBar
         VerticalGroup:new{
             self.config_panel,
             self.config_menubar,

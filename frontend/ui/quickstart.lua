@@ -38,11 +38,11 @@ Turning pages can be done either by swiping left and right or by single taps on 
 
 ### Main <a id="main-menu"></a>
 
-![Menu](../resources/icons/menu-icon.png) You can always view this quickstart guide again through *Help* → *Quickstart guide* in the top right menu.
+![Menu](../resources/icons/mdlight/appbar.menu.svg) You can always view this quickstart guide again through *Help* → *Quickstart guide* in the top right menu.
 
 ### Settings <a id="settings"></a>
 
-![Settings](../resources/icons/appbar.settings.png) You can change the language and other settings through the gear icon.
+![Settings](../resources/icons/mdlight/appbar.settings.svg) You can change the language and other settings through the gear icon.
 
 
 ## File browser <a id="file-browser"></a>

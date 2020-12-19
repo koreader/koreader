@@ -6,20 +6,20 @@ local Device = require("device")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local ImageWidget = require("ui/widget/imagewidget")
+local IconWidget = require("ui/widget/iconwidget")
 local GestureRange = require("ui/gesturerange")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local Screen = Device.screen
 
 local IconButton = InputContainer:new{
-    icon_file = "resources/info-confirm.png",
+    icon = "notice-warning",
     dimen = nil,
     -- show_parent is used for UIManager:setDirty, so we can trigger repaint
     show_parent = nil,
-    width = nil,
-    height = nil,
-    scale_for_dpi = true,
+    width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
+    height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
     padding = 0,
     padding_top = nil,
     padding_right = nil,
@@ -30,9 +30,8 @@ local IconButton = InputContainer:new{
 }
 
 function IconButton:init()
-    self.image = ImageWidget:new{
-        file = self.icon_file,
-        scale_for_dpi = self.scale_for_dpi,
+    self.image = IconWidget:new{
+        icon = self.icon,
         width = self.width,
         height = self.height,
     }
