@@ -819,7 +819,7 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
     end
 
     if fuzzy_search then
-        UIManager:scheduleIn(0.5, self.showLookupInfo, self)
+        UIManager:scheduleIn(0.5, self.showLookupInfo, self, word)
     end
 
     local results = self:startSdcv(word, dict_names, fuzzy_search)
