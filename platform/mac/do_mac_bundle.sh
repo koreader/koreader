@@ -160,8 +160,7 @@ rm -rf cache clipboard history ota \
     l10n/.git l10n/.tx l10n/templates l10n/LICENSE l10n/Makefile l10n/README.md \
     plugins/SSH.koplugin plugins/hello.koplugin plugins/timesync.koplugin \
     plugins/autofrontlight.koplugin resources/fonts resources/icons/src \
-    resources/kobo-touch-probe.png resources/koreader.icns rocks/bin \
-    rocks/lib/luarocks screenshots spec tools
+    rocks/bin rocks/lib/luarocks screenshots spec tools
 
 # adjust reader.lua a bit.
 
