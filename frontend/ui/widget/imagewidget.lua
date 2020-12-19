@@ -426,7 +426,7 @@ function ImageWidget:paintTo(bb, x, y)
         -- NOTE: MuPDF feeds us premultiplied alpha (and we don't care w/ GifLib, as alpha is all or nothing),
         --       while NanoSVG feeds us straight alpha.
         --       SVG icons are currently flattened at caching time, so we'll only go through the straight alpha
-        --       codepath for non-icons PNGs.
+        --       codepath for non-icons SVGs.
         if self._is_straight_alpha then
             -- NOTE: Our icons are already dithered properly, either at encoding time, or at caching time.
             if Screen.sw_dithering and not self.is_icon then
