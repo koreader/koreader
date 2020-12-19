@@ -81,22 +81,34 @@ function FileManager:setRotationMode(init)
     end
 end
 
-function FileManager:init()
-    if Device:isTouchDevice() then
-        self:registerTouchZones({
-            {
-                id = "filemanager_swipe",
-                ges = "swipe",
-                screen_zone = {
-                    ratio_x = 0, ratio_y = 0,
-                    ratio_w = Screen:getWidth(), ratio_h = Screen:getHeight(),
-                },
-                handler = function(ges)
-                    self:onSwipeFM(ges)
-                end,
-            },
-        })
+function FileManager:initGesListener()
+    if not Device:isTouchDevice() then
+        return
     end
+
+    self:registerTouchZones({
+        {
+            id = "filemanager_swipe",
+            ges = "swipe",
+            screen_zone = {
+                ratio_x = 0, ratio_y = 0,
+                ratio_w = Screen:getWidth(), ratio_h = Screen:getHeight(),
+            },
+            handler = function(ges)
+                self:onSwipeFM(ges)
+            end,
+        },
+    })
+end
+
+function FileManager:onSetDimensions(dimen)
+    -- update listening according to new screen dimen
+    if Device:isTouchDevice() then
+        self:initGesListener()
+    end
+end
+
+function FileManager:setupLayout()
     self.show_parent = self.show_parent or self
     local icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE)
     local home_button = IconButton:new{
@@ -457,6 +469,20 @@ function FileManager:init()
         ui = self
     }
 
+    if Device:hasKeys() then
+        self.key_events.Home = { {"Home"}, doc = "go home" }
+        -- Override the menu.lua way of handling the back key
+        self.file_chooser.key_events.Back = { {"Back"}, doc = "go back" }
+        if not Device:hasFewKeys() then
+            -- Also remove the handler assigned to the "Back" key by menu.lua
+            self.file_chooser.key_events.Close = nil
+        end
+    end
+end
+
+function FileManager:init()
+    self:setupLayout()
+
     local screenshoter = Screenshoter:new{ prefix = 'FileManager' }
     table.insert(self, screenshoter) -- for regular events
     self.active_widgets = { screenshoter } -- to get events even when hidden
@@ -476,37 +502,24 @@ function FileManager:init()
     table.insert(self, DeviceListener:new{ ui = self })
 
     -- koreader plugins
-    if not self._plugins_loaded then
-        for _,plugin_module in ipairs(PluginLoader:loadPlugins()) do
-            if not plugin_module.is_doc_only then
-                local ok, plugin_or_err = PluginLoader:createPluginInstance(
-                    plugin_module, { ui = self, })
-                -- Keep references to the modules which do not register into menu.
-                if ok then
-                    local name = plugin_module.name
-                    if name then self[name] = plugin_or_err end
-                    table.insert(self, plugin_or_err)
-                    logger.info("FM loaded plugin", name,
-                                "at", plugin_module.path)
-                end
+    for _, plugin_module in ipairs(PluginLoader:loadPlugins()) do
+        if not plugin_module.is_doc_only then
+            local ok, plugin_or_err = PluginLoader:createPluginInstance(
+                plugin_module, { ui = self, })
+            -- Keep references to the modules which do not register into menu.
+            if ok then
+                local name = plugin_module.name
+                if name then self[name] = plugin_or_err end
+                table.insert(self, plugin_or_err)
+                logger.info("FM loaded plugin", name,
+                            "at", plugin_module.path)
             end
         end
-        self._plugins_loaded = true
     end
 
     if Device:hasWifiToggle() then
         local NetworkListener = require("ui/network/networklistener")
         table.insert(self, NetworkListener:new{ ui = self })
-    end
-
-    if Device:hasKeys() then
-        self.key_events.Home = { {"Home"}, doc = "go home" }
-        -- Override the menu.lua way of handling the back key
-        self.file_chooser.key_events.Back = { {"Back"}, doc = "go back" }
-        if not Device:hasFewKeys() then
-            -- Also remove the handler assigned to the "Back" key by menu.lua
-            self.file_chooser.key_events.Close = nil
-        end
     end
 
     self:handleEvent(Event:new("SetDimensions", self.dimen))
@@ -696,10 +709,12 @@ function FileManager:reinit(path, focused_file)
     end
     -- reinit filemanager
     self.focused_file = focused_file
-    self:init()
+    self:setupLayout()
+    self:handleEvent(Event:new("SetDimensions", self.dimen))
     self.file_chooser.path_items = path_items_backup
-    -- self:init() has already done file_chooser:refreshPath(), so this one
-    -- looks like not necessary (cheap with classic mode, less cheap with
+    -- self:init() has already done file_chooser:refreshPath()
+    -- (by virtue of rebuilding file_chooser), so this one
+    -- looks unnecessary (cheap with classic mode, less cheap with
     -- CoverBrowser plugin's cover image renderings)
     -- self:onRefresh()
 end
