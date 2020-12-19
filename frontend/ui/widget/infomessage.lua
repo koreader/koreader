@@ -145,6 +145,7 @@ function InfoMessage:init()
     end
     local frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
+        radius = Size.radius.window,
         HorizontalGroup:new{
             align = "center",
             image_widget,

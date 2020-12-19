@@ -136,6 +136,7 @@ function ConfirmBox:init()
     local frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
         margin = self.margin,
+        radius = Size.radius.window,
         padding = self.padding,
         padding_bottom = 0, -- no padding below buttontable
         VerticalGroup:new{
