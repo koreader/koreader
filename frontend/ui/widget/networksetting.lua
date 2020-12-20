@@ -123,13 +123,15 @@ function NetworkItem:init()
     end
     -- NOTE: Load the dice a bit to get slightly more useful icons... (c.f., https://github.com/koreader/lj-wpaclient/pull/6)
     local weighted_rssi = self.info.signal_quality
-    if weighted_rssi < 15 then
+    if weighted_rssi < 9 then
         wifi_icon = string.format(wifi_icon, 0)
     elseif weighted_rssi > 85 then
         wifi_icon = string.format(wifi_icon, 100)
     else
         -- Fudge the realistic range of values by 15, because we're unlikely to see anything better than -15dBm
-        weighted_rssi = self.info.signal_quality + 15
+        if weighted_rssi > 25 then
+            weighted_rssi = self.info.signal_quality + 15
+        end
         -- Round up to the next multiple of 25
         wifi_icon = string.format(
             wifi_icon,
