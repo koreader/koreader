@@ -452,7 +452,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
             end,
         }
         button_plus_one_hour = Button:new{
-            text = "+",
+            text = "＋",
             margin = Size.margin.small,
             radius = 0,
             enabled = self.powerd.auto_warmth,

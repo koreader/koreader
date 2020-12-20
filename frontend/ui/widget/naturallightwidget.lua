@@ -100,7 +100,7 @@ function NaturalLightWidget:adaptableNumber(initial, step)
         end,
     }
     local button_plus = Button:new{
-        text = "+",
+        text = "＋",
         margin = Size.margin.small,
         radius = 0,
         width = self.button_width,
