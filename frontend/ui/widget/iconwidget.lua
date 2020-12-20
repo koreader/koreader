@@ -8,7 +8,7 @@ local Screen = require("device").screen
 
 -- Directories to look for icons by name, with any of the accepted suffixes
 local ICONS_DIRS = {}
-local user_icons_dir = DataStorage:getSettingsDir() .. "/icons"
+local user_icons_dir = DataStorage:getDataDir() .. "/icons"
 if lfs.attributes(user_icons_dir, "mode") == "directory" then
     table.insert(ICONS_DIRS, user_icons_dir)
 end
