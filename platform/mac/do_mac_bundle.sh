@@ -153,13 +153,13 @@ install_name_tool -id libintl.8.dylib libs/libintl.8.dylib
 install_name_tool -id libwebp.7.dylib libs/libwebp.7.dylib
 install_name_tool -id libsodium.23.dylib libs/libsodium.23.dylib
 # And make sure anything that depends on them points to ours
-install_name_tool -change ${BREW}/gettext/lib/libintl.8.dylib libs/libintl.8.dylib libs/libglib-2.0.dylib
-install_name_tool -change ${BREW}/webp/lib/libwebp.7.dylib libs/libwebp.7.dylib libs/liblept.5.dylib
-install_name_tool -change ${BREW}/webp/lib/libwebp.7.dylib libs/libwebp.7.dylib libs/libtesseract.3.dylib
-install_name_tool -change ${BREW}/libsodium/lib/libsodium.23.dylib libs/libsodium.23.dylib libs/libczmq.1.dylib
-install_name_tool -change ${BREW}/libsodium/lib/libsodium.23.dylib libs/libsodium.23.dylib libs/libfmq.1.dylib
-install_name_tool -change ${BREW}/libsodium/lib/libsodium.23.dylib libs/libsodium.23.dylib libs/libzmq.4.dylib
-install_name_tool -change ${BREW}/libsodium/lib/libsodium.23.dylib libs/libsodium.23.dylib libs/libzyre.1.dylib
+install_name_tool -change "${BREW}/gettext/lib/libintl.8.dylib" libs/libintl.8.dylib libs/libglib-2.0.dylib
+install_name_tool -change "${BREW}/webp/lib/libwebp.7.dylib" libs/libwebp.7.dylib libs/liblept.5.dylib
+install_name_tool -change "${BREW}/webp/lib/libwebp.7.dylib" libs/libwebp.7.dylib libs/libtesseract.3.dylib
+install_name_tool -change "${BREW}/libsodium/lib/libsodium.23.dylib" libs/libsodium.23.dylib libs/libczmq.1.dylib
+install_name_tool -change "${BREW}/libsodium/lib/libsodium.23.dylib" libs/libsodium.23.dylib libs/libfmq.1.dylib
+install_name_tool -change "${BREW}/libsodium/lib/libsodium.23.dylib" libs/libsodium.23.dylib libs/libzmq.4.dylib
+install_name_tool -change "${BREW}/libsodium/lib/libsodium.23.dylib" libs/libsodium.23.dylib libs/libzyre.1.dylib
 
 # prepare bundle for distribution
 ln -s /usr/bin/tar tar
