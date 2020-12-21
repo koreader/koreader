@@ -453,8 +453,8 @@ local PocketBook632 = PocketBook:new{
     model = "PBTouchHDPlus",
     display_dpi = 300,
     isAlwaysPortrait = yes,
-    usingForcedRotation = landscape_ccw,
     hasNaturalLight = yes,
+    -- Buggy kernel, no usingForcedRotation, fb reinits done by the HW rotation shenanigans forget about inversion, c.f. #7017
 }
 
 -- PocketBook Color (633)
