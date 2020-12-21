@@ -1280,6 +1280,10 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, d
                     end
                 }
             end
+            if delay_repaint then
+                self._dialog_closed = true
+                self:closeDialog()
+            end
             UIManager:show(widget)
         end
         if not delay_repaint then -- immediate refresh
