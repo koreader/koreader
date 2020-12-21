@@ -121,13 +121,20 @@ function NetworkItem:init()
     else
         wifi_icon = "wifi.open.%d"
     end
-    if self.info.signal_quality == 0 or self.info.signal_quality == 100 then
-        wifi_icon = string.format(wifi_icon, self.info.signal_quality)
+    -- Based on NetworkManager's nmc_wifi_strength_bars
+    -- c.f., https://github.com/NetworkManager/NetworkManager/blob/2fa8ef9fb9c7fe0cc2d9523eed6c5a3749b05175/clients/common/nm-client-utils.c#L585-L612
+    if self.info.signal_quality > 80 then
+        wifi_icon = string.format(wifi_icon, 100)
+    elseif self.info.signal_quality > 55 then
+        wifi_icon = string.format(wifi_icon, 75)
+    elseif self.info.signal_quality > 30 then
+        wifi_icon = string.format(wifi_icon, 50)
+    elseif self.info.signal_quality > 5 then
+        wifi_icon = string.format(wifi_icon, 25)
     else
-        wifi_icon = string.format(
-            wifi_icon,
-            self.info.signal_quality + 25 - self.info.signal_quality % 25)
+        wifi_icon = string.format(wifi_icon, 0)
     end
+
     local horizontal_space = HorizontalSpan:new{width = Size.span.horizontal_default}
     self.content_container = OverlapGroup:new{
         dimen = self.dimen:copy(),
