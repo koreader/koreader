@@ -93,6 +93,17 @@ Note that this may not be ensured under some conditions: in scroll mode, when a 
                 },
                 delay_repaint = true,
                 name_text_hold_callback = optionsutil.showValuesHMargins,
+                more_options = true,
+                more_options_param = {
+                    left_min = 0,
+                    left_max = 140,
+                    left_step = 1,
+                    left_hold_step = 5,
+                    right_min = 0,
+                    right_max = 140,
+                    right_step = 1,
+                    right_hold_step = 5,
+                },
             },
             {
                 name = "sync_t_b_page_margins",
@@ -143,6 +154,13 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 },
                 delay_repaint = true,
                 name_text_hold_callback = optionsutil.showValues,
+                more_options = true,
+                more_options_param = {
+                  value_min = 0,
+                  value_max = 140,
+                  value_step = 1,
+                  value_hold_step = 5,
+                },
             },
             {
                 name = "b_page_margin",
@@ -177,6 +195,13 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 delay_repaint = true,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[In the top menu → Settings → Status bar, you can choose whether the bottom margin applies from the bottom of the screen, or from above the status bar.]]),
+                more_options = true,
+                more_options_param = {
+                  value_min = 0,
+                  value_max = 140,
+                  value_step = 1,
+                  value_hold_step = 5,
+                },
             },
         }
     },
