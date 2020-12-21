@@ -65,7 +65,6 @@ Note that this may not be ensured under some conditions: in scroll mode, when a 
                 name = "h_page_margins",
                 name_text = _("L/R Margins"),
                 buttonprogress = true,
-                fine_tune = true,
                 values = {
                     DCREREADER_CONFIG_H_MARGIN_SIZES_SMALL,
                     DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM,
@@ -126,7 +125,6 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 name = "t_page_margin",
                 name_text = _("Top Margin"),
                 buttonprogress = true,
-                fine_tune = true,
                 values = {
                     DCREREADER_CONFIG_T_MARGIN_SIZES_SMALL,
                     DCREREADER_CONFIG_T_MARGIN_SIZES_MEDIUM,
@@ -166,7 +164,6 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 name = "b_page_margin",
                 name_text = _("Bottom Margin"),
                 buttonprogress = true,
-                fine_tune = true,
                 values = {
                     DCREREADER_CONFIG_B_MARGIN_SIZES_SMALL,
                     DCREREADER_CONFIG_B_MARGIN_SIZES_MEDIUM,
