@@ -494,33 +494,87 @@ function CreDocument:getImageFromPosition(pos, want_frames)
 end
 
 function CreDocument:getWordFromPosition(pos)
-    local word_box = self._document:getWordFromPosition(pos.x, pos.y)
-    logger.dbg("CreDocument: get word box", word_box)
-    local text_range = self._document:getTextFromPositions(pos.x, pos.y, pos.x, pos.y)
-    logger.dbg("CreDocument: get text range", text_range)
     local wordbox = {
-        word = text_range.text == "" and word_box.word or text_range.text,
         page = self._document:getCurrentPage(),
     }
-    if word_box.word then
-        wordbox.sbox = Geom:new{
-            x = word_box.x0, y = word_box.y0,
-            w = word_box.x1 - word_box.x0,
-            h = word_box.y1 - word_box.y0,
-        }
-    else
-        -- dummy word box
-        wordbox.sbox = Geom:new{
-            x = pos.x, y = pos.y,
-            w = 20, h = 20,
-        }
-    end
+    -- We use getTextFromPositions() which is more accurate.
+    -- In case some stuff is missing, we could fallback to use
+    -- the less accurate getWordFromPosition().
+    -- But it looks like getTextFromPositions() is just fine, and
+    -- when it fails, it's because there's no word at position.
+    -- So, we'll return nil below in case not all is found
+    local word_found = false
+    local box_found = false
+
+    local text_range = self._document:getTextFromPositions(pos.x, pos.y, pos.x, pos.y)
+    logger.dbg("CreDocument: get text range", text_range)
     if text_range then
-        -- add xpointers if found, might be useful for across pages highlighting
+        if text_range.text and text_range.text ~= "" then
+            wordbox.word = text_range.text
+            word_found = true
+        end
+        if text_range.pos0 and text_range.pos1 then
+            -- get segments from these pos, to build the overall box
+            local word_boxes = self._document:getWordBoxesFromPositions(text_range.pos0, text_range.pos1, true)
+            if #word_boxes > 0 then
+                local overall_box
+                for i = 1, #word_boxes do
+                    local line_box = word_boxes[i]
+                    if not overall_box then
+                        overall_box = line_box
+                    else
+                        if line_box.x0 < overall_box.x0 then overall_box.x0 = line_box.x0 end
+                        if line_box.y0 < overall_box.y0 then overall_box.y0 = line_box.y0 end
+                        if line_box.x1 > overall_box.x1 then overall_box.x1 = line_box.x1 end
+                        if line_box.y1 > overall_box.y1 then overall_box.y1 = line_box.y1 end
+                    end
+                end
+                wordbox.sbox = Geom:new{
+                    x = overall_box.x0,
+                    y = overall_box.y0,
+                    w = overall_box.x1 - overall_box.x0,
+                    h = overall_box.y1 - overall_box.y0,
+                }
+                box_found = true
+            end
+        end
+        -- add xpointers if any, might be useful for across pages highlighting
         wordbox.pos0 = text_range.pos0
         wordbox.pos1 = text_range.pos1
     end
+
+    -- Fully trust getTextFromPositions()
+    if word_found and box_found then
+        return wordbox
+    else
+        return nil
+    end
+
+    -- If we ever want to fallback to getWordFromPositions()
+    --[[
+    local word = self._document:getWordFromPosition(pos.x, pos.y)
+    logger.warn("CreDocument: get word box", word)
+    if not word_found then
+        wordbox.word = word.word
+    end
+    if not box_found then
+        if word.word then
+            wordbox.sbox = Geom:new{
+                x = word.x0,
+                y = word.y0,
+                w = word.x1 - word.x0,
+                h = word.y1 - word.y0,
+            }
+        else
+            -- dummy box
+            wordbox.sbox = Geom:new{
+                x = pos.x, y = pos.y,
+                w = 20, h = 20,
+            }
+        end
+    end
     return wordbox
+    ]]--
 end
 
 function CreDocument:getTextFromPositions(pos0, pos1)
