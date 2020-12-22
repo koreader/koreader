@@ -35,7 +35,6 @@ G_reader_settings = require("luasettings"):open(
 -- which only makes the mcode allocation issues worse on Android...
 local is_cbb_enabled = G_reader_settings:nilOrFalse("dev_no_c_blitter")
 if not is_cbb_enabled then
-    print("reader.lua setting loopunroll to 45")
     jit.opt.start("loopunroll=45")
 end
 
