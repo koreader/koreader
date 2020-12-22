@@ -856,7 +856,19 @@ function OPDSBrowser:onMenuHold(item)
     end
 end
 
+--[[
+function OPDSBrowser:onClose()
+    print("OPDSBrowser:onClose")
+    self.paths = {}
+    UIManager:close(self)
+    return true
+end
+--]]
+
 function OPDSBrowser:onReturn()
+    print("OPDSBrowser:onReturn")
+    print(debug.traceback())
+    logger.dbg("self.paths:", self.paths)
     if #self.paths > 0 then
         table.remove(self.paths)
         local path = self.paths[#self.paths]

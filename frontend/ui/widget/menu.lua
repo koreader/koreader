@@ -1244,8 +1244,21 @@ function Menu:onRight()
 end
 
 function Menu:onClose()
+    print("Menu:onClose")
     local table_length = #self.item_table_stack
+    print("table_length:", table_length)
+    logger.dbg("self.paths:", self.paths)
     if table_length == 0 then
+        -- Clear the path history (CloudStorage/OPDSBrowser)
+        for i, _ in ipairs(self.paths) do
+            self.paths[i] = nil
+        end
+
+        --[[
+        while #self.paths > 0 do
+            table.remove(self.paths)
+        end
+        --]]
         self:onCloseAllMenus()
     else
         -- back to parent menu
