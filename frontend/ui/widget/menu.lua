@@ -551,8 +551,6 @@ local Menu = FocusManager:new{
     page_info = nil,
     page_return = nil,
 
-    paths = {},  -- table to trace navigation path
-
     -- set this to true to not paint as popup menu
     is_borderless = false,
     -- if you want to embed the menu widget into another widget, set
@@ -607,6 +605,8 @@ function Menu:init()
         self.dimen.h = Screen:getHeight()
     end
     self.page = 1
+
+    self.paths = {}  -- per instance table to trace navigation path
 
     -----------------------------------
     -- start to set up widget layout --
@@ -1246,10 +1246,6 @@ end
 function Menu:onClose()
     local table_length = #self.item_table_stack
     if table_length == 0 then
-        -- Clear the path history (CloudStorage/OPDSBrowser)
-        for i, _ in ipairs(self.paths) do
-            self.paths[i] = nil
-        end
         self:onCloseAllMenus()
     else
         -- back to parent menu
