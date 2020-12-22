@@ -1002,8 +1002,8 @@ This may fail on complex HTML (with styles, scripts, comments), but should be fi
 function util.htmlToPlainText(text)
     -- Replace <br> and <p> with \n
     text = text:gsub("%s*<%s*br%s*/?>%s*", "\n") -- <br> and <br/>
-    text = text:gsub("%s*<%s*p%s*>%s*", "\n") -- <p>
-    text = text:gsub("%s*</%s*p%s*>%s*", "\n") -- </p>
+    text = text:gsub("%s*<%s*p%s*>%s*", "\n\n") -- <p>
+    text = text:gsub("%s*</%s*p%s*>%s*", "\n\n") -- </p>
     text = text:gsub("%s*<%s*p%s*/>%s*", "\n") -- standalone <p/>
     -- Remove all HTML tags
     text = text:gsub("<[^>]*>", "")
