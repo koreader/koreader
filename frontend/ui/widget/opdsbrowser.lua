@@ -91,7 +91,7 @@ function OPDSBrowser:init()
           },
           {
              title = "ManyBooks",
-             url = "https://manybooks.net/opds/index.php",
+             url = "http://manybooks.net/opds/index.php",
           },
           {
              title = "Internet Archive",
@@ -99,11 +99,11 @@ function OPDSBrowser:init()
           },
           {
              title = "Flibusta (Russian)",
-             url = "https://www.flibusta.is/opds",
+             url = "http://www.flibusta.is/opds",
           },
           {
              title = "Flibusta [Ru] [Searchable]",
-             url = "https://www.flibusta.is/opds/search?searchTerm=%s",
+             url = "http://www.flibusta.is/opds/search?searchTerm=%s",
              searchable = true,
           },
           {
