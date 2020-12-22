@@ -488,7 +488,7 @@ function ReaderWikipedia:lookupWikipedia(word, box, get_fullpage, forced_lang)
                 dict = T(_("Wikipedia %1"), lang:upper()),
                 word = page.title,
                 definition = definition,
-                is_fullpage = get_fullpage,
+                is_wiki_fullpage = get_fullpage,
                 lang = lang,
                 rtl_lang = Wikipedia:isWikipediaLanguageRTL(lang),
                 images = page.images,
@@ -512,7 +512,7 @@ function ReaderWikipedia:lookupWikipedia(word, box, get_fullpage, forced_lang)
                 dict = T(_("Wikipedia %1"), lang:upper()),
                 word = word,
                 definition = definition,
-                is_fullpage = get_fullpage,
+                is_wiki_fullpage = get_fullpage,
                 lang = lang,
             }
         }

@@ -853,7 +853,6 @@ function ReaderDictionary:showDict(word, results, box, link)
             selected_link = link,
             results = results,
             dictionary = self.default_dictionary,
-            width = Screen:getWidth() - Screen:scaleBySize(80),
             word_box = box,
             -- differentiate between dict and wiki
             is_wiki = self.is_wiki,
@@ -1009,6 +1008,7 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
     end
 end
 
+--[[ No longer used
 function ReaderDictionary:onUpdateDefaultDict(dict)
     logger.dbg("make default dictionary:", dict)
     self.default_dictionary = dict
@@ -1019,6 +1019,7 @@ function ReaderDictionary:onUpdateDefaultDict(dict)
     })
     return true
 end
+]]--
 
 function ReaderDictionary:onReadSettings(config)
     self.default_dictionary = config:readSetting("default_dictionary")
