@@ -1,6 +1,5 @@
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
-local Button = require("ui/widget/button")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CloseButton = require("ui/widget/closebutton")
@@ -10,10 +9,11 @@ local Event = require("ui/event")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local GestureRange = require("ui/gesturerange")
+local IconButton = require("ui/widget/iconbutton")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
-local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local Math = require("optmath")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
@@ -22,6 +22,7 @@ local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local util = require("util")
@@ -41,27 +42,14 @@ local DictQuickLookup = InputContainer:new{
     displayword = nil,
     images = nil,
     is_wiki = false,
-    is_fullpage = false,
+    is_wiki_fullpage = false,
     is_html = false,
     dict_index = 1,
-    title_face = Font:getFace("x_smalltfont"),
-    content_face = Font:getFace("cfont", 20),
-    image_alt_face = Font:getFace("cfont", 16),
     width = nil,
     height = nil,
     -- box of highlighted word, quick lookup window tries to not hide the word
     word_box = nil,
 
-    title_padding = Size.padding.default,
-    title_margin = Size.margin.title,
-    word_padding = Size.padding.default,
-    word_margin = Size.margin.default,
-    -- alt padding/margin for wiki to compensate for reduced font size
-    wiki_word_padding = Screen:scaleBySize(7),
-    wiki_word_margin = Screen:scaleBySize(3),
-    definition_padding = Screen:scaleBySize(2),
-    definition_margin = Screen:scaleBySize(2),
-    button_padding = Screen:scaleBySize(14),
     -- refresh_callback will be called before we trigger full refresh in onSwipe
     refresh_callback = nil,
     html_dictionary_link_tapped_callback = nil,
@@ -73,14 +61,13 @@ local highlight_strings = {
 }
 
 function DictQuickLookup:init()
-    local font_size = G_reader_settings:readSetting("dict_font_size") or 20
-    self.content_face = Font:getFace("cfont", font_size)
-    local font_size_alt = font_size - 4
+    self.dict_font_size = G_reader_settings:readSetting("dict_font_size") or 20
+    self.content_face = Font:getFace("cfont", self.dict_font_size)
+    local font_size_alt = self.dict_font_size - 4
     if font_size_alt < 8 then
         font_size_alt = 8
     end
     self.image_alt_face = Font:getFace("cfont", font_size_alt)
-    self:changeToDefaultDict()
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close quick lookup" }
@@ -93,7 +80,7 @@ function DictQuickLookup:init()
             h = Screen:getHeight(),
         }
         self.ges_events = {
-            TapCloseDict = {
+            Tap = {
                 GestureRange:new{
                     ges = "tap",
                     range = range,
@@ -167,6 +154,11 @@ function DictQuickLookup:init()
             ForwardingPanRelease = { GestureRange:new{ ges = "pan_release", range = range, }, },
         }
     end
+
+    -- We no longer support setting a default dict with Tap on title.
+    -- self:changeToDefaultDict()
+    -- Now, dictionaries can be ordered (although not yet per-book), so trust the order set
+    self:changeDictionary(1) -- this will call self:update()
 end
 
 -- Whether currently DictQuickLookup is working without a document.
@@ -220,135 +212,162 @@ function DictQuickLookup:update()
     if self[1] then
         self[1]:free()
     end
-    -- calculate window dimension
-    self.align = "center"
-    self.region = Geom:new{
-        x = 0, y = 0,
-        w = Screen:getWidth(),
-        h = Screen:getHeight(),
-    }
-    if self.is_fullpage or G_reader_settings:isTrue("dict_largewindow") then
-        -- bigger window if fullpage being shown - this will let
-        -- some room anyway for footer display (time, battery...)
-        -- In Landscape, we have less room available for the UI bits, so, chop it off some more
-        if Screen:getScreenMode() == "landscape" then
-            self.height = Screen:getHeight() - Screen:scaleBySize(80)
-        else
-            self.height = Screen:getHeight()
-        end
-        self.width = Screen:getWidth() - Screen:scaleBySize(40)
-    else
-        -- smaller window otherwise
-        -- try to not hide highlighted word
-        if self.word_box then
-            local box = self.word_box
-            if box.y + box.h/2 < Screen:getHeight()*0.3 then
-                self.region.y = box.y + box.h
-                self.region.h = Screen:getHeight() - box.y - box.h
-                self.align = "top"
-            elseif box.y + box.h/2 > Screen:getHeight()*0.7 then
-                self.region.y = 0
-                self.region.h = box.y
-                self.align = "bottom"
-            end
-        end
-        self.height = math.floor(math.min(self.region.h*0.7, Screen:getHeight()*0.5))
-    end
-    -- dictionary title
-    local close_button = CloseButton:new{ window = self, padding_top = self.title_margin, }
-    local btn_width = close_button:getSize().w + Size.padding.default * 2
-    local dict_title_text = TextWidget:new{
-        text = self.dictionary,
-        face = self.title_face,
-        bold = true,
-        max_width = self.width - btn_width,
-    }
-    -- Some different UI tweaks for dict or wiki
-    local lookup_word_font_size, lookup_word_padding, lookup_word_margin
-    local dict_title_widget
+
     if self.is_wiki then
-        -- visual hint : dictionary title left adjusted, Wikipedia title centered
-        dict_title_widget = CenterContainer:new{
-                dimen = Geom:new{
-                    w = self.width,
-                    h = dict_title_text:getSize().h,
-                },
-                dict_title_text,
-        }
-        -- Wikipedia has longer titles, so use a smaller font
-        lookup_word_font_size = 18
-        lookup_word_padding = self.wiki_word_padding
-        lookup_word_margin = self.wiki_word_margin
         -- Keep a copy of self.wiki_languages for use
         -- by DictQuickLookup:resyncWikiLanguages()
         self.wiki_languages_copy = self.wiki_languages and {unpack(self.wiki_languages)} or nil
-    else
-        dict_title_widget = dict_title_text
-        -- Usual font size for dictionary
-        lookup_word_font_size = 22
-        lookup_word_padding = self.word_padding
-        lookup_word_margin = self.word_margin
     end
-    self.dict_title = FrameContainer:new{
-        padding = self.title_padding,
-        margin = self.title_margin,
-        bordersize = 0,
-        dict_title_widget,
-    }
-    -- lookup word
-    local lookup_word = Button:new{
-        padding = lookup_word_padding,
-        margin = lookup_word_margin,
-        bordersize = 0,
-        max_width = self.width,
-        text = self.displayword,
-        text_font_face = "tfont",
-        text_font_size = lookup_word_font_size,
-        hold_callback = function() self:lookupInputWord(self.lookupword) end,
-    }
 
-    local text_widget
-
-    if self.is_html then
-        text_widget = ScrollHtmlWidget:new{
-            html_body = self.definition,
-            css = self:getHtmlDictionaryCss(),
-            default_font_size = Screen:scaleBySize(G_reader_settings:readSetting("dict_font_size") or 20),
-            width = self.width,
-            height = self.is_fullpage and math.floor(self.height*0.75) or math.floor(self.height*0.7),
-            dialog = self,
-            html_link_tapped_callback = function(link)
-                self.html_dictionary_link_tapped_callback(self.dictionary, link)
-            end,
-         }
+    -- Bigger window if fullpage Wikipedia article being shown,
+    -- or when large windows for dict requested
+    local is_large_window = self.is_wiki_fullpage or G_reader_settings:isTrue("dict_largewindow")
+    if is_large_window then
+        self.width = Screen:getWidth() - 2*Size.margin.default
     else
-        text_widget = ScrollTextWidget:new{
-            text = self.definition,
-            face = self.content_face,
-            width = self.width,
-            -- get a bit more height for definition as wiki has one less button raw
-            height = self.is_fullpage and math.floor(self.height*0.75) or math.floor(self.height*0.7),
-            dialog = self,
-            -- allow for disabling justification
-            justified = G_reader_settings:nilOrTrue("dict_justify"),
-            lang = self.lang and self.lang:lower(), -- only available on wikipedia results
-            para_direction_rtl = self.rtl_lang,     -- only available on wikipedia results
-            auto_para_direction = not self.is_wiki, -- only for dict results (we don't know their lang)
-            image_alt_face = self.image_alt_face,
-            images = self.images,
+        self.width = Screen:getWidth() - Screen:scaleBySize(80)
+    end
+    local frame_bordersize = Size.border.window
+    local inner_width = self.width - 2*frame_bordersize
+    -- Height will be computed below, after we build top an bottom
+    -- components, when we know how much height they are taking.
+
+    -- Dictionary title
+    -- (a bit convoluted with margin & padding but no border, but let's
+    -- do as other widgets to get the same look)
+    local title_margin = Size.margin.title
+    local title_padding = Size.padding.default
+    local title_width = inner_width - 2*title_padding -2*title_margin
+    local close_button = CloseButton:new{ window = self, padding_top = title_margin, }
+    local dict_title_text = TextWidget:new{
+        text = self.dictionary,
+        face = Font:getFace("x_smalltfont"),
+        bold = true,
+        max_width = title_width - close_button:getSize().w + close_button.padding_left
+            -- Allow text to eat on the CloseButton padding_left (which
+            -- is quite large to ensure a bigger tap area)
+    }
+    local dict_title_widget = dict_title_text
+    if self.is_wiki then
+        -- Visual hint: title left aligned for dict, but centered for Wikipedia
+        dict_title_widget = CenterContainer:new{
+            dimen = Geom:new{
+                w = title_width,
+                h = dict_title_text:getSize().h,
+            },
+            dict_title_text,
         }
     end
-
-    -- word definition
-    self.definition_widget = FrameContainer:new{
-        padding = self.definition_padding,
-        margin = self.definition_margin,
+    self.dict_title = FrameContainer:new{
+        margin = title_margin,
         bordersize = 0,
-        text_widget,
+        padding = title_padding,
+        dict_title_widget,
     }
-    -- Different sets of buttons if fullpage or not
+    local title_bar = OverlapGroup:new{
+        dimen = {
+            w = inner_width,
+            h = self.dict_title:getSize().h
+        },
+        self.dict_title,
+        close_button,
+    }
+    local title_sep = LineWidget:new{
+        dimen = Geom:new{
+            w = inner_width,
+            h = Size.line.thick,
+        }
+    }
+
+    -- This padding and the resulting width apply to the content
+    -- below the title:  lookup word and definition
+    local content_padding_h = Size.padding.large
+    local content_padding_v = Size.padding.large -- added via VerticalSpan
+    local content_width = inner_width - 2*content_padding_h
+
+    -- Spans between components
+    local top_to_word_span = VerticalSpan:new{ width = content_padding_v }
+    local word_to_definition_span = VerticalSpan:new{ width = content_padding_v }
+    local definition_to_bottom_span = VerticalSpan:new{ width = content_padding_v }
+
+    -- Lookup word
+    local word_font_face = "tfont"
+    -- Ensure this word doesn't get smaller than its definition
+    local word_font_size = math.max(22, self.dict_font_size)
+    -- Get the line height of the normal font size, as a base for sizing this component
+    if not self.word_line_height then
+        local test_widget = TextWidget:new{
+            text = "z",
+            face = Font:getFace(word_font_face, word_font_size),
+        }
+        self.word_line_height = test_widget:getSize().h
+        test_widget:free()
+    end
+    if self.is_wiki then
+        -- Wikipedia has longer titles, so use a smaller font,
+        word_font_size = math.max(18, self.dict_font_size)
+    end
+    local icon_size = Screen:scaleBySize(32)
+    local lookup_height = math.max(self.word_line_height, icon_size)
+    -- Edit button
+    local lookup_edit_button = IconButton:new{
+        icon = "edit",
+        width = icon_size,
+        height = icon_size,
+        padding = 0,
+        padding_left = Size.padding.small,
+        callback = function()
+            -- allow adjusting the queried word
+            self:lookupInputWord(self.word)
+        end,
+        hold_callback = function()
+            -- allow adjusting the current result word
+            self:lookupInputWord(self.lookupword)
+        end,
+        overlap_align = "right",
+    }
+    local lookup_edit_button_w = lookup_edit_button:getSize().w
+    -- Nb of results (if set)
+    local lookup_word_nb
+    local lookup_word_nb_w = 0
+    if self.displaynb then
+        lookup_word_nb = FrameContainer:new{
+            margin = 0,
+            bordersize = 0,
+            padding = 0,
+            padding_left = Size.padding.small,
+            padding_right = lookup_edit_button_w + Size.padding.default,
+            overlap_align = "right",
+            TextWidget:new{
+                text = self.displaynb,
+                face = Font:getFace("cfont", word_font_size),
+                padding = 0, -- smaller height for better aligmnent with icon
+            }
+        }
+        lookup_word_nb_w = lookup_word_nb:getSize().w
+    end
+    -- Lookup word
+    local lookup_word_text = TextWidget:new{
+        text = self.displayword,
+        face = Font:getFace(word_font_face, word_font_size),
+        bold = true,
+        max_width = content_width - math.max(lookup_edit_button_w, lookup_word_nb_w),
+        padding = 0, -- to be aligned with lookup_word_nb
+    }
+    -- Group these 3 widgets
+    local lookup_word = OverlapGroup:new{
+        dimen = {
+            w = content_width,
+            h = lookup_height,
+        },
+        lookup_word_text,
+        lookup_edit_button,
+        lookup_word_nb, -- last, as this might be nil
+    }
+
+    -- Different sets of buttons whether fullpage or not
     local buttons
-    if self.is_fullpage then
+    if self.is_wiki_fullpage then
         -- A save and a close button
         buttons = {
             {
@@ -481,97 +500,225 @@ function DictQuickLookup:update()
                         end)
                     end,
                 },
-                -- Rotate thru available wikipedia languages (disabled if dictionary window)
-                -- (replace previous unimplemented "Add Note")
+                -- Rotate thru available wikipedia languages, or Search in book if dict window
                 {
                     -- if more than one language, enable it and display "current lang > next lang"
                     -- otherwise, just display current lang
                     text = self.is_wiki
                         and ( #self.wiki_languages > 1 and BD.wrap(self.wiki_languages[1]).." > "..BD.wrap(self.wiki_languages[2])
                                                         or self.wiki_languages[1] ) -- (this " > " will be auro-mirrored by bidi)
-                        or _("Follow Link"),
-                    enabled = (self.is_wiki and #self.wiki_languages > 1) or self.selected_link ~= nil,
+                        or _("Search"),
+                    enabled = not self.is_wiki and true or #self.wiki_languages > 1,
                     callback = function()
                         if self.is_wiki then
                             self:resyncWikiLanguages(true) -- rotate & resync them
                             UIManager:close(self)
                             self:lookupWikipedia()
                         else
-                            local link = self.selected_link.link or self.selected_link
-                            self.ui.link:onGotoLink(link)
-                            self:onClose()
+                            self.ui:handleEvent(Event:new("HighlightSearch"))
+                            UIManager:close(self)
                         end
                     end,
                 },
                 {
-                    text = (self.is_wiki or self:isDocless()) and _("Close") or _("Search"),
+                    text = _("Close"),
                     callback = function()
-                        if not self.is_wiki then
-                            self.ui:handleEvent(Event:new("HighlightSearch"))
-                        end
-                        UIManager:close(self)
+                        -- UIManager:close(self)
+                        self:onClose()
                     end,
                 },
             },
         }
+        if not self.is_wiki and self.selected_link ~= nil then
+            -- If highlighting some word part of a link (which should be rare),
+            -- add a new first row with a single button to follow this link.
+            table.insert(buttons, 1, {
+                {
+                    text = _("Follow Link"),
+                    callback = function()
+                        local link = self.selected_link.link or self.selected_link
+                        self.ui.link:onGotoLink(link)
+                        self:onClose()
+                    end,
+                },
+            })
+        end
     end
 
+    -- Bottom buttons get a bit less padding so their line separators
+    -- reach out from the content to the borders a bit more
+    local buttons_padding = Size.padding.default
+    local buttons_width = inner_width - 2*buttons_padding
     local button_table = ButtonTable:new{
-        width = math.max(self.width, self.definition_widget:getSize().w),
+        width = buttons_width,
         button_font_face = "cfont",
         button_font_size = 20,
         buttons = buttons,
         zero_sep = true,
         show_parent = self,
     }
-    local title_bar = LineWidget:new{
-        dimen = Geom:new{
-            w = button_table:getSize().w + self.button_padding,
-            h = Size.line.thick,
-        }
-    }
 
-    self.dict_bar = OverlapGroup:new{
-        dimen = {
-            w = button_table:getSize().w + self.button_padding,
-            h = self.dict_title:getSize().h
-        },
-        self.dict_title,
-        close_button,
+    -- Margin from screen edges
+    local margin_top = Size.margin.default
+    local margin_bottom = Size.margin.default
+    if self.ui and self.ui.view and self.ui.view.footer_visible then
+        -- We want to let the footer visible (as it can show time, battery level
+        -- and wifi state, which might be useful when spending time reading
+        -- definitions or wikipedia articles)
+        margin_bottom = margin_bottom + self.ui.view.footer:getHeight()
+    end
+    local avail_height = Screen:getHeight() - margin_top - margin_bottom
+    -- Region in which the window will be aligned center/top/bottom:
+    self.region = Geom:new{
+        x = 0,
+        y = margin_top,
+        w = Screen:getWidth(),
+        h = avail_height,
     }
-    -- Fix dict title max width now that we know the final width
-    dict_title_text:setMaxWidth(self.dict_bar.dimen.w - close_button:getSize().w)
+    self.align = "center"
+
+    local others_height = frame_bordersize * 2 -- DictQuickLookup border
+                        + title_bar:getSize().h
+                        + title_sep:getSize().h
+                        + top_to_word_span:getSize().h
+                        + lookup_word:getSize().h
+                        + word_to_definition_span:getSize().h
+                        + definition_to_bottom_span:getSize().h
+                        + button_table:getSize().h
+
+    -- To properly adjust the definition to the height of text, we need
+    -- the line height a ScrollTextWidget will use for the current font
+    -- size (we'll then use this perfect height for ScrollTextWidget,
+    -- but also for ScrollHtmlWidget, where it doesn't matter).
+    if not self.definition_line_height then
+        local test_widget = ScrollTextWidget:new{
+            text = "z",
+            face = self.content_face,
+            width = content_width,
+            height = self.definition_height,
+        }
+        self.definition_line_height = test_widget:getLineHeight()
+        test_widget:free()
+    end
+
+    if is_large_window then
+        -- Available height for definition + components
+        self.height = avail_height
+        self.definition_height = self.height - others_height
+        local nb_lines = math.floor(self.definition_height / self.definition_line_height)
+        self.definition_height = nb_lines * self.definition_line_height
+        local pad = self.height - others_height - self.definition_height
+        -- put that unused height on the above span
+        word_to_definition_span.width = word_to_definition_span.width + pad
+    else
+        -- Definition height was previously computed as 0.5*0.7*screen_height, so keep
+        -- it that way. Components will add themselves to that.
+        self.definition_height = math.floor(avail_height * 0.5 * 0.7)
+        -- But we want it to fit to the lines that will show, to avoid
+        -- any extra padding
+        local nb_lines = Math.round(self.definition_height / self.definition_line_height)
+        self.definition_height = nb_lines * self.definition_line_height
+        self.height = self.definition_height + others_height
+        if self.word_box then
+            -- Try to not hide the highlighted word. We don't want to always
+            -- get near it if we can stay center, so that more context around
+            -- the word is still visible with the dict result.
+            -- But if we were to be drawn over the word, move a bit if possible.
+            local box = self.word_box
+            -- Don't stick to the box, ensure a minimal padding between box and window
+            local box_dict_padding = Size.padding.small
+            local word_box_top = box.y - box_dict_padding
+            local word_box_bottom = box.y + box.h + box_dict_padding
+            local half_visible_height = (avail_height - self.height) / 2
+            if word_box_bottom > half_visible_height and word_box_top <= half_visible_height + self.height then
+                -- word would be covered by our centered window
+                if word_box_bottom <= avail_height - self.height then
+                    -- Window can be moved just below word
+                    self.region.y = word_box_bottom
+                    self.region.h = self.region.h - word_box_bottom
+                    self.align = "top"
+                elseif word_box_top > self.height then
+                    -- Window can be moved just above word
+                    self.region.y = 0
+                    self.region.h = word_box_top
+                    self.align = "bottom"
+                end
+            end
+        end
+    end
+
+    local text_widget
+    if self.is_html then
+        text_widget = ScrollHtmlWidget:new{
+            html_body = self.definition,
+            css = self:getHtmlDictionaryCss(),
+            default_font_size = Screen:scaleBySize(self.dict_font_size),
+            width = content_width,
+            height = self.definition_height,
+            dialog = self,
+            html_link_tapped_callback = function(link)
+                self.html_dictionary_link_tapped_callback(self.dictionary, link)
+            end,
+         }
+    else
+        text_widget = ScrollTextWidget:new{
+            text = self.definition,
+            face = self.content_face,
+            width = content_width,
+            height = self.definition_height,
+            dialog = self,
+            justified = G_reader_settings:nilOrTrue("dict_justify"), -- allow for disabling justification
+            lang = self.lang and self.lang:lower(), -- only available on wikipedia results
+            para_direction_rtl = self.rtl_lang,     -- only available on wikipedia results
+            auto_para_direction = not self.is_wiki, -- only for dict results (we don't know their lang)
+            image_alt_face = self.image_alt_face,
+            images = self.images,
+        }
+    end
+
+    -- word definition
+    self.definition_widget = FrameContainer:new{
+        padding = 0,
+        padding_left = content_padding_h,
+        padding_right = content_padding_h,
+        margin = 0,
+        bordersize = 0,
+        text_widget,
+    }
 
     self.dict_frame = FrameContainer:new{
         radius = Size.radius.window,
-        bordersize = Size.border.window,
+        bordersize = frame_bordersize,
         padding = 0,
         margin = 0,
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
-            self.dict_bar,
             title_bar,
+            title_sep,
+            top_to_word_span,
             -- word
-            LeftContainer:new{
+            CenterContainer:new{
                 dimen = Geom:new{
-                    w = title_bar:getSize().w,
+                    w = inner_width,
                     h = lookup_word:getSize().h,
                 },
                 lookup_word,
             },
+            word_to_definition_span,
             -- definition
             CenterContainer:new{
                 dimen = Geom:new{
-                    w = title_bar:getSize().w,
+                    w = inner_width,
                     h = self.definition_widget:getSize().h,
                 },
                 self.definition_widget,
             },
+            definition_to_bottom_span,
             -- buttons
             CenterContainer:new{
                 dimen = Geom:new{
-                    w = title_bar:getSize().w,
+                    w = inner_width,
                     h = button_table:getSize().h,
                 },
                 button_table,
@@ -705,7 +852,7 @@ function DictQuickLookup:changeDictionary(index)
     self.dictionary = self.results[index].dict
     self.lookupword = self.results[index].word
     self.definition = self.results[index].definition
-    self.is_fullpage = self.results[index].is_fullpage
+    self.is_wiki_fullpage = self.results[index].is_wiki_fullpage
     self.is_html = self.results[index].is_html
     self.css = self.results[index].css
     self.lang = self.results[index].lang
@@ -717,12 +864,13 @@ function DictQuickLookup:changeDictionary(index)
         -- when we're done.
         self.images_cleanup_needed = true
     end
-    if self.is_fullpage then
+    if self.is_wiki_fullpage then
         self.displayword = self.lookupword
+        self.displaynb = nil
     else
-        -- add "dict_index / nbresults" to displayword, so we know where
-        -- we're at and what's yet to see
-        self.displayword = self.lookupword.."   "..index.." / "..#self.results
+        self.displayword = self.lookupword
+        -- show "dict_index / nbresults" so we know where we're at and what's yet to see
+        self.displaynb = T("%1 / %2", index, #self.results)
         -- add queried word to 1st result's definition, so we can see
         -- what was the selected text and if we selected wrong
         if index == 1 then
@@ -738,6 +886,7 @@ function DictQuickLookup:changeDictionary(index)
     self:update()
 end
 
+--[[ No longer used
 function DictQuickLookup:changeToDefaultDict()
     if self.dictionary then
         -- dictionaries that have definition of the first word(accurate word)
@@ -766,6 +915,7 @@ function DictQuickLookup:changeToDefaultDict()
         self:changeDictionary(1)
     end
 end
+]]--
 
 function DictQuickLookup:onAnyKeyPressed()
     -- triggered by our defined key events
@@ -773,28 +923,32 @@ function DictQuickLookup:onAnyKeyPressed()
     return true
 end
 
-function DictQuickLookup:onTapCloseDict(arg, ges_ev)
+function DictQuickLookup:onTap(arg, ges_ev)
     if ges_ev.pos:notIntersectWith(self.dict_frame.dimen) then
         self:onClose()
         return true
-    elseif not ges_ev.pos:notIntersectWith(self.dict_title.dimen) and not self.is_wiki then
+    end
+    --[[ This was more bothering than working, do disable this feature
+    if not ges_ev.pos:notIntersectWith(self.dict_title.dimen) and not self.is_wiki then
         self.ui:handleEvent(Event:new("UpdateDefaultDict", self.dictionary))
         return true
-    end
-    -- Allow for changing dict with tap (tap event will be first
-    -- processed for scrolling definition by ScrollTextWidget, which
-    -- will pop it up for us here when it can't scroll anymore).
-    -- This allow for continuous reading of results' definitions with tap.
-    if BD.flipIfMirroredUILayout(ges_ev.pos.x < Screen:getWidth()/2) then
-        local prev_index = self.dict_index
-        self:changeToPrevDict()
-        if self.dict_index ~= prev_index then
-            -- Jump directly to bottom of previous dict definition
-            -- to keep "continuous reading with tap" consistent
-            self.definition_widget[1]:scrollToRatio(1) -- 1 = 100% = bottom
+    --]]
+    if ges_ev.pos:intersectWith(self.definition_widget.dimen) then
+        -- Allow for changing dict with tap (tap event will be first
+        -- processed for scrolling definition by ScrollTextWidget, which
+        -- will pop it up for us here when it can't scroll anymore).
+        -- This allow for continuous reading of results' definitions with tap.
+        if BD.flipIfMirroredUILayout(ges_ev.pos.x < Screen:getWidth()/2) then
+            local prev_index = self.dict_index
+            self:changeToPrevDict()
+            if self.dict_index ~= prev_index then
+                -- Jump directly to bottom of previous dict definition
+                -- to keep "continuous reading with tap" consistent
+                self.definition_widget[1]:scrollToRatio(1) -- 1 = 100% = bottom
+            end
+        else
+            self:changeToNextDict()
         end
-    else
-        self:changeToNextDict()
     end
     return true
 end
@@ -909,7 +1063,6 @@ function DictQuickLookup:onForwardingPanRelease(arg, ges)
 end
 
 function DictQuickLookup:lookupInputWord(hint)
-    self:onClose()
     self.input_dialog = InputDialog:new{
         title = _("Input lookup word"),
         input = hint,
@@ -928,6 +1081,7 @@ function DictQuickLookup:lookupInputWord(hint)
                     is_enter_default = true,
                     callback = function()
                         self:closeInputDialog()
+                        self:onClose()
                         self:inputLookup()
                     end,
                 },
