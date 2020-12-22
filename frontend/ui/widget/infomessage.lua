@@ -67,6 +67,8 @@ local InfoMessage = InputContainer:new{
     auto_para_direction = nil,
     -- Don't call setDirty when closing the widget
     no_refresh_on_close = nil,
+    -- Only have it painted after this delay (dismissing still works before it's shown)
+    show_delay = nil,
 }
 
 function InfoMessage:init()
@@ -184,9 +186,18 @@ function InfoMessage:init()
             end
         end
     end
+
+    if self.show_delay then
+        -- Don't have UIManager setDirty us yet
+        self.invisible = true
+    end
 end
 
 function InfoMessage:onCloseWidget()
+    if self.invisible then
+        -- Still invisible, no setDirty needed
+        return true
+    end
     if self.no_refresh_on_close then
         return true
     end
@@ -198,28 +209,58 @@ function InfoMessage:onCloseWidget()
 end
 
 function InfoMessage:onShow()
-    -- triggered by the UIManager after we got successfully shown (not yet painted)
+    -- triggered by the UIManager after we got successfully show()'n (not yet painted)
+    if self.show_delay and self.invisible then
+        -- Let us be shown after this delay
+        self._delayed_show_action = function()
+            self._delayed_show_action = nil
+            self.invisible = false
+            self:onShow()
+        end
+        UIManager:scheduleIn(self.show_delay, self._delayed_show_action)
+        return true
+    end
+    -- set our region to be dirty, so UImanager will call our paintTo()
     UIManager:setDirty(self, function()
         return "ui", self[1][1].dimen
     end)
+    -- schedule us to close ourself if timeout provided
     if self.timeout then
         UIManager:scheduleIn(self.timeout, function() UIManager:close(self) end)
     end
     return true
 end
 
-function InfoMessage:onAnyKeyPressed()
-    -- triggered by our defined key events
+function InfoMessage:getVisibleArea()
+    if not self.invisible then
+        return self[1][1].dimen
+    end
+end
+
+function InfoMessage:paintTo(bb, x, y)
+    if self.invisible then
+        return
+    end
+    InputContainer.paintTo(self, bb, x, y)
+end
+
+function InfoMessage:dismiss()
+    if self._delayed_show_action then
+        UIManager:unschedule(self._delayed_show_action)
+    end
     self.dismiss_callback()
     UIManager:close(self)
+end
+
+function InfoMessage:onAnyKeyPressed()
+    self:dismiss()
     if self.readonly ~= true then
         return true
     end
 end
 
 function InfoMessage:onTapClose()
-    self.dismiss_callback()
-    UIManager:close(self)
+    self:dismiss()
     if self.readonly ~= true then
         return true
     end
