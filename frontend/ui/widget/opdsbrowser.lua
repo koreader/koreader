@@ -317,7 +317,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
     logger.info("request", request)
     http.TIMEOUT = 10
     local httpRequest = http.request
-    local code, headers, status = socket.skip(1, httpRequest(request))
+    local code, headers = socket.skip(1, httpRequest(request))
     -- raise error message when network is unavailable
     if headers == nil then
         error(code)
