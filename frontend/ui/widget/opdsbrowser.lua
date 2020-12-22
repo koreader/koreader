@@ -343,7 +343,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
         })
     elseif code == 302 and item_url:match("^https") and headers.location:match("^http[^s]") then
         UIManager:show(InfoMessage:new{
-            text = T(_("Insecure HTTPS → HTTP downgrade attemped by redirect from:\n\n'%1'\n\nto\n\n'%2'.\n\nPlease inform the server administrator that  many clients disallow this because it could be a downgrade attack."), BD.url(item_url), BD.url(headers.location)),
+            text = T(_("Insecure HTTPS → HTTP downgrade attemped by redirect from:\n\n'%1'\n\nto\n\n'%2'.\n\nPlease inform the server administrator that many clients disallow this because it could be a downgrade attack."), BD.url(item_url), BD.url(headers.location)),
         })
     elseif code == 401 then
         UIManager:show(InfoMessage:new{
