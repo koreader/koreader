@@ -781,6 +781,8 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
                 dict = "",
                 word = word,
                 definition = lookup_cancelled and _("Dictionary lookup canceled.") or _("No definition found."),
+                no_result = true,
+                lookup_cancelled = lookup_cancelled,
             }
         }
     end
@@ -822,7 +824,18 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
 
     self:showLookupInfo(word, 0.5)
 
+    local lookup_start_ts = ffiUtil.getTimestamp()
     local results = self:startSdcv(word, dict_names, fuzzy_search)
+    if results and results[1] and results[1].lookup_cancelled and ffiUtil.getDuration(lookup_start_ts) < 1.5 then
+        -- If interrupted quickly just after launch, don't display anything
+        -- (this might help avoiding refreshes and the need to dismiss
+        -- after accidental long-press when holding a device).
+        if self.highlight then
+            self.highlight:clear()
+        end
+        return
+    end
+
     self:showDict(word, tidyMarkup(results), box, link)
 end
 
