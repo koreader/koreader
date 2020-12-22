@@ -189,6 +189,9 @@ end
 
 function MovableContainer:onMovableSwipe(_, ges)
     logger.dbg("MovableContainer:onMovableSwipe", ges)
+    if not self.dimen then -- not yet painted
+        return false
+    end
     if not ges.pos:intersectWith(self.dimen) then
         -- with swipe, ges.pos is swipe's start position, which should
         -- be on us to consider it
@@ -216,6 +219,9 @@ function MovableContainer:onMovableTouch(_, ges)
     -- First "pan" event may already be outsise us, we need to
     -- remember any "touch" event on us prior to "pan"
     logger.dbg("MovableContainer:onMovableTouch", ges)
+    if not self.dimen then -- not yet painted
+        return false
+    end
     if ges.pos:intersectWith(self.dimen) then
         self._touch_pre_pan_was_inside = true
         self._move_relative_x = ges.pos.x
@@ -228,6 +234,9 @@ end
 
 function MovableContainer:onMovableHold(_, ges)
     logger.dbg("MovableContainer:onMovableHold", ges)
+    if not self.dimen then -- not yet painted
+        return false
+    end
     if ges.pos:intersectWith(self.dimen) then
         self._moving = true -- start of pan
         self._move_relative_x = ges.pos.x
@@ -239,6 +248,9 @@ end
 
 function MovableContainer:onMovableHoldPan(_, ges)
     logger.dbg("MovableContainer:onMovableHoldPan", ges)
+    if not self.dimen then -- not yet painted
+        return false
+    end
     -- we may sometimes not see the "hold" event
     if ges.pos:intersectWith(self.dimen) or self._moving or self._touch_pre_pan_was_inside then
         self._touch_pre_pan_was_inside = false -- reset it
@@ -250,6 +262,9 @@ end
 
 function MovableContainer:onMovableHoldRelease(_, ges)
     logger.dbg("MovableContainer:onMovableHoldRelease", ges)
+    if not self.dimen then -- not yet painted
+        return false
+    end
     if self._moving or self._touch_pre_pan_was_inside then
         self._moving = false
         if not self._move_relative_x or not self._move_relative_y then
@@ -273,6 +288,9 @@ end
 
 function MovableContainer:onMovablePan(_, ges)
     logger.dbg("MovableContainer:onMovablePan", ges)
+    if not self.dimen then -- not yet painted
+        return false
+    end
     if ges.pos:intersectWith(self.dimen) or self._moving or self._touch_pre_pan_was_inside then
         self._touch_pre_pan_was_inside = false -- reset it
         self._moving = true
@@ -285,6 +303,9 @@ end
 
 function MovableContainer:onMovablePanRelease(_, ges)
     logger.dbg("MovableContainer:onMovablePanRelease", ges)
+    if not self.dimen then -- not yet painted
+        return false
+    end
     if self._moving then
         self:_moveBy(self._move_relative_x, self._move_relative_y)
         self._moving = false
