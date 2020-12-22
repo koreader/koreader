@@ -607,6 +607,26 @@ function DictQuickLookup:update()
     end)
 end
 
+function DictQuickLookup:getInitialVisibleArea()
+    -- Some positionning happens only at paintTo() time, but we want
+    -- to know this before. So, do a bit like WidgetContainer does
+    -- (without any MovableContainer offset)
+    local dict_size = self.dict_frame:getSize()
+    local area = Geom:new{
+        w = dict_size.w,
+        h = dict_size.h,
+        x = self.region.x + math.floor((self.region.w - dict_size.w)/2)
+    }
+    if self.align == "top" then
+        area.y = self.region.y
+    elseif self.align == "bottom" then
+        area.y = self.region.y + self.region.h - dict_size.h
+    elseif self.align == "center" then
+        area.x = self.region.y + math.floor((self.region.h - dict_size.h)/2)
+    end
+    return area
+end
+
 function DictQuickLookup:onCloseWidget()
     -- Free our widget and subwidgets' resources (especially
     -- definitions' TextBoxWidget bb, HtmlBoxWidget bb and MuPDF instance,
