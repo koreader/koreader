@@ -551,8 +551,6 @@ local Menu = FocusManager:new{
     page_info = nil,
     page_return = nil,
 
-    paths = {},  -- table to trace navigation path
-
     -- set this to true to not paint as popup menu
     is_borderless = false,
     -- if you want to embed the menu widget into another widget, set
@@ -607,6 +605,8 @@ function Menu:init()
         self.dimen.h = Screen:getHeight()
     end
     self.page = 1
+
+    self.paths = {}  -- per instance table to trace navigation path
 
     -----------------------------------
     -- start to set up widget layout --
