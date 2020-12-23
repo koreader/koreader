@@ -182,6 +182,31 @@ else
     function InputText:initEventListener() end
 end
 
+function InputText:onKeyPress(key)
+
+    -- logger.dbg(key)
+
+    if key["key"]:len() == 1 and not key["Ctrl"] and not key["Alt"] then
+
+        if key["modifiers"]["Sym"] then
+            self:addChars(key["key"])
+        else
+            self:addChars(key["key"]:lower())
+        end
+    elseif key["Backspace"] then
+        self:delChar()
+    elseif key["Del"] then
+        self:rightChar()
+        self:delChar()
+    elseif key["Ctrl"] then
+        if key["U"] then
+            self:delToStartOfLine()
+        elseif key["H"] then
+            self:delChar()
+        end
+    end
+end
+
 function InputText:checkTextEditability()
     -- The split of the 'text' string to a table of utf8 chars may not be
     -- reversible to the same string, if 'text'  comes from a binary file
