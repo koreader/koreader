@@ -125,6 +125,7 @@ function OPDSBrowser:init()
         servers[4].url = "https://bookserver.archive.org"
     end
     self.item_table = self:genItemTableFromRoot()
+    self.catalog_title = nil
     Menu.init(self) -- call parent's init()
 end
 
@@ -520,7 +521,7 @@ end
 function OPDSBrowser:updateCatalog(item_url, username, password)
     local menu_table = self:genItemTableFromURL(item_url, username, password)
     if #menu_table > 0 then
-        self:switchItemTable(nil, menu_table)
+        self:switchItemTable(self.catalog_title, menu_table)
         if self.page_num <= 1 then
             self:onNext()
         end
@@ -536,7 +537,7 @@ function OPDSBrowser:appendCatalog(item_url, username, password)
         table.insert(self.item_table, item)
     end
     self.item_table.hrefs = new_table.hrefs
-    self:switchItemTable(nil, self.item_table, -1)
+    self:switchItemTable(self.catalog_title, self.item_table, -1)
     return true
 end
 
@@ -680,6 +681,7 @@ function OPDSBrowser:browse(browse_url, username, password)
         url = browse_url,
         username = username,
         password = password,
+        title = self.catalog_title,
     })
     if not self:updateCatalog(browse_url, username, password) then
         table.remove(self.paths)
@@ -721,6 +723,7 @@ function OPDSBrowser:browseSearchable(browse_url, username, password)
 end
 
 function OPDSBrowser:onMenuSelect(item)
+    self.catalog_title = item.text or _("OPDS Catalog")
     -- add catalog
     if item.callback then
         item.callback()
@@ -862,6 +865,7 @@ function OPDSBrowser:onReturn()
         local path = self.paths[#self.paths]
         if path then
             -- return to last path
+            self.catalog_title = path.title
             self:updateCatalog(path.url, path.username, path.password)
         else
             -- return to root path, we simply reinit opdsbrowser
