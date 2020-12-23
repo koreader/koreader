@@ -60,7 +60,7 @@ function ReaderStatus:onEndOfBook()
         self:onMarkBook(true)
     end
 
-    if settings == "pop-up" or settings == nil then
+    if (settings == "pop-up" or settings == nil) and UIManager:getTopWidget() ~= "end_document" then
         local buttons = {
             {
                 {
@@ -128,6 +128,7 @@ function ReaderStatus:onEndOfBook()
             },
         }
         choose_action = ButtonDialogTitle:new{
+            name = "end_document",
             title = _("You've reached the end of the document.\nWhat would you like to do?"),
             title_align = "center",
             buttons = buttons,
