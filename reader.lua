@@ -29,6 +29,15 @@ io.stdout:flush()
 -- they might call gettext on load
 G_reader_settings = require("luasettings"):open(
     DataStorage:getDataDir().."/settings.reader.lua")
+
+-- Apply the JIT opt tweaks ASAP when the C BB is disabled,
+-- because we want to avoid the jit.flush() from bb:enableCBB,
+-- which only makes the mcode allocation issues worse on Android...
+local is_cbb_enabled = G_reader_settings:nilOrFalse("dev_no_c_blitter")
+if not is_cbb_enabled then
+    jit.opt.start("loopunroll=45")
+end
+
 local lang_locale = G_reader_settings:readSetting("language")
 -- Allow quick switching to Arabic for testing RTL/UI mirroring
 if os.getenv("KO_RTL") then lang_locale = "ar_AA" end
@@ -41,7 +50,8 @@ local dummy = require("ffi/posix_h")
 
 -- Try to turn the C blitter on/off, and synchronize setting so that UI config reflects real state
 local bb = require("ffi/blitbuffer")
-local is_cbb_enabled = bb:enableCBB(G_reader_settings:nilOrFalse("dev_no_c_blitter"))
+bb:setUseCBB(is_cbb_enabled)
+is_cbb_enabled = bb:enableCBB(G_reader_settings:nilOrFalse("dev_no_c_blitter"))
 G_reader_settings:saveSetting("dev_no_c_blitter", not is_cbb_enabled)
 
 -- Should check DEBUG option in arg and turn on DEBUG before loading other
