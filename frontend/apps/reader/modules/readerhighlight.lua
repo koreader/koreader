@@ -710,8 +710,7 @@ end
 function ReaderHighlight:onHold(arg, ges)
     if self.document.info.has_pages and self.panel_zoom_enabled then
         local res = self:onPanelZoom(arg, ges)
-        -- TODO: make sure it cover all situations
-        if res and not self.panel_zoom_fallback_to_text_selection then
+        if res or not self.panel_zoom_fallback_to_text_selection then
             return res
         end
     end
