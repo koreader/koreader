@@ -261,7 +261,7 @@ function Device:init()
 
     -- Make sure we won't ever fallback to the Lua BB...
     local bb = require("ffi/blitbuffer")
-    bb.BB_mt.__index:canUseCbbTogether = bb.getUseCBB
+    bb.BB_mt.__index.canUseCbbTogether = bb.getUseCBB
     bb.BB4_mt.__index.canUseCbbTogether = bb.getUseCBB
     bb.BB8_mt.__index.canUseCbbTogether = bb.getUseCBB
     bb.BB8A_mt.__index.canUseCbbTogether = bb.getUseCBB
@@ -269,7 +269,7 @@ function Device:init()
     bb.BBRGB24_mt.__index.canUseCbbTogether = bb.getUseCBB
     bb.BBRGB32_mt.__index.canUseCbbTogether = bb.getUseCBB
 
-    bb.BB_mt.__index:canUseCbb = bb.getUseCBB
+    bb.BB_mt.__index.canUseCbb = bb.getUseCBB
     bb.BB4_mt.__index.canUseCbb = bb.getUseCBB
     bb.BB8_mt.__index.canUseCbb = bb.getUseCBB
     bb.BB8A_mt.__index.canUseCbb = bb.getUseCBB
