@@ -209,6 +209,24 @@ function Device:init()
         setClipboardText = function(text)
             return android.setClipboardText(text)
         end,
+
+        -- Make sure we won't ever fallback to the Lua BB...
+        local bb = require("ffi/blitbuffer")
+        bb.BB_mt.__index:canUseCbbTogether = bb.getUseCBB
+        bb.BB4_mt.__index.canUseCbbTogether = bb.getUseCBB
+        bb.BB8_mt.__index.canUseCbbTogether = bb.getUseCBB
+        bb.BB8A_mt.__index.canUseCbbTogether = bb.getUseCBB
+        bb.BBRGB16_mt.__index.canUseCbbTogether = bb.getUseCBB
+        bb.BBRGB24_mt.__index.canUseCbbTogether = bb.getUseCBB
+        bb.BBRGB32_mt.__index.canUseCbbTogether = bb.getUseCBB
+
+        bb.BB_mt.__index:canUseCbb = bb.getUseCBB
+        bb.BB4_mt.__index.canUseCbb = bb.getUseCBB
+        bb.BB8_mt.__index.canUseCbb = bb.getUseCBB
+        bb.BB8A_mt.__index.canUseCbb = bb.getUseCBB
+        bb.BBRGB16_mt.__index.canUseCbb = bb.getUseCBB
+        bb.BBRGB24_mt.__index.canUseCbb = bb.getUseCBB
+        bb.BBRGB32_mt.__index.canUseCbb = bb.getUseCBB
     }
 
     -- check if we have a keyboard
