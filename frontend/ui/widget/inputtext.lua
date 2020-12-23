@@ -523,6 +523,14 @@ function InputText:rightChar()
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
+function InputText:goToHome()
+    self.text_widget:moveCursorToCharPos(1)
+end
+
+function InputText:goToEnd()
+    self.text_widget:moveCursorToCharPos(0)
+end
+
 function InputText:upLine()
     self.text_widget:moveCursorUp()
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
