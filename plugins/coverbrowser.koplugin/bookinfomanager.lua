@@ -169,7 +169,7 @@ function BookInfoManager:createDB()
         -- Restore non-deprecated settings
         for k, v in pairs(self.settings) do
             if k ~= "version" then
-                self:saveSetting(k, v, true)
+                self:saveSetting(k, v, db_conn, true)
             end
         end
         self:loadSettings(db_conn)
@@ -268,16 +268,24 @@ function BookInfoManager:getSetting(key)
     return self.settings[key]
 end
 
-function BookInfoManager:saveSetting(key, value, skip_reload)
+function BookInfoManager:saveSetting(key, value, db_conn, skip_reload)
     if not value or value == false or value == "" then
         if lfs.attributes(self.db_location, "mode") ~= "file" then
             -- If no db created, no need to save (and create db) an empty value
             return
         end
     end
-    self:openDbConnection()
+
+    local my_db_conn
+    if db_conn then
+        my_db_conn = db_conn
+    else
+        self:openDbConnection()
+        my_db_conn = self.db_conn
+    end
+
     local query = "INSERT OR REPLACE INTO config (key, value) VALUES (?, ?);"
-    local stmt = self.db_conn:prepare(query)
+    local stmt = my_db_conn:prepare(query)
     if value == false then -- convert false to NULL
         value = nil
     elseif value == true then -- convert true to "Y"
