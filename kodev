@@ -841,7 +841,7 @@ TARGET:
             KOREADER_ARGS="-d"
             KOREADER_COMMAND="env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./reader.lua ${KOREADER_ARGS}"
 
-            # run with catchsegv by default when it is available (unless sane-return is enabled, c.f., #7036)
+            # run with catchsegv by default when it is available (unless no-catchsegv is enabled, c.f., #7036)
             # see https://github.com/koreader/koreader/issues/2878#issuecomment-326796777
             if [ -z "${no_catchsegv}" ]; then
                 if command -v catchsegv >/dev/null; then
