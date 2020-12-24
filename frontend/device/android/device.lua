@@ -108,19 +108,23 @@ local Device = Generic:new{
         end
     end,
 
-
-    --[[
-    Disable jit on some modules on android to make koreader on Android more stable.
-
-    The strategy here is that we only use precious mcode memory (jitting)
-    on deep loops like the several blitting methods in blitbuffer.lua and
-    the pixel-copying methods in mupdf.lua. So that a small amount of mcode
-    memory (64KB) allocated when koreader is launched in the android.lua
-    is enough for the program and it won't need to jit other parts of lua
-    code and thus won't allocate mcode memory any more which by our
-    observation will be harder and harder as we run koreader.
-    ]]--
-    should_restrict_JIT = true,
+    -- Android is very finicky, and the LuaJIT allocator has a tremendously hard time getting the system
+    -- to allocate memory for it in the very specific memory range it requires to store generated code (mcode).
+    -- Failure to do so at runtime (mcode_alloc) will *tank* performance
+    -- (much worse than if the JIT were simply disabled).
+    -- The first line of defense is left to android-luajit-launcher,
+    -- which will try to grab the full mcode region in one go right at startup.
+    -- The second line of defense is *this* flag, which disables the JIT in a few code-hungry modules,
+    -- but not necessarily performance critical ones, to hopefully limit the amount of mcode memory
+    -- required for those modules where it *really* matters (e.g., ffi/blitbuffer.lua).
+    -- This is also why we try to actually avoid entering actual loops in the Lua blitter on Android,
+    -- and instead attempt to do most of everything via the C implementation.
+    -- (FIXME:
+    -- Revert the bits of https://github.com/koreader/koreader-base/pull/1200
+    -- that made nightmode go through the Lua blitter again)
+    -- NOTE: So, on that joyous note, it's been 5 years since the last time we touched that, so,
+    --       let's try to disable it and watch the world burn ;).
+    should_restrict_JIT = false,
 }
 
 function Device:init()
