@@ -566,7 +566,7 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
             local dummy, c = nil
 
             if parsed.scheme == "http" then
-                dummy, c = http.request {
+                dummy, code, headers = http.request {
                     url         = remote_url,
                     sink        = ltn12.sink.file(io.open(local_path, "w")),
                     user        = item.username,
@@ -575,7 +575,7 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
             elseif parsed.scheme == "https" then
                 local auth = (item.username and item.password) and string.format("%s:%s", item.username, item.password) or nil
                 local hostname = parsed.host
-                dummy, c = http.request {
+                dummy, code, headers = http.request {
                     url         = remote_url,
                     headers     = auth and { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname } or nil,
                     sink        = ltn12.sink.file(io.open(local_path, "w")),
@@ -587,12 +587,19 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
                 })
             end
 
-            if c == 200 then
+            if code == 200 then
                 logger.dbg("file downloaded to", local_path)
                 if self.file_downloaded_callback then
                     self.file_downloaded_callback(local_path)
                 end
+            elseif code == 302 and remote_url:match("^https") and headers.location:match("^http[^s]") then
+                util.removeFile(local_path)
+                UIManager:show(InfoMessage:new{
+                    text = T(_("Insecure HTTPS → HTTP downgrade attempted by redirect from:\n\n'%1'\n\nto\n\n'%2'.\n\nPlease inform the server administrator that many clients disallow this because it could be a downgrade attack."), BD.url(remote_url), BD.url(headers.location)),
+                    icon = "notice-warning",
+                })
             else
+                util.removeFile(local_path)
                 UIManager:show(InfoMessage:new {
                     text = _("Could not save file to:\n") .. BD.filepath(local_path),
                     timeout = 3,
