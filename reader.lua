@@ -65,7 +65,6 @@ local longopts = {
     debug = "d",
     verbose = "d",
     profile = "p",
-    teardown = "t",
     help = "h",
 }
 
@@ -76,7 +75,6 @@ local function showusage()
     print("-d               start in debug mode")
     print("-v               debug in verbose mode")
     print("-p               enable Lua code profiling")
-    print("-t               teardown via a return instead of calling os.exit")
     print("-h               show this usage help")
     print("")
     print("If you give the name of a directory instead of a file path, a file")
@@ -89,7 +87,6 @@ local function showusage()
 end
 
 local Profiler = nil
-local sane_teardown
 local ARGV = arg
 local argidx = 1
 while argidx <= #ARGV do
@@ -111,8 +108,6 @@ while argidx <= #ARGV do
     elseif arg == "-p" then
         Profiler = require("jit.p")
         Profiler.start("la")
-    elseif arg == "-t" then
-        sane_teardown = true
     else
         -- not a recognized option, should be a filename
         argidx = argidx - 1
@@ -353,18 +348,10 @@ local function exitReader()
     if type(exit_code) == "number" then
         return exit_code
     else
-        return 0
+        return true
     end
 end
 
 local ret = exitReader()
-
-if not sane_teardown then
-    os.exit(ret)
-else
-    -- NOTE: We can unfortunately not return with a custom exit code...
-    --       But since this should only really be used on the emulator,
-    --       to ensure a saner teardown of ressources when debugging,
-    --       it's not a great loss...
-    return
-end
+-- Close the Lua state on exit
+os.exit(ret, true)

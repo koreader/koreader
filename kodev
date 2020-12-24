@@ -621,7 +621,7 @@ OPTIONS:
     -p, --graph              graph memory use (requires gnuplot)
     -v X, --valgrind=X       run with valgrind (default: \"valgrind --tool=memcheck --trace-children=yes --leak-check=full --track-origins=yes --show-reachable=yes\")
     -c, --callgrind          run with valgrind's callgrind (valgrind --tool=callgrind --trace-children=yes)
-    -r, --sane-return        force KOReader to exit sanely, instead of calling os.exit. This ensures a saner teardown of the Lua state. (enabled by default when running under valgrind/gdb).
+    -S, --no-catchsegv       prevents wrapping by catchsegv
 
 TARGET:
 
@@ -638,8 +638,8 @@ TARGET:
 
     declare opt
     declare -r E_OPTERR=85
-    declare -r short_opts="tbng::pv::cw:h:d:s:rH"
-    declare -r long_opts="disable-touch,no-build,gdb::,graph,valgrind::,callgrind,screen-width:,screen-height:,screen-dpi:,simulate:,sane-return,help"
+    declare -r short_opts="tbng::pv::cw:h:d:s:SH"
+    declare -r long_opts="disable-touch,no-build,gdb::,graph,valgrind::,callgrind,screen-width:,screen-height:,screen-dpi:,simulate:,no-catchsegv,help"
 
     if ! opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}"); then
         echo "${RUN_HELP_MSG}"
@@ -663,7 +663,6 @@ TARGET:
                 export KODEBUG=
                 ;;
             -g | --gdb)
-                export SANE_RETURN=1
                 if [ -n "${VALUE}" ]; then
                     gdb="${VALUE}"
                 else
@@ -691,7 +690,6 @@ TARGET:
                 graph_memory=1
                 ;;
             -v | --valgrind)
-                export SANE_RETURN=1
                 if [ -n "${VALUE}" ]; then
                     valgrind="${VALUE}"
                 else
@@ -706,7 +704,6 @@ TARGET:
                 shift
                 ;;
             -c | --callgrind)
-                export SANE_RETURN=1
                 # Try to use sensible defaults for valgrind
                 if command -v valgrind >/dev/null; then
                     valgrind="valgrind --tool=callgrind --trace-children=yes"
@@ -778,8 +775,8 @@ TARGET:
                 esac
                 shift
                 ;;
-            -r | --sane-return)
-                export SANE_RETURN=1
+            -S | --no-catchsegv)
+                no_catchsegv=1
                 ;;
             -H | --help)
                 echo "${RUN_HELP_MSG}"
@@ -841,18 +838,15 @@ TARGET:
                 gnuplot_wrapper "--parent $$" "reader.lua"
             fi
 
-            if [ -n "${SANE_RETURN}" ]; then
-                KOREADER_ARGS="-d -t"
-            else
-                KOREADER_ARGS="-d"
-            fi
-
+            KOREADER_ARGS="-d"
             KOREADER_COMMAND="env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./reader.lua ${KOREADER_ARGS}"
 
-            # run with catchsegv by default when it is available
+            # run with catchsegv by default when it is available (unless no-catchsegv is enabled, c.f., #7036)
             # see https://github.com/koreader/koreader/issues/2878#issuecomment-326796777
-            if command -v catchsegv >/dev/null; then
-                KOREADER_COMMAND="$(command -v catchsegv) ${KOREADER_COMMAND}"
+            if [ -z "${no_catchsegv}" ]; then
+                if command -v catchsegv >/dev/null; then
+                    KOREADER_COMMAND="$(command -v catchsegv) ${KOREADER_COMMAND}"
+                fi
             fi
 
             if [ -n "${valgrind}" ]; then
