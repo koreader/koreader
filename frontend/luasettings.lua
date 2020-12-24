@@ -156,6 +156,29 @@ function LuaSettings:flipFalse(key)
     return self
 end
 
+-- Initializes settings per extension with default values
+function LuaSettings:initializeExtSettings(key, defaults, force_init)
+    local curr = self:readSetting(key)
+    if not curr or force_init then
+        self:saveSetting(key, defaults)
+        return true
+    end
+    return false
+end
+
+-- Returns saved setting for given extension
+function LuaSettings:getSettingForExt(key, ext)
+    local saved_settings = self:readSetting(key) or {}
+    return saved_settings[ext]
+end
+
+-- Sets setting for given extension
+function LuaSettings:saveSettingForExt(key, value, ext)
+    local saved_settings = self:readSetting(key) or {}
+    saved_settings[ext] = value
+    self:saveSetting(key, saved_settings)
+end
+
 --- Adds item to table.
 function LuaSettings:addTableItem(key, value)
     local settings_table = self:has(key) and self:readSetting(key) or {}
