@@ -563,7 +563,7 @@ function OPDSBrowser:downloadFile(item, format, remote_url)
             local parsed = url.parse(remote_url)
             http.TIMEOUT = 20
 
-            local dummy, c = nil
+            local dummy, code, headers
 
             if parsed.scheme == "http" then
                 dummy, code, headers = http.request {
