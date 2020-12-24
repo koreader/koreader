@@ -621,7 +621,7 @@ OPTIONS:
     -p, --graph              graph memory use (requires gnuplot)
     -v X, --valgrind=X       run with valgrind (default: \"valgrind --tool=memcheck --trace-children=yes --leak-check=full --track-origins=yes --show-reachable=yes\")
     -c, --callgrind          run with valgrind's callgrind (valgrind --tool=callgrind --trace-children=yes)
-    -r, --sane-return        force KOReader to exit sanely, instead of calling os.exit. This ensures a saner teardown of the Lua state. (enabled by default when running under valgrind/gdb).
+    -r, --sane-return        force KOReader to exit sanely, instead of calling os.exit. This ensures a saner teardown of the Lua state. (enabled by default when running under valgrind/gdb). Also prevents wrapping by catchsegv.
 
 TARGET:
 
@@ -849,10 +849,12 @@ TARGET:
 
             KOREADER_COMMAND="env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./reader.lua ${KOREADER_ARGS}"
 
-            # run with catchsegv by default when it is available
+            # run with catchsegv by default when it is available (unless sane-return is enabled, c.f., #7036)
             # see https://github.com/koreader/koreader/issues/2878#issuecomment-326796777
-            if command -v catchsegv >/dev/null; then
-                KOREADER_COMMAND="$(command -v catchsegv) ${KOREADER_COMMAND}"
+            if [ -z "${SANE_RETURN}" ]; then
+                if command -v catchsegv >/dev/null; then
+                    KOREADER_COMMAND="$(command -v catchsegv) ${KOREADER_COMMAND}"
+                fi
             fi
 
             if [ -n "${valgrind}" ]; then
