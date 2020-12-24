@@ -186,8 +186,8 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         # With a little notice at the top of the screen, on a big gray screen of death ;).
         ./fbink -q -b -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
         if [ ${CRASH_COUNT} -eq 1 ]; then
-            # Warn that we're waiting on a tap to continue...
-            ./fbink -q -b -O -m -y 2 "Tap the screen to continue."
+            # Warn that we're sleeping for a bit...
+            ./fbink -q -b -O -m -y 2 "KOReader will restart in 15 sec."
         fi
         # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
         # shellcheck disable=SC2039
@@ -212,10 +212,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
 
         # Pause a bit if it's the first crash in a while, so that it actually has a chance of getting noticed ;).
         if [ ${CRASH_COUNT} -eq 1 ]; then
-            # NOTE: We don't actually care about what read read, we're just using it as a fancy sleep ;).
-            #       i.e., we pause either until the 15s timeout, or until the user touches the screen.
-            # shellcheck disable=SC2039
-            read -r -t 15 </dev/input/event1
+            sleep 15
         fi
         # Cycle the last crash timestamp
         CRASH_PREV_TS=${CRASH_TS}
