@@ -44,7 +44,7 @@ local Button = InputContainer:new{
     margin = 0,
     bordersize = Size.border.button,
     background = Blitbuffer.COLOR_WHITE,
-    radius = 0,
+    radius = nil,
     padding = Size.padding.button,
     padding_h = nil,
     padding_v = nil,
@@ -234,7 +234,10 @@ function Button:onTapSelectButton()
             -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
             if self.text then
                 -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
-                self[1].radius = Size.radius.button
+                -- The nil check is to discriminate the default from callers that explicitly request a specific radius.
+                if self[1].radius == nil then
+                    self[1].radius = Size.radius.button
+                end
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
             end
             UIManager:setDirty(nil, function()
@@ -250,7 +253,9 @@ function Button:onTapSelectButton()
 
                 self[1].invert = false
                 -- Since we kill the corners, we only need a single repaint.
-                self[1].radius = 0
+                if self[1].radius == Size.radius.button then
+                    self[1].radius = nil
+                end
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
                 UIManager:setDirty(nil, function()
                     return "fast", self[1].dimen
