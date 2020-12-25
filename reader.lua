@@ -245,76 +245,81 @@ end
 -- Get which file to start with
 local last_file = G_reader_settings:readSetting("lastfile")
 local start_with = G_reader_settings:readSetting("start_with")
-local open_last = start_with == "last"
-
-if open_last and last_file and lfs.attributes(last_file, "mode") ~= "file" then
-    UIManager:show(retryLastFile())
-    last_file = nil
-else
-    local QuickStart = require("ui/quickstart")
-    if not QuickStart:isShown() then
-        open_last = true
-        last_file = QuickStart:getQuickStart()
-    end
-end
+local file
+local directory
 
 -- Start app
 local exit_code
+-- command line file argument overrides the defaults.
 if ARGV[argidx] and ARGV[argidx] ~= "" then
-    local file
     local sanitized_path = getPathFromURI(ARGV[argidx])
     if lfs.attributes(sanitized_path, "mode") == "file" then
         file = sanitized_path
-    elseif open_last and last_file then
-        file = last_file
-    end
-    -- if file is given in command line argument or open last document is set
-    -- true, the given file or the last file is opened in the reader
-    if file and file ~= "" then
-        local ReaderUI = require("apps/reader/readerui")
-        UIManager:nextTick(function()
-            ReaderUI:showReader(file)
-        end)
-    -- we assume a directory is given in command line argument
-    -- the filemanger will show the files in that path
     else
-        local FileManager = require("apps/filemanager/filemanager")
-        local home_dir =
-            G_reader_settings:readSetting("home_dir") or ARGV[argidx]
-        UIManager:nextTick(function()
-            FileManager:setRotationMode(true)
-            FileManager:showFiles(home_dir)
-        end)
-        -- always open history on top of filemanager so closing history
-        -- doesn't result in exit
-        if start_with == "history" then
-            local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
-            UIManager:nextTick(function()
-                FileManagerHistory:onShowHist(last_file)
-            end)
-        elseif start_with == "favorites" then
-            local FileManagerCollection = require("apps/filemanager/filemanagercollection")
-            UIManager:nextTick(function()
-                FileManagerCollection:new{
-                    ui = FileManager.instance,
-                }:onShowColl("favorites")
-            end)
-        elseif start_with == "folder_shortcuts" then
-            local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
-            UIManager:nextTick(function()
-                FileManagerShortcuts:new{
-                    ui = FileManager.instance,
-                }:onShowFolderShortcutsDialog()
-            end)
-        end
+        directory = ARGV[argidx]
     end
-    exit_code = UIManager:run()
-elseif last_file then
+end
+-- if file is given in command line argument the given file is opened in the reader.
+if file and file ~= "" then
     local ReaderUI = require("apps/reader/readerui")
     UIManager:nextTick(function()
-        ReaderUI:showReader(last_file)
+        ReaderUI:showReader(file)
     end)
     exit_code = UIManager:run()
+-- if the quickstart was not shown, show it.
+else
+    local QuickStart = require("ui/quickstart")
+    if not QuickStart:isShown() then
+        start_with = "last"
+        last_file = QuickStart:getQuickStart()
+    end
+end
+-- if start_ with is last document makes sure it exists.
+if start_with == "last" and last_file then
+    if lfs.attributes(last_file, "mode") ~= "file" then
+        UIManager:show(retryLastFile())
+    else
+        local ReaderUI = require("apps/reader/readerui")
+        UIManager:nextTick(function()
+            ReaderUI:showReader(last_file)
+        end)
+    end
+    exit_code = UIManager:run()
+-- or else we assume a directory is given in command line argument
+-- the filemanger will show the files in that path
+-- or the home path if start_with is defined.
+elseif (directory and directory ~= "") or start_with ~= nil then
+    local FileManager = require("apps/filemanager/filemanager")
+    local home_dir =
+        G_reader_settings:readSetting("home_dir") or directory
+    UIManager:nextTick(function()
+        FileManager:setRotationMode(true)
+        FileManager:showFiles(home_dir)
+    end)
+    -- always open history on top of filemanager so closing history
+    -- doesn't result in exit
+    if start_with == "history" then
+        local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
+        UIManager:nextTick(function()
+            FileManagerHistory:onShowHist(last_file)
+        end)
+    elseif start_with == "favorites" then
+        local FileManagerCollection = require("apps/filemanager/filemanagercollection")
+        UIManager:nextTick(function()
+            FileManagerCollection:new{
+                ui = FileManager.instance,
+            }:onShowColl("favorites")
+        end)
+    elseif start_with == "folder_shortcuts" then
+        local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
+        UIManager:nextTick(function()
+            FileManagerShortcuts:new{
+                ui = FileManager.instance,
+            }:onShowFolderShortcutsDialog()
+        end)
+    end
+    exit_code = UIManager:run()
+-- nothing to do, bailout with help info.
 else
     return showusage()
 end
