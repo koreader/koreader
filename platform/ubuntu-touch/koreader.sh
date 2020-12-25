@@ -22,7 +22,7 @@ export SDL_FULLSCREEN=1
 RETURN_VALUE=85
 
 while [ ${RETURN_VALUE} -eq 85 ]; do
-    ./reader.lua -d ~/Documents
+    ./reader.lua -d
     RETURN_VALUE=$?
 done
 
