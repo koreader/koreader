@@ -17,6 +17,11 @@ IS_RELEASE := $(if $(or $(EMULATE_READER),$(WIN32)),,1)
 IS_RELEASE := $(if $(or $(IS_RELEASE),$(APPIMAGE),$(DEBIAN),$(MACOS)),1,)
 
 ANDROID_ARCH?=arm
+ifeq ($(ANDROID_ARCH), x86)
+	ANDROID_ABI:=$(ANDROID_ARCH)
+endif
+ANDROID_ABI?=armeabi-v7a
+
 # Use the git commit count as the (integer) Android version code
 ANDROID_VERSION?=$(shell git rev-list --count HEAD)
 ANDROID_NAME?=$(VERSION)
@@ -45,6 +50,8 @@ PLATFORM_DIR=platform
 COMMON_DIR=$(PLATFORM_DIR)/common
 ANDROID_DIR=$(PLATFORM_DIR)/android
 ANDROID_LAUNCHER_DIR:=$(ANDROID_DIR)/luajit-launcher
+ANDROID_ASSETS:=$(ANDROID_LAUNCHER_DIR)/assets/module
+ANDROID_LIBS:=$(ANDROID_LAUNCHER_DIR)/libs/$(ANDROID_ABI)
 APPIMAGE_DIR=$(PLATFORM_DIR)/appimage
 CERVANTES_DIR=$(PLATFORM_DIR)/cervantes
 DEBIAN_DIR=$(PLATFORM_DIR)/debian
@@ -350,25 +357,41 @@ endif
 		mv *.AppImage ../../koreader-$(DIST)-$(MACHINE)-$(VERSION).AppImage
 
 androidupdate: all
-	mkdir -p $(ANDROID_LAUNCHER_DIR)/assets/module
-	-rm $(ANDROID_LAUNCHER_DIR)/assets/module/koreader-*
 	# in runtime luajit-launcher's libluajit.so will be loaded
 	-rm $(INSTALL_DIR)/koreader/libs/libluajit.so
 
-	# shared libraries are stored as raw assets
-	rm -rf $(ANDROID_LAUNCHER_DIR)assets/libs
-	cp -pR $(INSTALL_DIR)/koreader/libs $(ANDROID_LAUNCHER_DIR)/assets
+	# fresh APK assets
+	rm -rfv $(ANDROID_ASSETS) $(ANDROID_LIBS)
+	mkdir -p $(ANDROID_ASSETS) $(ANDROID_LIBS)
 
-	# assets are compressed manually and stored inside the APK.
+	# APK version
+	echo $(VERSION) > $(ANDROID_ASSETS)/version.txt
+
+	# store executables as shared libraries, to prevent W^X exception on Android 10+
+	cp -pR $(INSTALL_DIR)/koreader/sdcv $(ANDROID_LIBS)/libsdcv.so
+	echo "sdcv libsdcv.so" > $(ANDROID_ASSETS)/map.txt
+
+	# copy JNI libs in APK and create a text file with a map, to create symbolic links at runtime
+	$(CURDIR)/platform/android/copy_libs.sh $(INSTALL_DIR)/koreader $(ANDROID_LIBS) $(ANDROID_ASSETS)/map.txt
+
+        # some libs fail when copied as JNI libs. We keep them on a arch-dependant 7z file.
 	cd $(INSTALL_DIR)/koreader && 7z a -l -m0=lzma2 -mx=9 \
-		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).7z * \
+		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(ANDROID_ABI).7z \
+		common/ rocks/lib/lua/5.1/ \
+		-xr!common/lua-ljsqlite3$ \
+		-xr!common/ssl$ \
+		-xr!common/turbo$ \
+		-xr!*.lua$
+
+	# the rest of assets are compressed inside an arch-independant 7z file.
+	cd $(INSTALL_DIR)/koreader && 7z a -l -m0=lzma2 -mx=9 \
+		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader.7z * \
 		-xr!*cache$ \
 		-xr!*clipboard$ \
 		-xr!*data/dict$ \
 		-xr!*data/tessdata$ \
 		-xr!*history$ \
 		-xr!*l10n/templates$ \
-		-xr!*libs$ \
 		-xr!*ota$ \
 		-xr!*resources/fonts* \
 		-xr!*resources/icons/src* \
@@ -383,6 +406,8 @@ androidupdate: all
 		-xr!*NOTES.txt$ \
 		-xr!*NOTICE$ \
 		-xr!*README.md$ \
+		-xr!*sdcv \
+		-xr!*.so*$ \
 		-xr'!.*'
 
 	# make the android APK
