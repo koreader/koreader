@@ -98,6 +98,7 @@ local AppImage = Device:new{
     hasMultitouch = no,
     hasOTAUpdates = yes,
     isDesktop = yes,
+    home_dir = os.getenv("XDG_DOCUMENTS_DIR") or os.getenv("HOME"),
 }
 
 local Desktop = Device:new{
@@ -125,7 +126,7 @@ local Emulator = Device:new{
 local UbuntuTouch = Device:new{
     model = "UbuntuTouch",
     hasFrontlight = yes,
-    home_dir = nil,
+    home_dir = nil, --  ~/Documents ?
 }
 
 function Device:init()
