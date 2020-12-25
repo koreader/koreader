@@ -80,12 +80,31 @@ local function showusage()
     print("If you give the name of a directory instead of a file path, a file")
     print("chooser will show up and let you select a file")
     print("")
-    print("If you don't pass any path, the last viewed document will be opened")
+    print("If you don't pass any path, the File Manager will be opened")
     print("")
     print("This software is licensed under the AGPLv3.")
     print("See http://github.com/koreader/koreader for more info.")
 end
 
+local function getPathFromURI(str)
+    local hexToChar = function(x)
+        return string.char(tonumber(x, 16))
+    end
+
+    local unescape = function(url)
+       return url:gsub("%%(%x%x)", hexToChar)
+    end
+
+    local prefix = "file://"
+    if str:sub(1, #prefix) ~= prefix then
+        return str
+    end
+    return unescape(str):sub(#prefix+1)
+end
+
+local lfs = require("libs/libkoreader-lfs")
+local file
+local directory
 local Profiler = nil
 local ARGV = arg
 local argidx = 1
@@ -109,8 +128,14 @@ while argidx <= #ARGV do
         Profiler = require("jit.p")
         Profiler.start("la")
     else
-        -- not a recognized option, should be a filename
-        argidx = argidx - 1
+        -- not a recognized option, should be a filename or directory
+        local sanitized_path = getPathFromURI(arg)
+        local mode = lfs.attributes(sanitized_path, "mode")
+        if mode == "file" then
+            file = sanitized_path
+        elseif mode == "directory" or mode == "link" then
+            directory = sanitized_path
+        end
         break
     end
 end
@@ -206,87 +231,69 @@ if G_reader_settings:isTrue("color_rendering") and not Device:hasColorScreen() t
     })
 end
 
+-- Get which file to start with
+local last_file = G_reader_settings:readSetting("lastfile")
+local start_with = G_reader_settings:readSetting("start_with") or "filemanager"
+
 -- Helpers
-local lfs = require("libs/libkoreader-lfs")
 local function retryLastFile()
     local ConfirmBox = require("ui/widget/confirmbox")
     return ConfirmBox:new{
         text = _("Cannot open last file.\nThis could be because it was deleted or because external storage is still being mounted.\nDo you want to retry?"),
         ok_callback = function()
-            local last_file = G_reader_settings:readSetting("lastfile")
-            if lfs.attributes(last_file, "mode") == "file" then
-                local ReaderUI = require("apps/reader/readerui")
-                UIManager:nextTick(function()
-                    ReaderUI:showReader(last_file)
-                end)
-            else
+            if lfs.attributes(last_file, "mode") ~= "file" then
                 UIManager:show(retryLastFile())
             end
+        end,
+        cancel_callback = function()
+            start_with = "filemanager"
         end,
     }
 end
 
-local function getPathFromURI(str)
-    local hexToChar = function(x)
-        return string.char(tonumber(x, 16))
-    end
-
-    local unescape = function(url)
-       return url:gsub("%%(%x%x)", hexToChar)
-    end
-
-    local prefix = "file://"
-    if str:sub(1, #prefix) ~= prefix then
-        return str
-    end
-    return unescape(str):sub(#prefix+1)
-end
-
--- Get which file to start with
-local last_file = G_reader_settings:readSetting("lastfile")
-local start_with = G_reader_settings:readSetting("start_with")
-local open_last = start_with == "last"
-
-if open_last and last_file and lfs.attributes(last_file, "mode") ~= "file" then
-    UIManager:show(retryLastFile())
-    last_file = nil
+-- Start app
+local exit_code
+if file then
+    local ReaderUI = require("apps/reader/readerui")
+    UIManager:nextTick(function()
+        ReaderUI:showReader(file)
+    end)
+    exit_code = UIManager:run()
+elseif directory then
+    local FileManager = require("apps/filemanager/filemanager")
+    UIManager:nextTick(function()
+        FileManager:setRotationMode(true)
+        FileManager:showFiles(directory)
+    end)
+    exit_code = UIManager:run()
 else
     local QuickStart = require("ui/quickstart")
     if not QuickStart:isShown() then
-        open_last = true
+        start_with = "last"
         last_file = QuickStart:getQuickStart()
     end
-end
 
--- Start app
-local exit_code
-if ARGV[argidx] and ARGV[argidx] ~= "" then
-    local file
-    local sanitized_path = getPathFromURI(ARGV[argidx])
-    if lfs.attributes(sanitized_path, "mode") == "file" then
-        file = sanitized_path
-    elseif open_last and last_file then
-        file = last_file
+    if start_with == "last" and last_file and lfs.attributes(last_file, "mode") ~= "file" then
+        UIManager:show(retryLastFile())
+        -- no exit code as something else will be run after this.
+        UIManager:run()
     end
-    -- if file is given in command line argument or open last document is set
-    -- true, the given file or the last file is opened in the reader
-    if file and file ~= "" then
+    if start_with == "last" and last_file then
         local ReaderUI = require("apps/reader/readerui")
         UIManager:nextTick(function()
-            ReaderUI:showReader(file)
+            ReaderUI:showReader(last_file)
         end)
-    -- we assume a directory is given in command line argument
-    -- the filemanger will show the files in that path
+        exit_code = UIManager:run()
     else
         local FileManager = require("apps/filemanager/filemanager")
         local home_dir =
-            G_reader_settings:readSetting("home_dir") or ARGV[argidx]
+            G_reader_settings:readSetting("home_dir") or Device.home_dir or lfs.currentdir()
         UIManager:nextTick(function()
             FileManager:setRotationMode(true)
             FileManager:showFiles(home_dir)
         end)
-        -- always open history on top of filemanager so closing history
-        -- doesn't result in exit
+        -- Always open history on top of filemanager so closing history
+        -- doesn't result in exit.
         if start_with == "history" then
             local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
             UIManager:nextTick(function()
@@ -307,16 +314,8 @@ if ARGV[argidx] and ARGV[argidx] ~= "" then
                 }:onShowFolderShortcutsDialog()
             end)
         end
+        exit_code = UIManager:run()
     end
-    exit_code = UIManager:run()
-elseif last_file then
-    local ReaderUI = require("apps/reader/readerui")
-    UIManager:nextTick(function()
-        ReaderUI:showReader(last_file)
-    end)
-    exit_code = UIManager:run()
-else
-    return showusage()
 end
 
 -- Exit

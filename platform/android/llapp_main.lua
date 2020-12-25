@@ -75,9 +75,9 @@ C.setenv("TESSDATA_PREFIX", path.."/koreader/data", 1)
 -- create fake command-line arguments
 -- luacheck: ignore 121
 if android.isDebuggable() then
-    arg = {"-d", file or path}
+    arg = {"-d", file}
 else
-    arg = {file or path}
+    arg = {file}
 end
 
 dofile(android.dir.."/reader.lua")

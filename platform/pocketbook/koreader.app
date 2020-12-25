@@ -65,13 +65,6 @@ export TESSDATA_PREFIX="data"
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 
-# shellcheck disable=2000
-if [ "$(echo "$@" | wc -c)" -eq 1 ]; then
-    args="/mnt/ext1/"
-else
-    args="$*"
-fi
-
 # we keep at maximum 500K worth of crash log
 if [ -e crash.log ]; then
     tail -c 500000 crash.log >crash.log.new
@@ -94,7 +87,7 @@ while [ "${RETURN_VALUE}" -ne 0 ]; do
         ko_update_check
     fi
 
-    ./reader.lua "${args}" >>crash.log 2>&1
+    ./reader.lua "$@" >>crash.log 2>&1
 
     # Account for the fact a hard crash may have prevented the KO_EXIT_CODE file from being written to...
     if [ -f "${KO_EXIT_CODE}" ]; then

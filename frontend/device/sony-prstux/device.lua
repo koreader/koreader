@@ -15,6 +15,7 @@ local SonyPRSTUX = Generic:new{
     canReboot = yes,
     canPowerOff = yes,
     usbPluggedIn = false,
+    home_dir = nil,
 }
 
 

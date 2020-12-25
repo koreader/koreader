@@ -39,19 +39,12 @@ ko_update_check() {
     fi
 }
 
-# if no args were passed to the script, start the FM on public partition.
-if [ "$#" -eq 0 ]; then
-    args="/mnt/public"
-else
-    args="$*"
-fi
-
 # NOTE: Keep doing an initial update check, in addition to one during the restart loop, so we can pickup potential updates of this very script...
 ko_update_check
 # If an update happened, and was successful, reexec
 if [ -n "${fail}" ] && [ "${fail}" -eq 0 ]; then
     # By now, we know we're in the right directory, and our script name is pretty much set in stone, so we can forgo using $0
-    exec ./koreader.sh "${args}"
+    exec ./koreader.sh "$@"
 fi
 
 # load our own shared libraries if possible
@@ -101,7 +94,7 @@ while [ "${RETURN_VALUE}" -ge "${RESTART_KOREADER}" ]; do
     ko_update_check
 
     # run KOReader
-    ./reader.lua "${args}" >>crash.log 2>&1
+    ./reader.lua "$@" >>crash.log 2>&1
     RETURN_VALUE=$?
 
     # check if KOReader requested to enter in mass storage mode.

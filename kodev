@@ -853,11 +853,9 @@ TARGET:
                 KOREADER_COMMAND="${valgrind} env LD_LIBRARY_PATH=${KO_LD_LIBRARY_PATH} ./luajit reader.lua ${KOREADER_ARGS}"
             fi
 
-            echo "[*] Running KOReader with arguments: $*..."
+            echo "[*] Running KOReader with arguments: $* ..."
             pushd "${EMU_DIR}" && {
-                if [ $# -lt 1 ]; then
-                    args="${CURDIR}/test"
-                else
+                if [ $# -ge 1 ]; then
                     args="$*"
                     [[ "${args}" != /* ]] && args="${CURDIR}/${args}"
                 fi

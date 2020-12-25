@@ -12,19 +12,8 @@ export LD_LIBRARY_PATH=${KOREADER_DIR}/libs:${LD_LIBRARY_PATH}
 
 RETURN_VALUE=85
 
-if [ $# -eq 0 ]; then
-    # no arguments
-    if [ -n "${XDG_DOCUMENTS_DIR+x}" ]; then
-        start_path=${XDG_DOCUMENTS_DIR}
-    else
-        start_path=$(pwd)
-    fi
-else
-    start_path="$*"
-fi
-
 while [ ${RETURN_VALUE} -eq 85 ]; do
-    ./reader.lua "${start_path}"
+    ./reader.lua "$@"
     RETURN_VALUE=$?
 done
 

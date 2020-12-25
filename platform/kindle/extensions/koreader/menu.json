@@ -5,54 +5,26 @@
 		"priority": 0,
 		"items": [
 		{
-			"name": "Start the filemanager",
-			"if": "\"KindleVoyage\" -m!",
-			"priority": 1,
-			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--kual /mnt/us/documents",
-			"status": false,
-			"internal": "status Start KOReader on the File Manager"
-		},
-		{
-			"name": "Start the filemanager",
-			"if": "\"KindleVoyage\" -m",
-			"priority": 1,
-			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--kual /mnt/us/documents",
-			"exitmenu": false,
-			"status": false,
-			"internal": "status Start KOReader on the File Manager"
-		},
-		{
-			"name": "Open the last document",
+			"name": "Start KOReader",
 			"if": "\"KindleVoyage\" -m!",
 			"priority": 2,
 			"action": "/mnt/us/koreader/koreader.sh",
 			"params": "--kual",
 			"status": false,
-			"internal": "status Start KOReader on the last document"
+			"internal": "status Start KOReader"
 		},
 		{
-			"name": "Open the last document",
+			"name": "Start KOReader",
 			"if": "\"KindleVoyage\" -m",
 			"priority": 2,
 			"action": "/mnt/us/koreader/koreader.sh",
 			"params": "--kual",
 			"exitmenu": false,
 			"status": false,
-			"internal": "status Start KOReader on the last document"
+			"internal": "status Start KOReader"
 		},
 		{
-			"name": "Start the filemanager (no framework)",
-			"if": "\"Kindle2\" -m \"KindleDX\" -m \"KindleDXG\" -m \"Kindle3\" -m \"Kindle4\" -m || || || ||",
-			"priority": 3,
-			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--kual --framework_stop /mnt/us/documents",
-			"status": false,
-			"internal": "status Kill the framework and start KOReader's FM"
-		},
-		{
-			"name": "Open the last document (no framework)",
+			"name": "Start KOReader (no framework)",
 			"if": "\"Kindle2\" -m \"KindleDX\" -m \"KindleDXG\" -m \"Kindle3\" -m \"Kindle4\" -m || || || ||",
 			"priority": 4,
 			"action": "/mnt/us/koreader/koreader.sh",
@@ -61,42 +33,23 @@
 			"internal": "status Kill the framework and start KOReader"
 		},
 		{
-			"name": "Start the filemanager (ASAP)",
-			"if": "\"KindleVoyage\" -m!",
-			"priority": 5,
-			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--kual --asap /mnt/us/documents",
-			"status": false,
-			"internal": "status Start KOreader on the File Manager ASAP"
-		},
-		{
-			"name": "Start the filemanager (ASAP)",
-			"if": "\"KindleVoyage\" -m",
-			"priority": 5,
-			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--kual --asap /mnt/us/documents",
-			"exitmenu": false,
-			"status": false,
-			"internal": "status Start KOreader on the File Manager ASAP"
-		},
-		{
-			"name": "Open the last document (ASAP)",
+			"name": "Start KOReader (ASAP)",
 			"if": "\"KindleVoyage\" -m!",
 			"priority": 6,
 			"action": "/mnt/us/koreader/koreader.sh",
 			"params": "--kual --asap",
 			"status": false,
-			"internal": "status Start KOreader on the last document ASAP"
+			"internal": "status Start KOReader ASAP"
 		},
 		{
-			"name": "Open the last document (ASAP)",
+			"name": "Start KOReader (ASAP)",
 			"if": "\"KindleVoyage\" -m",
 			"priority": 6,
 			"action": "/mnt/us/koreader/koreader.sh",
 			"params": "--kual --asap",
 			"exitmenu": false,
 			"status": false,
-			"internal": "status Start KOreader on the last document ASAP"
+			"internal": "status Start KOReader ASAP"
 		},
 		{
 			"name": "Tools",
@@ -122,7 +75,7 @@
 				"checked": true,
 				"refresh": false,
 				"status": false,
-				"internal": "status Try to install KOreader from scratch . . ."
+				"internal": "status Try to install KOReader from scratch . . ."
 			}
 			]
 		}
