@@ -823,7 +823,7 @@ function Input:waitEvent(timeout_us)
             break
         elseif ev == "application forced to quit" then
             --- @todo return an event that can be handled
-            os.exit(0)
+            os.exit(0, true)
         end
         logger.warn("got error waiting for events:", ev)
         if ev ~= "Waiting for input failed: 4\n" then

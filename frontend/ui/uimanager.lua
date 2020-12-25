@@ -1278,7 +1278,7 @@ function UIManager:handleInput()
                 io.stderr:write(debug.traceback() .. "\n")
                 io.stderr:flush()
                 self.looper:close()
-                os.exit(1)
+                os.exit(1, true)
             end)
         end)
     end
