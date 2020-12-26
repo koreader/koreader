@@ -250,7 +250,6 @@ local directory
 
 -- Start app
 local exit_code
--- command line file argument overrides the defaults.
 if ARGV[argidx] and ARGV[argidx] ~= "" then
     local sanitized_path = getPathFromURI(ARGV[argidx])
     if lfs.attributes(sanitized_path, "mode") == "file" then
@@ -259,14 +258,12 @@ if ARGV[argidx] and ARGV[argidx] ~= "" then
         directory = ARGV[argidx]
     end
 end
--- if file is given in command line argument the given file is opened in the reader.
 if file and file ~= "" then
     local ReaderUI = require("apps/reader/readerui")
     UIManager:nextTick(function()
         ReaderUI:showReader(file)
     end)
     exit_code = UIManager:run()
--- if the quickstart was not shown, show it.
 else
     local QuickStart = require("ui/quickstart")
     if not QuickStart:isShown() then
@@ -274,7 +271,6 @@ else
         last_file = QuickStart:getQuickStart()
     end
 end
--- if start_ with is last document makes sure it exists.
 if start_with == "last" and last_file then
     if lfs.attributes(last_file, "mode") ~= "file" then
         UIManager:show(retryLastFile())
@@ -296,8 +292,8 @@ elseif (directory and directory ~= "") or start_with ~= nil then
         FileManager:setRotationMode(true)
         FileManager:showFiles(home_dir)
     end)
-    -- always open history on top of filemanager so closing history
-    -- doesn't result in exit
+    -- Always open history on top of filemanager so closing history
+    -- doesn't result in exit.
     if start_with == "history" then
         local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
         UIManager:nextTick(function()
@@ -319,7 +315,6 @@ elseif (directory and directory ~= "") or start_with ~= nil then
         end)
     end
     exit_code = UIManager:run()
--- nothing to do, bailout with help info.
 else
     return showusage()
 end
