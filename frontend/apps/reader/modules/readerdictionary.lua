@@ -577,7 +577,8 @@ local function tidyMarkup(results)
             result.is_html = ifo.is_html
             result.css = ifo.css
             if ifo.fix_html_func then
-                local ok, fixed_definition = pcall(ifo.fix_html_func, result.definition)
+                local dict_path = util.splitFilePathName(ifo.file)
+                local ok, fixed_definition = pcall(ifo.fix_html_func, result.definition, dict_path)
                 if ok then
                     result.definition = fixed_definition
                 else
