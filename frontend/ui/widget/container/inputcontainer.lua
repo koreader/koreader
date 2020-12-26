@@ -35,7 +35,7 @@ local Screen = Device.screen
 local _ = require("gettext")
 
 if Device.should_restrict_JIT then
-    require("jit").off(true, true)
+    jit.off(true, true)
 end
 
 local InputContainer = WidgetContainer:new{

@@ -9,7 +9,7 @@ local md5 = require("ffi/sha2").md5
 
 local CanvasContext = require("document/canvascontext")
 if CanvasContext.should_restrict_JIT then
-    require("jit").off(true, true)
+    jit.off(true, true)
 end
 
 local function calcFreeMem()
