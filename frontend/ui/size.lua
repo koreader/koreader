@@ -57,7 +57,7 @@ local Size = {
     radius = {
         default = Screen:scaleBySize(2),
         window = Screen:scaleBySize(7),
-        button = Screen:scaleBySize(15),
+        button = Screen:scaleBySize(7),
     },
     line = {
         thin = Screen:scaleBySize(0.5),
