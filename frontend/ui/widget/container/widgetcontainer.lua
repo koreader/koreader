@@ -18,7 +18,7 @@ local Widget = require("ui/widget/widget")
 local Device = require("device")
 
 if Device.should_restrict_JIT then
-    require("jit").off(true, true)
+    jit.off(true, true)
 end
 
 local WidgetContainer = Widget:new()

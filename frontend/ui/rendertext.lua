@@ -15,7 +15,7 @@ local bor = bit.bor
 local lshift = bit.lshift
 
 if Device.should_restrict_JIT then
-    require("jit").off(true, true)
+    jit.off(true, true)
 end
 
 --[[
