@@ -10,7 +10,7 @@ function checkAndCopy() {
         src="${INSTALL_DIR}/${1}"
         dest="${JNILIBS_DIR}/${2}"
         cp -pv "${src}" "${dest}"
-        echo "${1} ${2}" >> "${SYMBOLIC_MAP}"
+        echo "${1} ${2}" >>"${SYMBOLIC_MAP}"
     fi
 }
 
@@ -19,4 +19,3 @@ for i in "${array[@]}"; do
     file="${i##*/}"
     checkAndCopy "${i}" "${file}"
 done
-
