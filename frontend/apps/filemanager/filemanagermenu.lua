@@ -355,7 +355,7 @@ function FileManagerMenu:setUpdateItemTable()
             end,
         })
     end
-    if not (Device.should_restrict_JIT or Device:isAndroid()) then
+    if not Device.should_restrict_JIT then
         local Blitbuffer = require("ffi/blitbuffer")
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Disable C blitter"),
