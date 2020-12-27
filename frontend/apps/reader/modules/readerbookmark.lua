@@ -326,7 +326,7 @@ function ReaderBookmark:onShowBookmark()
                         text = _("Remove this bookmark"),
                         callback = function()
                             UIManager:show(ConfirmBox:new{
-                                text = _("Do you want remove this bookmark?"),
+                                text = _("Remove this bookmark?"),
                                 cancel_text = _("Cancel"),
                                 cancel_callback = function()
                                     return
