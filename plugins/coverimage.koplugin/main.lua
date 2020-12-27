@@ -158,7 +158,7 @@ function CoverImage:addToMainMenu(menu_items)
     menu_items.coverimage = {
 --        sorting_hint = "document",
         sorting_hint = "screen",
-        text = _("Save cover image"),
+        text = _("Cover image"),
         checked_func = function()
             return self.enabled or self.fallback
         end,
@@ -176,7 +176,7 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: filename dialog
             {
-                text = _("Set system screensaver image"),
+                text = _("Set image path"),
                 checked_func = function()
                     return self.cover_image_path ~= "" and pathOk(self.cover_image_path)
                 end,
@@ -232,7 +232,7 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: enable
             {
-                text = _("Save book cover"),
+                text = _("Save cover image"),
                 checked_func = function()
                     return self:_enabled() and pathOk(self.cover_image_path)
                 end,
@@ -259,7 +259,7 @@ function CoverImage:addToMainMenu(menu_items)
                 end,
                 sub_item_table = {
                     {
-                        text = _("Scale, black background"),
+                        text = _("Scaled, black background"),
                         checked_func = function()
                             return self.cover_image_background == "black"
                         end,
@@ -273,7 +273,7 @@ function CoverImage:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Scale, white background"),
+                        text = _("Scaled, white background"),
                         checked_func = function()
                             return self.cover_image_background == "white"
                         end,
@@ -287,7 +287,7 @@ function CoverImage:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Scale, gray background"),
+                        text = _("Scaled, gray background"),
                         checked_func = function()
                             return self.cover_image_background == "gray"
                         end,
@@ -301,7 +301,7 @@ function CoverImage:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Original image"),
+                        text = _("Original size"),
                         checked_func = function()
                             return self.cover_image_background == "none"
                         end,
@@ -395,7 +395,7 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: set fallback image
             {
-                text = _("Set fallback image"),
+                text = _("Set fallback image path"),
                 checked_func = function()
                     return lfs.attributes(self.cover_image_fallback_path, "mode") == "file"
                 end,
