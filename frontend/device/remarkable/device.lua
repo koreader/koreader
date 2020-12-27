@@ -149,6 +149,8 @@ function Remarkable:resume()
 end
 
 function Remarkable:powerOff()
+    self.screen:clear()
+    self.screen:refreshFull()
     os.execute("systemctl poweroff")
 end
 
