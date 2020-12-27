@@ -5,25 +5,6 @@
 		"priority": 0,
 		"items": [
 		{
-			"name": "Start the filemanager",
-			"if": "\"KindleVoyage\" -m!",
-			"priority": 1,
-			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--kual /mnt/us/documents",
-			"status": false,
-			"internal": "status Start KOReader on the File Manager"
-		},
-		{
-			"name": "Start the filemanager",
-			"if": "\"KindleVoyage\" -m",
-			"priority": 1,
-			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--kual /mnt/us/documents",
-			"exitmenu": false,
-			"status": false,
-			"internal": "status Start KOReader on the File Manager"
-		},
-		{
 			"name": "Open the last document",
 			"if": "\"KindleVoyage\" -m!",
 			"priority": 2,
@@ -41,15 +22,6 @@
 			"exitmenu": false,
 			"status": false,
 			"internal": "status Start KOReader on the last document"
-		},
-		{
-			"name": "Start the filemanager (no framework)",
-			"if": "\"Kindle2\" -m \"KindleDX\" -m \"KindleDXG\" -m \"Kindle3\" -m \"Kindle4\" -m || || || ||",
-			"priority": 3,
-			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--kual --framework_stop /mnt/us/documents",
-			"status": false,
-			"internal": "status Kill the framework and start KOReader's FM"
 		},
 		{
 			"name": "Open the last document (no framework)",
@@ -59,25 +31,6 @@
 			"params": "--kual --framework_stop",
 			"status": false,
 			"internal": "status Kill the framework and start KOReader"
-		},
-		{
-			"name": "Start the filemanager (ASAP)",
-			"if": "\"KindleVoyage\" -m!",
-			"priority": 5,
-			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--kual --asap /mnt/us/documents",
-			"status": false,
-			"internal": "status Start KOreader on the File Manager ASAP"
-		},
-		{
-			"name": "Start the filemanager (ASAP)",
-			"if": "\"KindleVoyage\" -m",
-			"priority": 5,
-			"action": "/mnt/us/koreader/koreader.sh",
-			"params": "--kual --asap /mnt/us/documents",
-			"exitmenu": false,
-			"status": false,
-			"internal": "status Start KOreader on the File Manager ASAP"
 		},
 		{
 			"name": "Open the last document (ASAP)",
