@@ -208,7 +208,7 @@ end
 
 -- Get which file to start with
 local last_file = G_reader_settings:readSetting("lastfile")
-local start_with = G_reader_settings:readSetting("start_with")
+local start_with = G_reader_settings:readSetting("start_with") or "filemanager"
 local file
 local directory
 
@@ -292,7 +292,7 @@ end
 if (directory and directory ~= "") or (start_with and start_with ~= last) then
     local FileManager = require("apps/filemanager/filemanager")
     local home_dir =
-        G_reader_settings:readSetting("home_dir") or directory
+        G_reader_settings:readSetting("home_dir") or Device.home_dir or directory or lfs.currentdir()
     UIManager:nextTick(function()
         FileManager:setRotationMode(true)
         FileManager:showFiles(home_dir)
@@ -321,6 +321,7 @@ if (directory and directory ~= "") or (start_with and start_with ~= last) then
     end
     exit_code = UIManager:run()
 else
+    -- Should never happen.
     return showusage()
 end
 

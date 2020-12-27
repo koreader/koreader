@@ -66,9 +66,7 @@ export TESSDATA_PREFIX="data"
 export STARDICT_DATA_DIR="data/dict"
 
 # shellcheck disable=2000
-if [ "$(echo "$@" | wc -c)" -eq 1 ]; then
-    args="/mnt/ext1/"
-else
+if [ "$(echo "$@" | wc -c)" -ne 1 ]; then
     args="$*"
 fi
 

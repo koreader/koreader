@@ -132,9 +132,7 @@ if [ -e crash.log ]; then
     mv -f crash.log.new crash.log
 fi
 
-if [ "$#" -eq 0 ]; then
-    args="/home/root"
-else
+if [ "$#" -ne 0 ]; then
     args="$*"
 fi
 

@@ -198,10 +198,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     fi
 fi
 
-# fallback for old fmon, KFMon and advboot users (-> if no args were passed to the script, start the FM)
-if [ "$#" -eq 0 ]; then
-    args="/mnt/onboard"
-else
+if [ "$#" -ne 0 ]; then
     args="$*"
 fi
 

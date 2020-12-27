@@ -39,10 +39,7 @@ ko_update_check() {
     fi
 }
 
-# if no args were passed to the script, start the FM on public partition.
-if [ "$#" -eq 0 ]; then
-    args="/mnt/public"
-else
+if [ "$#" -ne 0 ]; then
     args="$*"
 fi
 
