@@ -198,10 +198,6 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     fi
 fi
 
-if [ "$#" -ne 0 ]; then
-    args="$*"
-fi
-
 # check whether PLATFORM & PRODUCT have a value assigned by rcS
 if [ -z "${PRODUCT}" ]; then
     # shellcheck disable=SC2046
@@ -330,7 +326,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         ko_do_dns
     fi
 
-    ./reader.lua "${args}" >>crash.log 2>&1
+    ./reader.lua "$@" >>crash.log 2>&1
     RETURN_VALUE=$?
 
     # Did we crash?

@@ -4,12 +4,10 @@ export LC_ALL="en_US.UTF-8"
 # writable storage: ${HOME}/.config/koreader.
 export KO_MULTIUSER=1
 
-if [ -n "${1}" ]; then
-    if [ $# -eq 1 ] && [ -e "$(pwd)/${1}" ]; then
-        ARGS="$(pwd)/${1}"
-    else
-        ARGS="${*}"
-    fi
+if [ $# -eq 1 ] && [ -e "$(pwd)/${1}" ]; then
+    ARGS="$(pwd)/${1}"
+else
+    ARGS="${*}"
 fi
 
 # working directory of koreader
