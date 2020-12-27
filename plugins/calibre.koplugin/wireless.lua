@@ -255,10 +255,14 @@ end
 function CalibreWireless:disconnect()
     logger.info("disconnect from calibre")
     self.connect_message = false
-    self.calibre_socket:stop()
-    UIManager:removeZMQ(self.calibre_messagequeue)
-    self.calibre_socket = nil
-    self.calibre_messagequeue = nil
+    if self.calibre_socket then
+        self.calibre_socket:stop()
+        self.calibre_socket = nil
+    end
+    if self.calibre_messagequeue then
+        UIManager:removeZMQ(self.calibre_messagequeue)
+        self.calibre_messagequeue = nil
+    end
     CalibreMetadata:clean()
 end
 
