@@ -740,14 +740,7 @@ end
 -- keyboard
 function VirtualKeyboard:onKeyPress(key)
 
-    if key["key"]:len() == 1 and not key["Ctrl"] and not key["Alt"] then
-
-        if key["modifiers"]["Sym"] then
-            self:addChar(key["key"])
-        else
-            self:addChar(key["key"]:lower())
-        end
-    elseif key["Backspace"] then
+    if key["Backspace"] then
         self:delChar()
     elseif key["Del"] then
         self:rightChar()
@@ -766,7 +759,16 @@ function VirtualKeyboard:onKeyPress(key)
         self:goToEnd()
     elseif key["Home"] then
         self:goToHome()
+    else
+        return false
     end
+
+    return true
+end
+
+function VirtualKeyboard:onTextInput(text)
+    self:addChar(text)
+    return true
 end
 
 function VirtualKeyboard:_refresh(want_flash, fullscreen)
