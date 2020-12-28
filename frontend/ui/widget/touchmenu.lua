@@ -716,15 +716,16 @@ function TouchMenu:switchMenuTab(tab_num)
     if self.tab_item_table[tab_num].callback then
         self.tab_item_table[tab_num].callback()
     end
-    if self.cur_tab ~= tab_num then
-        -- it's like getting a new menu everytime we switch tab!
-        self.page = 1
-        -- clear item table stack
-        self.item_table_stack = {}
-        self.cur_tab = tab_num
-        self.item_table = self.tab_item_table[tab_num]
-        self:updateItems()
-    end
+
+    -- It's like getting a new menu everytime we switch tab!
+    -- Also, switching to the _same_ tab resets the stack and takes us back to
+    -- the top of the menu tree
+    self.page = 1
+    -- clear item table stack
+    self.item_table_stack = {}
+    self.cur_tab = tab_num
+    self.item_table = self.tab_item_table[tab_num]
+    self:updateItems()
 end
 
 function TouchMenu:backToUpperMenu()
