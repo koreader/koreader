@@ -141,8 +141,20 @@ function Remarkable:setDateTime(year, month, day, hour, min, sec)
     return os.execute(command) == 0
 end
 
-function Remarkable:suspend()
+function Remarkable1:suspend()
     os.execute("systemctl suspend")
+end
+
+function Remarkable2:suspend()
+    os.execute("systemctl suspend")
+    -- While device is suspended, when the user presses the power button and wakes up the device,
+    -- a "Power" event is NOT sent.
+    -- So we schedule a manual `UIManager:resume` call just far enough in the future that it won't
+    -- trigger before the `systemctl suspend` command finishes suspending the device
+    local UIManager = require("ui/uimanager")
+    UIManager:scheduleIn(0.5, function()
+        UIManager:resume()
+    end)
 end
 
 function Remarkable:resume()
