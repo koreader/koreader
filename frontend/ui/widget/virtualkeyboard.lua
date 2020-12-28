@@ -786,13 +786,11 @@ function VirtualKeyboard:_refresh(want_flash, fullscreen)
 end
 
 function VirtualKeyboard:onShow()
-    Device:startTextInput()
     self:_refresh(true)
     return true
 end
 
 function VirtualKeyboard:onCloseWidget()
-    Device:stopTextInput()
     self:_refresh(false)
     return true
 end

@@ -423,6 +423,8 @@ function InputText:focus()
 end
 
 function InputText:onShowKeyboard(ignore_first_hold_release)
+    Device:startTextInput()
+
     self.keyboard.ignore_first_hold_release = ignore_first_hold_release
     UIManager:show(self.keyboard)
     return true
@@ -430,6 +432,7 @@ end
 
 function InputText:onCloseKeyboard()
     UIManager:close(self.keyboard)
+    Device:stopTextInput()
 end
 
 function InputText:onCloseWidget()
