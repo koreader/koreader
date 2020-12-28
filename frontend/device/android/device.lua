@@ -5,6 +5,7 @@ local Geom = require("ui/geometry")
 local ffi = require("ffi")
 local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
+local lj_launcher = ffi.load("libluajit-launcher.so")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -389,9 +390,9 @@ local function processEvents()
     if poll_state >= 0 then
         if source[0] ~= nil then
             if source[0].id == C.LOOPER_ID_MAIN then
-                local cmd = C.android_app_read_cmd(android.app)
-                C.android_app_pre_exec_cmd(android.app, cmd)
-                C.android_app_post_exec_cmd(android.app, cmd)
+                local cmd = lj_launcher.android_app_read_cmd(android.app)
+                lj_launcher.android_app_pre_exec_cmd(android.app, cmd)
+                lj_launcher.android_app_post_exec_cmd(android.app, cmd)
             elseif source[0].id == C.LOOPER_ID_INPUT then
                 local event = ffi.new("AInputEvent*[1]")
                 while android.lib.AInputQueue_getEvent(android.app.inputQueue, event) >= 0 do
