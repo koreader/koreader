@@ -67,8 +67,8 @@ local Device = {
     canAssociateFileExtensions = no,
 
     -- Start and stop text input mode (e.g. open soft keyboard, etc)
-    startTextInput = function() return nil end,
-    stopTextInput = function() return nil end,
+    startTextInput = function() end,
+    stopTextInput = function() end,
 
     -- use these only as a last resort. We should abstract the functionality
     -- and have device dependent implementations in the corresponting
