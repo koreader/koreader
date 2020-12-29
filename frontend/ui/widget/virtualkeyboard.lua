@@ -735,42 +735,6 @@ function VirtualKeyboard:onPressKey()
     return true
 end
 
--- Handle real keypresses from a physical keyboard, even if the virtual keyboard
--- is shown. Mostly likely to be in the emulator, but could be android + BT
--- keyboard
-function VirtualKeyboard:onKeyPress(key)
-
-    if key["Backspace"] then
-        self:delChar()
-    elseif key["Del"] then
-        self:rightChar()
-        self:delChar()
-    elseif key["Ctrl"] then
-        if key["U"] then
-            self:delToStartOfLine()
-        elseif key["H"] then
-            self:delChar()
-        end
-    elseif key["Left"] then
-        self:leftChar()
-    elseif key["Right"] then
-        self:rightChar()
-    elseif key["End"] then
-        self:goToEnd()
-    elseif key["Home"] then
-        self:goToHome()
-    else
-        return false
-    end
-
-    return true
-end
-
-function VirtualKeyboard:onTextInput(text)
-    self:addChar(text)
-    return true
-end
-
 function VirtualKeyboard:_refresh(want_flash, fullscreen)
     local refresh_type = "ui"
     if want_flash then
@@ -926,14 +890,6 @@ end
 
 function VirtualKeyboard:rightChar()
     self.inputbox:rightChar()
-end
-
-function VirtualKeyboard:goToHome()
-    self.inputbox:goToHome()
-end
-
-function VirtualKeyboard:goToEnd()
-    self.inputbox:goToEnd()
 end
 
 function VirtualKeyboard:upLine()
