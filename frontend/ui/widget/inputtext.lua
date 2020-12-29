@@ -426,7 +426,6 @@ end
 -- is shown. Mostly likely to be in the emulator, but could be Android + BT
 -- keyboard, or a "coder's keyboard" Android input method.
 function InputText:onKeyPress(key)
-
     if key["Backspace"] then
         self:delChar()
     elseif key["Del"] then
