@@ -66,6 +66,10 @@ local Device = {
     canPowerOff = no,
     canAssociateFileExtensions = no,
 
+    -- Start and stop text input mode (e.g. open soft keyboard, etc)
+    startTextInput = function() end,
+    stopTextInput = function() end,
+
     -- use these only as a last resort. We should abstract the functionality
     -- and have device dependent implementations in the corresponting
     -- device/<devicetype>/device.lua file

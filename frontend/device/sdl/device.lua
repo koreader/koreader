@@ -65,6 +65,8 @@ local Device = Generic:new{
     hasColorScreen = yes,
     hasEinkScreen = no,
     canSuspend = no,
+    startTextInput = SDL.startTextInput,
+    stopTextInput = SDL.stopTextInput,
     canOpenLink = getLinkOpener,
     openLink = function(self, link)
         local enabled, tool = getLinkOpener()
@@ -169,6 +171,7 @@ function Device:init()
             local UIManager = require("ui/uimanager")
 
             -- SDL events can remain cdata but are almost completely transparent
+            local SDL_TEXTINPUT = 771
             local SDL_MOUSEWHEEL = 1027
             local SDL_MULTIGESTURE = 2050
             local SDL_DROPFILE = 4096
@@ -266,6 +269,8 @@ function Device:init()
             elseif ev.code == SDL_WINDOWEVENT_MOVED then
                 self.window.left = ev.value.data1
                 self.window.top = ev.value.data2
+            elseif ev.code == SDL_TEXTINPUT then
+                UIManager:broadcastEvent(Event:new("TextInput", ev.value))
             end
         end,
         hasClipboardText = function()

@@ -422,7 +422,46 @@ function InputText:focus()
     self._frame_textwidget.color = Blitbuffer.COLOR_BLACK
 end
 
+-- Handle real keypresses from a physical keyboard, even if the virtual keyboard
+-- is shown. Mostly likely to be in the emulator, but could be Android + BT
+-- keyboard, or a "coder's keyboard" Android input method.
+function InputText:onKeyPress(key)
+    if key["Backspace"] then
+        self:delChar()
+    elseif key["Del"] then
+        self:rightChar()
+        self:delChar()
+    elseif key["Left"] then
+        self:leftChar()
+    elseif key["Right"] then
+        self:rightChar()
+    elseif key["End"] then
+        self:goToEnd()
+    elseif key["Home"] then
+        self:goToHome()
+    elseif key["Ctrl"] and not key["Shift"] and not key["Alt"] then
+        if key["U"] then
+            self:delToStartOfLine()
+        elseif key["H"] then
+            self:delChar()
+        end
+    else
+        return false
+    end
+
+    return true
+end
+
+-- Handle text coming directly as text from the Device layer (eg. soft keyboard
+-- or via SDL's keyboard mapping).
+function InputText:onTextInput(text)
+    self:addChars(text)
+    return true
+end
+
 function InputText:onShowKeyboard(ignore_first_hold_release)
+    Device:startTextInput()
+
     self.keyboard.ignore_first_hold_release = ignore_first_hold_release
     UIManager:show(self.keyboard)
     return true
@@ -430,6 +469,7 @@ end
 
 function InputText:onCloseKeyboard()
     UIManager:close(self.keyboard)
+    Device:stopTextInput()
 end
 
 function InputText:onCloseWidget()
@@ -521,6 +561,14 @@ function InputText:rightChar()
     if self.charpos > #self.charlist then return end
     self.text_widget:moveCursorRight()
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
+end
+
+function InputText:goToHome()
+    self.text_widget:moveCursorToCharPos(1)
+end
+
+function InputText:goToEnd()
+    self.text_widget:moveCursorToCharPos(0)
 end
 
 function InputText:upLine()
