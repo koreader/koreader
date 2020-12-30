@@ -1073,7 +1073,11 @@ OPTIONS:
 
 function kodev-log() {
     LOG_HELP_MSG="
-usage: log <TARGET>
+usage: log <OPTIONS> <TARGET>
+
+OPTIONS:
+
+    -d, --debug               more verbose logs (e.g., debug builds)
 
 TARGET:
 
@@ -1084,13 +1088,53 @@ TARGET:
         exit 1
     }
 
+    # Defaults
+    ignore_translation=0
+
+    declare opt
+    declare -r E_OPTERR=85
+    declare -r short_opts="dh"
+    declare -r long_opts="debug, help"
+
+    if ! opt=$(getopt -o "${short_opts}" --long "${long_opts}" --name "kodev" -- "${@}"); then
+        echo "${LOG_HELP_MSG}"
+        exit ${E_OPTERR}
+    fi
+
+    eval set -- "${opt}"
+
+    while true; do
+        PARAM="${1}"
+        # Support using an = assignment with short options (e.g., -f=blah instead of -f blah).
+        VALUE="${2/#=/}"
+        case "${PARAM}" in
+            -d | --debug)
+                export KODEBUG=1
+                ;;
+            -h | --help)
+                echo "${LOG_HELP_MSG}"
+                exit 0
+                ;;
+            --)
+                break
+                ;;
+            *)
+                echo "ERROR: unknown option \"${PARAM}\""
+                echo "${RELEASE_HELP_MSG}"
+                exit 1
+                ;;
+        esac
+        shift
+    done
+    shift
+
     case "${1}" in
-        -h | --help)
-            echo "${LOG_HELP_MSG}"
-            exit 0
-            ;;
         android)
-            adb logcat 'KOReader:I ActivityManager:* AndroidRuntime:* DEBUG:* *:F'
+            if [ -n "${KODEBUG}" ]; then
+                adb logcat 'KOReader:* ActivityManager:* AndroidRuntime:* DEBUG:* *:F dlopen:* LuaJIT:*'
+            else
+                adb logcat 'KOReader:I ActivityManager:* AndroidRuntime:* DEBUG:* *:F'
+            fi
             ;;
         *)
             echo "Unsupported target: $1."
