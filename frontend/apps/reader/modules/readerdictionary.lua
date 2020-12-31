@@ -868,7 +868,6 @@ function ReaderDictionary:showDict(word, results, box, link)
             end,
         }
         table.insert(self.dict_window_list, self.dict_window)
-        UIManager:show(self.dict_window)
         if self.lookup_progress_msg then
             -- If we have a lookup InfoMessage that ended up being displayed, make
             -- it *not* refresh on close if it is hidden by our DictQuickLookup
