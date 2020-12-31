@@ -275,21 +275,20 @@ else
         last_file = QuickStart:getQuickStart()
     end
 end
-if start_with == "last" and last_file then
-    if lfs.attributes(last_file, "mode") ~= "file" then
-        UIManager:show(retryLastFile())
-    else
-        local ReaderUI = require("apps/reader/readerui")
-        UIManager:nextTick(function()
-            ReaderUI:showReader(last_file)
-        end)
-    end
+if start_with == "last" and last_file and lfs.attributes(last_file, "mode") ~= "file" then
+    UIManager:show(retryLastFile())
     exit_code = UIManager:run()
 end
+if start_with == "last" and last_file and lfs.attributes(last_file, "mode") == "file" then
+    local ReaderUI = require("apps/reader/readerui")
+    UIManager:nextTick(function()
+        ReaderUI:showReader(last_file)
+    end)
+    exit_code = UIManager:run()
 -- or else we assume a directory is given in command line argument
 -- the filemanger will show the files in that path
 -- or the home path if start_with is defined.
-if (directory and directory ~= "") or (start_with and start_with ~= last) then
+elseif (directory and directory ~= "") or (start_with and start_with ~= last) then
     local FileManager = require("apps/filemanager/filemanager")
     local home_dir =
         G_reader_settings:readSetting("home_dir") or Device.home_dir or directory or lfs.currentdir()
