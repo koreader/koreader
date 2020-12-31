@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# disable wifi and remove modules
+
+# clean stop (if it's running) of main wpa_supplicant service, used by xochitl
+systemctl stop wpa_supplicant
+
+# fully kill any other instances of wpa_supplicant
+killall wpa_supplicant 2>/dev/null
+
+# power down wifi interface
+ifconfig wlan0 down 2>/dev/null
+
+# remove module: IMPORTANT to do this before device suspends
+modprobe -r brcmfmac 2>/dev/null

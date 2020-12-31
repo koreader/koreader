@@ -18,6 +18,10 @@ local wacom_height = 20967 -- unscaled_size_check: ignore
 local wacom_scale_x = screen_width / wacom_width
 local wacom_scale_y = screen_height / wacom_height
 
+local function turnOffWifi()
+    os.execute("./disable-rm2-wifi.sh")
+end
+
 local Remarkable = Generic:new{
     isRemarkable = yes,
     hasKeys = yes,
@@ -130,6 +134,32 @@ end
 
 function Remarkable:supportsScreensaver() return true end
 
+function Remarkable2:initNetworkManager(NetworkMgr)
+    function NetworkMgr:turnOnWifi(complete_callback)
+        os.execute("./enable-rm2-wifi.sh")
+        self:reconnectOrShowNetworkMenu(function()
+            self:connectivityCheck(1, complete_callback)
+        end)
+    end
+
+    function NetworkMgr:turnOffWifi(complete_callback)
+        turnOffWifi()
+        if complete_callback then
+            complete_callback()
+        end
+    end
+
+    function NetworkMgr:getNetworkInterfaceName()
+        return "wlan0"
+    end
+
+    NetworkMgr:setWirelessBackend("wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/wlan0"})
+
+    NetworkMgr.isWifiOn = function()
+        return NetworkMgr:isConnected()
+    end
+end
+
 function Remarkable:setDateTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end
     local command
@@ -146,6 +176,9 @@ function Remarkable1:suspend()
 end
 
 function Remarkable2:suspend()
+    -- Need to remove brcmfmac kernel module before suspend
+    turnOffWifi()
+
     os.execute("systemctl suspend")
     -- While device is suspended, when the user presses the power button and wakes up the device,
     -- a "Power" event is NOT sent.
