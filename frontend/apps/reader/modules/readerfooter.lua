@@ -29,7 +29,7 @@ local Screen = Device.screen
 local MODE = {
     off = 0,
     page_progress = 1,
-    page_remaining = 2,
+    pages_left_book = 2,
     time = 3,
     pages_left = 4,
     battery = 5,
@@ -209,7 +209,7 @@ local footerTextGeneratorMap = {
             return ("%d / %d"):format(footer.position, footer.doc_height)
         end
     end,
-    page_remaining = function(footer)
+    pages_left_book = function(footer)
         if footer.pageno then
             if footer.ui.pagemap and footer.ui.pagemap:wantsPageLabels() then
                 -- (Page labels might not be numbers)
@@ -378,7 +378,7 @@ function ReaderFooter:init()
         bookmark_count = true,
         time = true,
         page_progress = true,
-        page_remaining = true,
+        pages_left_book = false,
         pages_left = true,
         percentage = true,
         book_time_to_read = true,
@@ -792,7 +792,7 @@ function ReaderFooter:textOptionTitles(option)
         reclaim_height = _("Reclaim bar height from bottom margin"),
         bookmark_count = T(_("Bookmark count (%1)"), symbol_prefix[symbol].bookmark_count),
         page_progress = T(_("Current page (%1)"), "/"),
-        page_remaining = T(_("Pages remaining (%1)"), "-"),
+        pages_left_book = T(_("Pages remaining (%1)"), "-"),
         time = symbol_prefix[symbol].time
             and T(_("Current time (%1)"), symbol_prefix[symbol].time) or _("Current time"),
         pages_left = T(_("Pages left in chapter (%1)"), symbol_prefix[symbol].pages_left),
@@ -1677,7 +1677,7 @@ function ReaderFooter:addToMainMenu(menu_items)
         }
     })
     table.insert(sub_items, getMinibarOption("page_progress"))
-    table.insert(sub_items, getMinibarOption("page_remaining"))
+    table.insert(sub_items, getMinibarOption("pages_left_book"))
     table.insert(sub_items, getMinibarOption("time"))
     table.insert(sub_items, getMinibarOption("pages_left"))
     if Device:hasBattery() then
@@ -1981,22 +1981,6 @@ function ReaderFooter:onReadSettings(config)
 end
 
 function ReaderFooter:applyFooterMode(mode)
-    -- three modes switcher for reader footer
-    -- 0 for footer off
-    -- 1 for footer page info
-    -- 2 for footer time info
-    -- 3 for footer next_chapter info
-    -- 4 for battery status
-    -- 5 for progress percentage
-    -- 6 for from statistics book time to read
-    -- 7 for from statistics chapter time to read
-    -- 8 for front light level
-    -- 9 for memory usage
-    -- 10 for Wi-Fi status
-    -- 11 for book title
-    -- 12 for current chapter
-    -- 13 for bookmark count
-
     if mode ~= nil then self.mode = mode end
     local prev_visible_state = self.view.footer_visible
     self.view.footer_visible = (self.mode ~= self.mode_list.off)
