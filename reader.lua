@@ -151,6 +151,13 @@ end
 if G_reader_settings:isTrue("night_mode") then
     Device.screen:toggleNightMode()
 end
+-- Ensure the proper rotation on startup.
+-- We default to the rotation KOReader closed with.
+-- If the rotation is not locked it will be overridden by a book or the FM when opened.
+local rotation_mode = G_reader_settings:readSetting("closed_rotation_mode")
+if rotation_mode and rotation_mode ~= Device.screen:getRotationMode() then
+    Device.screen:setRotationMode(rotation_mode)
+end
 -- Dithering
 if Device:hasEinkScreen() then
     Device.screen:setupDithering()
@@ -262,7 +269,6 @@ if file then
 elseif directory then
     local FileManager = require("apps/filemanager/filemanager")
     UIManager:nextTick(function()
-        FileManager:setRotationMode(true)
         FileManager:showFiles(directory)
     end)
     exit_code = UIManager:run()
@@ -289,7 +295,6 @@ else
         local home_dir =
             G_reader_settings:readSetting("home_dir") or Device.home_dir or lfs.currentdir()
         UIManager:nextTick(function()
-            FileManager:setRotationMode(true)
             FileManager:showFiles(home_dir)
         end)
         -- Always open history on top of filemanager so closing history
@@ -333,6 +338,9 @@ local function exitReader()
 
     -- Save any device settings before closing G_reader_settings
     Device:saveSettings()
+
+    --  Save current rotation to have it for next startup
+    G_reader_settings:saveSetting("closed_rotation_mode", Device.screen:getRotationMode())
 
     G_reader_settings:close()
 
