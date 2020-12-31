@@ -29,18 +29,19 @@ local Screen = Device.screen
 local MODE = {
     off = 0,
     page_progress = 1,
-    time = 2,
-    pages_left = 3,
-    battery = 4,
-    percentage = 5,
-    book_time_to_read = 6,
-    chapter_time_to_read = 7,
-    frontlight = 8,
-    mem_usage = 9,
-    wifi_status = 10,
-    book_title = 11,
-    book_chapter = 12,
-    bookmark_count = 13,
+    pages_left_book = 2,
+    time = 3,
+    pages_left = 4,
+    battery = 5,
+    percentage = 6,
+    book_time_to_read = 7,
+    chapter_time_to_read = 8,
+    frontlight = 9,
+    mem_usage = 10,
+    wifi_status = 11,
+    book_title = 12,
+    book_chapter = 13,
+    bookmark_count = 14,
 }
 
 local symbol_prefix = {
@@ -208,6 +209,32 @@ local footerTextGeneratorMap = {
             return ("%d / %d"):format(footer.position, footer.doc_height)
         end
     end,
+    pages_left_book = function(footer)
+        if footer.pageno then
+            if footer.ui.pagemap and footer.ui.pagemap:wantsPageLabels() then
+                -- (Page labels might not be numbers)
+                return ("%s / %s"):format(footer.ui.pagemap:getCurrentPageLabel(true),
+                                          footer.ui.pagemap:getLastPageLabel(true))
+            end
+            if footer.ui.document:hasHiddenFlows() then
+                -- i.e., if we are hiding non-linear fragments and there's anything to hide,
+                local flow = footer.ui.document:getPageFlow(footer.pageno)
+                local page = footer.ui.document:getPageNumberInFlow(footer.pageno)
+                local pages = footer.ui.document:getTotalPagesInFlow(flow)
+                local remaining = pages - page;
+                if flow == 0 then
+                    return ("-%d // %d"):format(remaining, pages)
+                else
+                    return ("[-%d / %d]%d"):format(remaining, pages, flow)
+                end
+            else
+                local remaining = footer.pages - footer.pageno
+                return ("-%d / %d"):format(remaining, footer.pages)
+            end
+        elseif footer.position then
+            return ("-%d / %d"):format(footer.doc_height - footer.position, footer.doc_height)
+        end
+    end,
     pages_left = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].pages_left
@@ -352,6 +379,7 @@ function ReaderFooter:init()
         bookmark_count = true,
         time = true,
         page_progress = true,
+        pages_left_book = false,
         pages_left = true,
         percentage = true,
         book_time_to_read = true,
@@ -765,6 +793,7 @@ function ReaderFooter:textOptionTitles(option)
         reclaim_height = _("Reclaim bar height from bottom margin"),
         bookmark_count = T(_("Bookmark count (%1)"), symbol_prefix[symbol].bookmark_count),
         page_progress = T(_("Current page (%1)"), "/"),
+        pages_left_book = T(_("Pages left in book (%1)"), "-"),
         time = symbol_prefix[symbol].time
             and T(_("Current time (%1)"), symbol_prefix[symbol].time) or _("Current time"),
         pages_left = T(_("Pages left in chapter (%1)"), symbol_prefix[symbol].pages_left),
@@ -1649,6 +1678,7 @@ function ReaderFooter:addToMainMenu(menu_items)
         }
     })
     table.insert(sub_items, getMinibarOption("page_progress"))
+    table.insert(sub_items, getMinibarOption("pages_left_book"))
     table.insert(sub_items, getMinibarOption("time"))
     table.insert(sub_items, getMinibarOption("pages_left"))
     if Device:hasBattery() then
@@ -1952,22 +1982,6 @@ function ReaderFooter:onReadSettings(config)
 end
 
 function ReaderFooter:applyFooterMode(mode)
-    -- three modes switcher for reader footer
-    -- 0 for footer off
-    -- 1 for footer page info
-    -- 2 for footer time info
-    -- 3 for footer next_chapter info
-    -- 4 for battery status
-    -- 5 for progress percentage
-    -- 6 for from statistics book time to read
-    -- 7 for from statistics chapter time to read
-    -- 8 for front light level
-    -- 9 for memory usage
-    -- 10 for Wi-Fi status
-    -- 11 for book title
-    -- 12 for current chapter
-    -- 13 for bookmark count
-
     if mode ~= nil then self.mode = mode end
     local prev_visible_state = self.view.footer_visible
     self.view.footer_visible = (self.mode ~= self.mode_list.off)
