@@ -221,17 +221,18 @@ local footerTextGeneratorMap = {
                 local flow = footer.ui.document:getPageFlow(footer.pageno)
                 local page = footer.ui.document:getPageNumberInFlow(footer.pageno)
                 local pages = footer.ui.document:getTotalPagesInFlow(flow)
+                local remaining = pages - page;
                 if flow == 0 then
-                    return ("%d // %d"):format(page, pages)
+                    return ("-%d // %d"):format(remaining, pages)
                 else
-                    return ("[%d / %d]%d"):format(page, pages, flow)
+                    return ("[-%d / %d]%d"):format(remaining, pages, flow)
                 end
             else
                 local remaining = footer.pages - footer.pageno
                 return ("-%d / %d"):format(remaining, footer.pages)
             end
         elseif footer.position then
-            return ("%d / %d"):format(footer.position, footer.doc_height)
+            return ("-%d / %d"):format(footer.doc_height - footer.position, footer.doc_height)
         end
     end,
     pages_left = function(footer)
@@ -792,7 +793,7 @@ function ReaderFooter:textOptionTitles(option)
         reclaim_height = _("Reclaim bar height from bottom margin"),
         bookmark_count = T(_("Bookmark count (%1)"), symbol_prefix[symbol].bookmark_count),
         page_progress = T(_("Current page (%1)"), "/"),
-        pages_left_book = T(_("Pages remaining (%1)"), "-"),
+        pages_left_book = T(_("Pages left in book (%1)"), "-"),
         time = symbol_prefix[symbol].time
             and T(_("Current time (%1)"), symbol_prefix[symbol].time) or _("Current time"),
         pages_left = T(_("Pages left in chapter (%1)"), symbol_prefix[symbol].pages_left),
