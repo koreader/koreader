@@ -1000,20 +1000,24 @@ This may fail on complex HTML (with styles, scripts, comments), but should be fi
 @treturn string plain text
 ]]
 function util.htmlToPlainText(text)
-    -- Replace <br> and <p> with \n
+    -- Replace <br> with \n
     text = text:gsub("%s*<%s*br%s*/?>%s*", "\n") -- <br> and <br/>
-    text = text:gsub("%s*<%s*p%s*>%s*", "\n&nbsp;&nbsp;&nbsp;&nbsp;") -- <p>
+    -- Replace <p> with \n\t (\t, unlike any combination of spaces,
+    -- ensures a constant indentation when text is justified.)
     text = text:gsub("%s*</%s*p%s*>%s*", "\n") -- </p>
     text = text:gsub("%s*<%s*p%s*/>%s*", "\n") -- standalone <p/>
+    text = text:gsub("%s*<%s*p%s*>%s*", "\n\t") -- <p>
+        -- (this one last, so \t is not removed by the others' %s)
     -- Remove all HTML tags
     text = text:gsub("<[^>]*>", "")
     -- Convert HTML entities
     text = util.htmlEntitiesToUtf8(text)
-    -- Trim spaces and new lines at start and end
+    -- Trim spaces and new lines at start and end, including
+    -- the \t we added (this looks fine enough with multiple
+    -- paragraphs, but feels nicer with a single paragraph,
+    -- whether it contains <br>s or not).
     text = text:gsub("^[\n%s]*", "")
     text = text:gsub("[\n%s]*$", "")
-    -- Trim non-breaking spaces from the start
-    text = text:gsub("^\xC2\xA0\xC2\xA0\xC2\xA0\xC2\xA0", "")
     return text
 end
 
