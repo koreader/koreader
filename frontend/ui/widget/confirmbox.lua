@@ -51,6 +51,8 @@ local ConfirmBox = InputContainer:new{
     margin = Size.margin.default,
     padding = Size.padding.default,
     dismissable = true, -- set to false if any button callback is required
+    flush_events_on_show = false, -- set to true when it might be displayed after
+                                  -- some processing, to avoid accidental dismissal
 }
 
 function ConfirmBox:init()
@@ -182,6 +184,10 @@ function ConfirmBox:onShow()
     UIManager:setDirty(self, function()
         return "ui", self[1][1].dimen
     end)
+    if self.flush_events_on_show then
+        -- Discard queued and coming up events to avoid accidental dismissal
+        UIManager:discardEvents(true)
+    end
 end
 
 function ConfirmBox:onCloseWidget()
