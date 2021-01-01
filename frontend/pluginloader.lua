@@ -9,7 +9,7 @@ local OBSOLETE_PLUGINS = {
     storagestat = true,
     kobolight = true,
 }
--- deprecated plugins are still available, but show a hint about its deprecation on UI
+-- Deprecated plugins are still available, but show a hint about deprecation.
 local function getMenuTable(plugin)
     local t = {}
     t.name = plugin.name
