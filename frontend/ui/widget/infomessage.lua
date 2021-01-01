@@ -69,6 +69,8 @@ local InfoMessage = InputContainer:new{
     no_refresh_on_close = nil,
     -- Only have it painted after this delay (dismissing still works before it's shown)
     show_delay = nil,
+    -- Set to true when it might be displayed after some processing, to avoid accidental dismissal
+    flush_events_on_show = false,
 }
 
 function InfoMessage:init()
@@ -224,6 +226,10 @@ function InfoMessage:onShow()
     UIManager:setDirty(self, function()
         return "ui", self[1][1].dimen
     end)
+    if self.flush_events_on_show then
+        -- Discard queued and coming up events to avoid accidental dismissal
+        UIManager:discardEvents(true)
+    end
     -- schedule us to close ourself if timeout provided
     if self.timeout then
         UIManager:scheduleIn(self.timeout, function() UIManager:close(self) end)

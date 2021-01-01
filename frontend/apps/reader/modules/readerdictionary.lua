@@ -889,6 +889,12 @@ function ReaderDictionary:showDict(word, results, box, link)
     self:dismissLookupInfo()
     if results and results[1] then
         UIManager:show(self.dict_window)
+        if not results[1].lookup_cancelled then
+            -- Discard queued and coming up events to avoid accidental
+            -- dismissal (but not if lookup interrupted, so 2 quick
+            -- taps can discard everything)
+            UIManager:discardEvents(true)
+        end
     end
 end
 

@@ -39,6 +39,7 @@ local UIManager = {
     _exit_code = nil,
     _prevent_standby_count = 0,
     _prev_prevent_standby_count = 0,
+    _discard_events_till = nil,
 
     event_hook = require("ui/hook_container"):new()
 }
@@ -797,9 +798,47 @@ function UIManager:quit()
     end
 end
 
+--- Request events to be ignored for some duration
+function UIManager:discardEvents(set_or_seconds)
+    if not set_or_seconds then -- remove any previously set
+        self._discard_events_till = nil
+        return
+    end
+    local usecs
+    if set_or_seconds == true then
+        -- Use an adequate delay to account for device refresh duration
+        -- so any events happening in this delay (ie. before a widget
+        -- is really painted on screen) are discarded.
+        if Device:hasEinkScreen() then
+            -- A screen refresh can take a few 100ms,
+            -- sometimes > 500ms on some devices/temperatures
+            usecs = 600000
+        else
+            -- On non-eInk screen, it's usually instantaneous
+            usecs = 300000
+        end
+    else -- we expect a number
+        usecs = set_or_seconds * MILLION
+    end
+    local now = { util.gettime() }
+    local now_us = now[1] * MILLION + now[2]
+    self._discard_events_till = now_us + usecs
+end
+
 --- Transmits an event to an active widget.
 function UIManager:sendEvent(event)
     if #self._window_stack == 0 then return end
+
+    -- Ensure discardEvents
+    if self._discard_events_till then
+        local now = { util.gettime() }
+        local now_us = now[1] * MILLION + now[2]
+        if now_us < self._discard_events_till then
+            return
+        else
+            self._discard_events_till = nil
+        end
+    end
 
     local top_widget = self._window_stack[#self._window_stack]
     -- top level widget has first access to the event
