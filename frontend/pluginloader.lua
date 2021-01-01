@@ -1,11 +1,24 @@
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local _ = require("gettext")
 
 local DEFAULT_PLUGIN_PATH = "plugins"
+
+-- plugin names that were removed and are no longer available.
 local OBSOLETE_PLUGINS = {
     storagestat = true,
     kobolight = true,
 }
+-- deprecated plugins are still available, but show a hint about its deprecation on UI
+local function getMenuTable(plugin)
+    local t = {}
+    t.name = plugin.name
+    t.fullname = string.format("%s%s", plugin.fullname or plugin.name,
+        plugin.deprecated and " (" .. _("deprecated") .. ")" or "")
+    t.description = string.format("%s%s", plugin.description,
+        type(plugin.deprecated) == "string"  and "\n\n" .. plugin.deprecated or "")
+    return t
+end
 
 local function sandboxPluginEventHandlers(plugin)
     for key, value in pairs(plugin) do
@@ -126,19 +139,13 @@ function PluginLoader:genPluginManagerSubItem()
     end
 
     for _, plugin in ipairs(enabled_plugins) do
-        local element = {}
-        element.fullname = plugin.fullname or plugin.name
-        element.name = plugin.name
-        element.description = plugin.description
+        local element = getMenuTable(plugin)
         element.enable = true
         table.insert(self.all_plugins, element)
     end
 
     for _, plugin in ipairs(disabled_plugins) do
-        local element = {}
-        element.fullname = plugin.fullname or plugin.name
-        element.name = plugin.name
-        element.description = plugin.description
+        local element = getMenuTable(plugin)
         element.enable = false
         if not OBSOLETE_PLUGINS[element.name] then
             table.insert(self.all_plugins, element)
