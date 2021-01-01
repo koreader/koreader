@@ -1102,7 +1102,8 @@ function DictQuickLookup:inputLookup()
         else
             event = "LookupWord"
         end
-        self.ui:handleEvent(Event:new(event, word))
+        -- Trust that input text does not need any cleaning (allows querying for "-suffix")
+        self.ui:handleEvent(Event:new(event, word, true))
     end
 end
 
@@ -1131,18 +1132,21 @@ end
 
 function DictQuickLookup:lookupWikipedia(get_fullpage)
     local word
+    local is_sane
     if get_fullpage then
         -- we use the word of the displayed result's definition, which
         -- is the exact title of the full wikipedia page
         word = self.lookupword
+        is_sane = true
     else
         -- we use the original word that was querried
         word = self.word
+        is_sane = false
     end
     self:resyncWikiLanguages()
-    -- strange : we need to pass false instead of nil if word_box is nil,
-    -- otherwise get_fullpage is not passed
-    self.ui:handleEvent(Event:new("LookupWikipedia", word, self.word_box and self.word_box or false, get_fullpage))
+    -- (With Event, we need to pass false instead of nil if word_box is nil,
+    -- otherwise next arguments are discarded)
+    self.ui:handleEvent(Event:new("LookupWikipedia", word, is_sane, self.word_box and self.word_box or false, get_fullpage))
 end
 
 return DictQuickLookup

@@ -53,7 +53,8 @@ function ReaderWikipedia:lookupInput()
                     is_enter_default = true,
                     callback = function()
                         UIManager:close(self.input_dialog)
-                        self:onLookupWikipedia(self.input_dialog:getInputText())
+                        -- Trust that input text does not need any cleaning (allows querying for "-suffix")
+                        self:onLookupWikipedia(self.input_dialog:getInputText(), true)
                     end,
                 },
             }
@@ -98,7 +99,8 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                     os.date("%Y-%m-%d %H:%M:%S", value.time),
                     text,
                     callback = function()
-                        self:onLookupWikipedia(value.word, nil, value.page, value.lang)
+                        -- Word had been cleaned before being added to history
+                        self:onLookupWikipedia(value.word, true, nil, value.page, value.lang)
                     end
                 })
             end
@@ -375,16 +377,16 @@ function ReaderWikipedia:initLanguages(word)
     end
 end
 
-function ReaderWikipedia:onLookupWikipedia(word, box, get_fullpage, forced_lang)
+function ReaderWikipedia:onLookupWikipedia(word, is_sane, box, get_fullpage, forced_lang)
     -- Wrapped through Trapper, as we may be using Trapper:dismissableRunInSubprocess() in it
     Trapper:wrap(function()
-        self:lookupWikipedia(word, box, get_fullpage, forced_lang)
+        self:lookupWikipedia(word, is_sane, box, get_fullpage, forced_lang)
     end)
     return true
 end
 
-function ReaderWikipedia:lookupWikipedia(word, box, get_fullpage, forced_lang)
-    if NetworkMgr:willRerunWhenOnline(function() self:lookupWikipedia(word, box, get_fullpage, forced_lang) end) then
+function ReaderWikipedia:lookupWikipedia(word, is_sane, box, get_fullpage, forced_lang)
+    if NetworkMgr:willRerunWhenOnline(function() self:lookupWikipedia(word, is_sane, box, get_fullpage, forced_lang) end) then
         -- Not online yet, nothing more to do here, NetworkMgr will forward the callback and run it once connected!
         return
     end
@@ -404,7 +406,7 @@ function ReaderWikipedia:lookupWikipedia(word, box, get_fullpage, forced_lang)
     -- no need to clean word if get_fullpage, as it is the exact wikipetia page title
     if word and not get_fullpage then
         -- escape quotes and other funny characters in word
-        word = self:cleanSelection(word)
+        word = self:cleanSelection(word, is_sane)
         -- no need to lower() word with wikipedia search
     end
     logger.dbg("stripped word:", word)
