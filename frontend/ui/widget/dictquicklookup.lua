@@ -461,6 +461,9 @@ function DictQuickLookup:update()
                     callback = function()
                         self:changeToPrevDict()
                     end,
+                    hold_callback = function()
+                        self:changeToFirstDict()
+                    end,
                 },
                 {
                     text = self:getHighlightText(),
@@ -479,6 +482,9 @@ function DictQuickLookup:update()
                     enabled = self:isNextDictAvaiable(),
                     callback = function()
                         self:changeToNextDict()
+                    end,
+                    hold_callback = function()
+                        self:changeToLastDict()
                     end,
                 },
             },
@@ -843,6 +849,18 @@ function DictQuickLookup:changeToNextDict()
         self:changeDictionary(self.dict_index + 1)
     elseif #self.results > 1 then -- restart at first if end reached
         self:changeDictionary(1)
+    end
+end
+
+function DictQuickLookup:changeToFirstDict()
+    if self:isPrevDictAvaiable() then
+        self:changeDictionary(1)
+    end
+end
+
+function DictQuickLookup:changeToLastDict()
+    if self:isNextDictAvaiable() then
+        self:changeDictionary(#self.results)
     end
 end
 
