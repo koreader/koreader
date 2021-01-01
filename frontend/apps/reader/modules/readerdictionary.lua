@@ -214,7 +214,8 @@ function ReaderDictionary:addToMainMenu(menu_items)
                     os.date("%Y-%m-%d %H:%M:%S", value.time),
                     value.word,
                     callback = function()
-                        self:onLookupWord(value.word)
+                        -- Word had been cleaned before being added to history
+                        self:onLookupWord(value.word, true)
                     end
                 })
             end
@@ -385,10 +386,10 @@ function ReaderDictionary:addToMainMenu(menu_items)
     end
 end
 
-function ReaderDictionary:onLookupWord(word, box, highlight, link)
+function ReaderDictionary:onLookupWord(word, is_sane, box, highlight, link)
     logger.dbg("dict lookup word:", word, box)
     -- escape quotes and other funny characters in word
-    word = self:cleanSelection(word)
+    word = self:cleanSelection(word, is_sane)
     logger.dbg("dict stripped word:", word)
 
     self.highlight = highlight
@@ -609,7 +610,7 @@ local function tidyMarkup(results)
     return results
 end
 
-function ReaderDictionary:cleanSelection(text)
+function ReaderDictionary:cleanSelection(text, is_sane)
     -- Will be used by ReaderWikipedia too
     if not text then
         return ""
@@ -618,31 +619,33 @@ function ReaderDictionary:cleanSelection(text)
     -- some cleanup is still needed for selection we get from other engines
     -- (example: pdf selection "qu’autrefois," will be cleaned to "autrefois")
     --
+    -- Replace no-break space with regular space
+    text = text:gsub("\xC2\xA0", ' ') -- U+00A0 no-break space
     -- Trim any space at start or end
     text = text:gsub("^%s+", "")
     text = text:gsub("%s+$", "")
-    -- Replace extended quote (included in the general puncturation range)
-    -- with plain ascii quote (for french words like "aujourd’hui")
-    text = text:gsub("\xE2\x80\x99", "'") -- U+2019 (right single quotation mark)
-    -- Strip punctuation characters around selection
-    text = util.stripPunctuation(text)
-    -- Strip some common english grammatical construct
-    text = text:gsub("'s$", '') -- english possessive
-    -- Strip some common french grammatical constructs
-    text = text:gsub("^[LSDMNTlsdmnt]'", '') -- french l' s' t'...
-    text = text:gsub("^[Qq][Uu]'", '') -- french qu'
-    -- Replace no-break space with regular space
-    text = text:gsub("\xC2\xA0", ' ') -- U+00A0 no-break space
-    -- There may be a need to remove some (all?) diacritical marks
-    -- https://en.wikipedia.org/wiki/Combining_character#Unicode_ranges
-    -- see discussion at https://github.com/koreader/koreader/issues/1649
-    -- Commented for now, will have to be checked by people who read
-    -- languages and texts that use them.
-    -- text = text:gsub("\204[\128-\191]", '') -- U+0300 to U+033F
-    -- text = text:gsub("\205[\128-\175]", '') -- U+0340 to U+036F
-    -- Trim any space now at start or end after above changes
-    text = text:gsub("^%s+", "")
-    text = text:gsub("%s+$", "")
+    if not is_sane then
+        -- Replace extended quote (included in the general puncturation range)
+        -- with plain ascii quote (for french words like "aujourd’hui")
+        text = text:gsub("\xE2\x80\x99", "'") -- U+2019 (right single quotation mark)
+        -- Strip punctuation characters around selection
+        text = util.stripPunctuation(text)
+        -- Strip some common english grammatical construct
+        text = text:gsub("'s$", '') -- english possessive
+        -- Strip some common french grammatical constructs
+        text = text:gsub("^[LSDMNTlsdmnt]'", '') -- french l' s' t'...
+        text = text:gsub("^[Qq][Uu]'", '') -- french qu'
+        -- There may be a need to remove some (all?) diacritical marks
+        -- https://en.wikipedia.org/wiki/Combining_character#Unicode_ranges
+        -- see discussion at https://github.com/koreader/koreader/issues/1649
+        -- Commented for now, will have to be checked by people who read
+        -- languages and texts that use them.
+        -- text = text:gsub("\204[\128-\191]", '') -- U+0300 to U+033F
+        -- text = text:gsub("\205[\128-\175]", '') -- U+0340 to U+036F
+        -- Trim any space now at start or end after above changes
+        text = text:gsub("^%s+", "")
+        text = text:gsub("%s+$", "")
+    end
     return text
 end
 
@@ -680,7 +683,8 @@ function ReaderDictionary:onShowDictionaryLookup()
                     is_enter_default = true,
                     callback = function()
                         UIManager:close(self.dictionary_lookup_dialog)
-                        self:onLookupWord(self.dictionary_lookup_dialog:getInputText())
+                        -- Trust that input text does not need any cleaning (allows querying for "-suffix")
+                        self:onLookupWord(self.dictionary_lookup_dialog:getInputText(), true)
                     end,
                 },
             }

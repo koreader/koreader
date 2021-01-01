@@ -711,7 +711,7 @@ function ReaderLink:onGoToExternalLink(link_url)
             callback = function()
                 UIManager:nextTick(function()
                     UIManager:close(dialog)
-                    self.ui:handleEvent(Event:new("LookupWikipedia", wiki_page, false, true, wiki_lang))
+                    self.ui:handleEvent(Event:new("LookupWikipedia", wiki_page, true, false, true, wiki_lang))
                 end)
             end,
         })
