@@ -86,6 +86,25 @@ local function showusage()
     print("See http://github.com/koreader/koreader for more info.")
 end
 
+local function getPathFromURI(str)
+    local hexToChar = function(x)
+        return string.char(tonumber(x, 16))
+    end
+
+    local unescape = function(url)
+       return url:gsub("%%(%x%x)", hexToChar)
+    end
+
+    local prefix = "file://"
+    if str:sub(1, #prefix) ~= prefix then
+        return str
+    end
+    return unescape(str):sub(#prefix+1)
+end
+
+local lfs = require("libs/libkoreader-lfs")
+local file
+local directory
 local Profiler = nil
 local ARGV = arg
 local argidx = 1
@@ -109,8 +128,14 @@ while argidx <= #ARGV do
         Profiler = require("jit.p")
         Profiler.start("la")
     else
-        -- not a recognized option, should be a filename
-        argidx = argidx - 1
+        -- not a recognized option, should be a filename or directory
+        local sanitized_path = getPathFromURI(arg)
+        local mode = lfs.attributes(sanitized_path, "mode")
+        if mode == "file" then
+            file = sanitized_path
+        elseif mode == "directory" or mode == "link" then
+            directory = sanitized_path
+        end
         break
     end
 end
@@ -209,23 +234,14 @@ end
 -- Get which file to start with
 local last_file = G_reader_settings:readSetting("lastfile")
 local start_with = G_reader_settings:readSetting("start_with") or "filemanager"
-local file
-local directory
 
 -- Helpers
-local lfs = require("libs/libkoreader-lfs")
 local function retryLastFile()
     local ConfirmBox = require("ui/widget/confirmbox")
     return ConfirmBox:new{
         text = _("Cannot open last file.\nThis could be because it was deleted or because external storage is still being mounted.\nDo you want to retry?"),
         ok_callback = function()
-            local last_file = G_reader_settings:readSetting("lastfile")
-            if lfs.attributes(last_file, "mode") == "file" then
-                local ReaderUI = require("apps/reader/readerui")
-                UIManager:nextTick(function()
-                    ReaderUI:showReader(last_file)
-                end)
-            else
+            if lfs.attributes(last_file, "mode") ~= "file" then
                 UIManager:show(retryLastFile())
             end
         end,
@@ -235,37 +251,19 @@ local function retryLastFile()
     }
 end
 
-local function getPathFromURI(str)
-    local hexToChar = function(x)
-        return string.char(tonumber(x, 16))
-    end
-
-    local unescape = function(url)
-       return url:gsub("%%(%x%x)", hexToChar)
-    end
-
-    local prefix = "file://"
-    if str:sub(1, #prefix) ~= prefix then
-        return str
-    end
-    return unescape(str):sub(#prefix+1)
-end
-
-
 -- Start app
 local exit_code
-if ARGV[argidx] and ARGV[argidx] ~= "" then
-    local sanitized_path = getPathFromURI(ARGV[argidx])
-    if lfs.attributes(sanitized_path, "mode") == "file" then
-        file = sanitized_path
-    else
-        directory = ARGV[argidx]
-    end
-end
-if file and file ~= "" then
+if file then
     local ReaderUI = require("apps/reader/readerui")
     UIManager:nextTick(function()
         ReaderUI:showReader(file)
+    end)
+    exit_code = UIManager:run()
+elseif directory then
+    local FileManager = require("apps/filemanager/filemanager")
+    UIManager:nextTick(function()
+        FileManager:setRotationMode(true)
+        FileManager:showFiles(directory)
     end)
     exit_code = UIManager:run()
 else
@@ -274,54 +272,49 @@ else
         start_with = "last"
         last_file = QuickStart:getQuickStart()
     end
-end
-if start_with == "last" and last_file and lfs.attributes(last_file, "mode") ~= "file" then
-    UIManager:show(retryLastFile())
-    exit_code = UIManager:run()
-end
-if start_with == "last" and last_file and lfs.attributes(last_file, "mode") == "file" then
-    local ReaderUI = require("apps/reader/readerui")
-    UIManager:nextTick(function()
-        ReaderUI:showReader(last_file)
-    end)
-    exit_code = UIManager:run()
--- or else we assume a directory is given in command line argument
--- the filemanger will show the files in that path
--- or the home path if start_with is defined.
-elseif (directory and directory ~= "") or (start_with and start_with ~= last) then
-    local FileManager = require("apps/filemanager/filemanager")
-    local home_dir =
-        G_reader_settings:readSetting("home_dir") or Device.home_dir or directory or lfs.currentdir()
-    UIManager:nextTick(function()
-        FileManager:setRotationMode(true)
-        FileManager:showFiles(home_dir)
-    end)
-    -- Always open history on top of filemanager so closing history
-    -- doesn't result in exit.
-    if start_with == "history" then
-        local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
-        UIManager:nextTick(function()
-            FileManagerHistory:onShowHist(last_file)
-        end)
-    elseif start_with == "favorites" then
-        local FileManagerCollection = require("apps/filemanager/filemanagercollection")
-        UIManager:nextTick(function()
-            FileManagerCollection:new{
-                ui = FileManager.instance,
-            }:onShowColl("favorites")
-        end)
-    elseif start_with == "folder_shortcuts" then
-        local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
-        UIManager:nextTick(function()
-            FileManagerShortcuts:new{
-                ui = FileManager.instance,
-            }:onShowFolderShortcutsDialog()
-        end)
+
+    if start_with == "last" and last_file and lfs.attributes(last_file, "mode") ~= "file" then
+        UIManager:show(retryLastFile())
+        exit_code = UIManager:run()
     end
-    exit_code = UIManager:run()
-else
-    -- Should never happen.
-    return showusage()
+    if start_with == "last" and last_file then
+        local ReaderUI = require("apps/reader/readerui")
+        UIManager:nextTick(function()
+            ReaderUI:showReader(last_file)
+        end)
+        exit_code = UIManager:run()
+    else
+        local FileManager = require("apps/filemanager/filemanager")
+        local home_dir =
+            G_reader_settings:readSetting("home_dir") or Device.home_dir or lfs.currentdir()
+        UIManager:nextTick(function()
+            FileManager:setRotationMode(true)
+            FileManager:showFiles(home_dir)
+        end)
+        -- Always open history on top of filemanager so closing history
+        -- doesn't result in exit.
+        if start_with == "history" then
+            local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
+            UIManager:nextTick(function()
+                FileManagerHistory:onShowHist(last_file)
+            end)
+        elseif start_with == "favorites" then
+            local FileManagerCollection = require("apps/filemanager/filemanagercollection")
+            UIManager:nextTick(function()
+                FileManagerCollection:new{
+                    ui = FileManager.instance,
+                }:onShowColl("favorites")
+            end)
+        elseif start_with == "folder_shortcuts" then
+            local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
+            UIManager:nextTick(function()
+                FileManagerShortcuts:new{
+                    ui = FileManager.instance,
+                }:onShowFolderShortcutsDialog()
+            end)
+        end
+        exit_code = UIManager:run()
+    end
 end
 
 -- Exit
