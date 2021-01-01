@@ -14,7 +14,7 @@ local function getMenuTable(plugin)
     local t = {}
     t.name = plugin.name
     t.fullname = string.format("%s%s", plugin.fullname or plugin.name,
-        plugin.deprecated and " (" .. _("deprecated") .. ")" or "")
+        plugin.deprecated and " (" .. _("outdated") .. ")" or "")
     t.description = string.format("%s%s", plugin.description,
         type(plugin.deprecated) == "string"  and "\n\n" .. plugin.deprecated or "")
     return t
