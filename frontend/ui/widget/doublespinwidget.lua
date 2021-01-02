@@ -167,16 +167,21 @@ function DoubleSpinWidget:update()
         widget_title,
         CloseButton:new{ window = self, padding_top = Size.margin.title, },
     }
-    local widget_info = FrameContainer:new{
-        padding = Size.padding.default,
-        margin = Size.margin.small,
-        bordersize = 0,
-        TextBoxWidget:new{
-            text = self.info_text or "",
-            face = Font:getFace("x_smallinfofont"),
-            width = math.floor(self.width * 0.9),
+    local widget_info
+    if self.info_text then
+        widget_info = FrameContainer:new{
+            padding = Size.padding.default,
+            margin = Size.margin.small,
+            bordersize = 0,
+            TextBoxWidget:new{
+                text = self.info_text,
+                face = Font:getFace("x_smallinfofont"),
+                width = math.floor(self.width * 0.9),
+            }
         }
-    }
+    else
+        widget_info = VerticalSpan:new{ width = 0 }
+    end
     local buttons = {
         {
             {
