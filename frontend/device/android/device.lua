@@ -119,8 +119,8 @@ local Device = Generic:new{
     -- required for those modules where it *really* matters (e.g., ffi/blitbuffer.lua).
     -- This is also why we try to actually avoid entering actual loops in the Lua blitter on Android,
     -- and instead attempt to do most of everything via the C implementation.
-    -- NOTE: We're currently testing even crazier workarounds in android-luajit-launcher
-    --       that should alleviate the need for this :).
+    -- NOTE: Since https://github.com/koreader/android-luajit-launcher/pull/283, we've patched LuaJIT
+    --       to ensure that the initial mcode alloc works, and sticks around, which is why this is no longer enabled.
     should_restrict_JIT = false,
 }
 
