@@ -94,6 +94,7 @@ Note that this may not be ensured under some conditions: in scroll mode, when a 
                 name_text_hold_callback = optionsutil.showValuesHMargins,
                 more_options = true,
                 more_options_param = {
+                    name_text = _("Left/Right Margins"),
                     left_min = 0,
                     left_max = 140,
                     left_step = 1,
@@ -154,10 +155,23 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 name_text_hold_callback = optionsutil.showValues,
                 more_options = true,
                 more_options_param = {
-                  value_min = 0,
-                  value_max = 140,
-                  value_step = 1,
-                  value_hold_step = 5,
+                    -- Allow this to tune both top and bottom margins,
+                    -- handling 2 setting names and sending 2 events
+                    -- (we'll get the exact same DoubleSpinWidget in
+                    -- the b_page_margin setting just below)
+                    name_text = _("Top/Bottom Margins"),
+                    names = { "t_page_margin", "b_page_margin" },
+                    events = { "SetPageTopMargin", "SetPageBottomMargin" },
+                    left_text = _("Top"),
+                    left_min = 0,
+                    left_max = 140,
+                    left_step = 1,
+                    left_hold_step = 5,
+                    right_text = _("Bottom"),
+                    right_min = 0,
+                    right_max = 140,
+                    right_step = 1,
+                    right_hold_step = 5,
                 },
             },
             {
@@ -194,10 +208,20 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 help_text = _([[In the top menu → Settings → Status bar, you can choose whether the bottom margin applies from the bottom of the screen, or from above the status bar.]]),
                 more_options = true,
                 more_options_param = {
-                  value_min = 0,
-                  value_max = 140,
-                  value_step = 1,
-                  value_hold_step = 5,
+                    -- Similar as for t_page_margin above
+                    name_text = _("Top/Bottom Margins"),
+                    names = { "t_page_margin", "b_page_margin" },
+                    events = { "SetPageTopMargin", "SetPageBottomMargin" },
+                    left_text = _("Top"),
+                    left_min = 0,
+                    left_max = 140,
+                    left_step = 1,
+                    left_hold_step = 5,
+                    right_text = _("Bottom"),
+                    right_min = 0,
+                    right_max = 140,
+                    right_step = 1,
+                    right_hold_step = 5,
                 },
             },
         }

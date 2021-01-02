@@ -1126,7 +1126,13 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, d
             if more_options_param.left_min then -- DoubleSpingWidget
                 local DoubleSpinWidget = require("ui/widget/doublespinwidget")
                 -- (No support for value_table - add it if needed)
-                local curr_values = self.configurable[name]
+                local curr_values
+                if more_options_param.names then -- allows managing 2 different settings
+                    curr_values = { self.configurable[more_options_param.names[1]],
+                                    self.configurable[more_options_param.names[2]] }
+                else
+                    curr_values = self.configurable[name]
+                end
                 widget = DoubleSpinWidget:new{
                     width = math.floor(Screen:getWidth() * 0.6),
                     left_text = more_options_param.left_text,
@@ -1152,8 +1158,17 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, d
                             self:closeDialog()
                         end
                         local value_tables = { left_value, right_value }
-                        self:onConfigChoice(name, value_tables)
-                        if event then
+                        if more_options_param.names then
+                            self:onConfigChoice(more_options_param.names[1], left_value)
+                            self:onConfigChoice(more_options_param.names[2], right_value)
+                        else
+                            self:onConfigChoice(name, value_tables)
+                        end
+                        if more_options_param.events then
+                            self:onConfigEvent(more_options_param.events[1], left_value, nil)
+                            self:onConfigEvent(more_options_param.events[2], right_value, refresh_callback)
+                            self:update()
+                        elseif event then
                             args = args or {}
                             self:onConfigEvent(event, value_tables, refresh_callback)
                             self:update()
@@ -1172,8 +1187,15 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, d
                             text = T(_("Set default %1 to %2?"), (name_text or ""), values_string),
                             ok_text = T(_("Set as default")),
                             ok_callback = function()
-                                name = self.config_options.prefix.."_"..name
-                                G_reader_settings:saveSetting(name, value_tables)
+                                if more_options_param.names then
+                                    name = self.config_options.prefix.."_"..more_options_param.names[1]
+                                    G_reader_settings:saveSetting(name, left_value)
+                                    name = self.config_options.prefix.."_"..more_options_param.names[2]
+                                    G_reader_settings:saveSetting(name, right_value)
+                                else
+                                    name = self.config_options.prefix.."_"..name
+                                    G_reader_settings:saveSetting(name, value_tables)
+                                end
                                 self:update()
                                 UIManager:setDirty(self, function()
                                     return "ui", self.dialog_frame.dimen
