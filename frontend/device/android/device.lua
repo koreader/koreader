@@ -119,7 +119,9 @@ local Device = Generic:new{
     -- required for those modules where it *really* matters (e.g., ffi/blitbuffer.lua).
     -- This is also why we try to actually avoid entering actual loops in the Lua blitter on Android,
     -- and instead attempt to do most of everything via the C implementation.
-    should_restrict_JIT = true,
+    -- NOTE: Since https://github.com/koreader/android-luajit-launcher/pull/283, we've patched LuaJIT
+    --       to ensure that the initial mcode alloc works, and sticks around, which is why this is no longer enabled.
+    should_restrict_JIT = false,
 }
 
 function Device:init()
@@ -387,9 +389,9 @@ local function processEvents()
     if poll_state >= 0 then
         if source[0] ~= nil then
             if source[0].id == C.LOOPER_ID_MAIN then
-                local cmd = C.android_app_read_cmd(android.app)
-                C.android_app_pre_exec_cmd(android.app, cmd)
-                C.android_app_post_exec_cmd(android.app, cmd)
+                local cmd = android.glue.android_app_read_cmd(android.app)
+                android.glue.android_app_pre_exec_cmd(android.app, cmd)
+                android.glue.android_app_post_exec_cmd(android.app, cmd)
             elseif source[0].id == C.LOOPER_ID_INPUT then
                 local event = ffi.new("AInputEvent*[1]")
                 while android.lib.AInputQueue_getEvent(android.app.inputQueue, event) >= 0 do
