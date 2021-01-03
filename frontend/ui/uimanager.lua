@@ -779,7 +779,7 @@ end
 --- Check if a widget is still in the window stack, or is a subwidget of a widget still in the window stack
 function UIManager:isWidgetShown(widget, max_depth)
     for i = #self._window_stack, 1, -1 do
-        local matched, depth = util.tableContains(self._window_stack[i].widget, widget, max_depth)
+        local matched, depth = util.arrayReferences(self._window_stack[i].widget, widget, max_depth)
         if matched then
             return matched, depth
         end
