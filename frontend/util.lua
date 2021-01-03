@@ -384,17 +384,19 @@ function util.arrayContains(t, v, cb)
     return false
 end
 
---- Test whether table t contains a reference to table n (at any depth)
----- @param t Lua table
+--- Test whether array t contains a reference to table n (at any depth)
+---- @param t Lua table (array only)
 ---- @param n Lua table
-function util.tableContains(t, n, l, m, h)
-    if not l then l = 0 end
+---- @int m Max nesting level
+function util.tableContains(t, n, m, l, h)
     if not m then m = 10 end
+    if not l then l = 0 end
     if l > m then
         return false
     end
 
     if type(t) == "table" then
+        -- Cache references to avoid useless recursions (c.f., frontend/dump.lua)
         history = h or {}
         for _, item in ipairs(history) do
             if item == t then
@@ -408,7 +410,7 @@ function util.tableContains(t, n, l, m, h)
 
         local new_history = { t, unpack(history) }
         for _, v in pairs(t) do
-            local matched, depth = util.tableContains(v, n, l + 1, m, new_history)
+            local matched, depth = util.tableContains(v, n, m, l + 1, new_history)
             if matched then
                 return matched, depth
             end
