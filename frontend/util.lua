@@ -388,7 +388,7 @@ end
 ---- @param t Lua table (array only)
 ---- @param n Lua table (array only)
 ---- @int m Max nesting level
-function util.arrayReferences(t, n, m, l, h)
+function util.arrayReferences(t, n, m, l)
     if not m then m = 15 end
     if not l then l = 0 end
     if l > m then
@@ -396,21 +396,12 @@ function util.arrayReferences(t, n, m, l, h)
     end
 
     if type(t) == "table" then
-        -- Cache references to avoid useless recursions (c.f., frontend/dump.lua)
-        history = h or {}
-        for _, item in ipairs(history) do
-            if item == t then
-                return false
-            end
-        end
-
         if t == n then
             return true, l
         end
 
-        local new_history = { t, unpack(history) }
         for _, v in ipairs(t) do
-            local matched, depth = util.arrayReferences(v, n, m, l + 1, new_history)
+            local matched, depth = util.arrayReferences(v, n, m, l + 1)
             if matched then
                 return matched, depth
             end
