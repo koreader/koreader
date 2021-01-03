@@ -163,21 +163,25 @@ function TouchMenuItem:onTapSelect(arg, ges)
         UIManager:setDirty(nil, function()
             return "fast", self.dimen
         end)
-        -- yield to main UI loop to invert item
-        UIManager:tickAfterNext(function()
-            self.menu:onMenuSelect(self.item)
-            self.item_frame.invert = false
-            -- NOTE: We can *usually* optimize that repaint away, as most entries in the menu will at least trigger a menu repaint ;).
-            --       But when stuff doesn't repaint the menu and keeps it open, we need to do it.
-            --       Since it's an *un*highlight containing text, we make it "ui" and not "fast", both so it won't mangle text,
-            --       and because "fast" can have some weird side-effects on some devices in this specific instance...
-            if self.item.hold_keep_menu_open or self.item.keep_menu_open then
-                --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-                UIManager:setDirty(self.show_parent, function()
-                    return "ui", self.dimen
-                end)
-            end
-        end)
+
+        -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
+        UIManager:forceRePaint()
+        self.menu:onMenuSelect(self.item)
+        UIManager:forceRePaint()
+        UIManager:waitForVSync()
+
+        self.item_frame.invert = false
+        -- NOTE: We can *usually* optimize that repaint away, as most entries in the menu will at least trigger a menu repaint ;).
+        --       But when stuff doesn't repaint the menu and keeps it open, we need to do it.
+        --       Since it's an *un*highlight containing text, we make it "ui" and not "fast", both so it won't mangle text,
+        --       and because "fast" can have some weird side-effects on some devices in this specific instance...
+        if self.item.hold_keep_menu_open or self.item.keep_menu_open then
+            --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self.dimen
+            end)
+        end
+        UIManager:forceRePaint()
     end
     return true
 end
@@ -197,17 +201,20 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         UIManager:setDirty(nil, function()
             return "fast", self.dimen
         end)
-        UIManager:tickAfterNext(function()
-            self.menu:onMenuHold(self.item)
+
+        -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
+        UIManager:forceRePaint()
+        self.menu:onMenuHold(self.item)
+        UIManager:forceRePaint()
+        UIManager:waitForVSync()
+
+        self.item_frame.invert = false
+        -- NOTE: For some reason, this is finicky (I end up with a solid black bar, i.e., text gets inverted, but not the bg?!)
+        --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(self.show_parent, function()
+            return "ui", self.dimen
         end)
-        UIManager:scheduleIn(0.5, function()
-            self.item_frame.invert = false
-            -- NOTE: For some reason, this is finicky (I end up with a solid black bar, i.e., text gets inverted, but not the bg?!)
-            --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-            UIManager:setDirty(self.show_parent, function()
-                return "ui", self.dimen
-            end)
-        end)
+        UIManager:forceRePaint()
     end
     return true
 end

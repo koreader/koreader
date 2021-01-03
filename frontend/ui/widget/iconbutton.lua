@@ -101,15 +101,34 @@ function IconButton:onTapIconButton()
         UIManager:setDirty(nil, function()
             return "fast", self.dimen
         end)
-        -- And, we usually need to delay the callback for the same reasons as Button...
-        UIManager:tickAfterNext(function()
-            self.callback()
-            self.image.invert = false
-            UIManager:widgetRepaint(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
-            UIManager:setDirty(nil, function()
-                return "fast", self.dimen
-            end)
+
+        local shown, depth = UIManager:isWidgetShown(self.image)
+        if shown then
+            print("Before callback, IconButton was shown at depth", depth)
+        else
+            print("IconButton is not shown before callbak?!")
+        end
+
+        -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
+        UIManager:forceRePaint()
+        self.callback()
+        UIManager:forceRePaint()
+        UIManager:waitForVSync()
+
+        if UIManager:isWidgetShown(self.image, depth) then
+            print("After callback, IconButton is still shown")
+        else
+            print("IconButton was closed by callback")
+            -- In which case, nothing more to do :)
+            return
+        end
+
+        self.image.invert = false
+        UIManager:widgetRepaint(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
+        UIManager:setDirty(nil, function()
+            return "fast", self.dimen
         end)
+        UIManager:forceRePaint()
     end
     return true
 end

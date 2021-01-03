@@ -119,14 +119,19 @@ function RadioButton:onTapCheckButton()
             UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
-            UIManager:tickAfterNext(function()
-                self.callback()
-                self.frame.invert = false
-                UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
-                UIManager:setDirty(nil, function()
-                    return "fast", self.dimen
-                end)
+
+            -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
+            UIManager:forceRePaint()
+            self.callback()
+            UIManager:forceRePaint()
+            UIManager:waitForVSync()
+
+            self.frame.invert = false
+            UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
+            UIManager:setDirty(nil, function()
+                return "fast", self.dimen
             end)
+            UIManager:forceRePaint()
         end
     elseif self.tap_input then
         self:onInput(self.tap_input)

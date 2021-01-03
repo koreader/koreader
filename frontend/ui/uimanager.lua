@@ -7,7 +7,8 @@ local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local dbg = require("dbg")
 local logger = require("logger")
-local util = require("ffi/util")
+local ffiUtil = require("ffi/util")
+local util = require("util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
@@ -528,7 +529,7 @@ dbg:guard(UIManager, 'schedule',
 
 --- Schedules task in a certain amount of seconds (fractions allowed) from now.
 function UIManager:scheduleIn(seconds, action, ...)
-    local when = { util.gettime() }
+    local when = { ffiUtil.gettime() }
     local s = math.floor(seconds)
     local usecs = (seconds - s) * MILLION
     when[1] = when[1] + s
@@ -775,6 +776,17 @@ function UIManager:getTopWidget()
     return ((self._window_stack[#self._window_stack] or {}).widget or {}).name
 end
 
+--- Check if a widget is still in the window stack, or is a subwidget of a widget still in the window stack
+function UIManager:isWidgetShown(widget)
+    for i = #self._window_stack, 1, -1 do
+        local matched, depth = util.tableContains(self._window_stack[i].widget, widget)
+        if matched then
+            return matched, depth
+        end
+    end
+    return false
+end
+
 --- Signals to quit.
 function UIManager:quit()
     if not self._running then return end
@@ -820,7 +832,7 @@ function UIManager:discardEvents(set_or_seconds)
     else -- we expect a number
         usecs = set_or_seconds * MILLION
     end
-    local now = { util.gettime() }
+    local now = { ffiUtil.gettime() }
     local now_us = now[1] * MILLION + now[2]
     self._discard_events_till = now_us + usecs
 end
@@ -831,7 +843,7 @@ function UIManager:sendEvent(event)
 
     -- Ensure discardEvents
     if self._discard_events_till then
-        local now = { util.gettime() }
+        local now = { ffiUtil.gettime() }
         local now_us = now[1] * MILLION + now[2]
         if now_us < self._discard_events_till then
             return
@@ -895,7 +907,7 @@ function UIManager:broadcastEvent(event)
 end
 
 function UIManager:_checkTasks()
-    local now = { util.gettime() }
+    local now = { ffiUtil.gettime() }
     local now_us = now[1] * MILLION + now[2]
     local wait_until = nil
 
@@ -1208,6 +1220,10 @@ end
 
 function UIManager:forceRePaint()
     self:_repaint()
+end
+
+function UIManager:waitForVSync()
+    Screen:refreshWaitForLast()
 end
 
 -- Used to repaint a specific sub-widget that isn't on the _window_stack itself

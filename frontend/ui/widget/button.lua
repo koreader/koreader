@@ -243,24 +243,42 @@ function Button:onTapSelectButton()
             UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen
             end)
-            -- And we also often have to delay the callback to both see the flash and/or avoid tearing artefacts w/ fast refreshes...
-            UIManager:tickAfterNext(function()
-                self.callback()
-                if not self[1] or not self[1].invert or not self[1].dimen then
-                    -- widget no more there (destroyed, re-init'ed by setText(), or not inverted: nothing to invert back
-                    return
-                end
 
-                self[1].invert = false
-                -- Since we kill the corners, we only need a single repaint.
-                if self[1].radius == Size.radius.button then
-                    self[1].radius = nil
-                end
-                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-                UIManager:setDirty(nil, function()
-                    return "fast", self[1].dimen
-                end)
+            local shown, depth = UIManager:isWidgetShown(self[1])
+            if shown then
+                print("Before callback, Button was shown at depth", depth)
+            else
+                print("Button is not shown before callbak?!")
+            end
+            -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
+            UIManager:forceRePaint()
+            self.callback()
+            UIManager:forceRePaint()
+            UIManager:waitForVSync()
+
+            if not self[1] or not self[1].invert or not self[1].dimen then
+                -- If the widget no longer exists (destroyed, re-init'ed by setText(), or not inverted: nothing to invert back
+                return
+            end
+
+            if UIManager:isWidgetShown(self[1], depth) then
+                print("After callback, Button is still shown")
+            else
+                print("Button was closed by callback")
+                -- In which case, nothing more to do :)
+                return
+            end
+
+            self[1].invert = false
+            -- Since we kill the corners, we only need a single repaint.
+            if self[1].radius == Size.radius.button then
+                self[1].radius = nil
+            end
+            UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:setDirty(nil, function()
+                return "fast", self[1].dimen
             end)
+            UIManager:forceRePaint()
         end
     elseif self.tap_input then
         self:onInput(self.tap_input)

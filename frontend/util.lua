@@ -384,6 +384,40 @@ function util.arrayContains(t, v, cb)
     return false
 end
 
+--- Test whether table t contains a reference to table n (at any depth)
+---- @param t Lua table
+---- @param n Lua table
+function util.tableContains(t, n, l, m, h)
+    if not l then l = 0 end
+    if not m then m = 10 end
+    if l > m then
+        return false
+    end
+
+    if type(t) == "table" then
+        history = h or {}
+        for _, item in ipairs(history) do
+            if item == t then
+                return false
+            end
+        end
+
+        if t == n then
+            return true, l
+        end
+
+        local new_history = { t, unpack(history) }
+        for _, v in pairs(t) do
+            local matched, depth = util.tableContains(v, n, l + 1, m, new_history)
+            if matched then
+                return matched, depth
+            end
+        end
+    end
+
+    return false
+end
+
 -- Merge t2 into t1, overwriting existing elements if they already exist
 -- Probably not safe with nested tables (c.f., https://stackoverflow.com/q/1283388)
 ---- @param t1 Lua table
