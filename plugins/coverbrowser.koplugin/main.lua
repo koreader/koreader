@@ -472,7 +472,8 @@ function CoverBrowser:addToMainMenu(menu_items)
                             local sstr = BookInfoManager:getDbSize()
                             return _("Current cache size: ") .. sstr
                         end,
-                        -- no callback, only for information
+                        keep_menu_open = true,
+                        callback = function() end, -- no callback, only for information
                     },
                     {
                         text = _("Prune cache of removed books"),
