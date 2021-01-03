@@ -12,6 +12,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
+local ffiUtil = require("ffi/util")
 
 local IconButton = InputContainer:new{
     icon = "notice-warning",
@@ -104,6 +105,7 @@ function IconButton:onTapIconButton()
 
         -- Check the Button instead, cheaper
         local t1 = os.clock()
+        local start_ts = ffiUtil.getTimestamp()
         local shown, depth = UIManager:isWidgetShown(self[1])
         if shown then
             print("Before callback, IconButton was shown at depth", depth)
@@ -111,7 +113,8 @@ function IconButton:onTapIconButton()
             print("IconButton is not shown before callback?!")
         end
         local t2 = os.clock()
-        print(string.format("It took %9.3f ms", (t2 - t1) * 1000))
+        local end_ts = ffiUtil.getTimestamp()
+        print(string.format("It took %9.3f ms (real: %9.3f ms)", (t2 - t1) * 1000,  (end_ts - start_ts) * 1000))
 
         -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
         UIManager:forceRePaint()
