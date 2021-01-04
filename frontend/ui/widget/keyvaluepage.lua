@@ -293,24 +293,24 @@ function KeyValueItem:onTap()
             UIManager:forceRePaint()
             --UIManager:waitForVSync()
 
-            self[1].invert = false
-            -- Skip the repaint if we've ended up below something, which is likely.
-            -- Unfortunately, getting accurate dimensions out of whatever's above us proved tricky,
-            -- so, just abort without fancier checks (like, checking if it actually intersects with us would have been nice).
-            -- First check which window-level widget we belong to...
-            if UIManager:getTopWidget() ~= self.show_parent then
-                local prev_region = UIManager:getPreviousRefreshRegion()
-                print("Previous region:", prev_region, "us:", self[1].dimen)
-                if prev_region:contains(self[1].dimen) then
-                    print("Callback has hidden us, abort early")
+            -- Has to be scheduled *after* the dict delays...
+            UIManager:scheduleIn(0.75, function()
+                self[1].invert = false
+                -- Skip the repaint if we've ended up below something, which is likely.
+                if UIManager:getTopWidget() ~= self.show_parent then
+                    local prev_region = UIManager:getPreviousRefreshRegion()
+                    print("Previous region:", prev_region, "us:", self[1].dimen)
+                    if self[1].dimen:intersectWith(prev_region) then
+                        print("Callback has hidden us, abort early")
+                        return
+                    end
                 end
-            else
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
                 UIManager:setDirty(nil, function()
                     return "ui", self[1].dimen
                 end)
                 --UIManager:forceRePaint()
-            end
+            end)
         end
     end
     return true
