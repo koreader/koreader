@@ -250,7 +250,7 @@ function Button:onTapSelectButton()
                 end
 
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-                -- Keep the invert flag in both cases, mainly for the check below
+                -- Keep the invert flag in both cases, mainly for the early return check below
                 self[1].invert = true
             else
                 self[1].invert = true
