@@ -783,17 +783,6 @@ function UIManager:getTopWidget()
     return top.widget
 end
 
---- Get the topmost modal widget (ref).
-function UIManager:getTopmostModal()
-    for i = #self._window_stack, 1, -1 do
-        local widget = self._window_stack[i].widget
-        print("Widget at", i, "is", widget)
-        if widget and widget.modal then
-            return widget
-        end
-    end
-end
-
 --- Check if a widget is still in the window stack, or is a subwidget of a widget still in the window stack
 function UIManager:isWidgetShown(widget, max_depth)
     for i = #self._window_stack, 1, -1 do
