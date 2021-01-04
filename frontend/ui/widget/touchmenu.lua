@@ -459,7 +459,7 @@ function TouchMenu:init()
     self.key_events.Press = { {"Press"}, doc = "chose selected item" }
 
     local icons = {}
-    for _,v in ipairs(self.tab_item_table) do
+    for _, v in ipairs(self.tab_item_table) do
         table.insert(icons, v.icon)
     end
     self.bar = TouchMenuBar:new{
