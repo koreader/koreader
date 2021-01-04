@@ -293,7 +293,7 @@ function KeyValueItem:onTap()
             UIManager:forceRePaint()
             --UIManager:waitForVSync()
 
-            -- Has to be scheduled *after* the dict delays...
+            -- Has to be scheduled *after* the dict delays for the history widget...
             UIManager:scheduleIn(0.75, function()
                 self[1].invert = false
                 -- Skip the repaint if we've ended up below something, which is likely.
