@@ -270,8 +270,8 @@ function Button:onTapSelectButton()
             self.callback()
             UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
             if self.vsync then
-                -- NOTE: This is mainly useful when the callback caused a REAGL update, as these appear to be more liable to get batched,
-                --       despite us already fencing 'em already in framebuffer_mxcfb...
+                -- NOTE: This is mainly useful when the callback caused a REAGL update that we do not explicitly fence already,
+                --       (i.e., Kobo Mk. 7).
                 UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
                                          -- because that would have a chance to noticeably delay it until the unhighlight.
             end
