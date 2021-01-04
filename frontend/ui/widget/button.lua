@@ -254,11 +254,12 @@ function Button:onTapSelectButton()
             local t2 = os.clock()
             print(string.format("It took %9.3f ms", (t2 - t1) * 1000))
 
-            -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
-            UIManager:forceRePaint()
+            -- Force the repaint *now*, so we don't have to delay the callback to see the highlight...
+            UIManager:forceRePaint() -- Ensures we have a chance to see the highlight
             self.callback()
-            UIManager:forceRePaint()
-            UIManager:waitForVSync()
+            UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
+            UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
+                                     -- because that would have a chance to noticeably delay it until the unhighlight.
 
             if not self[1] or not self[1].invert or not self[1].dimen then
                 -- If the widget no longer exists (destroyed, re-init'ed by setText(), or not inverted: nothing to invert back
@@ -287,7 +288,7 @@ function Button:onTapSelectButton()
             UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen
             end)
-            UIManager:forceRePaint()
+            UIManager:forceRePaint() -- Ensures the unhilight happens now, instead of potentially waiting and having it batched with something else.
         end
     elseif self.tap_input then
         self:onInput(self.tap_input)
