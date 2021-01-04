@@ -295,7 +295,11 @@ function KeyValueItem:onTap()
 
             self[1].invert = false
 
-            -- Skip the repaint if we've ended up below a modal
+            -- Skip the repaint if we've ended up below something
+            -- First check which window-level widget we belong to...
+            local _, _, my_widget = UIManager:isWidgetShown(self[1])
+            print("KV", self, "belongs to", my_widget, "parent:", self.show_parent, "[1]parent:", self[1].show_parent)
+
             local dump = require("dump")
             local top_modal = UIManager:getTopmostModal()
             print("Top modal:", top_modal, top_modal and top_modal.dimen, top_modal and dump(top_modal:getSize()))

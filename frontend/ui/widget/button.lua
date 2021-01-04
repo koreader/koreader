@@ -260,17 +260,16 @@ function Button:onTapSelectButton()
                 return "fast", self[1].dimen
             end)
 
-            --[[
             local t1 = os.clock()
-            local shown, depth = UIManager:isWidgetShown(self[1])
+            local shown, depth, widget = UIManager:isWidgetShown(self[1])
             if shown then
                 print("Before callback, Button was shown at depth", depth)
+                print("Belongs to widget", widget, self.show_parent, self[1].show_parent, UIManager:getTopWidget())
             else
                 print("Button is not shown before callback?!")
             end
             local t2 = os.clock()
             print(string.format("It took %9.3f ms", (t2 - t1) * 1000))
-            --]]
 
             -- Force the repaint *now*, so we don't have to delay the callback to see the highlight...
             if not self.vsync then
@@ -291,8 +290,8 @@ function Button:onTapSelectButton()
                 return
             end
 
-            local t1 = os.clock()
-            if UIManager:isWidgetShown(self[1], depth) then
+            t1 = os.clock()
+            if UIManager:getTopWidget() == self.show_parent then
                 print("After callback, Button is still shown")
             else
                 print("Button was closed by callback")
@@ -301,7 +300,7 @@ function Button:onTapSelectButton()
                 -- In which case, nothing more to do :)
                 return
             end
-            local t2 = os.clock()
+            t2 = os.clock()
             print(string.format("It took %9.3f ms", (t2 - t1) * 1000))
 
             self[1].invert = false

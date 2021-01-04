@@ -799,7 +799,7 @@ function UIManager:isWidgetShown(widget, max_depth)
     for i = #self._window_stack, 1, -1 do
         local matched, depth = util.arrayReferences(self._window_stack[i].widget, widget, max_depth)
         if matched then
-            return matched, depth
+            return matched, depth, self._window_stack[i].widget
         end
     end
     return false

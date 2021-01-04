@@ -106,17 +106,16 @@ function IconButton:onTapIconButton()
         end)
 
         -- Check the Button instead of the IconWidget, it's cheaper (less nesting)
-        --[[
         local t1 = os.clock()
-        local shown, depth = UIManager:isWidgetShown(self[1])
+        local shown, depth, widget = UIManager:isWidgetShown(self[1])
         if shown then
             print("Before callback, IconButton was shown at depth", depth)
+            print("Belongs to widget", widget, self.show_parent, self[1].show_parent, UIManager:getTopWidget())
         else
             print("IconButton is not shown before callback?!")
         end
         local t2 = os.clock()
         print(string.format("It took %9.3f ms", (t2 - t1) * 1000))
-        --]]
 
         -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
         UIManager:forceRePaint()
@@ -124,8 +123,8 @@ function IconButton:onTapIconButton()
         UIManager:forceRePaint()
         --UIManager:waitForVSync()
 
-        local t1 = os.clock()
-        if UIManager:isWidgetShown(self[1], depth) then
+        t1 = os.clock()
+        if UIManager:getTopWidget() == self.show_parent then
             print("After callback, IconButton is still shown")
         else
             print("IconButton was closed by callback")
@@ -134,7 +133,7 @@ function IconButton:onTapIconButton()
             -- In which case, nothing more to do :)
             return
         end
-        local t2 = os.clock()
+        t2 = os.clock()
         print(string.format("It took %9.3f ms", (t2 - t1) * 1000))
 
         self.image.invert = false
