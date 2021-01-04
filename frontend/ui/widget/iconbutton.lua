@@ -108,8 +108,8 @@ function IconButton:onTapIconButton()
         UIManager:forceRePaint()
         --UIManager:waitForVSync()
 
-        -- If the callback closed our parent (which ought to have been the top level widget), abort early
-        if UIManager:getTopWidget() == self.show_parent then
+        -- If the callback closed our parent (which may not always be the top-level widget, e.g., Home/+ buttons in the FM), abort early
+        if UIManager:getTopWidget() == self.show_parent or UIManager:isWidgetShown(self.show_parent) then
             print("After callback, IconButton is still shown")
         else
             print("IconButton was closed by callback")
