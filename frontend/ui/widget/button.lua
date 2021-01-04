@@ -273,7 +273,10 @@ function Button:onTapSelectButton()
             --]]
 
             -- Force the repaint *now*, so we don't have to delay the callback to see the highlight...
-            UIManager:forceRePaint() -- Ensures we have a chance to see the highlight
+            if not self.vsync then
+                -- NOTE: Allow bundling the highlight with the callback when we request vsync, to prevent further delays
+                UIManager:forceRePaint() -- Ensures we have a chance to see the highlight
+            end
             self.callback()
             UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
             if self.vsync then
