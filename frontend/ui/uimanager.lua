@@ -794,6 +794,11 @@ function UIManager:isWidgetShown(widget, max_depth)
     return false
 end
 
+-- Returns the region of the previous refresh
+function UIManager:getPreviousRefreshRegion()
+   return self._last_refresh_region
+end
+
 --- Signals to quit.
 function UIManager:quit()
     if not self._running then return end
@@ -1210,6 +1215,8 @@ function UIManager:_repaint()
             refresh.region.w = ALIGN_UP(refresh.region.w + (x_fixup * 2), 8)
             refresh.region.h = ALIGN_UP(refresh.region.h + (y_fixup * 2), 8)
         end
+        -- Remember the refresh region
+        self._last_refresh_region = refresh.region
         Screen[refresh_methods[refresh.mode]](Screen,
             refresh.region.x, refresh.region.y,
             refresh.region.w, refresh.region.h,
