@@ -235,18 +235,26 @@ function Button:onTapSelectButton()
             self.callback()
         else
             -- For most of our buttons, we can't avoid that initial repaint...
-            self[1].invert = true
-            UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            --self[1].invert = true
+            --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
             -- NOTE: This completely insane double repaint is needed to avoid cosmetic issues with FrameContainer's rounded corners on Text buttons...
             --       On the upside, we now actually get to *see* those rounded corners (as the highlight), where it was a simple square before.
             --       c.f., #4554 & #4541
             -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
             if self.text then
+                print("Button:onTapSelectButton: Painting text white on black for", self)
                 -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
                 -- The nil check is to discriminate the default from callers that explicitly request a specific radius.
                 if self[1].radius == nil then
                     self[1].radius = Size.radius.button
                 end
+                self[1].background = Blitbuffer.COLOR_BLACK
+                self.label_widget.fgcolor = Blitbuffer.COLOR_WHITE
+                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                -- Keep the invert flag, mainly for the check below
+                self[1].invert = true
+            else
+                self[1].invert = true
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
             end
             UIManager:setDirty(nil, function()
@@ -295,11 +303,18 @@ function Button:onTapSelectButton()
             print(string.format("It took %9.3f ms", (t2 - t1) * 1000))
 
             self[1].invert = false
-            -- Since we kill the corners, we only need a single repaint.
-            if self[1].radius == Size.radius.button then
-                self[1].radius = nil
+            if self.text then
+                print("Button:onTapSelectButton: Back to black on white for", self)
+                if self[1].radius == Size.radius.button then
+                    self[1].radius = nil
+                end
+
+                self[1].background = Blitbuffer.COLOR_WHITE
+                self.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
+                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            else
+                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
             end
-            UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen
             end)
