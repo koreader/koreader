@@ -298,11 +298,9 @@ function KeyValueItem:onTap()
                 self[1].invert = false
                 -- Skip the repaint if we've ended up below something, which is likely.
                 if UIManager:getTopWidget() ~= self.show_parent then
-                    local prev_region = UIManager:getPreviousRefreshRegion()
-                    print("Previous region:", prev_region, "us:", self[1].dimen)
-                    if self[1].dimen:intersectWith(prev_region) then
+                    if self[1].dimen:intersectWith( UIManager:getPreviousRefreshRegion()) then
                         print("Callback has hidden us, abort early")
-                        return
+                        return true
                     end
                 end
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)

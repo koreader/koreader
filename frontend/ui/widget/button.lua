@@ -272,7 +272,7 @@ function Button:onTapSelectButton()
 
             if not self[1] or not self[1].invert or not self[1].dimen then
                 -- If the widget no longer exists (destroyed, re-init'ed by setText(), or not inverted: nothing to invert back
-                return
+                return true
             end
 
             -- If the callback closed our parent (which ought to have been the top level widget), abort early
@@ -280,7 +280,7 @@ function Button:onTapSelectButton()
                 print("After callback, Button is still shown")
             else
                 print("Button was closed by callback")
-                return
+                return true
             end
 
             self[1].invert = false

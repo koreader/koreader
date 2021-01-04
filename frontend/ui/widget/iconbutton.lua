@@ -113,7 +113,7 @@ function IconButton:onTapIconButton()
             print("After callback, IconButton is still shown")
         else
             print("IconButton was closed by callback")
-            return
+            return true
         end
 
         self.image.invert = false
