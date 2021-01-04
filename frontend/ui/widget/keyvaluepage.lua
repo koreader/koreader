@@ -298,7 +298,7 @@ function KeyValueItem:onTap()
                 self[1].invert = false
                 -- Skip the repaint if we've ended up below something, which is likely.
                 if UIManager:getTopWidget() ~= self.show_parent then
-                    if self[1].dimen:intersectWith( UIManager:getPreviousRefreshRegion()) then
+                    if self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
                         print("Callback has hidden us, abort early")
                         return true
                     end
