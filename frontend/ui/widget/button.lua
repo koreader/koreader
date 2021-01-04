@@ -269,8 +269,12 @@ function Button:onTapSelectButton()
             UIManager:forceRePaint() -- Ensures we have a chance to see the highlight
             self.callback()
             UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
-            --UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
-                                     -- because that would have a chance to noticeably delay it until the unhighlight.
+            if self.vsync then
+                -- NOTE: This is mainly useful when the callback caused a REAGL update, as these appear to be more liable to get batched,
+                --       despite us already fencing 'em already in framebuffer_mxcfb...
+                UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
+                                         -- because that would have a chance to noticeably delay it until the unhighlight.
+            end
 
             if not self[1] or not self[1].invert or not self[1].dimen then
                 -- If the widget no longer exists (destroyed, re-init'ed by setText(), or not inverted: nothing to invert back
