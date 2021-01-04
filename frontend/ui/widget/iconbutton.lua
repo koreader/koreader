@@ -95,6 +95,9 @@ function IconButton:onTapIconButton()
     if G_reader_settings:isFalse("flash_ui") then
         self.callback()
     else
+        print("IconButton:onTapIconButton", self, self.show_parent, self[1], self[1].show_parent)
+        print(debug.traceback())
+
         self.image.invert = true
         -- For ConfigDialog icons, we can't avoid that initial repaint...
         UIManager:widgetRepaint(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
