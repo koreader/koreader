@@ -269,7 +269,7 @@ function Button:onTapSelectButton()
             UIManager:forceRePaint() -- Ensures we have a chance to see the highlight
             self.callback()
             UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
-            UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
+            --UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
                                      -- because that would have a chance to noticeably delay it until the unhighlight.
 
             if not self[1] or not self[1].invert or not self[1].dimen then
@@ -299,7 +299,7 @@ function Button:onTapSelectButton()
             UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen
             end)
-            UIManager:forceRePaint() -- Ensures the unhilight happens now, instead of potentially waiting and having it batched with something else.
+            --UIManager:forceRePaint() -- Ensures the unhilight happens now, instead of potentially waiting and having it batched with something else.
         end
     elseif self.tap_input then
         self:onInput(self.tap_input)

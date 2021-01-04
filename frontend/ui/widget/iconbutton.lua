@@ -122,7 +122,7 @@ function IconButton:onTapIconButton()
         UIManager:forceRePaint()
         self.callback()
         UIManager:forceRePaint()
-        UIManager:waitForVSync()
+        --UIManager:waitForVSync()
 
         local t1 = os.clock()
         if UIManager:isWidgetShown(self[1], depth) then
@@ -142,7 +142,7 @@ function IconButton:onTapIconButton()
         UIManager:setDirty(nil, function()
             return "fast", self.dimen
         end)
-        UIManager:forceRePaint()
+        --UIManager:forceRePaint()
     end
     return true
 end

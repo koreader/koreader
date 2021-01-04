@@ -290,14 +290,14 @@ function KeyValueItem:onTap()
             UIManager:forceRePaint()
             self.callback()
             UIManager:forceRePaint()
-            UIManager:waitForVSync()
+            --UIManager:waitForVSync()
 
             self[1].invert = false
             UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
             UIManager:setDirty(nil, function()
                 return "ui", self[1].dimen
             end)
-            UIManager:forceRePaint()
+            --UIManager:forceRePaint()
         end
     end
     return true

@@ -109,14 +109,14 @@ function CheckButton:onTapCheckButton()
             UIManager:forceRePaint()
             self.callback()
             UIManager:forceRePaint()
-            UIManager:waitForVSync()
+            --UIManager:waitForVSync()
 
             self[1].invert = false
             UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
-            UIManager:forceRePaint()
+            --UIManager:forceRePaint()
         end
     elseif self.tap_input then
         self:onInput(self.tap_input)

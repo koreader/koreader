@@ -168,7 +168,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
         UIManager:forceRePaint()
         self.menu:onMenuSelect(self.item)
         UIManager:forceRePaint()
-        UIManager:waitForVSync()
+        --UIManager:waitForVSync()
 
         self.item_frame.invert = false
         -- NOTE: We can *usually* optimize that repaint away, as most entries in the menu will at least trigger a menu repaint ;).
@@ -181,7 +181,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
                 return "ui", self.dimen
             end)
         end
-        UIManager:forceRePaint()
+        --UIManager:forceRePaint()
     end
     return true
 end
@@ -206,7 +206,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         UIManager:forceRePaint()
         self.menu:onMenuHold(self.item)
         UIManager:forceRePaint()
-        UIManager:waitForVSync()
+        --UIManager:waitForVSync()
 
         self.item_frame.invert = false
         -- NOTE: For some reason, this is finicky (I end up with a solid black bar, i.e., text gets inverted, but not the bg?!)
@@ -214,7 +214,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         UIManager:setDirty(self.show_parent, function()
             return "ui", self.dimen
         end)
-        UIManager:forceRePaint()
+        --UIManager:forceRePaint()
     end
     return true
 end

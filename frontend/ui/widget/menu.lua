@@ -485,14 +485,14 @@ function MenuItem:onTapSelect(arg, ges)
         end)
         coroutine.resume(co)
         UIManager:forceRePaint()
-        UIManager:waitForVSync()
+        --UIManager:waitForVSync()
 
         self[1].invert = false
         --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
         UIManager:setDirty(self.show_parent, function()
             return "ui", self[1].dimen
         end)
-        UIManager:forceRePaint()
+        --UIManager:forceRePaint()
     end
     return true
 end
@@ -509,19 +509,17 @@ function MenuItem:onHoldSelect(arg, ges)
         end)
 
         -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
-        --UIManager:forceRePaint()
+        UIManager:forceRePaint()
         self.menu:onMenuHold(self.table, pos)
         UIManager:forceRePaint()
-        UIManager:waitForVSync()
+        --UIManager:waitForVSync()
 
-        UIManager:nextTick(function()
-            self[1].invert = false
-            --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-            UIManager:setDirty(self.show_parent, function()
-                return "ui", self[1].dimen
-            end)
+        self[1].invert = false
+        --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(self.show_parent, function()
+            return "ui", self[1].dimen
         end)
-        UIManager:forceRePaint()
+        --UIManager:forceRePaint()
     end
     return true
 end
