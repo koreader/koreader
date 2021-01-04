@@ -199,7 +199,7 @@ end
 
 function Button:hide()
     if self.icon then
-        self.frame.orig_background = self[1].background
+        self.frame.orig_background = self.frame.background
         self.frame.background = nil
         self.label_widget.hide = true
     end
@@ -208,7 +208,7 @@ end
 function Button:show()
     if self.icon then
         self.label_widget.hide = false
-        self.frame.background = self[1].old_background
+        self.frame.background = self.frame.orig_background
     end
 end
 
