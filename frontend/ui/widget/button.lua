@@ -40,6 +40,7 @@ local Button = InputContainer:new{
     preselect = false,
     callback = nil,
     enabled = true,
+    hidden = false,
     allow_hold_when_disabled = false,
     margin = 0,
     bordersize = Size.border.button,
@@ -164,28 +165,30 @@ function Button:onUnfocus()
 end
 
 function Button:enable()
-    self.enabled = true
     if self.text then
-        if self.enabled then
+        if not self.enabled then
             self.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
-        else
-            self.label_widget.fgcolor = Blitbuffer.COLOR_DARK_GRAY
+            self.enabled = true
         end
     else
-        self.label_widget.dim = not self.enabled
+        if not self.enabled then
+            self.label_widget.dim = false
+            self.enabled = true
+        end
     end
 end
 
 function Button:disable()
-    self.enabled = false
     if self.text then
         if self.enabled then
-            self.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
-        else
             self.label_widget.fgcolor = Blitbuffer.COLOR_DARK_GRAY
+            self.enabled = false
         end
     else
-        self.label_widget.dim = not self.enabled
+        if self.enabled then
+            self.label_widget.dim = true
+            self.enabled = false
+        end
     end
 end
 
@@ -198,17 +201,23 @@ function Button:enableDisable(enable)
 end
 
 function Button:hide()
-    if self.icon then
+    if self.icon and not self.hidden then
+        print("Hiding button w/ icon", self)
+        print("BG:", self.frame.background, "Border:", self.frame.bordersize)
         self.frame.orig_background = self.frame.background
         self.frame.background = nil
         self.label_widget.hide = true
+        self.hidden = true
     end
 end
 
 function Button:show()
-    if self.icon then
+    if self.icon and self.hidden then
         self.label_widget.hide = false
         self.frame.background = self.frame.orig_background
+        self.hidden = false
+        print("Showing button w/ icon", self)
+        print("BG:", self.frame.background, "Border:", self.frame.bordersize)
     end
 end
 
@@ -244,6 +253,7 @@ function Button:onTapSelectButton()
                 return "fast", self[1].dimen
             end)
 
+            --[[
             local t1 = os.clock()
             local shown, depth = UIManager:isWidgetShown(self[1])
             if shown then
@@ -253,6 +263,7 @@ function Button:onTapSelectButton()
             end
             local t2 = os.clock()
             print(string.format("It took %9.3f ms", (t2 - t1) * 1000))
+            --]]
 
             -- Force the repaint *now*, so we don't have to delay the callback to see the highlight...
             UIManager:forceRePaint() -- Ensures we have a chance to see the highlight
@@ -266,7 +277,7 @@ function Button:onTapSelectButton()
                 return
             end
 
-            t1 = os.clock()
+            local t1 = os.clock()
             if UIManager:isWidgetShown(self[1], depth) then
                 print("After callback, Button is still shown")
             else
@@ -276,7 +287,7 @@ function Button:onTapSelectButton()
                 -- In which case, nothing more to do :)
                 return
             end
-            t2 = os.clock()
+            local t2 = os.clock()
             print(string.format("It took %9.3f ms", (t2 - t1) * 1000))
 
             self[1].invert = false
