@@ -771,9 +771,27 @@ function UIManager:ToggleNightMode(night_mode)
     end
 end
 
---- Get top widget.
+--- Get top widget (name if possible, ref otherwise).
 function UIManager:getTopWidget()
-    return ((self._window_stack[#self._window_stack] or {}).widget or {}).name
+    local top = self._window_stack[#self._window_stack]
+    if not top or not top.widget then
+        return nil
+    end
+    if top.widget.name then
+        return top.widget.name
+    end
+    return top.widget
+end
+
+--- Get the topmost modal widget (ref).
+function UIManager:getTopmostModal()
+    for i = #self._window_stack, 1, -1 do
+        local widget = self._window_stack[i].widget
+        print("Widget at", i, "is", widget)
+        if widget and widget.modal then
+            return widget
+        end
+    end
 end
 
 --- Check if a widget is still in the window stack, or is a subwidget of a widget still in the window stack

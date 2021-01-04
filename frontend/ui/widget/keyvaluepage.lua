@@ -290,15 +290,24 @@ function KeyValueItem:onTap()
             -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
             UIManager:forceRePaint()
             self.callback()
-            UIManager:forceRePaint()
+            --UIManager:forceRePaint()
             --UIManager:waitForVSync()
 
             self[1].invert = false
-            UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-            UIManager:setDirty(nil, function()
-                return "ui", self[1].dimen
-            end)
-            --UIManager:forceRePaint()
+
+            -- Skip the repaint if we've ended up below a modal
+            local dump = require("dump")
+            local top_modal = UIManager:getTopmostModal()
+            print("Top modal:", top_modal, top_modal and top_modal.dimen, top_modal and dump(top_modal:getSize()))
+            local top_widget = UIManager:getTopWidget()
+            print("Top widget:", top_widget, top_widget and top_widget.dimen, top_widget and dump(top_widget:getSize()))
+            --if not top_modal or not top_modal.dimen:contains(self[1].dimen) then
+                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                UIManager:setDirty(nil, function()
+                    return "ui", self[1].dimen
+                end)
+                --UIManager:forceRePaint()
+            --end
         end
     end
     return true
