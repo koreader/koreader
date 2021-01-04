@@ -252,6 +252,7 @@ function KeyValueItem:init()
     self[1] = FrameContainer:new{
         padding = frame_padding,
         bordersize = 0,
+        background = Blitbuffer.COLOR_WHITE,
         HorizontalGroup:new{
             dimen = self.dimen:copy(),
             LeftContainer:new{
