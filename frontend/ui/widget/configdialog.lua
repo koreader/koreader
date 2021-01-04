@@ -674,8 +674,6 @@ local MenuBar = FrameContainer:new{
 }
 
 function MenuBar:init()
-    print("MenuBar:init")
-    print(debug.traceback())
     local icon_sep_width = Size.padding.button
     local line_thickness = Size.line.thick
     local config_options = self.config_dialog.config_options
@@ -695,7 +693,6 @@ function MenuBar:init()
                     self.config_dialog:handleEvent(Event:new("ShowConfigPanel", c))
                 end,
             }
-            print("MenuBar:init IconButton", menu_icon, "for icon", config_options[c].icon, c, "of", #config_options)
             self.menu_items[c] = menu_icon
         end
     end

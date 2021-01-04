@@ -202,8 +202,6 @@ end
 
 function Button:hide()
     if self.icon and not self.hidden then
-        print("Hiding button w/ icon", self)
-        print("BG:", self.frame.background, "Border:", self.frame.bordersize)
         self.frame.orig_background = self.frame.background
         self.frame.background = nil
         self.label_widget.hide = true
@@ -216,8 +214,6 @@ function Button:show()
         self.label_widget.hide = false
         self.frame.background = self.frame.orig_background
         self.hidden = false
-        print("Showing button w/ icon", self)
-        print("BG:", self.frame.background, "Border:", self.frame.bordersize)
     end
 end
 
@@ -260,17 +256,6 @@ function Button:onTapSelectButton()
                 return "fast", self[1].dimen
             end)
 
-            local t1 = os.clock()
-            local shown, depth, widget = UIManager:isWidgetShown(self[1])
-            if shown then
-                print("Before callback, Button was shown at depth", depth)
-                print("Belongs to widget", widget, self.show_parent, self[1].show_parent, UIManager:getTopWidget())
-            else
-                print("Button is not shown before callback?!")
-            end
-            local t2 = os.clock()
-            print(string.format("It took %9.3f ms", (t2 - t1) * 1000))
-
             -- Force the repaint *now*, so we don't have to delay the callback to see the highlight...
             if not self.vsync then
                 -- NOTE: Allow bundling the highlight with the callback when we request vsync, to prevent further delays
@@ -290,18 +275,13 @@ function Button:onTapSelectButton()
                 return
             end
 
-            t1 = os.clock()
+            -- If the callback closed our parent (which ought to have been the top level widget), abort early
             if UIManager:getTopWidget() == self.show_parent then
                 print("After callback, Button is still shown")
             else
                 print("Button was closed by callback")
-                t2 = os.clock()
-                print(string.format("It took %9.3f ms", (t2 - t1) * 1000))
-                -- In which case, nothing more to do :)
                 return
             end
-            t2 = os.clock()
-            print(string.format("It took %9.3f ms", (t2 - t1) * 1000))
 
             self[1].invert = false
             if self.text then

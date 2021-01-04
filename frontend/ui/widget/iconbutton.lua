@@ -95,9 +95,6 @@ function IconButton:onTapIconButton()
     if G_reader_settings:isFalse("flash_ui") then
         self.callback()
     else
-        print("IconButton:onTapIconButton", self, self.show_parent, self[1], self[1].show_parent)
-        print(debug.traceback())
-
         self.image.invert = true
         -- For ConfigDialog icons, we can't avoid that initial repaint...
         UIManager:widgetRepaint(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
@@ -105,36 +102,19 @@ function IconButton:onTapIconButton()
             return "fast", self.dimen
         end)
 
-        -- Check the Button instead of the IconWidget, it's cheaper (less nesting)
-        local t1 = os.clock()
-        local shown, depth, widget = UIManager:isWidgetShown(self[1])
-        if shown then
-            print("Before callback, IconButton was shown at depth", depth)
-            print("Belongs to widget", widget, self.show_parent, self[1].show_parent, UIManager:getTopWidget())
-        else
-            print("IconButton is not shown before callback?!")
-        end
-        local t2 = os.clock()
-        print(string.format("It took %9.3f ms", (t2 - t1) * 1000))
-
         -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
         UIManager:forceRePaint()
         self.callback()
         UIManager:forceRePaint()
         --UIManager:waitForVSync()
 
-        t1 = os.clock()
+        -- If the callback closed our parent (which ought to have been the top level widget), abort early
         if UIManager:getTopWidget() == self.show_parent then
             print("After callback, IconButton is still shown")
         else
             print("IconButton was closed by callback")
-            t2 = os.clock()
-            print(string.format("It took %9.3f ms", (t2 - t1) * 1000))
-            -- In which case, nothing more to do :)
             return
         end
-        t2 = os.clock()
-        print(string.format("It took %9.3f ms", (t2 - t1) * 1000))
 
         self.image.invert = false
         UIManager:widgetRepaint(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
