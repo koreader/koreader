@@ -165,7 +165,6 @@ function Button:onUnfocus()
 end
 
 function Button:enable()
-    print("Enable button", self)
     if not self.enabled then
         if self.text then
             self.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
@@ -178,7 +177,6 @@ function Button:enable()
 end
 
 function Button:disable()
-    print("Disable button", self)
     if self.enabled then
         if self.text then
             self.label_widget.fgcolor = Blitbuffer.COLOR_DARK_GRAY
@@ -199,7 +197,6 @@ function Button:enableDisable(enable)
 end
 
 function Button:hide()
-    print("Hide button", self)
     if self.icon and not self.hidden then
         self.frame.orig_background = self.frame.background
         self.frame.background = nil
@@ -209,7 +206,6 @@ function Button:hide()
 end
 
 function Button:show()
-    print("Show button", self)
     if self.icon and self.hidden then
         self.label_widget.hide = false
         self.frame.background = self.frame.orig_background
@@ -230,7 +226,6 @@ function Button:onTapSelectButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
-            print("Before callback, Button", self, "enabled:", self.enabled, "hidden:", self.hidden)
             -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
             if self.text then
                 -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
@@ -278,12 +273,11 @@ function Button:onTapSelectButton()
 
             -- If the callback closed our parent (which ought to have been the top level widget), abort early
             if UIManager:getTopWidget() == self.show_parent then
-                print("After callback, Button", self, "is still shown")
+                print("After callback, Button is still shown")
             else
-                print("Button", self, "was closed by callback")
+                print("Button was closed by callback")
                 return true
             end
-            print("After callback, Button", self, "enabled:", self.enabled, "hidden:", self.hidden)
 
             self[1].invert = false
             if self.text then
@@ -295,13 +289,7 @@ function Button:onTapSelectButton()
 
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
             else
-                -- If the callback hid the button, that requires a repaint, because there's no longer a background ;)
-                if not self.hidden then
-                    UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-                else
-                    print("Button", self, "was hidden by callback")
-                    UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-                end
+                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             end
             UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen

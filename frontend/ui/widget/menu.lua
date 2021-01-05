@@ -974,7 +974,6 @@ function Menu:updatePageInfo(select_number)
         self.page_info_first_chev:showHide(self.page_num > 2)
         self.page_info_last_chev:showHide(self.page_num > 2)
         self.page_return_arrow:showHide(self.onReturn ~= nil)
-        print("Return arrow is", self.page_return_arrow)
 
         self.page_info_left_chev:enableDisable(self.page > 1)
         self.page_info_right_chev:enableDisable(self.page < self.page_num)
