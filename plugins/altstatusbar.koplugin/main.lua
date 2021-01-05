@@ -25,7 +25,6 @@ window.status.title=1
 
 local Device = require("device")
 local Event = require("ui/event")
-local ConfirmBox = require("ui/widget/confirmbox")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local T = require("ffi/util").template
@@ -37,13 +36,9 @@ local AltStatusBar = WidgetContainer:new{
     is_doc_only = true,
 }
 
-function AltStatusBar:isEnabled()
-    return G_reader_settings:readSetting("copt_status_line") == 0
-end
-
-function AltStatusBar:onReadSettings()
+function AltStatusBar:onReadSettings(config)
     if self.document.provider == "crengine" then
-        self.enabled = self:isEnabled()
+        self.config = config
         self.title = G_reader_settings:readSetting("cre_header_title") or 1
         self.clock = G_reader_settings:readSetting("cre_header_clock") or 1
         self.page_number = G_reader_settings:readSetting("cre_header_page_number") or 1
@@ -62,8 +57,7 @@ function AltStatusBar:onReadSettings()
         self.ui.document._document:setIntProperty("window.status.battery.percent", self.battery_percent)
         self.ui.document._document:setIntProperty("window.status.pos.percent", self.reading_percent)
 
-        UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
-
+--        UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
         self.ui.menu:registerToMainMenu(self)
     else
         logger.dbg("AltStatusBar disabled")
@@ -74,15 +68,15 @@ function AltStatusBar:addToMainMenu(menu_items)
     menu_items.alt_status_bar = {
         sorting_hint = "setting",
         text = _("Alt Status Bar"),
-        checked_func = function()
-            return self:isEnabled()
-        end,
+--        checked_func = function()
+--            return self:isEnabled()
+--        end,
         sub_item_table = {
             {
-                text = _("Enable top status bar"),
+                text = _("Enable top status bar for new documents"),
                 keep_menu_open = true,
                 checked_func = function()
-                    return self:isEnabled()
+                    return G_reader_settings:readSetting("copt_status_line") == 0
                 end,
                 callback = function()
                     local old_status_line = G_reader_settings:readSetting("copt_status_line") or 1
@@ -90,10 +84,10 @@ function AltStatusBar:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Exclude top status bar for this document"),
+                text = _("Enable top status bar for this document"),
                 keep_menu_open = true,
                 checked_func = function()
-                    return self.document.configurable.status_line == 1
+                    return self.document.configurable.status_line == 0
                 end,
                 callback = function()
                     self.document.configurable.status_line = 1 - self.document.configurable.status_line
@@ -104,9 +98,6 @@ function AltStatusBar:addToMainMenu(menu_items)
             {
                 text = _("Title"),
                 keep_menu_open = true,
-                enabled_func = function()
-                    return self:isEnabled()
-                end,
                 checked_func = function()
                     return self.title == 1
                 end,
@@ -123,9 +114,6 @@ function AltStatusBar:addToMainMenu(menu_items)
             {
                 text = _("Clock"),
                 keep_menu_open = true,
-                enabled_func = function()
-                    return self:isEnabled()
-                end,
                 checked_func = function()
                     return self.clock == 1
                 end,
@@ -139,9 +127,6 @@ function AltStatusBar:addToMainMenu(menu_items)
             {
                 text = _("Page number"),
                 keep_menu_open = true,
-                enabled_func = function()
-                    return self:isEnabled()
-                end,
                 checked_func = function()
                     return self.page_number == 1
                 end,
@@ -155,9 +140,6 @@ function AltStatusBar:addToMainMenu(menu_items)
             {
                 text = _("Page count"),
                 keep_menu_open = true,
-                enabled_func = function()
-                    return self:isEnabled()
-                end,
                 checked_func = function()
                     return self.page_count == 1
                 end,
@@ -171,9 +153,6 @@ function AltStatusBar:addToMainMenu(menu_items)
             {
                 text = _("Reading percent"),
                 keep_menu_open = true,
-                enabled_func = function()
-                    return self:isEnabled()
-                end,
                 checked_func = function()
                     return self.reading_percent == 1
                 end,
@@ -187,9 +166,6 @@ function AltStatusBar:addToMainMenu(menu_items)
             {
                 text = _("Battery"),
                 keep_menu_open = true,
-                enabled_func = function()
-                    return self:isEnabled()
-                end,
                 checked_func = function()
                     return self.battery == 1
                 end,
@@ -204,7 +180,7 @@ function AltStatusBar:addToMainMenu(menu_items)
                 text = _("Battery Percent"),
                 keep_menu_open = true,
                 enabled_func = function()
-                    return self:isEnabled() and self.battery == 1
+                    return self.battery == 1
                 end,
                 checked_func = function()
                     return self.battery_percent == 1
@@ -219,9 +195,6 @@ function AltStatusBar:addToMainMenu(menu_items)
             {
                 text = _("Chapter marks"),
                 keep_menu_open = true,
-                enabled_func = function()
-                    return self:isEnabled()
-                end,
                 checked_func = function()
                     return self.chapter_marks == 1
                 end,
@@ -236,9 +209,6 @@ function AltStatusBar:addToMainMenu(menu_items)
             {
                 text_func = function()
                     return T(_("Header font size (%1)"), G_reader_settings:readSetting("cre_header_status_font_size") or 14 )
-                end,
-                enabled_func = function()
-                    return self:isEnabled()
                 end,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
