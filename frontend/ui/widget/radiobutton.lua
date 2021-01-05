@@ -115,7 +115,7 @@ function RadioButton:onTapCheckButton()
         else
             -- While I'd like to only flash the button itself, we have to make do with flashing the full width of the TextWidget...
             self.frame.invert = true
-            UIManager:widgetInvert(self.frame, self.dimen.x, self.dimen.y)
+            UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
@@ -123,11 +123,11 @@ function RadioButton:onTapCheckButton()
             -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
             UIManager:forceRePaint()
             self.callback()
-            UIManager:forceRePaint()
+            --UIManager:forceRePaint()
             --UIManager:waitForVSync()
 
             self.frame.invert = false
-            UIManager:widgetInvert(self.frame, self.dimen.x, self.dimen.y)
+            UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
@@ -156,7 +156,8 @@ function RadioButton:check(callback)
     self._radio_button = self._checked_widget
     self.checked = true
     self:update()
-    UIManager:setDirty(self.parent, function()
+    UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
+    UIManager:setDirty(nil, function()
         return "fast", self.dimen
     end)
 end
@@ -165,7 +166,8 @@ function RadioButton:unCheck()
     self._radio_button = self._unchecked_widget
     self.checked = false
     self:update()
-    UIManager:setDirty(self.parent, function()
+    UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
+    UIManager:setDirty(nil, function()
         return "fast", self.dimen
     end)
 end
