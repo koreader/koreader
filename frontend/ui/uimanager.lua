@@ -1251,11 +1251,11 @@ function UIManager:widgetRepaint(widget, x, y)
 end
 
 -- Same idea, but does a simple invertRect, without actually repainting anything
-function UIManager:widgetInvert(widget, x, y)
+function UIManager:widgetInvert(widget, x, y, w, h)
     if not widget then return end
 
     logger.dbg("Explicit widgetInvert:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
-    Screen.bb:invertRect(x, y, widget.dimen.w, widget.dimen.h)
+    Screen.bb:invertRect(x, y, w or widget.dimen.w, h or widget.dimen.h)
 end
 
 function UIManager:setInputTimeout(timeout)

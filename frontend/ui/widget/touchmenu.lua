@@ -158,10 +158,14 @@ function TouchMenuItem:onTapSelect(arg, ges)
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuSelect(self.item)
     else
+        -- The item frame's width stops at the text width, but we want it to match the menu's length instead
+        local highlight_dimen = self.item_frame.dimen
+        highlight_dimen.w = self.item_frame.width
+
         self.item_frame.invert = true
-        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
         UIManager:setDirty(nil, function()
-            return "fast", self.dimen
+            return "fast", highlight_dimen
         end)
 
         -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
@@ -176,9 +180,9 @@ function TouchMenuItem:onTapSelect(arg, ges)
         --       Since it's an *un*highlight containing text, we make it "ui" and not "fast", both so it won't mangle text,
         --       and because "fast" can have some weird side-effects on some devices in this specific instance...
         if self.item.hold_keep_menu_open or self.item.keep_menu_open then
-            --UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-            UIManager:setDirty(self.show_parent, function()
-                return "ui", self.dimen
+            UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+            UIManager:setDirty(nil, function()
+                return "ui", highlight_dimen
             end)
         end
         --UIManager:forceRePaint()
@@ -196,10 +200,14 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuHold(self.item)
     else
+        -- The item frame's width stops at the text width, but we want it to match the menu's length instead
+        local highlight_dimen = self.item_frame.dimen
+        highlight_dimen.w = self.item_frame.width
+
         self.item_frame.invert = true
-        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
         UIManager:setDirty(nil, function()
-            return "fast", self.dimen
+            return "fast", highlight_dimen
         end)
 
         -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
@@ -209,10 +217,9 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         --UIManager:waitForVSync()
 
         self.item_frame.invert = false
-        -- NOTE: For some reason, this is finicky (I end up with a solid black bar, i.e., text gets inverted, but not the bg?!)
-        --UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-        UIManager:setDirty(self.show_parent, function()
-            return "ui", self.dimen
+        UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+        UIManager:setDirty(nil, function()
+            return "ui", highlight_dimen
         end)
         --UIManager:forceRePaint()
     end
