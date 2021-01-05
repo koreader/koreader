@@ -139,7 +139,7 @@ function NetworkListener:_scheduleActivityCheck()
     local keep_checking = true
 
     local tx_packets = NetworkListener:_getTxPackets()
-    if self._last_tx_packets then
+    if self._last_tx_packets and tx_packets then
         -- Compute noise threshold based on the current delay
         local delay = self._activity_check_delay or default_network_timeout_seconds
         local noise_threshold = delay / default_network_timeout_seconds * network_activity_noise_margin
