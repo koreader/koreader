@@ -250,7 +250,7 @@ function Button:onTapSelectButton()
                 self[1].invert = true
             else
                 self[1].invert = true
-                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             end
             UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen
@@ -293,7 +293,7 @@ function Button:onTapSelectButton()
 
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
             else
-                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             end
             UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen

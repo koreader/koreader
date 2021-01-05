@@ -159,7 +159,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
         self.menu:onMenuSelect(self.item)
     else
         self.item_frame.invert = true
-        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
         UIManager:setDirty(nil, function()
             return "fast", self.dimen
         end)
@@ -176,7 +176,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
         --       Since it's an *un*highlight containing text, we make it "ui" and not "fast", both so it won't mangle text,
         --       and because "fast" can have some weird side-effects on some devices in this specific instance...
         if self.item.hold_keep_menu_open or self.item.keep_menu_open then
-            --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            --UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             UIManager:setDirty(self.show_parent, function()
                 return "ui", self.dimen
             end)
@@ -197,7 +197,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         self.menu:onMenuHold(self.item)
     else
         self.item_frame.invert = true
-        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
         UIManager:setDirty(nil, function()
             return "fast", self.dimen
         end)
@@ -210,7 +210,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
 
         self.item_frame.invert = false
         -- NOTE: For some reason, this is finicky (I end up with a solid black bar, i.e., text gets inverted, but not the bg?!)
-        --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        --UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
         UIManager:setDirty(self.show_parent, function()
             return "ui", self.dimen
         end)

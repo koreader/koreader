@@ -1250,6 +1250,14 @@ function UIManager:widgetRepaint(widget, x, y)
     widget:paintTo(Screen.bb, x, y)
 end
 
+-- Same idea, but does a simple invertRect, without actually repainting anything
+function UIManager:widgetInvert(widget, x, y)
+    if not widget then return end
+
+    logger.dbg("Explicit widgetInvert:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
+    Screen.bb:invertRect(x, y, widget.dimen.w, widget.dimen.h)
+end
+
 function UIManager:setInputTimeout(timeout)
     self.INPUT_TIMEOUT = timeout or 200*1000
 end

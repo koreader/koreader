@@ -115,7 +115,7 @@ function RadioButton:onTapCheckButton()
         else
             -- While I'd like to only flash the button itself, we have to make do with flashing the full width of the TextWidget...
             self.frame.invert = true
-            UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
+            UIManager:widgetInvert(self.frame, self.dimen.x, self.dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
@@ -127,7 +127,7 @@ function RadioButton:onTapCheckButton()
             --UIManager:waitForVSync()
 
             self.frame.invert = false
-            UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
+            UIManager:widgetInvert(self.frame, self.dimen.x, self.dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)

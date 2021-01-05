@@ -97,7 +97,7 @@ function IconButton:onTapIconButton()
     else
         self.image.invert = true
         -- For ConfigDialog icons, we can't avoid that initial repaint...
-        UIManager:widgetRepaint(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
+        UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
         UIManager:setDirty(nil, function()
             return "fast", self.dimen
         end)
@@ -117,7 +117,7 @@ function IconButton:onTapIconButton()
         end
 
         self.image.invert = false
-        UIManager:widgetRepaint(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
+        UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
         UIManager:setDirty(nil, function()
             return "fast", self.dimen
         end)

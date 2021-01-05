@@ -282,7 +282,7 @@ function KeyValueItem:onTap()
             self.callback()
         else
             self[1].invert = true
-            UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen
             end)
@@ -303,7 +303,7 @@ function KeyValueItem:onTap()
                         return true
                     end
                 end
-                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
                 UIManager:setDirty(nil, function()
                     return "ui", self[1].dimen
                 end)
