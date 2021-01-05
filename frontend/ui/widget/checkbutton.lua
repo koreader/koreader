@@ -100,7 +100,7 @@ function CheckButton:onTapCheckButton()
             self.callback()
         else
             self[1].invert = true
-            UIManager:widgetInvert(self[1], self.dimen.x, self.dimen.y)
+            UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
@@ -108,11 +108,11 @@ function CheckButton:onTapCheckButton()
             -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
             UIManager:forceRePaint()
             self.callback()
-            UIManager:forceRePaint()
+            --UIManager:forceRePaint()
             --UIManager:waitForVSync()
 
             self[1].invert = false
-            UIManager:widgetInvert(self[1], self.dimen.x, self.dimen.y)
+            UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
