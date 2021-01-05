@@ -291,8 +291,9 @@ function Button:onTapSelectButton()
             else
                 UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             end
+            -- If the button was disabled, switch to UI to make sure the gray comes through unharmed ;).
             UIManager:setDirty(nil, function()
-                return "fast", self[1].dimen
+                return self.enabled and "fast" or "ui", self[1].dimen
             end)
             --UIManager:forceRePaint() -- Ensures the unhilight happens now, instead of potentially waiting and having it batched with something else.
         end
