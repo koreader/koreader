@@ -38,31 +38,29 @@ local AltStatusBar = WidgetContainer:new{
 }
 
 function AltStatusBar:isEnabled()
-    return self.document.configurable.status_line == 0
+    return G_reader_settings:readSetting("copt_status_line") == 0
 end
 
 function AltStatusBar:onReadSettings()
     if self.document.provider == "crengine" then
         self.enabled = self:isEnabled()
-        self.document.configurable.title = self.document.configurable.title
-            or G_reader_settings:readSetting("copt_title") or 1
-        self.document.configurable.clock = self.document.configurable.clock
-            or G_reader_settings:readSetting("copt_clock") or 1
-        self.document.configurable.page_number = self.document.configurable.page_number
-            or G_reader_settings:readSetting("copt_page_number") or 1
-        self.document.configurable.page_count = self.document.configurable.page_count
-            or G_reader_settings:readSetting("copt_page_count") or 1
-        self.document.configurable.battery = self.document.configurable.battery
-            or G_reader_settings:readSetting("copt_battery") or 1
-        self.document.configurable.battery_percent = self.document.configurable.battery_percent
-            or G_reader_settings:readSetting("copt_battery_percent") or 0
+        self.title = G_reader_settings:readSetting("cre_header_title") or 1
+        self.clock = G_reader_settings:readSetting("cre_header_clock") or 1
+        self.page_number = G_reader_settings:readSetting("cre_header_page_number") or 1
+        self.page_count = G_reader_settings:readSetting("cre_header_page_count") or 1
+        self.reading_percent = G_reader_settings:readSetting("cre_header_reading_percent") or 0
+        self.battery = G_reader_settings:readSetting("cre_header_battery") or 1
+        self.battery_percent = G_reader_settings:readSetting("cre_header_battery_percent") or 0
+        self.chapter_marks = G_reader_settings:readSetting("cre_header_chapter_marks") or 1
 
-        self.ui.document._document:setIntProperty("window.status.title", self.document.configurable.title)
-        self.ui.document._document:setIntProperty("window.status.clock", self.document.configurable.clock)
-        self.ui.document._document:setIntProperty("window.status.pos.page.number", self.document.configurable.page_number)
-        self.ui.document._document:setIntProperty("window.status.pos.page.count", self.document.configurable.page_count)
-        self.ui.document._document:setIntProperty("window.status.battery", self.document.configurable.battery)
-        self.ui.document._document:setIntProperty("window.status.battery.percent", self.document.configurable.battery_percent)
+        self.ui.document._document:setIntProperty("window.status.title", self.title)
+        self.ui.document._document:setIntProperty("window.status.clock", self.clock)
+        self.ui.document._document:setIntProperty("window.status.pos.page.number", self.page_number)
+        self.ui.document._document:setIntProperty("window.status.pos.page.count", self.page_count)
+        self.ui.document._document:setIntProperty("crengine.page.header.chapter.marks", self.chapter_marks)
+        self.ui.document._document:setIntProperty("window.status.battery", self.battery)
+        self.ui.document._document:setIntProperty("window.status.battery.percent", self.battery_percent)
+        self.ui.document._document:setIntProperty("window.status.pos.percent", self.reading_percent)
 
         UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
 
@@ -72,45 +70,36 @@ function AltStatusBar:onReadSettings()
     end
 end
 
-function AltStatusBar:setDefaultBehavior(title, key, inverse)
-    local inverse_val = 0
-    if inverse then
-        inverse_val = 1
-    end
-    UIManager:show( ConfirmBox:new{
-        text = T(_("Set default of \"%1\" to"), title),
-        cancel_text = _("Off"),
-        ok_text = _("On"),
-        ok_callback = function()
-            G_reader_settings:saveSetting(key, inverse_val - 1)
-        end,
-        cancel_callback = function()
-            G_reader_settings:saveSetting(key, inverse_val - 0)
-        end,
-    })
-end
-
 function AltStatusBar:addToMainMenu(menu_items)
     menu_items.alt_status_bar = {
         sorting_hint = "setting",
-        text = _("Alternate status bar"),
+        text = _("Alt Status Bar"),
         checked_func = function()
             return self:isEnabled()
         end,
         sub_item_table = {
             {
-                text = _("Top status bar"),
+                text = _("Enable top status bar"),
                 keep_menu_open = true,
                 checked_func = function()
                     return self:isEnabled()
                 end,
                 callback = function()
+                    local old_status_line = G_reader_settings:readSetting("copt_status_line") or 1
+                    G_reader_settings:saveSetting("copt_status_line", 1 - old_status_line)
+                end,
+            },
+            {
+                text = _("Exclude top status bar for this document"),
+                keep_menu_open = true,
+                checked_func = function()
+                    return self.document.configurable.status_line == 1
+                end,
+                callback = function()
                     self.document.configurable.status_line = 1 - self.document.configurable.status_line
-                    UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
+                    UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, true))
                 end,
-                hold_callback = function()
-                    self:setDefaultBehavior(_("Top status bar"), "copt_status_line", true)
-                end,
+                separator = true,
             },
             {
                 text = _("Title"),
@@ -119,15 +108,16 @@ function AltStatusBar:addToMainMenu(menu_items)
                     return self:isEnabled()
                 end,
                 checked_func = function()
-                    return self.document.configurable.title == 1
+                    return self.title == 1
                 end,
                 callback = function()
-                    self.document.configurable.title = 1 - self.document.configurable.title
-                    self.ui.document._document:setIntProperty("window.status.title", self.document.configurable.title)
+                    self.title = 1 - self.title
+                    self.ui.document._document:setIntProperty("window.status.title", self.title)
+                    G_reader_settings:saveSetting("cre_header_title", self.title)
                     UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
                 end,
                 hold_callback = function()
-                    self:setDefaultBehavior(_("Title"), "copt_title")
+                    self:setDefaultBehavior(_("Title"), "cre_header_title")
                 end,
             },
             {
@@ -137,15 +127,13 @@ function AltStatusBar:addToMainMenu(menu_items)
                     return self:isEnabled()
                 end,
                 checked_func = function()
-                    return self.document.configurable.clock == 1
+                    return self.clock == 1
                 end,
                 callback = function()
-                    self.document.configurable.clock = 1 - self.document.configurable.clock
-                    self.ui.document._document:setIntProperty("window.status.clock", self.document.configurable.clock)
+                    self.clock = 1 - self.clock
+                    self.ui.document._document:setIntProperty("window.status.clock", self.clock)
+                    G_reader_settings:saveSetting("cre_header_clock", self.clock)
                     UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
-                end,
-                hold_callback = function()
-                    self:setDefaultBehavior(_("Clock"), "copt_clock")
                 end,
             },
             {
@@ -155,15 +143,13 @@ function AltStatusBar:addToMainMenu(menu_items)
                     return self:isEnabled()
                 end,
                 checked_func = function()
-                    return self.document.configurable.page_number == 1
+                    return self.page_number == 1
                 end,
                 callback = function()
-                    self.document.configurable.page_number = 1 - self.document.configurable.page_number
-                    self.ui.document._document:setIntProperty("window.status.pos.page.number", self.document.configurable.page_number)
+                    self.page_number = 1 - self.page_number
+                    self.ui.document._document:setIntProperty("window.status.pos.page.number", self.page_number)
+                    G_reader_settings:saveSetting("cre_header_page_number", self.page_number)
                     UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
-                end,
-                hold_callback = function()
-                    self:setDefaultBehavior(_("Page number"), "copt_page_number")
                 end,
             },
             {
@@ -173,15 +159,29 @@ function AltStatusBar:addToMainMenu(menu_items)
                     return self:isEnabled()
                 end,
                 checked_func = function()
-                    return self.document.configurable.page_count == 1
+                    return self.page_count == 1
                 end,
                 callback = function()
-                    self.document.configurable.page_count = 1 - self.document.configurable.page_count
-                    self.ui.document._document:setIntProperty("window.status.pos.page.count", self.document.configurable.page_count)
+                    self.page_count = 1 - self.page_count
+                    self.ui.document._document:setIntProperty("window.status.pos.page.count", self.page_count)
+                    G_reader_settings:saveSetting("cre_header_page_count", self.page_count)
                     UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
                 end,
-                hold_callback = function()
-                    self:setDefaultBehavior(_("Page count"), "copt_page_count")
+            },
+            {
+                text = _("Reading percent"),
+                keep_menu_open = true,
+                enabled_func = function()
+                    return self:isEnabled()
+                end,
+                checked_func = function()
+                    return self.reading_percent == 1
+                end,
+                callback = function()
+                    self.reading_percent = 1 - self.reading_percent
+                    self.ui.document._document:setIntProperty("window.status.pos.percent", self.reading_percent)
+                    G_reader_settings:saveSetting("cre_header_reading_percent", self.reading_percent)
+                    UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
                 end,
             },
             {
@@ -191,33 +191,45 @@ function AltStatusBar:addToMainMenu(menu_items)
                     return self:isEnabled()
                 end,
                 checked_func = function()
-                    return self.document.configurable.battery == 1
+                    return self.battery == 1
                 end,
                 callback = function()
-                    self.document.configurable.battery = 1 - self.document.configurable.battery
-                    self.ui.document._document:setIntProperty("window.status.battery", self.document.configurable.battery)
+                    self.battery = 1 - self.battery
+                    self.ui.document._document:setIntProperty("window.status.battery", self.battery)
+                    G_reader_settings:saveSetting("cre_header_battery", self.battery)
                     UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
-                end,
-                hold_callback = function()
-                    self:setDefaultBehavior(_("Battery"), "copt_battery")
                 end,
             },
             {
                 text = _("Battery Percent"),
                 keep_menu_open = true,
                 enabled_func = function()
-                    return self:isEnabled() and self.document.configurable.battery == 1
+                    return self:isEnabled() and self.battery == 1
                 end,
                 checked_func = function()
-                    return self.document.configurable.battery_percent == 1
+                    return self.battery_percent == 1
                 end,
                 callback = function()
-                    self.document.configurable.battery_percent = 1 - self.document.configurable.battery_percent
-                    self.ui.document._document:setIntProperty("window.status.battery.percent", self.document.configurable.battery_percent)
+                    self.battery_percent = 1 - self.battery_percent
+                    self.ui.document._document:setIntProperty("window.status.battery.percent", self.battery_percent)
+                    G_reader_settings:saveSetting("cre_header_battery_percent", self.battery_percent)
                     UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
                 end,
-                hold_callback = function()
-                    self:setDefaultBehavior(_("Pattery Percent"), "copt_battery_percent")
+            },
+            {
+                text = _("Chapter marks"),
+                keep_menu_open = true,
+                enabled_func = function()
+                    return self:isEnabled()
+                end,
+                checked_func = function()
+                    return self.chapter_marks == 1
+                end,
+                callback = function()
+                    self.chapter_marks = 1 - self.chapter_marks
+                    self.ui.document._document:setIntProperty("crengine.page.header.chapter.marks", self.chapter_marks)
+                    G_reader_settings:saveSetting("cre_header_chapter_marks", self.chapter_marks)
+                    UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
                 end,
                 separator = true,
             },
