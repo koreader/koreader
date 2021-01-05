@@ -275,7 +275,8 @@ else
 
     if start_with == "last" and last_file and lfs.attributes(last_file, "mode") ~= "file" then
         UIManager:show(retryLastFile())
-        exit_code = UIManager:run()
+        -- no exit code as something else will be run after this.
+        UIManager:run()
     end
     if start_with == "last" and last_file then
         local ReaderUI = require("apps/reader/readerui")
