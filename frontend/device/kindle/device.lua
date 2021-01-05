@@ -126,11 +126,6 @@ function Kindle:initNetworkManager(NetworkMgr)
 end
 
 function Kindle:supportsScreensaver()
-    -- NOTE: The first ad-supported device was the K3
-    if self.model == "Kindle2" or self.model == "KindleDXG" then
-        return true
-    end
-
     if self.isSpecialOffers then
         return false
     else
@@ -276,6 +271,7 @@ local Kindle2 = Kindle:new{
     canHWInvert = no,
     canUseCBB = no, -- 4bpp
     canUseWAL = no, -- Kernel too old to support mmap'ed I/O on /mnt/us
+    supportsScreensaver = yes, -- The first ad-supported device was the K3
 }
 
 local KindleDXG = Kindle:new{
@@ -286,6 +282,7 @@ local KindleDXG = Kindle:new{
     canHWInvert = no,
     canUseCBB = no, -- 4bpp
     canUseWAL = no, -- Kernel too old to support mmap'ed I/O on /mnt/us
+    supportsScreensaver = yes, -- The first ad-supported device was the K3
 }
 
 local Kindle3 = Kindle:new{
@@ -295,6 +292,7 @@ local Kindle3 = Kindle:new{
     hasDPad = yes,
     canHWInvert = no,
     canUseCBB = no, -- 4bpp
+    supportsScreensaver = no, -- Can't probe for SO status on FW < 5.x
 }
 
 local Kindle4 = Kindle:new{
@@ -304,6 +302,7 @@ local Kindle4 = Kindle:new{
     canHWInvert = no,
     -- NOTE: It could *technically* use the C BB, as it's running @ 8bpp, but it's expecting an inverted palette...
     canUseCBB = no,
+    supportsScreensaver = no, -- Can't probe for SO status on FW < 5.x
 }
 
 local KindleTouch = Kindle:new{
