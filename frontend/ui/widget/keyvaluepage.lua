@@ -367,7 +367,7 @@ function KeyValuePage:init()
 
     -- return button
     --- @todo: alternative icon if BD.mirroredUILayout()
-    self.page_return_arrow = Button:new{
+    self.page_return_arrow = self.page_return_arrow or Button:new{
         icon = "back.top",
         callback = function() self:onReturn() end,
         bordersize = 0,
@@ -382,25 +382,25 @@ function KeyValuePage:init()
         chevron_left, chevron_right = chevron_right, chevron_left
         chevron_first, chevron_last = chevron_last, chevron_first
     end
-    self.page_info_left_chev = Button:new{
+    self.page_info_left_chev = self.page_info_left_chev or Button:new{
         icon = chevron_left,
         callback = function() self:prevPage() end,
         bordersize = 0,
         show_parent = self,
     }
-    self.page_info_right_chev = Button:new{
+    self.page_info_right_chev = self.page_info_right_chev or Button:new{
         icon = chevron_right,
         callback = function() self:nextPage() end,
         bordersize = 0,
         show_parent = self,
     }
-    self.page_info_first_chev = Button:new{
+    self.page_info_first_chev = self.page_info_first_chev or Button:new{
         icon = chevron_first,
         callback = function() self:goToPage(1) end,
         bordersize = 0,
         show_parent = self,
     }
-    self.page_info_last_chev = Button:new{
+    self.page_info_last_chev = self.page_info_last_chev or Button:new{
         icon = chevron_last,
         callback = function() self:goToPage(self.pages) end,
         bordersize = 0,
@@ -424,7 +424,7 @@ function KeyValuePage:init()
     self.page_info_first_chev:hide()
     self.page_info_last_chev:hide()
 
-    self.page_info_text = Button:new{
+    self.page_info_text = self.page_info_text or Button:new{
         text = "",
         hold_input = {
             title = _("Enter page number"),

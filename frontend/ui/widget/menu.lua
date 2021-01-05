@@ -679,25 +679,25 @@ function Menu:init()
         chevron_left, chevron_right = chevron_right, chevron_left
         chevron_first, chevron_last = chevron_last, chevron_first
     end
-    self.page_info_left_chev = Button:new{
+    self.page_info_left_chev = self.page_info_left_chev or Button:new{
         icon = chevron_left,
         callback = function() self:onPrevPage() end,
         bordersize = 0,
         show_parent = self.show_parent,
     }
-    self.page_info_right_chev = Button:new{
+    self.page_info_right_chev = self.page_info_right_chev or Button:new{
         icon = chevron_right,
         callback = function() self:onNextPage() end,
         bordersize = 0,
         show_parent = self.show_parent,
     }
-    self.page_info_first_chev = Button:new{
+    self.page_info_first_chev = self.page_info_first_chev or Button:new{
         icon = chevron_first,
         callback = function() self:onFirstPage() end,
         bordersize = 0,
         show_parent = self.show_parent,
     }
-    self.page_info_last_chev = Button:new{
+    self.page_info_last_chev = self.page_info_last_chev or Button:new{
         icon = chevron_last,
         callback = function() self:onLastPage() end,
         bordersize = 0,
@@ -765,10 +765,10 @@ function Menu:init()
         end
     end
 
-    self.page_info_text = Button:new{
+    self.page_info_text = self.page_info_text or Button:new{
         text = "",
         hold_input = {
-            title = title_goto ,
+            title = title_goto,
             type = type_goto,
             hint_func = hint_func,
             buttons = buttons,
@@ -789,7 +789,7 @@ function Menu:init()
     }
 
     -- return button
-    self.page_return_arrow = Button:new{
+    self.page_return_arrow = self.page_return_arrow or Button:new{
         icon = "back.top",
         callback = function()
             if self.onReturn then self:onReturn() end
@@ -974,6 +974,7 @@ function Menu:updatePageInfo(select_number)
         self.page_info_first_chev:showHide(self.page_num > 2)
         self.page_info_last_chev:showHide(self.page_num > 2)
         self.page_return_arrow:showHide(self.onReturn ~= nil)
+        print("Return arrow is", self.page_return_arrow)
 
         self.page_info_left_chev:enableDisable(self.page > 1)
         self.page_info_right_chev:enableDisable(self.page < self.page_num)
