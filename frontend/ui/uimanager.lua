@@ -784,11 +784,21 @@ function UIManager:getTopWidget()
 end
 
 --- Check if a widget is still in the window stack, or is a subwidget of a widget still in the window stack
-function UIManager:isWidgetShown(widget, max_depth)
+function UIManager:isSubwidgetShown(widget, max_depth)
     for i = #self._window_stack, 1, -1 do
         local matched, depth = util.arrayReferences(self._window_stack[i].widget, widget, max_depth)
         if matched then
             return matched, depth, self._window_stack[i].widget
+        end
+    end
+    return false
+end
+
+--- Same, but only check window-level widgets (e.g., what's directly registered in the window stack), don't recurse
+function UIManager:isWidgetShown(widget)
+    for i = #self._window_stack, 1, -1 do
+        if self._window_stack[i].widget == widget then
+           return true
         end
     end
     return false
