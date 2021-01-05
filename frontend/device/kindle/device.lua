@@ -58,7 +58,7 @@ end
 
 --[[
 Test if a kindle device has Special Offers
-FIXME: Find a way to probe for SO status on FX < 5.x
+FIXME: Find a way to probe for SO status on FW < 5.x
 --]]
 local function isSpecialOffers()
     -- Look at the current blanket modules to see if the SO screensavers are enabled...
