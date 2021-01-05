@@ -1,5 +1,28 @@
 -- plugin for configuration of the Alt Status Bar
 
+--[[
+from https://github.com/koreader/koreader/issues/5848#issuecomment-584682914
+thanks to @poire-z
+That top status bar is not managed by KOReader, but by crengine (the engine thats renders EPUB files).
+You can tweak a bit of what it will show/not show by editing koreader/data/cr3.ini, these bits should apply to it:
+
+crengine.page.header.chapter.marks=1
+crengine.page.header.font.color=0xFF000000
+crengine.page.header.font.face=Noto Sans
+crengine.page.header.font.size=22
+
+window.status.battery=1
+window.status.battery.percent=0
+window.status.clock=0
+window.status.line=0
+window.status.pos.page.count=1
+window.status.pos.page.number=1
+window.status.pos.percent=0
+window.status.title=1
+]]
+
+--if true then return { disabled = true, } end
+
 local Device = require("device")
 local Event = require("ui/event")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -18,48 +41,53 @@ function AltStatusBar:isEnabled()
     return self.document.configurable.status_line == 0
 end
 
-function AltStatusBar:init()
-    self.enabled = self:isEnabled()
-    self.document.configurable.title = self.ui.doc_settings:readSetting("copt_title")
-        or G_reader_settings:readSetting("copt_title") or 1
-    self.document.configurable.clock = self.ui.doc_settings:readSetting("copt_clock")
-        or G_reader_settings:readSetting("copt_clock") or 1
-    self.document.configurable.page_number = self.ui.doc_settings:readSetting("copt_page_number")
-        or G_reader_settings:readSetting("copt_page_number") or 1
-    self.document.configurable.page_count = self.ui.doc_settings:readSetting("copt_page_count")
-        or G_reader_settings:readSetting("copt_page_count") or 1
-    self.document.configurable.battery = self.ui.doc_settings:readSetting("copt_battery")
-        or G_reader_settings:readSetting("copt_battery") or 1
-    self.document.configurable.battery_percent = self.ui.doc_settings:readSetting("copt_battery_percent")
-        or G_reader_settings:readSetting("copt_battery_percent") or 0
+function AltStatusBar:onReadSettings()
+    if self.document.provider == "crengine" then
+        self.enabled = self:isEnabled()
+        self.document.configurable.title = self.document.configurable.title
+            or G_reader_settings:readSetting("copt_title") or 1
+        self.document.configurable.clock = self.document.configurable.clock
+            or G_reader_settings:readSetting("copt_clock") or 1
+        self.document.configurable.page_number = self.document.configurable.page_number
+            or G_reader_settings:readSetting("copt_page_number") or 1
+        self.document.configurable.page_count = self.document.configurable.page_count
+            or G_reader_settings:readSetting("copt_page_count") or 1
+        self.document.configurable.battery = self.document.configurable.battery
+            or G_reader_settings:readSetting("copt_battery") or 1
+        self.document.configurable.battery_percent = self.document.configurable.battery_percent
+            or G_reader_settings:readSetting("copt_battery_percent") or 0
 
-    -- set top status bar title
-    if self.document.configurable.title then
         self.ui.document._document:setIntProperty("window.status.title", self.document.configurable.title)
-    end
-    -- set top status bar clock
-    if self.document.configurable.clock then
         self.ui.document._document:setIntProperty("window.status.clock", self.document.configurable.clock)
-    end
-    -- set top status bar page number
-    if self.document.configurable.page_number then
         self.ui.document._document:setIntProperty("window.status.pos.page.number", self.document.configurable.page_number)
-    end
-    -- set top status bar page count
-    if self.document.configurable.page_count then
         self.ui.document._document:setIntProperty("window.status.pos.page.count", self.document.configurable.page_count)
-    end
-    -- set top status bar battery
-    if self.document.configurable.battery then
         self.ui.document._document:setIntProperty("window.status.battery", self.document.configurable.battery)
-    end
-    -- set top status bar battery percent
-    if self.document.configurable.battery_percent then
         self.ui.document._document:setIntProperty("window.status.battery.percent", self.document.configurable.battery_percent)
-    end
-    UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
 
-    self.ui.menu:registerToMainMenu(self)
+        UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
+
+        self.ui.menu:registerToMainMenu(self)
+    else
+        logger.dbg("AltStatusBar disabled")
+    end
+end
+
+function AltStatusBar:setDefaultBehavior(title, key, inverse)
+    local inverse_val = 0
+    if inverse then
+        inverse_val = 1
+    end
+    UIManager:show( ConfirmBox:new{
+        text = T(_("Set default of \"%1\" to"), title),
+        cancel_text = _("Off"),
+        ok_text = _("On"),
+        ok_callback = function()
+            G_reader_settings:saveSetting(key, inverse_val - 1)
+        end,
+        cancel_callback = function()
+            G_reader_settings:saveSetting(key, inverse_val - 0)
+        end,
+    })
 end
 
 function AltStatusBar:addToMainMenu(menu_items)
@@ -71,7 +99,7 @@ function AltStatusBar:addToMainMenu(menu_items)
         end,
         sub_item_table = {
             {
-                text = _("Enable top status bar"),
+                text = _("Top status bar"),
                 keep_menu_open = true,
                 checked_func = function()
                     return self:isEnabled()
@@ -79,6 +107,9 @@ function AltStatusBar:addToMainMenu(menu_items)
                 callback = function()
                     self.document.configurable.status_line = 1 - self.document.configurable.status_line
                     UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
+                end,
+                hold_callback = function()
+                    self:setDefaultBehavior(_("Top status bar"), "copt_status_line", true)
                 end,
             },
             {
@@ -96,17 +127,7 @@ function AltStatusBar:addToMainMenu(menu_items)
                     UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
                 end,
                 hold_callback = function()
-                    UIManager:show( ConfirmBox:new{
-                        text = _("Default behavior"),
-                        cancel_text = _("Disable"),
-                        ok_text = _("Enable"),
-                        ok_callback = function()
-                            G_reader_settings:saveSetting("copt_title", 1)
-                        end,
-                        cancel_callback = function()
-                            G_reader_settings:saveSetting("copt_title", 0)
-                        end,
-                    })
+                    self:setDefaultBehavior(_("Title"), "copt_title")
                 end,
             },
             {
@@ -124,17 +145,7 @@ function AltStatusBar:addToMainMenu(menu_items)
                     UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
                 end,
                 hold_callback = function()
-                    UIManager:show( ConfirmBox:new{
-                        text = _("Default behavior"),
-                        cancel_text = _("Disable"),
-                        ok_text = _("Enable"),
-                        ok_callback = function()
-                            G_reader_settings:saveSetting("copt_clock", 1)
-                        end,
-                        cancel_callback = function()
-                            G_reader_settings:saveSetting("copt_clock", 0)
-                        end,
-                    })
+                    self:setDefaultBehavior(_("Clock"), "copt_clock")
                 end,
             },
             {
@@ -152,17 +163,7 @@ function AltStatusBar:addToMainMenu(menu_items)
                     UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
                 end,
                 hold_callback = function()
-                    UIManager:show( ConfirmBox:new{
-                        text = _("Default behavior"),
-                        cancel_text = _("Disable"),
-                        ok_text = _("Enable"),
-                        ok_callback = function()
-                            G_reader_settings:saveSetting("copt_page_number", 0)
-                        end,
-                        cancel_callback = function()
-                            G_reader_settings:saveSetting("copt_page_number", 0)
-                        end,
-                    })
+                    self:setDefaultBehavior(_("Page number"), "copt_page_number")
                 end,
             },
             {
@@ -180,17 +181,7 @@ function AltStatusBar:addToMainMenu(menu_items)
                     UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
                 end,
                 hold_callback = function()
-                    UIManager:show( ConfirmBox:new{
-                        text = _("Default behavior"),
-                        cancel_text = _("Disable"),
-                        ok_text = _("Enable"),
-                        ok_callback = function()
-                            G_reader_settings:saveSetting("copt_page_count", 1)
-                        end,
-                        cancel_callback = function()
-                            G_reader_settings:saveSetting("copt_page_count", 0)
-                        end,
-                    })
+                    self:setDefaultBehavior(_("Page count"), "copt_page_count")
                 end,
             },
             {
@@ -208,17 +199,7 @@ function AltStatusBar:addToMainMenu(menu_items)
                     UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
                 end,
                 hold_callback = function()
-                    UIManager:show( ConfirmBox:new{
-                        text = _("Default behavior"),
-                        cancel_text = _("Disable"),
-                        ok_text = _("Enable"),
-                        ok_callback = function()
-                            G_reader_settings:saveSetting("copt_battery", 1)
-                        end,
-                        cancel_callback = function()
-                            G_reader_settings:saveSetting("copt_battery", 0)
-                        end,
-                    })
+                    self:setDefaultBehavior(_("Battery"), "copt_battery")
                 end,
             },
             {
@@ -236,22 +217,11 @@ function AltStatusBar:addToMainMenu(menu_items)
                     UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
                 end,
                 hold_callback = function()
-                    UIManager:show( ConfirmBox:new{
-                        text = _("Default behavior"),
-                        cancel_text = _("Disable"),
-                        ok_text = _("Enable"),
-                        ok_callback = function()
-                            G_reader_settings:saveSetting("copt_battery_percent", 1)
-                        end,
-                        cancel_callback = function()
-                            G_reader_settings:saveSetting("copt_battery_percent", 0)
-                        end,
-                    })
+                    self:setDefaultBehavior(_("Pattery Percent"), "copt_battery_percent")
                 end,
                 separator = true,
             },
             {
-                -- todo save in sdr
                 text_func = function()
                     return T(_("Header font size (%1)"), G_reader_settings:readSetting("cre_header_status_font_size") or 14 )
                 end,
