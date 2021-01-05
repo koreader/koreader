@@ -7,7 +7,7 @@ export KO_MULTIUSER=1
 if [ $# -eq 1 ] && [ -e "$(pwd)/${1}" ]; then
     ARGS="$(pwd)/${1}"
 else
-    ARGS="$@"
+    ARGS="${*}"
 fi
 
 # working directory of koreader
