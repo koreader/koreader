@@ -488,10 +488,13 @@ function MenuItem:onTapSelect(arg, ges)
         --UIManager:waitForVSync()
 
         self[1].invert = false
-        --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-        UIManager:setDirty(self.show_parent, function()
+        -- We assume a tap anywhere updates the menu, so, forgo this
+        --[[
+        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(nil, function()
             return "ui", self[1].dimen
         end)
+        --]]
         --UIManager:forceRePaint()
     end
     return true
@@ -515,8 +518,8 @@ function MenuItem:onHoldSelect(arg, ges)
         --UIManager:waitForVSync()
 
         self[1].invert = false
-        --UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-        UIManager:setDirty(self.show_parent, function()
+        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(nil, function()
             return "ui", self[1].dimen
         end)
         --UIManager:forceRePaint()
