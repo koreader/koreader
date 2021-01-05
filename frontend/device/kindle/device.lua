@@ -207,7 +207,9 @@ function Kindle:intoScreenSaver()
         else
             -- Let the native system handle screensavers on SO devices...
             if os.getenv("AWESOME_STOPPED") == "yes" then
-                os.execute("killall -cont awesome")
+                os.execute("killall -CONT awesome")
+            elseif os.getenv("CVM_STOPPED") == "yes" then
+                os.execute("killall -CONT cvm")
             end
         end
     end
@@ -230,7 +232,9 @@ function Kindle:outofScreenSaver()
         else
             -- Stop awesome again if need be...
             if os.getenv("AWESOME_STOPPED") == "yes" then
-                os.execute("killall -stop awesome")
+                os.execute("killall -STOP awesome")
+            elseif os.getenv("CVM_STOPPED") == "yes" then
+                os.execute("killall -STOP cvm")
             end
             local UIManager = require("ui/uimanager")
             -- NOTE: We redraw after a slightly longer delay to take care of the potentially dynamic ad screen...
@@ -808,7 +812,7 @@ function KindleTouch:exit()
     if self.isSpecialOffers then
         -- Wakey wakey...
         if os.getenv("AWESOME_STOPPED") == "yes" then
-            os.execute("killall -cont awesome")
+            os.execute("killall -CONT awesome")
         end
         -- fake a touch event
         if self.touch_dev then

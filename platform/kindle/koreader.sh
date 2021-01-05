@@ -57,6 +57,7 @@ fi
 
 # Keep track of what we do with pillow...
 export AWESOME_STOPPED="no"
+export CVM_STOPPED="no"
 export VOLUMD_STOPPED="no"
 PILLOW_HARD_DISABLED="no"
 PILLOW_SOFT_DISABLED="no"
@@ -282,6 +283,7 @@ fi
 if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "sysv" ]; then
     logmsg "Stopping cvm . . ."
     killall -STOP cvm
+    CVM_STOPPED="yes"
 fi
 
 # SIGSTOP volumd, to inhibit USBMS (sysv & upstart)
