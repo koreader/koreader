@@ -58,6 +58,7 @@ end
 
 --[[
 Test if a kindle device has Special Offers
+FIXME: Find a way to probe for SO status on FW < 5.x
 --]]
 local function isSpecialOffers()
     -- Look at the current blanket modules to see if the SO screensavers are enabled...
@@ -201,7 +202,9 @@ function Kindle:intoScreenSaver()
         else
             -- Let the native system handle screensavers on SO devices...
             if os.getenv("AWESOME_STOPPED") == "yes" then
-                os.execute("killall -cont awesome")
+                os.execute("killall -CONT awesome")
+            elseif os.getenv("CVM_STOPPED") == "yes" then
+                os.execute("killall -CONT cvm")
             end
         end
     end
@@ -224,7 +227,9 @@ function Kindle:outofScreenSaver()
         else
             -- Stop awesome again if need be...
             if os.getenv("AWESOME_STOPPED") == "yes" then
-                os.execute("killall -stop awesome")
+                os.execute("killall -STOP awesome")
+            elseif os.getenv("CVM_STOPPED") == "yes" then
+                os.execute("killall -STOP cvm")
             end
             local UIManager = require("ui/uimanager")
             -- NOTE: We redraw after a slightly longer delay to take care of the potentially dynamic ad screen...
@@ -266,6 +271,7 @@ local Kindle2 = Kindle:new{
     canHWInvert = no,
     canUseCBB = no, -- 4bpp
     canUseWAL = no, -- Kernel too old to support mmap'ed I/O on /mnt/us
+    supportsScreensaver = yes, -- The first ad-supported device was the K3
 }
 
 local KindleDXG = Kindle:new{
@@ -276,6 +282,7 @@ local KindleDXG = Kindle:new{
     canHWInvert = no,
     canUseCBB = no, -- 4bpp
     canUseWAL = no, -- Kernel too old to support mmap'ed I/O on /mnt/us
+    supportsScreensaver = yes, -- The first ad-supported device was the K3
 }
 
 local Kindle3 = Kindle:new{
@@ -285,6 +292,7 @@ local Kindle3 = Kindle:new{
     hasDPad = yes,
     canHWInvert = no,
     canUseCBB = no, -- 4bpp
+    supportsScreensaver = no, -- Can't probe for SO status on FW < 5.x
 }
 
 local Kindle4 = Kindle:new{
@@ -294,6 +302,7 @@ local Kindle4 = Kindle:new{
     canHWInvert = no,
     -- NOTE: It could *technically* use the C BB, as it's running @ 8bpp, but it's expecting an inverted palette...
     canUseCBB = no,
+    supportsScreensaver = no, -- Can't probe for SO status on FW < 5.x
 }
 
 local KindleTouch = Kindle:new{
@@ -802,7 +811,7 @@ function KindleTouch:exit()
     if self.isSpecialOffers then
         -- Wakey wakey...
         if os.getenv("AWESOME_STOPPED") == "yes" then
-            os.execute("killall -cont awesome")
+            os.execute("killall -CONT awesome")
         end
         -- fake a touch event
         if self.touch_dev then
