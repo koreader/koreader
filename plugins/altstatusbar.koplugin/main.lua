@@ -21,7 +21,7 @@ window.status.pos.percent=0
 window.status.title=1
 ]]
 
---if true then return { disabled = true, } end
+if true then return { disabled = true, } end
 
 local Device = require("device")
 local Event = require("ui/event")

@@ -58,6 +58,7 @@ local order = {
         "----------------------------",
         "djvu_render_mode",
         "status_bar",
+        "alt_status_bar",
     },
     device = {
         "keyboard_layout",
