@@ -27,7 +27,6 @@ function ReaderCoptListener:onReadSettings(config)
     local status_line = config:readSetting("copt_status_line") or G_reader_settings:readSetting("copt_status_line") or 1
     self.ui:handleEvent(Event:new("SetStatusLine", status_line, true))
 
-    self.config = config
     self.title = G_reader_settings:readSetting("cre_header_title") or 1
     self.clock = G_reader_settings:readSetting("cre_header_clock") or 1
     self.page_number = G_reader_settings:readSetting("cre_header_page_number") or 1
