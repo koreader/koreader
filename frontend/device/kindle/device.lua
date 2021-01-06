@@ -57,8 +57,7 @@ local function isWifiUp()
 end
 
 --[[
-Test if a kindle device has Special Offers
-FIXME: Find a way to probe for SO status on FW < 5.x
+Test if a kindle device is flagged as a Special Offers device (i.e., ad supported) (FW >= 5.x)
 --]]
 local function isSpecialOffers()
     -- Look at the current blanket modules to see if the SO screensavers are enabled...
@@ -85,6 +84,18 @@ local function isSpecialOffers()
     end
     lipc_handle:close()
     return is_so
+end
+
+--[[
+Test if a kindle device has *received* Special Offers (FW < 5.x)
+--]]
+local function hasSpecialOffers()
+    local lfs = require("libs/libkoreader-lfs")
+    if lfs.attributes("/mnt/us/system/.assets", "mode") == "directory" then
+        return true
+    else
+        return false
+    end
 end
 
 local Kindle = Generic:new{
@@ -292,7 +303,7 @@ local Kindle3 = Kindle:new{
     hasDPad = yes,
     canHWInvert = no,
     canUseCBB = no, -- 4bpp
-    supportsScreensaver = no, -- Can't probe for SO status on FW < 5.x
+    isSpecialOffers = hasSpecialOffers(),
 }
 
 local Kindle4 = Kindle:new{
@@ -302,7 +313,7 @@ local Kindle4 = Kindle:new{
     canHWInvert = no,
     -- NOTE: It could *technically* use the C BB, as it's running @ 8bpp, but it's expecting an inverted palette...
     canUseCBB = no,
-    supportsScreensaver = no, -- Can't probe for SO status on FW < 5.x
+    isSpecialOffers = hasSpecialOffers(),
 }
 
 local KindleTouch = Kindle:new{
