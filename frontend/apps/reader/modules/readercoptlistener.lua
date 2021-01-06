@@ -45,8 +45,6 @@ function ReaderCoptListener:onReadSettings(config)
     self.ui.document._document:setIntProperty("window.status.battery", self.battery)
     self.ui.document._document:setIntProperty("window.status.battery.percent", self.battery_percent)
     self.ui.document._document:setIntProperty("window.status.pos.percent", self.reading_percent)
-
-    self.ui.menu:registerToMainMenu(self)
 end
 
 function ReaderCoptListener:onSetFontSize(font_size)
@@ -66,8 +64,8 @@ The settings here will only affect CRE documents in page mode.
 
 The top status bar (per document or by default) has to be enabled in the bottom menu.]])
 
-function ReaderCoptListener:addToMainMenu(menu_items)
-    menu_items.alt_status_bar = {
+function ReaderCoptListener:getAltStatusBarMenu()
+    return {
         text = _("Alt status bar"),
         sorting_hint = "status_bar",
         sorting_hint_top = true,
