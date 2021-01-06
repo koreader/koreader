@@ -179,7 +179,9 @@ function TouchMenuItem:onTapSelect(arg, ges)
         --       But when stuff doesn't repaint the menu and keeps it open, we need to do it.
         --       Since it's an *un*highlight containing text, we make it "ui" and not "fast", both so it won't mangle text,
         --       and because "fast" can have some weird side-effects on some devices in this specific instance...
-        if self.item.hold_keep_menu_open or self.item.keep_menu_open then
+        --       We do double-check that the top-level widget is still TouchMenu, though,
+        --       because stuff may request the menu staying open *below* showing a new widget (e.g., statistics) ;).
+        if (self.item.hold_keep_menu_open or self.item.keep_menu_open) and UIManager:getTopWidget() == self.menu then
             UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
             UIManager:setDirty(nil, function()
                 return "ui", highlight_dimen
