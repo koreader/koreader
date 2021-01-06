@@ -123,7 +123,7 @@ function RadioButton:onTapCheckButton()
             -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
             UIManager:forceRePaint()
             self.callback()
-            --UIManager:forceRePaint()
+            --UIManager:forceRePaint() -- Unnecessary, the check/uncheck process involves too many repaints already
             --UIManager:waitForVSync()
 
             self.frame.invert = false

@@ -108,20 +108,15 @@ function IconButton:onTapIconButton()
         UIManager:forceRePaint()
         --UIManager:waitForVSync()
 
-        -- If the callback closed our parent (which may not always be the top-level widget, or even *a* window-level widget; e.g., the Home/+ buttons in the FM), abort early
+        -- If the callback closed our parent (which may not always be the top-level widget, or even *a* window-level widget; e.g., the Home/+ buttons in the FM), we're done
         if UIManager:getTopWidget() == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
-            print("After callback, IconButton is still shown")
-        else
-            print("IconButton was closed by callback")
-            return true
+            self.image.invert = false
+            UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
+            UIManager:setDirty(nil, function()
+                return "fast", self.dimen
+            end)
+            --UIManager:forceRePaint()
         end
-
-        self.image.invert = false
-        UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
-        UIManager:setDirty(nil, function()
-            return "fast", self.dimen
-        end)
-        --UIManager:forceRePaint()
     end
     return true
 end
