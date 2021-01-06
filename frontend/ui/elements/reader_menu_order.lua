@@ -128,6 +128,7 @@ local order = {
         "progress_sync",
         "move_to_archive",
         "wallabag",
+        "pocket",
         "zsync",
         "news_downloader",
         "send2ebook",

@@ -103,6 +103,7 @@ local order = {
         "cloud_storage",
         "read_timer",
         "wallabag",
+        "pocket",
         "news_downloader",
         "send2ebook",
         "text_editor",
