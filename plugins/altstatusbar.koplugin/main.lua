@@ -25,6 +25,7 @@ window.status.title=1
 
 local Device = require("device")
 local Event = require("ui/event")
+local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local T = require("ffi/util").template
@@ -57,41 +58,31 @@ function AltStatusBar:onReadSettings(config)
         self.ui.document._document:setIntProperty("window.status.battery.percent", self.battery_percent)
         self.ui.document._document:setIntProperty("window.status.pos.percent", self.reading_percent)
 
---        UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, false))
         self.ui.menu:registerToMainMenu(self)
     else
         logger.dbg("AltStatusBar disabled")
     end
 end
 
+local about_text = _([[
+Here you can set the items shown in the top status bar.
+
+The settings here will only affect CRE documents.
+
+The top status bar (per document or by default) has to be enabled in the bottom menu.]])
+
 function AltStatusBar:addToMainMenu(menu_items)
     menu_items.alt_status_bar = {
         sorting_hint = "setting",
-        text = _("Alt Status Bar"),
---        checked_func = function()
---            return self:isEnabled()
---        end,
+        text = _("Alt status bar"),
         sub_item_table = {
             {
-                text = _("Enable top status bar for new documents"),
+                text = _("About cover image"),
                 keep_menu_open = true,
-                checked_func = function()
-                    return G_reader_settings:readSetting("copt_status_line") == 0
-                end,
                 callback = function()
-                    local old_status_line = G_reader_settings:readSetting("copt_status_line") or 1
-                    G_reader_settings:saveSetting("copt_status_line", 1 - old_status_line)
-                end,
-            },
-            {
-                text = _("Enable top status bar for this document"),
-                keep_menu_open = true,
-                checked_func = function()
-                    return self.document.configurable.status_line == 0
-                end,
-                callback = function()
-                    self.document.configurable.status_line = 1 - self.document.configurable.status_line
-                    UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, true))
+                    UIManager:show(InfoMessage:new{
+                        text = about_text,
+                    })
                 end,
                 separator = true,
             },
@@ -177,7 +168,7 @@ function AltStatusBar:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Battery Percent"),
+                text = _("Battery percent"),
                 keep_menu_open = true,
                 enabled_func = function()
                     return self.battery == 1
