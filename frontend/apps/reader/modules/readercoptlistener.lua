@@ -6,10 +6,6 @@ local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
---local ReaderCoptListener = WidgetContainer:new{
---    name = "alt_status_bar",
---    is_doc_only = true,
---}
 local ReaderCoptListener = EventListener:new{
     name = "alt_status_bar",
     is_doc_only = true,
@@ -73,9 +69,12 @@ The top status bar (per document or by default) has to be enabled in the bottom 
 function ReaderCoptListener:addToMainMenu(menu_items)
     menu_items.alt_status_bar = {
         text = _("Alt status bar"),
+        sorting_hint = "status_bar",
+        sorting_hint_top = true,
+        separator = true,
         sub_item_table = {
             {
-                text = _("About cover image"),
+                text = _("About alternate status bar"),
                 keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{

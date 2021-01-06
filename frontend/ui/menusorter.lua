@@ -179,7 +179,11 @@ function MenuSorter:sort(item_table, order)
         if sorting_hint then
             local sorting_hint_menu = self:findById(menu_table["KOMenu:menu_buttons"], sorting_hint)
             sorting_hint_menu = sorting_hint_menu.sub_item_table or sorting_hint_menu
-            table.insert(sorting_hint_menu, v)
+            if v.sorting_hint_top then
+                table.insert(sorting_hint_menu, 1, v)
+            else
+                table.insert(sorting_hint_menu, v)
+            end
         else
             table.insert(menu_table["KOMenu:menu_buttons"][1], v)
         end
