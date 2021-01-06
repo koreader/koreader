@@ -1897,20 +1897,20 @@ end
 function ReaderStatistics:genResetBookSubItemTable()
     local sub_item_table = {}
     table.insert(sub_item_table, {
-        text = _("Reset statistics per book"),
-        keep_menu_open = true,
-        callback = function()
-            self:resetBook()
-        end,
-        separator = true,
-    })
-    table.insert(sub_item_table, {
-        text = _("Reset statistics for current book"),
+        text = _("Reset statistics for the current book"),
         keep_menu_open = true,
         callback = function()
             self:resetCurrentBook()
         end,
         enabled_func = function() return not self:isDocless() and self.is_enabled and self.id_curr_book end,
+        separator = true,
+    })
+    table.insert(sub_item_table, {
+        text = _("Reset statistics per book"),
+        keep_menu_open = true,
+        callback = function()
+            self:resetBook()
+        end,
         separator = true,
     })
     local reset_minutes = { 1, 5, 15, 30, 60 }
