@@ -240,7 +240,7 @@ function DictQuickLookup:update()
     local title_width = inner_width - 2*title_padding -2*title_margin
     local close_button = CloseButton:new{ window = self, padding_top = title_margin, }
     local dict_title_text = TextWidget:new{
-        text = self.dictionary,
+        text = self.displaydictname,
         face = Font:getFace("x_smalltfont"),
         bold = true,
         max_width = title_width - close_button:getSize().w + close_button.padding_left
@@ -900,6 +900,19 @@ function DictQuickLookup:changeDictionary(index)
             self.definition = self.definition..T(_("(query : %1)"), self.word)
         end
     end
+    self.displaydictname = self.dictionary
+    if self.preferred_dictionaries then
+        -- If current result is from a preferred dictionary, prepend dict name
+        -- (shown in the window title) with its preference number
+        for idx, name in ipairs(self.preferred_dictionaries) do
+            if self.dictionary == name then
+                -- Use number in circle symbol (U+2460...2473)
+                local symbol = util.unicodeCodepointToUtf8(0x245F + (idx < 20 and idx or 20))
+                self.displaydictname = symbol .. " " .. self.displaydictname
+                break
+            end
+        end
+    end
 
     self:update()
 end
@@ -946,11 +959,12 @@ function DictQuickLookup:onTap(arg, ges_ev)
         self:onClose()
         return true
     end
-    --[[ This was more bothering than working, do disable this feature
-    if not ges_ev.pos:notIntersectWith(self.dict_title.dimen) and not self.is_wiki then
-        self.ui:handleEvent(Event:new("UpdateDefaultDict", self.dictionary))
+    if ges_ev.pos:intersectWith(self.dict_title.dimen) and not self.is_wiki then
+        self.ui:handleEvent(Event:new("TogglePreferredDict", self.dictionary))
+        -- Re-display current result, with title bar updated
+        self:changeDictionary(self.dict_index)
         return true
-    --]]
+    end
     if ges_ev.pos:intersectWith(self.definition_widget.dimen) then
         -- Allow for changing dict with tap (tap event will be first
         -- processed for scrolling definition by ScrollTextWidget, which
