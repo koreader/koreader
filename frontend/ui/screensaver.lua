@@ -199,7 +199,7 @@ function Screensaver:setMessage()
     end
     self.input_dialog = InputDialog:new{
         title = "Screensaver message",
-        description = _("Enter the message to be displayed by the screensaver. The following escape sequences can be used:\n  %p percentage read\n  %c current page number\n  %t total number of pages\n  %T title"),
+        description = _("Enter the message to be displayed by the screensaver. The following escape sequences can be used:\n  %p percentage read\n  %c current page number\n  %t total number of pages\n  %T title\n  %A authors\n  %S series"),
         input = screensaver_message,
         buttons = {
             {
@@ -363,7 +363,7 @@ function Screensaver:show(event, fallback_message)
         if screensaver_image == nil then
             screensaver_image = DataStorage:getDataDir() .. "/resources/koreader.png"
         end
-        if  lfs.attributes(screensaver_image, "mode") ~= "file" then
+        if lfs.attributes(screensaver_image, "mode") ~= "file" then
             show_message = true
         else
             widget = ImageWidget:new{
@@ -387,8 +387,7 @@ function Screensaver:show(event, fallback_message)
     if show_message == true then
         local screensaver_message = G_reader_settings:readSetting(prefix.."screensaver_message")
         local message_pos = G_reader_settings:readSetting(prefix.."screensaver_message_position")
-        if not self:whiteBackground() then
-            background = nil -- no background filling, let book text visible
+        if self:noBackground() and not widget then
             covers_fullscreen = false
         end
         if screensaver_message == nil and prefix ~= "" then
@@ -399,7 +398,10 @@ function Screensaver:show(event, fallback_message)
         if screensaver_message == nil then
             screensaver_message = fallback
         else
-            screensaver_message = self:expandSpecial(screensaver_message, fallback)
+            -- NOTE: Only attempt to expand if there are special characters in the message.
+            if screensaver_message:find("%%") then
+                screensaver_message = self:expandSpecial(screensaver_message, fallback)
+            end
         end
 
         local message_widget
@@ -473,33 +475,63 @@ function Screensaver:show(event, fallback_message)
 end
 
 function Screensaver:expandSpecial(message, fallback)
-    -- Expand special character sequences in given message. Use fallback string if there is no document instance
+    -- Expand special character sequences in given message.
     -- %p percentage read
     -- %c current page
     -- %t total pages
     -- %T document title
+    -- %A document authors
+    -- %S document series
 
     local ret = message
 
     local lastfile = G_reader_settings:readSetting("lastfile")
-    local instance = require("apps/reader/readerui"):_getRunningInstance()
-    if lastfile and lfs.attributes(lastfile, "mode") == "file" and instance ~= nil then
-        local doc = DocumentRegistry:openDocument(lastfile)
-        local currentpage = instance.view.state.page
-        ret = string.gsub(ret, "%%c", currentpage)
-
-        local totalpages = doc:getPageCount()
-        ret = string.gsub(ret, "%%t", totalpages)
-
-        local percent = Math.round((currentpage * 100) / totalpages)
-        ret = string.gsub(ret, "%%p", percent)
-
-        local props = doc:getProps()
-        ret = string.gsub(ret, "%%T", props.title)
-        doc:close()
-    else
-        ret = fallback
+    if not lastfile then
+        return fallback
     end
+
+    local totalpages = 0
+    local percent = 0
+    local currentpage = 0
+    local title = "N/A"
+    local authors = "N/A"
+    local series = "N/A"
+
+    local instance = require("apps/reader/readerui"):_getRunningInstance()
+    if instance == nil and DocSettings:hasSidecarFile(lastfile) then
+        -- If there's no ReaderUI instance, but the file has sidecar data, use that
+        local docinfo = DocSettings:open(lastfile)
+        totalpages = docinfo.data.doc_pages or totalpages
+        percent = docinfo.data.percent_finished or percent
+        currentpage = Math.round(percent * totalpages)
+        percent = Math.round(percent * 100)
+        if docinfo.data.doc_props then
+            title = docinfo.data.doc_props.title or title
+            authors = docinfo.data.doc_props.authors or authors
+            series = docinfo.data.doc_props.series or series
+        end
+        docinfo:close()
+    elseif instance ~= nil and lfs.attributes(lastfile, "mode") == "file" then
+        -- But if we have a ReaderUI instance, and the file stil exists, open it
+        local doc = DocumentRegistry:openDocument(lastfile)
+        currentpage = instance.view.state.page or currentpage
+        totalpages = doc:getPageCount() or totalpages
+        percent = Math.round((currentpage * 100) / totalpages)
+        local props = doc:getProps()
+        if props then
+            title = props.title or title
+            authors = props.authors or authors
+            series = props.series or series
+        end
+        doc:close()
+    end
+
+    ret = string.gsub(ret, "%%c", currentpage)
+    ret = string.gsub(ret, "%%t", totalpages)
+    ret = string.gsub(ret, "%%p", percent)
+    ret = string.gsub(ret, "%%T", title)
+    ret = string.gsub(ret, "%%A", authors)
+    ret = string.gsub(ret, "%%S", series)
 
     return ret
 end
