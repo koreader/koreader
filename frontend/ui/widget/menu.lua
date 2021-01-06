@@ -488,7 +488,7 @@ function MenuItem:onTapSelect(arg, ges)
         --UIManager:waitForVSync()
 
         self[1].invert = false
-        -- We assume a tap anywhere updates the menu, so, forgo this
+        -- We assume a tap anywhere updates the full menu, so, forgo this, much like in TouchMenu
         --[[
         UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
         UIManager:setDirty(nil, function()

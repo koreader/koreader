@@ -293,13 +293,14 @@ function KeyValueItem:onTap()
             UIManager:forceRePaint()
             --UIManager:waitForVSync()
 
-            -- Has to be scheduled *after* the dict delays for the history widget...
+            -- Has to be scheduled *after* the dict delays for the lookup history pages...
             UIManager:scheduleIn(0.75, function()
                 self[1].invert = false
                 -- Skip the repaint if we've ended up below something, which is likely.
                 if UIManager:getTopWidget() ~= self.show_parent then
+                    -- It's generally tricky to get accurate dimensions out of whatever was painted above us,
+                    -- so cheat by comparing against the previous refresh region...
                     if self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
-                        print("Callback has hidden us, abort early")
                         return true
                     end
                 end
