@@ -7,8 +7,6 @@ local T = require("ffi/util").template
 local _ = require("gettext")
 
 local ReaderCoptListener = EventListener:new{
-    name = "alt_status_bar",
-    is_doc_only = true,
 }
 
 function ReaderCoptListener:onReadSettings(config)
@@ -23,9 +21,6 @@ function ReaderCoptListener:onReadSettings(config)
             self.view:onSetViewMode("scroll")
         end)
     end
-
-    local status_line = config:readSetting("copt_status_line") or G_reader_settings:readSetting("copt_status_line") or 1
-    self.ui:handleEvent(Event:new("SetStatusLine", status_line, true))
 
     self.title = G_reader_settings:readSetting("cre_header_title") or 1
     self.clock = G_reader_settings:readSetting("cre_header_clock") or 1
@@ -44,30 +39,31 @@ function ReaderCoptListener:onReadSettings(config)
     self.ui.document._document:setIntProperty("window.status.battery", self.battery)
     self.ui.document._document:setIntProperty("window.status.battery.percent", self.battery_percent)
     self.ui.document._document:setIntProperty("window.status.pos.percent", self.reading_percent)
+
+    local status_line = config:readSetting("copt_status_line") or G_reader_settings:readSetting("copt_status_line") or 1
+    self.ui:handleEvent(Event:new("SetStatusLine", status_line, true))
 end
 
 function ReaderCoptListener:onSetFontSize(font_size)
     self.document.configurable.font_size = font_size
 end
 
-function ReaderCoptListener:setAndSave(property, setting, value)
+function ReaderCoptListener:setAndSave(setting, property, value)
     self.ui.document._document:setIntProperty(property, value)
     G_reader_settings:saveSetting(setting, value)
     UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, true))
 end
 
 local about_text = _([[
-Here you can set the items shown in the top status bar.
+On CRE documents only, an alt status bar can be displayed at top of screen, with or without the regular bottom status bar.
 
-The settings here will only affect CRE documents in page mode.
+Enabling this alt status bar, per document or by default, can be done in the bottom menu.
 
-The top status bar (per document or by default) has to be enabled in the bottom menu.]])
+You can set here which information this top status bar will show.]])
 
 function ReaderCoptListener:getAltStatusBarMenu()
     return {
         text = _("Alt status bar"),
-        sorting_hint = "status_bar",
-        sorting_hint_top = true,
         separator = true,
         sub_item_table = {
             {
@@ -82,73 +78,66 @@ function ReaderCoptListener:getAltStatusBarMenu()
             },
             {
                 text = _("Title"),
-                keep_menu_open = true,
                 checked_func = function()
                     return self.title == 1
                 end,
                 callback = function()
-                    self.title = 1 - self.title
-                    self:setAndSave("window.status.title", "cre_header_title", self.title)
+                    self.title = self.title == 0 and 1 or 0
+                    self:setAndSave("cre_header_title", "window.status.title", self.title)
                 end,
             },
             {
                 text = _("Clock"),
-                keep_menu_open = true,
                 checked_func = function()
                     return self.clock == 1
                 end,
                 callback = function()
-                    self.clock = 1 - self.clock
-                    self:setAndSave("window.status.clock", "cre_header_clock", self.clock)
+                    self.clock = self.clock == 0 and 1 or 0
+                    self:setAndSave("cre_header_clock", "window.status.clock", self.clock)
                 end,
             },
             {
                 text = _("Page number"),
-                keep_menu_open = true,
                 checked_func = function()
                     return self.page_number == 1
                 end,
                 callback = function()
-                    self.page_number = 1 - self.page_number
-                    self:setAndSave("window.status.pos.page.number", "cre_header_page_number", self.page_number)
+                    self.page_number = self.page_number == 0 and 1 or 0
+                    self:setAndSave("cre_header_page_number", "window.status.pos.page.number", self.page_number)
                 end,
             },
             {
                 text = _("Page count"),
-                keep_menu_open = true,
                 checked_func = function()
                     return self.page_count == 1
                 end,
                 callback = function()
-                    self.page_count = 1 - self.page_count
-                    self:setAndSave("window.status.pos.page.count", "cre_header_page_count", self.page_count)
+                    self.page_count = self.page_count == 0 and 1 or 0
+                    self:setAndSave("cre_header_page_count", "window.status.pos.page.count", self.page_count)
                 end,
             },
             {
                 text = _("Reading percent"),
-                keep_menu_open = true,
                 checked_func = function()
                     return self.reading_percent == 1
                 end,
                 callback = function()
-                    self.reading_percent = 1 - self.reading_percent
-                    self:setAndSave("window.status.pos.percent", "cre_header_reading_percent", self.reading_percent)
+                    self.reading_percent = self.reading_percent == 0 and 1 or 0
+                    self:setAndSave("cre_header_reading_percent", "window.status.pos.percent", self.reading_percent)
                 end,
             },
             {
                 text = _("Battery"),
-                keep_menu_open = true,
                 checked_func = function()
                     return self.battery == 1
                 end,
                 callback = function()
-                    self.battery = 1 - self.battery
-                    self:setAndSave("window.status.battery", "cre_header_battery", self.battery)
+                    self.battery = self.battery == 0 and 1 or 0
+                    self:setAndSave("cre_header_battery", "window.status.battery", self.battery)
                 end,
             },
             {
                 text = _("Battery percent"),
-                keep_menu_open = true,
                 enabled_func = function()
                     return self.battery == 1
                 end,
@@ -156,25 +145,25 @@ function ReaderCoptListener:getAltStatusBarMenu()
                     return self.battery_percent == 1
                 end,
                 callback = function()
-                    self.battery_percent = 1 - self.battery_percent
-                    self:setAndSave("window.status.battery.percent", "cre_header_battery_percent", self.battery_percent)
+                    self.battery_percent = self.battery_percent == 0 and 1 or 0
+                    self:setAndSave("cre_header_battery_percent", "window.status.battery.percent", self.battery_percent)
                 end,
             },
             {
                 text = _("Chapter marks"),
-                keep_menu_open = true,
                 checked_func = function()
                     return self.chapter_marks == 1
                 end,
                 callback = function()
-                    self.chapter_marks = 1 - self.chapter_marks
-                    self:setAndSave("crengine.page.header.chapter.marks", "cre_header_chapter_marks", self.chapter_marks)
+                    self.chapter_marks = self.chapter_marks == 0 and 1 or 0
+                    self:setAndSave("cre_header_chapter_marks", "crengine.page.header.chapter.marks", self.chapter_marks)
                 end,
                 separator = true,
             },
             {
+                keep_menu_open = true,
                 text_func = function()
-                    return T(_("Header font size (%1)"), G_reader_settings:readSetting("cre_header_status_font_size") or 20 )
+                    return T(_("Font size of top status bar (%1)"), G_reader_settings:readSetting("cre_header_status_font_size") or 20 )
                 end,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
@@ -187,15 +176,13 @@ function ReaderCoptListener:getAltStatusBarMenu()
                         default_value = 14,
                         title_text =  _("Size of top status bar"),
                         ok_text = _("Set size"),
-                        keep_shown_on_apply = true,
                         callback = function(spin)
-                            self:setAndSave("crengine.page.header.font.size", "cre_header_status_font_size", spin.value)
+                            self:setAndSave("cre_header_status_font_size", "crengine.page.header.font.size", spin.value)
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end
                     }
                     UIManager:show(size_spinner)
                 end,
-                keep_menu_open = true,
             },
         },
     }
