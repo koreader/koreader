@@ -232,17 +232,18 @@ function Button:onTapSelectButton()
                 -- The nil check is to discriminate the default from callers that explicitly request a specific radius.
                 if self[1].radius == nil then
                     self[1].radius = Size.radius.button
-                    -- And here, as the invert flag just causes a plain invertRect post-paint,
-                    -- it's easier to just invert the bg/fg colors ourselves,
+                    -- And here, it's easier to just invert the bg/fg colors ourselves,
                     -- so as to preserve the rounded corners in one step.
                     self[1].background = self[1].background:invert()
                     self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
+                    -- We do *NOT* set the invert flag, because it just adds an invertRect step at the end of the paintTo process,
+                    -- and we've already taken care of inversion in a way that won't mangle the rounded corners.
                 else
                     self[1].invert = true
                 end
 
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-                -- Keep the invert flag in both cases, mainly for the early return check below
+                -- But do make sure the invert flag is set in both cases, mainly for the early return check below
                 self[1].invert = true
             else
                 self[1].invert = true
@@ -272,10 +273,7 @@ function Button:onTapSelectButton()
             end
 
             -- If the callback closed our parent (which ought to have been the top level widget), abort early
-            if UIManager:getTopWidget() == self.show_parent then
-                print("After callback, Button is still shown")
-            else
-                print("Button was closed by callback")
+            if UIManager:getTopWidget() ~= self.show_parent then
                 return true
             end
 
