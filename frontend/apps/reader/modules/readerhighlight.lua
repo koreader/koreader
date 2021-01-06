@@ -83,7 +83,10 @@ function ReaderHighlight:init()
                 text = _("Search"),
                 callback = function()
                     _self:onHighlightSearch()
-                    _self:onClose()
+                    UIManager:close(self.highlight_dialog)
+                    -- We don't call _self:onClose(), crengine will highlight
+                    -- search matches on the current page, and self:clear()
+                    -- would redraw and remove crengine native highlights
                 end,
             }
         end,
