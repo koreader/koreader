@@ -872,9 +872,11 @@ function ReaderFooter:addToMainMenu(menu_items)
                     if self.settings.all_at_once then
                         self.mode = self.mode_list.page_progress
                         self:applyFooterMode()
+                        G_reader_settings:saveSetting("reader_footer_mode", self.mode)
+                    else
+                        G_reader_settings:saveSetting("reader_footer_mode", first_enabled_mode_num)
                     end
                     should_signal = true
-                    G_reader_settings:saveSetting("reader_footer_mode", first_enabled_mode_num)
                 elseif self.reclaim_height ~= prev_reclaim_height then
                     should_signal = true
                     should_update = true
@@ -899,6 +901,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     end
                     should_update = true
                     self:applyFooterMode()
+                    G_reader_settings:saveSetting("reader_footer_mode", self.mode)
                 end
                 if should_update or should_signal then
                     self:refreshFooter(should_update, should_signal)
@@ -1370,8 +1373,12 @@ function ReaderFooter:addToMainMenu(menu_items)
                     self.settings.disable_progress_bar = not self.settings.disable_progress_bar
                     if not self.settings.disable_progress_bar then
                         self:setTocMarkers()
+                    end
+                    -- If the status bar is currently disabled, switch to an innocuous mode to display it
+                    if not self.view.footer_visible then
                         self.mode = self.mode_list.page_progress
                         self:applyFooterMode()
+                        G_reader_settings:saveSetting("reader_footer_mode", self.mode)
                     end
                     self:refreshFooter(true, true)
                 end,
