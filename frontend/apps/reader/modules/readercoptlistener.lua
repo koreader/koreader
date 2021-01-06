@@ -174,11 +174,11 @@ function ReaderCoptListener:getAltStatusBarMenu()
             },
             {
                 text_func = function()
-                    return T(_("Header font size (%1)"), G_reader_settings:readSetting("cre_header_status_font_size") or 14 )
+                    return T(_("Header font size (%1)"), G_reader_settings:readSetting("cre_header_status_font_size") or 20 )
                 end,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
-                    local start_size = G_reader_settings:readSetting("cre_header_status_font_size") or 14
+                    local start_size = G_reader_settings:readSetting("cre_header_status_font_size") or 20
                     local size_spinner = SpinWidget:new{
                         width = math.floor(Device.screen:getWidth() * 0.6),
                         value = start_size,
