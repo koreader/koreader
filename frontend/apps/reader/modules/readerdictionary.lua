@@ -149,6 +149,7 @@ function ReaderDictionary:init()
     end
     -- Prepare the -u options to give to sdcv the dictionary order and if some are disabled
     self:updateSdcvDictNamesOptions()
+
     if not lookup_history then
         lookup_history = LuaData:open(DataStorage:getSettingsDir() .. "/lookup_history.lua", { name = "LookupHistory" })
     end
@@ -173,16 +174,28 @@ end
 
 
 function ReaderDictionary:updateSdcvDictNamesOptions()
-    self.enabled_dict_names = {}
-
     -- We cannot tell sdcv which dictionaries to ignore, but we
     -- can tell it which dictionaries to use, by using multiple
     -- -u <dictname> options.
     -- The order of the -u options controls the dictionary order
     -- that sdcv uses to order its results.
+
+    self.enabled_dict_names = {}
+
+    -- First, insert any preferred dicts, even if globally disabled
+    -- (this might allow enabling a dict only for a specific book,
+    -- while keeping it disabled for all others)
+    local preferred_names_already_in = {}
+    if self.preferred_dictionaries then
+        for _, name in ipairs(self.preferred_dictionaries) do
+            table.insert(self.enabled_dict_names, name)
+            preferred_names_already_in[name] = true
+        end
+    end
+
     local dicts_disabled = G_reader_settings:readSetting("dicts_disabled")
     for _, ifo in pairs(available_ifos) do
-        if not dicts_disabled[ifo.file] then
+        if not dicts_disabled[ifo.file] and not preferred_names_already_in[ifo.name] then
             table.insert(self.enabled_dict_names, ifo.name)
         end
     end
@@ -856,8 +869,8 @@ function ReaderDictionary:showDict(word, results, box, link)
             -- selected link, if any
             selected_link = link,
             results = results,
-            dictionary = self.default_dictionary,
             word_box = box,
+            preferred_dictionaries = self.preferred_dictionaries,
             -- differentiate between dict and wiki
             is_wiki = self.is_wiki,
             wiki_languages = self.wiki_languages,
@@ -1017,21 +1030,19 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
     end
 end
 
---[[ No longer used
-function ReaderDictionary:onUpdateDefaultDict(dict)
-    logger.dbg("make default dictionary:", dict)
-    self.default_dictionary = dict
-    UIManager:show(InfoMessage:new{
-        text = T(_("%1 is now the default dictionary for this document."),
-                 dict),
-        timeout = 2,
-    })
-    return true
-end
-]]--
-
 function ReaderDictionary:onReadSettings(config)
-    self.default_dictionary = config:readSetting("default_dictionary")
+    self.preferred_dictionaries = config:readSetting("preferred_dictionaries") or {}
+    if #self.preferred_dictionaries == 0 then
+        -- Legacy setting, when only one dict could be set as default/first to show
+        local default_dictionary = config:readSetting("default_dictionary")
+        if default_dictionary then
+            table.insert(self.preferred_dictionaries, default_dictionary)
+            config:delSetting("default_dictionary")
+        end
+    end
+    if #self.preferred_dictionaries > 0 then
+        self:updateSdcvDictNamesOptions()
+    end
     self.disable_fuzzy_search = config:readSetting("disable_fuzzy_search")
     if self.disable_fuzzy_search == nil then
         self.disable_fuzzy_search = G_reader_settings:isTrue("disable_fuzzy_search")
@@ -1040,10 +1051,34 @@ end
 
 function ReaderDictionary:onSaveSettings()
     if self.ui.doc_settings then
-        logger.dbg("save default dictionary", self.default_dictionary)
-        self.ui.doc_settings:saveSetting("default_dictionary", self.default_dictionary)
+        self.ui.doc_settings:saveSetting("preferred_dictionaries", self.preferred_dictionaries)
         self.ui.doc_settings:saveSetting("disable_fuzzy_search", self.disable_fuzzy_search)
     end
+end
+
+function ReaderDictionary:onTogglePreferredDict(dict)
+    if not self.preferred_dictionaries then
+        -- Invoked from FileManager: no preferred dict to manage
+        return true
+    end
+    local removed = false
+    for idx, name in ipairs(self.preferred_dictionaries) do
+        if dict == name then
+            removed = true
+            table.remove(self.preferred_dictionaries, idx)
+            break
+        end
+    end
+    if not removed then -- insert it as first
+        table.insert(self.preferred_dictionaries, 1, dict)
+    end
+    UIManager:show(InfoMessage:new{
+        text = removed and T(_("%1 is no longer a preferred dictionary for this document."), dict)
+                        or T(_("%1 is now the preferred dictionary for this document."), dict),
+        timeout = 2,
+    })
+    self:updateSdcvDictNamesOptions()
+    return true
 end
 
 function ReaderDictionary:toggleFuzzyDefault()
