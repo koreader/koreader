@@ -812,20 +812,16 @@ function TouchMenu:onMenuSelect(item)
                 callback = item.callback_func()
             end
             if callback then
-                -- put stuff in scheduler so we can see
-                -- the effect of inverted menu item
-                UIManager:tickAfterNext(function()
-                    -- Provide callback with us, so it can call our
-                    -- closemenu() or updateItems() when it sees fit
-                    -- (if not providing checked or checked_fund, caller
-                    -- must set keep_menu_open=true if that is wished)
-                    callback(self)
-                    if refresh then
-                        self:updateItems()
-                    elseif not item.keep_menu_open then
-                        self:closeMenu()
-                    end
-                end)
+                -- Provide callback with us, so it can call our
+                -- closemenu() or updateItems() when it sees fit
+                -- (if not providing checked or checked_fund, caller
+                -- must set keep_menu_open=true if that is wished)
+                callback(self)
+                if refresh then
+                    self:updateItems()
+                elseif not item.keep_menu_open then
+                    self:closeMenu()
+                end
             end
         else
             table.insert(self.item_table_stack, self.item_table)
@@ -856,17 +852,15 @@ function TouchMenu:onMenuHold(item)
             callback = item.hold_callback_func()
         end
         if callback then
-            UIManager:tickAfterNext(function()
-                -- With hold, the default is to keep menu open, as we're
-                -- most often showing a ConfirmBox that can be cancelled
-                -- (provide hold_keep_menu_open=false to override)
-                if item.hold_keep_menu_open == false then
-                    self:closeMenu()
-                end
-                -- Provide callback with us, so it can call our
-                -- closemenu() or updateItems() when it sees fit
-                callback(self)
-            end)
+            -- With hold, the default is to keep menu open, as we're
+            -- most often showing a ConfirmBox that can be cancelled
+            -- (provide hold_keep_menu_open=false to override)
+            if item.hold_keep_menu_open == false then
+                self:closeMenu()
+            end
+            -- Provide callback with us, so it can call our
+            -- closemenu() or updateItems() when it sees fit
+            callback(self)
         end
     elseif item.help_text or type(item.help_text_func) == "function" then
         local help_text = item.help_text
