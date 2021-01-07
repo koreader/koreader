@@ -181,7 +181,9 @@ function TouchMenuItem:onTapSelect(arg, ges)
         --       and because "fast" can have some weird side-effects on some devices in this specific instance...
         --       We do double-check that the top-level widget is still TouchMenu, though,
         --       because stuff may request the menu staying open *below* showing a full-screen new widget (e.g., statistics) ;).
-        if (self.item.hold_keep_menu_open or self.item.keep_menu_open) and (UIManager:getTopWidget() == self.menu or not UIManager:getTopWidget().covers_fullscreen) then
+        --       While we could check for covers_fullscreen, that doesn't account for a popup that might fall right on top of the menu entry,
+        --       hence the hacky previous refresh region approach...
+        if (self.item.hold_keep_menu_open or self.item.keep_menu_open) and (UIManager:getTopWidget() == self.menu or highlight_dimen:notIntersectWith(UIManager:getPreviousRefreshRegion())) then
             UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
             UIManager:setDirty(nil, function()
                 return "ui", highlight_dimen
