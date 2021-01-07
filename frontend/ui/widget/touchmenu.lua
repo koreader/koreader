@@ -179,15 +179,28 @@ function TouchMenuItem:onTapSelect(arg, ges)
         --       But when stuff doesn't repaint the menu and keeps it open, we need to do it.
         --       Since it's an *un*highlight containing text, we make it "ui" and not "fast", both so it won't mangle text,
         --       and because "fast" can have some weird side-effects on some devices in this specific instance...
-        --       We do double-check that the top-level widget is still TouchMenu, though,
-        --       because stuff may request the menu staying open *below* showing a full-screen new widget (e.g., statistics) ;).
-        --       While we could check for covers_fullscreen, that doesn't account for a popup that might fall right on top of the menu entry,
-        --       hence the hacky previous refresh region approach...
-        if (self.item.hold_keep_menu_open or self.item.keep_menu_open) and (UIManager:getTopWidget() == self.menu or highlight_dimen:notIntersectWith(UIManager:getPreviousRefreshRegion())) then
-            UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
-            UIManager:setDirty(nil, function()
-                return "ui", highlight_dimen
-            end)
+        if (self.item.hold_keep_menu_open or self.item.keep_menu_open) then
+            local top_widget = UIManager:getTopWidget()
+            -- If the callback opened a full-screen widget, we're done
+            if top_widget.covers_fullscreen then
+                return true
+            end
+
+            -- If we're still on top, or if a modal was opened outside of our highlight region, we can unhilight safely
+            if (top_widget == self.menu or highlight_dimen:notIntersectWith(UIManager:getPreviousRefreshRegion())) then
+                UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+                UIManager:setDirty(nil, function()
+                    return "ui", highlight_dimen
+                end)
+            else
+                -- That leaves modals that might have been displayed on top of the highlighted menu entry, in which case,
+                -- we can't take any shortcuts, as it would invert/paint *over* the popop.
+                -- Instead, fence the callback to avoid races, and repaint the *full* widget stack properly.
+                UIManager:waitForVSync()
+                UIManager:setDirty(self.show_parent, function()
+                    return "ui", highlight_dimen
+                end)
+            end
         end
         --UIManager:forceRePaint()
     end
