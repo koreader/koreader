@@ -175,7 +175,6 @@ rm -rf cache clipboard history ota \
 
 sed '1d' reader.lua >tempfile
 sed -i.backup 's/.\/reader.lua/koreader/' tempfile
-sed -i.backup 's/the last viewed document will be opened"/" .. os.getenv("HOME") .. " will be opened"/' tempfile
 mv tempfile reader.lua
 rm -f tempfile*
 chmod -x reader.lua

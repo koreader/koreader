@@ -198,13 +198,6 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     fi
 fi
 
-# fallback for old fmon, KFMon and advboot users (-> if no args were passed to the script, start the FM)
-if [ "$#" -eq 0 ]; then
-    args="/mnt/onboard"
-else
-    args="$*"
-fi
-
 # check whether PLATFORM & PRODUCT have a value assigned by rcS
 if [ -z "${PRODUCT}" ]; then
     # shellcheck disable=SC2046
@@ -333,7 +326,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         ko_do_dns
     fi
 
-    ./reader.lua "${args}" >>crash.log 2>&1
+    ./reader.lua "$@" >>crash.log 2>&1
     RETURN_VALUE=$?
 
     # Did we crash?
