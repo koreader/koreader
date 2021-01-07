@@ -1704,6 +1704,11 @@ function ReaderFooter:addToMainMenu(menu_items)
     end
     table.insert(sub_items, getMinibarOption("book_title"))
     table.insert(sub_items, getMinibarOption("book_chapter"))
+
+    -- If using crengine, add Alt status bar items at top
+    if self.ui.crelistener then
+        table.insert(sub_items, 1, self.ui.crelistener:getAltStatusBarMenu())
+    end
 end
 
 -- this method will be updated at runtime based on user setting
