@@ -101,6 +101,13 @@ function ReaderDictionary:init()
         os.getenv("STARDICT_DATA_DIR") or
         DataStorage:getDataDir() .. "/data/dict"
 
+    -- Show the "Seaching..." InfoMessage after this delay
+    self.lookup_msg_delay = 0.5
+    -- Allow quick interruption or dismiss of search result window
+    -- with tap if done before this delay. After this delay, the
+    -- result window is shown and dismiss prevented for a few 100ms
+    self.quick_dismiss_before_delay = 3
+
     -- Gather info about available dictionaries
     if not available_ifos then
         available_ifos = {}
@@ -797,11 +804,16 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
             {
                 dict = "",
                 word = word,
-                definition = lookup_cancelled and _("Dictionary lookup canceled.") or _("No definition found."),
+                definition = lookup_cancelled and _("Dictionary lookup interrupted.") or _("No definition found."),
                 no_result = true,
                 lookup_cancelled = lookup_cancelled,
             }
         }
+    end
+    if lookup_cancelled then
+        -- Also put this as a k/v into the results array: when using dict_ext,
+        -- we may get results from the 1st lookup, and have interrupted the 2nd.
+        final_results.lookup_cancelled = true
     end
 
     return final_results
@@ -839,11 +851,11 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
         return
     end
 
-    self:showLookupInfo(word, 0.5)
+    self:showLookupInfo(word, self.lookup_msg_delay)
 
-    local lookup_start_ts = ffiUtil.getTimestamp()
+    self._lookup_start_ts = ffiUtil.getTimestamp()
     local results = self:startSdcv(word, dict_names, fuzzy_search)
-    if results and results[1] and results[1].lookup_cancelled and ffiUtil.getDuration(lookup_start_ts) < 1.5 then
+    if results and results.lookup_cancelled and ffiUtil.getDuration(self._lookup_start_ts) <= self.quick_dismiss_before_delay then
         -- If interrupted quickly just after launch, don't display anything
         -- (this might help avoiding refreshes and the need to dismiss
         -- after accidental long-press when holding a device).
@@ -902,10 +914,11 @@ function ReaderDictionary:showDict(word, results, box, link)
     self:dismissLookupInfo()
     if results and results[1] then
         UIManager:show(self.dict_window)
-        if not results[1].lookup_cancelled then
-            -- Discard queued and coming up events to avoid accidental
-            -- dismissal (but not if lookup interrupted, so 2 quick
-            -- taps can discard everything)
+        if not results.lookup_cancelled and ffiUtil.getDuration(self._lookup_start_ts) > self.quick_dismiss_before_delay then
+            -- If the search took more than a few seconds to be done, discard
+            -- queued and coming up events to avoid a voluntary dismissal
+            -- (because the user felt the result would not come) to kill the
+            -- result that finally came and is about to be displayed
             UIManager:discardEvents(true)
         end
     end

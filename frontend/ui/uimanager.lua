@@ -811,11 +811,13 @@ function UIManager:discardEvents(set_or_seconds)
         -- is really painted on screen) are discarded.
         if Device:hasEinkScreen() then
             -- A screen refresh can take a few 100ms,
-            -- sometimes > 500ms on some devices/temperatures
-            usecs = 600000
+            -- sometimes > 500ms on some devices/temperatures.
+            -- So, block for 400ms (to have it displayed) + 400ms
+            -- for user reaction to it
+            usecs = 800000
         else
-            -- On non-eInk screen, it's usually instantaneous
-            usecs = 300000
+            -- On non-eInk screen, display is usually instantaneous
+            usecs = 400000
         end
     else -- we expect a number
         usecs = set_or_seconds * MILLION
