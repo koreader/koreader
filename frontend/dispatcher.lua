@@ -23,6 +23,7 @@ Each setting contains:
 * args: allowed values for string.
 * toggle: display name for args
 * separator: put a separator after in the menu list
+* configurable: can be parsed from cre/kopt and used to set document.configurable. Should not be set manualy
 --]]--
 
 local CreOptions = require("ui/data/creoptions")
@@ -289,6 +290,9 @@ function Dispatcher:init()
         for y=1,#base[i].options do
             local option = base[i].options[y]
             if settingsList[option.name] ~= nil then
+                if option.name ~= nil and option.values ~= nil then
+                    settingsList[option.name].configurable = {name = option.name, values = option.values}
+                end
                 if settingsList[option.name].event == nil then
                     settingsList[option.name].event = option.event
                 end
@@ -618,6 +622,15 @@ function Dispatcher:execute(ui, settings, gesture)
             if settingsList[k].category == "incrementalnumber" then
                 local arg = v ~= 0 and v or gesture or 0
                 ui:handleEvent(Event:new(settingsList[k].event, arg))
+            end
+            if settingsList[k].configurable ~= nil then
+                 local value = v
+                 if type(v) ~= "number" then
+                     for i, r in ipairs(settingsList[k].args) do
+                        if v == r then value = settingsList[k].configurable.values[i] break end
+                     end
+                 end
+                 ui.document.configurable[settingsList[k].configurable.name] = value
             end
         end
     end
