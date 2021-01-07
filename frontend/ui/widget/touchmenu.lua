@@ -179,7 +179,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
         --       But when stuff doesn't repaint the menu and keeps it open, we need to do it.
         --       Since it's an *un*highlight containing text, we make it "ui" and not "fast", both so it won't mangle text,
         --       and because "fast" can have some weird side-effects on some devices in this specific instance...
-        if (self.item.hold_keep_menu_open or self.item.keep_menu_open) then
+        if self.item.hold_keep_menu_open or self.item.keep_menu_open then
             local top_widget = UIManager:getTopWidget()
             -- If the callback opened a full-screen widget, we're done
             if top_widget.covers_fullscreen then
@@ -187,7 +187,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
             end
 
             -- If we're still on top, or if a modal was opened outside of our highlight region, we can unhilight safely
-            if (top_widget == self.menu or highlight_dimen:notIntersectWith(UIManager:getPreviousRefreshRegion())) then
+            if top_widget == self.menu or highlight_dimen:notIntersectWith(UIManager:getPreviousRefreshRegion()) then
                 UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
                 UIManager:setDirty(nil, function()
                     return "ui", highlight_dimen
