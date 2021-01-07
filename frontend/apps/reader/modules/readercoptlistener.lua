@@ -6,8 +6,7 @@ local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-local ReaderCoptListener = EventListener:new{
-}
+local ReaderCoptListener = EventListener:new{}
 
 function ReaderCoptListener:onReadSettings(config)
     local view_mode = config:readSetting("copt_view_mode") or
@@ -55,11 +54,11 @@ function ReaderCoptListener:setAndSave(setting, property, value)
 end
 
 local about_text = _([[
-On CRE documents only, an alt status bar can be displayed at top of screen, with or without the regular bottom status bar.
+In CRE documents, an alternative status bar can be displayed at the top of the screen, with or without the regular bottom status bar.
 
 Enabling this alt status bar, per document or by default, can be done in the bottom menu.
 
-You can set here which information this top status bar will show.]])
+The alternative status bar can be configured here.]])
 
 function ReaderCoptListener:getAltStatusBarMenu()
     return {
@@ -117,7 +116,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 end,
             },
             {
-                text = _("Reading percent"),
+                text = _("Reading percentage"),
                 checked_func = function()
                     return self.reading_percent == 1
                 end,
@@ -137,7 +136,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 end,
             },
             {
-                text = _("Battery percent"),
+                text = _("Battery percentage"),
                 enabled_func = function()
                     return self.battery == 1
                 end,
@@ -163,7 +162,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
             {
                 keep_menu_open = true,
                 text_func = function()
-                    return T(_("Font size of top status bar (%1)"), G_reader_settings:readSetting("cre_header_status_font_size") or 20 )
+                    return T(_("Top status bar font size (%1)"), G_reader_settings:readSetting("cre_header_status_font_size") or 20 )
                 end,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
