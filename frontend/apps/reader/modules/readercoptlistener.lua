@@ -160,7 +160,6 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 separator = true,
             },
             {
-                keep_menu_open = true,
                 text_func = function()
                     return T(_("Top status bar font size (%1)"), G_reader_settings:readSetting("cre_header_status_font_size") or 20 )
                 end,
@@ -173,6 +172,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
                         value_min = 8,
                         value_max = 36,
                         default_value = 14,
+                        keep_shown_on_apply = true,
                         title_text =  _("Size of top status bar"),
                         ok_text = _("Set size"),
                         callback = function(spin)
