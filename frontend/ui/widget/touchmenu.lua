@@ -186,7 +186,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
                 return true
             end
 
-            -- If we're still on top, or if a modal was opened outside of our highlight region, we can unhilight safely
+            -- If we're still on top, or if a modal was opened outside of our highlight region, we can unhighlight safely
             if top_widget == self.menu or highlight_dimen:notIntersectWith(UIManager:getPreviousRefreshRegion()) then
                 UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
                 UIManager:setDirty(nil, function()

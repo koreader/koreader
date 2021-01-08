@@ -182,7 +182,7 @@ function ImageWidget:_loadfile()
             -- Now, if that was *also* one of our icons, and it has an alpha channel,
             -- compose it against a background-colored BB now, and cache *that*.
             -- This helps us avoid repeating alpha-blending steps down the line,
-            -- and also ensures icon highlights/unhilights behave sensibly.
+            -- and also ensures icon highlights/unhighlights behave sensibly.
             if self.is_icon then
                 local bbtype = self._bb:getType()
                 if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then

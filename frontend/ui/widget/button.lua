@@ -54,7 +54,7 @@ local Button = InputContainer:new{
     text_font_face = "cfont",
     text_font_size = 20,
     text_font_bold = true,
-    vsync = nil, -- when "flash_ui" is enabled, allow bundling the highlight with the callback, and fence that batch away from the unhilight. Avoid delays when callback requires a "partial" on Kobo Mk. 7, c.f., ffi/framebuffer_mxcfb for more details.
+    vsync = nil, -- when "flash_ui" is enabled, allow bundling the highlight with the callback, and fence that batch away from the unhighlight. Avoid delays when callback requires a "partial" on Kobo Mk. 7, c.f., ffi/framebuffer_mxcfb for more details.
 }
 
 function Button:init()
@@ -294,7 +294,7 @@ function Button:onTapSelectButton()
             UIManager:setDirty(nil, function()
                 return self.enabled and "fast" or "ui", self[1].dimen
             end)
-            --UIManager:forceRePaint() -- Ensures the unhilight happens now, instead of potentially waiting and having it batched with something else.
+            --UIManager:forceRePaint() -- Ensures the unhighlight happens now, instead of potentially waiting and having it batched with something else.
         end
     elseif self.tap_input then
         self:onInput(self.tap_input)
