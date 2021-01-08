@@ -198,6 +198,7 @@ end
 function InfoMessage:onCloseWidget()
     if self._delayed_show_action then
         UIManager:unschedule(self._delayed_show_action)
+        self._delayed_show_action = nil
     end
     if self.invisible then
         -- Still invisible, no setDirty needed
@@ -256,6 +257,7 @@ end
 function InfoMessage:dismiss()
     if self._delayed_show_action then
         UIManager:unschedule(self._delayed_show_action)
+        self._delayed_show_action = nil
     end
     self.dismiss_callback()
     UIManager:close(self)
