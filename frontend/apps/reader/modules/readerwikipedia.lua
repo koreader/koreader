@@ -502,7 +502,7 @@ function ReaderWikipedia:lookupWikipedia(word, is_sane, box, get_fullpage, force
         -- dummy results
         local definition
         if lookup_cancelled then
-            definition = _("Wikipedia request canceled.")
+            definition = _("Wikipedia request interrupted.")
         elseif ok then
             definition = no_result_text
         else
