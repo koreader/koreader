@@ -762,11 +762,13 @@ function ReaderHighlight:onHold(arg, ges)
             local boxes = {}
             table.insert(boxes, self.selected_word.sbox)
             self.view.highlight.temp[self.hold_pos.page] = boxes
+            -- Unfortunately, getWordFromPosition() may not return good coordinates,
+            -- so refresh the whole page
+            UIManager:setDirty(self.dialog, "ui")
+        else
+            -- With crengine, getWordFromPosition() does return good coordinates
+            UIManager:setDirty(self.dialog, "ui", self.selected_word.sbox)
         end
-        -- Unfortunately, CREngine does not return good coordinates
-        -- UIManager:setDirty(self.dialog, "ui")
-        -- But now it does:
-        UIManager:setDirty(self.dialog, "ui", self.selected_word.sbox)
         self:_resetHoldTimer()
         if word.pos0 then
             -- Remember original highlight start position, so we can show
