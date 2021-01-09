@@ -1160,23 +1160,6 @@ function util.clearTable(t)
     for i = 0, c do t[i] = nil end
 end
 
---- Dumps a table into a file.
---- @table t the table to be dumped
---- @string file the file to store the table
---- @treturn bool true on success, false otherwise
-function util.dumpTable(t, file)
-    if not t or not file or file == "" then return end
-    local dump = require("dump")
-    local f = io.open(file, "w")
-    if f then
-        f:write("return "..dump(t))
-        f:close()
-        return true
-    end
-    return false
-end
-
-
 --- Encode URL also known as percent-encoding see https://en.wikipedia.org/wiki/Percent-encoding
 --- @string text the string to encode
 --- @treturn encode string

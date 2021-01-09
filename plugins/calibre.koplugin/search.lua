@@ -16,24 +16,10 @@ local Menu = require("ui/widget/menu")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local persist = require("persist")
 local socket = require("socket")
-local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
-
--- cache files
-local libraries_file = "calibre-libraries.lua"
-local metadata_file = "calibre-books.lua"
-
--- loads a table from disk
-local function loadTable(path)
-    local ok, data = pcall(dofile, path)
-    if ok then
-        return data
-    else
-        return nil, data
-    end
-end
 
 -- get root dir for disk scans
 local function getDefaultRootDir()
@@ -183,8 +169,15 @@ local CalibreSearch = InputContainer:new{
         "find_by_authors",
         "find_by_path",
     },
-    user_libraries = DataStorage:getDataDir() .. "/cache/" .. libraries_file,
-    user_book_cache = DataStorage:getDataDir() .. "/cache/" .. metadata_file,
+
+    cache_libs = persist:new{
+        path = DataStorage:getDataDir() .. "/cache/calibre-libraries.lua",
+    },
+
+    cache_books = persist:new{
+        path = DataStorage:getDataDir() .. "/cache/calibre-books.dat",
+        codec = "bitser",
+    },
 }
 
 function CalibreSearch:ShowSearch()
@@ -311,7 +304,7 @@ function CalibreSearch:find(option)
     end
 
     if #self.libraries == 0 then
-        local libs, err = loadTable(self.user_libraries)
+        local libs, err = self.cache_libs:loadFile()
         if not libs then
             logger.warn("no calibre libraries", err)
             self:prompt(_("No calibre libraries"))
@@ -504,7 +497,7 @@ function CalibreSearch:prompt(message)
                 paths = paths .. "\n" .. _("SD card") .. ": " .. sd_paths
             end
 
-            util.dumpTable(self.libraries, self.user_libraries)
+            self.cache_libs:saveFile(self.libraries)
             self:invalidateCache()
             self.books = self:getMetadata()
             local info_text
@@ -559,7 +552,7 @@ end
 
 -- invalidate current cache
 function CalibreSearch:invalidateCache()
-    util.removeFile(self.user_book_cache)
+    self.cache_books:removeFile()
     self.books = {}
 end
 
@@ -571,12 +564,14 @@ function CalibreSearch:getMetadata()
     -- try to load metadata from cache
     if self.cache_metadata then
         local function cacheIsNewer(timestamp)
-            if not timestamp then return false end
+            local file_timestamp = self.cache_books:timestamp()
+            if not timestamp or not file_timestamp then return false end
             local Y, M, D, h, m, s = timestamp:match("(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)")
             local date = os.time({year = Y, month = M, day = D, hour = h, min = m, sec = s})
-            return lfs.attributes(self.user_book_cache, "modification") > date
+            return file_timestamp > date
         end
-        local cache, err = loadTable(self.user_book_cache)
+
+        local cache, err = self.cache_books:loadFile()
         if not cache then
             logger.warn("invalid cache:", err)
         else
@@ -612,7 +607,7 @@ function CalibreSearch:getMetadata()
         for index, book in ipairs(books) do
             table.insert(dump, index, removeNull(book))
         end
-        util.dumpTable(dump, self.user_book_cache)
+        self.cache_books:saveFile(dump)
     end
     local elapsed = socket.gettime() - start
     logger.info(string.format(template, #books, "calibre", elapsed * 1000))
