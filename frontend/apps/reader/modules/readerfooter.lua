@@ -373,7 +373,7 @@ function ReaderFooter:init()
         -- disable_progress_bar = true,
         disabled = false,
         all_at_once = false,
-        compact_status_bar = false,
+        compact_items = false,
         reclaim_height = false,
         toc_markers = true,
         battery = Device:hasBattery(),
@@ -791,7 +791,6 @@ function ReaderFooter:textOptionTitles(option)
     local symbol = self.settings.item_prefix or "icons"
     local option_titles = {
         all_at_once = _("Show all at once"),
-        compact_status_bar = _("Compact status bar"),
         reclaim_height = _("Reclaim bar height from bottom margin"),
         bookmark_count = T(_("Bookmark count (%1)"), symbol_prefix[symbol].bookmark_count),
         page_progress = T(_("Current page (%1)"), "/"),
@@ -804,6 +803,7 @@ function ReaderFooter:textOptionTitles(option)
             and T(_("Progress percentage (%1)"), symbol_prefix[symbol].percentage) or ("Progress percentage"),
         book_time_to_read = T(_("Book time to read (%1)"),symbol_prefix[symbol].book_time_to_read),
         chapter_time_to_read = T(_("Chapter time to read (%1)"), symbol_prefix[symbol].chapter_time_to_read),
+        compact_items = _("Compact items"),
         frontlight = T(_("Frontlight level (%1)"), symbol_prefix[symbol].frontlight),
         mem_usage = T(_("KOReader memory usage (%1)"), symbol_prefix[symbol].mem_usage),
         wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
@@ -941,7 +941,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
             },
             getMinibarOption("all_at_once", self.updateFooterTextGenerator),
-            getMinibarOption("compact_status_bar", self.updateFooterTextGenerator),
             getMinibarOption("reclaim_height"),
             {
                 text = _("Auto refresh time"),
@@ -971,6 +970,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     self:refreshFooter(true, true)
                 end,
             },
+            getMinibarOption("compact_items", self.updateFooterTextGenerator),
             {
                 text = _("Hide empty items"),
                 help_text = _([[This will hide values like 0 or off.]]),
@@ -1732,7 +1732,7 @@ function ReaderFooter:genAllFooterText()
         -- Skip empty generators, so they don't generate bogus separators
         local text = gen(self)
         if text and text ~= "" then
-            if self.settings.compact_status_bar then
+            if self.settings.compact_items then
                 -- strip all non-alphanumerics, whitespace, slashes, colons, periods, percents
                 text = text:gsub('[^%w%s-/:.%%]','')
                 -- make things smaller by removing the trailing and leading spaces around slashes
