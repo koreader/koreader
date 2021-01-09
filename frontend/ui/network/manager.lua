@@ -594,7 +594,7 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
         table.sort(network_list,
            function(l, r) return l.signal_quality > r.signal_quality end)
         local success = false
-        for idx, network in ipairs(network_list) do
+        for dummy, network in ipairs(network_list) do
             if network.password then
                 success = NetworkMgr:authenticateNetwork(network)
                 if success then
