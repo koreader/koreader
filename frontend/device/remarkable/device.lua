@@ -186,7 +186,7 @@ function Remarkable1:suspend()
 end
 
 function Remarkable2:suspend()
-    -- Need to remove brcmfmac kernel module before suspend
+    -- Need to remove brcmfmac kernel module before suspend. Otherwise the module crashes on wakeup
     turnOffWifi(self.model)
 
     os.execute("systemctl suspend")
