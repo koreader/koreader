@@ -187,7 +187,7 @@ end
 
 function Remarkable2:suspend()
     -- Need to remove brcmfmac kernel module before suspend
-    turnOffWifi("reMarkable 2")
+    turnOffWifi(self.model)
 
     os.execute("systemctl suspend")
     -- While device is suspended, when the user presses the power button and wakes up the device,
