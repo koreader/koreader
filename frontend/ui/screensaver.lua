@@ -274,12 +274,14 @@ function Screensaver:show(event, fallback_message)
 
     -- "as-is" mode obviously requires not mangling the background ;).
     if screensaver_type == "disable" then
-        -- NOTE: Ideally, "disable" mode should *honor* the "background" options.
+        -- NOTE: Ideally, "disable" mode should *honor* all the "background" options.
         --       Unfortunately, the no background option is much more recent than the "disable" mode,
         --       and as such, the default assumes that in "disable" mode, the default background is nil instead of black.
-        --       We previously honored the *white* option, but it doesn't make much sense to allow white but not black,
-        --       so just enforce nil, no matter what.
-        background = nil
+        --       This implies that, for the same legacy reasons, we have to honor the *white* background setting here...
+        --       (Which means that you can have no background, a white background, but *NOT* a black background in this mode :/).
+        if not self:whiteBackground() then
+            background = nil
+        end
     end
 
     local lastfile = G_reader_settings:readSetting("lastfile")
