@@ -373,6 +373,7 @@ function ReaderFooter:init()
         -- disable_progress_bar = true,
         disabled = false,
         all_at_once = false,
+        compact_status_bar = false,
         reclaim_height = false,
         toc_markers = true,
         battery = Device:hasBattery(),
@@ -790,6 +791,7 @@ function ReaderFooter:textOptionTitles(option)
     local symbol = self.settings.item_prefix or "icons"
     local option_titles = {
         all_at_once = _("Show all at once"),
+        compact_status_bar = _("Compact status bar"),
         reclaim_height = _("Reclaim bar height from bottom margin"),
         bookmark_count = T(_("Bookmark count (%1)"), symbol_prefix[symbol].bookmark_count),
         page_progress = T(_("Current page (%1)"), "/"),
@@ -939,6 +941,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
             },
             getMinibarOption("all_at_once", self.updateFooterTextGenerator),
+            getMinibarOption("compact_status_bar", self.updateFooterTextGenerator),
             getMinibarOption("reclaim_height"),
             {
                 text = _("Auto refresh time"),
@@ -1729,7 +1732,15 @@ function ReaderFooter:genAllFooterText()
         -- Skip empty generators, so they don't generate bogus separators
         local text = gen(self)
         if text and text ~= "" then
-            table.insert(info, BD.wrap(text))
+            if self.settings.compact_status_bar then
+                -- strip all non-alphanumerics, whitespace, slashes, colons, periods, percents
+                text = text:gsub('[^%w%s-/:.%%]','')
+                -- make things smaller by removing the trailing and leading spaces around slashes
+                text = text:gsub(' / ', '/')
+                table.insert(info, BD.wrap(text))
+            else
+                table.insert(info, BD.wrap(text))
+            end
         end
     end
     return table.concat(info, BD.wrap(separator))
