@@ -497,12 +497,13 @@ function ReaderTypeset:onSetPageMargins(margins, refresh_callback)
             text = T(_([[
 Margins set to:
 
-  horizontal: %1 (%2px)
-  top: %3 (%4px)
-  bottom: %5 (%6px)
+  left: %1 (%2px)
+  right: %3 (%4px)
+  top: %5 (%6px)
+  bottom: %7 (%8px)
 
 Tap to dismiss.]]),
-            margins[1], left, margins[2], top, margins[4], bottom),
+            margins[1], left, margins[3], right, margins[2], top, margins[4], bottom),
             dismiss_callback = refresh_callback,
         })
     end
