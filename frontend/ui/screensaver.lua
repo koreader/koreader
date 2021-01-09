@@ -265,11 +265,13 @@ function Screensaver:show(event, fallback_message)
     end
 
     local widget = nil
+    local no_background = false
     local background = Blitbuffer.COLOR_BLACK
     if self:whiteBackground() then
         background = Blitbuffer.COLOR_WHITE
     elseif self:noBackground() then
         background = nil
+        no_background = true
     end
 
     -- "as-is" mode obviously requires not mangling the background ;).
@@ -281,6 +283,7 @@ function Screensaver:show(event, fallback_message)
         --       (Which means that you can have no background, a white background, but *NOT* a black background in this mode :/).
         if not self:whiteBackground() then
             background = nil
+            no_background = true
         end
     end
 
@@ -399,7 +402,7 @@ function Screensaver:show(event, fallback_message)
     if show_message == true then
         local screensaver_message = G_reader_settings:readSetting(prefix.."screensaver_message")
         local message_pos = G_reader_settings:readSetting(prefix.."screensaver_message_position")
-        if self:noBackground() and not widget then
+        if no_background and widget == nil then
             covers_fullscreen = false
         end
         if screensaver_message == nil and prefix ~= "" then
