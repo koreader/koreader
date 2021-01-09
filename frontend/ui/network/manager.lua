@@ -594,23 +594,22 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
         table.sort(network_list,
            function(l, r) return l.signal_quality > r.signal_quality end)
         local success = false
-        table.foreach(network_list,
-           function(idx, network)
-               if network.password then
-                   success = NetworkMgr:authenticateNetwork(network)
-                   if success then
-                       NetworkMgr:obtainIP()
-                       if complete_callback then
-                           complete_callback()
-                       end
-                       UIManager:show(InfoMessage:new{
-                           text = T(_("Connected to network %1"), BD.wrap(network.ssid)),
-                           timeout = 3,
-                       })
-                       return
-                   end
-               end
-           end)
+        for idx, network in pairs(network_list) do
+            if network.password then
+                success = NetworkMgr:authenticateNetwork(network)
+                if success then
+                    NetworkMgr:obtainIP()
+                    if complete_callback then
+                        complete_callback()
+                    end
+                    UIManager:show(InfoMessage:new{
+                        text = T(_("Connected to network %1"), BD.wrap(network.ssid)),
+                        timeout = 3,
+                    })
+                    break
+                end
+            end
+        end
         if not success then
             UIManager:show(require("ui/widget/networksetting"):new{
                 network_list = network_list,
