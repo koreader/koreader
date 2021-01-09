@@ -272,6 +272,16 @@ function Screensaver:show(event, fallback_message)
         background = nil
     end
 
+    -- "as-is" mode obviously requires not mangling the background ;).
+    if screensaver_type == "disable" then
+        -- NOTE: Ideally, "disable" mode should *honor* the "background" options.
+        --       Unfortunately, the no background option is much more recent than the "disable" mode,
+        --       and as such, the default assumes that in "disable" mode, the default background is nil instead of black.
+        --       We previously honored the *white* option, but it doesn't make much sense to allow white but not black,
+        --       so just enforce nil, no matter what.
+        background = nil
+    end
+
     local lastfile = G_reader_settings:readSetting("lastfile")
     if screensaver_type == "document_cover" then
         -- Set lastfile to the document of which we want to show the cover.
