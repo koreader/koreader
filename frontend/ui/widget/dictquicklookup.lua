@@ -28,6 +28,7 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
+local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
 
@@ -70,6 +71,8 @@ function DictQuickLookup:init()
     self.image_alt_face = Font:getFace("cfont", font_size_alt)
     if Device:hasKeys() then
         self.key_events = {
+            ReadPrevResult = {{Input.group.PgBack}, doc = "read prev result"},
+            ReadNextResult = {{Input.group.PgFwd}, doc = "read next result"},
             Close = { {"Back"}, doc = "close quick lookup" }
         }
     end
@@ -948,9 +951,19 @@ function DictQuickLookup:changeToDefaultDict()
 end
 ]]--
 
-function DictQuickLookup:onAnyKeyPressed()
-    -- triggered by our defined key events
-    UIManager:close(self)
+function DictQuickLookup:onReadNextResult()
+    self:changeToNextDict()
+    return true
+end
+
+function DictQuickLookup:onReadPrevResult()
+    local prev_index = self.dict_index
+    self:changeToPrevDict()
+    if self.dict_index ~= prev_index then
+        -- Jump directly to bottom of previous dict definition
+        -- to keep "continuous reading with tap" consistent
+        self.definition_widget[1]:scrollToRatio(1) -- 1 = 100% = bottom
+    end
     return true
 end
 
@@ -971,15 +984,9 @@ function DictQuickLookup:onTap(arg, ges_ev)
         -- will pop it up for us here when it can't scroll anymore).
         -- This allow for continuous reading of results' definitions with tap.
         if BD.flipIfMirroredUILayout(ges_ev.pos.x < Screen:getWidth()/2) then
-            local prev_index = self.dict_index
-            self:changeToPrevDict()
-            if self.dict_index ~= prev_index then
-                -- Jump directly to bottom of previous dict definition
-                -- to keep "continuous reading with tap" consistent
-                self.definition_widget[1]:scrollToRatio(1) -- 1 = 100% = bottom
-            end
+            self:onReadPrevResult()
         else
-            self:changeToNextDict()
+            self:onReadNextResult()
         end
     end
     return true
