@@ -6,8 +6,10 @@ else
     modprobe brcmfmac
 fi
 
-# clean out any other running instances of wpa_supplicant
-killall wpa_supplicant 2>/dev/null
+# clean stop (if it's running) of main wpa_supplicant service, used by xochitl
+systemctl stop wpa_supplicant
+# clean stop of non-service wpa_supplicant, if running
+wpa_cli terminate 2>/dev/null
 
 sleep 1
 

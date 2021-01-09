@@ -4,9 +4,8 @@
 
 # clean stop (if it's running) of main wpa_supplicant service, used by xochitl
 systemctl stop wpa_supplicant
-
-# fully kill any other instances of wpa_supplicant
-killall wpa_supplicant 2>/dev/null
+# clean stop of non-service wpa_supplicant, if running
+wpa_cli terminate 2>/dev/null
 
 # power down wifi interface
 ifconfig wlan0 down 2>/dev/null
