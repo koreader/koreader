@@ -399,7 +399,7 @@ function Screensaver:show(event, fallback_message)
     if show_message == true then
         local screensaver_message = G_reader_settings:readSetting(prefix.."screensaver_message")
         local message_pos = G_reader_settings:readSetting(prefix.."screensaver_message_position")
-        if self:noBackground() and not widget then
+        if background == nil and not widget then
             covers_fullscreen = false
         end
         if screensaver_message == nil and prefix ~= "" then
