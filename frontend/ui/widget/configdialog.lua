@@ -623,7 +623,7 @@ function ConfigOption:init()
             -- Add it to our CenterContainer
             table.insert(option_items_container, option_items_group)
             --add line of item to the second last place in the focusmanager so the menubar stay at the bottom
-            table.insert(self.config.layout, #self.config.layout,self:_itemGroupToLayoutLine(option_items_group))
+            table.insert(self.config.layout, #self.config.layout, self:_itemGroupToLayoutLine(option_items_group))
             table.insert(horizontal_group, option_items_container)
             table.insert(vertical_group, horizontal_group)
         end -- if show ~= false
@@ -672,41 +672,44 @@ local MenuBar = FrameContainer:new{
     padding = 0,
     background = Blitbuffer.COLOR_WHITE,
 }
+
 function MenuBar:init()
     local icon_sep_width = Size.padding.button
     local line_thickness = Size.line.thick
     local config_options = self.config_dialog.config_options
-    local menu_items = {}
     local icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE)
     local icon_height = icon_width
     local icons_width = (icon_width + 2*icon_sep_width) * #config_options
     local bar_height = icon_height + 2*Size.padding.default
-    for c = 1, #config_options do
-        local menu_icon = IconButton:new{
-            show_parent = self.config_dialog,
-            icon = config_options[c].icon,
-            width = icon_width,
-            height = icon_height,
-            callback = function()
-                self.config_dialog:handleEvent(Event:new("ShowConfigPanel", c))
-            end,
-        }
-        menu_items[c] = menu_icon
-    end
-    table.insert(self.config_dialog.layout,menu_items) --for the focusmanager
-    local available_width = Screen:getWidth() - icons_width
-    -- local padding = math.floor(available_width / #menu_items / 2) -- all for padding
-    -- local padding = math.floor(available_width / #menu_items / 2 / 2) -- half padding, half spacing ?
-    local padding = math.min(math.floor(available_width / #menu_items / 2), Screen:scaleBySize(20)) -- as in TouchMenuBar
-    if padding > 0 then
-        for c = 1, #menu_items do
-            menu_items[c].padding_left = padding
-            menu_items[c].padding_right = padding
-            menu_items[c]:update()
+    if not self.menu_items then
+        self.menu_items = {}
+        for c = 1, #config_options do
+            local menu_icon = IconButton:new{
+                show_parent = self.config_dialog,
+                icon = config_options[c].icon,
+                width = icon_width,
+                height = icon_height,
+                callback = function()
+                    self.config_dialog:handleEvent(Event:new("ShowConfigPanel", c))
+                end,
+            }
+            self.menu_items[c] = menu_icon
         end
-        available_width = available_width - 2*padding*#menu_items
     end
-    local spacing_width = math.ceil(available_width / (#menu_items+1))
+    table.insert(self.config_dialog.layout, self.menu_items) -- for the focusmanager
+    local available_width = Screen:getWidth() - icons_width
+    -- local padding = math.floor(available_width / #self.menu_items / 2) -- all for padding
+    -- local padding = math.floor(available_width / #self.menu_items / 2 / 2) -- half padding, half spacing ?
+    local padding = math.min(math.floor(available_width / #self.menu_items / 2), Screen:scaleBySize(20)) -- as in TouchMenuBar
+    if padding > 0 then
+        for c = 1, #self.menu_items do
+            self.menu_items[c].padding_left = padding
+            self.menu_items[c].padding_right = padding
+            self.menu_items[c]:update()
+        end
+        available_width = available_width - 2*padding*#self.menu_items
+    end
+    local spacing_width = math.ceil(available_width / (#self.menu_items+1))
 
     local icon_sep_black = LineWidget:new{
         background = Blitbuffer.COLOR_BLACK,
@@ -740,17 +743,17 @@ function MenuBar:init()
     local menu_bar = HorizontalGroup:new{}
     local line_bar = HorizontalGroup:new{}
 
-    for c = 1, #menu_items do
+    for c = 1, #self.menu_items do
         table.insert(menu_bar, spacing)
         table.insert(line_bar, spacing_line)
         if c == self.panel_index then
             table.insert(menu_bar, icon_sep_black)
             table.insert(line_bar, sep_line)
-            table.insert(menu_bar, menu_items[c])
+            table.insert(menu_bar, self.menu_items[c])
             table.insert(line_bar, LineWidget:new{
                 background = Blitbuffer.COLOR_WHITE,
                 dimen = Geom:new{
-                    w = menu_items[c]:getSize().w,
+                    w = self.menu_items[c]:getSize().w,
                     h = line_thickness,
                 }
             })
@@ -759,10 +762,10 @@ function MenuBar:init()
         else
             table.insert(menu_bar, icon_sep_white)
             table.insert(line_bar, sep_line)
-            table.insert(menu_bar, menu_items[c])
+            table.insert(menu_bar, self.menu_items[c])
             table.insert(line_bar, LineWidget:new{
                 dimen = Geom:new{
-                    w = menu_items[c]:getSize().w,
+                    w = self.menu_items[c]:getSize().w,
                     h = line_thickness,
                 }
             })
@@ -779,7 +782,6 @@ function MenuBar:init()
         menu_bar,
     }
     table.insert(self, vertical_menu)
-
 end
 
 --[[
@@ -853,14 +855,22 @@ end
 
 function ConfigDialog:update()
     self.layout = {}
-    self.config_menubar = MenuBar:new{
-        config_dialog = self,
-        panel_index = self.panel_index,
-    }
+
+    if self.config_menubar then
+        self.config_menubar:clear()
+        self.config_menubar.panel_index = self.panel_index
+        self.config_menubar:init()
+    else
+        self.config_menubar = MenuBar:new{
+            config_dialog = self,
+            panel_index = self.panel_index,
+        }
+    end
     self.config_panel = ConfigPanel:new{
         index = self.panel_index,
         config_dialog = self,
     }
+
     self.dialog_frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
         padding_bottom = 0, -- ensured by MenuBar
@@ -896,9 +906,7 @@ function ConfigDialog:onShowConfigPanel(index)
     -- NOTE: And we also only need to repaint what's behind us when switching to a smaller dialog...
     --       This is trickier than in touchmenu, because dimen appear to fluctuate before/after painting...
     --       So we've settled instead for the amount of lines in the panel, as line-height is constant.
-    -- NOTE: line/widget-height is actually not constant (e.g. the font size widget on the emulator),
-    --       so do it only when the new nb of widgets is strictly greater than the previous one.
-    local keep_bg = old_layout_h and #self.layout > old_layout_h
+    local keep_bg = old_layout_h and #self.layout >= old_layout_h
     UIManager:setDirty((self.is_fresh or keep_bg) and self or "all", function()
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dialog_frame.dimen)

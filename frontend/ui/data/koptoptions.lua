@@ -320,7 +320,6 @@ The first option ("auto") tries to automatically align reflowed text as it is in
                 item_text = tableOfNumbersToTableOfStrings(FONT_SCALE_FACTORS),
                 item_align_center = 1.0,
                 spacing = 15,
-                height = 60,
                 item_font_size = FONT_SCALE_DISPLAY_SIZE,
                 args = FONT_SCALE_FACTORS,
                 values = FONT_SCALE_FACTORS,

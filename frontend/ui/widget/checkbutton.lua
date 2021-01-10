@@ -104,14 +104,19 @@ function CheckButton:onTapCheckButton()
             UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
-            UIManager:tickAfterNext(function()
-                self.callback()
-                self[1].invert = false
-                UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
-                UIManager:setDirty(nil, function()
-                    return "fast", self.dimen
-                end)
+
+            -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
+            UIManager:forceRePaint()
+            self.callback()
+            --UIManager:forceRePaint() -- Unnecessary, the check/uncheck process involves too many repaints already
+            --UIManager:waitForVSync()
+
+            self[1].invert = false
+            UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
+            UIManager:setDirty(nil, function()
+                return "fast", self.dimen
             end)
+            --UIManager:forceRePaint()
         end
     elseif self.tap_input then
         self:onInput(self.tap_input)

@@ -72,6 +72,7 @@ function ReaderProgress:init()
             }
         }
     end
+    self.covers_fullscreen = true -- hint for UIManager:_repaint()
     self[1] = FrameContainer:new{
         width = self.width,
         height = self.height,

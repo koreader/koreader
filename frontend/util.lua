@@ -384,6 +384,33 @@ function util.arrayContains(t, v, cb)
     return false
 end
 
+--- Test whether array t contains a reference to array n (at any depth at or below m)
+---- @param t Lua table (array only)
+---- @param n Lua table (array only)
+---- @int m Max nesting level
+function util.arrayReferences(t, n, m, l)
+    if not m then m = 15 end
+    if not l then l = 0 end
+    if l > m then
+        return false
+    end
+
+    if type(t) == "table" then
+        if t == n then
+            return true, l
+        end
+
+        for _, v in ipairs(t) do
+            local matched, depth = util.arrayReferences(v, n, m, l + 1)
+            if matched then
+                return matched, depth
+            end
+        end
+    end
+
+    return false
+end
+
 -- Merge t2 into t1, overwriting existing elements if they already exist
 -- Probably not safe with nested tables (c.f., https://stackoverflow.com/q/1283388)
 ---- @param t1 Lua table

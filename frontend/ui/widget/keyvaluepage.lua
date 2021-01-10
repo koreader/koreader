@@ -252,6 +252,7 @@ function KeyValueItem:init()
     self[1] = FrameContainer:new{
         padding = frame_padding,
         bordersize = 0,
+        background = Blitbuffer.COLOR_WHITE,
         HorizontalGroup:new{
             dimen = self.dimen:copy(),
             LeftContainer:new{
@@ -281,17 +282,33 @@ function KeyValueItem:onTap()
             self.callback()
         else
             self[1].invert = true
-            UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen
             end)
-            UIManager:tickAfterNext(function()
-                self.callback()
+
+            -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
+            UIManager:forceRePaint()
+            self.callback()
+            UIManager:forceRePaint()
+            --UIManager:waitForVSync()
+
+            -- Has to be scheduled *after* the dict delays for the lookup history pages...
+            UIManager:scheduleIn(0.75, function()
                 self[1].invert = false
-                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                -- Skip the repaint if we've ended up below something, which is likely.
+                if UIManager:getTopWidget() ~= self.show_parent then
+                    -- It's generally tricky to get accurate dimensions out of whatever was painted above us,
+                    -- so cheat by comparing against the previous refresh region...
+                    if self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
+                        return true
+                    end
+                end
+                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
                 UIManager:setDirty(nil, function()
                     return "ui", self[1].dimen
                 end)
+                --UIManager:forceRePaint()
             end)
         end
     end
@@ -351,7 +368,7 @@ function KeyValuePage:init()
 
     -- return button
     --- @todo: alternative icon if BD.mirroredUILayout()
-    self.page_return_arrow = Button:new{
+    self.page_return_arrow = self.page_return_arrow or Button:new{
         icon = "back.top",
         callback = function() self:onReturn() end,
         bordersize = 0,
@@ -366,25 +383,25 @@ function KeyValuePage:init()
         chevron_left, chevron_right = chevron_right, chevron_left
         chevron_first, chevron_last = chevron_last, chevron_first
     end
-    self.page_info_left_chev = Button:new{
+    self.page_info_left_chev = self.page_info_left_chev or Button:new{
         icon = chevron_left,
         callback = function() self:prevPage() end,
         bordersize = 0,
         show_parent = self,
     }
-    self.page_info_right_chev = Button:new{
+    self.page_info_right_chev = self.page_info_right_chev or Button:new{
         icon = chevron_right,
         callback = function() self:nextPage() end,
         bordersize = 0,
         show_parent = self,
     }
-    self.page_info_first_chev = Button:new{
+    self.page_info_first_chev = self.page_info_first_chev or Button:new{
         icon = chevron_first,
         callback = function() self:goToPage(1) end,
         bordersize = 0,
         show_parent = self,
     }
-    self.page_info_last_chev = Button:new{
+    self.page_info_last_chev = self.page_info_last_chev or Button:new{
         icon = chevron_last,
         callback = function() self:goToPage(self.pages) end,
         bordersize = 0,
@@ -408,7 +425,7 @@ function KeyValuePage:init()
     self.page_info_first_chev:hide()
     self.page_info_last_chev:hide()
 
-    self.page_info_text = Button:new{
+    self.page_info_text = self.page_info_text or Button:new{
         text = "",
         hold_input = {
             title = _("Enter page number"),

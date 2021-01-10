@@ -158,26 +158,51 @@ function TouchMenuItem:onTapSelect(arg, ges)
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuSelect(self.item)
     else
+        -- The item frame's width stops at the text width, but we want it to match the menu's length instead
+        local highlight_dimen = self.item_frame.dimen
+        highlight_dimen.w = self.item_frame.width
+
         self.item_frame.invert = true
-        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
         UIManager:setDirty(nil, function()
-            return "fast", self.dimen
+            return "fast", highlight_dimen
         end)
-        -- yield to main UI loop to invert item
-        UIManager:tickAfterNext(function()
-            self.menu:onMenuSelect(self.item)
-            self.item_frame.invert = false
-            -- NOTE: We can *usually* optimize that repaint away, as most entries in the menu will at least trigger a menu repaint ;).
-            --       But when stuff doesn't repaint the menu and keeps it open, we need to do it.
-            --       Since it's an *un*highlight containing text, we make it "ui" and not "fast", both so it won't mangle text,
-            --       and because "fast" can have some weird side-effects on some devices in this specific instance...
-            if self.item.hold_keep_menu_open or self.item.keep_menu_open then
-                --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+
+        -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
+        UIManager:forceRePaint()
+        self.menu:onMenuSelect(self.item)
+        UIManager:forceRePaint()
+        --UIManager:waitForVSync()
+
+        self.item_frame.invert = false
+        -- NOTE: We can *usually* optimize that repaint away, as most entries in the menu will at least trigger a menu repaint ;).
+        --       But when stuff doesn't repaint the menu and keeps it open, we need to do it.
+        --       Since it's an *un*highlight containing text, we make it "ui" and not "fast", both so it won't mangle text,
+        --       and because "fast" can have some weird side-effects on some devices in this specific instance...
+        if self.item.hold_keep_menu_open or self.item.keep_menu_open then
+            local top_widget = UIManager:getTopWidget()
+            -- If the callback opened a full-screen widget, we're done
+            if top_widget.covers_fullscreen then
+                return true
+            end
+
+            -- If we're still on top, or if a modal was opened outside of our highlight region, we can unhighlight safely
+            if top_widget == self.menu or highlight_dimen:notIntersectWith(UIManager:getPreviousRefreshRegion()) then
+                UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+                UIManager:setDirty(nil, function()
+                    return "ui", highlight_dimen
+                end)
+            else
+                -- That leaves modals that might have been displayed on top of the highlighted menu entry, in which case,
+                -- we can't take any shortcuts, as it would invert/paint *over* the popop.
+                -- Instead, fence the callback to avoid races, and repaint the *full* widget stack properly.
+                UIManager:waitForVSync()
                 UIManager:setDirty(self.show_parent, function()
-                    return "ui", self.dimen
+                    return "ui", highlight_dimen
                 end)
             end
-        end)
+        end
+        --UIManager:forceRePaint()
     end
     return true
 end
@@ -192,22 +217,28 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuHold(self.item)
     else
+        -- The item frame's width stops at the text width, but we want it to match the menu's length instead
+        local highlight_dimen = self.item_frame.dimen
+        highlight_dimen.w = self.item_frame.width
+
         self.item_frame.invert = true
-        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
         UIManager:setDirty(nil, function()
-            return "fast", self.dimen
+            return "fast", highlight_dimen
         end)
-        UIManager:tickAfterNext(function()
-            self.menu:onMenuHold(self.item)
+
+        -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
+        UIManager:forceRePaint()
+        self.menu:onMenuHold(self.item)
+        UIManager:forceRePaint()
+        --UIManager:waitForVSync()
+
+        self.item_frame.invert = false
+        UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+        UIManager:setDirty(nil, function()
+            return "ui", highlight_dimen
         end)
-        UIManager:scheduleIn(0.5, function()
-            self.item_frame.invert = false
-            -- NOTE: For some reason, this is finicky (I end up with a solid black bar, i.e., text gets inverted, but not the bg?!)
-            --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-            UIManager:setDirty(self.show_parent, function()
-                return "ui", self.dimen
-            end)
-        end)
+        --UIManager:forceRePaint()
     end
     return true
 end
@@ -452,7 +483,7 @@ function TouchMenu:init()
     self.key_events.Press = { {"Press"}, doc = "chose selected item" }
 
     local icons = {}
-    for _,v in ipairs(self.tab_item_table) do
+    for _, v in ipairs(self.tab_item_table) do
         table.insert(icons, v.icon)
     end
     self.bar = TouchMenuBar:new{
@@ -798,20 +829,16 @@ function TouchMenu:onMenuSelect(item)
                 callback = item.callback_func()
             end
             if callback then
-                -- put stuff in scheduler so we can see
-                -- the effect of inverted menu item
-                UIManager:tickAfterNext(function()
-                    -- Provide callback with us, so it can call our
-                    -- closemenu() or updateItems() when it sees fit
-                    -- (if not providing checked or checked_fund, caller
-                    -- must set keep_menu_open=true if that is wished)
-                    callback(self)
-                    if refresh then
-                        self:updateItems()
-                    elseif not item.keep_menu_open then
-                        self:closeMenu()
-                    end
-                end)
+                -- Provide callback with us, so it can call our
+                -- closemenu() or updateItems() when it sees fit
+                -- (if not providing checked or checked_fund, caller
+                -- must set keep_menu_open=true if that is wished)
+                callback(self)
+                if refresh then
+                    self:updateItems()
+                elseif not item.keep_menu_open then
+                    self:closeMenu()
+                end
             end
         else
             table.insert(self.item_table_stack, self.item_table)
@@ -842,17 +869,15 @@ function TouchMenu:onMenuHold(item)
             callback = item.hold_callback_func()
         end
         if callback then
-            UIManager:tickAfterNext(function()
-                -- With hold, the default is to keep menu open, as we're
-                -- most often showing a ConfirmBox that can be cancelled
-                -- (provide hold_keep_menu_open=false to override)
-                if item.hold_keep_menu_open == false then
-                    self:closeMenu()
-                end
-                -- Provide callback with us, so it can call our
-                -- closemenu() or updateItems() when it sees fit
-                callback(self)
-            end)
+            -- With hold, the default is to keep menu open, as we're
+            -- most often showing a ConfirmBox that can be cancelled
+            -- (provide hold_keep_menu_open=false to override)
+            if item.hold_keep_menu_open == false then
+                self:closeMenu()
+            end
+            -- Provide callback with us, so it can call our
+            -- closemenu() or updateItems() when it sees fit
+            callback(self)
         end
     elseif item.help_text or type(item.help_text_func) == "function" then
         local help_text = item.help_text
