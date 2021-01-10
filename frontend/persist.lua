@@ -5,7 +5,6 @@ local lfs = require("libs/libkoreader-lfs")
 local codecs = {
     -- bitser: binary form, fast encode/decode, low size. Not human readable.
     bitser = {
-        id = "Bitser serializer",
 
         serialize = function(t, file)
             local ok, str = pcall(bitser.dumps, t)
@@ -35,7 +34,6 @@ local codecs = {
     },
     -- dump: human readable, pretty printed, fast enough for most user cases.
     dump = {
-        id = "Dump serializer",
 
         serialize = function(t, file, as_bytecode)
             local content, err = dump(t)
