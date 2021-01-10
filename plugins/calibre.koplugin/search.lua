@@ -25,6 +25,8 @@ local T = require("ffi/util").template
 local function getDefaultRootDir()
     if Device:isCervantes() or Device:isKobo() then
         return "/mnt"
+    elseif Device:isEmulator() then
+        return lfs.currentdir()
     else
         return Device.home_dir or lfs.currentdir()
     end
