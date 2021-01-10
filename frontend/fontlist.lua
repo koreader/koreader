@@ -2,9 +2,9 @@ local CanvasContext = require("document/canvascontext")
 local DataStorage = require("datastorage")
 local FT = require("ffi/freetype")
 local HB = require("ffi/harfbuzz")
+local Persist = require("persist")
 local util = require("util")
 local logger = require("logger")
-local persist = require("persist")
 local dbg = require("dbg")
 
 local FontList = {
@@ -168,7 +168,7 @@ end
 function FontList:getFontList()
     if #self.fontlist > 0 then return self.fontlist end
 
-    local cache = persist:new{
+    local cache = Persist:new{
         path = DataStorage:getDataDir() .. "/cache/fontinfo.dat"
     }
 

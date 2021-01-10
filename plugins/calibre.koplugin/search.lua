@@ -13,10 +13,10 @@ local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
+local Persist = require("persist")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
-local persist = require("persist")
 local socket = require("socket")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -170,11 +170,11 @@ local CalibreSearch = InputContainer:new{
         "find_by_path",
     },
 
-    cache_libs = persist:new{
+    cache_libs = Persist:new{
         path = DataStorage:getDataDir() .. "/cache/calibre-libraries.lua",
     },
 
-    cache_books = persist:new{
+    cache_books = Persist:new{
         path = DataStorage:getDataDir() .. "/cache/calibre-books.dat",
         codec = "bitser",
     },
