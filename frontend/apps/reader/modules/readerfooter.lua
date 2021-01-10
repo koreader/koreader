@@ -1764,7 +1764,6 @@ function ReaderFooter:genAllFooterText()
         if text and text ~= "" then
             if self.settings.item_prefix == "compact_letters" then
                 -- remove whitespace from footer items if symbol_type is compact_letters
-                -- Issue: also removes white space from book, chapter titles
                 text = text:gsub('%s', '')
                 table.insert(info, BD.wrap(text))
             else
