@@ -799,7 +799,7 @@ function ReaderFooter:textOptionTitles(option)
         pages_left = T(_("Pages left in chapter (%1)"), symbol_prefix[symbol].pages_left),
         battery = T(_("Battery status (%1)"), symbol_prefix[symbol].battery),
         percentage = symbol_prefix[symbol].percentage
-            and T(_("Progress percentage (%1)"), symbol_prefix[symbol].percentage) or ("Progress percentage"),
+            and T(_("Progress percentage (%1)"), symbol_prefix[symbol].percentage) or _("Progress percentage"),
         book_time_to_read = T(_("Book time to read (%1)"),symbol_prefix[symbol].book_time_to_read),
         chapter_time_to_read = T(_("Chapter time to read (%1)"), symbol_prefix[symbol].chapter_time_to_read),
         frontlight = T(_("Frontlight level (%1)"), symbol_prefix[symbol].frontlight),
