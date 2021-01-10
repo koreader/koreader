@@ -123,7 +123,7 @@ function Persist:save(t, as_bytecode)
     return true
 end
 
-function Persist:removeFile()
+function Persist:delete()
     if not self:exists() then return end
     return os.remove(self.path)
 end

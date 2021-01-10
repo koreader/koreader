@@ -552,7 +552,7 @@ end
 
 -- invalidate current cache
 function CalibreSearch:invalidateCache()
-    self.cache_books:removeFile()
+    self.cache_books:delete()
     self.books = {}
 end
 
