@@ -106,7 +106,7 @@ function Persist:stats()
 end
 
 function Persist:loadFile()
-    local t, err = codecs[self.codec]:deserialize(self.path)
+    local t, err = codecs[self.codec].deserialize(self.path)
     if not t then
         return nil, err
     end
