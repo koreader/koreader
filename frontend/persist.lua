@@ -99,12 +99,6 @@ function Persist:size()
     return lfs.attributes(self.path, "size")
 end
 
-function Persist:stats()
-    local stats = string.format("file: %s, codec: %s, exists: %s, size: %d, timestamp: %d",
-        self.path, self.codec, self:exists(), self:size(), self:timestamp())
-    print(stats)
-end
-
 function Persist:load()
     local t, err = codecs[self.codec].deserialize(self.path)
     if not t then
