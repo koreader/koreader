@@ -105,7 +105,7 @@ function Persist:stats()
     print(stats)
 end
 
-function Persist:loadFile()
+function Persist:load()
     local t, err = codecs[self.codec].deserialize(self.path)
     if not t then
         return nil, err
@@ -113,7 +113,7 @@ function Persist:loadFile()
     return t
 end
 
-function Persist:saveFile(t, as_bytecode)
+function Persist:save(t, as_bytecode)
     local str, file, err
     str, err = codecs[self.codec].serialize(t, self.path, as_bytecode)
     if not str then

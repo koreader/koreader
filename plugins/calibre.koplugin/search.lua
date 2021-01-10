@@ -304,7 +304,7 @@ function CalibreSearch:find(option)
     end
 
     if #self.libraries == 0 then
-        local libs, err = self.cache_libs:loadFile()
+        local libs, err = self.cache_libs:load()
         if not libs then
             logger.warn("no calibre libraries", err)
             self:prompt(_("No calibre libraries"))
@@ -497,7 +497,7 @@ function CalibreSearch:prompt(message)
                 paths = paths .. "\n" .. _("SD card") .. ": " .. sd_paths
             end
 
-            self.cache_libs:saveFile(self.libraries)
+            self.cache_libs:save(self.libraries)
             self:invalidateCache()
             self.books = self:getMetadata()
             local info_text
@@ -571,7 +571,7 @@ function CalibreSearch:getMetadata()
             return file_timestamp > date
         end
 
-        local cache, err = self.cache_books:loadFile()
+        local cache, err = self.cache_books:load()
         if not cache then
             logger.warn("invalid cache:", err)
         else
@@ -607,7 +607,7 @@ function CalibreSearch:getMetadata()
         for index, book in ipairs(books) do
             table.insert(dump, index, removeNull(book))
         end
-        self.cache_books:saveFile(dump)
+        self.cache_books:save(dump)
     end
     local elapsed = socket.gettime() - start
     logger.info(string.format(template, #books, "calibre", elapsed * 1000))

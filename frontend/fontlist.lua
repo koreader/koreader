@@ -172,7 +172,7 @@ function FontList:getFontList()
         path = DataStorage:getDataDir() .. "/cache/fontinfo.dat"
     }
 
-    local t, err = cache:loadFile()
+    local t, err = cache:load()
     if not t then
         logger.info(cache.path, "error loading file", err)
     end
@@ -197,10 +197,10 @@ function FontList:getFontList()
 
     if dbg.is_verbose then
         -- when verbose debug is on, always dump the cache in plain text (to inspect the db output)
-        cache:saveFile(self.fontinfo)
+        cache:save(self.fontinfo)
     elseif mark.cache_dirty then
         -- otherwise dump the db in binary (more compact), and only if something has changed
-        cache:saveFile(self.fontinfo, true)
+        cache:save(self.fontinfo, true)
     end
 
     local names = self.fontnames
