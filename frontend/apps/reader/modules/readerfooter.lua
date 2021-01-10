@@ -77,6 +77,21 @@ local symbol_prefix = {
         mem_usage = "",
         wifi_status = "",
         wifi_status_off = "",
+    },
+    compact_letters = {
+        time = nil,
+        pages_left = BD.mirroredUILayout() and "<" or ">",
+        battery = "",
+        -- @translators This is the footer compact letter prefix for the number of bookmarks (bookmark count).
+        bookmark_count = "B",
+        percentage = nil,
+        book_time_to_read = "",
+        chapter_time_to_read = BD.mirroredUILayout() and "«" or "»",
+        frontlight = "*",
+        -- @translators This is the footer compact letter prefix for memory usage.
+        mem_usage = "M",
+        wifi_status = "",
+        wifi_status_off = "",
     }
 }
 if BD.mirroredUILayout() then
@@ -133,7 +148,7 @@ local footerTextGeneratorMap = {
         local powerd = Device:getPowerDevice()
         local batt_lvl = powerd:getCapacity()
         -- If we're using icons, use fancy variable icons
-        if symbol_type == "icons" then
+        if symbol_type == "icons" or symbol_type == "compact_letters" then
             if powerd:isCharging() then
                 prefix = ""
             else
@@ -288,7 +303,7 @@ local footerTextGeneratorMap = {
         -- NOTE: This one deviates a bit from the mold because, in icons mode, we simply use two different icons and no text.
         local symbol_type = footer.settings.item_prefix or "icons"
         local NetworkMgr = require("ui/network/manager")
-        if symbol_type == "icons" and not footer.settings.compact_items then
+        if symbol_type == "icons" or symbol_type == "compact_letters" then
             if NetworkMgr:isWifiOn() then
                 return symbol_prefix.icons.wifi_status
             else
@@ -373,7 +388,6 @@ function ReaderFooter:init()
         -- disable_progress_bar = true,
         disabled = false,
         all_at_once = false,
-        compact_items = false,
         reclaim_height = false,
         toc_markers = true,
         battery = Device:hasBattery(),
@@ -803,7 +817,6 @@ function ReaderFooter:textOptionTitles(option)
             and T(_("Progress percentage (%1)"), symbol_prefix[symbol].percentage) or ("Progress percentage"),
         book_time_to_read = T(_("Book time to read (%1)"),symbol_prefix[symbol].book_time_to_read),
         chapter_time_to_read = T(_("Chapter time to read (%1)"), symbol_prefix[symbol].chapter_time_to_read),
-        compact_items = _("Compact items"),
         frontlight = T(_("Frontlight level (%1)"), symbol_prefix[symbol].frontlight),
         mem_usage = T(_("KOReader memory usage (%1)"), symbol_prefix[symbol].mem_usage),
         wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
@@ -970,7 +983,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                     self:refreshFooter(true, true)
                 end,
             },
-            getMinibarOption("compact_items", self.updateFooterTextGenerator),
             {
                 text = _("Hide empty items"),
                 help_text = _([[This will hide values like 0 or off.]]),
@@ -1225,6 +1237,22 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         callback = function()
                             self.settings.item_prefix = "icons"
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
+                        text_func = function()
+                            local sym_tbl = {}
+                            for _, letter in pairs(symbol_prefix.compact_letters) do
+                                table.insert(sym_tbl, letter)
+                            end
+                            return T(_("Compact Letters (%1)"), table.concat(sym_tbl, " "))
+                        end,
+                        checked_func = function()
+                            return self.settings.item_prefix == "compact_letters" or self.settings.item_prefix == nil
+                        end,
+                        callback = function()
+                            self.settings.item_prefix = "compact_letters"
                             self:refreshFooter(true)
                         end,
                     },
@@ -1732,11 +1760,10 @@ function ReaderFooter:genAllFooterText()
         -- Skip empty generators, so they don't generate bogus separators
         local text = gen(self)
         if text and text ~= "" then
-            if self.settings.compact_items then
-                -- strip all non-alphanumerics, whitespace, slashes, colons, periods, percents
-                text = text:gsub('[^%w%s-/:.%%]','')
-                -- make things smaller by removing the trailing and leading spaces around slashes
-                text = text:gsub(' / ', '/')
+            if self.settings.item_prefix == "compact_letters" then
+                -- remove whitespace from footer items if symbol_type is compact_letters
+                -- Issue: also removes white space from book, chapter titles
+                text = text:gsub('%s', '')
                 table.insert(info, BD.wrap(text))
             else
                 table.insert(info, BD.wrap(text))
