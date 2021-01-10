@@ -288,7 +288,7 @@ local footerTextGeneratorMap = {
         -- NOTE: This one deviates a bit from the mold because, in icons mode, we simply use two different icons and no text.
         local symbol_type = footer.settings.item_prefix or "icons"
         local NetworkMgr = require("ui/network/manager")
-        if symbol_type == "icons" then
+        if symbol_type == "icons" and not footer.settings.compact_items then
             if NetworkMgr:isWifiOn() then
                 return symbol_prefix.icons.wifi_status
             else
