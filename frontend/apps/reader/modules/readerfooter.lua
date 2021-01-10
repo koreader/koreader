@@ -349,8 +349,9 @@ local footerTextGeneratorMap = {
     book_chapter = function(footer)
         local chapter_title = footer.ui.toc:getTocTitleByPage(footer.pageno)
         if chapter_title and chapter_title ~= "" then
+            local chapter_title_no_break_spaces = chapter_title:gsub(" ", "\xC2\xA0") -- replace space with no-break-space
             local chapter_widget = TextWidget:new{
-                text = chapter_title,
+                text = chapter_title_no_break_spaces,
                 max_width = footer._saved_screen_width * footer.settings.book_chapter_max_width_pct / 100,
                 face = Font:getFace(footer.text_font_face, footer.settings.text_font_size),
                 bold = footer.settings.text_font_bold,
@@ -360,7 +361,6 @@ local footerTextGeneratorMap = {
             if add_ellipsis then
                 fitted_chapter_text = fitted_chapter_text .. "…"
             end
-            fitted_chapter_text = fitted_chapter_text:gsub(" ", "\xC2\xA0") -- replace space with no-break-space
             return BD.auto(fitted_chapter_text)
         else
             return ""
