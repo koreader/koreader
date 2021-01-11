@@ -155,13 +155,12 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 name_text_hold_callback = optionsutil.showValues,
                 more_options = true,
                 more_options_param = {
-                    -- Allow this to tune both top and bottom margins,
-                    -- handling 2 setting names and sending 2 events
-                    -- (we'll get the exact same DoubleSpinWidget in
-                    -- the b_page_margin setting just below)
+                    -- Allow this to tune both top and bottom margins, handling
+                    -- 2 setting names (we'll get the exact same DoubleSpinWidget
+                    -- in the b_page_margin setting just below)
                     name_text = _("Top/Bottom Margins"),
                     names = { "t_page_margin", "b_page_margin" },
-                    events = { "SetPageTopMargin", "SetPageBottomMargin" },
+                    event = "SetPageTopAndBottomMargin",
                     left_text = _("Top"),
                     left_min = 0,
                     left_max = 140,
@@ -211,7 +210,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                     -- Similar as for t_page_margin above
                     name_text = _("Top/Bottom Margins"),
                     names = { "t_page_margin", "b_page_margin" },
-                    events = { "SetPageTopMargin", "SetPageBottomMargin" },
+                    event = "SetPageTopAndBottomMargin",
                     left_text = _("Top"),
                     left_min = 0,
                     left_max = 140,
