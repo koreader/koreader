@@ -781,7 +781,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
         cmd = cmd .. "; echo"
         local completed, results_str = Trapper:dismissablePopen(cmd, self.lookup_progress_msg or false)
         lookup_cancelled = not completed
-        
+
         if results_str and results_str ~= "\n" then -- \n is when lookup was cancelled
             local ok, results = pcall(JSON.decode, results_str)
             if ok and results then
