@@ -746,7 +746,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
             break -- don't do any more lookup on additional dict_dirs
         end
 
-        local args = {"./sdcv", "--utf8-input", "--utf8-output", "--json-output", "--non-interactive", "--data-dir", dict_dir, word}
+        local args = {"./sdcv", "--utf8-input", "--utf8-output", "--json-output", "--non-interactive", "--data-dir", dict_dir}
         if not fuzzy_search then
             table.insert(args, "--exact-search")
         end
@@ -754,8 +754,10 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
             for _, opt in pairs(dict_names) do
                 table.insert(args, "-u")
                 table.insert(args, opt)
-            end
+                end
         end
+        table.insert(args, "--")
+        table.insert(args, word)
 
         local cmd = util.shell_escape(args)
         -- cmd = "sleep 7 ; " .. cmd     -- uncomment to simulate long lookup time
@@ -776,10 +778,12 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
         -- We must ensure we will have some output to be readable (if no
         -- definition found, sdcv will output some message on stderr, and
         -- let stdout empty) by appending an "echo":
+
         cmd = cmd .. "; echo"
+        logger.warn(cmd)
         local completed, results_str = Trapper:dismissablePopen(cmd, self.lookup_progress_msg or false)
         lookup_cancelled = not completed
-
+        logger.warn(results_str)
         if results_str and results_str ~= "\n" then -- \n is when lookup was cancelled
             local ok, results = pcall(JSON.decode, results_str)
             if ok and results then
