@@ -59,7 +59,7 @@ function UIManager:init()
     }
     self.poweroff_action = function()
         self._entered_poweroff_stage = true
-        G_reader_settings:saveSetting("closed_rotation_mode", Device.screen:getRotationMode())
+        Device.orig_rotation_mode = Device.screen:getRotationMode()
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
         require("ui/screensaver"):show("poweroff", _("Powered off"))
         if Device:needsScreenRefreshAfterResume() then
@@ -76,7 +76,7 @@ function UIManager:init()
     end
     self.reboot_action = function()
         self._entered_poweroff_stage = true
-        G_reader_settings:saveSetting("closed_rotation_mode", Device.screen:getRotationMode())
+        Device.orig_rotation_mode = Device.screen:getRotationMode()
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
         require("ui/screensaver"):show("reboot", _("Rebooting…"))
         if Device:needsScreenRefreshAfterResume() then
