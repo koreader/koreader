@@ -339,7 +339,7 @@ local function exitReader()
     -- Save any device settings before closing G_reader_settings
     Device:saveSettings()
 
-    --  Save current rotation to have it for next startup
+    -- Save current rotation to have it for next startup
     G_reader_settings:saveSetting("closed_rotation_mode", Device.screen:getRotationMode())
 
     G_reader_settings:close()
