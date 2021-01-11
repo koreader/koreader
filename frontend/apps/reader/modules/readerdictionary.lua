@@ -754,7 +754,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
             for _, opt in pairs(dict_names) do
                 table.insert(args, "-u")
                 table.insert(args, opt)
-                end
+            end
         end
         table.insert(args, "--")
         table.insert(args, word)
@@ -780,10 +780,8 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
         -- let stdout empty) by appending an "echo":
 
         cmd = cmd .. "; echo"
-        logger.warn(cmd)
         local completed, results_str = Trapper:dismissablePopen(cmd, self.lookup_progress_msg or false)
         lookup_cancelled = not completed
-        logger.warn(results_str)
         if results_str and results_str ~= "\n" then -- \n is when lookup was cancelled
             local ok, results = pcall(JSON.decode, results_str)
             if ok and results then
