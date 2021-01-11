@@ -1172,11 +1172,7 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, d
                         else
                             self:onConfigChoice(name, value_tables)
                         end
-                        if more_options_param.events then
-                            self:onConfigEvent(more_options_param.events[1], left_value, nil)
-                            self:onConfigEvent(more_options_param.events[2], right_value, refresh_callback)
-                            self:update()
-                        elseif event then
+                        if event then
                             args = args or {}
                             self:onConfigEvent(event, value_tables, refresh_callback)
                             self:update()
