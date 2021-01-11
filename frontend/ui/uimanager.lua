@@ -391,8 +391,14 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     -- put this window on top of the toppest non-modal window
     for i = #self._window_stack, 0, -1 do
         local top_window = self._window_stack[i]
-        -- skip modal window
-        if widget.modal or not top_window or not top_window.widget.modal then
+        -- toasts are stacked on top of other toasts,
+        -- then come modals, and then other widgets
+        if top_window and top_window.widget.toast then
+            if widget.toast then
+                table.insert(self._window_stack, i + 1, window)
+                break
+            end
+        elseif widget.modal or not top_window or not top_window.widget.modal then
             table.insert(self._window_stack, i + 1, window)
             break
         end
@@ -876,8 +882,18 @@ function UIManager:sendEvent(event)
         end
     end
 
+    -- The top widget gets to be the first to get the event
     local top_widget = self._window_stack[#self._window_stack]
-    -- top level widget has first access to the event
+
+    -- A toast widget gets closed by any event, and
+    -- lets the event be handled by a lower widget
+    -- (Notification is our single widget with toast=true)
+    while top_widget.widget.toast do -- close them all
+        self:close(top_widget.widget)
+        if #self._window_stack == 0 then return end
+        top_widget = self._window_stack[#self._window_stack]
+    end
+
     if top_widget.widget:handleEvent(event) then
         return
     end

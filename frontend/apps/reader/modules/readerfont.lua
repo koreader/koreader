@@ -211,7 +211,6 @@ function ReaderFont:onSetFontSize(new_size)
     self.ui:handleEvent(Event:new("UpdatePos"))
     UIManager:show(Notification:new{
         text = T( _("Font size set to %1."), self.font_size),
-        timeout = 2,
     })
 
     return true
@@ -221,7 +220,6 @@ function ReaderFont:onSetLineSpace(space)
     self.line_space_percent = math.min(200, math.max(50, space))
     UIManager:show(Notification:new{
         text = T( _("Line spacing set to %1%."), self.line_space_percent),
-        timeout = 2,
     })
     self.ui.document:setInterlineSpacePercent(self.line_space_percent)
     self.ui:handleEvent(Event:new("UpdatePos"))
@@ -269,7 +267,6 @@ function ReaderFont:onSetFontGamma(gamma)
     local gamma_level = self.ui.document:getGammaLevel()
     UIManager:show(Notification:new{
         text = T( _("Font gamma set to %1."), gamma_level),
-        timeout = 2,
     })
     self.ui:handleEvent(Event:new("RedrawCurrentView"))
     return true
@@ -293,7 +290,6 @@ function ReaderFont:setFont(face)
         self.font_face = face
         UIManager:show(Notification:new{
             text = T( _("Redrawing with font %1."), face),
-            timeout = 2,
         })
 
         self.ui.document:setFontFace(face)
