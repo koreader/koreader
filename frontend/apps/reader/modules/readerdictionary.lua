@@ -746,7 +746,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
             break -- don't do any more lookup on additional dict_dirs
         end
 
-        local args = {"./sdcv", "--utf8-input", "--utf8-output", "--json-output", "--non-interactive", "--data-dir", dict_dir, word}
+        local args = {"./sdcv", "--utf8-input", "--utf8-output", "--json-output", "--non-interactive", "--data-dir", dict_dir}
         if not fuzzy_search then
             table.insert(args, "--exact-search")
         end
@@ -756,6 +756,8 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
                 table.insert(args, opt)
             end
         end
+        table.insert(args, "--") -- prevent word starting with a "-" to be interpreted as a sdcv option
+        table.insert(args, word)
 
         local cmd = util.shell_escape(args)
         -- cmd = "sleep 7 ; " .. cmd     -- uncomment to simulate long lookup time
