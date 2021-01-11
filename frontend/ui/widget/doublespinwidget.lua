@@ -41,6 +41,9 @@ local DoubleSpinWidget = InputContainer:new{
     right_text = _("Right"),
     cancel_text = _("Close"),
     ok_text = _("Apply"),
+    cancel_callback = nil,
+    callback = nil,
+    close_callback = nil,
     keep_shown_on_apply = false,
     -- Set this to add default button that restores numbers to their default values
     default_values = nil,
@@ -187,6 +190,9 @@ function DoubleSpinWidget:update()
             {
                 text = self.cancel_text,
                 callback = function()
+                    if self.cancel_callback then
+                        self.cancel_callback()
+                    end
                     self:onClose()
                 end,
             },
@@ -312,7 +318,7 @@ function DoubleSpinWidget:onShow()
 end
 
 function DoubleSpinWidget:onAnyKeyPressed()
-    UIManager:close(self)
+    self:onClose()
     return true
 end
 
@@ -325,6 +331,9 @@ end
 
 function DoubleSpinWidget:onClose()
     UIManager:close(self)
+    if self.close_callback then
+        self.close_callback()
+    end
     return true
 end
 
