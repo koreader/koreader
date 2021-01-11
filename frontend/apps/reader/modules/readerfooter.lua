@@ -80,13 +80,15 @@ local symbol_prefix = {
     },
     compact_items = {
         time = nil,
-        pages_left = BD.mirroredUILayout() and "<" or ">",
+        pages_left = ">",
+        -- pages_left = BD.mirroredUILayout() and "<" or ">",
         battery = "",
         -- @translators This is the footer compact item prefix for the number of bookmarks (bookmark count).
         bookmark_count = C_("FooterCompactItemsPrefix", "BM"),
         percentage = nil,
         book_time_to_read = nil,
-        chapter_time_to_read = BD.mirroredUILayout() and "«" or "»",
+        chapter_time_to_read = "»",
+        -- chapter_time_to_read = BD.mirroredUILayout() and "«" or "»",
         frontlight = "*",
         -- @translators This is the footer compact item prefix for memory usage.
         mem_usage = C_("FooterCompactItemsPrefix", "M"),
@@ -1764,11 +1766,10 @@ function ReaderFooter:genAllFooterText()
         if text and text ~= "" then
             if self.settings.item_prefix == "compact_items" then
                 -- remove whitespace from footer items if symbol_type is compact_items
-                text = text:gsub('%s', '')
-                table.insert(info, BD.wrap(text))
-            else
-                table.insert(info, BD.wrap(text))
+                -- use a hair-space to avoid issues with RTL display
+                text = text:gsub("%s", "\xE2\x80\x8A")
             end
+            table.insert(info, BD.wrap(text))
         end
     end
     return table.concat(info, BD.wrap(separator))
