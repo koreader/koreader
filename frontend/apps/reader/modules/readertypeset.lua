@@ -430,32 +430,32 @@ function ReaderTypeset:makeDefaultStyleSheet(css, text, touchmenu_instance)
     })
 end
 
-function ReaderTypeset:onSetPageHorizMargins(h_margins, refresh_callback)
+function ReaderTypeset:onSetPageHorizMargins(h_margins, when_applied_callback)
     self.unscaled_margins = { h_margins[1], self.unscaled_margins[2], h_margins[2], self.unscaled_margins[4] }
-    self.ui:handleEvent(Event:new("SetPageMargins", self.unscaled_margins, refresh_callback))
+    self.ui:handleEvent(Event:new("SetPageMargins", self.unscaled_margins, when_applied_callback))
 end
 
-function ReaderTypeset:onSetPageTopMargin(t_margin, refresh_callback)
+function ReaderTypeset:onSetPageTopMargin(t_margin, when_applied_callback)
     self.unscaled_margins = { self.unscaled_margins[1], t_margin, self.unscaled_margins[3], self.unscaled_margins[4] }
     if self.sync_t_b_page_margins then
         self.unscaled_margins[4] = t_margin
         -- Let ConfigDialog know so it can update it on screen and have it saved on quit
         self.ui.document.configurable.b_page_margin = t_margin
     end
-    self.ui:handleEvent(Event:new("SetPageMargins", self.unscaled_margins, refresh_callback))
+    self.ui:handleEvent(Event:new("SetPageMargins", self.unscaled_margins, when_applied_callback))
 end
 
-function ReaderTypeset:onSetPageBottomMargin(b_margin, refresh_callback)
+function ReaderTypeset:onSetPageBottomMargin(b_margin, when_applied_callback)
     self.unscaled_margins = { self.unscaled_margins[1], self.unscaled_margins[2], self.unscaled_margins[3], b_margin }
     if self.sync_t_b_page_margins then
         self.unscaled_margins[2] = b_margin
         -- Let ConfigDialog know so it can update it on screen and have it saved on quit
         self.ui.document.configurable.t_page_margin = b_margin
     end
-    self.ui:handleEvent(Event:new("SetPageMargins", self.unscaled_margins, refresh_callback))
+    self.ui:handleEvent(Event:new("SetPageMargins", self.unscaled_margins, when_applied_callback))
 end
 
-function ReaderTypeset:onSetPageTopAndBottomMargin(t_b_margins, refresh_callback)
+function ReaderTypeset:onSetPageTopAndBottomMargin(t_b_margins, when_applied_callback)
     local t_margin, b_margin = t_b_margins[1], t_b_margins[2]
     self.unscaled_margins = { self.unscaled_margins[1], t_margin, self.unscaled_margins[3], b_margin }
     if t_margin ~= b_margin then
@@ -463,10 +463,10 @@ function ReaderTypeset:onSetPageTopAndBottomMargin(t_b_margins, refresh_callback
         self.sync_t_b_page_margins = false
         self.ui.document.configurable.sync_t_b_page_margins = 0
     end
-    self.ui:handleEvent(Event:new("SetPageMargins", self.unscaled_margins, refresh_callback))
+    self.ui:handleEvent(Event:new("SetPageMargins", self.unscaled_margins, when_applied_callback))
 end
 
-function ReaderTypeset:onSyncPageTopBottomMargins(toggle, refresh_callback)
+function ReaderTypeset:onSyncPageTopBottomMargins(toggle, when_applied_callback)
     self.sync_t_b_page_margins = not self.sync_t_b_page_margins
     if self.sync_t_b_page_margins then
         -- Adjust current top and bottom margins if needed
@@ -481,16 +481,16 @@ function ReaderTypeset:onSyncPageTopBottomMargins(toggle, refresh_callback)
             self.ui.document.configurable.t_page_margin = mean_margin
             self.ui.document.configurable.b_page_margin = mean_margin
             self.unscaled_margins = { self.unscaled_margins[1], mean_margin, self.unscaled_margins[3], mean_margin }
-            self.ui:handleEvent(Event:new("SetPageMargins", self.unscaled_margins, refresh_callback))
-            refresh_callback = nil
+            self.ui:handleEvent(Event:new("SetPageMargins", self.unscaled_margins, when_applied_callback))
+            when_applied_callback = nil
         end
     end
-    if refresh_callback then
-        refresh_callback()
+    if when_applied_callback then
+        when_applied_callback()
     end
 end
 
-function ReaderTypeset:onSetPageMargins(margins, refresh_callback)
+function ReaderTypeset:onSetPageMargins(margins, when_applied_callback)
     local left = Screen:scaleBySize(margins[1])
     local top = Screen:scaleBySize(margins[2])
     local right = Screen:scaleBySize(margins[3])
@@ -502,8 +502,10 @@ function ReaderTypeset:onSetPageMargins(margins, refresh_callback)
     end
     self.ui.document:setPageMargins(left, top, right, bottom)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    if refresh_callback then
-        -- Show a toast on set, with the unscaled & scaled values
+    if when_applied_callback then
+        -- Provided when hide_on_apply, and ConfigDialog temporarily hidden:
+        -- show an InfoMessage with the unscaled & scaled values,
+        -- and call when_applied_callback on dismiss
         UIManager:show(InfoMessage:new{
             text = T(_([[
 Margins set to:
@@ -515,7 +517,7 @@ Margins set to:
 
 Tap to dismiss.]]),
             margins[1], left, margins[3], right, margins[2], top, margins[4], bottom),
-            dismiss_callback = refresh_callback,
+            dismiss_callback = when_applied_callback,
         })
     end
 end
