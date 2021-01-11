@@ -1172,14 +1172,12 @@ function ReaderHighlight:onCycleHighlightAction()
         G_reader_settings:saveSetting("default_highlight_action", "highlight")
         UIManager:show(Notification:new{
             text = _("Default highlight action changed to 'highlight'."),
-            timeout = 1,
         })
     else
         local next_action = next_actions[current_action]
         G_reader_settings:saveSetting("default_highlight_action", next_action)
         UIManager:show(Notification:new{
             text = T(_("Default highlight action changed to '%1'."), (next_action or "default")),
-            timeout = 1,
         })
     end
     return true
@@ -1195,7 +1193,6 @@ function ReaderHighlight:onCycleHighlightStyle()
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
     UIManager:show(Notification:new{
         text = T(_("Default highlight style changed to '%1'."), self.view.highlight.saved_drawer),
-        timeout = 1,
     })
     return true
 end

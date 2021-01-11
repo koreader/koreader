@@ -205,7 +205,6 @@ function InputText:isTextEditable(show_warning)
     if show_warning and not self.is_text_editable then
         UIManager:show(Notification:new{
             text = _("Text may be binary content, and is not editable"),
-            timeout = 2
         })
     end
     return self.is_text_editable

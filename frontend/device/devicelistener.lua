@@ -53,7 +53,6 @@ function DeviceListener:onShowIntensity()
     end
     UIManager:show(Notification:new{
         text = new_text,
-        timeout = 1,
     })
     return true
 end
@@ -65,7 +64,6 @@ function DeviceListener:onShowWarmth(value)
         -- powerd.fl_warmth_max is the maximum value the hardware accepts
         UIManager:show(Notification:new{
             text = T(_("Warmth set to %1."), math.floor(powerd.fl_warmth/100*powerd.fl_warmth_max)),
-            timeout = 1.0,
         })
     end
     return true
@@ -179,7 +177,6 @@ if Device:hasFrontlight() then
         if powerd.auto_warmth then
             UIManager:show(Notification:new{
                 text = _("Warmth is handled automatically."),
-                timeout = 1.0,
             })
             return true
         end
@@ -225,7 +222,6 @@ if Device:hasFrontlight() then
         end
         UIManager:show(Notification:new{
             text = new_text,
-            timeout = 1.0,
         })
         return true
     end
@@ -248,7 +244,6 @@ if Device:canToggleGSensor() then
         end
         UIManager:show(Notification:new{
             text = new_text,
-            timeout = 1.0,
         })
         return true
     end

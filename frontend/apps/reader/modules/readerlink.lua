@@ -508,7 +508,6 @@ function ReaderLink:onClearLocationStack(show_notification)
     if show_notification then
         UIManager:show(Notification:new{
             text = _("Location history cleared."),
-            timeout = 2,
         })
     end
     return true
@@ -758,7 +757,6 @@ function ReaderLink:onGoBackLink(show_notification_if_empty)
     elseif show_notification_if_empty then
         UIManager:show(Notification:new{
             text = _("Location history is empty."),
-            timeout = 2,
         })
     end
 end
@@ -780,7 +778,6 @@ function ReaderLink:onSwipe(arg, ges)
                 -- so the user knows why
                 UIManager:show(Notification:new{
                     text = _("Location history is empty."),
-                    timeout = 2,
                 })
                 return true
             end

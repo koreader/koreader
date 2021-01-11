@@ -474,7 +474,6 @@ function TextEditor:editFile(file_path, readonly)
                 else
                     UIManager:show(Notification:new{
                         text = T(_("Lua syntax OK")),
-                        timeout = 2,
                     })
                 end
             end,
