@@ -718,6 +718,8 @@ end
 function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     local final_results = {}
     local seen_results = {}
+    -- Add an escape character to a dash to prevent sdcv from looking at it as an option.
+    word = word:gsub('^-', '/-')
     -- Allow for two sdcv calls : one in the classic data/dict, and
     -- another one in data/dict_ext if it exists
     -- We could put in data/dict_ext dictionaries with a great number of words
