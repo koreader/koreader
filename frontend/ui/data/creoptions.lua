@@ -90,7 +90,7 @@ Note that this may not be ensured under some conditions: in scroll mode, when a 
                     DCREREADER_CONFIG_H_MARGIN_SIZES_X_HUGE,
                     DCREREADER_CONFIG_H_MARGIN_SIZES_XX_HUGE,
                 },
-                delay_repaint = true,
+                hide_on_apply = true,
                 name_text_hold_callback = optionsutil.showValuesHMargins,
                 more_options = true,
                 more_options_param = {
@@ -114,7 +114,7 @@ Note that this may not be ensured under some conditions: in scroll mode, when a 
                 event = "SyncPageTopBottomMargins",
                 args = {false, true},
                 default_arg = false,
-                delay_repaint = true,
+                hide_on_apply = true,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Keep top and bottom margins synchronized.
 - 'off' allows different top and bottom margins.
@@ -151,7 +151,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                     DCREREADER_CONFIG_T_MARGIN_SIZES_X_HUGE,
                     DCREREADER_CONFIG_T_MARGIN_SIZES_XX_HUGE,
                 },
-                delay_repaint = true,
+                hide_on_apply = true,
                 name_text_hold_callback = optionsutil.showValues,
                 more_options = true,
                 more_options_param = {
@@ -202,7 +202,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                     DCREREADER_CONFIG_B_MARGIN_SIZES_X_HUGE,
                     DCREREADER_CONFIG_B_MARGIN_SIZES_XX_HUGE,
                 },
-                delay_repaint = true,
+                hide_on_apply = true,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[In the top menu → Settings → Status bar, you can choose whether the bottom margin applies from the bottom of the screen, or from above the status bar.]]),
                 more_options = true,

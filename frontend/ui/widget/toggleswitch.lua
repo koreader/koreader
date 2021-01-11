@@ -218,7 +218,7 @@ function ToggleSwitch:onTapSelect(arg, gev)
     end
     if self.toggle[self.position] ~= "⋮" then
         self.config:onConfigChoose(self.values, self.name,
-            self.event, self.args, self.events, self.position, self.delay_repaint)
+            self.event, self.args, self.events, self.position, self.hide_on_apply)
         UIManager:setDirty(self.config, function()
             return "ui", self.dimen
         end)

@@ -60,7 +60,7 @@ local InfoMessage = InputContainer:new{
     show_icon = true,
     icon = "notice-info",
     alpha = nil, -- if image or icon have an alpha channel (default to true for icons, false for images
-    dismiss_callback = function() end,
+    dismiss_callback = nil,
     -- In case we'd like to use it to display some text we know a few more things about:
     lang = nil,
     para_direction_rtl = nil,
@@ -236,7 +236,15 @@ function InfoMessage:onShow()
     end
     -- schedule us to close ourself if timeout provided
     if self.timeout then
-        UIManager:scheduleIn(self.timeout, function() UIManager:close(self) end)
+        UIManager:scheduleIn(self.timeout, function()
+            -- In case we're provided with dismiss_callback, also call it
+            -- on timeout
+            if self.dismiss_callback then
+                self.dismiss_callback()
+                self.dismiss_callback = nil
+            end
+            UIManager:close(self)
+        end)
     end
     return true
 end
@@ -259,7 +267,10 @@ function InfoMessage:dismiss()
         UIManager:unschedule(self._delayed_show_action)
         self._delayed_show_action = nil
     end
-    self.dismiss_callback()
+    if self.dismiss_callback then
+        self.dismiss_callback()
+        self.dismiss_callback = nil
+    end
     UIManager:close(self)
 end
 

@@ -37,6 +37,9 @@ local SpinWidget = InputContainer:new{
     value_hold_step = 4,
     cancel_text = _("Close"),
     ok_text = _("Apply"),
+    cancel_callback = nil,
+    callback = nil,
+    close_callback = nil,
     keep_shown_on_apply = false,
     -- Set this to add default button that restores number to its default value
     default_value = nil,
@@ -130,8 +133,7 @@ function SpinWidget:update()
                 text = self.cancel_text,
                 callback = function()
                     if self.cancel_callback then
-                        self.value = value_widget:getValue()
-                        self:cancel_callback(self)
+                        self.cancel_callback()
                     end
                     self:onClose()
                 end,
@@ -141,7 +143,7 @@ function SpinWidget:update()
                 callback = function()
                     if self.callback then
                         self.value, self.value_index = value_widget:getValue()
-                        self:callback(self)
+                        self.callback(self)
                     end
                     if not self.keep_shown_on_apply then
                         self:onClose()
@@ -266,7 +268,7 @@ function SpinWidget:onShow()
 end
 
 function SpinWidget:onAnyKeyPressed()
-    UIManager:close(self)
+    self:onClose()
     return true
 end
 
@@ -279,6 +281,9 @@ end
 
 function SpinWidget:onClose()
     UIManager:close(self)
+    if self.close_callback then
+        self.close_callback()
+    end
     return true
 end
 
