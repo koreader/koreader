@@ -605,7 +605,6 @@ function InputDialog:_addSaveCloseButtons()
                         self._buttons_edit_callback(false)
                         UIManager:show(Notification:new{
                             text = msg or _("Text reset"),
-                            timeout = 2
                         })
                     else -- nil content, assume failure and show msg
                         if msg ~= false then -- false allows for no InfoMessage
@@ -638,7 +637,6 @@ function InputDialog:_addSaveCloseButtons()
                         self._buttons_edit_callback(false)
                         UIManager:show(Notification:new{
                             text = msg or _("Saved"),
-                            timeout = 2
                         })
                     end
                 end
@@ -659,7 +657,6 @@ function InputDialog:_addSaveCloseButtons()
                         UIManager:close(self)
                         UIManager:show(Notification:new{
                             text = self.close_discarded_notif_text or _("Changes discarded"),
-                            timeout = 2
                         })
                     end,
                     choice2_text = self.close_save_button_text or _("Save"),
@@ -679,7 +676,6 @@ function InputDialog:_addSaveCloseButtons()
                                 UIManager:close(self)
                                 UIManager:show(Notification:new{
                                     text = msg or _("Saved"),
-                                    timeout = 2
                                 })
                             end
                         end)

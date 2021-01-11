@@ -19,29 +19,33 @@ local Screen = Device.screen
 local Notification = InputContainer:new{
     face = Font:getFace("x_smallinfofont"),
     text = "Null Message",
-    timeout = nil,
     margin = Size.margin.default,
     padding = Size.padding.default,
+    timeout = 2, -- default to 2 seconds
+    toast = true, -- closed on any event, and let the event propagate to next top widget
 }
 
 function Notification:init()
-    if Device:hasKeys() then
-        self.key_events = {
-            AnyKeyPressed = { { Input.group.Any },
-                seqtext = "any key", doc = "close dialog" }
-        }
-    end
-    if Device:isTouchDevice() then
-        self.ges_events.TapClose = {
-            GestureRange:new{
-                ges = "tap",
-                range = Geom:new{
-                    x = 0, y = 0,
-                    w = Screen:getWidth(),
-                    h = Screen:getHeight(),
+    if not self.toast then
+        -- If not toast, closing is handled in here
+        if Device:hasKeys() then
+            self.key_events = {
+                AnyKeyPressed = { { Input.group.Any },
+                    seqtext = "any key", doc = "close dialog" }
+            }
+        end
+        if Device:isTouchDevice() then
+            self.ges_events.TapClose = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = Geom:new{
+                        x = 0, y = 0,
+                        w = Screen:getWidth(),
+                        h = Screen:getHeight(),
+                    }
                 }
             }
-        }
+        end
     end
 
     -- we construct the actual content here because self.text is only available now
@@ -90,22 +94,15 @@ function Notification:onShow()
 end
 
 function Notification:onAnyKeyPressed()
-    -- triggered by our defined key events
+    if self.toast then return end -- should not happen
     UIManager:close(self)
-    if not self.timeout then
-        return true
-    end
+    return true
 end
 
 function Notification:onTapClose()
+    if self.toast then return end -- should not happen
     UIManager:close(self)
-    -- If timeout (usually 1s or 2s), let it propagate so an underlying
-    -- widget can process the tap whether it's done at 1.9s or 2.1s
-    -- If no timout, don't propagate as this tap is most probably meant
-    -- at dismissing the notification
-    if not self.timeout then
-        return true
-    end
+    return true
 end
 
 return Notification
