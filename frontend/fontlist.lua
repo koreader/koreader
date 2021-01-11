@@ -174,7 +174,7 @@ function FontList:getFontList()
 
     local t, err = cache:load()
     if not t then
-        logger.info(cache.path, "error loading file", err)
+        logger.info(cache.path, err, "initializing it")
     end
     self.fontinfo = t or {}
 

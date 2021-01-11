@@ -5,7 +5,6 @@ local lfs = require("libs/libkoreader-lfs")
 local codecs = {
     -- bitser: binary form, fast encode/decode, low size. Not human readable.
     bitser = {
-
         serialize = function(t, file)
             local ok, str = pcall(bitser.dumps, t)
             if not ok then
@@ -34,24 +33,18 @@ local codecs = {
     },
     -- dump: human readable, pretty printed, fast enough for most user cases.
     dump = {
-
         serialize = function(t, file, as_bytecode)
-            local content, err = dump(t)
-            if not content then
-                return nil, string.format("cannot serialize table %s: %s", t, err)
-            end
             local str
             if as_bytecode then
-                str, err =  load("return " .. content)
-                if not str then
+                local bytecode, err = load("return " .. dump(t))
+                if not bytecode then
                     print("cannot convert table to bytecode: %s, ignoring", err)
                 else
-                    str = string.dump(str, true)
+                    str = string.dump(bytecode, true)
                 end
             end
-
             if not str then
-                str = "return " .. content
+                str = "return " .. dump(t)
             end
             return str
         end,
@@ -70,18 +63,11 @@ local Persist = {}
 
 function Persist:new(o)
     o = o or {}
+    assert(type(o.path) == "string", "path is required")
+    o.codec = o.codec or "dump"
     setmetatable(o, self)
     self.__index = self
-    return o:init(o.path, o.codec)
-end
-
-function Persist:init(path, codec)
-    if type(path) ~= "string" then
-        return nil, "path is required"
-    end
-    self.path = path
-    self.codec = codec or "dump"
-    return self
+    return o
 end
 
 function Persist:exists()
