@@ -756,7 +756,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
                 table.insert(args, opt)
             end
         end
-        table.insert(args, "--")
+        table.insert(args, "--") -- prevent word starting with a "-" to be interpreted as a sdcv option
         table.insert(args, word)
 
         local cmd = util.shell_escape(args)
