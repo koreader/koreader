@@ -455,6 +455,17 @@ function ReaderTypeset:onSetPageBottomMargin(b_margin, refresh_callback)
     self.ui:handleEvent(Event:new("SetPageMargins", self.unscaled_margins, refresh_callback))
 end
 
+function ReaderTypeset:onSetPageTopAndBottomMargin(t_b_margins, refresh_callback)
+    local t_margin, b_margin = t_b_margins[1], t_b_margins[2]
+    self.unscaled_margins = { self.unscaled_margins[1], t_margin, self.unscaled_margins[3], b_margin }
+    if t_margin ~= b_margin then
+        -- Set Sync T/B Margins toggle to off, as user explicitly made them differ
+        self.sync_t_b_page_margins = false
+        self.ui.document.configurable.sync_t_b_page_margins = 0
+    end
+    self.ui:handleEvent(Event:new("SetPageMargins", self.unscaled_margins, refresh_callback))
+end
+
 function ReaderTypeset:onSyncPageTopBottomMargins(toggle, refresh_callback)
     self.sync_t_b_page_margins = not self.sync_t_b_page_margins
     if self.sync_t_b_page_margins then
