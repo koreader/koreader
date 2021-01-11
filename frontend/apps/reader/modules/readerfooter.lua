@@ -78,18 +78,18 @@ local symbol_prefix = {
         wifi_status = "",
         wifi_status_off = "",
     },
-    compact_letters = {
+    compact_items = {
         time = nil,
         pages_left = BD.mirroredUILayout() and "<" or ">",
         battery = "",
-        -- @translators This is the footer compact letter prefix for the number of bookmarks (bookmark count).
-        bookmark_count = C_("FooterCompactLetterPrefix", "BM"),
+        -- @translators This is the footer compact item prefix for the number of bookmarks (bookmark count).
+        bookmark_count = C_("FooterCompactPrefix", "BM"),
         percentage = nil,
-        book_time_to_read = "",
+        book_time_to_read = nil,
         chapter_time_to_read = BD.mirroredUILayout() and "«" or "»",
         frontlight = "*",
-        -- @translators This is the footer compact letter prefix for memory usage.
-        mem_usage = C_("FooterCompactLetterPrefix", "M"),
+        -- @translators This is the footer compact item prefix for memory usage.
+        mem_usage = C_("FooterCompactPrefix", "M"),
         wifi_status = "",
         wifi_status_off = "",
     }
@@ -148,7 +148,7 @@ local footerTextGeneratorMap = {
         local powerd = Device:getPowerDevice()
         local batt_lvl = powerd:getCapacity()
         -- If we're using icons, use fancy variable icons
-        if symbol_type == "icons" or symbol_type == "compact_letters" then
+        if symbol_type == "icons" or symbol_type == "compact_items" then
             if powerd:isCharging() then
                 prefix = ""
             else
@@ -303,7 +303,7 @@ local footerTextGeneratorMap = {
         -- NOTE: This one deviates a bit from the mold because, in icons mode, we simply use two different icons and no text.
         local symbol_type = footer.settings.item_prefix or "icons"
         local NetworkMgr = require("ui/network/manager")
-        if symbol_type == "icons" or symbol_type == "compact_letters" then
+        if symbol_type == "icons" or symbol_type == "compact_items" then
             if NetworkMgr:isWifiOn() then
                 return symbol_prefix.icons.wifi_status
             else
@@ -1245,16 +1245,16 @@ function ReaderFooter:addToMainMenu(menu_items)
                     {
                         text_func = function()
                             local sym_tbl = {}
-                            for _, letter in pairs(symbol_prefix.compact_letters) do
+                            for _, letter in pairs(symbol_prefix.compact_items) do
                                 table.insert(sym_tbl, letter)
                             end
-                            return T(_("Compact Letters (%1)"), table.concat(sym_tbl, " "))
+                            return T(_("Compact Items (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
-                            return self.settings.item_prefix == "compact_letters" or self.settings.item_prefix == nil
+                            return self.settings.item_prefix == "compact_items" or self.settings.item_prefix == nil
                         end,
                         callback = function()
-                            self.settings.item_prefix = "compact_letters"
+                            self.settings.item_prefix = "compact_items"
                             self:refreshFooter(true)
                         end,
                     },
@@ -1762,8 +1762,8 @@ function ReaderFooter:genAllFooterText()
         -- Skip empty generators, so they don't generate bogus separators
         local text = gen(self)
         if text and text ~= "" then
-            if self.settings.item_prefix == "compact_letters" then
-                -- remove whitespace from footer items if symbol_type is compact_letters
+            if self.settings.item_prefix == "compact_items" then
+                -- remove whitespace from footer items if symbol_type is compact_items
                 text = text:gsub('%s', '')
                 table.insert(info, BD.wrap(text))
             else
