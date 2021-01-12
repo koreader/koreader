@@ -77,6 +77,21 @@ local symbol_prefix = {
         mem_usage = "",
         wifi_status = "",
         wifi_status_off = "",
+    },
+    compact_items = {
+        time = nil,
+        pages_left = "›",
+        battery = "",
+        -- @translators This is the footer compact item prefix for the number of bookmarks (bookmark count).
+        bookmark_count = C_("FooterCompactItemsPrefix", "BM"),
+        percentage = nil,
+        book_time_to_read = nil,
+        chapter_time_to_read = "»",
+        frontlight = "*",
+        -- @translators This is the footer compact item prefix for memory usage.
+        mem_usage = C_("FooterCompactItemsPrefix", "M"),
+        wifi_status = "",
+        wifi_status_off = "",
     }
 }
 if BD.mirroredUILayout() then
@@ -133,7 +148,7 @@ local footerTextGeneratorMap = {
         local powerd = Device:getPowerDevice()
         local batt_lvl = powerd:getCapacity()
         -- If we're using icons, use fancy variable icons
-        if symbol_type == "icons" then
+        if symbol_type == "icons" or symbol_type == "compact_items" then
             if powerd:isCharging() then
                 prefix = ""
             else
@@ -288,7 +303,7 @@ local footerTextGeneratorMap = {
         -- NOTE: This one deviates a bit from the mold because, in icons mode, we simply use two different icons and no text.
         local symbol_type = footer.settings.item_prefix or "icons"
         local NetworkMgr = require("ui/network/manager")
-        if symbol_type == "icons" then
+        if symbol_type == "icons" or symbol_type == "compact_items" then
             if NetworkMgr:isWifiOn() then
                 return symbol_prefix.icons.wifi_status
             else
@@ -314,8 +329,9 @@ local footerTextGeneratorMap = {
     book_title = function(footer)
         local doc_info = footer.ui.document:getProps()
         if doc_info and doc_info.title then
+            local title = doc_info.title:gsub(" ", "\xC2\xA0") -- replace space with no-break-space
             local title_widget = TextWidget:new{
-                text = doc_info.title,
+                text = title,
                 max_width = footer._saved_screen_width * footer.settings.book_title_max_width_pct / 100,
                 face = Font:getFace(footer.text_font_face, footer.settings.text_font_size),
                 bold = footer.settings.text_font_bold,
@@ -333,6 +349,7 @@ local footerTextGeneratorMap = {
     book_chapter = function(footer)
         local chapter_title = footer.ui.toc:getTocTitleByPage(footer.pageno)
         if chapter_title and chapter_title ~= "" then
+            chapter_title = chapter_title:gsub(" ", "\xC2\xA0") -- replace space with no-break-space
             local chapter_widget = TextWidget:new{
                 text = chapter_title,
                 max_width = footer._saved_screen_width * footer.settings.book_chapter_max_width_pct / 100,
@@ -1228,6 +1245,22 @@ function ReaderFooter:addToMainMenu(menu_items)
                     {
                         text_func = function()
                             local sym_tbl = {}
+                            for _, letter in pairs(symbol_prefix.compact_items) do
+                                table.insert(sym_tbl, letter)
+                            end
+                            return T(_("Compact Items (%1)"), table.concat(sym_tbl, " "))
+                        end,
+                        checked_func = function()
+                            return self.settings.item_prefix == "compact_items" or self.settings.item_prefix == nil
+                        end,
+                        callback = function()
+                            self.settings.item_prefix = "compact_items"
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
+                        text_func = function()
+                            local sym_tbl = {}
                             for _, letter in pairs(symbol_prefix.letters) do
                                 table.insert(sym_tbl, letter)
                             end
@@ -1729,6 +1762,11 @@ function ReaderFooter:genAllFooterText()
         -- Skip empty generators, so they don't generate bogus separators
         local text = gen(self)
         if text and text ~= "" then
+            if self.settings.item_prefix == "compact_items" then
+                -- remove whitespace from footer items if symbol_type is compact_items
+                -- use a hair-space to avoid issues with RTL display
+                text = text:gsub("%s", "\xE2\x80\x8A")
+            end
             table.insert(info, BD.wrap(text))
         end
     end
