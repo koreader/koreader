@@ -7,7 +7,7 @@ describe("Persist module", function()
         b = nil,
         c = "something",
         d = 1234,
-        d = {
+        e = {
             things = {
                 id = 0,
                 menu = nil,
