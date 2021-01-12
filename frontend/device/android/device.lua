@@ -142,7 +142,6 @@ function Device:init()
                 or ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
                 this.device.screen:_updateWindow()
             elseif ev.code == C.APP_CMD_CONFIG_CHANGED then
-                logger.info("android.getScreenWidth()", android.getScreenWidth(), "android.getScreenHeight()", android.getScreenHeight(), "android.getScreenAvailableWidth()", android.getScreenAvailableWidth(), "android.getScreenAvailableHeight()", android.getScreenAvailableHeight(), "android.getTopInsetHeight()", android.getTopInsetHeight())
                 -- orientation and size changes
                 if android.screen.width ~= android.getScreenWidth()
                 or android.screen.height ~= android.getScreenHeight() then
