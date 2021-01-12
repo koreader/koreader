@@ -58,7 +58,8 @@ function UIManager:init()
         end,
     }
     self.poweroff_action = function()
-        self._entered_poweroff_stage = true;
+        self._entered_poweroff_stage = true
+        Device.orig_rotation_mode = Device.screen:getRotationMode()
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
         require("ui/screensaver"):show("poweroff", _("Powered off"))
         if Device:needsScreenRefreshAfterResume() then
@@ -74,7 +75,8 @@ function UIManager:init()
         end)
     end
     self.reboot_action = function()
-        self._entered_poweroff_stage = true;
+        self._entered_poweroff_stage = true
+        Device.orig_rotation_mode = Device.screen:getRotationMode()
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
         require("ui/screensaver"):show("reboot", _("Rebooting…"))
         if Device:needsScreenRefreshAfterResume() then
