@@ -80,15 +80,13 @@ local symbol_prefix = {
     },
     compact_items = {
         time = nil,
-        pages_left = ">",
-        -- pages_left = BD.mirroredUILayout() and "<" or ">",
+        pages_left = "›",
         battery = "",
         -- @translators This is the footer compact item prefix for the number of bookmarks (bookmark count).
         bookmark_count = C_("FooterCompactItemsPrefix", "BM"),
         percentage = nil,
         book_time_to_read = nil,
         chapter_time_to_read = "»",
-        -- chapter_time_to_read = BD.mirroredUILayout() and "«" or "»",
         frontlight = "*",
         -- @translators This is the footer compact item prefix for memory usage.
         mem_usage = C_("FooterCompactItemsPrefix", "M"),
