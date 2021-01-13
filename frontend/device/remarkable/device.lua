@@ -18,18 +18,6 @@ local wacom_height = 20967 -- unscaled_size_check: ignore
 local wacom_scale_x = screen_width / wacom_width
 local wacom_scale_y = screen_height / wacom_height
 
-local function turnOnWifi(model)
-    if model == "reMarkable 2" then
-        os.execute("./enable-rm2-wifi.sh")
-    end
-end
-
-local function turnOffWifi(model)
-    if model == "reMarkable 2" then
-        os.execute("./disable-rm2-wifi.sh")
-    end
-end
-
 local Remarkable = Generic:new{
     isRemarkable = yes,
     hasKeys = yes,
@@ -143,17 +131,15 @@ end
 function Remarkable:supportsScreensaver() return true end
 
 function Remarkable:initNetworkManager(NetworkMgr)
-    local model = self.model
-
     function NetworkMgr:turnOnWifi(complete_callback)
-        turnOnWifi(model)
+        os.execute("./enable-wifi.sh")
         self:reconnectOrShowNetworkMenu(function()
             self:connectivityCheck(1, complete_callback)
         end)
     end
 
     function NetworkMgr:turnOffWifi(complete_callback)
-        turnOffWifi(model)
+        os.execute("./disable-wifi.sh")
         if complete_callback then
             complete_callback()
         end
@@ -187,7 +173,7 @@ end
 
 function Remarkable2:suspend()
     -- Need to remove brcmfmac kernel module before suspend. Otherwise the module crashes on wakeup
-    turnOffWifi(self.model)
+    os.execute("./disable-wifi.sh")
 
     os.execute("systemctl suspend")
     -- While device is suspended, when the user presses the power button and wakes up the device,
