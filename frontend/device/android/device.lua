@@ -321,6 +321,7 @@ function Device:toggleFullscreen()
     elseif api < 19 and api >= 17 then
         local width = android.getScreenWidth()
         local height = android.getScreenHeight()
+        -- NOTE: Since we don't do HW rotation here, this should always match width
         local available_width = android.getScreenAvailableWidth()
         local available_height = android.getScreenAvailableHeight()
         local is_fullscreen = android.isFullscreen()
