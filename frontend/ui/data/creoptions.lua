@@ -40,6 +40,7 @@ local CreOptions = {
                 args = {1, 2},
                 default_arg = 1,
                 event = "SetVisiblePages",
+                --[[ Commented out, to have it also available in portrait mode
                 current_func = function()
                     -- If not in landscape mode, shows "1" as selected
                     if Device.screen:getScreenMode() ~= "landscape" then
@@ -48,9 +49,10 @@ local CreOptions = {
                     -- if we return nil, ConfigDialog will pick the one from the
                     -- configurable as if we hadn't provided this 'current_func'
                 end,
+                ]]--
                 enabled_func = function(configurable)
-                    return Device.screen:getScreenMode() == "landscape" and
-                        optionsutil.enableIfEquals(configurable, "view_mode", 0) -- "page"
+                    return optionsutil.enableIfEquals(configurable, "view_mode", 0) -- "page" mode
+                        -- and Device.screen:getScreenMode() == "landscape"
                 end,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[In landscape mode, you can choose to display one or two pages of the book on the screen.
