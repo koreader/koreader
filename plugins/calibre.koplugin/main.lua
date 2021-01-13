@@ -127,7 +127,7 @@ function Calibre:getSearchMenuTable()
             sub_item_table_func = function()
                 local result = {}
                 -- append previous scanned dirs to the list.
-                local cache = LuaSettings:open(CalibreSearch.user_libraries)
+                local cache = LuaSettings:open(CalibreSearch.cache_libs.path)
                 for path, _ in pairs(cache.data) do
                     table.insert(result, {
                         text = path,
