@@ -321,6 +321,8 @@ function Device:toggleFullscreen()
     elseif api < 19 and api >= 17 then
         local width = android.getScreenWidth()
         local height = android.getScreenHeight()
+        -- NOTE: Since we don't do HW rotation here, this should always match width
+        local available_width = android.getScreenAvailableWidth()
         local available_height = android.getScreenAvailableHeight()
         local is_fullscreen = android.isFullscreen()
         android.setFullscreen(not is_fullscreen)
@@ -329,7 +331,7 @@ function Device:toggleFullscreen()
         if is_fullscreen then
             self:setViewport(0, 0, width, height)
         else
-            self:setViewport(0, 0, width, available_height)
+            self:setViewport(0, 0, available_width, available_height)
         end
     else
         logger.dbg("ignoring fullscreen toggle, reason: legacy api " .. api)
