@@ -54,7 +54,7 @@ local function systemInfo()
     do
         local stat = io.open("/proc/stat", "r")
         if stat ~= nil then
-            for line in util.gsplit(stat:read("*all"), "\n", false) do
+            for line in stat:lines() do
                 local t = util.splitToArray(line, " ")
                 if #t >= 5 and string.lower(t[1]) == "cpu" then
                     local n1, n2, n3, n4
@@ -82,7 +82,7 @@ local function systemInfo()
         local meminfo = io.open("/proc/meminfo", "r")
         if meminfo ~= nil then
             result.memory = {}
-            for line in util.gsplit(meminfo:read("*all"), "\n", false) do
+            for line in meminfo:lines() do
                 local t = util.splitToArray(line, " ")
                 if #t >= 2 then
                     if string.lower(t[1]) == "memtotal:" then
@@ -142,7 +142,7 @@ function SystemStat:appendProcessInfo()
     local stat = io.open("/proc/self/stat", "r")
     if stat == nil then return end
 
-    local t = util.splitToArray(stat:read("*all"), " ")
+    local t = util.splitToArray(stat:read("*line"), " ")
     stat:close()
 
     local n1, n2
@@ -197,7 +197,7 @@ function SystemStat:appendStorageInfo()
     if not std_out then return end
 
     self:put({_("Storage information"), ""})
-    for line in util.gsplit(std_out:read("*all"), "\n", false) do
+    for line in std_out:lines() do
         local t = util.splitToArray(line, "\t")
         if #t ~= 4 then
             self:put({_("  Unexpected"), line})

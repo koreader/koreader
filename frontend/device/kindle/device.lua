@@ -678,7 +678,7 @@ function KindleOasis:init()
     -- get rotate dev by EV=d
     local std_out = io.popen("grep -e 'Handlers\\|EV=' /proc/bus/input/devices | grep -B1 'EV=d' | grep -o 'event[0-9]'", "r")
     if std_out then
-        local rotation_dev = std_out:read()
+        local rotation_dev = std_out:read("*line")
         std_out:close()
         if rotation_dev then
             self.input.open("/dev/input/"..rotation_dev)
@@ -752,7 +752,7 @@ function KindleOasis2:init()
     -- Get accelerometer device by looking for EV=d
     local std_out = io.popen("grep -e 'Handlers\\|EV=' /proc/bus/input/devices | grep -B1 'EV=d' | grep -o 'event[0-9]\\{1,2\\}'", "r")
     if std_out then
-        local rotation_dev = std_out:read()
+        local rotation_dev = std_out:read("*line")
         std_out:close()
         if rotation_dev then
             self.input.open("/dev/input/"..rotation_dev)
@@ -790,7 +790,7 @@ function KindlePaperWhite4:init()
     -- So, look for a goodix TS input device (c.f., #5110)...
     local std_out = io.popen("grep -e 'Handlers\\|Name=' /proc/bus/input/devices | grep -A1 'goodix-ts' | grep -o 'event[0-9]'", "r")
     if std_out then
-        local goodix_dev = std_out:read()
+        local goodix_dev = std_out:read("*line")
         std_out:close()
         if goodix_dev then
             self.touch_dev = "/dev/input/" .. goodix_dev
@@ -866,7 +866,7 @@ end
 
 local kindle_sn_fd = io.open("/proc/usid", "r")
 if not kindle_sn_fd then return end
-local kindle_sn = kindle_sn_fd:read()
+local kindle_sn = kindle_sn_fd:read("*line")
 kindle_sn_fd:close()
 -- NOTE: Attempt to sanely differentiate v1 from v2,
 --       c.f., https://github.com/NiLuJe/FBInk/commit/8a1161734b3f5b4461247af461d26987f6f1632e
