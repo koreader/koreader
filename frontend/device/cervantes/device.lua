@@ -7,7 +7,7 @@ local function no() return false end
 local function getProductId()
     local ntxinfo_pcb = io.popen("/usr/bin/ntxinfo /dev/mmcblk0 | grep pcb | cut -d ':' -f2", "r")
     if not ntxinfo_pcb then return 0 end
-    local product_id = tonumber(ntxinfo_pcb:read()) or 0
+    local product_id = ntxinfo_pcb:read("*number") or 0
     ntxinfo_pcb:close()
     return product_id
 end
@@ -20,23 +20,10 @@ local function isConnected()
     if not file then return 0 end
 
     -- 0 means not connected, 1 connected
-    local out = file:read("*all")
+    local out = file:read("*number")
     file:close()
 
-    -- strip NaN from file read (ie: line endings, error messages)
-    local carrier
-    if type(out) ~= "number" then
-        carrier = tonumber(out)
-    else
-        carrier = out
-    end
-
-    -- finally return if we're connected or not
-    if type(carrier) == "number" then
-        return carrier
-    else
-        return 0
-    end
+    return out or 0
 end
 
 local function isMassStorageSupported()

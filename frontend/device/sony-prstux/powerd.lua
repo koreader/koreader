@@ -25,7 +25,7 @@ function SonyPRSTUX_PowerD:getCapacityHW()
 end
 
 function SonyPRSTUX_PowerD:isChargingHW()
-    return self:read_str_file(self.status_file) == "Charging\n"
+    return self:read_str_file(self.status_file) == "Charging"
 end
 
 return SonyPRSTUX_PowerD
