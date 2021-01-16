@@ -176,7 +176,11 @@ local footerTextGeneratorMap = {
                     prefix = ""
                 end
             end
-            return BD.wrap(prefix) .. batt_lvl .. "%"
+            if symbol_type == "compact_items" then
+                return BD.wrap(prefix)
+            else
+                return BD.wrap(prefix) .. batt_lvl .. "%"
+            end
         else
             return BD.wrap(prefix) .. " " .. (powerd:isCharging() and "+" or "") .. batt_lvl .. "%"
         end
@@ -290,10 +294,11 @@ local footerTextGeneratorMap = {
         local prefix = symbol_prefix[symbol_type].mem_usage
         local statm = io.open("/proc/self/statm", "r")
         if statm then
-            local dummy, rss = statm:read("*number", "*number")
+            local infos = statm:read("*all")
             statm:close()
+            local rss = infos:match("^%S+ (%S+) ")
             -- we got the nb of 4Kb-pages used, that we convert to Mb
-            rss = math.floor(rss * 4096 / 1024 / 1024)
+            rss = math.floor(tonumber(rss) * 4096 / 1024 / 1024)
             return (prefix .. " %d"):format(rss)
         end
         return ""
@@ -1749,6 +1754,9 @@ function ReaderFooter:genFooterText() end
 function ReaderFooter:genAllFooterText()
     local info = {}
     local separator = "  "
+    if self.settings.item_prefix == "compact_items" then
+        separator = " "
+    end
     if self.settings.items_separator == "bar" or self.settings.items_separator == nil then
         separator = " | "
     elseif self.settings.items_separator == "bullet" then
