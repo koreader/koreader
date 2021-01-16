@@ -18,6 +18,7 @@ local rapidjson = require("rapidjson")
 local sha = require("ffi/sha2")
 local util = require("util")
 local _ = require("gettext")
+local N_ = _.ngettext
 local T = FFIUtil.template
 
 require("ffi/zeromq_h")
@@ -617,7 +618,7 @@ function CalibreWireless:deleteBook(arg)
             if i == 1 then
                 msg = T(_("Deleted file: %1"), BD.filepath(arg.lpaths[1]))
             else
-                msg = T(_("Deleted %1 files in %2:\n %3"),
+                msg = T(N_("Deleted 1 file in %2:\n %3", "Deleted %1 files in %2:\n %3", #titles),
                     #arg.lpaths, BD.filepath(inbox_dir), titles)
             end
             UIManager:show(InfoMessage:new{
