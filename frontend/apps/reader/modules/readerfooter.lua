@@ -290,11 +290,10 @@ local footerTextGeneratorMap = {
         local prefix = symbol_prefix[symbol_type].mem_usage
         local statm = io.open("/proc/self/statm", "r")
         if statm then
-            local infos = statm:read("*all")
+            local dummy, rss = statm:read("*number", "*number")
             statm:close()
-            local rss = infos:match("^%S+ (%S+) ")
             -- we got the nb of 4Kb-pages used, that we convert to Mb
-            rss = math.floor(tonumber(rss) * 4096 / 1024 / 1024)
+            rss = math.floor(rss * 4096 / 1024 / 1024)
             return (prefix .. " %d"):format(rss)
         end
         return ""

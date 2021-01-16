@@ -95,20 +95,20 @@ function BasePowerD:turnOnFrontlight()
 end
 
 function BasePowerD:read_int_file(file)
-    local fd =  io.open(file, "r")
+    local fd = io.open(file, "r")
     if fd then
-        local int = fd:read("*all"):match("%d+")
+        local int = fd:read("*number")
         fd:close()
-        return int and tonumber(int) or 0
+        return int or 0
     else
         return 0
     end
 end
 
 function BasePowerD:read_str_file(file)
-    local fd =  io.open(file, "r")
+    local fd = io.open(file, "r")
     if fd then
-        local str = fd:read("*all")
+        local str = fd:read("*line")
         fd:close()
         return str
     else

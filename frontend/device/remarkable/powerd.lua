@@ -19,7 +19,7 @@ function Remarkable_PowerD:getCapacityHW()
 end
 
 function Remarkable_PowerD:isChargingHW()
-    return self:read_str_file(self.status_file) == "Charging\n"
+    return self:read_str_file(self.status_file) == "Charging"
 end
 
 return Remarkable_PowerD

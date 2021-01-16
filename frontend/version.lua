@@ -10,7 +10,7 @@ function Version:getCurrentRevision()
     if not self.rev then
         local rev_file = io.open("git-rev", "r")
         if rev_file then
-            self.rev = rev_file:read()
+            self.rev = rev_file:read("*line")
             rev_file:close()
         end
         -- sanity check in case `git describe` failed

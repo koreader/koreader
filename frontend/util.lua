@@ -622,13 +622,8 @@ function util.getFilesystemType(path)
     local mounts = io.open("/proc/mounts", "r")
     if not mounts then return nil end
     local type
-    while true do
-        local line
+    for line in mounts:lines() do
         local mount = {}
-        line = mounts:read()
-        if line == nil then
-            break
-        end
         for param in line:gmatch("%S+") do table.insert(mount, param) end
         if string.match(path, mount[2]) then
             type = mount[3]

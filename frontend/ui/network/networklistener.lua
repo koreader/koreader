@@ -98,23 +98,11 @@ function NetworkListener:_getTxPackets()
     -- file exists only when Wi-Fi module is loaded.
     if not file then return nil end
 
-    local out = file:read("*all")
+    local tx_packets = file:read("*number")
     file:close()
 
-    -- strip NaN from file read (i.e.,: line endings, error messages)
-    local tx_packets
-    if type(out) ~= "number" then
-        tx_packets = tonumber(out)
-    else
-        tx_packets = out
-    end
-
-    -- finally return it
-    if type(tx_packets) == "number" then
-        return tx_packets
-    else
-        return nil
-    end
+    -- Will be nil if NaN, just like we want it
+    return tx_packets
 end
 
 function NetworkListener:_unscheduleActivityCheck()

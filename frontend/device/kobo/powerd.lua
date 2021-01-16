@@ -318,7 +318,7 @@ function KoboPowerD:getCapacityHW()
 end
 
 function KoboPowerD:isChargingHW()
-    return self:read_str_file(self.is_charging_file) == "Charging\n"
+    return self:read_str_file(self.is_charging_file) == "Charging"
 end
 
 function KoboPowerD:turnOffFrontlightHW()

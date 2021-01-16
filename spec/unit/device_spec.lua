@@ -227,7 +227,7 @@ describe("device module", function()
                     }
                 elseif filename == "/sys/class/backlight/max77696-bl/brightness" then
                     return {
-                        read = function() return "12" end,
+                        read = function() return 12 end,
                         close = function() end
                     }
                 else
