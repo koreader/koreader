@@ -22,6 +22,9 @@ function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
         weight = weight or 100,
     })
     self.filetype_provider[extension] = true
+    -- We take the first extension registered for a mimetype as canonical.
+    -- Provided we order the calls to addProvider() correct, that means
+    -- epub instead of epub3, etc.
     self.mimetype_ext[mimetype] = self.mimetype_ext[mimetype] or extension
 end
 
