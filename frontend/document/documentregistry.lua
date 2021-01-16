@@ -10,6 +10,7 @@ local DocumentRegistry = {
     registry = {},
     providers = {},
     filetype_provider = {},
+    mimetype_provider = {},
 }
 
 function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
@@ -21,6 +22,7 @@ function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
         weight = weight or 100,
     })
     self.filetype_provider[extension] = true
+    self.mimetype_provider[mimetype] = extension
 end
 
 function DocumentRegistry:getRandomFile(dir, opened, extension)
@@ -53,7 +55,12 @@ end
 --- Returns true if file has provider.
 -- @string file
 -- @treturn boolean
-function DocumentRegistry:hasProvider(file)
+function DocumentRegistry:hasProvider(file, mimetype)
+    if mimetype and self.mimetype_provider[mimetype] then
+        return true
+    end
+    if not file then return false end
+
     local filename_suffix = string.lower(util.getFileNameSuffix(file))
 
     local filetype_provider = G_reader_settings:readSetting("provider") or {}
@@ -176,6 +183,12 @@ function DocumentRegistry:setProvider(file, provider, all)
         local filetype_provider = G_reader_settings:readSetting("provider") or {}
         filetype_provider[filename_suffix] = provider.provider
         G_reader_settings:saveSetting("provider", filetype_provider)
+    end
+end
+
+function DocumentRegistry:mimeToExt(mimetype)
+    if self:hasProvider(nil, mimetype) then
+        return self.mimetype_provider[mimetype]
     end
 end
 

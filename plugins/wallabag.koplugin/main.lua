@@ -6,6 +6,7 @@ local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
 local Dispatcher = require("dispatcher")
 local DocSettings = require("docsettings")
+local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local FileManager = require("apps/filemanager/filemanager")
@@ -485,11 +486,18 @@ function Wallabag:download(article)
     local file_ext = ".epub"
     local item_url = "/api/entries/" .. article.id .. "/export.epub"
 
-    -- If the article links to a pdf file, we will download it directly
-    ---- @todo use hasProvider to skip all supported mimetypes
-    if article.mimetype == "application/pdf" then
-        file_ext = ".pdf"
-        item_url = article.url
+    -- If the article links to a supported file, we will download it directly.
+    -- All webpages are HTML. Ignore them since we want the Wallabag EPUB instead!
+    if article.mimetype ~= "text/html" then
+        if DocumentRegistry:hasProvider(nil, article.mimetype) then
+            file_ext = "."..DocumentRegistry:mimeToExt(article.mimetype)
+            item_url = article.url
+        -- A function represents `null` in our JSON.decode, because `nil` would just disappear.
+        -- In that case, fall back to the file extension.
+        elseif type(article.mimetype) == "function" and DocumentRegistry:hasProvider(article.url) then
+            file_ext = ""
+            item_url = article.url
+        end
     end
 
     local local_path = self.directory .. article_id_prefix .. article.id .. article_id_postfix .. title .. file_ext
