@@ -5,6 +5,7 @@ local ffi = require("ffi")
 local logger = require("logger")
 local _ = require("gettext")
 local Input = Device.input
+local N_ = _.ngettext
 local Screen = Device.screen
 local T = require("ffi/util").template
 
@@ -26,9 +27,9 @@ local timeout_custom7 = 30 * 60 * 1000
 local function humanReadableTimeout(timeout)
     local sec = timeout / 1000
     if sec >= 120 then
-        return T(_("%1 minutes"), sec / 60)
+        return T(N_("1 minute", "%1 minutes", sec), sec / 60)
     else
-        return T(_("%1 seconds"), sec)
+        return T(N_("1 second", "%1 seconds", sec), sec)
     end
 end
 
