@@ -1023,7 +1023,8 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         })
                     else
                         UIManager:show(InfoMessage:new{
-                            text =T(_("Reading progress unavailable.\nNo data from last %1 days."),7)})
+                            text = _("Reading progress is not available.\nThere is no data for the last week."),
+                        })
                     end
                 end
             },
