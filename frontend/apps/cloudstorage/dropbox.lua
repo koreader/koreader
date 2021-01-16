@@ -142,7 +142,7 @@ function DropBox:info(token)
     local info = DropBoxApi:fetchInfo(token)
     local info_text
     if info and info.name then
-        info_text = T(_"Type: %1\nName: %2\nEmail: %3\nCounty: %4",
+        info_text = T(_"Type: %1\nName: %2\nEmail: %3\nCountry: %4",
             "Dropbox",info.name.display_name, info.email, info.country)
     else
         info_text = _("No information available")
