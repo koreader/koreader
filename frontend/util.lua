@@ -884,16 +884,16 @@ function util.getFriendlySize(size, right_align)
     size = tonumber(size)
     if not size or type(size) ~= "number" then return end
     if size > 1024*1024*1024 then
-        -- @translators This is an abbreviation for the gibibyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 GiB"), string.format(frac_format, size/1024/1024/1024))
+        -- @translators This is an abbreviation for the gigabyte, a unit of computer memory or data storage capacity.
+        return T(_("%1 GB"), string.format(frac_format, size/1024/1024/1024))
     end
     if size > 1024*1024 then
-        -- @translators This is an abbreviation for the mebibyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 MiB"), string.format(frac_format, size/1024/1024))
+        -- @translators This is an abbreviation for the megabyte, a unit of computer memory or data storage capacity.
+        return T(_("%1 MB"), string.format(frac_format, size/1024/1024))
     end
     if size > 1024 then
-        -- @translators This is an abbreviation for the kibibyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 KiB"), string.format(frac_format, size/1024))
+        -- @translators This is an abbreviation for the kilobyte, a unit of computer memory or data storage capacity.
+        return T(_("%1 KB"), string.format(frac_format, size/1024))
     else
         -- @translators This is an abbreviation for the byte, a unit of computer memory or data storage capacity.
         return T(_("%1 B"), string.format(deci_format, size))
