@@ -10,7 +10,7 @@ local DocumentRegistry = {
     registry = {},
     providers = {},
     filetype_provider = {},
-    mimetype_provider = {},
+    mimetype_ext = {},
 }
 
 function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
@@ -22,7 +22,7 @@ function DocumentRegistry:addProvider(extension, mimetype, provider, weight)
         weight = weight or 100,
     })
     self.filetype_provider[extension] = true
-    self.mimetype_provider[mimetype] = extension
+    self.mimetype_ext[mimetype] = self.mimetype_ext[mimetype] or extension
 end
 
 function DocumentRegistry:getRandomFile(dir, opened, extension)
@@ -56,7 +56,7 @@ end
 -- @string file
 -- @treturn boolean
 function DocumentRegistry:hasProvider(file, mimetype)
-    if mimetype and self.mimetype_provider[mimetype] then
+    if mimetype and self.mimetype_ext[mimetype] then
         return true
     end
     if not file then return false end
@@ -187,9 +187,7 @@ function DocumentRegistry:setProvider(file, provider, all)
 end
 
 function DocumentRegistry:mimeToExt(mimetype)
-    if self:hasProvider(nil, mimetype) then
-        return self.mimetype_provider[mimetype]
-    end
+    return self.mimetype_ext[mimetype]
 end
 
 function DocumentRegistry:openDocument(file, provider)
