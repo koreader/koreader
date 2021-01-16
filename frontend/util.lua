@@ -885,15 +885,15 @@ function util.getFriendlySize(size, right_align)
     if not size or type(size) ~= "number" then return end
     if size > 1024*1024*1024 then
         -- @translators This is an abbreviation for the gigabyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 GB"), string.format(frac_format, size/1024/1024/1024))
+        return T(_("%1 GB"), string.format(frac_format, size/1000/1000/1000))
     end
     if size > 1024*1024 then
         -- @translators This is an abbreviation for the megabyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 MB"), string.format(frac_format, size/1024/1024))
+        return T(_("%1 MB"), string.format(frac_format, size/1000/1000))
     end
     if size > 1024 then
         -- @translators This is an abbreviation for the kilobyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 KB"), string.format(frac_format, size/1024))
+        return T(_("%1 kB"), string.format(frac_format, size/1000))
     else
         -- @translators This is an abbreviation for the byte, a unit of computer memory or data storage capacity.
         return T(_("%1 B"), string.format(deci_format, size))
