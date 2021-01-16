@@ -176,7 +176,11 @@ local footerTextGeneratorMap = {
                     prefix = ""
                 end
             end
-            return BD.wrap(prefix) .. batt_lvl .. "%"
+            if symbol_type == "compact_items" then
+                return BD.wrap(prefix)
+            else
+                return BD.wrap(prefix) .. batt_lvl .. "%"
+            end
         else
             return BD.wrap(prefix) .. " " .. (powerd:isCharging() and "+" or "") .. batt_lvl .. "%"
         end
@@ -1749,6 +1753,9 @@ function ReaderFooter:genFooterText() end
 function ReaderFooter:genAllFooterText()
     local info = {}
     local separator = "  "
+    if self.settings.item_prefix == "compact_items" then
+        separator = " "
+    end
     if self.settings.items_separator == "bar" or self.settings.items_separator == nil then
         separator = " | "
     elseif self.settings.items_separator == "bullet" then
