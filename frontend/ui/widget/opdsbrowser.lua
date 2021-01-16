@@ -531,10 +531,10 @@ function OPDSBrowser.getCurrentDownloadDir()
     return G_reader_settings:readSetting("download_dir") or lastdir
 end
 
-function OPDSBrowser:downloadFile(item, format, remote_url)
+function OPDSBrowser:downloadFile(item, filetype, remote_url)
     -- download to user selected directory or last opened dir
     local download_dir = self.getCurrentDownloadDir()
-    local filename = util.getSafeFilename(item.author .. " - " .. item.title .. "." .. string.lower(format), download_dir)
+    local filename = util.getSafeFilename(item.author .. " - " .. item.title .. "." .. filetype, download_dir)
     local local_path = download_dir .. "/" .. filename
     local_path = util.fixUtf8(local_path, "_")
 
@@ -628,13 +628,13 @@ function OPDSBrowser:showDownloads(item)
             if acquisition then
                 local filetype
                 if DocumentRegistry:hasProvider(nil, acquisition.type) then
-                    filetype = string.upper(DocumentRegistry:mimeToExt(acquisition.type))
+                    filetype = DocumentRegistry:mimeToExt(acquisition.type)
                 elseif DocumentRegistry:hasProvider(acquisition.href) then
-                    filetype = string.upper(util.getFileNameSuffix(acquisition.href))
+                    filetype = string.lower(util.getFileNameSuffix(acquisition.href))
                 end
                 if filetype then
                     -- append DOWNWARDS BLACK ARROW ⬇ U+2B07 to format
-                    button.text = filetype .. "\xE2\xAC\x87"
+                    button.text = string.upper(filetype) .. "\xE2\xAC\x87"
                     button.callback = function()
                         self:downloadFile(item, filetype, acquisition.href)
                         UIManager:close(self.download_dialog)
