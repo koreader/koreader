@@ -4,6 +4,7 @@ local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local ConfirmBox = require("ui/widget/confirmbox")
+local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
@@ -44,27 +45,6 @@ local OPDSBrowser = Menu:extend{
     acquisition_rel = "^http://opds%-spec%.org/acquisition",
     image_rel = "http://opds-spec.org/image",
     thumbnail_rel = "http://opds-spec.org/image/thumbnail",
-
-    formats = {
-        ["application/epub+zip"] = "EPUB",
-        ["application/fb2+zip"] = "FB2",
-        ["application/pdf"] = "PDF",
-        ["text/html"] = "HTML",
-        ["text/plain"] = "TXT",
-        ["application/x-mobipocket-ebook"] = "MOBI",
-        ["application/x-mobi8-ebook"] = "AZW3",
-        ["application/vnd.amazon.mobi8-ebook"] = "AZW3",
-        ["application/x-cbz"] = "CBZ",
-        ["application/vnd.comicbook+zip"] = "CBZ",
-        ["application/zip"] = "CBZ",
-        ["application/x-cbr"] = "CBR",
-        ["application/vnd.comicbook-rar"] = "CBR",
-        ["application/x-rar-compressed"] = "CBR",
-        ["application/vnd.rar"] = "CBR",
-        ["application/djvu"] = "DJVU",
-        ["image/x-djvu"] = "DJVU",
-        ["image/vnd.djvu"] = "DJVU",
-    },
 
     width = Screen:getWidth(),
     height = Screen:getHeight(),
@@ -646,12 +626,17 @@ function OPDSBrowser:showDownloads(item)
             local index = (i-1)*downloadsperline + j
             local acquisition = acquisitions[index]
             if acquisition then
-                local format = self.formats[acquisition.type]
-                if format then
+                local filetype
+                if DocumentRegistry:hasProvider(nil, acquisition.type) then
+                    filetype = string.upper(DocumentRegistry:mimeToExt(acquisition.type))
+                elseif DocumentRegistry:hasProvider(acquisition.href) then
+                    filetype = string.upper(util.getFileNameSuffix(acquisition.href))
+                end
+                if filetype then
                     -- append DOWNWARDS BLACK ARROW ⬇ U+2B07 to format
-                    button.text = format .. "\xE2\xAC\x87"
+                    button.text = filetype .. "\xE2\xAC\x87"
                     button.callback = function()
-                        self:downloadFile(item, format, acquisition.href)
+                        self:downloadFile(item, filetype, acquisition.href)
                         UIManager:close(self.download_dialog)
                     end
                     table.insert(line, button)
