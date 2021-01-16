@@ -106,9 +106,9 @@ function KindlePowerD:getCapacityHW()
     else
         local std_out = io.popen("gasgauge-info -c 2>/dev/null", "r")
         if std_out then
-            local result = std_out:read("*all"):match("%d+")
+            local result = std_out:read("*number")
             std_out:close()
-            return result and tonumber(result) or 0
+            return result or 0
         else
             return 0
         end

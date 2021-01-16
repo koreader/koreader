@@ -192,7 +192,7 @@ function CervantesPowerD:getCapacityHW()
 end
 
 function CervantesPowerD:isChargingHW()
-    return self:read_str_file(self.status_file) == "Charging\n"
+    return self:read_str_file(self.status_file) == "Charging"
 end
 
 function CervantesPowerD:beforeSuspend()
