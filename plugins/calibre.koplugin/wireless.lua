@@ -618,7 +618,7 @@ function CalibreWireless:deleteBook(arg)
             if i == 1 then
                 msg = T(_("Deleted file: %1"), BD.filepath(arg.lpaths[1]))
             else
-                msg = T(N_("Deleted 1 file in %2:\n %3", "Deleted %1 files in %2:\n %3", #titles),
+                msg = T(N_("Deleted 1 file in %2:\n %3", "Deleted %1 files in %2:\n %3", #arg.lpaths),
                     #arg.lpaths, BD.filepath(inbox_dir), titles)
             end
             UIManager:show(InfoMessage:new{
