@@ -411,9 +411,9 @@ function ListMenuItem:update()
                 -- Display these instead of the read %
                 if pages then
                     if status == "complete" then
-                        pages_str = T(_("Finished - %1 pages"), pages)
+                        pages_str = T(N_("Finished – 1 page", "Finished – %1 pages", pages), pages)
                     else
-                        pages_str = T(_("On hold - %1 pages"), pages)
+                        pages_str = T(N_("On hold – 1 page", "On hold – %1 pages", pages), pages)
                     end
                 else
                     pages_str = status == "complete" and _("Finished") or _("On hold")
