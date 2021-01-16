@@ -332,19 +332,19 @@ describe("util module", function()
         describe("should convert bytes to friendly size as string", function()
             it("to 100.0 GB", function()
                 assert.is_equal("100.0 GB",
-                                util.getFriendlySize(100*1024*1024*1024))
+                                util.getFriendlySize(100*1000*1000*1000))
             end)
             it("to 1.0 GB", function()
                 assert.is_equal("1.0 GB",
-                                util.getFriendlySize(1024*1024*1024+1))
+                                util.getFriendlySize(1000*1000*1000+1))
             end)
             it("to 1.0 MB", function()
                 assert.is_equal("1.0 MB",
-                                util.getFriendlySize(1024*1024+1))
+                                util.getFriendlySize(1000*1000+1))
             end)
-            it("to 1.0 KB", function()
-                assert.is_equal("1.0 KB",
-                                util.getFriendlySize(1024+1))
+            it("to 1.0 kB", function()
+                assert.is_equal("1.0 kB",
+                                util.getFriendlySize(1000+1))
             end)
             it("to B", function()
                 assert.is_equal("10 B",
@@ -352,19 +352,19 @@ describe("util module", function()
             end)
             it("to 100.0 GB with minimum field width alignment", function()
                 assert.is_equal(" 100.0 GB",
-                                util.getFriendlySize(100*1024*1024*1024, true))
+                                util.getFriendlySize(100*1000*1000*1000, true))
             end)
             it("to 1.0 GB with minimum field width alignment", function()
                 assert.is_equal("   1.0 GB",
-                                util.getFriendlySize(1024*1024*1024+1, true))
+                                util.getFriendlySize(1000*1000*1000+1, true))
             end)
             it("to 1.0 MB with minimum field width alignment", function()
                 assert.is_equal("   1.0 MB",
-                                util.getFriendlySize(1024*1024+1, true))
+                                util.getFriendlySize(1000*1000+1, true))
             end)
-            it("to 1.0 KB with minimum field width alignment", function()
-                assert.is_equal("   1.0 KB",
-                                util.getFriendlySize(1024+1, true))
+            it("to 1.0 kB with minimum field width alignment", function()
+                assert.is_equal("   1.0 kB",
+                                util.getFriendlySize(1000+1, true))
             end)
             it("to B with minimum field width alignment", function()
                 assert.is_equal("    10 B",
