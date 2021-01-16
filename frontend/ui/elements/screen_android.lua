@@ -26,7 +26,7 @@ local timeout_custom7 = 30 * 60 * 1000
 
 local function humanReadableTimeout(timeout)
     local sec = timeout / 1000
-    if sec >= 120 then
+    if sec >= 60 then
         return T(N_("1 minute", "%1 minutes", sec), sec / 60)
     else
         return T(N_("1 second", "%1 seconds", sec), sec)
