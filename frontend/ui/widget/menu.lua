@@ -472,22 +472,30 @@ function MenuItem:onTapSelect(arg, ges)
         coroutine.resume(co)
     else
         self[1].invert = true
-        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
         UIManager:setDirty(nil, function()
             return "fast", self[1].dimen
         end)
-        UIManager:tickAfterNext(function()
-            logger.dbg("creating coroutine for menu select")
-            local co = coroutine.create(function()
-                self.menu:onMenuSelect(self.table, pos)
-            end)
-            coroutine.resume(co)
-            self[1].invert = false
-            --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-            UIManager:setDirty(self.show_parent, function()
-                return "ui", self[1].dimen
-            end)
+
+        -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
+        UIManager:forceRePaint()
+        logger.dbg("creating coroutine for menu select")
+        local co = coroutine.create(function()
+            self.menu:onMenuSelect(self.table, pos)
         end)
+        coroutine.resume(co)
+        UIManager:forceRePaint()
+        --UIManager:waitForVSync()
+
+        self[1].invert = false
+        -- We assume a tap anywhere updates the full menu, so, forgo this, much like in TouchMenu
+        --[[
+        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(nil, function()
+            return "ui", self[1].dimen
+        end)
+        --]]
+        --UIManager:forceRePaint()
     end
     return true
 end
@@ -498,18 +506,23 @@ function MenuItem:onHoldSelect(arg, ges)
         self.menu:onMenuHold(self.table, pos)
     else
         self[1].invert = true
-        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
         UIManager:setDirty(nil, function()
             return "fast", self[1].dimen
         end)
-        UIManager:tickAfterNext(function()
-            self.menu:onMenuHold(self.table, pos)
-            self[1].invert = false
-            --UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-            UIManager:setDirty(self.show_parent, function()
-                return "ui", self[1].dimen
-            end)
+
+        -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
+        UIManager:forceRePaint()
+        self.menu:onMenuHold(self.table, pos)
+        UIManager:forceRePaint()
+        --UIManager:waitForVSync()
+
+        self[1].invert = false
+        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(nil, function()
+            return "ui", self[1].dimen
         end)
+        --UIManager:forceRePaint()
     end
     return true
 end
@@ -666,25 +679,25 @@ function Menu:init()
         chevron_left, chevron_right = chevron_right, chevron_left
         chevron_first, chevron_last = chevron_last, chevron_first
     end
-    self.page_info_left_chev = Button:new{
+    self.page_info_left_chev = self.page_info_left_chev or Button:new{
         icon = chevron_left,
         callback = function() self:onPrevPage() end,
         bordersize = 0,
         show_parent = self.show_parent,
     }
-    self.page_info_right_chev = Button:new{
+    self.page_info_right_chev = self.page_info_right_chev or Button:new{
         icon = chevron_right,
         callback = function() self:onNextPage() end,
         bordersize = 0,
         show_parent = self.show_parent,
     }
-    self.page_info_first_chev = Button:new{
+    self.page_info_first_chev = self.page_info_first_chev or Button:new{
         icon = chevron_first,
         callback = function() self:onFirstPage() end,
         bordersize = 0,
         show_parent = self.show_parent,
     }
-    self.page_info_last_chev = Button:new{
+    self.page_info_last_chev = self.page_info_last_chev or Button:new{
         icon = chevron_last,
         callback = function() self:onLastPage() end,
         bordersize = 0,
@@ -752,10 +765,10 @@ function Menu:init()
         end
     end
 
-    self.page_info_text = Button:new{
+    self.page_info_text = self.page_info_text or Button:new{
         text = "",
         hold_input = {
-            title = title_goto ,
+            title = title_goto,
             type = type_goto,
             hint_func = hint_func,
             buttons = buttons,
@@ -776,7 +789,7 @@ function Menu:init()
     }
 
     -- return button
-    self.page_return_arrow = Button:new{
+    self.page_return_arrow = self.page_return_arrow or Button:new{
         icon = "back.top",
         callback = function()
             if self.onReturn then self:onReturn() end

@@ -207,7 +207,7 @@ function ReaderStatistics:initData()
     else
         -- NOTE: Possibly less weird-looking than initializing this to 0?
         self.avg_time = math.floor(0.50 * self.page_max_read_sec)
-        logger.info("ReaderStatistics: Initializing average time per page at 50% of the max value, i.e.,", self.avg_time)
+        logger.dbg("ReaderStatistics: Initializing average time per page at 50% of the max value, i.e.,", self.avg_time)
     end
 end
 
@@ -216,7 +216,7 @@ function ReaderStatistics:onUpdateToc()
     local new_pagecount = self.view.document:getPageCount()
 
     if new_pagecount ~= self.data.pages then
-        logger.info("ReaderStatistics: Pagecount change, flushing volatile book statistics")
+        logger.dbg("ReaderStatistics: Pagecount change, flushing volatile book statistics")
         -- Flush volatile stats to DB for current book, and update pagecount and average time per page stats
         self:insertDB(self.id_curr_book, new_pagecount)
     end
@@ -1023,7 +1023,8 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         })
                     else
                         UIManager:show(InfoMessage:new{
-                            text =T(_("Reading progress unavailable.\nNo data from last %1 days."),7)})
+                            text = _("Reading progress is not available.\nThere is no data for the last week."),
+                        })
                     end
                 end
             },
@@ -2033,7 +2034,7 @@ function ReaderStatistics:resetCurrentBook()
             self.book_read_pages = 0
             self.book_read_time = 0
             self.avg_time = math.floor(0.50 * self.page_max_read_sec)
-            logger.info("ReaderStatistics: Initializing average time per page at 50% of the max value, i.e.,", self.avg_time)
+            logger.dbg("ReaderStatistics: Initializing average time per page at 50% of the max value, i.e.,", self.avg_time)
 
             -- And the current volatile stats
             self:resetVolatileStats(os.time())

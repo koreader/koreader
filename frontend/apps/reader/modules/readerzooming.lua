@@ -200,7 +200,7 @@ function ReaderZooming:onZoom(direction)
     return true
 end
 
-function ReaderZooming:onDefineZoom(btn)
+function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     local config = self.ui.document.configurable
     local settings = ({
         [7] = {right_to_left = false, zoom_bottom_to_top = false, zoom_direction_vertical = false},
@@ -281,9 +281,10 @@ function ReaderZooming:onDefineZoom(btn)
             btn == "columns" and settings.zoom_overlap_h or settings.zoom_overlap_v
         )
     end
-    if tonumber(btn) then
+    if when_applied_callback then
+        -- Provided when hide_on_apply, and ConfigDialog temporarily hidden:
+        -- show an InfoMessage with the values, and call when_applied_callback on dismiss
         UIManager:show(InfoMessage:new{
-            timeout = 2,
             text = T(_([[Zoom set to:
 
     mode: %1
@@ -298,6 +299,7 @@ function ReaderZooming:onDefineZoom(btn)
                 ("%.2f"):format(self:getNumberOf("rows", settings.zoom_overlap_v)),
                 settings.zoom_overlap_v,
                 ("%.2f"):format(self:getNumberOf("columns"))),
+            dismiss_callback = when_applied_callback,
         })
     end
 end

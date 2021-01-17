@@ -384,6 +384,33 @@ function util.arrayContains(t, v, cb)
     return false
 end
 
+--- Test whether array t contains a reference to array n (at any depth at or below m)
+---- @param t Lua table (array only)
+---- @param n Lua table (array only)
+---- @int m Max nesting level
+function util.arrayReferences(t, n, m, l)
+    if not m then m = 15 end
+    if not l then l = 0 end
+    if l > m then
+        return false
+    end
+
+    if type(t) == "table" then
+        if t == n then
+            return true, l
+        end
+
+        for _, v in ipairs(t) do
+            local matched, depth = util.arrayReferences(v, n, m, l + 1)
+            if matched then
+                return matched, depth
+            end
+        end
+    end
+
+    return false
+end
+
 -- Merge t2 into t1, overwriting existing elements if they already exist
 -- Probably not safe with nested tables (c.f., https://stackoverflow.com/q/1283388)
 ---- @param t1 Lua table
@@ -595,13 +622,8 @@ function util.getFilesystemType(path)
     local mounts = io.open("/proc/mounts", "r")
     if not mounts then return nil end
     local type
-    while true do
-        local line
+    for line in mounts:lines() do
         local mount = {}
-        line = mounts:read()
-        if line == nil then
-            break
-        end
         for param in line:gmatch("%S+") do table.insert(mount, param) end
         if string.match(path, mount[2]) then
             type = mount[3]
@@ -856,17 +878,17 @@ function util.getFriendlySize(size, right_align)
     local deci_format = right_align and "%6d" or "%d"
     size = tonumber(size)
     if not size or type(size) ~= "number" then return end
-    if size > 1024*1024*1024 then
+    if size > 1000*1000*1000 then
         -- @translators This is an abbreviation for the gigabyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 GB"), string.format(frac_format, size/1024/1024/1024))
+        return T(_("%1 GB"), string.format(frac_format, size/1000/1000/1000))
     end
-    if size > 1024*1024 then
+    if size > 1000*1000 then
         -- @translators This is an abbreviation for the megabyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 MB"), string.format(frac_format, size/1024/1024))
+        return T(_("%1 MB"), string.format(frac_format, size/1000/1000))
     end
-    if size > 1024 then
+    if size > 1000 then
         -- @translators This is an abbreviation for the kilobyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 KB"), string.format(frac_format, size/1024))
+        return T(_("%1 kB"), string.format(frac_format, size/1000))
     else
         -- @translators This is an abbreviation for the byte, a unit of computer memory or data storage capacity.
         return T(_("%1 B"), string.format(deci_format, size))
@@ -1132,23 +1154,6 @@ function util.clearTable(t)
     local c = #t
     for i = 0, c do t[i] = nil end
 end
-
---- Dumps a table into a file.
---- @table t the table to be dumped
---- @string file the file to store the table
---- @treturn bool true on success, false otherwise
-function util.dumpTable(t, file)
-    if not t or not file or file == "" then return end
-    local dump = require("dump")
-    local f = io.open(file, "w")
-    if f then
-        f:write("return "..dump(t))
-        f:close()
-        return true
-    end
-    return false
-end
-
 
 --- Encode URL also known as percent-encoding see https://en.wikipedia.org/wiki/Percent-encoding
 --- @string text the string to encode

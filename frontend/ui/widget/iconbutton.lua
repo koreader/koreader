@@ -97,19 +97,26 @@ function IconButton:onTapIconButton()
     else
         self.image.invert = true
         -- For ConfigDialog icons, we can't avoid that initial repaint...
-        UIManager:widgetRepaint(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
+        UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
         UIManager:setDirty(nil, function()
             return "fast", self.dimen
         end)
-        -- And, we usually need to delay the callback for the same reasons as Button...
-        UIManager:tickAfterNext(function()
-            self.callback()
+
+        -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
+        UIManager:forceRePaint()
+        self.callback()
+        UIManager:forceRePaint()
+        --UIManager:waitForVSync()
+
+        -- If the callback closed our parent (which may not always be the top-level widget, or even *a* window-level widget; e.g., the Home/+ buttons in the FM), we're done
+        if UIManager:getTopWidget() == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
             self.image.invert = false
-            UIManager:widgetRepaint(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
+            UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
             UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
-        end)
+            --UIManager:forceRePaint()
+        end
     end
     return true
 end

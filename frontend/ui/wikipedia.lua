@@ -97,7 +97,7 @@ end
 
 -- Say who we are to Wikipedia (see https://meta.wikimedia.org/wiki/User-Agent_policy)
 local USER_AGENT = T("KOReader/%1 (https://koreader.rocks/) %2",
-    (lfs.attributes("git-rev", "mode") == "file" and io.open("git-rev", "r"):read() or "devel"),
+    (lfs.attributes("git-rev", "mode") == "file" and io.open("git-rev", "r"):read("*line") or "devel"),
     require('socket.http').USERAGENT:gsub(" ", "/") )
 
 -- Codes that getUrlContent may get from requester.request()
@@ -895,7 +895,7 @@ function Wikipedia:createEpub(epub_path, page, lang, with_images)
     --     </guide>
     local koreader_version = "KOReader"
     if lfs.attributes("git-rev", "mode") == "file" then
-        koreader_version = "KOReader "..io.open("git-rev", "r"):read()
+        koreader_version = "KOReader "..io.open("git-rev", "r"):read("*line")
     end
     local content_opf_parts = {}
     -- head

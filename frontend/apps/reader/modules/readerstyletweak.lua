@@ -194,7 +194,6 @@ function TweakInfoWidget:onTap(arg, ges)
         Device.input.setClipboardText("\n"..self.css_text.."\n")
         UIManager:show(Notification:new{
             text = _("CSS text copied to clipboard"),
-            timeout = 2
         })
         return true
     elseif ges.pos:notIntersectWith(self.movable.dimen) then
@@ -777,7 +776,6 @@ function ReaderStyleTweak:editBookTweak(touchmenu_instance)
             if not editor.save_callback_called then
                 UIManager:show(Notification:new{
                     text = NOT_MODIFIED_MSG,
-                    timeout = 2,
                 })
                 -- This has to be the same message above and below: when
                 -- discarding, we can't prevent these 2 notifications from

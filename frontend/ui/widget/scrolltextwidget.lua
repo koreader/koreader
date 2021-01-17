@@ -252,28 +252,28 @@ function ScrollTextWidget:onTapScrollText(arg, ges)
     end
     -- same tests as done in TextBoxWidget:scrollUp/Down
     if BD.flipIfMirroredUILayout(ges.pos.x < Screen:getWidth()/2) then
-        if self.text_widget.virtual_line_num > 1 then
-            self:scrollText(-1)
-            return true
-        end
+        return self:onScrollUp()
     else
-        if self.text_widget.virtual_line_num + self.text_widget:getVisLineCount() <= #self.text_widget.vertical_string_list then
-            self:scrollText(1)
-            return true
-        end
+        return self:onScrollDown()
+    end
+end
+
+function ScrollTextWidget:onScrollUp()
+    if self.text_widget.virtual_line_num > 1 then
+        self:scrollText(-1)
+        return true
     end
     -- if we couldn't scroll (because we're already at top or bottom),
     -- let it propagate up (e.g. for quickdictlookup to go to next/prev result)
 end
 
 function ScrollTextWidget:onScrollDown()
-    self:scrollText(1)
-    return true
-end
-
-function ScrollTextWidget:onScrollUp()
-    self:scrollText(-1)
-    return true
+    if self.text_widget.virtual_line_num + self.text_widget:getVisLineCount() <= #self.text_widget.vertical_string_list then
+        self:scrollText(1)
+        return true
+    end
+    -- if we couldn't scroll (because we're already at top or bottom),
+    -- let it propagate up (e.g. for quickdictlookup to go to next/prev result)
 end
 
 function ScrollTextWidget:onPanText(arg, ges)

@@ -142,7 +142,6 @@ function ReaderBack:onBack()
             self.back_resist = true
             UIManager:show(Notification:new{
                 text = _("Location history is empty."),
-                timeout = 2,
             })
             return true
         else

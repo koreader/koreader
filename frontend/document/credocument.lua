@@ -1134,7 +1134,7 @@ end
 
 function CreDocument:setVisiblePageCount(new_count)
     logger.dbg("CreDocument: set visible page count", new_count)
-    self._document:setVisiblePageCount(new_count)
+    self._document:setVisiblePageCount(new_count, false)
 end
 
 function CreDocument:setBatteryState(state)

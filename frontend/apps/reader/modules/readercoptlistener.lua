@@ -21,6 +21,7 @@ function ReaderCoptListener:onReadSettings(config)
         end)
     end
 
+    -- crengine top status bar can only show author and title together
     self.title = G_reader_settings:readSetting("cre_header_title") or 1
     self.clock = G_reader_settings:readSetting("cre_header_clock") or 1
     self.page_number = G_reader_settings:readSetting("cre_header_page_number") or 1
@@ -76,7 +77,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 separator = true,
             },
             {
-                text = _("Title"),
+                text = _("Book author and title"),
                 checked_func = function()
                     return self.title == 1
                 end,
@@ -86,7 +87,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 end,
             },
             {
-                text = _("Clock"),
+                text = _("Current time"),
                 checked_func = function()
                     return self.clock == 1
                 end,
@@ -96,7 +97,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 end,
             },
             {
-                text = _("Page number"),
+                text = _("Current page"),
                 checked_func = function()
                     return self.page_number == 1
                 end,
@@ -106,7 +107,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 end,
             },
             {
-                text = _("Page count"),
+                text = _("Total pages"),
                 checked_func = function()
                     return self.page_count == 1
                 end,
@@ -116,7 +117,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 end,
             },
             {
-                text = _("Reading percentage"),
+                text = _("Progress percentage"),
                 checked_func = function()
                     return self.reading_percent == 1
                 end,
@@ -126,7 +127,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 end,
             },
             {
-                text = _("Battery"),
+                text = _("Battery status"),
                 checked_func = function()
                     return self.battery == 1
                 end,
@@ -161,7 +162,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
             },
             {
                 text_func = function()
-                    return T(_("Top status bar font size (%1)"), G_reader_settings:readSetting("cre_header_status_font_size") or 20 )
+                    return T(_("Font size (%1)"), G_reader_settings:readSetting("cre_header_status_font_size") or 20 )
                 end,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")

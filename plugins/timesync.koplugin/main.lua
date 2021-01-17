@@ -24,10 +24,9 @@ local TimeSync = WidgetContainer:new{
 local function currentTime()
     local std_out = io.popen("date")
     if std_out then
-        local result = std_out:read("*all")
+        local result = std_out:read("*line")
         std_out:close()
         if result ~= nil then
-            result = result:gsub("\n", "")
             return T(_("New time is %1."), result)
         end
     end

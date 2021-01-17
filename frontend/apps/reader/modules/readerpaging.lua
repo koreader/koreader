@@ -1052,7 +1052,6 @@ function ReaderPaging:onToggleReadingOrder()
     end
     UIManager:show(Notification:new{
         text = is_rtl and _("RTL page turning.") or _("LTR page turning."),
-        timeout = 2.5,
     })
     return true
 end

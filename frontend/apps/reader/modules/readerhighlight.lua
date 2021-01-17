@@ -762,11 +762,13 @@ function ReaderHighlight:onHold(arg, ges)
             local boxes = {}
             table.insert(boxes, self.selected_word.sbox)
             self.view.highlight.temp[self.hold_pos.page] = boxes
+            -- Unfortunately, getWordFromPosition() may not return good coordinates,
+            -- so refresh the whole page
+            UIManager:setDirty(self.dialog, "ui")
+        else
+            -- With crengine, getWordFromPosition() does return good coordinates
+            UIManager:setDirty(self.dialog, "ui", self.selected_word.sbox)
         end
-        -- Unfortunately, CREngine does not return good coordinates
-        -- UIManager:setDirty(self.dialog, "ui")
-        -- But now it does:
-        UIManager:setDirty(self.dialog, "ui", self.selected_word.sbox)
         self:_resetHoldTimer()
         if word.pos0 then
             -- Remember original highlight start position, so we can show
@@ -1170,14 +1172,12 @@ function ReaderHighlight:onCycleHighlightAction()
         G_reader_settings:saveSetting("default_highlight_action", "highlight")
         UIManager:show(Notification:new{
             text = _("Default highlight action changed to 'highlight'."),
-            timeout = 1,
         })
     else
         local next_action = next_actions[current_action]
         G_reader_settings:saveSetting("default_highlight_action", next_action)
         UIManager:show(Notification:new{
             text = T(_("Default highlight action changed to '%1'."), (next_action or "default")),
-            timeout = 1,
         })
     end
     return true
@@ -1193,7 +1193,6 @@ function ReaderHighlight:onCycleHighlightStyle()
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
     UIManager:show(Notification:new{
         text = T(_("Default highlight style changed to '%1'."), self.view.highlight.saved_drawer),
-        timeout = 1,
     })
     return true
 end

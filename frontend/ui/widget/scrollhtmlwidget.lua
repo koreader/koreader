@@ -150,28 +150,28 @@ end
 
 function ScrollHtmlWidget:onTapScrollText(arg, ges)
     if BD.flipIfMirroredUILayout(ges.pos.x < Screen:getWidth()/2) then
-        if self.htmlbox_widget.page_number > 1 then
-            self:scrollText(-1)
-            return true
-        end
+        return self:onScrollUp()
     else
-        if self.htmlbox_widget.page_number < self.htmlbox_widget.page_count then
-            self:scrollText(1)
-            return true
-        end
+        return self:onScrollDown()
+    end
+end
+
+function ScrollHtmlWidget:onScrollUp()
+    if self.htmlbox_widget.page_number > 1 then
+        self:scrollText(-1)
+        return true
     end
     -- if we couldn't scroll (because we're already at top or bottom),
     -- let it propagate up (e.g. for quickdictlookup to go to next/prev result)
 end
 
 function ScrollHtmlWidget:onScrollDown()
-    self:scrollText(1)
-    return true
-end
-
-function ScrollHtmlWidget:onScrollUp()
-    self:scrollText(-1)
-    return true
+    if self.htmlbox_widget.page_number < self.htmlbox_widget.page_count then
+        self:scrollText(1)
+        return true
+    end
+    -- if we couldn't scroll (because we're already at top or bottom),
+    -- let it propagate up (e.g. for quickdictlookup to go to next/prev result)
 end
 
 return ScrollHtmlWidget

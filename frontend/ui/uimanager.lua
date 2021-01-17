@@ -7,7 +7,8 @@ local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local dbg = require("dbg")
 local logger = require("logger")
-local util = require("ffi/util")
+local ffiUtil = require("ffi/util")
+local util = require("util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
@@ -57,7 +58,8 @@ function UIManager:init()
         end,
     }
     self.poweroff_action = function()
-        self._entered_poweroff_stage = true;
+        self._entered_poweroff_stage = true
+        Device.orig_rotation_mode = Device.screen:getRotationMode()
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
         require("ui/screensaver"):show("poweroff", _("Powered off"))
         if Device:needsScreenRefreshAfterResume() then
@@ -73,7 +75,8 @@ function UIManager:init()
         end)
     end
     self.reboot_action = function()
-        self._entered_poweroff_stage = true;
+        self._entered_poweroff_stage = true
+        Device.orig_rotation_mode = Device.screen:getRotationMode()
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
         require("ui/screensaver"):show("reboot", _("Rebooting…"))
         if Device:needsScreenRefreshAfterResume() then
@@ -390,8 +393,14 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     -- put this window on top of the toppest non-modal window
     for i = #self._window_stack, 0, -1 do
         local top_window = self._window_stack[i]
-        -- skip modal window
-        if widget.modal or not top_window or not top_window.widget.modal then
+        -- toasts are stacked on top of other toasts,
+        -- then come modals, and then other widgets
+        if top_window and top_window.widget.toast then
+            if widget.toast then
+                table.insert(self._window_stack, i + 1, window)
+                break
+            end
+        elseif widget.modal or not top_window or not top_window.widget.modal then
             table.insert(self._window_stack, i + 1, window)
             break
         end
@@ -528,7 +537,7 @@ dbg:guard(UIManager, 'schedule',
 
 --- Schedules task in a certain amount of seconds (fractions allowed) from now.
 function UIManager:scheduleIn(seconds, action, ...)
-    local when = { util.gettime() }
+    local when = { ffiUtil.gettime() }
     local s = math.floor(seconds)
     local usecs = (seconds - s) * MILLION
     when[1] = when[1] + s
@@ -770,9 +779,42 @@ function UIManager:ToggleNightMode(night_mode)
     end
 end
 
---- Get top widget.
+--- Get top widget (name if possible, ref otherwise).
 function UIManager:getTopWidget()
-    return ((self._window_stack[#self._window_stack] or {}).widget or {}).name
+    local top = self._window_stack[#self._window_stack]
+    if not top or not top.widget then
+        return nil
+    end
+    if top.widget.name then
+        return top.widget.name
+    end
+    return top.widget
+end
+
+--- Check if a widget is still in the window stack, or is a subwidget of a widget still in the window stack
+function UIManager:isSubwidgetShown(widget, max_depth)
+    for i = #self._window_stack, 1, -1 do
+        local matched, depth = util.arrayReferences(self._window_stack[i].widget, widget, max_depth)
+        if matched then
+            return matched, depth, self._window_stack[i].widget
+        end
+    end
+    return false
+end
+
+--- Same, but only check window-level widgets (e.g., what's directly registered in the window stack), don't recurse
+function UIManager:isWidgetShown(widget)
+    for i = #self._window_stack, 1, -1 do
+        if self._window_stack[i].widget == widget then
+           return true
+        end
+    end
+    return false
+end
+
+-- Returns the region of the previous refresh
+function UIManager:getPreviousRefreshRegion()
+   return self._last_refresh_region
 end
 
 --- Signals to quit.
@@ -822,7 +864,7 @@ function UIManager:discardEvents(set_or_seconds)
     else -- we expect a number
         usecs = set_or_seconds * MILLION
     end
-    local now = { util.gettime() }
+    local now = { ffiUtil.gettime() }
     local now_us = now[1] * MILLION + now[2]
     self._discard_events_till = now_us + usecs
 end
@@ -833,7 +875,7 @@ function UIManager:sendEvent(event)
 
     -- Ensure discardEvents
     if self._discard_events_till then
-        local now = { util.gettime() }
+        local now = { ffiUtil.gettime() }
         local now_us = now[1] * MILLION + now[2]
         if now_us < self._discard_events_till then
             return
@@ -842,8 +884,18 @@ function UIManager:sendEvent(event)
         end
     end
 
+    -- The top widget gets to be the first to get the event
     local top_widget = self._window_stack[#self._window_stack]
-    -- top level widget has first access to the event
+
+    -- A toast widget gets closed by any event, and
+    -- lets the event be handled by a lower widget
+    -- (Notification is our single widget with toast=true)
+    while top_widget.widget.toast do -- close them all
+        self:close(top_widget.widget)
+        if #self._window_stack == 0 then return end
+        top_widget = self._window_stack[#self._window_stack]
+    end
+
     if top_widget.widget:handleEvent(event) then
         return
     end
@@ -897,7 +949,7 @@ function UIManager:broadcastEvent(event)
 end
 
 function UIManager:_checkTasks()
-    local now = { util.gettime() }
+    local now = { ffiUtil.gettime() }
     local now_us = now[1] * MILLION + now[2]
     local wait_until = nil
 
@@ -1193,6 +1245,8 @@ function UIManager:_repaint()
             refresh.region.w = ALIGN_UP(refresh.region.w + (x_fixup * 2), 8)
             refresh.region.h = ALIGN_UP(refresh.region.h + (y_fixup * 2), 8)
         end
+        -- Remember the refresh region
+        self._last_refresh_region = refresh.region
         Screen[refresh_methods[refresh.mode]](Screen,
             refresh.region.x, refresh.region.y,
             refresh.region.w, refresh.region.h,
@@ -1212,6 +1266,10 @@ function UIManager:forceRePaint()
     self:_repaint()
 end
 
+function UIManager:waitForVSync()
+    Screen:refreshWaitForLast()
+end
+
 -- Used to repaint a specific sub-widget that isn't on the _window_stack itself
 -- Useful to avoid repainting a complex widget when we just want to invert an icon, for instance.
 -- No safety checks on x & y *by design*. I want this to blow up if used wrong.
@@ -1220,6 +1278,14 @@ function UIManager:widgetRepaint(widget, x, y)
 
     logger.dbg("Explicit widgetRepaint:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
     widget:paintTo(Screen.bb, x, y)
+end
+
+-- Same idea, but does a simple invertRect, without actually repainting anything
+function UIManager:widgetInvert(widget, x, y, w, h)
+    if not widget then return end
+
+    logger.dbg("Explicit widgetInvert:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
+    Screen.bb:invertRect(x, y, w or widget.dimen.w, h or widget.dimen.h)
 end
 
 function UIManager:setInputTimeout(timeout)

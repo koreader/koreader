@@ -40,6 +40,7 @@ local Button = InputContainer:new{
     preselect = false,
     callback = nil,
     enabled = true,
+    hidden = false,
     allow_hold_when_disabled = false,
     margin = 0,
     bordersize = Size.border.button,
@@ -53,6 +54,7 @@ local Button = InputContainer:new{
     text_font_face = "cfont",
     text_font_size = 20,
     text_font_bold = true,
+    vsync = nil, -- when "flash_ui" is enabled, allow bundling the highlight with the callback, and fence that batch away from the unhighlight. Avoid delays when callback requires a "partial" on Kobo Mk. 7, c.f., ffi/framebuffer_mxcfb for more details.
 }
 
 function Button:init()
@@ -164,28 +166,26 @@ function Button:onUnfocus()
 end
 
 function Button:enable()
-    self.enabled = true
-    if self.text then
-        if self.enabled then
+    if not self.enabled then
+        if self.text then
             self.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
+            self.enabled = true
         else
-            self.label_widget.fgcolor = Blitbuffer.COLOR_DARK_GRAY
+            self.label_widget.dim = false
+            self.enabled = true
         end
-    else
-        self.label_widget.dim = not self.enabled
     end
 end
 
 function Button:disable()
-    self.enabled = false
-    if self.text then
-        if self.enabled then
-            self.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
-        else
+    if self.enabled then
+        if self.text then
             self.label_widget.fgcolor = Blitbuffer.COLOR_DARK_GRAY
+            self.enabled = false
+        else
+            self.label_widget.dim = true
+            self.enabled = false
         end
-    else
-        self.label_widget.dim = not self.enabled
     end
 end
 
@@ -198,17 +198,19 @@ function Button:enableDisable(enable)
 end
 
 function Button:hide()
-    if self.icon then
-        self.frame.orig_background = self[1].background
+    if self.icon and not self.hidden then
+        self.frame.orig_background = self.frame.background
         self.frame.background = nil
         self.label_widget.hide = true
+        self.hidden = true
     end
 end
 
 function Button:show()
-    if self.icon then
+    if self.icon and self.hidden then
         self.label_widget.hide = false
-        self.frame.background = self[1].old_background
+        self.frame.background = self.frame.orig_background
+        self.hidden = false
     end
 end
 
@@ -225,42 +227,74 @@ function Button:onTapSelectButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
-            -- For most of our buttons, we can't avoid that initial repaint...
-            self[1].invert = true
-            UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-            -- NOTE: This completely insane double repaint is needed to avoid cosmetic issues with FrameContainer's rounded corners on Text buttons...
-            --       On the upside, we now actually get to *see* those rounded corners (as the highlight), where it was a simple square before.
-            --       c.f., #4554 & #4541
             -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
             if self.text then
                 -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
                 -- The nil check is to discriminate the default from callers that explicitly request a specific radius.
                 if self[1].radius == nil then
                     self[1].radius = Size.radius.button
+                    -- And here, it's easier to just invert the bg/fg colors ourselves,
+                    -- so as to preserve the rounded corners in one step.
+                    self[1].background = self[1].background:invert()
+                    self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
+                    -- We do *NOT* set the invert flag, because it just adds an invertRect step at the end of the paintTo process,
+                    -- and we've already taken care of inversion in a way that won't mangle the rounded corners.
+                else
+                    self[1].invert = true
                 end
+
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                -- But do make sure the invert flag is set in both cases, mainly for the early return check below
+                self[1].invert = true
+            else
+                self[1].invert = true
+                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             end
             UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen
             end)
-            -- And we also often have to delay the callback to both see the flash and/or avoid tearing artefacts w/ fast refreshes...
-            UIManager:tickAfterNext(function()
-                self.callback()
-                if not self[1] or not self[1].invert or not self[1].dimen then
-                    -- widget no more there (destroyed, re-init'ed by setText(), or not inverted: nothing to invert back
-                    return
-                end
 
-                self[1].invert = false
-                -- Since we kill the corners, we only need a single repaint.
+            -- Force the repaint *now*, so we don't have to delay the callback to see the highlight...
+            if not self.vsync then
+                -- NOTE: Allow bundling the highlight with the callback when we request vsync, to prevent further delays
+                UIManager:forceRePaint() -- Ensures we have a chance to see the highlight
+            end
+            self.callback()
+            UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
+            if self.vsync then
+                -- NOTE: This is mainly useful when the callback caused a REAGL update that we do not explicitly fence already,
+                --       (i.e., Kobo Mk. 7).
+                UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
+                                         -- because that would have a chance to noticeably delay it until the unhighlight.
+            end
+
+            if not self[1] or not self[1].invert or not self[1].dimen then
+                -- If the widget no longer exists (destroyed, re-init'ed by setText(), or not inverted: nothing to invert back
+                return true
+            end
+
+            -- If the callback closed our parent (which ought to have been the top level widget), abort early
+            if UIManager:getTopWidget() ~= self.show_parent then
+                return true
+            end
+
+            self[1].invert = false
+            if self.text then
                 if self[1].radius == Size.radius.button then
                     self[1].radius = nil
+                    self[1].background = self[1].background:invert()
+                    self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
                 end
+
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-                UIManager:setDirty(nil, function()
-                    return "fast", self[1].dimen
-                end)
+            else
+                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+            end
+            -- If the button was disabled, switch to UI to make sure the gray comes through unharmed ;).
+            UIManager:setDirty(nil, function()
+                return self.enabled and "fast" or "ui", self[1].dimen
             end)
+            --UIManager:forceRePaint() -- Ensures the unhighlight happens now, instead of potentially waiting and having it batched with something else.
         end
     elseif self.tap_input then
         self:onInput(self.tap_input)

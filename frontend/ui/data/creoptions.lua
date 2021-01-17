@@ -40,6 +40,7 @@ local CreOptions = {
                 args = {1, 2},
                 default_arg = 1,
                 event = "SetVisiblePages",
+                --[[ Commented out, to have it also available in portrait mode
                 current_func = function()
                     -- If not in landscape mode, shows "1" as selected
                     if Device.screen:getScreenMode() ~= "landscape" then
@@ -48,9 +49,10 @@ local CreOptions = {
                     -- if we return nil, ConfigDialog will pick the one from the
                     -- configurable as if we hadn't provided this 'current_func'
                 end,
+                ]]--
                 enabled_func = function(configurable)
-                    return Device.screen:getScreenMode() == "landscape" and
-                        optionsutil.enableIfEquals(configurable, "view_mode", 0) -- "page"
+                    return optionsutil.enableIfEquals(configurable, "view_mode", 0) -- "page" mode
+                        -- and Device.screen:getScreenMode() == "landscape"
                 end,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[In landscape mode, you can choose to display one or two pages of the book on the screen.
@@ -90,7 +92,7 @@ Note that this may not be ensured under some conditions: in scroll mode, when a 
                     DCREREADER_CONFIG_H_MARGIN_SIZES_X_HUGE,
                     DCREREADER_CONFIG_H_MARGIN_SIZES_XX_HUGE,
                 },
-                delay_repaint = true,
+                hide_on_apply = true,
                 name_text_hold_callback = optionsutil.showValuesHMargins,
                 more_options = true,
                 more_options_param = {
@@ -114,7 +116,7 @@ Note that this may not be ensured under some conditions: in scroll mode, when a 
                 event = "SyncPageTopBottomMargins",
                 args = {false, true},
                 default_arg = false,
-                delay_repaint = true,
+                hide_on_apply = true,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Keep top and bottom margins synchronized.
 - 'off' allows different top and bottom margins.
@@ -151,17 +153,16 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                     DCREREADER_CONFIG_T_MARGIN_SIZES_X_HUGE,
                     DCREREADER_CONFIG_T_MARGIN_SIZES_XX_HUGE,
                 },
-                delay_repaint = true,
+                hide_on_apply = true,
                 name_text_hold_callback = optionsutil.showValues,
                 more_options = true,
                 more_options_param = {
-                    -- Allow this to tune both top and bottom margins,
-                    -- handling 2 setting names and sending 2 events
-                    -- (we'll get the exact same DoubleSpinWidget in
-                    -- the b_page_margin setting just below)
+                    -- Allow this to tune both top and bottom margins, handling
+                    -- 2 setting names (we'll get the exact same DoubleSpinWidget
+                    -- in the b_page_margin setting just below)
                     name_text = _("Top/Bottom Margins"),
                     names = { "t_page_margin", "b_page_margin" },
-                    events = { "SetPageTopMargin", "SetPageBottomMargin" },
+                    event = "SetPageTopAndBottomMargin",
                     left_text = _("Top"),
                     left_min = 0,
                     left_max = 140,
@@ -203,7 +204,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                     DCREREADER_CONFIG_B_MARGIN_SIZES_X_HUGE,
                     DCREREADER_CONFIG_B_MARGIN_SIZES_XX_HUGE,
                 },
-                delay_repaint = true,
+                hide_on_apply = true,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[In the top menu → Settings → Status bar, you can choose whether the bottom margin applies from the bottom of the screen, or from above the status bar.]]),
                 more_options = true,
@@ -211,7 +212,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                     -- Similar as for t_page_margin above
                     name_text = _("Top/Bottom Margins"),
                     names = { "t_page_margin", "b_page_margin" },
-                    events = { "SetPageTopMargin", "SetPageBottomMargin" },
+                    event = "SetPageTopAndBottomMargin",
                     left_text = _("Top"),
                     left_min = 0,
                     left_max = 140,
