@@ -277,7 +277,8 @@ function Button:onTapSelectButton()
             end
 
             -- If the callback closed our parent (which may not always be the top-level widget, or even *a* window-level widget), we're done
-            if UIManager:getTopWidget() == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
+            local top_widget = UIManager:getTopWidget()
+            if top_widget == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
                 -- If the button can no longer be found inside a shown widget, abort early
                 -- (this allows us to catch widgets that instanciate *new* Buttons on every update... (e.g., ButtonTable) :()
                 if not UIManager:isSubwidgetShown(self) then
@@ -285,8 +286,14 @@ function Button:onTapSelectButton()
                     return true
                 end
 
-                -- If our parent is no longer the toplevel widget, and our highlight would clash with the last refresh, abort early
+                -- If our parent is no longer the toplevel widget, toplevel is now a modal, and our highlight would clash with that modal's region, abort early
                 -- (this mainly concerns stuff that pops up the virtual keyboard (e.g., TextEditor), where said keyboard will always be top-level)
+                if top_widget ~= self.show_parent and top_widget.modal and self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
+                    print("Button", self, "unhighlight would clash with previous refresh of a modal")
+                    print("Modal", top_widget:getSize())
+                    print("Refresh", UIManager:getPreviousRefreshRegion())
+                    return true
+                end
 
                 self[1].invert = false
                 if self.text then
