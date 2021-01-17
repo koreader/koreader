@@ -29,6 +29,7 @@ local TextEditor = WidgetContainer:new{
     normal_font = "x_smallinfofont",
     monospace_font = "infont",
     min_file_size_warn = 200000, -- warn/ask when opening files bigger than this
+    covers_fullscreen = true, -- Asking for a fullscreen InputDialog also flags InputDialog itself that way, but it's not enough.
 }
 
 function TextEditor:onDispatcherRegisterActions()
