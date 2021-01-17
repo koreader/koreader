@@ -276,6 +276,16 @@ function Button:onTapSelectButton()
                 return true
             end
 
+            -- Reset colors early, regardless of what we do later, to avoid code duplication
+            self[1].invert = false
+            if self.text then
+                if self[1].radius == Size.radius.button then
+                    self[1].radius = nil
+                    self[1].background = self[1].background:invert()
+                    self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
+                end
+            end
+
             -- If the callback closed our parent (which may not always be the top-level widget, or even *a* window-level widget), we're done
             local top_widget = UIManager:getTopWidget()
             if top_widget == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
@@ -292,17 +302,15 @@ function Button:onTapSelectButton()
                     print("Button", self, "unhighlight would clash with previous refresh of a modal")
                     print("Modal", top_widget:getSize())
                     print("Refresh", UIManager:getPreviousRefreshRegion())
+                    -- Much like in TouchMenu, the fact that the two intersect means we have no choice but to repaint the full stack to avoid half-painted widgets...
+                    UIManager:waitForVSync()
+                    UIManager:setDirty(self.show_parent, function()
+                        return "ui", self[1].dimen
+                    end)
                     return true
                 end
 
-                self[1].invert = false
                 if self.text then
-                    if self[1].radius == Size.radius.button then
-                        self[1].radius = nil
-                        self[1].background = self[1].background:invert()
-                        self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
-                    end
-
                     print("Unhighlight: Repaint text Button", self, self.enabled)
                     UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
                 else
