@@ -278,6 +278,13 @@ function Button:onTapSelectButton()
                 return true
             end
 
+            -- If the button can no longer be found inside a shown widget, abort early
+            -- (this allows us to catch widgets that instanciate *new* Buttons on every updates... (e.g., ButtonTable) :()
+            if not UIManager:isSubwidgetShown(self) then
+                print("Button", self, "doesn't belong to a visible widget anymore")
+                return true
+            end
+
             self[1].invert = false
             if self.text then
                 if self[1].radius == Size.radius.button then
