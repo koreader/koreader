@@ -221,7 +221,7 @@ end
 function Device:rescheduleSuspend()
     local UIManager = require("ui/uimanager")
     UIManager:unschedule(self.suspend)
-    UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
+    UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
 end
 
 -- Only used on platforms where we handle suspend ourselves.
@@ -323,7 +323,7 @@ function Device:onPowerEvent(ev)
                     network_manager:turnOffWifi()
                 end
             end
-            UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend, self)
+            UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
         end)
     end
 end
