@@ -149,8 +149,8 @@ function DjvuDocument:drawPage(target, x, y, rect, pageno, zoom, rotation, gamma
 end
 
 function DjvuDocument:register(registry)
-    registry:addProvider("djv", "image/vnd.djvu", self, 100)
     registry:addProvider("djvu", "image/vnd.djvu", self, 100)
+    registry:addProvider("djv", "image/vnd.djvu", self, 100)
 end
 
 return DjvuDocument
