@@ -243,11 +243,13 @@ function Button:onTapSelectButton()
                     self[1].invert = true
                 end
 
+                print("Highlight: Repaint text Button", self, self.enabled)
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
                 -- But do make sure the invert flag is set in both cases, mainly for the early return check below
                 self[1].invert = true
             else
                 self[1].invert = true
+                print("Highlight: Invert text Button", self, self.enabled)
                 UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             end
             UIManager:setDirty(nil, function()
@@ -270,38 +272,44 @@ function Button:onTapSelectButton()
 
             if not self[1] or not self[1].invert or not self[1].dimen then
                 -- If the widget no longer exists (destroyed, re-init'ed by setText(), or not inverted: nothing to invert back
+                print("Button", self, "no longer exists")
                 return true
             end
 
-            -- If the callback closed our parent (which ought to have been the top level widget), abort early
-            if UIManager:getTopWidget() ~= self.show_parent then
-                return true
-            end
-
-            -- If the button can no longer be found inside a shown widget, abort early
-            -- (this allows us to catch widgets that instanciate *new* Buttons on every updates... (e.g., ButtonTable) :()
-            if not UIManager:isSubwidgetShown(self) then
-                print("Button", self, "doesn't belong to a visible widget anymore")
-                return true
-            end
-
-            self[1].invert = false
-            if self.text then
-                if self[1].radius == Size.radius.button then
-                    self[1].radius = nil
-                    self[1].background = self[1].background:invert()
-                    self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
+            -- If the callback closed our parent (which may not always be the top-level widget, or even *a* window-level widget), we're done
+            if UIManager:getTopWidget() == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
+                -- If the button can no longer be found inside a shown widget, abort early
+                -- (this allows us to catch widgets that instanciate *new* Buttons on every update... (e.g., ButtonTable) :()
+                if not UIManager:isSubwidgetShown(self) then
+                    print("Button", self, "doesn't belong to a visible widget anymore")
+                    return true
                 end
 
-                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                -- If our parent is no longer the toplevel widget, and our highlight would clash with the last refresh, abort early
+                -- (this mainly concerns stuff that pops up the virtual keyboard (e.g., TextEditor), where said keyboard will always be top-level)
+
+                self[1].invert = false
+                if self.text then
+                    if self[1].radius == Size.radius.button then
+                        self[1].radius = nil
+                        self[1].background = self[1].background:invert()
+                        self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
+                    end
+
+                    print("Unhighlight: Repaint text Button", self, self.enabled)
+                    UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                else
+                    print("Unhighlight: Invert text Button", self, self.enabled)
+                    UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+                end
+                -- If the button was disabled, switch to UI to make sure the gray comes through unharmed ;).
+                UIManager:setDirty(nil, function()
+                    return self.enabled and "fast" or "ui", self[1].dimen
+                end)
+                --UIManager:forceRePaint() -- Ensures the unhighlight happens now, instead of potentially waiting and having it batched with something else.
             else
-                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+                print("Button", self, "parent", self.show_parent, "is no longer shown")
             end
-            -- If the button was disabled, switch to UI to make sure the gray comes through unharmed ;).
-            UIManager:setDirty(nil, function()
-                return self.enabled and "fast" or "ui", self[1].dimen
-            end)
-            --UIManager:forceRePaint() -- Ensures the unhighlight happens now, instead of potentially waiting and having it batched with something else.
         end
     elseif self.tap_input then
         self:onInput(self.tap_input)
