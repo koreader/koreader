@@ -324,6 +324,7 @@ function Button:onTapSelectButton()
                 --UIManager:forceRePaint() -- Ensures the unhighlight happens now, instead of potentially waiting and having it batched with something else.
             else
                 print("Button", self, "parent", self.show_parent, "is no longer shown")
+                return true
             end
         end
     elseif self.tap_input then
