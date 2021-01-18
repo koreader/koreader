@@ -596,7 +596,7 @@ function DictQuickLookup:update()
                             button:enableDisable(btn.enabled)
                         end
                         if btn.text ~= button.text then
-                            button:setText(btn.text)
+                            button:setText(btn.text, button.width)
                         end
                     elseif btn.id == "next_dict" then
                         local button = self.button_table:getButtonById(btn.id)
