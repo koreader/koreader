@@ -57,8 +57,8 @@ function ButtonTable:init()
                 callback = btn_entry.callback,
                 hold_callback = btn_entry.hold_callback,
                 vsync = btn_entry.vsync,
-                width = (self.width - sizer_space)/column_cnt,
-                max_width = (self.width - sizer_space)/column_cnt - 2*self.sep_width - 2*self.padding,
+                width = math.ceil((self.width - sizer_space)/column_cnt),
+                max_width = math.ceil((self.width - sizer_space)/column_cnt - 2*self.sep_width - 2*self.padding),
                 bordersize = 0,
                 margin = 0,
                 padding = Size.padding.buttontable, -- a bit taller than standalone buttons, for easier tap
