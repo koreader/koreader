@@ -302,6 +302,7 @@ function Button:onTapSelectButton()
                         return "ui", self[1].dimen
                     end)
 
+                    -- It's a sane exit, handle the return the same way.
                     if self.readonly ~= true then
                         return true
                     end
