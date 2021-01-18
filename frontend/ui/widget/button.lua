@@ -227,6 +227,9 @@ function Button:onTapSelectButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
+            -- We need to keep track of whether we actually flipped the frame's invert flag ourselves,
+            -- to handle the rounded corners shenanigan in the post-callback invert check...
+            local inverted = false
             -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
             if self.text then
                 -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
@@ -239,15 +242,17 @@ function Button:onTapSelectButton()
                     self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
                     -- We do *NOT* set the invert flag, because it just adds an invertRect step at the end of the paintTo process,
                     -- and we've already taken care of inversion in a way that won't mangle the rounded corners.
+                    -- The "inverted" local flag allows us to fudge the "did callback invert the frame?" check for these buttons,
+                    -- otherwise setting the invert flag here breaks the highlight for vsync buttons...
                 else
                     self[1].invert = true
+                    inverted = true
                 end
 
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-                -- But do make sure the invert flag is set in both cases, mainly for the early return check below
-                self[1].invert = true
             else
                 self[1].invert = true
+                inverted = true
                 UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             end
             UIManager:setDirty(nil, function()
@@ -270,7 +275,7 @@ function Button:onTapSelectButton()
                                          -- because that would have a chance to noticeably delay it until the unhighlight.
             end
 
-            if not self[1] or not self[1].invert or not self[1].dimen then
+            if not self[1] or (inverted and not self[1].invert) or not self[1].dimen then
                 -- If the frame widget no longer exists (destroyed, re-init'ed by setText(), or is no longer inverted: we have nothing to invert back
                 -- NOTE: This cannot catch orphaned Button instances, c.f., the isSubwidgetShown(self) check below for that.
                 print("Button", self, "frame is gone")
@@ -279,6 +284,7 @@ function Button:onTapSelectButton()
 
             -- Reset colors early, regardless of what we do later, to avoid code duplication
             self[1].invert = false
+            inverted = nil
             if self.text then
                 if self[1].radius == Size.radius.button then
                     self[1].radius = nil
