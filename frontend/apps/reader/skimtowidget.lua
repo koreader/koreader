@@ -197,7 +197,7 @@ function SkimToWidget:init()
         enabled = true,
         width = self.button_width,
         show_parent = self,
-        vsync = not G_reader_settings:isTrue("refresh_on_chapter_boundaries"),
+        vsync = true,
         callback = function()
             local page = self.ui.toc:getNextChapter(self.curr_page)
             if page and page >=1 and page <= self.page_count then
@@ -217,7 +217,7 @@ function SkimToWidget:init()
         enabled = true,
         width = self.button_width,
         show_parent = self,
-        vsync = not G_reader_settings:isTrue("refresh_on_chapter_boundaries"),
+        vsync = true,
         callback = function()
             local page = self.ui.toc:getPreviousChapter(self.curr_page)
             if page and page >=1 and page <= self.page_count then
