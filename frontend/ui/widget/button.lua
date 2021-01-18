@@ -288,7 +288,7 @@ function Button:onTapSelectButton()
             local top_widget = UIManager:getTopWidget()
             if top_widget == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
                 -- If the button can no longer be found inside a shown widget, abort early
-                -- (this allows us to catch widgets that instanciate *new* Buttons on every update... (e.g., ButtonTable) :()
+                -- (this allows us to catch widgets that instanciate *new* Buttons on every update... (e.g., most ButtonTable users) :()
                 if not UIManager:isSubwidgetShown(self) then
                     return true
                 end
