@@ -295,7 +295,6 @@ function Button:onTapSelectButton()
 
                 -- If our parent is no longer the toplevel widget, toplevel is now a true modal, and our highlight would clash with that modal's region,
                 -- we have no other choice than repainting the full stack...
-                -- (this mainly concerns stuff that pops up the virtual keyboard (e.g., TextEditor), where said keyboard will always be top-level)
                 if top_widget ~= self.show_parent and top_widget ~= "VirtualKeyboard" and top_widget.modal and self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
                     -- Much like in TouchMenu, the fact that the two intersect means we have no choice but to repaint the full stack to avoid half-painted widgets...
                     UIManager:waitForVSync()
@@ -320,6 +319,8 @@ function Button:onTapSelectButton()
                 end)
                 --UIManager:forceRePaint() -- Ensures the unhighlight happens now, instead of potentially waiting and having it batched with something else.
             else
+                -- This branch will mainly be taken by stuff that pops up the virtual keyboard (e.g., TextEditor), where said keyboard will always be top-level,
+                -- (hence the exception in the check above).
                 return true
             end
         end
