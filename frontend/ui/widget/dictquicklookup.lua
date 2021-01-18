@@ -569,12 +569,19 @@ function DictQuickLookup:update()
     -- reach out from the content to the borders a bit more
     local buttons_padding = Size.padding.default
     local buttons_width = inner_width - 2*buttons_padding
+    local button_count = 0
+    for dummy, r in ipairs(buttons) do
+       for dummy, c in ipairs(r) do
+           button_count = button_count + 1
+       end
+    end
     -- If the amount of buttons changed, instanciate a new ButtonTable, otherwise, just update the existing instance if there's one.
-    if self.button_table and self.button_table.button_count == #buttons then
+    if self.button_table and self.button_table.button_count == button_count then
+        print("Re-using ButtonTable :)", self.button_table)
         -- The only ones we care about are actually prev/next dict, and highlight, all the others are static.
         -- They happen to all belong to the !is_wiki_fullpage branch ;).
         if not self.is_wiki_fullpage then
-            for _, btn in ipairs(buttons) do
+            for dummy, btn in ipairs(buttons) do
                 if btn.id == "prev_dict" then
                     local button = self.button_table:getButtonById(btn.id)
                     if button then
@@ -597,6 +604,7 @@ function DictQuickLookup:update()
             end
         end
     else
+        print("Instanciating a new ButtonTable :(", button_count, self.button_table, self.button_table and self.button_table.button_count or nil)
         self.button_table = ButtonTable:new{
             width = buttons_width,
             button_font_face = "cfont",
