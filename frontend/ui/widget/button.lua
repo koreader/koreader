@@ -243,13 +243,11 @@ function Button:onTapSelectButton()
                     self[1].invert = true
                 end
 
-                print("Highlight: Repaint text Button", self, self.enabled)
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
                 -- But do make sure the invert flag is set in both cases, mainly for the early return check below
                 self[1].invert = true
             else
                 self[1].invert = true
-                print("Highlight: Invert text Button", self, self.enabled)
                 UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             end
             UIManager:setDirty(nil, function()
@@ -273,7 +271,6 @@ function Button:onTapSelectButton()
             if not self[1] or not self[1].invert or not self[1].dimen then
                 -- If the frame widget no longer exists (destroyed, re-init'ed by setText(), or is no longer inverted: we have nothing to invert back
                 -- NOTE: This cannot catch orphaned Button instances, c.f., the isSubwidgetShown(self) check below for that.
-                print("Button", self, "no longer exists")
                 return true
             end
 
@@ -293,16 +290,12 @@ function Button:onTapSelectButton()
                 -- If the button can no longer be found inside a shown widget, abort early
                 -- (this allows us to catch widgets that instanciate *new* Buttons on every update... (e.g., ButtonTable) :()
                 if not UIManager:isSubwidgetShown(self) then
-                    print("Button", self, "doesn't belong to a visible widget anymore")
                     return true
                 end
 
                 -- If our parent is no longer the toplevel widget, toplevel is now a true modal, and our highlight would clash with that modal's region, abort early
                 -- (this mainly concerns stuff that pops up the virtual keyboard (e.g., TextEditor), where said keyboard will always be top-level)
                 if top_widget ~= self.show_parent and top_widget ~= "VirtualKeyboard" and top_widget.modal and self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
-                    print("Button", self, "unhighlight would clash with previous refresh of a modal")
-                    print("Modal", top_widget:getSize())
-                    print("Refresh", UIManager:getPreviousRefreshRegion())
                     -- Much like in TouchMenu, the fact that the two intersect means we have no choice but to repaint the full stack to avoid half-painted widgets...
                     UIManager:waitForVSync()
                     UIManager:setDirty(self.show_parent, function()
@@ -312,10 +305,8 @@ function Button:onTapSelectButton()
                 end
 
                 if self.text then
-                    print("Unhighlight: Repaint text Button", self, self.enabled)
                     UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
                 else
-                    print("Unhighlight: Invert text Button", self, self.enabled)
                     UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
                 end
                 -- If the button was disabled, switch to UI to make sure the gray comes through unharmed ;).
@@ -324,7 +315,6 @@ function Button:onTapSelectButton()
                 end)
                 --UIManager:forceRePaint() -- Ensures the unhighlight happens now, instead of potentially waiting and having it batched with something else.
             else
-                print("Button", self, "parent", self.show_parent, "is no longer shown")
                 return true
             end
         end

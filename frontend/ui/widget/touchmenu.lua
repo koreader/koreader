@@ -181,25 +181,19 @@ function TouchMenuItem:onTapSelect(arg, ges)
         --       and because "fast" can have some weird side-effects on some devices in this specific instance...
         if self.item.hold_keep_menu_open or self.item.keep_menu_open then
             local top_widget = UIManager:getTopWidget()
-            print("Keep menu open, and top_widget is", top_widget)
             -- If the callback opened a full-screen widget, we're done
             if top_widget.covers_fullscreen then
-                print("Top widget covers the full screen")
                 return true
             end
 
             -- If the callback opened the Virtual Keyboard, we're done
-            -- (this is for TextEditor, terminal & friends)
+            -- (this is for TextEditor, Terminal & co)
             if top_widget == "VirtualKeyboard" then
-                print("Top widget is VK")
                 return true
             end
 
             -- If we're still on top, or if a modal was opened outside of our highlight region, we can unhighlight safely
             if top_widget == self.menu or highlight_dimen:notIntersectWith(UIManager:getPreviousRefreshRegion()) then
-                print("Top widget is still menu, or our highlight doesn't clash with the last refresh")
-                print("HL", highlight_dimen)
-                print("refresh:", UIManager:getPreviousRefreshRegion())
                 UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
                 UIManager:setDirty(nil, function()
                     return "ui", highlight_dimen
@@ -208,7 +202,6 @@ function TouchMenuItem:onTapSelect(arg, ges)
                 -- That leaves modals that might have been displayed on top of the highlighted menu entry, in which case,
                 -- we can't take any shortcuts, as it would invert/paint *over* the popop.
                 -- Instead, fence the callback to avoid races, and repaint the *full* widget stack properly.
-                print("Repainting the full stack")
                 UIManager:waitForVSync()
                 UIManager:setDirty(self.show_parent, function()
                     return "ui", highlight_dimen
@@ -255,9 +248,6 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         local top_widget = UIManager:getTopWidget()
         -- If we're still on top, or if a modal was opened outside of our highlight region, we can unhighlight safely
         if top_widget == self.menu or highlight_dimen:notIntersectWith(UIManager:getPreviousRefreshRegion()) then
-            print("Top widget is still menu, or our highlight doesn't clash with the last refresh")
-            print("HL", highlight_dimen)
-            print("refresh:", UIManager:getPreviousRefreshRegion())
             UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
             UIManager:setDirty(nil, function()
                 return "ui", highlight_dimen
@@ -266,7 +256,6 @@ function TouchMenuItem:onHoldSelect(arg, ges)
             -- That leaves modals that might have been displayed on top of the highlighted menu entry, in which case,
             -- we can't take any shortcuts, as it would invert/paint *over* the popop.
             -- Instead, fence the callback to avoid races, and repaint the *full* widget stack properly.
-            print("Repainting the full stack")
             UIManager:waitForVSync()
             UIManager:setDirty(self.show_parent, function()
                 return "ui", highlight_dimen
