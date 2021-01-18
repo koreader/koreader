@@ -254,6 +254,8 @@ function Button:onTapSelectButton()
                 return "fast", self[1].dimen
             end)
 
+            print("Highlighted Button", self)
+
             -- Force the repaint *now*, so we don't have to delay the callback to see the highlight...
             if not self.vsync then
                 -- NOTE: Allow bundling the highlight with the callback when we request vsync, to prevent further delays
@@ -271,6 +273,7 @@ function Button:onTapSelectButton()
             if not self[1] or not self[1].invert or not self[1].dimen then
                 -- If the frame widget no longer exists (destroyed, re-init'ed by setText(), or is no longer inverted: we have nothing to invert back
                 -- NOTE: This cannot catch orphaned Button instances, c.f., the isSubwidgetShown(self) check below for that.
+                print("Button", self, "frame is gone")
                 return true
             end
 
@@ -290,12 +293,14 @@ function Button:onTapSelectButton()
                 -- If the button can no longer be found inside a shown widget, abort early
                 -- (this allows us to catch widgets that instanciate *new* Buttons on every update... (e.g., some ButtonTable users) :()
                 if not UIManager:isSubwidgetShown(self) then
+                    print("Button", self, "has been orphaned")
                     return true
                 end
 
                 -- If our parent is no longer the toplevel widget, toplevel is now a true modal, and our highlight would clash with that modal's region,
                 -- we have no other choice than repainting the full stack...
                 if top_widget ~= self.show_parent and top_widget ~= "VirtualKeyboard" and top_widget.modal and self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
+                    print("Button", self, "is below something visible")
                     -- Much like in TouchMenu, the fact that the two intersect means we have no choice but to repaint the full stack to avoid half-painted widgets...
                     UIManager:waitForVSync()
                     UIManager:setDirty(self.show_parent, function()
@@ -308,6 +313,7 @@ function Button:onTapSelectButton()
                     end
                 end
 
+                print("Unhighlight Button", self)
                 if self.text then
                     UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
                 else
@@ -321,6 +327,7 @@ function Button:onTapSelectButton()
             else
                 -- This branch will mainly be taken by stuff that pops up the virtual keyboard (e.g., TextEditor), where said keyboard will always be top-level,
                 -- (hence the exception in the check above).
+                print("Button", self, "parent is gone")
                 return true
             end
         end
