@@ -571,9 +571,7 @@ function DictQuickLookup:update()
     local buttons_width = inner_width - 2*buttons_padding
     local button_count = 0
     for dummy, r in ipairs(buttons) do
-       for dummy, c in ipairs(r) do
-           button_count = button_count + 1
-       end
+       button_count = button_count + #r
     end
     -- If the amount of buttons changed, instanciate a new ButtonTable, otherwise, just update the existing instance if there's one.
     if self.button_table and self.button_table.button_count == button_count then
