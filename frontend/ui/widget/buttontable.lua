@@ -40,6 +40,7 @@ function ButtonTable:init()
     else
         self:addHorizontalSep(false, false, true)
     end
+    self.button_count = 0
     local row_cnt = #self.buttons
     for i = 1, row_cnt do
         local buttons_layout_line = {}
@@ -69,6 +70,7 @@ function ButtonTable:init()
             if btn_entry.id then
                 self.button_by_id[btn_entry.id] = button
             end
+            self.button_count = self.button_count + 1
             local button_dim = button:getSize()
             local vertical_sep = LineWidget:new{
                 background = Blitbuffer.COLOR_GRAY,
@@ -88,7 +90,7 @@ function ButtonTable:init()
             self:addHorizontalSep(true, true, true)
         end
         if column_cnt > 0 then
-            --Only add line that are not separator to the focusmanager
+            -- Only add lines that are not separator to the focusmanager
             table.insert(self.buttons_layout, buttons_layout_line)
         end
     end -- end for each button line
