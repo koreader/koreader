@@ -426,13 +426,12 @@ function SkimToWidget:onSelectByKeyPress()
     item.callback()
 end
 
-function SkimToWidget:onFirstRowKeyPress(args)
-        local perc = args
-        local page = Math.round(perc * self.page_count)
-        self:addOriginToLocationStack()
-        self.ui:handleEvent(Event:new("GotoPage", page ))
-        self.curr_page = page
-        self:update()
+function SkimToWidget:onFirstRowKeyPress(percent)
+    local page = Math.round(percent * self.page_count)
+    self:addOriginToLocationStack()
+    self.ui:handleEvent(Event:new("GotoPage", page ))
+    self.curr_page = page
+    self:update()
 end
 
 function SkimToWidget:onTapProgress(arg, ges_ev)
