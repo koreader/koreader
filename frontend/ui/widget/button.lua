@@ -301,7 +301,10 @@ function Button:onTapSelectButton()
                     UIManager:setDirty(self.show_parent, function()
                         return "ui", self[1].dimen
                     end)
-                    return true
+
+                    if self.readonly ~= true then
+                        return true
+                    end
                 end
 
                 if self.text then
