@@ -581,24 +581,29 @@ function DictQuickLookup:update()
         -- The only ones we care about are actually prev/next dict, and highlight, all the others are static.
         -- They happen to all belong to the !is_wiki_fullpage branch ;).
         if not self.is_wiki_fullpage then
-            for dummy, btn in ipairs(buttons) do
-                if btn.id == "prev_dict" then
-                    local button = self.button_table:getButtonById(btn.id)
-                    if button then
-                        button:enableDisable(btn.enabled)
-                    end
-                elseif btn.id == "highlight" then
-                    local button = self.button_table:getButtonById(btn.id)
-                    if button then
-                        button:enableDisable(btn.enabled)
-                    end
-                    if btn.text ~= button.text then
-                        button:setText(btn.text)
-                    end
-                elseif btn.id == "next_dict" then
-                    local button = self.button_table:getButtonById(btn.id)
-                    if button then
-                        button:enableDisable(btn.enabled)
+            for dummy, r in ipairs(buttons) do
+                for dummy, btn in ipairs(r) do
+                    if btn.id == "prev_dict" then
+                        local button = self.button_table:getButtonById(btn.id)
+                        print("Actual prev_dict Button is", button)
+                        if button then
+                            button:enableDisable(btn.enabled)
+                        end
+                    elseif btn.id == "highlight" then
+                        local button = self.button_table:getButtonById(btn.id)
+                        print("Actual highlight Button is", button)
+                        if button then
+                            button:enableDisable(btn.enabled)
+                        end
+                        if btn.text ~= button.text then
+                            button:setText(btn.text)
+                        end
+                    elseif btn.id == "next_dict" then
+                        local button = self.button_table:getButtonById(btn.id)
+                        print("Actual next_dict Button is", button)
+                        if button then
+                            button:enableDisable(btn.enabled)
+                        end
                     end
                 end
             end
