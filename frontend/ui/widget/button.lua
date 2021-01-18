@@ -271,7 +271,8 @@ function Button:onTapSelectButton()
             end
 
             if not self[1] or not self[1].invert or not self[1].dimen then
-                -- If the widget no longer exists (destroyed, re-init'ed by setText(), or not inverted: nothing to invert back
+                -- If the frame widget no longer exists (destroyed, re-init'ed by setText(), or is no longer inverted: we have nothing to invert back
+                -- NOTE: This cannot catch orphaned Button instances, c.f., the isSubwidgetShown(self) check below for that.
                 print("Button", self, "no longer exists")
                 return true
             end
