@@ -7,11 +7,11 @@ local Device = require("device")
 local Event = require("ui/event")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local FocusManager = require("ui/widget/focusmanager")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
-local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local Math = require("optmath")
 local MovableContainer = require("ui/widget/container/movablecontainer")
@@ -26,13 +26,15 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local SkimToWidget = InputContainer:new{
+local SkimToWidget = FocusManager:new{
     title_face = Font:getFace("x_smalltfont"),
     width = nil,
     height = nil,
 }
 
 function SkimToWidget:init()
+    self.buttons_layout = {}
+    self.selected = { x = 1, y = 2 }
     self.medium_font_face = Font:getFace("ffont")
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
@@ -44,9 +46,7 @@ function SkimToWidget:init()
     self.button_margin = self.button_bordersize
     self.button_width = math.floor(self.screen_width * 0.16) - (2*self.button_margin)
     if Device:hasKeys() then
-        self.key_events = {
-            Close = { {"Back"}, doc = "close skimto page" }
-        }
+        self.key_events.Close = { { "Back" }, doc = "close skimto page" }
     end
     if Device:isTouchDevice() then
         self.ges_events = {
@@ -266,7 +266,7 @@ function SkimToWidget:init()
     }
 
     local horizontal_span_up = HorizontalSpan:new{ width = math.floor(self.screen_width * 0.2) }
-       local button_table_up = HorizontalGroup:new{
+    local button_table_up = HorizontalGroup:new{
         align = "center",
         button_chapter_prev,
         button_bookmark_prev,
@@ -328,6 +328,28 @@ function SkimToWidget:init()
             self.skimto_frame,
         }
     }
+
+    if Device:hasDPad() then
+        self.buttons_layout = {
+            { button_chapter_prev, button_bookmark_prev, button_bookmark_next, button_chapter_next },
+            { button_minus, button_minus_ten, button_plus_ten, button_plus },
+        }
+        self.layout = self.buttons_layout
+        self.layout[2][1]:onFocus()
+        self.key_events.SelectByKeyPress = { { "Press" }, doc = "select focused item" }
+    end
+    if Device:hasKeyboard() then
+        self.key_events.QKey = { { "Q" }, event = "FirstRowKeyPress", args =    0 }
+        self.key_events.WKey = { { "W" }, event = "FirstRowKeyPress", args = 0.11 }
+        self.key_events.EKey = { { "E" }, event = "FirstRowKeyPress", args = 0.22 }
+        self.key_events.RKey = { { "R" }, event = "FirstRowKeyPress", args = 0.33 }
+        self.key_events.TKey = { { "T" }, event = "FirstRowKeyPress", args = 0.44 }
+        self.key_events.YKey = { { "Y" }, event = "FirstRowKeyPress", args = 0.55 }
+        self.key_events.UKey = { { "U" }, event = "FirstRowKeyPress", args = 0.66 }
+        self.key_events.IKey = { { "I" }, event = "FirstRowKeyPress", args = 0.77 }
+        self.key_events.OKey = { { "O" }, event = "FirstRowKeyPress", args = 0.88 }
+        self.key_events.PKey = { { "P" }, event = "FirstRowKeyPress", args =    1 }
+    end
 end
 
 function SkimToWidget:update()
@@ -397,6 +419,19 @@ end
 function SkimToWidget:onAnyKeyPressed()
     UIManager:close(self)
     return true
+end
+
+function SkimToWidget:onSelectByKeyPress()
+    local item = self:getFocusItem()
+    item.callback()
+end
+
+function SkimToWidget:onFirstRowKeyPress(percent)
+    local page = Math.round(percent * self.page_count)
+    self:addOriginToLocationStack()
+    self.ui:handleEvent(Event:new("GotoPage", page ))
+    self.curr_page = page
+    self:update()
 end
 
 function SkimToWidget:onTapProgress(arg, ges_ev)
