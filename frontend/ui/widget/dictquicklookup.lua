@@ -375,6 +375,7 @@ function DictQuickLookup:update()
         buttons = {
             {
                 {
+                    id = "save",
                     text = _("Save as EPUB"),
                     callback = function()
                         local InfoMessage = require("ui/widget/infomessage")
@@ -443,6 +444,7 @@ function DictQuickLookup:update()
                     end,
                 },
                 {
+                    id = "close",
                     text = _("Close"),
                     callback = function()
                         UIManager:close(self)
@@ -459,6 +461,7 @@ function DictQuickLookup:update()
         buttons = {
             {
                 {
+                    id = "prev_dict",
                     text = prev_dict_text,
                     vsync = true,
                     enabled = self:isPrevDictAvaiable(),
@@ -470,6 +473,7 @@ function DictQuickLookup:update()
                     end,
                 },
                 {
+                    id = "highlight",
                     text = self:getHighlightText(),
                     enabled = self.highlight ~= nil,
                     callback = function()
@@ -482,6 +486,7 @@ function DictQuickLookup:update()
                     end,
                 },
                 {
+                    id = "next_dict",
                     text = next_dict_text,
                     vsync = true,
                     enabled = self:isNextDictAvaiable(),
@@ -495,6 +500,7 @@ function DictQuickLookup:update()
             },
             {
                 {
+                    id = "wikipedia",
                     -- if dictionary result, do the same search on wikipedia
                     -- if already wiki, get the full page for the current result
                     text_func = function()
@@ -513,6 +519,7 @@ function DictQuickLookup:update()
                 },
                 -- Rotate thru available wikipedia languages, or Search in book if dict window
                 {
+                    id = "search",
                     -- if more than one language, enable it and display "current lang > next lang"
                     -- otherwise, just display current lang
                     text = self.is_wiki
@@ -532,6 +539,7 @@ function DictQuickLookup:update()
                     end,
                 },
                 {
+                    id = "close",
                     text = _("Close"),
                     callback = function()
                         -- UIManager:close(self)
@@ -545,6 +553,7 @@ function DictQuickLookup:update()
             -- add a new first row with a single button to follow this link.
             table.insert(buttons, 1, {
                 {
+                    id = "link",
                     text = _("Follow Link"),
                     callback = function()
                         local link = self.selected_link.link or self.selected_link
@@ -560,14 +569,43 @@ function DictQuickLookup:update()
     -- reach out from the content to the borders a bit more
     local buttons_padding = Size.padding.default
     local buttons_width = inner_width - 2*buttons_padding
-    local button_table = ButtonTable:new{
-        width = buttons_width,
-        button_font_face = "cfont",
-        button_font_size = 20,
-        buttons = buttons,
-        zero_sep = true,
-        show_parent = self,
-    }
+    -- If the amount of buttons changed, instanciate a new ButtonTable, otherwise, just update the existing instance if there's one.
+    if self.button_table and self.button_table.button_count == #buttons then
+        -- The only ones we care about are actually prev/next dict, and highlight, all the others are static.
+        -- They happen to all belong to the !is_wiki_fullpage branch ;).
+        if not self.is_wiki_fullpage then
+            for _, btn in ipairs(buttons) do
+                if btn.id == "prev_dict" then
+                    local button = self.button_table:getButtonById(btn.id)
+                    if button then
+                        button:enableDisable(btn.enabled)
+                    end
+                elseif btn.id == "highlight" then
+                    local button = self.button_table:getButtonById(btn.id)
+                    if button then
+                        button:enableDisable(btn.enabled)
+                    end
+                    if btn.text ~= button.text then
+                        button:setText(btn.text)
+                    end
+                elseif btn.id == "next_dict" then
+                    local button = self.button_table:getButtonById(btn.id)
+                    if button then
+                        button:enableDisable(btn.enabled)
+                    end
+                end
+            end
+        end
+    else
+        self.button_table = ButtonTable:new{
+            width = buttons_width,
+            button_font_face = "cfont",
+            button_font_size = 20,
+            buttons = buttons,
+            zero_sep = true,
+            show_parent = self,
+        }
+    end
 
     -- Margin from screen edges
     local margin_top = Size.margin.default
@@ -595,7 +633,7 @@ function DictQuickLookup:update()
                         + lookup_word:getSize().h
                         + word_to_definition_span:getSize().h
                         + definition_to_bottom_span:getSize().h
-                        + button_table:getSize().h
+                        + self.button_table:getSize().h
 
     -- To properly adjust the definition to the height of text, we need
     -- the line height a ScrollTextWidget will use for the current font
@@ -730,9 +768,9 @@ function DictQuickLookup:update()
             CenterContainer:new{
                 dimen = Geom:new{
                     w = inner_width,
-                    h = button_table:getSize().h,
+                    h = self.button_table:getSize().h,
                 },
-                button_table,
+                self.button_table,
             }
         }
     }
