@@ -61,34 +61,49 @@ end
 
 -- If successful returns id of found note.
 function JoplinClient:findNoteByTitle(title, notebook_id)
-    local url =  "http://"..self.server_ip..":"..self.server_port.."/notes?".."token="..self.auth_token.."&fields=id,title,parent_id"
+    local url_base =  "http://"..self.server_ip..":"..self.server_port.."/notes?".."token="..self.auth_token.."&fields=id,title,parent_id&page="
 
-    local notes = self:_makeRequest(url, "GET")
+    local url
+    local page = 1
+    local has_more
 
-    for _, note in pairs(notes) do
-        if note.title == title then
-            if notebook_id == nil or note.parent_id == notebook_id then
-                return note.id
+    repeat
+        url = url_base..page
+        local notes = self:_makeRequest(url, "GET")
+        has_more = notes.has_more
+        for _, note in pairs(notes.items) do
+            if note.title == title then
+                if notebook_id == nil or note.parent_id == notebook_id then
+                    return note.id
+                end
             end
         end
-    end
-
+        page = page + 1
+    until(not(has_more))
     return false
 
 end
 
 -- If successful returns id of found notebook (folder).
 function JoplinClient:findNotebookByTitle(title)
-    local url =  "http://"..self.server_ip..":"..self.server_port.."/folders?".."token="..self.auth_token.."&".."query="..title
+    local url_base =  "http://"..self.server_ip..":"..self.server_port.."/folders?".."token="..self.auth_token.."&".."query="..title.."&page="
 
-    local folders = self:_makeRequest(url, "GET")
 
-    for _, folder in pairs(folders) do
-        if folder.title== title then
-            return folder.id
+    local url
+    local page = 1
+    local has_more
+
+    repeat
+        url = url_base..page
+        local folders = self:_makeRequest(url, "GET")
+        has_more = folders.has_more
+        for _, folder in pairs(folders.items) do
+            if folder.title== title then
+                return folder.id
+            end
         end
-    end
-
+        page = page + 1
+    until(not(has_more))
     return false
 end
 
@@ -109,10 +124,10 @@ end
 -- If successful returns id of created note.
 function JoplinClient:createNote(title, note, parent_id, created_time)
     local request_body = {
-            title = title,
-            body = note,
-            parent_id = parent_id,
-            created_time = created_time
+        title = title,
+        body = note,
+        parent_id = parent_id,
+        created_time = created_time
     }
     local url =  "http://"..self.server_ip..":"..self.server_port.."/notes?".."token="..self.auth_token
     local response = self:_makeRequest(url, "POST", request_body)
