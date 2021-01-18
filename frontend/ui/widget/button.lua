@@ -269,15 +269,12 @@ function Button:onTapSelectButton()
             end
 
             if not self[1] or not self[1].invert or not self[1].dimen then
-                -- If the widget no longer exists (destroyed, re-init'ed by setText(), or not inverted: nothing to invert back
+                -- If the frame widget no longer exists (destroyed, re-init'ed by setText(), or is no longer inverted: we have nothing to invert back
+                -- NOTE: This cannot catch orphaned Button instances, c.f., the isSubwidgetShown(self) check below for that.
                 return true
             end
 
-            -- If the callback closed our parent (which ought to have been the top level widget), abort early
-            if UIManager:getTopWidget() ~= self.show_parent then
-                return true
-            end
-
+            -- Reset colors early, regardless of what we do later, to avoid code duplication
             self[1].invert = false
             if self.text then
                 if self[1].radius == Size.radius.button then
@@ -285,16 +282,47 @@ function Button:onTapSelectButton()
                     self[1].background = self[1].background:invert()
                     self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
                 end
-
-                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-            else
-                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             end
-            -- If the button was disabled, switch to UI to make sure the gray comes through unharmed ;).
-            UIManager:setDirty(nil, function()
-                return self.enabled and "fast" or "ui", self[1].dimen
-            end)
-            --UIManager:forceRePaint() -- Ensures the unhighlight happens now, instead of potentially waiting and having it batched with something else.
+
+            -- If the callback closed our parent (which may not always be the top-level widget, or even *a* window-level widget), we're done
+            local top_widget = UIManager:getTopWidget()
+            if top_widget == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
+                -- If the button can no longer be found inside a shown widget, abort early
+                -- (this allows us to catch widgets that instanciate *new* Buttons on every update... (e.g., ButtonTable) :()
+                if not UIManager:isSubwidgetShown(self) then
+                    return true
+                end
+
+                -- If our parent is no longer the toplevel widget, toplevel is now a true modal, and our highlight would clash with that modal's region,
+                -- we have no other choice than repainting the full stack...
+                if top_widget ~= self.show_parent and top_widget ~= "VirtualKeyboard" and top_widget.modal and self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
+                    -- Much like in TouchMenu, the fact that the two intersect means we have no choice but to repaint the full stack to avoid half-painted widgets...
+                    UIManager:waitForVSync()
+                    UIManager:setDirty(self.show_parent, function()
+                        return "ui", self[1].dimen
+                    end)
+
+                    -- It's a sane exit, handle the return the same way.
+                    if self.readonly ~= true then
+                        return true
+                    end
+                end
+
+                if self.text then
+                    UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                else
+                    UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+                end
+                -- If the button was disabled, switch to UI to make sure the gray comes through unharmed ;).
+                UIManager:setDirty(nil, function()
+                    return self.enabled and "fast" or "ui", self[1].dimen
+                end)
+                --UIManager:forceRePaint() -- Ensures the unhighlight happens now, instead of potentially waiting and having it batched with something else.
+            else
+                -- This branch will mainly be taken by stuff that pops up the virtual keyboard (e.g., TextEditor), where said keyboard will always be top-level,
+                -- (hence the exception in the check above).
+                return true
+            end
         end
     elseif self.tap_input then
         self:onInput(self.tap_input)

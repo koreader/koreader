@@ -186,6 +186,12 @@ function TouchMenuItem:onTapSelect(arg, ges)
                 return true
             end
 
+            -- If the callback opened the Virtual Keyboard, we're done
+            -- (this is for TextEditor, Terminal & co)
+            if top_widget == "VirtualKeyboard" then
+                return true
+            end
+
             -- If we're still on top, or if a modal was opened outside of our highlight region, we can unhighlight safely
             if top_widget == self.menu or highlight_dimen:notIntersectWith(UIManager:getPreviousRefreshRegion()) then
                 UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
@@ -234,10 +240,27 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         --UIManager:waitForVSync()
 
         self.item_frame.invert = false
-        UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
-        UIManager:setDirty(nil, function()
-            return "ui", highlight_dimen
-        end)
+        -- If the callback closed the menu, we're done. (This field defaults to nil, meaning keep the menu open)
+        if self.item.hold_keep_menu_open == false then
+            return true
+        end
+
+        local top_widget = UIManager:getTopWidget()
+        -- If we're still on top, or if a modal was opened outside of our highlight region, we can unhighlight safely
+        if top_widget == self.menu or highlight_dimen:notIntersectWith(UIManager:getPreviousRefreshRegion()) then
+            UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+            UIManager:setDirty(nil, function()
+                return "ui", highlight_dimen
+            end)
+        else
+            -- That leaves modals that might have been displayed on top of the highlighted menu entry, in which case,
+            -- we can't take any shortcuts, as it would invert/paint *over* the popop.
+            -- Instead, fence the callback to avoid races, and repaint the *full* widget stack properly.
+            UIManager:waitForVSync()
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", highlight_dimen
+            end)
+        end
         --UIManager:forceRePaint()
     end
     return true

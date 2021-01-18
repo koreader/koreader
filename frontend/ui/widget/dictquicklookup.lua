@@ -460,6 +460,7 @@ function DictQuickLookup:update()
             {
                 {
                     text = prev_dict_text,
+                    vsync = true,
                     enabled = self:isPrevDictAvaiable(),
                     callback = function()
                         self:changeToPrevDict()
@@ -482,6 +483,7 @@ function DictQuickLookup:update()
                 },
                 {
                     text = next_dict_text,
+                    vsync = true,
                     enabled = self:isNextDictAvaiable(),
                     callback = function()
                         self:changeToNextDict()
