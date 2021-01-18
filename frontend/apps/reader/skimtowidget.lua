@@ -339,7 +339,6 @@ function SkimToWidget:init()
         self.key_events.SelectByKeyPress = { { "Press" }, doc = "select focused item" }
     end
     if Device:hasKeyboard() then
-        local first_row = Device.keyboard_layout[1]
         self.key_events.QKey = { { "Q" }, event = "FirstRowKeyPress", args =    0 }
         self.key_events.WKey = { { "W" }, event = "FirstRowKeyPress", args = 0.11 }
         self.key_events.EKey = { { "E" }, event = "FirstRowKeyPress", args = 0.22 }
