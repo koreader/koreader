@@ -774,9 +774,7 @@ function DictQuickLookup:update()
     -- Free our previous widget and subwidgets' resources (especially
     -- definitions' TextBoxWidget bb, HtmlBoxWidget bb and MuPDF instance,
     -- and scheduled image_update_action)
-    if self[1] then
-        self[1]:free()
-    end
+    self[1]:free()
 
     -- Update TextWidgets
     self.dict_title_text:setText(self.displaydictname)
@@ -802,6 +800,7 @@ function DictQuickLookup:update()
         self.text_widget.htmlbox_widget:setContent(self.definition, self:getHtmlDictionaryCss(), Screen:scaleBySize(self.dict_font_size))
     else
         self.text_widget.text_widget.text = self.definition
+        -- NOTE: The recursive free via our WidgetContainer (self[1]) above already free'd us ;)
         self.text_widget.text_widget:init()
     end
 
