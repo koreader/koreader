@@ -434,16 +434,15 @@ function DictQuickLookup:init()
                         else
                             self.ui:handleEvent(Event:new("Unhighlight"))
                         end
-                        -- Just repaint *this* button
+                        -- Just update, repaint and refresh *this* button
                         local this = self.button_table:getButtonById("highlight")
                         if not this then return end
                         this:enableDisable(self.highlight ~= nil)
-                        this:setText(self:getHighlightText(), this.width)
-                        -- c.f., Button's onTap handler
-                        UIManager:widgetRepaint(this[1], this[1].dimen.x, this[1].dimen.y)
-                        UIManager:setDirty(nil, function()
-                            return this.enabled and "fast" or "ui", this[1].dimen
-                        end)
+                        -- Button's setText resets the frame, so access the TextWidget's setText instead,
+                        -- otherwise we lose the frame's dimension until an actuall widget stack repaint,
+                        -- which would break refresh ;).
+                        this.label_widget:setText(self:getHighlightText())
+                        this:refresh()
                     end,
                 },
                 {
