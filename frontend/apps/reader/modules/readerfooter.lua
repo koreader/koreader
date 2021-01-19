@@ -280,7 +280,7 @@ local footerTextGeneratorMap = {
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].book_time_to_read
         local left = footer.ui.document:getTotalPagesLeft(footer.pageno)
-        return footer:getDataFromStatistics(prefix .. " ", left)
+        return footer:getDataFromStatistics(prefix and (prefix.." ") or "", left)
     end,
     chapter_time_to_read = function(footer)
         local symbol_type = footer.settings.item_prefix or "icons"
@@ -820,7 +820,8 @@ function ReaderFooter:textOptionTitles(option)
         battery = T(_("Battery status (%1)"), symbol_prefix[symbol].battery),
         percentage = symbol_prefix[symbol].percentage
             and T(_("Progress percentage (%1)"), symbol_prefix[symbol].percentage) or _("Progress percentage"),
-        book_time_to_read = T(_("Book time to read (%1)"),symbol_prefix[symbol].book_time_to_read),
+        book_time_to_read = symbol_prefix[symbol].book_time_to_read
+            and T(_("Book time to read (%1)"),symbol_prefix[symbol].book_time_to_read) or _("Book time to read"),
         chapter_time_to_read = T(_("Chapter time to read (%1)"), symbol_prefix[symbol].chapter_time_to_read),
         frontlight = T(_("Frontlight level (%1)"), symbol_prefix[symbol].frontlight),
         mem_usage = T(_("KOReader memory usage (%1)"), symbol_prefix[symbol].mem_usage),
@@ -1254,7 +1255,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                             return T(_("Compact Items (%1)"), table.concat(sym_tbl, " "))
                         end,
                         checked_func = function()
-                            return self.settings.item_prefix == "compact_items" or self.settings.item_prefix == nil
+                            return self.settings.item_prefix == "compact_items"
                         end,
                         callback = function()
                             self.settings.item_prefix = "compact_items"
