@@ -289,7 +289,6 @@ function Button:onTapSelectButton()
 
             -- Reset colors early, regardless of what we do later, to avoid code duplication
             self[1].invert = false
-            inverted = nil
             if self.text then
                 if self[1].radius == Size.radius.button then
                     self[1].radius = nil
