@@ -144,9 +144,15 @@ end
 
 function Button:setText(text, width)
     if text ~= self.text then
-        self.text = text
-        self.width = width
-        self:init()
+        -- Don't trash the frame if we're already a text button, and we're keeping the geometry intact
+        if self.text and width and width == self.width then
+            self.text = text
+            self.label_widget:setText(text)
+        else
+            self.text = text
+            self.width = width
+            self:init()
+        end
     end
 end
 
