@@ -29,6 +29,7 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local Screen = Device.screen
+local logger = require("logger")
 
 local Button = InputContainer:new{
     text = nil, -- mandatory
@@ -351,6 +352,22 @@ function Button:onTapSelectButton()
     if self.readonly ~= true then
         return true
     end
+end
+
+-- Allow repainting and refreshing *a* specific Button, instead of the full screen/parent stack
+function Button:refresh()
+    -- We can only be called on a Button that's already been painted once, which allows us to know where we're positioned,
+    -- thanks to the frame's geometry.
+    -- e.g., right after a setText or setIcon is a no-go, as those kill the frame.
+    --       (But one could call setText on the button's label_widget instead ;)).
+    if not self[1].dimen then
+        logger.dbg("Button:", self, "attempted a repaint in an unpainted frame!")
+        return
+    end
+    UIManager:widgetRepaint(self[1], self[1].dimen.x, self.dimen.y)
+    UIManager:setDirty(nil, function()
+        return self.enabled and "fast" or "ui", self[1].dimen
+    end)
 end
 
 function Button:onHoldSelectButton()
