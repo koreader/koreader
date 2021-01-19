@@ -436,7 +436,7 @@ function DictQuickLookup:init()
                         end
                         -- Just repaint *this* button
                         local this = self.button_table:getButtonById("highlight")
-                        if not this return end
+                        if not this then return end
                         this:enableDisable(self.highlight ~= nil)
                         this:setText(self:getHighlightText(), this.width)
                         -- c.f., Button's onTap handler
