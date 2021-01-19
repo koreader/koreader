@@ -436,10 +436,7 @@ function DictQuickLookup:init()
                         local this = self.button_table:getButtonById("highlight")
                         if not this then return end
                         this:enableDisable(self.highlight ~= nil)
-                        -- Button's setText resets the frame, so access the Button's actual TextWidget's setText instead,
-                        -- otherwise we lose the frame's geometry until an actuall widget stack repaint,
-                        -- which would render refresh inoperable ;).
-                        this.label_widget:setText(self:getHighlightText())
+                        this:setText(self:getHighlightText(), this.width)
                         this:refresh()
                     end,
                 },
