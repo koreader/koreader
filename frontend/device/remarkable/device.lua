@@ -130,6 +130,32 @@ end
 
 function Remarkable:supportsScreensaver() return true end
 
+function Remarkable:initNetworkManager(NetworkMgr)
+    function NetworkMgr:turnOnWifi(complete_callback)
+        os.execute("./enable-wifi.sh")
+        self:reconnectOrShowNetworkMenu(function()
+            self:connectivityCheck(1, complete_callback)
+        end)
+    end
+
+    function NetworkMgr:turnOffWifi(complete_callback)
+        os.execute("./disable-wifi.sh")
+        if complete_callback then
+            complete_callback()
+        end
+    end
+
+    function NetworkMgr:getNetworkInterfaceName()
+        return "wlan0"
+    end
+
+    NetworkMgr:setWirelessBackend("wpa_supplicant", {ctrl_interface = "/var/run/wpa_supplicant/wlan0"})
+
+    NetworkMgr.isWifiOn = function()
+        return NetworkMgr:isConnected()
+    end
+end
+
 function Remarkable:setDateTime(year, month, day, hour, min, sec)
     if hour == nil or min == nil then return true end
     local command
@@ -146,6 +172,9 @@ function Remarkable1:suspend()
 end
 
 function Remarkable2:suspend()
+    -- Need to remove brcmfmac kernel module before suspend. Otherwise the module crashes on wakeup
+    os.execute("./disable-wifi.sh")
+
     os.execute("systemctl suspend")
     -- While device is suspended, when the user presses the power button and wakes up the device,
     -- a "Power" event is NOT sent.
