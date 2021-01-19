@@ -805,6 +805,9 @@ function DictQuickLookup:update()
         self.text_widget.text_widget:init()
     end
 
+    -- Reset alpha to avoid stacking transparency on top of the previous content
+    self.movable.alpha = nil
+
     UIManager:setDirty(self, function()
         return "partial", self.dict_frame.dimen
     end)
