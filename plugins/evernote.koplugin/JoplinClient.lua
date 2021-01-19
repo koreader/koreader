@@ -71,7 +71,7 @@ function JoplinClient:findNoteByTitle(title, notebook_id)
         url = url_base..page
         local notes = self:_makeRequest(url, "GET")
         has_more = notes.has_more
-        for _, note in pairs(notes.items) do
+        for _, note in ipairs(notes.items) do
             if note.title == title then
                 if notebook_id == nil or note.parent_id == notebook_id then
                     return note.id
@@ -97,7 +97,7 @@ function JoplinClient:findNotebookByTitle(title)
         url = url_base..page
         local folders = self:_makeRequest(url, "GET")
         has_more = folders.has_more
-        for _, folder in pairs(folders.items) do
+        for _, folder in ipairs(folders.items) do
             if folder.title== title then
                 return folder.id
             end
