@@ -113,7 +113,9 @@ end
 
 function WidgetContainer:free()
     for _, widget in ipairs(self) do
-        if widget.free then widget:free() end
+        if widget.free then
+            widget:free()
+        end
     end
 end
 
