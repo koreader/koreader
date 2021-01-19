@@ -164,8 +164,6 @@ function DictQuickLookup:init()
     self:changeDictionary(1, true) -- don't call update yet
 
     -- And here comes the initial widget layout...
-    local orig_dimen = Geom:new{}
-
     if self.is_wiki then
         -- Keep a copy of self.wiki_languages for use
         -- by DictQuickLookup:resyncWikiLanguages()
@@ -726,7 +724,7 @@ function DictQuickLookup:init()
         self.movable,
     }
     UIManager:setDirty(self, function()
-        local update_region = self.dict_frame and self.dict_frame.dimen and self.dict_frame.dimen:combine(orig_dimen) or orig_dimen
+        local update_region = self.dict_frame and self.dict_frame.dimen and self.dict_frame.dimen or nil
         logger.dbg("update dict region", update_region)
         return "partial", update_region
     end)
@@ -775,8 +773,6 @@ function DictQuickLookup:getHtmlDictionaryCss()
 end
 
 function DictQuickLookup:update()
-    local orig_dimen = self.dict_frame and self.dict_frame.dimen or Geom:new{}
-    local orig_moved_offset = self.movable and self.movable:getMovedOffset()
     -- Free our previous widget and subwidgets' resources (especially
     -- definitions' TextBoxWidget bb, HtmlBoxWidget bb and MuPDF instance,
     -- and scheduled image_update_action)
@@ -811,10 +807,8 @@ function DictQuickLookup:update()
         self.text_widget.text_widget:init()
     end
 
-    --self.movable:setMovedOffset(orig_moved_offset)
-
     UIManager:setDirty(self, function()
-        local update_region = self.dict_frame and self.dict_frame.dimen and self.dict_frame.dimen:combine(orig_dimen) or orig_dimen
+        local update_region = self.dict_frame and self.dict_frame.dimen and self.dict_frame.dimen or nil
         logger.dbg("update dict region", update_region)
         return "partial", update_region
     end)
