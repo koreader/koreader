@@ -364,7 +364,7 @@ function Button:refresh()
     -- We can only be called on a Button that's already been painted once, which allows us to know where we're positioned,
     -- thanks to the frame's geometry.
     -- e.g., right after a setText or setIcon is a no-go, as those kill the frame.
-    --       (But one could call setText on the button's label_widget instead ;)).
+    --       (Although, setText, if called with the current width, will conserve the frame).
     if not self[1].dimen then
         logger.dbg("Button:", self, "attempted a repaint in an unpainted frame!")
         return
