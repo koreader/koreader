@@ -807,7 +807,8 @@ function DictQuickLookup:update()
     if self.is_html then
         self.text_widget.htmlbox_widget:setContent(self.definition, self:getHtmlDictionaryCss(), Screen:scaleBySize(self.dict_font_size))
     else
-        self.text_widget.text_widget:setText(self.definition)
+        self.text_widget.text_widget.text = self.definition
+        self.text_widget.text_widget:init()
     end
 
     --self.movable:setMovedOffset(orig_moved_offset)
