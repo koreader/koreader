@@ -142,15 +142,19 @@ function Button:init()
 end
 
 function Button:setText(text, width)
-    self.text = text
-    self.width = width
-    self:init()
+    if text ~= self.text then
+        self.text = text
+        self.width = width
+        self:init()
+    end
 end
 
 function Button:setIcon(icon)
-    self.icon = icon
-    self.width = nil
-    self:init()
+    if icon ~= self.icon then
+        self.icon = icon
+        self.width = nil
+        self:init()
+    end
 end
 
 function Button:onFocus()
