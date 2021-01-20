@@ -56,6 +56,8 @@ function DateWidget:init()
             },
         }
     end
+
+    -- Actually the widget layout
     self:update()
 end
 
