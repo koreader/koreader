@@ -536,7 +536,7 @@ function ImageViewer:update()
     end
 
     -- Update the progress bar
-    if self._images_list
+    if self._images_list then
         local percent = 1
         if self._images_list_nb > 1 then
             percent = (self._images_list_cur - 1) / (self._images_list_nb - 1)
