@@ -895,9 +895,17 @@ function TextBoxWidget:_renderImage(start_row_idx)
         local bbtype = image.bb:getType()
         if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then
             -- NOTE: MuPDF feeds us premultiplied alpha (and we don't care w/ GifLib, as alpha is all or nothing).
-            self._bb:pmulalphablitFrom(image.bb, self.width - image.width, 0)
+            if Screen.sw_dithering then
+                self._bb:ditherpmulalphablitFrom(image.bb, self.width - image.width, 0)
+            else
+                self._bb:pmulalphablitFrom(image.bb, self.width - image.width, 0)
+            end
         else
-            self._bb:blitFrom(image.bb, self.width - image.width, 0)
+            if Screen.sw_dithering then
+                self._bb:ditherblitFrom(image.bb, self.width - image.width, 0)
+            else
+                self._bb:blitFrom(image.bb, self.width - image.width, 0)
+            end
         end
 
         -- Request dithering
