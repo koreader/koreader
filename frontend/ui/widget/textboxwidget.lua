@@ -847,6 +847,10 @@ function TextBoxWidget:_renderImage(start_row_idx)
     local scheduled_update = self.scheduled_update
     self.scheduled_update = nil -- reset it, so we don't have to whenever we return below
     if not self.line_num_to_image or not self.line_num_to_image[start_row_idx] then
+        -- No image, no dithering
+        if self.dialog then
+            self.dialog.dithered = false
+        end
         return -- no image on this page
     end
     local image = self.line_num_to_image[start_row_idx]
@@ -894,6 +898,11 @@ function TextBoxWidget:_renderImage(start_row_idx)
             self._bb:pmulalphablitFrom(image.bb, self.width - image.width, 0)
         else
             self._bb:blitFrom(image.bb, self.width - image.width, 0)
+        end
+
+        -- Request dithering
+        if self.dialog then
+            self.dialog.dithered = true
         end
     end
     local status_height = 0
@@ -965,7 +974,7 @@ function TextBoxWidget:_renderImage(start_row_idx)
                                 y = self.dimen.y,
                                 w = image.width,
                                 h = image.height,
-                            }
+                            }, true
                         end)
                     end
                 end)
@@ -983,7 +992,7 @@ function TextBoxWidget:_renderImage(start_row_idx)
                         y = self.dimen.y,
                         w = image.width,
                         h = image.height,
-                    }
+                    }, true
                 end)
             end
         end
@@ -1124,7 +1133,7 @@ function TextBoxWidget:onTapImage(arg, ges)
                         y = self.dimen.y,
                         w = image.width,
                         h = image.height,
-                    }
+                    }, not self.image_show_alt_text
                 end)
                 return true
             end
