@@ -471,7 +471,7 @@ function ImageViewer:update()
         local scale_btn = self.button_table:getButtonById("scale")
         scale_btn:setText(self._scale_to_fit and _("Original size") or _("Scale"), scale_btn.width)
         local rotate_btn = self.button_table:getButtonById("rotate")
-        rotate_btn:setText(self.rotated and _("No rotation") or _("Rotate"))
+        rotate_btn:setText(self.rotated and _("No rotation") or _("Rotate"), rotate_btn.width)
 
         self.button_table_size = self.button_table:getSize().h
     else
