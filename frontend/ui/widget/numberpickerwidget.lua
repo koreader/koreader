@@ -169,6 +169,7 @@ function NumberPickerWidget:init()
                     },
                 },
             }
+            self.update_callback()
             UIManager:show(input_dialog)
             input_dialog:onShowKeyboard()
         end
