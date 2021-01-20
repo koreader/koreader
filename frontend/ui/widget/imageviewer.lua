@@ -163,7 +163,7 @@ end
 function ImageViewer:update()
     self:_clean_image_wg() -- clean previous if any
     if self._scale_to_fit == nil then -- initialize our toggle
-        self._scale_to_fit = self.scale_factor == 0 and true or false
+        self._scale_to_fit = self.scale_factor == 0
     end
     local orig_dimen = self.main_frame and self.main_frame.dimen or Geom:new{}
     self.align = "center"
