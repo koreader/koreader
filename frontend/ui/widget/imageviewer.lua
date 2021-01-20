@@ -187,7 +187,6 @@ function ImageViewer:update()
     end
 
     local button_table_size = 0
-    local button_container
     if self.buttons_visible then
         local buttons = {
             {
@@ -225,7 +224,7 @@ function ImageViewer:update()
             zero_sep = true,
             show_parent = self,
         }
-        button_container = CenterContainer:new{
+        self.button_container = CenterContainer:new{
             dimen = Geom:new{
                 w = self.width,
                 h = button_table:getSize().h,
@@ -236,9 +235,8 @@ function ImageViewer:update()
     end
 
     -- height available to our image
-    local img_container_h = self.height - button_table_size
+    self.img_container_h = self.height - button_table_size
 
-    local title_bar, title_sep
     if self.with_title_bar then
         -- Toggler (white arrow) for caption, on the left of title
         local ctoggler
@@ -250,29 +248,30 @@ function ImageViewer:update()
             else
                 ctoggler_text = "▷ " -- white arrow (nicer than smaller black arrow ►)
             end
+            -- FIXME: Needs to be accessible for update
+            self.ctoggler_tw = TextWidget:new{
+                text = ctoggler_text,
+                face = self.title_face,
+            }
             -- paddings chosen to align nicely with titlew
             ctoggler = FrameContainer:new{
                 bordersize = 0,
                 padding = self.title_padding,
                 padding_top = self.title_padding + Size.padding.small,
                 padding_right = 0,
-                -- FIXME: Needs to be accessible for update
-                TextWidget:new{
-                    text = ctoggler_text,
-                    face = self.title_face,
-                }
+                self.ctoggler_tw,
             }
             ctoggler_width = ctoggler:getSize().w
         end
         local closeb = CloseButton:new{ window = self, padding_top = Size.padding.tiny, }
         -- FIXME: Need to be accessible and re-init'ed, meaning we need ctoggler, too
-        local title_tbw = TextBoxWidget:new{
+        self.title_tbw = TextBoxWidget:new{
             text = self.title_text,
             face = self.title_face,
             -- bold = true, -- we're already using a bold font
             width = self.width - 2*self.title_padding - 2*self.title_margin - closeb:getSize().w - ctoggler_width,
         }
-        print("ImageViewer: title_tbw is", title_tbw)
+        print("ImageViewer: self.title_tbw is", self.title_tbw)
         local title_tbw_padding_bottom = self.title_padding + Size.padding.small
         if self.caption and self.caption_visible then
             title_tbw_padding_bottom = 0 -- save room between title and caption
@@ -284,12 +283,12 @@ function ImageViewer:update()
             padding_left = ctoggler and ctoggler_width or self.title_padding,
             margin = self.title_margin,
             bordersize = 0,
-            title_tbw,
+            self.title_tbw,
         }
         if self.caption then
             self.caption_tap_area = titlew
         end
-        title_bar = OverlapGroup:new{
+        self.title_bar = OverlapGroup:new{
             dimen = {
                 w = self.width,
                 h = titlew:getSize().h
@@ -297,50 +296,50 @@ function ImageViewer:update()
             titlew,
             closeb
         }
+        -- FIXME: ctoggler?
         if ctoggler then
-            table.insert(title_bar, 1, ctoggler)
+            table.insert(self.title_bar, 1, ctoggler)
         end
         if self.caption and self.caption_visible then
             -- FIXME: Once more, with feeling
-            local caption_tbw = TextBoxWidget:new{
+            self.caption_tbw = TextBoxWidget:new{
                 text = self.caption,
                 face = self.caption_face,
                 width = self.width - 2*self.title_padding - 2*self.title_margin - 2*self.caption_padding,
             }
-            print("ImageViewer: caption_tbw is", caption_tbw)
+            print("ImageViewer: self.caption_tbw is", self.caption_tbw)
             local captionw = FrameContainer:new{
                 padding = self.caption_padding,
                 padding_top = 0, -- don't waste vertical room for bigger image
                 padding_bottom = 0,
                 margin = self.title_margin,
                 bordersize = 0,
-                caption_tbw,
+                self.caption_tbw,
             }
-            title_bar = VerticalGroup:new{
+            self.title_bar = VerticalGroup:new{
                 align = "left",
-                title_bar,
+                self.title_bar,
                 captionw
             }
         end
-        title_sep = LineWidget:new{
+        self.title_sep = LineWidget:new{
             dimen = Geom:new{
                 w = self.width,
                 h = Size.line.thick,
             }
         }
         -- adjust height available to our image
-        img_container_h = img_container_h - title_bar:getSize().h - title_sep:getSize().h
+        self.img_container_h = self.img_container_h - self.title_bar:getSize().h - self.title_sep:getSize().h
     end
 
-    local progress_container
     if self._images_list then
         -- progress bar
         local percent = 1
         if self._images_list_nb > 1 then
             percent = (self._images_list_cur - 1) / (self._images_list_nb - 1)
         end
-        -- FIXME: Need to update the percentage (setPercentage), so, accessible it need to be
-        local progress_bar = ProgressWidget:new{
+        -- FIXME: Need to update the percentage (setPercentage), so, accessible it needs to be
+        self.progress_bar = ProgressWidget:new{
             width = self.width - 2*self.button_padding,
             height = Screen:scaleBySize(5),
             percentage = percent,
@@ -350,23 +349,23 @@ function ImageViewer:update()
             ticks = nil,
             last = nil,
         }
-        progress_container = CenterContainer:new{
+        self.progress_container = CenterContainer:new{
             dimen = Geom:new{
                 w = self.width,
-                h = progress_bar:getSize().h + Size.padding.small,
+                h = self.progress_bar:getSize().h + Size.padding.small,
             },
-            progress_bar
+            self.progress_bar
         }
-        img_container_h = img_container_h - progress_container:getSize().h
+        self.img_container_h = self.img_container_h - self.progress_container:getSize().h
     end
 
     -- FIXME: That has to stay, too, because it is dynamic
     -- If no buttons and no title are shown, use the full screen
-    local max_image_h = img_container_h
+    local max_image_h = self.img_container_h
     local max_image_w = self.width
     -- Otherwise, add paddings around image
     if self.buttons_visible or self.with_title_bar then
-        max_image_h = img_container_h - self.image_padding*2
+        max_image_h = self.img_container_h - self.image_padding*2
         max_image_w = self.width - self.image_padding*2
     end
 
@@ -397,10 +396,10 @@ function ImageViewer:update()
         center_y_ratio = self._center_y_ratio,
     }
 
-    local image_container = CenterContainer:new{
+    self.image_container = CenterContainer:new{
         dimen = Geom:new{
             w = self.width,
-            h = img_container_h,
+            h = self.img_container_h,
         },
         self._image_wg,
     }
@@ -408,16 +407,16 @@ function ImageViewer:update()
     local frame_elements = VerticalGroup:new{ align = "left" }
     -- FIXME: Can all this stuff change across our lifetime?
     if self.with_title_bar then
-        table.insert(frame_elements, title_bar)
-        table.insert(frame_elements, title_sep)
+        table.insert(frame_elements, self.title_bar)
+        table.insert(frame_elements, self.title_sep)
     end
-    table.insert(frame_elements, image_container)
-    if progress_container then
-        table.insert(frame_elements, progress_container)
+    table.insert(frame_elements, self.image_container)
+    if self.progress_container then
+        table.insert(frame_elements, self.progress_container)
     end
     -- FIXME: Crap, that can.
     if self.buttons_visible then
-        table.insert(frame_elements, button_container)
+        table.insert(frame_elements, self.button_container)
     end
 
     self.main_frame = FrameContainer:new{
