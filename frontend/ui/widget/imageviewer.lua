@@ -147,31 +147,12 @@ function ImageViewer:init()
         self._images_list_disposable = self.image_disposable
         self.image_disposable = self._images_list.image_disposable
     end
-    self:update()
-end
 
-function ImageViewer:_clean_image_wg()
-    -- To be called before re-using / not needing self._image_wg
-    -- otherwise resources used by its blitbuffer won't be freed
-    if self._image_wg then
-        logger.dbg("ImageViewer:_clean_image_wg")
-        self._image_wg:free()
-        self._image_wg = nil
-    end
-end
-
-function ImageViewer:update()
-    -- FIXME: Can't we just do self:free? InputContainer is a WidgetContainer, it'll wipe all the things like a good boy...
-    --        Because, at the very least, our TextBoxWidgets are probably never free'd...
-    --        Yes we (currently) can...
-    --self:_clean_image_wg() -- clean previous if any
-    print("ImageViewer:update: self._image_wg is", self._image_wg)
-    self:free() -- free all the things
-
+    -- Widget layout
     if self._scale_to_fit == nil then -- initialize our toggle
         self._scale_to_fit = self.scale_factor == 0
     end
-    local orig_dimen = self.main_frame and self.main_frame.dimen or Geom:new{}
+    local orig_dimen = Geom:new{}
     self.align = "center"
     self.region = Geom:new{
         x = 0, y = 0,
@@ -186,176 +167,190 @@ function ImageViewer:update()
         self.width = Screen:getWidth() - Screen:scaleBySize(40)
     end
 
-    local button_table_size = 0
-    if self.buttons_visible then
-        local buttons = {
+    -- Init the buttons no matter what
+    local buttons = {
+        {
             {
-                {
-                    text = self._scale_to_fit and _("Original size") or _("Scale"),
-                    callback = function()
-                        self.scale_factor = self._scale_to_fit and 1 or 0
-                        self._scale_to_fit = not self._scale_to_fit
-                        -- Reset center ratio (may have been modified if some panning was done)
-                        self._center_x_ratio = 0.5
-                        self._center_y_ratio = 0.5
-                        self:update()
-                    end,
-                },
-                {
-                    text = self.rotated and _("No rotation") or _("Rotate"),
-                    callback = function()
-                        self.rotated = not self.rotated and true or false
-                        self:update()
-                    end,
-                },
-                {
-                    text = _("Close"),
-                    callback = function()
-                        UIManager:close(self)
-                    end,
-                },
+                id = "scale",
+                text = self._scale_to_fit and _("Original size") or _("Scale"),
+                callback = function()
+                    self.scale_factor = self._scale_to_fit and 1 or 0
+                    self._scale_to_fit = not self._scale_to_fit
+                    -- Reset center ratio (may have been modified if some panning was done)
+                    self._center_x_ratio = 0.5
+                    self._center_y_ratio = 0.5
+                    self:update()
+                end,
             },
-        }
-        local button_table = ButtonTable:new{
-            width = self.width - 2*self.button_padding,
-            button_font_face = "cfont",
-            button_font_size = 20,
-            buttons = buttons,
-            zero_sep = true,
-            show_parent = self,
-        }
-        self.button_container = CenterContainer:new{
-            dimen = Geom:new{
-                w = self.width,
-                h = button_table:getSize().h,
+            {
+                id = "rotate",
+                text = self.rotated and _("No rotation") or _("Rotate"),
+                callback = function()
+                    self.rotated = not self.rotated and true or false
+                    self:update()
+                end,
             },
-            button_table,
-        }
-        button_table_size = button_table:getSize().h
+            {
+                id = "close",
+                text = _("Close"),
+                callback = function()
+                    UIManager:close(self)
+                end,
+            },
+        },
+    }
+    self.button_table = ButtonTable:new{
+        width = self.width - 2*self.button_padding,
+        button_font_face = "cfont",
+        button_font_size = 20,
+        buttons = buttons,
+        zero_sep = true,
+        show_parent = self,
+    }
+    self.button_container = CenterContainer:new{
+        dimen = Geom:new{
+            w = self.width,
+            h = self.button_table:getSize().h,
+        },
+        self.button_table,
+    }
+
+    if self.buttons_visible then
+        self.button_table_size = self.button_table:getSize().h
+    else
+        self.button_table_size = 0
     end
 
     -- height available to our image
-    self.img_container_h = self.height - button_table_size
+    self.img_container_h = self.height - self.button_table_size
 
+    -- Iniit the title bar and its components no matter what
+    -- Toggler (white arrow) for caption, on the left of title
+    local ctoggler_text
+    if self.caption_visible then
+        ctoggler_text = "▽ " -- white arrow (nicer than smaller black arrow ▼)
+    else
+        ctoggler_text = "▷ " -- white arrow (nicer than smaller black arrow ►)
+    end
+    -- FIXME: Needs to be accessible for update
+    self.ctoggler_tw = TextWidget:new{
+        text = ctoggler_text,
+        face = self.title_face,
+    }
+    -- paddings chosen to align nicely with titlew
+    self.ctoggler = FrameContainer:new{
+        bordersize = 0,
+        padding = self.title_padding,
+        padding_top = self.title_padding + Size.padding.small,
+        padding_right = 0,
+        self.ctoggler_tw,
+    }
+    if self.caption then
+        self.ctoggler_width = self.ctoggler:getSize().w
+    else
+        self.ctoggler_width = 0
+    end
+    self.closeb = CloseButton:new{ window = self, padding_top = Size.padding.tiny, }
+    -- FIXME: Need to be accessible and re-init'ed, meaning we need self.ctoggler, too
+    self.title_tbw = TextBoxWidget:new{
+        text = self.title_text,
+        face = self.title_face,
+        -- bold = true, -- we're already using a bold font
+        width = self.width - 2*self.title_padding - 2*self.title_margin - self.closeb:getSize().w - self.ctoggler_width,
+    }
+    print("ImageViewer: self.title_tbw is", self.title_tbw)
+    local title_tbw_padding_bottom = self.title_padding + Size.padding.small
+    if self.caption and self.caption_visible then
+        title_tbw_padding_bottom = 0 -- save room between title and caption
+    end
+    local titlew = FrameContainer:new{
+        padding = self.title_padding,
+        padding_top = self.title_padding + Size.padding.small,
+        padding_bottom = title_tbw_padding_bottom,
+        padding_left = self.caption and self.ctoggler_width or self.title_padding,
+        margin = self.title_margin,
+        bordersize = 0,
+        self.title_tbw,
+    }
+    if self.caption then
+        self.caption_tap_area = titlew
+    end
+    self.title_bar = OverlapGroup:new{
+        dimen = {
+            w = self.width,
+            h = titlew:getSize().h
+        },
+        titlew,
+        self.closeb
+    }
+    -- FIXME: ctoggler?
+    if self.caption then
+        table.insert(self.title_bar, 1, self.ctoggler)
+    end
+    -- Init the caption no matter what
+    -- FIXME: Once more, with feeling
+    self.caption_tbw = TextBoxWidget:new{
+        text = self.caption or _("N/A"),
+        face = self.caption_face,
+        width = self.width - 2*self.title_padding - 2*self.title_margin - 2*self.caption_padding,
+    }
+    print("ImageViewer: self.caption_tbw is", self.caption_tbw)
+    local captionw = FrameContainer:new{
+        padding = self.caption_padding,
+        padding_top = 0, -- don't waste vertical room for bigger image
+        padding_bottom = 0,
+        margin = self.title_margin,
+        bordersize = 0,
+        self.caption_tbw,
+    }
+    self.captioned_title_bar = VerticalGroup:new{
+        align = "left",
+        self.title_bar,
+        captionw
+    }
+
+    if self.caption and self.caption_visible then
+        self.full_title_bar = self.captioned_title_bar
+    else
+        self.full_title_bar = self.title_bar
+    end
+    self.title_sep = LineWidget:new{
+        dimen = Geom:new{
+            w = self.width,
+            h = Size.line.thick,
+        }
+    }
+    -- adjust height available to our image
     if self.with_title_bar then
-        -- Toggler (white arrow) for caption, on the left of title
-        local ctoggler
-        local ctoggler_width = 0
-        if self.caption then
-            local ctoggler_text
-            if self.caption_visible then
-                ctoggler_text = "▽ " -- white arrow (nicer than smaller black arrow ▼)
-            else
-                ctoggler_text = "▷ " -- white arrow (nicer than smaller black arrow ►)
-            end
-            -- FIXME: Needs to be accessible for update
-            self.ctoggler_tw = TextWidget:new{
-                text = ctoggler_text,
-                face = self.title_face,
-            }
-            -- paddings chosen to align nicely with titlew
-            ctoggler = FrameContainer:new{
-                bordersize = 0,
-                padding = self.title_padding,
-                padding_top = self.title_padding + Size.padding.small,
-                padding_right = 0,
-                self.ctoggler_tw,
-            }
-            ctoggler_width = ctoggler:getSize().w
-        end
-        local closeb = CloseButton:new{ window = self, padding_top = Size.padding.tiny, }
-        -- FIXME: Need to be accessible and re-init'ed, meaning we need ctoggler, too
-        self.title_tbw = TextBoxWidget:new{
-            text = self.title_text,
-            face = self.title_face,
-            -- bold = true, -- we're already using a bold font
-            width = self.width - 2*self.title_padding - 2*self.title_margin - closeb:getSize().w - ctoggler_width,
-        }
-        print("ImageViewer: self.title_tbw is", self.title_tbw)
-        local title_tbw_padding_bottom = self.title_padding + Size.padding.small
-        if self.caption and self.caption_visible then
-            title_tbw_padding_bottom = 0 -- save room between title and caption
-        end
-        local titlew = FrameContainer:new{
-            padding = self.title_padding,
-            padding_top = self.title_padding + Size.padding.small,
-            padding_bottom = title_tbw_padding_bottom,
-            padding_left = ctoggler and ctoggler_width or self.title_padding,
-            margin = self.title_margin,
-            bordersize = 0,
-            self.title_tbw,
-        }
-        if self.caption then
-            self.caption_tap_area = titlew
-        end
-        self.title_bar = OverlapGroup:new{
-            dimen = {
-                w = self.width,
-                h = titlew:getSize().h
-            },
-            titlew,
-            closeb
-        }
-        -- FIXME: ctoggler?
-        if ctoggler then
-            table.insert(self.title_bar, 1, ctoggler)
-        end
-        if self.caption and self.caption_visible then
-            -- FIXME: Once more, with feeling
-            self.caption_tbw = TextBoxWidget:new{
-                text = self.caption,
-                face = self.caption_face,
-                width = self.width - 2*self.title_padding - 2*self.title_margin - 2*self.caption_padding,
-            }
-            print("ImageViewer: self.caption_tbw is", self.caption_tbw)
-            local captionw = FrameContainer:new{
-                padding = self.caption_padding,
-                padding_top = 0, -- don't waste vertical room for bigger image
-                padding_bottom = 0,
-                margin = self.title_margin,
-                bordersize = 0,
-                self.caption_tbw,
-            }
-            self.title_bar = VerticalGroup:new{
-                align = "left",
-                self.title_bar,
-                captionw
-            }
-        end
-        self.title_sep = LineWidget:new{
-            dimen = Geom:new{
-                w = self.width,
-                h = Size.line.thick,
-            }
-        }
-        -- adjust height available to our image
-        self.img_container_h = self.img_container_h - self.title_bar:getSize().h - self.title_sep:getSize().h
+        self.img_container_h = self.img_container_h - self.full_title_bar:getSize().h - self.title_sep:getSize().h
     end
 
+    -- Init the progress bar no matter what
+    -- progress bar
+    local percent = 1
+    if self._images_list and self._images_list_nb > 1 then
+        percent = (self._images_list_cur - 1) / (self._images_list_nb - 1)
+    end
+    -- FIXME: Need to update the percentage (setPercentage), so, accessible it needs to be
+    self.progress_bar = ProgressWidget:new{
+        width = self.width - 2*self.button_padding,
+        height = Screen:scaleBySize(5),
+        percentage = percent,
+        margin_h = 0,
+        margin_v = 0,
+        radius = 0,
+        ticks = nil,
+        last = nil,
+    }
+    self.progress_container = CenterContainer:new{
+        dimen = Geom:new{
+            w = self.width,
+            h = self.progress_bar:getSize().h + Size.padding.small,
+        },
+        self.progress_bar
+    }
+
     if self._images_list then
-        -- progress bar
-        local percent = 1
-        if self._images_list_nb > 1 then
-            percent = (self._images_list_cur - 1) / (self._images_list_nb - 1)
-        end
-        -- FIXME: Need to update the percentage (setPercentage), so, accessible it needs to be
-        self.progress_bar = ProgressWidget:new{
-            width = self.width - 2*self.button_padding,
-            height = Screen:scaleBySize(5),
-            percentage = percent,
-            margin_h = 0,
-            margin_v = 0,
-            radius = 0,
-            ticks = nil,
-            last = nil,
-        }
-        self.progress_container = CenterContainer:new{
-            dimen = Geom:new{
-                w = self.width,
-                h = self.progress_bar:getSize().h + Size.padding.small,
-            },
-            self.progress_bar
-        }
         self.img_container_h = self.img_container_h - self.progress_container:getSize().h
     end
 
@@ -407,11 +402,11 @@ function ImageViewer:update()
     local frame_elements = VerticalGroup:new{ align = "left" }
     -- FIXME: Can all this stuff change across our lifetime?
     if self.with_title_bar then
-        table.insert(frame_elements, self.title_bar)
+        table.insert(frame_elements, self.full_title_bar)
         table.insert(frame_elements, self.title_sep)
     end
     table.insert(frame_elements, self.image_container)
-    if self.progress_container then
+    if self._images_list then
         table.insert(frame_elements, self.progress_container)
     end
     -- FIXME: Crap, that can.
@@ -439,6 +434,194 @@ function ImageViewer:update()
     -- NOTE: Disabling dithering here makes for a perfect test-case of how well it works:
     --       page turns will show color quantization artefacts (i.e., banding) like crazy,
     --       while a long touch will trigger a dithered, flashing full-refresh that'll make everything shiny :).
+    self.dithered = true
+    UIManager:setDirty(self, function()
+        local update_region = self.main_frame.dimen:combine(orig_dimen)
+        logger.dbg("update image region", update_region)
+        return "ui", update_region, true
+    end)
+end
+
+function ImageViewer:_clean_image_wg()
+    -- To be called before re-using / not needing self._image_wg
+    -- otherwise resources used by its blitbuffer won't be freed
+    if self._image_wg then
+        logger.dbg("ImageViewer:_clean_image_wg")
+        self._image_wg:free()
+        self._image_wg = nil
+    end
+end
+
+function ImageViewer:update()
+    print("ImageViewer:update: self._image_wg is", self._image_wg)
+    self:free() -- free all the things
+
+    -- Update window geometry
+    local orig_dimen = self.main_frame.dimen
+    if self.fullscreen then
+        self.height = Screen:getHeight()
+        self.width = Screen:getWidth()
+    else
+        self.height = Screen:getHeight() - Screen:scaleBySize(40)
+        self.width = Screen:getWidth() - Screen:scaleBySize(40)
+    end
+
+    -- Update Buttons
+    if self.buttons_visible then
+        local scale_btn = self.button_table:getButtonById("scale")
+        scale_btn:setText(self._scale_to_fit and _("Original size") or _("Scale"), scale_btn.width)
+        local rotate_btn = self.button_table:getButtonById("rotate")
+        rotate_btn:setText(self.rotated and _("No rotation") or _("Rotate"))
+
+        self.button_table_size = self.button_table:getSize().h
+    else
+        self.button_table_size = 0
+    end
+
+    -- height available to our image
+    self.img_container_h = self.height - self.button_table_size
+
+    -- Update the title bar
+    if self.with_title_bar then
+        self.ctoggler_tw:setText(self.caption_visible and "▽ " or "▷ ")
+
+        if self.caption then
+            self.ctoggler_width = self.ctoggler:getSize().w
+        else
+            self.ctoggler_width = 0
+        end
+
+        self.title_tbw.text = self.title_text
+        self.title_tbw.width = self.width - 2*self.title_padding - 2*self.title_margin - self.closeb:getSize().w - self.ctoggler_width
+        self.title_tbw:init()
+
+        -- Dynamic padding means we have to re-initialize that...
+        local title_tbw_padding_bottom = self.title_padding + Size.padding.small
+        if self.caption and self.caption_visible then
+            title_tbw_padding_bottom = 0
+        end
+        local titlew = FrameContainer:new{
+            padding = self.title_padding,
+            padding_top = self.title_padding + Size.padding.small,
+            padding_bottom = title_tbw_padding_bottom,
+            padding_left = self.caption and self.ctoggler_width or self.title_padding,
+            margin = self.title_margin,
+            bordersize = 0,
+            self.title_tbw,
+        }
+        if self.caption then
+            self.caption_tap_area = titlew
+        end
+        self.title_bar = OverlapGroup:new{
+            dimen = {
+                w = self.width,
+                h = titlew:getSize().h
+            },
+            titlew,
+            self.closeb
+        }
+
+        if self.caption then
+            table.insert(self.title_bar, 1, self.ctoggler)
+
+            self.caption_tbw.text=self.caption
+            self.caption_tbw:init()
+
+            self.full_title_bar = self.captioned_title_bar
+        else
+            self.full_title_bar = self.title_bar
+        end
+
+        self.img_container_h = self.img_container_h - self.full_title_bar:getSize().h - self.title_sep:getSize().h
+    end
+
+    -- Update the progress bar
+    if self._images_list
+        local percent = 1
+        if self._images_list_nb > 1 then
+            percent = (self._images_list_cur - 1) / (self._images_list_nb - 1)
+        end
+
+        self.progress_bar:setPercentage(percent)
+
+        self.img_container_h = self.img_container_h - self.progress_container:getSize().h
+    end
+
+    -- Update the image widget itself
+    -- If no buttons and no title are shown, use the full screen
+    local max_image_h = self.img_container_h
+    local max_image_w = self.width
+    -- Otherwise, add paddings around image
+    if self.buttons_visible or self.with_title_bar then
+        max_image_h = self.img_container_h - self.image_padding*2
+        max_image_w = self.width - self.image_padding*2
+    end
+
+    local rotation_angle = 0
+    if self.rotated then
+        -- in portrait mode, rotate according to this global setting so we are
+        -- like in landscape mode
+        local rotate_clockwise = DLANDSCAPE_CLOCKWISE_ROTATION
+        if Screen:getWidth() > Screen:getHeight() then
+            -- in landscape mode, counter-rotate landscape rotation so we are
+            -- back like in portrait mode
+            rotate_clockwise = not rotate_clockwise
+        end
+        rotation_angle = rotate_clockwise and 90 or 270
+    end
+
+    self._image_wg = ImageWidget:new{
+        file = self.file,
+        image = self.image,
+        image_disposable = false, -- we may re-use self.image
+        alpha = true, -- we might be showing images with an alpha channel (e.g., from Wikipedia)
+        width = max_image_w,
+        height = max_image_h,
+        rotation_angle = rotation_angle,
+        scale_factor = self.scale_factor,
+        center_x_ratio = self._center_x_ratio,
+        center_y_ratio = self._center_y_ratio,
+    }
+
+    self.image_container = CenterContainer:new{
+        dimen = Geom:new{
+            w = self.width,
+            h = self.img_container_h,
+        },
+        self._image_wg,
+    }
+
+    -- Update the final layout
+    local frame_elements = VerticalGroup:new{ align = "left" }
+    if self.with_title_bar then
+        table.insert(frame_elements, self.full_title_bar)
+        table.insert(frame_elements, self.title_sep)
+    end
+    table.insert(frame_elements, self.image_container)
+    if self._images_list then
+        table.insert(frame_elements, self.progress_container)
+    end
+    if self.buttons_visible then
+        table.insert(frame_elements, self.button_container)
+    end
+
+    self.main_frame = FrameContainer:new{
+        radius = not self.fullscreen and 8 or nil,
+        padding = 0,
+        margin = 0,
+        background = Blitbuffer.COLOR_WHITE,
+        frame_elements,
+    }
+    self[1] = WidgetContainer:new{
+        align = self.align,
+        dimen = self.region,
+        FrameContainer:new{
+            bordersize = 0,
+            padding = Size.padding.default,
+            self.main_frame,
+        }
+    }
+
     self.dithered = true
     UIManager:setDirty(self, function()
         local update_region = self.main_frame.dimen:combine(orig_dimen)
