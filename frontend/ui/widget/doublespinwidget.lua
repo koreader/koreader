@@ -77,6 +77,8 @@ function DoubleSpinWidget:init()
             },
         }
     end
+
+    -- Actually the widget layout
     self:update()
 end
 
@@ -290,9 +292,9 @@ function DoubleSpinWidget:update()
     end)
     picker_update_callback = function()
         -- If we're actually transparent, and flash_ui is enabled, force an alpha-aware repaint.
-        -- Otherwise, nothing will have been repainted that could screw with alpha, so there's nothing to do :).
-        -- It's delayed to the next tick to actually catch a Button unhighlight
+        -- Otherwise, nothing that could screw with our alpha will have been repainted, so we don't have to do anything.
         if self.movable.alpha and G_reader_settings:nilOrTrue("flash_ui") then
+            -- It's delayed to the next tick to actually catch a Button unhighlight.
             UIManager:nextTick(function()
                 UIManager:setDirty("all", function()
                     return "ui", self.movable.dimen
