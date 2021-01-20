@@ -246,7 +246,7 @@ function BookStatusWidget:generateRateGroup(width, height, rating)
 end
 
 function BookStatusWidget:setStar(num)
-    --clear previous data
+    -- clear previous data
     self.stars_container:clear()
 
     local stars_group = HorizontalGroup:new{ align = "center" }

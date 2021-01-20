@@ -48,7 +48,6 @@ function CoverMenu:updateItems(select_number)
     local old_dimen = self.dimen and self.dimen:copy()
     -- self.layout must be updated for focusmanager
     self.layout = {}
-    self.item_group:free() -- avoid memory leaks by calling free() on all our sub-widgets
     self.item_group:clear()
     -- strange, best here if resetLayout() are done after _recalculateDimen(),
     -- unlike what is done in menu.lua

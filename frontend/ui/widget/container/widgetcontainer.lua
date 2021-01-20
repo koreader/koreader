@@ -54,6 +54,8 @@ end
 Deletes all child widgets.
 ]]
 function WidgetContainer:clear()
+    -- Make sure we free 'em before orphaning them...
+    self:free()
     while table.remove(self) do end
 end
 
