@@ -511,6 +511,8 @@ function ImageViewer:update()
         }
         if self.caption then
             self.caption_tap_area = titlew
+        else
+            self.caption_tap_area = nil
         end
         self.title_bar = OverlapGroup:new{
             dimen = {
