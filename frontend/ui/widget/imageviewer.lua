@@ -535,6 +535,8 @@ function ImageViewer:update()
         end
 
         self.img_container_h = self.img_container_h - self.full_title_bar:getSize().h - self.title_sep:getSize().h
+    else
+        self.caption_tap_area = nil
     end
 
     -- Update the progress bar
