@@ -672,6 +672,9 @@ function ImageViewer:onTap(_, ges)
             return self:onSaveImageView()
         end
     end
+    print("ImageViewer:onTap: self.caption_visible", self.caption_visible)
+    print("ImageViewer:onTap: self.caption_tap_area", self.caption_tap_area)
+    print("ImageViewer:onTap: self.caption_tap_area.dimen", self.caption_tap_area.dimen)
     if self.caption_tap_area and ges.pos:intersectWith(self.caption_tap_area.dimen) then
         self.caption_visible = not self.caption_visible
         self:update()
