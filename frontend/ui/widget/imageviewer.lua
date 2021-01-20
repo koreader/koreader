@@ -36,16 +36,16 @@ local ImageViewer = InputContainer:new{
     file = nil,
     -- or an already made BlitBuffer (ie: made by Mupdf.renderImageFile())
     image = nil,
-    -- whether provided BlitBuffer should be free(), normally true
-    -- unless our caller wants to reuse it's provided image
+    -- whether the provided BlitBuffer should be free'd. Usually true,
+    -- unless our caller wants to reuse the image it provided
     image_disposable = true,
 
     -- 'image' can alternatively be a table (list) of multiple BlitBuffers
     -- (or functions returning BlitBuffers).
     -- The table will have its .free() called onClose according to
     -- the image_disposable provided here.
-    -- Each BlitBuffer in the table (or returned by functions) will be free()
-    -- if the table has itself an attribute image_disposable=true.
+    -- Each BlitBuffer in the table (or returned by functions) will be free'd
+    -- if the table has itself an attribute image_disposable set to true.
 
     -- With images list, when switching image, whether to keep previous
     -- image pan & zoom
@@ -154,14 +154,20 @@ function ImageViewer:_clean_image_wg()
     -- To be called before re-using / not needing self._image_wg
     -- otherwise resources used by its blitbuffer won't be freed
     if self._image_wg then
-        logger.dbg("ImageViewer:_clean_image_wg()")
+        logger.dbg("ImageViewer:_clean_image_wg")
         self._image_wg:free()
         self._image_wg = nil
     end
 end
 
 function ImageViewer:update()
-    self:_clean_image_wg() -- clean previous if any
+    -- FIXME: Can't we just do self:free? InputContainer is a WidgetContainer, it'll wipe all the things like a good boy...
+    --        Because, at the very least, our TextBoxWidgets are probably never free'd...
+    --        Yes we (currently) can...
+    --self:_clean_image_wg() -- clean previous if any
+    print("ImageViewer:update: self._image_wg is", self._image_wg)
+    self:free() -- free all the things
+
     if self._scale_to_fit == nil then -- initialize our toggle
         self._scale_to_fit = self.scale_factor == 0
     end
@@ -250,6 +256,7 @@ function ImageViewer:update()
                 padding = self.title_padding,
                 padding_top = self.title_padding + Size.padding.small,
                 padding_right = 0,
+                -- FIXME: Needs to be accessible for update
                 TextWidget:new{
                     text = ctoggler_text,
                     face = self.title_face,
@@ -258,12 +265,14 @@ function ImageViewer:update()
             ctoggler_width = ctoggler:getSize().w
         end
         local closeb = CloseButton:new{ window = self, padding_top = Size.padding.tiny, }
+        -- FIXME: Need to be accessible and re-init'ed, meaning we need ctoggler, too
         local title_tbw = TextBoxWidget:new{
             text = self.title_text,
             face = self.title_face,
             -- bold = true, -- we're already using a bold font
             width = self.width - 2*self.title_padding - 2*self.title_margin - closeb:getSize().w - ctoggler_width,
         }
+        print("ImageViewer: title_tbw is", title_tbw)
         local title_tbw_padding_bottom = self.title_padding + Size.padding.small
         if self.caption and self.caption_visible then
             title_tbw_padding_bottom = 0 -- save room between title and caption
@@ -292,11 +301,13 @@ function ImageViewer:update()
             table.insert(title_bar, 1, ctoggler)
         end
         if self.caption and self.caption_visible then
+            -- FIXME: Once more, with feeling
             local caption_tbw = TextBoxWidget:new{
                 text = self.caption,
                 face = self.caption_face,
                 width = self.width - 2*self.title_padding - 2*self.title_margin - 2*self.caption_padding,
             }
+            print("ImageViewer: caption_tbw is", caption_tbw)
             local captionw = FrameContainer:new{
                 padding = self.caption_padding,
                 padding_top = 0, -- don't waste vertical room for bigger image
@@ -328,6 +339,7 @@ function ImageViewer:update()
         if self._images_list_nb > 1 then
             percent = (self._images_list_cur - 1) / (self._images_list_nb - 1)
         end
+        -- FIXME: Need to update the percentage (setPercentage), so, accessible it need to be
         local progress_bar = ProgressWidget:new{
             width = self.width - 2*self.button_padding,
             height = Screen:scaleBySize(5),
@@ -348,6 +360,7 @@ function ImageViewer:update()
         img_container_h = img_container_h - progress_container:getSize().h
     end
 
+    -- FIXME: That has to stay, too, because it is dynamic
     -- If no buttons and no title are shown, use the full screen
     local max_image_h = img_container_h
     local max_image_w = self.width
@@ -370,6 +383,7 @@ function ImageViewer:update()
         rotation_angle = rotate_clockwise and 90 or 270
     end
 
+    -- FIXME: Obviously, that stays ;p
     self._image_wg = ImageWidget:new{
         file = self.file,
         image = self.image,
@@ -392,6 +406,7 @@ function ImageViewer:update()
     }
 
     local frame_elements = VerticalGroup:new{ align = "left" }
+    -- FIXME: Can all this stuff change across our lifetime?
     if self.with_title_bar then
         table.insert(frame_elements, title_bar)
         table.insert(frame_elements, title_sep)
@@ -400,6 +415,7 @@ function ImageViewer:update()
     if progress_container then
         table.insert(frame_elements, progress_container)
     end
+    -- FIXME: Crap, that can.
     if self.buttons_visible then
         table.insert(frame_elements, button_container)
     end
@@ -442,7 +458,7 @@ end
 
 function ImageViewer:switchToImageNum(image_num)
     if self.image and self.image_disposable and self.image.free then
-        logger.dbg("ImageViewer:free(self.image)")
+        logger.dbg("ImageViewer:switchToImageNum: free self.image", self.image)
         self.image:free()
         self.image = nil
     end
@@ -710,15 +726,22 @@ function ImageViewer:onAnyKeyPressed()
 end
 
 function ImageViewer:onCloseWidget()
-    -- clean all our BlitBuffer objects when UIManager:close() was called
-    self:_clean_image_wg()
+    -- clean all our BlitBuffer objects when UIManager:close() is called
+    print("ImageViewer:onCloseWidget: self._image_wg is", self._image_wg)
+    print("ImageViewer:onCloseWidget: self.image is", self.image)
+    -- self (an InputContainer) inherits WidgetContainer's free method, which frees *all* the container's widgets
+    self:free()
+    -- The BB may not be flagged as disposable in our ImageWidget (self._image_wg),
+    -- which would have prevented it from being free'd during its free().
+    -- So, make sure we actually free the all BBs as necessary.
     if self.image and self.image_disposable and self.image.free then
-        logger.dbg("ImageViewer:free(self.image)")
+        logger.dbg("ImageViewer:onCloseWidget: free self.image", self.image)
         self.image:free()
         self.image = nil
     end
     -- also clean _images_list if it provides a method for that
     if self._images_list and self._images_list_disposable and self._images_list.free then
+        logger.dbg("ImageViewer:onCloseWidget: free self._images_list", self._images_list)
         self._images_list:free()
     end
     -- NOTE: Assume there's no image beneath us, so, no dithering request
