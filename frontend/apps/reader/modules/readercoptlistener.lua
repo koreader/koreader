@@ -65,12 +65,13 @@ end
 function ReaderCoptListener:updateHeader()
     if self.view.view_mode == "page" then
         require("logger").dbg("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx updateHeader")
-        self.ui.document._callCacheSet("current_buffer_tag", nil)
-        self.ui:handleEvent(Event:new("RedrawCurrentView", self.current_page))
---        self.ui.rolling:updateBatteryState()
---        UIManager:setDirty(self.view.dialog, function()
---            return "ui", Geom:new{ w = Device.screen:getWidth(), h = self.ui.document:getHeaderHeight()}
---        end)
+--        self.ui.document._callCacheSet("current_buffer_tag", nil)
+--        self.ui:handleEvent(Event:new("RedrawCurrentView", self.current_page))
+        self.ui.rolling:updateBatteryState()
+        self.ui.document:resetBufferCache()
+        UIManager:setDirty(self.view.dialog, function()
+            return "ui", Geom:new{ w = Device.screen:getWidth(), h = self.ui.document:getHeaderHeight()}
+        end)
     end
 end
 
