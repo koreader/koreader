@@ -1211,7 +1211,7 @@ function UIManager:_repaint()
         Screen[refresh_methods[refresh.mode]](Screen,
             refresh.region.x, refresh.region.y,
             refresh.region.w, refresh.region.h,
-            true)
+            refresh.dither)
     end
 
     -- Don't trigger afterPaint if we did not, in fact, paint anything
