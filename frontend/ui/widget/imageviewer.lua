@@ -501,8 +501,6 @@ function ImageViewer:update()
         end
 
         self.img_container_h = self.img_container_h - self.full_title_bar:getSize().h - self.title_sep:getSize().h
-    else
-        self.caption_tap_area = nil
     end
 
     -- Update the progress bar
@@ -640,8 +638,8 @@ function ImageViewer:onTap(_, ges)
     end
     print("ImageViewer:onTap: self.caption_visible", self.caption_visible)
     print("ImageViewer:onTap: self.caption_tap_area", self.caption_tap_area)
-    print("ImageViewer:onTap: self.caption_tap_area.dimen", self.caption_tap_area.dimen)
-    if self.caption_tap_area and ges.pos:intersectWith(self.caption_tap_area.dimen) then
+    print("ImageViewer:onTap: self.caption_tap_area.dimen", self.caption_tap_area and self.caption_tap_area.dimen)
+    if self.with_title_bar and self.caption_tap_area and ges.pos:intersectWith(self.caption_tap_area.dimen) then
         self.caption_visible = not self.caption_visible
         self:update()
         return true
