@@ -485,16 +485,6 @@ function ImageViewer:update()
     if self.with_title_bar then
         self.ctoggler_tw:setText(self.caption_visible and "▽ " or "▷ ")
 
-        if self.caption then
-            self.ctoggler_width = self.ctoggler:getSize().w
-        else
-            self.ctoggler_width = 0
-        end
-
-        self.title_tbw.text = self.title_text
-        self.title_tbw.width = self.width - 2*self.title_padding - 2*self.title_margin - self.closeb:getSize().w - self.ctoggler_width
-        self.title_tbw:init()
-
         -- Dynamic padding means we have to re-initialize that...
         local title_tbw_padding_bottom = self.title_padding + Size.padding.small
         if self.caption and self.caption_visible then
@@ -511,8 +501,6 @@ function ImageViewer:update()
         }
         if self.caption then
             self.caption_tap_area = titlew
-        else
-            self.caption_tap_area = nil
         end
         self.title_bar = OverlapGroup:new{
             dimen = {
@@ -528,9 +516,6 @@ function ImageViewer:update()
         end
 
         if self.caption and self.caption_visible then
-            self.caption_tbw.text = self.caption
-            self.caption_tbw:init()
-
             self.full_title_bar = self.captioned_title_bar
         else
             self.full_title_bar = self.title_bar
