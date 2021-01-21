@@ -601,7 +601,8 @@ The TL;DR being: if you already know the region, you can pass everything by valu
 (it'll make for slightly more readable debug logs),
 but if the region will only be known after the widget has been painted, pass a function.
 Note that, technically, it means that stuff passed by value will be enqueued earlier in the refresh stack.
-In practice, since the stack of refreshes is optimized into as few actual refresh ioctls as possible,
+In practice, since the stack of (both types of) refreshes is optimized into as few actual refresh ioctls as possible,
+and that during the next `_repaint` tick (which is when `paintTo` for dirty widgets happens),
 this shouldn't change much in the grand scheme of things, but it ought to be noted ;).
 
 Here's a quick rundown of what each refreshtype should be used for:
