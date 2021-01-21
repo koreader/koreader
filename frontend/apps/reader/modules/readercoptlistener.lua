@@ -24,6 +24,7 @@ function ReaderCoptListener:onReadSettings(config)
     -- crengine top status bar can only show author and title together
     self.title = G_reader_settings:readSetting("cre_header_title") or 1
     self.clock = G_reader_settings:readSetting("cre_header_clock") or 1
+    self.clock_auto_refresh = G_reader_settings:readSetting("cre_header_clock_auto_refresh") or 1
     self.page_number = G_reader_settings:readSetting("cre_header_page_number") or 1
     self.page_count = G_reader_settings:readSetting("cre_header_page_count") or 1
     self.reading_percent = G_reader_settings:readSetting("cre_header_reading_percent") or 0
@@ -42,6 +43,12 @@ function ReaderCoptListener:onReadSettings(config)
 
     local status_line = config:readSetting("copt_status_line") or G_reader_settings:readSetting("copt_status_line") or 1
     self.ui:handleEvent(Event:new("SetStatusLine", status_line, true))
+
+    self.old_battery_level = Device:getPowerDevice():getCapacity()
+
+    if self.clock_auto_refresh then
+        self:setupAutoRefreshTime()
+    end
 end
 
 function ReaderCoptListener:onSetFontSize(font_size)
@@ -52,6 +59,46 @@ function ReaderCoptListener:setAndSave(setting, property, value)
     self.ui.document._document:setIntProperty(property, value)
     G_reader_settings:saveSetting(setting, value)
     UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, true))
+end
+
+function ReaderCoptListener:UpdateHeader()
+    if self.view.view_mode == "page" then
+        if self.ui.document.provider == "crengine" then -- can that "if" be dropped
+            self.ui.document._callCacheSet("current_buffer_tag", nil)
+        end
+        self.ui:handleEvent(Event:new("RedrawCurrentView", self.current_page))
+    end
+end
+
+function ReaderCoptListener:setupAutoRefreshTime()
+    if not self.autoRefreshTime then
+        self.autoRefreshTime = function()
+            -- Only actually repaint the header if nothing's being shown over ReaderUI (#6616)
+            if UIManager:getTopWidget() == "ReaderUI" then
+                -- And that only if it's actually visible
+                if self.document.configurable.status_line == 0 then -- is top bar enabled
+                    local new_battery_level = Device:getPowerDevice():getCapacity()
+                    if self.clock == 1 or (self.battery == 1 and new_battery_level ~= self.old_battery_level) then
+                        self:UpdateHeader(true)
+                        self.old_battery_level = new_battery_level
+                    end
+                end
+            else
+                require("logger").dbg("Skipping Header repaint, because ReaderUI is not the top-level widget")
+                -- NOTE: We *do* keep its content up-to-date, though
+                self:UpdateHeader()
+            end
+            UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
+        end
+    end
+    self.onCloseDocument = function()
+        UIManager:unschedule(self.autoRefreshTime)
+    end
+    UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
+end
+
+function ReaderCoptListener:unsetAutoRefreshTime()
+    UIManager:unschedule(self.autoRefreshTime)
 end
 
 local about_text = _([[
@@ -75,6 +122,22 @@ function ReaderCoptListener:getAltStatusBarMenu()
                     })
                 end,
                 separator = true,
+            },
+            {
+                text = _("Auto refresh the alternate status bar"),
+                checked_func = function()
+                    return self.clock_auto_refresh == 1
+                end,
+                callback = function()
+                    self.clock_auto_refresh = self.clock_auto_refresh == 0 and 1 or 0
+                    G_reader_settings:saveSetting("cre_header_clock_auto_refresh", self.clock_auto_refresh)
+                    if self.clock_auto_refresh then
+                        self:setupAutoRefreshTime()
+                    else
+                        self:unsetAutoRefreshTime()
+                    end
+                end,
+                separator = true
             },
             {
                 text = _("Book author and title"),
@@ -127,29 +190,6 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 end,
             },
             {
-                text = _("Battery status"),
-                checked_func = function()
-                    return self.battery == 1
-                end,
-                callback = function()
-                    self.battery = self.battery == 0 and 1 or 0
-                    self:setAndSave("cre_header_battery", "window.status.battery", self.battery)
-                end,
-            },
-            {
-                text = _("Battery percentage"),
-                enabled_func = function()
-                    return self.battery == 1
-                end,
-                checked_func = function()
-                    return self.battery_percent == 1
-                end,
-                callback = function()
-                    self.battery_percent = self.battery_percent == 0 and 1 or 0
-                    self:setAndSave("cre_header_battery_percent", "window.status.battery.percent", self.battery_percent)
-                end,
-            },
-            {
                 text = _("Chapter marks"),
                 checked_func = function()
                     return self.chapter_marks == 1
@@ -158,6 +198,63 @@ function ReaderCoptListener:getAltStatusBarMenu()
                     self.chapter_marks = self.chapter_marks == 0 and 1 or 0
                     self:setAndSave("cre_header_chapter_marks", "crengine.page.header.chapter.marks", self.chapter_marks)
                 end,
+            },
+            {
+                text_func = function()
+                    local status = _("off")
+                    if self.battery == 1 then
+                        if self.battery_percent == 1 then
+                            status = _("percent")
+                        else
+                            status = _("icon")
+                        end
+                    end
+                    return T(_("Battery status (%1)"), status)
+                end,
+                sub_item_table = {
+                    {
+                        text = _("Battery icon"),
+                        checked_func = function()
+                            return self.battery == 1 and self.battery_percent == 0
+                        end,
+                        callback = function()
+                            if self.battery == 0 then -- self.battery_percent don't care
+                                self.battery = 1
+                                self.battery_percent = 0
+                            elseif self.battery == 1 and self.battery_percent == 1 then
+                                self.battery = 1
+                                self.battery_percent = 0
+                            else
+                                self.battery = 0
+                                self.battery_percent = 0
+                            end
+
+                            self:setAndSave("cre_header_battery", "window.status.battery", self.battery)
+                            self:setAndSave("cre_header_battery_percent", "window.status.battery.percent", self.battery_percent)
+                        end,
+                    },
+                    {
+                        text = _("Battery percentage"),
+                        checked_func = function()
+                            return self.battery == 1 and self.battery_percent == 1
+                        end,
+                        callback = function()
+                            if self.battery == 0 then -- self.battery_percent don't care
+                                self.battery = 1
+                                self.battery_percent = 1
+                            elseif self.battery == 1 and self.battery_percent == 0 then
+                                self.battery_percent = 1
+                            else
+                                self.battery = 0
+                                self.battery_percent = 0
+                            end
+
+
+                            self:setAndSave("cre_header_battery", "window.status.battery", self.battery)
+                            self:setAndSave("cre_header_battery_percent", "window.status.battery.percent", self.battery_percent)
+                        end,
+                    },
+                },
                 separator = true,
             },
             {
