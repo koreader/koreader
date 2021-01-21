@@ -600,6 +600,9 @@ usually stored in a field named `dimen`, in only computed at painting time (e.g.
 The TL;DR being: if you already know the region, you can pass everything by value directly,
 (it'll make for slightly more readable debug logs),
 but if the region will only be known after the widget has been painted, pass a function.
+Note that, technically, it means that stuff passed by value will be enqueued earlier in the refresh stack.
+In practice, since the stack of refreshes is optimized into as few actual refresh ioctls as possible,
+this shouldn't change much in the grand scheme of things, but it ought to be noted ;).
 
 Here's a quick rundown of what each refreshtype should be used for:
 full: high-fidelity flashing refresh (e.g., large images).
