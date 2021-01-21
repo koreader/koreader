@@ -32,6 +32,20 @@ local function getDefaultRootDir()
     end
 end
 
+local function humanReadableSize(bytes)
+    if type(bytes) ~= "number" then
+        bytes = tonumber(bytes)
+        if not bytes then return _("Unknown") end
+    end
+    if bytes < 1000 then
+        return string.format("%dB", bytes)
+    elseif bytes >= 1000 and bytes < 1000 * 1000 then
+        return string.format("%4.1fKB", bytes/1000)
+    else
+        return string.format("%4.1fMB", bytes/1000/1000)
+    end
+end
+
 -- get metadata from calibre libraries
 local function getAllMetadata(t)
     local books = {}
@@ -45,16 +59,8 @@ local function getAllMetadata(t)
                 end
             end
             for _, book in ipairs(CalibreMetadata.books) do
-                local slim_book = {}
-                slim_book.title = book.title
-                slim_book.lpath = book.lpath
-                slim_book.authors = book.authors
-                slim_book.series = book.series
-                slim_book.series_index = book.series_index
-                slim_book.tags = book.tags
-                slim_book.size = book.size
-                slim_book.rootpath = path
-                table.insert(books, #books + 1, slim_book)
+                book.rootpath = path
+                table.insert(books, #books + 1, book)
             end
             CalibreMetadata:clean()
         end
@@ -103,9 +109,11 @@ end
 local function searchByTag(t, query, case_insensitive)
     local freq = {}
     for _, book in ipairs(t) do
-        for __, tag in ipairs(book.tags) do
-            if match(tag, query, case_insensitive) then
-                freq[tag] = (freq[tag] or 0) + 1
+        if type(book.tags) == "table" then
+            for __, tag in ipairs(book.tags) do
+                if match(tag, query, case_insensitive) then
+                    freq[tag] = (freq[tag] or 0) + 1
+                end
             end
         end
     end
@@ -145,7 +153,7 @@ local function getBookInfo(book)
     -- all entries can be empty, except size, which is always filled by calibre.
     local title = _("Title:") .. " " .. book.title or "-"
     local authors = _("Author(s):") .. " " .. getEntries(book.authors) or "-"
-    local size = _("Size:") .. " " .. string.format("%4.1fM", book.size/1024/1024)
+    local size = _("Size:") .. " " .. humanReadableSize(book.size)
     local tags = getEntries(book.tags)
     if tags then
         tags = _("Tags:") .. " " .. tags
@@ -329,7 +337,7 @@ function CalibreSearch:find(option)
     -- measure time elapsed searching
     local start = socket.gettime()
     if option == "find" then
-        local books = self:findBooks(self.books, self.search_value)
+        local books = self:findBooks(self.search_value)
         local result = self:bookCatalog(books)
         self:showresults(result)
     else
@@ -346,7 +354,7 @@ function CalibreSearch:find(option)
 end
 
 -- find books with current search options
-function CalibreSearch:findBooks(t, query)
+function CalibreSearch:findBooks(query)
     -- handle case sensitivity
     local function bookMatch(s, p)
         if not s or not p then return false end
@@ -375,7 +383,7 @@ function CalibreSearch:findBooks(t, query)
     end
     -- performs a book search
     local results = {}
-    for i, book in ipairs(t) do
+    for i, book in ipairs(self.books) do
         if bookSearch(book, query) then
             table.insert(results, #results + 1, book)
         end
@@ -597,7 +605,7 @@ function CalibreSearch:getMetadata()
     -- try to load metadata from calibre files and dump it to cache file, if enabled.
     local books = getAllMetadata(self.libraries)
     if self.cache_metadata then
-        local dump = {}
+        local serialized_table = {}
         local function removeNull(t)
             for _, key in ipairs({"series", "series_index"}) do
                 if type(t[key]) == "function" then
@@ -607,9 +615,9 @@ function CalibreSearch:getMetadata()
             return t
         end
         for index, book in ipairs(books) do
-            table.insert(dump, index, removeNull(book))
+            table.insert(serialized_table, index, removeNull(book))
         end
-        self.cache_books:save(dump)
+        self.cache_books:save(serialized_table)
     end
     local elapsed = socket.gettime() - start
     logger.info(string.format(template, #books, "calibre", elapsed * 1000))
