@@ -594,7 +594,13 @@ Registers a widget to be repainted and enqueues a refresh.
 the second parameter (refreshtype) can either specify a refreshtype
 (optionally in combination with a refreshregion - which is suggested)
 or a function that returns refreshtype AND refreshregion and is called
-after painting the widget.
+*after* painting the widget.
+This is an interesting distinction, because a widget's geometry,
+usually stored in a field named `dimen`, in only computed at painting time (e.g., during `paintTo`).
+The TL;DR being: if you already know the region, you can pass everything by value directly,
+(it'll make for slightly more readable debug logs),
+but if the region will only be known after the widget has been painted, pass a function.
+
 Here's a quick rundown of what each refreshtype should be used for:
 full: high-fidelity flashing refresh (e.g., large images).
       Highest quality, but highest latency.
