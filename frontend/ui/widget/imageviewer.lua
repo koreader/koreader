@@ -525,8 +525,10 @@ function ImageViewer:update()
 
         if self.caption then
             table.insert(self.title_bar, 1, self.ctoggler)
+        end
 
-            self.caption_tbw.text=self.caption
+        if self.caption and self.caption_visible then
+            self.caption_tbw.text = self.caption
             self.caption_tbw:init()
 
             self.full_title_bar = self.captioned_title_bar
