@@ -1,6 +1,7 @@
 local Event = require("ui/event")
 local Device = require("device")
 local EventListener = require("ui/widget/eventlistener")
+local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
@@ -24,7 +25,7 @@ function ReaderCoptListener:onReadSettings(config)
     -- crengine top status bar can only show author and title together
     self.title = G_reader_settings:readSetting("cre_header_title") or 1
     self.clock = G_reader_settings:readSetting("cre_header_clock") or 1
-    self.clock_auto_refresh = G_reader_settings:readSetting("cre_header_clock_auto_refresh") or 1
+    self.header_auto_refresh = G_reader_settings:readSetting("cre_header_auto_refresh") or 1
     self.page_number = G_reader_settings:readSetting("cre_header_page_number") or 1
     self.page_count = G_reader_settings:readSetting("cre_header_page_count") or 1
     self.reading_percent = G_reader_settings:readSetting("cre_header_reading_percent") or 0
@@ -46,8 +47,8 @@ function ReaderCoptListener:onReadSettings(config)
 
     self.old_battery_level = Device:getPowerDevice():getCapacity()
 
-    if self.clock_auto_refresh then
-        self:setupAutoRefreshTime()
+    if self.header_auto_refresh then
+        self:setupHeaderRefresh()
     end
 end
 
@@ -61,44 +62,47 @@ function ReaderCoptListener:setAndSave(setting, property, value)
     UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, true))
 end
 
-function ReaderCoptListener:UpdateHeader()
+function ReaderCoptListener:updateHeader()
     if self.view.view_mode == "page" then
-        if self.ui.document.provider == "crengine" then -- can that "if" be dropped
-            self.ui.document._callCacheSet("current_buffer_tag", nil)
-        end
+        require("logger").dbg("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx updateHeader")
+        self.ui.document._callCacheSet("current_buffer_tag", nil)
         self.ui:handleEvent(Event:new("RedrawCurrentView", self.current_page))
+--        self.ui.rolling:updateBatteryState()
+--        UIManager:setDirty(self.view.dialog, function()
+--            return "ui", Geom:new{ w = Device.screen:getWidth(), h = self.ui.document:getHeaderHeight()}
+--        end)
     end
 end
 
-function ReaderCoptListener:setupAutoRefreshTime()
-    if not self.autoRefreshTime then
-        self.autoRefreshTime = function()
+function ReaderCoptListener:setupHeaderRefresh()
+    if not self.headerRefresh then
+        self.headerRefresh = function()
             -- Only actually repaint the header if nothing's being shown over ReaderUI (#6616)
             if UIManager:getTopWidget() == "ReaderUI" then
                 -- And that only if it's actually visible
                 if self.document.configurable.status_line == 0 then -- is top bar enabled
                     local new_battery_level = Device:getPowerDevice():getCapacity()
                     if self.clock == 1 or (self.battery == 1 and new_battery_level ~= self.old_battery_level) then
-                        self:UpdateHeader(true)
+                        self:updateHeader(true)
                         self.old_battery_level = new_battery_level
                     end
                 end
             else
                 require("logger").dbg("Skipping Header repaint, because ReaderUI is not the top-level widget")
                 -- NOTE: We *do* keep its content up-to-date, though
-                self:UpdateHeader()
+                self:updateHeader()
             end
-            UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
+            UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.headerRefresh)
         end
     end
     self.onCloseDocument = function()
-        UIManager:unschedule(self.autoRefreshTime)
+        UIManager:unschedule(self.headerRefresh)
     end
-    UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
+    UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.headerRefresh)
 end
 
-function ReaderCoptListener:unsetAutoRefreshTime()
-    UIManager:unschedule(self.autoRefreshTime)
+function ReaderCoptListener:unsetHeaderRefresh()
+    UIManager:unschedule(self.headerRefresh)
 end
 
 local about_text = _([[
@@ -126,15 +130,15 @@ function ReaderCoptListener:getAltStatusBarMenu()
             {
                 text = _("Auto refresh the alternate status bar"),
                 checked_func = function()
-                    return self.clock_auto_refresh == 1
+                    return self.header_auto_refresh == 1
                 end,
                 callback = function()
-                    self.clock_auto_refresh = self.clock_auto_refresh == 0 and 1 or 0
-                    G_reader_settings:saveSetting("cre_header_clock_auto_refresh", self.clock_auto_refresh)
-                    if self.clock_auto_refresh then
-                        self:setupAutoRefreshTime()
+                    self.header_auto_refresh = self.header_auto_refresh == 0 and 1 or 0
+                    G_reader_settings:saveSetting("cre_header_auto_refresh", self.header_auto_refresh)
+                    if self.header_auto_refresh then
+                        self:setupHeaderRefresh()
                     else
-                        self:unsetAutoRefreshTime()
+                        self:unsetHeaderRefresh()
                     end
                 end,
                 separator = true
