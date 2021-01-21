@@ -263,7 +263,7 @@ function ImageViewer:init()
     if self.caption and self.caption_visible then
         title_tbw_padding_bottom = 0 -- save room between title and caption
     end
-    local titlew = FrameContainer:new{
+    self.titlew = FrameContainer:new{
         padding = self.title_padding,
         padding_top = self.title_padding + Size.padding.small,
         padding_bottom = title_tbw_padding_bottom,
@@ -273,14 +273,14 @@ function ImageViewer:init()
         self.title_tbw,
     }
     if self.caption then
-        self.caption_tap_area = titlew
+        self.caption_tap_area = self.titlew
     end
     self.title_bar = OverlapGroup:new{
         dimen = {
             w = self.width,
-            h = titlew:getSize().h
+            h = self.titlew:getSize().h
         },
-        titlew,
+        self.titlew,
         self.closeb
     }
     -- FIXME: ctoggler?
@@ -454,7 +454,8 @@ end
 
 function ImageViewer:update()
     print("ImageViewer:update: self._image_wg is", self._image_wg)
-    self:free() -- free all the things
+    -- Free our ImageWidget, which is the only thing we'll replace (e.g., leave the TextBoxWidgets alone).
+    self:_clean_image_wg()
 
     -- Update window geometry
     local orig_dimen = self.main_frame.dimen
@@ -485,35 +486,13 @@ function ImageViewer:update()
     if self.with_title_bar then
         self.ctoggler_tw:setText(self.caption_visible and "▽ " or "▷ ")
 
-        -- Dynamic padding means we have to re-initialize that...
+        -- Padding is dynamic...
         local title_tbw_padding_bottom = self.title_padding + Size.padding.small
         if self.caption and self.caption_visible then
             title_tbw_padding_bottom = 0
         end
-        local titlew = FrameContainer:new{
-            padding = self.title_padding,
-            padding_top = self.title_padding + Size.padding.small,
-            padding_bottom = title_tbw_padding_bottom,
-            padding_left = self.caption and self.ctoggler_width or self.title_padding,
-            margin = self.title_margin,
-            bordersize = 0,
-            self.title_tbw,
-        }
-        if self.caption then
-            self.caption_tap_area = titlew
-        end
-        self.title_bar = OverlapGroup:new{
-            dimen = {
-                w = self.width,
-                h = titlew:getSize().h
-            },
-            titlew,
-            self.closeb
-        }
-
-        if self.caption then
-            table.insert(self.title_bar, 1, self.ctoggler)
-        end
+        self.titlew.padding_bottom = title_tbw_padding_bottom
+        self.title_bar.dimen.h = self.titlew:getSize().h
 
         if self.caption and self.caption_visible then
             self.full_title_bar = self.captioned_title_bar
