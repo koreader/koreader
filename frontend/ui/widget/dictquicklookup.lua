@@ -830,7 +830,7 @@ function DictQuickLookup:getInitialVisibleArea()
 end
 
 function DictQuickLookup:onCloseWidget()
-    -- Our TextBoxWidgets & HtmlBoxWidgets are proper child widgets,
+    -- Our TextBoxWidget/HtmlBoxWidget/TextWidget/ImageWidget are proper child widgets,
     -- so this event will propagate to 'em, and they'll free their resources.
 
     -- What's left is stuff that isn't directly in our widget tree...

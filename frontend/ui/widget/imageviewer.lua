@@ -873,9 +873,10 @@ function ImageViewer:onCloseWidget()
     -- clean all our BlitBuffer objects when UIManager:close() is called
     print("ImageViewer:onCloseWidget: self._image_wg is", self._image_wg)
     print("ImageViewer:onCloseWidget: self.image is", self.image)
-    -- self (an InputContainer) inherits WidgetContainer's free method, which frees *all* the container's widgets
-    self:free()
-    -- The BB may not be flagged as disposable in our ImageWidget (self._image_wg),
+
+    -- Our ImageWidget (self._image_wg) is a proper child widget, so it'll receive this event,
+    -- and attempt to free its resources accordingly.
+    -- But, the BB may not actually be flagged as disposable in it,
     -- which would have prevented it from being free'd during its free().
     -- So, make sure we actually free the all BBs as necessary.
     if self.image and self.image_disposable and self.image.free then
