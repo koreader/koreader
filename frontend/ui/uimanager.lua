@@ -439,7 +439,6 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     -- Ensure all the widgets can get onFlushSettings event.
     widget:handleEvent(Event:new("FlushSettings"))
     -- first send close event to widget
-    print("UIManager:close sending CloseWidget to", widget)
     widget:handleEvent(Event:new("CloseWidget"))
     -- make it disabled by default and check if any widget wants it disabled or enabled
     Input.disable_double_tap = true
