@@ -563,8 +563,8 @@ function ReaderFooter:init()
     else
         self:applyFooterMode()
     end
-    if self.settings.auto_refresh_time then
-        self:setupAutoRefreshTime()
+    if self.settings.auto_refresh then
+        self:setupAutoRefreshFooter()
     end
 
     self.visibility_change = nil
@@ -644,27 +644,30 @@ function ReaderFooter:updateFooterContainer()
     self[1] = self.footer_positioner
 end
 
-function ReaderFooter:setupAutoRefreshTime()
-    if not self.autoRefreshTime then
-        self.autoRefreshTime = function()
+function ReaderFooter:setupAutoRefreshFooter()
+    if not self.autoRefreshFooter then
+        self.autoRefreshFooter = function()
             -- Only actually repaint the footer if nothing's being shown over ReaderUI (#6616)
             if UIManager:getTopWidget() == "ReaderUI" then
                 -- And that only if it's actually visible
                 if self.view.footer_visible then
-                    self:onUpdateFooter(true)
+                    -- Only update, if there could be a change without user activity
+                    if self.settings.time or self.settings.battery or self.settings.wifi_status or self.settings.mem_usage then
+                        self:onUpdateFooter(true)
+                    end
                 end
             else
                 logger.dbg("Skipping ReaderFooter repaint, because ReaderUI is not the top-level widget")
                 -- NOTE: We *do* keep its content up-to-date, though
                 self:onUpdateFooter()
             end
-            UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
+            UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshFooter)
         end
     end
     self.onCloseDocument = function()
-        UIManager:unschedule(self.autoRefreshTime)
+        UIManager:unschedule(self.autoRefreshFooter)
     end
-    UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
+    UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshFooter)
 end
 
 function ReaderFooter:setupTouchZones()
@@ -962,19 +965,23 @@ function ReaderFooter:addToMainMenu(menu_items)
             getMinibarOption("all_at_once", self.updateFooterTextGenerator),
             getMinibarOption("reclaim_height"),
             {
-                text = _("Auto refresh time"),
+                text = _("Auto refresh"),
                 checked_func = function()
-                    return self.settings.auto_refresh_time == true
+                    return self.settings.auto_refresh == true
                 end,
-                -- only enable auto refresh when time is shown
-                enabled_func = function() return self.settings.time end,
+                -- only enable auto refresh when time, battery, memory or wifi is shown
+                -- maybe the enabled_func should be dropped, for simplicity
+                --  enabled_func = function()
+                --    return self.settings.time or self.settings.battery or self.settings.wifi_status
+                --        or self.settings.mem_usage
+                -- end,
                 callback = function()
-                    self.settings.auto_refresh_time = not self.settings.auto_refresh_time
+                    self.settings.auto_refresh = not self.settings.auto_refresh
                     G_reader_settings:saveSetting("footer", self.settings)
-                    if self.settings.auto_refresh_time then
-                        self:setupAutoRefreshTime()
+                    if self.settings.auto_refresh then
+                        self:setupAutoRefreshFooter()
                     else
-                        UIManager:unschedule(self.autoRefreshTime)
+                        UIManager:unschedule(self.autoRefreshFooter)
                         self.onCloseDocument = nil
                     end
                 end
@@ -2167,14 +2174,14 @@ end
 
 function ReaderFooter:onResume()
     self:onUpdateFooter()
-    if self.settings.auto_refresh_time then
-        self:setupAutoRefreshTime()
+    if self.settings.auto_refresh then
+        self:setupAutoRefreshFooter()
     end
 end
 
 function ReaderFooter:onSuspend()
-    if self.settings.auto_refresh_time then
-        UIManager:unschedule(self.autoRefreshTime)
+    if self.settings.auto_refresh then
+        UIManager:unschedule(self.autoRefreshFooter)
         self.onCloseDocument = nil
     end
 end
