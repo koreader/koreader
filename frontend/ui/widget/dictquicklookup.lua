@@ -801,7 +801,9 @@ function DictQuickLookup:update()
         self.text_widget.text_widget:init()
     end
 
-    -- Reset alpha to avoid stacking transparency on top of the previous content
+    -- Reset alpha to avoid stacking transparency on top of the previous content.
+    -- NOTE: This doesn't take care of the Scroll*Widget, which will preserve alpha on scroll,
+    --       leading to increasingly opaque and muddy text as half-tarnsparent stuff gets stacked on top of each other...
     self.movable.alpha = nil
 
     UIManager:setDirty(self, function()
