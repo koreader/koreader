@@ -85,7 +85,7 @@ function SetDefaults:init()
     -- opened immediately) we need to set the full screen dirty because
     -- otherwise only the input dialog part of the screen is refreshed.
     menu_container.onShow = function()
-        UIManager:setDirty(nil, "partial")
+        UIManager:setDirty(nil, "ui")
     end
 
     self.defaults_menu = Menu:new{

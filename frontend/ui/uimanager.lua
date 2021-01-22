@@ -430,6 +430,7 @@ For refreshtype & refreshregion see description of setDirty().
 ---- @param refreshdither an optional bool
 ---- @see setDirty
 function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
+    print("UIManager:close", widget, refreshtype, refreshregion, refreshdither)
     if not widget then
         logger.dbg("widget to be closed does not exist")
         return
@@ -486,8 +487,10 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     if dirty and not widget.invisible then
         -- schedule the remaining visible (i.e., uncovered) widgets to be painted
         for i = start_idx, #self._window_stack do
+            print("UIManager:close -> setDirty", self._window_stack[i].widget)
             self:setDirty(self._window_stack[i].widget)
         end
+        print("UIManager:close -> _refresh", refreshtype, refreshregion, refreshdither)
         self:_refresh(refreshtype, refreshregion, refreshdither)
     end
 end
@@ -637,6 +640,7 @@ NOTE: You'll notice a trend on UI elements that are usually shown *over* some ki
       so making sure your stuff only applies to the proper region is key to avoiding spurious large black flashes.
       That said, depending on your use case, using "ui" onClose can be a perfectly valid decision, and will ensure
       never seeing a flash because of that widget.
+      Remember that the FM uses "ui", so, if said widgets are shown over the FM, prefer using "ui" or "flashui" onClose.
 
 The final parameter (refreshdither) is an optional hint for devices with hardware dithering support that this repaint
 could benefit from dithering (i.e., it contains an image).
