@@ -366,6 +366,7 @@ function TextWidget:free()
     -- Allow not waiting until Lua gc() to cleanup C XText malloc'ed stuff
     if self._xtext then
         self._xtext:free()
+        self._xtext = nil
     end
 end
 
