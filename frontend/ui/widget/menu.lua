@@ -945,12 +945,13 @@ function Menu:init()
 end
 
 function Menu:onCloseWidget()
+    self:free()
     --- @fixme
     -- we cannot refresh regionally using the dimen field
     -- because some menus without menu title use VerticalGroup to include
     -- a text widget which is not calculated into the dimen.
-    -- For example, it's a dirty hack to use two menus(one this menu and one
-    -- touch menu) in the filemanager in order to capture tap gesture to popup
+    -- For example, it's a dirty hack to use two menus (one being this menu and
+    -- the other touch menu) in the filemanager in order to capture tap gesture to popup
     -- the filemanager menu.
     -- NOTE: For the same reason, don't make it flash,
     --       because that'll trigger when we close the FM and open a book...

@@ -580,6 +580,7 @@ function FrontLightWidget:update()
 end
 
 function FrontLightWidget:onCloseWidget()
+    self:free()
     UIManager:setDirty(nil, function()
         return "flashpartial", self.light_frame.dimen
     end)

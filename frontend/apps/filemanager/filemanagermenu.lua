@@ -658,6 +658,7 @@ function FileManagerMenu:onCloseFileManagerMenu()
     local last_tab_index = self.menu_container[1].last_index
     G_reader_settings:saveSetting("filemanagermenu_tab_index", last_tab_index)
     UIManager:close(self.menu_container)
+    self.menu_container:free()
     return true
 end
 

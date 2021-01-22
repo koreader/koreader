@@ -517,6 +517,11 @@ function SortWidget:onClose()
     return true
 end
 
+function SortWidget:onCloseWidget()
+    self:free()
+    return true
+end
+
 function SortWidget:onReturn()
     UIManager:close(self)
     if self.callback then self:callback() end

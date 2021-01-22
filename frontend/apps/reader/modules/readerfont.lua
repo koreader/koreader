@@ -178,6 +178,7 @@ function ReaderFont:onShowFontMenu()
     }
     main_menu.close_callback = function ()
         UIManager:close(menu_container)
+        menu_container:free()
     end
     -- show menu
 

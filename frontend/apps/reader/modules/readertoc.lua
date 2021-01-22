@@ -671,6 +671,7 @@ function ReaderToc:onShowToc()
 
     toc_menu.close_callback = function()
         UIManager:close(menu_container)
+        menu_container:free()
     end
 
     toc_menu.show_parent = menu_container

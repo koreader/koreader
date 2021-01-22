@@ -207,6 +207,7 @@ function DateWidget:update()
 end
 
 function DateWidget:onCloseWidget()
+    self:free()
     UIManager:setDirty(nil, function()
         return "partial", self.date_frame.dimen
     end)

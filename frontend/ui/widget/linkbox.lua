@@ -35,6 +35,7 @@ function LinkBox:paintTo(bb)
 end
 
 function LinkBox:onCloseWidget()
+    --self:free()
     UIManager:setDirty(nil, function()
         return "partial", self.box
     end)

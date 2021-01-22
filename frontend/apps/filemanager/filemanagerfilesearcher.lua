@@ -176,6 +176,7 @@ function FileSearcher:showSearchResults()
     table.insert(menu_container, self.search_menu)
     self.search_menu.close_callback = function()
         UIManager:close(menu_container)
+        menu_container:free()
     end
     table.sort(self.results, function(v1,v2) return v1.text < v2.text end)
     self.search_menu:switchItemTable(_("Search Results"), self.results)

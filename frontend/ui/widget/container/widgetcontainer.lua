@@ -114,6 +114,7 @@ function WidgetContainer:handleEvent(event)
 end
 
 function WidgetContainer:free()
+    print("WidgetContainer:free: from", self)
     for _, widget in ipairs(self) do
         if widget.free then
             print("WidgetContainer: Calling free for widget", debug.getinfo(widget.free, "S").short_src, widget, "from", debug.getinfo(self.free, "S").short_src or "N/A", self)

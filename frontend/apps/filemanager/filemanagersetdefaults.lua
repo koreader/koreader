@@ -106,6 +106,7 @@ function SetDefaults:init()
         logger.dbg("Closing defaults menu")
         self:saveBeforeExit()
         UIManager:close(menu_container)
+        menu_container:free()
     end
 
     local cancel_button = {

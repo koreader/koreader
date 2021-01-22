@@ -753,6 +753,11 @@ function FileManager:onClose()
     return true
 end
 
+function FileManager:onCloseWidget()
+    self:free()
+    return true
+end
+
 function FileManager:onRefresh()
     self.file_chooser:refreshPath()
     return true
