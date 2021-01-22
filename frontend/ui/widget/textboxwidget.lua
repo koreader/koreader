@@ -1104,6 +1104,7 @@ function TextBoxWidget:free(full)
             -- Allow not waiting until Lua gc() to cleanup C XText malloc'ed stuff
             -- (we should not free it if full=false as it is re-usable across renderings)
             self._xtext:free()
+            self._xtext = nil
             -- logger.dbg("TextBoxWidget:_xtext:free()")
         end
     end
