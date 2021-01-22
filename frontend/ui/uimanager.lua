@@ -430,13 +430,11 @@ For refreshtype & refreshregion see description of setDirty().
 ---- @param refreshdither an optional bool
 ---- @see setDirty
 function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
-    print("UIManager:close", widget, refreshtype, refreshregion, refreshdither)
     if not widget then
         logger.dbg("widget to be closed does not exist")
         return
     end
     logger.dbg("close widget:", widget.name or widget.id or tostring(widget))
-    print("It's a", (widget.init or widget.new) and debug.getinfo(widget.init or widget.new, "S").short_src or " N/A")
     local dirty = false
     -- Ensure all the widgets can get onFlushSettings event.
     widget:handleEvent(Event:new("FlushSettings"))
@@ -487,10 +485,8 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     if dirty and not widget.invisible then
         -- schedule the remaining visible (i.e., uncovered) widgets to be painted
         for i = start_idx, #self._window_stack do
-            print("UIManager:close -> setDirty", self._window_stack[i].widget)
             self:setDirty(self._window_stack[i].widget)
         end
-        print("UIManager:close -> _refresh", refreshtype, refreshregion, refreshdither)
         self:_refresh(refreshtype, refreshregion, refreshdither)
     end
 end

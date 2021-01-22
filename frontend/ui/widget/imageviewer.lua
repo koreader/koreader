@@ -442,7 +442,6 @@ function ImageViewer:_clean_image_wg()
 end
 
 function ImageViewer:update()
-    print("ImageViewer:update: self._image_wg is", self._image_wg)
     -- Free our ImageWidget, which is the only thing we'll replace (e.g., leave the TextBoxWidgets alone).
     self:_clean_image_wg()
 
@@ -625,9 +624,6 @@ function ImageViewer:onTap(_, ges)
             return self:onSaveImageView()
         end
     end
-    print("ImageViewer:onTap: self.caption_visible", self.caption_visible)
-    print("ImageViewer:onTap: self.caption_tap_area", self.caption_tap_area)
-    print("ImageViewer:onTap: self.caption_tap_area.dimen", self.caption_tap_area and self.caption_tap_area.dimen)
     if self.with_title_bar and self.caption_tap_area and ges.pos:intersectWith(self.caption_tap_area.dimen) then
         self.caption_visible = not self.caption_visible
         self:update()
@@ -858,7 +854,6 @@ function ImageViewer:onSaveImageView()
 end
 
 function ImageViewer:onClose()
-    print("ImageViewer:onClose", self)
     UIManager:close(self)
     return true
 end
@@ -869,11 +864,6 @@ function ImageViewer:onAnyKeyPressed()
 end
 
 function ImageViewer:onCloseWidget()
-    print("ImageViewer:onCloseWidget", self)
-    -- clean all our BlitBuffer objects when UIManager:close() is called
-    print("ImageViewer:onCloseWidget: self._image_wg is", self._image_wg)
-    print("ImageViewer:onCloseWidget: self.image is", self.image)
-
     -- Our ImageWidget (self._image_wg) is a proper child widget, so it'll receive this event,
     -- and attempt to free its resources accordingly.
     -- But, if it didn't have to touch the original BB (self.image) passed to ImageViewer (e.g., no scaling needed),
