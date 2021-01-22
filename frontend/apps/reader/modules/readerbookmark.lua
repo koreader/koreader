@@ -358,7 +358,6 @@ function ReaderBookmark:onShowBookmark()
 
     bm_menu.close_callback = function()
         UIManager:close(self.bookmark_menu)
-        self.bookmark_menu:free()
     end
 
     bm_menu.show_parent = self.bookmark_menu

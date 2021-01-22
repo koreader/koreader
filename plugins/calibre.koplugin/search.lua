@@ -394,7 +394,6 @@ function CalibreSearch:browse(option, run, chosen)
     table.insert(menu_container, self.search_menu)
     self.search_menu.close_callback = function()
         UIManager:close(menu_container)
-        menu_container:free()
     end
     if run == 1 then
         local menu_entries = {}
@@ -455,7 +454,6 @@ function CalibreSearch:showresults(t, title)
     table.insert(menu_container, self.search_menu)
     self.search_menu.close_callback = function()
         UIManager:close(menu_container)
-        menu_container:free()
     end
 
     table.sort(t, function(v1,v2) return v1.text < v2.text end)

@@ -24,4 +24,10 @@ function CenterContainer:paintTo(bb, x, y)
     self[1]:paintTo(bb, x_pos, y_pos)
 end
 
+-- We have a bunch of use-cases where this is used to wrap a Menu instance...
+function CenterContainer:onCloseWidget()
+    self:free()
+    return true
+end
+
 return CenterContainer

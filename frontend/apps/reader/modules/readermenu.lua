@@ -395,7 +395,6 @@ function ReaderMenu:onCloseReaderMenu()
         self.last_tab_index = self.menu_container[1].last_index
         self:onSaveSettings()
         UIManager:close(self.menu_container)
-        self.menu_container:free()
     end
     return true
 end
