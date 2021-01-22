@@ -314,7 +314,7 @@ end
 function DoubleSpinWidget:onCloseWidget()
     self:free()
     UIManager:setDirty(nil, function()
-        return "flashui", self.widget_frame.dimen
+        return "ui", self.widget_frame.dimen
     end)
     return true
 end

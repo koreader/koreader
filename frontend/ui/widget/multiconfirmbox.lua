@@ -157,7 +157,7 @@ end
 function MultiConfirmBox:onCloseWidget()
     self:free()
     UIManager:setDirty(nil, function()
-        return "flashui", self[1][1].dimen
+        return "ui", self[1][1].dimen
     end)
 end
 
