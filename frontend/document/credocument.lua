@@ -1517,7 +1517,6 @@ function CreDocument:setupCallCache()
             elseif name:sub(1,6) == "enable" then add_reset = true
             elseif name == "zoomFont" then add_reset = true -- not used by koreader
             elseif name == "resetCallCache" then add_reset = true
-            elseif name == "resetBufferCache" then add_buffer_trash = true
             elseif name == "cacheFlows" then add_reset = true
 
             -- These may have crengine do native highlight or unhighlight
@@ -1528,6 +1527,7 @@ function CreDocument:setupCallCache()
             elseif name == "getWordFromPosition" then add_buffer_trash = true
             elseif name == "getTextFromPositions" then add_buffer_trash = true
             elseif name == "findText" then add_buffer_trash = true
+            elseif name == "resetBufferCache" then add_buffer_trash = true
 
             -- These may change page/pos
             elseif name == "gotoPage" then set_tag = "page" ; set_arg = 2

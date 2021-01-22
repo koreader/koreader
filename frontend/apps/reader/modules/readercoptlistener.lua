@@ -64,14 +64,10 @@ end
 
 function ReaderCoptListener:updateHeader()
     if self.view.view_mode == "page" then
-        require("logger").dbg("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx updateHeader")
---        self.ui.document._callCacheSet("current_buffer_tag", nil)
---        self.ui:handleEvent(Event:new("RedrawCurrentView", self.current_page))
         self.ui.rolling:updateBatteryState()
         self.ui.document:resetBufferCache()
-        UIManager:setDirty(self.view.dialog, function()
-            return "ui", Geom:new{ w = Device.screen:getWidth(), h = self.ui.document:getHeaderHeight()}
-        end)
+        UIManager:setDirty(self.view.dialog, "ui",
+            Geom:new{ w = Device.screen:getWidth(), h = self.ui.document:getHeaderHeight()})
     end
 end
 
@@ -84,7 +80,7 @@ function ReaderCoptListener:setupHeaderRefresh()
                 if self.document.configurable.status_line == 0 then -- is top bar enabled
                     local new_battery_level = Device:getPowerDevice():getCapacity()
                     if self.clock == 1 or (self.battery == 1 and new_battery_level ~= self.old_battery_level) then
-                        self:updateHeader(true)
+                        self:updateHeader()
                         self.old_battery_level = new_battery_level
                     end
                 end
@@ -209,7 +205,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
                     local status = _("off")
                     if self.battery == 1 then
                         if self.battery_percent == 1 then
-                            status = _("percent")
+                            status = _("percentage")
                         else
                             status = _("icon")
                         end
