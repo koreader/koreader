@@ -605,11 +605,8 @@ function BookStatusWidget:onClose()
     self:saveSummary()
     -- NOTE: Flash on close to avoid ghosting, since we show an image.
     UIManager:close(self, "flashpartial")
-    return true
-end
 
-function BookStatusWidget:onCloseWidget()
-    self:free()
+    return true
 end
 
 function BookStatusWidget:onSwitchFocus(inputbox)

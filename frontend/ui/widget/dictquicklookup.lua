@@ -851,6 +851,7 @@ function DictQuickLookup:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "flashui", nil
     end)
+
     return true
 end
 
@@ -858,6 +859,7 @@ function DictQuickLookup:onShow()
     UIManager:setDirty(self, function()
         return "flashui", self.dict_frame.dimen
     end)
+
     return true
 end
 

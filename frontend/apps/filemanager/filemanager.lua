@@ -750,11 +750,8 @@ function FileManager:onClose()
     if self.onExit then
         self:onExit()
     end
-    return true
-end
 
-function FileManager:onCloseWidget()
-    self:free()
+    return true
 end
 
 function FileManager:onRefresh()

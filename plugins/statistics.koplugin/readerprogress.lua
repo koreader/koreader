@@ -518,11 +518,8 @@ end
 
 function ReaderProgress:onClose()
     UIManager:close(self)
-    return true
-end
 
-function ReaderProgress:onCloseWidget()
-    self:free()
+    return true
 end
 
 return ReaderProgress

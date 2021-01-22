@@ -752,12 +752,13 @@ end
 
 function VirtualKeyboard:onShow()
     self:_refresh(true)
+
     return true
 end
 
 function VirtualKeyboard:onCloseWidget()
     self:_refresh(false)
-    self:free()
+
     return true
 end
 

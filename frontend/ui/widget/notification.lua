@@ -76,10 +76,10 @@ function Notification:init()
 end
 
 function Notification:onCloseWidget()
-    self:free()
     UIManager:setDirty(nil, function()
         return "ui", self[1][1].dimen
     end)
+
     return true
 end
 
@@ -91,6 +91,7 @@ function Notification:onShow()
     if self.timeout then
         UIManager:scheduleIn(self.timeout, function() UIManager:close(self) end)
     end
+
     return true
 end
 

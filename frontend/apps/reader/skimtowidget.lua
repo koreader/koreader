@@ -377,10 +377,10 @@ function SkimToWidget:addOriginToLocationStack(add_current)
 end
 
 function SkimToWidget:onCloseWidget()
-    self:free()
     UIManager:setDirty(nil, function()
         return "ui", self.skimto_frame.dimen
     end)
+
     return true
 end
 
@@ -388,6 +388,7 @@ function SkimToWidget:onShow()
     UIManager:setDirty(self, function()
         return "ui", self.skimto_frame.dimen
     end)
+
     return true
 end
 

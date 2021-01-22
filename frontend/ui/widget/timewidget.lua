@@ -192,10 +192,10 @@ function TimeWidget:update()
 end
 
 function TimeWidget:onCloseWidget()
-    self:free()
     UIManager:setDirty(nil, function()
         return "ui", self.time_frame.dimen
     end)
+
     return true
 end
 
@@ -203,6 +203,7 @@ function TimeWidget:onShow()
     UIManager:setDirty(self, function()
         return "ui", self.time_frame.dimen
     end)
+
     return true
 end
 

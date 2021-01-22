@@ -155,7 +155,6 @@ function MultiConfirmBox:onShow()
 end
 
 function MultiConfirmBox:onCloseWidget()
-    self:free()
     UIManager:setDirty(nil, function()
         return "ui", self[1][1].dimen
     end)
@@ -163,6 +162,7 @@ end
 
 function MultiConfirmBox:onClose()
     UIManager:close(self)
+
     return true
 end
 

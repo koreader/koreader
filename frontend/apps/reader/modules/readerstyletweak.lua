@@ -176,7 +176,6 @@ function TweakInfoWidget:onShow()
 end
 
 function TweakInfoWidget:onCloseWidget()
-    self:free()
     UIManager:setDirty(nil, function()
         return "ui", self.movable.dimen
     end)
@@ -184,6 +183,7 @@ end
 
 function TweakInfoWidget:onClose()
     UIManager:close(self)
+
     return true
 end
 
