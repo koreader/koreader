@@ -264,7 +264,7 @@ end
 function SpinWidget:onCloseWidget()
     self:free()
     UIManager:setDirty(nil, function()
-        return "flashui", self.spin_frame.dimen
+        return "ui", self.spin_frame.dimen
     end)
     return true
 end
