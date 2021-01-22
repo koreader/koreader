@@ -71,8 +71,7 @@ end
 
 function ReaderCoptListener:setupHeaderRefresh()
     self.headerRefresh = function()
-        -- Only actually repaint the header if nothing's being shown over ReaderUI (#6616)
-        -- And that only if it's actually visible
+        -- Only actually repaint the header only if it's actually visible
         if self.document.configurable.status_line == 0 then -- is top bar enabled
             local new_battery_level = Device:getPowerDevice():getCapacity()
             if self.clock == 1 or (self.battery == 1 and new_battery_level ~= self.old_battery_level) then
