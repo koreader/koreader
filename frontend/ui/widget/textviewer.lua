@@ -228,7 +228,6 @@ function TextViewer:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "partial", self.frame.dimen
     end)
-
     return true
 end
 
@@ -236,7 +235,6 @@ function TextViewer:onShow()
     UIManager:setDirty(self, function()
         return "ui", self.frame.dimen
     end)
-
     return true
 end
 

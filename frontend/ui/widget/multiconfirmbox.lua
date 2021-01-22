@@ -162,7 +162,6 @@ end
 
 function MultiConfirmBox:onClose()
     UIManager:close(self)
-
     return true
 end
 

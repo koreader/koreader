@@ -381,7 +381,6 @@ function NaturalLightWidget:onCloseWidget()
     end)
     -- Tell frontlight widget that we're closed
     self.fl_widget:naturalLightConfigClose()
-
     return true
 end
 
@@ -393,7 +392,6 @@ function NaturalLightWidget:onShow()
     self.fl_widget:naturalLightConfigOpen()
     -- Store values in case user cancels
     self.old_values = self:getCurrentValues()
-
     return true
 end
 

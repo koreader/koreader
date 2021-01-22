@@ -60,7 +60,7 @@ end
 
 function VerticalGroup:clear()
     self:free()
-    -- Skip WidgetContainer:clear's own free call, we just did that in our own free ;)
+    -- Skip WidgetContainer:clear's free call, we just did that in our own free ;)
     WidgetContainer.clear(self, true)
 end
 

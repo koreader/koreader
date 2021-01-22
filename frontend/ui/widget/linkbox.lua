@@ -38,7 +38,6 @@ function LinkBox:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "partial", self.box
     end)
-
     return true
 end
 
@@ -52,7 +51,6 @@ function LinkBox:onShow()
             if self.callback then self.callback() end
         end)
     end
-
     return true
 end
 

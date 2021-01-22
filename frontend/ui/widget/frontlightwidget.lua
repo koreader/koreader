@@ -583,7 +583,6 @@ function FrontLightWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "flashui", self.light_frame.dimen
     end)
-
     return true
 end
 
@@ -592,7 +591,6 @@ function FrontLightWidget:onShow()
     UIManager:setDirty(self, function()
         return "ui", self.light_frame.dimen
     end)
-
     return true
 end
 

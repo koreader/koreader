@@ -210,7 +210,6 @@ function DateWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "ui", self.date_frame.dimen
     end)
-
     return true
 end
 
@@ -218,7 +217,6 @@ function DateWidget:onShow()
     UIManager:setDirty(self, function()
         return "ui", self.date_frame.dimen
     end)
-
     return true
 end
 
@@ -231,13 +229,11 @@ function DateWidget:onTapClose(arg, ges_ev)
     if ges_ev.pos:notIntersectWith(self.date_frame.dimen) then
         self:onClose()
     end
-
     return true
 end
 
 function DateWidget:onClose()
     UIManager:close(self)
-
     return true
 end
 

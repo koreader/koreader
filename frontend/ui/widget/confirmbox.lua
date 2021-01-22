@@ -200,7 +200,6 @@ function ConfirmBox:onClose()
     -- Call cancel_callback, parent may expect a choice
     self.cancel_callback()
     UIManager:close(self)
-
     return true
 end
 
@@ -208,7 +207,6 @@ function ConfirmBox:onTapClose(arg, ges)
     if ges.pos:notIntersectWith(self[1][1].dimen) then
         self:onClose()
     end
-
     -- Don't let it propagate to underlying widgets
     return true
 end

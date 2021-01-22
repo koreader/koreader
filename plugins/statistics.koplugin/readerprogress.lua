@@ -518,7 +518,6 @@ end
 
 function ReaderProgress:onClose()
     UIManager:close(self)
-
     return true
 end
 

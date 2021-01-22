@@ -750,7 +750,6 @@ function FileManager:onClose()
     if self.onExit then
         self:onExit()
     end
-
     return true
 end
 
