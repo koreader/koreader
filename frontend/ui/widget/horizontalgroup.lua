@@ -65,7 +65,8 @@ end
 
 function HorizontalGroup:clear()
     self:free()
-    WidgetContainer.clear(self)
+    -- Skip WidgetContainer:clear's own free call, we just did that in our own free ;)
+    WidgetContainer.clear(self, true)
 end
 
 function HorizontalGroup:resetLayout()

@@ -53,9 +53,14 @@ end
 --[[--
 Deletes all child widgets.
 ]]
-function WidgetContainer:clear()
-    -- Make sure we free 'em before orphaning them...
-    self:free()
+function WidgetContainer:clear(skip_free)
+    -- HorizontalGroup & VerticalGroup call us after already having called free,
+    -- so allow skipping this one ;).
+    if not skip_free then
+        -- Make sure we free 'em before orphaning them...
+        self:free()
+    end
+
     while table.remove(self) do end
 end
 
