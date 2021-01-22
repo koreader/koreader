@@ -232,7 +232,6 @@ function ImageViewer:init()
     else
         ctoggler_text = "▷ " -- white arrow (nicer than smaller black arrow ►)
     end
-    -- FIXME: Needs to be accessible for update
     self.ctoggler_tw = TextWidget:new{
         text = ctoggler_text,
         face = self.title_face,
@@ -251,14 +250,12 @@ function ImageViewer:init()
         self.ctoggler_width = 0
     end
     self.closeb = CloseButton:new{ window = self, padding_top = Size.padding.tiny, }
-    -- FIXME: Need to be accessible and re-init'ed, meaning we need self.ctoggler, too
     self.title_tbw = TextBoxWidget:new{
         text = self.title_text,
         face = self.title_face,
         -- bold = true, -- we're already using a bold font
         width = self.width - 2*self.title_padding - 2*self.title_margin - self.closeb:getSize().w - self.ctoggler_width,
     }
-    print("ImageViewer: self.title_tbw is", self.title_tbw)
     local title_tbw_padding_bottom = self.title_padding + Size.padding.small
     if self.caption and self.caption_visible then
         title_tbw_padding_bottom = 0 -- save room between title and caption
@@ -283,18 +280,15 @@ function ImageViewer:init()
         self.titlew,
         self.closeb
     }
-    -- FIXME: ctoggler?
     if self.caption then
         table.insert(self.title_bar, 1, self.ctoggler)
     end
     -- Init the caption no matter what
-    -- FIXME: Once more, with feeling
     self.caption_tbw = TextBoxWidget:new{
         text = self.caption or _("N/A"),
         face = self.caption_face,
         width = self.width - 2*self.title_padding - 2*self.title_margin - 2*self.caption_padding,
     }
-    print("ImageViewer: self.caption_tbw is", self.caption_tbw)
     local captionw = FrameContainer:new{
         padding = self.caption_padding,
         padding_top = 0, -- don't waste vertical room for bigger image
@@ -331,7 +325,6 @@ function ImageViewer:init()
     if self._images_list and self._images_list_nb > 1 then
         percent = (self._images_list_cur - 1) / (self._images_list_nb - 1)
     end
-    -- FIXME: Need to update the percentage (setPercentage), so, accessible it needs to be
     self.progress_bar = ProgressWidget:new{
         width = self.width - 2*self.button_padding,
         height = Screen:scaleBySize(5),
@@ -354,7 +347,6 @@ function ImageViewer:init()
         self.img_container_h = self.img_container_h - self.progress_container:getSize().h
     end
 
-    -- FIXME: That has to stay, too, because it is dynamic
     -- If no buttons and no title are shown, use the full screen
     local max_image_h = self.img_container_h
     local max_image_w = self.width
@@ -377,7 +369,6 @@ function ImageViewer:init()
         rotation_angle = rotate_clockwise and 90 or 270
     end
 
-    -- FIXME: Obviously, that stays ;p
     self._image_wg = ImageWidget:new{
         file = self.file,
         image = self.image,
@@ -400,7 +391,6 @@ function ImageViewer:init()
     }
 
     local frame_elements = VerticalGroup:new{ align = "left" }
-    -- FIXME: Can all this stuff change across our lifetime?
     if self.with_title_bar then
         table.insert(frame_elements, self.full_title_bar)
         table.insert(frame_elements, self.title_sep)
@@ -409,7 +399,6 @@ function ImageViewer:init()
     if self._images_list then
         table.insert(frame_elements, self.progress_container)
     end
-    -- FIXME: Crap, that can.
     if self.buttons_visible then
         table.insert(frame_elements, self.button_container)
     end
