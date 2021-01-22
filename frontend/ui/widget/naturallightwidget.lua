@@ -382,6 +382,7 @@ function NaturalLightWidget:onCloseWidget()
     end)
     -- Tell frontlight widget that we're closed
     self.fl_widget:naturalLightConfigClose()
+
     return true
 end
 
