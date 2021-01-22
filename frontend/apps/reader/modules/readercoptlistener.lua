@@ -89,17 +89,21 @@ function ReaderCoptListener:setupHeaderRefresh()
                 -- NOTE: We *do* keep its content up-to-date, though
                 self:updateHeader()
             end
-            UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.headerRefresh)
+            self:updateHeaderRefreshSchedule()
         end
     end
     self.onCloseDocument = function()
         UIManager:unschedule(self.headerRefresh)
     end
-    UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.headerRefresh)
+    self:updateHeaderRefreshSchedule()
 end
 
-function ReaderCoptListener:unsetHeaderRefresh()
+function ReaderCoptListener:updateHeaderRefreshSchedule()
     UIManager:unschedule(self.headerRefresh)
+    if self.document.configurable.status_line == 0 and self.header_auto_refresh == 1 and
+        (self.clock == 1 or self.battery == 1) then
+        UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.headerRefresh)
+    end
 end
 
 local about_text = _([[
@@ -132,11 +136,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 callback = function()
                     self.header_auto_refresh = self.header_auto_refresh == 0 and 1 or 0
                     G_reader_settings:saveSetting("cre_header_auto_refresh", self.header_auto_refresh)
-                    if self.header_auto_refresh then
-                        self:setupHeaderRefresh()
-                    else
-                        self:unsetHeaderRefresh()
-                    end
+                    self:updateHeaderRefreshSchedule()
                 end,
                 separator = true
             },
@@ -158,6 +158,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 callback = function()
                     self.clock = self.clock == 0 and 1 or 0
                     self:setAndSave("cre_header_clock", "window.status.clock", self.clock)
+                    self:updateHeaderRefreshSchedule()
                 end,
             },
             {
@@ -229,9 +230,9 @@ function ReaderCoptListener:getAltStatusBarMenu()
                                 self.battery = 0
                                 self.battery_percent = 0
                             end
-
                             self:setAndSave("cre_header_battery", "window.status.battery", self.battery)
                             self:setAndSave("cre_header_battery_percent", "window.status.battery.percent", self.battery_percent)
+                            self:updateHeaderRefreshSchedule()
                         end,
                     },
                     {
@@ -249,10 +250,9 @@ function ReaderCoptListener:getAltStatusBarMenu()
                                 self.battery = 0
                                 self.battery_percent = 0
                             end
-
-
                             self:setAndSave("cre_header_battery", "window.status.battery", self.battery)
                             self:setAndSave("cre_header_battery_percent", "window.status.battery.percent", self.battery_percent)
+                            self:updateHeaderRefreshSchedule()
                         end,
                     },
                 },
