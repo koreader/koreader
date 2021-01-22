@@ -69,7 +69,7 @@ end
 function ButtonDialog:onCloseWidget()
     self:free()
     UIManager:setDirty(nil, function()
-        return "partial", self[1][1].dimen
+        return "flashui", self[1][1].dimen
     end)
 end
 

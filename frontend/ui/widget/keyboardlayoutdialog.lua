@@ -155,7 +155,7 @@ end
 
 function KeyboardLayoutDialog:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "partial", self[1][1].dimen
+        return "ui", self[1][1].dimen
     end)
     return true
 end
