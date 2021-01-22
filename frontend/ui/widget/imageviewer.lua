@@ -876,9 +876,9 @@ function ImageViewer:onCloseWidget()
 
     -- Our ImageWidget (self._image_wg) is a proper child widget, so it'll receive this event,
     -- and attempt to free its resources accordingly.
-    -- But, the BB may not actually be flagged as disposable in it,
-    -- which would have prevented it from being free'd during its free().
-    -- So, make sure we actually free the all BBs as necessary.
+    -- But, if it didn't have to touch the original BB (self.image) passed to ImageViewer (e.g., no scaling needed),
+    -- it will *re-use* self.image, and flag it as non-disposable, meaning it will not have been free'd earlier.
+    -- Since we're the ones who ultimately truly know whether we should dispose of self.image or not, do that now ;).
     if self.image and self.image_disposable and self.image.free then
         logger.dbg("ImageViewer:onCloseWidget: free self.image", self.image)
         self.image:free()
