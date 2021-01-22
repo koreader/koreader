@@ -552,10 +552,25 @@ function MenuItem:onHoldSelect(arg, ges)
         --UIManager:waitForVSync()
 
         self[1].invert = false
-        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-        UIManager:setDirty(nil, function()
-            return "ui", self[1].dimen
-        end)
+
+        -- Same idea as for tap, minus the various things that make no sense for a hold callback...
+        local top_widget = UIManager:getTopWidget()
+
+        -- If we're still on top, or a modal was opened outside of our highlight region, we can unhighlight safely
+        if top_widget == self.show_parent or self[1].dimen:notIntersectWith(UIManager:getPreviousRefreshRegion()) then
+            UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:setDirty(nil, function()
+                return "ui", self[1].dimen
+            end)
+        else
+            -- That leaves modals that might have been displayed on top of the highlighted menu entry, in which case,
+            -- we can't take any shortcuts, as it would invert/paint *over* the popop.
+            -- Instead, fence the callback to avoid races, and repaint the *full* widget stack properly.
+            UIManager:waitForVSync()
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
+        end
         --UIManager:forceRePaint()
     end
     return true
