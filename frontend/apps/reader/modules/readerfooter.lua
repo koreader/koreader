@@ -970,11 +970,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                     return self.settings.auto_refresh == true
                 end,
                 -- only enable auto refresh when time, battery, memory or wifi is shown
-                -- maybe the enabled_func should be dropped, for simplicity
-                --  enabled_func = function()
-                --    return self.settings.time or self.settings.battery or self.settings.wifi_status
-                --        or self.settings.mem_usage
-                -- end,
+                enabled_func = function()
+                    return self.settings.time or self.settings.battery or self.settings.wifi_status
+                        or self.settings.mem_usage
+                end,
                 callback = function()
                     self.settings.auto_refresh = not self.settings.auto_refresh
                     G_reader_settings:saveSetting("footer", self.settings)
