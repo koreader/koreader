@@ -109,6 +109,7 @@ local Desktop = Device:new{
 
 local Emulator = Device:new{
     model = "Emulator",
+    hasDPad = no,
     isEmulator = yes,
     hasBattery = yes,
     hasEinkScreen = yes,
