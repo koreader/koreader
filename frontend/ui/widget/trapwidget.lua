@@ -146,7 +146,6 @@ function TrapWidget:onShow()
             return "ui", self.frame.dimen
         end)
     end
-
     return true
 end
 
@@ -156,7 +155,6 @@ function TrapWidget:onCloseWidget()
             return "ui", self.frame.dimen
         end)
     end
-
     return true
 end
 

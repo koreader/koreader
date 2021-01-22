@@ -626,7 +626,6 @@ end
 
 function KeyValuePage:onClose()
     UIManager:close(self)
-
     return true
 end
 

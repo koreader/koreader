@@ -183,7 +183,6 @@ end
 
 function TweakInfoWidget:onClose()
     UIManager:close(self)
-
     return true
 end
 

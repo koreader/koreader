@@ -161,7 +161,7 @@ function DictQuickLookup:init()
     -- We no longer support setting a default dict with Tap on title.
     -- self:changeToDefaultDict()
     -- Now, dictionaries can be ordered (although not yet per-book), so trust the order set
-    self:changeDictionary(1, true) -- don't call update yet
+    self:changeDictionary(1, true) -- don't call update
 
     -- And here comes the initial widget layout...
     if self.is_wiki then
@@ -849,7 +849,6 @@ function DictQuickLookup:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "flashui", nil
     end)
-
     return true
 end
 
@@ -857,7 +856,6 @@ function DictQuickLookup:onShow()
     UIManager:setDirty(self, function()
         return "flashui", self.dict_frame.dimen
     end)
-
     return true
 end
 

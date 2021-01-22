@@ -105,13 +105,11 @@ function ButtonDialogTitle:onTapClose()
     if self.tap_close_callback then
         self.tap_close_callback()
     end
-
     return true
 end
 
 function ButtonDialogTitle:onClose()
     self:onTapClose()
-
     return true
 end
 

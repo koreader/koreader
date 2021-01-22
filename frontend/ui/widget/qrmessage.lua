@@ -86,7 +86,6 @@ function QRMessage:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "ui", self[1][1].dimen
     end)
-
     return true
 end
 
@@ -98,7 +97,6 @@ function QRMessage:onShow()
     if self.timeout then
         UIManager:scheduleIn(self.timeout, function() UIManager:close(self) end)
     end
-
     return true
 end
 

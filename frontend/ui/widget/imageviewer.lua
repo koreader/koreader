@@ -45,7 +45,7 @@ local ImageViewer = InputContainer:new{
     -- The table will have its .free() called onClose according to
     -- the image_disposable provided here.
     -- Each BlitBuffer in the table (or returned by functions) will be free'd
-    -- if the table has itself an attribute image_disposable set to true.
+    -- if the table itself has an image_disposable field set to true.
 
     -- With images list, when switching image, whether to keep previous
     -- image pan & zoom
@@ -432,8 +432,8 @@ function ImageViewer:init()
 end
 
 function ImageViewer:_clean_image_wg()
-    -- To be called before re-using / not needing self._image_wg
-    -- otherwise resources used by its blitbuffer won't be freed
+    -- To be called before re-using / disposing of self._image_wg,
+    -- otherwise resources used by its blitbuffer won't be free'd
     if self._image_wg then
         logger.dbg("ImageViewer:_clean_image_wg")
         self._image_wg:free()

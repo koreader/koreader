@@ -61,7 +61,6 @@ function ScreenSaverWidget:onShow()
     UIManager:setDirty(self, function()
         return "full", self.main_frame.dimen
     end)
-
     return true
 end
 
@@ -86,7 +85,6 @@ function ScreenSaverWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "full", self.main_frame.dimen
     end)
-
     return true
 end
 

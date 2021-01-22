@@ -819,7 +819,6 @@ end
 
 function CalendarView:onClose()
     UIManager:close(self)
-
     return true
 end
 
