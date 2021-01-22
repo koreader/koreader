@@ -631,7 +631,6 @@ end
 
 function KeyValuePage:onCloseWidget()
     self:free()
-    return true
 end
 
 function KeyValuePage:onReturn()

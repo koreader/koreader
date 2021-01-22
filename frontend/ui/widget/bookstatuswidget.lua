@@ -602,6 +602,7 @@ function BookStatusWidget:onSwipe(arg, ges_ev)
 end
 
 function BookStatusWidget:onClose()
+    print("BookStatusWidget:onClose", self)
     self:saveSummary()
     -- NOTE: Flash on close to avoid ghosting, since we show an image.
     UIManager:close(self, "flashpartial")
@@ -609,8 +610,9 @@ function BookStatusWidget:onClose()
 end
 
 function BookStatusWidget:onCloseWidget()
+    print("BookStatusWidget:onCloseWidget", self)
     self:free()
-    return true
+    print("BookStatusWidget:onCloseWidget done", self)
 end
 
 function BookStatusWidget:onSwitchFocus(inputbox)
