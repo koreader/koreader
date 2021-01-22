@@ -18,6 +18,7 @@ local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local socket = require("socket")
+local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -29,20 +30,6 @@ local function getDefaultRootDir()
         return lfs.currentdir()
     else
         return Device.home_dir or lfs.currentdir()
-    end
-end
-
-local function humanReadableSize(bytes)
-    if type(bytes) ~= "number" then
-        bytes = tonumber(bytes)
-        if not bytes then return _("Unknown") end
-    end
-    if bytes < 1000 then
-        return string.format("%dB", bytes)
-    elseif bytes >= 1000 and bytes < 1000 * 1000 then
-        return string.format("%4.1fKB", bytes/1000)
-    else
-        return string.format("%4.1fMB", bytes/1000/1000)
     end
 end
 
@@ -153,7 +140,7 @@ local function getBookInfo(book)
     -- all entries can be empty, except size, which is always filled by calibre.
     local title = _("Title:") .. " " .. book.title or "-"
     local authors = _("Author(s):") .. " " .. getEntries(book.authors) or "-"
-    local size = _("Size:") .. " " .. humanReadableSize(book.size)
+    local size = _("Size:") .. " " .. util.getFriendlySize(book.size) or _("Unknown")
     local tags = getEntries(book.tags)
     if tags then
         tags = _("Tags:") .. " " .. tags
