@@ -83,6 +83,7 @@ function QRMessage:init()
 end
 
 function QRMessage:onCloseWidget()
+    self:free()
     UIManager:setDirty(nil, function()
         return "ui", self[1][1].dimen
     end)

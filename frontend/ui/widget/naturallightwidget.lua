@@ -376,6 +376,7 @@ end
 
 function NaturalLightWidget:onCloseWidget()
     self:closeKeyboard()
+    self:free()
     UIManager:setDirty(nil, function()
         return "partial", self.nl_frame.dimen
     end)

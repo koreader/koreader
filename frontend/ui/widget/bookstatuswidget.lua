@@ -608,6 +608,11 @@ function BookStatusWidget:onClose()
     return true
 end
 
+function BookStatusWidget:onCloseWidget()
+    self:free()
+    return true
+end
+
 function BookStatusWidget:onSwitchFocus(inputbox)
     self.note_dialog = InputDialog:new{
         title = _("Review"),

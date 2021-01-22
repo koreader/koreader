@@ -521,4 +521,9 @@ function ReaderProgress:onClose()
     return true
 end
 
+function ReaderProgress:onCloseWidget()
+    self:free()
+    return true
+end
+
 return ReaderProgress

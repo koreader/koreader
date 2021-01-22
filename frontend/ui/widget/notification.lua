@@ -76,6 +76,7 @@ function Notification:init()
 end
 
 function Notification:onCloseWidget()
+    self:free()
     UIManager:setDirty(nil, function()
         return "ui", self[1][1].dimen
     end)

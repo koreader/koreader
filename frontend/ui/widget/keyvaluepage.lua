@@ -629,6 +629,11 @@ function KeyValuePage:onClose()
     return true
 end
 
+function KeyValuePage:onCloseWidget()
+    self:free()
+    return true
+end
+
 function KeyValuePage:onReturn()
     if self.callback_return then
         self:callback_return()

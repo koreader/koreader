@@ -82,6 +82,7 @@ function ScreenSaverWidget:onAnyKeyPressed()
 end
 
 function ScreenSaverWidget:onCloseWidget()
+    self:free()
     UIManager:setDirty(nil, function()
         return "full", self.main_frame.dimen
     end)

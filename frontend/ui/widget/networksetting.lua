@@ -509,4 +509,9 @@ function NetworkSetting:onTapClose(arg, ges_ev)
     end
 end
 
+function NetworkSetting:onCloseWidget()
+    self:free()
+    return true
+end
+
 return NetworkSetting

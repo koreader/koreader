@@ -95,6 +95,7 @@ function ButtonDialogTitle:onShow()
 end
 
 function ButtonDialogTitle:onCloseWidget()
+    self:free()
     UIManager:setDirty(nil, function()
         return "partial", self[1][1].dimen
     end)

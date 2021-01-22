@@ -262,6 +262,7 @@ function SpinWidget:hasMoved()
 end
 
 function SpinWidget:onCloseWidget()
+    self:free()
     UIManager:setDirty(nil, function()
         return "partial", self.spin_frame.dimen
     end)

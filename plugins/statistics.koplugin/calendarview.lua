@@ -822,4 +822,9 @@ function CalendarView:onClose()
     return true
 end
 
+function CalendarView:onCloseWidget()
+    self:free()
+    return true
+end
+
 return CalendarView

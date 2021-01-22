@@ -757,6 +757,7 @@ end
 
 function VirtualKeyboard:onCloseWidget()
     self:_refresh(false)
+    self:free()
     return true
 end
 

@@ -225,6 +225,7 @@ function TextViewer:init()
 end
 
 function TextViewer:onCloseWidget()
+    self:free()
     UIManager:setDirty(nil, function()
         return "partial", self.frame.dimen
     end)

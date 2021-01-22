@@ -312,6 +312,7 @@ function DoubleSpinWidget:hasMoved()
 end
 
 function DoubleSpinWidget:onCloseWidget()
+    self:free()
     UIManager:setDirty(nil, function()
         return "partial", self.widget_frame.dimen
     end)

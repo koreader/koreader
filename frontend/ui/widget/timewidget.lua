@@ -192,6 +192,7 @@ function TimeWidget:update()
 end
 
 function TimeWidget:onCloseWidget()
+    self:free()
     UIManager:setDirty(nil, function()
         return "partial", self.time_frame.dimen
     end)

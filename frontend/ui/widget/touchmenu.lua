@@ -626,6 +626,7 @@ function TouchMenu:init()
 end
 
 function TouchMenu:onCloseWidget()
+    self:free()
     -- NOTE: We don't pass a region in order to ensure a full-screen flash to avoid ghosting
     UIManager:setDirty(nil, "flashui")
 end
