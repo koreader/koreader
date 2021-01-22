@@ -830,12 +830,10 @@ function DictQuickLookup:getInitialVisibleArea()
 end
 
 function DictQuickLookup:onCloseWidget()
-    -- Free our widget and subwidgets' resources (especially
-    -- definitions' TextBoxWidget bb, HtmlBoxWidget bb and MuPDF instance,
-    -- and scheduled image_update_action)
-    if self[1] then
-        self[1]:free()
-    end
+    -- Our TextBoxWidgets & HtmlBoxWidgets are proper child widgets,
+    -- so this event will propagate to 'em, and they'll free their resources.
+
+    -- What's left is stuff that isn't directly in our widget tree...
     if self.images_cleanup_needed then
         logger.dbg("freeing lookup results images blitbuffers")
         for _, r in ipairs(self.results) do
