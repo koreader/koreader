@@ -511,7 +511,6 @@ end
 
 function NetworkSetting:onCloseWidget()
     self:free()
-    return true
 end
 
 return NetworkSetting

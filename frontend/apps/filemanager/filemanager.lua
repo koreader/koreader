@@ -755,7 +755,6 @@ end
 
 function FileManager:onCloseWidget()
     self:free()
-    return true
 end
 
 function FileManager:onRefresh()

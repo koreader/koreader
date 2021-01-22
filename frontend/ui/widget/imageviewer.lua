@@ -194,7 +194,7 @@ function ImageViewer:init()
                 id = "close",
                 text = _("Close"),
                 callback = function()
-                    UIManager:close(self)
+                    self:onClose()
                 end,
             },
         },
@@ -858,6 +858,7 @@ function ImageViewer:onSaveImageView()
 end
 
 function ImageViewer:onClose()
+    print("ImageViewer:onClose", self)
     UIManager:close(self)
     return true
 end
@@ -868,6 +869,7 @@ function ImageViewer:onAnyKeyPressed()
 end
 
 function ImageViewer:onCloseWidget()
+    print("ImageViewer:onCloseWidget", self)
     -- clean all our BlitBuffer objects when UIManager:close() is called
     print("ImageViewer:onCloseWidget: self._image_wg is", self._image_wg)
     print("ImageViewer:onCloseWidget: self.image is", self.image)

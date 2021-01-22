@@ -519,7 +519,6 @@ end
 
 function SortWidget:onCloseWidget()
     self:free()
-    return true
 end
 
 function SortWidget:onReturn()

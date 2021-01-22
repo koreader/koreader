@@ -523,7 +523,6 @@ end
 
 function ReaderProgress:onCloseWidget()
     self:free()
-    return true
 end
 
 return ReaderProgress

@@ -27,7 +27,6 @@ end
 -- We have a bunch of use-cases where this is used to wrap a Menu instance...
 function CenterContainer:onCloseWidget()
     self:free()
-    return true
 end
 
 return CenterContainer
