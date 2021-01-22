@@ -47,9 +47,7 @@ function ReaderCoptListener:onReadSettings(config)
 
     self.old_battery_level = Device:getPowerDevice():getCapacity()
 
-    if self.header_auto_refresh then
-        self:setupHeaderRefresh()
-    end
+    self:setupHeaderRefresh()
 end
 
 function ReaderCoptListener:onSetFontSize(font_size)
@@ -72,30 +70,23 @@ function ReaderCoptListener:updateHeader()
 end
 
 function ReaderCoptListener:setupHeaderRefresh()
-    if not self.headerRefresh then
-        self.headerRefresh = function()
-            -- Only actually repaint the header if nothing's being shown over ReaderUI (#6616)
-            if UIManager:getTopWidget() == "ReaderUI" then
-                -- And that only if it's actually visible
-                if self.document.configurable.status_line == 0 then -- is top bar enabled
-                    local new_battery_level = Device:getPowerDevice():getCapacity()
-                    if self.clock == 1 or (self.battery == 1 and new_battery_level ~= self.old_battery_level) then
-                        self:updateHeader()
-                        self.old_battery_level = new_battery_level
-                    end
-                end
-            else
-                require("logger").dbg("Skipping Header repaint, because ReaderUI is not the top-level widget")
-                -- NOTE: We *do* keep its content up-to-date, though
+    self.headerRefresh = function()
+        -- Only actually repaint the header if nothing's being shown over ReaderUI (#6616)
+        -- And that only if it's actually visible
+        if self.document.configurable.status_line == 0 then -- is top bar enabled
+            local new_battery_level = Device:getPowerDevice():getCapacity()
+            if self.clock == 1 or (self.battery == 1 and new_battery_level ~= self.old_battery_level) then
                 self:updateHeader()
+                self.old_battery_level = new_battery_level
             end
-            self:updateHeaderRefreshSchedule()
         end
-    end
-    self.onCloseDocument = function()
-        UIManager:unschedule(self.headerRefresh)
+        self:updateHeaderRefreshSchedule()
     end
     self:updateHeaderRefreshSchedule()
+end
+
+function ReaderCoptListener:onCloseDocument()
+    UIManager:unschedule(self.headerRefresh)
 end
 
 function ReaderCoptListener:updateHeaderRefreshSchedule()
