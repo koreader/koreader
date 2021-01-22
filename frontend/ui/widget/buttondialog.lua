@@ -67,7 +67,6 @@ function ButtonDialog:onShow()
 end
 
 function ButtonDialog:onCloseWidget()
-    self:free()
     UIManager:setDirty(nil, function()
         return "flashui", self[1][1].dimen
     end)
@@ -78,11 +77,13 @@ function ButtonDialog:onTapClose()
     if self.tap_close_callback then
         self.tap_close_callback()
     end
+
     return true
 end
 
 function ButtonDialog:onClose()
     self:onTapClose()
+
     return true
 end
 

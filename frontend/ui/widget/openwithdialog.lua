@@ -185,10 +185,10 @@ function OpenWithDialog:init()
 end
 
 function OpenWithDialog:onCloseWidget()
-    self:free()
     UIManager:setDirty(nil, function()
         return "ui", self.dialog_frame.dimen
     end)
+
     return true
 end
 

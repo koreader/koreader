@@ -514,11 +514,8 @@ end
 function SortWidget:onClose()
     UIManager:close(self)
     UIManager:setDirty(nil, "ui")
-    return true
-end
 
-function SortWidget:onCloseWidget()
-    self:free()
+    return true
 end
 
 function SortWidget:onReturn()

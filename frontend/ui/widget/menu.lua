@@ -945,7 +945,6 @@ function Menu:init()
 end
 
 function Menu:onCloseWidget()
-    self:free()
     --- @fixme
     -- we cannot refresh regionally using the dimen field
     -- because some menus without menu title use VerticalGroup to include

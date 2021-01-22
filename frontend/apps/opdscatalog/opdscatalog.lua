@@ -53,7 +53,6 @@ function OPDSCatalog:onShow()
 end
 
 function OPDSCatalog:onCloseWidget()
-    self:free()
     UIManager:setDirty(nil, function()
         return "ui", self[1].dimen
     end)

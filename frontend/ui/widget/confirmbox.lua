@@ -191,7 +191,6 @@ function ConfirmBox:onShow()
 end
 
 function ConfirmBox:onCloseWidget()
-    self:free()
     UIManager:setDirty(nil, function()
         return "ui", self[1][1].dimen
     end)
@@ -201,6 +200,7 @@ function ConfirmBox:onClose()
     -- Call cancel_callback, parent may expect a choice
     self.cancel_callback()
     UIManager:close(self)
+
     return true
 end
 
@@ -208,6 +208,7 @@ function ConfirmBox:onTapClose(arg, ges)
     if ges.pos:notIntersectWith(self[1][1].dimen) then
         self:onClose()
     end
+
     -- Don't let it propagate to underlying widgets
     return true
 end

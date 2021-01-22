@@ -376,7 +376,6 @@ end
 
 function NaturalLightWidget:onCloseWidget()
     self:closeKeyboard()
-    self:free()
     UIManager:setDirty(nil, function()
         return "flashui", self.nl_frame.dimen
     end)
@@ -394,6 +393,7 @@ function NaturalLightWidget:onShow()
     self.fl_widget:naturalLightConfigOpen()
     -- Store values in case user cancels
     self.old_values = self:getCurrentValues()
+
     return true
 end
 

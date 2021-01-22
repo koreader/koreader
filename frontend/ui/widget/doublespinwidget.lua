@@ -312,7 +312,6 @@ function DoubleSpinWidget:hasMoved()
 end
 
 function DoubleSpinWidget:onCloseWidget()
-    self:free()
     UIManager:setDirty(nil, function()
         return "ui", self.widget_frame.dimen
     end)
@@ -324,6 +323,7 @@ function DoubleSpinWidget:onShow()
     UIManager:setDirty(self, function()
         return "ui", self.widget_frame.dimen
     end)
+
     return true
 end
 
@@ -336,6 +336,7 @@ function DoubleSpinWidget:onTapClose(arg, ges_ev)
     if ges_ev.pos:notIntersectWith(self.widget_frame.dimen) then
         self:onClose()
     end
+
     return true
 end
 
@@ -344,6 +345,7 @@ function DoubleSpinWidget:onClose()
     if self.close_callback then
         self.close_callback()
     end
+
     return true
 end
 
