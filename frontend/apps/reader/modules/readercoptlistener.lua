@@ -136,6 +136,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 callback = function()
                     self.header_auto_refresh = self.header_auto_refresh == 0 and 1 or 0
                     G_reader_settings:saveSetting("cre_header_auto_refresh", self.header_auto_refresh)
+                    UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, true))
                     self:updateHeaderRefreshSchedule()
                 end,
                 separator = true
