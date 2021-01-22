@@ -27,8 +27,8 @@ By default, it's `"on"..Event.name`.
 @treturn bool return true if event is consumed successfully.
 ]]
 function EventListener:handleEvent(event)
-    print("EventListener:handleEvent", self, event.handler)
     if self[event.handler] then
+        print("EventListener:handleEvent:", event.handler, "handled by", debug.getinfo(self[event.handler], "S").short_src, self)
         return self[event.handler](self, unpack(event.args))
     end
 end

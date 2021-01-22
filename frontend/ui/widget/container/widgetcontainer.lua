@@ -85,7 +85,6 @@ function WidgetContainer:paintTo(bb, x, y)
 end
 
 function WidgetContainer:propagateEvent(event)
-    print("WidgetContainer:propagateEvent", self, event.handler)
     -- propagate to children
     for _, widget in ipairs(self) do
         if widget:handleEvent(event) then
@@ -106,7 +105,6 @@ to react to the event by itself.
 not be sent to other widgets.
 ]]
 function WidgetContainer:handleEvent(event)
-    print("WidgetContainer:handleEvent", self, event.handler)
     if not self:propagateEvent(event) then
         -- call our own standard event handler
         return Widget.handleEvent(self, event)
