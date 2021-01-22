@@ -435,6 +435,7 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
         return
     end
     logger.dbg("close widget:", widget.name or widget.id or tostring(widget))
+    print("It's a", (widget.init or widget.new) and debug.getinfo(widget.init or widget.new, "S").short_src or " N/A")
     local dirty = false
     -- Ensure all the widgets can get onFlushSettings event.
     widget:handleEvent(Event:new("FlushSettings"))
