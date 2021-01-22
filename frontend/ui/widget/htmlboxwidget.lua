@@ -130,6 +130,7 @@ end
 -- (ie: in some other widget's update()), to not leak memory with
 -- BlitBuffer zombies
 function HtmlBoxWidget:free()
+    print("HtmlBoxWidget:free on", self)
     self:freeBb()
 
     if self.document then

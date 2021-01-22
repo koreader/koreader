@@ -74,6 +74,7 @@ function HorizontalGroup:resetLayout()
 end
 
 function HorizontalGroup:free()
+    print("HorizontalGroup:free on", self)
     self:resetLayout()
     WidgetContainer.free(self)
 end
