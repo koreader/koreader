@@ -114,13 +114,11 @@ function IconButton:onTapIconButton()
         if top_widget == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
             -- If the button can no longer be found inside a shown widget, abort early
             if not UIManager:isSubwidgetShown(self) then
-                print("IconButton", self, "has been orphaned")
                 return true
             end
 
             -- If the callback popped up the VK, it prevents us from finessing this any further, so repaint the whole stack
             if top_widget == "VirtualKeyboard" then
-                print("IconButton", self, "opened the VirtualKeyboard")
                 UIManager:waitForVSync()
                 UIManager:setDirty(self.show_parent, function()
                     return "ui", self.dimen
@@ -130,7 +128,6 @@ function IconButton:onTapIconButton()
 
             -- If the callback popped up something above us, repaint the whole stack
             if top_widget ~= self.show_parent and self.dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
-                print("IconButton", self, "is below something visible")
                 UIManager:waitForVSync()
                 UIManager:setDirty(self.show_parent, function()
                     return "ui", self.dimen
@@ -139,14 +136,12 @@ function IconButton:onTapIconButton()
             end
 
             -- Otherwise, we can unhighlight it safely
-            print("Unhighlight IconButton", self)
             UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
             UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
         else
             -- Callback closed our parent, we're done
-            print("IconButton", self, "parent is gone")
             return true
         end
         --UIManager:forceRePaint()
