@@ -642,6 +642,24 @@ NOTE: You'll notice a trend on UI elements that are usually shown *over* some ki
 The final parameter (refreshdither) is an optional hint for devices with hardware dithering support that this repaint
 could benefit from dithering (i.e., it contains an image).
 
+As far as the actual lifecycle of a widget goes, the rules are:
+* What you `show`, you `close`.
+* If you know the dimensions of the widget (or simply of the region you want to refresh), you can pass it directly:
+  * to show (as show calls setDirty),
+  * to close (as close will also call setDirty on the remaining dirty and visible widgets,
+    and will also enqueue a refresh based on that if there are dirty widgets).
+* Otherwise, you can use, respectively, the `Show` & `CloseWidget` handlers for that via `setDirty` calls.
+  This can also be useful if *child* widgets have specific needs (e.g., flashing, dithering) that they want to inject in the refresh queue.
+* Remember that events propagate children first (in array order, starting at the top), and that if *any* event handler returns true,
+  the propagation of that specific event for this widget tree stops *immediately*.
+  (This generally means that, unless you know what you're doing (e.g., a widget that will *always* be used as a parent),
+   you generally *don't* want to return true in `Show` or `CloseWidget` handlers).
+* If any widget requires freeing non-Lua resources (e.g., FFI/C), having a `free` method called from its `CloseWidget` handler is ideal:
+  this'll ensure that *any* widget including it will be sure that resources are freed when it (or its parent) are closed.
+* Note that there *is* a `Close` event, but it is *only* broadcast (e.g., sent to every widget in the window stack;
+  the same rules about propagation apply, but only per *window-level widget*) at poweroff/reboot, so,
+  refrain from implementing custom onClose methods if that's not their intended purpose ;).
+
 @usage
 
 UIManager:setDirty(self.widget, "partial")
