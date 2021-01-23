@@ -28,7 +28,7 @@ local used_metadata = {
 
 local function slim(book)
     local slim_book = {}
-    for k, _ in pairs(used_metadata) do
+    for _, k in ipairs(used_metadata) do
         if k == "series" or k == "series_index" then
             slim_book[k] = book[k] or rapidjson.null
         elseif k == "tags" then
@@ -42,7 +42,7 @@ end
 
 -- this is the max file size we attempt to decode using json. For larger
 -- files we want to attempt to manually parse the file to avoid OOM errors
-local MAX_JSON_FILESIZE = 30 * 1024 * 1024
+local MAX_JSON_FILESIZE = 30 * 1000 * 1000
 
 --- find calibre files for a given dir
 local function findCalibreFiles(dir)
