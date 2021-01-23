@@ -982,7 +982,8 @@ function TextBoxWidget:_renderImage(start_row_idx)
                                 y = self.dimen.y,
                                 w = image.width,
                                 h = image.height,
-                            }, true
+                            },
+                            true  -- Request dithering
                         end)
                     end
                 end)
@@ -1000,7 +1001,8 @@ function TextBoxWidget:_renderImage(start_row_idx)
                         y = self.dimen.y,
                         w = image.width,
                         h = image.height,
-                    }, true
+                    },
+                    true  -- Request dithering
                 end)
             end
         end
@@ -1143,7 +1145,8 @@ function TextBoxWidget:onTapImage(arg, ges)
                         y = self.dimen.y,
                         w = image.width,
                         h = image.height,
-                    }, not self.image_show_alt_text
+                    },
+                    not self.image_show_alt_text  -- Request dithering when showing the image
                 end)
                 return true
             end
