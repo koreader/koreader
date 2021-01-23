@@ -112,11 +112,6 @@ function IconButton:onTapIconButton()
         -- If the callback closed our parent (which may not always be the top-level widget, or even *a* window-level widget), we're done
         local top_widget = UIManager:getTopWidget()
         if top_widget == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
-            -- If the button can no longer be found inside a shown widget, abort early
-            if not UIManager:isSubwidgetShown(self) then
-                return true
-            end
-
             -- If the callback popped up the VK, it prevents us from finessing this any further, so repaint the whole stack
             if top_widget == "VirtualKeyboard" then
                 UIManager:waitForVSync()
