@@ -276,6 +276,7 @@ function DictQuickLookup:init()
             self:lookupInputWord(self.lookupword)
         end,
         overlap_align = "right",
+        show_parent = self,
     }
     local lookup_edit_button_w = lookup_edit_button:getSize().w
     -- Nb of results (if set)
