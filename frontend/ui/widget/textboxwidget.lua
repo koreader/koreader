@@ -1080,7 +1080,7 @@ function TextBoxWidget:onCloseWidget()
 end
 
 function TextBoxWidget:free(full)
-    print("TextBoxWidget:free", full, "on", self)
+    --print("TextBoxWidget:free", full, "on", self)
     -- logger.dbg("TextBoxWidget:free called")
     -- We are called with full=false from other methods here whenever
     -- :_renderText() is to be called to render a new page (when scrolling

@@ -426,7 +426,6 @@ function ImageViewer:init()
     self.dithered = true
     UIManager:setDirty(self, function()
         local update_region = self.main_frame.dimen:combine(orig_dimen)
-        logger.dbg("update image region", update_region)
         return "ui", update_region, true
     end)
 end
@@ -581,7 +580,6 @@ function ImageViewer:update()
     self.dithered = true
     UIManager:setDirty(self, function()
         local update_region = self.main_frame.dimen:combine(orig_dimen)
-        logger.dbg("update image region", update_region)
         return "ui", update_region, true
     end)
 end

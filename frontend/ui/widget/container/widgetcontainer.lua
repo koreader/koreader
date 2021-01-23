@@ -121,7 +121,7 @@ end
 function WidgetContainer:free()
     for _, widget in ipairs(self) do
         if widget.free then
-            print("WidgetContainer: Calling free for widget", debug.getinfo(widget.free, "S").short_src, widget, "from", debug.getinfo(self.free, "S").short_src or "N/A", self)
+            --print("WidgetContainer: Calling free for widget", debug.getinfo(widget.free, "S").short_src, widget, "from", debug.getinfo(self.free, "S").short_src, self)
             widget:free()
         end
     end
