@@ -121,7 +121,7 @@ function IconButton:onTapIconButton()
                 return true
             end
 
-            -- If the callback popped up a model above us, repaint the whole stack
+            -- If the callback popped up a modal above us, repaint the whole stack
             if top_widget ~= self.show_parent and top_widget.modal and self.dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
                 UIManager:waitForVSync()
                 UIManager:setDirty(self.show_parent, function()
