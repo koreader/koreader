@@ -70,7 +70,7 @@ function VerticalGroup:resetLayout()
 end
 
 function VerticalGroup:free()
-    print("VerticalGroup:free on", self)
+    --print("VerticalGroup:free on", self)
     self:resetLayout()
     WidgetContainer.free(self)
 end

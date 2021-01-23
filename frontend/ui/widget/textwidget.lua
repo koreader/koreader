@@ -363,7 +363,7 @@ function TextWidget:paintTo(bb, x, y)
 end
 
 function TextWidget:free()
-    print("TextWidget:free on", self)
+    --print("TextWidget:free on", self)
     -- Allow not waiting until Lua gc() to cleanup C XText malloc'ed stuff
     if self._xtext then
         self._xtext:free()
