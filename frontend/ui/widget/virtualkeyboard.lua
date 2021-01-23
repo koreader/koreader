@@ -696,7 +696,7 @@ function VirtualKeyboard:init()
     self.max_layer = keyboard.max_layer
     self:initLayer(self.keyboard_layer)
     self.tap_interval_override = G_reader_settings:readSetting("ges_tap_interval_on_keyboard") or 0
-    if Device:hasDPad() then
+    if Device:hasDPad() and not Device:hasKeyboard() then
         self.key_events.PressKey = { {"Press"}, doc = "select key" }
     end
     if Device:hasKeys() then
@@ -734,6 +734,19 @@ end
 function VirtualKeyboard:onPressKey()
     self:getFocusItem():handleEvent(Event:new("TapSelect"))
     return true
+end
+
+function VirtualKeyboard:onFocusMove(args)
+
+    -- for example devices with just a DPad - defer to parent to
+    -- move focus among keys
+    if not Device:hasKeyboard() then
+        FocusManager.onFocusMove(self, args)
+        return false
+    end
+
+    -- no focus more - move within the text field
+    return false
 end
 
 function VirtualKeyboard:_refresh(want_flash, fullscreen)
