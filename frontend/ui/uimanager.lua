@@ -660,6 +660,17 @@ As far as the actual lifecycle of a widget goes, the rules are:
   the same rules about propagation apply, but only per *window-level widget*) at poweroff/reboot, so,
   refrain from implementing custom onClose methods if that's not their intended purpose ;).
 
+On the subject of widgets and child widgets,
+you might have noticed an unspoken convention across the codebase of widgets having a field called `show_parent`.
+Since handling this is entirely at the programmer's behest, here's how we usually use it:
+Basically, we cascade a field named `show_parent` to every child widget that matter
+(e.g., those that serve an UI purpose, as opposed to, say, a container).
+This ensures that every subwidget can reference its actual parent
+(ideally, all the way to the window-level widget it belongs to, i.e., the one that was passed to UIManager:show, hence the name ;)),
+to, among other things, flag the right widget as setDirty (c.f., those pesky debug warnings when that's done wrong ;p) when they want to request a repaint.
+This is why you often see stuff doing, when instantiating a new widget, FancyWidget:new{ show_parent = self.show_parent or self };
+meaning, if I'm already a subwidget, cascade my parent, otherwise, it means I'm a window-level widget, so cascade myself as that widget's parent ;).
+
 @usage
 
 UIManager:setDirty(self.widget, "partial")
