@@ -224,7 +224,7 @@ function ImageViewer:init()
     -- height available to our image
     self.img_container_h = self.height - self.button_table_size
 
-    -- Iniit the title bar and its components no matter what
+    -- Init the title bar and its components no matter what
     -- Toggler (white arrow) for caption, on the left of title
     local ctoggler_text
     if self.caption_visible then
