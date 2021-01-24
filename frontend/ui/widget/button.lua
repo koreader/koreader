@@ -314,7 +314,6 @@ function Button:onTapSelectButton()
                 -- This branch will mainly be taken by stuff that pops up the virtual keyboard (e.g., TextEditor), where said keyboard will always be top-level,
                 -- hence the exception, because we want to catch modals *over* all that ;).
                 if top_widget ~= self.show_parent and top_widget ~= "VirtualKeyboard" and top_widget.modal and self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
-                    -- This branch will mainly be taken by stuff that pops up the virtual keyboard (e.g., TextEditor), where said keyboard will always be top-level,
                     -- Much like in TouchMenu, the fact that the two intersect means we have no choice but to repaint the full stack to avoid half-painted widgets...
                     UIManager:waitForVSync()
                     UIManager:setDirty(self.show_parent, function()
