@@ -302,8 +302,8 @@ function DoubleSpinWidget:update()
                 end)
             else
                 -- This should only really be necessary for the up/down buttons here,
-                -- because they repaint the center value button, unlike sauid button,
-                -- which just pops the VK.
+                -- because they repaint the center value button & text, unlike said button,
+                -- which just pops up the VK.
                 -- On the upside, we shouldn't need to delay anything without flash_ui ;).
                 UIManager:setDirty("all", function()
                     return "ui", self.movable.dimen
