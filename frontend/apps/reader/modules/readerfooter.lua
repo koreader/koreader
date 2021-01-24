@@ -2166,7 +2166,7 @@ function ReaderFooter:refreshFooter(refresh, signal)
 end
 
 function ReaderFooter:onResume()
-    self:onUpdateFooter()
+    self:onUpdateFooter(true)
     if self.settings.auto_refresh_time then
         self:setupAutoRefreshTime()
     end
