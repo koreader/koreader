@@ -40,7 +40,6 @@ function ButtonTable:init()
     else
         self:addHorizontalSep(false, false, true)
     end
-    self.button_count = 0
     local row_cnt = #self.buttons
     for i = 1, row_cnt do
         local buttons_layout_line = {}
@@ -70,7 +69,6 @@ function ButtonTable:init()
             if btn_entry.id then
                 self.button_by_id[btn_entry.id] = button
             end
-            self.button_count = self.button_count + 1
             local button_dim = button:getSize()
             local vertical_sep = LineWidget:new{
                 background = Blitbuffer.COLOR_GRAY,
