@@ -80,7 +80,7 @@ end
 function SpinWidget:update()
     -- This picker_update_callback will be redefined later.
     -- It's a hack to restore transparency after a Button unhighlight in NumberPicker,
-    -- in case the MovableContainer was actually made transparent, and Button highlights are enabled.
+    -- in case the MovableContainer was actually made transparent.
     local picker_update_callback = function() end
     local value_widget = NumberPickerWidget:new{
         show_parent = self,
@@ -243,15 +243,24 @@ function SpinWidget:update()
         return "ui", self.spin_frame.dimen
     end)
     picker_update_callback = function()
-        -- If we're actually transparent, and flash_ui is enabled, force an alpha-aware repaint.
-        -- Otherwise, nothing that could screw with our alpha will have been repainted, so we don't have to do anything.
-        if self.movable.alpha and G_reader_settings:nilOrTrue("flash_ui") then
-            -- It's delayed to the next tick to actually catch a Button unhighlight.
-            UIManager:nextTick(function()
+        -- If we're actually transparent, force an alpha-aware repaint.
+        if self.movable.alpha then
+            if G_reader_settings:nilOrTrue("flash_ui") then
+                -- It's delayed to the next tick to actually catch a Button unhighlight.
+                UIManager:nextTick(function()
+                    UIManager:setDirty("all", function()
+                        return "ui", self.movable.dimen
+                    end)
+                end)
+            else
+                -- This should only really be necessary for the up/down buttons here,
+                -- because they repaint the center value button, unlike sauid button,
+                -- which just pops the VK.
+                -- On the upside, we shouldn't need to delay anything without flash_ui ;).
                 UIManager:setDirty("all", function()
                     return "ui", self.movable.dimen
                 end)
-            end)
+            end
         end
     end
 end
