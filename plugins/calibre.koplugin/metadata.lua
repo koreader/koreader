@@ -8,33 +8,41 @@ of storing it.
 @module koplugin.calibre.metadata
 --]]--
 
+local lfs = require("libs/libkoreader-lfs")
 local rapidjson = require("rapidjson")
 local logger = require("logger")
+local parser = require("parser")
 local util = require("util")
 
-local unused_metadata = {
-    "application_id",
-    "author_link_map",
-    "author_sort",
-    "author_sort_map",
-    "book_producer",
-    "comments",
-    "cover",
-    "db_id",
-    "identifiers",
-    "languages",
-    "pubdate",
-    "publication_type",
-    "publisher",
-    "rating",
-    "rights",
-    "thumbnail",
-    "timestamp",
-    "title_sort",
-    "user_categories",
-    "user_metadata",
-    "_series_sort_",
+local used_metadata = {
+    "uuid",
+    "lpath",
+    "last_modified",
+    "size",
+    "title",
+    "authors",
+    "tags",
+    "series",
+    "series_index"
 }
+
+local function slim(book)
+    local slim_book = {}
+    for _, k in ipairs(used_metadata) do
+        if k == "series" or k == "series_index" then
+            slim_book[k] = book[k] or rapidjson.null
+        elseif k == "tags" then
+            slim_book[k] = book[k] or {}
+        else
+            slim_book[k] = book[k]
+        end
+    end
+    return slim_book
+end
+
+-- this is the max file size we attempt to decode using json. For larger
+-- files we want to attempt to manually parse the file to avoid OOM errors
+local MAX_JSON_FILESIZE = 30 * 1000 * 1000
 
 --- find calibre files for a given dir
 local function findCalibreFiles(dir)
@@ -90,12 +98,28 @@ end
 
 -- loads books' metadata from JSON file
 function CalibreMetadata:loadBookList()
-    local json, err = rapidjson.load(self.metadata)
-    if not json then
-        logger.warn("Unable to load book list from JSON file:", self.metadata, err)
+    local attr = lfs.attributes(self.metadata)
+    if not attr then
+        logger.warn("Unable to get file attributes from JSON file:", self.metadata)
         return {}
     end
-    return json
+    local valid = attr.mode == "file" and attr.size > 0
+    if not valid then
+        logger.warn("File is invalid", self.metadata)
+        return {}
+    end
+    local books, err
+    if attr.size > MAX_JSON_FILESIZE then
+        books, err = parser.parseFile(self.metadata)
+    else
+        books, err = rapidjson.load(self.metadata)
+    end
+    if not books then
+        logger.warn(string.format("Unable to load library from json file %s: \n%s",
+            self.metadata, err))
+        return {}
+    end
+    return books
 end
 
 -- saves books' metadata to JSON file
@@ -114,11 +138,8 @@ function CalibreMetadata:saveBookList()
 end
 
 -- add a book to our books table
-function CalibreMetadata:addBook(metadata)
-    for _, key in pairs(unused_metadata) do
-        metadata[key] = nil
-    end
-    table.insert(self.books, #self.books + 1, metadata)
+function CalibreMetadata:addBook(book)
+    table.insert(self.books, #self.books + 1, slim(book))
 end
 
 -- remove a book from our books table
@@ -180,13 +201,9 @@ end
 
 -- removes unused metadata from books
 function CalibreMetadata:cleanUnused()
-    local slim_books = self.books
-    for index, _ in ipairs(slim_books) do
-        for _, key in pairs(unused_metadata) do
-            slim_books[index][key] = nil
-        end
+    for index, book in ipairs(self.books) do
+        self.books[index] = slim(book)
     end
-    self.books = slim_books
     self:saveBookList()
 end
 
@@ -238,14 +255,17 @@ function CalibreMetadata:init(dir, is_search)
         return false
     end
 
-    local deleted_count = self:prune()
-    local elapsed = socket.gettime() - start
-    logger.info(string.format(
-        "calibre info loaded from disk in %f milliseconds: %d books. %d pruned",
-        elapsed * 1000, #self.books, deleted_count))
-    if not is_search then
+    local msg
+    if is_search then
+        msg = string.format("(search) in %f milliseconds: %d books",
+            (socket.gettime() - start) * 1000, #self.books)
+    else
+        local deleted_count = self:prune()
         self:cleanUnused()
+        msg = string.format("in %f milliseconds: %d books. %d pruned",
+            (socket.gettime() - start) * 1000, #self.books, deleted_count)
     end
+    logger.info(string.format("calibre info loaded from disk %s", msg))
     return true
 end
 
