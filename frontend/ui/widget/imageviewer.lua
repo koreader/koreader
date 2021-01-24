@@ -862,7 +862,7 @@ function ImageViewer:onAnyKeyPressed()
 end
 
 function ImageViewer:onCloseWidget()
-    -- Our ImageWidget (self._image_wg) is a proper child widget, so it'll receive this event,
+    -- Our ImageWidget (self._image_wg) is always a proper child widget, so it'll receive this event,
     -- and attempt to free its resources accordingly.
     -- But, if it didn't have to touch the original BB (self.image) passed to ImageViewer (e.g., no scaling needed),
     -- it will *re-use* self.image, and flag it as non-disposable, meaning it will not have been free'd earlier.
@@ -877,6 +877,23 @@ function ImageViewer:onCloseWidget()
         logger.dbg("ImageViewer:onCloseWidget: free self._images_list", self._images_list)
         self._images_list:free()
     end
+
+    -- Those, on the other hand, are always initialized, but may not actually be in our widget tree right now,
+    -- depending on what we needed to show, so they might not get sent a CloseWidget event.
+    -- They (and their FFI/C resources) would eventually get released by the GC, but let's be pedantic ;).
+    if not self.with_title_bar then
+        self.captioned_title_bar:free()
+    end
+    if not self.caption then
+        self.ctoggler:free()
+    end
+    if not self._images_list then
+        self.progress_container:free()
+    end
+    if not self.buttons_visible then
+        self.button_container:free()
+    end
+
     -- NOTE: Assume there's no image beneath us, so, no dithering request
     UIManager:setDirty(nil, function()
         return "flashui", self.main_frame.dimen
