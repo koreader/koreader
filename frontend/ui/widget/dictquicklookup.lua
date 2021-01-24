@@ -769,9 +769,9 @@ function DictQuickLookup:getHtmlDictionaryCss()
 end
 
 function DictQuickLookup:update()
-    -- Free our previous widget and subwidgets' resources (especially
-    -- definitions' TextBoxWidget bb, HtmlBoxWidget bb and MuPDF instance,
-    -- and scheduled image_update_action)
+    -- self[1] is a WidgetContainer, its free method will call free on each of its child widget with a free method.
+    -- Here, that's the definitions' TextBoxWidget & HtmlBoxWidget,
+    -- to release their bb, MuPDF instance, and scheduled image_update_action.
     self[1]:free()
 
     -- Update TextWidgets
