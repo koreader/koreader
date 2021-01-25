@@ -42,8 +42,12 @@ function ReaderToc:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function ReaderToc:cleanUpTocTitle(title)
-    return (title:gsub("\13", ""))
+function ReaderToc:cleanUpTocTitle(title, replace_empty)
+    title = title:gsub("\13", "")
+    if replace_empty and title:match("^%s*$") then
+        title = "\xE2\x80\x93" -- U+2013 En-Dash
+    end
+    return title
 end
 
 function ReaderToc:onSetDimensions(dimen)
@@ -523,7 +527,7 @@ function ReaderToc:onShowToc()
     -- build menu items
     if #self.toc > 0 and not self.toc[1].text then
         for _,v in ipairs(self.toc) do
-            v.text = self.toc_indent:rep(v.depth-1)..self:cleanUpTocTitle(v.title)
+            v.text = self.toc_indent:rep(v.depth-1)..self:cleanUpTocTitle(v.title, true)
             v.mandatory = v.page
             if self.ui.document:hasHiddenFlows() then
                 local flow = self.ui.document:getPageFlow(v.page)
