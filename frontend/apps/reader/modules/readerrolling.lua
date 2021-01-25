@@ -41,8 +41,7 @@ local band = bit.band
 --]]
 local ReaderRolling = InputContainer:new{
     pan_rate = 30,  -- default 30 ops, will be adjusted in readerui
-    old_doc_height = nil,
-    old_page = nil,
+    rendering_hash = 0,
     current_pos = 0,
     inverse_reading_order = nil,
     -- only used for page view mode
@@ -119,9 +118,8 @@ function ReaderRolling:init()
     end
 
     table.insert(self.ui.postInitCallback, function()
+        self.rendering_hash = self.ui.document:getDocumentRenderingHash()
         self.ui.document:_readMetadata()
-        self.old_doc_height = self.ui.document.info.doc_height
-        self.old_page = self.ui.document.info.number_of_pages
     end)
     table.insert(self.ui.postReaderCallback, function()
         self:updatePos()
@@ -497,7 +495,7 @@ end
 
 function ReaderRolling:getLastPercent()
     if self.view.view_mode == "page" then
-        return self.current_page / self.old_page
+        return self.current_page / self.ui.document.info.number_of_pages
     else
         --- @fixme the calculated percent is not accurate in "scroll" mode.
         return self.ui.document:getPosFromXPointer(
@@ -816,7 +814,6 @@ function ReaderRolling:onPanning(args, _)
 end
 
 function ReaderRolling:onZoom()
-    --- @todo Re-read doc_height info after font or lineheight changes.  05.06 2012 (houqp)
     self:updatePos()
 end
 
@@ -849,24 +846,23 @@ function ReaderRolling:updatePos()
         -- document closed since we were scheduleIn'ed
         return
     end
-    -- reread document height
-    self.ui.document:_readMetadata()
-    -- update self.current_pos if the height of document has been changed.
-    local new_height = self.ui.document.info.doc_height
-    local new_page = self.ui.document.info.number_of_pages
-    if self.old_doc_height ~= new_height or self.old_page ~= new_page then
+    -- Check if the document has been re-rendered
+    local new_rendering_hash = self.ui.document:getDocumentRenderingHash()
+    if new_rendering_hash ~= self.rendering_hash then
+        logger.dbg("rendering hash changed:", self.rendering_hash, ">", new_rendering_hash)
+        self.rendering_hash = new_rendering_hash
+        -- A few things like page numbers may have changed
+        self.ui.document:_readMetadata() -- get updated document height and nb of pages
         if self.hide_nonlinear_flows then
             self.ui.document:cacheFlows()
         end
         self:_gotoXPointer(self.xpointer)
-        self.old_doc_height = new_height
-        self.old_page = new_page
         self.ui:handleEvent(Event:new("UpdateToc"))
     end
     self:updateTopStatusBarMarkers()
     UIManager:setDirty(self.view.dialog, "partial")
     -- Allow for the new rendering to be shown before possibly showing
-    -- the "Styles have changes..." ConfirmBox so the user can decide
+    -- the "Styles have changed..." ConfirmBox so the user can decide
     -- if it is really needed
     UIManager:scheduleIn(0.1, function ()
         self:onCheckDomStyleCoherence()
@@ -877,9 +873,8 @@ end
     switching screen mode should not change current page number
 --]]
 function ReaderRolling:onChangeViewMode()
+    self.rendering_hash = self.ui.document:getDocumentRenderingHash()
     self.ui.document:_readMetadata()
-    self.old_doc_height = self.ui.document.info.doc_height
-    self.old_page = self.ui.document.info.number_of_pages
     self.ui:handleEvent(Event:new("UpdateToc"))
     if self.xpointer then
         self:_gotoXPointer(self.xpointer)
