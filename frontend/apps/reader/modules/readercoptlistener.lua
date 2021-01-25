@@ -40,12 +40,18 @@ function ReaderCoptListener:onReadSettings(config)
     self.ui.document._document:setIntProperty("window.status.battery.percent", self.battery_percent)
     self.ui.document._document:setIntProperty("window.status.pos.percent", self.reading_percent)
 
+    self:onTimeFormatChanged()
+
     local status_line = config:readSetting("copt_status_line") or G_reader_settings:readSetting("copt_status_line") or 1
     self.ui:handleEvent(Event:new("SetStatusLine", status_line, true))
 end
 
 function ReaderCoptListener:onSetFontSize(font_size)
     self.document.configurable.font_size = font_size
+end
+
+function ReaderCoptListener:onTimeFormatChanged()
+    self.ui.document._document:setIntProperty("window.status.clock.12hours", G_reader_settings:isTrue("twelve_hour_clock") and 1 or 0)
 end
 
 function ReaderCoptListener:setAndSave(setting, property, value)
