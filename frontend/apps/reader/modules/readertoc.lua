@@ -654,7 +654,11 @@ function ReaderToc:onShowToc()
         else
             toc_menu:close_callback()
             self.ui.link:addCurrentLocationToStack()
-            self.ui:handleEvent(Event:new("GotoPage", item.page))
+            if item.xpointer then
+                self.ui:handleEvent(Event:new("GotoXPointer", item.xpointer, item.xpointer))
+            else
+                self.ui:handleEvent(Event:new("GotoPage", item.page))
+            end
         end
     end
 
