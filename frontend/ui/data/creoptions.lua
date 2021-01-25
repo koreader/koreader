@@ -33,7 +33,7 @@ local CreOptions = {
             },
             {
                 name = "visible_pages",
-                name_text = _("Dual Pages"),
+                name_text = _("Two Columns"),
                 toggle = {_("off"), _("on")},
                 values = {1, 2},
                 default_value = 1,
@@ -55,8 +55,8 @@ local CreOptions = {
                         -- and Device.screen:getScreenMode() == "landscape"
                 end,
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[In landscape mode, you can choose to display one or two pages of the book on the screen.
-Note that this may not be ensured under some conditions: in scroll mode, when a very big font size is used, or on devices with a very low aspect ratio.]]),
+                help_text = _([[Render the document on half the screen width and display two pages at once with a single page number. This makes it look like two columns.
+This is disabled in scroll mode. Switching from page mode with two columns to scroll mode will cause the document to be re-rendered.]]),
             },
         }
     },

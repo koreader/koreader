@@ -873,16 +873,20 @@ function ReaderHighlight:onHoldPan(_, ges)
                 elseif self.hold_pos.x <= screen_half_width and is_in_next_page_corner then
                     return true
                 end
-                local cur_page = self.ui.document:getCurrentPage()
+                -- To be able to browse half-page when 2 visible pages as 1 page number,
+                -- we must work with internal page numbers
+                local cur_page = self.ui.document:getCurrentPage(true)
                 local restore_page_mode_xpointer = self.ui.document:getXPointer() -- top of current page
+                self.ui.document.no_page_sync = true -- avoid CreDocument:drawCurrentViewByPage() to resync page
                 self.restore_page_mode_func = function()
+                    self.ui.document.no_page_sync = nil
                     self.ui.rolling:onGotoXPointer(restore_page_mode_xpointer, self.selected_text_start_xpointer)
                 end
                 if is_in_next_page_corner then -- bottom right corner in LTR UI
-                    self.ui.rolling:_gotoPage(cur_page + 1, true) -- no odd left page enforcement
+                    self.ui.rolling:_gotoPage(cur_page + 1, true, true) -- no odd left page enforcement
                     self.hold_pos.x = self.hold_pos.x - screen_half_width
                 else -- top left corner in RTL UI
-                    self.ui.rolling:_gotoPage(cur_page - 1, true) -- no odd left page enforcement
+                    self.ui.rolling:_gotoPage(cur_page - 1, true, true) -- no odd left page enforcement
                     self.hold_pos.x = self.hold_pos.x + screen_half_width
                 end
                 UIManager:setDirty(self.dialog, "ui")
