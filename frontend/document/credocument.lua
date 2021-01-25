@@ -200,6 +200,16 @@ function CreDocument:setupDefaultView()
     self._document:readDefaults()
     logger.dbg("CreDocument: applied cr3.ini default settings.")
 
+    -- Disable crengine image scaling options (we prefer scaling them via crengine.render.dpi)
+    self._document:setIntProperty("crengine.image.scaling.zoomin.block.mode", 0)
+    self._document:setIntProperty("crengine.image.scaling.zoomin.block.scale", 1)
+    self._document:setIntProperty("crengine.image.scaling.zoomin.inline.mode", 0)
+    self._document:setIntProperty("crengine.image.scaling.zoomin.inline.scale", 1)
+    self._document:setIntProperty("crengine.image.scaling.zoomout.block.mode", 0)
+    self._document:setIntProperty("crengine.image.scaling.zoomout.block.scale", 1)
+    self._document:setIntProperty("crengine.image.scaling.zoomout.inline.mode", 0)
+    self._document:setIntProperty("crengine.image.scaling.zoomout.inline.scale", 1)
+
     -- set fallback font faces (this was formerly done in :init(), but it
     -- affects crengine calcGlobalSettingsHash() and would invalidate the
     -- cache from the main currently being read document when we just
