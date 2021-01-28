@@ -54,7 +54,7 @@ end
 
 function OPDSCatalog:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "partial", self[1].dimen
+        return "ui", self[1].dimen
     end)
 end
 

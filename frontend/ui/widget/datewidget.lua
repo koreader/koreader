@@ -56,6 +56,8 @@ function DateWidget:init()
             },
         }
     end
+
+    -- Actually the widget layout
     self:update()
 end
 
@@ -206,7 +208,7 @@ end
 
 function DateWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "partial", self.date_frame.dimen
+        return "ui", self.date_frame.dimen
     end)
     return true
 end

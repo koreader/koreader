@@ -56,8 +56,8 @@ function ButtonTable:init()
                 callback = btn_entry.callback,
                 hold_callback = btn_entry.hold_callback,
                 vsync = btn_entry.vsync,
-                width = (self.width - sizer_space)/column_cnt,
-                max_width = (self.width - sizer_space)/column_cnt - 2*self.sep_width - 2*self.padding,
+                width = math.ceil((self.width - sizer_space)/column_cnt),
+                max_width = math.ceil((self.width - sizer_space)/column_cnt - 2*self.sep_width - 2*self.padding),
                 bordersize = 0,
                 margin = 0,
                 padding = Size.padding.buttontable, -- a bit taller than standalone buttons, for easier tap
@@ -88,7 +88,7 @@ function ButtonTable:init()
             self:addHorizontalSep(true, true, true)
         end
         if column_cnt > 0 then
-            --Only add line that are not separator to the focusmanager
+            -- Only add lines that are not separator to the focusmanager
             table.insert(self.buttons_layout, buttons_layout_line)
         end
     end -- end for each button line

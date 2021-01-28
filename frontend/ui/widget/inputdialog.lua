@@ -491,7 +491,7 @@ end
 function InputDialog:onCloseWidget()
     self:onClose()
     UIManager:setDirty(nil, self.fullscreen and "full" or function()
-        return "partial", self.dialog_frame.dimen
+        return "ui", self.dialog_frame.dimen
     end)
 end
 

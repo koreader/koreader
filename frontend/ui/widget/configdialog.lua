@@ -868,6 +868,9 @@ function ConfigDialog:update()
             panel_index = self.panel_index,
         }
     end
+    if self.config_panel then
+        self.config_panel:free()
+    end
     self.config_panel = ConfigPanel:new{
         index = self.panel_index,
         config_dialog = self,

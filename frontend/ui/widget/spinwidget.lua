@@ -72,14 +72,15 @@ function SpinWidget:init()
             },
          }
     end
+
+    -- Actually the widget layout
     self:update()
 end
 
 function SpinWidget:update()
-    -- This picker_update_callback will be redefined later. It is needed
-    -- so we can have our MovableContainer repainted on NumberPickerWidgets
-    -- update. It is needed if we have enabled transparency on MovableContainer,
-    -- otherwise the NumberPicker area gets opaque on update.
+    -- This picker_update_callback will be redefined later.
+    -- It's a hack to restore transparency after a Button unhighlight in NumberPicker,
+    -- in case the MovableContainer was actually made transparent.
     local picker_update_callback = function() end
     local value_widget = NumberPickerWidget:new{
         show_parent = self,
@@ -242,9 +243,25 @@ function SpinWidget:update()
         return "ui", self.spin_frame.dimen
     end)
     picker_update_callback = function()
-        UIManager:setDirty("all", function()
-            return "ui", self.movable.dimen
-        end)
+        -- If we're actually transparent, force an alpha-aware repaint.
+        if self.movable.alpha then
+            if G_reader_settings:nilOrTrue("flash_ui") then
+                -- It's delayed to the next tick to actually catch a Button unhighlight.
+                UIManager:nextTick(function()
+                    UIManager:setDirty("all", function()
+                        return "ui", self.movable.dimen
+                    end)
+                end)
+            else
+                -- This should only really be necessary for the up/down buttons here,
+                -- because they repaint the center value button & text, unlike said button,
+                -- which just pops up the VK.
+                -- On the upside, we shouldn't need to delay anything without flash_ui ;).
+                UIManager:setDirty("all", function()
+                    return "ui", self.movable.dimen
+                end)
+            end
+        end
     end
 end
 
@@ -255,7 +272,7 @@ end
 
 function SpinWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "partial", self.spin_frame.dimen
+        return "ui", self.spin_frame.dimen
     end)
     return true
 end

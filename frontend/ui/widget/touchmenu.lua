@@ -186,9 +186,16 @@ function TouchMenuItem:onTapSelect(arg, ges)
                 return true
             end
 
-            -- If the callback opened the Virtual Keyboard, we're done
+            -- If the callback opened the Virtual Keyboard, it gets trickier
             -- (this is for TextEditor, Terminal & co)
             if top_widget == "VirtualKeyboard" then
+                -- Unfortunately, we can't really tell full-screen widgets (e.g., TextEditor, Terminal) apart from
+                -- stuff that might just pop the keyboard for a TextInput box...
+                -- So, a full fenced redraw it is...
+                UIManager:waitForVSync()
+                UIManager:setDirty(self.show_parent, function()
+                    return "ui", highlight_dimen
+                end)
                 return true
             end
 

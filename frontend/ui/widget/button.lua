@@ -29,6 +29,7 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local Screen = Device.screen
+local logger = require("logger")
 
 local Button = InputContainer:new{
     text = nil, -- mandatory
@@ -142,15 +143,25 @@ function Button:init()
 end
 
 function Button:setText(text, width)
-    self.text = text
-    self.width = width
-    self:init()
+    if text ~= self.text then
+        -- Don't trash the frame if we're already a text button, and we're keeping the geometry intact
+        if self.text and width and width == self.width then
+            self.text = text
+            self.label_widget:setText(text)
+        else
+            self.text = text
+            self.width = width
+            self:init()
+        end
+    end
 end
 
 function Button:setIcon(icon)
-    self.icon = icon
-    self.width = nil
-    self:init()
+    if icon ~= self.icon then
+        self.icon = icon
+        self.width = nil
+        self:init()
+    end
 end
 
 function Button:onFocus()
@@ -227,6 +238,9 @@ function Button:onTapSelectButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
+            -- We need to keep track of whether we actually flipped the frame's invert flag ourselves,
+            -- to handle the rounded corners shenanigan in the post-callback invert check...
+            local inverted = false
             -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
             if self.text then
                 -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
@@ -239,15 +253,17 @@ function Button:onTapSelectButton()
                     self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
                     -- We do *NOT* set the invert flag, because it just adds an invertRect step at the end of the paintTo process,
                     -- and we've already taken care of inversion in a way that won't mangle the rounded corners.
+                    -- The "inverted" local flag allows us to fudge the "did callback invert the frame?" check for these buttons,
+                    -- otherwise setting the invert flag here breaks the highlight for vsync buttons...
                 else
                     self[1].invert = true
+                    inverted = true
                 end
 
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-                -- But do make sure the invert flag is set in both cases, mainly for the early return check below
-                self[1].invert = true
             else
                 self[1].invert = true
+                inverted = true
                 UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             end
             UIManager:setDirty(nil, function()
@@ -268,7 +284,7 @@ function Button:onTapSelectButton()
                                          -- because that would have a chance to noticeably delay it until the unhighlight.
             end
 
-            if not self[1] or not self[1].invert or not self[1].dimen then
+            if not self[1] or (inverted and not self[1].invert) or not self[1].dimen then
                 -- If the frame widget no longer exists (destroyed, re-init'ed by setText(), or is no longer inverted: we have nothing to invert back
                 -- NOTE: This cannot catch orphaned Button instances, c.f., the isSubwidgetShown(self) check below for that.
                 return true
@@ -288,13 +304,15 @@ function Button:onTapSelectButton()
             local top_widget = UIManager:getTopWidget()
             if top_widget == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
                 -- If the button can no longer be found inside a shown widget, abort early
-                -- (this allows us to catch widgets that instanciate *new* Buttons on every update... (e.g., ButtonTable) :()
+                -- (this allows us to catch widgets that instanciate *new* Buttons on every update... (e.g., some ButtonTable users) :()
                 if not UIManager:isSubwidgetShown(self) then
                     return true
                 end
 
                 -- If our parent is no longer the toplevel widget, toplevel is now a true modal, and our highlight would clash with that modal's region,
                 -- we have no other choice than repainting the full stack...
+                -- This branch will mainly be taken by stuff that pops up the virtual keyboard (e.g., TextEditor), where said keyboard will always be top-level,
+                -- hence the exception, because we want to catch modals *over* all that ;).
                 if top_widget ~= self.show_parent and top_widget ~= "VirtualKeyboard" and top_widget.modal and self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
                     -- Much like in TouchMenu, the fact that the two intersect means we have no choice but to repaint the full stack to avoid half-painted widgets...
                     UIManager:waitForVSync()
@@ -319,8 +337,7 @@ function Button:onTapSelectButton()
                 end)
                 --UIManager:forceRePaint() -- Ensures the unhighlight happens now, instead of potentially waiting and having it batched with something else.
             else
-                -- This branch will mainly be taken by stuff that pops up the virtual keyboard (e.g., TextEditor), where said keyboard will always be top-level,
-                -- (hence the exception in the check above).
+                -- Callback closed our parent, we're done
                 return true
             end
         end
@@ -332,6 +349,22 @@ function Button:onTapSelectButton()
     if self.readonly ~= true then
         return true
     end
+end
+
+-- Allow repainting and refreshing *a* specific Button, instead of the full screen/parent stack
+function Button:refresh()
+    -- We can only be called on a Button that's already been painted once, which allows us to know where we're positioned,
+    -- thanks to the frame's geometry.
+    -- e.g., right after a setText or setIcon is a no-go, as those kill the frame.
+    --       (Although, setText, if called with the current width, will conserve the frame).
+    if not self[1].dimen then
+        logger.dbg("Button:", self, "attempted a repaint in an unpainted frame!")
+        return
+    end
+    UIManager:widgetRepaint(self[1], self[1].dimen.x, self.dimen.y)
+    UIManager:setDirty(nil, function()
+        return self.enabled and "fast" or "ui", self[1].dimen
+    end)
 end
 
 function Button:onHoldSelectButton()

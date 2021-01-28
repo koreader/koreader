@@ -488,13 +488,47 @@ function MenuItem:onTapSelect(arg, ges)
         --UIManager:waitForVSync()
 
         self[1].invert = false
-        -- We assume a tap anywhere updates the full menu, so, forgo this, much like in TouchMenu
-        --[[
-        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-        UIManager:setDirty(nil, function()
-            return "ui", self[1].dimen
-        end)
-        --]]
+
+        -- Most Menu entries will actually update the full menu, but they may also pop up a few various things,
+        -- so, pilfer a few heuristics from TouchMenu...
+        local top_widget = UIManager:getTopWidget()
+        -- If the callback opened a full-screen widget, we're done
+        if top_widget.covers_fullscreen then
+            return true
+        end
+
+        -- If we're still on top, we're done, as the full list of items has probably been updated by the callback
+        if top_widget == self.show_parent then
+            return true
+        end
+
+        -- If the callback opened the Virtual Keyboard, it gets trickier
+        if top_widget == "VirtualKeyboard" then
+            -- Unfortunately, we can't really tell full-screen widgets apart from
+            -- stuff that might just pop the keyboard for a TextInput box...
+            -- So, a full fenced redraw it is...
+            UIManager:waitForVSync()
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
+            return true
+        end
+
+        -- If a modal was opened outside of our highlight region, we can unhighlight safely
+        if self[1].dimen:notIntersectWith(UIManager:getPreviousRefreshRegion()) then
+            UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:setDirty(nil, function()
+                return "ui", self[1].dimen
+            end)
+        else
+            -- That leaves modals that might have been displayed on top of the highlighted menu entry, in which case,
+            -- we can't take any shortcuts, as it would invert/paint *over* the popop.
+            -- Instead, fence the callback to avoid races, and repaint the *full* widget stack properly.
+            UIManager:waitForVSync()
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
+        end
         --UIManager:forceRePaint()
     end
     return true
@@ -518,10 +552,25 @@ function MenuItem:onHoldSelect(arg, ges)
         --UIManager:waitForVSync()
 
         self[1].invert = false
-        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-        UIManager:setDirty(nil, function()
-            return "ui", self[1].dimen
-        end)
+
+        -- Same idea as for tap, minus the various things that make no sense for a hold callback...
+        local top_widget = UIManager:getTopWidget()
+
+        -- If we're still on top, or a modal was opened outside of our highlight region, we can unhighlight safely
+        if top_widget == self.show_parent or self[1].dimen:notIntersectWith(UIManager:getPreviousRefreshRegion()) then
+            UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:setDirty(nil, function()
+                return "ui", self[1].dimen
+            end)
+        else
+            -- That leaves modals that might have been displayed on top of the highlighted menu entry, in which case,
+            -- we can't take any shortcuts, as it would invert/paint *over* the popop.
+            -- Instead, fence the callback to avoid races, and repaint the *full* widget stack properly.
+            UIManager:waitForVSync()
+            UIManager:setDirty(self.show_parent, function()
+                return "ui", self[1].dimen
+            end)
+        end
         --UIManager:forceRePaint()
     end
     return true
@@ -949,8 +998,8 @@ function Menu:onCloseWidget()
     -- we cannot refresh regionally using the dimen field
     -- because some menus without menu title use VerticalGroup to include
     -- a text widget which is not calculated into the dimen.
-    -- For example, it's a dirty hack to use two menus(one this menu and one
-    -- touch menu) in the filemanager in order to capture tap gesture to popup
+    -- For example, it's a dirty hack to use two menus (one being this menu and
+    -- the other touch menu) in the filemanager in order to capture tap gesture to popup
     -- the filemanager menu.
     -- NOTE: For the same reason, don't make it flash,
     --       because that'll trigger when we close the FM and open a book...

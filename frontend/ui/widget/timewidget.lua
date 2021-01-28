@@ -56,6 +56,8 @@ function TimeWidget:init()
             },
          }
     end
+
+    -- Actually the widget layout
     self:update()
 end
 
@@ -191,7 +193,7 @@ end
 
 function TimeWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "partial", self.time_frame.dimen
+        return "ui", self.time_frame.dimen
     end)
     return true
 end

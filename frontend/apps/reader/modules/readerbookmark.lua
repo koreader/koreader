@@ -182,7 +182,7 @@ function ReaderBookmark:onToggleBookmark()
         pn_or_xp = self.ui.document:getXPointer()
     end
     self:toggleBookmark(pn_or_xp)
-    self.view.footer:onUpdateFooter(true)
+    self.view.footer:onUpdateFooter(self.view.footer_visible)
     self.ui:handleEvent(Event:new("SetDogearVisibility",
                                   not self.view.dogear_visible))
     UIManager:setDirty(self.view.dialog, "ui")
@@ -426,7 +426,7 @@ function ReaderBookmark:addBookmark(item)
         end
     end
     table.insert(self.bookmarks, _middle + direction, item)
-    self.view.footer:onUpdateFooter(true)
+    self.view.footer:onUpdateFooter(self.view.footer_visible)
 end
 
 -- binary search of sorted bookmarks
@@ -470,7 +470,7 @@ function ReaderBookmark:removeBookmark(item)
         local v = self.bookmarks[_middle]
         if item.datetime == v.datetime and item.page == v.page then
             table.remove(self.bookmarks, _middle)
-            self.view.footer:onUpdateFooter(true)
+            self.view.footer:onUpdateFooter(self.view.footer_visible)
             return
         elseif self:isBookmarkInPageOrder(item, v) then
             _end = _middle - 1
@@ -487,7 +487,7 @@ function ReaderBookmark:removeBookmark(item)
         local v = self.bookmarks[i]
         if item.datetime == v.datetime and item.page == v.page then
             table.remove(self.bookmarks, i)
-            self.view.footer:onUpdateFooter(true)
+            self.view.footer:onUpdateFooter(self.view.footer_visible)
             return
         end
     end

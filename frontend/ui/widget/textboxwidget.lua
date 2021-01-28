@@ -847,6 +847,10 @@ function TextBoxWidget:_renderImage(start_row_idx)
     local scheduled_update = self.scheduled_update
     self.scheduled_update = nil -- reset it, so we don't have to whenever we return below
     if not self.line_num_to_image or not self.line_num_to_image[start_row_idx] then
+        -- No image, no dithering
+        if self.dialog then
+            self.dialog.dithered = false
+        end
         return -- no image on this page
     end
     local image = self.line_num_to_image[start_row_idx]
@@ -891,9 +895,22 @@ function TextBoxWidget:_renderImage(start_row_idx)
         local bbtype = image.bb:getType()
         if bbtype == Blitbuffer.TYPE_BB8A or bbtype == Blitbuffer.TYPE_BBRGB32 then
             -- NOTE: MuPDF feeds us premultiplied alpha (and we don't care w/ GifLib, as alpha is all or nothing).
-            self._bb:pmulalphablitFrom(image.bb, self.width - image.width, 0)
+            if Screen.sw_dithering then
+                self._bb:ditherpmulalphablitFrom(image.bb, self.width - image.width, 0)
+            else
+                self._bb:pmulalphablitFrom(image.bb, self.width - image.width, 0)
+            end
         else
-            self._bb:blitFrom(image.bb, self.width - image.width, 0)
+            if Screen.sw_dithering then
+                self._bb:ditherblitFrom(image.bb, self.width - image.width, 0)
+            else
+                self._bb:blitFrom(image.bb, self.width - image.width, 0)
+            end
+        end
+
+        -- Request dithering
+        if self.dialog then
+            self.dialog.dithered = true
         end
     end
     local status_height = 0
@@ -965,7 +982,8 @@ function TextBoxWidget:_renderImage(start_row_idx)
                                 y = self.dimen.y,
                                 w = image.width,
                                 h = image.height,
-                            }
+                            },
+                            true  -- Request dithering
                         end)
                     end
                 end)
@@ -983,7 +1001,8 @@ function TextBoxWidget:_renderImage(start_row_idx)
                         y = self.dimen.y,
                         w = image.width,
                         h = image.height,
-                    }
+                    },
+                    true  -- Request dithering
                 end)
             end
         end
@@ -1063,6 +1082,7 @@ function TextBoxWidget:onCloseWidget()
 end
 
 function TextBoxWidget:free(full)
+    --print("TextBoxWidget:free", full, "on", self)
     -- logger.dbg("TextBoxWidget:free called")
     -- We are called with full=false from other methods here whenever
     -- :_renderText() is to be called to render a new page (when scrolling
@@ -1087,6 +1107,7 @@ function TextBoxWidget:free(full)
             -- Allow not waiting until Lua gc() to cleanup C XText malloc'ed stuff
             -- (we should not free it if full=false as it is re-usable across renderings)
             self._xtext:free()
+            self._xtext = nil
             -- logger.dbg("TextBoxWidget:_xtext:free()")
         end
     end
@@ -1124,7 +1145,8 @@ function TextBoxWidget:onTapImage(arg, ges)
                         y = self.dimen.y,
                         w = image.width,
                         h = image.height,
-                    }
+                    },
+                    not self.image_show_alt_text  -- Request dithering when showing the image
                 end)
                 return true
             end

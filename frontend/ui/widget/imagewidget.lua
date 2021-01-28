@@ -482,6 +482,7 @@ end
 -- (ie: in some other widget's update()), to not leak memory with
 -- BlitBuffer zombies
 function ImageWidget:free()
+    --print("ImageWidget:free on", self, "for BB?", self._bb, self._bb_disposable)
     if self._bb and self._bb_disposable and self._bb.free then
         self._bb:free()
         self._bb = nil

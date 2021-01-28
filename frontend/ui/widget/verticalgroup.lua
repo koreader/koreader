@@ -60,7 +60,8 @@ end
 
 function VerticalGroup:clear()
     self:free()
-    WidgetContainer.clear(self)
+    -- Skip WidgetContainer:clear's free call, we just did that in our own free ;)
+    WidgetContainer.clear(self, true)
 end
 
 function VerticalGroup:resetLayout()
@@ -69,6 +70,7 @@ function VerticalGroup:resetLayout()
 end
 
 function VerticalGroup:free()
+    --print("VerticalGroup:free on", self)
     self:resetLayout()
     WidgetContainer.free(self)
 end

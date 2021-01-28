@@ -594,7 +594,17 @@ Registers a widget to be repainted and enqueues a refresh.
 the second parameter (refreshtype) can either specify a refreshtype
 (optionally in combination with a refreshregion - which is suggested)
 or a function that returns refreshtype AND refreshregion and is called
-after painting the widget.
+*after* painting the widget.
+This is an interesting distinction, because a widget's geometry,
+usually stored in a field named `dimen`, in only computed at painting time (e.g., during `paintTo`).
+The TL;DR being: if you already know the region, you can pass everything by value directly,
+(it'll make for slightly more readable debug logs),
+but if the region will only be known after the widget has been painted, pass a function.
+Note that, technically, it means that stuff passed by value will be enqueued earlier in the refresh stack.
+In practice, since the stack of (both types of) refreshes is optimized into as few actual refresh ioctls as possible,
+and that during the next `_repaint` tick (which is when `paintTo` for dirty widgets happens),
+this shouldn't change much in the grand scheme of things, but it ought to be noted ;).
+
 Here's a quick rundown of what each refreshtype should be used for:
 full: high-fidelity flashing refresh (e.g., large images).
       Highest quality, but highest latency.
@@ -615,20 +625,51 @@ flashpartial: like partial, but flashing (and not counting towards flashing prom
               Can be used when closing an UI element, to avoid ghosting.
               You can even drop the region in these cases, to ensure a fullscreen flash.
               NOTE: On REAGL devices, "flashpartial" will NOT actually flash (by design).
-                    As such, even onClose, you might prefer "flashui" in some rare instances.
+                    As such, even onCloseWidget, you might prefer "flashui" in some rare instances.
 
 NOTE: You'll notice a trend on UI elements that are usually shown *over* some kind of text
-      of using "ui" onShow & onUpdate, but "partial" onClose.
+      of using "ui" onShow & onUpdate, but "partial" onCloseWidget.
       This is by design: "partial" is what the reader uses, as it's tailor-made for pure text
       over a white background, so this ensures we resume the usual flow of the reader.
       The same dynamic is true for their flashing counterparts, in the rare instances we enforce flashes.
       Any kind of "partial" refresh *will* count towards a flashing promotion after FULL_REFRESH_COUNT refreshes,
       so making sure your stuff only applies to the proper region is key to avoiding spurious large black flashes.
-      That said, depending on your use case, using "ui" onClose can be a perfectly valid decision, and will ensure
-      never seeing a flash because of that widget.
+      That said, depending on your use case, using "ui" onCloseWidget can be a perfectly valid decision,
+      and will ensure never seeing a flash because of that widget.
+      Remember that the FM uses "ui", so, if said widgets are shown over the FM,
+      prefer using "ui" or "flashui" onCloseWidget.
 
 The final parameter (refreshdither) is an optional hint for devices with hardware dithering support that this repaint
 could benefit from dithering (i.e., it contains an image).
+
+As far as the actual lifecycle of a widget goes, the rules are:
+* What you `show`, you `close`.
+* If you know the dimensions of the widget (or simply of the region you want to refresh), you can pass it directly:
+  * to show (as show calls setDirty),
+  * to close (as close will also call setDirty on the remaining dirty and visible widgets,
+    and will also enqueue a refresh based on that if there are dirty widgets).
+* Otherwise, you can use, respectively, the `Show` & `CloseWidget` handlers for that via `setDirty` calls.
+  This can also be useful if *child* widgets have specific needs (e.g., flashing, dithering) that they want to inject in the refresh queue.
+* Remember that events propagate children first (in array order, starting at the top), and that if *any* event handler returns true,
+  the propagation of that specific event for this widget tree stops *immediately*.
+  (This generally means that, unless you know what you're doing (e.g., a widget that will *always* be used as a parent),
+   you generally *don't* want to return true in `Show` or `CloseWidget` handlers).
+* If any widget requires freeing non-Lua resources (e.g., FFI/C), having a `free` method called from its `CloseWidget` handler is ideal:
+  this'll ensure that *any* widget including it will be sure that resources are freed when it (or its parent) are closed.
+* Note that there *is* a `Close` event, but it is *only* broadcast (e.g., sent to every widget in the window stack;
+  the same rules about propagation apply, but only per *window-level widget*) at poweroff/reboot, so,
+  refrain from implementing custom onClose methods if that's not their intended purpose ;).
+
+On the subject of widgets and child widgets,
+you might have noticed an unspoken convention across the codebase of widgets having a field called `show_parent`.
+Since handling this is entirely at the programmer's behest, here's how we usually use it:
+Basically, we cascade a field named `show_parent` to every child widget that matter
+(e.g., those that serve an UI purpose, as opposed to, say, a container).
+This ensures that every subwidget can reference its actual parent
+(ideally, all the way to the window-level widget it belongs to, i.e., the one that was passed to UIManager:show, hence the name ;)),
+to, among other things, flag the right widget as setDirty (c.f., those pesky debug warnings when that's done wrong ;p) when they want to request a repaint.
+This is why you often see stuff doing, when instantiating a new widget, FancyWidget:new{ show_parent = self.show_parent or self };
+meaning, if I'm already a subwidget, cascade my parent, otherwise, it means I'm a window-level widget, so cascade myself as that widget's parent ;).
 
 @usage
 
@@ -1126,20 +1167,6 @@ function UIManager:_refresh(mode, region, dither)
 end
 
 
--- A couple helper functions to compute aligned values...
--- c.f., <linux/kernel.h> & ffi/framebuffer_linux.lua
-local function ALIGN_DOWN(x, a)
-    -- x & ~(a-1)
-    local mask = a - 1
-    return bit.band(x, bit.bnot(mask))
-end
-
-local function ALIGN_UP(x, a)
-    -- (x + (a-1)) & ~(a-1)
-    local mask = a - 1
-    return bit.band(x + mask, bit.bnot(mask))
-end
-
 --- Repaints dirty widgets.
 function UIManager:_repaint()
     -- flag in which we will record if we did any repaints at all
@@ -1220,31 +1247,6 @@ function UIManager:_repaint()
             refresh.dither = nil
         end
         dbg:v("triggering refresh", refresh)
-        -- NOTE: If we're requesting hardware dithering on a partial update, make sure the rectangle is using
-        --       coordinates aligned to the previous multiple of 8, and dimensions aligned to the next multiple of 8.
-        --       Otherwise, some unlucky coordinates will play badly with the PxP's own alignment constraints,
-        --       leading to a refresh where content appears to have moved a few pixels to the side...
-        --       (Sidebar: this is probably a kernel issue, the EPDC driver is responsible for the alignment fixup,
-        --       c.f., epdc_process_update @ drivers/video/fbdev/mxc/mxc_epdc_v2_fb.c on a Kobo Mk. 7 kernel...).
-        if refresh.dither then
-            -- NOTE: Make sure the coordinates are positive, first! Otherwise, we'd gladly align further down below 0,
-            --       which would skew the rectangle's position/dimension after checkBounds...
-            local x_fixup = 0
-            if refresh.region.x > 0 then
-                local x_orig = refresh.region.x
-                refresh.region.x = ALIGN_DOWN(x_orig, 8)
-                x_fixup = x_orig - refresh.region.x
-            end
-            local y_fixup = 0
-            if refresh.region.y > 0 then
-                local y_orig = refresh.region.y
-                refresh.region.y = ALIGN_DOWN(y_orig, 8)
-                y_fixup = y_orig - refresh.region.y
-            end
-            -- And also make sure we won't be inadvertently cropping our rectangle in case of severe alignment fixups...
-            refresh.region.w = ALIGN_UP(refresh.region.w + (x_fixup * 2), 8)
-            refresh.region.h = ALIGN_UP(refresh.region.h + (y_fixup * 2), 8)
-        end
         -- Remember the refresh region
         self._last_refresh_region = refresh.region
         Screen[refresh_methods[refresh.mode]](Screen,

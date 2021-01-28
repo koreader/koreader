@@ -2166,7 +2166,8 @@ function ReaderFooter:refreshFooter(refresh, signal)
 end
 
 function ReaderFooter:onResume()
-    self:onUpdateFooter()
+    -- Force a footer repaint on resume if it was visible
+    self:onUpdateFooter(self.view.footer_visible)
     if self.settings.auto_refresh_time then
         self:setupAutoRefreshTime()
     end

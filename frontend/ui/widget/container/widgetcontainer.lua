@@ -53,7 +53,14 @@ end
 --[[--
 Deletes all child widgets.
 ]]
-function WidgetContainer:clear()
+function WidgetContainer:clear(skip_free)
+    -- HorizontalGroup & VerticalGroup call us after already having called free,
+    -- so allow skipping this one ;).
+    if not skip_free then
+        -- Make sure we free 'em before orphaning them...
+        self:free()
+    end
+
     while table.remove(self) do end
 end
 
@@ -113,7 +120,10 @@ end
 
 function WidgetContainer:free()
     for _, widget in ipairs(self) do
-        if widget.free then widget:free() end
+        if widget.free then
+            --print("WidgetContainer: Calling free for widget", debug.getinfo(widget.free, "S").short_src, widget, "from", debug.getinfo(self.free, "S").short_src, self)
+            widget:free()
+        end
     end
 end
 

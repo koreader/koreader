@@ -581,7 +581,7 @@ end
 
 function FrontLightWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
-        return "flashpartial", self.light_frame.dimen
+        return "flashui", self.light_frame.dimen
     end)
     return true
 end
