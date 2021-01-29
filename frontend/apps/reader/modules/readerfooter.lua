@@ -757,7 +757,6 @@ function ReaderFooter:disableFooter()
     self.updateFooterPage = function() end
     self.updateFooterPos = function() end
     self.onUpdatePos = function() end
-    self.onSetStatusLine = function() end
     self.mode = self.mode_list.off
     self.view.footer_visible = false
 end

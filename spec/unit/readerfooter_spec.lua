@@ -56,6 +56,13 @@ describe("Readerfooter module", function()
         end
     end)
 
+    teardown(function()
+        -- Clean up global settings we played with
+        G_reader_settings:delSetting("reader_footer_mode")
+        G_reader_settings:delSetting("footer")
+        G_reader_settings:flush()
+    end)
+
     before_each(function()
         G_reader_settings:saveSetting("footer", {
             disabled = false,
@@ -747,6 +754,7 @@ describe("Readerfooter module", function()
         readerui:onClose()
     end)
 
+    --[[ This toggling behaviour has been removed:
     it("should toggle between full and min progress bar for cre documents", function()
         local sample_txt = "spec/front/unit/data/sample.txt"
         local readerui = ReaderUI:new{
@@ -773,4 +781,5 @@ describe("Readerfooter module", function()
         readerui:closeDocument()
         readerui:onClose()
     end)
+    ]]--
 end)
