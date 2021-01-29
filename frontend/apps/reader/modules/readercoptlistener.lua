@@ -1,8 +1,10 @@
 local Event = require("ui/event")
 local Device = require("device")
 local EventListener = require("ui/widget/eventlistener")
+local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
+local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -22,6 +24,7 @@ function ReaderCoptListener:onReadSettings(config)
     -- crengine top status bar can only show author and title together
     self.title = G_reader_settings:readSetting("cre_header_title") or 1
     self.clock = G_reader_settings:readSetting("cre_header_clock") or 1
+    self.header_auto_refresh = G_reader_settings:readSetting("cre_header_auto_refresh") or 1
     self.page_number = G_reader_settings:readSetting("cre_header_page_number") or 1
     self.page_count = G_reader_settings:readSetting("cre_header_page_count") or 1
     self.reading_percent = G_reader_settings:readSetting("cre_header_reading_percent") or 0
@@ -43,6 +46,20 @@ function ReaderCoptListener:onReadSettings(config)
     -- Enable or disable crengine header status line (note that for crengine, 0=header enabled, 1=header disabled)
     local status_line = config:readSetting("copt_status_line") or G_reader_settings:readSetting("copt_status_line") or 1
     self.ui:handleEvent(Event:new("SetStatusLine", status_line))
+
+    self.old_battery_level = Device:getPowerDevice():getCapacity()
+
+    -- Have this ready in case auto-refresh is enabled, now or later
+    self.headerRefresh = function()
+        -- Only draw it if something has changed
+        local new_battery_level = Device:getPowerDevice():getCapacity()
+        if self.clock == 1 or (self.battery == 1 and new_battery_level ~= self.old_battery_level) then
+            self.old_battery_level = new_battery_level
+            self:updateHeader()
+        end
+        self:rescheduleHeaderRefreshIfNeeded() -- schedule (or not) next refresh
+    end
+    self:rescheduleHeaderRefreshIfNeeded() -- schedule (or not) first refresh
 end
 
 function ReaderCoptListener:onSetFontSize(font_size)
@@ -53,10 +70,65 @@ function ReaderCoptListener:onTimeFormatChanged()
     self.ui.document._document:setIntProperty("window.status.clock.12hours", G_reader_settings:isTrue("twelve_hour_clock") and 1 or 0)
 end
 
+function ReaderCoptListener:updateHeader()
+    -- Have crengine display accurate time and battery on its next drawing
+    self.ui.rolling:updateBatteryState()
+    self.ui.document:resetBufferCache() -- be sure next repaint is a redrawing
+    -- Force a repaint (we could avoid it if the top menu is shown as it
+    -- would fully cover the header, but let's not bother)
+    UIManager:setDirty(self.view.dialog, "ui",
+        Geom:new{
+            x = 0, y = 0,
+            w = Device.screen:getWidth(),
+            h = self.ui.document:getHeaderHeight(),
+        }
+    )
+end
+
+function ReaderCoptListener:unscheduleHeaderRefresh()
+    if not self.headerRefresh then return end -- not yet set up
+    UIManager:unschedule(self.headerRefresh)
+    logger.dbg("ReaderCoptListener.headerRefresh unscheduled")
+end
+
+function ReaderCoptListener:rescheduleHeaderRefreshIfNeeded()
+    if not self.headerRefresh then return end -- not yet set up
+    local unscheduled = UIManager:unschedule(self.headerRefresh) -- unschedule if already scheduled
+    -- Only schedule an update if the header is actually visible
+    if self.header_auto_refresh == 1
+            and self.document.configurable.status_line == 0 -- top bar enabled
+            and self.view.view_mode == "page" -- not in scroll mode (which would disable the header)
+            and (self.clock == 1 or self.battery == 1) then -- something shown can change in next minute
+        UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.headerRefresh)
+        if not unscheduled then
+            logger.dbg("ReaderCoptListener.headerRefresh scheduled")
+        else
+            logger.dbg("ReaderCoptListener.headerRefresh rescheduled")
+        end
+    elseif unscheduled then
+        logger.dbg("ReaderCoptListener.headerRefresh unscheduled")
+    end
+end
+
+-- Schedule or stop scheluding on these events, as they may change what is shown:
+ReaderCoptListener.onSetStatusLine = ReaderCoptListener.rescheduleHeaderRefreshIfNeeded
+    -- configurable.status_line is set before this event is triggered
+ReaderCoptListener.onSetViewMode = ReaderCoptListener.rescheduleHeaderRefreshIfNeeded
+    -- ReaderView:onSetViewMode(), which sets view.view_mode, is called before
+    -- ReaderCoptListener.onSetViewMode, so we'll get the updated value
+ReaderCoptListener.onResume = ReaderCoptListener.rescheduleHeaderRefreshIfNeeded
+
+-- Unschedule on these events
+ReaderCoptListener.onCloseDocument = ReaderCoptListener.unscheduleHeaderRefresh
+ReaderCoptListener.onSuspend = ReaderCoptListener.unscheduleHeaderRefresh
+
 function ReaderCoptListener:setAndSave(setting, property, value)
     self.ui.document._document:setIntProperty(property, value)
     G_reader_settings:saveSetting(setting, value)
-    UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, true))
+    -- Have crengine redraw it (even if hidden by the menu at this time)
+    self:updateHeader()
+    -- And see if we should auto-refresh
+    self:rescheduleHeaderRefreshIfNeeded()
 end
 
 local about_text = _([[
@@ -80,6 +152,18 @@ function ReaderCoptListener:getAltStatusBarMenu()
                     })
                 end,
                 separator = true,
+            },
+            {
+                text = _("Auto refresh"),
+                checked_func = function()
+                    return self.header_auto_refresh == 1
+                end,
+                callback = function()
+                    self.header_auto_refresh = self.header_auto_refresh == 0 and 1 or 0
+                    G_reader_settings:saveSetting("cre_header_auto_refresh", self.header_auto_refresh)
+                    self:rescheduleHeaderRefreshIfNeeded()
+                end,
+                separator = true
             },
             {
                 text = _("Book author and title"),
@@ -132,29 +216,6 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 end,
             },
             {
-                text = _("Battery status"),
-                checked_func = function()
-                    return self.battery == 1
-                end,
-                callback = function()
-                    self.battery = self.battery == 0 and 1 or 0
-                    self:setAndSave("cre_header_battery", "window.status.battery", self.battery)
-                end,
-            },
-            {
-                text = _("Battery percentage"),
-                enabled_func = function()
-                    return self.battery == 1
-                end,
-                checked_func = function()
-                    return self.battery_percent == 1
-                end,
-                callback = function()
-                    self.battery_percent = self.battery_percent == 0 and 1 or 0
-                    self:setAndSave("cre_header_battery_percent", "window.status.battery.percent", self.battery_percent)
-                end,
-            },
-            {
                 text = _("Chapter marks"),
                 checked_func = function()
                     return self.chapter_marks == 1
@@ -163,6 +224,60 @@ function ReaderCoptListener:getAltStatusBarMenu()
                     self.chapter_marks = self.chapter_marks == 0 and 1 or 0
                     self:setAndSave("cre_header_chapter_marks", "crengine.page.header.chapter.marks", self.chapter_marks)
                 end,
+            },
+            {
+                text_func = function()
+                    local status = _("off")
+                    if self.battery == 1 then
+                        if self.battery_percent == 1 then
+                            status = _("percentage")
+                        else
+                            status = _("icon")
+                        end
+                    end
+                    return T(_("Battery status (%1)"), status)
+                end,
+                sub_item_table = {
+                    {
+                        text = _("Battery icon"),
+                        checked_func = function()
+                            return self.battery == 1 and self.battery_percent == 0
+                        end,
+                        callback = function()
+                            if self.battery == 0 then -- self.battery_percent don't care
+                                self.battery = 1
+                                self.battery_percent = 0
+                            elseif self.battery == 1 and self.battery_percent == 1 then
+                                self.battery = 1
+                                self.battery_percent = 0
+                            else
+                                self.battery = 0
+                                self.battery_percent = 0
+                            end
+                            self:setAndSave("cre_header_battery", "window.status.battery", self.battery)
+                            self:setAndSave("cre_header_battery_percent", "window.status.battery.percent", self.battery_percent)
+                        end,
+                    },
+                    {
+                        text = _("Battery percentage"),
+                        checked_func = function()
+                            return self.battery == 1 and self.battery_percent == 1
+                        end,
+                        callback = function()
+                            if self.battery == 0 then -- self.battery_percent don't care
+                                self.battery = 1
+                                self.battery_percent = 1
+                            elseif self.battery == 1 and self.battery_percent == 0 then
+                                self.battery_percent = 1
+                            else
+                                self.battery = 0
+                                self.battery_percent = 0
+                            end
+                            self:setAndSave("cre_header_battery", "window.status.battery", self.battery)
+                            self:setAndSave("cre_header_battery_percent", "window.status.battery.percent", self.battery_percent)
+                        end,
+                    },
+                },
                 separator = true,
             },
             {
@@ -182,6 +297,10 @@ function ReaderCoptListener:getAltStatusBarMenu()
                         title_text =  _("Size of top status bar"),
                         ok_text = _("Set size"),
                         callback = function(spin)
+                            -- This could change the header height, and as we refresh only on the
+                            -- new height, we could get part of a previous taller status bar
+                            -- still displayed. But as all this is covered by this menu that
+                            -- we keep open, no need to handle this case.
                             self:setAndSave("cre_header_status_font_size", "crengine.page.header.font.size", spin.value)
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end
