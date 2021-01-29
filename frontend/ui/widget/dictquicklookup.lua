@@ -624,7 +624,7 @@ function DictQuickLookup:init()
     end
 
     if self.is_html then
-        self.text_widget = ScrollHtmlWidget:new{
+        self.shw_widget = ScrollHtmlWidget:new{
             html_body = self.definition,
             css = self:getHtmlDictionaryCss(),
             default_font_size = Screen:scaleBySize(self.dict_font_size),
@@ -634,9 +634,10 @@ function DictQuickLookup:init()
             html_link_tapped_callback = function(link)
                 self.html_dictionary_link_tapped_callback(self.dictionary, link)
             end,
-         }
+        }
+        self.text_widget = self.shw_widget
     else
-        self.text_widget = ScrollTextWidget:new{
+        self.stw_widget = ScrollTextWidget:new{
             text = self.definition,
             face = self.content_face,
             width = content_width,
@@ -649,6 +650,7 @@ function DictQuickLookup:init()
             image_alt_face = self.image_alt_face,
             images = self.images,
         }
+        self.text_widget = self.stw_widget
     end
 
     -- word definition
@@ -794,12 +796,47 @@ function DictQuickLookup:update()
     end
 
     -- Update main text widgets
-    if self.is_html then
+    if self.is_html and self.shw_widget then
         self.text_widget.htmlbox_widget:setContent(self.definition, self:getHtmlDictionaryCss(), Screen:scaleBySize(self.dict_font_size))
-    else
+    elseif not self.is_html and self.stw_widget then
         self.text_widget.text_widget.text = self.definition
         -- NOTE: The recursive free via our WidgetContainer (self[1]) above already free'd us ;)
         self.text_widget.text_widget:init()
+    else
+        -- We jumped from HTML to Text of vice-versa, we need a new widget instance
+        self.shw_widget = nil
+        self.stw_widget = nil
+
+        -- Whee, code duplication! (this is copied verbatim from init)
+        if self.is_html then
+            self.shw_widget = ScrollHtmlWidget:new{
+                html_body = self.definition,
+                css = self:getHtmlDictionaryCss(),
+                default_font_size = Screen:scaleBySize(self.dict_font_size),
+                width = content_width,
+                height = self.definition_height,
+                dialog = self,
+                html_link_tapped_callback = function(link)
+                    self.html_dictionary_link_tapped_callback(self.dictionary, link)
+                end,
+            }
+            self.text_widget = self.shw_widget
+        else
+            self.stw_widget = ScrollTextWidget:new{
+                text = self.definition,
+                face = self.content_face,
+                width = content_width,
+                height = self.definition_height,
+                dialog = self,
+                justified = G_reader_settings:nilOrTrue("dict_justify"), -- allow for disabling justification
+                lang = self.lang and self.lang:lower(), -- only available on wikipedia results
+                para_direction_rtl = self.rtl_lang,     -- only available on wikipedia results
+                auto_para_direction = not self.is_wiki, -- only for dict results (we don't know their lang)
+                image_alt_face = self.image_alt_face,
+                images = self.images,
+            }
+            self.text_widget = self.stw_widget
+        end
     end
 
     -- Reset alpha to avoid stacking transparency on top of the previous content.
