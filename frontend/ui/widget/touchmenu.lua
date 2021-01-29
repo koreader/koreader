@@ -105,6 +105,15 @@ function TouchMenuItem:init()
             face = self.face
         end
     end
+    local text_widget = TextWidget:new{
+        text = text,
+        max_width = text_max_width,
+        fgcolor = item_enabled ~= false and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
+        face = face,
+        forced_baseline = forced_baseline,
+        forced_height = forced_height,
+    }
+    self.text_truncated = text_widget:isTruncated()
     self.item_frame = FrameContainer:new{
         width = self.dimen.w,
         bordersize = 0,
@@ -115,14 +124,7 @@ function TouchMenuItem:init()
                 dimen = Geom:new{ w = checked_widget:getSize().w },
                 checkmark_widget,
             },
-            TextWidget:new{
-                text = text,
-                max_width = text_max_width,
-                fgcolor = item_enabled ~= false and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
-                face = face,
-                forced_baseline = forced_baseline,
-                forced_height = forced_height,
-            },
+            text_widget,
         },
     }
 
@@ -228,7 +230,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     if enabled == false then return end
 
     if G_reader_settings:isFalse("flash_ui") then
-        self.menu:onMenuHold(self.item)
+        self.menu:onMenuHold(self.item, self.text_truncated)
     else
         -- The item frame's width stops at the text width, but we want it to match the menu's length instead
         local highlight_dimen = self.item_frame.dimen
@@ -242,7 +244,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
 
         -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
         UIManager:forceRePaint()
-        self.menu:onMenuHold(self.item)
+        self.menu:onMenuHold(self.item, self.text_truncated)
         UIManager:forceRePaint()
         --UIManager:waitForVSync()
 
@@ -880,7 +882,7 @@ function TouchMenu:onMenuSelect(item)
     return true
 end
 
-function TouchMenu:onMenuHold(item)
+function TouchMenu:onMenuHold(item, text_truncated)
     if self.touch_menu_callback then
         self.touch_menu_callback()
     end
@@ -917,6 +919,8 @@ function TouchMenu:onMenuHold(item)
         if help_text then
             UIManager:show(InfoMessage:new{ text = help_text, })
         end
+    elseif text_truncated then
+        UIManager:show(InfoMessage:new{ text = getMenuText(item), })
     end
     return true
 end
