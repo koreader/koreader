@@ -558,7 +558,7 @@ function ReaderRolling:onResume()
 end
 
 function ReaderRolling:onGotoNextChapter()
-    local visible_page_count = self.ui.document:getVisiblePageCount()
+    local visible_page_count = self.ui.document:getVisiblePageNumberCount()
     local pageno = self.current_page + (visible_page_count > 1 and 1 or 0)
     local new_page
     if self.ui.document:hasHiddenFlows() then
@@ -664,7 +664,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
                     -- In the middle margin, on the right of text
                     -- Same trick as below, assuming page2_x is equal to page 1 right x
                     screen_x = math.floor(Screen:getWidth() * 0.5)
-                    local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage()+1)
+                    local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage(true)+1)
                     marker_w = page2_x + marker_w - screen_x
                     screen_x = screen_x - marker_w
                 else
@@ -678,7 +678,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
                     -- This is a bit tricky with how the middle margin is sized
                     -- by crengine (see LVDocView::updateLayout() in lvdocview.cpp)
                     screen_x = math.floor(Screen:getWidth() * 0.5)
-                    local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage()+1)
+                    local page2_x = self.ui.document:getPageOffsetX(self.ui.document:getCurrentPage(true)+1)
                     marker_w = page2_x + marker_w - screen_x
                 end
             end
@@ -767,7 +767,7 @@ function ReaderRolling:onGotoViewRel(diff)
             self.ui:handleEvent(Event:new("EndOfBook"))
         end
     elseif self.view.view_mode == "page" then
-        local page_count = self.ui.document:getVisiblePageCount()
+        local page_count = self.ui.document:getVisiblePageNumberCount()
         local old_page = self.current_page
         -- we're in paged mode, so round up
         if diff > 0 then
@@ -970,8 +970,9 @@ function ReaderRolling:_gotoPercent(new_percent)
     end
 end
 
-function ReaderRolling:_gotoPage(new_page, free_first_page)
-    if self.ui.document:getVisiblePageCount() > 1 and not free_first_page then
+function ReaderRolling:_gotoPage(new_page, free_first_page, internal)
+    if self.ui.document:getVisiblePageCount() > 1 and not free_first_page
+            and (internal or self.ui.document:getVisiblePageNumberCount() == 2) then
         -- Ensure we always have the first of the two pages odd
         if self.odd_or_even_first_page == 1 then -- odd
             if band(new_page, 1) == 0 then
@@ -985,7 +986,7 @@ function ReaderRolling:_gotoPage(new_page, free_first_page)
             end
         end
     end
-    self.ui.document:gotoPage(new_page)
+    self.ui.document:gotoPage(new_page, internal)
     if self.view.view_mode == "page" then
         self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
     else
@@ -1012,16 +1013,15 @@ end
 --]]
 
 function ReaderRolling:onSetVisiblePages(visible_pages)
-    -- crengine may decide to not ensure the value we request
-    -- (for example, in 2-pages mode, it may stop being ensured
-    -- when we increase the font size up to a point where a line
-    -- would contain less that 20 glyphs).
-    -- crengine may enforce visible_page=1 when:
-    --   - not in page mode but in scroll mode
-    --   - screen w/h < 6/5
-    --   - w < 20*em
-    -- We nevertheless update the setting (that will saved) with what
-    -- the user has requested - and not what crengine has enforced.
+    -- By default, crengine may decide to not ensure the value we request
+    -- (for example, in 2-pages mode, it may stop being ensured when we
+    -- increase the font size up to a point where a line would contain
+    -- less that 20 glyphs).
+    -- But we have CreDocument:setVisiblePageCount() provide only_if_sane=false
+    -- so these checks are not done.
+    -- We nevertheless update the setting (that will be saved) with what
+    -- the user has requested - and not what crengine has enforced, and
+    -- always query crengine for if it ends up ensuring it or not.
     self.visible_pages = visible_pages
     local prev_visible_pages = self.ui.document:getVisiblePageCount()
     self.ui.document:setVisiblePageCount(visible_pages)
