@@ -81,6 +81,7 @@ common_settings.time = {
         end,
         callback = function()
             G_reader_settings:flipNilOrFalse("twelve_hour_clock")
+            UIManager:broadcastEvent(Event:new("TimeFormatChanged"))
         end,
         }
     }
