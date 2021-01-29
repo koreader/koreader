@@ -1037,11 +1037,15 @@ function ReaderRolling:onSetStatusLine(status_line, on_read_settings)
     -- in koreader: 0=top status bar, 1=bottom mini bar
     self.ui.document:setStatusLineProp(status_line)
     self.cre_top_bar_enabled = status_line == 0
+    -- Don't toggle the footer when toggling the top status bar,
+    -- people seem to like having them both.
+    --[[
     if not on_read_settings then
         -- Ignore this event when it is first sent by ReaderCoptListener
         -- on book loading, so we stay with the saved footer settings
         self.view.footer:setVisible(status_line == 1)
     end
+    ]]--
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
