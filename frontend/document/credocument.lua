@@ -210,6 +210,13 @@ function CreDocument:setupDefaultView()
     self._document:setIntProperty("crengine.image.scaling.zoomout.inline.mode", 0)
     self._document:setIntProperty("crengine.image.scaling.zoomout.inline.scale", 1)
 
+    -- If switching to two pages on view, we want it to behave like two columns
+    -- and each view to be a single page number (instead of the default of two).
+    -- This ensures that page number and count are consistent between top and
+    -- bottom status bars, that SkimTo -1/+1 don't do nothing every other tap,
+    -- and that reading statistics do not see half of the pages never read.
+    self._document:setIntProperty("window.pages.two.visible.as.one.page.number", 1)
+
     -- set fallback font faces (this was formerly done in :init(), but it
     -- affects crengine calcGlobalSettingsHash() and would invalidate the
     -- cache from the main currently being read document when we just
@@ -312,8 +319,8 @@ function CreDocument:setHideNonlinearFlows(hide_nonlinear_flows)
     end
 end
 
-function CreDocument:getPageCount()
-    return self._document:getPages()
+function CreDocument:getPageCount(internal)
+    return self._document:getPages(internal)
 end
 
 -- Whether the document has any non-linear flow to care about
@@ -693,7 +700,14 @@ function CreDocument:drawCurrentViewByPos(target, x, y, rect, pos)
 end
 
 function CreDocument:drawCurrentViewByPage(target, x, y, rect, page)
-    self._document:gotoPage(page)
+    if not self.no_page_sync then
+        -- Avoid syncing page when this flag is set, when selecting text
+        -- across pages in 2-page mode and flipping half the screen
+        -- (currently only set by ReaderHighlight:onHoldPan())
+        -- self._document:gotoPage(page)
+        -- This allows this method to not be cached by cre call cache
+        self:gotoPage(page)
+    end
     self:drawCurrentView(target, x, y, rect)
 end
 
@@ -750,8 +764,9 @@ function CreDocument:getScreenPositionFromXPointer(xp)
     if self._view_mode == self.PAGE_VIEW_MODE then
         if self:getVisiblePageCount() > 1 then
             -- Correct coordinates if on the 2nd page in 2-pages mode
-            local next_page = self:getCurrentPage() + 1
-            if next_page <= self:getPageCount() then
+            -- getPageStartY() and getPageOffsetX() expects internal page numbers
+            local next_page = self:getCurrentPage(true) + 1
+            if next_page <= self:getPageCount(true) then
                 local next_top_y = self._document:getPageStartY(next_page)
                 if doc_y >= next_top_y then
                     screen_y = doc_y - next_top_y
@@ -831,9 +846,9 @@ function CreDocument:gotoPos(pos)
     self._document:gotoPos(pos)
 end
 
-function CreDocument:gotoPage(page)
+function CreDocument:gotoPage(page, internal)
     logger.dbg("CreDocument: goto page", page, "flow", self:getPageFlow(page))
-    self._document:gotoPage(page)
+    self._document:gotoPage(page, internal)
 end
 
 function CreDocument:gotoLink(link)
@@ -851,8 +866,8 @@ function CreDocument:goForward(link)
     self._document:goForward()
 end
 
-function CreDocument:getCurrentPage()
-    return self._document:getCurrentPage()
+function CreDocument:getCurrentPage(internal)
+    return self._document:getCurrentPage(internal)
 end
 
 function CreDocument:setFontFace(new_font_face)
@@ -1145,6 +1160,8 @@ function CreDocument:setTxtPreFormatted(enabled)
     self._document:setIntProperty("crengine.file.txt.preformatted", enabled)
 end
 
+-- get crengine internal visible page count (to be used when doing specific
+-- screen position handling)
 function CreDocument:getVisiblePageCount()
     return self._document:getVisiblePageCount()
 end
@@ -1152,6 +1169,11 @@ end
 function CreDocument:setVisiblePageCount(new_count)
     logger.dbg("CreDocument: set visible page count", new_count)
     self._document:setVisiblePageCount(new_count, false)
+end
+
+-- get visible page number count (to be used when only interested in page numbers)
+function CreDocument:getVisiblePageNumberCount()
+    return self._document:getVisiblePageNumberCount()
 end
 
 function CreDocument:setBatteryState(state)
@@ -1519,6 +1541,7 @@ function CreDocument:setupCallCache()
             local cache_global = false
             local set_tag = nil
             local set_arg = nil
+            local set_arg2 = nil
             local is_cached = false
 
             -- Assume all set* may change rendering
@@ -1541,10 +1564,14 @@ function CreDocument:setupCallCache()
             elseif name == "findText" then add_buffer_trash = true
 
             -- These may change page/pos
-            elseif name == "gotoPage" then set_tag = "page" ; set_arg = 2
+            elseif name == "gotoPage" then set_tag = "page" ; set_arg = 2 ; set_arg2 = 3
             elseif name == "gotoPos" then set_tag = "pos" ; set_arg = 2
-            elseif name == "drawCurrentViewByPage" then set_tag = "page" ; set_arg = 6
             elseif name == "drawCurrentViewByPos" then set_tag = "pos" ; set_arg = 6
+            -- elseif name == "drawCurrentViewByPage" then set_tag = "page" ; set_arg = 6
+            -- drawCurrentViewByPage() has some tweaks when browsing half-pages for
+            -- text selection in two-pages mode: no need to wrap it, as it uses
+            -- internally 2 other functions that are themselves wrapped
+
             -- gotoXPointer() is for cre internal fixup, we always use gotoPage/Pos
             -- (goBack, goForward, gotoLink are not used)
 
@@ -1554,6 +1581,7 @@ function CreDocument:setupCallCache()
             elseif name == "getCurrentPage" then no_wrap = true
             elseif name == "getCurrentPos" then no_wrap = true
             elseif name == "getVisiblePageCount" then no_wrap = true
+            elseif name == "getVisiblePageNumberCount" then no_wrap = true
             elseif name == "getCoverPageImage" then no_wrap = true
             elseif name == "getDocumentFileContent" then no_wrap = true
             elseif name == "getHTMLFromXPointer" then no_wrap = true
@@ -1611,6 +1639,12 @@ function CreDocument:setupCallCache()
                 self[name] = function(...)
                     if do_log then logger.dbg("callCache:", name, "setting tag") end
                     local val = select(set_arg, ...)
+                    if set_arg2 then
+                        local val2 = select(set_arg2, ...)
+                        if val2 ~= nil then
+                            val = val .. tostring(val2)
+                        end
+                    end
                     self._callCacheSetCurrentTag(set_tag .. val)
                     return func(...)
                 end

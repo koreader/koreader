@@ -10,16 +10,14 @@ local ReaderCoptListener = EventListener:new{}
 
 function ReaderCoptListener:onReadSettings(config)
     local view_mode = config:readSetting("copt_view_mode") or
-           G_reader_settings:readSetting("copt_view_mode")
-    if view_mode == 0 then
-        self.ui:registerPostReadyCallback(function()
-            self.view:onSetViewMode("page")
-        end)
-    elseif view_mode == 1 then
-        self.ui:registerPostReadyCallback(function()
-            self.view:onSetViewMode("scroll")
-        end)
-    end
+           G_reader_settings:readSetting("copt_view_mode") or 0 -- default to "page" mode
+    local view_mode_name = view_mode == 0 and "page" or "scroll"
+    -- Let crengine know of the view mode before rendering, as it can
+    -- cause a rendering change (2-pages would become 1-page in
+    -- scroll mode).
+    self.ui.document:setViewMode(view_mode_name)
+    -- ReaderView is the holder of the view_mode state
+    self.view.view_mode = view_mode_name
 
     -- crengine top status bar can only show author and title together
     self.title = G_reader_settings:readSetting("cre_header_title") or 1
