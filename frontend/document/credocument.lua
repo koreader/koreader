@@ -270,6 +270,13 @@ function CreDocument:render()
     logger.dbg("CreDocument: rendering done.")
 end
 
+function CreDocument:getDocumentRenderingHash()
+    if self.been_rendered then
+        return self._document:getDocumentRenderingHash()
+    end
+    return 0
+end
+
 function CreDocument:_readMetadata()
     Document._readMetadata(self) -- will grab/update self.info.number_of_pages
     if self.been_rendered then
