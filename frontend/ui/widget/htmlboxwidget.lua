@@ -76,7 +76,6 @@ function HtmlBoxWidget:setContent(body, css, default_font_size)
 end
 
 function HtmlBoxWidget:_render()
-    print("HtmlBoxWidget:_render for", self)
     if self.bb then
         return
     end

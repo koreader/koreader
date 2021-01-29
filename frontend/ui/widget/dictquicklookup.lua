@@ -797,14 +797,12 @@ function DictQuickLookup:update()
 
     -- Update main text widgets
     if self.is_html and self.shw_widget then
-        print("Update HTML widget")
         self.text_widget.htmlbox_widget:setContent(self.definition, self:getHtmlDictionaryCss(), Screen:scaleBySize(self.dict_font_size))
         -- Scroll back to top
         self.text_widget.htmlbox_widget.page_number = 1
         self.text_widget.v_scroll_bar:set((self.text_widget.htmlbox_widget.page_number-1) / self.text_widget.htmlbox_widget.page_count, self.text_widget.htmlbox_widget.page_number / self.text_widget.htmlbox_widget.page_count)
         self.text_widget.v_scroll_bar.enable = self.text_widget.htmlbox_widget.page_count > 1
     elseif not self.is_html and self.stw_widget then
-        print("Update Text widget")
         self.text_widget.text_widget.text = self.definition
         -- NOTE: The recursive free via our WidgetContainer (self[1]) above already free'd us ;)
         self.text_widget.text_widget:init()
@@ -818,7 +816,6 @@ function DictQuickLookup:update()
         -- We jumped from HTML to Text of vice-versa, we need a new widget instance
         -- Whee, code duplication! (this is copied verbatim from init)
         if self.is_html then
-            print("New HTML widget, old was", self.text_widget, self.definition_widget[1])
             self.shw_widget = ScrollHtmlWidget:new{
                 html_body = self.definition,
                 css = self:getHtmlDictionaryCss(),
@@ -835,7 +832,6 @@ function DictQuickLookup:update()
             self.definition_widget[1] = self.text_widget
             self.stw_widget = nil
         else
-            print("New Text widget, old was", self.text_widget, self.text_widget.htmlbox_widget, self.definition_widget[1])
             self.stw_widget = ScrollTextWidget:new{
                 text = self.definition,
                 face = self.content_face,
