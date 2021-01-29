@@ -50,7 +50,7 @@ function ScrollHtmlWidget:init()
         end
     }
 
-    self.v_scroll_bar:set((self.htmlbox_widget.page_number-1) / self.htmlbox_widget.page_count, self.htmlbox_widget.page_number / self.htmlbox_widget.page_count)
+    self:_updateScrollBar()
 
     local horizontal_group = HorizontalGroup:new{}
     table.insert(horizontal_group, self.htmlbox_widget)
@@ -85,6 +85,12 @@ function ScrollHtmlWidget:init()
     end
 end
 
+-- Not to be confused with ScrollTextWidget's updateScrollBar, which has user-visible effects.
+-- This simply updates the scroll bar's internal state according to the current page & page count.
+function ScrollTextWidget:_updateScrollBar()
+    self.v_scroll_bar:set((self.htmlbox_widget.page_number-1) / self.htmlbox_widget.page_count, self.htmlbox_widget.page_number / self.htmlbox_widget.page_count)
+end
+
 function ScrollHtmlWidget:getSinglePageHeight()
     return self.htmlbox_widget:getSinglePageHeight()
 end
@@ -93,7 +99,7 @@ end
 -- (Useful when replacing a Scroll*Widget during an update call, c.f., DictQuickLookup).
 function ScrollHtmlWidget:resetScroll()
     self.htmlbox_widget.page_number = 1
-    self.v_scroll_bar:set((self.htmlbox_widget.page_number-1) / self.htmlbox_widget.page_count, self.htmlbox_widget.page_number / self.htmlbox_widget.page_count)
+    self:_updateScrollBar()
 
     self.v_scroll_bar.enable = self.htmlbox_widget.page_count > 1
 end
@@ -108,9 +114,11 @@ function ScrollHtmlWidget:scrollToRatio(ratio)
         return
     end
     self.htmlbox_widget.page_number = page_num
-    self.v_scroll_bar:set((page_num-1) / self.htmlbox_widget.page_count, page_num / self.htmlbox_widget.page_count)
+    self:_updateScrollBar()
+
     self.htmlbox_widget:freeBb()
     self.htmlbox_widget:_render()
+
     UIManager:setDirty(self.dialog, function()
         return "partial", self.dimen
     end)
@@ -134,8 +142,7 @@ function ScrollHtmlWidget:scrollText(direction)
 
         self.htmlbox_widget.page_number = self.htmlbox_widget.page_number - 1
     end
-
-    self.v_scroll_bar:set((self.htmlbox_widget.page_number-1) / self.htmlbox_widget.page_count, self.htmlbox_widget.page_number / self.htmlbox_widget.page_count)
+    self:_updateScrollBar()
 
     self.htmlbox_widget:freeBb()
     self.htmlbox_widget:_render()
