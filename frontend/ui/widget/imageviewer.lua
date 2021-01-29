@@ -560,22 +560,8 @@ function ImageViewer:update()
         table.insert(frame_elements, self.button_container)
     end
 
-    self.main_frame = FrameContainer:new{
-        radius = not self.fullscreen and 8 or nil,
-        padding = 0,
-        margin = 0,
-        background = Blitbuffer.COLOR_WHITE,
-        frame_elements,
-    }
-    self[1] = WidgetContainer:new{
-        align = self.align,
-        dimen = self.region,
-        FrameContainer:new{
-            bordersize = 0,
-            padding = Size.padding.default,
-            self.main_frame,
-        }
-    }
+    self.main_frame.radius = not self.fullscreen and 8 or nil
+    self.main_frame[1] = frame_elements
 
     self.dithered = true
     UIManager:setDirty(self, function()
