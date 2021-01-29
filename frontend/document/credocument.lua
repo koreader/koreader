@@ -1331,6 +1331,9 @@ end
 -- no-op that will be wrapped by setupCallCache
 function CreDocument:resetCallCache() end
 
+-- no-op that will be wrapped by setupCallCache
+function CreDocument:resetBufferCache() end
+
 -- Optimise usage of some of the above methods by caching their results,
 -- either globally, or per page/pos for those whose result may depend on
 -- current page number or y-position.
@@ -1344,6 +1347,8 @@ function CreDocument:setupCallCache()
     -- Tune these when debugging
     local do_stats_include_not_cached = false
     local do_log = false
+
+    do_log = true --xxx delete this
 
     -- Beware below for luacheck warnings "shadowing upvalue argument 'self'":
     -- the 'self' we got and use here, and the one we may get implicitely
@@ -1562,6 +1567,7 @@ function CreDocument:setupCallCache()
             elseif name == "getWordFromPosition" then add_buffer_trash = true
             elseif name == "getTextFromPositions" then add_buffer_trash = true
             elseif name == "findText" then add_buffer_trash = true
+            elseif name == "resetBufferCache" then add_buffer_trash = true
 
             -- These may change page/pos
             elseif name == "gotoPage" then set_tag = "page" ; set_arg = 2 ; set_arg2 = 3
