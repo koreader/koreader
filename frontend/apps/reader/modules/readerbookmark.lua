@@ -209,10 +209,10 @@ function ReaderBookmark:onPosUpdate(pos)
     self:setDogearVisibility(self.ui.document:getXPointer())
 end
 
-function ReaderBookmark:gotoBookmark(pn_or_xp)
+function ReaderBookmark:gotoBookmark(pn_or_xp, marker_xp)
     if pn_or_xp then
         local event = self.ui.document.info.has_pages and "GotoPage" or "GotoXPointer"
-        self.ui:handleEvent(Event:new(event, pn_or_xp))
+        self.ui:handleEvent(Event:new(event, pn_or_xp, marker_xp))
     end
 end
 
@@ -304,7 +304,7 @@ function ReaderBookmark:onShowBookmark()
     local bookmark = self
     function bm_menu:onMenuChoice(item)
         bookmark.ui.link:addCurrentLocationToStack()
-        bookmark:gotoBookmark(item.page)
+        bookmark:gotoBookmark(item.page, item.pos0)
     end
 
     function bm_menu:onMenuHold(item)
