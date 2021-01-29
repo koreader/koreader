@@ -89,6 +89,15 @@ function ScrollHtmlWidget:getSinglePageHeight()
     return self.htmlbox_widget:getSinglePageHeight()
 end
 
+-- Reset the scrolling *state* to the top of the document, but don't actually re-render/refresh anything.
+-- (Useful when replacing a Scroll*Widget during an update call, c.f., DictQuickLookup).
+function ScrollHtmlWidget:resetScroll()
+    self.htmlbox_widget.page_number = 1
+    self.v_scroll_bar:set((self.htmlbox_widget.page_number-1) / self.htmlbox_widget.page_count, self.htmlbox_widget.page_number / self.htmlbox_widget.page_count)
+
+    self.v_scroll_bar.enable = self.htmlbox_widget.page_count > 1
+end
+
 function ScrollHtmlWidget:scrollToRatio(ratio)
     ratio = math.max(0, math.min(1, ratio)) -- ensure ratio is between 0 and 1 (100%)
     local page_num = 1 + math.floor((self.htmlbox_widget.page_count) * ratio)
