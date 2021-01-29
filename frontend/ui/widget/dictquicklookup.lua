@@ -799,11 +799,19 @@ function DictQuickLookup:update()
     if self.is_html and self.shw_widget then
         print("Update HTML widget")
         self.text_widget.htmlbox_widget:setContent(self.definition, self:getHtmlDictionaryCss(), Screen:scaleBySize(self.dict_font_size))
+        -- Scroll back to top
+        self.text_widget.htmlbox_widget.page_number = 1
+        self.text_widget.v_scroll_bar:set((self.text_widget.htmlbox_widget.page_number-1) / self.text_widget.htmlbox_widget.page_count, self.text_widget.htmlbox_widget.page_number / self.text_widget.htmlbox_widget.page_count)
+        --self.text_widget:scrollToRatio(0)
     elseif not self.is_html and self.stw_widget then
         print("Update Text widget")
         self.text_widget.text_widget.text = self.definition
         -- NOTE: The recursive free via our WidgetContainer (self[1]) above already free'd us ;)
         self.text_widget.text_widget:init()
+        -- Scroll back to top
+        local low, high = self.text_widget.text_widget:getVisibleHeightRatios()
+        self.text_widget.v_scroll_bar:set(low, high)
+        --self.text_widget:scrollToRatio(0)
     else
         -- We jumped from HTML to Text of vice-versa, we need a new widget instance
         -- Whee, code duplication! (this is copied verbatim from init)
@@ -821,6 +829,7 @@ function DictQuickLookup:update()
                 end,
             }
             self.text_widget:clear()
+            -- Update *all* the references to self.text_widget
             self.text_widget = self.shw_widget
             self.definition_widget[1] = self.text_widget
             self.stw_widget = nil
@@ -840,6 +849,7 @@ function DictQuickLookup:update()
                 images = self.images,
             }
             self.text_widget:clear()
+            -- Update *all* the references to self.text_widget
             self.text_widget = self.stw_widget
             self.definition_widget[1] = self.text_widget
             self.shw_widget = nil
