@@ -802,7 +802,7 @@ function DictQuickLookup:update()
         -- Scroll back to top
         self.text_widget.htmlbox_widget.page_number = 1
         self.text_widget.v_scroll_bar:set((self.text_widget.htmlbox_widget.page_number-1) / self.text_widget.htmlbox_widget.page_count, self.text_widget.htmlbox_widget.page_number / self.text_widget.htmlbox_widget.page_count)
-        --self.text_widget:scrollToRatio(0)
+        self.text_widget.v_scroll_bar.enable = self.text_widget.htmlbox_widget.page_count > 1
     elseif not self.is_html and self.stw_widget then
         print("Update Text widget")
         self.text_widget.text_widget.text = self.definition
@@ -811,7 +811,9 @@ function DictQuickLookup:update()
         -- Scroll back to top
         local low, high = self.text_widget.text_widget:getVisibleHeightRatios()
         self.text_widget.v_scroll_bar:set(low, high)
-        --self.text_widget:scrollToRatio(0)
+        local visible_line_count = self.text_widget:getVisLineCount()
+        local total_line_count = self.text_widget:getAllLineCount()
+        self.text_widget.v_scroll_bar.enable = visible_line_count < total_line_count
     else
         -- We jumped from HTML to Text of vice-versa, we need a new widget instance
         -- Whee, code duplication! (this is copied verbatim from init)
