@@ -243,7 +243,13 @@ function ReaderToc:getTocIndexByPage(pn_or_xp)
     end
     local pre_index = 1
     for _k,_v in ipairs(self.toc) do
+        if _v.page == pageno then
+            -- Return the first chapter seen on the current page
+            pre_index = _k
+            break
+        end
         if _v.page > pageno then
+            -- Return last chapter seen on a previous page
             break
         end
         pre_index = _k
