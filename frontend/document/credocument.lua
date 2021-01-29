@@ -1348,8 +1348,6 @@ function CreDocument:setupCallCache()
     local do_stats_include_not_cached = false
     local do_log = false
 
-    do_log = true --xxx delete this
-
     -- Beware below for luacheck warnings "shadowing upvalue argument 'self'":
     -- the 'self' we got and use here, and the one we may get implicitely
     -- as first parameter of the methods we define or redefine, are actually

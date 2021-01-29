@@ -864,7 +864,6 @@ function ReaderView:onSetViewMode(new_mode)
         self.ui.document:setViewMode(new_mode)
         self.ui:handleEvent(Event:new("ChangeViewMode"))
     end
-    return true
 end
 
 --Refresh after changing a variable done by koptoptions.lua since all of them

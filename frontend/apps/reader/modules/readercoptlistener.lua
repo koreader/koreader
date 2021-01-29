@@ -4,6 +4,7 @@ local EventListener = require("ui/widget/eventlistener")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
+local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -47,7 +48,17 @@ function ReaderCoptListener:onReadSettings(config)
 
     self.old_battery_level = Device:getPowerDevice():getCapacity()
 
-    self:setupHeaderRefresh()
+    -- Have this ready if now or later auto-refresh is enabled
+    self.headerRefresh = function()
+        -- Only draw it if something has changed
+        local new_battery_level = Device:getPowerDevice():getCapacity()
+        if self.clock == 1 or (self.battery == 1 and new_battery_level ~= self.old_battery_level) then
+            self.old_battery_level = new_battery_level
+            self:updateHeader()
+        end
+        self:rescheduleHeaderRefreshIfNeeded() -- schedule (or not) next refresh
+    end
+    self:rescheduleHeaderRefreshIfNeeded() -- schedule (or not) first refresh
 end
 
 function ReaderCoptListener:onSetFontSize(font_size)
@@ -58,46 +69,65 @@ function ReaderCoptListener:onTimeFormatChanged()
     self.ui.document._document:setIntProperty("window.status.clock.12hours", G_reader_settings:isTrue("twelve_hour_clock") and 1 or 0)
 end
 
+function ReaderCoptListener:updateHeader()
+    -- Have crengine display accurate time and battery on its next drawing
+    self.ui.rolling:updateBatteryState()
+    self.ui.document:resetBufferCache() -- be sure next repaint is a redrawing
+    -- Force a repaint (we could avoid it if the top menu is shown as it
+    -- would fully cover the header, but let's not bother)
+    UIManager:setDirty(self.view.dialog, "ui",
+        Geom:new{
+            x = 0, y = 0,
+            w = Device.screen:getWidth(),
+            h = self.ui.document:getHeaderHeight(),
+        }
+    )
+end
+
+function ReaderCoptListener:unscheduleHeaderRefresh()
+    if not self.headerRefresh then return end -- not yet set up
+    UIManager:unschedule(self.headerRefresh)
+    logger.dbg("ReaderCoptListener.headerRefresh unscheduled")
+end
+
+function ReaderCoptListener:rescheduleHeaderRefreshIfNeeded()
+    if not self.headerRefresh then return end -- not yet set up
+    local unscheduled = UIManager:unschedule(self.headerRefresh) -- unschedule if already scheduled
+    -- Only schedule an update if the header is actually visible
+    if self.header_auto_refresh == 1
+            and self.document.configurable.status_line == 0 -- top bar enabled
+            and self.view.view_mode == "page" -- not in scroll mode (which would disable the header)
+            and (self.clock == 1 or self.battery == 1) then -- something shown can change in next minute
+        UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.headerRefresh)
+        if not unscheduled then
+            logger.dbg("ReaderCoptListener.headerRefresh scheduled")
+        else
+            logger.dbg("ReaderCoptListener.headerRefresh rescheduled")
+        end
+    elseif unscheduled then
+        logger.dbg("ReaderCoptListener.headerRefresh unscheduled")
+    end
+end
+
+-- Schedule or stop scheluding on these events, as they may change what is shown:
+ReaderCoptListener.onSetStatusLine = ReaderCoptListener.rescheduleHeaderRefreshIfNeeded
+    -- configurable.status_line is set before this event is triggered
+ReaderCoptListener.onSetViewMode = ReaderCoptListener.rescheduleHeaderRefreshIfNeeded
+    -- ReaderView:onSetViewMode(), which sets view.view_mode, is called before
+    -- ReaderCoptListener.onSetViewMode, so we'll get the updated value
+ReaderCoptListener.onResume = ReaderCoptListener.rescheduleHeaderRefreshIfNeeded
+
+-- Unschedule on these events
+ReaderCoptListener.onCloseDocument = ReaderCoptListener.unscheduleHeaderRefresh
+ReaderCoptListener.onSuspend = ReaderCoptListener.unscheduleHeaderRefresh
+
 function ReaderCoptListener:setAndSave(setting, property, value)
     self.ui.document._document:setIntProperty(property, value)
     G_reader_settings:saveSetting(setting, value)
-    UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, true))
-end
-
-function ReaderCoptListener:updateHeader()
-    if self.view.view_mode == "page" then
-        self.ui.rolling:updateBatteryState()
-        self.ui.document:resetBufferCache()
-        UIManager:setDirty(self.view.dialog, "ui",
-            Geom:new{ w = Device.screen:getWidth(), h = self.ui.document:getHeaderHeight()})
-    end
-end
-
-function ReaderCoptListener:setupHeaderRefresh()
-    self.headerRefresh = function()
-        -- Only actually repaint the header only if it's actually visible
-        if self.document.configurable.status_line == 0 then -- is top bar enabled
-            local new_battery_level = Device:getPowerDevice():getCapacity()
-            if self.clock == 1 or (self.battery == 1 and new_battery_level ~= self.old_battery_level) then
-                self:updateHeader()
-                self.old_battery_level = new_battery_level
-            end
-        end
-        self:updateHeaderRefreshSchedule()
-    end
-    self:updateHeaderRefreshSchedule()
-end
-
-function ReaderCoptListener:onCloseDocument()
-    UIManager:unschedule(self.headerRefresh)
-end
-
-function ReaderCoptListener:updateHeaderRefreshSchedule()
-    UIManager:unschedule(self.headerRefresh)
-    if self.document.configurable.status_line == 0 and self.header_auto_refresh == 1 and
-        (self.clock == 1 or self.battery == 1) then
-        UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.headerRefresh)
-    end
+    -- Have crengine redraw it (even if hidden by the menu at this time)
+    self:updateHeader()
+    -- And see if we should auto-refresh
+    self:rescheduleHeaderRefreshIfNeeded()
 end
 
 local about_text = _([[
@@ -123,15 +153,14 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 separator = true,
             },
             {
-                text = _("Auto refresh the alternate status bar"),
+                text = _("Auto refresh"),
                 checked_func = function()
                     return self.header_auto_refresh == 1
                 end,
                 callback = function()
                     self.header_auto_refresh = self.header_auto_refresh == 0 and 1 or 0
                     G_reader_settings:saveSetting("cre_header_auto_refresh", self.header_auto_refresh)
-                    UIManager:broadcastEvent(Event:new("SetStatusLine", self.document.configurable.status_line, true))
-                    self:updateHeaderRefreshSchedule()
+                    self:rescheduleHeaderRefreshIfNeeded()
                 end,
                 separator = true
             },
@@ -153,7 +182,6 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 callback = function()
                     self.clock = self.clock == 0 and 1 or 0
                     self:setAndSave("cre_header_clock", "window.status.clock", self.clock)
-                    self:updateHeaderRefreshSchedule()
                 end,
             },
             {
@@ -227,7 +255,6 @@ function ReaderCoptListener:getAltStatusBarMenu()
                             end
                             self:setAndSave("cre_header_battery", "window.status.battery", self.battery)
                             self:setAndSave("cre_header_battery_percent", "window.status.battery.percent", self.battery_percent)
-                            self:updateHeaderRefreshSchedule()
                         end,
                     },
                     {
@@ -247,7 +274,6 @@ function ReaderCoptListener:getAltStatusBarMenu()
                             end
                             self:setAndSave("cre_header_battery", "window.status.battery", self.battery)
                             self:setAndSave("cre_header_battery_percent", "window.status.battery.percent", self.battery_percent)
-                            self:updateHeaderRefreshSchedule()
                         end,
                     },
                 },
@@ -270,6 +296,10 @@ function ReaderCoptListener:getAltStatusBarMenu()
                         title_text =  _("Size of top status bar"),
                         ok_text = _("Set size"),
                         callback = function(spin)
+                            -- This could change the header height, and as we refresh only on the
+                            -- new height, we could get part of a previous taller status bar
+                            -- still displayed. But as all this is covered by this menu that
+                            -- we keep open, no need to handle this case.
                             self:setAndSave("cre_header_status_font_size", "crengine.page.header.font.size", spin.value)
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end
