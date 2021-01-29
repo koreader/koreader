@@ -234,7 +234,7 @@ function DictQuickLookup:init()
     -- below the title:  lookup word and definition
     local content_padding_h = Size.padding.large
     local content_padding_v = Size.padding.large -- added via VerticalSpan
-    local content_width = inner_width - 2*content_padding_h
+    self.content_width = inner_width - 2*content_padding_h
 
     -- Spans between components
     local top_to_word_span = VerticalSpan:new{ width = content_padding_v }
@@ -305,13 +305,13 @@ function DictQuickLookup:init()
         text = self.displayword,
         face = Font:getFace(word_font_face, word_font_size),
         bold = true,
-        max_width = content_width - math.max(lookup_edit_button_w, lookup_word_nb_w),
+        max_width = self.content_width - math.max(lookup_edit_button_w, lookup_word_nb_w),
         padding = 0, -- to be aligned with lookup_word_nb
     }
     -- Group these 3 widgets
     local lookup_word = OverlapGroup:new{
         dimen = {
-            w = content_width,
+            w = self.content_width,
             h = lookup_height,
         },
         self.lookup_word_text,
@@ -570,7 +570,7 @@ function DictQuickLookup:init()
         local test_widget = ScrollTextWidget:new{
             text = "z",
             face = self.content_face,
-            width = content_width,
+            width = self.content_width,
             height = self.definition_height,
         }
         self.definition_line_height = test_widget:getLineHeight()
@@ -628,7 +628,7 @@ function DictQuickLookup:init()
             html_body = self.definition,
             css = self:getHtmlDictionaryCss(),
             default_font_size = Screen:scaleBySize(self.dict_font_size),
-            width = content_width,
+            width = self.content_width,
             height = self.definition_height,
             dialog = self,
             html_link_tapped_callback = function(link)
@@ -640,7 +640,7 @@ function DictQuickLookup:init()
         self.stw_widget = ScrollTextWidget:new{
             text = self.definition,
             face = self.content_face,
-            width = content_width,
+            width = self.content_width,
             height = self.definition_height,
             dialog = self,
             justified = G_reader_settings:nilOrTrue("dict_justify"), -- allow for disabling justification
@@ -797,35 +797,38 @@ function DictQuickLookup:update()
 
     -- Update main text widgets
     if self.is_html and self.shw_widget then
+        print("Update HTML widget")
         self.text_widget.htmlbox_widget:setContent(self.definition, self:getHtmlDictionaryCss(), Screen:scaleBySize(self.dict_font_size))
     elseif not self.is_html and self.stw_widget then
+        print("Update Text widget")
         self.text_widget.text_widget.text = self.definition
         -- NOTE: The recursive free via our WidgetContainer (self[1]) above already free'd us ;)
         self.text_widget.text_widget:init()
     else
         -- We jumped from HTML to Text of vice-versa, we need a new widget instance
-        self.shw_widget = nil
-        self.stw_widget = nil
-
         -- Whee, code duplication! (this is copied verbatim from init)
         if self.is_html then
+            print("New HTML widget")
             self.shw_widget = ScrollHtmlWidget:new{
                 html_body = self.definition,
                 css = self:getHtmlDictionaryCss(),
                 default_font_size = Screen:scaleBySize(self.dict_font_size),
-                width = content_width,
+                width = self.content_width,
                 height = self.definition_height,
                 dialog = self,
                 html_link_tapped_callback = function(link)
                     self.html_dictionary_link_tapped_callback(self.dictionary, link)
                 end,
             }
+            self.text_widget:clear()
             self.text_widget = self.shw_widget
+            self.stw_widget = nil
         else
+            print("New Text widget")
             self.stw_widget = ScrollTextWidget:new{
                 text = self.definition,
                 face = self.content_face,
-                width = content_width,
+                width = self.content_width,
                 height = self.definition_height,
                 dialog = self,
                 justified = G_reader_settings:nilOrTrue("dict_justify"), -- allow for disabling justification
@@ -835,7 +838,9 @@ function DictQuickLookup:update()
                 image_alt_face = self.image_alt_face,
                 images = self.images,
             }
+            self.text_widget:clear()
             self.text_widget = self.stw_widget
+            self.shw_widget = nil
         end
     end
 
