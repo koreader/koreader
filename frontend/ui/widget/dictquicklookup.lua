@@ -830,7 +830,6 @@ function DictQuickLookup:update()
                     self.html_dictionary_link_tapped_callback(self.dictionary, link)
                 end,
             }
-            self.text_widget:clear()
             -- Update *all* the references to self.text_widget
             self.text_widget = self.shw_widget
             self.definition_widget[1] = self.text_widget
@@ -850,7 +849,6 @@ function DictQuickLookup:update()
                 image_alt_face = self.image_alt_face,
                 images = self.images,
             }
-            self.text_widget:clear()
             -- Update *all* the references to self.text_widget
             self.text_widget = self.stw_widget
             self.definition_widget[1] = self.text_widget
