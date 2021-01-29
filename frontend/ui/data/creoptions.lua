@@ -533,15 +533,15 @@ Note that your selected font size is not affected by this setting.]]),
                 name = "status_line",
                 name_text = _("Alt Status Bar"),
                 toggle = {_("off"), _("on")},
-                values = {1, 0},
-                default_value = 1, -- Note that 1 means KOReader (bottom) status bar only
+                values = {1, 0}, -- Note that 0 means crengine header status line enabled, and 1 means disabled
+                default_value = 1,
                 args = {1, 0},
                 default_arg = 1,
                 event = "SetStatusLine",
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[Enable or disable the rendering engine alternative status bar at the top of the screen (this status bar can't be customized).
+                help_text = _([[Enable or disable the rendering engine alternative status bar at the top of the screen. The items displayed can be customized via the main menu.
 
-Whether enabled or disabled, KOReader's own status bar at the bottom of the screen can be toggled by tapping. The items displayed can be customized via the main menu.]]),
+Whether enabled or disabled, KOReader's own status bar at the bottom of the screen can be toggled by tapping.]]),
             },
             {
                 name = "embedded_css",

@@ -40,8 +40,9 @@ function ReaderCoptListener:onReadSettings(config)
 
     self:onTimeFormatChanged()
 
+    -- Enable or disable crengine header status line (note that for crengine, 0=header enabled, 1=header disabled)
     local status_line = config:readSetting("copt_status_line") or G_reader_settings:readSetting("copt_status_line") or 1
-    self.ui:handleEvent(Event:new("SetStatusLine", status_line, true))
+    self.ui:handleEvent(Event:new("SetStatusLine", status_line))
 end
 
 function ReaderCoptListener:onSetFontSize(font_size)
