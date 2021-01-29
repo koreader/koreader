@@ -808,7 +808,7 @@ function DictQuickLookup:update()
         -- We jumped from HTML to Text of vice-versa, we need a new widget instance
         -- Whee, code duplication! (this is copied verbatim from init)
         if self.is_html then
-            print("New HTML widget")
+            print("New HTML widget, old was", self.text_widget, self.definition_widget[1])
             self.shw_widget = ScrollHtmlWidget:new{
                 html_body = self.definition,
                 css = self:getHtmlDictionaryCss(),
@@ -822,9 +822,10 @@ function DictQuickLookup:update()
             }
             self.text_widget:clear()
             self.text_widget = self.shw_widget
+            self.definition_widget[1] = self.text_widget
             self.stw_widget = nil
         else
-            print("New Text widget")
+            print("New Text widget, old was", self.text_widget, self.text_widget.htmlbox_widget, self.definition_widget[1])
             self.stw_widget = ScrollTextWidget:new{
                 text = self.definition,
                 face = self.content_face,
@@ -840,6 +841,7 @@ function DictQuickLookup:update()
             }
             self.text_widget:clear()
             self.text_widget = self.stw_widget
+            self.definition_widget[1] = self.text_widget
             self.shw_widget = nil
         end
     end
