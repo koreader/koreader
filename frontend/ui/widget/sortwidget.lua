@@ -228,6 +228,7 @@ function SortWidget:init()
         bordersize = 0,
         padding = 0,
         radius = 0,
+        show_parent = self,
     }
     self.footer_right = Button:new{
         text = footer_right_text,
@@ -237,6 +238,7 @@ function SortWidget:init()
         bordersize = 0,
         padding = 0,
         radius = 0,
+        show_parent = self,
     }
     self.footer_first_up = Button:new{
         text = footer_first_up_text,
@@ -252,6 +254,7 @@ function SortWidget:init()
         bordersize = 0,
         padding = 0,
         radius = 0,
+        show_parent = self,
     }
     self.footer_last_down = Button:new{
         text = footer_last_down_text,
@@ -267,6 +270,7 @@ function SortWidget:init()
         bordersize = 0,
         padding = 0,
         radius = 0,
+        show_parent = self,
     }
     self.footer_cancel = Button:new{
         text = "✘",
@@ -276,6 +280,7 @@ function SortWidget:init()
         text_font_size = 28,
         padding = 0,
         radius = 0,
+        show_parent = self,
     }
 
     self.footer_ok = Button:new{
@@ -286,6 +291,7 @@ function SortWidget:init()
         padding = 0,
         radius = 0,
         text_font_size = 28,
+        show_parent = self,
     }
 
     self.footer_page = Button:new{
@@ -308,6 +314,7 @@ function SortWidget:init()
         text_font_face = "pgfont",
         text_font_bold = false,
         width = self.width_widget * 22 / 100,
+        show_parent = self,
     }
     local button_vertical_line = LineWidget:new{
         dimen = Geom:new{ w = Size.line.thick, h = math.floor(self.item_height * 1.25) },
