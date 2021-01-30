@@ -803,6 +803,7 @@ function DictQuickLookup:update()
 
     -- Update main text widgets
     if self.is_html and self.shw_widget then
+        -- NOTE: The recursive free via our WidgetContainer (self[1]) above already released the revious MµPDF document instance ;)
         self.text_widget.htmlbox_widget:setContent(self.definition, self:getHtmlDictionaryCss(), Screen:scaleBySize(self.dict_font_size))
         -- Scroll back to top
         self.text_widget:resetScroll()
