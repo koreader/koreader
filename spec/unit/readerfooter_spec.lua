@@ -420,8 +420,9 @@ describe("Readerfooter module", function()
 
         assert.are.same({}, UIManager._task_queue)
         G_reader_settings:saveSetting("footer", {
-            page_progress = true,
             auto_refresh_time = true,
+            all_at_once = true,
+            time = true,
         })
         local readerui = ReaderUI:new{
             dimen = Screen:getSize(),
@@ -430,7 +431,7 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         local found = 0
         for _,task in ipairs(UIManager._task_queue) do
-            if task.action == footer.autoRefreshTime then
+            if task.action == footer.autoRefreshFooter then
                 found = found + 1
             end
         end
@@ -439,7 +440,7 @@ describe("Readerfooter module", function()
         footer:onCloseDocument()
         found = 0
         for _,task in ipairs(UIManager._task_queue) do
-            if task.action == footer.autoRefreshTime then
+            if task.action == footer.autoRefreshFooter then
                 found = found + 1
             end
         end
@@ -457,8 +458,9 @@ describe("Readerfooter module", function()
         assert.are.same({}, UIManager._task_queue)
         G_reader_settings:saveSetting("footer", {
             disabled = true,
-            page_progress = true,
             auto_refresh_time = true,
+            all_at_once = true,
+            time = true,
         })
         local readerui = ReaderUI:new{
             dimen = Screen:getSize(),
@@ -467,7 +469,7 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
         local found = 0
         for _,task in ipairs(UIManager._task_queue) do
-            if task.action == footer.autoRefreshTime then
+            if task.action == footer.autoRefreshFooter then
                 found = found + 1
             end
         end
@@ -485,8 +487,9 @@ describe("Readerfooter module", function()
         assert.are.same({}, UIManager._task_queue)
         G_reader_settings:saveSetting("footer", {
             disabled = false,
-            page_progress = true,
             auto_refresh_time = true,
+            all_at_once = true,
+            time = true,
         })
         local readerui = ReaderUI:new{
             dimen = Screen:getSize(),
@@ -498,27 +501,27 @@ describe("Readerfooter module", function()
 
         local found = 0
         for _,task in ipairs(UIManager._task_queue) do
-            if task.action == footer.autoRefreshTime then
+            if task.action == footer.autoRefreshFooter then
                 found = found + 1
             end
         end
         assert.is.same(1, found)
 
         -- disable auto refresh time
-        tapFooterMenu(fake_menu, "Auto refresh time")
+        tapFooterMenu(fake_menu, "Auto refresh")
         found = 0
         for _,task in ipairs(UIManager._task_queue) do
-            if task.action == footer.autoRefreshTime then
+            if task.action == footer.autoRefreshFooter then
                 found = found + 1
             end
         end
         assert.is.same(0, found)
 
         -- enable auto refresh time again
-        tapFooterMenu(fake_menu, "Auto refresh time")
+        tapFooterMenu(fake_menu, "Auto refresh")
         found = 0
         for _,task in ipairs(UIManager._task_queue) do
-            if task.action == footer.autoRefreshTime then
+            if task.action == footer.autoRefreshFooter then
                 found = found + 1
             end
         end
@@ -748,8 +751,16 @@ describe("Readerfooter module", function()
         local footer = readerui.view.footer
 
         assert.falsy(readerui.view.footer_visible)
-        assert.truthy(footer.onCloseDocument == nil)
         assert.truthy(footer.mode == 0)
+
+        local found = 0
+        for _,task in ipairs(UIManager._task_queue) do
+            if task.action == footer.autoRefreshFooter then
+                found = found + 1
+            end
+        end
+        assert.is.same(0, found)
+
         readerui:closeDocument()
         readerui:onClose()
     end)

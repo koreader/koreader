@@ -563,9 +563,6 @@ function ReaderFooter:init()
     else
         self:applyFooterMode()
     end
-    if self.settings.auto_refresh_time then
-        self:setupAutoRefreshTime()
-    end
 
     self.visibility_change = nil
 end
@@ -644,27 +641,57 @@ function ReaderFooter:updateFooterContainer()
     self[1] = self.footer_positioner
 end
 
-function ReaderFooter:setupAutoRefreshTime()
-    if not self.autoRefreshTime then
-        self.autoRefreshTime = function()
+function ReaderFooter:unscheduleFooterAutoRefresh()
+    if not self.autoRefreshFooter then return end -- not yet set up
+    UIManager:unschedule(self.autoRefreshFooter)
+    logger.dbg("ReaderFooter.autoRefreshFooter unscheduled")
+end
+
+function ReaderFooter:rescheduleFooterAutoRefreshIfNeeded()
+    if not self.autoRefreshFooter then
+        -- Create this function the first time we're called
+        self.autoRefreshFooter = function()
             -- Only actually repaint the footer if nothing's being shown over ReaderUI (#6616)
+            -- (We want to avoid the footer to be painted over a widget covering it - we would
+            -- be fine refreshing it if the widget is not covering it, but this is hard to
+            -- guess from here.)
             if UIManager:getTopWidget() == "ReaderUI" then
-                -- And that only if it's actually visible
-                if self.view.footer_visible then
-                    self:onUpdateFooter(true)
-                end
+                self:onUpdateFooter(self.view.footer_visible)
             else
                 logger.dbg("Skipping ReaderFooter repaint, because ReaderUI is not the top-level widget")
                 -- NOTE: We *do* keep its content up-to-date, though
                 self:onUpdateFooter()
             end
-            UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
+            self:rescheduleFooterAutoRefreshIfNeeded() -- schedule (or not) next refresh
         end
     end
-    self.onCloseDocument = function()
-        UIManager:unschedule(self.autoRefreshTime)
+    local unscheduled = UIManager:unschedule(self.autoRefreshFooter) -- unschedule if already scheduled
+    -- Only schedule an update if the footer has items that may change
+    -- As self.view.footer_visible may be temporarily toggled off by other modules,
+    -- we can't trust it for not scheduling auto refresh
+    local schedule = false
+    if self.settings.auto_refresh_time then
+        if self.settings.all_at_once then
+            if self.settings.time or self.settings.battery or self.settings.wifi_status or self.settings.mem_usage then
+                schedule = true
+            end
+        else
+            if self.mode == self.mode_list.time or self.mode == self.mode_list.battery
+                    or self.mode == self.mode_list.wifi_status or self.mode == self.mode_list.mem_usage then
+                schedule = true
+            end
+        end
     end
-    UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshTime)
+    if schedule then
+        UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.autoRefreshFooter)
+        if not unscheduled then
+            logger.dbg("ReaderFooter.autoRefreshFooter scheduled")
+        else
+            logger.dbg("ReaderFooter.autoRefreshFooter rescheduled")
+        end
+    elseif unscheduled then
+        logger.dbg("ReaderFooter.autoRefreshFooter unscheduled")
+    end
 end
 
 function ReaderFooter:setupTouchZones()
@@ -753,7 +780,6 @@ end
 function ReaderFooter:disableFooter()
     self.onReaderReady = function() end
     self.resetLayout = function() end
-    self.onCloseDocument = nil
     self.updateFooterPage = function() end
     self.updateFooterPos = function() end
     self.onUpdatePos = function() end
@@ -926,6 +952,8 @@ function ReaderFooter:addToMainMenu(menu_items)
                 if should_update or should_signal then
                     self:refreshFooter(should_update, should_signal)
                 end
+                -- The absence or presence of some items may change whether auto-refresh should be ensured
+                self:rescheduleFooterAutoRefreshIfNeeded()
             end,
         }
     end
@@ -961,21 +989,14 @@ function ReaderFooter:addToMainMenu(menu_items)
             getMinibarOption("all_at_once", self.updateFooterTextGenerator),
             getMinibarOption("reclaim_height"),
             {
-                text = _("Auto refresh time"),
+                text = _("Auto refresh"),
                 checked_func = function()
                     return self.settings.auto_refresh_time == true
                 end,
-                -- only enable auto refresh when time is shown
-                enabled_func = function() return self.settings.time end,
                 callback = function()
                     self.settings.auto_refresh_time = not self.settings.auto_refresh_time
                     G_reader_settings:saveSetting("footer", self.settings)
-                    if self.settings.auto_refresh_time then
-                        self:setupAutoRefreshTime()
-                    else
-                        UIManager:unschedule(self.autoRefreshTime)
-                        self.onCloseDocument = nil
-                    end
+                    self:rescheduleFooterAutoRefreshIfNeeded()
                 end
             },
             {
@@ -2026,6 +2047,7 @@ function ReaderFooter:onReaderReady()
     self:setTocMarkers()
     self.updateFooterText = self._updateFooterText
     self:onUpdateFooter()
+    self:rescheduleFooterAutoRefreshIfNeeded()
 end
 
 function ReaderFooter:onReadSettings(config)
@@ -2075,10 +2097,12 @@ end
 function ReaderFooter:onEnterFlippingMode()
     self.orig_mode = self.mode
     self:applyFooterMode(self.mode_list.page_progress)
+    self:rescheduleFooterAutoRefreshIfNeeded()
 end
 
 function ReaderFooter:onExitFlippingMode()
     self:applyFooterMode(self.orig_mode)
+    self:rescheduleFooterAutoRefreshIfNeeded()
 end
 
 function ReaderFooter:onTapFooter(ges)
@@ -2123,6 +2147,7 @@ function ReaderFooter:onTapFooter(ges)
     self:applyFooterMode()
     G_reader_settings:saveSetting("reader_footer_mode", self.mode)
     self:onUpdateFooter(true)
+    self:rescheduleFooterAutoRefreshIfNeeded()
     return true
 end
 
@@ -2131,19 +2156,6 @@ function ReaderFooter:onHoldFooter()
     if self.settings.skim_widget_on_hold then
         self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
         return true
-    end
-end
-
-function ReaderFooter:setVisible(visible)
-    if visible then
-        -- If it was off, just do as if we tap'ed on it (so we don't
-        -- duplicate onTapFooter() code)
-        if self.mode == self.mode_list.off then
-            self:onTapFooter(true) -- ignore tap lock
-        end
-        self.view.footer_visible = (self.mode ~= self.mode_list.off)
-    else
-        self:applyFooterMode(self.mode_list.off)
     end
 end
 
@@ -2167,16 +2179,15 @@ end
 function ReaderFooter:onResume()
     -- Force a footer repaint on resume if it was visible
     self:onUpdateFooter(self.view.footer_visible)
-    if self.settings.auto_refresh_time then
-        self:setupAutoRefreshTime()
-    end
+    self:rescheduleFooterAutoRefreshIfNeeded()
 end
 
 function ReaderFooter:onSuspend()
-    if self.settings.auto_refresh_time then
-        UIManager:unschedule(self.autoRefreshTime)
-        self.onCloseDocument = nil
-    end
+    self:unscheduleFooterAutoRefresh()
+end
+
+function ReaderFooter:onCloseDocument()
+    self:unscheduleFooterAutoRefresh()
 end
 
 function ReaderFooter:onFrontlightStateChanged()
