@@ -623,7 +623,7 @@ function DictQuickLookup:init()
         end
     end
 
-    -- self.text_widget
+    -- Instantiate self.text_widget
     self:_instantiateScrollWidget()
 
     -- word definition
