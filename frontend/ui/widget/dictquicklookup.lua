@@ -623,35 +623,8 @@ function DictQuickLookup:init()
         end
     end
 
-    if self.is_html then
-        self.shw_widget = ScrollHtmlWidget:new{
-            html_body = self.definition,
-            css = self:getHtmlDictionaryCss(),
-            default_font_size = Screen:scaleBySize(self.dict_font_size),
-            width = self.content_width,
-            height = self.definition_height,
-            dialog = self,
-            html_link_tapped_callback = function(link)
-                self.html_dictionary_link_tapped_callback(self.dictionary, link)
-            end,
-        }
-        self.text_widget = self.shw_widget
-    else
-        self.stw_widget = ScrollTextWidget:new{
-            text = self.definition,
-            face = self.content_face,
-            width = self.content_width,
-            height = self.definition_height,
-            dialog = self,
-            justified = G_reader_settings:nilOrTrue("dict_justify"), -- allow for disabling justification
-            lang = self.lang and self.lang:lower(), -- only available on wikipedia results
-            para_direction_rtl = self.rtl_lang,     -- only available on wikipedia results
-            auto_para_direction = not self.is_wiki, -- only for dict results (we don't know their lang)
-            image_alt_face = self.image_alt_face,
-            images = self.images,
-        }
-        self.text_widget = self.stw_widget
-    end
+    -- self.text_widget
+    self:_instantiateScrollWidget()
 
     -- word definition
     self.definition_widget = FrameContainer:new{
@@ -770,6 +743,39 @@ function DictQuickLookup:getHtmlDictionaryCss()
     return css
 end
 
+-- Used in init & update to instantiate the Scroll*Widget that self.text_widget points to
+function DictQuickLookup:_instantiateScrollWidget()
+    if self.is_html then
+        self.shw_widget = ScrollHtmlWidget:new{
+            html_body = self.definition,
+            css = self:getHtmlDictionaryCss(),
+            default_font_size = Screen:scaleBySize(self.dict_font_size),
+            width = self.content_width,
+            height = self.definition_height,
+            dialog = self,
+            html_link_tapped_callback = function(link)
+                self.html_dictionary_link_tapped_callback(self.dictionary, link)
+            end,
+        }
+        self.text_widget = self.shw_widget
+    else
+        self.stw_widget = ScrollTextWidget:new{
+            text = self.definition,
+            face = self.content_face,
+            width = self.content_width,
+            height = self.definition_height,
+            dialog = self,
+            justified = G_reader_settings:nilOrTrue("dict_justify"), -- allow for disabling justification
+            lang = self.lang and self.lang:lower(), -- only available on wikipedia results
+            para_direction_rtl = self.rtl_lang,     -- only available on wikipedia results
+            auto_para_direction = not self.is_wiki, -- only for dict results (we don't know their lang)
+            image_alt_face = self.image_alt_face,
+            images = self.images,
+        }
+        self.text_widget = self.stw_widget
+    end
+end
+
 function DictQuickLookup:update()
     -- self[1] is a WidgetContainer, its free method will call free on each of its child widget with a free method.
     -- Here, that's the definitions' TextBoxWidget & HtmlBoxWidget,
@@ -808,40 +814,13 @@ function DictQuickLookup:update()
         self.text_widget:resetScroll()
     else
         -- We jumped from HTML to Text of vice-versa, we need a new widget instance
-        -- Whee, code duplication! (this is copied verbatim from init)
+        self:_instantiateScrollWidget()
+        -- Update *all* the references to self.text_widget
+        self.definition_widget[1] = self.text_widget
+        -- Don't leave dangling pointers
         if self.is_html then
-            self.shw_widget = ScrollHtmlWidget:new{
-                html_body = self.definition,
-                css = self:getHtmlDictionaryCss(),
-                default_font_size = Screen:scaleBySize(self.dict_font_size),
-                width = self.content_width,
-                height = self.definition_height,
-                dialog = self,
-                html_link_tapped_callback = function(link)
-                    self.html_dictionary_link_tapped_callback(self.dictionary, link)
-                end,
-            }
-            -- Update *all* the references to self.text_widget
-            self.text_widget = self.shw_widget
-            self.definition_widget[1] = self.text_widget
             self.stw_widget = nil
         else
-            self.stw_widget = ScrollTextWidget:new{
-                text = self.definition,
-                face = self.content_face,
-                width = self.content_width,
-                height = self.definition_height,
-                dialog = self,
-                justified = G_reader_settings:nilOrTrue("dict_justify"), -- allow for disabling justification
-                lang = self.lang and self.lang:lower(), -- only available on wikipedia results
-                para_direction_rtl = self.rtl_lang,     -- only available on wikipedia results
-                auto_para_direction = not self.is_wiki, -- only for dict results (we don't know their lang)
-                image_alt_face = self.image_alt_face,
-                images = self.images,
-            }
-            -- Update *all* the references to self.text_widget
-            self.text_widget = self.stw_widget
-            self.definition_widget[1] = self.text_widget
             self.shw_widget = nil
         end
     end
