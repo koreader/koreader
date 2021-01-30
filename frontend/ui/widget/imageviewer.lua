@@ -400,7 +400,7 @@ function ImageViewer:_clean_image_wg()
     end
 end
 
--- Used in init & update to instatiate a new ImageWidget & its container
+-- Used in init & update to instantiate a new ImageWidget & its container
 function ImageViewer:_new_image_wg()
     -- If no buttons and no title are shown, use the full screen
     local max_image_h = self.img_container_h
@@ -415,6 +415,7 @@ function ImageViewer:_new_image_wg()
     if self.rotated then
         -- in portrait mode, rotate according to this global setting so we are
         -- like in landscape mode
+        -- NOTE: This is the sole user of this legacy global left!
         local rotate_clockwise = DLANDSCAPE_CLOCKWISE_ROTATION
         if Screen:getWidth() > Screen:getHeight() then
             -- in landscape mode, counter-rotate landscape rotation so we are

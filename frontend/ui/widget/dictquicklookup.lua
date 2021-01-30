@@ -803,22 +803,24 @@ function DictQuickLookup:update()
 
     -- Update main text widgets
     if self.is_html and self.shw_widget then
+        -- Re-use our ScrollHtmlWidget (self.shw_widget)
         -- NOTE: The recursive free via our WidgetContainer (self[1]) above already released the revious MµPDF document instance ;)
         self.text_widget.htmlbox_widget:setContent(self.definition, self:getHtmlDictionaryCss(), Screen:scaleBySize(self.dict_font_size))
         -- Scroll back to top
         self.text_widget:resetScroll()
     elseif not self.is_html and self.stw_widget then
+        -- Re-use our ScrollTextWidget (self.stw_widget)
         self.text_widget.text_widget.text = self.definition
         -- NOTE: The recursive free via our WidgetContainer (self[1]) above already free'd us ;)
         self.text_widget.text_widget:init()
         -- Scroll back to top
         self.text_widget:resetScroll()
     else
-        -- We jumped from HTML to Text of vice-versa, we need a new widget instance
+        -- We jumped from HTML to Text (or vice-versa), we need a new widget instance
         self:_instantiateScrollWidget()
         -- Update *all* the references to self.text_widget
         self.definition_widget[1] = self.text_widget
-        -- Don't leave dangling pointers
+        -- Destroy the previous "opposite type" widget
         if self.is_html then
             self.stw_widget = nil
         else
@@ -828,7 +830,7 @@ function DictQuickLookup:update()
 
     -- Reset alpha to avoid stacking transparency on top of the previous content.
     -- NOTE: This doesn't take care of the Scroll*Widget, which will preserve alpha on scroll,
-    --       leading to increasingly opaque and muddy text as half-tarnsparent stuff gets stacked on top of each other...
+    --       leading to increasingly opaque and muddy text as half-transparent stuff gets stacked on top of each other...
     self.movable.alpha = nil
 
     UIManager:setDirty(self, function()
