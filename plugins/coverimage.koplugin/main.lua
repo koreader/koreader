@@ -102,11 +102,12 @@ function CoverImage:createCoverImage(doc_settings)
 
             local screen_ratio = s_w / s_h
             local image_ratio = i_w / i_h
-            local ratio_factor = image_ratio < screen_ratio and image_ratio/screen_ratio or screen_ratio/image_ratio
-            logger.dbg("CoverImage: geometries screen=" .. screen_ratio .. ", image=" .. image_ratio .. "; ratio=" .. ratio_factor)
+            local ratio_divergence_percent = math.abs(100 - image_ratio / screen_ratio * 100)
+
+            logger.dbg("CoverImage: geometries screen=" .. screen_ratio .. ", image=" .. image_ratio .. "; ratio=" .. ratio_divergence_percent)
 
             local image
-            if 100 - ratio_factor * 100 < self.cover_image_stretch_limit then -- stretch
+            if ratio_divergence_percent < self.cover_image_stretch_limit then -- stretch
                 logger.dbg("CoverImage: stretch to fullscreen")
                 image = RenderImage:scaleBlitBuffer(cover_image, s_w, s_h)
             else -- scale
@@ -273,10 +274,10 @@ function CoverImage:addToMainMenu(menu_items)
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Elastic stretch limit (%1%)"), self.cover_image_stretch_limit )
+                            return T(_("Aspect ratio stretch threshold (%1%)"), self.cover_image_stretch_limit )
                         end,
                         help_text_func = function()
-                            return T(_("If the aspect ratios of the image and the screen differ less than the selected limit (%1%), the image gets stretched (instead of scaled) to fullscreen."), self.cover_image_stretch_limit )
+                            return T(_("If the image and the screen have a similar aspect ratio (±%1%), stretch the image instead of honoring its aspect ratio."), self.cover_image_stretch_limit )
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
@@ -287,8 +288,8 @@ function CoverImage:addToMainMenu(menu_items)
                                 value = old_stretch_limit,
                                 value_min = 0,
                                 value_max = 25,
-                                default_value = 95,
-                                title_text =  _("Set the stretch limit"),
+                                default_value = 10,
+                                title_text =  _("Set stretch threshold"),
                                 ok_text = _("Set"),
                                 callback = function(spin)
                                     if self.enabled and spin.value ~= old_stretch_limit then
