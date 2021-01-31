@@ -58,10 +58,10 @@ return {
     keys = {
         -- first row
         {  --  1                         2            3      4
-            { dhad,      				dhad,        "~",   "1", },
-            { saad,   					saad,        "`",   "2", },
-            { thaa,      				thaa,        "|",   "3", },
-            { qaf,  					qaf,         "•",   "4", },
+            { dhad,                     dhad,        "~",   "1", },
+            { saad,                     saad,        "`",   "2", },
+            { thaa,                     thaa,        "|",   "3", },
+            { qaf,                      qaf,         "•",   "4", },
             { fah,                      fah,         "√",   "5", },
             { ghayn,                    ghayn,       "π",   "6", },
             { ayin,                     ayin,        "÷",   "7", },
@@ -72,8 +72,8 @@ return {
         },
         -- second row
         {  --  1                         2            3       4
-            { sheen,        			sheen,       "£",    _at, },
-            { seen,    					seen,        "¥",    "#", },
+            { sheen,                    sheen,       "£",    _at, },
+            { seen,                     seen,        "¥",    "#", },
             { yaa,                      yaa,         "$",    "﷼", },
             { ba,                       ba,          "¢",    "ـ", },
             { lam,                      lam,         "^",    "&", },
@@ -86,15 +86,15 @@ return {
         },
         -- third row
         {  --  1                         2             3       4
-            { th_aa,       			    th_aa,        "٪",    "/", },
+            { th_aa,                    th_aa,        "٪",    "/", },
             { tah,                      tah,          "©",     "«", },
             { jee,                      jee,          "®",    "»", },
             { zay,                      zay,          "™",    ":", },
             { raa,                      raa,          "✓",   "؛", },
-            { thaal,          			thaal,        "[",    "!", },
+            { thaal,                    thaal,        "[",    "!", },
             { daal,                     daal,         "]",   "؟", },
             { pe,                       pe,         "↑",   "↑", },
-            { waw,             			waw,          "←",    "←", },
+            { waw,                      waw,          "←",    "←", },
             { che,                      che,        "→",   "→",  },
             { label = "",
               width = 1,
