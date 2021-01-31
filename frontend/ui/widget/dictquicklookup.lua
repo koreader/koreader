@@ -828,14 +828,17 @@ function DictQuickLookup:update()
         end
     end
 
-    -- Reset alpha to avoid stacking transparency on top of the previous content.
-    -- NOTE: This doesn't take care of the Scroll*Widget, which will preserve alpha on scroll,
-    --       leading to increasingly opaque and muddy text as half-transparent stuff gets stacked on top of each other...
-    self.movable.alpha = nil
-
-    UIManager:setDirty(self, function()
-        return "partial", self.dict_frame.dimen
-    end)
+    -- If the container is transparent, keep it that way (which requires repainting everything)
+    if self.movable.alpha then
+        -- FIXME: Buttons need to honor that somehow if flash_ui is enabled, otherwise the unhighlight is not transparent...
+        UIManager:setDirty("all", function()
+            return "partial", self.dict_frame.dimen
+        end)
+    else
+        UIManager:setDirty(self, function()
+            return "partial", self.dict_frame.dimen
+        end)
+    end
 end
 
 function DictQuickLookup:getInitialVisibleArea()

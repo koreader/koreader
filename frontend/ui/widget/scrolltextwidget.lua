@@ -150,9 +150,16 @@ function ScrollTextWidget:updateScrollBar(is_partial)
         if is_partial then
             refreshfunc = "partial"
         end
-        UIManager:setDirty(self.dialog, function()
-            return refreshfunc, self.dimen
-        end)
+        -- Handle the dialog's container potentially being translucent...
+        if is_partial and self.dialog.movable and self.dialog.movable.alpha then
+            UIManager:setDirty("all", function()
+                return refreshfunc, self.dimen
+            end)
+        else
+            UIManager:setDirty(self.dialog, function()
+                return refreshfunc, self.dimen
+            end)
+        end
         if self.scroll_callback then
             self.scroll_callback(low, high)
         end
