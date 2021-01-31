@@ -357,7 +357,6 @@ function Button:onTapSelectButton()
     -- If our parent belongs to a translucent MovableContainer, repaint all the things to honor alpha without layering glitches,
     -- and refresh the full container, because the widget might have inhibited its own setDirty call to avoid flickering (c.f., *SpinWidget).
     if is_translucent then
-        print("alpha from", self)
         UIManager:setDirty("all", function()
             return "ui", self.show_parent.movable.dimen
         end)
