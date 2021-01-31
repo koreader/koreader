@@ -48,6 +48,7 @@ function CoverImage:init()
     self.cover_image_format = G_reader_settings:readSetting("cover_image_format") or "auto"
     self.cover_image_extension = getExtension(self.cover_image_path)
     self.cover_image_quality = G_reader_settings:readSetting("cover_image_quality") or 75
+    self.cover_image_stretch_limit = G_reader_settings:readSetting("cover_image_stretch_limit") or 5
     self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "black"
     self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or "cover_fallback.png"
     self.enabled = G_reader_settings:isTrue("cover_image_enabled")
@@ -99,23 +100,36 @@ function CoverImage:createCoverImage(doc_settings)
                 return
             end
 
-            local scaled_w, scaled_h = math.floor(i_w * scale_factor), math.floor(i_h * scale_factor)
-            cover_image = RenderImage:scaleBlitBuffer(cover_image, scaled_w, scaled_h)
+            local screen_ratio = s_w / s_h
+            local image_ratio = i_w / i_h
+            local ratio_divergence_percent = math.abs(100 - image_ratio / screen_ratio * 100)
 
-            -- new buffer with screen dimensions,
-            local image = Blitbuffer.new(s_w, s_h, cover_image:getType()) -- new buffer, filled with black
-            if self.cover_image_background == "white" then
-                image:fill(Blitbuffer.COLOR_WHITE)
-            elseif self.cover_image_background == "gray" then
-                image:fill(Blitbuffer.COLOR_GRAY)
+            logger.dbg("CoverImage: geometries screen=" .. screen_ratio .. ", image=" .. image_ratio .. "; ratio=" .. ratio_divergence_percent)
+
+            local image
+            if ratio_divergence_percent < self.cover_image_stretch_limit then -- stretch
+                logger.dbg("CoverImage: stretch to fullscreen")
+                image = RenderImage:scaleBlitBuffer(cover_image, s_w, s_h)
+            else -- scale
+                local scaled_w, scaled_h = math.floor(i_w * scale_factor), math.floor(i_h * scale_factor)
+                logger.dbg("CoverImage: scale to fullscreen, fill background")
+
+                cover_image = RenderImage:scaleBlitBuffer(cover_image, scaled_w, scaled_h)
+                -- new buffer with screen dimensions,
+                image = Blitbuffer.new(s_w, s_h, cover_image:getType()) -- new buffer, filled with black
+                if self.cover_image_background == "white" then
+                    image:fill(Blitbuffer.COLOR_WHITE)
+                elseif self.cover_image_background == "gray" then
+                    image:fill(Blitbuffer.COLOR_GRAY)
+                end
+                -- copy scaled image to buffer
+                if s_w > scaled_w then -- move right
+                    image:blitFrom(cover_image, math.floor((s_w - scaled_w) / 2), 0, 0, 0, scaled_w, scaled_h)
+                else -- move down
+                    image:blitFrom(cover_image, 0, math.floor((s_h - scaled_h) / 2), 0, 0, scaled_w, scaled_h)
+                end
             end
 
-            -- copy scaled image to buffer
-            if s_w > scaled_w then -- move right
-                image:blitFrom(cover_image, math.floor((s_w - scaled_w) / 2), 0, 0, 0, scaled_w, scaled_h)
-            else -- move down
-                image:blitFrom(cover_image, 0, math.floor((s_h - scaled_h) / 2), 0, 0, scaled_w, scaled_h)
-            end
             cover_image:free()
 
             local act_format = self.cover_image_format == "auto" and self.cover_image_extension or self.cover_image_format
@@ -259,7 +273,41 @@ function CoverImage:addToMainMenu(menu_items)
                 end,
                 sub_item_table = {
                     {
-                        text = _("Scale, black background"),
+                        text_func = function()
+                            return T(_("Aspect ratio stretch threshold (%1%)"), self.cover_image_stretch_limit )
+                        end,
+                        help_text_func = function()
+                            return T(_("If the image and the screen have a similar aspect ratio (±%1%), stretch the image instead of keeping its aspect ratio."), self.cover_image_stretch_limit )
+                        end,
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            local old_stretch_limit = self.cover_image_stretch_limit
+                            local SpinWidget = require("ui/widget/spinwidget")
+                            local size_spinner = SpinWidget:new{
+                                width = math.floor(Device.screen:getWidth() * 0.6),
+                                value = old_stretch_limit,
+                                value_min = 0,
+                                value_max = 25,
+                                default_value = 5,
+                                title_text =  _("Set stretch threshold"),
+                                ok_text = _("Set"),
+                                callback = function(spin)
+                                    if self.enabled and spin.value ~= old_stretch_limit then
+                                        self.cover_image_stretch_limit = spin.value
+                                        G_reader_settings:saveSetting("cover_image_stretch_limit", self.cover_image_stretch_limit)
+                                        self:createCoverImage(self.ui.doc_settings)
+                                    end
+                                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                                end
+                            }
+                            UIManager:show(size_spinner)
+                            if self.enabled and old_stretch_limit ~= self.cover_image_stretch_limit then
+                                self:createCoverImage(self.ui.doc_settings)
+                            end
+                        end,
+                    },
+                    {
+                        text = _("Fit to screen, black background"),
                         checked_func = function()
                             return self.cover_image_background == "black"
                         end,
@@ -273,7 +321,7 @@ function CoverImage:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Scale, white background"),
+                        text = _("Fit to screen, white background"),
                         checked_func = function()
                             return self.cover_image_background == "white"
                         end,
@@ -287,7 +335,7 @@ function CoverImage:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Scale, gray background"),
+                        text = _("Fit to screen, gray background"),
                         checked_func = function()
                             return self.cover_image_background == "gray"
                         end,
@@ -318,7 +366,7 @@ function CoverImage:addToMainMenu(menu_items)
                     -- menu entries: File format
                     {
                         text = _("File format derived from filename"),
-                        help_text = _("If the file format is not supported, then PNG will be used."),
+                        help_text = _("If the file format is not supported, then JPG will be used."),
                         checked_func = function()
                             return self.cover_image_format == "auto"
                         end,
