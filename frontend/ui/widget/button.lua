@@ -279,7 +279,7 @@ function Button:onTapSelectButton()
                 UIManager:forceRePaint() -- Ensures we have a chance to see the highlight
             end
             self.callback()
-            -- We don't want to fence the callback when we're translucent, because we want a *single* refresh post-callback *and* post-unhilight,
+            -- We don't want to fence the callback when we're translucent, because we want a *single* refresh post-callback *and* post-unhighlight,
             -- in order to avoid flickering.
             if not is_translucent then
                 UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
@@ -338,7 +338,6 @@ function Button:onTapSelectButton()
                 else
                     UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
                 end
-
                 -- If the button was disabled, switch to UI to make sure the gray comes through unharmed ;).
                 UIManager:setDirty(nil, function()
                     return self.enabled and "fast" or "ui", self[1].dimen
@@ -355,8 +354,8 @@ function Button:onTapSelectButton()
         self:onInput(self.tap_input_func())
     end
 
-    -- If our parent belongs to a translucent MovableContainer, repaint all the things to honor alpha, and refresh the full container,
-    -- because the widget might have inhibited its own setDirty call to avoid flickering (c.f., *SpinWidget).
+    -- If our parent belongs to a translucent MovableContainer, repaint all the things to honor alpha without layering glitches,
+    -- and refresh the full container, because the widget might have inhibited its own setDirty call to avoid flickering (c.f., *SpinWidget).
     if is_translucent then
         print("alpha from", self)
         UIManager:setDirty("all", function()
