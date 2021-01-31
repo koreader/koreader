@@ -287,9 +287,13 @@ function DoubleSpinWidget:update()
         },
         self.movable,
     }
-    UIManager:setDirty(self, function()
-        return "ui", self.widget_frame.dimen
-    end)
+    -- If we're transparent, Button itself will handle that post-callback, in order to preserve alpha without flickering.
+    if not self.movable.alpha then
+        UIManager:setDirty(self, function()
+            return "ui", self.widget_frame.dimen
+        end)
+    end
+    --[[
     picker_update_callback = function()
         -- If we're actually transparent, force an alpha-aware repaint.
         if self.movable.alpha then
@@ -300,6 +304,7 @@ function DoubleSpinWidget:update()
         -- If we'd like to have the values auto-applied, uncomment this:
         -- self.callback(left_widget:getValue(), right_widget:getValue())
     end
+    --]]
 end
 
 function DoubleSpinWidget:hasMoved()

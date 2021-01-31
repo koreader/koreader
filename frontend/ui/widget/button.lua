@@ -234,6 +234,9 @@ function Button:showHide(show)
 end
 
 function Button:onTapSelectButton()
+    -- NOTE: We have a few tricks up our sleeve in case our parent is inside a translucent MovableContainer...
+    local is_translucent = self.show_parent and self.show_parent.movable and self.show_parent.movable.alpha
+
     if self.enabled and self.callback then
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
@@ -276,7 +279,11 @@ function Button:onTapSelectButton()
                 UIManager:forceRePaint() -- Ensures we have a chance to see the highlight
             end
             self.callback()
-            UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
+            -- We don't want to fence the callback when we're translucent, because we want a *single* refresh post-callback *and* post-unhilight,
+            -- in order to avoid flickering.
+            if not is_translucent then
+                UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
+            end
             if self.vsync then
                 -- NOTE: This is mainly useful when the callback caused a REAGL update that we do not explicitly fence already,
                 --       (i.e., Kobo Mk. 7).
@@ -332,18 +339,10 @@ function Button:onTapSelectButton()
                     UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
                 end
 
-                -- If our parent has a transparent movable container, repaint all the things to honor alpha
-                if self.show_parent and self.show_parent.movable and self.show_parent.movable.alpha then
-                    print("Alpha!")
-                    UIManager:setDirty("all", function()
-                        return "ui", self[1].dimen
-                    end)
-                else
-                    -- If the button was disabled, switch to UI to make sure the gray comes through unharmed ;).
-                    UIManager:setDirty(nil, function()
-                        return self.enabled and "fast" or "ui", self[1].dimen
-                    end)
-                end
+                -- If the button was disabled, switch to UI to make sure the gray comes through unharmed ;).
+                UIManager:setDirty(nil, function()
+                    return self.enabled and "fast" or "ui", self[1].dimen
+                end)
                 --UIManager:forceRePaint() -- Ensures the unhighlight happens now, instead of potentially waiting and having it batched with something else.
             else
                 -- Callback closed our parent, we're done
@@ -355,6 +354,16 @@ function Button:onTapSelectButton()
     elseif type(self.tap_input_func) == "function" then
         self:onInput(self.tap_input_func())
     end
+
+    -- If our parent belongs to a translucent MovableContainer, repaint all the things to honor alpha, and refresh the full container,
+    -- because the widget might have inhibited its own setDirty call to avoid flickering (c.f., *SpinWidget).
+    if is_translucent then
+        print("alpha from", self)
+        UIManager:setDirty("all", function()
+            return "ui", self.show_parent.movable.dimen
+        end)
+    end
+
     if self.readonly ~= true then
         return true
     end
