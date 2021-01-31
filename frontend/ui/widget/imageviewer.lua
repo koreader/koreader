@@ -347,48 +347,8 @@ function ImageViewer:init()
         self.img_container_h = self.img_container_h - self.progress_container:getSize().h
     end
 
-    -- If no buttons and no title are shown, use the full screen
-    local max_image_h = self.img_container_h
-    local max_image_w = self.width
-    -- Otherwise, add paddings around image
-    if self.buttons_visible or self.with_title_bar then
-        max_image_h = self.img_container_h - self.image_padding*2
-        max_image_w = self.width - self.image_padding*2
-    end
-
-    local rotation_angle = 0
-    if self.rotated then
-        -- in portrait mode, rotate according to this global setting so we are
-        -- like in landscape mode
-        local rotate_clockwise = DLANDSCAPE_CLOCKWISE_ROTATION
-        if Screen:getWidth() > Screen:getHeight() then
-            -- in landscape mode, counter-rotate landscape rotation so we are
-            -- back like in portrait mode
-            rotate_clockwise = not rotate_clockwise
-        end
-        rotation_angle = rotate_clockwise and 90 or 270
-    end
-
-    self._image_wg = ImageWidget:new{
-        file = self.file,
-        image = self.image,
-        image_disposable = false, -- we may re-use self.image
-        alpha = true, -- we might be showing images with an alpha channel (e.g., from Wikipedia)
-        width = max_image_w,
-        height = max_image_h,
-        rotation_angle = rotation_angle,
-        scale_factor = self.scale_factor,
-        center_x_ratio = self._center_x_ratio,
-        center_y_ratio = self._center_y_ratio,
-    }
-
-    self.image_container = CenterContainer:new{
-        dimen = Geom:new{
-            w = self.width,
-            h = self.img_container_h,
-        },
-        self._image_wg,
-    }
+    -- Instantiate self._image_wg & self.image_container
+    self:_new_image_wg()
 
     local frame_elements = VerticalGroup:new{ align = "left" }
     if self.with_title_bar then
@@ -438,6 +398,53 @@ function ImageViewer:_clean_image_wg()
         self._image_wg:free()
         self._image_wg = nil
     end
+end
+
+-- Used in init & update to instantiate a new ImageWidget & its container
+function ImageViewer:_new_image_wg()
+    -- If no buttons and no title are shown, use the full screen
+    local max_image_h = self.img_container_h
+    local max_image_w = self.width
+    -- Otherwise, add paddings around image
+    if self.buttons_visible or self.with_title_bar then
+        max_image_h = self.img_container_h - self.image_padding*2
+        max_image_w = self.width - self.image_padding*2
+    end
+
+    local rotation_angle = 0
+    if self.rotated then
+        -- in portrait mode, rotate according to this global setting so we are
+        -- like in landscape mode
+        -- NOTE: This is the sole user of this legacy global left!
+        local rotate_clockwise = DLANDSCAPE_CLOCKWISE_ROTATION
+        if Screen:getWidth() > Screen:getHeight() then
+            -- in landscape mode, counter-rotate landscape rotation so we are
+            -- back like in portrait mode
+            rotate_clockwise = not rotate_clockwise
+        end
+        rotation_angle = rotate_clockwise and 90 or 270
+    end
+
+    self._image_wg = ImageWidget:new{
+        file = self.file,
+        image = self.image,
+        image_disposable = false, -- we may re-use self.image
+        alpha = true, -- we might be showing images with an alpha channel (e.g., from Wikipedia)
+        width = max_image_w,
+        height = max_image_h,
+        rotation_angle = rotation_angle,
+        scale_factor = self.scale_factor,
+        center_x_ratio = self._center_x_ratio,
+        center_y_ratio = self._center_y_ratio,
+    }
+
+    self.image_container = CenterContainer:new{
+        dimen = Geom:new{
+            w = self.width,
+            h = self.img_container_h,
+        },
+        self._image_wg,
+    }
 end
 
 function ImageViewer:update()
@@ -503,48 +510,7 @@ function ImageViewer:update()
     end
 
     -- Update the image widget itself
-    -- If no buttons and no title are shown, use the full screen
-    local max_image_h = self.img_container_h
-    local max_image_w = self.width
-    -- Otherwise, add paddings around image
-    if self.buttons_visible or self.with_title_bar then
-        max_image_h = self.img_container_h - self.image_padding*2
-        max_image_w = self.width - self.image_padding*2
-    end
-
-    local rotation_angle = 0
-    if self.rotated then
-        -- in portrait mode, rotate according to this global setting so we are
-        -- like in landscape mode
-        local rotate_clockwise = DLANDSCAPE_CLOCKWISE_ROTATION
-        if Screen:getWidth() > Screen:getHeight() then
-            -- in landscape mode, counter-rotate landscape rotation so we are
-            -- back like in portrait mode
-            rotate_clockwise = not rotate_clockwise
-        end
-        rotation_angle = rotate_clockwise and 90 or 270
-    end
-
-    self._image_wg = ImageWidget:new{
-        file = self.file,
-        image = self.image,
-        image_disposable = false, -- we may re-use self.image
-        alpha = true, -- we might be showing images with an alpha channel (e.g., from Wikipedia)
-        width = max_image_w,
-        height = max_image_h,
-        rotation_angle = rotation_angle,
-        scale_factor = self.scale_factor,
-        center_x_ratio = self._center_x_ratio,
-        center_y_ratio = self._center_y_ratio,
-    }
-
-    self.image_container = CenterContainer:new{
-        dimen = Geom:new{
-            w = self.width,
-            h = self.img_container_h,
-        },
-        self._image_wg,
-    }
+    self:_new_image_wg()
 
     -- Update the final layout
     local frame_elements = VerticalGroup:new{ align = "left" }
@@ -560,22 +526,8 @@ function ImageViewer:update()
         table.insert(frame_elements, self.button_container)
     end
 
-    self.main_frame = FrameContainer:new{
-        radius = not self.fullscreen and 8 or nil,
-        padding = 0,
-        margin = 0,
-        background = Blitbuffer.COLOR_WHITE,
-        frame_elements,
-    }
-    self[1] = WidgetContainer:new{
-        align = self.align,
-        dimen = self.region,
-        FrameContainer:new{
-            bordersize = 0,
-            padding = Size.padding.default,
-            self.main_frame,
-        }
-    }
+    self.main_frame.radius = not self.fullscreen and 8 or nil
+    self.main_frame[1] = frame_elements
 
     self.dithered = true
     UIManager:setDirty(self, function()

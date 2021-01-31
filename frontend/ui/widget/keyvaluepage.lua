@@ -296,12 +296,22 @@ function KeyValueItem:onTap()
             -- Has to be scheduled *after* the dict delays for the lookup history pages...
             UIManager:scheduleIn(0.75, function()
                 self[1].invert = false
-                -- Skip the repaint if we've ended up below something, which is likely.
-                if UIManager:getTopWidget() ~= self.show_parent then
+                -- If we've ended up below something, things get trickier.
+                local top_widget = UIManager:getTopWidget()
+                if top_widget ~= self.show_parent then
                     -- It's generally tricky to get accurate dimensions out of whatever was painted above us,
                     -- so cheat by comparing against the previous refresh region...
                     if self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
-                        return true
+                        -- If that something is a modal (e.g., dictionary D/L), repaint the whole stack
+                        if top_widget.modal then
+                            UIManager:setDirty(self.show_parent, function()
+                                return "ui", self[1].dimen
+                            end)
+                            return true
+                        else
+                            -- Otherwise, skip the repaint
+                            return true
+                        end
                     end
                 end
                 UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)

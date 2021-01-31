@@ -159,6 +159,17 @@ function ScrollTextWidget:updateScrollBar(is_partial)
     end
 end
 
+-- Reset the scrolling *state* to the top of the document, but don't actually re-render/refresh anything.
+-- (Useful when replacing a Scroll*Widget during an update call, c.f., DictQuickLookup).
+function ScrollTextWidget:resetScroll()
+    local low, high = self.text_widget:getVisibleHeightRatios()
+    self.v_scroll_bar:set(low, high)
+
+    local visible_line_count = self.text_widget:getVisLineCount()
+    local total_line_count = self.text_widget:getAllLineCount()
+    self.v_scroll_bar.enable = visible_line_count < total_line_count
+end
+
 function ScrollTextWidget:moveCursorToCharPos(charpos)
     self.text_widget:moveCursorToCharPos(charpos)
     self:updateScrollBar()
