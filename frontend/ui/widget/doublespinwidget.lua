@@ -83,10 +83,6 @@ function DoubleSpinWidget:init()
 end
 
 function DoubleSpinWidget:update()
-    -- This picker_update_callback will be redefined later.
-    -- It's a hack to restore transparency after a Button unhighlight in NumberPicker,
-    -- in case the MovableContainer was actually made transparent.
-    local picker_update_callback = function() end
     local left_widget = NumberPickerWidget:new{
         show_parent = self,
         width = self.picker_width,
@@ -96,7 +92,6 @@ function DoubleSpinWidget:update()
         value_step = self.left_step,
         value_hold_step = self.left_hold_step,
         wrap = false,
-        update_callback = function() picker_update_callback() end,
     }
     local right_widget = NumberPickerWidget:new{
         show_parent = self,
@@ -107,7 +102,6 @@ function DoubleSpinWidget:update()
         value_step = self.right_step,
         value_hold_step = self.right_hold_step,
         wrap = false,
-        update_callback = function() picker_update_callback() end,
     }
     local left_vertical_group = VerticalGroup:new{
         align = "center",
@@ -293,18 +287,6 @@ function DoubleSpinWidget:update()
             return "ui", self.widget_frame.dimen
         end)
     end
-    --[[
-    picker_update_callback = function()
-        -- If we're actually transparent, force an alpha-aware repaint.
-        if self.movable.alpha then
-            UIManager:setDirty("all", function()
-                return "ui", self.movable.dimen
-            end)
-        end
-        -- If we'd like to have the values auto-applied, uncomment this:
-        -- self.callback(left_widget:getValue(), right_widget:getValue())
-    end
-    --]]
 end
 
 function DoubleSpinWidget:hasMoved()

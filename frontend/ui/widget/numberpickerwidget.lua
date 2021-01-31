@@ -12,7 +12,6 @@ Example:
         value_step = 1,
         value_hold_step = 4,
         wrap = true,
-        update_callback = function() end,
     }
 --]]
 
@@ -46,7 +45,6 @@ local NumberPickerWidget = InputContainer:new{
     value_table = nil,
     value_index = nil,
     wrap = true,
-    update_callback = function() end,
     -- in case we need calculate number of days in a given month and year
     date_month = nil,
     date_year = nil,
@@ -169,7 +167,6 @@ function NumberPickerWidget:init()
                     },
                 },
             }
-            self.update_callback()
             UIManager:show(input_dialog)
             input_dialog:onShowKeyboard()
         end
@@ -229,7 +226,6 @@ function NumberPickerWidget:update()
     UIManager:setDirty(self.show_parent, function()
         return "ui", self.dimen
     end)
-    self.update_callback()
 end
 
 --[[--

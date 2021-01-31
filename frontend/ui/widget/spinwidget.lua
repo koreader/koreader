@@ -78,10 +78,6 @@ function SpinWidget:init()
 end
 
 function SpinWidget:update()
-    -- This picker_update_callback will be redefined later.
-    -- It's a hack to restore transparency after a Button unhighlight in NumberPicker,
-    -- in case the MovableContainer was actually made transparent.
-    local picker_update_callback = function() end
     local value_widget = NumberPickerWidget:new{
         show_parent = self,
         width = math.floor(self.screen_width * 0.2),
@@ -93,7 +89,6 @@ function SpinWidget:update()
         value_step = self.value_step,
         value_hold_step = self.value_hold_step,
         precision = self.precision,
-        update_callback = function() picker_update_callback() end,
     }
     local value_group = HorizontalGroup:new{
         align = "center",
@@ -239,29 +234,11 @@ function SpinWidget:update()
         },
         self.movable,
     }
-    UIManager:setDirty(self, function()
-        return "ui", self.spin_frame.dimen
-    end)
-    picker_update_callback = function()
-        -- If we're actually transparent, force an alpha-aware repaint.
-        if self.movable.alpha then
-            if G_reader_settings:nilOrTrue("flash_ui") then
-                -- It's delayed to the next tick to actually catch a Button unhighlight.
-                UIManager:nextTick(function()
-                    UIManager:setDirty("all", function()
-                        return "ui", self.movable.dimen
-                    end)
-                end)
-            else
-                -- This should only really be necessary for the up/down buttons here,
-                -- because they repaint the center value button & text, unlike said button,
-                -- which just pops up the VK.
-                -- On the upside, we shouldn't need to delay anything without flash_ui ;).
-                UIManager:setDirty("all", function()
-                    return "ui", self.movable.dimen
-                end)
-            end
-        end
+    -- If we're transparent, Button itself will handle that post-callback, in order to preserve alpha without flickering.
+    if not self.movable.alpha then
+        UIManager:setDirty(self, function()
+            return "ui", self.spin_frame.dimen
+        end)
     end
 end
 
