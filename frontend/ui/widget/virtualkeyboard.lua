@@ -662,11 +662,11 @@ local VirtualKeyboard = FocusManager:new{
 
     lang_to_keyboard_layout = {
         ar_AA = "ar_AA_keyboard",
-        fa = "fa_keyboard",
         de = "de_keyboard",
         el = "el_keyboard",
         en = "en_keyboard",
         es = "es_keyboard",
+        fa = "fa_keyboard",
         fr = "fr_keyboard",
         he = "he_keyboard",
         ja = "ja_keyboard",
