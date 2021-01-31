@@ -48,7 +48,7 @@ function CoverImage:init()
     self.cover_image_format = G_reader_settings:readSetting("cover_image_format") or "auto"
     self.cover_image_extension = getExtension(self.cover_image_path)
     self.cover_image_quality = G_reader_settings:readSetting("cover_image_quality") or 75
-    self.cover_image_stretch_limit = G_reader_settings:readSetting("cover_image_stretch_limit") or 10
+    self.cover_image_stretch_limit = G_reader_settings:readSetting("cover_image_stretch_limit") or 5
     self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "black"
     self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or "cover_fallback.png"
     self.enabled = G_reader_settings:isTrue("cover_image_enabled")
@@ -277,7 +277,7 @@ function CoverImage:addToMainMenu(menu_items)
                             return T(_("Aspect ratio stretch threshold (%1%)"), self.cover_image_stretch_limit )
                         end,
                         help_text_func = function()
-                            return T(_("If the image and the screen have a similar aspect ratio (±%1%), stretch the image instead of honoring its aspect ratio."), self.cover_image_stretch_limit )
+                            return T(_("If the image and the screen have a similar aspect ratio (±%1%), stretch the image instead of keeping its aspect ratio."), self.cover_image_stretch_limit )
                         end,
                         keep_menu_open = true,
                         callback = function(touchmenu_instance)
@@ -288,7 +288,7 @@ function CoverImage:addToMainMenu(menu_items)
                                 value = old_stretch_limit,
                                 value_min = 0,
                                 value_max = 25,
-                                default_value = 10,
+                                default_value = 5,
                                 title_text =  _("Set stretch threshold"),
                                 ok_text = _("Set"),
                                 callback = function(spin)
