@@ -119,9 +119,9 @@ function ScrollHtmlWidget:scrollToRatio(ratio)
     self.htmlbox_widget:freeBb()
     self.htmlbox_widget:_render()
 
-    -- If our dialog is wrapped in a movable, and that movable has been made translucent,
-    -- repaint all the things to avoid layering alpha on top of alpha,
-    -- leading to increasingly opaque and muddy text as half-transparent stuff gets stacked on top of each other...
+    -- If our dialog is wrapped in a MovableContainer and that container has been made translucent,
+    -- repaint all the things to avoid layering alpha on top of alpha, because
+    -- that would lead to increasingly opaque and muddy text as half-transparent stuff gets stacked on top of each other...
     if self.dialog.movable and self.dialog.movable.alpha then
         UIManager:setDirty("all", function()
             return "partial", self.dimen
