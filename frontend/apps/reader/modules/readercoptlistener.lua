@@ -303,6 +303,8 @@ function ReaderCoptListener:getAltStatusBarMenu()
                             -- we keep open, no need to handle this case.
                             self:setAndSave("cre_header_status_font_size", "crengine.page.header.font.size", spin.value)
                             if touchmenu_instance then touchmenu_instance:updateItems() end
+                            -- Repaint the whole page, as changing this should cause a re-rendering
+                            UIManager:setDirty(self.view.dialog, "ui")
                         end
                     }
                     UIManager:show(size_spinner)
