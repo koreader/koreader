@@ -293,22 +293,9 @@ function DoubleSpinWidget:update()
     picker_update_callback = function()
         -- If we're actually transparent, force an alpha-aware repaint.
         if self.movable.alpha then
-            if G_reader_settings:nilOrTrue("flash_ui") then
-                -- It's delayed to the next tick to actually catch a Button unhighlight.
-                UIManager:nextTick(function()
-                    UIManager:setDirty("all", function()
-                        return "ui", self.movable.dimen
-                    end)
-                end)
-            else
-                -- This should only really be necessary for the up/down buttons here,
-                -- because they repaint the center value button & text, unlike said button,
-                -- which just pops up the VK.
-                -- On the upside, we shouldn't need to delay anything without flash_ui ;).
-                UIManager:setDirty("all", function()
-                    return "ui", self.movable.dimen
-                end)
-            end
+            UIManager:setDirty("all", function()
+                return "ui", self.movable.dimen
+            end)
         end
         -- If we'd like to have the values auto-applied, uncomment this:
         -- self.callback(left_widget:getValue(), right_widget:getValue())

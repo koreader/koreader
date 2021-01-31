@@ -331,10 +331,19 @@ function Button:onTapSelectButton()
                 else
                     UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
                 end
-                -- If the button was disabled, switch to UI to make sure the gray comes through unharmed ;).
-                UIManager:setDirty(nil, function()
-                    return self.enabled and "fast" or "ui", self[1].dimen
-                end)
+
+                -- If our parent has a transparent movable container, repaint all the things to honor alpha
+                if self.show_parent and self.show_parent.movable and self.show_parent.movable.alpha then
+                    print("Alpha!")
+                    UIManager:setDirty("all", function()
+                        return "ui", self[1].dimen
+                    end)
+                else
+                    -- If the button was disabled, switch to UI to make sure the gray comes through unharmed ;).
+                    UIManager:setDirty(nil, function()
+                        return self.enabled and "fast" or "ui", self[1].dimen
+                    end)
+                end
                 --UIManager:forceRePaint() -- Ensures the unhighlight happens now, instead of potentially waiting and having it batched with something else.
             else
                 -- Callback closed our parent, we're done
