@@ -349,61 +349,70 @@ function NetworkMgr:getWifiMenuTable()
 end
 
 function NetworkMgr:getWifiToggleMenuTable()
+    local toggleCallback = function(touchmenu_instance)
+        local is_wifi_on = NetworkMgr:isWifiOn()
+        local is_connected = NetworkMgr:isConnected()
+        local fully_connected = is_wifi_on and is_connected
+        local complete_callback = function()
+            -- Notify TouchMenu to update item check state
+            touchmenu_instance:updateItems()
+            -- If Wi-Fi was on when the menu was shown, this means the tap meant to turn the Wi-Fi *off*,
+            -- as such, this callback will only be executed *after* the network has been disconnected.
+            if fully_connected then
+                UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
+            else
+                -- On hasWifiManager devices that play with kernel modules directly,
+                -- double-check that the connection attempt was actually successful...
+                if Device:isKobo() or Device:isCervantes() then
+                    if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
+                        UIManager:broadcastEvent(Event:new("NetworkConnected"))
+                    elseif NetworkMgr:isWifiOn() and not NetworkMgr:isConnected() then
+                        -- Don't leave Wi-Fi in an inconsistent state if the connection failed.
+                        -- NOTE: Keep in mind that NetworkSetting only runs this callback on *successful* connections!
+                        --       (It's called connect_callback there).
+                        --       This makes this branch somewhat hard to reach, which is why it gets a dedicated prompt below...
+                        self.wifi_was_on = false
+                        G_reader_settings:makeFalse("wifi_was_on")
+                        -- NOTE: We're limiting this to only a few platforms, as it might be actually harmful on some devices.
+                        --       The intent being to unload kernel modules, and make a subsequent turnOnWifi behave sanely.
+                        --       PB: Relies on netagent, no idea what it does, but it's not using this codepath anyway (!hasWifiToggle)
+                        --       Android: Definitely shouldn't do it.
+                        --       Sony: Doesn't play with modules, don't do it.
+                        --       Kobo: Yes, please.
+                        --       Cervantes: Loads/unloads module, probably could use it like Kobo.
+                        --       Kindle: Probably could use it, if only because leaving Wireless on is generally a terrible idea on Kindle,
+                        --               except that we defer to lipc, which makes Wi-Fi handling asynchronous, and the callback is simply delayed by 1s,
+                        --               so we can't be sure the system will actually have finished bringing Wi-Fi up by then...
+                        NetworkMgr:turnOffWifi()
+                        touchmenu_instance:updateItems()
+                    end
+                else
+                    -- Assume success on other platforms
+                    UIManager:broadcastEvent(Event:new("NetworkConnected"))
+                end
+            end
+        end
+        if fully_connected then
+            NetworkMgr:promptWifiOff(complete_callback)
+        elseif is_wifi_on and not is_connected then
+            NetworkMgr:promptWifi(complete_callback)
+        else
+            NetworkMgr:promptWifiOn(complete_callback)
+        end
+    end
+
     return {
         text = _("Wi-Fi connection"),
         enabled_func = function() return Device:hasWifiToggle() end,
         checked_func = function() return NetworkMgr:isWifiOn() end,
         callback = function(touchmenu_instance)
-            local is_wifi_on = NetworkMgr:isWifiOn()
-            local is_connected = NetworkMgr:isConnected()
-            local fully_connected = is_wifi_on and is_connected
-            local complete_callback = function()
-                -- Notify TouchMenu to update item check state
-                touchmenu_instance:updateItems()
-                -- If Wi-Fi was on when the menu was shown, this means the tap meant to turn the Wi-Fi *off*,
-                -- as such, this callback will only be executed *after* the network has been disconnected.
-                if fully_connected then
-                    UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
-                else
-                    -- On hasWifiManager devices that play with kernel modules directly,
-                    -- double-check that the connection attempt was actually successful...
-                    if Device:isKobo() or Device:isCervantes() then
-                        if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
-                            UIManager:broadcastEvent(Event:new("NetworkConnected"))
-                        elseif NetworkMgr:isWifiOn() and not NetworkMgr:isConnected() then
-                            -- Don't leave Wi-Fi in an inconsistent state if the connection failed.
-                            -- NOTE: Keep in mind that NetworkSetting only runs this callback on *successful* connections!
-                            --       (It's called connect_callback there).
-                            --       This makes this branch somewhat hard to reach, which is why it gets a dedicated prompt below...
-                            self.wifi_was_on = false
-                            G_reader_settings:makeFalse("wifi_was_on")
-                            -- NOTE: We're limiting this to only a few platforms, as it might be actually harmful on some devices.
-                            --       The intent being to unload kernel modules, and make a subsequent turnOnWifi behave sanely.
-                            --       PB: Relies on netagent, no idea what it does, but it's not using this codepath anyway (!hasWifiToggle)
-                            --       Android: Definitely shouldn't do it.
-                            --       Sony: Doesn't play with modules, don't do it.
-                            --       Kobo: Yes, please.
-                            --       Cervantes: Loads/unloads module, probably could use it like Kobo.
-                            --       Kindle: Probably could use it, if only because leaving Wireless on is generally a terrible idea on Kindle,
-                            --               except that we defer to lipc, which makes Wi-Fi handling asynchronous, and the callback is simply delayed by 1s,
-                            --               so we can't be sure the system will actually have finished bringing Wi-Fi up by then...
-                            NetworkMgr:turnOffWifi()
-                            touchmenu_instance:updateItems()
-                        end
-                    else
-                        -- Assume success on other platforms
-                        UIManager:broadcastEvent(Event:new("NetworkConnected"))
-                    end
-                end
-            end
-            if fully_connected then
-                NetworkMgr:promptWifiOff(complete_callback)
-            elseif is_wifi_on and not is_connected then
-                NetworkMgr:promptWifi(complete_callback)
-            else
-                NetworkMgr:promptWifiOn(complete_callback)
-            end
-        end
+            self.wifi_toggle_long_press = false
+            toggleCallback(touchmenu_instance)
+        end,
+        hold_callback = function(touchmenu_instance)
+            self.wifi_toggle_long_press = true
+            toggleCallback(touchmenu_instance)
+        end,
     }
 end
 
@@ -580,7 +589,7 @@ function NetworkMgr:getMenuTable(common_settings)
     end
 end
 
-function NetworkMgr:showNetworkMenu(complete_callback)
+function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
     local info = InfoMessage:new{text = _("Scanning for networks…")}
     UIManager:show(info)
     UIManager:nextTick(function()
@@ -600,44 +609,29 @@ function NetworkMgr:showNetworkMenu(complete_callback)
                 return
             end
         end
-        -- NOTE: Also supports a disconnect_callback, should we use it for something?
-        --       Tearing down Wi-Fi completely when tapping "disconnect" would feel a bit harsh, though...
-        UIManager:show(require("ui/widget/networksetting"):new{
-            network_list = network_list,
-            connect_callback = complete_callback,
-        })
-    end)
-end
-
-function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
-    local info = InfoMessage:new{text = _("Scanning for networks…")}
-    UIManager:show(info)
-    UIManager:nextTick(function()
-        local network_list, err = self:getNetworkList()
-        UIManager:close(info)
-        if network_list == nil then
-            UIManager:show(InfoMessage:new{text = err})
-            return
-        end
         table.sort(network_list,
            function(l, r) return l.signal_quality > r.signal_quality end)
+
         local success = false
-        for dummy, network in ipairs(network_list) do
-            if network.password then
-                success = NetworkMgr:authenticateNetwork(network)
-                if success then
-                    NetworkMgr:obtainIP()
-                    if complete_callback then
-                        complete_callback()
+        if not self.wifi_toggle_long_press then
+            for dummy, network in ipairs(network_list) do
+                if network.password then
+                    success = NetworkMgr:authenticateNetwork(network)
+                    if success then
+                        NetworkMgr:obtainIP()
+                        if complete_callback then
+                            complete_callback()
+                        end
+                        UIManager:show(InfoMessage:new{
+                            text = T(_("Connected to network %1"), BD.wrap(network.ssid)),
+                            timeout = 3,
+                        })
+                        break
                     end
-                    UIManager:show(InfoMessage:new{
-                        text = T(_("Connected to network %1"), BD.wrap(network.ssid)),
-                        timeout = 3,
-                    })
-                    break
                 end
             end
         end
+
         if not success then
             UIManager:show(require("ui/widget/networksetting"):new{
                 network_list = network_list,
