@@ -828,13 +828,8 @@ function DictQuickLookup:update()
         end
     end
 
-    -- If the container is transparent, keep it that way (which requires repainting everything)
-    if self.movable.alpha then
-        -- FIXME: Buttons need to honor that somehow if flash_ui is enabled, otherwise the unhighlight is not transparent...
-        UIManager:setDirty("all", function()
-            return "partial", self.dict_frame.dimen
-        end)
-    else
+    -- If we're translucent, Button itself will handle that post-callback, in order to preserve alpha without flickering.
+    if not self.movable.alpha then
         UIManager:setDirty(self, function()
             return "partial", self.dict_frame.dimen
         end)
