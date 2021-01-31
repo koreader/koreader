@@ -56,6 +56,9 @@ local Cervantes = Generic:new{
     -- all devices, except the original Cervantes Touch, have frontlight
     hasFrontlight = yes,
 
+    -- REMOVE ME: workaround until the frontlight widget is sane enough
+    hasNaturalLightApi = yes,
+
     -- currently only Cervantes 4 has coloured frontlight
     hasNaturalLight = no,
     hasNaturalLightMixer = no,

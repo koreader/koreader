@@ -1,14 +1,11 @@
 local BasePowerD = require("device/generic/powerd")
 local SysfsLight = require ("device/sysfs_light")
-local PluginShare = require("pluginshare")
 
 local battery_sysfs = "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/"
 
 local CervantesPowerD = BasePowerD:new{
     fl = nil,
     fl_warmth = nil,
-    auto_warmth = false,
-    max_warmth_hour = 23,
 
     fl_min = 0,
     fl_max = 100,
@@ -23,11 +20,10 @@ function CervantesPowerD:_syncLightOnStart()
     -- Use last values stored in koreader settings.
     local new_intensity = G_reader_settings:readSetting("frontlight_intensity") or nil
     local is_frontlight_on = G_reader_settings:readSetting("is_frontlight_on") or nil
-    local new_warmth, auto_warmth = nil
+    local new_warmth = nil
 
     if self.fl_warmth ~= nil then
         new_warmth = G_reader_settings:readSetting("frontlight_warmth") or nil
-        auto_warmth = G_reader_settings:readSetting("frontlight_auto_warmth") or nil
     end
 
     if new_intensity ~= nil then
@@ -38,15 +34,7 @@ function CervantesPowerD:_syncLightOnStart()
         self.initial_is_fl_on = is_frontlight_on
     end
 
-    local max_warmth_hour =
-        G_reader_settings:readSetting("frontlight_max_warmth_hour")
-    if max_warmth_hour then
-        self.max_warmth_hour = max_warmth_hour
-    end
-    if auto_warmth then
-        self.auto_warmth = true
-        self:calculateAutoWarmth()
-    elseif new_warmth ~= nil then
+    if new_warmth ~= nil then
         self.fl_warmth = new_warmth
     end
 
@@ -61,7 +49,6 @@ function CervantesPowerD:init()
     -- not be called)
     self.hw_intensity = 20
     self.initial_is_fl_on = true
-    self.autowarmth_job_running = false
 
     if self.device:hasFrontlight() then
         if self.device:hasNaturalLight() then
@@ -101,15 +88,12 @@ function CervantesPowerD:saveSettings()
         local cur_intensity = self.fl_intensity
         local cur_is_fl_on = self.is_fl_on
         local cur_warmth = self.fl_warmth
-        local cur_auto_warmth = self.auto_warmth
-        local cur_max_warmth_hour = self.max_warmth_hour
+
         -- Save intensity to koreader settings
         G_reader_settings:saveSetting("frontlight_intensity", cur_intensity)
         G_reader_settings:saveSetting("is_frontlight_on", cur_is_fl_on)
         if cur_warmth ~= nil then
             G_reader_settings:saveSetting("frontlight_warmth", cur_warmth)
-            G_reader_settings:saveSetting("frontlight_auto_warmth", cur_auto_warmth)
-            G_reader_settings:saveSetting("frontlight_max_warmth_hour", cur_max_warmth_hour)
         end
     end
 end
@@ -141,50 +125,8 @@ end
 
 function CervantesPowerD:setWarmth(warmth)
     if self.fl == nil then return end
-    if not warmth and self.auto_warmth then
-        self:calculateAutoWarmth()
-    end
     self.fl_warmth = warmth or self.fl_warmth
     self.fl:setWarmth(self.fl_warmth)
-end
-
-function CervantesPowerD:calculateAutoWarmth()
-    local current_time = os.date("%H") + os.date("%M")/60
-    local max_hour = self.max_warmth_hour
-    local diff_time = max_hour - current_time
-    if diff_time < 0 then
-        diff_time = diff_time + 24
-    end
-    if diff_time < 12 then
-        -- We are before bedtime. Use a slower progression over 5h.
-        self.fl_warmth = math.max(20 * (5 - diff_time), 0)
-    elseif diff_time > 22 then
-        -- Keep warmth at maximum for two hours after bedtime.
-        self.fl_warmth = 100
-    else
-        -- Between 2-4h after bedtime, return to zero.
-        self.fl_warmth = math.max(100 - 50 * (22 - diff_time), 0)
-    end
-    self.fl_warmth = math.floor(self.fl_warmth + 0.5)
-
-    -- Enable background job for setting Warmth, if not already done.
-    if not self.autowarmth_job_running then
-        table.insert(PluginShare.backgroundJobs, {
-                         when = 180,
-                         repeated = true,
-                         executable = function()
-                             if self.auto_warmth then
-                                 self:setWarmth()
-                             end
-                         end,
-        })
-        if package.loaded["ui/uimanager"] ~= nil then
-            local Event = require("ui/event")
-            local UIManager = require("ui/uimanager")
-            UIManager:broadcastEvent(Event:new("BackgroundJobsUpdated"))
-        end
-        self.autowarmth_job_running = true
-    end
 end
 
 function CervantesPowerD:getCapacityHW()
@@ -207,9 +149,6 @@ function CervantesPowerD:afterResume()
     if self.fl_warmth == nil then
         self.fl:setBrightness(self.hw_intensity)
     else
-        if self.auto_warmth then
-            self:calculateAutoWarmth()
-        end
         self.fl:setNaturalBrightness(self.hw_intensity, self.fl_warmth)
     end
 end
