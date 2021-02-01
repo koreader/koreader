@@ -19,6 +19,7 @@ local Language = {
         hu = "Magyar",
         nl_NL = "Nederlands",
         nb_NO = "Norsk",
+        ka = "ქართული",
         pl = "Polski",
         pl_PL = "Polski2",
         pt_PT = "Português",
