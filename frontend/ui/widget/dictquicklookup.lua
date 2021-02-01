@@ -828,8 +828,11 @@ function DictQuickLookup:update()
         end
     end
 
-    -- If we're translucent, Button itself will handle that post-callback, in order to preserve alpha without flickering.
-    if not self.movable.alpha then
+    -- If we're translucent, reset alpha to make the new definition actually readable.
+    if self.movable.alpha then
+        self.movable.alpha = nil
+        -- And skip the setDirty, Button will handle it post-callback & post-unhighlight.
+    else
         UIManager:setDirty(self, function()
             return "partial", self.dict_frame.dimen
         end)
