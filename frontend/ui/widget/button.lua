@@ -235,7 +235,11 @@ end
 
 function Button:onTapSelectButton()
     -- NOTE: We have a few tricks up our sleeve in case our parent is inside a translucent MovableContainer...
-    local is_translucent = self.show_parent and self.show_parent.movable and self.show_parent.movable.alpha
+    local was_translucent = self.show_parent and self.show_parent.movable and self.show_parent.movable.alpha
+    -- We make a distinction between transparency pre- and post- callback, because if a widget *was* transparent,
+    -- but no longer is post-callback, we want to ensure that we refresh the *full* container,
+    -- instead of just the button's frame, in order to avoid leaving bits of the widget transparent ;).
+    local is_translucent = was_translucent
 
     if self.enabled and self.callback then
         if G_reader_settings:isFalse("flash_ui") then
@@ -279,9 +283,11 @@ function Button:onTapSelectButton()
                 UIManager:forceRePaint() -- Ensures we have a chance to see the highlight
             end
             self.callback()
+            -- Check if the callback reset transparency...
+            is_translucent = was_translucent and self.show_parent.movable.alpha
             -- We don't want to fence the callback when we're *still* translucent, because we want a *single* refresh post-callback *and* post-unhighlight,
             -- in order to avoid flickering.
-            if not (is_translucent and self.show_parent.movable.alpha) then
+            if not is_translucent then
                 UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
             end
             if self.vsync then
@@ -356,9 +362,9 @@ function Button:onTapSelectButton()
 
     -- If our parent belongs to a translucent MovableContainer, repaint all the things to honor alpha without layering glitches,
     -- and refresh the full container, because the widget might have inhibited its own setDirty call to avoid flickering (c.f., *SpinWidget).
-    if is_translucent then
+    if was_translucent then
         -- If the callback reset the transparency, we only need to repaint our parent
-        UIManager:setDirty(self.show_parent.movable.alpha and "all" or self.show_parent, function()
+        UIManager:setDirty(is_translucent and "all" or self.show_parent, function()
             return "ui", self.show_parent.movable.dimen
         end)
     end
