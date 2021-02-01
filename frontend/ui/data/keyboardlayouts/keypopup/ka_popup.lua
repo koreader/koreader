@@ -3,18 +3,9 @@ return {
         "ა",
         north = "ჺ", -- georgian letter ain
     },
-    _b_ = {
-        "ბ",
-    },
-    _C_ = {
-        "ჩ",
-    },
     _c_ = {
         "ც",
         north = "ჩ",
-    },
-    _d_ = {
-        "დ",
     },
     _e_ = {
         "ე",
@@ -36,38 +27,14 @@ return {
         "ი",
         north = "ჲ", -- georgian letter hie
     },
-    _J_ = {
-        "ჟ",
-    },
     _j_ = {
         "ჯ",
         north = "ჟ",
         northeast = "ჷ", -- georgian letter yn
     },
-    _k_ = {
-        "კ",
-    },
-    _l_ = {
-        "ლ",
-    },
-    _m_ = {
-        "მ",
-    },
     _n_ = {
         "ნ",
         north = "ჼ", -- modifier letter nar
-    },
-    _o_ = {
-        "ო",
-    },
-    _p_ = {
-        "პ",
-    },
-    _q_ = {
-        "ქ",
-    },
-    _R_ = {
-        "ღ",
     },
     _r_ = {
         "რ",
@@ -78,24 +45,15 @@ return {
     },
     _s_ = {
         "ს",
-        north = "შ", 
-    },
-    _T_ = {
-        "თ",
+        north = "შ",
     },
     _t_ = {
         "ტ",
         north = "თ",
     },
-    _u_ = {
-        "უ",
-    },
     _v_ = {
         "ვ",
         north = "ჳ", -- georgian letter vie
-    },
-    _W_ = {
-        "ჭ",
     },
     _w_ = {
         "წ",
@@ -108,9 +66,6 @@ return {
     _y_ = {
         "ყ",
         north = "ჸ", -- georgian letter elifi
-    },
-    _Z_ = {
-        "ძ",
     },
     _z_ = {
         "ზ",
