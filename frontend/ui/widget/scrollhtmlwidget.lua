@@ -119,12 +119,13 @@ function ScrollHtmlWidget:scrollToRatio(ratio)
     self.htmlbox_widget:freeBb()
     self.htmlbox_widget:_render()
 
-    -- If our dialog is wrapped in a MovableContainer and that container has been made translucent,
-    -- repaint all the things to avoid layering alpha on top of alpha, because
-    -- that would lead to increasingly opaque and muddy text as half-transparent stuff gets stacked on top of each other...
+    -- If our dialog is currently wrapped in a MovableContainer and that container has been made translucent,
+    -- reset the alpha and refresh the whole thing, because we assume that a scroll means the user actually wants to
+    -- *read* the content, which is kinda hard on a nearly transparent widget ;).
     if self.dialog.movable and self.dialog.movable.alpha then
-        UIManager:setDirty("all", function()
-            return "partial", self.dimen
+        self.dialog.movable.alpha = nil
+        UIManager:setDirty(self.dialog, function()
+            return "partial", self.dialog.movable.dimen
         end)
     else
         UIManager:setDirty(self.dialog, function()
@@ -158,8 +159,9 @@ function ScrollHtmlWidget:scrollText(direction)
 
     -- Handle the container's alpha as above...
     if self.dialog.movable and self.dialog.movable.alpha then
-        UIManager:setDirty("all", function()
-            return "partial", self.dimen
+        self.dialog.movable.alpha = nil
+        UIManager:setDirty(self.dialog, function()
+            return "partial", self.dialog.movable.dimen
         end)
     else
         UIManager:setDirty(self.dialog, function()
