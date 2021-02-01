@@ -6,7 +6,6 @@ local _at = en_popup._at
 local _eq = en_popup._eq -- equals sign (=)
 local _a_ = ka_popup._a_
 local _c_ = ka_popup._c_
-local _d_ = ka_popup._d_
 local _e_ = ka_popup._e_
 local _f_ = ka_popup._f_
 local _g_ = ka_popup._g_
