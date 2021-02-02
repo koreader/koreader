@@ -5,6 +5,17 @@ local logger = require("logger")
 local function yes() return true end
 local function no() return false end
 
+-- returns isRm2, device_model
+local function getModel()
+    local f = io.open("/sys/devices/soc0/machine")
+    if not f then
+        error("missing sysfs entry for a remarkable")
+    end
+    local model = f:read("*line")
+    f:close()
+    return model == "reMarkable 2.0", model
+end
+
 local EV_ABS = 3
 local ABS_X = 00
 local ABS_Y = 01
@@ -17,9 +28,11 @@ local wacom_width = 15725 -- unscaled_size_check: ignore
 local wacom_height = 20967 -- unscaled_size_check: ignore
 local wacom_scale_x = screen_width / wacom_width
 local wacom_scale_y = screen_height / wacom_height
+local isRm2, rm_model = getModel()
 
 local Remarkable = Generic:new{
     isRemarkable = yes,
+    model = rm_model,
     hasKeys = yes,
     needsScreenRefreshAfterResume = no,
     hasOTAUpdates = yes,
@@ -34,7 +47,6 @@ local Remarkable = Generic:new{
 }
 
 local Remarkable1 = Remarkable:new{
-    model = "reMarkable",
     mt_width = 767, -- unscaled_size_check: ignore
     mt_height = 1023, -- unscaled_size_check: ignore
     input_wacom = "/dev/input/event0",
@@ -59,7 +71,6 @@ function Remarkable1:adjustTouchEvent(ev, by)
 end
 
 local Remarkable2 = Remarkable:new{
-    model = "reMarkable 2",
     mt_width = 1403, -- unscaled_size_check: ignore
     mt_height = 1871, -- unscaled_size_check: ignore
     input_wacom = "/dev/input/event1",
@@ -167,26 +178,22 @@ function Remarkable:setDateTime(year, month, day, hour, min, sec)
     return os.execute(command) == 0
 end
 
-function Remarkable1:suspend()
-    os.execute("systemctl suspend")
-end
-
-function Remarkable2:suspend()
-    -- Need to remove brcmfmac kernel module before suspend. Otherwise the module crashes on wakeup
-    os.execute("./disable-wifi.sh")
-
-    os.execute("systemctl suspend")
-    -- While device is suspended, when the user presses the power button and wakes up the device,
-    -- a "Power" event is NOT sent.
-    -- So we schedule a manual `UIManager:resume` call just far enough in the future that it won't
-    -- trigger before the `systemctl suspend` command finishes suspending the device
-    local UIManager = require("ui/uimanager")
-    UIManager:scheduleIn(0.5, function()
-        UIManager:resume()
-    end)
-end
-
 function Remarkable:resume()
+end
+
+function Remarkable:suspend()
+    os.execute("./disable-wifi.sh")
+    os.execute("systemctl suspend")
+    if isRm2 then
+        -- While device is suspended, when the user presses the power button and wakes up the device,
+        -- a "Power" event is NOT sent.
+        -- So we schedule a manual `UIManager:resume` call just far enough in the future that it won't
+        -- trigger before the `systemctl suspend` command finishes suspending the device
+        local UIManager = require("ui/uimanager")
+        UIManager:scheduleIn(0.5, function()
+            UIManager:resume()
+        end)
+    end
 end
 
 function Remarkable:powerOff()
@@ -199,19 +206,12 @@ function Remarkable:reboot()
     os.execute("systemctl reboot")
 end
 
-local f = io.open("/sys/devices/soc0/machine")
-if not f then error("missing sysfs entry for a remarkable") end
+logger.info(string.format("Starting %s", rm_model))
 
-local deviceType = f:read("*line")
-f:close()
-
-logger.info("deviceType: ", deviceType)
-
-if deviceType == "reMarkable 2.0" then
+if isRm2 then
     if not os.getenv("RM2FB_SHIM") then
         error("reMarkable2 requires RM2FB to work (https://github.com/ddvk/remarkable2-framebuffer)")
     end
-
     return Remarkable2
 else
     return Remarkable1
