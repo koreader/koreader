@@ -674,6 +674,10 @@ to, among other things, flag the right widget as setDirty (c.f., those pesky deb
 This is why you often see stuff doing, when instantiating a new widget, FancyWidget:new{ show_parent = self.show_parent or self };
 meaning, if I'm already a subwidget, cascade my parent, otherwise, it means I'm a window-level widget, so cascade myself as that widget's parent ;).
 
+Another convention (that a few things rely on) is naming a (persistent) MovableContainer wrapping a full widget `movable`, accessible as an instance field.
+This is useful when it's used for transparency purposes, which, e.g., Button relies on to handle highlighting inside a transparent widget properly,
+by checking if self.show_parent.movable exists and is currently translucent ;).
+
 @usage
 
 UIManager:setDirty(self.widget, "partial")

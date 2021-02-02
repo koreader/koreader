@@ -316,6 +316,10 @@ function SkimToWidget:init()
             vertical_group_down,
         }
     }
+    self.movable = MovableContainer:new{
+        -- alpha = 0.8,
+        self.skimto_frame,
+    }
     self[1] = WidgetContainer:new{
         align = "center",
         dimen =Geom:new{
@@ -323,10 +327,7 @@ function SkimToWidget:init()
             w = self.screen_width,
             h = self.screen_height,
         },
-        MovableContainer:new{
-            -- alpha = 0.8,
-            self.skimto_frame,
-        }
+        self.movable,
     }
 
     if Device:hasDPad() then

@@ -83,10 +83,6 @@ function DoubleSpinWidget:init()
 end
 
 function DoubleSpinWidget:update()
-    -- This picker_update_callback will be redefined later.
-    -- It's a hack to restore transparency after a Button unhighlight in NumberPicker,
-    -- in case the MovableContainer was actually made transparent.
-    local picker_update_callback = function() end
     local left_widget = NumberPickerWidget:new{
         show_parent = self,
         width = self.picker_width,
@@ -96,7 +92,6 @@ function DoubleSpinWidget:update()
         value_step = self.left_step,
         value_hold_step = self.left_hold_step,
         wrap = false,
-        update_callback = function() picker_update_callback() end,
     }
     local right_widget = NumberPickerWidget:new{
         show_parent = self,
@@ -107,7 +102,6 @@ function DoubleSpinWidget:update()
         value_step = self.right_step,
         value_hold_step = self.right_hold_step,
         wrap = false,
-        update_callback = function() picker_update_callback() end,
     }
     local left_vertical_group = VerticalGroup:new{
         align = "center",
@@ -287,31 +281,11 @@ function DoubleSpinWidget:update()
         },
         self.movable,
     }
-    UIManager:setDirty(self, function()
-        return "ui", self.widget_frame.dimen
-    end)
-    picker_update_callback = function()
-        -- If we're actually transparent, force an alpha-aware repaint.
-        if self.movable.alpha then
-            if G_reader_settings:nilOrTrue("flash_ui") then
-                -- It's delayed to the next tick to actually catch a Button unhighlight.
-                UIManager:nextTick(function()
-                    UIManager:setDirty("all", function()
-                        return "ui", self.movable.dimen
-                    end)
-                end)
-            else
-                -- This should only really be necessary for the up/down buttons here,
-                -- because they repaint the center value button & text, unlike said button,
-                -- which just pops up the VK.
-                -- On the upside, we shouldn't need to delay anything without flash_ui ;).
-                UIManager:setDirty("all", function()
-                    return "ui", self.movable.dimen
-                end)
-            end
-        end
-        -- If we'd like to have the values auto-applied, uncomment this:
-        -- self.callback(left_widget:getValue(), right_widget:getValue())
+    -- If we're translucent, Button itself will handle that post-callback, in order to preserve alpha without flickering.
+    if not self.movable.alpha then
+        UIManager:setDirty(self, function()
+            return "ui", self.widget_frame.dimen
+        end)
     end
 end
 
