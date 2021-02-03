@@ -472,7 +472,7 @@ function ConfigOption:init()
                     option_items[d] = option_item
                     option_item.items = option_items
                     option_item.name = self.options[c].name
-                    option_item.name_text = name_text
+                    option_item.name_text = name_text or self.options[c].alt_name_text
                     option_item.item_text = self.options[c].item_text
                     option_item.values = self.options[c].values
                     option_item.args = self.options[c].args
@@ -514,7 +514,7 @@ function ConfigOption:init()
                     option_items[d] = option_item
                     option_item.items = option_items
                     option_item.name = self.options[c].name
-                    option_item.name_text = name_text
+                    option_item.name_text = name_text or self.options[c].alt_name_text
                     option_item.values = self.options[c].values
                     option_item.args = self.options[c].args
                     option_item.event = self.options[c].event
