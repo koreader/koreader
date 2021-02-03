@@ -350,7 +350,12 @@ function ReaderBookmark:onShowBookmark()
                         end,
                     },
                 }
-            }
+            },
+            -- Request a full-screen refresh on close, to clear potential flash_ui highlights
+            close_callback = function()
+                -- TextViewer does a "partial" on CloseWidget
+                UIManager:setDirty(nil, "partial")
+            end,
         }
         UIManager:show(self.textviewer)
         return true
