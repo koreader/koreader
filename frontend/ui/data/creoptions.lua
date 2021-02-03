@@ -337,6 +337,7 @@ Note that your selected font size is not affected by this setting.]]),
         options = {
             {
                 name = "font_size",
+                alt_name_text = _("Font size"),
                 item_text = tableOfNumbersToTableOfStrings(DCREREADER_CONFIG_FONT_SIZES),
                 item_align_center = 1.0,
                 spacing = 15,
