@@ -58,6 +58,9 @@ local TextViewer = InputContainer:new{
     text_padding = Size.padding.large,
     text_margin = Size.margin.small,
     button_padding = Size.padding.default,
+
+    -- Optional callback called on CloseWidget, set by the widget which showed us (e.g., to request a full-screen refresh)
+    close_callback = nil,
 }
 
 function TextViewer:init()
@@ -228,6 +231,9 @@ function TextViewer:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "partial", self.frame.dimen
     end)
+    if self.close_callback then
+        self.close_callback()
+    end
     return true
 end
 
