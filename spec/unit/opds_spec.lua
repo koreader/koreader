@@ -228,11 +228,18 @@ local facet_sample = [[
 
 describe("OPDS module #nocov", function()
     local OPDSParser, OPDSBrowser
+    local orig_path
 
     setup(function()
+        orig_path = package.path
+        package.path = "plugins/opds.koplugin/?.lua;" .. package.path
         require("commonrequire")
-        OPDSParser = require("ui/opdsparser")
-        OPDSBrowser = require("ui/widget/opdsbrowser")
+        OPDSParser = require("opdsparser")
+        OPDSBrowser = require("opdsbrowser")
+    end)
+
+    teardown(function()
+        package.path = orig_path
     end)
 
     describe("OPDS parser module", function()
