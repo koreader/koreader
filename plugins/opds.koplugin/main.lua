@@ -10,7 +10,7 @@ local OPDS = WidgetContainer:new{
 
 function OPDS:onDispatcherRegisterActions()
     Dispatcher:registerAction("opds_show_catalog",
-        {category="none", event="ShowCatalog", title=_("OPDS Catalog"), filemanager=true,}
+        {category="none", event="ShowOPDSCatalog", title=_("OPDS Catalog"), filemanager=true,}
     )
 end
 
@@ -29,7 +29,7 @@ function OPDS:showCatalog()
     OPDSCatalog:showCatalog()
 end
 
-function OPDS:onShowCatalog()
+function OPDS:onShowOPDSCatalog()
     self:showCatalog()
     return true
 end
