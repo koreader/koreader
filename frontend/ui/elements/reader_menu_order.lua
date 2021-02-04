@@ -100,6 +100,7 @@ local order = {
     },
     screen = {
         "screensaver",
+        "coverimage",
         "----------------------------",
         "screen_rotation",
         "----------------------------",
@@ -109,8 +110,6 @@ local order = {
         "----------------------------",
         "screen_timeout",
         "fullscreen",
-        "----------------------------",
-        "coverimage",
     },
     taps_and_gestures = {
         "gesture_manager",
