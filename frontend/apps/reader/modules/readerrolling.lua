@@ -891,7 +891,7 @@ function ReaderRolling:onRedrawCurrentView()
     if self.view.view_mode == "page" then
         self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
     else
-        self.ui:handleEvent(Event:new("PosUpdate", self.current_pos))
+        self.ui:handleEvent(Event:new("PosUpdate", self.current_pos, self.ui.document:getCurrentPage()))
     end
     return true
 end
