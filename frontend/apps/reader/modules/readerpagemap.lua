@@ -207,6 +207,10 @@ function ReaderPageMap:onShowPageList()
         page_list.current = cur_page_idx
     end
 
+    -- We use the per-page and font-size settings set for the ToC
+    local items_per_page = G_reader_settings:readSetting("toc_items_per_page") or 14
+    local items_font_size = G_reader_settings:readSetting("toc_items_font_size") or Menu.getItemFontSize(items_per_page)
+
     local pl_menu = Menu:new{
         title = _("Reference page numbers list"),
         item_table = page_list,
@@ -215,7 +219,8 @@ function ReaderPageMap:onShowPageList()
         width = Screen:getWidth(),
         height = Screen:getHeight(),
         cface = Font:getFace("x_smallinfofont"),
-        perpage = G_reader_settings:readSetting("items_per_page") or 14,
+        items_per_page = items_per_page,
+        items_font_size = items_font_size,
         line_color = require("ffi/blitbuffer").COLOR_WHITE,
         single_line = true,
         on_close_ges = {

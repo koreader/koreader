@@ -29,7 +29,6 @@ local FileChooser = Menu:extend{
     collate = "strcoll", -- or collate = "access",
     reverse_collate = false,
     path_items = {}, -- store last browsed location(item index) for each path
-    perpage = G_reader_settings:readSetting("items_per_page"),
     goto_letter = true,
 }
 

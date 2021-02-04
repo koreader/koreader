@@ -148,6 +148,7 @@ local MenuItem = InputContainer:new{
     _underline_container = nil,
     linesize = Size.line.medium,
     single_line = false,
+    multilines_show_more_text = false,
     -- Align text & mandatory baselines (only when single_line=true)
     align_baselines = false,
 }
@@ -193,8 +194,7 @@ function MenuItem:init()
     if self.infont_size > max_font_size then
         self.infont_size = max_font_size
     end
-    local multilines_show_more_text = G_reader_settings:isTrue("items_multilines_show_more_text")
-    if not self.single_line and not multilines_show_more_text then
+    if not self.single_line and not self.multilines_show_more_text then
         -- For non single line menus (File browser, Bookmarks), if the
         -- user provided font size is large and would not allow showing
         -- more than one line in our item height, just switch to single
@@ -297,7 +297,7 @@ function MenuItem:init()
             end
         end
 
-    elseif multilines_show_more_text then
+    elseif self.multilines_show_more_text then
         -- Multi-lines, with font size decrease if needed to show more of the text.
         -- It would be costly/slow with use_xtext if we were to try all
         -- font sizes from self.font_size to min_font_size (12).
@@ -581,14 +581,6 @@ Widget that displays menu
 --]]
 local Menu = FocusManager:new{
     show_parent = nil,
-    -- face for displaying item contents
-    cface = Font:getFace("cfont"),
-    -- face for menu title
-    tface = Font:getFace("tfont"),
-    -- face for paging info display
-    fface = Font:getFace("ffont"),
-    -- font for item shortcut
-    sface = Font:getFace("scfont"),
 
     title = "No Title",
     -- default width and height
@@ -613,6 +605,13 @@ local Menu = FocusManager:new{
     page_info = nil,
     page_return = nil,
 
+    items_per_page_default = 14,
+    items_per_page = nil,
+    items_font_size = nil,
+    items_mandatory_font_size = nil,
+    multilines_show_more_text = nil,
+        -- Global settings or default values will be used if not provided
+
     -- set this to true to not paint as popup menu
     is_borderless = false,
     -- if you want to embed the menu widget into another widget, set
@@ -624,12 +623,11 @@ local Menu = FocusManager:new{
     -- it is usually set by the widget which creates the menu
     close_callback = nil,
     linesize = Size.line.medium,
-    perpage = G_reader_settings:readSetting("items_per_page") or 14,
     line_color = Blitbuffer.COLOR_DARK_GRAY,
 }
 
 function Menu:_recalculateDimen()
-    self.perpage = self.perpage_custom or G_reader_settings:readSetting("items_per_page") or 14
+    self.perpage = self.items_per_page or G_reader_settings:readSetting("items_per_page") or self.items_per_page_default
     self.span_width = 0
     self.dimen.w = self.width
     self.dimen.h = self.height or Screen:getHeight()
@@ -676,7 +674,7 @@ function Menu:init()
     self.menu_title = TextWidget:new{
         overlap_align = "center",
         text = self.title,
-        face = self.tface,
+        face = Font:getFace("tfont"),
     }
     local menu_title_container = CenterContainer:new{
         dimen = Geom:new{
@@ -906,7 +904,7 @@ function Menu:init()
 
     self[1] = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
-        bordersize = self.is_borderless and 0 or 2,
+        bordersize = self.is_borderless and 0 or Size.border.window,
         padding = 0,
         margin = 0,
         radius = self.is_popout and math.floor(self.dimen.w/20) or 0,
@@ -1049,10 +1047,14 @@ function Menu:updateItems(select_number)
     if not select_number then
         select_number = 1
     end
-    --font size between 12 and 18 for better matching
-    local infont_size = math.floor(18 - (self.perpage - 6) / 3)
-    --default font size between 14 and 24 for better matching
-    local font_size = G_reader_settings:readSetting("items_font_size") or math.floor(24 - ((self.perpage - 6)/ 18) * 10 )
+
+    local font_size = self.items_font_size or G_reader_settings:readSetting("items_font_size")
+                                     or Menu.getItemFontSize(self.perpage)
+    local infont_size = self.items_mandatory_font_size or Menu.getItemMandatoryFontSize(self.perpage)
+    local multilines_show_more_text = self.multilines_show_more_text
+    if multilines_show_more_text == nil then
+        multilines_show_more_text = G_reader_settings:isTrue("items_multilines_show_more_text")
+    end
 
     for c = 1, math.min(self.perpage, #self.item_table) do
         -- calculate index in item_table
@@ -1090,6 +1092,7 @@ function Menu:updateItems(select_number)
                 menu = self,
                 linesize = self.linesize,
                 single_line = self.single_line,
+                multilines_show_more_text = multilines_show_more_text,
                 align_baselines = self.align_baselines,
                 line_color = self.line_color,
             }
@@ -1108,6 +1111,12 @@ function Menu:updateItems(select_number)
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen
+        if not self.is_borderless then
+            refresh_dimen = refresh_dimen:copy()
+            local bordersize = Size.border.window
+            refresh_dimen.w = refresh_dimen.w + bordersize*2
+            refresh_dimen.h = refresh_dimen.h + bordersize*2
+        end
         return "ui", refresh_dimen
     end)
 end
@@ -1373,6 +1382,18 @@ else
     else -- normal case with LTR language
         sub_item_format = "%s " .. BD.ltr(arrow_right)
     end
+end
+
+function Menu.getItemFontSize(perpage)
+    -- Get adjusted font size for the given nb of items per page:
+    -- item font size between 14 and 24 for better matching
+    return math.floor(24 - ((perpage - 6)/ 18) * 10 )
+end
+
+function Menu.getItemMandatoryFontSize(perpage)
+    -- Get adjusted font size for the given nb of items per page:
+    -- "mandatory" font size between 12 and 18 for better matching
+    return math.floor(18 - (perpage - 6) / 3)
 end
 
 function Menu.getMenuText(item)

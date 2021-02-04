@@ -158,19 +158,22 @@ function FileManagerMenu:setUpdateItemTable()
             {
                 text = _("Items per page"),
                 help_text = _([[This sets the number of items per page in:
-- File browser and history in 'classic' display mode
+- File browser, history and favorites in 'classic' display mode
+- Search results and folder shortcuts
 - File and directory selection
-- Table of contents
-- Bookmarks list]]),
+- Calibre and OPDS browsers/search results]]),
                 keep_menu_open = true,
                 callback = function()
+                    local Menu = require("ui/widget/menu")
                     local SpinWidget = require("ui/widget/spinwidget")
-                    local curr_items = G_reader_settings:readSetting("items_per_page") or 14
+                    local default_perpage = Menu.items_per_page_default
+                    local curr_perpage = G_reader_settings:readSetting("items_per_page") or default_perpage
                     local items = SpinWidget:new{
                         width = math.floor(Screen:getWidth() * 0.6),
-                        value = curr_items,
+                        value = curr_perpage,
                         value_min = 6,
                         value_max = 24,
+                        default_value = default_perpage,
                         title_text =  _("Items per page"),
                         keep_shown_on_apply = true,
                         callback = function(spin)
@@ -185,9 +188,10 @@ function FileManagerMenu:setUpdateItemTable()
                 text = _("Font size"),
                 keep_menu_open = true,
                 callback = function()
+                    local Menu = require("ui/widget/menu")
                     local SpinWidget = require("ui/widget/spinwidget")
-                    local curr_items = G_reader_settings:readSetting("items_per_page") or 14
-                    local default_font_size = math.floor(24 - ((curr_items - 6)/ 18) * 10 )
+                    local curr_perpage = G_reader_settings:readSetting("items_per_page") or Menu.items_per_page_default
+                    local default_font_size = Menu.getItemFontSize(curr_perpage)
                     local curr_font_size = G_reader_settings:readSetting("items_font_size") or default_font_size
                     local items_font = SpinWidget:new{
                         width = math.floor(Screen:getWidth() * 0.6),
@@ -198,7 +202,14 @@ function FileManagerMenu:setUpdateItemTable()
                         keep_shown_on_apply = true,
                         title_text =  _("Maximum font size for item"),
                         callback = function(spin)
-                            G_reader_settings:saveSetting("items_font_size", spin.value)
+                            if spin.value == default_font_size then
+                                -- We can't know if the user has set a size or hit "Use default", but
+                                -- assume that if it is the default font size, he will prefer to have
+                                -- our default font size if he later update per-page
+                                G_reader_settings:delSetting("items_font_size")
+                            else
+                                G_reader_settings:saveSetting("items_font_size", spin.value)
+                            end
                             self.ui:onRefresh()
                         end
                     }
@@ -213,6 +224,7 @@ function FileManagerMenu:setUpdateItemTable()
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrFalse("items_multilines_show_more_text")
+                    self.ui:onRefresh()
                 end
             }
         }

@@ -92,7 +92,6 @@ function SetDefaults:init()
         width = Screen:getWidth()-15,
         height = Screen:getHeight()-15,
         cface = Font:getFace("smallinfofont"),
-        perpage = G_reader_settings:readSetting("items_per_page") or 14,
         show_parent = menu_container,
         _manager = self,
     }

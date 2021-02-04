@@ -859,7 +859,7 @@ function ReaderRolling:updatePos()
         self:_gotoXPointer(self.xpointer)
         self.ui:handleEvent(Event:new("UpdateToc"))
     end
-    self:updateTopStatusBarMarkers()
+    self:onUpdateTopStatusBarMarkers()
     UIManager:setDirty(self.view.dialog, "partial")
     -- Allow for the new rendering to be shown before possibly showing
     -- the "Styles have changed..." ConfirmBox so the user can decide
@@ -1042,7 +1042,7 @@ function ReaderRolling:onSetStatusLine(status_line)
     self.ui:handleEvent(Event:new("UpdatePos"))
 end
 
-function ReaderRolling:updateTopStatusBarMarkers()
+function ReaderRolling:onUpdateTopStatusBarMarkers()
     if not self.cre_top_bar_enabled then
         return
     end

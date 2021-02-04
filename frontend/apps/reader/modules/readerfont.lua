@@ -169,12 +169,13 @@ function ReaderFont:onShowFontMenu()
         width = Screen:getWidth() - 100,
         height = math.floor(Screen:getHeight() * 0.5),
         single_line = true,
-        perpage_custom = 8,
+        items_per_page = 8,
+        items_font_size = Menu.getItemFontSize(8),
     }
     -- build container
     local menu_container = CenterContainer:new{
-        main_menu,
         dimen = Screen:getSize(),
+        main_menu,
     }
     main_menu.close_callback = function ()
         UIManager:close(menu_container)

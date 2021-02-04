@@ -577,18 +577,18 @@ width: 100% !important;
     {
         title = _("Miscellaneous"),
         {
-            title = _("Alternative TOC hints"),
+            title = _("Alternative ToC hints"),
             {
-                title = _("About alternative TOC"),
+                title = _("About alternative ToC"),
                 info_text = _([[
-An alternative table of contents can be built with a long-press on the "Table of contents" menu item.
+An alternative table of contents can be built from the "Table of contents" settings menu.
 
-The TOC will be built from document headings <H1> to <H6>. Some of these can be ignored with the tweaks available here.
-If the document contains no headings, or all are ignored, the alternative TOC will be built from document fragments and will point to the start of each individual HTML file in the EPUB.
+The ToC will be built from document headings <H1> to <H6>. Some of these can be ignored with the tweaks available here.
+If the document contains no headings, or all are ignored, the alternative ToC will be built from document fragments and will point to the start of each individual HTML file in the EPUB.
 
-Hints can be set to other non-heading elements in a user style tweak, so they can be used as TOC items. Since this would be quite book-specific, please see the final tweak for some examples.
+Hints can be set to other non-heading elements in a user style tweak, so they can be used as ToC items. Since this would be quite book-specific, please see the final tweak for some examples.
 
-After applying these tweaks, the alternative TOC needs to be rebuilt by long-pressing "Table of contents" twice: once to restore the original TOC, and once to build the alternative TOC again.]]),
+After applying these tweaks, the alternative ToC needs to be rebuilt by toggling it twice in its menu: once to restore the original ToC, and once to build the alternative ToC again.]]),
                 separator = true,
             },
             {
@@ -629,9 +629,9 @@ After applying these tweaks, the alternative TOC needs to be rebuilt by long-pre
             },
             {
                 id = "alt_toc_level_example";
-                title = _("Example of book specific TOC hints"),
+                title = _("Example of book specific ToC hints"),
                 description = _([[
-If headings or document fragments do not result in a usable TOC, you can inspect the HTML and look for elements that contain chapter titles. Then you can set hints to their class names.
+If headings or document fragments do not result in a usable ToC, you can inspect the HTML and look for elements that contain chapter titles. Then you can set hints to their class names.
 This is just an example, that will need to be adapted into a user style tweak.]]),
                 css = [[
 .book_n    { -cr-hint: toc-level1; }
