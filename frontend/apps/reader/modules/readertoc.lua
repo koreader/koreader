@@ -28,6 +28,7 @@ local ReaderToc = InputContainer:new{
     expanded_nodes = {},
     toc_menu_title = _("Table of contents"),
     alt_toc_menu_title = _("Table of contents *"),
+    toc_items_per_page_default = 14,
 }
 
 function ReaderToc:init()
@@ -38,8 +39,31 @@ function ReaderToc:init()
                 doc = "show Table of Content menu" },
         }
     end
+
+    if not G_reader_settings:readSetting("toc_items_per_page") then
+        -- The TOC items per page and items' font size can now be
+        -- configured. Previously, the ones set for the file browser
+        -- were used. Initialize them from these ones.
+        local items_per_page = G_reader_settings:readSetting("items_per_page")
+                                or self.toc_items_per_page_default
+        G_reader_settings:saveSetting("toc_items_per_page", items_per_page)
+        local items_font_size = G_reader_settings:readSetting("items_font_size")
+        if items_font_size and items_font_size ~= Menu.getItemFontSize(items_per_page) then
+            -- Keep the user items font size if it's not the default for items_per_page
+            G_reader_settings:saveSetting("toc_items_font_size", items_font_size)
+        end
+    end
+
     self:resetToc()
     self.ui.menu:registerToMainMenu(self)
+end
+
+function ReaderToc:onReadSettings(config)
+    self.toc_ticks_ignored_levels = config:readSetting("toc_ticks_ignored_levels") or {}
+end
+
+function ReaderToc:onSaveSettings()
+    self.ui.doc_settings:saveSetting("toc_ticks_ignored_levels", self.toc_ticks_ignored_levels)
 end
 
 function ReaderToc:cleanUpTocTitle(title, replace_empty)
@@ -380,11 +404,13 @@ function ReaderToc:getTocTicksFlattened()
 
     -- Keep track of what we add to avoid duplicates (c.f., https://stackoverflow.com/a/20067270)
     local hash = {}
-    for _, v in ipairs(ticks) do
-        for depth, page in ipairs(v) do
-            if not hash[page] then
-                table.insert(ticks_flattened, page)
-                hash[page] = true
+    for depth, v in ipairs(ticks) do
+        if not self.toc_ticks_ignored_levels[depth] then
+            for _, page in ipairs(v) do
+                if not hash[page] then
+                    table.insert(ticks_flattened, page)
+                    hash[page] = true
+                end
             end
         end
     end
@@ -571,8 +597,9 @@ function ReaderToc:onShowToc()
         end
     end
 
+    local items_per_page = G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_default
+    local items_font_size = G_reader_settings:readSetting("toc_items_font_size") or Menu.getItemFontSize(items_per_page)
     -- Estimate expand/collapse icon size
-    local items_per_page = G_reader_settings:readSetting("items_per_page") or 14
     -- *2/5 to acount for Menu top title and bottom icons, and add some air between consecutive icons
     local icon_size = math.floor(Screen:getHeight() / items_per_page * 2/5)
     local button_width = icon_size * 2
@@ -627,7 +654,8 @@ function ReaderToc:onShowToc()
         cface = Font:getFace("x_smallinfofont"),
         single_line = true,
         align_baselines = true,
-        perpage = items_per_page,
+        items_per_page = items_per_page,
+        items_font_size = items_font_size,
         line_color = require("ffi/blitbuffer").COLOR_WHITE,
         on_close_ges = {
             GestureRange:new{
@@ -785,38 +813,157 @@ function ReaderToc:addToMainMenu(menu_items)
             self:onShowToc()
         end,
     }
+    -- ToC (and other navigation) settings
+    menu_items.navi_settings = {
+        text = _("Settings"),
+    }
+    -- Alternative ToC (only available with CRE documents)
     if self.ui.document:canHaveAlternativeToc() then
-        menu_items.table_of_contents.hold_callback = function(touchmenu_instance)
-            if self.ui.document:isTocAlternativeToc() then
-                UIManager:show(ConfirmBox:new{
-                    text = _("The table of content for this book is currently an alternative one built from the document headings.\nDo you want to get back the original table of content? (The book will be reloaded.)"),
-                    ok_callback = function()
-                        touchmenu_instance:closeMenu()
-                        self.ui.doc_settings:delSetting("alternative_toc")
-                        self.ui.document:invalidateCacheFile()
-                        -- Allow for ConfirmBox to be closed before showing
-                        -- "Opening file" InfoMessage
-                        UIManager:scheduleIn(0.5, function ()
-                            self.ui:reloadDocument()
-                        end)
-                    end,
-                })
-            else
-                UIManager:show(ConfirmBox:new{
-                    text = _("Do you want to use an alternative table of content built from the document headings?"),
-                    ok_callback = function()
-                        touchmenu_instance:closeMenu()
-                        self:resetToc()
-                        self.ui.document:buildAlternativeToc()
-                        self.ui.doc_settings:saveSetting("alternative_toc", true)
-                        self:onShowToc()
-                        self.view.footer:setTocMarkers(true)
-                        self.view.footer:onUpdateFooter()
-                    end,
-                })
-            end
-        end
+        menu_items.toc_alt_toc = {
+            text = _("Alternative table of contents"),
+            help_text = _([[
+An alternative table of contents can be built from document headings <H1> to <H6>.
+If the document contains no headings, or all are ignored, the alternative ToC will be built from document fragments and will point to the start of each individual HTML file in the EPUB.
+
+Some of the headings can be ignored, and hints can be set to other non-heading elements in a user style tweak, so they can be used as ToC items.
+See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
+            checked_func = function()
+                return self.ui.document:isTocAlternativeToc()
+            end,
+            callback = function(touchmenu_instance)
+                if self.ui.document:isTocAlternativeToc() then
+                    UIManager:show(ConfirmBox:new{
+                        text = _("The table of contents for this book is currently an alternative one built from the document headings.\nDo you want to get back the original table of contents? (The book will be reloaded.)"),
+                        ok_callback = function()
+                            touchmenu_instance:closeMenu()
+                            self.ui.doc_settings:delSetting("alternative_toc")
+                            self.ui.document:invalidateCacheFile()
+                            self.toc_ticks_ignored_levels = {} -- reset this
+                            -- Allow for ConfirmBox to be closed before showing
+                            -- "Opening file" InfoMessage
+                            UIManager:scheduleIn(0.5, function ()
+                                self.ui:reloadDocument()
+                            end)
+                        end,
+                    })
+                else
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Do you want to use an alternative table of contents built from the document headings?"),
+                        ok_callback = function()
+                            touchmenu_instance:closeMenu()
+                            self:resetToc()
+                            self.toc_ticks_ignored_levels = {} -- reset this
+                            self.ui.document:buildAlternativeToc()
+                            self.ui.doc_settings:saveSetting("alternative_toc", true)
+                            self:onShowToc()
+                            self.view.footer:setTocMarkers(true)
+                            self.view.footer:onUpdateFooter()
+                            self.ui:handleEvent(Event:new("UpdateTopStatusBarMarkers"))
+                        end,
+                    })
+                end
+            end,
+        }
     end
+    -- Allow to have getTocTicksFlattened() get rid of all items at some depths, which
+    -- might be useful to have the footer and SkimTo progress bar less crowded.
+    -- This also affects the footer current chapter title, but leave the ToC itself unchanged.
+    local genTocLevelIgnoreMenuItem = function(level)
+        if not self.ticks or not self.ticks[level] then
+            return
+        end
+        return {
+            text_func = function()
+                return T(_("%1 entries at ToC depth %2"), #self.ticks[level], level)
+            end,
+            checked_func = function()
+                return not self.toc_ticks_ignored_levels[level]
+            end,
+            callback = function()
+                self.toc_ticks_ignored_levels[level] = not self.toc_ticks_ignored_levels[level]
+                self:onUpdateToc()
+                self.view.footer:onUpdateFooter(self.view.footer_visible)
+                self.ui:handleEvent(Event:new("UpdateTopStatusBarMarkers"))
+            end,
+        }
+    end
+    menu_items.toc_ticks_level_ignore = {
+        text_func = function()
+            local nb_ticks = 0
+            if self.ticks then
+                for level=1, #self.ticks do
+                    if not self.toc_ticks_ignored_levels[level] then
+                        nb_ticks = nb_ticks + #self.ticks[level]
+                    end
+                end
+            end
+            return T(_("Progress bars: %1 ticks"), nb_ticks)
+        end,
+        help_text = _([[The progress bars in the footer and the skim dialog can become cramped when the table of contents is complex. This allows you to restrict the number of tick marks.]]),
+        enabled_func = function()
+            return self.ticks and #self.ticks > 0
+        end,
+        sub_item_table_func = function()
+            local toc_ticks_levels = {}
+            local level = 1
+            while true do
+                local item = genTocLevelIgnoreMenuItem(level)
+                if item then
+                    table.insert(toc_ticks_levels, item)
+                    level = level + 1
+                else
+                    break
+                end
+            end
+            return toc_ticks_levels
+        end,
+    }
+    menu_items.toc_items_per_page = {
+        text = _("ToC entries per page"),
+        keep_menu_open = true,
+        callback = function()
+            local SpinWidget = require("ui/widget/spinwidget")
+            local curr_perpage = G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_default
+            local items = SpinWidget:new{
+                width = math.floor(Screen:getWidth() * 0.6),
+                value = curr_perpage,
+                value_min = 6,
+                value_max = 24,
+                default_value = self.toc_items_per_page_default,
+                title_text =  _("ToC entries per page"),
+                callback = function(spin)
+                    G_reader_settings:saveSetting("toc_items_per_page", spin.value)
+                    -- We need to reset the TOC so cached expand/collapsed icons
+                    -- instances (as item.state), which were sized for a previous
+                    -- value or items_per_page, are forgotten.
+                    self:resetToc()
+                end
+            }
+            UIManager:show(items)
+        end
+    }
+    menu_items.toc_items_font_size = {
+        text = _("ToC entry font size"),
+        keep_menu_open = true,
+        callback = function()
+            local SpinWidget = require("ui/widget/spinwidget")
+            local curr_perpage = G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_default
+            local default_font_size = Menu.getItemFontSize(curr_perpage)
+            local curr_font_size = G_reader_settings:readSetting("toc_items_font_size") or default_font_size
+            local items_font = SpinWidget:new{
+                width = math.floor(Screen:getWidth() * 0.6),
+                value = curr_font_size,
+                value_min = 10,
+                value_max = 72,
+                default_value = default_font_size,
+                title_text =  _("ToC entry font size"),
+                callback = function(spin)
+                    G_reader_settings:saveSetting("toc_items_font_size", spin.value)
+                end
+            }
+            UIManager:show(items_font)
+        end,
+    }
 end
 
 return ReaderToc

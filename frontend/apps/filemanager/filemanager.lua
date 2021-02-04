@@ -185,7 +185,6 @@ function FileManager:setupLayout()
         is_popout = false,
         is_borderless = true,
         has_close_button = true,
-        perpage = G_reader_settings:readSetting("items_per_page"),
         show_unsupported = show_unsupported,
         file_filter = function(filename)
             if DocumentRegistry:hasProvider(filename) then

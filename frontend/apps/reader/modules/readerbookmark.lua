@@ -19,6 +19,7 @@ local T = require("ffi/util").template
 local ReaderBookmark = InputContainer:new{
     bm_menu_title = _("Bookmarks"),
     bbm_menu_title = _("Bookmark browsing mode"),
+    bookmarks_items_per_page_default = 14,
     bookmarks = nil,
 }
 
@@ -30,6 +31,21 @@ function ReaderBookmark:init()
                 doc = "show bookmarks" },
         }
     end
+
+    if not G_reader_settings:readSetting("bookmarks_items_per_page") then
+        -- The Bookmarks items per page and items' font size can now be
+        -- configured. Previously, the ones set for the file browser
+        -- were used. Initialize them from these ones.
+        local items_per_page = G_reader_settings:readSetting("items_per_page")
+                                or self.bookmarks_items_per_page_default
+        G_reader_settings:saveSetting("bookmarks_items_per_page", items_per_page)
+        local items_font_size = G_reader_settings:readSetting("items_font_size")
+        if items_font_size and items_font_size ~= Menu.getItemFontSize(items_per_page) then
+            -- Keep the user items font size if it's not the default for items_per_page
+            G_reader_settings:saveSetting("bookmarks_items_font_size", items_font_size)
+        end
+    end
+
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -59,6 +75,58 @@ function ReaderBookmark:addToMainMenu(menu_items)
             end,
         }
     end
+    menu_items.bookmarks_items_per_page = {
+        text = _("Bookmarks per page"),
+        keep_menu_open = true,
+        callback = function()
+            local SpinWidget = require("ui/widget/spinwidget")
+            local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page") or self.bookmarks_items_per_page_default
+            local items = SpinWidget:new{
+                width = math.floor(Screen:getWidth() * 0.6),
+                value = curr_perpage,
+                value_min = 6,
+                value_max = 24,
+                default_value = self.bookmarks_items_per_page_default,
+                title_text =  _("Bookmarks per page"),
+                callback = function(spin)
+                    G_reader_settings:saveSetting("bookmarks_items_per_page", spin.value)
+                end
+            }
+            UIManager:show(items)
+        end
+    }
+    menu_items.bookmarks_items_font_size = {
+        text = _("Bookmark font size"),
+        keep_menu_open = true,
+        callback = function()
+            local SpinWidget = require("ui/widget/spinwidget")
+            local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page") or self.bookmarks_items_per_page_default
+            local default_font_size = Menu.getItemFontSize(curr_perpage)
+            local curr_font_size = G_reader_settings:readSetting("bookmarks_items_font_size") or default_font_size
+            local items_font = SpinWidget:new{
+                width = math.floor(Screen:getWidth() * 0.6),
+                value = curr_font_size,
+                value_min = 10,
+                value_max = 72,
+                default_value = default_font_size,
+                title_text =  _("Bookmark font size"),
+                callback = function(spin)
+                    G_reader_settings:saveSetting("bookmarks_items_font_size", spin.value)
+                end
+            }
+            UIManager:show(items_font)
+        end,
+    }
+    menu_items.bookmarks_items_show_more_text = {
+        text = _("Shrink bookmark font size to fit more text"),
+        keep_menu_open = true,
+        checked_func = function()
+            return G_reader_settings:isTrue("bookmarks_items_multilines_show_more_text")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("bookmarks_items_multilines_show_more_text")
+        end
+    }
 end
 
 function ReaderBookmark:enableBookmarkBrowsingMode()
@@ -271,6 +339,10 @@ function ReaderBookmark:onShowBookmark()
         end
     end
 
+    local items_per_page = G_reader_settings:readSetting("bookmarks_items_per_page") or self.bookmarks_items_per_page_default
+    local items_font_size = G_reader_settings:readSetting("bookmarks_items_font_size") or Menu.getItemFontSize(items_per_page)
+    local multilines_show_more_text = G_reader_settings:isTrue("bookmarks_items_multilines_show_more_text")
+
     local bm_menu = Menu:new{
         title = _("Bookmarks"),
         item_table = self.bookmarks,
@@ -279,7 +351,9 @@ function ReaderBookmark:onShowBookmark()
         width = Screen:getWidth(),
         height = Screen:getHeight(),
         cface = Font:getFace("x_smallinfofont"),
-        perpage = G_reader_settings:readSetting("items_per_page") or 14,
+        items_per_page = items_per_page,
+        items_font_size = items_font_size,
+        multilines_show_more_text = multilines_show_more_text,
         line_color = require("ffi/blitbuffer").COLOR_WHITE,
         on_close_ges = {
             GestureRange:new{
