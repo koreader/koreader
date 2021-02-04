@@ -42,6 +42,7 @@ local MODE = {
     book_title = 12,
     book_chapter = 13,
     bookmark_count = 14,
+    low_battery = 15,
 }
 
 local symbol_prefix = {
@@ -147,6 +148,53 @@ local footerTextGeneratorMap = {
         local prefix = symbol_prefix[symbol_type].battery
         local powerd = Device:getPowerDevice()
         local batt_lvl = powerd:getCapacity()
+        -- If we're using icons, use fancy variable icons
+        if symbol_type == "icons" or symbol_type == "compact_items" then
+            if powerd:isCharging() then
+                prefix = ""
+            else
+                if batt_lvl >= 100 then
+                    prefix = ""
+                elseif batt_lvl >= 90 then
+                    prefix = ""
+                elseif batt_lvl >= 80 then
+                    prefix = ""
+                elseif batt_lvl >= 70 then
+                    prefix = ""
+                elseif batt_lvl >= 60 then
+                    prefix = ""
+                elseif batt_lvl >= 50 then
+                    prefix = ""
+                elseif batt_lvl >= 40 then
+                    prefix = ""
+                elseif batt_lvl >= 30 then
+                    prefix = ""
+                elseif batt_lvl >= 20 then
+                    prefix = ""
+                elseif batt_lvl >= 10 then
+                    prefix = ""
+                else
+                    prefix = ""
+                end
+            end
+            if symbol_type == "compact_items" then
+                return BD.wrap(prefix)
+            else
+                return BD.wrap(prefix) .. batt_lvl .. "%"
+            end
+        else
+            return BD.wrap(prefix) .. " " .. (powerd:isCharging() and "+" or "") .. batt_lvl .. "%"
+        end
+    end,
+    low_battery = function(footer)
+        local symbol_type = footer.settings.item_prefix or "icons"
+        local prefix = symbol_prefix[symbol_type].battery
+        local powerd = Device:getPowerDevice()
+        local batt_lvl = powerd:getCapacity()
+        local threshold = G_reader_settings:readSetting("low_battery_threshold") or 20
+        if footer.settings.hide_empty_generators and batt_lvl > threshold then
+            return ""
+        end
         -- If we're using icons, use fancy variable icons
         if symbol_type == "icons" or symbol_type == "compact_items" then
             if powerd:isCharging() then
@@ -843,6 +891,7 @@ function ReaderFooter:textOptionTitles(option)
             and T(_("Current time (%1)"), symbol_prefix[symbol].time) or _("Current time"),
         pages_left = T(_("Pages left in chapter (%1)"), symbol_prefix[symbol].pages_left),
         battery = T(_("Battery status (%1)"), symbol_prefix[symbol].battery),
+        low_battery = T(_("Battery status when low (%1)"), symbol_prefix[symbol].battery),
         percentage = symbol_prefix[symbol].percentage
             and T(_("Progress percentage (%1)"), symbol_prefix[symbol].percentage) or _("Progress percentage"),
         book_time_to_read = symbol_prefix[symbol].book_time_to_read
@@ -1747,6 +1796,7 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(sub_items, getMinibarOption("pages_left"))
     if Device:hasBattery() then
         table.insert(sub_items, getMinibarOption("battery"))
+        table.insert(sub_items, getMinibarOption("low_battery"))
     end
     table.insert(sub_items, getMinibarOption("bookmark_count"))
     table.insert(sub_items, getMinibarOption("percentage"))
