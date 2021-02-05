@@ -100,6 +100,7 @@ local order = {
     },
     screen = {
         "screensaver",
+        "coverimage",
         "----------------------------",
         "screen_rotation",
         "----------------------------",
