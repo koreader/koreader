@@ -666,6 +666,7 @@ local VirtualKeyboard = FocusManager:new{
         el = "el_keyboard",
         en = "en_keyboard",
         es = "es_keyboard",
+        fa = "fa_keyboard",
         fr = "fr_keyboard",
         he = "he_keyboard",
         ja = "ja_keyboard",
