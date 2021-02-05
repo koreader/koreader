@@ -51,13 +51,13 @@ return {
     },
     -- Diacritics (Harakat حركات)
     diacritics = {
-        "ّ",
+        "‌",
         north = "َ",
         northeast = "ْ",
         northwest = "ً",
         east = "ُ",
         west = "ٌ",
-        south= "~",
+        south= "ّ",
         southeast= "ِ",
         southwest= "ٍ",
     },
