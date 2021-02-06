@@ -33,6 +33,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 
 local TextViewer = InputContainer:new{
+    modal = true,
     title = nil,
     text = nil,
     width = nil,
