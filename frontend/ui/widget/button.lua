@@ -277,16 +277,12 @@ function Button:onTapSelectButton()
                 return "fast", self[1].dimen
             end)
 
-            print("Button", self, "hl", self.show_parent)
-
             -- Force the repaint *now*, so we don't have to delay the callback to see the highlight...
             if not self.vsync then
                 -- NOTE: Allow bundling the highlight with the callback when we request vsync, to prevent further delays
                 UIManager:forceRePaint() -- Ensures we have a chance to see the highlight
             end
-            print("Button", self, "pre-cb")
             self.callback()
-            print("Button", self, "post-cb")
             -- Check if the callback reset transparency...
             is_translucent = was_translucent and self.show_parent.movable.alpha
             -- We don't want to fence the callback when we're *still* translucent, because we want a *single* refresh post-callback *and* post-unhighlight,
@@ -304,7 +300,6 @@ function Button:onTapSelectButton()
             if not self[1] or (inverted and not self[1].invert) or not self[1].dimen then
                 -- If the frame widget no longer exists (destroyed, re-init'ed by setText(), or is no longer inverted: we have nothing to invert back
                 -- NOTE: This cannot catch orphaned Button instances, c.f., the isSubwidgetShown(self) check below for that.
-                print("Button", self, "no more frame")
                 return true
             end
 
@@ -324,12 +319,10 @@ function Button:onTapSelectButton()
             if top_widget == "VirtualKeyboard" then
                 top_widget = UIManager:getSecondTopmostWidget()
             end
-            print("Button", self, "parent, top", self.show_parent, top_widget, top_widget.init and debug.getinfo(top_widget.init, "S").short_src or nil)
             if top_widget == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
                 -- If the button can no longer be found inside a shown widget, abort early
                 -- (this allows us to catch widgets that instanciate *new* Buttons on every update... (e.g., some ButtonTable users) :()
                 if not UIManager:isSubwidgetShown(self) then
-                    print("Button", self, "no longer visible")
                     return true
                 end
 
@@ -337,7 +330,6 @@ function Button:onTapSelectButton()
                 if top_widget ~= self.show_parent then
                     -- ... and the new toplevel covers the full screen, we're done.
                     if top_widget.covers_fullscreen then
-                        print("Button", self, "covered by a new fs widget")
                         -- It's a sane exit, handle the return the same way.
                         if self.readonly ~= true then
                             return true
@@ -348,7 +340,6 @@ function Button:onTapSelectButton()
                     -- we have no other choice than repainting the full stack...
                     if top_widget.modal and self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
                         -- Much like in TouchMenu, the fact that the two intersect means we have no choice but to repaint the full stack to avoid half-painted widgets...
-                        print("Button", self, "repaint parent because underneath modal")
                         UIManager:waitForVSync()
                         UIManager:setDirty(self.show_parent, function()
                             return "ui", self[1].dimen
@@ -361,8 +352,6 @@ function Button:onTapSelectButton()
                     end
                 end
 
-                print("Is parent shown?", UIManager:isSubwidgetShown(self.show_parent))
-                print("Button", self, "unhl")
                 if self.text then
                     UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
                 else
@@ -375,7 +364,6 @@ function Button:onTapSelectButton()
                 --UIManager:forceRePaint() -- Ensures the unhighlight happens now, instead of potentially waiting and having it batched with something else.
             else
                 -- Callback closed our parent, we're done
-                print("Button", self, "cb closed our parent")
                 return true
             end
         end
