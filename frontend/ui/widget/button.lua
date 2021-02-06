@@ -330,10 +330,7 @@ function Button:onTapSelectButton()
                 if top_widget ~= self.show_parent then
                     -- ... and the new toplevel covers the full screen, we're done.
                     if top_widget.covers_fullscreen then
-                        -- It's a sane exit, handle the return the same way.
-                        if self.readonly ~= true then
-                            return true
-                        end
+                        return true
                     end
 
                     -- ... and toplevel is now a true modal, and our highlight would clash with that modal's region,
