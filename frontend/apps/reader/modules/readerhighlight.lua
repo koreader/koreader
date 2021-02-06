@@ -156,18 +156,19 @@ function ReaderHighlight:init()
     end
 
     -- Links
-    if self.selected_link ~= nil then
-        self:addToHighlightDialog("10_follow_link", function(_self)
-            return {
-                text = _("Follow Link"),
-                callback = function()
-                    local link = _self.selected_link.link or _self.selected_link
-                    _self.ui.link:onGotoLink(link)
-                    _self:onClose()
-                end,
-            }
-        end)
-    end
+    self:addToHighlightDialog("10_follow_link", function(_self)
+        return {
+            text = _("Follow Link"),
+            show_in_highlight_dialog_func = function()
+                return _self.selected_link ~= nil
+            end,
+            callback = function()
+                local link = _self.selected_link.link or _self.selected_link
+                _self.ui.link:onGotoLink(link)
+                _self:onClose()
+            end,
+        }
+    end)
 
     self.ui:registerPostInitCallback(function()
         self.ui.menu:registerToMainMenu(self)
@@ -657,11 +658,14 @@ function ReaderHighlight:onShowHighlightMenu()
 
     local columns = 2
     for idx, fn_button in ffiUtil.orderedPairs(self._highlight_buttons) do
-        if #highlight_buttons[#highlight_buttons] >= columns then
-            table.insert(highlight_buttons, {})
+        local button = fn_button(self)
+        if not button.show_in_highlight_dialog_func or button.show_in_highlight_dialog_func() then
+            if #highlight_buttons[#highlight_buttons] >= columns then
+                table.insert(highlight_buttons, {})
+            end
+            table.insert(highlight_buttons[#highlight_buttons], button)
+            logger.dbg("ReaderHighlight", idx..": line "..#highlight_buttons..", col "..#highlight_buttons[#highlight_buttons])
         end
-        table.insert(highlight_buttons[#highlight_buttons], fn_button(self))
-        logger.dbg("ReaderHighlight", idx..": line "..#highlight_buttons..", col "..#highlight_buttons[#highlight_buttons])
     end
 
     self.highlight_dialog = ButtonDialog:new{
