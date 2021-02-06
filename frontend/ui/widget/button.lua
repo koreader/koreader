@@ -320,8 +320,11 @@ function Button:onTapSelectButton()
 
             -- If the callback closed our parent (which may not always be the top-level widget, or even *a* window-level widget), we're done
             local top_widget = UIManager:getTopWidget()
-            local sec_widget = UIManager:getSecondTopmostWidget()
-            print("Button", self, "parent, top, sec", self.show_parent, top_widget, top_widget.init and debug.getinfo(top_widget.init, "S").short_src or nil, sec_widget, sec_widget.init and debug.getinfo(sec_widget.init, "S").short_src or nil)
+            -- When VirtualKeyboard is involved, it steals the top widget slot... So, instead, look below it to find the *effective* top-level widget, because we generally don't give a damn about VK here...
+            if top_widget == "VirtualKeyboard" then
+                top_widget = UIManager:getSecondTopmostWidget()
+            end
+            print("Button", self, "parent, top", self.show_parent, top_widget, top_widget.init and debug.getinfo(top_widget.init, "S").short_src or nil)
             if top_widget == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
                 -- If the button can no longer be found inside a shown widget, abort early
                 -- (this allows us to catch widgets that instanciate *new* Buttons on every update... (e.g., some ButtonTable users) :()
@@ -330,21 +333,31 @@ function Button:onTapSelectButton()
                     return true
                 end
 
-                -- If our parent is no longer the toplevel widget, toplevel is now a true modal, and our highlight would clash with that modal's region,
-                -- we have no other choice than repainting the full stack...
-                -- This branch will mainly be taken by stuff that pops up the virtual keyboard (e.g., TextEditor), where said keyboard will always be top-level,
-                -- hence the exception, because we want to catch modals *over* all that ;).
-                if top_widget ~= self.show_parent and top_widget ~= "VirtualKeyboard" and top_widget.modal and self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
-                    -- Much like in TouchMenu, the fact that the two intersect means we have no choice but to repaint the full stack to avoid half-painted widgets...
-                    print("Button", self, "repaint parent because underneath modal")
-                    UIManager:waitForVSync()
-                    UIManager:setDirty(self.show_parent, function()
-                        return "ui", self[1].dimen
-                    end)
+                -- If our parent is no longer the toplevel widget...
+                if top_widget ~= self.show_parent then
+                    -- ... and the new toplevel covers the full screen, we're done.
+                    if top_widget.covers_fullscreen then
+                        print("Button", self, "covered by a new fs widget")
+                        -- It's a sane exit, handle the return the same way.
+                        if self.readonly ~= true then
+                            return true
+                        end
+                    end
 
-                    -- It's a sane exit, handle the return the same way.
-                    if self.readonly ~= true then
-                        return true
+                    -- ... and toplevel is now a true modal, and our highlight would clash with that modal's region,
+                    -- we have no other choice than repainting the full stack...
+                    if top_widget.modal and self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
+                        -- Much like in TouchMenu, the fact that the two intersect means we have no choice but to repaint the full stack to avoid half-painted widgets...
+                        print("Button", self, "repaint parent because underneath modal")
+                        UIManager:waitForVSync()
+                        UIManager:setDirty(self.show_parent, function()
+                            return "ui", self[1].dimen
+                        end)
+
+                        -- It's a sane exit, handle the return the same way.
+                        if self.readonly ~= true then
+                            return true
+                        end
                     end
                 end
 
