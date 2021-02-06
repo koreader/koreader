@@ -118,7 +118,7 @@ function IconButton:onTapIconButton()
         if top_widget == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
             -- If the callback popped up the VK, it prevents us from finessing this any further,
             -- because getPreviousRefreshRegion will return the VK's region,
-            -- and it's impossible to get the actual geometry of *only* the dialog part of an InputDialog,
+            -- and it's impossible to get the actual geometry of *only* the InputText of an InputDialog,
             -- making the same kind of getSecondTopmostWidget trickery as in Button useless,
             -- so repaint the whole stack instead.
             if top_widget == "VirtualKeyboard" then
