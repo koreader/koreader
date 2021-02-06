@@ -7,7 +7,7 @@ return {
         east = "آ",
         west = "ﭐ",
     },
-    h_aa = { 
+    h_aa = {
         "ه",
        north = "ة",
     },
