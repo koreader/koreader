@@ -839,6 +839,24 @@ function UIManager:getTopWidget()
     return top.widget
 end
 
+--- Get the *second* topmost widget, if there is one (name if possible, ref otherwise).
+--- Useful when VirtualKeyboard is involved, as it *always* steals the top spot ;).
+function UIManager:getSecondTopmostWidget()
+    if #self._window_stack <= 1 then
+        -- Not enough widgets in the stack, bye!
+        return nil
+    end
+
+    local sec = self._window_stack[#self._window_stack - 1]
+    if not sec or not sec.widget then
+        return nil
+    end
+    if sec.widget.name then
+        return sec.widget.name
+    end
+    return sec.widget
+end
+
 --- Check if a widget is still in the window stack, or is a subwidget of a widget still in the window stack
 function UIManager:isSubwidgetShown(widget, max_depth)
     for i = #self._window_stack, 1, -1 do
