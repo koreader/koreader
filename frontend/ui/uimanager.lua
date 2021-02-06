@@ -390,7 +390,7 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
 
     self._running = true
     local window = {x = x or 0, y = y or 0, widget = widget}
-    -- put this window on top of the toppest non-modal window
+    -- put this window on top of the topmost non-modal window
     for i = #self._window_stack, 0, -1 do
         local top_window = self._window_stack[i]
         -- toasts are stacked on top of other toasts,
