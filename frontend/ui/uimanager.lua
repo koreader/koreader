@@ -841,6 +841,7 @@ end
 
 --- Get the *second* topmost widget, if there is one (name if possible, ref otherwise).
 --- Useful when VirtualKeyboard is involved, as it *always* steals the top spot ;).
+--- NOTE: Will skip over VirtualKeyboard instances, in case there are multiple (because, apparently, we can do that.. ugh).
 function UIManager:getSecondTopmostWidget()
     if #self._window_stack <= 1 then
         -- Not enough widgets in the stack, bye!
