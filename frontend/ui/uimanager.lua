@@ -847,14 +847,26 @@ function UIManager:getSecondTopmostWidget()
         return nil
     end
 
-    local sec = self._window_stack[#self._window_stack - 1]
-    if not sec or not sec.widget then
-        return nil
+    -- Because everything is terrible, you can actually instantiate multiple VirtualKeyboards,
+    -- and they'll stack at the top, so, loop until we get something that *isn't* VK...
+    for i = #self._window_stack - 1, 1, -1 do
+        local sec = self._window_stack[i]
+        if not sec or not sec.widget then
+            return nil
+        end
+
+        if sec.widget.name then
+            if sec.widget.name ~= "VirtualKeyboard" then
+                return sec.widget.name
+            end
+            -- Meaning if name is set, and is set to VK => continue, as we want the *next* widget.
+            -- I *really* miss the continue keyword, Lua :/.
+        else
+            return sec.widget
+        end
     end
-    if sec.widget.name then
-        return sec.widget.name
-    end
-    return sec.widget
+
+    return nil
 end
 
 --- Check if a widget is still in the window stack, or is a subwidget of a widget still in the window stack
