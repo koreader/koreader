@@ -492,14 +492,29 @@ function MenuItem:onTapSelect(arg, ges)
         -- Most Menu entries will actually update the full menu, but they may also pop up a few various things,
         -- so, pilfer a few heuristics from TouchMenu...
         local top_widget = UIManager:getTopWidget()
-        -- If the callback opened a full-screen widget, we're done
-        if top_widget.covers_fullscreen then
-            return true
-        end
 
         -- If we're still on top, we're done, as the full list of items has probably been updated by the callback
         if top_widget == self.show_parent then
+            print("Menu, same.", UIManager:getPreviousRefreshRegion(), self[1].dimen)
+            -- Unless the callback actually did nothing (e.g., PathChooser in Classic view)
+            if UIManager:getPreviousRefreshRegion() == self[1].dimen then
+                -- The highlight matches the last refresh, callback did nothing, so just unhighlight...
+                print("Same menu unhl")
+                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+                UIManager:setDirty(nil, function()
+                    return "ui", self[1].dimen
+                end)
+            else
+                print("Effective callback, return")
+            end
+            -- Both cases warrant an early return
             return true
+        else
+            -- If the callback opened a *different* full-screen widget, we're done
+            if top_widget.covers_fullscreen then
+                print("Menu, covers fullscreen", self.show_parent, top_widget)
+                return true
+            end
         end
 
         -- If the callback opened the Virtual Keyboard, it gets trickier
@@ -516,6 +531,7 @@ function MenuItem:onTapSelect(arg, ges)
 
         -- If a modal was opened outside of our highlight region, we can unhighlight safely
         if self[1].dimen:notIntersectWith(UIManager:getPreviousRefreshRegion()) then
+            print("Menu unhl")
             UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             UIManager:setDirty(nil, function()
                 return "ui", self[1].dimen
@@ -524,6 +540,7 @@ function MenuItem:onTapSelect(arg, ges)
             -- That leaves modals that might have been displayed on top of the highlighted menu entry, in which case,
             -- we can't take any shortcuts, as it would invert/paint *over* the popop.
             -- Instead, fence the callback to avoid races, and repaint the *full* widget stack properly.
+            print("menu repaint")
             UIManager:waitForVSync()
             UIManager:setDirty(self.show_parent, function()
                 return "ui", self[1].dimen
