@@ -320,7 +320,8 @@ function Button:onTapSelectButton()
 
             -- If the callback closed our parent (which may not always be the top-level widget, or even *a* window-level widget), we're done
             local top_widget = UIManager:getTopWidget()
-            print("Button", self, "parent, top", self.show_parent, top_widget)
+            local sec_widget = UIManager:getSecondTopmostWidget()
+            print("Button", self, "parent, top, sec", self.show_parent, top_widget, top_widget.init and debug.getinfo(top_widget.init, "S").short_src or nil, sec_widget, sec_widget.init and debug.getinfo(sec_widget.init, "S").short_src or nil)
             if top_widget == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
                 -- If the button can no longer be found inside a shown widget, abort early
                 -- (this allows us to catch widgets that instanciate *new* Buttons on every update... (e.g., some ButtonTable users) :()
