@@ -318,12 +318,12 @@ function Button:onTapSelectButton()
             -- in order to avoid flickering.
             if not is_translucent then
                 UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
-            end
-            if self.vsync then
-                -- NOTE: This is mainly useful when the callback caused a REAGL update that we do not explicitly fence already,
-                --       (i.e., Kobo Mk. 7).
-                UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
-                                         -- because that would have a chance to noticeably delay it until the unhighlight.
+                if self.vsync then
+                    -- NOTE: This is mainly useful when the callback caused a REAGL update that we do not explicitly fence already,
+                    --       (i.e., Kobo Mk. 7).
+                    UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
+                                            -- because that would have a chance to noticeably delay it until the unhighlight.
+                end
             end
         end
     elseif self.tap_input then
@@ -339,6 +339,7 @@ function Button:onTapSelectButton()
         UIManager:setDirty(is_translucent and "all" or self.show_parent, function()
             return "ui", self.show_parent.movable.dimen
         end)
+        -- FIXME: vsync?
     end
 
     if self.readonly ~= true then
