@@ -492,14 +492,25 @@ function MenuItem:onTapSelect(arg, ges)
         -- Most Menu entries will actually update the full menu, but they may also pop up a few various things,
         -- so, pilfer a few heuristics from TouchMenu...
         local top_widget = UIManager:getTopWidget()
-        -- If the callback opened a full-screen widget, we're done
-        if top_widget.covers_fullscreen then
-            return true
-        end
 
         -- If we're still on top, we're done, as the full list of items has probably been updated by the callback
         if top_widget == self.show_parent then
+            -- Unless the callback actually did nothing (e.g., PathChooser in Classic view)
+            if UIManager:getPreviousRefreshRegion() == self[1].dimen then
+                -- The highlight matches the last refresh, assume this means that the callback did nothing, so just unhighlight...
+                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+                UIManager:setDirty(nil, function()
+                    return "ui", self[1].dimen
+                end)
+            end
+            -- Otherwise, we assume the callback effectively updated & repainted the list of items.
+            -- Both cases warrant an early return.
             return true
+        else
+            -- If the callback opened a *different* full-screen widget, we're done
+            if top_widget.covers_fullscreen then
+                return true
+            end
         end
 
         -- If the callback opened the Virtual Keyboard, it gets trickier
