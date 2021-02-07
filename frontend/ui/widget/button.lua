@@ -285,7 +285,9 @@ function Button:onTapSelectButton()
             -- We won't *fence* the refresh, though, to ensure that we do not delay the callback, and that the unhighlight essentially blends into whatever the callback does.
             -- Worst case scenario, we'll simply have "wasted" a tiny subwidget repaint if the callback closed us,
             -- but doing it this way allows us to avoid a large array of potential interactions with whatever the callback may paint/refresh if we were to handle the unhighlight post-callback,
-            -- which would require a number of possibly brittle heursitics to handle.
+            -- which would require a number of possibly brittle heuristics to handle.
+            -- FIXME: If vsync is enabled, we *know* that the widget will still exist and be visible/on-top, so, we could arguably delay this to nextTick (or, probably tickAfterNext),
+            --        in order to allow vsync buttons to still be painted highlighted ;).
             self[1].invert = false
             if self.text then
                 if self[1].radius == Size.radius.button then
