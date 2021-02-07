@@ -390,7 +390,7 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
 
     self._running = true
     local window = {x = x or 0, y = y or 0, widget = widget}
-    -- put this window on top of the toppest non-modal window
+    -- put this window on top of the topmost non-modal window
     for i = #self._window_stack, 0, -1 do
         local top_window = self._window_stack[i]
         -- toasts are stacked on top of other toasts,
@@ -595,9 +595,10 @@ dbg:guard(UIManager, 'unschedule',
 Registers a widget to be repainted and enqueues a refresh.
 
 the second parameter (refreshtype) can either specify a refreshtype
-(optionally in combination with a refreshregion - which is suggested)
-or a function that returns refreshtype AND refreshregion and is called
-*after* painting the widget.
+(optionally in combination with a refreshregion - which is suggested,
+and an even more optional refreshdither flag if the content requires dithering)
+or a function that returns a refreshtype, refreshregion tuple (or a refreshtype, refreshregion, refreshdither triple)
+and is called *after* painting the widget.
 This is an interesting distinction, because a widget's geometry,
 usually stored in a field named `dimen`, in only computed at painting time (e.g., during `paintTo`).
 The TL;DR being: if you already know the region, you can pass everything by value directly,
@@ -678,6 +679,16 @@ Another convention (that a few things rely on) is naming a (persistent) MovableC
 This is useful when it's used for transparency purposes, which, e.g., Button relies on to handle highlighting inside a transparent widget properly,
 by checking if self.show_parent.movable exists and is currently translucent ;).
 
+When I mentioned passing the *right* widget to `setDirty` earlier, what I meant is that setDirty will only actually flag a widget for repaint
+*if* that widget is a window-level widget (that is, a widget that was passed to `show` earlier and hasn't been `close`'d yet),
+hence the self.show_parent convention detailed above to get at the proper widget from within a subwidget ;).
+Otherwise, you'll notice in debug mode that a debug guard will shout at you if that contract is broken,
+and what happens in practice is the same thing as if an explicit `nil` were passed: no widgets will actually be flagged for repaint,
+and only the *refresh* matching the requested region *will* be enqueued.
+This is why you'll find a number of valid use-cases for passing a nil here, when you *just* want a screen refresh without a repaint :).
+The string "all" is also accepted in place of a widget, and will do the obvious thing: flag the *full* window stack, bottom to top, for repaint,
+while still honoring the refresh region (e.g., this doesn't enforce a full-screen refresh).
+
 @usage
 
 UIManager:setDirty(self.widget, "partial")
@@ -685,9 +696,9 @@ UIManager:setDirty(self.widget, "partial", Geom:new{x=10,y=10,w=100,h=50})
 UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen end)
 
 --]]
----- @param widget a widget object
+---- @param widget a window-level widget object, "all", or nil
 ---- @param refreshtype "full", "flashpartial", "flashui", "partial", "ui", "fast"
----- @param refreshregion a Geom object
+---- @param refreshregion an optional Geom object
 ---- @param refreshdither an optional bool
 function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
     if widget then
@@ -837,6 +848,37 @@ function UIManager:getTopWidget()
         return top.widget.name
     end
     return top.widget
+end
+
+--- Get the *second* topmost widget, if there is one (name if possible, ref otherwise).
+--- Useful when VirtualKeyboard is involved, as it *always* steals the top spot ;).
+--- NOTE: Will skip over VirtualKeyboard instances, plural, in case there are multiple (because, apparently, we can do that.. ugh).
+function UIManager:getSecondTopmostWidget()
+    if #self._window_stack <= 1 then
+        -- Not enough widgets in the stack, bye!
+        return nil
+    end
+
+    -- Because everything is terrible, you can actually instantiate multiple VirtualKeyboards,
+    -- and they'll stack at the top, so, loop until we get something that *isn't* VK...
+    for i = #self._window_stack - 1, 1, -1 do
+        local sec = self._window_stack[i]
+        if not sec or not sec.widget then
+            return nil
+        end
+
+        if sec.widget.name then
+            if sec.widget.name ~= "VirtualKeyboard" then
+                return sec.widget.name
+            end
+            -- Meaning if name is set, and is set to VK => continue, as we want the *next* widget.
+            -- I *really* miss the continue keyword, Lua :/.
+        else
+            return sec.widget
+        end
+    end
+
+    return nil
 end
 
 --- Check if a widget is still in the window stack, or is a subwidget of a widget still in the window stack
