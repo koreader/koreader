@@ -150,6 +150,8 @@ end
 
 function DjvuDocument:register(registry)
     registry:addProvider("djvu", "image/vnd.djvu", self, 100)
+    registry:addProvider("djvu", "application/djvu", self, 100) -- Alternative mimetype for OPDS.
+    registry:addProvider("djvu", "image/x-djvu", self, 100) -- Alternative mimetype for OPDS.
     registry:addProvider("djv", "image/vnd.djvu", self, 100)
 end
 

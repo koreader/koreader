@@ -1294,6 +1294,7 @@ end
 
 function CreDocument:register(registry)
     registry:addProvider("azw", "application/vnd.amazon.mobi8-ebook", self, 90)
+    registry:addProvider("azw", "application/x-mobi8-ebook", self, 90) -- Alternative mimetype for OPDS.
     registry:addProvider("chm", "application/vnd.ms-htmlhelp", self, 90)
     registry:addProvider("doc", "application/msword", self, 90)
     registry:addProvider("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", self, 90)
@@ -1301,6 +1302,7 @@ function CreDocument:register(registry)
     registry:addProvider("epub3", "application/epub+zip", self, 100)
     registry:addProvider("fb2", "application/fb2", self, 90)
     registry:addProvider("fb2.zip", "application/zip", self, 90)
+    registry:addProvider("fb2.zip", "application/fb2+zip", self, 90) -- Alternative mimetype for OPDS.
     registry:addProvider("fb3", "application/fb3", self, 90)
     registry:addProvider("htm", "text/html", self, 100)
     registry:addProvider("html", "text/html", self, 100)
