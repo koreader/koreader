@@ -245,9 +245,8 @@ function Button:onTapSelectButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
-            -- We need to keep track of whether we actually flipped the frame's invert flag ourselves,
-            -- to handle the rounded corners shenanigan in the post-callback invert check...
-            local inverted = false
+            -- Highlighting
+            --
             -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
             if self.text then
                 -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
@@ -260,17 +259,13 @@ function Button:onTapSelectButton()
                     self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
                     -- We do *NOT* set the invert flag, because it just adds an invertRect step at the end of the paintTo process,
                     -- and we've already taken care of inversion in a way that won't mangle the rounded corners.
-                    -- The "inverted" local flag allows us to fudge the "did callback invert the frame?" check for these buttons,
-                    -- otherwise setting the invert flag here breaks the highlight for vsync buttons...
                 else
                     self[1].invert = true
-                    inverted = true
                 end
 
                 UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
             else
                 self[1].invert = true
-                inverted = true
                 UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             end
             UIManager:setDirty(nil, function()
@@ -282,6 +277,38 @@ function Button:onTapSelectButton()
                 -- NOTE: Allow bundling the highlight with the callback when we request vsync, to prevent further delays
                 UIManager:forceRePaint() -- Ensures we have a chance to see the highlight
             end
+
+            -- Unhighlight
+            --
+            -- We'll *paint* the unhighlight now, because this ensures that our widget still exists,
+            -- and that anything we do will not impact whatever the callback does (i.e., that we draw *below* whatever the callback might show).
+            -- We won't *fence* the refresh, though, to ensure that we do not delay the callback, and that the unhighlight essentially blends into whatever the callback does.
+            -- Worst case scenario, we'll simply have "wasted" a tiny subwidget repaint if the callback closed us,
+            -- but doing it this way allows us to avoid a large array of potential interactions with whatever the callback may paint/refresh if we were to handle the unhighlight post-callback,
+            -- which would require a number of possibly brittle heursitics to handle.
+            self[1].invert = false
+            if self.text then
+                if self[1].radius == Size.radius.button then
+                    self[1].radius = nil
+                    self[1].background = self[1].background:invert()
+                    self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
+                end
+                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+            else
+                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+            end
+
+            -- In case the callback itself won't enqueue a refresh region that includes us, do it ourselves.
+            -- If the button is disabled, switch to UI to make sure the gray comes through unharmed ;).
+            UIManager:setDirty(nil, function()
+                return self.enabled and "fast" or "ui", self[1].dimen
+            end)
+
+            -- Callback
+            --
+            -- TODO: Double-check how this interacts with vsync/alpha (e.g., we may also be able to get rid of some of this).
+            --       As far as vsync is concerned, this means we actually never see the highlight...
+            --       If I can't find a way to work around this, it's possibly easier to just skip the flash_ui branch if vsync is set ;).
             self.callback()
             -- Check if the callback reset transparency...
             is_translucent = was_translucent and self.show_parent.movable.alpha
@@ -295,73 +322,6 @@ function Button:onTapSelectButton()
                 --       (i.e., Kobo Mk. 7).
                 UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
                                          -- because that would have a chance to noticeably delay it until the unhighlight.
-            end
-
-            if not self[1] or (inverted and not self[1].invert) or not self[1].dimen then
-                -- If the frame widget no longer exists (destroyed, re-init'ed by setText(), or is no longer inverted: we have nothing to invert back
-                -- NOTE: This cannot catch orphaned Button instances, c.f., the isSubwidgetShown(self) check below for that.
-                return true
-            end
-
-            -- Reset colors early, regardless of what we do later, to avoid code duplication
-            self[1].invert = false
-            if self.text then
-                if self[1].radius == Size.radius.button then
-                    self[1].radius = nil
-                    self[1].background = self[1].background:invert()
-                    self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
-                end
-            end
-
-            -- If the callback closed our parent (which may not always be the top-level widget, or even *a* window-level widget), we're done
-            local top_widget = UIManager:getTopWidget()
-            -- When VirtualKeyboard is involved, it steals the top widget slot... So, instead, look below it to find the *effective* top-level widget, because we generally don't give a damn about VK here...
-            if top_widget == "VirtualKeyboard" then
-                top_widget = UIManager:getSecondTopmostWidget()
-            end
-            if top_widget == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
-                -- If the button can no longer be found inside a shown widget, abort early
-                -- (this allows us to catch widgets that instanciate *new* Buttons on every update... (e.g., some ButtonTable users) :()
-                if not UIManager:isSubwidgetShown(self) then
-                    return true
-                end
-
-                -- If our parent is no longer the toplevel widget...
-                if top_widget ~= self.show_parent then
-                    -- ... and the new toplevel covers the full screen, we're done.
-                    if top_widget.covers_fullscreen then
-                        return true
-                    end
-
-                    -- ... and toplevel is now a true modal, and our highlight would clash with that modal's region,
-                    -- we have no other choice than repainting the full stack...
-                    if top_widget.modal and self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
-                        -- Much like in TouchMenu, the fact that the two intersect means we have no choice but to repaint the full stack to avoid half-painted widgets...
-                        UIManager:waitForVSync()
-                        UIManager:setDirty(self.show_parent, function()
-                            return "ui", self[1].dimen
-                        end)
-
-                        -- It's a sane exit, handle the return the same way.
-                        if self.readonly ~= true then
-                            return true
-                        end
-                    end
-                end
-
-                if self.text then
-                    UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-                else
-                    UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-                end
-                -- If the button was disabled, switch to UI to make sure the gray comes through unharmed ;).
-                UIManager:setDirty(nil, function()
-                    return self.enabled and "fast" or "ui", self[1].dimen
-                end)
-                --UIManager:forceRePaint() -- Ensures the unhighlight happens now, instead of potentially waiting and having it batched with something else.
-            else
-                -- Callback closed our parent, we're done
-                return true
             end
         end
     elseif self.tap_input then
