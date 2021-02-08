@@ -75,7 +75,7 @@ function ScrollTextWidget:init()
             self:scrollToRatio(ratio, false)
         end
     }
-    self:updateScrollBar()
+    self:updateScrollBar(false, true)
     local horizontal_group = HorizontalGroup:new{ align = "top" }
     table.insert(horizontal_group, self.text_widget)
     table.insert(horizontal_group, HorizontalSpan:new{width=self.text_scroll_span})
@@ -140,27 +140,34 @@ function ScrollTextWidget:getCharPos()
     return self.text_widget:getCharPos()
 end
 
-function ScrollTextWidget:updateScrollBar(is_partial)
+function ScrollTextWidget:updateScrollBar(is_partial, is_init)
     local low, high = self.text_widget:getVisibleHeightRatios()
     if low ~= self.prev_low or high ~= self.prev_high then
         self.prev_low = low
         self.prev_high = high
         self.v_scroll_bar:set(low, high)
-        local refreshfunc = "ui"
-        if is_partial then
-            refreshfunc = "partial"
+
+        -- If we're called from init, the dimensions are wonky as hell, don't enqueue a bogus refresh
+        if not is_init then
+            local refreshfunc = "ui"
+            if is_partial then
+                refreshfunc = "partial"
+            end
+            -- Reset transparency if the dialog's MovableContainer is currently translucent...
+            if is_partial and self.dialog.movable and self.dialog.movable.alpha then
+                self.dialog.movable.alpha = nil
+                UIManager:setDirty(self.dialog, function()
+                    return refreshfunc, self.dialog.movable.dimen
+                end)
+            else
+                print("ScrollTextWidget:updateScrollBar", is_partial, self.dimen)
+                print(debug.traceback())
+                UIManager:setDirty(self.dialog, function()
+                    return refreshfunc, self.dimen
+                end)
+            end
         end
-        -- Reset transparency if the dialog's MovableContainer is currently translucent...
-        if is_partial and self.dialog.movable and self.dialog.movable.alpha then
-            self.dialog.movable.alpha = nil
-            UIManager:setDirty(self.dialog, function()
-                return refreshfunc, self.dialog.movable.dimen
-            end)
-        else
-            UIManager:setDirty(self.dialog, function()
-                return refreshfunc, self.dimen
-            end)
-        end
+
         if self.scroll_callback then
             self.scroll_callback(low, high)
         end
@@ -192,42 +199,42 @@ function ScrollTextWidget:moveCursorToXY(x, y, no_overflow)
 end
 
 function ScrollTextWidget:moveCursorLeft()
-    self.text_widget:moveCursorLeft();
+    self.text_widget:moveCursorLeft()
     self:updateScrollBar()
 end
 
 function ScrollTextWidget:moveCursorRight()
-    self.text_widget:moveCursorRight();
+    self.text_widget:moveCursorRight()
     self:updateScrollBar()
 end
 
 function ScrollTextWidget:moveCursorUp()
-    self.text_widget:moveCursorUp();
+    self.text_widget:moveCursorUp()
     self:updateScrollBar()
 end
 
 function ScrollTextWidget:moveCursorDown()
-    self.text_widget:moveCursorDown();
+    self.text_widget:moveCursorDown()
     self:updateScrollBar()
 end
 
 function ScrollTextWidget:scrollDown()
-    self.text_widget:scrollDown();
+    self.text_widget:scrollDown()
     self:updateScrollBar(true)
 end
 
 function ScrollTextWidget:scrollUp()
-    self.text_widget:scrollUp();
+    self.text_widget:scrollUp()
     self:updateScrollBar(true)
 end
 
 function ScrollTextWidget:scrollToTop()
-    self.text_widget:scrollToTop();
+    self.text_widget:scrollToTop()
     self:updateScrollBar(true)
 end
 
 function ScrollTextWidget:scrollToBottom()
-    self.text_widget:scrollToBottom();
+    self.text_widget:scrollToBottom()
     self:updateScrollBar(true)
 end
 
