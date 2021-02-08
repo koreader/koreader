@@ -701,9 +701,6 @@ UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen e
 ---- @param refreshregion an optional Geom object
 ---- @param refreshdither an optional bool
 function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
-    print("setDirty", widget, widget and widget.init and debug.getinfo(widget.init, "S").short_src or nil, refreshtype, refreshregion, refreshdither)
-    print(debug.traceback())
-
     if widget then
         if widget == "all" then
             -- special case: set all top-level widgets as being "dirty".
@@ -751,8 +748,6 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             --- @fixme We can't consume the return values of refreshtype by running it, because for a reason that is beyond me (scoping? gc?), that renders it useless later, meaning we then enqueue refreshes with bogus arguments...
             --        Thankfully, we can track them in _refresh()'s logging very soon after that...
             logger.dbg("setDirty via a func from widget", widget and (widget.name or widget.id or tostring(widget)) or "nil")
-            local type, region, dither = refreshtype()
-            print("type, region, dither", type, region, dither)
         end
     else
         -- otherwise, enqueue refresh
@@ -1138,9 +1133,6 @@ UIManager that a certain part of the screen is to be refreshed.
     optional, no dithering requested if not specified or not supported.
 --]]
 function UIManager:_refresh(mode, region, dither)
-    print("_refresh", mode, region, dither)
-    print(debug.traceback())
-
     if not mode then
         -- If we're trying to float a dither hint up from a lower widget after a close, mode might be nil...
         -- So use the lowest priority refresh mode (short of fast, because that'd do half-toning).
@@ -1262,7 +1254,6 @@ function UIManager:_repaint()
             -- pass hint to widget that we got when setting widget dirty
             -- the widget can use this to decide which parts should be refreshed
             logger.dbg("painting widget:", widget.widget.name or widget.widget.id or tostring(widget))
-            print("It's a", widget and (widget.init or widget.free) and debug.getinfo(widget.init or widget.free, "S").short_src or nil)
             Screen:beforePaint()
             widget.widget:paintTo(Screen.bb, widget.x, widget.y, self._dirty[widget.widget])
 

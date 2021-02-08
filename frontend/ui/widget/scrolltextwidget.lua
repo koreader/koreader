@@ -75,7 +75,7 @@ function ScrollTextWidget:init()
             self:scrollToRatio(ratio, false)
         end
     }
-    self:updateScrollBar(false, true)
+    self:updateScrollBar(false, true) -- Don't call setDirty yet, it's too early, it's going to be bogus.
     local horizontal_group = HorizontalGroup:new{ align = "top" }
     table.insert(horizontal_group, self.text_widget)
     table.insert(horizontal_group, HorizontalSpan:new{width=self.text_scroll_span})
@@ -141,6 +141,7 @@ function ScrollTextWidget:getCharPos()
 end
 
 function ScrollTextWidget:updateScrollBar(is_partial, is_init)
+    print("ScrollTextWidget:updateScrollBar", is_partial, is_init)
     local low, high = self.text_widget:getVisibleHeightRatios()
     if low ~= self.prev_low or high ~= self.prev_high then
         self.prev_low = low
@@ -155,12 +156,14 @@ function ScrollTextWidget:updateScrollBar(is_partial, is_init)
             end
             -- Reset transparency if the dialog's MovableContainer is currently translucent...
             if is_partial and self.dialog.movable and self.dialog.movable.alpha then
+                print("ScrollTextWidget:updateScrollBar in a Movable", is_partial, self.dimen, self.dialog.movable.dimen)
+                print(debug.traceback())
                 self.dialog.movable.alpha = nil
                 UIManager:setDirty(self.dialog, function()
                     return refreshfunc, self.dialog.movable.dimen
                 end)
             else
-                print("ScrollTextWidget:updateScrollBar", is_partial, self.dimen)
+                print("ScrollTextWidget:updateScrollBar not in a Movable", is_partial, self.dimen)
                 print(debug.traceback())
                 UIManager:setDirty(self.dialog, function()
                     return refreshfunc, self.dimen
