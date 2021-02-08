@@ -244,6 +244,8 @@ function Button:onTapSelectButton()
     if self.enabled and self.callback then
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
+            -- Check if the callback reset transparency...
+            is_translucent = was_translucent and self.show_parent.movable.alpha
         else
             -- Highlighting
             --
@@ -272,21 +274,21 @@ function Button:onTapSelectButton()
                 return "fast", self[1].dimen
             end)
 
-            -- Force the repaint *now*, so we don't have to delay the callback to see the highlight...
+            -- Force the repaint *now*, so we have a chance to see the highlight on its own, before whatever the callback will do.
             if not self.vsync then
-                -- NOTE: Allow bundling the highlight with the callback when we request vsync, to prevent further delays
-                UIManager:forceRePaint() -- Ensures we have a chance to see the highlight
+                -- NOTE: Except when a Button is flagged vsync, in which case we *want* to bundle the highlight with the callback, to prevent further delays
+                UIManager:forceRePaint()
             end
 
             -- Unhighlight
             --
-            -- We'll *paint* the unhighlight now, because this ensures that our widget still exists,
+            -- We'll *paint* the unhighlight now, because at this point we can still be sure that our widget exists,
             -- and that anything we do will not impact whatever the callback does (i.e., that we draw *below* whatever the callback might show).
             -- We won't *fence* the refresh, though, to ensure that we do not delay the callback, and that the unhighlight essentially blends into whatever the callback does.
             -- Worst case scenario, we'll simply have "wasted" a tiny subwidget repaint if the callback closed us,
             -- but doing it this way allows us to avoid a large array of potential interactions with whatever the callback may paint/refresh if we were to handle the unhighlight post-callback,
             -- which would require a number of possibly brittle heuristics to handle.
-            -- NOTE: If a Button is marked vsync, we want to keep it highlighted for now (in order for it to be visible during the callback refresh), we'll remove the highlight post-callback.
+            -- NOTE: If a Button is marked vsync, we want to keep it highlighted for now (in order for said highlight to be visible during the callback refresh), we'll remove the highlight post-callback.
             if not self.vsync then
                 self[1].invert = false
                 if self.text then
@@ -357,8 +359,6 @@ function Button:onTapSelectButton()
     elseif type(self.tap_input_func) == "function" then
         self:onInput(self.tap_input_func())
     end
-
-    -- FIXME: Update is_translucent outside of the flash_ui branch!
 
     -- If our parent belongs to a translucent MovableContainer, repaint all the things to honor alpha without layering glitches,
     -- and refresh the full container, because the widget might have inhibited its own setDirty call to avoid flickering (c.f., *SpinWidget).
