@@ -233,6 +233,54 @@ function Button:showHide(show)
     end
 end
 
+-- Used by onTapSelectButton to handle visual feedback when flash_ui is enabled
+function Button:_doFeedbackHighlight()
+    -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
+    if self.text then
+        -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
+        -- The nil check is to discriminate the default from callers that explicitly request a specific radius.
+        if self[1].radius == nil then
+            self[1].radius = Size.radius.button
+            -- And here, it's easier to just invert the bg/fg colors ourselves,
+            -- so as to preserve the rounded corners in one step.
+            self[1].background = self[1].background:invert()
+            self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
+            -- We do *NOT* set the invert flag, because it just adds an invertRect step at the end of the paintTo process,
+            -- and we've already taken care of inversion in a way that won't mangle the rounded corners.
+        else
+            self[1].invert = true
+        end
+
+        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+    else
+        self[1].invert = true
+        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+    end
+    UIManager:setDirty(nil, function()
+        return "fast", self[1].dimen
+    end)
+end
+
+function Button:_undoFeedbackHighlight()
+    self[1].invert = false
+    if self.text then
+        if self[1].radius == Size.radius.button then
+            self[1].radius = nil
+            self[1].background = self[1].background:invert()
+            self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
+        end
+        UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+    else
+        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+    end
+
+    -- In case the callback itself won't enqueue a refresh region that includes us, do it ourselves.
+    -- If the button is disabled, switch to UI to make sure the gray comes through unharmed ;).
+    UIManager:setDirty(nil, function()
+        return self.enabled and "fast" or "ui", self[1].dimen
+    end)
+end
+
 function Button:onTapSelectButton()
     -- NOTE: We have a few tricks up our sleeve in case our parent is inside a translucent MovableContainer...
     local was_translucent = self.show_parent and self.show_parent.movable and self.show_parent.movable.alpha
@@ -247,33 +295,10 @@ function Button:onTapSelectButton()
             -- Check if the callback reset transparency...
             is_translucent = was_translucent and self.show_parent.movable.alpha
         else
-            -- Highlighting
+            -- Highlight
             --
             print("Button", self, "HL")
-            -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
-            if self.text then
-                -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
-                -- The nil check is to discriminate the default from callers that explicitly request a specific radius.
-                if self[1].radius == nil then
-                    self[1].radius = Size.radius.button
-                    -- And here, it's easier to just invert the bg/fg colors ourselves,
-                    -- so as to preserve the rounded corners in one step.
-                    self[1].background = self[1].background:invert()
-                    self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
-                    -- We do *NOT* set the invert flag, because it just adds an invertRect step at the end of the paintTo process,
-                    -- and we've already taken care of inversion in a way that won't mangle the rounded corners.
-                else
-                    self[1].invert = true
-                end
-
-                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-            else
-                self[1].invert = true
-                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-            end
-            UIManager:setDirty(nil, function()
-                return "fast", self[1].dimen
-            end)
+            self:_doFeedbackHighlight()
 
             -- Force the repaint *now*, so we have a chance to see the highlight on its own, before whatever the callback will do.
             if not self.vsync then
@@ -293,23 +318,7 @@ function Button:onTapSelectButton()
             -- NOTE: If a Button is marked vsync, we want to keep it highlighted for now (in order for said highlight to be visible during the callback refresh), we'll remove the highlight post-callback.
             if not self.vsync then
                 print("Button", self, "UNHL (!vsync)")
-                self[1].invert = false
-                if self.text then
-                    if self[1].radius == Size.radius.button then
-                        self[1].radius = nil
-                        self[1].background = self[1].background:invert()
-                        self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
-                    end
-                    UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-                else
-                    UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-                end
-
-                -- In case the callback itself won't enqueue a refresh region that includes us, do it ourselves.
-                -- If the button is disabled, switch to UI to make sure the gray comes through unharmed ;).
-                UIManager:setDirty(nil, function()
-                    return self.enabled and "fast" or "ui", self[1].dimen
-                end)
+                self:_undoFeedbackHighlight()
             end
 
             -- Callback
@@ -326,11 +335,10 @@ function Button:onTapSelectButton()
                 print("Button", self, "CB fence")
                 UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
                 if self.vsync then
-                    -- NOTE: This is mainly useful when the callback caused a REAGL update that we do not explicitly fence already,
-                    --       (i.e., Kobo Mk. 7).
+                    -- NOTE: This is mainly useful when the callback caused a REAGL update that we do not explicitly fence already, (i.e., Kobo Mk. 7).
                     print("Button", self, "CB vsync")
                     UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
-                                            -- because that would have a chance to noticeably delay it until the unhighlight.
+                                             -- because that would have a chance to noticeably delay it until the unhighlight.
                 end
             end
 
@@ -338,26 +346,9 @@ function Button:onTapSelectButton()
             --
             -- NOTE: If a Button is marked vsync, we have a guarantee from the programmer that the widget it belongs to is still alive and top-level post-callback,
             --       so we can do this safely without risking UI glitches.
-            -- FIXME: Dedupe.
             if self.vsync then
                 print("Button", self, "UNHL (vsync)")
-                self[1].invert = false
-                if self.text then
-                    if self[1].radius == Size.radius.button then
-                        self[1].radius = nil
-                        self[1].background = self[1].background:invert()
-                        self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
-                    end
-                    UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-                else
-                    UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-                end
-
-                -- In case the callback itself won't enqueue a refresh region that includes us, do it ourselves.
-                -- If the button is disabled, switch to UI to make sure the gray comes through unharmed ;).
-                UIManager:setDirty(nil, function()
-                    return self.enabled and "fast" or "ui", self[1].dimen
-                end)
+                self:_undoFeedbackHighlight()
             end
         end
     elseif self.tap_input then
