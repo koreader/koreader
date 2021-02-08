@@ -140,31 +140,26 @@ function ScrollTextWidget:getCharPos()
     return self.text_widget:getCharPos()
 end
 
-function ScrollTextWidget:updateScrollBar(is_partial, is_init)
-    print("ScrollTextWidget:updateScrollBar", is_partial, is_init)
+function ScrollTextWidget:updateScrollBar(is_partial, from_init)
     local low, high = self.text_widget:getVisibleHeightRatios()
     if low ~= self.prev_low or high ~= self.prev_high then
         self.prev_low = low
         self.prev_high = high
         self.v_scroll_bar:set(low, high)
 
-        -- If we're called from init, the dimensions are wonky as hell, don't enqueue a bogus refresh
-        if not is_init then
+        -- When we're called from init, the dimensions are non-existent or not up-to-date yet, so don't enqueue a bogus refresh
+        if not from_init then
             local refreshfunc = "ui"
             if is_partial then
                 refreshfunc = "partial"
             end
             -- Reset transparency if the dialog's MovableContainer is currently translucent...
             if is_partial and self.dialog.movable and self.dialog.movable.alpha then
-                print("ScrollTextWidget:updateScrollBar in a Movable", is_partial, self.dimen, self.dialog.movable.dimen)
-                print(debug.traceback())
                 self.dialog.movable.alpha = nil
                 UIManager:setDirty(self.dialog, function()
                     return refreshfunc, self.dialog.movable.dimen
                 end)
             else
-                print("ScrollTextWidget:updateScrollBar not in a Movable", is_partial, self.dimen)
-                print(debug.traceback())
                 UIManager:setDirty(self.dialog, function()
                     return refreshfunc, self.dimen
                 end)
