@@ -99,23 +99,34 @@ function CheckButton:onTapCheckButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
+            -- c.f., ui/widget/button for the canonical documentation about the flash_ui code flow
+
+            -- Highlight
+            --
+            print("CheckButton", self, "HL")
             self[1].invert = true
             UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
 
-            -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
             UIManager:forceRePaint()
-            self.callback()
-            --UIManager:forceRePaint() -- Unnecessary, the check/uncheck process involves too many repaints already
-            --UIManager:waitForVSync()
 
+            -- Unhighlight
+            --
+            print("CheckButton", self, "UNHL")
             self[1].invert = false
             UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
+
+            -- Callback
+            --
+            print("CheckButton", self, "CB")
+            self.callback()
+
+            -- Unnecessary, the check/uncheck process involves too many repaints already
             --UIManager:forceRePaint()
         end
     elseif self.tap_input then
