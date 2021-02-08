@@ -145,8 +145,8 @@ function KeyValueItem:init()
     local available_width = frame_internal_width - middle_padding
 
     -- Default widths (and position of value widget) if each text fits in 1/2 screen width
-    local key_w = frame_internal_width / 2 - middle_padding
-    local value_w = frame_internal_width / 2
+    local key_w = math.floor(frame_internal_width / 2 - middle_padding)
+    local value_w = math.floor(frame_internal_width / 2)
 
     local key_widget = TextWidget:new{
         text = self.key,
@@ -473,7 +473,7 @@ function KeyValuePage:init()
         kv_page = self,
     }
     -- setup main content
-    self.item_margin = self.item_height / 4
+    self.item_margin = math.floor(self.item_height / 4)
     local line_height = self.item_height + 2 * self.item_margin
     local content_height = self.dimen.h - self.title_bar:getSize().h - self.page_info:getSize().h
     self.items_per_page = math.floor(content_height / line_height)
