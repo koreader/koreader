@@ -249,6 +249,7 @@ function Button:onTapSelectButton()
         else
             -- Highlighting
             --
+            print("Button", self, "HL")
             -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
             if self.text then
                 -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
@@ -277,6 +278,7 @@ function Button:onTapSelectButton()
             -- Force the repaint *now*, so we have a chance to see the highlight on its own, before whatever the callback will do.
             if not self.vsync then
                 -- NOTE: Except when a Button is flagged vsync, in which case we *want* to bundle the highlight with the callback, to prevent further delays
+                print("Button", self, "HL fence")
                 UIManager:forceRePaint()
             end
 
@@ -290,6 +292,7 @@ function Button:onTapSelectButton()
             -- which would require a number of possibly brittle heuristics to handle.
             -- NOTE: If a Button is marked vsync, we want to keep it highlighted for now (in order for said highlight to be visible during the callback refresh), we'll remove the highlight post-callback.
             if not self.vsync then
+                print("Button", self, "UNHL (!vsync)")
                 self[1].invert = false
                 if self.text then
                     if self[1].radius == Size.radius.button then
@@ -311,6 +314,7 @@ function Button:onTapSelectButton()
 
             -- Callback
             --
+            print("Button", self, "CB")
             self.callback()
             -- Check if the callback reset transparency...
             is_translucent = was_translucent and self.show_parent.movable.alpha
@@ -319,10 +323,12 @@ function Button:onTapSelectButton()
             -- and that's handled later, at the end of this function.
             -- NOTE: On the other hand, if a Button is flagged vsync, we want to honor that commitment, and we know that those Buttons are free from potential alpha interactions anyway.
             if not is_translucent or (is_translucent and self.vsync) then
+                print("Button", self, "CB fence")
                 UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
                 if self.vsync then
                     -- NOTE: This is mainly useful when the callback caused a REAGL update that we do not explicitly fence already,
                     --       (i.e., Kobo Mk. 7).
+                    print("Button", self, "CB vsync")
                     UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
                                             -- because that would have a chance to noticeably delay it until the unhighlight.
                 end
@@ -334,6 +340,7 @@ function Button:onTapSelectButton()
             --       so we can do this safely without risking UI glitches.
             -- FIXME: Dedupe.
             if self.vsync then
+                print("Button", self, "UNHL (vsync)")
                 self[1].invert = false
                 if self.text then
                     if self[1].radius == Size.radius.button then
@@ -362,11 +369,11 @@ function Button:onTapSelectButton()
     -- If our parent belongs to a translucent MovableContainer, repaint all the things to honor alpha without layering glitches,
     -- and refresh the full container, because the widget might have inhibited its own setDirty call to avoid flickering (c.f., *SpinWidget).
     if was_translucent then
+        print("Button", self, "Alpha?", is_translucent)
         -- If the callback reset the transparency, we only need to repaint our parent
         UIManager:setDirty(is_translucent and "all" or self.show_parent, function()
             return "ui", self.show_parent.movable.dimen
         end)
-        -- FIXME: vsync?
     end
 
     if self.readonly ~= true then
