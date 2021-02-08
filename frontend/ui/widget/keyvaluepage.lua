@@ -281,45 +281,34 @@ function KeyValueItem:onTap()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
+            -- c.f., ui/widget/button for the canonical documentation about the flash_ui code flow
+
+            -- Highlight
+            --
+            print("KeyValueItem", self, "HL")
             self[1].invert = true
             UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self[1].dimen
             end)
 
-            -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
             UIManager:forceRePaint()
-            self.callback()
-            UIManager:forceRePaint()
-            --UIManager:waitForVSync()
 
-            -- Has to be scheduled *after* the dict delays for the lookup history pages...
-            UIManager:scheduleIn(0.75, function()
-                self[1].invert = false
-                -- If we've ended up below something, things get trickier.
-                local top_widget = UIManager:getTopWidget()
-                if top_widget ~= self.show_parent then
-                    -- It's generally tricky to get accurate dimensions out of whatever was painted above us,
-                    -- so cheat by comparing against the previous refresh region...
-                    if self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
-                        -- If that something is a modal (e.g., dictionary D/L), repaint the whole stack
-                        if top_widget.modal then
-                            UIManager:setDirty(self.show_parent, function()
-                                return "ui", self[1].dimen
-                            end)
-                            return true
-                        else
-                            -- Otherwise, skip the repaint
-                            return true
-                        end
-                    end
-                end
-                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-                UIManager:setDirty(nil, function()
-                    return "ui", self[1].dimen
-                end)
-                --UIManager:forceRePaint()
+            -- Unhighlight
+            --
+            print("KeyValueItem", self, "UNHL")
+            self[1].invert = false
+            UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:setDirty(nil, function()
+                return "ui", self[1].dimen
             end)
+
+            -- Callback
+            --
+            print("KeyValueItem", self, "CB")
+            self.callback()
+
+            UIManager:forceRePaint()
         end
     end
     return true
