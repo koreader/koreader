@@ -133,8 +133,7 @@ function CheckButton:onTapCheckButton()
             print("CheckButton", self, "CB")
             self.callback()
 
-            -- Unnecessary, the check/uncheck process involves too many repaints already
-            --UIManager:forceRePaint()
+            UIManager:forceRePaint()
         end
     elseif self.tap_input then
         self:onInput(self.tap_input)
