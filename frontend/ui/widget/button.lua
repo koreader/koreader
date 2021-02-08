@@ -322,7 +322,7 @@ function Button:onTapSelectButton()
             -- in order to avoid flickering when the callback refreshed other stuff inside the same widget as our Button without preserving alpha handling (e.g., NumberPicker via SpinWidget),
             -- and that's handled later, at the end of this function.
             -- NOTE: On the other hand, if a Button is flagged vsync, we want to honor that commitment, and we know that those Buttons are free from potential alpha interactions anyway.
-            if not is_translucent or (is_translucent and self.vsync) then
+            if self.vsync or not is_translucent then
                 print("Button", self, "CB fence")
                 UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
                 if self.vsync then
