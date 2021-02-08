@@ -1195,7 +1195,8 @@ function UIManager:_refresh(mode, region, dither)
     --       as well as a few actually effective merges
     --       (e.g., the disappearance of a selection HL with the following menu update).
     for i = 1, #self._refresh_stack do
-        -- check for collision with refreshes that are already enqueued
+        -- Check for collision with refreshes that are already enqueued
+        -- NOTE: intersect *means* intersect: we won't merge edge-to-edge regions (but the EPDC probably will).
         if region:intersectWith(self._refresh_stack[i].region) then
             -- combine both refreshes' regions
             local combined = region:combine(self._refresh_stack[i].region)
