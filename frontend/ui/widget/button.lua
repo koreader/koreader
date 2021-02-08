@@ -286,18 +286,19 @@ function Button:onTapSelectButton()
             -- Worst case scenario, we'll simply have "wasted" a tiny subwidget repaint if the callback closed us,
             -- but doing it this way allows us to avoid a large array of potential interactions with whatever the callback may paint/refresh if we were to handle the unhighlight post-callback,
             -- which would require a number of possibly brittle heuristics to handle.
-            -- FIXME: If vsync is enabled, we *know* that the widget will still exist and be visible/on-top, so, we could arguably delay this to nextTick (or, probably tickAfterNext),
-            --        in order to allow vsync buttons to still be painted highlighted ;).
-            self[1].invert = false
-            if self.text then
-                if self[1].radius == Size.radius.button then
-                    self[1].radius = nil
-                    self[1].background = self[1].background:invert()
-                    self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
+            -- NOTE: If a Button is marked vsync, we want to keep it highlighted for now (in order for it to be visible during the callback refresh), we'll remove the highlight post-callback.
+            if not self.vsync then
+                self[1].invert = false
+                if self.text then
+                    if self[1].radius == Size.radius.button then
+                        self[1].radius = nil
+                        self[1].background = self[1].background:invert()
+                        self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
+                    end
+                    UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                else
+                    UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
                 end
-                UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
-            else
-                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             end
 
             -- In case the callback itself won't enqueue a refresh region that includes us, do it ourselves.
@@ -325,12 +326,33 @@ function Button:onTapSelectButton()
                                             -- because that would have a chance to noticeably delay it until the unhighlight.
                 end
             end
+
+            -- Unhighlight
+            --
+            -- NOTE: If a Button is marked vsync, we have a guarantee from the programmer that the widget it belongs to is still alive and top-level post-callback,
+            --       so we can do this safely without risking UI glitches.
+            -- FIXME: Dedupe.
+            if self.vsync then
+                self[1].invert = false
+                if self.text then
+                    if self[1].radius == Size.radius.button then
+                        self[1].radius = nil
+                        self[1].background = self[1].background:invert()
+                        self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
+                    end
+                    UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
+                else
+                    UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+                end
+            end
         end
     elseif self.tap_input then
         self:onInput(self.tap_input)
     elseif type(self.tap_input_func) == "function" then
         self:onInput(self.tap_input_func())
     end
+
+    -- FIXME: Update is_translucent outside of the flash_ui branch!
 
     -- If our parent belongs to a translucent MovableContainer, repaint all the things to honor alpha without layering glitches,
     -- and refresh the full container, because the widget might have inhibited its own setDirty call to avoid flickering (c.f., *SpinWidget).
