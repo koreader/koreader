@@ -471,76 +471,38 @@ function MenuItem:onTapSelect(arg, ges)
         end)
         coroutine.resume(co)
     else
+        -- c.f., ui/widget/button for the canonical documentation about the flash_ui code flow
+
+        -- Highlight
+        --
+        print("MenuItem", self, "tap HL")
         self[1].invert = true
         UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
         UIManager:setDirty(nil, function()
             return "fast", self[1].dimen
         end)
 
-        -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
         UIManager:forceRePaint()
+
+        -- Unhighlight
+        --
+        print("MenuItem", self, "tap UNHL")
+        self[1].invert = false
+        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(nil, function()
+            return "ui", self[1].dimen
+        end)
+
+        -- Callback
+        --
+        print("MenuItem", self, "tap CB")
         logger.dbg("creating coroutine for menu select")
         local co = coroutine.create(function()
             self.menu:onMenuSelect(self.table, pos)
         end)
         coroutine.resume(co)
+
         UIManager:forceRePaint()
-        --UIManager:waitForVSync()
-
-        self[1].invert = false
-
-        -- Most Menu entries will actually update the full menu, but they may also pop up a few various things,
-        -- so, pilfer a few heuristics from TouchMenu...
-        local top_widget = UIManager:getTopWidget()
-
-        -- If we're still on top, we're done, as the full list of items has probably been updated by the callback
-        if top_widget == self.show_parent then
-            -- Unless the callback actually did nothing (e.g., PathChooser in Classic view)
-            if UIManager:getPreviousRefreshRegion() == self[1].dimen then
-                -- The highlight matches the last refresh, assume this means that the callback did nothing, so just unhighlight...
-                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-                UIManager:setDirty(nil, function()
-                    return "ui", self[1].dimen
-                end)
-            end
-            -- Otherwise, we assume the callback effectively updated & repainted the list of items.
-            -- Both cases warrant an early return.
-            return true
-        else
-            -- If the callback opened a *different* full-screen widget, we're done
-            if top_widget.covers_fullscreen then
-                return true
-            end
-        end
-
-        -- If the callback opened the Virtual Keyboard, it gets trickier
-        if top_widget == "VirtualKeyboard" then
-            -- Unfortunately, we can't really tell full-screen widgets apart from
-            -- stuff that might just pop the keyboard for an InputText box...
-            -- So, a full fenced redraw it is...
-            UIManager:waitForVSync()
-            UIManager:setDirty(self.show_parent, function()
-                return "ui", self[1].dimen
-            end)
-            return true
-        end
-
-        -- If a modal was opened outside of our highlight region, we can unhighlight safely
-        if self[1].dimen:notIntersectWith(UIManager:getPreviousRefreshRegion()) then
-            UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-            UIManager:setDirty(nil, function()
-                return "ui", self[1].dimen
-            end)
-        else
-            -- That leaves modals that might have been displayed on top of the highlighted menu entry, in which case,
-            -- we can't take any shortcuts, as it would invert/paint *over* the popop.
-            -- Instead, fence the callback to avoid races, and repaint the *full* widget stack properly.
-            UIManager:waitForVSync()
-            UIManager:setDirty(self.show_parent, function()
-                return "ui", self[1].dimen
-            end)
-        end
-        --UIManager:forceRePaint()
     end
     return true
 end
@@ -550,39 +512,34 @@ function MenuItem:onHoldSelect(arg, ges)
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuHold(self.table, pos)
     else
+        -- c.f., ui/widget/button for the canonical documentation about the flash_ui code flow
+
+        -- Highlight
+        --
+        print("MenuItem", self, "hold HL")
         self[1].invert = true
         UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
         UIManager:setDirty(nil, function()
             return "fast", self[1].dimen
         end)
 
-        -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
         UIManager:forceRePaint()
-        self.menu:onMenuHold(self.table, pos)
-        UIManager:forceRePaint()
-        --UIManager:waitForVSync()
 
+        -- Unhighlight
+        --
+        print("MenuItem", self, "hold UNHL")
         self[1].invert = false
+        UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+        UIManager:setDirty(nil, function()
+            return "ui", self[1].dimen
+        end)
 
-        -- Same idea as for tap, minus the various things that make no sense for a hold callback...
-        local top_widget = UIManager:getTopWidget()
+        -- Callback
+        --
+        print("MenuItem", self, "hold CB")
+        self.menu:onMenuHold(self.table, pos)
 
-        -- If we're still on top, or a modal was opened outside of our highlight region, we can unhighlight safely
-        if top_widget == self.show_parent or self[1].dimen:notIntersectWith(UIManager:getPreviousRefreshRegion()) then
-            UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-            UIManager:setDirty(nil, function()
-                return "ui", self[1].dimen
-            end)
-        else
-            -- That leaves modals that might have been displayed on top of the highlighted menu entry, in which case,
-            -- we can't take any shortcuts, as it would invert/paint *over* the popop.
-            -- Instead, fence the callback to avoid races, and repaint the *full* widget stack properly.
-            UIManager:waitForVSync()
-            UIManager:setDirty(self.show_parent, function()
-                return "ui", self[1].dimen
-            end)
-        end
-        --UIManager:forceRePaint()
+        UIManager:forceRePaint()
     end
     return true
 end
