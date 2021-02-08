@@ -311,13 +311,14 @@ function Button:onTapSelectButton()
 
             -- Callback
             --
-            -- TODO: Double-check how this interacts with vsync/alpha (e.g., we may also be able to get rid of some of this).
             self.callback()
             -- Check if the callback reset transparency...
             is_translucent = was_translucent and self.show_parent.movable.alpha
-            -- We don't want to fence the callback when we're *still* translucent, because we want a *single* refresh post-callback *and* post-unhighlight,
-            -- in order to avoid flickering.
-            if not is_translucent then
+            -- If we're *still* translucent, we don't want to fence the callback refresh *now*, because we want a *single* refresh post-callback *and* post-unhighlight,
+            -- in order to avoid flickering when the callback refreshed other stuff inside the same widget as our Button without preserving alpha handling (e.g., NumberPicker via SpinWidget),
+            -- and that's handled later, at the end of this function.
+            -- NOTE: On the other hand, if a Button is flagged vsync, we want to honor that commitment, and we know that those Buttons are free from potential alpha interactions anyway.
+            if not is_translucent or (is_translucent and self.vsync) then
                 UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
                 if self.vsync then
                     -- NOTE: This is mainly useful when the callback caused a REAGL update that we do not explicitly fence already,
