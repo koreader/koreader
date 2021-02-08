@@ -118,7 +118,7 @@ function CheckButton:onTapCheckButton()
             self[1].invert = false
             UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
             UIManager:setDirty(nil, function()
-                return "fast", self.dimen
+                return "ui", self.dimen
             end)
 
             -- Callback
