@@ -299,13 +299,13 @@ function Button:onTapSelectButton()
                 else
                     UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
                 end
-            end
 
-            -- In case the callback itself won't enqueue a refresh region that includes us, do it ourselves.
-            -- If the button is disabled, switch to UI to make sure the gray comes through unharmed ;).
-            UIManager:setDirty(nil, function()
-                return self.enabled and "fast" or "ui", self[1].dimen
-            end)
+                -- In case the callback itself won't enqueue a refresh region that includes us, do it ourselves.
+                -- If the button is disabled, switch to UI to make sure the gray comes through unharmed ;).
+                UIManager:setDirty(nil, function()
+                    return self.enabled and "fast" or "ui", self[1].dimen
+                end)
+            end
 
             -- Callback
             --
@@ -344,6 +344,12 @@ function Button:onTapSelectButton()
                 else
                     UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
                 end
+
+                -- In case the callback itself won't enqueue a refresh region that includes us, do it ourselves.
+                -- If the button is disabled, switch to UI to make sure the gray comes through unharmed ;).
+                UIManager:setDirty(nil, function()
+                    return self.enabled and "fast" or "ui", self[1].dimen
+                end)
             end
         end
     elseif self.tap_input then
