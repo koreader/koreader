@@ -325,6 +325,7 @@ function Button:onTapSelectButton()
             --
             print("Button", self, "CB")
             self.callback()
+
             -- Check if the callback reset transparency...
             is_translucent = was_translucent and self.show_parent.movable.alpha
             -- If we're *still* translucent, we don't want to fence the callback refresh *now*, because we want a *single* refresh post-callback *and* post-unhighlight,

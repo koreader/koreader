@@ -95,55 +95,35 @@ function IconButton:onTapIconButton()
     if G_reader_settings:isFalse("flash_ui") then
         self.callback()
     else
+        -- c.f., ui/widget/button for the canonical documentation about the flash_ui code flow
+
+        -- Highlight
+        --
+        print("IconButton", self, "HL")
         self.image.invert = true
-        -- For ConfigDialog icons, we can't avoid that initial repaint...
         UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
         UIManager:setDirty(nil, function()
             return "fast", self.dimen
         end)
 
-        -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
         UIManager:forceRePaint()
-        self.callback()
-        UIManager:forceRePaint()
-        --UIManager:waitForVSync()
 
+        -- Unhighlight
+        --
+         print("IconButton", self, "UNHL")
         self.image.invert = false
-        -- If the callback closed our parent (which may not always be the top-level widget, or even *a* window-level widget), we're done
-        local top_widget = UIManager:getTopWidget()
-        if top_widget == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
-            -- If the callback popped up the VK, it prevents us from finessing this any further,
-            -- because getPreviousRefreshRegion will return the VK's region,
-            -- and it's impossible to get the actual geometry of *only* the InputText of an InputDialog,
-            -- making the same kind of getSecondTopmostWidget trickery as in Button useless,
-            -- so repaint the whole stack instead.
-            if top_widget == "VirtualKeyboard" then
-                UIManager:waitForVSync()
-                UIManager:setDirty(self.show_parent, function()
-                    return "ui", self.dimen
-                end)
-                return true
-            end
+        UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
+        UIManager:setDirty(nil, function()
+            return "fast", self.dimen
+        end)
+        UIManager:setDirty(nil, "fast", self.dimen)
 
-            -- If the callback popped up a modal above us, repaint the whole stack
-            if top_widget ~= self.show_parent and top_widget.modal and self.dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
-                UIManager:waitForVSync()
-                UIManager:setDirty(self.show_parent, function()
-                    return "ui", self.dimen
-                end)
-                return true
-            end
+        -- Callback
+        --
+        print("IconButton", self, "CB")
+        self.callback()
 
-            -- Otherwise, we can unhighlight it safely
-            UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
-            UIManager:setDirty(nil, function()
-                return "fast", self.dimen
-            end)
-        else
-            -- Callback closed our parent, we're done
-            return true
-        end
-        --UIManager:forceRePaint()
+        UIManager:forceRePaint()
     end
     return true
 end
