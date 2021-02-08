@@ -32,6 +32,7 @@ local CheckButton = InputContainer:new{
     checked = false,
     enabled = true,
     face = Font:getFace("cfont"),
+    background = Blitbuffer.COLOR_WHITE,
     overlap_align = "right",
     text = nil,
     toggle_text = nil,
@@ -67,6 +68,7 @@ function CheckButton:initCheckButton(checked)
     }
     self._frame = FrameContainer:new{
         bordersize = 0,
+        background = self.background,
         margin = 0,
         padding = 0,
         self._horizontalgroup,
@@ -101,13 +103,17 @@ function CheckButton:onTapCheckButton()
         else
             -- c.f., ui/widget/button for the canonical documentation about the flash_ui code flow
 
+            -- Unlike RadioButton, the frame's width stops at the text width, but we want our highlight to span the full width...
+            local highlight_dimen = self.dimen
+            highlight_dimen.w = self.width and self.width or self.dimen.w
+
             -- Highlight
             --
             print("CheckButton", self, "HL")
             self[1].invert = true
-            UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
+            UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
             UIManager:setDirty(nil, function()
-                return "fast", self.dimen
+                return "fast", highlight_dimen
             end)
 
             UIManager:forceRePaint()
@@ -116,9 +122,9 @@ function CheckButton:onTapCheckButton()
             --
             print("CheckButton", self, "UNHL")
             self[1].invert = false
-            UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
+            UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
             UIManager:setDirty(nil, function()
-                return "ui", self.dimen
+                return "ui", highlight_dimen
             end)
 
             -- Callback
