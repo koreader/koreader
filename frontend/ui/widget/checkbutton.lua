@@ -104,6 +104,7 @@ function CheckButton:onTapCheckButton()
             -- c.f., ui/widget/button for the canonical documentation about the flash_ui code flow
 
             -- Unlike RadioButton, the frame's width stops at the text width, but we want our highlight to span the full width...
+            -- (That's when we have one, some callers don't pass a width, so, handle that, too).
             local highlight_dimen = self.dimen
             highlight_dimen.w = self.width and self.width or self.dimen.w
 
