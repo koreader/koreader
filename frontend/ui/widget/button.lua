@@ -262,15 +262,17 @@ function Button:_doFeedbackHighlight()
 end
 
 function Button:_undoFeedbackHighlight()
-    self[1].invert = false
     if self.text then
         if self[1].radius == Size.radius.button then
             self[1].radius = nil
             self[1].background = self[1].background:invert()
             self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
+        else
+            self[1].invert = false
         end
         UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
     else
+        self[1].invert = false
         UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
     end
 
