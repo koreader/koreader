@@ -118,9 +118,10 @@ function RadioButton:onTapCheckButton()
             -- Highlight
             --
             print("RadioButton", self, "HL")
-            -- While I'd like to only flash the button itself, we have to make do with flashing the full width of the TextWidget...
+            -- self.frame's width is based on self.width, so we effectively flash the full width, not only the button/text's width.
+            -- This matches the behavior of Menu & TouchMenu.
             self.frame.invert = true
-            UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
+            UIManager:widgetInvert(self.frame, self.dimen.x, self.dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
@@ -131,7 +132,7 @@ function RadioButton:onTapCheckButton()
             --
             print("RadioButton", self, "UNHL")
             self.frame.invert = false
-            UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
+            UIManager:widgetInvert(self.frame, self.dimen.x, self.dimen.y)
             UIManager:setDirty(nil, function()
                 return "ui", self.dimen
             end)
