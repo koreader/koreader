@@ -312,8 +312,6 @@ function Button:onTapSelectButton()
             -- Callback
             --
             -- TODO: Double-check how this interacts with vsync/alpha (e.g., we may also be able to get rid of some of this).
-            --       As far as vsync is concerned, this means we actually never see the highlight...
-            --       If I can't find a way to work around this, it's possibly easier to just skip the flash_ui branch if vsync is set ;).
             self.callback()
             -- Check if the callback reset transparency...
             is_translucent = was_translucent and self.show_parent.movable.alpha
