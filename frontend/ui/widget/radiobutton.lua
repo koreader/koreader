@@ -113,6 +113,11 @@ function RadioButton:onTapCheckButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
+            -- c.f., ui/widget/button for the canonical documentation about the flash_ui code flow
+
+            -- Highlight
+            --
+            print("RadioButton", self, "HL")
             -- While I'd like to only flash the button itself, we have to make do with flashing the full width of the TextWidget...
             self.frame.invert = true
             UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
@@ -120,17 +125,23 @@ function RadioButton:onTapCheckButton()
                 return "fast", self.dimen
             end)
 
-            -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
             UIManager:forceRePaint()
-            self.callback()
-            --UIManager:forceRePaint() -- Unnecessary, the check/uncheck process involves too many repaints already
-            --UIManager:waitForVSync()
 
+            -- Unhighlight
+            --
+            print("RadioButton", self, "UNHL")
             self.frame.invert = false
             UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
             UIManager:setDirty(nil, function()
                 return "fast", self.dimen
             end)
+
+            -- Callback
+            --
+            print("RadioButton", self, "CB")
+            self.callback()
+
+            -- Unnecessary, the check/uncheck process involves too many repaints already
             --UIManager:forceRePaint()
         end
     elseif self.tap_input then
