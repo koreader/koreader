@@ -133,7 +133,7 @@ function RadioButton:onTapCheckButton()
             self.frame.invert = false
             UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
             UIManager:setDirty(nil, function()
-                return "fast", self.dimen
+                return "ui", self.dimen
             end)
 
             -- Callback
