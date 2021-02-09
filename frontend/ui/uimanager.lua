@@ -661,7 +661,7 @@ Here's a quick rundown of what each refreshtype should be used for:
           Highest quality, but highest latency.
           Don't abuse if you only want a flash (in this case, prefer `flashui` or `flashpartial`).
 * `partial`: medium fidelity refresh (e.g., text on a white background).
-             Can be promoted to flashing after FULL_REFRESH_COUNT refreshes.
+             Can be promoted to flashing after `FULL_REFRESH_COUNT` refreshes.
              Don't abuse to avoid spurious flashes.
              In practice, this means this should mostly always be limited to ReaderUI.
 * `ui`: medium fidelity refresh (e.g., mixed content).
@@ -685,7 +685,7 @@ of using `"ui"` onShow & onUpdate, but `"partial"` onCloseWidget.
 This is by design: `"partial"` is what the reader (ReaderUI) uses, as it's tailor-made for pure text
 over a white background, so this ensures we resume the usual flow of the reader.
 The same dynamic is true for their flashing counterparts, in the rare instances we enforce flashes.
-Any kind of `"partial"` refresh *will* count towards a flashing promotion after FULL_REFRESH_COUNT refreshes,
+Any kind of `"partial"` refresh *will* count towards a flashing promotion after `FULL_REFRESH_COUNT` refreshes,
 so making sure your stuff only applies to the proper region is key to avoiding spurious large black flashes.
 That said, depending on your use case, using `"ui"` onCloseWidget can be a perfectly valid decision,
 and will ensure never seeing a flash because of that widget.
@@ -859,9 +859,13 @@ function UIManager:removeZMQ(zeromq)
 end
 
 --[[--
-Sets full refresh rate for e-ink screen.
+Sets the full refresh rate for e-ink screen (`FULL_REFRESH_COUNT`).
+
+This is the amount of `"partial"` refreshes before the next one gets promoted to `"full"`.
 
 Also makes the refresh rate persistent in global reader settings.
+
+@see setDirty
 --]]
 function UIManager:setRefreshRate(rate, night_rate)
     logger.dbg("set screen full refresh rate", rate, night_rate)
