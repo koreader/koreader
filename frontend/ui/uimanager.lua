@@ -611,7 +611,7 @@ dbg:guard(UIManager, 'unschedule',
     function(self, action) assert(action ~= nil) end)
 
 --[[--
-Registers a widget to be repainted and enqueues a refresh.
+Mark a window-level widget as dirty, enqueuing a repaint & refresh request for that widget, to be processed on the next UI tick.
 
 The second parameter (refreshtype) can either specify a refreshtype
 (optionally in combination with a refreshregion - which is suggested,
