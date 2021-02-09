@@ -62,6 +62,7 @@ function ScrollTextWidget:init()
         para_direction_rtl = self.para_direction_rtl,
         auto_para_direction = self.auto_para_direction,
         alignment_strict = self.alignment_strict,
+        _dummy = self._dummy,
     }
     local visible_line_count = self.text_widget:getVisLineCount()
     local total_line_count = self.text_widget:getAllLineCount()
@@ -141,6 +142,7 @@ function ScrollTextWidget:getCharPos()
 end
 
 function ScrollTextWidget:updateScrollBar(is_partial, from_init)
+    print("ScrollTextWidget:updateScrollBar", is_partial, from_init)
     local low, high = self.text_widget:getVisibleHeightRatios()
     if low ~= self.prev_low or high ~= self.prev_high then
         self.prev_low = low
@@ -156,10 +158,12 @@ function ScrollTextWidget:updateScrollBar(is_partial, from_init)
             -- Reset transparency if the dialog's MovableContainer is currently translucent...
             if is_partial and self.dialog.movable and self.dialog.movable.alpha then
                 self.dialog.movable.alpha = nil
+                print("Movable setDirty on", self.dialog.movable.dimen)
                 UIManager:setDirty(self.dialog, function()
                     return refreshfunc, self.dialog.movable.dimen
                 end)
             else
+                print("!Movable setDirty on", self.dimen)
                 UIManager:setDirty(self.dialog, function()
                     return refreshfunc, self.dimen
                 end)
