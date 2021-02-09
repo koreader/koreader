@@ -379,14 +379,14 @@ then modal widgets are stacked together, and finally come standard widgets.
 If you think about how painting will be handled (also bottom to top), this makes perfect sense ;).
 
 For more details about refreshtype, refreshregion & refreshdither see the description of `setDirty`.
-If none of those three are specified, no refresh will be enqueued at this time (`_refresh` will take care of that).
+If refreshtype is omitted, no refresh will be enqueued at this time (`_refresh` will take care of that).
 
 @param widget a @{ui.widget.widget|widget} object
 @param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
-@param refreshregion a @{ui.geometry.Geom|Geom} object (optional)
+@param refreshregion a @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
 @int x horizontal screen offset (optional, `0` if omitted)
 @int y vertical screen offset (optional, `0` if omitted)
-@bool refreshdither `true` if widget requires dithering (optional)
+@bool refreshdither `true` if widget requires dithering (optional, but if set without a refreshtype, this *will* infect the refresh queue with a dithered `ui` refresh!)
 @see setDirty
 ]]
 function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
@@ -437,8 +437,8 @@ If none of those three are specified, no refresh will be enqueued at this time (
 
 @param widget a @{ui.widget.widget|widget} object
 @param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
-@param refreshregion a @{ui.geometry.Geom|Geom} object (optional)
-@bool refreshdither `true` if the refresh requires dithering (optional)
+@param refreshregion a @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
+@bool refreshdither `true` if the refresh requires dithering (optional, but if set without a refreshtype, this *will* infect the refresh queue with a dithered `ui` refresh!)
 @see setDirty
 ]]
 function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
@@ -618,7 +618,7 @@ and an even more optional refreshdither flag if the content requires dithering);
 or a function that returns a refreshtype, refreshregion tuple (or a refreshtype, refreshregion, refreshdither triple),
 which will be called *after* painting the widget.
 This is an interesting distinction, because a widget's geometry,
-usually stored in a field named `dimen`, in (generally) only computed at painting time (e.g., during `paintTo`).
+usually stored in a field named `dimen`, is (generally) only computed at painting time (e.g., during `paintTo`).
 The TL;DR being: if you already know the region, you can pass everything by value directly,
 (it'll make for slightly more readable debug logs),
 but if the region will only be known after the widget has been painted, pass a function.
