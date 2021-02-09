@@ -977,7 +977,7 @@ function UIManager:quit()
 end
 
 --[[--
-Request events to be ignored for some duration.
+Request all @{ui.event.Event|Event}s to be ignored for some duration.
 
 @param set_or_seconds either `true`, in which case a platform-specific delay is chosen, or a duration in seconds (***int***).
 ]]
@@ -1009,7 +1009,11 @@ function UIManager:discardEvents(set_or_seconds)
     self._discard_events_till = now_us + usecs
 end
 
---- Transmits an event to active widgets.
+--[[--
+Transmits an @{ui.event.Event|Event} to active widgets.
+
+@param event an @{ui.event.Event|Event} object
+]]
 function UIManager:sendEvent(event)
     if #self._window_stack == 0 then return end
 
@@ -1045,14 +1049,14 @@ function UIManager:sendEvent(event)
         end
     end
 
-    -- if the event is not consumed, active widgets (from top to bottom) can
-    -- access it. NOTE: _window_stack can shrink on close event
+    -- if the event is not consumed, active widgets (from top to bottom) can access it.
+    -- NOTE: _window_stack can shrink when widgets are closed (CloseWidget & Close events).
     local checked_widgets = {top_widget}
     for i = #self._window_stack, 1, -1 do
         local widget = self._window_stack[i]
         if checked_widgets[widget] == nil then
             -- active widgets has precedence to handle this event
-            -- Note: ReaderUI currently only has one active_widget: readerscreenshot
+            -- NOTE: While FileManager only has a single (screenshotter), ReaderUI has many active_widgets (each ReaderUI module gets added to the list).
             if widget.widget.active_widgets then
                 checked_widgets[widget] = true
                 for _, active_widget in ipairs(widget.widget.active_widgets) do
@@ -1061,8 +1065,7 @@ function UIManager:sendEvent(event)
             end
             if widget.widget.is_always_active then
                 -- active widgets will handle this event
-                -- Note: is_always_active widgets currently are widgets that want to show a keyboard
-                -- and readerconfig
+                -- NOTE: is_always_active widgets currently are widgets that want to show a VirtualKeyboard or listen to Dispatcher events
                 checked_widgets[widget] = true
                 if widget.widget:handleEvent(event) then return end
             end
@@ -1071,9 +1074,9 @@ function UIManager:sendEvent(event)
 end
 
 --[[--
-Transmits an event to all registered widgets.
+Transmits an @{ui.event.Event|Event} to all registered widgets.
 
-@param event
+@param event an @{ui.event.Event|Event} object
 ]]
 function UIManager:broadcastEvent(event)
     -- the widget's event handler might close widgets in which case
@@ -1584,17 +1587,18 @@ function UIManager:runForever()
     return self:run()
 end
 
--- The common operations should be performed before suspending the device. Ditto.
+-- The common operations that should be performed before suspending the device.
 function UIManager:_beforeSuspend()
     self:flushSettings()
     self:broadcastEvent(Event:new("Suspend"))
 end
 
--- The common operations should be performed after resuming the device. Ditto.
+-- The common operations that should be performed after resuming the device.
 function UIManager:_afterResume()
     self:broadcastEvent(Event:new("Resume"))
 end
 
+-- The common operations that should be performed when the device is plugged to a power source.
 function UIManager:_beforeCharging()
     if G_reader_settings:nilOrTrue("enable_charging_led") then
         Device:toggleChargingLED(true)
@@ -1602,6 +1606,7 @@ function UIManager:_beforeCharging()
     self:broadcastEvent(Event:new("Charging"))
 end
 
+-- The common operations that should be performed when the device is unplugged from a power source.
 function UIManager:_afterNotCharging()
     if G_reader_settings:nilOrTrue("enable_charging_led") then
         Device:toggleChargingLED(false)
@@ -1610,7 +1615,7 @@ function UIManager:_afterNotCharging()
 end
 
 --[[--
-Executes all the operations of a suspending request.
+Executes all the operations of a suspension (i.e., sleep) request.
 
 This function usually puts the device into suspension.
 ]]
@@ -1625,7 +1630,7 @@ function UIManager:suspend()
 end
 
 --[[--
-Executes all the operations of a resume request.
+Executes all the operations of a resume (i.e., wakeup) request.
 
 This function usually wakes up the device.
 ]]
