@@ -611,7 +611,7 @@ In order to unschedule anonymous functions, store a reference.
 @usage
 
 self.anonymousFunction = function() self:regularFunction() end
-UIManager:scheduleIn(10, self.anonymousFunction)
+UIManager:scheduleIn(10.5, self.anonymousFunction)
 UIManager:unschedule(self.anonymousFunction)
 ]]
 function UIManager:unschedule(action)
