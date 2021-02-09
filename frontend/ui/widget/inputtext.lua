@@ -225,7 +225,7 @@ function InputText:init()
         -- checkTextEditability() fails if self.text stays not a string
         self.text = tostring(self.text)
     end
-    self:initTextBox(self.text)
+    self:initTextBox(self.text, false, true) -- Don't call setDirty on init, the geometry isn't accurate yet
     self:checkTextEditability()
     if self.readonly ~= true then
         self:initKeyboard()
@@ -236,7 +236,7 @@ end
 -- This will be called when we add or del chars, as we need to recreate
 -- the text widget to have the new text splittted into possibly different
 -- lines than before
-function InputText:initTextBox(text, char_added)
+function InputText:initTextBox(text, char_added, from_init)
     if self.text_widget then
         self.text_widget:free()
     end
@@ -318,6 +318,7 @@ function InputText:initTextBox(text, char_added)
             lang = self.lang, -- these might influence height
             para_direction_rtl = self.para_direction_rtl,
             auto_para_direction = self.auto_para_direction,
+            _dummy = true,
         }
         self.height = text_widget:getTextHeight()
         self.scroll = true
@@ -343,6 +344,7 @@ function InputText:initTextBox(text, char_added)
             dialog = self.parent,
             scroll_callback = self.scroll_callback,
             scroll_by_pan = self.scroll_by_pan,
+            _dummy = self._dummy,
         }
     else
         self.text_widget = TextBoxWidget:new{
@@ -362,6 +364,7 @@ function InputText:initTextBox(text, char_added)
             width = self.width,
             height = self.height,
             dialog = self.parent,
+            _dummy = self._dummy,
         }
     end
     -- Get back possibly modified charpos and virtual_line_num
@@ -388,9 +391,11 @@ function InputText:initTextBox(text, char_added)
     self[1] = self._frame
     self.dimen = self._frame:getSize()
     --- @fixme self.parent is not always in the widget stack (BookStatusWidget)
-    UIManager:setDirty(self.parent, function()
-        return "ui", self.dimen
-    end)
+    if not (from_init or self._dummy) then
+        UIManager:setDirty(self.parent, function()
+            return "ui", self.dimen
+        end)
+    end
     if self.edit_callback then
         self.edit_callback(self.is_text_edited)
     end
