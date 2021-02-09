@@ -368,19 +368,26 @@ function UIManager:init()
     end
 end
 
---[[
+--[[--
 Registers and shows a widget.
 
-Modal widget should be always on top.
+Widgets are registered in a stack, from bottom to top in registration order,
+with a few tweaks to handle modals & toasts:
+toast widgets are stacked together on top,
+then modal widgets are stacked together, and finally come standard widgets.
+
+If you think about how painting will be handled (also bottom to top), this makes perfect sense ;).
+
 For refreshtype, refreshregion & refreshdither see description of `setDirty`.
+
+@param widget a widget object
+@param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
+@param refreshregion a @{ui.geometry.Geom|Geom} object (optional)
+@int x horizontal screen offset (optional)
+@int y vertical screen offset (optional)
+@bool refreshdither `true` if widget requires dithering (optional)
+@see setDirty
 ]]
----- @param widget a widget object
----- @param refreshtype "full", "flashpartial", "flashui", "partial", "ui", "fast"
----- @param refreshregion a Geom object
----- @int x
----- @int y
----- @param refreshdither an optional bool
----- @see setDirty
 function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     if not widget then
         logger.dbg("widget not exist to be shown")
@@ -419,16 +426,19 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     Input.tap_interval_override = widget.tap_interval_override
 end
 
---[[
+--[[--
 Unregisters a widget.
 
+It will be removed from the stack.
+
 For refreshtype, refreshregion & refreshdither see `setDirty`.
+
+@param widget a widget object
+@param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
+@param refreshregion a @{ui.geometry.Geom|Geom} object (optional)
+@bool refreshdither `true` if the refresh requires dithering (optional)
+@see setDirty
 ]]
----- @param widget a widget object
----- @param refreshtype "full", "flashpartial", "flashui", "partial", "ui", "fast"
----- @param refreshregion a Geom object
----- @param refreshdither an optional bool
----- @see setDirty
 function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     if not widget then
         logger.dbg("widget to be closed does not exist")
@@ -557,7 +567,7 @@ function UIManager:nextTick(action)
     return self:scheduleIn(0, action)
 end
 
--- Useful to run UI callbacks ASAP without skipping repaints
+--- Useful to run UI callbacks ASAP without skipping repaints
 function UIManager:tickAfterNext(action)
     return self:nextTick(function() self:nextTick(action) end)
 end
@@ -568,7 +578,8 @@ function UIManager:tickAfterNext(action)
 end
 --]]
 
---[[ Unschedules an execution task.
+--[[--
+Unschedules an execution task.
 
 In order to unschedule anonymous functions, store a reference.
 
@@ -577,7 +588,7 @@ In order to unschedule anonymous functions, store a reference.
 self.anonymousFunction = function() self:regularFunction() end
 UIManager:scheduleIn(10, self.anonymousFunction)
 UIManager:unschedule(self.anonymousFunction)
---]]
+]]
 function UIManager:unschedule(action)
     local removed = false
     for i = #self._task_queue, 1, -1 do
@@ -591,7 +602,7 @@ end
 dbg:guard(UIManager, 'unschedule',
     function(self, action) assert(action ~= nil) end)
 
---[[
+--[[--
 Registers a widget to be repainted and enqueues a refresh.
 
 The second parameter (refreshtype) can either specify a refreshtype
@@ -616,48 +627,50 @@ It doesn't block, and when it returns, nothing new has actually been painted or 
 It just appends stuff to the paint and/or refresh queues.
 
 Here's a quick rundown of what each refreshtype should be used for:
-full: high-fidelity flashing refresh (e.g., large images).
-      Highest quality, but highest latency.
-      Don't abuse if you only want a flash (in this case, prefer flashpartial or flashui).
-partial: medium fidelity refresh (e.g., text on a white background).
-         Can be promoted to flashing after FULL_REFRESH_COUNT refreshes.
-         Don't abuse to avoid spurious flashes.
-ui: medium fidelity refresh (e.g., mixed content).
-    Should apply to most UI elements.
-fast: low fidelity refresh (e.g., monochrome content).
-      Should apply to most highlighting effects achieved through inversion.
-      Note that if your highlighted element contains text,
-      you might want to keep the unhighlight refresh as "ui" instead, for crisper text.
-      (Or optimize that refresh away entirely, if you can get away with it).
-flashui: like ui, but flashing.
-         Can be used when showing a UI element for the first time, to avoid ghosting.
-flashpartial: like partial, but flashing (and not counting towards flashing promotions).
-              Can be used when closing an UI element, to avoid ghosting.
-              You can even drop the region in these cases, to ensure a fullscreen flash.
-              NOTE: On REAGL devices, "flashpartial" will NOT actually flash (by design).
-                    As such, even onCloseWidget, you might prefer "flashui" in some rare instances.
+
+* full: high-fidelity flashing refresh (e.g., large images).
+        Highest quality, but highest latency.
+        Don't abuse if you only want a flash (in this case, prefer flashpartial or flashui).
+* partial: medium fidelity refresh (e.g., text on a white background).
+           Can be promoted to flashing after FULL_REFRESH_COUNT refreshes.
+           Don't abuse to avoid spurious flashes.
+* ui: medium fidelity refresh (e.g., mixed content).
+      Should apply to most UI elements.
+* fast: low fidelity refresh (e.g., monochrome content).
+        Should apply to most highlighting effects achieved through inversion.
+        Note that if your highlighted element contains text,
+        you might want to keep the unhighlight refresh as "ui" instead, for crisper text.
+        (Or optimize that refresh away entirely, if you can get away with it).
+* flashui: like ui, but flashing.
+           Can be used when showing a UI element for the first time, to avoid ghosting.
+* flashpartial: like partial, but flashing (and not counting towards flashing promotions).
+                Can be used when closing an UI element, to avoid ghosting.
+                You can even drop the region in these cases, to ensure a fullscreen flash.
+                NOTE: On REAGL devices, "flashpartial" will NOT actually flash (by design).
+                      As such, even onCloseWidget, you might prefer "flashui" in some rare instances.
 
 NOTE: You'll notice a trend on UI elements that are usually shown *over* some kind of text
-      of using "ui" onShow & onUpdate, but "partial" onCloseWidget.
-      This is by design: "partial" is what the reader uses, as it's tailor-made for pure text
-      over a white background, so this ensures we resume the usual flow of the reader.
-      The same dynamic is true for their flashing counterparts, in the rare instances we enforce flashes.
-      Any kind of "partial" refresh *will* count towards a flashing promotion after FULL_REFRESH_COUNT refreshes,
-      so making sure your stuff only applies to the proper region is key to avoiding spurious large black flashes.
-      That said, depending on your use case, using "ui" onCloseWidget can be a perfectly valid decision,
-      and will ensure never seeing a flash because of that widget.
-      Remember that the FM uses "ui", so, if said widgets are shown over the FM,
-      prefer using "ui" or "flashui" onCloseWidget.
+of using "ui" onShow & onUpdate, but "partial" onCloseWidget.
+This is by design: "partial" is what the reader uses, as it's tailor-made for pure text
+over a white background, so this ensures we resume the usual flow of the reader.
+The same dynamic is true for their flashing counterparts, in the rare instances we enforce flashes.
+Any kind of "partial" refresh *will* count towards a flashing promotion after FULL_REFRESH_COUNT refreshes,
+so making sure your stuff only applies to the proper region is key to avoiding spurious large black flashes.
+That said, depending on your use case, using "ui" onCloseWidget can be a perfectly valid decision,
+and will ensure never seeing a flash because of that widget.
+Remember that the FM uses "ui", so, if said widgets are shown over the FM,
+prefer using "ui" or "flashui" onCloseWidget.
 
 The final parameter (refreshdither) is an optional hint for devices with hardware dithering support that this repaint
 could benefit from dithering (i.e., it contains an image).
 
 As far as the actual lifecycle of a widget goes, the rules are:
+
 * What you `show`, you `close`.
 * If you know the dimensions of the widget (or simply of the region you want to refresh), you can pass it directly:
-  * to show (as show calls setDirty),
-  * to close (as close will also call setDirty on the remaining dirty and visible widgets,
-    and will also enqueue a refresh based on that if there are dirty widgets).
+    * to show (as show calls setDirty),
+    * to close (as close will also call setDirty on the remaining dirty and visible widgets,
+      and will also enqueue a refresh based on that if there are dirty widgets).
 * Otherwise, you can use, respectively, the `Show` & `CloseWidget` handlers for that via `setDirty` calls.
   This can also be useful if *child* widgets have specific needs (e.g., flashing, dithering) that they want to inject in the refresh queue.
 * Remember that events propagate children first (in array order, starting at the top), and that if *any* event handler returns true,
@@ -701,11 +714,11 @@ UIManager:setDirty(self.widget, "partial")
 UIManager:setDirty(self.widget, "partial", Geom:new{x=10,y=10,w=100,h=50})
 UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen end)
 
---]]
----- @param widget a window-level widget object, "all", or nil
----- @param refreshtype "full", "flashpartial", "flashui", "partial", "ui", "fast"
----- @param refreshregion an optional Geom object
----- @param refreshdither an optional bool
+@param widget a window-level widget object, `"all"`, or `nil`
+@param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (or a lambda, see description above)
+@param refreshregion a @{ui.geometry.Geom|Geom} object (optional, omitting it means the region will cover the full screen)
+@bool refreshdither `true` if widget requires dithering (optional)
+]]
 function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
     if widget then
         if widget == "all" then
@@ -783,7 +796,7 @@ dbg:guard(UIManager, 'setDirty',
         end
     end)
 
---[[
+--[[--
 Clear the full repaint & refresh queues.
 NOTE: Beware! This doesn't take any prisonners!
       You shouldn't have to resort to this unless in very specific circumstances!
@@ -859,7 +872,7 @@ function UIManager:getTopWidget()
     return top.widget
 end
 
---[[
+--[[--
 Get the *second* topmost widget, if there is one (name if possible, ref otherwise).
 Useful when VirtualKeyboard is involved, as it *always* steals the top spot ;).
 NOTE: Will skip over VirtualKeyboard instances, plural, in case there are multiple (because, apparently, we can do that.. ugh).
@@ -1103,7 +1116,7 @@ local refresh_methods = {
 Compares refresh mode.
 
 Will return the mode that takes precedence.
---]]
+]]
 local function update_mode(mode1, mode2)
     if refresh_modes[mode1] > refresh_modes[mode2] then
         logger.dbg("update_mode: Update refresh mode", mode2, "to", mode1)
@@ -1117,7 +1130,7 @@ end
 Compares dither hints.
 
 Dither always wins.
---]]
+]]
 local function update_dither(dither1, dither2)
     if dither1 and not dither2 then
         logger.dbg("update_dither: Update dither hint", dither2, "to", dither1)
@@ -1127,14 +1140,14 @@ local function update_dither(dither1, dither2)
     end
 end
 
---[[
+--[[--
 Enqueues a refresh.
 
-Widgets call this in their paintTo() method in order to notify
+Widgets call this in their `paintTo()` method in order to notify
 UIManager that a certain part of the screen is to be refreshed.
 
 @param mode
-    refresh mode ("full", "flashpartial", "flashui", "partial", "ui", "fast")
+    refresh mode (`"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"`)
 @param region
     Rect() that specifies the region to be updated
     optional, update will affect whole screen if not specified.
@@ -1142,7 +1155,9 @@ UIManager that a certain part of the screen is to be refreshed.
 @param dither
     Bool, a hint to request hardware dithering (if supported)
     optional, no dithering requested if not specified or not supported.
---]]
+
+@local Not to be used outside of UIManager!
+]]
 function UIManager:_refresh(mode, region, dither)
     if not mode then
         -- If we're trying to float a dither hint up from a lower widget after a close, mode might be nil...
@@ -1227,13 +1242,15 @@ function UIManager:_refresh(mode, region, dither)
     table.insert(self._refresh_stack, {mode = mode, region = region, dither = dither})
 end
 
---[[
+--[[--
 Repaints dirty widgets.
 
 This will also drain the refresh queue, effectively refreshing the screen region(s) matching those freshly repainted widgets.
 
 There may be refreshes enqueued without any widgets needing to be repainted (c.f., `setDirty`'s behavior when passed a `nil` widget),
 in which case, nothing is repainted, but the refreshes are still drained and executed.
+
+@local Not to be used outside of UIManager!
 --]]
 function UIManager:_repaint()
     -- flag in which we will record if we did any repaints at all
@@ -1336,26 +1353,28 @@ function UIManager:forceRePaint()
     self:_repaint()
 end
 
---[[
+--[[--
 Ask the EPDC to *block* until our previous refresh ioctl has completed.
+
 This interacts sanely with the existing low-level handling of this in `framebuffer_mxcfb`
 (i.e., it doesn't even try to wait for a marker that fb has already waited for, and vice-versa).
 
 Will return immediately if it has already completed.
 
 If the device isn't a Linux + MXCFB device, this is a NOP.
---]]
+]]
 function UIManager:waitForVSync()
     Screen:refreshWaitForLast()
 end
 
---[[
+--[[--
 Used to repaint a specific sub-widget that isn't on the `_window_stack` itself.
+
 Useful to avoid repainting a complex widget when we just want to invert an icon, for instance.
 No safety checks on x & y *by design*. I want this to blow up if used wrong.
 
 This is an explicit repaint *now*: it bypasses and ignores the paint queue (unlike `setDirty`).
---]]
+]]
 function UIManager:widgetRepaint(widget, x, y)
     if not widget then return end
 
@@ -1363,7 +1382,7 @@ function UIManager:widgetRepaint(widget, x, y)
     widget:paintTo(Screen.bb, x, y)
 end
 
---[[
+--[[--
 Same idea as `widgetRepaint`, but does a simple `bb:invertRect`, without actually going through the widget's `paintTo` method.
 --]]
 function UIManager:widgetInvert(widget, x, y, w, h)
@@ -1491,8 +1510,9 @@ function UIManager:initLooper()
     end
 end
 
---[[
+--[[--
 This is the main loop of the UI controller.
+
 It is intended to manage input events and delegate them to dialogs.
 --]]
 function UIManager:run()
@@ -1543,8 +1563,11 @@ function UIManager:_afterNotCharging()
     self:broadcastEvent(Event:new("NotCharging"))
 end
 
--- Executes all the operations of a suspending request. This function usually puts the device into
--- suspension.
+--[[--
+Executes all the operations of a suspending request.
+
+This function usually puts the device into suspension.
+]]
 function UIManager:suspend()
     if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isRemarkable() or Device:isSonyPRSTUX() then
         self.event_handlers["Suspend"]()
@@ -1555,7 +1578,11 @@ function UIManager:suspend()
     end
 end
 
--- Executes all the operations of a resume request. This function usually wakes up the device.
+--[[--
+Executes all the operations of a resume request.
+
+This function usually wakes up the device.
+]]
 function UIManager:resume()
     if Device:isCervantes() or Device:isKobo() or Device:isSDL() or Device:isRemarkable() or Device:isSonyPRSTUX() then
         self.event_handlers["Resume"]()
@@ -1564,19 +1591,27 @@ function UIManager:resume()
     end
 end
 
--- Release standby lock once. We're done with whatever we were doing in the background.
--- Standby is re-enabled only after all issued prevents are paired with allowStandby for each one.
+--[[--
+Release standby lock.
+
+Called once we're done with whatever we were doing in the background.
+Standby is re-enabled only after all issued prevents are paired with allowStandby for each one.
+]]
 function UIManager:allowStandby()
     assert(self._prevent_standby_count > 0, "allowing standby that isn't prevented; you have an allow/prevent mismatch somewhere")
     self._prevent_standby_count = self._prevent_standby_count - 1
 end
 
--- Prevent standby, ie something is happening in background, yet UI may tick.
+--[[--
+Prevent standby.
+
+i.e., something is happening in background, yet UI may tick.
+]]
 function UIManager:preventStandby()
     self._prevent_standby_count = self._prevent_standby_count + 1
 end
 
--- Allow/prevent calls above can interminently allow standbys, but we're not interested until
+-- The allow/prevent calls above can interminently allow standbys, but we're not interested until
 -- the state change crosses UI tick boundary, which is what self._prev_prevent_standby_count is tracking.
 function UIManager:_standbyTransition()
     if self._prevent_standby_count == 0 and self._prev_prevent_standby_count > 0 then
@@ -1593,10 +1628,12 @@ function UIManager:_standbyTransition()
     self._prev_prevent_standby_count = self._prevent_standby_count
 end
 
+--- Broadcasts a `FlushSettings` Event to *all* widgets.
 function UIManager:flushSettings()
     self:broadcastEvent(Event:new("FlushSettings"))
 end
 
+--- Sanely restart KOReader (on supported platforms).
 function UIManager:restartKOReader()
     self:quit()
     -- This is just a magic number to indicate the restart request for shell scripts.
