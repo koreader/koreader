@@ -572,6 +572,7 @@ function DictQuickLookup:init()
             face = self.content_face,
             width = self.content_width,
             height = self.definition_height,
+            _dummy = true,
         }
         self.definition_line_height = test_widget:getLineHeight()
         test_widget:free()

@@ -40,6 +40,9 @@ local ScrollTextWidget = InputContainer:new{
     para_direction_rtl = nil,
     auto_para_direction = false,
     alignment_strict = false,
+
+    -- for internal use
+    _dummy = nil, -- When the widget is a one-off used to compute text height
 }
 
 function ScrollTextWidget:init()
@@ -141,16 +144,16 @@ function ScrollTextWidget:getCharPos()
     return self.text_widget:getCharPos()
 end
 
-function ScrollTextWidget:updateScrollBar(is_partial, from_init)
-    print("ScrollTextWidget:updateScrollBar", is_partial, from_init)
+function ScrollTextWidget:updateScrollBar(is_partial)
+    print("ScrollTextWidget:updateScrollBar", is_partial)
     local low, high = self.text_widget:getVisibleHeightRatios()
     if low ~= self.prev_low or high ~= self.prev_high then
         self.prev_low = low
         self.prev_high = high
         self.v_scroll_bar:set(low, high)
 
-        -- When we're called from init, the dimensions are non-existent or not up-to-date yet, so don't enqueue a bogus refresh
-        if not from_init then
+        -- Don't even try to refresh dummy widgets used for text height computations...
+        if not self._dummy then
             local refreshfunc = "ui"
             if is_partial then
                 refreshfunc = "partial"
