@@ -1352,6 +1352,8 @@ end
 Used to repaint a specific sub-widget that isn't on the `_window_stack` itself.
 Useful to avoid repainting a complex widget when we just want to invert an icon, for instance.
 No safety checks on x & y *by design*. I want this to blow up if used wrong.
+
+This is an explicit repaint *now*: it bypasses and ignores the paint queue (unlike `setDirty`).
 --]]
 function UIManager:widgetRepaint(widget, x, y)
     if not widget then return end
@@ -1361,7 +1363,7 @@ function UIManager:widgetRepaint(widget, x, y)
 end
 
 --[[
-Same idea as `widgetRepaint`, but does a simple invertRect, without actually repainting anything.
+Same idea as `widgetRepaint`, but does a simple `bb:invertRect`, without actually going through the widget's `paintTo` method.
 --]]
 function UIManager:widgetInvert(widget, x, y, w, h)
     if not widget then return end

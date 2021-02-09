@@ -251,6 +251,7 @@ function Button:_doFeedbackHighlight()
             self[1].invert = true
         end
 
+        -- This repaints *now*, unlike setDirty
         UIManager:widgetRepaint(self[1], self[1].dimen.x, self[1].dimen.y)
     else
         self[1].invert = true
@@ -302,7 +303,7 @@ function Button:onTapSelectButton()
             print("Button", self, "HL")
             self:_doFeedbackHighlight()
 
-            -- Force the repaint *now*, so we have a chance to see the highlight on its own, before whatever the callback will do.
+            -- Force the refresh by draining the refresh queue *now*, so we have a chance to see the highlight on its own, before whatever the callback will do.
             if not self.vsync then
                 -- NOTE: Except when a Button is flagged vsync, in which case we *want* to bundle the highlight with the callback, to prevent further delays
                 print("Button", self, "HL fence")
@@ -313,7 +314,7 @@ function Button:onTapSelectButton()
             --
             -- We'll *paint* the unhighlight now, because at this point we can still be sure that our widget exists,
             -- and that anything we do will not impact whatever the callback does (i.e., that we draw *below* whatever the callback might show).
-            -- We won't *fence* the refresh, though, to ensure that we do not delay the callback, and that the unhighlight essentially blends into whatever the callback does.
+            -- We won't *fence* the refresh (i.e., it's queued, but we don't actually drain the queue yet), though, to ensure that we do not delay the callback, and that the unhighlight essentially blends into whatever the callback does.
             -- Worst case scenario, we'll simply have "wasted" a tiny subwidget repaint if the callback closed us,
             -- but doing it this way allows us to avoid a large array of potential interactions with whatever the callback may paint/refresh if we were to handle the unhighlight post-callback,
             -- which would require a number of possibly brittle heuristics to handle.
@@ -339,7 +340,7 @@ function Button:onTapSelectButton()
                 print("Button", self, "CB fence")
                 UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
                 if self.vsync then
-                    -- NOTE: This is mainly useful when the callback caused a REAGL update that we do not explicitly fence already, (i.e., Kobo Mk. 7).
+                    -- NOTE: This is mainly useful when the callback caused a REAGL update that we do not explicitly fence via MXCFB_WAIT_FOR_UPDATE_COMPLETE already, (i.e., Kobo Mk. 7).
                     print("Button", self, "CB vsync")
                     UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
                                              -- because that would have a chance to noticeably delay it until the unhighlight.
@@ -369,6 +370,10 @@ function Button:onTapSelectButton()
         UIManager:setDirty(is_translucent and "all" or self.show_parent, function()
             return "ui", self.show_parent.movable.dimen
         end)
+
+        -- We don't force the hand of the paint & refresh queues here, as, when transparency is involved,
+        -- this should be the only actual setDirty call (outside of a Button flagged vsync),
+        -- so we're back into standard territory.
     end
 
     if self.readonly ~= true then
