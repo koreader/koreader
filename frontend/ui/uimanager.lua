@@ -859,7 +859,7 @@ function UIManager:removeZMQ(zeromq)
 end
 
 --[[--
-Sets the full refresh rate for e-ink screen (`FULL_REFRESH_COUNT`).
+Sets the full refresh rate for e-ink screens (`FULL_REFRESH_COUNT`).
 
 This is the amount of `"partial"` refreshes before the next one gets promoted to `"full"`.
 
@@ -888,11 +888,12 @@ function UIManager:setRefreshRate(rate, night_rate)
     end
 end
 
---- Gets full refresh rate for e-ink screen.
+--- Returns the full refresh rate for e-ink screens (`FULL_REFRESH_COUNT`).
 function UIManager:getRefreshRate()
     return G_reader_settings:readSetting("full_refresh_count") or DEFAULT_FULL_REFRESH_COUNT, G_reader_settings:readSetting("night_full_refresh_count") or G_reader_settings:readSetting("full_refresh_count") or DEFAULT_FULL_REFRESH_COUNT
 end
 
+--- Toggles Night Mode (i.e., inverted rendering).
 function UIManager:ToggleNightMode(night_mode)
     if night_mode then
         self.FULL_REFRESH_COUNT = G_reader_settings:readSetting("night_full_refresh_count") or G_reader_settings:readSetting("full_refresh_count") or DEFAULT_FULL_REFRESH_COUNT
