@@ -383,8 +383,8 @@ For more details about refreshtype, refreshregion & refreshdither see the descri
 @param widget a @{ui.widget.widget|widget} object
 @param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
 @param refreshregion a @{ui.geometry.Geom|Geom} object (optional)
-@int x horizontal screen offset (optional, 0 if omitted)
-@int y vertical screen offset (optional, 0 if omitted)
+@int x horizontal screen offset (optional, `0` if omitted)
+@int y vertical screen offset (optional, `0` if omitted)
 @bool refreshdither `true` if widget requires dithering (optional)
 @see setDirty
 ]]
@@ -792,11 +792,14 @@ dbg:guard(UIManager, 'setDirty',
     nil,
     function(self, widget, refreshtype, refreshregion, refreshdither)
         if not widget or widget == "all" then return end
-        -- when debugging, we check if we get handed a valid widget,
-        -- which would be a dialog that was previously passed via show()
+        -- when debugging, we check if we were handed a valid window-level widget,
+        -- which would be a widget that was previously passed to `show`.
         local found = false
         for i = 1, #self._window_stack do
-            if self._window_stack[i].widget == widget then found = true end
+            if self._window_stack[i].widget == widget then
+                found = true
+                break
+            end
         end
         if not found then
             dbg:v("INFO: invalid widget for setDirty()", debug.traceback())
@@ -1165,12 +1168,12 @@ UIManager that a certain part of the screen is to be refreshed.
 @param mode
     refresh mode (`"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"`)
 @param region
-    Rect() that specifies the region to be updated
-    optional, update will affect whole screen if not specified.
+    A @{ui.geometry.Geom|Geom} rectangle that specifies the region to be updated.
+    Optional, update will affect whole screen if not specified.
     Note that this should be the exception.
-@param dither
-    Bool, a hint to request hardware dithering (if supported)
-    optional, no dithering requested if not specified or not supported.
+@bool dither
+    A hint to request hardware dithering (if supported).
+    Optional, no dithering requested if not specified or not supported.
 
 @local Not to be used outside of UIManager!
 ]]
@@ -1225,7 +1228,7 @@ function UIManager:_refresh(mode, region, dither)
         self.refresh_counted = true
     end
 
-    -- if no region is specified, define default region
+    -- if no region is specified, use the screen's dimensions
     region = region or Geom:new{w=Screen:getWidth(), h=Screen:getHeight()}
 
     -- if no dithering hint was specified, don't request dithering
