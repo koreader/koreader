@@ -609,6 +609,12 @@ In practice, since the stack of (both types of) refreshes is optimized into as f
 and that during the next `_repaint` tick (which is when `paintTo` for dirty widgets happens),
 this shouldn't change much in the grand scheme of things, but it ought to be noted ;).
 
+See `_repaint` for more details about how the repaint & refresh queues are processed,
+and `handleInput` for more details about when those queues are actually drained.
+What you should essentially remember is that `setDirty` doesn't actually "do" anything visible on its own.
+It doesn't block, and when it returns, nothing new has actually been painted or refreshed.
+It just appends stuff to the paint and/or refresh queues.
+
 Here's a quick rundown of what each refreshtype should be used for:
 full: high-fidelity flashing refresh (e.g., large images).
       Highest quality, but highest latency.
@@ -1329,6 +1335,15 @@ function UIManager:forceRePaint()
     self:_repaint()
 end
 
+--[[
+Ask the EPDC to *block* until our previous refresh ioctl has completed.
+This interacts sanely with the existing low-level handling of this in `framebuffer_mxcfb`
+(i.e., it doesn't even try to wait for a marker that fb has already waited for, and vice-versa).
+
+Will return immediately if it has already completed.
+
+If the device isn't a Linux + MXCFB device, this is a NOP.
+--]]
 function UIManager:waitForVSync()
     Screen:refreshWaitForLast()
 end
