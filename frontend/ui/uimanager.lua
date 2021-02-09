@@ -552,7 +552,7 @@ dbg:guard(UIManager, 'schedule',
 Schedules a task to be run a certain amount of seconds from now.
 
 @number seconds scheduling delay in seconds (supports decimal values)
-@func action reference to the scheduled task (may be anonymous)
+@func action reference to the task to schedule (may be anonymous)
 @param ... optional arguments passed to action
 
 @see unschedule
@@ -577,6 +577,8 @@ dbg:guard(UIManager, 'scheduleIn',
 --[[--
 Schedules a task for the next UI tick.
 
+@func action reference to the task to schedule (may be anonymous)
+@param ... optional arguments passed to action
 @see scheduleIn
 ]]
 function UIManager:nextTick(action, ...)
@@ -588,6 +590,8 @@ Schedules a task to be run two UI ticks from now.
 
 Useful to run UI callbacks ASAP without skipping repaints.
 
+@func action reference to the task to schedule (may be anonymous)
+@param ... optional arguments passed to action
 @see nextTick
 ]]
 function UIManager:tickAfterNext(action, ...)
