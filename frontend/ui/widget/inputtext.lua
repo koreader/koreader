@@ -319,7 +319,7 @@ function InputText:initTextBox(text, char_added)
             lang = self.lang, -- these might influence height
             para_direction_rtl = self.para_direction_rtl,
             auto_para_direction = self.auto_para_direction,
-            _dummy = true,
+            _dummy = true, -- flag it as a dummy, so it won't trigger any bogus repaint/refresh...
         }
         self.height = text_widget:getTextHeight()
         self.scroll = true
