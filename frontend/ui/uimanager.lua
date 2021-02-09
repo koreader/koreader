@@ -379,6 +379,7 @@ then modal widgets are stacked together, and finally come standard widgets.
 If you think about how painting will be handled (also bottom to top), this makes perfect sense ;).
 
 For more details about refreshtype, refreshregion & refreshdither see the description of `setDirty`.
+If none of those three are specified, no refresh will be enqueued at this time (`_refresh` will take care of that).
 
 @param widget a @{ui.widget.widget|widget} object
 @param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
@@ -432,6 +433,7 @@ Unregisters a widget.
 It will be removed from the stack.
 
 For more details about refreshtype, refreshregion & refreshdither see the description of `setDirty`.
+If none of those three are specified, no refresh will be enqueued at this time (`_refresh` will take care of that).
 
 @param widget a @{ui.widget.widget|widget} object
 @param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
@@ -612,11 +614,11 @@ Registers a widget to be repainted and enqueues a refresh.
 
 The second parameter (refreshtype) can either specify a refreshtype
 (optionally in combination with a refreshregion - which is suggested,
-and an even more optional refreshdither flag if the content requires dithering)
-or a function that returns a refreshtype, refreshregion tuple (or a refreshtype, refreshregion, refreshdither triple)
-and is called *after* painting the widget.
+and an even more optional refreshdither flag if the content requires dithering);
+or a function that returns a refreshtype, refreshregion tuple (or a refreshtype, refreshregion, refreshdither triple),
+which will be called *after* painting the widget.
 This is an interesting distinction, because a widget's geometry,
-usually stored in a field named `dimen`, in only computed at painting time (e.g., during `paintTo`).
+usually stored in a field named `dimen`, in (generally) only computed at painting time (e.g., during `paintTo`).
 The TL;DR being: if you already know the region, you can pass everything by value directly,
 (it'll make for slightly more readable debug logs),
 but if the region will only be known after the widget has been painted, pass a function.
@@ -1184,6 +1186,8 @@ function UIManager:_refresh(mode, region, dither)
         if dither then
             mode = "ui"
         else
+            -- Otherwise, this is most likely from a `show` or `close` that wasn't passed specific refresh details,
+            -- (which is the vast majority of them), in which case we drop it to avoid enqueuing a useless full-screen refresh.
             return
         end
     end
