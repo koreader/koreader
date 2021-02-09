@@ -197,7 +197,7 @@ function Trapper:info(text, fast_refresh)
         self.current_widget:init()
         self.current_widget.movable:setMovedOffset(orig_moved_offset)
         local Screen = require("device").screen
-        self.current_widget:paintTo(Screen.bb, 0,0)
+        self.current_widget:paintTo(Screen.bb, 0, 0)
         local d = self.current_widget[1][1].dimen
         Screen.refreshUI(Screen, d.x, d.y, d.w, d.h)
     else
