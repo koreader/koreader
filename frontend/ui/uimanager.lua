@@ -368,11 +368,11 @@ function UIManager:init()
     end
 end
 
---[[--
+--[[
 Registers and shows a widget.
 
 Modal widget should be always on top.
-For refreshtype & refreshregion see description of setDirty().
+For refreshtype, refreshregion & refreshdither see description of `setDirty`.
 ]]
 ---- @param widget a widget object
 ---- @param refreshtype "full", "flashpartial", "flashui", "partial", "ui", "fast"
@@ -419,10 +419,10 @@ function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
     Input.tap_interval_override = widget.tap_interval_override
 end
 
---[[--
+--[[
 Unregisters a widget.
 
-For refreshtype & refreshregion see description of setDirty().
+For refreshtype, refreshregion & refreshdither see `setDirty`.
 ]]
 ---- @param widget a widget object
 ---- @param refreshtype "full", "flashpartial", "flashui", "partial", "ui", "fast"
@@ -568,7 +568,7 @@ function UIManager:tickAfterNext(action)
 end
 --]]
 
---[[-- Unschedules an execution task.
+--[[ Unschedules an execution task.
 
 In order to unschedule anonymous functions, store a reference.
 
@@ -577,7 +577,7 @@ In order to unschedule anonymous functions, store a reference.
 self.anonymousFunction = function() self:regularFunction() end
 UIManager:scheduleIn(10, self.anonymousFunction)
 UIManager:unschedule(self.anonymousFunction)
-]]
+--]]
 function UIManager:unschedule(action)
     local removed = false
     for i = #self._task_queue, 1, -1 do
@@ -591,10 +591,10 @@ end
 dbg:guard(UIManager, 'unschedule',
     function(self, action) assert(action ~= nil) end)
 
---[[--
+--[[
 Registers a widget to be repainted and enqueues a refresh.
 
-the second parameter (refreshtype) can either specify a refreshtype
+The second parameter (refreshtype) can either specify a refreshtype
 (optionally in combination with a refreshregion - which is suggested,
 and an even more optional refreshdither flag if the content requires dithering)
 or a function that returns a refreshtype, refreshregion tuple (or a refreshtype, refreshregion, refreshdither triple)
@@ -776,11 +776,13 @@ dbg:guard(UIManager, 'setDirty',
         end
     end)
 
--- Clear the full repaint & refreshes queues.
--- NOTE: Beware! This doesn't take any prisonners!
---       You shouldn't have to resort to this unless in very specific circumstances!
---       plugins/coverbrowser.koplugin/covermenu.lua building a franken-menu out of buttondialogtitle & buttondialog
---       and wanting to avoid inheriting their original paint/refresh cycle being a prime example.
+--[[
+Clear the full repaint & refresh queues.
+NOTE: Beware! This doesn't take any prisonners!
+      You shouldn't have to resort to this unless in very specific circumstances!
+      plugins/coverbrowser.koplugin/covermenu.lua building a franken-menu out of buttondialogtitle & buttondialog
+      and wanting to avoid inheriting their original paint/refresh cycle being a prime example.
+--]]
 function UIManager:clearRenderStack()
     logger.dbg("clearRenderStack: Clearing the full render stack!")
     self._dirty = {}
@@ -850,9 +852,11 @@ function UIManager:getTopWidget()
     return top.widget
 end
 
---- Get the *second* topmost widget, if there is one (name if possible, ref otherwise).
---- Useful when VirtualKeyboard is involved, as it *always* steals the top spot ;).
---- NOTE: Will skip over VirtualKeyboard instances, plural, in case there are multiple (because, apparently, we can do that.. ugh).
+--[[
+Get the *second* topmost widget, if there is one (name if possible, ref otherwise).
+Useful when VirtualKeyboard is involved, as it *always* steals the top spot ;).
+NOTE: Will skip over VirtualKeyboard instances, plural, in case there are multiple (because, apparently, we can do that.. ugh).
+--]]
 function UIManager:getSecondTopmostWidget()
     if #self._window_stack <= 1 then
         -- Not enough widgets in the stack, bye!
@@ -892,7 +896,7 @@ function UIManager:isSubwidgetShown(widget, max_depth)
     return false
 end
 
---- Same, but only check window-level widgets (e.g., what's directly registered in the window stack), don't recurse
+--- Same as `isSubwidgetShown`, but only check window-level widgets (e.g., what's directly registered in the window stack), don't recurse
 function UIManager:isWidgetShown(widget)
     for i = #self._window_stack, 1, -1 do
         if self._window_stack[i].widget == widget then
@@ -959,7 +963,7 @@ function UIManager:discardEvents(set_or_seconds)
     self._discard_events_till = now_us + usecs
 end
 
---- Transmits an event to an active widget.
+--- Transmits an event to active widgets.
 function UIManager:sendEvent(event)
     if #self._window_stack == 0 then return end
 
@@ -1116,7 +1120,7 @@ local function update_dither(dither1, dither2)
     end
 end
 
---[[--
+--[[
 Enqueues a refresh.
 
 Widgets call this in their paintTo() method in order to notify
@@ -1216,8 +1220,14 @@ function UIManager:_refresh(mode, region, dither)
     table.insert(self._refresh_stack, {mode = mode, region = region, dither = dither})
 end
 
+--[[
+Repaints dirty widgets.
 
---- Repaints dirty widgets.
+This will also drain the refresh queue, effectively refreshing the screen region(s) matching those freshly repainted widgets.
+
+There may be refreshes enqueued without any widgets needing to be repainted (c.f., `setDirty`'s behavior when passed a `nil` widget),
+in which case, nothing is repainted, but the refreshes are still drained and executed.
+--]]
 function UIManager:_repaint()
     -- flag in which we will record if we did any repaints at all
     -- will trigger a refresh if set.
@@ -1314,6 +1324,7 @@ function UIManager:_repaint()
     self.refresh_counted = false
 end
 
+---- Explicitly drain the paint & refresh queues *now*, instead of waiting for the next tick.
 function UIManager:forceRePaint()
     self:_repaint()
 end
@@ -1322,9 +1333,11 @@ function UIManager:waitForVSync()
     Screen:refreshWaitForLast()
 end
 
--- Used to repaint a specific sub-widget that isn't on the _window_stack itself
--- Useful to avoid repainting a complex widget when we just want to invert an icon, for instance.
--- No safety checks on x & y *by design*. I want this to blow up if used wrong.
+--[[
+Used to repaint a specific sub-widget that isn't on the `_window_stack` itself.
+Useful to avoid repainting a complex widget when we just want to invert an icon, for instance.
+No safety checks on x & y *by design*. I want this to blow up if used wrong.
+--]]
 function UIManager:widgetRepaint(widget, x, y)
     if not widget then return end
 
@@ -1332,7 +1345,9 @@ function UIManager:widgetRepaint(widget, x, y)
     widget:paintTo(Screen.bb, x, y)
 end
 
--- Same idea, but does a simple invertRect, without actually repainting anything
+--[[
+Same idea as `widgetRepaint`, but does a simple invertRect, without actually repainting anything.
+--]]
 function UIManager:widgetInvert(widget, x, y, w, h)
     if not widget then return end
 
@@ -1458,9 +1473,10 @@ function UIManager:initLooper()
     end
 end
 
--- this is the main loop of the UI controller
--- it is intended to manage input events and delegate
--- them to dialogs
+--[[
+This is the main loop of the UI controller.
+It is intended to manage input events and delegate them to dialogs.
+--]]
 function UIManager:run()
     self._running = true
     self:initLooper()
