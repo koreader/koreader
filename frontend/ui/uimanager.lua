@@ -378,7 +378,7 @@ then modal widgets are stacked together, and finally come standard widgets.
 
 If you think about how painting will be handled (also bottom to top), this makes perfect sense ;).
 
-For refreshtype, refreshregion & refreshdither see description of `setDirty`.
+For more details about refreshtype, refreshregion & refreshdither see the description of `setDirty`.
 
 @param widget a widget object
 @param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
@@ -431,7 +431,7 @@ Unregisters a widget.
 
 It will be removed from the stack.
 
-For refreshtype, refreshregion & refreshdither see `setDirty`.
+For more details about refreshtype, refreshregion & refreshdither see the description of `setDirty`.
 
 @param widget a widget object
 @param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
@@ -563,11 +563,16 @@ dbg:guard(UIManager, 'scheduleIn',
         assert(seconds >= 0, "Only positive seconds allowed")
     end)
 
+--- Schedules a task for the next UI tick.
 function UIManager:nextTick(action)
     return self:scheduleIn(0, action)
 end
 
---- Useful to run UI callbacks ASAP without skipping repaints
+--[[--
+Schedules a task to be run two UI ticks from now.
+
+Useful to run UI callbacks ASAP without skipping repaints.
+]]
 function UIManager:tickAfterNext(action)
     return self:nextTick(function() self:nextTick(action) end)
 end
@@ -628,50 +633,52 @@ It just appends stuff to the paint and/or refresh queues.
 
 Here's a quick rundown of what each refreshtype should be used for:
 
-* full: high-fidelity flashing refresh (e.g., large images).
-        Highest quality, but highest latency.
-        Don't abuse if you only want a flash (in this case, prefer flashpartial or flashui).
-* partial: medium fidelity refresh (e.g., text on a white background).
-           Can be promoted to flashing after FULL_REFRESH_COUNT refreshes.
-           Don't abuse to avoid spurious flashes.
-* ui: medium fidelity refresh (e.g., mixed content).
-      Should apply to most UI elements.
-* fast: low fidelity refresh (e.g., monochrome content).
-        Should apply to most highlighting effects achieved through inversion.
-        Note that if your highlighted element contains text,
-        you might want to keep the unhighlight refresh as "ui" instead, for crisper text.
-        (Or optimize that refresh away entirely, if you can get away with it).
-* flashui: like ui, but flashing.
-           Can be used when showing a UI element for the first time, to avoid ghosting.
-* flashpartial: like partial, but flashing (and not counting towards flashing promotions).
-                Can be used when closing an UI element, to avoid ghosting.
-                You can even drop the region in these cases, to ensure a fullscreen flash.
-                NOTE: On REAGL devices, "flashpartial" will NOT actually flash (by design).
-                      As such, even onCloseWidget, you might prefer "flashui" in some rare instances.
+* `full`: high-fidelity flashing refresh (e.g., large images).
+          Highest quality, but highest latency.
+          Don't abuse if you only want a flash (in this case, prefer `flashui` or `flashpartial`).
+* `partial`: medium fidelity refresh (e.g., text on a white background).
+             Can be promoted to flashing after FULL_REFRESH_COUNT refreshes.
+             Don't abuse to avoid spurious flashes.
+             In practice, this means this should mostly always be limited to ReaderUI.
+* `ui`: medium fidelity refresh (e.g., mixed content).
+        Should apply to most UI elements.
+        When in doubt, use this.
+* `fast`: low fidelity refresh (e.g., monochrome content).
+          Should apply to most highlighting effects achieved through inversion.
+          Note that if your highlighted element contains text,
+          you might want to keep the unhighlight refresh as `"ui"` instead, for crisper text.
+          (Or optimize that refresh away entirely, if you can get away with it).
+* `flashui`: like `ui`, but flashing.
+             Can be used when showing a UI element for the first time, or when closing one, to avoid ghosting.
+* `flashpartial`: like `partial`, but flashing (and not counting towards flashing promotions).
+                  Can be used when closing an UI element (usually over ReaderUI), to avoid ghosting.
+                  You can even drop the region in these cases, to ensure a fullscreen flash.
+                  NOTE: On REAGL devices, `flashpartial` will NOT actually flash (by design).
+                        As such, even onCloseWidget, you might prefer `flashui` in most instances.
 
-NOTE: You'll notice a trend on UI elements that are usually shown *over* some kind of text
-of using "ui" onShow & onUpdate, but "partial" onCloseWidget.
-This is by design: "partial" is what the reader uses, as it's tailor-made for pure text
+NOTE: You'll notice a trend on UI elements that are usually shown *over* some kind of text (generally ReaderUI)
+of using `"ui"` onShow & onUpdate, but `"partial"` onCloseWidget.
+This is by design: `"partial"` is what the reader (ReaderUI) uses, as it's tailor-made for pure text
 over a white background, so this ensures we resume the usual flow of the reader.
 The same dynamic is true for their flashing counterparts, in the rare instances we enforce flashes.
-Any kind of "partial" refresh *will* count towards a flashing promotion after FULL_REFRESH_COUNT refreshes,
+Any kind of `"partial"` refresh *will* count towards a flashing promotion after FULL_REFRESH_COUNT refreshes,
 so making sure your stuff only applies to the proper region is key to avoiding spurious large black flashes.
-That said, depending on your use case, using "ui" onCloseWidget can be a perfectly valid decision,
+That said, depending on your use case, using `"ui"` onCloseWidget can be a perfectly valid decision,
 and will ensure never seeing a flash because of that widget.
-Remember that the FM uses "ui", so, if said widgets are shown over the FM,
-prefer using "ui" or "flashui" onCloseWidget.
+Remember that the FM uses `"ui"`, so, if said widgets are shown over the FM,
+prefer using `"ui"` or `"flashui"` onCloseWidget.
 
 The final parameter (refreshdither) is an optional hint for devices with hardware dithering support that this repaint
-could benefit from dithering (i.e., it contains an image).
+could benefit from dithering (e.g., because it contains an image).
 
 As far as the actual lifecycle of a widget goes, the rules are:
 
 * What you `show`, you `close`.
 * If you know the dimensions of the widget (or simply of the region you want to refresh), you can pass it directly:
-    * to show (as show calls setDirty),
-    * to close (as close will also call setDirty on the remaining dirty and visible widgets,
+    * to `show` (as `show` calls `setDirty`),
+    * to `close` (as `close` will also call `setDirty` on the remaining dirty and visible widgets,
       and will also enqueue a refresh based on that if there are dirty widgets).
-* Otherwise, you can use, respectively, the `Show` & `CloseWidget` handlers for that via `setDirty` calls.
+* Otherwise, you can use, respectively, a widget's `Show` & `CloseWidget` handlers for that via `setDirty` calls.
   This can also be useful if *child* widgets have specific needs (e.g., flashing, dithering) that they want to inject in the refresh queue.
 * Remember that events propagate children first (in array order, starting at the top), and that if *any* event handler returns true,
   the propagation of that specific event for this widget tree stops *immediately*.
@@ -681,7 +688,7 @@ As far as the actual lifecycle of a widget goes, the rules are:
   this'll ensure that *any* widget including it will be sure that resources are freed when it (or its parent) are closed.
 * Note that there *is* a `Close` event, but it is *only* broadcast (e.g., sent to every widget in the window stack;
   the same rules about propagation apply, but only per *window-level widget*) at poweroff/reboot, so,
-  refrain from implementing custom onClose methods if that's not their intended purpose ;).
+  refrain from implementing custom `onClose` methods if that's not their intended purpose ;).
 
 On the subject of widgets and child widgets,
 you might have noticed an unspoken convention across the codebase of widgets having a field called `show_parent`.
@@ -689,23 +696,23 @@ Since handling this is entirely at the programmer's behest, here's how we usuall
 Basically, we cascade a field named `show_parent` to every child widget that matter
 (e.g., those that serve an UI purpose, as opposed to, say, a container).
 This ensures that every subwidget can reference its actual parent
-(ideally, all the way to the window-level widget it belongs to, i.e., the one that was passed to UIManager:show, hence the name ;)),
-to, among other things, flag the right widget as setDirty (c.f., those pesky debug warnings when that's done wrong ;p) when they want to request a repaint.
-This is why you often see stuff doing, when instantiating a new widget, FancyWidget:new{ show_parent = self.show_parent or self };
+(ideally, all the way to the window-level widget it belongs to, i.e., the one that was passed to `show`, hence the name ;)),
+to, among other things, flag the right widget for repaint via `setDirty` (c.f., those pesky debug warnings when that's done wrong ;p) when they want to request a repaint.
+This is why you often see stuff doing, when instantiating a new widget, `FancyWidget:new{ show_parent = self.show_parent or self }`;
 meaning, if I'm already a subwidget, cascade my parent, otherwise, it means I'm a window-level widget, so cascade myself as that widget's parent ;).
 
 Another convention (that a few things rely on) is naming a (persistent) MovableContainer wrapping a full widget `movable`, accessible as an instance field.
-This is useful when it's used for transparency purposes, which, e.g., Button relies on to handle highlighting inside a transparent widget properly,
+This is useful when it's used for transparency purposes, which, e.g., @{ui.widget.button|Button} relies on to handle highlighting inside a transparent widget properly,
 by checking if self.show_parent.movable exists and is currently translucent ;).
 
-When I mentioned passing the *right* widget to `setDirty` earlier, what I meant is that setDirty will only actually flag a widget for repaint
+When I mentioned passing the *right* widget to `setDirty` earlier, what I meant is that `setDirty` will only actually flag a widget for repaint
 *if* that widget is a window-level widget (that is, a widget that was passed to `show` earlier and hasn't been `close`'d yet),
-hence the self.show_parent convention detailed above to get at the proper widget from within a subwidget ;).
+hence the `self.show_parent` convention detailed above to get at the proper widget from within a subwidget ;).
 Otherwise, you'll notice in debug mode that a debug guard will shout at you if that contract is broken,
 and what happens in practice is the same thing as if an explicit `nil` were passed: no widgets will actually be flagged for repaint,
 and only the *refresh* matching the requested region *will* be enqueued.
-This is why you'll find a number of valid use-cases for passing a nil here, when you *just* want a screen refresh without a repaint :).
-The string "all" is also accepted in place of a widget, and will do the obvious thing: flag the *full* window stack, bottom to top, for repaint,
+This is why you'll find a number of valid use-cases for passing a `nil` here, when you *just* want a screen refresh without a repaint :).
+The string `"all"` is also accepted in place of a widget, and will do the obvious thing: flag the *full* window stack, bottom to top, for repaint,
 while still honoring the refresh region (e.g., this doesn't enforce a full-screen refresh).
 
 @usage
