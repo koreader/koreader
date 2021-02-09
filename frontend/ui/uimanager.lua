@@ -386,7 +386,7 @@ If refreshtype is omitted, no refresh will be enqueued at this time (`_refresh` 
 @param refreshregion a @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
 @int x horizontal screen offset (optional, `0` if omitted)
 @int y vertical screen offset (optional, `0` if omitted)
-@bool refreshdither `true` if widget requires dithering (optional, but if set without a refreshtype, this *will* infect the refresh queue with a dithered `ui` refresh!)
+@bool refreshdither `true` if widget requires dithering (optional, requires refreshtype to be set)
 @see setDirty
 ]]
 function UIManager:show(widget, refreshtype, refreshregion, x, y, refreshdither)
@@ -438,7 +438,7 @@ If none of those three are specified, no refresh will be enqueued at this time (
 @param widget a @{ui.widget.widget|widget} object
 @param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
 @param refreshregion a @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
-@bool refreshdither `true` if the refresh requires dithering (optional, but if set without a refreshtype, this *will* infect the refresh queue with a dithered `ui` refresh!)
+@bool refreshdither `true` if the refresh requires dithering (optional, requires refreshtype to be set)
 @see setDirty
 ]]
 function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
