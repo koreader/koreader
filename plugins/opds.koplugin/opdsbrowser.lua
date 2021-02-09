@@ -98,6 +98,10 @@ function OPDSBrowser:init()
              title = "Gallica [Fr] [Searchable]",
              url = "https://gallica.bnf.fr/services/engine/search/opds?operation=searchRetrieve&query=(gallica all \"%s\")",
              searchable = true,
+          },
+          {
+             title = "Беларуская палічка",
+             url = "https://knihi.com/opds.xml",
           }
         }
         G_reader_settings:saveSetting("opds_servers", servers)
