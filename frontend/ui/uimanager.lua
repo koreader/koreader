@@ -383,8 +383,8 @@ For more details about refreshtype, refreshregion & refreshdither see the descri
 @param widget a @{ui.widget.widget|widget} object
 @param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
 @param refreshregion a @{ui.geometry.Geom|Geom} object (optional)
-@int x horizontal screen offset (optional)
-@int y vertical screen offset (optional)
+@int x horizontal screen offset (optional, 0 if omitted)
+@int y vertical screen offset (optional, 0 if omitted)
 @bool refreshdither `true` if widget requires dithering (optional)
 @see setDirty
 ]]
@@ -1306,12 +1306,15 @@ function UIManager:_repaint()
             -- the widget can use this to decide which parts should be refreshed
             logger.dbg("painting widget:", widget.widget.name or widget.widget.id or tostring(widget))
             Screen:beforePaint()
+            -- NOTE: Nothing actually seems to use the final argument?
+            --       Could be used by widgets to know whether they're being repainted because they're actually dirty (it's true),
+            --       or because something below them was (it's nil).
             widget.widget:paintTo(Screen.bb, widget.x, widget.y, self._dirty[widget.widget])
 
             -- and remove from list after painting
             self._dirty[widget.widget] = nil
 
-            -- trigger repaint
+            -- trigger a repaint for every widget above us, too
             dirty = true
 
             -- if any of 'em were dithered, we'll want to dither the final refresh
