@@ -142,19 +142,20 @@ function FileManagerMenu:setUpdateItemTable()
     end
 
     -- setting tab
-    self.menu_items.show_hidden_files = {
-        text = _("Show hidden files"),
-        checked_func = function() return self.ui.file_chooser.show_hidden end,
-        callback = function() self.ui:toggleHiddenFiles() end
-    }
-    self.menu_items.show_unsupported_files = {
-        text = _("Show unsupported files"),
-        checked_func = function() return self.ui.file_chooser.show_unsupported end,
-        callback = function() self.ui:toggleUnsupportedFiles() end
-    }
-    self.menu_items.items = {
-        text = _("Items"),
+    self.menu_items.filebrowser_settings = {
+        text = _("Settings"),
         sub_item_table = {
+            {
+                text = _("Show hidden files"),
+                checked_func = function() return self.ui.file_chooser.show_hidden end,
+                callback = function() self.ui:toggleHiddenFiles() end,
+            },
+            {
+                text = _("Show unsupported files"),
+                checked_func = function() return self.ui.file_chooser.show_unsupported end,
+                callback = function() self.ui:toggleUnsupportedFiles() end,
+                separator = true,
+            },
             {
                 text = _("Items per page"),
                 help_text = _([[This sets the number of items per page in:
@@ -182,10 +183,10 @@ function FileManagerMenu:setUpdateItemTable()
                         end
                     }
                     UIManager:show(items)
-                end
+                end,
             },
             {
-                text = _("Font size"),
+                text = _("Item font size"),
                 keep_menu_open = true,
                 callback = function()
                     local Menu = require("ui/widget/menu")
@@ -200,7 +201,7 @@ function FileManagerMenu:setUpdateItemTable()
                         value_max = 72,
                         default_value = default_font_size,
                         keep_shown_on_apply = true,
-                        title_text =  _("Maximum font size for item"),
+                        title_text =  _("Item font size"),
                         callback = function(spin)
                             if spin.value == default_font_size then
                                 -- We can't know if the user has set a size or hit "Use default", but
@@ -214,10 +215,10 @@ function FileManagerMenu:setUpdateItemTable()
                         end
                     }
                     UIManager:show(items_font)
-                end
+                end,
             },
             {
-                text = _("Reduce font size to show more text"),
+                text = _("Shrink item font size to fit more text"),
                 keep_menu_open = true,
                 checked_func = function()
                     return G_reader_settings:isTrue("items_multilines_show_more_text")
@@ -225,8 +226,72 @@ function FileManagerMenu:setUpdateItemTable()
                 callback = function()
                     G_reader_settings:flipNilOrFalse("items_multilines_show_more_text")
                     self.ui:onRefresh()
-                end
-            }
+                end,
+            },
+            {
+                text_func = function()
+                    local current_state = _("Show new files in bold")
+                    if G_reader_settings:readSetting("show_file_in_bold") == "opened" then
+                        current_state = _("Show opened files in bold")
+                    elseif G_reader_settings:readSetting("show_file_in_bold") == false then
+                        current_state = _("Show files in bold") -- with checkmark unchecked
+                    end
+                    -- Inform that this settings applies only to classic file chooser
+                    current_state = T(_("(Classic file browser) %1"), current_state)
+                    return current_state
+                end,
+                checked_func = function() return G_reader_settings:readSetting("show_file_in_bold") ~= false end,
+                sub_item_table = {
+                    {
+                        text = _("Don't show files in bold"),
+                        checked_func = function() return G_reader_settings:readSetting("show_file_in_bold") == false end,
+                        callback = function()
+                            G_reader_settings:saveSetting("show_file_in_bold", false)
+                            self.ui:onRefresh()
+                        end,
+                    },
+                    {
+                        text = _("Show opened files in bold"),
+                        checked_func = function() return G_reader_settings:readSetting("show_file_in_bold") == "opened" end,
+                        callback = function()
+                            G_reader_settings:saveSetting("show_file_in_bold", "opened")
+                            self.ui:onRefresh()
+                        end,
+                    },
+                    {
+                        text = _("Show new (not yet opened) files in bold"),
+                        checked_func = function()
+                            return G_reader_settings:readSetting("show_file_in_bold") ~= false and G_reader_settings:readSetting("show_file_in_bold") ~= "opened"
+                        end,
+                        callback = function()
+                            G_reader_settings:delSetting("show_file_in_bold")
+                            self.ui:onRefresh()
+                        end,
+                    },
+                },
+                separator = true,
+            },
+            {
+                text = _("Shorten home directory"),
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("shorten_home_dir")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("shorten_home_dir")
+                    local FileManager = require("apps/filemanager/filemanager")
+                    if FileManager.instance then FileManager.instance:reinit() end
+                end,
+            },
+            {
+                text = _("Show filename in Open last/previous menu items"),
+                checked_func = function() return G_reader_settings:readSetting("open_last_menu_show_filename") end,
+                callback = function() G_reader_settings:flipNilOrFalse("open_last_menu_show_filename") end,
+            },
+            {
+                text = _("Auto-remove deleted or purged items from history"),
+                checked_func = function() return G_reader_settings:readSetting("autoremove_deleted_items_from_history") end,
+                callback = function() G_reader_settings:flipNilOrFalse("autoremove_deleted_items_from_history") end,
+            },
         }
     }
     self.menu_items.sort_by = self.ui:getSortingMenuTable()

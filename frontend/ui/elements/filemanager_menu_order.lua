@@ -11,9 +11,7 @@ local order = {
     },
     filemanager_settings = {
         "filemanager_display_mode",
-        "show_hidden_files",
-        "show_unsupported_files",
-        "items",
+        "filebrowser_settings",
         "----------------------------",
         "sort_by",
         "reverse_sorting",

@@ -4,7 +4,6 @@ local logger = require("logger")
 local _ = require("gettext")
 local BookInfoManager = require("bookinfomanager")
 local Screen = require("device").screen
-local T = require("ffi/util").template
 
 --[[
     This plugin provides additional display modes to file browsers (File Manager
@@ -52,15 +51,7 @@ local CoverBrowser = InputContainer:new{
 }
 
 function CoverBrowser:init()
-    self.full_featured = true
-    -- (Could be set to false for some platforms to provide a fallback
-    -- option with only a menu for managing a few core settings)
-
     self.ui.menu:registerToMainMenu(self)
-
-    if not self.full_featured then -- nothing else than menu registration
-        return
-    end
 
     if init_done then -- things already patched according to current modes
         return
@@ -90,87 +81,6 @@ end
 function CoverBrowser:addToMainMenu(menu_items)
     -- We add it only to FileManager menu
     if self.ui.view then -- Reader
-        return
-    end
-
-    -- Items available even if not full_featured
-    -- (settings used by core, that fit in this menu)
-    local generic_items = {
-        {
-            text_func = function()
-                local current_state = _("Show new files in bold")
-                if G_reader_settings:readSetting("show_file_in_bold") == "opened" then
-                    current_state = _("Show opened files in bold")
-                elseif G_reader_settings:readSetting("show_file_in_bold") == false then
-                    current_state = _("Show files in bold") -- with checkmark unchecked
-                end
-                if self.full_featured then
-                    -- Inform that this settings applies only to classic file chooser
-                    current_state = T(_("(Classic mode) %1"), current_state)
-                end
-                return current_state
-            end,
-            checked_func = function() return G_reader_settings:readSetting("show_file_in_bold") ~= false end,
-            sub_item_table = {
-                {
-                    text = _("Don't show files in bold"),
-                    checked_func = function() return G_reader_settings:readSetting("show_file_in_bold") == false end,
-                    callback = function()
-                        G_reader_settings:saveSetting("show_file_in_bold", false)
-                        self:refreshFileManagerInstance()
-                    end,
-                },
-                {
-                    text = _("Show opened files in bold"),
-                    checked_func = function() return G_reader_settings:readSetting("show_file_in_bold") == "opened" end,
-                    callback = function()
-                        G_reader_settings:saveSetting("show_file_in_bold", "opened")
-                        self:refreshFileManagerInstance()
-                    end,
-                },
-                {
-                    text = _("Show new (not yet opened) files in bold"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("show_file_in_bold") ~= false and G_reader_settings:readSetting("show_file_in_bold") ~= "opened"
-                    end,
-                    callback = function()
-                        G_reader_settings:delSetting("show_file_in_bold")
-                        self:refreshFileManagerInstance()
-                    end,
-                },
-            },
-            separator = true,
-        },
-        {
-            text = _("Shorten home directory"),
-            checked_func = function()
-                return G_reader_settings:nilOrTrue("shorten_home_dir")
-            end,
-            callback = function()
-                G_reader_settings:flipNilOrTrue("shorten_home_dir")
-                if FileManager.instance then FileManager.instance:reinit() end
-            end,
-        },
-        {
-            text = _("Auto-remove deleted or purged items from history"),
-            checked_func = function() return G_reader_settings:readSetting("autoremove_deleted_items_from_history") end,
-            callback = function() G_reader_settings:flipNilOrFalse("autoremove_deleted_items_from_history") end,
-        },
-        {
-            text = _("Show filename in Open last/previous menu items"),
-            checked_func = function() return G_reader_settings:readSetting("open_last_menu_show_filename") end,
-            callback = function() G_reader_settings:flipNilOrFalse("open_last_menu_show_filename") end,
-        },
-    }
-
-    if not self.full_featured then
-        -- Make the generic items directly as 1st level items,
-        -- and use alternate name for main menu, not mentionning
-        -- "display mode" that are not available
-        menu_items.filemanager_display_mode = {
-            text = _("File browser settings"),
-            sub_item_table = generic_items
-        }
         return
     end
 
@@ -323,7 +233,7 @@ function CoverBrowser:addToMainMenu(menu_items)
             },
             -- Misc settings
             {
-                text = _("Other settings"),
+                text = _("Mosaic and detailed list settings"),
                 sub_item_table = {
                     {
                         text = _("Display hints"),
@@ -461,7 +371,6 @@ function CoverBrowser:addToMainMenu(menu_items)
                         end,
                         separator = true
                     },
-                    -- generic_items will be inserted here
                 },
             },
             {
@@ -539,12 +448,6 @@ function CoverBrowser:addToMainMenu(menu_items)
             },
         },
     }
-    -- Finally, insert the generic items at end of "Other settings" submenu
-    local sub_item_table = menu_items.filemanager_display_mode.sub_item_table
-    local generic_items_target = sub_item_table[#sub_item_table-1].sub_item_table -- second to last
-    for _, item in pairs(generic_items) do
-        table.insert(generic_items_target, item)
-    end
 end
 
 function CoverBrowser:refreshFileManagerInstance(cleanup, post_init)
