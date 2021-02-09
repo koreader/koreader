@@ -755,10 +755,6 @@ UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen e
 @bool refreshdither `true` if widget requires dithering (optional)
 ]]
 function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
-    print("setDirty", widget, refreshtype, refreshregion, refreshdither)
-    if widget and type(widget) and type(widget) ~= "string" then
-        print("It's a", debug.getinfo(widget.paintTo or widget.free or widget.init, "S").short_src)
-    end
     if widget then
         if widget == "all" then
             -- special case: set all top-level widgets as being "dirty".
@@ -1308,8 +1304,6 @@ function UIManager:_refresh(mode, region, dither)
 
     -- if we've stopped hitting collisions, enqueue the refresh
     logger.dbg("_refresh: Enqueued", mode, "update for region", region.x, region.y, region.w, region.h, dither and "w/ HW dithering" or "")
-    print("It came from:")
-    print(debug.traceback())
     table.insert(self._refresh_stack, {mode = mode, region = region, dither = dither})
 end
 
