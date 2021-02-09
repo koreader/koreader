@@ -382,7 +382,7 @@ For more details about refreshtype, refreshregion & refreshdither see the descri
 If refreshtype is omitted, no refresh will be enqueued at this time.
 
 @param widget a @{ui.widget.widget|widget} object
-@param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
+@string refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
 @param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
 @int x horizontal screen offset (optional, `0` if omitted)
 @int y vertical screen offset (optional, `0` if omitted)
@@ -437,7 +437,7 @@ For more details about refreshtype, refreshregion & refreshdither see the descri
 If refreshtype is omitted, no extra refresh will be enqueued at this time, leaving only those from the uncovered widgets.
 
 @param widget a @{ui.widget.widget|widget} object
-@param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
+@string refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
 @param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
 @bool refreshdither `true` if the refresh requires dithering (optional, requires refreshtype to be set)
 @see setDirty
@@ -548,7 +548,15 @@ dbg:guard(UIManager, 'schedule',
         assert(action ~= nil)
     end)
 
---- Schedules task in a certain amount of seconds (fractions allowed) from now.
+--[[--
+Schedules a task to be run a certain amount of seconds from now.
+
+@number seconds scheduling delay in seconds (supports decimal values)
+@func action reference to the scheduled task (may be anonymous)
+@param ... optional arguments passed to action
+
+@see unschedule
+]]
 function UIManager:scheduleIn(seconds, action, ...)
     local when = { ffiUtil.gettime() }
     local s = math.floor(seconds)
@@ -566,7 +574,11 @@ dbg:guard(UIManager, 'scheduleIn',
         assert(seconds >= 0, "Only positive seconds allowed")
     end)
 
---- Schedules a task for the next UI tick.
+--[[--
+Schedules a task for the next UI tick.
+
+@see scheduleIn
+]]
 function UIManager:nextTick(action, ...)
     return self:scheduleIn(0, action, ...)
 end
@@ -575,6 +587,8 @@ end
 Schedules a task to be run two UI ticks from now.
 
 Useful to run UI callbacks ASAP without skipping repaints.
+
+@see nextTick
 ]]
 function UIManager:tickAfterNext(action, ...)
     return self:nextTick(function() self:nextTick(action, ...) end)
@@ -590,6 +604,8 @@ end
 Unschedules an execution task.
 
 In order to unschedule anonymous functions, store a reference.
+
+@func action
 
 @usage
 
@@ -1179,7 +1195,7 @@ Enqueues a refresh.
 Widgets call this in their `paintTo()` method in order to notify
 UIManager that a certain part of the screen is to be refreshed.
 
-@param mode
+@string mode
     refresh mode (`"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"`)
 @param region
     A rectangle @{ui.geometry.Geom|Geom} object that specifies the region to be updated.
