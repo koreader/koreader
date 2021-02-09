@@ -372,7 +372,7 @@ function Button:onTapSelectButton()
         end)
 
         -- We don't force the hand of the paint & refresh queues here, as, when transparency is involved,
-        -- this should be the only actual setDirty call (outside of a Button flagged vsync),
+        -- this should be the only actual setDirty call put out by this function (outside of a Button flagged vsync),
         -- so we're back into standard territory.
     end
 
