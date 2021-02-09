@@ -567,8 +567,8 @@ dbg:guard(UIManager, 'scheduleIn',
     end)
 
 --- Schedules a task for the next UI tick.
-function UIManager:nextTick(action)
-    return self:scheduleIn(0, action)
+function UIManager:nextTick(action, ...)
+    return self:scheduleIn(0, action, ...)
 end
 
 --[[--
@@ -576,8 +576,8 @@ Schedules a task to be run two UI ticks from now.
 
 Useful to run UI callbacks ASAP without skipping repaints.
 ]]
-function UIManager:tickAfterNext(action)
-    return self:nextTick(function() self:nextTick(action) end)
+function UIManager:tickAfterNext(action, ...)
+    return self:nextTick(function() self:nextTick(action, ...) end)
 end
 --[[
 -- NOTE: This appears to work *nearly* just as well, but does sometimes go too fast (might depend on kernel HZ & NO_HZ settings?)
