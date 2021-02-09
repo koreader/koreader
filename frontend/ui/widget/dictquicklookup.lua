@@ -1264,9 +1264,7 @@ function DictQuickLookup:lookupWikipedia(get_fullpage)
         is_sane = false
     end
     self:resyncWikiLanguages()
-    -- (With Event, we need to pass false instead of nil if word_box is nil,
-    -- otherwise next arguments are discarded)
-    self.ui:handleEvent(Event:new("LookupWikipedia", word, is_sane, self.word_box and self.word_box or false, get_fullpage))
+    self.ui:handleEvent(Event:new("LookupWikipedia", word, is_sane, self.word_box, get_fullpage))
 end
 
 return DictQuickLookup
