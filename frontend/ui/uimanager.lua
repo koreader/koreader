@@ -1412,7 +1412,7 @@ function UIManager:_repaint()
     self.refresh_counted = false
 end
 
----- Explicitly drain the paint & refresh queues *now*, instead of waiting for the next UI tick.
+--- Explicitly drain the paint & refresh queues *now*, instead of waiting for the next UI tick.
 function UIManager:forceRePaint()
     self:_repaint()
 end
