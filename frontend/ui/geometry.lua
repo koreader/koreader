@@ -17,7 +17,7 @@ Some behaviour is defined for dimensions:
 Just use it on simple tables that have x, y and/or w, h
 or define your own types using this as a metatable.
 
-Where BlitBuffers are concerned, a point at (0, 0) means the top-left corner.
+Where @{ffi.blitbuffer|BlitBuffer} is concerned, a point at (0, 0) means the top-left corner.
 
 ]]
 
