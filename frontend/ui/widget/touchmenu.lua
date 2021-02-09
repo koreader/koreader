@@ -160,7 +160,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuSelect(self.item)
     else
-        -- c.f., ui/widget/button for the canonical documentation about the flash_ui code flow
+        -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
 
         -- The item frame's width stops at the text width, but we want it to match the menu's length instead
         local highlight_dimen = self.item_frame.dimen
@@ -209,7 +209,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuHold(self.item, self.text_truncated)
     else
-        -- c.f., ui/widget/button for the canonical documentation about the flash_ui code flow
+        -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
 
         -- The item frame's width stops at the text width, but we want it to match the menu's length instead
         local highlight_dimen = self.item_frame.dimen

@@ -113,7 +113,7 @@ function RadioButton:onTapCheckButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
-            -- c.f., ui/widget/button for the canonical documentation about the flash_ui code flow
+            -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
 
             -- Highlight
             --

@@ -95,7 +95,13 @@ function IconButton:onTapIconButton()
     if G_reader_settings:isFalse("flash_ui") then
         self.callback()
     else
-        -- c.f., ui/widget/button for the canonical documentation about the flash_ui code flow
+        -- c.f., ui/widget/button for more gnarly details about the implementation, but the flow of the flash_ui codepath essentially goes like this:
+        -- 1. Paint the highlight
+        -- 2. Refresh the highlighted item (so we can see the highlight)
+        -- 3. Paint the unhighlight
+        -- 4. Do NOT refresh the highlighted item, but enqueue a refresh request
+        -- 5. Run the callback
+        -- 6. Explicitly drain the paint & refresh queues; i.e., refresh (so we get to see both the callback results, and the unhighlight).
 
         -- Highlight
         --
