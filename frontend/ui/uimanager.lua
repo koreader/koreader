@@ -944,7 +944,7 @@ function UIManager:isWidgetShown(widget)
     return false
 end
 
--- Returns the region of the previous refresh.
+--- Returns the region of the previous refresh.
 function UIManager:getPreviousRefreshRegion()
    return self._last_refresh_region
 end
@@ -972,7 +972,7 @@ function UIManager:quit()
     end
 end
 
---- Request events to be ignored for some duration
+--- Request events to be ignored for some duration.
 function UIManager:discardEvents(set_or_seconds)
     if not set_or_seconds then -- remove any previously set
         self._discard_events_till = nil
