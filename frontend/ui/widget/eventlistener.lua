@@ -1,6 +1,6 @@
 --[[--
 The EventListener is an interface that handles events. This is the base class
-for @{ui.widget.widget}
+for @{ui.widget.widget|Widget}
 
 EventListeners have a rudimentary event handler/dispatcher that
 will call a method "onEventName" for an event with name
@@ -29,9 +29,7 @@ By default, it's `"on"..Event.name`.
 function EventListener:handleEvent(event)
     if self[event.handler] then
         --print("EventListener:handleEvent:", event.handler, "handled by", debug.getinfo(self[event.handler], "S").short_src, self)
-        -- NOTE: This doesn't preserve nils, c.f., http://lua-users.org/wiki/VarargTheSecondClassCitizen,
-        --       and UIManager:tickAfterNext for a practical example.
-        return self[event.handler](self, unpack(event.args))
+        return self[event.handler](self, unpack(event.args, 1, event.argc))
     end
 end
 
