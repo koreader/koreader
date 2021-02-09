@@ -1403,7 +1403,7 @@ function UIManager:widgetRepaint(widget, x, y)
 end
 
 --[[--
-Same idea as `widgetRepaint`, but does a simple `bb:invertRect`, without actually going through the widget's `paintTo` method.
+Same idea as `widgetRepaint`, but does a simple `bb:invertRect` on the Screen buffer, without actually going through the widget's `paintTo` method.
 
 @param widget a @{ui.widget.widget|widget} object
 @int x left origin of the rectangle to invert (in the Screen buffer, e.g., `widget.dimen.x`)
