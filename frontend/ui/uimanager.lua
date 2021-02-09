@@ -380,7 +380,7 @@ If you think about how painting will be handled (also bottom to top), this makes
 
 For more details about refreshtype, refreshregion & refreshdither see the description of `setDirty`.
 
-@param widget a widget object
+@param widget a @{ui.widget.widget|widget} object
 @param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
 @param refreshregion a @{ui.geometry.Geom|Geom} object (optional)
 @int x horizontal screen offset (optional)
@@ -433,7 +433,7 @@ It will be removed from the stack.
 
 For more details about refreshtype, refreshregion & refreshdither see the description of `setDirty`.
 
-@param widget a widget object
+@param widget a @{ui.widget.widget|widget} object
 @param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
 @param refreshregion a @{ui.geometry.Geom|Geom} object (optional)
 @bool refreshdither `true` if the refresh requires dithering (optional)
@@ -1390,6 +1390,10 @@ Useful to avoid repainting a complex widget when we just want to invert an icon,
 No safety checks on x & y *by design*. I want this to blow up if used wrong.
 
 This is an explicit repaint *now*: it bypasses and ignores the paint queue (unlike `setDirty`).
+
+@param widget a @{ui.widget.widget|widget} object
+@int x left origin of widget (in the Screen buffer, e.g., `widget.dimen.x`)
+@int y top origin of widget (in the Screen buffer, e.g., `widget.dimen.y`)
 ]]
 function UIManager:widgetRepaint(widget, x, y)
     if not widget then return end
@@ -1400,6 +1404,13 @@ end
 
 --[[--
 Same idea as `widgetRepaint`, but does a simple `bb:invertRect`, without actually going through the widget's `paintTo` method.
+
+@param widget a @{ui.widget.widget|widget} object
+@int x left origin of the rectangle to invert (in the Screen buffer, e.g., `widget.dimen.x`)
+@int y top origin of the rectangle (in the Screen buffer, e.g., `widget.dimen.y`)
+@int w width of the rectangle (optional, will use `widget.dimen.w` like `paintTo` would if omitted)
+@int h height of the rectangle (optional, will use `widget.dimen.h` like `paintTo` would if omitted)
+@see widgetRepaint
 --]]
 function UIManager:widgetInvert(widget, x, y, w, h)
     if not widget then return end
