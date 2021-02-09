@@ -601,11 +601,12 @@ end
 --]]
 
 --[[--
-Unschedules an execution task.
+Unschedules a previously scheduled task.
 
 In order to unschedule anonymous functions, store a reference.
 
 @func action
+@see scheduleIn
 
 @usage
 
