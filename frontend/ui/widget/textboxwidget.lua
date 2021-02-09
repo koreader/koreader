@@ -109,8 +109,6 @@ local TextBoxWidget = InputContainer:new{
 }
 
 function TextBoxWidget:init()
-    print("TextBoxWidget:init", self)
-    print(debug.traceback())
     if not self._face_adjusted then
         self._face_adjusted = true -- only do that once
         -- If self.bold, or if self.face is a real bold face, we may need to use
@@ -169,16 +167,12 @@ function TextBoxWidget:init()
         -- We need to show the line containing charpos, while trying to
         -- keep the previous top_line_num
         if self.editable and self.charpos then
-            print("TextBoxWidget:init's scrollViewToCharPos")
             self:scrollViewToCharPos()
-            print("TextBoxWidget:init's scrollViewToCharPos END")
         end
     end
     self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
     if self.editable then
-        print("TextBoxWidget:init's moveCursorToCharPos")
         self:moveCursorToCharPos(self.charpos or 1)
-        print("TextBoxWidget:init's moveCursorToCharPos END")
     end
     self.dimen = Geom:new(self:getSize())
     if Device:isTouchDevice() then
@@ -191,7 +185,6 @@ function TextBoxWidget:init()
             },
         }
     end
-    print("TextBoxWidget:init END")
 end
 
 function TextBoxWidget:unfocus()
@@ -1504,7 +1497,6 @@ local CURSOR_USE_REFRESH_FUNCS = G_reader_settings:nilOrTrue("ui_cursor_use_refr
 -- Update charpos to the one provided; if out of current view, update
 -- virtual_line_num to move it to view, and draw the cursor
 function TextBoxWidget:moveCursorToCharPos(charpos)
-    print("TextBoxWidget:moveCursorToCharPos", charpos)
     if not self.editable then
         -- we shouldn't have been called if not editable
         logger.warn("TextBoxWidget:moveCursorToCharPos called, but not editable")
@@ -1668,7 +1660,6 @@ end
 
 -- Update self.virtual_line_num to the page containing charpos
 function TextBoxWidget:scrollViewToCharPos()
-    print("TextBoxWidget:scrollViewToCharPos")
     if self.top_line_num then
         -- if previous top_line_num provided, go to that line
         self.virtual_line_num = self.top_line_num

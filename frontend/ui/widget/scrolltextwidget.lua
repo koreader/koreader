@@ -145,7 +145,6 @@ function ScrollTextWidget:getCharPos()
 end
 
 function ScrollTextWidget:updateScrollBar(is_partial)
-    print("ScrollTextWidget:updateScrollBar", is_partial)
     local low, high = self.text_widget:getVisibleHeightRatios()
     if low ~= self.prev_low or high ~= self.prev_high then
         self.prev_low = low
@@ -161,12 +160,10 @@ function ScrollTextWidget:updateScrollBar(is_partial)
             -- Reset transparency if the dialog's MovableContainer is currently translucent...
             if is_partial and self.dialog.movable and self.dialog.movable.alpha then
                 self.dialog.movable.alpha = nil
-                print("Movable setDirty on", self.dialog.movable.dimen)
                 UIManager:setDirty(self.dialog, function()
                     return refreshfunc, self.dialog.movable.dimen
                 end)
             else
-                print("!Movable setDirty on", self.dimen)
                 UIManager:setDirty(self.dialog, function()
                     return refreshfunc, self.dimen
                 end)
