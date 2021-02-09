@@ -595,7 +595,11 @@ Useful to run UI callbacks ASAP without skipping repaints.
 @see nextTick
 ]]
 function UIManager:tickAfterNext(action, ...)
-    return self:nextTick(function() self:nextTick(action, ...) end)
+    -- Storing varargs is a bit iffy as we don't build LuaJIT w/ 5.2 compat, so we don't have access to table.pack...
+    -- c.f., http://lua-users.org/wiki/VarargTheSecondClassCitizen
+    local n = select('#', ...)
+    local va = {...}
+    return self:nextTick(function() self:nextTick(action, unpack(va, 1, n)) end)
 end
 --[[
 -- NOTE: This appears to work *nearly* just as well, but does sometimes go too fast (might depend on kernel HZ & NO_HZ settings?)
