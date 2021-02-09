@@ -103,6 +103,9 @@ local TextBoxWidget = InputContainer:new{
                                 -- (set to 0 to disable any tab handling and display a tofu glyph)
     _xtext = nil, -- for internal use
     _alt_color_for_rtl = nil, -- (for debugging) draw LTR glyphs in black, RTL glyphs in gray
+
+    -- for internal use
+    _dummy = nil, -- When the widget is a one-off used to compute text height
 }
 
 function TextBoxWidget:init()

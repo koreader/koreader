@@ -58,6 +58,7 @@ local InputText = InputContainer:new{
     is_password_type = false, -- set to true if original text_type == "password"
     is_text_editable = true, -- whether text is utf8 reversible and editing won't mess content
     is_text_edited = false, -- whether text has been updated
+    _dummy = nil, -- When the widget is a one-off used to compute text height
 }
 
 -- only use PhysicalKeyboard if the device does not have touch screen
@@ -225,7 +226,7 @@ function InputText:init()
         -- checkTextEditability() fails if self.text stays not a string
         self.text = tostring(self.text)
     end
-    self:initTextBox(self.text, false, true) -- Don't call setDirty on init, the geometry isn't accurate yet
+    self:initTextBox(self.text)
     self:checkTextEditability()
     if self.readonly ~= true then
         self:initKeyboard()
@@ -236,7 +237,7 @@ end
 -- This will be called when we add or del chars, as we need to recreate
 -- the text widget to have the new text splittted into possibly different
 -- lines than before
-function InputText:initTextBox(text, char_added, from_init)
+function InputText:initTextBox(text, char_added)
     if self.text_widget then
         self.text_widget:free()
     end
@@ -391,7 +392,8 @@ function InputText:initTextBox(text, char_added, from_init)
     self[1] = self._frame
     self.dimen = self._frame:getSize()
     --- @fixme self.parent is not always in the widget stack (BookStatusWidget)
-    if not (from_init or self._dummy) then
+    -- Don't even try to refresh dummy widgets used for text height computations...
+    if not self._dummy then
         UIManager:setDirty(self.parent, function()
             return "ui", self.dimen
         end)
