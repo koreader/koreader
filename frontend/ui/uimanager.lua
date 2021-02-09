@@ -976,7 +976,11 @@ function UIManager:quit()
     end
 end
 
---- Request events to be ignored for some duration.
+--[[--
+Request events to be ignored for some duration.
+
+@param set_or_seconds either `true`, in which case a platform-specific delay is chosen, or a duration in seconds (`int`).
+]]
 function UIManager:discardEvents(set_or_seconds)
     if not set_or_seconds then -- remove any previously set
         self._discard_events_till = nil
