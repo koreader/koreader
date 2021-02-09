@@ -383,7 +383,7 @@ If refreshtype is omitted, no refresh will be enqueued at this time.
 
 @param widget a @{ui.widget.widget|widget} object
 @param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
-@param refreshregion a @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
+@param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
 @int x horizontal screen offset (optional, `0` if omitted)
 @int y vertical screen offset (optional, `0` if omitted)
 @bool refreshdither `true` if widget requires dithering (optional, requires refreshtype to be set)
@@ -438,7 +438,7 @@ If refreshtype is omitted, no extra refresh will be enqueued at this time, leavi
 
 @param widget a @{ui.widget.widget|widget} object
 @param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
-@param refreshregion a @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
+@param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
 @bool refreshdither `true` if the refresh requires dithering (optional, requires refreshtype to be set)
 @see setDirty
 ]]
@@ -726,7 +726,7 @@ UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen e
 
 @param widget a window-level widget object, `"all"`, or `nil`
 @param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (or a lambda, see description above)
-@param refreshregion a @{ui.geometry.Geom|Geom} object (optional, omitting it means the region will cover the full screen)
+@param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, omitting it means the region will cover the full screen)
 @bool refreshdither `true` if widget requires dithering (optional)
 ]]
 function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
@@ -944,7 +944,11 @@ function UIManager:isWidgetShown(widget)
     return false
 end
 
---- Returns the region of the previous refresh.
+--[[--
+Returns the region of the previous refresh.
+
+@return a rectangle @{ui.geometry.Geom|Geom} object
+]]
 function UIManager:getPreviousRefreshRegion()
    return self._last_refresh_region
 end
@@ -1171,7 +1175,7 @@ UIManager that a certain part of the screen is to be refreshed.
 @param mode
     refresh mode (`"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"`)
 @param region
-    A @{ui.geometry.Geom|Geom} rectangle that specifies the region to be updated.
+    A rectangle @{ui.geometry.Geom|Geom} object that specifies the region to be updated.
     Optional, update will affect whole screen if not specified.
     Note that this should be the exception.
 @bool dither
