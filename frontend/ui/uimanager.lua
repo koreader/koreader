@@ -805,10 +805,11 @@ dbg:guard(UIManager, 'setDirty',
 
 --[[--
 Clear the full repaint & refresh queues.
+
 NOTE: Beware! This doesn't take any prisonners!
-      You shouldn't have to resort to this unless in very specific circumstances!
-      plugins/coverbrowser.koplugin/covermenu.lua building a franken-menu out of buttondialogtitle & buttondialog
-      and wanting to avoid inheriting their original paint/refresh cycle being a prime example.
+You shouldn't have to resort to this unless in very specific circumstances!
+plugins/coverbrowser.koplugin/covermenu.lua building a franken-menu out of buttondialogtitle & buttondialog
+and wanting to avoid inheriting their original paint/refresh cycle being a prime example.
 --]]
 function UIManager:clearRenderStack()
     logger.dbg("clearRenderStack: Clearing the full render stack!")
@@ -830,9 +831,11 @@ function UIManager:removeZMQ(zeromq)
     end
 end
 
---- Sets full refresh rate for e-ink screen.
---
--- Also makes the refresh rate persistent in global reader settings.
+--[[--
+Sets full refresh rate for e-ink screen.
+
+Also makes the refresh rate persistent in global reader settings.
+--]]
 function UIManager:setRefreshRate(rate, night_rate)
     logger.dbg("set screen full refresh rate", rate, night_rate)
 
@@ -881,7 +884,9 @@ end
 
 --[[--
 Get the *second* topmost widget, if there is one (name if possible, ref otherwise).
+
 Useful when VirtualKeyboard is involved, as it *always* steals the top spot ;).
+
 NOTE: Will skip over VirtualKeyboard instances, plural, in case there are multiple (because, apparently, we can do that.. ugh).
 --]]
 function UIManager:getSecondTopmostWidget()
@@ -1051,7 +1056,11 @@ function UIManager:sendEvent(event)
     end
 end
 
---- Transmits an event to all registered widgets.
+--[[--
+Transmits an event to all registered widgets.
+
+@param event
+]]
 function UIManager:broadcastEvent(event)
     -- the widget's event handler might close widgets in which case
     -- a simple iterator like ipairs would skip over some entries
@@ -1355,7 +1364,7 @@ function UIManager:_repaint()
     self.refresh_counted = false
 end
 
----- Explicitly drain the paint & refresh queues *now*, instead of waiting for the next tick.
+---- Explicitly drain the paint & refresh queues *now*, instead of waiting for the next UI tick.
 function UIManager:forceRePaint()
     self:_repaint()
 end
