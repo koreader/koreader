@@ -198,7 +198,6 @@ local InputDialog = InputContainer:new{
     _buttons_scroll_callback = nil,
     _buttons_backup_done = false,
     _buttons_backup = nil,
-    _dummy = nil, -- When the widget is a one-off used to compute text height
 }
 
 function InputDialog:init()
