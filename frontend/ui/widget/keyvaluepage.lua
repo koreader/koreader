@@ -288,9 +288,7 @@ function KeyValueItem:onTap()
             print("KeyValueItem", self, "HL")
             self[1].invert = true
             UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-            UIManager:setDirty(nil, function()
-                return "fast", self[1].dimen
-            end)
+            UIManager:setDirty(nil, "fast", self[1].dimen)
 
             UIManager:forceRePaint()
 
@@ -299,9 +297,7 @@ function KeyValueItem:onTap()
             print("KeyValueItem", self, "UNHL")
             self[1].invert = false
             UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-            UIManager:setDirty(nil, function()
-                return "ui", self[1].dimen
-            end)
+            UIManager:setDirty(nil, "ui", self[1].dimen)
 
             -- Callback
             --

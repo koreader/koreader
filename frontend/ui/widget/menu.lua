@@ -478,9 +478,7 @@ function MenuItem:onTapSelect(arg, ges)
         print("MenuItem", self, "tap HL")
         self[1].invert = true
         UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-        UIManager:setDirty(nil, function()
-            return "fast", self[1].dimen
-        end)
+        UIManager:setDirty(nil, "fast", self[1].dimen)
 
         UIManager:forceRePaint()
 
@@ -489,9 +487,7 @@ function MenuItem:onTapSelect(arg, ges)
         print("MenuItem", self, "tap UNHL")
         self[1].invert = false
         UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-        UIManager:setDirty(nil, function()
-            return "ui", self[1].dimen
-        end)
+        UIManager:setDirty(nil, "ui", self[1].dimen)
 
         -- Callback
         --
@@ -519,9 +515,7 @@ function MenuItem:onHoldSelect(arg, ges)
         print("MenuItem", self, "hold HL")
         self[1].invert = true
         UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-        UIManager:setDirty(nil, function()
-            return "fast", self[1].dimen
-        end)
+        UIManager:setDirty(nil, "fast", self[1].dimen)
 
         UIManager:forceRePaint()
 
@@ -530,9 +524,7 @@ function MenuItem:onHoldSelect(arg, ges)
         print("MenuItem", self, "hold UNHL")
         self[1].invert = false
         UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-        UIManager:setDirty(nil, function()
-            return "ui", self[1].dimen
-        end)
+        UIManager:setDirty(nil, "ui", self[1].dimen)
 
         -- Callback
         --

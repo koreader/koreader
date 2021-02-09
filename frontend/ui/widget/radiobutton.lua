@@ -122,9 +122,7 @@ function RadioButton:onTapCheckButton()
             -- This matches the behavior of Menu & TouchMenu.
             self.frame.invert = true
             UIManager:widgetInvert(self.frame, self.dimen.x, self.dimen.y)
-            UIManager:setDirty(nil, function()
-                return "fast", self.dimen
-            end)
+            UIManager:setDirty(nil, "fast", self.dimen)
 
             UIManager:forceRePaint()
 
@@ -133,9 +131,7 @@ function RadioButton:onTapCheckButton()
             print("RadioButton", self, "UNHL")
             self.frame.invert = false
             UIManager:widgetInvert(self.frame, self.dimen.x, self.dimen.y)
-            UIManager:setDirty(nil, function()
-                return "ui", self.dimen
-            end)
+            UIManager:setDirty(nil, "ui", self.dimen)
 
             -- Callback
             --
@@ -168,9 +164,7 @@ function RadioButton:check(callback)
     self.checked = true
     self:update()
     UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
-    UIManager:setDirty(nil, function()
-        return "fast", self.dimen
-    end)
+    UIManager:setDirty(nil, "ui", self.dimen)
 end
 
 function RadioButton:unCheck()
@@ -178,9 +172,7 @@ function RadioButton:unCheck()
     self.checked = false
     self:update()
     UIManager:widgetRepaint(self.frame, self.dimen.x, self.dimen.y)
-    UIManager:setDirty(nil, function()
-        return "fast", self.dimen
-    end)
+    UIManager:setDirty(nil, "ui", self.dimen)
 end
 
 return RadioButton

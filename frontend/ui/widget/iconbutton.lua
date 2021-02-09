@@ -108,9 +108,7 @@ function IconButton:onTapIconButton()
         print("IconButton", self, "HL")
         self.image.invert = true
         UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
-        UIManager:setDirty(nil, function()
-            return "fast", self.dimen
-        end)
+        UIManager:setDirty(nil, "fast", self.dimen)
 
         UIManager:forceRePaint()
 
@@ -130,9 +128,7 @@ function IconButton:onTapIconButton()
         --       otherwise, it's lost.
         --       This changes nothing in practice, since we follow by explicitly requesting to drain the refresh queue ;).
         print("IconButton", self, "UNHL (delayed enqueued refresh)")
-        UIManager:setDirty(nil, function()
-            return "fast", self.dimen
-        end)
+        UIManager:setDirty(nil, "fast", self.dimen)
 
         UIManager:forceRePaint()
     end

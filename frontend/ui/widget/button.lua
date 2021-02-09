@@ -257,9 +257,7 @@ function Button:_doFeedbackHighlight()
         self[1].invert = true
         UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
     end
-    UIManager:setDirty(nil, function()
-        return "fast", self[1].dimen
-    end)
+    UIManager:setDirty(nil, "fast", self[1].dimen)
 end
 
 function Button:_undoFeedbackHighlight()
@@ -279,9 +277,7 @@ function Button:_undoFeedbackHighlight()
 
     -- In case the callback itself won't enqueue a refresh region that includes us, do it ourselves.
     -- If the button is disabled, switch to UI to make sure the gray comes through unharmed ;).
-    UIManager:setDirty(nil, function()
-        return self.enabled and "fast" or "ui", self[1].dimen
-    end)
+    UIManager:setDirty(nil, self.enabled and "fast" or "ui", self[1].dimen)
 end
 
 function Button:onTapSelectButton()
