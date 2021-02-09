@@ -113,9 +113,7 @@ function CheckButton:onTapCheckButton()
             print("CheckButton", self, "HL")
             self[1].invert = true
             UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
-            UIManager:setDirty(nil, function()
-                return "fast", highlight_dimen
-            end)
+            UIManager:setDirty(nil, "fast", highlight_dimen)
 
             UIManager:forceRePaint()
 
@@ -124,9 +122,7 @@ function CheckButton:onTapCheckButton()
             print("CheckButton", self, "UNHL")
             self[1].invert = false
             UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
-            UIManager:setDirty(nil, function()
-                return "ui", highlight_dimen
-            end)
+            UIManager:setDirty(nil, "ui", highlight_dimen)
 
             -- Callback
             --
@@ -157,14 +153,14 @@ end
 function CheckButton:check()
     self:initCheckButton(true)
     UIManager:setDirty(self.parent, function()
-        return "fast", self.dimen
+        return "ui", self.dimen
     end)
 end
 
 function CheckButton:unCheck()
     self:initCheckButton(false)
     UIManager:setDirty(self.parent, function()
-        return "fast", self.dimen
+        return "ui", self.dimen
     end)
 end
 
@@ -181,7 +177,6 @@ function CheckButton:disable()
     self:initCheckButton(false)
     UIManager:setDirty(self.parent, function()
         return "ui", self.dimen
-        -- best to use "ui" instead of "fast" when we make things gray
     end)
 end
 

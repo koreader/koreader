@@ -171,9 +171,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
         print("TouchMenuItem", self, "tap HL")
         self.item_frame.invert = true
         UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
-        UIManager:setDirty(nil, function()
-            return "fast", highlight_dimen
-        end)
+        UIManager:setDirty(nil, "fast", highlight_dimen)
 
         UIManager:forceRePaint()
 
@@ -184,9 +182,7 @@ function TouchMenuItem:onTapSelect(arg, ges)
         if self.item.keep_menu_open then
             print("TouchMenuItem", self, "tap UNHL")
             UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
-            UIManager:setDirty(nil, function()
-                return "ui", highlight_dimen
-            end)
+            UIManager:setDirty(nil, "ui", highlight_dimen)
         end
 
         -- Callback
@@ -220,9 +216,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         print("TouchMenuItem", self, "hold HL")
         self.item_frame.invert = true
         UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
-        UIManager:setDirty(nil, function()
-            return "fast", highlight_dimen
-        end)
+        UIManager:setDirty(nil, "fast", highlight_dimen)
 
         UIManager:forceRePaint()
 
@@ -234,9 +228,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         if self.item.hold_keep_menu_open ~= false then
             print("TouchMenuItem", self, "hold UNHL")
             UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
-            UIManager:setDirty(nil, function()
-                return "ui", highlight_dimen
-            end)
+            UIManager:setDirty(nil, "ui", highlight_dimen)
         end
 
         -- Callback
