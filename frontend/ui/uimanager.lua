@@ -379,7 +379,7 @@ then modal widgets are stacked together, and finally come standard widgets.
 If you think about how painting will be handled (also bottom to top), this makes perfect sense ;).
 
 For more details about refreshtype, refreshregion & refreshdither see the description of `setDirty`.
-If refreshtype is omitted, no refresh will be enqueued at this time (`_refresh` will take care of that).
+If refreshtype is omitted, no refresh will be enqueued at this time.
 
 @param widget a @{ui.widget.widget|widget} object
 @param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
@@ -431,9 +431,10 @@ end
 Unregisters a widget.
 
 It will be removed from the stack.
+Will flag uncovered widgets as dirty.
 
 For more details about refreshtype, refreshregion & refreshdither see the description of `setDirty`.
-If none of those three are specified, no refresh will be enqueued at this time (`_refresh` will take care of that).
+If refreshtype is omitted, no extra refresh will be enqueued at this time, leaving only those from the uncovered widgets.
 
 @param widget a @{ui.widget.widget|widget} object
 @param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
