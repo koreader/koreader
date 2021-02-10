@@ -423,7 +423,7 @@ You can set how many lines are shown.]])
             callback = function()
                 self.show_overlap_enable = not self.show_overlap_enable
                 if not self.show_overlap_enable then
-                    self.view:clearDimArea()
+                    self.view.dim_area:clear()
                 end
             end
         },
@@ -950,10 +950,10 @@ function ReaderRolling:_gotoPos(new_pos, do_dim_area)
         if self.current_pos > max_pos - self.ui.dimen.h/2 then
             -- Avoid a fully dimmed page when reaching end of document
             -- (the scroll would bump and not be a full page long)
-            self.view:clearDimArea()
+            self.view.dim_area:clear()
         end
     else
-        self.view:clearDimArea()
+        self.view.dim_area:clear()
     end
     self.ui.document:gotoPos(new_pos)
     -- The current page we get in scroll mode may be a bit innacurate,

@@ -79,22 +79,11 @@ function ReaderView:init()
     -- fix recalculate from close document pageno
     self.state.page = nil
     -- fix inherited dim_area for following opened documents
-    self:resetDimArea()
+    self.dim_area = Geom:new{w = 0, h = 0}
     self:addWidgets()
     self.emitHintPageEvent = function()
         self.ui:handleEvent(Event:new("HintPage", self.hinting))
     end
-end
-
-function ReaderView:resetDimArea()
-    self.dim_area = Geom:new{w = 0, h = 0}
-end
-
-function ReaderView:clearDimArea()
-    self.dim_area.x = 0
-    self.dim_area.y = 0
-    self.dim_area.w = 0
-    self.dim_area.h = 0
 end
 
 function ReaderView:addWidgets()
@@ -179,7 +168,7 @@ function ReaderView:paintTo(bb, x, y)
     end
 
     -- dim last read area
-    if self.dim_area.w ~= 0 and self.dim_area.h ~= 0 then
+    if not self.dim_area:isEmpty() then
         if self.page_overlap_style == "dim" then
             bb:dimRect(
                 self.dim_area.x, self.dim_area.y,
@@ -600,7 +589,7 @@ function ReaderView:recalculate()
             self.visible_area:offsetWithin(self.page_area, 0, 0)
         end
         -- clear dim area
-        self:clearDimArea()
+        self.dim_area:clear()
         self.ui:handleEvent(
             Event:new("ViewRecalculate", self.visible_area, self.page_area))
     else

@@ -233,7 +233,7 @@ function ReaderPaging:addToMainMenu(menu_items)
             callback = function()
                 self.show_overlap_enable = not self.show_overlap_enable
                 if not self.show_overlap_enable then
-                    self.view:clearDimArea()
+                    self.view.dim_area:clear()
                 end
             end,
             separator = true,
@@ -943,7 +943,7 @@ function ReaderPaging:onGotoPageRel(diff)
     -- Update dim area in ReaderView
     if self.show_overlap_enable then
         if self.current_page ~= old_page then
-            self.view:clearDimArea()
+            self.view.dim_area:clear()
         else
             -- We're post PanningUpdate, recompute via self.visible_area instead of new_va for accuracy, it'll have been updated via ViewRecalculate
             panned_x, panned_y = math.floor(self.visible_area.x - old_va.x), math.floor(self.visible_area.y - old_va.y)
