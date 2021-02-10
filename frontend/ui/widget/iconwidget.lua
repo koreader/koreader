@@ -83,16 +83,6 @@ function IconWidget:alphaPaintTo(bb, x, y, alpha)
     logger.dbg("blitFrom", x, y, self._offset_x, self._offset_y, size.w, size.h)
     -- NOTE: This is basically ImageWidget'd paintTo, but with an addblitFrom ;p
     bb:addblitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h, alpha or 0.6)
-
-    if self.invert then
-        bb:invertRect(x, y, size.w, size.h)
-    end
-    if self.dim then
-        bb:dimRect(x, y, size.w, size.h)
-    end
-    if Screen.night_mode and not self.is_icon then
-        bb:invertRect(x, y, size.w, size.h)
-    end
 end
 
 return IconWidget

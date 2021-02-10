@@ -39,7 +39,7 @@ function AlphaContainer:paintTo(bb, x, y)
         -- we restore this first, provided we're painting in the same spot as where the background was captured.
         --- @fixme: Why, oh why? What was the intended use-case?
         --          This makes absolutely no sense in, like, most cases
-        --          (e.g., x, y changed between now and when this was captured, or, worse, it didn't, but the actual content of the frmaebuffer at those coordinates did in the meantime, so we'd be restoring stale content?),
+        --          (e.g., x, y changed between now and when this was captured, or, worse, it didn't, but the actual content of the framebuffer at those coordinates did in the meantime, so we'd be restoring stale content?),
         --          which is why MovableContainer implements alpha on its own.
         if self.background_bb_x == x and self.background_bb_y == y then
             bb:blitFrom(self.background_bb, self.background_bb_x, self.background_bb_y)
