@@ -62,6 +62,7 @@ export MACOSX_DEPLOYMENT_TARGET=10.09
 ```
 *Note:* On Catalina (10.15), you will currently *NOT* want to deploy for `10.15`, as [XCode is currently broken in that configuration](https://forums.developer.apple.com/thread/121887)! (i.e., deploy for `10.14` instead).
 
+Next, you will need to install the Oracle JDK.  First, check to see whether you have it installed by running `javac` from the terminal.  If you get usage instructions written to the terminal, you have a JDK installed, but if you get a dialog box indicating that you need to install the JDK to use `javac`, click on the `More Information` button and follow the instructions.
 
 ## Getting the source
 
