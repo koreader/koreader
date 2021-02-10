@@ -774,6 +774,8 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             for i = 1, #self._window_stack do
                 if self._window_stack[i].widget == widget then
                     self._dirty[widget] = true
+                    -- We shouldn't be seeing the same widget at two different spots in the stack, so, we're done.
+                    break
                 end
             end
             -- Again, if it's flagged as dithered, honor that
@@ -790,6 +792,8 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
                 if self._window_stack[i].widget.dithered then
                     logger.dbg("setDirty full on no specific widget: found a dithered widget, infecting the refresh queue")
                     refreshdither = true
+                    -- One is enough ;)
+                    break
                 end
             end
         end
