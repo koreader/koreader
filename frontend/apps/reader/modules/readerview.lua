@@ -2,7 +2,6 @@
 ReaderView module handles all the screen painting for document browsing.
 ]]
 
-local AlphaContainer = require("ui/widget/container/alphacontainer")
 local Blitbuffer = require("ffi/blitbuffer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
