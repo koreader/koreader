@@ -35,9 +35,11 @@ function AlphaContainer:paintTo(bb, x, y)
     local private_bb = self.private_bb
 
     if self.background_bb then
-        -- we have a saved copy of what was below our paint area
-        -- we restore this first
-        bb:blitFrom(self.background_bb, self.background_bb_x, self.background_bb_y)
+        -- we have a saved copy of what was below our paint area.
+        -- we restore this first, provided we're painting in the same spot as where the background was captured.
+        if self.background_bb_x == x and self.background_bb_y == y then
+            bb:blitFrom(self.background_bb, self.background_bb_x, self.background_bb_y)
+        end
     end
 
     if not private_bb
