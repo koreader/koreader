@@ -3,10 +3,8 @@ Subclass of ImageWidget to show icons
 ]]
 
 local DataStorage = require("datastorage")
-local Geom = require("ui/geometry")
 local ImageWidget = require("ui/widget/imagewidget")
 local Screen = require("device").screen
-local logger = require("logger")
 
 -- Directories to look for icons by name, with any of the accepted suffixes
 local ICONS_DIRS = {}

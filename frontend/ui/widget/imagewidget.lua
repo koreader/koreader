@@ -179,7 +179,7 @@ function ImageWidget:_loadfile()
                 end
             end
 
-            -- Now, if that was *also* one of our icons, we haven't explicitly requested to keep the alpha intact,
+            -- Now, if that was *also* one of our icons, we haven't explicitly requested to keep the alpha channel intact,
             -- and it actually has an alpha channel, compose it against a background-colored BB now, and cache *that*.
             -- This helps us avoid repeating alpha-blending steps down the line,
             -- and also ensures icon highlights/unhighlights behave sensibly.

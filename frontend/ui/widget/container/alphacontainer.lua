@@ -39,7 +39,7 @@ function AlphaContainer:paintTo(bb, x, y)
         --       Unfortunately, those are hard constraints to respect, and, while we can take care of the first by invalidating the cache if coordinates have changed,
         --       we can't do anything about the second (and that's exactly what happens in ReaderUI when paging around, for example: that'll obviously have changed what's below AlphaContainer ;)).
         --       FWIW, MovableContainer's alpha handling rely on callers using setDirty("all") to force a repaint of the whole stack to avoid layering issues.
-        --       A better approach would probably to let UIManager handle it: if it finds a dirty translucent widget, mark all the widgets below it dirty...
+        --       A better approach would probably involve letting UIManager handle it: if it finds a dirty translucent widget, mark all the widgets below it dirty, too...
         if self.background_bb_x == x and self.background_bb_y == y then
             bb:blitFrom(self.background_bb, self.background_bb_x, self.background_bb_y)
         else
