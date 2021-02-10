@@ -421,7 +421,7 @@ end
 
 --[[--
 Checks if a dimension or rectangle is empty.
-@return bool
+@treturn bool
 ]]
 function Geom:isEmpty()
     if self.w == 0 or self.h == 0 then
