@@ -62,9 +62,11 @@ function AlphaContainer:paintTo(bb, x, y)
             self.background_bb = Blitbuffer.new(contentSize.w, contentSize.h, bb:getType())
         end
         self.background_bb:blitFrom(bb, 0, 0, x, y)
+        self.background_bb_x = x
+        self.background_bb_y = y
     end
 
-    -- now have our childs paint to the private blitbuffer
+    -- now have our child widget paint to the private blitbuffer
     private_bb:fill(Blitbuffer.COLOR_WHITE)
     self[1]:paintTo(private_bb, 0, 0)
 
