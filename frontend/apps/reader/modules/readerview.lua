@@ -59,9 +59,9 @@ local ReaderView = OverlapGroup:extend{
     hinting = true,
 
     -- visible area within current viewing page
-    visible_area = Geom:new{x = 0, y = 0},
+    visible_area = nil,
     -- dimen for current viewing page
-    page_area = Geom:new{},
+    page_area = nil,
     -- dimen for area to dim
     dim_area = nil,
     -- has footer
@@ -78,8 +78,12 @@ function ReaderView:init()
     self.view_modules = {}
     -- fix recalculate from close document pageno
     self.state.page = nil
-    -- fix inherited dim_area for following opened documents
-    self.dim_area = Geom:new{w = 0, h = 0}
+
+    -- Reset the various areas across documents
+    self.visible_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
+    self.page_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
+    self.dim_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
+
     self:addWidgets()
     self.emitHintPageEvent = function()
         self.ui:handleEvent(Event:new("HintPage", self.hinting))
