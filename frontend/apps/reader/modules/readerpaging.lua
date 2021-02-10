@@ -233,7 +233,7 @@ function ReaderPaging:addToMainMenu(menu_items)
             callback = function()
                 self.show_overlap_enable = not self.show_overlap_enable
                 if not self.show_overlap_enable then
-                    self.view:resetDimArea()
+                    self.view.dim_area:clear()
                 end
             end,
             separator = true,
@@ -916,7 +916,7 @@ function ReaderPaging:onGotoPageRel(diff)
         end
     end
 
-    -- Move the view area towerds line end
+    -- Move the view area towards line end
     new_va[x] = old_va[x] + x_pan_off
     new_va[y] = old_va[y]
 
@@ -937,31 +937,26 @@ function ReaderPaging:onGotoPageRel(diff)
     end
 
     -- signal panning update
-    local panned_x, panned_y = (new_va.x - old_va.x), (new_va.y - old_va.y)
-    -- adjust for crazy floating point overflow...
-    if math.abs(panned_x) < 1 then
-        panned_x = 0
-    end
-    if math.abs(panned_y) < 1 then
-        panned_y = 0
-    end
+    local panned_x, panned_y = math.floor(new_va.x - old_va.x), math.floor(new_va.y - old_va.y)
     self.view:PanningUpdate(panned_x, panned_y)
 
-    -- update dim area in ReaderView
+    -- Update dim area in ReaderView
     if self.show_overlap_enable then
         if self.current_page ~= old_page then
-            self.view.dim_area.x = 0
-            self.view.dim_area.y = 0
+            self.view.dim_area:clear()
         else
-            self.view.dim_area.h = new_va.h - math.abs(panned_y)
-            self.view.dim_area.w = new_va.w - math.abs(panned_x)
+            -- We're post PanningUpdate, recompute via self.visible_area instead of new_va for accuracy, it'll have been updated via ViewRecalculate
+            panned_x, panned_y = math.floor(self.visible_area.x - old_va.x), math.floor(self.visible_area.y - old_va.y)
+
+            self.view.dim_area.h = self.visible_area.h - math.abs(panned_y)
+            self.view.dim_area.w = self.visible_area.w - math.abs(panned_x)
             if panned_y < 0 then
-                self.view.dim_area.y = new_va.y - panned_y
+                self.view.dim_area.y = self.visible_area.h - self.view.dim_area.h
             else
                 self.view.dim_area.y = 0
             end
             if panned_x < 0 then
-                self.view.dim_area.x = new_va.x - panned_x
+                self.view.dim_area.x = self.visible_area.w - self.view.dim_area.w
             else
                 self.view.dim_area.x = 0
             end

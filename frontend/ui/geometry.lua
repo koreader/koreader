@@ -404,4 +404,27 @@ function Geom:center()
     }
 end
 
+--[[--
+Resets an existing Geom object to zero.
+@treturn Geom
+]]
+function Geom:clear()
+    self.x = 0
+    self.y = 0
+    self.w = 0
+    self.h = 0
+    return self
+end
+
+--[[--
+Checks if a dimension or rectangle is empty.
+@return bool
+]]
+function Geom:isEmpty()
+    if self.w == 0 or self.h == 0 then
+        return true
+    end
+    return false
+end
+
 return Geom

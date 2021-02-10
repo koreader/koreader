@@ -35,9 +35,20 @@ function AlphaContainer:paintTo(bb, x, y)
     local private_bb = self.private_bb
 
     if self.background_bb then
-        -- we have a saved copy of what was below our paint area
-        -- we restore this first
-        bb:blitFrom(self.background_bb, self.background_bb_x, self.background_bb_y)
+        -- NOTE: Best as I can tell, this was an attempt at avoiding alpha layering issues when an AlphaContainer is repainted *at the same coordinates* AND *over the same background*.
+        --       Unfortunately, those are hard constraints to respect, and, while we can take care of the first by invalidating the cache if coordinates have changed,
+        --       we can't do anything about the second (and that's exactly what happens in ReaderUI when paging around, for example: that'll obviously have changed what's below AlphaContainer ;)).
+        --       FWIW, MovableContainer's alpha handling rely on callers using setDirty("all") to force a repaint of the whole stack to avoid layering issues.
+        --       A better approach would probably involve letting UIManager handle it: if it finds a dirty translucent widget, mark all the widgets below it dirty, too...
+        if self.background_bb_x == x and self.background_bb_y == y then
+            bb:blitFrom(self.background_bb, self.background_bb_x, self.background_bb_y)
+        else
+            -- We moved, invalidate the bg cache.
+            self.background_bb:free()
+            self.background_bb = nil
+            self.background_bb_x = nil
+            self.background_bb_y = nil
+        end
     end
 
     if not private_bb
@@ -62,9 +73,11 @@ function AlphaContainer:paintTo(bb, x, y)
             self.background_bb = Blitbuffer.new(contentSize.w, contentSize.h, bb:getType())
         end
         self.background_bb:blitFrom(bb, 0, 0, x, y)
+        self.background_bb_x = x
+        self.background_bb_y = y
     end
 
-    -- now have our childs paint to the private blitbuffer
+    -- now have our child widget paint to the private blitbuffer
     private_bb:fill(Blitbuffer.COLOR_WHITE)
     self[1]:paintTo(private_bb, 0, 0)
 

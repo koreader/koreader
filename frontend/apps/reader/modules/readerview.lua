@@ -2,7 +2,6 @@
 ReaderView module handles all the screen painting for document browsing.
 ]]
 
-local AlphaContainer = require("ui/widget/container/alphacontainer")
 local Blitbuffer = require("ffi/blitbuffer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
@@ -80,15 +79,11 @@ function ReaderView:init()
     -- fix recalculate from close document pageno
     self.state.page = nil
     -- fix inherited dim_area for following opened documents
-    self:resetDimArea()
+    self.dim_area = Geom:new{w = 0, h = 0}
     self:addWidgets()
     self.emitHintPageEvent = function()
         self.ui:handleEvent(Event:new("HintPage", self.hinting))
     end
-end
-
-function ReaderView:resetDimArea()
-    self.dim_area = Geom:new{w = 0, h = 0}
 end
 
 function ReaderView:addWidgets()
@@ -105,14 +100,13 @@ function ReaderView:addWidgets()
         ui = self.ui,
     }
     local arrow_size = Screen:scaleBySize(16)
-    self.arrow = AlphaContainer:new{
-        alpha = 0.6,
-        IconWidget:new{
-            icon = "control.expand",
-            width = arrow_size,
-            height = arrow_size,
-        }
+    self.arrow = IconWidget:new{
+        icon = "control.expand.alpha",
+        width = arrow_size,
+        height = arrow_size,
+        alpha = true, -- Keep the alpha layer intact, the fill opacity is set at 75%
     }
+
     self[1] = self.dogear
     self[2] = self.footer
     self[3] = self.flipping
@@ -175,14 +169,16 @@ function ReaderView:paintTo(bb, x, y)
     end
 
     -- dim last read area
-    if self.dim_area.w ~= 0 and self.dim_area.h ~= 0 then
+    if not self.dim_area:isEmpty() then
         if self.page_overlap_style == "dim" then
             bb:dimRect(
                 self.dim_area.x, self.dim_area.y,
                 self.dim_area.w, self.dim_area.h
             )
         elseif self.page_overlap_style == "arrow" then
-            self.arrow:paintTo(bb, 0, self.dim_area.h)
+            local center_offset = bit.rshift(self.arrow.height, 1)
+            -- Paint at the proper y origin depending on wheter we paged forward (dim_area.y == 0) or backward
+            self.arrow:paintTo(bb, 0, self.dim_area.y == 0 and self.dim_area.h - center_offset or self.dim_area.y - center_offset)
         end
     end
     -- draw saved highlight
@@ -594,8 +590,7 @@ function ReaderView:recalculate()
             self.visible_area:offsetWithin(self.page_area, 0, 0)
         end
         -- clear dim area
-        self.dim_area.w = 0
-        self.dim_area.h = 0
+        self.dim_area:clear()
         self.ui:handleEvent(
             Event:new("ViewRecalculate", self.visible_area, self.page_area))
     else
