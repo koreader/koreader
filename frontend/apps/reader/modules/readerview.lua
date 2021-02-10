@@ -104,7 +104,7 @@ function ReaderView:addWidgets()
         icon = "control.expand.alpha",
         width = arrow_size,
         height = arrow_size,
-        preserve_alpha = true,
+        alpha = true, -- Keep the alpha layer intact, the fill opacity is set at 75%
     }
 
     self[1] = self.dogear
