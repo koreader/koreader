@@ -41,12 +41,12 @@ Install the prerequisites using [Homebrew](https://brew.sh/):
 
 ```
 brew install nasm ragel binutils coreutils libtool autoconf automake cmake makedepend \
-sdl2 lua@5.1 luarocks gettext pkg-config wget gnu-getopt
+sdl2 lua@5.1 luarocks gettext pkg-config wget gnu-getopt grep
 ```
 
-You will also have to ensure Homebrew's gettext & gnu-getopt are in your path, e.g., via
+You will also have to ensure Homebrew's gettext, gnu-getopt, & grep are in your path, e.g., via
 ```
-export PATH="$(brew --prefix)/opt/gettext/bin:$(brew --prefix)/opt/gnu-getopt/bin:${PATH}"
+export PATH="$(brew --prefix)/opt/gettext/bin:$(brew --prefix)/opt/gnu-getopt/bin:$(brew --prefix)/opt/grep/libexec/gnubin:${PATH}"
 ```
 See also `brew info gettext` for details on how to make that permanent in your shell.
 
@@ -61,8 +61,6 @@ On Mojave, `10.09` has been known to behave with XCode 10, And `10.14` with XCod
 export MACOSX_DEPLOYMENT_TARGET=10.09
 ```
 *Note:* On Catalina (10.15), you will currently *NOT* want to deploy for `10.15`, as [XCode is currently broken in that configuration](https://forums.developer.apple.com/thread/121887)! (i.e., deploy for `10.14` instead).
-
-Next, you will need to install the Oracle JDK.  First, check to see whether you have it installed by running `javac` from the terminal.  If you get usage instructions written to the terminal, you have a JDK installed, but if you get a dialog box indicating that you need to install the JDK to use `javac`, click on the `More Information` button and follow the instructions.
 
 ## Getting the source
 
