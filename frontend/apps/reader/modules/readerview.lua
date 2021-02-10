@@ -191,7 +191,9 @@ function ReaderView:paintTo(bb, x, y)
             )
         elseif self.page_overlap_style == "arrow" then
             print("Arrow y pos:", self.dim_area.y == 0 and self.dim_area.h or self.dim_area.y)
-            self.arrow:paintTo(bb, 0, self.dim_area.y == 0 and self.dim_area.h or self.dim_area.y)
+            --require("ffi/util").usleep(250 * 1000)
+            local center_offset = math.floor(self.arrow[1].height / 2)
+            self.arrow:paintTo(bb, 0, self.dim_area.y == 0 and self.dim_area.h - center_offset or self.dim_area.y - center_offset)
         end
     end
     -- draw saved highlight
