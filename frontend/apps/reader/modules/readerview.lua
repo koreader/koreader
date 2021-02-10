@@ -180,7 +180,7 @@ function ReaderView:paintTo(bb, x, y)
                 self.dim_area.w, self.dim_area.h
             )
         elseif self.page_overlap_style == "arrow" then
-            local center_offset = math.floor(self.arrow.height / 2)
+            local center_offset = bit.rshift(self.arrow.height, 1)
             -- Paint at the proper y origin depending on wheter we paged forward (dim_area.y == 0) or backward
             self.arrow:alphaPaintTo(bb, 0, self.dim_area.y == 0 and self.dim_area.h - center_offset or self.dim_area.y - center_offset)
         end
