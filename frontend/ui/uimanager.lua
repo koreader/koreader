@@ -769,13 +769,34 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
                 end
             end
         elseif not widget.invisible then
-            -- We only ever check the dirty flag on top-level widgets, so only set it there!
-            -- NOTE: Enable verbose debug to catch misbehaving widgets via our post-guard.
+            -- NOTE: We only ever check the dirty flag on top-level widgets, so only set it there!
+            --       Enable verbose debug to catch misbehaving widgets via our post-guard.
+            -- NOTE: If our widget is translucent, or belongs to a translucent MovableContainer,
+            --       we'll want to flag everything below it as dirty, too,
+            --       because doing transparency right requires having an up to date background against which to blend.
+            --       (The typecheck is because some widgets use an alpha boolean trap for internal alpha handling (e.g., ImageWidget)).
+            local is_translucent = widget.alpha and type(widget.alpha) == "number" and widget.alpha < 1 and widget.alpha > 0 or widget.movable and widget.movable.alpha and widget.movable.alpha < 1 and widget.movable.alpha > 0
+            print("setDirty: widget", widget, "is translucent?", is_translucent)
+            local handle_alpha = false
             for i = 1, #self._window_stack do
+                if handle_alpha then
+                    self._dirty[self._window_stack[i].widget] = true
+                    print("setDirty: widget", self._window_stack[i].widget, "is below a translucent widget, marking as dirty")
+                    -- Stop flagging widgets at the uppermost one that covers the full screen
+                    if self._window_stack[i].widget.covers_fullscreen then
+                        break
+                    end
+                end
+
                 if self._window_stack[i].widget == widget then
                     self._dirty[widget] = true
                     -- We shouldn't be seeing the same widget at two different spots in the stack, so, we're done.
-                    break
+                    if not is_translucent then
+                        break
+                    else
+                        -- Except if we need to flag widgets below us...
+                        handle_alpha = true
+                    end
                 end
             end
             -- Again, if it's flagged as dithered, honor that
