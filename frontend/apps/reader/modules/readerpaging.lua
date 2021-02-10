@@ -937,15 +937,13 @@ function ReaderPaging:onGotoPageRel(diff)
     end
 
     -- signal panning update
-    print("Panning: self.visible_area:", self.visible_area)
-    print("Panning: self.view.visible_area:", self.view.visible_area)
+    print("Panning: old self.visible_area:", self.visible_area)
     local panned_x, panned_y = math.floor(new_va.x - old_va.x), math.floor(new_va.y - old_va.y)
     self.view:PanningUpdate(panned_x, panned_y)
 
     print("Panning: old_va:", old_va)
     print("Panning: new_va:", new_va)
-    print("Panning: self.visible_area:", self.visible_area)
-    print("Panning: self.view.visible_area:", self.view.visible_area)
+    print("Panning: new self.visible_area:", self.visible_area)
     print("Panning: panned:", panned_x, panned_y)
     print("Panning: old dim_area:", self.view.dim_area)
 
@@ -957,16 +955,17 @@ function ReaderPaging:onGotoPageRel(diff)
         else
             -- We're post PanningUpdate, recompute via self.visible_area instead of new_va for accuracy, it'll have been updated via ViewRecalculate
             panned_x, panned_y = math.floor(self.visible_area.x - old_va.x), math.floor(self.visible_area.y - old_va.y)
+            print("Panning: Effective pan:", panned_x, panned_y)
 
             self.view.dim_area.h = self.visible_area.h - math.abs(panned_y)
             self.view.dim_area.w = self.visible_area.w - math.abs(panned_x)
             if panned_y < 0 then
-                self.view.dim_area.y = self.visible_area.y - panned_y
+                self.view.dim_area.y = self.visible_area.h - self.view.dim_area.h
             else
                 self.view.dim_area.y = 0
             end
             if panned_x < 0 then
-                self.view.dim_area.x = self.visible_area.x - panned_x
+                self.view.dim_area.x = self.visible_area.w - self.view.dim_area.w
             else
                 self.view.dim_area.x = 0
             end
