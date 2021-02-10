@@ -90,6 +90,13 @@ function ReaderView:resetDimArea()
     self.dim_area = Geom:new{w = 0, h = 0}
 end
 
+function ReaderView:clearDimArea()
+    self.dim_area.x = 0
+    self.dim_area.y = 0
+    self.dim_area.w = 0
+    self.dim_area.h = 0
+end
+
 function ReaderView:addWidgets()
     self.dogear = ReaderDogear:new{
         view = self,
@@ -593,7 +600,7 @@ function ReaderView:recalculate()
             self.visible_area:offsetWithin(self.page_area, 0, 0)
         end
         -- clear dim area
-        self:resetDimArea()
+        self:clearDimArea()
         self.ui:handleEvent(
             Event:new("ViewRecalculate", self.visible_area, self.page_area))
     else
