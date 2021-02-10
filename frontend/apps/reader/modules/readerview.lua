@@ -175,14 +175,23 @@ function ReaderView:paintTo(bb, x, y)
     end
 
     -- dim last read area
+    print("Dim area:", self.dim_area)
     if self.dim_area.w ~= 0 and self.dim_area.h ~= 0 then
+        -- We sometimes get negative height values, so, fix that...
+        --[[
+        if self.dim_area.h < 0 then
+            self.dim_area.h = bb:getHeight() - math.abs(self.dim_area.h)
+            print("Fixed dim area:", self.dim_area)
+        end
+        --]]
         if self.page_overlap_style == "dim" then
             bb:dimRect(
                 self.dim_area.x, self.dim_area.y,
                 self.dim_area.w, self.dim_area.h
             )
         elseif self.page_overlap_style == "arrow" then
-            self.arrow:paintTo(bb, 0, self.dim_area.h)
+            print("Arrow y pos:", self.dim_area.y == 0 and self.dim_area.h or self.dim_area.y)
+            self.arrow:paintTo(bb, 0, self.dim_area.y == 0 and self.dim_area.h or self.dim_area.y)
         end
     end
     -- draw saved highlight
