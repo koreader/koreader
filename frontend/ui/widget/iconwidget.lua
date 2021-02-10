@@ -38,6 +38,7 @@ local IconWidget = ImageWidget:extend{
     width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
     height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
     alpha = false, --- @note: our icons have a transparent background, but we flatten them at caching time, and this flag is only checked at blitting time.
+    preserve_alpha = false, --- @note: but, we *can*, as an exception, ask to keep the alpha intact, and do alpha-blending at runtime each and every time.
     is_icon = true, -- avoid dithering in ImageWidget:paintTo()
 }
 
@@ -67,22 +68,11 @@ function IconWidget:init()
         end
         ICONS_PATH[self.icon] = self.file
     end
-end
 
--- Convenience method to blit our pre-composited icons at something other than full opacity, because AlphaContainer is hilariously broken.
-function IconWidget:alphaPaintTo(bb, x, y, alpha)
-    if self.hide then return end
-    -- self:_render is called in getSize method
-    local size = self:getSize()
-    self.dimen = Geom:new{
-        x = x, y = y,
-        w = size.w,
-        h = size.h
-    }
-
-    logger.dbg("blitFrom", x, y, self._offset_x, self._offset_y, size.w, size.h)
-    -- NOTE: This is basically ImageWidget'd paintTo, but with an addblitFrom ;p
-    bb:addblitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h, alpha or 0.6)
+    -- If we've asked to preserve alpha, do that ;)
+    if self.preserve_alpha then
+        self.alpha = true
+    end
 end
 
 return IconWidget

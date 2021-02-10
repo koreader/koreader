@@ -101,9 +101,10 @@ function ReaderView:addWidgets()
     }
     local arrow_size = Screen:scaleBySize(16)
     self.arrow = IconWidget:new{
-        icon = "control.expand",
+        icon = "control.expand.alpha",
         width = arrow_size,
         height = arrow_size,
+        preserve_alpha = true,
     }
 
     self[1] = self.dogear
@@ -177,7 +178,7 @@ function ReaderView:paintTo(bb, x, y)
         elseif self.page_overlap_style == "arrow" then
             local center_offset = bit.rshift(self.arrow.height, 1)
             -- Paint at the proper y origin depending on wheter we paged forward (dim_area.y == 0) or backward
-            self.arrow:alphaPaintTo(bb, 0, self.dim_area.y == 0 and self.dim_area.h - center_offset or self.dim_area.y - center_offset)
+            self.arrow:paintTo(bb, 0, self.dim_area.y == 0 and self.dim_area.h - center_offset or self.dim_area.y - center_offset)
         end
     end
     -- draw saved highlight
