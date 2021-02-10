@@ -163,7 +163,7 @@ function CervantesPowerD:calculateAutoWarmth()
         self.fl_warmth = 100
     else
         -- Between 2-4h after bedtime, return to zero.
-        self.fl_warmth = math.max(100 - 50 * (22 - diff_time), 0)
+        self.fl_warmth = math.max(100 - 15 * (22 - diff_time), 0)
     end
     self.fl_warmth = math.floor(self.fl_warmth + 0.5)
 
