@@ -593,8 +593,7 @@ function ReaderView:recalculate()
             self.visible_area:offsetWithin(self.page_area, 0, 0)
         end
         -- clear dim area
-        self.dim_area.w = 0
-        self.dim_area.h = 0
+        self:resetDimArea()
         self.ui:handleEvent(
             Event:new("ViewRecalculate", self.visible_area, self.page_area))
     else
