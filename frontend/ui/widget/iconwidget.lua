@@ -3,8 +3,10 @@ Subclass of ImageWidget to show icons
 ]]
 
 local DataStorage = require("datastorage")
+local Geom = require("ui/geometry")
 local ImageWidget = require("ui/widget/imagewidget")
 local Screen = require("device").screen
+local logger = require("logger")
 
 -- Directories to look for icons by name, with any of the accepted suffixes
 local ICONS_DIRS = {}
@@ -64,6 +66,32 @@ function IconWidget:init()
             self.file = ICON_NOT_FOUND
         end
         ICONS_PATH[self.icon] = self.file
+    end
+end
+
+-- Convenience method to blit our pre-composited icons at something other than full opacity, because AlphaContainer is hilariously broken.
+function IconWidget:alphaPaintTo(bb, x, y, alpha)
+    if self.hide then return end
+    -- self:_render is called in getSize method
+    local size = self:getSize()
+    self.dimen = Geom:new{
+        x = x, y = y,
+        w = size.w,
+        h = size.h
+    }
+
+    logger.dbg("blitFrom", x, y, self._offset_x, self._offset_y, size.w, size.h)
+    -- NOTE: This is basically ImageWidget'd paintTo, but with an addblitFrom ;p
+    bb:addblitFrom(self._bb, x, y, self._offset_x, self._offset_y, size.w, size.h, alpha or 0.6)
+
+    if self.invert then
+        bb:invertRect(x, y, size.w, size.h)
+    end
+    if self.dim then
+        bb:dimRect(x, y, size.w, size.h)
+    end
+    if Screen.night_mode and not self.is_icon then
+        bb:invertRect(x, y, size.w, size.h)
     end
 end
 

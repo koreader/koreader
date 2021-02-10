@@ -105,14 +105,12 @@ function ReaderView:addWidgets()
         ui = self.ui,
     }
     local arrow_size = Screen:scaleBySize(16)
-    self.arrow = AlphaContainer:new{
-        alpha = 0.6,
-        IconWidget:new{
-            icon = "control.expand",
-            width = arrow_size,
-            height = arrow_size,
-        }
+    self.arrow = IconWidget:new{
+        icon = "control.expand",
+        width = arrow_size,
+        height = arrow_size,
     }
+
     self[1] = self.dogear
     self[2] = self.footer
     self[3] = self.flipping
@@ -192,8 +190,8 @@ function ReaderView:paintTo(bb, x, y)
         elseif self.page_overlap_style == "arrow" then
             print("Arrow y pos:", self.dim_area.y == 0 and self.dim_area.h or self.dim_area.y)
             --require("ffi/util").usleep(250 * 1000)
-            local center_offset = math.floor(self.arrow[1].height / 2)
-            self.arrow:paintTo(bb, 0, self.dim_area.y == 0 and self.dim_area.h - center_offset or self.dim_area.y - center_offset)
+            local center_offset = math.floor(self.arrow.height / 2)
+            self.arrow:alphaPaintTo(bb, 0, self.dim_area.y == 0 and self.dim_area.h - center_offset or self.dim_area.y - center_offset)
         end
     end
     -- draw saved highlight
