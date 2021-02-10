@@ -755,6 +755,11 @@ UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen e
 @bool refreshdither `true` if widget requires dithering (optional)
 ]]
 function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
+    print("UIManager:setDirty", widget, refreshtype, refreshregion, refreshdither)
+    if widget and type(widget) ~= "string" then
+        print("It's a", debug.getinfo(widget.paintTo, "S").short_src)
+    end
+    print(debug.traceback())
     if widget then
         if widget == "all" then
             -- special case: set all top-level widgets as being "dirty".
@@ -775,10 +780,10 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             --       we'll want to flag everything below it as dirty, too,
             --       because doing transparency right requires having an up to date background against which to blend.
             --       (The typecheck is because some widgets use an alpha boolean trap for internal alpha handling (e.g., ImageWidget)).
-            local is_translucent = widget.alpha and type(widget.alpha) == "number" and widget.alpha < 1 and widget.alpha > 0 or widget.movable and widget.movable.alpha and widget.movable.alpha < 1 and widget.movable.alpha > 0
+            local is_translucent = (widget.alpha and type(widget.alpha) == "number" and widget.alpha < 1 and widget.alpha > 0) or (widget.movable and widget.movable.alpha and widget.movable.alpha < 1 and widget.movable.alpha > 0)
             print("setDirty: widget", widget, "is translucent?", is_translucent)
             local handle_alpha = false
-            for i = 1, #self._window_stack do
+            for i = #self._window_stack, 1, -1 do
                 if handle_alpha then
                     self._dirty[self._window_stack[i].widget] = true
                     print("setDirty: widget", self._window_stack[i].widget, "is below a translucent widget, marking as dirty")
@@ -808,7 +813,7 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
         -- Another special case: if we did NOT specify a widget, but requested a full refresh nonetheless (i.e., a diagonal swipe),
         -- we'll want to check the window stack in order to honor dithering...
         if refreshtype == "full" then
-            for i = 1, #self._window_stack do
+            for i = #self._window_stack, 1, -1 do
                 -- If any of 'em were dithered, honor their dithering hint
                 if self._window_stack[i].widget.dithered then
                     logger.dbg("setDirty full on no specific widget: found a dithered widget, infecting the refresh queue")
