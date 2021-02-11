@@ -780,7 +780,7 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             for i = #self._window_stack, 1, -1 do
                 if handle_alpha then
                     self._dirty[self._window_stack[i].widget] = true
-                    logger.dbg("setDirty: widget:", self._window_stack[i].widget, "is below a translucent widget:", widget, "marking as dirty")
+                    logger.dbg("setDirty: widget:", self._window_stack[i].widget.name or self._window_stack[i].widget.id or tostring(self._window_stack[i].widget), "is below a translucent widget:", widget.name or widget.id or tostring(widget), "marking as dirty")
                     -- Stop flagging widgets at the uppermost one that covers the full screen
                     if self._window_stack[i].widget.covers_fullscreen then
                         break
