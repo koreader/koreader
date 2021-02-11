@@ -116,37 +116,32 @@ function MovableContainer:paintTo(bb, x, y)
     self.dimen.y = y + self._moved_offset_y
 
     if self.alpha then
-        -- Create/Recreate the compose cache if we don't have one or changed geometry
+        -- Create/Recreate the compose cache if we changed screen geometry
         if not self.compose_bb
-            or self.compose_bb:getWidth() ~= self.dimen.w
-            or self.compose_bb:getHeight() ~= self.dimen.h
+            or self.compose_bb:getWidth() ~= bb:getWidth()
+            or self.compose_bb:getHeight() ~= bb:getHeight()
         then
             if self.compose_bb then
                 self.compose_bb:free()
             end
             -- create a canvas for our child widget to paint to
-            print("Creating a", self.dimen.w, self.dimen.h, "canvas")
-            self.compose_bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bb:getType())
+            print("Creating a", bb:getWidth(), bb:getHeight(), "canvas")
+            self.compose_bb = Blitbuffer.new(bb:getWidth(), bb:getHeight(), bb:getType())
             -- fill it with our usual background color
             self.compose_bb:fill(Blitbuffer.COLOR_WHITE)
         end
 
         -- now, compose our child widget's content on our canvas
+        -- NOTE: Unlike AlphaContainer, we aim to support interactive widgets.
+        --       Most InputContainer-based widgets register their touchzones at paintTo time,
+        --       and they rely on the target coordinates fed to paintTo for proper on-screen positioning.
+        --       As such, we have to compose on a target bb sized canvas, at the expected coordinates.
         print("Painting to canvas origin")
-        print("Original content geom:", self[1].dimen, self.dimen)
-        local actual_geom = self[1].dimen:copy()
-        self[1]:paintTo(self.compose_bb, 0, 0)
-        -- NOTE: We're painting to a content-sized canvas, not a screen-sized one,
-        --       so the widget's paintTo will update its geometry thinking it's now at the top-left corner,
-        --       which is unlikely to actually be the case, so, restore its proper geometry now,
-        --       which we've force-computed via getSize above.
-        print("Updated content geom:", self[1].dimen)
-        self[1].dimen = actual_geom
-        print("Fixed content geom:", self[1].dimen)
+        self[1]:paintTo(self.compose_bb, self.dimen.x, self.dimen.y)
 
         -- and finally blit the canvas to the target blitbuffer at the requested opacity level
         print("Painting to canvas to target coordinates", self.dimen.x, self.dimen.y)
-        bb:addblitFrom(self.compose_bb, self.dimen.x, self.dimen.y, 0, 0, self.dimen.w, self.dimen.h, self.alpha)
+        bb:addblitFrom(self.compose_bb, self.dimen.x, self.dimen.y, self.dimen.x, self.dimen.y, self.dimen.w, self.dimen.h, self.alpha)
     else
         -- No alpha, just paint
         self[1]:paintTo(bb, self.dimen.x, self.dimen.y)
