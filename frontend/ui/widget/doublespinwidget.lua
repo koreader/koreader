@@ -281,12 +281,9 @@ function DoubleSpinWidget:update()
         },
         self.movable,
     }
-    -- If we're translucent, Button itself will handle that post-callback, in order to preserve alpha without flickering.
-    if not self.movable.alpha then
-        UIManager:setDirty(self, function()
-            return "ui", self.widget_frame.dimen
-        end)
-    end
+    UIManager:setDirty(self, function()
+        return "ui", self.widget_frame.dimen
+    end)
 end
 
 function DoubleSpinWidget:hasMoved()

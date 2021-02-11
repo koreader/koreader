@@ -260,7 +260,7 @@ function Button:_doFeedbackHighlight()
     UIManager:setDirty(nil, "fast", self[1].dimen)
 end
 
-function Button:_undoFeedbackHighlight()
+function Button:_undoFeedbackHighlight(is_translucent)
     if self.text then
         if self[1].radius == Size.radius.button then
             self[1].radius = nil
@@ -275,9 +275,16 @@ function Button:_undoFeedbackHighlight()
         UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
     end
 
-    -- In case the callback itself won't enqueue a refresh region that includes us, do it ourselves.
-    -- If the button is disabled, switch to UI to make sure the gray comes through unharmed ;).
-    UIManager:setDirty(nil, self.enabled and "fast" or "ui", self[1].dimen)
+    if is_translucent then
+        -- If our parent belongs to a translucent MovableContainer, we need to repaint it on unhighlight in order to honor alpha,
+        -- because our highlight/unhighlight will have made the Button fully opaque.
+        -- UIManager will detect transparency and then takes care of also repainting what's underneath us to avoid alpha layering glitches.
+        UIManager:setDirty(self.show_parent, "ui", self[1].dimen)
+    else
+        -- In case the callback itself won't enqueue a refresh region that includes us, do it ourselves.
+        -- If the button is disabled, switch to UI to make sure the gray comes through unharmed ;).
+        UIManager:setDirty(nil, self.enabled and "fast" or "ui", self[1].dimen)
+    end
 end
 
 function Button:onTapSelectButton()
@@ -317,7 +324,7 @@ function Button:onTapSelectButton()
             -- NOTE: If a Button is marked vsync, we want to keep it highlighted for now (in order for said highlight to be visible during the callback refresh), we'll remove the highlight post-callback.
             if not self.vsync then
                 print("Button", self, "UNHL (!vsync)")
-                self:_undoFeedbackHighlight()
+                self:_undoFeedbackHighlight(is_translucent)
             end
 
             -- Callback
@@ -349,7 +356,8 @@ function Button:onTapSelectButton()
             --       so we can do this safely without risking UI glitches.
             if self.vsync then
                 print("Button", self, "UNHL (vsync)")
-                self:_undoFeedbackHighlight()
+                self:_undoFeedbackHighlight(is_translucent)
+                UIManager:forceRePaint()
             end
         end
     elseif self.tap_input then
@@ -358,10 +366,12 @@ function Button:onTapSelectButton()
         self:onInput(self.tap_input_func())
     end
 
+    --[[
     -- If our parent belongs to a translucent MovableContainer, repaint all the things to honor alpha without layering glitches,
     -- and refresh the full container, because the widget might have inhibited its own setDirty call to avoid flickering (c.f., *SpinWidget).
     if was_translucent then
         print("Button", self, "Alpha?", is_translucent)
+        is_translucent = false
         -- If the callback reset the transparency, we only need to repaint our parent
         UIManager:setDirty(is_translucent and "all" or self.show_parent, function()
             return "ui", self.show_parent.movable.dimen
@@ -371,6 +381,7 @@ function Button:onTapSelectButton()
         -- this should be the only actual setDirty call put out by this function (outside of a Button flagged vsync),
         -- so we're back into standard territory.
     end
+    --]]
 
     if self.readonly ~= true then
         return true
@@ -388,6 +399,7 @@ function Button:refresh()
         return
     end
     UIManager:widgetRepaint(self[1], self[1].dimen.x, self.dimen.y)
+
     UIManager:setDirty(nil, function()
         return self.enabled and "fast" or "ui", self[1].dimen
     end)

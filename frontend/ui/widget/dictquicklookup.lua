@@ -836,12 +836,11 @@ function DictQuickLookup:update()
     -- If we're translucent, reset alpha to make the new definition actually readable.
     if self.movable.alpha then
         self.movable.alpha = nil
-        -- And skip the setDirty, Button will handle it post-callback & post-unhighlight.
-    else
-        UIManager:setDirty(self, function()
-            return "partial", self.dict_frame.dimen
-        end)
     end
+
+    UIManager:setDirty(self, function()
+        return "partial", self.dict_frame.dimen
+    end)
 end
 
 function DictQuickLookup:getInitialVisibleArea()
