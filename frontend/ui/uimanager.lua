@@ -776,8 +776,6 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             --       we'll want to flag everything below it as dirty, too,
             --       because doing transparency right requires having an up to date background against which to blend.
             --       (The typecheck is because some widgets use an alpha boolean trap for internal alpha handling (e.g., ImageWidget)).
-            local is_translucent = (widget.alpha and type(widget.alpha) == "number" and widget.alpha < 1 and widget.alpha > 0)
-                                or (widget.movable and widget.movable.alpha and widget.movable.alpha < 1 and widget.movable.alpha > 0)
             local handle_alpha = false
             -- NOTE: We only ever check the dirty flag on top-level widgets, so only set it there!
             --       Enable verbose debug to catch misbehaving widgets via our post-guard.
@@ -793,12 +791,14 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
 
                 if self._window_stack[i].widget == widget then
                     self._dirty[widget] = true
+
+                    -- We've got a match, now check if it's translucent...
+                    handle_alpha = (widget.alpha and type(widget.alpha) == "number" and widget.alpha < 1 and widget.alpha > 0)
+                                or (widget.movable and widget.movable.alpha and widget.movable.alpha < 1 and widget.movable.alpha > 0)
                     -- We shouldn't be seeing the same widget at two different spots in the stack, so, we're done,
-                    -- except when we need to keep looping to to flag widgets below us to handle a translucent widget...
-                    if not is_translucent then
+                    -- except when we need to keep looping to flag widgets below us in order to handle a translucent widget...
+                    if not handle_alpha then
                         break
-                    else
-                        handle_alpha = true
                     end
                 end
             end
