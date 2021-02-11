@@ -45,7 +45,7 @@ function AlphaContainer:paintTo(bb, x, y)
     self[1]:paintTo(self.private_bb, 0, 0)
 
     -- and finally blit the private blitbuffer to the target blitbuffer at the requested opacity level
-    bb:addblitFrom(self.private_bb, x, y, nil, nil, nil, nil, self.alpha)
+    bb:addblitFrom(self.private_bb, x, y, 0, 0, contentSize.w, contentSize.h, self.alpha)
 end
 
 function AlphaContainer:onCloseWidget()

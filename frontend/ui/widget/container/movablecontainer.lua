@@ -46,6 +46,9 @@ local MovableContainer = InputContainer:new{
     -- Original painting position from outer widget
     _orig_x = nil,
     _orig_y = nil,
+
+    -- We cache a compose canvas for alpha handling
+    compose_bb = nil,
 }
 
 function MovableContainer:init()
@@ -101,7 +104,7 @@ function MovableContainer:paintTo(bb, x, y)
         return
     end
 
-    local content_size = self[1]:getSize()
+    local content_size = self[1]:getSize():copy()
     if not self.dimen then
         self.dimen = Geom:new{w = content_size.w, h = content_size.h}
     end
@@ -113,17 +116,48 @@ function MovableContainer:paintTo(bb, x, y)
     self.dimen.y = y + self._moved_offset_y
 
     if self.alpha then
-        -- Create private blitbuffer for our child widget to paint to
-        local private_bb = Blitbuffer.new(bb:getWidth(), bb:getHeight(), bb:getType())
-        private_bb:fill(Blitbuffer.COLOR_WHITE) -- for round corners' outside to not stay black
-        self[1]:paintTo(private_bb, self.dimen.x, self.dimen.y)
-        -- And blend our private blitbuffer over the original bb
-        bb:addblitFrom(private_bb, self.dimen.x, self.dimen.y, self.dimen.x, self.dimen.y,
-            self.dimen.w, self.dimen.h, self.alpha)
-        private_bb:free()
+        -- Create/Recreate the compose cache if we don't have one or changed geometry
+        if not self.compose_bb
+            or self.compose_bb:getWidth() ~= self.dimen.w
+            or self.compose_bb:getHeight() ~= self.dimen.h
+        then
+            if self.compose_bb then
+                self.compose_bb:free()
+            end
+            -- create a canvas for our child widget to paint to
+            print("Creating a", self.dimen.w, self.dimen.h, "canvas")
+            self.compose_bb = Blitbuffer.new(self.dimen.w, self.dimen.h, bb:getType())
+            -- fill it with our usual background color
+            self.compose_bb:fill(Blitbuffer.COLOR_WHITE)
+        end
+
+        -- now, compose our child widget's content on our canvas
+        print("Painting to canvas origin")
+        print("Original content geom:", self[1].dimen, self.dimen)
+        local actual_geom = self[1].dimen:copy()
+        self[1]:paintTo(self.compose_bb, 0, 0)
+        -- NOTE: We're painting to a content-sized canvas, not a screen-sized one,
+        --       so the widget's paintTo will update its geometry thinking it's now at the top-left corner,
+        --       which is unlikely to actually be the case, so, restore its proper geometry now,
+        --       which we've force-computed via getSize above.
+        print("Updated content geom:", self[1].dimen)
+        self[1].dimen = actual_geom
+        print("Fixed content geom:", self[1].dimen)
+
+        -- and finally blit the canvas to the target blitbuffer at the requested opacity level
+        print("Painting to canvas to target coordinates", self.dimen.x, self.dimen.y)
+        bb:addblitFrom(self.compose_bb, self.dimen.x, self.dimen.y, 0, 0, self.dimen.w, self.dimen.h, self.alpha)
     else
         -- No alpha, just paint
         self[1]:paintTo(bb, self.dimen.x, self.dimen.y)
+    end
+end
+
+function MovableContainer:onCloseWidget()
+    if self.compose_bb then
+        print("Free canvas")
+        self.compose_bb:free()
+        self.compose_bb = nil
     end
 end
 
