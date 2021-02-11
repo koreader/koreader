@@ -125,7 +125,6 @@ function MovableContainer:paintTo(bb, x, y)
                 self.compose_bb:free()
             end
             -- create a canvas for our child widget to paint to
-            print("Creating a", bb:getWidth(), bb:getHeight(), "canvas")
             self.compose_bb = Blitbuffer.new(bb:getWidth(), bb:getHeight(), bb:getType())
             -- fill it with our usual background color
             self.compose_bb:fill(Blitbuffer.COLOR_WHITE)
@@ -136,11 +135,9 @@ function MovableContainer:paintTo(bb, x, y)
         --       Most InputContainer-based widgets register their touchzones at paintTo time,
         --       and they rely on the target coordinates fed to paintTo for proper on-screen positioning.
         --       As such, we have to compose on a target bb sized canvas, at the expected coordinates.
-        print("Painting to canvas origin")
         self[1]:paintTo(self.compose_bb, self.dimen.x, self.dimen.y)
 
         -- and finally blit the canvas to the target blitbuffer at the requested opacity level
-        print("Painting to canvas to target coordinates", self.dimen.x, self.dimen.y)
         bb:addblitFrom(self.compose_bb, self.dimen.x, self.dimen.y, self.dimen.x, self.dimen.y, self.dimen.w, self.dimen.h, self.alpha)
     else
         -- No alpha, just paint
@@ -150,7 +147,6 @@ end
 
 function MovableContainer:onCloseWidget()
     if self.compose_bb then
-        print("Free canvas")
         self.compose_bb:free()
         self.compose_bb = nil
     end
