@@ -42,10 +42,10 @@ function AlphaContainer:paintTo(bb, x, y)
     end
 
     -- now, compose our child widget's content on our private blitbuffer canvas
-    self[1]:paintTo(private_bb, 0, 0)
+    self[1]:paintTo(self.private_bb, 0, 0)
 
     -- and finally blit the private blitbuffer to the target blitbuffer at the requested opacity level
-    bb:addblitFrom(private_bb, x, y, nil, nil, nil, nil, self.alpha)
+    bb:addblitFrom(self.private_bb, x, y, nil, nil, nil, nil, self.alpha)
 end
 
 function AlphaContainer:onCloseWidget()
