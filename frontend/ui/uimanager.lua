@@ -730,7 +730,7 @@ This is why you often see stuff doing, when instantiating a new widget, `FancyWi
 meaning, if I'm already a subwidget, cascade my parent, otherwise, it means I'm a window-level widget, so cascade myself as that widget's parent ;).
 
 Another convention (that a few things rely on) is naming a (persistent) MovableContainer wrapping a full widget `movable`, accessible as an instance field.
-This is useful when it's used for transparency purposes, which, e.g., @{ui.widget.button|Button} relies on to handle highlighting inside a transparent widget properly,
+This is useful when it's used for transparency purposes, which, e.g., `setDirty` and @{ui.widget.button|Button} rely on to handle updating translucent widgets properly,
 by checking if self.show_parent.movable exists and is currently translucent ;).
 
 When I mentioned passing the *right* widget to `setDirty` earlier, what I meant is that `setDirty` will only actually flag a widget for repaint
@@ -755,11 +755,6 @@ UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen e
 @bool refreshdither `true` if widget requires dithering (optional)
 ]]
 function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
-    print("UIManager:setDirty", widget, refreshtype, refreshregion, refreshdither)
-    if widget and type(widget) ~= "string" then
-        print("It's a", debug.getinfo(widget.paintTo, "S").short_src)
-    end
-    print(debug.traceback())
     if widget then
         if widget == "all" then
             -- special case: set all top-level widgets as being "dirty".
@@ -774,19 +769,18 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
                 end
             end
         elseif not widget.invisible then
-            -- NOTE: We only ever check the dirty flag on top-level widgets, so only set it there!
-            --       Enable verbose debug to catch misbehaving widgets via our post-guard.
             -- NOTE: If our widget is translucent, or belongs to a translucent MovableContainer,
             --       we'll want to flag everything below it as dirty, too,
             --       because doing transparency right requires having an up to date background against which to blend.
             --       (The typecheck is because some widgets use an alpha boolean trap for internal alpha handling (e.g., ImageWidget)).
             local is_translucent = (widget.alpha and type(widget.alpha) == "number" and widget.alpha < 1 and widget.alpha > 0) or (widget.movable and widget.movable.alpha and widget.movable.alpha < 1 and widget.movable.alpha > 0)
-            print("setDirty: widget", widget, "is translucent?", is_translucent)
             local handle_alpha = false
+            -- NOTE: We only ever check the dirty flag on top-level widgets, so only set it there!
+            --       Enable verbose debug to catch misbehaving widgets via our post-guard.
             for i = #self._window_stack, 1, -1 do
                 if handle_alpha then
                     self._dirty[self._window_stack[i].widget] = true
-                    print("setDirty: widget", self._window_stack[i].widget, "is below a translucent widget, marking as dirty")
+                    logger.dbg("setDirty: widget:", self._window_stack[i].widget, "is below a translucent widget:", widget, "marking as dirty")
                     -- Stop flagging widgets at the uppermost one that covers the full screen
                     if self._window_stack[i].widget.covers_fullscreen then
                         break
@@ -799,7 +793,7 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
                     if not is_translucent then
                         break
                     else
-                        -- Except if we need to flag widgets below us...
+                        -- Except if we need to flag widgets below us to handle a translucent widget...
                         handle_alpha = true
                     end
                 end

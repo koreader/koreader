@@ -288,19 +288,13 @@ function Button:_undoFeedbackHighlight(is_translucent)
 end
 
 function Button:onTapSelectButton()
-    -- NOTE: We have a few tricks up our sleeve in case our parent is inside a translucent MovableContainer...
-    local was_translucent = self.show_parent and self.show_parent.movable and self.show_parent.movable.alpha
-    -- We make a distinction between transparency pre- and post- callback, because if a widget *was* transparent,
-    -- but no longer is post-callback, we want to ensure that we refresh the *full* container,
-    -- instead of just the button's frame, in order to avoid leaving bits of the widget transparent ;).
-    local is_translucent = was_translucent
-
     if self.enabled and self.callback then
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
-            -- Check if the callback reset transparency...
-            is_translucent = was_translucent and self.show_parent.movable.alpha
         else
+            -- NOTE: We have a few tricks up our sleeve in case our parent is inside a translucent MovableContainer...
+            local is_translucent = self.show_parent and self.show_parent.movable and self.show_parent.movable.alpha
+
             -- Highlight
             --
             print("Button", self, "HL")
@@ -333,7 +327,7 @@ function Button:onTapSelectButton()
             self.callback()
 
             -- Check if the callback reset transparency...
-            is_translucent = was_translucent and self.show_parent.movable.alpha
+            is_translucent = is_translucent and self.show_parent.movable.alpha
             -- If we're *still* translucent, we don't want to fence the callback refresh *now*, because we want a *single* refresh post-callback *and* post-unhighlight,
             -- in order to avoid flickering when the callback refreshed other stuff inside the same widget as our Button without preserving alpha handling (e.g., NumberPicker via SpinWidget),
             -- and that's handled later, at the end of this function.
@@ -357,6 +351,7 @@ function Button:onTapSelectButton()
             if self.vsync then
                 print("Button", self, "UNHL (vsync)")
                 self:_undoFeedbackHighlight(is_translucent)
+                print("Button", self, "UNHL vsync fence")
                 UIManager:forceRePaint()
             end
         end
@@ -365,23 +360,6 @@ function Button:onTapSelectButton()
     elseif type(self.tap_input_func) == "function" then
         self:onInput(self.tap_input_func())
     end
-
-    --[[
-    -- If our parent belongs to a translucent MovableContainer, repaint all the things to honor alpha without layering glitches,
-    -- and refresh the full container, because the widget might have inhibited its own setDirty call to avoid flickering (c.f., *SpinWidget).
-    if was_translucent then
-        print("Button", self, "Alpha?", is_translucent)
-        is_translucent = false
-        -- If the callback reset the transparency, we only need to repaint our parent
-        UIManager:setDirty(is_translucent and "all" or self.show_parent, function()
-            return "ui", self.show_parent.movable.dimen
-        end)
-
-        -- We don't force the hand of the paint & refresh queues here, as, when transparency is involved,
-        -- this should be the only actual setDirty call put out by this function (outside of a Button flagged vsync),
-        -- so we're back into standard territory.
-    end
-    --]]
 
     if self.readonly ~= true then
         return true
