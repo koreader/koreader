@@ -776,7 +776,8 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
             --       we'll want to flag everything below it as dirty, too,
             --       because doing transparency right requires having an up to date background against which to blend.
             --       (The typecheck is because some widgets use an alpha boolean trap for internal alpha handling (e.g., ImageWidget)).
-            local is_translucent = (widget.alpha and type(widget.alpha) == "number" and widget.alpha < 1 and widget.alpha > 0) or (widget.movable and widget.movable.alpha and widget.movable.alpha < 1 and widget.movable.alpha > 0)
+            local is_translucent = (widget.alpha and type(widget.alpha) == "number" and widget.alpha < 1 and widget.alpha > 0)
+                                or (widget.movable and widget.movable.alpha and widget.movable.alpha < 1 and widget.movable.alpha > 0)
             local handle_alpha = false
             -- NOTE: We only ever check the dirty flag on top-level widgets, so only set it there!
             --       Enable verbose debug to catch misbehaving widgets via our post-guard.
