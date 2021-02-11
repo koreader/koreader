@@ -328,20 +328,14 @@ function Button:onTapSelectButton()
 
             -- Check if the callback reset transparency...
             is_translucent = is_translucent and self.show_parent.movable.alpha
-            -- If we're *still* translucent, we don't want to fence the callback refresh *now*, because we want a *single* refresh post-callback *and* post-unhighlight,
-            -- in order to avoid flickering when the callback refreshed other stuff inside the same widget as our Button without preserving alpha handling (e.g., NumberPicker via SpinWidget),
-            -- and that's handled later, at the end of this function.
-            -- NOTE: On the other hand, if a Button is flagged vsync, we want to honor that commitment, we want to see the highlight (because it hasn't been fenced yet),
-            --       and we know that those Buttons are free from potential alpha interactions anyway.
-            if self.vsync or not is_translucent then
-                print("Button", self, "CB fence")
-                UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
-                if self.vsync then
-                    -- NOTE: This is mainly useful when the callback caused a REAGL update that we do not explicitly fence via MXCFB_WAIT_FOR_UPDATE_COMPLETE already, (i.e., Kobo Mk. 7).
-                    print("Button", self, "CB vsync")
-                    UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
-                                             -- because that would have a chance to noticeably delay it until the unhighlight.
-                end
+
+            print("Button", self, "CB fence")
+            UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
+            if self.vsync then
+                -- NOTE: This is mainly useful when the callback caused a REAGL update that we do not explicitly fence via MXCFB_WAIT_FOR_UPDATE_COMPLETE already, (i.e., Kobo Mk. 7).
+                print("Button", self, "CB vsync")
+                UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
+                                            -- because that would have a chance to noticeably delay it until the unhighlight.
             end
 
             -- Unhighlight
