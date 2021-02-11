@@ -793,11 +793,11 @@ function UIManager:setDirty(widget, refreshtype, refreshregion, refreshdither)
 
                 if self._window_stack[i].widget == widget then
                     self._dirty[widget] = true
-                    -- We shouldn't be seeing the same widget at two different spots in the stack, so, we're done.
+                    -- We shouldn't be seeing the same widget at two different spots in the stack, so, we're done,
+                    -- except when we need to keep looping to to flag widgets below us to handle a translucent widget...
                     if not is_translucent then
                         break
                     else
-                        -- Except if we need to flag widgets below us to handle a translucent widget...
                         handle_alpha = true
                     end
                 end
