@@ -714,9 +714,12 @@ As far as the actual lifecycle of a widget goes, the rules are:
    you generally *don't* want to return true in `Show` or `CloseWidget` handlers).
 * If any widget requires freeing non-Lua resources (e.g., FFI/C), having a `free` method called from its `CloseWidget` handler is ideal:
   this'll ensure that *any* widget including it will be sure that resources are freed when it (or its parent) are closed.
-* Note that there *is* a `Close` event, but it is *only* broadcast (e.g., sent to every widget in the window stack;
-  the same rules about propagation apply, but only per *window-level widget*) at poweroff/reboot, so,
-  refrain from implementing custom `onClose` methods if that's not their intended purpose ;).
+* Note that there *is* a `Close` event, but it has very specific use-cases, generally involving *programmatically* `close`ing a `show`n widget:
+    * It is broadcast (e.g., sent to every widget in the window stack; the same rules about propagation apply, but only per *window-level widget*)
+      at poweroff/reboot.
+    * It can also be used as a keypress handler by @{ui.widget.container.inputcontainer|InputContainer}, generally bound to the Back key.
+
+Please refrain from implementing custom `onClose` methods if that's not their intended purpose ;).
 
 On the subject of widgets and child widgets,
 you might have noticed an unspoken convention across the codebase of widgets having a field called `show_parent`.
