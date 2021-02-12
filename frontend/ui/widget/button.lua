@@ -180,11 +180,10 @@ function Button:enable()
     if not self.enabled then
         if self.text then
             self.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
-            self.enabled = true
         else
             self.label_widget.dim = false
-            self.enabled = true
         end
+        self.enabled = true
     end
 end
 
@@ -192,11 +191,10 @@ function Button:disable()
     if self.enabled then
         if self.text then
             self.label_widget.fgcolor = Blitbuffer.COLOR_DARK_GRAY
-            self.enabled = false
         else
             self.label_widget.dim = true
-            self.enabled = false
         end
+        self.enabled = false
     end
 end
 
