@@ -39,6 +39,9 @@ local function buildEntry(input_time, input_file)
             end
             return util.secondsToDate(last_read_ts, G_reader_settings:isTrue("twelve_hour_clock"))
         end,
+        select_enabled_func = function()
+            return lfs.attributes(file_path, "mode") == "file"
+        end,
         callback = function()
             local ReaderUI = require("apps/reader/readerui")
             ReaderUI:showReader(input_file)
