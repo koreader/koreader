@@ -401,12 +401,14 @@ function Button:refresh()
 end
 
 function Button:onHoldSelectButton()
-    if self.hold_callback and (self.enabled or self.allow_hold_when_disabled) then
-        self.hold_callback()
-    elseif self.hold_input then
-        self:onInput(self.hold_input, true)
-    elseif type(self.hold_input_func) == "function" then
-        self:onInput(self.hold_input_func(), true)
+    if self.enabled or self.allow_hold_when_disabled then
+        if self.hold_callback then
+            self.hold_callback()
+        elseif self.hold_input then
+            self:onInput(self.hold_input, true)
+        elseif type(self.hold_input_func) == "function" then
+            self:onInput(self.hold_input_func(), true)
+        end
     end
     if self.readonly ~= true then
         return true
@@ -414,13 +416,13 @@ function Button:onHoldSelectButton()
 end
 
 function Button:onHoldReleaseSelectButton()
-    -- Safe-guard for when used inside a MovableContainer,
-    -- which would handle HoldRelease and process it like
-    -- a Hold if we wouldn't return true here
-    if self.hold_callback and (self.enabled or self.allow_hold_when_disabled) then
-        return true
-    elseif self.hold_input or type(self.hold_input_func) == "function" then
-        return true
+    if self.enabled or self.allow_hold_when_disabled then
+        -- Safe-guard for when used inside a MovableContainer,
+        -- which would handle HoldRelease and process it like
+        -- a Hold if we wouldn't return true here
+        if self.hold_callback or self.hold_input or type(self.hold_input_func) == "function" then
+            return true
+        end
     end
     return false
 end
