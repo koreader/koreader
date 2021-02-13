@@ -31,6 +31,10 @@ function SystemStat:put(p)
     table.insert(self.kv_pairs, p)
 end
 
+function SystemStat:putSeparator()
+    self.kv_pairs[#self.kv_pairs].separator = true
+end
+
 function SystemStat:appendCounters()
     self:put({_("KOReader started at"), os.date("%c", self.start_sec)})
     if self.suspend_sec then
@@ -232,8 +236,11 @@ end
 function SystemStat:showStatistics()
     self.kv_pairs = {}
     self:appendCounters()
+    self:putSeparator()
     self:appendProcessInfo()
+    self:putSeparator()
     self:appendStorageInfo()
+    self:putSeparator()
     self:appendSystemInfo()
     UIManager:show(KeyValuePage:new{
         title = _("System statistics"),

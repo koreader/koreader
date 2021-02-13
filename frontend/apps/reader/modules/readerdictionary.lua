@@ -241,6 +241,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
             end
             UIManager:show(KeyValuePage:new{
                 title = _("Dictionary lookup history"),
+                value_overflow_align = "right",
                 kv_pairs = kv_pairs,
             })
         end,
@@ -944,8 +945,7 @@ function ReaderDictionary:showDownload(downloadable_dicts)
         end
         table.insert(kv_pairs, {lang, ""})
         table.insert(kv_pairs, {"    ".._("License"), dict.license})
-        table.insert(kv_pairs, {"    ".._("Entries"), dict.entries})
-        table.insert(kv_pairs, "----------------------------")
+        table.insert(kv_pairs, {"    ".._("Entries"), dict.entries, separator = true})
     end
     self.download_window = KeyValuePage:new{
         title = _("Tap dictionary name to download"),

@@ -199,7 +199,7 @@ function BatteryStat:showStatistics()
 
     self:accumulate()
     local kv_pairs = self:dump()
-    table.insert(kv_pairs, "----------")
+    kv_pairs[#kv_pairs].separator = true
     table.insert(kv_pairs, {_("If you would like to reset the data,"), "",
                             callback = function()
                                 UIManager:setDirty(self.kv_page, "fast")

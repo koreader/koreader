@@ -106,6 +106,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
             end
             UIManager:show(KeyValuePage:new{
                 title = _("Wikipedia history"),
+                value_overflow_align = "right",
                 kv_pairs = kv_pairs,
             })
         end,

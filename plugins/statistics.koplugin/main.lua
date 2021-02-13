@@ -1099,8 +1099,8 @@ function ReaderStatistics:statMenu()
                     }
                     UIManager:show(self.kv)
                 end,
+                separator = true,
             },
-            "----",
             { _("Last week"),"",
                 callback = function()
                     local kv = self.kv
@@ -1303,8 +1303,7 @@ function ReaderStatistics:getCurrentStat(id_book)
         { _("Pages read this session"), tonumber(current_pages) },
         -- today
         { _("Time spent reading today"), util.secondsToClock(today_duration, false) },
-        { _("Pages read today"), tonumber(today_pages) },
-        "----",
+        { _("Pages read today"), tonumber(today_pages), separator = true },
         -- Current book statistics
         -- Includes re-reads
         { _("Total time spent on this book"), util.secondsToClock(total_time_book, false) },
@@ -1324,7 +1323,7 @@ function ReaderStatistics:getCurrentStat(id_book)
         { _("Estimated reading finished"),
             T(N_("%1 (1 day)", "%1 (%2 days)", estimate_days_to_read), estimate_end_of_read_date, estimate_days_to_read) },
 
-        { _("Highlights"), tonumber(highlights) },
+        { _("Highlights"), tonumber(highlights), separator = true },
         -- { _("Total notes"), tonumber(notes) }, -- not accurate, don't show it
     }
 end
@@ -1404,9 +1403,8 @@ function ReaderStatistics:getBookStat(id_book)
         -- These 2 ones are about page actually read (not the current page and % into book)
         { _("Read pages/Total pages"), total_read_pages .. "/" .. pages },
         { _("Percentage read"), Math.round(total_read_pages / pages * 100) .. "%" },
-        { _("Highlights"), highlights },
+        { _("Highlights"), highlights, separator = true },
         -- { _("Total notes"), notes }, -- not accurate, don't show it
-        "----",
         { _("Show days"), _("Tap to display"),
             callback = function()
                 local kv = self.kv
