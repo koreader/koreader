@@ -152,18 +152,20 @@ function CervantesPowerD:calculateAutoWarmth()
     local current_time = os.date("%H") + os.date("%M")/60
     local max_hour = self.max_warmth_hour
     local diff_time = max_hour - current_time
+    -- number of hours to stay at full warmth before decreasing
+    local warm_window = 4
     if diff_time < 0 then
         diff_time = diff_time + 24
     end
     if diff_time < 12 then
         -- We are before bedtime. Use a slower progression over 5h.
         self.fl_warmth = math.max(20 * (5 - diff_time), 0)
-    elseif diff_time > 22 then
-        -- Keep warmth at maximum for two hours after bedtime.
+    elseif diff_time > (24 - warm_window) then
+        -- Keep warmth at maximum for 'warm_window' hours after bedtime.
         self.fl_warmth = 100
     else
-        -- Between 2-4h after bedtime, return to zero.
-        self.fl_warmth = math.max(100 - 50 * (22 - diff_time), 0)
+        -- Decrease for each subsequent hour by 20% per hour
+        self.fl_warmth = math.max(100 - 20 * (24 - warm_window - diff_time), 0)
     end
     self.fl_warmth = math.floor(self.fl_warmth + 0.5)
 
