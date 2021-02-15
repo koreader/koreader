@@ -1200,18 +1200,20 @@ function util.checkLuaSyntax(lua_text)
     return err
 end
 
--- Simple startsWith / endsWith string helpers
--- c.f., http://lua-users.org/wiki/StringRecipes
--- @param str string: source string
--- @param start string: string to match
--- @return boolean: true on success
+--- Simple startsWith string helper.
+--
+-- C.f., <http://lua-users.org/wiki/StringRecipes>.
+-- @string str source string
+-- @string start string to match
+-- @treturn bool true on success
 function util.stringStartsWith(str, start)
    return str:sub(1, #start) == start
 end
 
--- @param str string: source string
--- @param ending string: string to match
--- @return boolean: true on success
+--- Simple endsWith string helper.
+-- @string str source string
+-- @string ending string to match
+-- @treturn bool true on success
 function util.stringEndsWith(str, ending)
    return ending == "" or str:sub(-#ending) == ending
 end
