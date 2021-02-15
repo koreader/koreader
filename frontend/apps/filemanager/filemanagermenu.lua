@@ -327,18 +327,6 @@ function FileManagerMenu:setUpdateItemTable()
         sub_item_table = PluginLoader:genPluginManagerSubItem()
     }
 
-    self.menu_items.opds_catalog = {
-        text = _("OPDS catalog"),
-        callback = function()
-            local OPDSCatalog = require("apps/opdscatalog/opdscatalog")
-            local filemanagerRefresh = function() self.ui:onRefresh() end
-            function OPDSCatalog:onClose()
-                filemanagerRefresh()
-                UIManager:close(self)
-            end
-            OPDSCatalog:showCatalog()
-        end,
-    }
     self.menu_items.developer_options = {
         text = _("Developer options"),
         sub_item_table = {
