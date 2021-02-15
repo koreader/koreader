@@ -134,7 +134,7 @@ local order = {
         "find_file",
         "----------------------------",
         "goodreads",
-        "opds_catalog",
+        "opds",
     },
     main = {
         "history",
