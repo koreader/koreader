@@ -2,7 +2,6 @@ local Device = require("device")
 local Screen = Device.screen
 local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
-local C_ = _.pgettext
 
 -- Get font size numbers as a table of strings
 local tableOfNumbersToTableOfStrings = function(numbers)
