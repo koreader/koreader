@@ -1024,6 +1024,7 @@ function Menu:updatePageInfo(select_number)
         -- update page information
         if self.page_num > 1 then
             self.page_info_text:setText(FFIUtil.template(_("Page %1 of %2"), self.page, self.page_num))
+            self.page_info_text.enabled = true
         else
             self.page_info_text:setText("");
         end
@@ -1040,6 +1041,7 @@ function Menu:updatePageInfo(select_number)
         self.page_return_arrow:enableDisable(#self.paths > 0)
     else
         self.page_info_text:setText(_("No choices available"))
+        self.page_info_text.enabled = false
     end
 end
 
