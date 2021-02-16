@@ -29,7 +29,12 @@ local KoptOptions = {
             {
                 name = "rotation_mode",
                 name_text = _("Rotation"),
-                toggle = {C_("Rotation", "⤹ 90°"), C_("Rotation", "↑ 0°"), C_("Rotation", "⤸ 90°"), C_("Rotation", "↓ 180°")},
+                item_icons = {
+                    "appbar.rotation.90CCW",
+                    "appbar.rotation.0UR",
+                    "appbar.rotation.90CW",
+                    "appbar.rotation.180UD",
+                },
                 alternate = false,
                 values = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
                 args = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
