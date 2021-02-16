@@ -810,7 +810,11 @@ function DictQuickLookup:update()
         self.text_widget:resetScroll()
     elseif not self.is_html and self.stw_widget then
         -- Re-use our ScrollTextWidget (self.stw_widget)
+        -- Update properties that may change across results (as done in DictQuickLookup:_instantiateScrollWidget())
         self.text_widget.text_widget.text = self.definition
+        self.text_widget.text_widget.lang = self.lang and self.lang:lower()
+        self.text_widget.text_widget.para_direction_rtl = self.rtl_lang
+        self.text_widget.text_widget.images = self.images
         -- NOTE: The recursive free via our WidgetContainer (self[1]) above already free'd us ;)
         self.text_widget.text_widget:init()
         -- Scroll back to top
