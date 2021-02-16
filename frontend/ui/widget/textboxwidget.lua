@@ -244,6 +244,7 @@ end
 -- Split the text into logical lines to fit into the text box.
 function TextBoxWidget:_splitToLines()
     self.vertical_string_list = {}
+    self.line_num_to_image = nil
 
     local idx = 1
     local size = #self.charlist
