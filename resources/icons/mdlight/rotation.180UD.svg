@@ -31,7 +31,7 @@
    showgrid="true"
    inkscape:zoom="21"
    inkscape:cx="24"
-   inkscape:cy="24"
+   inkscape:cy="23.714286"
    inkscape:window-x="0"
    inkscape:window-y="0"
    inkscape:window-maximized="1"
@@ -41,7 +41,7 @@
      id="grid833" /></sodipodi:namedview><metadata
    id="metadata10"><rdf:RDF><cc:Work
        rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
-         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata>
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata>
 	
 <rect
    id="rect1443"
@@ -57,7 +57,7 @@
    transform="scale(1,-1)" /><rect
    id="rect1443-5"
    x="9"
-   y="-12"
+   y="-11.5"
    width="19"
    height="2"
    ry="0.98000002"
