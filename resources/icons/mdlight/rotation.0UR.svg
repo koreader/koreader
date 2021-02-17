@@ -56,12 +56,12 @@
    stroke-width="2" /><rect
    id="rect1443-5"
    x="9"
-   y="35"
+   y="35.5"
    width="19"
    height="2"
-   ry=".98"
+   ry="0.98000002"
    fill="none"
-   stroke="#000"
+   stroke="#000000"
    stroke-linejoin="round"
    stroke-width="2" /><path
    id="path1605"
