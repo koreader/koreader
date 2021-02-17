@@ -45,20 +45,21 @@
 	
 <path
    id="path1605"
-   d="M 37,16.5 V 30.1"
+   d="m 42.597927,16.604159 v 13.6"
    fill="none"
    stroke="#000000"
    stroke-width="2"
    style="stroke-width:1.6;stroke-miterlimit:4;stroke-dasharray:none"
    sodipodi:nodetypes="cc" /><path
    id="path1607"
-   d="m 33,20.5 4,-4.5 4,4.5"
+   d="m 38.597927,20.604159 4,-4.5 4,4.5"
    fill="none"
    stroke="#000000"
    stroke-width="2"
    style="stroke-width:1.6;stroke-miterlimit:4;stroke-dasharray:none"
    sodipodi:nodetypes="ccc" /><g
-   id="g847"><rect
+   id="g847"
+   transform="translate(5.5000021)"><rect
      id="rect1443"
      x="9"
      y="8"
