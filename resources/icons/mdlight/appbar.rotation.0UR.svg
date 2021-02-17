@@ -68,12 +68,14 @@
    d="m37 18v14"
    fill="none"
    stroke="#000"
-   stroke-width="2" /><path
+   stroke-width="2"
+   style="stroke-width:1.6;stroke-miterlimit:4;stroke-dasharray:none" /><path
    id="path1607"
    d="m33 22 4-4.5 4 4.5"
    fill="none"
    stroke="#000"
-   stroke-width="2" /><g
+   stroke-width="2"
+   style="stroke-width:1.6;stroke-miterlimit:4;stroke-dasharray:none" /><g
    aria-label="k"
    id="text841"
    style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:16px;line-height:125%;font-family:Diavlo;-inkscape-font-specification:Diavlo;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
