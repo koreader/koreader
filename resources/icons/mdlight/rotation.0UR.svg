@@ -43,27 +43,7 @@
        rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
          rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata>
 	
-<rect
-   id="rect1443"
-   x="9"
-   y="8"
-   width="19"
-   height="31"
-   ry="2.5999999"
-   fill="none"
-   stroke="#000000"
-   stroke-linejoin="round"
-   stroke-width="2" /><rect
-   id="rect1443-5"
-   x="9"
-   y="35.5"
-   width="19"
-   height="2"
-   ry="0.98000002"
-   fill="none"
-   stroke="#000000"
-   stroke-linejoin="round"
-   stroke-width="2" /><path
+<path
    id="path1605"
    d="M 37,16.5 V 30.1"
    fill="none"
@@ -78,9 +58,18 @@
    stroke-width="2"
    style="stroke-width:1.6;stroke-miterlimit:4;stroke-dasharray:none"
    sodipodi:nodetypes="ccc" /><g
-   aria-label="k"
-   id="text841"
-   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:16px;line-height:125%;font-family:Diavlo;-inkscape-font-specification:Diavlo;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-   transform="translate(-12.77,-8.016)"><path
-     d="m 30.948,30.36 c 1.552,-0.192 2.448,-2.448 3.104,-3.408 -0.176,-0.048 -0.336,-0.064 -0.48,-0.064 -0.96,0 -1.232,0.48 -1.328,0.656 -0.864,1.616 -1.488,2.368 -2.944,2.368 v -6.096 c 0,-0.8 -1.28,-0.8 -1.28,-0.8 v 11.296 c 0,0.8 1.28,0.8 1.28,0.8 v -4.16 c 4.048,0.32 2.816,4.16 4.656,4.16 0.208,0 0.672,-0.112 0.672,-0.112 -0.672,-1.056 -0.912,-4.016 -3.68,-4.64 z"
-     id="path846" /></g></svg>
+   id="g847"><rect
+     id="rect1443"
+     x="9"
+     y="8"
+     width="19"
+     height="31"
+     ry="2.5999999"
+     fill="none"
+     stroke="#000000"
+     stroke-linejoin="round"
+     stroke-width="2" /><path
+     style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="M 28,35 H 9 c 0,2 0.152585,4.046356 3,4 h 13 c 2,0 3,-1 3,-4 z"
+     id="path842"
+     sodipodi:nodetypes="ccccc" /></g></svg>
