@@ -170,7 +170,6 @@ If the fallback image isn't activated, the screensaver image will stay in place 
 
 function CoverImage:addToMainMenu(menu_items)
     menu_items.coverimage = {
---        sorting_hint = "document",
         sorting_hint = "screen",
         text = _("Cover image"),
         checked_func = function()
