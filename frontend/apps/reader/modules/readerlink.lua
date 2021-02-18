@@ -661,7 +661,7 @@ function ReaderLink:onGoToExternalLink(link_url)
         end,
     })
     table.insert(alt_handlers_buttons, {
-        text = _("as QR code"),
+        text = _("As QR code"),
         callback = function()
             UIManager:close(dialog)
             UIManager:show(QRMessage:new{
