@@ -521,9 +521,9 @@ function Screensaver:expandSpecial(message, fallback)
         currentpage = Math.round(percent * totalpages)
         percent = Math.round(percent * 100)
         if docinfo.data.doc_props then
-            title = docinfo.data.doc_props.title or title
-            authors = docinfo.data.doc_props.authors or authors
-            series = docinfo.data.doc_props.series or series
+            title = docinfo.data.doc_props.title and docinfo.data.doc_props.title ~= "" and docinfo.data.doc_props.title or title
+            authors = docinfo.data.doc_props.authors and docinfo.data.doc_props.authors ~= "" and docinfo.data.doc_props.authors or authors
+            series = docinfo.data.doc_props.series and docinfo.data.doc_props.series ~= "" and docinfo.data.doc_props.series or series
         end
         docinfo:close()
     elseif instance ~= nil and lfs.attributes(lastfile, "mode") == "file" then
@@ -534,9 +534,9 @@ function Screensaver:expandSpecial(message, fallback)
         percent = Math.round((currentpage * 100) / totalpages)
         local props = doc:getProps()
         if props then
-            title = props.title or title
-            authors = props.authors or authors
-            series = props.series or series
+            title = props.title and props.title ~= "" and props.title or title
+            authors = props.authors and props.authors ~= "" and props.authors or authors
+            series = props.series and props.series ~= "" and props.series or series
         end
         doc:close()
     end
