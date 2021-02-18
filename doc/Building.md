@@ -41,12 +41,12 @@ Install the prerequisites using [Homebrew](https://brew.sh/):
 
 ```
 brew install nasm ragel binutils coreutils libtool autoconf automake cmake makedepend \
-sdl2 lua@5.1 luarocks gettext pkg-config wget gnu-getopt grep
+sdl2 lua@5.1 luarocks gettext pkg-config wget gnu-getopt grep bison
 ```
 
-You will also have to ensure Homebrew's gettext, gnu-getopt, & grep are in your path, e.g., via
+You will also have to ensure Homebrew's gettext, gnu-getopt, bison & grep are in your path, e.g., via
 ```
-export PATH="$(brew --prefix)/opt/gettext/bin:$(brew --prefix)/opt/gnu-getopt/bin:$(brew --prefix)/opt/grep/libexec/gnubin:${PATH}"
+export PATH="$(brew --prefix)/opt/gettext/bin:$(brew --prefix)/opt/gnu-getopt/bin:$(brew --prefix)/opt/bison/bin:$(brew --prefix)/opt/grep/libexec/gnubin:${PATH}"
 ```
 See also `brew info gettext` for details on how to make that permanent in your shell.
 
