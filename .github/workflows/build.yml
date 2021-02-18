@@ -22,10 +22,10 @@ jobs:
       - name: Homebrew install dependencies
         # Compared to the README, adds ccache for faster compilation times and removes sh5sum to prevent some conflict with coreutils
         # Compared to the emulator, adds p7zip and removes sdl2.
-        run: brew install ccache nasm ragel binutils coreutils libtool autoconf automake cmake makedepend lua@5.1 luarocks gettext gnu-getopt pkg-config wget p7zip
+        run: brew install ccache nasm ragel binutils coreutils libtool autoconf automake cmake makedepend lua@5.1 luarocks gettext gnu-getopt pkg-config wget bison p7zip
 
       - name: Building in progress…
-        run: export MACOSX_DEPLOYMENT_TARGET=10.14 PATH="$(brew --prefix)/opt/gettext/bin:$(brew --prefix)/opt/gnu-getopt/bin:${PATH}" && ./kodev release macos
+        run: export MACOSX_DEPLOYMENT_TARGET=10.14 PATH="$(brew --prefix)/opt/gettext/bin:$(brew --prefix)/opt/gnu-getopt/bin:$(brew --prefix)/opt/bison/bin:${PATH}" && ./kodev release macos
 
       - name: Uploading artifacts
         uses: actions/upload-artifact@v2
