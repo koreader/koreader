@@ -42,7 +42,7 @@ local ScrollTextWidget = InputContainer:new{
     alignment_strict = false,
 
     -- for internal use
-    _dummy = nil, -- When the widget is a one-off used to compute text height
+    for_measurement_only = nil, -- When the widget is a one-off used to compute text height
 }
 
 function ScrollTextWidget:init()
@@ -65,7 +65,7 @@ function ScrollTextWidget:init()
         para_direction_rtl = self.para_direction_rtl,
         auto_para_direction = self.auto_para_direction,
         alignment_strict = self.alignment_strict,
-        _dummy = self._dummy,
+        for_measurement_only = self.for_measurement_only,
     }
     local visible_line_count = self.text_widget:getVisLineCount()
     local total_line_count = self.text_widget:getAllLineCount()
@@ -152,7 +152,7 @@ function ScrollTextWidget:updateScrollBar(is_partial)
         self.v_scroll_bar:set(low, high)
 
         -- Don't even try to refresh dummy widgets used for text height computations...
-        if not self._dummy then
+        if not self.for_measurement_only then
             local refreshfunc = "ui"
             if is_partial then
                 refreshfunc = "partial"

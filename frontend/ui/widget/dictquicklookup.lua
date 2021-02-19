@@ -572,7 +572,7 @@ function DictQuickLookup:init()
             face = self.content_face,
             width = self.content_width,
             height = self.definition_height,
-            _dummy = true, -- flag it as a dummy, so it won't trigger any bogus repaint/refresh...
+            for_measurement_only = true, -- flag it as a dummy, so it won't trigger any bogus repaint/refresh...
         }
         self.definition_line_height = test_widget:getLineHeight()
         test_widget:free()

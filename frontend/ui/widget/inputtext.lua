@@ -58,7 +58,7 @@ local InputText = InputContainer:new{
     is_password_type = false, -- set to true if original text_type == "password"
     is_text_editable = true, -- whether text is utf8 reversible and editing won't mess content
     is_text_edited = false, -- whether text has been updated
-    _dummy = nil, -- When the widget is a one-off used to compute text height
+    for_measurement_only = nil, -- When the widget is a one-off used to compute text height
 }
 
 -- only use PhysicalKeyboard if the device does not have touch screen
@@ -319,7 +319,7 @@ function InputText:initTextBox(text, char_added)
             lang = self.lang, -- these might influence height
             para_direction_rtl = self.para_direction_rtl,
             auto_para_direction = self.auto_para_direction,
-            _dummy = true, -- flag it as a dummy, so it won't trigger any bogus repaint/refresh...
+            for_measurement_only = true, -- flag it as a dummy, so it won't trigger any bogus repaint/refresh...
         }
         self.height = text_widget:getTextHeight()
         self.scroll = true
@@ -345,7 +345,7 @@ function InputText:initTextBox(text, char_added)
             dialog = self.parent,
             scroll_callback = self.scroll_callback,
             scroll_by_pan = self.scroll_by_pan,
-            _dummy = self._dummy,
+            for_measurement_only = self.for_measurement_only,
         }
     else
         self.text_widget = TextBoxWidget:new{
@@ -365,7 +365,7 @@ function InputText:initTextBox(text, char_added)
             width = self.width,
             height = self.height,
             dialog = self.parent,
-            _dummy = self._dummy,
+            for_measurement_only = self.for_measurement_only,
         }
     end
     -- Get back possibly modified charpos and virtual_line_num
@@ -393,7 +393,7 @@ function InputText:initTextBox(text, char_added)
     self.dimen = self._frame:getSize()
     --- @fixme self.parent is not always in the widget stack (BookStatusWidget)
     -- Don't even try to refresh dummy widgets used for text height computations...
-    if not self._dummy then
+    if not self.for_measurement_only then
         UIManager:setDirty(self.parent, function()
             return "ui", self.dimen
         end)
