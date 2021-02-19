@@ -79,7 +79,7 @@ function ScrollTextWidget:init()
             self:scrollToRatio(ratio, false)
         end
     }
-    self:updateScrollBar(false, true) -- Don't call setDirty yet, it's too early, it's going to be bogus.
+    self:updateScrollBar()
     local horizontal_group = HorizontalGroup:new{ align = "top" }
     table.insert(horizontal_group, self.text_widget)
     table.insert(horizontal_group, HorizontalSpan:new{width=self.text_scroll_span})
