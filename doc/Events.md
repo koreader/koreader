@@ -25,7 +25,7 @@ recalculate the view based on the new typesetting.
 
 ## Event propagation ##
 
-Most UI components azre a subclass of @{ui.widget.container.widgetcontainer|WidgetContainer}.
+Most UI components are a subclass of @{ui.widget.container.widgetcontainer|WidgetContainer}.
 A WidgetContainer is an array that stores a list of children widgets.
 
 When @{ui.widget.container.widgetcontainer:handleEvent|WidgetContainer:handleEvent} is called with a new event,
