@@ -285,7 +285,6 @@ function KeyValueItem:onTap()
 
             -- Highlight
             --
-            print("KeyValueItem", self, "HL")
             self[1].invert = true
             UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             UIManager:setDirty(nil, "fast", self[1].dimen)
@@ -294,14 +293,12 @@ function KeyValueItem:onTap()
 
             -- Unhighlight
             --
-            print("KeyValueItem", self, "UNHL")
             self[1].invert = false
             UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
             UIManager:setDirty(nil, "ui", self[1].dimen)
 
             -- Callback
             --
-            print("KeyValueItem", self, "CB")
             self.callback()
 
             UIManager:forceRePaint()

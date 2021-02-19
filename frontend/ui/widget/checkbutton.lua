@@ -110,7 +110,6 @@ function CheckButton:onTapCheckButton()
 
             -- Highlight
             --
-            print("CheckButton", self, "HL")
             self[1].invert = true
             UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
             UIManager:setDirty(nil, "fast", highlight_dimen)
@@ -119,14 +118,12 @@ function CheckButton:onTapCheckButton()
 
             -- Unhighlight
             --
-            print("CheckButton", self, "UNHL")
             self[1].invert = false
             UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
             UIManager:setDirty(nil, "ui", highlight_dimen)
 
             -- Callback
             --
-            print("CheckButton", self, "CB")
             self.callback()
 
             UIManager:forceRePaint()

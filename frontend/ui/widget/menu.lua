@@ -475,7 +475,6 @@ function MenuItem:onTapSelect(arg, ges)
 
         -- Highlight
         --
-        print("MenuItem", self, "tap HL")
         self[1].invert = true
         UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
         UIManager:setDirty(nil, "fast", self[1].dimen)
@@ -484,14 +483,12 @@ function MenuItem:onTapSelect(arg, ges)
 
         -- Unhighlight
         --
-        print("MenuItem", self, "tap UNHL")
         self[1].invert = false
         UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
         UIManager:setDirty(nil, "ui", self[1].dimen)
 
         -- Callback
         --
-        print("MenuItem", self, "tap CB")
         logger.dbg("creating coroutine for menu select")
         local co = coroutine.create(function()
             self.menu:onMenuSelect(self.table, pos)
@@ -512,7 +509,6 @@ function MenuItem:onHoldSelect(arg, ges)
 
         -- Highlight
         --
-        print("MenuItem", self, "hold HL")
         self[1].invert = true
         UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
         UIManager:setDirty(nil, "fast", self[1].dimen)
@@ -521,14 +517,12 @@ function MenuItem:onHoldSelect(arg, ges)
 
         -- Unhighlight
         --
-        print("MenuItem", self, "hold UNHL")
         self[1].invert = false
         UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
         UIManager:setDirty(nil, "ui", self[1].dimen)
 
         -- Callback
         --
-        print("MenuItem", self, "hold CB")
         self.menu:onMenuHold(self.table, pos)
 
         UIManager:forceRePaint()

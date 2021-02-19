@@ -117,7 +117,6 @@ function RadioButton:onTapCheckButton()
 
             -- Highlight
             --
-            print("RadioButton", self, "HL")
             -- self.frame's width is based on self.width, so we effectively flash the full width, not only the button/text's width.
             -- This matches the behavior of Menu & TouchMenu.
             self.frame.invert = true
@@ -128,14 +127,12 @@ function RadioButton:onTapCheckButton()
 
             -- Unhighlight
             --
-            print("RadioButton", self, "UNHL")
             self.frame.invert = false
             UIManager:widgetInvert(self.frame, self.dimen.x, self.dimen.y)
             UIManager:setDirty(nil, "ui", self.dimen)
 
             -- Callback
             --
-            print("RadioButton", self, "CB")
             self.callback()
 
             UIManager:forceRePaint()

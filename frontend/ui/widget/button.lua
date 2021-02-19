@@ -295,13 +295,11 @@ function Button:onTapSelectButton()
 
             -- Highlight
             --
-            print("Button", self, "HL")
             self:_doFeedbackHighlight()
 
             -- Force the refresh by draining the refresh queue *now*, so we have a chance to see the highlight on its own, before whatever the callback will do.
             if not self.vsync then
                 -- NOTE: Except when a Button is flagged vsync, in which case we *want* to bundle the highlight with the callback, to prevent further delays
-                print("Button", self, "HL fence")
                 UIManager:forceRePaint()
             end
 
@@ -315,23 +313,19 @@ function Button:onTapSelectButton()
             -- which would require a number of possibly brittle heuristics to handle.
             -- NOTE: If a Button is marked vsync, we want to keep it highlighted for now (in order for said highlight to be visible during the callback refresh), we'll remove the highlight post-callback.
             if not self.vsync then
-                print("Button", self, "UNHL (!vsync)")
                 self:_undoFeedbackHighlight(is_translucent)
             end
 
             -- Callback
             --
-            print("Button", self, "CB")
             self.callback()
 
             -- Check if the callback reset transparency...
             is_translucent = is_translucent and self.show_parent.movable.alpha
 
-            print("Button", self, "CB fence")
             UIManager:forceRePaint() -- Ensures whatever the callback wanted to paint will be shown *now*...
             if self.vsync then
                 -- NOTE: This is mainly useful when the callback caused a REAGL update that we do not explicitly fence via MXCFB_WAIT_FOR_UPDATE_COMPLETE already, (i.e., Kobo Mk. 7).
-                print("Button", self, "CB vsync")
                 UIManager:waitForVSync() -- ...and that the EPDC will not wait to coalesce it with the *next* update,
                                             -- because that would have a chance to noticeably delay it until the unhighlight.
             end
@@ -341,9 +335,7 @@ function Button:onTapSelectButton()
             -- NOTE: If a Button is marked vsync, we have a guarantee from the programmer that the widget it belongs to is still alive and top-level post-callback,
             --       so we can do this safely without risking UI glitches.
             if self.vsync then
-                print("Button", self, "UNHL (vsync)")
                 self:_undoFeedbackHighlight(is_translucent)
-                print("Button", self, "UNHL vsync fence")
                 UIManager:forceRePaint()
             end
         end

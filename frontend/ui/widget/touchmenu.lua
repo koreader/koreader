@@ -168,7 +168,6 @@ function TouchMenuItem:onTapSelect(arg, ges)
 
         -- Highlight
         --
-        print("TouchMenuItem", self, "tap HL")
         self.item_frame.invert = true
         UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
         UIManager:setDirty(nil, "fast", highlight_dimen)
@@ -180,14 +179,12 @@ function TouchMenuItem:onTapSelect(arg, ges)
         self.item_frame.invert = false
         -- NOTE: If the menu is going to be closed, we can safely drop that.
         if self.item.keep_menu_open then
-            print("TouchMenuItem", self, "tap UNHL")
             UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
             UIManager:setDirty(nil, "ui", highlight_dimen)
         end
 
         -- Callback
         --
-        print("TouchMenuItem", self, "tap CB")
         self.menu:onMenuSelect(self.item)
 
         UIManager:forceRePaint()
@@ -213,7 +210,6 @@ function TouchMenuItem:onHoldSelect(arg, ges)
 
         -- Highlight
         --
-        print("TouchMenuItem", self, "hold HL")
         self.item_frame.invert = true
         UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
         UIManager:setDirty(nil, "fast", highlight_dimen)
@@ -226,14 +222,12 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         -- NOTE: If the menu is going to be closed, we can safely drop that.
         --       (This field defaults to nil, meaning keep the menu open, hence the negated test)
         if self.item.hold_keep_menu_open ~= false then
-            print("TouchMenuItem", self, "hold UNHL")
             UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
             UIManager:setDirty(nil, "ui", highlight_dimen)
         end
 
         -- Callback
         --
-        print("TouchMenuItem", self, "hold CB")
         self.menu:onMenuHold(self.item, self.text_truncated)
 
         UIManager:forceRePaint()
