@@ -22,6 +22,7 @@ local ReaderToc = InputContainer:new{
     toc_depth = nil,
     ticks = nil,
     ticks_flattened = nil,
+    ticks_flattened_filtered = nil,
     toc_indent = "    ",
     collapsed_toc = {},
     collapse_depth = 2,
@@ -60,10 +61,14 @@ end
 
 function ReaderToc:onReadSettings(config)
     self.toc_ticks_ignored_levels = config:readSetting("toc_ticks_ignored_levels") or {}
+    self.toc_chapter_navigation_bind_to_ticks = config:readSetting("toc_chapter_navigation_bind_to_ticks")
+    self.toc_chapter_title_bind_to_ticks = config:readSetting("toc_chapter_title_bind_to_ticks")
 end
 
 function ReaderToc:onSaveSettings()
     self.ui.doc_settings:saveSetting("toc_ticks_ignored_levels", self.toc_ticks_ignored_levels)
+    self.ui.doc_settings:saveSetting("toc_chapter_navigation_bind_to_ticks", self.toc_chapter_navigation_bind_to_ticks)
+    self.ui.doc_settings:saveSetting("toc_chapter_title_bind_to_ticks", self.toc_chapter_title_bind_to_ticks)
 end
 
 function ReaderToc:cleanUpTocTitle(title, replace_empty)
@@ -83,6 +88,7 @@ function ReaderToc:resetToc()
     self.toc_depth = nil
     self.ticks = nil
     self.ticks_flattened = nil
+    self.ticks_flattened_filtered = nil
     self.collapsed_toc = {}
     self.collapse_depth = 2
     self.expanded_nodes = {}
@@ -258,54 +264,62 @@ function ReaderToc:validateAndFixToc()
     logger.info(string.format("TOC had %d bogus page numbers: fixed %d items to keep them ordered.", nb_bogus, nb_fixed_pages))
 end
 
-function ReaderToc:getTocIndexByPage(pn_or_xp)
+function ReaderToc:getTocIndexByPage(pn_or_xp, skip_ignored_ticks)
     self:fillToc()
     if #self.toc == 0 then return end
     local pageno = pn_or_xp
     if type(pn_or_xp) == "string" then
-        return self:getAccurateTocIndexByXPointer(pn_or_xp)
+        return self:getAccurateTocIndexByXPointer(pn_or_xp, skip_ignored_ticks)
     end
-    local pre_index = 1
+    local prev_index = 1
     for _k,_v in ipairs(self.toc) do
-        if _v.page == pageno then
-            -- Return the first chapter seen on the current page
-            pre_index = _k
-            break
+        if not skip_ignored_ticks or not self.toc_ticks_ignored_levels[_v.depth] then
+            if _v.page == pageno then
+                -- Return the first chapter seen on the current page
+                prev_index = _k
+                break
+            end
+            if _v.page > pageno then
+                -- Return last chapter seen on a previous page
+                break
+            end
+            prev_index = _k
         end
-        if _v.page > pageno then
-            -- Return last chapter seen on a previous page
-            break
-        end
-        pre_index = _k
     end
-    return pre_index
+    return prev_index
 end
 
-function ReaderToc:getAccurateTocIndexByXPointer(xptr)
+function ReaderToc:getAccurateTocIndexByXPointer(xptr, skip_ignored_ticks)
     local pageno = self.ui.document:getPageFromXPointer(xptr)
     -- get toc entry(index) on for the current page
     -- we don't get infinite loop, because the this call is not
     -- with xpointer, but with page
-    local index = self:getTocIndexByPage(pageno)
+    local index = self:getTocIndexByPage(pageno, skip_ignored_ticks)
     if not index or not self.toc[index] then return end
     local initial_comparison = self.ui.document:compareXPointers(self.toc[index].xpointer, xptr)
     if initial_comparison and initial_comparison < 0 then
         local i = index - 1
         while self.toc[i] do
-            local toc_xptr = self.toc[i].xpointer
-            local cmp = self.ui.document:compareXPointers(toc_xptr, xptr)
-            if cmp and cmp >= 0 then -- toc_xptr is before xptr(xptr >= toc_xptr)
-                return i
+            if not skip_ignored_ticks or not self.toc_ticks_ignored_levels[self.toc[i].depth] then
+                local toc_xptr = self.toc[i].xpointer
+                local cmp = self.ui.document:compareXPointers(toc_xptr, xptr)
+                if cmp and cmp >= 0 then -- toc_xptr is before xptr(xptr >= toc_xptr)
+                    return i
+                end
             end
             i = i - 1
         end
     else
+        local prev_index = index
         local i = index + 1
         while self.toc[i] do
-            local toc_xptr = self.toc[i].xpointer
-            local cmp = self.ui.document:compareXPointers(toc_xptr, xptr)
-            if cmp and cmp < 0 then -- toc_xptr is after xptr(xptr < toc_xptr)
-                return i - 1
+            if not skip_ignored_ticks or not self.toc_ticks_ignored_levels[self.toc[i].depth] then
+                local toc_xptr = self.toc[i].xpointer
+                local cmp = self.ui.document:compareXPointers(toc_xptr, xptr)
+                if cmp and cmp < 0 then -- toc_xptr is after xptr(xptr < toc_xptr)
+                    return prev_index
+                end
+                prev_index = i
             end
             i = i + 1
         end
@@ -314,7 +328,7 @@ function ReaderToc:getAccurateTocIndexByXPointer(xptr)
 end
 
 function ReaderToc:getTocTitleByPage(pn_or_xp)
-    local index = self:getTocIndexByPage(pn_or_xp)
+    local index = self:getTocIndexByPage(pn_or_xp, self.toc_chapter_title_bind_to_ticks)
     if index then
         return self:cleanUpTocTitle(self.toc[index].title)
     else
@@ -395,8 +409,25 @@ end
 --[[
 Returns a flattened list of ToC ticks, without duplicates
 ]]
-function ReaderToc:getTocTicksFlattened()
-    if self.ticks_flattened then return self.ticks_flattened end
+function ReaderToc:getTocTicksFlattened(for_chapter_navigation)
+    local wants_filtered_ticks = true
+    if not next(self.toc_ticks_ignored_levels) then
+        -- No ignored level: no need to keep an additional list of filtered ticks
+        wants_filtered_ticks = false
+    elseif for_chapter_navigation then
+        if not self.toc_chapter_navigation_bind_to_ticks then
+            wants_filtered_ticks = false
+        end
+    end
+    if wants_filtered_ticks then
+        if self.ticks_flattened_filtered then
+            return self.ticks_flattened_filtered
+        end
+    else
+        if self.ticks_flattened then
+            return self.ticks_flattened
+        end
+    end
 
     -- It hasn't been cached yet, compute it.
     local ticks = self:getTocTicks()
@@ -405,7 +436,7 @@ function ReaderToc:getTocTicksFlattened()
     -- Keep track of what we add to avoid duplicates (c.f., https://stackoverflow.com/a/20067270)
     local hash = {}
     for depth, v in ipairs(ticks) do
-        if not self.toc_ticks_ignored_levels[depth] then
+        if not wants_filtered_ticks or not self.toc_ticks_ignored_levels[depth] then
             for _, page in ipairs(v) do
                 if not hash[page] then
                     table.insert(ticks_flattened, page)
@@ -418,12 +449,17 @@ function ReaderToc:getTocTicksFlattened()
     -- And finally, sort it again
     table.sort(ticks_flattened)
 
-    self.ticks_flattened = ticks_flattened
-    return self.ticks_flattened
+    -- Store it in the relevant slot
+    if wants_filtered_ticks then
+        self.ticks_flattened_filtered = ticks_flattened
+    else
+        self.ticks_flattened = ticks_flattened
+    end
+    return ticks_flattened
 end
 
 function ReaderToc:getNextChapter(cur_pageno)
-    local ticks = self:getTocTicksFlattened()
+    local ticks = self:getTocTicksFlattened(true)
     local next_chapter = nil
     for _, page in ipairs(ticks) do
         if page > cur_pageno then
@@ -435,7 +471,7 @@ function ReaderToc:getNextChapter(cur_pageno)
 end
 
 function ReaderToc:getPreviousChapter(cur_pageno)
-    local ticks = self:getTocTicksFlattened()
+    local ticks = self:getTocTicksFlattened(true)
     local previous_chapter = nil
     for _, page in ipairs(ticks) do
         if page >= cur_pageno then
@@ -447,7 +483,7 @@ function ReaderToc:getPreviousChapter(cur_pageno)
 end
 
 function ReaderToc:isChapterStart(cur_pageno)
-    local ticks = self:getTocTicksFlattened()
+    local ticks = self:getTocTicksFlattened(true)
     local _start = false
     for _, page in ipairs(ticks) do
         if page == cur_pageno then
@@ -459,7 +495,7 @@ function ReaderToc:isChapterStart(cur_pageno)
 end
 
 function ReaderToc:isChapterSecondPage(cur_pageno)
-    local ticks = self:getTocTicksFlattened()
+    local ticks = self:getTocTicksFlattened(true)
     local _second = false
     for _, page in ipairs(ticks) do
         if page + 1 == cur_pageno then
@@ -471,7 +507,7 @@ function ReaderToc:isChapterSecondPage(cur_pageno)
 end
 
 function ReaderToc:isChapterEnd(cur_pageno)
-    local ticks = self:getTocTicksFlattened()
+    local ticks = self:getTocTicksFlattened(true)
     local _end = false
     for _, page in ipairs(ticks) do
         if page - 1 == cur_pageno then
@@ -880,7 +916,7 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
                 return not self.toc_ticks_ignored_levels[level]
             end,
             callback = function()
-                self.toc_ticks_ignored_levels[level] = not self.toc_ticks_ignored_levels[level]
+                self.toc_ticks_ignored_levels[level] = not self.toc_ticks_ignored_levels[level] or nil
                 self:onUpdateToc()
                 self.view.footer:onUpdateFooter(self.view.footer_visible)
                 self.ui:handleEvent(Event:new("UpdateTopStatusBarMarkers"))
@@ -915,6 +951,38 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
                     break
                 end
             end
+            toc_ticks_levels[#toc_ticks_levels].separator = true
+            table.insert(toc_ticks_levels, {
+                text = _("Bind chapter navigation to ticks"),
+                help_text = _([[Entries from ToC levels that are ignored in the progress bars will still be used for chapter navigation and 'page/time left until next chapter' in the footer.
+Enabling this option will restrict chapter nativation to progress bar ticks.]]),
+                enabled_func = function()
+                    return next(self.toc_ticks_ignored_levels) ~= nil
+                end,
+                checked_func = function()
+                    return self.toc_chapter_navigation_bind_to_ticks
+                end,
+                callback = function()
+                    self.toc_chapter_navigation_bind_to_ticks = not self.toc_chapter_navigation_bind_to_ticks
+                    self:onUpdateToc()
+                    self.view.footer:onUpdateFooter(self.view.footer_visible)
+                end,
+            })
+            table.insert(toc_ticks_levels, {
+                text = _("Chapter titles from ticks only"),
+                help_text = _([[Entries from ToC levels that are ignored in the progress bars will still be used for displaying the title of the current chapter in the footer and in bookmarks.
+Enabling this option will restrict display to the chapter titles of progress bar ticks.]]),
+                enabled_func = function()
+                    return next(self.toc_ticks_ignored_levels) ~= nil
+                end,
+                checked_func = function()
+                    return self.toc_chapter_title_bind_to_ticks
+                end,
+                callback = function()
+                    self.toc_chapter_title_bind_to_ticks = not self.toc_chapter_title_bind_to_ticks
+                    self.view.footer:onUpdateFooter(self.view.footer_visible)
+                end,
+            })
             return toc_ticks_levels
         end,
     }
