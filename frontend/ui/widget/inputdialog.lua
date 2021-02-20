@@ -319,6 +319,7 @@ function InputDialog:init()
             lang = self.lang, -- these might influence height
             para_direction_rtl = self.para_direction_rtl,
             auto_para_direction = self.auto_para_direction,
+            for_measurement_only = true, -- flag it as a dummy, so it won't trigger any bogus repaint/refresh...
         }
         local text_height = input_widget:getTextHeight()
         local line_height = input_widget:getLineHeight()

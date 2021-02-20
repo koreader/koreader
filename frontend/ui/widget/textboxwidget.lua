@@ -103,6 +103,9 @@ local TextBoxWidget = InputContainer:new{
                                 -- (set to 0 to disable any tab handling and display a tofu glyph)
     _xtext = nil, -- for internal use
     _alt_color_for_rtl = nil, -- (for debugging) draw LTR glyphs in black, RTL glyphs in gray
+
+    -- for internal use
+    for_measurement_only = nil, -- When the widget is a one-off used to compute text height
 }
 
 function TextBoxWidget:init()
@@ -1522,6 +1525,9 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
     -- (it will be drawn over the right of the last glyph, which should be ok.)
     if x > self.width - self.cursor_line.dimen.w then
         x = self.width - self.cursor_line.dimen.w
+    end
+    if self.for_measurement_only then
+        return -- we're a dummy widget used for computing text height, don't render/refresh anything
     end
     if not self._bb then
         return -- no bb yet to render the cursor too

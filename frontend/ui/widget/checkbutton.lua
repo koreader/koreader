@@ -32,6 +32,7 @@ local CheckButton = InputContainer:new{
     checked = false,
     enabled = true,
     face = Font:getFace("cfont"),
+    background = Blitbuffer.COLOR_WHITE,
     overlap_align = "right",
     text = nil,
     toggle_text = nil,
@@ -67,6 +68,7 @@ function CheckButton:initCheckButton(checked)
     }
     self._frame = FrameContainer:new{
         bordersize = 0,
+        background = self.background,
         margin = 0,
         padding = 0,
         self._horizontalgroup,
@@ -99,24 +101,32 @@ function CheckButton:onTapCheckButton()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
+            -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
+
+            -- Unlike RadioButton, the frame's width stops at the text width, but we want our highlight to span the full width...
+            -- (That's when we have one, some callers don't pass a width, so, handle that, too).
+            local highlight_dimen = self.dimen
+            highlight_dimen.w = self.width and self.width or self.dimen.w
+
+            -- Highlight
+            --
             self[1].invert = true
-            UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
-            UIManager:setDirty(nil, function()
-                return "fast", self.dimen
-            end)
+            UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+            UIManager:setDirty(nil, "fast", highlight_dimen)
 
-            -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
             UIManager:forceRePaint()
-            self.callback()
-            --UIManager:forceRePaint() -- Unnecessary, the check/uncheck process involves too many repaints already
-            --UIManager:waitForVSync()
 
+            -- Unhighlight
+            --
             self[1].invert = false
-            UIManager:widgetRepaint(self[1], self.dimen.x, self.dimen.y)
-            UIManager:setDirty(nil, function()
-                return "fast", self.dimen
-            end)
-            --UIManager:forceRePaint()
+            UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+            UIManager:setDirty(nil, "ui", highlight_dimen)
+
+            -- Callback
+            --
+            self.callback()
+
+            UIManager:forceRePaint()
         end
     elseif self.tap_input then
         self:onInput(self.tap_input)
@@ -140,14 +150,14 @@ end
 function CheckButton:check()
     self:initCheckButton(true)
     UIManager:setDirty(self.parent, function()
-        return "fast", self.dimen
+        return "ui", self.dimen
     end)
 end
 
 function CheckButton:unCheck()
     self:initCheckButton(false)
     UIManager:setDirty(self.parent, function()
-        return "fast", self.dimen
+        return "ui", self.dimen
     end)
 end
 
@@ -164,7 +174,6 @@ function CheckButton:disable()
     self:initCheckButton(false)
     UIManager:setDirty(self.parent, function()
         return "ui", self.dimen
-        -- best to use "ui" instead of "fast" when we make things gray
     end)
 end
 

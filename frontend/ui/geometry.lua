@@ -15,20 +15,23 @@ Some behaviour is defined for dimensions:
     Geom:new{ w = Screen:scaleBySize(600), h = Screen:scaleBySize(800), }
 
 Just use it on simple tables that have x, y and/or w, h
-or define your own types using this as a metatable
+or define your own types using this as a metatable.
+
+Where @{ffi.blitbuffer|BlitBuffer} is concerned, a point at (0, 0) means the top-left corner.
 
 ]]
 
 local Math = require("optmath")
 
 --[[--
+Represents a full rectangle (all fields are set), a point (x & y are set), or a dimension (w & h are set).
 @table Geom
 ]]
 local Geom = {
-    x = 0,
-    y = 0,
-    w = 0,
-    h = 0,
+    x = 0, -- left origin
+    y = 0, -- top origin
+    w = 0, -- width
+    h = 0, -- height
 }
 
 function Geom:new(o)
@@ -418,7 +421,7 @@ end
 
 --[[--
 Checks if a dimension or rectangle is empty.
-@return bool
+@treturn bool
 ]]
 function Geom:isEmpty()
     if self.w == 0 or self.h == 0 then

@@ -95,55 +95,38 @@ function IconButton:onTapIconButton()
     if G_reader_settings:isFalse("flash_ui") then
         self.callback()
     else
+        -- c.f., ui/widget/button for more gnarly details about the implementation, but the flow of the flash_ui codepath essentially goes like this:
+        -- 1. Paint the highlight
+        -- 2. Refresh the highlighted item (so we can see the highlight)
+        -- 3. Paint the unhighlight
+        -- 4. Do NOT refresh the highlighted item, but enqueue a refresh request
+        -- 5. Run the callback
+        -- 6. Explicitly drain the paint & refresh queues; i.e., refresh (so we get to see both the callback results, and the unhighlight).
+
+        -- Highlight
+        --
         self.image.invert = true
-        -- For ConfigDialog icons, we can't avoid that initial repaint...
         UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
-        UIManager:setDirty(nil, function()
-            return "fast", self.dimen
-        end)
+        UIManager:setDirty(nil, "fast", self.dimen)
 
-        -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
         UIManager:forceRePaint()
-        self.callback()
-        UIManager:forceRePaint()
-        --UIManager:waitForVSync()
 
+        -- Unhighlight
+        --
         self.image.invert = false
-        -- If the callback closed our parent (which may not always be the top-level widget, or even *a* window-level widget), we're done
-        local top_widget = UIManager:getTopWidget()
-        if top_widget == self.show_parent or UIManager:isSubwidgetShown(self.show_parent) then
-            -- If the callback popped up the VK, it prevents us from finessing this any further,
-            -- because getPreviousRefreshRegion will return the VK's region,
-            -- and it's impossible to get the actual geometry of *only* the InputText of an InputDialog,
-            -- making the same kind of getSecondTopmostWidget trickery as in Button useless,
-            -- so repaint the whole stack instead.
-            if top_widget == "VirtualKeyboard" then
-                UIManager:waitForVSync()
-                UIManager:setDirty(self.show_parent, function()
-                    return "ui", self.dimen
-                end)
-                return true
-            end
+        UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
 
-            -- If the callback popped up a modal above us, repaint the whole stack
-            if top_widget ~= self.show_parent and top_widget.modal and self.dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
-                UIManager:waitForVSync()
-                UIManager:setDirty(self.show_parent, function()
-                    return "ui", self.dimen
-                end)
-                return true
-            end
+        -- Callback
+        --
+        self.callback()
 
-            -- Otherwise, we can unhighlight it safely
-            UIManager:widgetInvert(self.image, self.dimen.x + self.padding_left, self.dimen.y + self.padding_top)
-            UIManager:setDirty(nil, function()
-                return "fast", self.dimen
-            end)
-        else
-            -- Callback closed our parent, we're done
-            return true
-        end
-        --UIManager:forceRePaint()
+        -- NOTE: plugins/coverbrowser.koplugin/covermenu (ab)uses UIManager:clearRenderStack,
+        --       so we need to enqueue the actual refresh request for the unhighlight post-callback,
+        --       otherwise, it's lost.
+        --       This changes nothing in practice, since we follow by explicitly requesting to drain the refresh queue ;).
+        UIManager:setDirty(nil, "fast", self.dimen)
+
+        UIManager:forceRePaint()
     end
     return true
 end

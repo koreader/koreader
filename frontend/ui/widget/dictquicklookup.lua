@@ -572,6 +572,7 @@ function DictQuickLookup:init()
             face = self.content_face,
             width = self.content_width,
             height = self.definition_height,
+            for_measurement_only = true, -- flag it as a dummy, so it won't trigger any bogus repaint/refresh...
         }
         self.definition_line_height = test_widget:getLineHeight()
         test_widget:free()
@@ -835,12 +836,11 @@ function DictQuickLookup:update()
     -- If we're translucent, reset alpha to make the new definition actually readable.
     if self.movable.alpha then
         self.movable.alpha = nil
-        -- And skip the setDirty, Button will handle it post-callback & post-unhighlight.
-    else
-        UIManager:setDirty(self, function()
-            return "partial", self.dict_frame.dimen
-        end)
     end
+
+    UIManager:setDirty(self, function()
+        return "partial", self.dict_frame.dimen
+    end)
 end
 
 function DictQuickLookup:getInitialVisibleArea()
@@ -1264,9 +1264,7 @@ function DictQuickLookup:lookupWikipedia(get_fullpage)
         is_sane = false
     end
     self:resyncWikiLanguages()
-    -- (With Event, we need to pass false instead of nil if word_box is nil,
-    -- otherwise next arguments are discarded)
-    self.ui:handleEvent(Event:new("LookupWikipedia", word, is_sane, self.word_box and self.word_box or false, get_fullpage))
+    self.ui:handleEvent(Event:new("LookupWikipedia", word, is_sane, self.word_box, get_fullpage))
 end
 
 return DictQuickLookup

@@ -160,64 +160,34 @@ function TouchMenuItem:onTapSelect(arg, ges)
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuSelect(self.item)
     else
+        -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
+
         -- The item frame's width stops at the text width, but we want it to match the menu's length instead
         local highlight_dimen = self.item_frame.dimen
         highlight_dimen.w = self.item_frame.width
 
+        -- Highlight
+        --
         self.item_frame.invert = true
         UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
-        UIManager:setDirty(nil, function()
-            return "fast", highlight_dimen
-        end)
+        UIManager:setDirty(nil, "fast", highlight_dimen)
 
-        -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
         UIManager:forceRePaint()
-        self.menu:onMenuSelect(self.item)
-        UIManager:forceRePaint()
-        --UIManager:waitForVSync()
 
+        -- Unhighlight
+        --
         self.item_frame.invert = false
-        -- NOTE: We can *usually* optimize that repaint away, as most entries in the menu will at least trigger a menu repaint ;).
-        --       But when stuff doesn't repaint the menu and keeps it open, we need to do it.
-        --       Since it's an *un*highlight containing text, we make it "ui" and not "fast", both so it won't mangle text,
-        --       and because "fast" can have some weird side-effects on some devices in this specific instance...
-        if self.item.hold_keep_menu_open or self.item.keep_menu_open then
-            local top_widget = UIManager:getTopWidget()
-            -- If the callback opened a full-screen widget, we're done
-            if top_widget.covers_fullscreen then
-                return true
-            end
-
-            -- If the callback opened the Virtual Keyboard, it gets trickier
-            -- (this is for TextEditor, Terminal & co)
-            if top_widget == "VirtualKeyboard" then
-                -- Unfortunately, we can't really tell full-screen widgets (e.g., TextEditor, Terminal) apart from
-                -- stuff that might just pop the keyboard for an InputText box...
-                -- So, a full fenced redraw it is...
-                UIManager:waitForVSync()
-                UIManager:setDirty(self.show_parent, function()
-                    return "ui", highlight_dimen
-                end)
-                return true
-            end
-
-            -- If we're still on top, or if a modal was opened outside of our highlight region, we can unhighlight safely
-            if top_widget == self.menu or highlight_dimen:notIntersectWith(UIManager:getPreviousRefreshRegion()) then
-                UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
-                UIManager:setDirty(nil, function()
-                    return "ui", highlight_dimen
-                end)
-            else
-                -- That leaves modals that might have been displayed on top of the highlighted menu entry, in which case,
-                -- we can't take any shortcuts, as it would invert/paint *over* the popop.
-                -- Instead, fence the callback to avoid races, and repaint the *full* widget stack properly.
-                UIManager:waitForVSync()
-                UIManager:setDirty(self.show_parent, function()
-                    return "ui", highlight_dimen
-                end)
-            end
+        -- NOTE: If the menu is going to be closed, we can safely drop that.
+        if self.item.keep_menu_open then
+            UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+            UIManager:setDirty(nil, "ui", highlight_dimen)
         end
-        --UIManager:forceRePaint()
+
+        -- Callback
+        --
+        self.menu:onMenuSelect(self.item)
+
+        UIManager:forceRePaint()
     end
     return true
 end
@@ -232,45 +202,35 @@ function TouchMenuItem:onHoldSelect(arg, ges)
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuHold(self.item, self.text_truncated)
     else
+        -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
+
         -- The item frame's width stops at the text width, but we want it to match the menu's length instead
         local highlight_dimen = self.item_frame.dimen
         highlight_dimen.w = self.item_frame.width
 
+        -- Highlight
+        --
         self.item_frame.invert = true
         UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
-        UIManager:setDirty(nil, function()
-            return "fast", highlight_dimen
-        end)
+        UIManager:setDirty(nil, "fast", highlight_dimen)
 
-        -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
         UIManager:forceRePaint()
-        self.menu:onMenuHold(self.item, self.text_truncated)
-        UIManager:forceRePaint()
-        --UIManager:waitForVSync()
 
+        -- Unhighlight
+        --
         self.item_frame.invert = false
-        -- If the callback closed the menu, we're done. (This field defaults to nil, meaning keep the menu open)
-        if self.item.hold_keep_menu_open == false then
-            return true
+        -- NOTE: If the menu is going to be closed, we can safely drop that.
+        --       (This field defaults to nil, meaning keep the menu open, hence the negated test)
+        if self.item.hold_keep_menu_open ~= false then
+            UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+            UIManager:setDirty(nil, "ui", highlight_dimen)
         end
 
-        local top_widget = UIManager:getTopWidget()
-        -- If we're still on top, or if a modal was opened outside of our highlight region, we can unhighlight safely
-        if top_widget == self.menu or highlight_dimen:notIntersectWith(UIManager:getPreviousRefreshRegion()) then
-            UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
-            UIManager:setDirty(nil, function()
-                return "ui", highlight_dimen
-            end)
-        else
-            -- That leaves modals that might have been displayed on top of the highlighted menu entry, in which case,
-            -- we can't take any shortcuts, as it would invert/paint *over* the popop.
-            -- Instead, fence the callback to avoid races, and repaint the *full* widget stack properly.
-            UIManager:waitForVSync()
-            UIManager:setDirty(self.show_parent, function()
-                return "ui", highlight_dimen
-            end)
-        end
-        --UIManager:forceRePaint()
+        -- Callback
+        --
+        self.menu:onMenuHold(self.item, self.text_truncated)
+
+        UIManager:forceRePaint()
     end
     return true
 end

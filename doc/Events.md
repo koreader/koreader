@@ -25,12 +25,11 @@ recalculate the view based on the new typesetting.
 
 ## Event propagation ##
 
-Most of the UI components is a subclass of
-@{ui.widget.container.widgetcontainer|WidgetContainer}. A WidgetContainer is an array that
-stores a list of children widgets.
+Most UI components are a subclass of @{ui.widget.container.widgetcontainer|WidgetContainer}.
+A WidgetContainer is an array that stores a list of children widgets.
 
-When @{ui.widget.container.widgetcontainer:handleEvent|WidgetContainer:handleEvent} is called with a new
-event, it will run roughly the following code:
+When @{ui.widget.container.widgetcontainer:handleEvent|WidgetContainer:handleEvent} is called with a new event,
+it will run roughly the following code:
 
 ```lua
 -- First propagate event to its children
@@ -40,8 +39,8 @@ for _, widget in ipairs(self) do
         return true
     end
 end
--- If not consumed by children, try consume by itself
-return self["on"..event.name](self, unpack(event.args))
+-- If not consumed by children, consume it ourself
+return self["on"..event.name](self, unpack(event.args, 1, event.argc))
 ```
 
 ## Event system

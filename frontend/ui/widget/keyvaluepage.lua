@@ -145,8 +145,8 @@ function KeyValueItem:init()
     local available_width = frame_internal_width - middle_padding
 
     -- Default widths (and position of value widget) if each text fits in 1/2 screen width
-    local key_w = frame_internal_width / 2 - middle_padding
-    local value_w = frame_internal_width / 2
+    local key_w = math.floor(frame_internal_width / 2 - middle_padding)
+    local value_w = math.floor(frame_internal_width / 2)
 
     local key_widget = TextWidget:new{
         text = self.key,
@@ -281,45 +281,27 @@ function KeyValueItem:onTap()
         if G_reader_settings:isFalse("flash_ui") then
             self.callback()
         else
+            -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
+
+            -- Highlight
+            --
             self[1].invert = true
             UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-            UIManager:setDirty(nil, function()
-                return "fast", self[1].dimen
-            end)
+            UIManager:setDirty(nil, "fast", self[1].dimen)
 
-            -- Force the repaint *now*, so we don't have to delay the callback to see the invert...
             UIManager:forceRePaint()
+
+            -- Unhighlight
+            --
+            self[1].invert = false
+            UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
+            UIManager:setDirty(nil, "ui", self[1].dimen)
+
+            -- Callback
+            --
             self.callback()
-            UIManager:forceRePaint()
-            --UIManager:waitForVSync()
 
-            -- Has to be scheduled *after* the dict delays for the lookup history pages...
-            UIManager:scheduleIn(0.75, function()
-                self[1].invert = false
-                -- If we've ended up below something, things get trickier.
-                local top_widget = UIManager:getTopWidget()
-                if top_widget ~= self.show_parent then
-                    -- It's generally tricky to get accurate dimensions out of whatever was painted above us,
-                    -- so cheat by comparing against the previous refresh region...
-                    if self[1].dimen:intersectWith(UIManager:getPreviousRefreshRegion()) then
-                        -- If that something is a modal (e.g., dictionary D/L), repaint the whole stack
-                        if top_widget.modal then
-                            UIManager:setDirty(self.show_parent, function()
-                                return "ui", self[1].dimen
-                            end)
-                            return true
-                        else
-                            -- Otherwise, skip the repaint
-                            return true
-                        end
-                    end
-                end
-                UIManager:widgetInvert(self[1], self[1].dimen.x, self[1].dimen.y)
-                UIManager:setDirty(nil, function()
-                    return "ui", self[1].dimen
-                end)
-                --UIManager:forceRePaint()
-            end)
+            UIManager:forceRePaint()
         end
     end
     return true
@@ -484,7 +466,7 @@ function KeyValuePage:init()
         kv_page = self,
     }
     -- setup main content
-    self.item_margin = self.item_height / 4
+    self.item_margin = math.floor(self.item_height / 4)
     local line_height = self.item_height + 2 * self.item_margin
     local content_height = self.dimen.h - self.title_bar:getSize().h - self.page_info:getSize().h
     self.items_per_page = math.floor(content_height / line_height)

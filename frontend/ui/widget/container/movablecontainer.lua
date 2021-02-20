@@ -46,6 +46,9 @@ local MovableContainer = InputContainer:new{
     -- Original painting position from outer widget
     _orig_x = nil,
     _orig_y = nil,
+
+    -- We cache a compose canvas for alpha handling
+    compose_bb = nil,
 }
 
 function MovableContainer:init()
@@ -113,17 +116,39 @@ function MovableContainer:paintTo(bb, x, y)
     self.dimen.y = y + self._moved_offset_y
 
     if self.alpha then
-        -- Create private blitbuffer for our child widget to paint to
-        local private_bb = Blitbuffer.new(bb:getWidth(), bb:getHeight(), bb:getType())
-        private_bb:fill(Blitbuffer.COLOR_WHITE) -- for round corners' outside to not stay black
-        self[1]:paintTo(private_bb, self.dimen.x, self.dimen.y)
-        -- And blend our private blitbuffer over the original bb
-        bb:addblitFrom(private_bb, self.dimen.x, self.dimen.y, self.dimen.x, self.dimen.y,
-            self.dimen.w, self.dimen.h, self.alpha)
-        private_bb:free()
+        -- Create/Recreate the compose cache if we changed screen geometry
+        if not self.compose_bb
+            or self.compose_bb:getWidth() ~= bb:getWidth()
+            or self.compose_bb:getHeight() ~= bb:getHeight()
+        then
+            if self.compose_bb then
+                self.compose_bb:free()
+            end
+            -- create a canvas for our child widget to paint to
+            self.compose_bb = Blitbuffer.new(bb:getWidth(), bb:getHeight(), bb:getType())
+            -- fill it with our usual background color
+            self.compose_bb:fill(Blitbuffer.COLOR_WHITE)
+        end
+
+        -- now, compose our child widget's content on our canvas
+        -- NOTE: Unlike AlphaContainer, we aim to support interactive widgets.
+        --       Most InputContainer-based widgets register their touchzones at paintTo time,
+        --       and they rely on the target coordinates fed to paintTo for proper on-screen positioning.
+        --       As such, we have to compose on a target bb sized canvas, at the expected coordinates.
+        self[1]:paintTo(self.compose_bb, self.dimen.x, self.dimen.y)
+
+        -- and finally blit the canvas to the target blitbuffer at the requested opacity level
+        bb:addblitFrom(self.compose_bb, self.dimen.x, self.dimen.y, self.dimen.x, self.dimen.y, self.dimen.w, self.dimen.h, self.alpha)
     else
         -- No alpha, just paint
         self[1]:paintTo(bb, self.dimen.x, self.dimen.y)
+    end
+end
+
+function MovableContainer:onCloseWidget()
+    if self.compose_bb then
+        self.compose_bb:free()
+        self.compose_bb = nil
     end
 end
 
