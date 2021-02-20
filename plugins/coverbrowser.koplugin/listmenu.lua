@@ -48,7 +48,6 @@ local corner_mark_size = -1
 local corner_mark
 
 local scale_by_size = Screen:scaleBySize(1000000) / 1000000
-local max_fontsize_fileinfo
 
 -- ItemShortCutIcon (for keyboard navigation) is private to menu.lua and can't be accessed,
 -- so we need to redefine it
@@ -191,11 +190,16 @@ function ListMenuItem:update()
         h = self.height - 2 * self.underline_h
     }
 
-    local function _fontSize(nominal)
-        -- nominal font size is based on 64px ListMenuItem height
-        -- keep ratio of font size to item height
-        local font_size = nominal * dimen.h / 64 / scale_by_size
-        return math.floor(font_size)
+    local function _fontSize(nominal, max)
+        -- The nominal font size is based on 64px ListMenuItem height.
+        -- Keep ratio of font size to item height
+        local font_size = math.floor(nominal * dimen.h / 64 / scale_by_size)
+        -- But limit it to the provided max, to avoid huge font size when
+        -- only 4-6 items per page
+        if max and font_size >= max then
+            return max
+        end
+        return font_size
     end
     -- Will speed up a bit if we don't do all font sizes when
     -- looking for one that make text fit
@@ -226,13 +230,13 @@ function ListMenuItem:update()
         -- nb items on the right, directory name on the left
         local wright = TextWidget:new{
             text = self.mandatory_func and self.mandatory_func() or self.mandatory,
-            face = Font:getFace("infont", math.min(max_fontsize_fileinfo, _fontSize(15))),
+            face = Font:getFace("infont", _fontSize(14, 18)),
         }
         local pad_width = Screen:scaleBySize(10) -- on the left, in between, and on the right
         local wleft_width = dimen.w - wright:getWidth() - 3*pad_width
         local wleft = TextBoxWidget:new{
             text = BD.directory(self.text),
-            face = Font:getFace("cfont", _fontSize(20)),
+            face = Font:getFace("cfont", _fontSize(20, 24)),
             width = wleft_width,
             alignment = "left",
             bold = true,
@@ -439,7 +443,7 @@ function ListMenuItem:update()
 
             -- Build the right widget
 
-            local fontsize_info = math.min(max_fontsize_fileinfo, _fontSize(14))
+            local fontsize_info = _fontSize(14, 18)
 
             local wfileinfo = TextWidget:new{
                 text = fileinfo_str,
@@ -499,8 +503,8 @@ function ListMenuItem:update()
 
             local fontname_title = "cfont"
             local fontname_authors = "cfont"
-            local fontsize_title = _fontSize(20)
-            local fontsize_authors = _fontSize(18)
+            local fontsize_title = _fontSize(20, 24)
+            local fontsize_authors = _fontSize(18, 22)
             local wtitle, wauthors
             local title, authors
             local series_mode = BookInfoManager:getSetting("series_mode")
@@ -533,8 +537,8 @@ function ListMenuItem:update()
                     end
                     authors = table.concat(authors, "\n")
                     -- as we'll fit 3 lines instead of 2, we can avoid some loops by starting from a lower font size
-                    fontsize_title = _fontSize(17)
-                    fontsize_authors = _fontSize(15)
+                    fontsize_title = _fontSize(17, 21)
+                    fontsize_authors = _fontSize(15, 19)
                 elseif authors then
                     authors = BD.auto(authors)
                 end
@@ -563,8 +567,8 @@ function ListMenuItem:update()
                     elseif series_mode == "series_in_separate_line" then
                         authors = bookinfo.series .. "\n" .. authors
                         -- as we'll fit 3 lines instead of 2, we can avoid some loops by starting from a lower font size
-                        fontsize_title = _fontSize(17)
-                        fontsize_authors = _fontSize(15)
+                        fontsize_title = _fontSize(17, 21)
+                        fontsize_authors = _fontSize(15, 19)
                     end
                 end
             end
@@ -694,7 +698,7 @@ function ListMenuItem:update()
                 -- If we have it, we need to build a more complex widget with
                 -- this date on the right
                 local fileinfo_str = self.mandatory_func()
-                local fontsize_info = math.min(max_fontsize_fileinfo, _fontSize(14))
+                local fontsize_info = _fontSize(14, 18)
                 local wfileinfo = TextWidget:new{
                     text = fileinfo_str,
                     face = Font:getFace("cfont", fontsize_info),
@@ -723,7 +727,7 @@ function ListMenuItem:update()
             end
             local text = BD.filename(self.text)
             local text_widget
-            local fontsize_no_bookinfo = _fontSize(18)
+            local fontsize_no_bookinfo = _fontSize(18, 22)
             repeat
                 if text_widget then
                     text_widget:free()
@@ -944,9 +948,6 @@ function ListMenu:_recalculateDimen()
         w = self.item_width,
         h = self.item_height
     }
-
-    -- upper limit for file info font to leave enough space for title and author
-    max_fontsize_fileinfo = available_height / scale_by_size / 32
 
     if self.page_recalc_needed then
         -- self.page has probably been set to a wrong value, we recalculate
