@@ -63,19 +63,19 @@ function Usage:percentagePerHour()
 end
 
 function Usage:remainingHours()
-    if self:percentagePerHour() == 0 then return "n/a" end
+    if self:percentagePerHour() == 0 then return "N/A" end
     local curr = State:new()
     return curr.percentage / self:percentagePerHour()
 end
 
 function Usage:chargingHours()
-    if self:percentagePerHour() == 0 then return "n/a" end
+    if self:percentagePerHour() == 0 then return "N/A" end
     local curr = State:new()
     return math.abs(curr.percentage - 100) / self:percentagePerHour()
 end
 
 local function shorten(number)
-    if number == "n/a" then return _("n/a") end
+    if number == "N/A" then return _("N/A") end
     return string.format("%.2f", number);
 end
 
@@ -199,7 +199,7 @@ function BatteryStat:showStatistics()
 
     self:accumulate()
     local kv_pairs = self:dump()
-    table.insert(kv_pairs, "----------")
+    kv_pairs[#kv_pairs].separator = true
     table.insert(kv_pairs, {_("If you would like to reset the data,"), "",
                             callback = function()
                                 UIManager:setDirty(self.kv_page, "fast")

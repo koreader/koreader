@@ -117,8 +117,9 @@ local KeyValueItem = InputContainer:new{
     key = nil,
     value = nil,
     value_lang = nil,
-    cface = Font:getFace("smallinfofont"),
-    tface = Font:getFace("smallinfofontbold"),
+    font_size = 20, -- will be adjusted depending on keyvalues_per_page
+    key_font_name = "smallinfofontbold",
+    value_font_name = "smallinfofont",
     width = nil,
     height = nil,
     textviewer_width = nil,
@@ -151,12 +152,12 @@ function KeyValueItem:init()
     local key_widget = TextWidget:new{
         text = self.key,
         max_width = available_width,
-        face = self.tface,
+        face = Font:getFace(self.key_font_name, self.font_size),
     }
     local value_widget = TextWidget:new{
         text = tvalue,
         max_width = available_width,
-        face = self.cface,
+        face = Font:getFace(self.value_font_name, self.font_size),
         lang = self.value_lang,
     }
     local key_w_rendered = key_widget:getWidth()
@@ -251,6 +252,8 @@ function KeyValueItem:init()
 
     self[1] = FrameContainer:new{
         padding = frame_padding,
+        padding_top = 0,
+        padding_bottom = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
         HorizontalGroup:new{
@@ -456,20 +459,32 @@ function KeyValuePage:init()
 
     local padding = Size.padding.large
     self.item_width = self.dimen.w - 2 * padding
-    self.item_height = Size.item.height_default
     -- setup title bar
     self.title_bar = KeyValueTitle:new{
         title = self.title,
         width = self.item_width,
-        height = self.item_height,
+        height = Size.item.height_default,
         use_top_page_count = self.use_top_page_count,
         kv_page = self,
     }
     -- setup main content
-    self.item_margin = math.floor(self.item_height / 4)
-    local line_height = self.item_height + 2 * self.item_margin
-    local content_height = self.dimen.h - self.title_bar:getSize().h - self.page_info:getSize().h
-    self.items_per_page = math.floor(content_height / line_height)
+    local available_height = self.dimen.h
+                         - self.title_bar:getSize().h
+                         - self.page_info:getSize().h
+                         - 2*Size.line.thick
+                            -- account for possibly 2 separator lines added
+
+    self.items_per_page = G_reader_settings:readSetting("keyvalues_per_page") or self:getDefaultKeyValuesPerPage()
+    self.item_height = math.floor(available_height / self.items_per_page)
+    -- Put half of the pixels lost by floor'ing between title and content
+    local span_height = math.floor((available_height - (self.items_per_page * (self.item_height ))) / 2)
+
+    -- Font size is not configurable: we can get a good one from the following
+    local TextBoxWidget = require("ui/widget/textboxwidget")
+    local line_extra_height = 1.0 -- ~ 2em -- unscaled_size_check: ignore
+        -- (gives a font size similar to the fixed one from former implementation at 14 items per page)
+    self.items_font_size = TextBoxWidget:getFontSizeToFitHeight(self.item_height, 1, line_extra_height)
+
     self.pages = math.ceil(#self.kv_pairs / self.items_per_page)
     self.main_content = VerticalGroup:new{}
 
@@ -485,6 +500,7 @@ function KeyValuePage:init()
         VerticalGroup:new{
             align = "left",
             self.title_bar,
+            VerticalSpan:new{ width = span_height },
             self.main_content,
         },
         footer,
@@ -497,6 +513,15 @@ function KeyValuePage:init()
         background = Blitbuffer.COLOR_WHITE,
         content
     }
+end
+
+function KeyValuePage:getDefaultKeyValuesPerPage()
+    -- Get a default according to Screen DPI (roughly following
+    -- the former implementation building logic)
+    local default_item_height = Size.item.height_default * 1.5 -- we were adding 1/2 as margin
+    local nb_items = math.floor(Screen:getHeight() / default_item_height)
+    nb_items = nb_items - 3 -- account for title and footer heights
+    return nb_items
 end
 
 function KeyValuePage:nextPage()
@@ -529,31 +554,37 @@ function KeyValuePage:_populateItems()
         local entry = self.kv_pairs[idx_offset + idx]
         if entry == nil then break end
 
-        table.insert(self.main_content,
-                     VerticalSpan:new{ width = self.item_margin })
         if type(entry) == "table" then
-            table.insert(
-                self.main_content,
-                KeyValueItem:new{
-                    height = self.item_height,
-                    width = self.item_width,
-                    key = entry[1],
-                    value = entry[2],
-                    value_lang = self.values_lang,
-                    callback = entry.callback,
-                    callback_back = entry.callback_back,
-                    textviewer_width = self.textviewer_width,
-                    textviewer_height = self.textviewer_height,
-                    value_overflow_align = self.value_overflow_align,
-                    value_align = self.value_align,
-                    show_parent = self,
-                }
-            )
+            table.insert(self.main_content, KeyValueItem:new{
+                height = self.item_height,
+                width = self.item_width,
+                font_size = self.items_font_size,
+                key = entry[1],
+                value = entry[2],
+                value_lang = self.values_lang,
+                callback = entry.callback,
+                callback_back = entry.callback_back,
+                textviewer_width = self.textviewer_width,
+                textviewer_height = self.textviewer_height,
+                value_overflow_align = self.value_overflow_align,
+                value_align = self.value_align,
+                show_parent = self,
+            })
+            if entry.separator then
+                table.insert(self.main_content, LineWidget:new{
+                    background = Blitbuffer.COLOR_LIGHT_GRAY,
+                    dimen = Geom:new{
+                        w = self.item_width,
+                        h = Size.line.thick
+                    },
+                    style = "solid",
+                })
+            end
         elseif type(entry) == "string" then
+            -- deprecated, use separator=true on a regular k/v table
+            -- (kept in case some user plugins would use this)
             local c = string.sub(entry, 1, 1)
             if c == "-" then
-                table.insert(self.main_content,
-                             VerticalSpan:new{ width = self.item_margin })
                 table.insert(self.main_content, LineWidget:new{
                     background = Blitbuffer.COLOR_LIGHT_GRAY,
                     dimen = Geom:new{
@@ -564,8 +595,6 @@ function KeyValuePage:_populateItems()
                 })
             end
         end
-        table.insert(self.main_content,
-                     VerticalSpan:new{ width = self.item_margin })
     end
     self.page_info_text:setText(T(_("Page %1 of %2"), self.show_page, self.pages))
     self.page_info_left_chev:showHide(self.pages > 1)

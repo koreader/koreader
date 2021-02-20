@@ -807,7 +807,7 @@ function ReaderTypography:onPreRenderDocument(config)
     -- Add a menu item to language sub-menu, whether the lang is known or not, so the
     -- user can see it and switch from and back to it easily
     table.insert(self.language_submenu, 1, {
-        text = T(_("Book language: %1"), self.book_lang_tag or _("n/a")),
+        text = T(_("Book language: %1"), self.book_lang_tag or _("N/A")),
         callback = function()
             UIManager:show(InfoMessage:new{
                 text = T(_("Changed language for typography rules to book language: %1."), BD.wrap(self.book_lang_tag)),
