@@ -348,7 +348,7 @@ function CoverImage:addToMainMenu(menu_items)
                         end,
                     },
                     {
-                        text = _("Original size"),
+                        text = _("Original image"),
                         checked_func = function()
                             return self.cover_image_background == "none"
                         end,
