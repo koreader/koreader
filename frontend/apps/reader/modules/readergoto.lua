@@ -7,7 +7,7 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 
 local ReaderGoto = InputContainer:new{
-    goto_menu_title = _("Go to"),
+    goto_menu_title = _("Go to page"),
     skim_menu_title = _("Skim document"),
 }
 
@@ -32,23 +32,10 @@ function ReaderGoto:addToMainMenu(menu_items)
 end
 
 function ReaderGoto:onShowGotoDialog()
-    local dialog_title, goto_btn, curr_page
+    local curr_page
     if self.document.info.has_pages then
-        dialog_title = _("Go to Page")
-        goto_btn = {
-            is_enter_default = true,
-            text = _("Page"),
-            callback = function() self:gotoPage() end,
-        }
         curr_page = self.ui.paging.current_page
     else
-        dialog_title = _("Go to Location")
-        goto_btn = {
-            is_enter_default = true,
-            text = _("Location"),
-            callback = function() self:gotoPage() end,
-        }
-        -- only CreDocument has this method
         curr_page = self.document:getCurrentPage()
     end
     local input_hint
@@ -60,7 +47,7 @@ function ReaderGoto:onShowGotoDialog()
         input_hint = T("@%1 (1 - %2)", curr_page, self.document:getPageCount())
     end
     self.goto_dialog = InputDialog:new{
-        title = dialog_title,
+        title = _("Go to page"),
         input_hint = input_hint,
         description = self.document:hasHiddenFlows() and
             _([[
@@ -94,7 +81,12 @@ x for an absolute page number
 
                     end,
                 },
-                goto_btn,
+                {
+                    text = _("Page"),
+                    enabled = true,
+                    is_enter_default = true,
+                    callback = function() self:gotoPage() end,
+                }
             },
         },
         input_type = "number",
