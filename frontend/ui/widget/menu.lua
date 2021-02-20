@@ -1173,6 +1173,14 @@ override this function to process the item selected in a different manner
 ]]--
 function Menu:onMenuSelect(item)
     if item.sub_item_table == nil then
+        if item.select_enabled == false then
+            return true
+        end
+        if item.select_enabled_func then
+            if not item.select_enabled_func() then
+                return true
+            end
+        end
         if self.close_callback then
             self.close_callback()
         end
