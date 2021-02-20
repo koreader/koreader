@@ -816,9 +816,11 @@ function DictQuickLookup:update()
         self.text_widget.text_widget.lang = self.lang and self.lang:lower()
         self.text_widget.text_widget.para_direction_rtl = self.rtl_lang
         self.text_widget.text_widget.images = self.images
+        -- Scroll back to the top, àla TextBoxWidget:scrollToTop
+        self.text_widget.text_widget.virtual_line_num = 1
         -- NOTE: The recursive free via our WidgetContainer (self[1]) above already free'd us ;)
         self.text_widget.text_widget:init()
-        -- Scroll back to top
+        -- Reset the scrollbar's state
         self.text_widget:resetScroll()
     else
         -- We jumped from HTML to Text (or vice-versa), we need a new widget instance
