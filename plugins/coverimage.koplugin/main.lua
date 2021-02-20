@@ -170,9 +170,8 @@ If the fallback image isn't activated, the screensaver image will stay in place 
 
 function CoverImage:addToMainMenu(menu_items)
     menu_items.coverimage = {
---        sorting_hint = "document",
         sorting_hint = "screen",
-        text = _("Save cover image"),
+        text = _("Cover image"),
         checked_func = function()
             return self.enabled or self.fallback
         end,
@@ -190,7 +189,7 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: filename dialog
             {
-                text = _("Set system screensaver image"),
+                text = _("Set image path"),
                 checked_func = function()
                     return self.cover_image_path ~= "" and pathOk(self.cover_image_path)
                 end,
@@ -246,7 +245,7 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: enable
             {
-                text = _("Save book cover"),
+                text = _("Save cover image"),
                 checked_func = function()
                     return self:_enabled() and pathOk(self.cover_image_path)
                 end,
@@ -443,7 +442,7 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: set fallback image
             {
-                text = _("Set fallback image"),
+                text = _("Set fallback image path"),
                 checked_func = function()
                     return lfs.attributes(self.cover_image_fallback_path, "mode") == "file"
                 end,
