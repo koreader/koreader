@@ -1295,7 +1295,7 @@ function ReaderStatistics:getCurrentStat(id_book)
     local time_to_read = (self.data.pages - self.view.state.page) * self.avg_time
     local estimate_days_to_read = math.ceil(time_to_read/(book_read_time/tonumber(total_days)))
     local estimate_end_of_read_date = os.date("%Y-%m-%d", tonumber(now_ts + estimate_days_to_read * 86400))
-    local formatstr = "%.0f%%"
+    local estimates_valid = time_to_read > 0 -- above values could be 'nan' and 'nil'
     return {
         -- Global statistics (may consider other books than current book)
         -- since last resume
@@ -1313,18 +1313,35 @@ function ReaderStatistics:getCurrentStat(id_book)
         { _("Reading started"), os.date("%Y-%m-%d (%H:%M)", tonumber(first_open))},
         { _("Days reading this book"), tonumber(total_days) },
         { _("Average time per day"), util.secondsToClock(book_read_time/tonumber(total_days), false) },
-        -- per page
-        { _("Pages read"), tonumber(total_read_pages) },
+        -- per page (% read)
         { _("Average time per page"), util.secondsToClock(self.avg_time, false) },
+        { _("Pages read"), string.format("%d (%d%%)", total_read_pages, Math.round(100*total_read_pages/self.data.pages)) },
+        -- current page (% completed)
+        { _("Current page/Total pages"), string.format("%d/%d (%d%%)", self.curr_page, self.data.pages, Math.round(100*self.curr_page/self.data.pages)) },
         -- estimation, from current page to end of book
-        { _("Current page/Total pages"),  self.curr_page .. "/" .. self.data.pages },
-        { _("Percentage completed"), formatstr:format(self.curr_page/self.data.pages * 100) },
-        { _("Estimated time to read"), util.secondsToClock(time_to_read, false) },
-        { _("Estimated reading finished"),
-            T(N_("%1 (1 day)", "%1 (%2 days)", estimate_days_to_read), estimate_end_of_read_date, estimate_days_to_read) },
-
+        { _("Estimated time to read"), estimates_valid and util.secondsToClock(time_to_read, false) or _("N/A") },
+        { _("Estimated reading finished"), estimates_valid and
+            T(N_("%1 (1 day)", "%1 (%2 days)", estimate_days_to_read), estimate_end_of_read_date, estimate_days_to_read)
+            or _("N/A") },
+        -- highlights
         { _("Highlights"), tonumber(highlights), separator = true },
         -- { _("Total notes"), tonumber(notes) }, -- not accurate, don't show it
+        { _("Show days"), _("Tap to display"),
+            callback = function()
+                local kv = self.kv
+                UIManager:close(self.kv)
+                self.kv = KeyValuePage:new{
+                    title = T(_("Days reading %1"), self.data.title),
+                    value_overflow_align = "right",
+                    kv_pairs = self:getDatesForBook(id_book),
+                    callback_return = function()
+                        UIManager:show(kv)
+                        self.kv = kv
+                    end
+                }
+                UIManager:show(self.kv)
+            end,
+        }
     }
 end
 
@@ -1365,11 +1382,12 @@ function ReaderStatistics:getBookStat(id_book)
     sql_stmt = [[
         SELECT sum(duration),
                count(DISTINCT page),
-               min(start_time)
+               min(start_time),
+               (select max(ps2.page) from page_stat as ps2 where ps2.start_time = max(page_stat.start_time))
         FROM   page_stat
         WHERE  id_book = %d;
     ]]
-    local total_time_book, total_read_pages, first_open = conn:rowexec(string.format(sql_stmt, id_book))
+    local total_time_book, total_read_pages, first_open, last_page = conn:rowexec(string.format(sql_stmt, id_book))
     conn:close()
 
     local book_read_pages, book_read_time = self:getPageTimeTotalStats(id_book)
@@ -1385,6 +1403,10 @@ function ReaderStatistics:getBookStat(id_book)
     end
     total_time_book = tonumber(total_time_book)
     total_read_pages = tonumber(total_read_pages)
+    last_page = tonumber(last_page)
+    if last_page == nil then
+        last_page = 0
+    end
     pages = tonumber(pages)
     if pages == nil or pages == 0 then
         pages = 1
@@ -1400,9 +1422,8 @@ function ReaderStatistics:getBookStat(id_book)
         { _("Time spent reading this book"), util.secondsToClock(book_read_time, false) },
         { _("Average time per day"), util.secondsToClock(book_read_time/tonumber(total_days), false) },
         { _("Average time per page"), util.secondsToClock(avg_time_per_page, false) },
-        -- These 2 ones are about page actually read (not the current page and % into book)
-        { _("Read pages/Total pages"), total_read_pages .. "/" .. pages },
-        { _("Percentage read"), Math.round(total_read_pages / pages * 100) .. "%" },
+        { _("Pages read"), string.format("%d (%d%%)", total_read_pages, Math.round(100*total_read_pages/pages)) },
+        { _("Last read page/Total pages"), string.format("%d/%d (%d%%)", last_page, pages, Math.round(100*last_page/pages)) },
         { _("Highlights"), highlights, separator = true },
         -- { _("Total notes"), notes }, -- not accurate, don't show it
         { _("Show days"), _("Tap to display"),
