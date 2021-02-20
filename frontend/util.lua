@@ -244,18 +244,33 @@ if jit.os == "Windows" then
         end
     end
 else
-    function util.secondsToHour(seconds, twelve_hour_clock)
+    function util.secondsToHour(seconds, twelve_hour_clock, pad_with_spaces)
         if twelve_hour_clock then
             if os.date("%p", seconds) == "AM" then
-                -- @translators This is the time in the morning using a 12-hour clock (%-I is the hour, %M the minute).
-                return os.date(_("%-I:%M AM"), seconds)
+                if pad_with_spaces then
+                    -- @translators This is the time in the morning using a 12-hour clock (%_I is the hour, %M the minute).
+                    return os.date(_("%_I:%M AM"), seconds)
+                else
+                    -- @translators This is the time in the morning using a 12-hour clock (%-I is the hour, %M the minute).
+                    return os.date(_("%-I:%M AM"), seconds)
+                end
             else
-                -- @translators This is the time in the afternoon using a 12-hour clock (%-I is the hour, %M the minute).
-                return os.date(_("%-I:%M PM"), seconds)
+                if pad_with_spaces then
+                    -- @translators This is the time in the afternoon using a 12-hour clock (%_I is the hour, %M the minute).
+                    return os.date(_("%_I:%M PM"), seconds)
+                else
+                    -- @translators This is the time in the afternoon using a 12-hour clock (%-I is the hour, %M the minute).
+                    return os.date(_("%-I:%M PM"), seconds)
+                end
             end
         else
-            -- @translators This is the time using a 24-hour clock (%-H is the hour, %M the minute).
-            return os.date(_("%-H:%M"), seconds)
+            if pad_with_spaces then
+                -- @translators This is the time using a 24-hour clock (%_H is the hour, %M the minute).
+                return os.date(_("%_H:%M"), seconds)
+            else
+                -- @translators This is the time using a 24-hour clock (%-H is the hour, %M the minute).
+                return os.date(_("%-H:%M"), seconds)
+            end
         end
     end
 end
@@ -266,7 +281,8 @@ end
 ---- @treturn string date string
 function util.secondsToDate(seconds, twelve_hour_clock)
     local BD = require("ui/bidi")
-    local time = util.secondsToHour(seconds, twelve_hour_clock)
+    -- In order to keep stuff aligned, we'll want to *keep* the padding, but using blanks instead of zeroes.
+    local time = util.secondsToHour(seconds, twelve_hour_clock, true)
     -- @translators This is the date (%Y is the year, %m the month, %d the day)
     local day = os.date(_("%Y-%m-%d"), seconds)
     return BD.wrap(day) .. " " .. BD.wrap(time)
