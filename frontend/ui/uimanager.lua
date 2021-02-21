@@ -1476,7 +1476,8 @@ We basically put ourselves to sleep for a very short amount of time, to let the 
 ]]
 function UIManager:yieldToEPDC(sleep_us)
     if Device:hasEinkScreen() then
-        -- NOTE: Consider jumping to the jiffy resolution (100Hz/10ms) is that's not enough ;).
+        -- NOTE: Early empiric evidence suggests that going as low as 1ms is enough to do the trick.
+        --       Consider jumping to the jiffy resolution (100Hz/10ms) is it turns out it isn't ;).
         ffiUtil.usleep(sleep_us or 1000)
     end
 end

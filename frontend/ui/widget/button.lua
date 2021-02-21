@@ -306,9 +306,9 @@ function Button:onTapSelectButton()
                 --       causing mild variants of our friend the papercut refresh glitch ;).
                 --       Remember that the whole eInk refresh dance is completely asynchronous: we *request* a refresh from the kernel,
                 --       but it's up to the EPDC to schedule that however it sees fit...
-                --       Empiric evidence suggests that going as low as 1ms is enough.
                 --       The other approach would be to *ask* the EPDC to block until it's *completely* done,
-                --       but that's too much (because we only care about it being done *reading* the fb), and it can take upwards of 300ms, which is also too much ;).
+                --       but that's too much (because we only care about it being done *reading* the fb),
+                --       and that could take upwards of 300ms, which is also way too much ;).
                 UIManager:yieldToEPDC()
             end
 
