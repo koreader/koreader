@@ -1465,6 +1465,21 @@ function UIManager:waitForVSync()
 end
 
 --[[--
+Yield to the EPDC.
+
+This is a dumb workaround for potential races with the EPDC when we request a refresh on a specific region,
+and then proceed to *write* to the framebuffer, in the same region, very, very, very soon after that.
+
+We basically put ourselves to sleep for a very short amount of time, to let the kernel do its thing.
+]]
+function UIManager:yieldToEPDC()
+    if Device:hasEinkScreen() then
+        -- NOTE: Consider jumping to the jiffy resolution (100Hz/10ms) is that's not enough ;).
+        ffiUtil.usleep(1000)
+    end
+end
+
+--[[--
 Used to repaint a specific sub-widget that isn't on the `_window_stack` itself.
 
 Useful to avoid repainting a complex widget when we just want to invert an icon, for instance.

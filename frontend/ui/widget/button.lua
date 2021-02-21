@@ -27,7 +27,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
-local ffiUtil = require("ffi/util")
 local _ = require("gettext")
 local Screen = Device.screen
 local logger = require("logger")
@@ -308,10 +307,9 @@ function Button:onTapSelectButton()
                 --       Remember that the whole eInk refresh dance is completely asynchronous: we *request* a refresh from the kernel,
                 --       but it's up to the EPDC to schedule that however it sees fit...
                 --       Empiric evidence suggests that going as low as 1ms is enough.
-                --       The other approach would be to *ask* the EPDC to block until it's *completely* done, but that's too much (because we only care about it being done *reading* the fb),
-                --       and can take upwards of 300ms.
-                --       Consider jumping to the jiffy resolution (100Hz/10ms) is that's not enough ;).
-                ffiUtil.usleep(1000)
+                --       The other approach would be to *ask* the EPDC to block until it's *completely* done,
+                --       but that's too much (because we only care about it being done *reading* the fb), and it can take upwards of 300ms, which is also too much ;).
+                UIManager:yieldToEPDC()
             end
 
             -- Unhighlight
