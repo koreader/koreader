@@ -141,8 +141,8 @@ function SkimToWidget:init()
     }
 
     -- Top row buttons
-    local chapter_next_text = "▷│"
-    local chapter_prev_text = "│◁"
+    local chapter_next_text = "▷▏"
+    local chapter_prev_text = "▕◁"
     local bookmark_next_text = "☆▷"
     local bookmark_prev_text = "◁☆"
     local bookmark_enabled_text = "★"
