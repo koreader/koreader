@@ -216,7 +216,7 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         UIManager:setDirty(nil, "fast", highlight_dimen)
 
         -- Stupid hack because the EPDC has decided to be race-y in this very specific case.
-        -- Random 100ms is random.
+        -- Empirical evidence suggests using 100ms does the job well enough.
         ffiUtil.usleep(100 * 1000)
         UIManager:forceRePaint()
 
