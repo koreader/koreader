@@ -538,6 +538,7 @@ function UIManager:schedule(time, action, ...)
     table.insert(self._task_queue, p, {
         time = time,
         action = action,
+        argc = select('#', ...),
         args = {...},
     })
     self._task_queue_dirty = true
@@ -1177,7 +1178,7 @@ function UIManager:_checkTasks()
             -- task is pending to be executed right now. do it.
             -- NOTE: be careful that task.action() might modify
             -- _task_queue here. So need to avoid race condition
-            task.action(unpack(task.args or {}))
+            task.action(unpack(task.args, 1, task.argc))
         else
             -- queue is sorted in ascendant order, safe to assume all items
             -- are future tasks for now
