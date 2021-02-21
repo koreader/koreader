@@ -215,6 +215,12 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         UIManager:setDirty(nil, "fast", highlight_dimen)
 
         UIManager:forceRePaint()
+        -- NOTE: These very specific circumstances appear to reliably upset the EPDC,
+        --       causing a mild variant of our racey friend the papercut refresh glitch ;).
+        --       As it appears to stem from the race between *this* refresh for the highlight and the following writes to the fb,
+        --       let the kernel take a breather. It'll yield back to us when it's done.
+        --       Expect it to block for ~150 to 350ms. Given the context (a hold gesture), we can absorb the latency hit mostly unnnoticed.
+        UIManager:waitForVSync()
 
         -- Unhighlight
         --
