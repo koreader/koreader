@@ -27,6 +27,7 @@ local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local ffiUtil = require("ffi/util")
 local util = require("util")
 local getMenuText = require("ui/widget/menu").getMenuText
 local _ = require("gettext")
@@ -214,6 +215,9 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         UIManager:widgetInvert(self.item_frame, highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
         UIManager:setDirty(nil, "fast", highlight_dimen)
 
+        -- Stupid hack because the EPDC has decided to be race-y in this very specific case.
+        -- Random 100ms is random.
+        ffiUtil.usleep(100 * 1000)
         UIManager:forceRePaint()
 
         -- Unhighlight
