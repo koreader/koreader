@@ -217,8 +217,9 @@ function TouchMenuItem:onHoldSelect(arg, ges)
 
         -- Stupid hack because the EPDC has decided to be race-y in this very specific case.
         -- Empirical evidence suggests using 100ms does the job well enough.
-        ffiUtil.usleep(100 * 1000)
+        --ffiUtil.usleep(100 * 1000)
         UIManager:forceRePaint()
+        ffiUtil.usleep(100 * 1000)
 
         -- Unhighlight
         --
