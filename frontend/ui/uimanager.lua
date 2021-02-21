@@ -1471,11 +1471,13 @@ This is a dumb workaround for potential races with the EPDC when we request a re
 and then proceed to *write* to the framebuffer, in the same region, very, very, very soon after that.
 
 We basically put ourselves to sleep for a very short amount of time, to let the kernel do its thing.
+
+@int sleep_us Amount of time to sleep for (in µs). (Optional, defaults to 1ms).
 ]]
-function UIManager:yieldToEPDC()
+function UIManager:yieldToEPDC(sleep_us)
     if Device:hasEinkScreen() then
         -- NOTE: Consider jumping to the jiffy resolution (100Hz/10ms) is that's not enough ;).
-        ffiUtil.usleep(1000)
+        ffiUtil.usleep(sleep_us or 1000)
     end
 end
 
