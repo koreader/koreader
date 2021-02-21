@@ -293,6 +293,7 @@ function KeyValueItem:onTap()
             UIManager:setDirty(nil, "fast", self[1].dimen)
 
             UIManager:forceRePaint()
+            UIManager:yieldToEPDC()
 
             -- Unhighlight
             --

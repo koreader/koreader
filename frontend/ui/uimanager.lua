@@ -1470,14 +1470,14 @@ Yield to the EPDC.
 This is a dumb workaround for potential races with the EPDC when we request a refresh on a specific region,
 and then proceed to *write* to the framebuffer, in the same region, very, very, very soon after that.
 
-We basically put ourselves to sleep for a very short amount of time, to let the kernel do its thing.
+This basically just puts ourselves to sleep for a very short amount of time, to let the kernel do its thing in peace.
 
 @int sleep_us Amount of time to sleep for (in µs). (Optional, defaults to 1ms).
 ]]
 function UIManager:yieldToEPDC(sleep_us)
     if Device:hasEinkScreen() then
         -- NOTE: Early empiric evidence suggests that going as low as 1ms is enough to do the trick.
-        --       Consider jumping to the jiffy resolution (100Hz/10ms) is it turns out it isn't ;).
+        --       Consider jumping to the jiffy resolution (100Hz/10ms) if it turns out it isn't ;).
         ffiUtil.usleep(sleep_us or 1000)
     end
 end

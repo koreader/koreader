@@ -480,6 +480,7 @@ function MenuItem:onTapSelect(arg, ges)
         UIManager:setDirty(nil, "fast", self[1].dimen)
 
         UIManager:forceRePaint()
+        UIManager:yieldToEPDC()
 
         -- Unhighlight
         --
@@ -514,6 +515,7 @@ function MenuItem:onHoldSelect(arg, ges)
         UIManager:setDirty(nil, "fast", self[1].dimen)
 
         UIManager:forceRePaint()
+        UIManager:yieldToEPDC()
 
         -- Unhighlight
         --
