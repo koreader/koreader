@@ -272,7 +272,7 @@ function FileManagerMenu:setUpdateItemTable()
                 separator = true,
             },
             {
-                text = _("Shorten home directory"),
+                text = _("Shorten home folder"),
                 checked_func = function()
                     return G_reader_settings:nilOrTrue("shorten_home_dir")
                 end,

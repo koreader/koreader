@@ -248,7 +248,7 @@ function Calibre:getWirelessMenuTable()
             end,
         },
         {
-            text = _("Set inbox directory"),
+            text = _("Set inbox folder"),
             enabled_func = isEnabled,
             callback = function()
                 CalibreWireless:setInboxDir()

@@ -115,7 +115,7 @@ function NewsDownloader:addToMainMenu(menu_items)
                         callback = function() self:changeFeedConfig() end,
                     },
                     {
-                        text = _("Set custom download directory"),
+                        text = _("Set custom download folder"),
                         keep_menu_open = true,
                         callback = function() self:setCustomDownloadDirectory() end,
                     },

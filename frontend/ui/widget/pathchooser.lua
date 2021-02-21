@@ -30,7 +30,7 @@ local PathChooser = FileChooser:extend{
 function PathChooser:init()
     if self.title == true then -- default title depending on options
         if self.select_directory and not self.select_file then
-            self.title = _("Long-press to select directory")
+            self.title = _("Long-press to select folder")
         elseif not self.select_directory and self.select_file then
             self.title = _("Long-press to select file")
         else

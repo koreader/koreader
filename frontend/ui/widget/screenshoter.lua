@@ -61,14 +61,14 @@ function Screenshoter:chooseFolder()
     local buttons = {}
     table.insert(buttons, {
         {
-            text = _("Choose screenshot directory"),
+            text = _("Choose screenshot folder"),
             callback = function()
                 UIManager:close(self.choose_dialog)
                 require("ui/downloadmgr"):new{
                     onConfirm = function(path)
                         G_reader_settings:saveSetting("screenshot_dir", path .. "/")
                         UIManager:show(InfoMessage:new{
-                            text = T(_("Screenshot directory set to:\n%1"), BD.dirpath(path)),
+                            text = T(_("Screenshot folder set to:\n%1"), BD.dirpath(path)),
                             timeout = 3,
                         })
                     end,
@@ -86,7 +86,7 @@ function Screenshoter:chooseFolder()
     })
     local screenshot_dir = G_reader_settings:readSetting("screenshot_dir") or DataStorage:getDataDir() .. "/screenshots/"
     self.choose_dialog = ButtonDialogTitle:new{
-        title = T(_("Current screenshot directory:\n%1"), BD.dirpath(screenshot_dir)),
+        title = T(_("Current screenshot folder:\n%1"), BD.dirpath(screenshot_dir)),
         buttons = buttons
     }
     UIManager:show(self.choose_dialog)
