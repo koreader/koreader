@@ -230,10 +230,8 @@ function TouchMenuItem:onHoldSelect(arg, ges)
 
         -- Callback
         --
-        print("TouchMenuItem: CB")
         self.menu:onMenuHold(self.item, self.text_truncated)
 
-        print("TouchMenuItem: Post-CB Repaint")
         UIManager:forceRePaint()
     end
     return true
