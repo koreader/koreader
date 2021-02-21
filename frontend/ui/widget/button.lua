@@ -27,6 +27,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
+local ffiUtil = require("ffi/util")
 local _ = require("gettext")
 local Screen = Device.screen
 local logger = require("logger")
@@ -301,6 +302,16 @@ function Button:onTapSelectButton()
             if not self.vsync then
                 -- NOTE: Except when a Button is flagged vsync, in which case we *want* to bundle the highlight with the callback, to prevent further delays
                 UIManager:forceRePaint()
+
+                -- NOTE: Yield to the kernel for a tiny slice of time, otherwise, writing to the same fb region as the refresh we've just requested may be race-y,
+                --       causing mild variants of our friend the papercut refresh glitch ;).
+                --       Remember that the whole eInk refresh dance is completely asynchronous: we *request* a refresh from the kernel,
+                --       but it's up to the EPDC to schedule that however it sees fit...
+                --       Empiric evidence suggests that going as low as 1ms is enough.
+                --       The other approach would be to *ask* the EPDC to block until it's *completely* done, but that's too much (because we only care about it being done *reading* the fb),
+                --       and can take upwards of 300ms.
+                --       Consider jumping to the jiffy resolution (100Hz/10ms) is that's not enough ;).
+                ffiUtil.usleep(1000)
             end
 
             -- Unhighlight
