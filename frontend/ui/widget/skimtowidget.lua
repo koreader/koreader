@@ -223,7 +223,6 @@ function SkimToWidget:init()
         enabled = true,
         width = button_inner_width,
         show_parent = self,
-        vsync = true,
         callback = function()
             self.ui:handleEvent(Event:new("ToggleBookmark"))
             self:update()
