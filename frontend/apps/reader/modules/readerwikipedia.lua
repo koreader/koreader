@@ -169,7 +169,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                 end,
             },
             { -- setting used by dictquicklookup
-                text = _("Set Wikipedia 'Save as EPUB' directory"),
+                text = _("Set Wikipedia 'Save as EPUB' folder"),
                 keep_menu_open = true,
                 callback = function()
                     local choose_directory = function()
@@ -179,11 +179,11 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                         if not default_dir then default_dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
                         local dialog
                         dialog = ButtonDialogTitle:new{
-                            title = T(_("Current Wikipedia 'Save as EPUB' directory:\n\n%1\n"), BD.dirpath(default_dir)),
+                            title = T(_("Current Wikipedia 'Save as EPUB' folder:\n\n%1\n"), BD.dirpath(default_dir)),
                             buttons = {
                                 {
                                     {
-                                        text = _("Keep this directory"),
+                                        text = _("Keep this folder"),
                                         callback = function()
                                             UIManager:close(dialog)
                                         end,
@@ -191,7 +191,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                                 },
                                 {
                                     {
-                                    text = _("Select another directory"),
+                                    text = _("Select another folder"),
                                     callback = function()
                                         UIManager:close(dialog)
                                         -- Use currently read book's directory as starting point,
@@ -224,7 +224,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                                             onConfirm = function(path)
                                                 G_reader_settings:saveSetting("wikipedia_save_dir", path)
                                                 UIManager:show(InfoMessage:new{
-                                                    text = T(_("Wikipedia 'Save as EPUB' directory set to:\n%1"), BD.dirpath(path)),
+                                                    text = T(_("Wikipedia 'Save as EPUB' folder set to:\n%1"), BD.dirpath(path)),
                                                 })
                                             end
                                         }
@@ -249,7 +249,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                             local text = _([[
 Wikipedia articles can be saved as an EPUB for more comfortable reading.
 
-You can select an existing directory, or use a default directory named "Wikipedia" in your reader's home directory.
+You can select an existing directory, or use a default directory named "Wikipedia" in your reader's home folder.
 
 Where do you want them saved?]])
                             UIManager:show(ConfirmBox:new{
@@ -261,10 +261,10 @@ Where do you want them saved?]])
                                     end
                                     G_reader_settings:saveSetting("wikipedia_save_dir", wikipedia_dir)
                                     UIManager:show(InfoMessage:new{
-                                        text = T(_("Wikipedia 'Save as EPUB' directory set to:\n%1"), BD.dirpath(wikipedia_dir)),
+                                        text = T(_("Wikipedia 'Save as EPUB' folder set to:\n%1"), BD.dirpath(wikipedia_dir)),
                                     })
                                 end,
-                                cancel_text = _("Select directory"),
+                                cancel_text = _("Select folder"),
                                 cancel_callback = function()
                                     choose_directory()
                                 end,
@@ -277,7 +277,7 @@ Where do you want them saved?]])
                 end,
             },
             { -- setting used by dictquicklookup
-                text = _("Save Wikipedia EPUB in current book directory"),
+                text = _("Save Wikipedia EPUB in current book folder"),
                 checked_func = function()
                     return G_reader_settings:isTrue("wikipedia_save_in_book_dir")
                 end,

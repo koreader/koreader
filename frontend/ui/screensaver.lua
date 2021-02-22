@@ -65,7 +65,7 @@ function Screensaver:chooseFolder()
     local buttons = {}
     table.insert(buttons, {
         {
-            text = _("Choose screensaver directory"),
+            text = _("Choose screensaver folder"),
             callback = function()
                 UIManager:close(self.choose_dialog)
                 require("ui/downloadmgr"):new{
@@ -94,7 +94,7 @@ function Screensaver:chooseFolder()
         screensaver_dir = DataStorage:getDataDir() .. "/screenshots/"
     end
     self.choose_dialog = ButtonDialogTitle:new{
-        title = T(_("Current screensaver image directory:\n%1"), BD.dirpath(screensaver_dir)),
+        title = T(_("Current screensaver image folder:\n%1"), BD.dirpath(screensaver_dir)),
         buttons = buttons
     }
     UIManager:show(self.choose_dialog)

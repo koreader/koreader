@@ -17,7 +17,7 @@ end
 -- @treturn string path chosen by the user
 function CloudMgr:chooseDir()
     local cloud_storage = CloudStorage:new{
-        title = _("Long-press to select directory"),
+        title = _("Long-press to select folder"),
         item = self.item,
         onConfirm = function(dir_path)
             self.onConfirm(dir_path)

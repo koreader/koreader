@@ -422,7 +422,7 @@ function FileManager:setupLayout()
             local realpath = BaseUtil.realpath(file)
             table.insert(buttons, {
                 {
-                    text = _("Set as HOME directory"),
+                    text = _("Set as HOME folder"),
                     callback = function()
                         setHome(realpath)
                         UIManager:close(self.file_dialog)
@@ -610,7 +610,7 @@ function FileManager:tapPlus()
         },
         {
             {
-                text = _("Set as HOME directory"),
+                text = _("Set as HOME folder"),
                 callback = function()
                     self:setHome(self.file_chooser.path)
                     UIManager:close(self.file_dialog)
@@ -619,7 +619,7 @@ function FileManager:tapPlus()
         },
         {
             {
-                text = _("Go to HOME directory"),
+                text = _("Go to HOME folder"),
                 callback = function()
                     self:goHome()
                     UIManager:close(self.file_dialog)
@@ -779,7 +779,7 @@ end
 function FileManager:setHome(path)
     path = path or self.file_chooser.path
     UIManager:show(ConfirmBox:new{
-        text = T(_("Set '%1' as HOME directory?"), BD.dirpath(path)),
+        text = T(_("Set '%1' as HOME folder?"), BD.dirpath(path)),
         ok_text = _("Set as HOME"),
         ok_callback = function()
             G_reader_settings:saveSetting("home_dir", path)

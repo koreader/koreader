@@ -53,7 +53,7 @@ The file browser will only show document or ebook files that KOReader can read.
 
 In the file browser, you can tap on any file to open it. Long press on any file to bring up a menu with more options. The location path display above the list of files and folders shows you which folder you're viewing. The `../` entry, at the top of the listed folders, lets you go *up* one level. For instance, if you are at `/mnt/onboard` now, tapping the `../` will bring you to `/mnt/`.
 
-Once you have found the folder you have your books listed in, you can long press the selection that opens that folder and you should see a message box popup with the option to **Set as HOME directory**.
+Once you have found the folder you have your books listed in, you can long press the selection that opens that folder and you should see a message box popup with the option to **Set as HOME folder**.
 
 ## Defaults <a id="defaults"></a>
 
