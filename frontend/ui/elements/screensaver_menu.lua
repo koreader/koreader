@@ -208,7 +208,7 @@ return {
                 }
             },
             {
-                text = _("Delay when exit from screensaver"),
+                text = _("Let the screensaver linger on wakeup"),
                 sub_item_table = {
                     {
                         text = _("Disable"),
@@ -263,7 +263,7 @@ return {
                         end
                     },
                     {
-                        text = _("Tap to exit screensaver"),
+                        text = _("Tap to finalize wakeup"),
                         checked_func = function()
                             if screensaverDelay() == "tap" then
                                 return true
