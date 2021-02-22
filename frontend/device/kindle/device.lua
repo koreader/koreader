@@ -428,6 +428,7 @@ function Kindle2:init()
     }
     self.input.open("/dev/input/event0")
     self.input.open("/dev/input/event1")
+    self.input.open("fake_events")
     Kindle.init(self)
 end
 
@@ -444,6 +445,7 @@ function KindleDXG:init()
     self.keyboard_layout = require("device/kindle/keyboard_layout")
     self.input.open("/dev/input/event0")
     self.input.open("/dev/input/event1")
+    self.input.open("fake_events")
     Kindle.init(self)
 end
 
@@ -461,6 +463,7 @@ function Kindle3:init()
     self.keyboard_layout = require("device/kindle/keyboard_layout")
     self.input.open("/dev/input/event0")
     self.input.open("/dev/input/event1")
+    self.input.open("fake_events")
     Kindle.init(self)
 end
 
