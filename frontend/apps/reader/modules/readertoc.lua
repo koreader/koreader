@@ -757,7 +757,17 @@ function ReaderToc:onShowToc()
 
     self:updateCurrentNode()
     -- auto expand the parent node of current page
-    self:expandParentNode(self:getTocIndexByPage(self.pageno))
+    local idx = self:getTocIndexByPage(self.pageno)
+    if idx then
+        self:expandParentNode(idx)
+        -- Also do it for other toc items on current page
+        idx = idx + 1
+        while self.toc[idx] and self.toc[idx].page == self.pageno do
+            self:expandParentNode(idx)
+            idx = idx + 1
+        end
+    end
+
     -- auto goto page of the current toc entry
     self.toc_menu:switchItemTable(nil, self.collapsed_toc, self.collapsed_toc.current or -1)
 
