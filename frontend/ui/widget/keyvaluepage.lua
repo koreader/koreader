@@ -605,10 +605,10 @@ function KeyValuePage:_populateItems()
     else
         self.page_info_text:disableWithoutDimming()
     end
-    self.page_info_left_chev:showHide(self.pages > 1)
-    self.page_info_right_chev:showHide(self.pages > 1)
-    self.page_info_first_chev:showHide(self.pages > 2)
-    self.page_info_last_chev:showHide(self.pages > 2)
+    self.page_info_left_chev:show()
+    self.page_info_right_chev:show()
+    self.page_info_first_chev:show()
+    self.page_info_last_chev:show()
 
     self.page_info_left_chev:enableDisable(self.show_page > 1)
     self.page_info_right_chev:enableDisable(self.show_page < self.pages)
