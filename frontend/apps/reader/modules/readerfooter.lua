@@ -2195,7 +2195,6 @@ function ReaderFooter:onOutOfScreenSaver()
     end
 
     self._delayed_screensaver = nil
-
     -- Force a footer repaint on resume if it was visible
     self:onUpdateFooter(self.view.footer_visible)
     self:rescheduleFooterAutoRefreshIfNeeded()
