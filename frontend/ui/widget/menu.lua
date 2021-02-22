@@ -606,7 +606,7 @@ function Menu:_recalculateDimen()
     end
     height_dim = self.dimen.h - bottom_height - top_height
     self.item_dimen.h = math.floor(height_dim / self.perpage)
-    self.span_width = math.floor((height_dim - (self.perpage * (self.item_dimen.h ))) / 2 -1 )
+    self.span_width = math.floor((height_dim - (self.perpage * (self.item_dimen.h ))) / 2 - 1)
     self.page_num = math.ceil(#self.item_table / self.perpage)
     -- fix current page if out of range
     if self.page_num > 0 and self.page > self.page_num then self.page = self.page_num end

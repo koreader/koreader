@@ -443,7 +443,6 @@ function KeyValuePage:init()
         },
         call_hold_input_on_tap = true,
         bordersize = 0,
-        margin = Screen:scaleBySize(20),
         text_font_face = "pgfont",
         text_font_bold = false,
     }
@@ -494,7 +493,7 @@ function KeyValuePage:init()
     self.items_per_page = G_reader_settings:readSetting("keyvalues_per_page") or self:getDefaultKeyValuesPerPage()
     self.item_height = math.floor(available_height / self.items_per_page)
     -- Put half of the pixels lost by floor'ing between title and content
-    local span_height = math.floor((available_height - (self.items_per_page * (self.item_height ))) / 2)
+    local span_height = math.floor((available_height - (self.items_per_page * (self.item_height))) / 2)
 
     -- Font size is not configurable: we can get a good one from the following
     local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -512,12 +511,14 @@ function KeyValuePage:init()
     self:_populateItems()
 
     local content = OverlapGroup:new{
-        dimen = self.dimen:copy(),
         allow_mirroring = false,
+        dimen = self.dimen:copy(),
         VerticalGroup:new{
             align = "left",
             self.title_bar,
-            VerticalSpan:new{ width = span_height },
+            HorizontalGroup:new{
+                VerticalSpan:new{ width = span_height }
+            },
             self.main_content,
         },
         page_return,
@@ -526,7 +527,8 @@ function KeyValuePage:init()
     -- assemble page
     self[1] = FrameContainer:new{
         height = self.dimen.h,
-        padding = padding,
+        padding = 0,
+        margin = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
         content
