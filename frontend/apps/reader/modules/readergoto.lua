@@ -47,7 +47,7 @@ function ReaderGoto:onShowGotoDialog()
         input_hint = T("@%1 (1 - %2)", curr_page, self.document:getPageCount())
     end
     self.goto_dialog = InputDialog:new{
-        title = _("Go to page"),
+        title = _("Enter page number"),
         input_hint = input_hint,
         description = self.document:hasHiddenFlows() and
             _([[
@@ -82,7 +82,7 @@ x for an absolute page number
                     end,
                 },
                 {
-                    text = _("Page"),
+                    text = _("Go to page"),
                     enabled = true,
                     is_enter_default = true,
                     callback = function() self:gotoPage() end,
