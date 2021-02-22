@@ -972,6 +972,7 @@ function Menu:updatePageInfo(select_number)
             self.page_info_text:enable()
         else
             self.page_info_text:setText("");
+            self.page_info_text:disable()
         end
         self.page_info_left_chev:showHide(self.page_num > 1)
         self.page_info_right_chev:showHide(self.page_num > 1)
@@ -986,7 +987,10 @@ function Menu:updatePageInfo(select_number)
         self.page_return_arrow:enableDisable(#self.paths > 0)
     else
         self.page_info_text:setText(_("No choices available"))
-        self.page_info_text:disable()
+        -- Dirty hackery: Call "enable" to make sure the text is black...
+        self.page_info_text:enable()
+        -- ...and then disable it manually to neuter its input handler.
+        self.page_info_text.enabled = false
     end
 end
 
