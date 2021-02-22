@@ -475,6 +475,14 @@ function KeyValuePage:init()
 
     local padding = Size.padding.large
     self.item_width = self.dimen.w - 2 * padding
+
+    -- Account for the outer FrameContainer's padding'
+    footer.dimen.w = self.item_width
+    page_return.dimen.w = self.item_width
+    -- NOTE: Yep, padding * 1. I'm guessing BottomContainer never pads on one side or something?
+    footer.dimen.h = self.dimen.h - padding
+    page_return.dimen.h = self.dimen.h - padding
+
     -- setup title bar
     self.title_bar = KeyValueTitle:new{
         title = self.title,
@@ -527,7 +535,7 @@ function KeyValuePage:init()
     -- assemble page
     self[1] = FrameContainer:new{
         height = self.dimen.h,
-        padding = 0,
+        padding = padding,
         margin = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
