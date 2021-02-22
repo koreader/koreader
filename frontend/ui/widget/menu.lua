@@ -776,6 +776,7 @@ function Menu:init()
             hint_func = hint_func,
             buttons = buttons,
         },
+        call_hold_input_on_tap = true,
         bordersize = 0,
         text_font_face = "cfont",
         text_font_size = 20,
