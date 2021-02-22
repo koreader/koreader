@@ -41,6 +41,7 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
@@ -406,15 +407,18 @@ function KeyValuePage:init()
     self.page_info_spacer = HorizontalSpan:new{
         width = Screen:scaleBySize(32),
     }
-    self.page_return_spacer = HorizontalSpan:new{
-        width = self.page_return_arrow:getSize().w
-    }
 
     if self.callback_return == nil and self.return_button == nil then
         self.page_return_arrow:hide()
     elseif self.callback_return == nil then
         self.page_return_arrow:disable()
     end
+    self.return_button = HorizontalGroup:new{
+        HorizontalSpan:new{
+            width = Size.span.horizontal_small,
+        },
+        self.page_return_arrow,
+    }
 
     self.page_info_left_chev:hide()
     self.page_info_right_chev:hide()
@@ -444,7 +448,6 @@ function KeyValuePage:init()
         text_font_bold = false,
     }
     self.page_info = HorizontalGroup:new{
-        self.page_return_arrow,
         self.page_info_first_chev,
         self.page_info_spacer,
         self.page_info_left_chev,
@@ -454,12 +457,21 @@ function KeyValuePage:init()
         self.page_info_right_chev,
         self.page_info_spacer,
         self.page_info_last_chev,
-        self.page_return_spacer,
     }
 
     local footer = BottomContainer:new{
         dimen = self.dimen:copy(),
         self.page_info,
+    }
+    local page_return = BottomContainer:new{
+        dimen = self.dimen:copy(),
+        WidgetContainer:new{
+            dimen = Geom:new{
+                w = Screen:getWidth(),
+                h = self.page_return_arrow:getSize().h,
+            },
+            self.return_button,
+        }
     }
 
     local padding = Size.padding.large
@@ -508,6 +520,7 @@ function KeyValuePage:init()
             VerticalSpan:new{ width = span_height },
             self.main_content,
         },
+        page_return,
         footer,
     }
     -- assemble page
@@ -553,6 +566,7 @@ end
 -- make sure self.item_margin and self.item_height are set before calling this
 function KeyValuePage:_populateItems()
     self.page_info:resetLayout()
+    self.return_button:resetLayout()
     self.main_content:clear()
     local idx_offset = (self.show_page - 1) * self.items_per_page
     for idx = 1, self.items_per_page do
