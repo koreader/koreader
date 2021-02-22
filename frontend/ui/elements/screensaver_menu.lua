@@ -208,7 +208,7 @@ return {
                 }
             },
             {
-                text = _("Let the screensaver linger on wakeup"),
+                text = _("Keep displaying the screensaver after wakeup"),
                 sub_item_table = {
                     {
                         text = _("Disable"),
@@ -224,7 +224,7 @@ return {
                         end
                     },
                     {
-                        text = _("1 second"),
+                        text = _("For 1 second"),
                         checked_func = function()
                             if screensaverDelay() == "1" then
                                 return true
@@ -237,7 +237,7 @@ return {
                         end
                     },
                     {
-                        text = _("3 seconds"),
+                        text = _("For 3 seconds"),
                         checked_func = function()
                             if screensaverDelay() == "3" then
                                 return true
@@ -250,7 +250,7 @@ return {
                         end
                     },
                     {
-                        text = _("5 seconds"),
+                        text = _("For 5 seconds"),
                         checked_func = function()
                             if screensaverDelay() == "5" then
                                 return true
@@ -263,7 +263,7 @@ return {
                         end
                     },
                     {
-                        text = _("Tap to finalize wakeup"),
+                        text = _("Until a tap"),
                         checked_func = function()
                             if screensaverDelay() == "tap" then
                                 return true
