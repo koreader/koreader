@@ -435,6 +435,7 @@ function KeyValuePage:init()
                     self:goToPage(page)
                 end
             end,
+            ok_text = "Go to page",
         },
         bordersize = 0,
         margin = Screen:scaleBySize(20),
