@@ -597,7 +597,15 @@ function KeyValuePage:_populateItems()
             end
         end
     end
-    self.page_info_text:setText(T(_("Page %1 of %2"), self.show_page, self.pages))
+
+    -- update page information
+    if self.pages > 1 then
+        self.page_info_text:setText(T(_("Page %1 of %2"), self.show_page, self.pages))
+    else
+        self.page_info_text:setText("Single page");
+        self.page_info_text:disable()
+        self.page_info_text.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
+    end
     self.page_info_left_chev:showHide(self.pages > 1)
     self.page_info_right_chev:showHide(self.pages > 1)
     self.page_info_first_chev:showHide(self.pages > 2)
