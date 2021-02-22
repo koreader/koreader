@@ -437,6 +437,7 @@ function KeyValuePage:init()
             end,
             ok_text = "Go to page",
         },
+        call_hold_input_on_tap = true,
         bordersize = 0,
         margin = Screen:scaleBySize(20),
         text_font_face = "pgfont",

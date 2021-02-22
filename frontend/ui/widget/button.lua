@@ -297,9 +297,13 @@ function Button:_undoFeedbackHighlight(is_translucent)
 end
 
 function Button:onTapSelectButton()
-    if self.enabled and self.callback then
+    local effective_cb = self.callback
+    -- Some buttons (generally, the pagination ones) want to be able to use their hold_input on taps, too.
+    if self.call_hold_input_on_tap and (self.enabled or self.allow_hold_when_disabled) then
+
+    if self.enabled and effective_cb then
         if G_reader_settings:isFalse("flash_ui") then
-            self.callback()
+            effective_cb()
         else
             -- NOTE: We have a few tricks up our sleeve in case our parent is inside a translucent MovableContainer...
             local is_translucent = self.show_parent and self.show_parent.movable and self.show_parent.movable.alpha
@@ -338,7 +342,7 @@ function Button:onTapSelectButton()
 
             -- Callback
             --
-            self.callback()
+            effective_cb()
 
             -- Check if the callback reset transparency...
             is_translucent = is_translucent and self.show_parent.movable.alpha
