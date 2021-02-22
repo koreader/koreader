@@ -967,15 +967,11 @@ function Menu:updatePageInfo(select_number)
             self.selected = { x = 1, y = select_number }
         end
         -- update page information
+        self.page_info_text:setText(FFIUtil.template(_("Page %1 of %2"), self.page, self.page_num))
         if self.page_num > 1 then
-            self.page_info_text:setText(FFIUtil.template(_("Page %1 of %2"), self.page, self.page_num))
             self.page_info_text:enable()
         else
-            self.page_info_text:setText("Single page");
-            -- Dirty hackery: Call "disable" to to neuter its input handler...
-            self.page_info_text:disable()
-            -- ...and then fudge the label manually to make sure the text is black...
-            self.page_info_text.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
+            self.page_info_text:disableWithoutDimming()
         end
         self.page_info_left_chev:showHide(self.page_num > 1)
         self.page_info_right_chev:showHide(self.page_num > 1)
@@ -990,8 +986,7 @@ function Menu:updatePageInfo(select_number)
         self.page_return_arrow:enableDisable(#self.paths > 0)
     else
         self.page_info_text:setText(_("No choices available"))
-        self.page_info_text:disable()
-        self.page_info_text.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
+        self.page_info_text:disableWithoutDimming()
     end
 end
 
