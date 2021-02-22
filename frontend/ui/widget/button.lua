@@ -198,6 +198,17 @@ function Button:disable()
     end
 end
 
+-- This is used by pagination buttons with a hold_input registered that we want to *sometimes* inhibit,
+-- meaning we want the Button disabled, but *without* dimming the text...
+function Button:disableWithoutDimming()
+    self.enabled = false
+    if self.text then
+        self.label_widget.fgcolor = Blitbuffer.COLOR_BLACK
+    else
+        self.label_widget.dim = false
+    end
+end
+
 function Button:enableDisable(enable)
     if enable then
         self:enable()
