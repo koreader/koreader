@@ -973,10 +973,10 @@ function Menu:updatePageInfo(select_number)
         else
             self.page_info_text:disableWithoutDimming()
         end
-        self.page_info_left_chev:showHide(self.page_num > 1)
-        self.page_info_right_chev:showHide(self.page_num > 1)
-        self.page_info_first_chev:showHide(self.page_num > 2)
-        self.page_info_last_chev:showHide(self.page_num > 2)
+        self.page_info_left_chev:show()
+        self.page_info_right_chev:show()
+        self.page_info_first_chev:show()
+        self.page_info_last_chev:show()
         self.page_return_arrow:showHide(self.onReturn ~= nil)
 
         self.page_info_left_chev:enableDisable(self.page > 1)
