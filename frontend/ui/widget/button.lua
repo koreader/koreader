@@ -301,6 +301,15 @@ function Button:onTapSelectButton()
             if not self.vsync then
                 -- NOTE: Except when a Button is flagged vsync, in which case we *want* to bundle the highlight with the callback, to prevent further delays
                 UIManager:forceRePaint()
+
+                -- NOTE: Yield to the kernel for a tiny slice of time, otherwise, writing to the same fb region as the refresh we've just requested may be race-y,
+                --       causing mild variants of our friend the papercut refresh glitch ;).
+                --       Remember that the whole eInk refresh dance is completely asynchronous: we *request* a refresh from the kernel,
+                --       but it's up to the EPDC to schedule that however it sees fit...
+                --       The other approach would be to *ask* the EPDC to block until it's *completely* done,
+                --       but that's too much (because we only care about it being done *reading* the fb),
+                --       and that could take upwards of 300ms, which is also way too much ;).
+                UIManager:yieldToEPDC()
             end
 
             -- Unhighlight

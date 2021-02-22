@@ -141,8 +141,8 @@ function SkimToWidget:init()
     }
 
     -- Top row buttons
-    local chapter_next_text = "▷│"
-    local chapter_prev_text = "│◁"
+    local chapter_next_text = "▷▏"
+    local chapter_prev_text = "▕◁"
     local bookmark_next_text = "☆▷"
     local bookmark_prev_text = "◁☆"
     local bookmark_enabled_text = "★"
@@ -223,7 +223,6 @@ function SkimToWidget:init()
         enabled = true,
         width = button_inner_width,
         show_parent = self,
-        vsync = true,
         callback = function()
             self.ui:handleEvent(Event:new("ToggleBookmark"))
             self:update()
