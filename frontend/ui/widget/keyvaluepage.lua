@@ -476,7 +476,7 @@ function KeyValuePage:init()
     local padding = Size.padding.large
     self.item_width = self.dimen.w - 2 * padding
 
-    -- Account for the outer FrameContainer's padding'
+    -- Account for the outer FrameContainer's padding
     footer.dimen.w = self.item_width
     page_return.dimen.w = self.item_width
     -- NOTE: Yep, padding * 1. I'm guessing BottomContainer never pads on one side or something?
