@@ -318,8 +318,7 @@ ruby { display: inline !important; }
                 id = "font_family_all_inherit";
                 title = _("Ignore publisher font families"),
                 description = _("Disable font-family specified in embedded styles."),
-                -- we have to use this trick, font-family handling by crengine is a bit complex
-                css = [[* { font-family: "NoSuchFont" !important; }]],
+                css = [[* { font-family: inherit !important; }]],
             },
             {
                 id = "font_size_all_inherit";
