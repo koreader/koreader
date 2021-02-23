@@ -1,4 +1,5 @@
 local Device = require("device")
+local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -73,6 +74,8 @@ end
 
 function ScreenSaverWidget:onClose()
     UIManager:close(self, "full")
+    -- Will come after the Resume event (how much later depends on screensaver_delay).
+    UIManager:broadcastEvent(Event:new("OutOfScreenSaver"))
     return true
 end
 

@@ -116,7 +116,25 @@ ReaderCoptListener.onSetStatusLine = ReaderCoptListener.rescheduleHeaderRefreshI
 ReaderCoptListener.onSetViewMode = ReaderCoptListener.rescheduleHeaderRefreshIfNeeded
     -- ReaderView:onSetViewMode(), which sets view.view_mode, is called before
     -- ReaderCoptListener.onSetViewMode, so we'll get the updated value
-ReaderCoptListener.onResume = ReaderCoptListener.rescheduleHeaderRefreshIfNeeded
+function ReaderCoptListener:onResume()
+    -- Don't repaint the header until OutOfScreenSaver if screensaver_delay is enabled...
+    local screensaver_delay = G_reader_settings:readSetting("screensaver_delay")
+    if screensaver_delay and screensaver_delay ~= "disable" then
+        self._delayed_screensaver = true
+        return
+    end
+
+    ReaderCoptListener:rescheduleHeaderRefreshIfNeeded()
+end
+
+function ReaderCoptListener:onOutOfScreenSaver()
+    if not self._delayed_screensaver then
+        return
+    end
+
+    self._delayed_screensaver = nil
+    ReaderCoptListener:rescheduleHeaderRefreshIfNeeded()
+end
 
 -- Unschedule on these events
 ReaderCoptListener.onCloseDocument = ReaderCoptListener.unscheduleHeaderRefresh
