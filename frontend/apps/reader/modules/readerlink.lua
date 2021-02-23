@@ -11,6 +11,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LinkBox = require("ui/widget/linkbox")
 local Notification = require("ui/widget/notification")
+local QRMessage = require("ui/widget/qrmessage")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
 local logger = require("logger")
@@ -652,6 +653,24 @@ function ReaderLink:onGoToExternalLink(link_url)
     end
     -- Set up buttons for alternative external link handling methods
     local alt_handlers_buttons = {}
+    table.insert(alt_handlers_buttons, {
+        text = _("Copy"),
+        callback = function()
+            UIManager:close(dialog)
+            Device.input.setClipboardText(link_url)
+        end,
+    })
+    table.insert(alt_handlers_buttons, {
+        text = _("Show QR code"),
+        callback = function()
+            UIManager:close(dialog)
+            UIManager:show(QRMessage:new{
+                text = link_url,
+                width = Device.screen:getWidth(),
+                height = Device.screen:getHeight()
+            })
+        end,
+    })
     if self.ui.wallabag then
         table.insert(alt_handlers_buttons, {
             text = _("Add to Wallabag"),
