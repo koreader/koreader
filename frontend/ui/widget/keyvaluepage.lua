@@ -458,30 +458,27 @@ function KeyValuePage:init()
         self.page_info_last_chev,
     }
 
+    local padding = Size.padding.large
+    self.inner_dimen = Geom:new{
+        w = self.dimen.w - 2 * padding,
+        h = self.dimen.h - padding, -- no bottom padding
+    }
+    self.item_width = self.inner_dimen.w
+
     local footer = BottomContainer:new{
-        dimen = self.dimen:copy(),
+        dimen = self.inner_dimen:copy(),
         self.page_info,
     }
     local page_return = BottomContainer:new{
-        dimen = self.dimen:copy(),
+        dimen = self.inner_dimen:copy(),
         WidgetContainer:new{
             dimen = Geom:new{
-                w = Screen:getWidth(),
-                h = self.page_return_arrow:getSize().h,
+                w = self.inner_dimen.w,
+                h = self.return_button:getSize().h,
             },
             self.return_button,
         }
     }
-
-    local padding = Size.padding.large
-    self.item_width = self.dimen.w - 2 * padding
-
-    -- Account for the outer FrameContainer's padding
-    footer.dimen.w = self.item_width
-    page_return.dimen.w = self.item_width
-    -- NOTE: Yep, padding * 1. I'm guessing BottomContainer never pads on one side or something?
-    footer.dimen.h = self.dimen.h - padding
-    page_return.dimen.h = self.dimen.h - padding
 
     -- setup title bar
     self.title_bar = KeyValueTitle:new{
@@ -491,9 +488,11 @@ function KeyValuePage:init()
         use_top_page_count = self.use_top_page_count,
         kv_page = self,
     }
+
     -- setup main content
-    local available_height = self.dimen.h
+    local available_height = self.inner_dimen.h
                          - self.title_bar:getSize().h
+                         - Size.span.vertical_large -- for above page_info (as title_bar adds one itself)
                          - self.page_info:getSize().h
                          - 2*Size.line.thick
                             -- account for possibly 2 separator lines added
@@ -520,7 +519,7 @@ function KeyValuePage:init()
 
     local content = OverlapGroup:new{
         allow_mirroring = false,
-        dimen = self.dimen:copy(),
+        dimen = self.inner_dimen:copy(),
         VerticalGroup:new{
             align = "left",
             self.title_bar,
@@ -534,6 +533,7 @@ function KeyValuePage:init()
     self[1] = FrameContainer:new{
         height = self.dimen.h,
         padding = padding,
+        padding_bottom = 0,
         margin = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
