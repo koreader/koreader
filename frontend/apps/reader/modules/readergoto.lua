@@ -65,7 +65,7 @@ x for an absolute page number
                     end,
                 },
                 {
-                    text = _("Skim mode"),
+                    text = _("Skim"),
                     enabled = true,
                     callback = function()
                         self:close()
