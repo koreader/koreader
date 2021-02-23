@@ -208,7 +208,7 @@ return {
                 }
             },
             {
-                text = _("Keep the screensaver displayed after wakeup"),
+                text = _("Keep the screensaver on screen after wakeup"),
                 sub_item_table = {
                     {
                         text = _("Disable"),
