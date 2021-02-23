@@ -200,12 +200,13 @@ function ReaderSearch:search(pattern, origin)
     local direction = self.direction
     local case = self.case_insensitive
     local page = self.view.state.page
-    return self.ui.document:findText(pattern, origin, direction, case, page)
 
     -- Spike the refresh queue with a REAGLD refresh when translucent
     if self.search_dialog.movable.alpha then
        UIManager:setDirty(nil, "reagld")
     end
+
+    return self.ui.document:findText(pattern, origin, direction, case, page)
 end
 
 function ReaderSearch:searchFromStart(pattern)
