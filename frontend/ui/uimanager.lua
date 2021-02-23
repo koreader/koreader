@@ -382,7 +382,7 @@ For more details about refreshtype, refreshregion & refreshdither see the descri
 If refreshtype is omitted, no refresh will be enqueued at this time.
 
 @param widget a @{ui.widget.widget|widget} object
-@string refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"reagld"`, `"partial"`, `"ui"`, `"fast"` (optional)
+@string refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
 @param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
 @int x horizontal screen offset (optional, `0` if omitted)
 @int y vertical screen offset (optional, `0` if omitted)
@@ -437,7 +437,7 @@ For more details about refreshtype, refreshregion & refreshdither see the descri
 If refreshtype is omitted, no extra refresh will be enqueued at this time, leaving only those from the uncovered widgets.
 
 @param widget a @{ui.widget.widget|widget} object
-@string refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"reagld"`, `"partial"`, `"ui"`, `"fast"` (optional)
+@string refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (optional)
 @param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, requires refreshtype to be set)
 @bool refreshdither `true` if the refresh requires dithering (optional, requires refreshtype to be set)
 @see setDirty
@@ -684,8 +684,6 @@ Here's a quick rundown of what each refreshtype should be used for:
                   You can even drop the region in these cases, to ensure a fullscreen flash.
                   NOTE: On REAGL devices, `flashpartial` will NOT actually flash (by design).
                         As such, even onCloseWidget, you might prefer `flashui` in most instances.
-* `reagld`: mapped to partial on almost every device.
-            On some REAGL devices where REAGL can be finicky, it allows explicit usage of the REAGLD waveform mode.
 
 NOTE: You'll notice a trend on UI elements that are usually shown *over* some kind of text (generally ReaderUI)
 of using `"ui"` onShow & onUpdate, but `"partial"` onCloseWidget.
@@ -756,7 +754,7 @@ UIManager:setDirty(self.widget, "partial", Geom:new{x=10,y=10,w=100,h=50})
 UIManager:setDirty(self.widget, function() return "ui", self.someelement.dimen end)
 
 @param widget a window-level widget object, `"all"`, or `nil`
-@param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"reagld"`, `"partial"`, `"ui"`, `"fast"` (or a lambda, see description above)
+@param refreshtype `"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"` (or a lambda, see description above)
 @param refreshregion a rectangle @{ui.geometry.Geom|Geom} object (optional, omitting it means the region will cover the full screen)
 @bool refreshdither `true` if widget requires dithering (optional)
 ]]
@@ -1193,7 +1191,7 @@ function UIManager:_checkTasks()
 end
 
 -- precedence of refresh modes:
-local refresh_modes = { fast = 1, ui = 2, partial = 3, reagld = 4, flashui = 5, flashpartial = 6, full = 7 }
+local refresh_modes = { fast = 1, ui = 2, partial = 3, flashui = 4, flashpartial = 5, full = 6 }
 -- NOTE: We might want to introduce a "force_fast" that points to fast, but has the highest priority,
 --       for the few cases where we might *really* want to enforce fast (for stuff like panning or skimming?).
 -- refresh methods in framebuffer implementation
@@ -1201,7 +1199,6 @@ local refresh_methods = {
     fast = "refreshFast",
     ui = "refreshUI",
     partial = "refreshPartial",
-    reagld = "refreshReagld",
     flashui = "refreshFlashUI",
     flashpartial = "refreshFlashPartial",
     full = "refreshFull",
@@ -1242,7 +1239,7 @@ Widgets call this in their `paintTo()` method in order to notify
 UIManager that a certain part of the screen is to be refreshed.
 
 @string mode
-    refresh mode (`"full"`, `"flashpartial"`, `"flashui"`, `"reagld"`, `"partial"`, `"ui"`, `"fast"`)
+    refresh mode (`"full"`, `"flashpartial"`, `"flashui"`, `"partial"`, `"ui"`, `"fast"`)
 @param region
     A rectangle @{ui.geometry.Geom|Geom} object that specifies the region to be updated.
     Optional, update will affect whole screen if not specified.

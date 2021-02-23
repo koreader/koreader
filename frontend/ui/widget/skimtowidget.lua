@@ -225,7 +225,7 @@ function SkimToWidget:init()
         show_parent = self,
         callback = function()
             self.ui:handleEvent(Event:new("ToggleBookmark"))
-            self:update(true)
+            self:update()
         end,
         hold_callback = function()
             self.ui:handleEvent(Event:new("ShowBookmark"))
@@ -313,7 +313,7 @@ function SkimToWidget:init()
     end
 end
 
-function SkimToWidget:update(skip_refresh)
+function SkimToWidget:update()
     if self.curr_page <= 0 then
         self.curr_page = 1
     end
@@ -323,13 +323,6 @@ function SkimToWidget:update(skip_refresh)
     self.progress_bar.percentage = self.curr_page / self.page_count
     self.current_page_text:setText(self.current_page_text:text_func(), self.current_page_text.width)
     self.button_bookmark_toggle:setText(self.button_bookmark_toggle:text_func(), self.button_bookmark_toggle.width)
-
-    -- NOTE: If we're translucent, spike the refresh queue with a REAGLD refresh,
-    --       to handle devices where transparency screws with REAGL's ability to detect modified pixels properly...
-    --       c.f., https://github.com/koreader/koreader/issues/7326
-    if self.movable.alpha and not skip_refresh then
-       UIManager:setDirty(nil, "reagld")
-    end
 end
 
 function SkimToWidget:addOriginToLocationStack(add_current)
