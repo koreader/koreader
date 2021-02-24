@@ -606,7 +606,7 @@ function Menu:_recalculateDimen()
             + 2 * Size.padding.button
     end
     if self.menu_title and not self.no_title then
-        top_height = self.menu_title_group:getSize().h + 2 * Size.padding.small
+        top_height = self.menu_title_group:getSize().h + self.header_padding
     end
     height_dim = self.inner_dimen.h - bottom_height - top_height
     self.item_dimen.h = math.floor(height_dim / self.perpage)
