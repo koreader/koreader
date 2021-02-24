@@ -584,7 +584,7 @@ function CalendarView:init()
     -- At most 6 weeks in a month
     local available_height = self.inner_dimen.h - self.title_bar:getSize().h
                             - self.page_info:getSize().h - self.day_names:getSize().h
-    self.week_height = math.floor((available_height - 5*self.inner_padding) / 6)
+    self.week_height = math.floor((available_height - 7*self.inner_padding) / 6)
     self.day_border = Size.border.default
     if self.show_hourly_histogram then
         -- day num + nb_book_spans + histogram: ceil() as histogram rarely
