@@ -8,6 +8,7 @@ local FFIUtil = require("ffi/util")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local PluginLoader = require("pluginloader")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local Screen = Device.screen
 local dbg = require("dbg")
@@ -738,7 +739,7 @@ function FileManagerMenu:onShowMenu(tab_index)
         main_menu = Menu:new{
             title = _("File manager menu"),
             item_table = Menu.itemTableFromTouchMenu(self.tab_item_table),
-            width = Screen:getWidth()-10,
+            width = Screen:getWidth() - (Size.border.window * 4),
             show_parent = menu_container,
         }
     end
