@@ -90,8 +90,8 @@ function SetDefaults:init()
     end
 
     self.defaults_menu = Menu:new{
-        width = Screen:getWidth() - (Size.padding.fullscreen_popout * 2),
-        height = Screen:getHeight() - (Size.padding.fullscreen_popout * 2),
+        width = Screen:getWidth() - (Size.margin.fullscreen_popout * 2),
+        height = Screen:getHeight() - (Size.margin.fullscreen_popout * 2),
         cface = Font:getFace("smallinfofont"),
         show_parent = menu_container,
         _manager = self,

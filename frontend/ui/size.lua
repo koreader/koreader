@@ -43,6 +43,7 @@ local Size = {
         small = Screen:scaleBySize(2),
         title = Screen:scaleBySize(2),
         fine_tune = Screen:scaleBySize(3),
+        fullscreen_popout = Screen:scaleBySize(3), -- Size.border.window * 2
         button = 0,
     },
     padding = {
@@ -53,7 +54,6 @@ local Size = {
         button = Screen:scaleBySize(2),
         buttontable = Screen:scaleBySize(4),
         fullscreen = Screen:scaleBySize(15),
-        fullscreen_popout = Screen:scaleBySize(3), -- Size.border.window * 2
     },
     radius = {
         default = Screen:scaleBySize(2),
