@@ -1,3 +1,4 @@
+local lfs = require("libs/libkoreader-lfs")
 local Generic = require("device/generic/device") -- <= look at this file!
 local TimeVal = require("ui/timeval")
 local logger = require("logger")
@@ -184,7 +185,7 @@ end
 function Remarkable:suspend()
     os.execute("./disable-wifi.sh")
     os.execute("systemctl suspend")
-    if isRm2 then
+    if isRm2 and lfs.attributes('/lib/systemd/system-sleep/rm2-wake-input.sh') == nil then -- no systemd workaround
         -- While device is suspended, when the user presses the power button and wakes up the device,
         -- a "Power" event is NOT sent.
         -- So we schedule a manual `UIManager:resume` call just far enough in the future that it won't
