@@ -592,7 +592,7 @@ function Menu:_recalculateDimen()
     end
     self.inner_dimen = Geom:new{
         w = self.dimen.w - 2 * self.border_size,
-        h = self.dimen.h
+        h = self.dimen.h - 2 * self.border_size,
     }
     self.item_dimen = Geom:new{
         w = self.inner_dimen.w,
@@ -628,7 +628,7 @@ function Menu:init()
     self.border_size = self.is_borderless and 0 or Size.border.window
     self.inner_dimen = Geom:new{
         w = self.dimen.w - 2 * self.border_size,
-        h = self.dimen.h
+        h = self.dimen.h - 2 * self.border_size,
     }
 
     self.page = 1
