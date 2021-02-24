@@ -166,8 +166,8 @@ function FileSearcher:showSearchResults()
         dimen = Screen:getSize(),
     }
     self.search_menu = Menu:new{
-        width = Screen:getWidth() - (Size.border.window * 4),
-        height = Screen:getHeight() - (Size.border.window * 4),
+        width = Screen:getWidth() - (Size.padding.fullscreen_popout * 2),
+        height = Screen:getHeight() - (Size.padding.fullscreen_popout * 2),
         show_parent = menu_container,
         onMenuHold = self.onMenuHold,
         cface = Font:getFace("smallinfofont"),

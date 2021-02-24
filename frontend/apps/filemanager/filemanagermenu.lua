@@ -739,7 +739,7 @@ function FileManagerMenu:onShowMenu(tab_index)
         main_menu = Menu:new{
             title = _("File manager menu"),
             item_table = Menu.itemTableFromTouchMenu(self.tab_item_table),
-            width = Screen:getWidth() - (Size.border.window * 4),
+            width = Screen:getWidth() - (Size.padding.fullscreen_popout * 2),
             show_parent = menu_container,
         }
     end

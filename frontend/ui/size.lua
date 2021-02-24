@@ -53,6 +53,7 @@ local Size = {
         button = Screen:scaleBySize(2),
         buttontable = Screen:scaleBySize(4),
         fullscreen = Screen:scaleBySize(15),
+        fullscreen_popout = Screen:scaleBySize(3), -- Size.border.window * 2
     },
     radius = {
         default = Screen:scaleBySize(2),
