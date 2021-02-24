@@ -51,7 +51,7 @@ function ItemShortCutIcon:init()
     local radius = 0
     local background = Blitbuffer.COLOR_WHITE
     if self.style == "rounded_corner" then
-        radius = math.floor(self.width/2)
+        radius = math.floor(self.width / 2)
     elseif self.style == "grey_square" then
         background = Blitbuffer.COLOR_LIGHT_GRAY
     end
@@ -100,7 +100,7 @@ function MenuCloseButton:init()
     -- diagonally aligned with the top right corner (assuming padding_right=0,
     -- or padding_right = padding_top so the diagonal aligment is preserved).
     local text_size = text_widget:getSize()
-    local text_width_pad = (text_size.h - text_size.w) / 2
+    local text_width_pad = math.floor((text_size.h - text_size.w) / 2)
 
     self[1] = FrameContainer:new{
         bordersize = 0,
@@ -157,7 +157,7 @@ function MenuItem:init()
     self.content_width = self.dimen.w - 2 * Size.padding.fullscreen
     local shortcut_icon_dimen = Geom:new()
     if self.shortcut then
-        shortcut_icon_dimen.w = math.floor(self.dimen.h*4/5)
+        shortcut_icon_dimen.w = math.floor(self.dimen.h * 4/5)
         shortcut_icon_dimen.h = shortcut_icon_dimen.w
         self.content_width = self.content_width - shortcut_icon_dimen.w - Size.span.horizontal_default
     end
@@ -216,7 +216,7 @@ function MenuItem:init()
     }
     local state_indent = self.state and self.state.indent or ""
     local state_container = LeftContainer:new{
-        dimen = Geom:new{w = self.content_width/2, h = self.dimen.h},
+        dimen = Geom:new{w = math.floor(self.content_width / 2), h = self.dimen.h},
         HorizontalGroup:new{
             TextWidget:new{
                 text = state_indent,
@@ -457,8 +457,8 @@ end
 function MenuItem:getGesPosition(ges)
     local dimen = self[1].dimen
     return {
-        x = (ges.pos.x - dimen.x)/dimen.w,
-        y = (ges.pos.y - dimen.y)/dimen.h,
+        x = math.floor((ges.pos.x - dimen.x) / dimen.w),
+        y = math.floor((ges.pos.y - dimen.y) / dimen.h),
     }
 end
 
@@ -590,8 +590,12 @@ function Menu:_recalculateDimen()
     if self.dimen.h > Screen:getHeight() or self.dimen.h == nil then
         self.dimen.h = Screen:getHeight()
     end
+    self.inner_dimen = Geom:new{
+        w = self.dimen.w - 2 * self.border_size,
+        h = self.dimen.h - self.header_padding, -- only the title is padded
+    }
     self.item_dimen = Geom:new{
-        w = self.dimen.w,
+        w = self.inner_dimen.w,
         h = Screen:scaleBySize(46),
     }
     local height_dim
@@ -604,7 +608,7 @@ function Menu:_recalculateDimen()
     if self.menu_title and not self.no_title then
         top_height = self.menu_title_group:getSize().h + 2 * Size.padding.small
     end
-    height_dim = self.dimen.h - bottom_height - top_height
+    height_dim = self.inner_dimen.h - bottom_height - top_height
     self.item_dimen.h = math.floor(height_dim / self.perpage)
     self.span_width = math.floor((height_dim - (self.perpage * (self.item_dimen.h ))) / 2 - 1)
     self.page_num = math.ceil(#self.item_table / self.perpage)
@@ -620,6 +624,13 @@ function Menu:init()
     if self.dimen.h > Screen:getHeight() or self.dimen.h == nil then
         self.dimen.h = Screen:getHeight()
     end
+
+    self.border_size = self.is_borderless and 0 or Size.border.window
+    self.inner_dimen = Geom:new{
+        w = self.dimen.w - 2 * self.border_size,
+        h = self.dimen.h - self.header_padding, -- only the title is padded
+    }
+
     self.page = 1
 
     self.paths = {}  -- per instance table to trace navigation path
@@ -634,7 +645,7 @@ function Menu:init()
     }
     local menu_title_container = CenterContainer:new{
         dimen = Geom:new{
-            w = self.dimen.w,
+            w = self.inner_dimen.w,
             h = self.menu_title:getSize().h,
         },
         self.menu_title,
@@ -645,12 +656,12 @@ function Menu:init()
         self.path_text = TextWidget:new{
             face = Font:getFace("xx_smallinfofont"),
             text = BD.directory(self.path),
-            max_width = self.dimen.w - 2*Size.padding.small,
+            max_width = self.inner_dimen.w - 2*Size.padding.small,
             truncate_left = true,
         }
         path_text_container = CenterContainer:new{
             dimen = Geom:new{
-                w = self.dimen.w,
+                w = self.inner_dimen.w,
                 h = self.path_text:getSize().h,
             },
             self.path_text,
@@ -668,7 +679,7 @@ function Menu:init()
     end
     -- group for title bar
     self.title_bar = OverlapGroup:new{
-        dimen = {w = self.dimen.w, h = self.menu_title_group:getSize().h},
+        dimen = {w = self.inner_dimen.w, h = self.menu_title_group:getSize().h},
         self.menu_title_group,
     }
     -- group for items
@@ -818,11 +829,11 @@ function Menu:init()
     }
     local body = self.item_group
     local footer = BottomContainer:new{
-        dimen = self.dimen:copy(),
+        dimen = self.inner_dimen:copy(),
         self.page_info,
     }
     local page_return = BottomContainer:new{
-        dimen = self.dimen:copy(),
+        dimen = self.inner_dimen:copy(),
         WidgetContainer:new{
             dimen = Geom:new{
                 w = Screen:getWidth(),
@@ -855,7 +866,7 @@ function Menu:init()
         -- to have this complex Menu, and all widgets based on it,
         -- be mirrored correctly with RTL languages
         allow_mirroring = false,
-        dimen = self.dimen:copy(),
+        dimen = self.inner_dimen:copy(),
         self.content_group,
         page_return,
         footer,
@@ -863,10 +874,10 @@ function Menu:init()
 
     self[1] = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
-        bordersize = self.is_borderless and 0 or Size.border.window,
+        bordersize = self.border_size,
         padding = 0,
         margin = 0,
-        radius = self.is_popout and math.floor(self.dimen.w/20) or 0,
+        radius = self.is_popout and math.floor(self.dimen.w / 20) or 0,
         content
     }
     ------------------------------------------
@@ -1072,12 +1083,6 @@ function Menu:updateItems(select_number)
         local refresh_dimen =
             old_dimen and old_dimen:combine(self.dimen)
             or self.dimen
-        if not self.is_borderless then
-            refresh_dimen = refresh_dimen:copy()
-            local bordersize = Size.border.window
-            refresh_dimen.w = refresh_dimen.w + bordersize*2
-            refresh_dimen.h = refresh_dimen.h + bordersize*2
-        end
         return "ui", refresh_dimen
     end)
 end
@@ -1356,7 +1361,7 @@ end
 function Menu.getItemFontSize(perpage)
     -- Get adjusted font size for the given nb of items per page:
     -- item font size between 14 and 24 for better matching
-    return math.floor(24 - ((perpage - 6)/ 18) * 10 )
+    return math.floor(24 - ((perpage - 6) / 18) * 10)
 end
 
 function Menu.getItemMandatoryFontSize(perpage)
