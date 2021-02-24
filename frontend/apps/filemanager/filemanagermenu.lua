@@ -131,7 +131,9 @@ function FileManagerMenu:onOpenLastDoc()
     end
 
     local FileManager = require("apps/filemanager/filemanager")
-    FileManager.instance:onClose()
+    if FileManager.instance then
+        FileManager.instance:onClose()
+    end
 end
 
 function FileManagerMenu:setUpdateItemTable()
