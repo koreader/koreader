@@ -797,14 +797,6 @@ end
 local MosaicMenu = {}
 
 function MosaicMenu:_recalculateDimen()
-    self.dimen.w = self.width
-    self.dimen.h = self.height or Screen:getHeight()
-    -- NOTE: inner_dimen should match dimen because we're generally (always?) borderless
-    self.inner_dimen = Geom:new{
-        w = self.dimen.w - 2 * self.border_size,
-        h = self.dimen.h - 2 * self.border_size,
-    }
-
     local portrait_mode = true
     if Screen:getWidth() > Screen:getHeight() then
         portrait_mode = false
