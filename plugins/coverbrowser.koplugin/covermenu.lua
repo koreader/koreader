@@ -50,7 +50,7 @@ function CoverMenu:updateItems(select_number)
     self.layout = {}
     self.item_group:clear()
     -- NOTE: Our various _recalculateDimen overloads appear to have a stronger dependency
-    --       on the rest of the wiget elements being properly laid-out,
+    --       on the rest of the widget elements being properly laid-out,
     --       so we have to run it *first*, unlike in Menu.
     --       Otherwise, various layout issues arise (e.g., MosaicMenu's page_info is misaligned).
     self:_recalculateDimen()
