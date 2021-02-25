@@ -41,6 +41,7 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local Input = Device.input
 local Screen = Device.screen
 local T = require("ffi/util").template
@@ -406,15 +407,18 @@ function KeyValuePage:init()
     self.page_info_spacer = HorizontalSpan:new{
         width = Screen:scaleBySize(32),
     }
-    self.page_return_spacer = HorizontalSpan:new{
-        width = self.page_return_arrow:getSize().w
-    }
 
     if self.callback_return == nil and self.return_button == nil then
         self.page_return_arrow:hide()
     elseif self.callback_return == nil then
         self.page_return_arrow:disable()
     end
+    self.return_button = HorizontalGroup:new{
+        HorizontalSpan:new{
+            width = Size.span.horizontal_small,
+        },
+        self.page_return_arrow,
+    }
 
     self.page_info_left_chev:hide()
     self.page_info_right_chev:hide()
@@ -435,31 +439,47 @@ function KeyValuePage:init()
                     self:goToPage(page)
                 end
             end,
+            ok_text = "Go to page",
         },
+        call_hold_input_on_tap = true,
         bordersize = 0,
-        margin = Screen:scaleBySize(20),
         text_font_face = "pgfont",
         text_font_bold = false,
     }
     self.page_info = HorizontalGroup:new{
-        self.page_return_arrow,
         self.page_info_first_chev,
         self.page_info_spacer,
         self.page_info_left_chev,
+        self.page_info_spacer,
         self.page_info_text,
+        self.page_info_spacer,
         self.page_info_right_chev,
         self.page_info_spacer,
         self.page_info_last_chev,
-        self.page_return_spacer,
-    }
-
-    local footer = BottomContainer:new{
-        dimen = self.dimen:copy(),
-        self.page_info,
     }
 
     local padding = Size.padding.large
-    self.item_width = self.dimen.w - 2 * padding
+    self.inner_dimen = Geom:new{
+        w = self.dimen.w - 2 * padding,
+        h = self.dimen.h - padding, -- no bottom padding
+    }
+    self.item_width = self.inner_dimen.w
+
+    local footer = BottomContainer:new{
+        dimen = self.inner_dimen:copy(),
+        self.page_info,
+    }
+    local page_return = BottomContainer:new{
+        dimen = self.inner_dimen:copy(),
+        WidgetContainer:new{
+            dimen = Geom:new{
+                w = self.inner_dimen.w,
+                h = self.return_button:getSize().h,
+            },
+            self.return_button,
+        }
+    }
+
     -- setup title bar
     self.title_bar = KeyValueTitle:new{
         title = self.title,
@@ -468,9 +488,11 @@ function KeyValuePage:init()
         use_top_page_count = self.use_top_page_count,
         kv_page = self,
     }
+
     -- setup main content
-    local available_height = self.dimen.h
+    local available_height = self.inner_dimen.h
                          - self.title_bar:getSize().h
+                         - Size.span.vertical_large -- for above page_info (as title_bar adds one itself)
                          - self.page_info:getSize().h
                          - 2*Size.line.thick
                             -- account for possibly 2 separator lines added
@@ -478,7 +500,7 @@ function KeyValuePage:init()
     self.items_per_page = G_reader_settings:readSetting("keyvalues_per_page") or self:getDefaultKeyValuesPerPage()
     self.item_height = math.floor(available_height / self.items_per_page)
     -- Put half of the pixels lost by floor'ing between title and content
-    local span_height = math.floor((available_height - (self.items_per_page * (self.item_height ))) / 2)
+    local span_height = math.floor((available_height - (self.items_per_page * (self.item_height))) / 2)
 
     -- Font size is not configurable: we can get a good one from the following
     local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -496,20 +518,23 @@ function KeyValuePage:init()
     self:_populateItems()
 
     local content = OverlapGroup:new{
-        dimen = self.dimen:copy(),
         allow_mirroring = false,
+        dimen = self.inner_dimen:copy(),
         VerticalGroup:new{
             align = "left",
             self.title_bar,
             VerticalSpan:new{ width = span_height },
             self.main_content,
         },
+        page_return,
         footer,
     }
     -- assemble page
     self[1] = FrameContainer:new{
         height = self.dimen.h,
         padding = padding,
+        padding_bottom = 0,
+        margin = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
         content
@@ -549,6 +574,7 @@ end
 -- make sure self.item_margin and self.item_height are set before calling this
 function KeyValuePage:_populateItems()
     self.page_info:resetLayout()
+    self.return_button:resetLayout()
     self.main_content:clear()
     local idx_offset = (self.show_page - 1) * self.items_per_page
     for idx = 1, self.items_per_page do
@@ -597,11 +623,18 @@ function KeyValuePage:_populateItems()
             end
         end
     end
+
+    -- update page information
     self.page_info_text:setText(T(_("Page %1 of %2"), self.show_page, self.pages))
-    self.page_info_left_chev:showHide(self.pages > 1)
-    self.page_info_right_chev:showHide(self.pages > 1)
-    self.page_info_first_chev:showHide(self.pages > 2)
-    self.page_info_last_chev:showHide(self.pages > 2)
+    if self.pages > 1 then
+        self.page_info_text:enable()
+    else
+        self.page_info_text:disableWithoutDimming()
+    end
+    self.page_info_left_chev:show()
+    self.page_info_right_chev:show()
+    self.page_info_first_chev:show()
+    self.page_info_last_chev:show()
 
     self.page_info_left_chev:enableDisable(self.show_page > 1)
     self.page_info_right_chev:enableDisable(self.show_page < self.pages)

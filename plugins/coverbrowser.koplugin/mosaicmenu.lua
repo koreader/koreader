@@ -799,6 +799,11 @@ local MosaicMenu = {}
 function MosaicMenu:_recalculateDimen()
     self.dimen.w = self.width
     self.dimen.h = self.height or Screen:getHeight()
+    -- NOTE: inner_dimen should match dimen because we're generally (always?) borderless
+    self.inner_dimen = Geom:new{
+        w = self.dimen.w - 2 * self.border_size,
+        h = self.dimen.h - 2 * self.border_size,
+    }
 
     local portrait_mode = true
     if Screen:getWidth() > Screen:getHeight() then
@@ -834,8 +839,8 @@ function MosaicMenu:_recalculateDimen()
 
     -- Set our items target size
     self.item_margin = Screen:scaleBySize(10)
-    self.item_height = math.floor((self.dimen.h - self.others_height - (1+self.nb_rows)*self.item_margin) / self.nb_rows)
-    self.item_width = math.floor((self.dimen.w - (1+self.nb_cols)*self.item_margin) / self.nb_cols)
+    self.item_height = math.floor((self.inner_dimen.h - self.others_height - (1+self.nb_rows)*self.item_margin) / self.nb_rows)
+    self.item_width = math.floor((self.inner_dimen.w - (1+self.nb_cols)*self.item_margin) / self.nb_cols)
     self.item_dimen = Geom:new{
         w = self.item_width,
         h = self.item_height
@@ -873,7 +878,7 @@ function MosaicMenu:_updateItemsBuildUI()
             local container = self._do_center_partial_rows and CenterContainer or LeftContainer
             table.insert(self.item_group, container:new{
                 dimen = Geom:new{
-                    w = self.dimen.w,
+                    w = self.inner_dimen.w,
                     h = self.item_height
                 },
                 cur_row

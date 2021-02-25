@@ -8,6 +8,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local dump = require("dump")
 local isAndroid, android = pcall(require, "android")
@@ -89,8 +90,8 @@ function SetDefaults:init()
     end
 
     self.defaults_menu = Menu:new{
-        width = Screen:getWidth()-15,
-        height = Screen:getHeight()-15,
+        width = Screen:getWidth() - (Size.margin.fullscreen_popout * 2),
+        height = Screen:getHeight() - (Size.margin.fullscreen_popout * 2),
         cface = Font:getFace("smallinfofont"),
         show_parent = menu_container,
         _manager = self,
