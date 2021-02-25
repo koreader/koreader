@@ -296,7 +296,7 @@ function SortWidget:init()
 
     self.footer_page = Button:new{
         text = "",
-        tap_input = {
+        hold_input = {
             title = _("Enter page number"),
             type = "number",
             hint_func = function()
@@ -308,7 +308,9 @@ function SortWidget:init()
                     self:goToPage(page)
                 end
             end,
+            ok_text = "Go to page",
         },
+        call_hold_input_on_tap = true,
         bordersize = 0,
         margin = 0,
         text_font_face = "pgfont",
