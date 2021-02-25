@@ -585,19 +585,6 @@ local Menu = FocusManager:new{
 function Menu:_recalculateDimen()
     self.perpage = self.items_per_page or G_reader_settings:readSetting("items_per_page") or self.items_per_page_default
     self.span_width = 0
-    self.dimen.w = self.width
-    self.dimen.h = self.height or Screen:getHeight()
-    if self.dimen.h > Screen:getHeight() or self.dimen.h == nil then
-        self.dimen.h = Screen:getHeight()
-    end
-    self.inner_dimen = Geom:new{
-        w = self.dimen.w - 2 * self.border_size,
-        h = self.dimen.h - 2 * self.border_size,
-    }
-    self.item_dimen = Geom:new{
-        w = self.inner_dimen.w,
-        h = Screen:scaleBySize(46),
-    }
     local height_dim
     local bottom_height = 0
     local top_height = 0
@@ -629,6 +616,11 @@ function Menu:init()
     self.inner_dimen = Geom:new{
         w = self.dimen.w - 2 * self.border_size,
         h = self.dimen.h - 2 * self.border_size,
+    }
+
+    self.item_dimen = Geom:new{
+        w = self.inner_dimen.w,
+        h = Screen:scaleBySize(46),
     }
 
     self.page = 1

@@ -797,18 +797,7 @@ end
 local MosaicMenu = {}
 
 function MosaicMenu:_recalculateDimen()
-    self.dimen.w = self.width
-    self.dimen.h = self.height or Screen:getHeight()
-    -- NOTE: inner_dimen should match dimen because we're generally (always?) borderless
-    self.inner_dimen = Geom:new{
-        w = self.dimen.w - 2 * self.border_size,
-        h = self.dimen.h - 2 * self.border_size,
-    }
-
-    local portrait_mode = true
-    if Screen:getWidth() > Screen:getHeight() then
-        portrait_mode = false
-    end
+    local portrait_mode = Screen:getWidth() <= Screen:getHeight()
     -- 3 x 3 grid by default if not initially provided (4 x 2 in landscape mode)
     if portrait_mode then
         self.nb_cols = self.nb_cols_portrait or 3

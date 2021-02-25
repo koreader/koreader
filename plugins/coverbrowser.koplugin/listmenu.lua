@@ -881,14 +881,6 @@ end
 local ListMenu = {}
 
 function ListMenu:_recalculateDimen()
-    self.dimen.w = self.width
-    self.dimen.h = self.height or Screen:getHeight()
-    -- NOTE: inner_dimen should match dimen because we're generally (always?) borderless
-    self.inner_dimen = Geom:new{
-        w = self.dimen.w - 2 * self.border_size,
-        h = self.dimen.h - 2 * self.border_size,
-    }
-
     -- Find out available height from other UI elements made in Menu
     self.others_height = 0
     if self.title_bar then -- Menu:init() has been done
