@@ -102,6 +102,10 @@ function OPDSBrowser:init()
           {
              title = "Беларуская палічка",
              url = "https://knihi.com/opds.xml",
+          },
+          {
+             title = "Library Genesis",
+             url = "https://libgen.avsej.download/opds.xml",
           }
         }
         G_reader_settings:saveSetting("opds_servers", servers)
