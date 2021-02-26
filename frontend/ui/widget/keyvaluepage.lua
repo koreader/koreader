@@ -642,7 +642,7 @@ function KeyValuePage:_populateItems()
         self.page_info_first_chev:enableDisable(self.show_page > 1)
         self.page_info_last_chev:enableDisable(self.show_page < self.pages)
     else
-        self.page_info_text:setText(_("No choices available"))
+        self.page_info_text:setText(_("No items"))
         self.page_info_text:disableWithoutDimming()
     end
 
