@@ -625,21 +625,26 @@ function KeyValuePage:_populateItems()
     end
 
     -- update page information
-    self.page_info_text:setText(T(_("Page %1 of %2"), self.show_page, self.pages))
-    if self.pages > 1 then
-        self.page_info_text:enable()
+    if self.pages >= 1 then
+        self.page_info_text:setText(T(_("Page %1 of %2"), self.show_page, self.pages))
+        if self.pages > 1 then
+            self.page_info_text:enable()
+        else
+            self.page_info_text:disableWithoutDimming()
+        end
+        self.page_info_left_chev:show()
+        self.page_info_right_chev:show()
+        self.page_info_first_chev:show()
+        self.page_info_last_chev:show()
+
+        self.page_info_left_chev:enableDisable(self.show_page > 1)
+        self.page_info_right_chev:enableDisable(self.show_page < self.pages)
+        self.page_info_first_chev:enableDisable(self.show_page > 1)
+        self.page_info_last_chev:enableDisable(self.show_page < self.pages)
     else
+        self.page_info_text:setText(_("No choices available"))
         self.page_info_text:disableWithoutDimming()
     end
-    self.page_info_left_chev:show()
-    self.page_info_right_chev:show()
-    self.page_info_first_chev:show()
-    self.page_info_last_chev:show()
-
-    self.page_info_left_chev:enableDisable(self.show_page > 1)
-    self.page_info_right_chev:enableDisable(self.show_page < self.pages)
-    self.page_info_first_chev:enableDisable(self.show_page > 1)
-    self.page_info_last_chev:enableDisable(self.show_page < self.pages)
 
     UIManager:setDirty(self, function()
         return "ui", self.dimen
