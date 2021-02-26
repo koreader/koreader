@@ -78,15 +78,6 @@ function OPDSBrowser:init()
              url = "https://bookserver.archive.org/",
           },
           {
-             title = "Flibusta (Russian)",
-             url = "http://www.flibusta.is/opds",
-          },
-          {
-             title = "Flibusta [Ru] [Searchable]",
-             url = "http://www.flibusta.is/opds/search?searchTerm=%s",
-             searchable = true,
-          },
-          {
              title = "textos.info (Spanish)",
              url = "https://www.textos.info/catalogo.atom",
           },
@@ -99,10 +90,6 @@ function OPDSBrowser:init()
              url = "https://gallica.bnf.fr/services/engine/search/opds?operation=searchRetrieve&query=(gallica all \"%s\")",
              searchable = true,
           },
-          {
-             title = "Беларуская палічка",
-             url = "https://knihi.com/opds.xml",
-          }
         }
         G_reader_settings:saveSetting("opds_servers", servers)
     elseif servers[4] and servers[4].title == "Internet Archive" and servers[4].url == "http://bookserver.archive.org/catalog/"  then
