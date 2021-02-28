@@ -5,6 +5,7 @@ local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
 local ffiutil = require("ffi/util")
 local logger = require("logger")
@@ -131,6 +132,24 @@ function NetworkMgr:promptWifiOff(complete_callback)
             self.wifi_was_on = false
             G_reader_settings:saveSetting("wifi_was_on", false)
             self:turnOffWifi(complete_callback)
+        end,
+    })
+end
+
+function NetworkMgr:promptWifi(complete_callback)
+    UIManager:show(MultiConfirmBox:new{
+        text = _("Wi-Fi is enabled, but you're currently not connected to a network.\nHow would you like to proceed?"),
+        choice1_text = _("Turn Wi-Fi off"),
+        choice1_callback = function()
+            self.wifi_was_on = false
+            G_reader_settings:saveSetting("wifi_was_on", false)
+            self:turnOffWifi(complete_callback)
+        end,
+        choice2_text = _("Connect"),
+        choice2_callback = function()
+            self.wifi_was_on = true
+            G_reader_settings:saveSetting("wifi_was_on", true)
+            self:turnOnWifi(complete_callback)
         end,
     })
 end
@@ -335,13 +354,15 @@ function NetworkMgr:getWifiToggleMenuTable()
         enabled_func = function() return Device:hasWifiToggle() end,
         checked_func = function() return NetworkMgr:isWifiOn() end,
         callback = function(touchmenu_instance)
-            local wifi_status = NetworkMgr:isWifiOn() and NetworkMgr:isConnected()
+            local is_wifi_on = NetworkMgr:isWifiOn()
+            local is_connected = NetworkMgr:isConnected()
+            local fully_connected = is_wifi_on and is_connected
             local complete_callback = function()
-                -- notify touch menu to update item check state
+                -- Notify TouchMenu to update item check state
                 touchmenu_instance:updateItems()
-                -- if wifi was on, this callback will only be executed when the network has been
-                -- disconnected.
-                if wifi_status then
+                -- If Wi-Fi was on when the menu was shown, this means the tap meant to turn the Wi-Fi *off*,
+                -- as such, this callback will only be executed *after* the network has been disconnected.
+                if fully_connected then
                     UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
                 else
                     -- On hasWifiManager devices that play with kernel modules directly,
@@ -372,8 +393,10 @@ function NetworkMgr:getWifiToggleMenuTable()
                     end
                 end
             end
-            if wifi_status then
+            if fully_connected then
                 NetworkMgr:promptWifiOff(complete_callback)
+            elseif is_wifi_on and not is_connected then
+                NetworkMgr:promptWifi(complete_callback)
             else
                 NetworkMgr:promptWifiOn(complete_callback)
             end
