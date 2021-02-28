@@ -60,7 +60,7 @@ end
 function FileSearcher:setSearchResults()
     local keywords = self.search_value
     self.results = {}
-    if keywords == " " then -- one space to show all files
+    if keywords == "*" then -- one * to show all files
         self.results = self.files
     else
         for __,f in pairs(self.files) do
