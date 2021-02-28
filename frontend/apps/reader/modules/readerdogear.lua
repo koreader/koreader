@@ -38,10 +38,11 @@ function ReaderDogear:setupDogear(new_dogear_size)
         self.vgroup = VerticalGroup:new{
             self.top_pad,
             IconWidget:new{
-                icon = "dogear.opaque",
+                icon = "dogear.alpha",
                 rotation_angle = BD.mirroredUILayout() and 90 or 0,
                 width = self.dogear_size,
                 height = self.dogear_size,
+                alpha = true, -- Keep the alpha layer intact
             }
         }
         self[1] = RightContainer:new{
