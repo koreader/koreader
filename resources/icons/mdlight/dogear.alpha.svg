@@ -70,7 +70,7 @@
    style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.12;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:0.999901"
    d="M 48,46 V 0 H 2 Z"
    sodipodi:nodetypes="cccc" /><path
-   style="opacity:1;fill:#ffffff;fill-opacity:0;stroke:#000000;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:0.75"
+   style="opacity:1;fill:#ffffff;fill-opacity:0.75;stroke:#000000;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:0.75"
    d="M 1.9999949,2 V 45.999919 H 46 Z"
    id="path1127"
    sodipodi:nodetypes="cccc"
