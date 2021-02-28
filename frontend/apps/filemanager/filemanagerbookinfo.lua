@@ -64,7 +64,7 @@ function BookInfo:show(file, book_props)
     table.insert(kv_pairs, { _("Format:"), filetype:upper() })
     table.insert(kv_pairs, { _("Size:"), size })
     table.insert(kv_pairs, { _("File date:"), os.date("%Y-%m-%d %H:%M:%S", file_modification) })
-    table.insert(kv_pairs, { _("Directory:"), BD.dirpath(filemanagerutil.abbreviate(directory)), separator = true })
+    table.insert(kv_pairs, { _("Folder:"), BD.dirpath(filemanagerutil.abbreviate(directory)), separator = true })
 
     -- book_props may be provided if caller already has them available
     -- but it may lack 'pages', that we may get from sidecar file
