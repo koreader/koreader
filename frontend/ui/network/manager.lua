@@ -372,6 +372,9 @@ function NetworkMgr:getWifiToggleMenuTable()
                             UIManager:broadcastEvent(Event:new("NetworkConnected"))
                         elseif NetworkMgr:isWifiOn() and not NetworkMgr:isConnected() then
                             -- Don't leave Wi-Fi in an inconsistent state if the connection failed.
+                            -- NOTE: Keep in mind that NetworkSetting only runs this callback on *successful* connections!
+                            --       (It's called connect_callback there).
+                            --       This makes this branch somewhat hard to reach, which is why it gets a dedicated prompt below...
                             self.wifi_was_on = false
                             G_reader_settings:saveSetting("wifi_was_on", false)
                             -- NOTE: We're limiting this to only a few platforms, as it might be actually harmful on some devices.
