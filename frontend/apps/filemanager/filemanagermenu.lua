@@ -5,7 +5,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
-local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local PluginLoader = require("pluginloader")
 local SetDefaults = require("apps/filemanager/filemanagersetdefaults")
@@ -285,9 +284,7 @@ function FileManagerMenu:setUpdateItemTable()
                     local FileManager = require("apps/filemanager/filemanager")
                     if FileManager.instance then FileManager.instance:reinit() end
                 end,
-                hold_callback = function()
-                    UIManager:show(InfoMessage:new{
-                        text = _([[
+                help_text = _([[
 "Shorten home folder" will display the home folder itself as "Home" instead of its full path.
 
 Assuming the home folder is:
@@ -295,10 +292,7 @@ Assuming the home folder is:
 A subfolder will be shortened from:
 `/mnt/onboard/.books/Manga/Cells at Work`
 To:
-`Manga/Cells at Work`.
-                        ]])
-                    })
-                end,
+`Manga/Cells at Work`.]]),
             },
             {
                 text = _("Show filename in Open last/previous menu items"),
