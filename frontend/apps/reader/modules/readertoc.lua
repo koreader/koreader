@@ -965,7 +965,7 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
             table.insert(toc_ticks_levels, {
                 text = _("Bind chapter navigation to ticks"),
                 help_text = _([[Entries from ToC levels that are ignored in the progress bars will still be used for chapter navigation and 'page/time left until next chapter' in the footer.
-Enabling this option will restrict chapter nativation to progress bar ticks.]]),
+Enabling this option will restrict chapter navigation to progress bar ticks.]]),
                 enabled_func = function()
                     return next(self.toc_ticks_ignored_levels) ~= nil
                 end,
