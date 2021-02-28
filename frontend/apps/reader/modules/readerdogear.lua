@@ -81,7 +81,7 @@ function ReaderDogear:onSetPageMargins(margins)
     -- top & right margins and be sure no text is hidden by the icon
     -- (the provided margins are not scaled, so do as ReaderTypeset)
     local margin = Screen:scaleBySize(math.max(margin_top, margin_right))
-    local new_dogear_size = math.max(self.dogear_min_size, math.min(self.dogear_max_size, margin))
+    local new_dogear_size = math.min(self.dogear_max_size, math.max(self.dogear_min_size, margin))
     print("Dogear clamped", margin, "between", self.dogear_min_size, "and", self.dogear_max_size, "to", new_dogear_size)
     self:setupDogear(new_dogear_size)
 end
