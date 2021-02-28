@@ -70,13 +70,9 @@
    style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.12;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:0.999901"
    d="M 48,46 V 0 H 2 Z"
    sodipodi:nodetypes="cccc" /><path
-   style="fill:#ffffff;stroke:#000000;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1;opacity:1;fill-opacity:0"
-   d="M 1.9999949,1.9994296 V 45.999919 H 46.00078"
+   style="opacity:1;fill:#ffffff;fill-opacity:0;stroke:#000000;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:0.75"
+   d="M 1.9999949,2 V 45.999919 H 46 Z"
    id="path1127"
-   sodipodi:nodetypes="ccc"
+   sodipodi:nodetypes="cccc"
    inkscape:export-xdpi="96"
-   inkscape:export-ydpi="96" /><path
-   style="fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-   d="m 2.25,1.75 44,44"
-   id="path14686"
-   sodipodi:nodetypes="cc" /></svg>
+   inkscape:export-ydpi="96" /></svg>
