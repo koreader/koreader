@@ -334,6 +334,10 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
         UIManager:show(InfoMessage:new{
             text = T(_("Catalog not found.")),
         })
+    elseif code == 406 then
+        UIManager:show(InfoMessage:new{
+            text = T(_("Cannot get catalog. Server refuses to serve uncompressed content.")),
+        })
     else
         UIManager:show(InfoMessage:new{
             text = T(_("Cannot get catalog. Server response code %1."), code),
