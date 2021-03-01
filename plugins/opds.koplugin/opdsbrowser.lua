@@ -101,7 +101,7 @@ function OPDSBrowser:init()
 end
 
 function OPDSBrowser:addServerFromInput(fields)
-    logger.info("input catalog", fields)
+    logger.info("New OPDS catalog input:", fields)
     local servers = G_reader_settings:readSetting("opds_servers") or {}
     local new_server = {
         title = fields[1],
@@ -116,7 +116,7 @@ function OPDSBrowser:addServerFromInput(fields)
 end
 
 function OPDSBrowser:editCalibreFromInput(fields)
-    logger.dbg("input calibre server", fields)
+    logger.dbg("Edit calibre server input:", fields)
     local calibre = G_reader_settings:readSetting("calibre_opds") or {}
     if fields[1] then
         calibre.host = fields[1]
@@ -374,7 +374,7 @@ end
 function OPDSBrowser:getCatalog(item_url, username, password)
     local ok, catalog = pcall(self.parseFeed, self, item_url, username, password)
     if not ok and catalog then
-        logger.info("cannot get catalog info from", item_url or "nil", catalog)
+        logger.info("Cannot get catalog info from", item_url or "nil", catalog)
         UIManager:show(InfoMessage:new{
             text = T(_("Cannot get catalog info from %1"), (item_url and BD.url(item_url) or "nil")),
         })
@@ -540,7 +540,7 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
 
     local function download()
         UIManager:scheduleIn(1, function()
-            logger.dbg("downloading file", local_path, "from", remote_url)
+            logger.dbg("Downloading file", local_path, "from", remote_url)
             local parsed = url.parse(remote_url)
             http.TIMEOUT = 20
 
@@ -570,7 +570,7 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
             end
 
             if code == 200 then
-                logger.dbg("file downloaded to", local_path)
+                logger.dbg("File downloaded to", local_path)
                 if self.file_downloaded_callback then
                     self.file_downloaded_callback(local_path)
                 end
@@ -656,7 +656,7 @@ function OPDSBrowser:showDownloads(item)
             callback = function()
                 require("ui/downloadmgr"):new{
                     onConfirm = function(path)
-                        logger.info("set download directory to", path)
+                        logger.info("Download directory set to", path)
                         G_reader_settings:saveSetting("download_dir", path)
                         UIManager:nextTick(function()
                             UIManager:close(self.download_dialog)
@@ -674,7 +674,7 @@ function OPDSBrowser:showDownloads(item)
 end
 
 function OPDSBrowser:browse(browse_url, username, password)
-    logger.dbg("Browse opds url", browse_url or "nil")
+    logger.dbg("Browse OPDS url", browse_url or "nil")
     table.insert(self.paths, {
         url = browse_url,
         username = username,
@@ -727,7 +727,7 @@ function OPDSBrowser:onMenuSelect(item)
         item.callback()
     -- acquisition
     elseif item.acquisitions and #item.acquisitions > 0 then
-        logger.dbg("downloads available", item)
+        logger.dbg("Downloads available:", item)
         self:showDownloads(item)
     -- navigation
     else
@@ -747,7 +747,7 @@ function OPDSBrowser:onMenuSelect(item)
 end
 
 function OPDSBrowser:editServerFromInput(item, fields)
-    logger.info("input catalog", fields)
+    logger.info("Edit OPDS catalog input:", fields)
     local servers = {}
     for _, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
         if server.title == item.text or server.url == item.url then
@@ -764,7 +764,7 @@ function OPDSBrowser:editServerFromInput(item, fields)
 end
 
 function OPDSBrowser:editOPDSServer(item)
-    logger.info("edit", item)
+    logger.info("Edit OPDS Server:", item)
     self.edit_server_dialog = MultiInputDialog:new{
         title = _("Edit OPDS catalog"),
         fields = {
@@ -813,7 +813,7 @@ function OPDSBrowser:editOPDSServer(item)
 end
 
 function OPDSBrowser:deleteOPDSServer(item)
-    logger.info("delete", item)
+    logger.info("Delete OPDS server:", item)
     local servers = {}
     for _, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
         if server.title ~= item.text or server.url ~= item.url then
