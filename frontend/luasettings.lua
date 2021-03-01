@@ -195,6 +195,14 @@ function LuaSettings:removeTableItem(key, index)
     return self
 end
 
+--- Returns or initialize a table.
+function LuaSettings:getTable(key, default_table)
+    if not self:has(key) then
+        self:saveSetting(key, default_table)
+    end
+    return self:readSetting(key)
+end
+
 --- Replaces existing settings with table.
 function LuaSettings:reset(table)
     self.data = table
