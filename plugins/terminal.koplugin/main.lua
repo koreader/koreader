@@ -38,11 +38,10 @@ end
 function Terminal:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
-    self.shortcuts = self.settings:readSetting("shortcuts") or {}
+    self.shortcuts = self.settings:readSetting("shortcuts", {})
 end
 
 function Terminal:saveShortcuts()
-    self.settings:saveSetting("shortcuts", self.shortcuts)
     self.settings:flush()
     UIManager:show(InfoMessage:new{
         text = _("Shortcuts saved"),
