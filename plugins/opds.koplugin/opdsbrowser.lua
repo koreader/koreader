@@ -108,7 +108,8 @@ function OPDSBrowser:addServerFromInput(fields)
         url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2]),
         searchable =  (fields[2]:match("%%s") and true or false),
         username = fields[3] ~= "" and fields[3] or nil,
-        password = fields[4] ~= "" and fields[4] or nil,
+        -- Allow empty passwords
+        password = fields[4],
     }
     table.insert(servers, new_server)
     G_reader_settings:saveSetting("opds_servers", servers)
@@ -129,7 +130,7 @@ function OPDSBrowser:editCalibreFromInput(fields)
     else
         calibre.username = nil
     end
-    if fields[4] and fields[4] ~= "" then
+    if fields[4] then
         calibre.password = fields[4]
     else
         calibre.password = nil
@@ -755,7 +756,7 @@ function OPDSBrowser:editServerFromInput(item, fields)
             server.url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2])
             server.searchable =  (fields[2]:match("%%s") and true or false)
             server.username = fields[3] ~= "" and fields[3] or nil
-            server.password = fields[4] ~= "" and fields[4] or nil
+            server.password = fields[4]
         end
         table.insert(servers, server)
     end
