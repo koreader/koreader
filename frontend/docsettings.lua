@@ -165,8 +165,25 @@ function DocSettings:open(docfile)
     return setmetatable(new, {__index = DocSettings})
 end
 
---- Reads a setting.
-function DocSettings:readSetting(key)
+--[[-- Reads a setting, optionally initializing it to a default.
+
+If default is set, and the key doesn't exist yet, it is initialized to default first.
+This ensures both that the defaults are actually set if necessary,
+and that the returned reference actually belongs to the DocSettings object straight away,
+without requiring further interaction (e.g., saveSetting) from the caller.
+
+@param key The setting's key
+@param default Initialization data (Optional)
+]]
+function DocSettings:readSetting(key, default)
+    -- No initialization data: legacy behavior
+    if not default then
+        return self.data[key]
+    end
+
+    if not self:has(key) then
+        self.data[key] = default
+    end
     return self.data[key]
 end
 
@@ -178,15 +195,6 @@ end
 --- Deletes a setting.
 function DocSettings:delSetting(key)
     self.data[key] = nil
-end
-
---- Returns a setting, initializing it first with the specified default if necessary.
---- This ensures that it actually belongs to the DocSettings object right away.
-function DocSettings:getSetting(key, default)
-    if not self:has(key) then
-        self:saveSetting(key, default)
-    end
-    return self:readSetting(key)
 end
 
 --- Serializes settings and writes them to `metadata.lua`.
