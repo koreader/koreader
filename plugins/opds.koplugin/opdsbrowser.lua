@@ -289,7 +289,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
     request['url'] = item_url
     request['method'] = method and method or "GET"
     request['sink'] = ltn12.sink.table(sink)
-    request['headers'] = username and { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname, } or  { ["Host"] = hostname, }
+    request['headers'] = username and { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname, ["Accept-Encoding"] = "identity", } or { ["Host"] = hostname, ["Accept-Encoding"] = "identity" }
     logger.info("request", request)
     http.TIMEOUT = 10
     local httpRequest = http.request
@@ -544,6 +544,7 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
             if parsed.scheme == "http" then
                 dummy, code, headers = http.request {
                     url         = remote_url,
+                    headers     = { ["Host"] = hostname, ["Accept-Encoding"] = "identity", },
                     sink        = ltn12.sink.file(io.open(local_path, "w")),
                     user        = item.username,
                     password    = item.password
@@ -553,7 +554,7 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
                 local hostname = parsed.host
                 dummy, code, headers = http.request {
                     url         = remote_url,
-                    headers     = auth and { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname } or nil,
+                    headers     = auth and { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname, ["Accept-Encoding"] = "identity", } or { ["Host"] = hostname, ["Accept-Encoding"] = "identity", },
                     sink        = ltn12.sink.file(io.open(local_path, "w")),
                 }
             else
