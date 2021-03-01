@@ -35,7 +35,7 @@ local DEFAULT_CALENDAR_NB_BOOK_SPANS = 3
 local DB_SCHEMA_VERSION = 20201022
 
 -- This is the query used to compute the total time spent reading distinct pages of the book,
--- capped at self.page_max_read_sec per distinct page.
+-- capped at self.settings.max_sec per distinct page.
 -- c.f., comments in insertDB
 local STATISTICS_SQL_BOOK_CAPPED_TOTALS_QUERY = [[
     SELECT count(*),
@@ -137,22 +137,15 @@ function ReaderStatistics:init()
     end
     self.start_current_period = os.time()
     self:resetVolatileStats()
-    local settings = G_reader_settings:readSetting("statistics") or {}
-    self.page_min_read_sec = tonumber(settings.min_sec)
-    self.page_max_read_sec = tonumber(settings.max_sec)
-    self.calendar_start_day_of_week = settings.calendar_start_day_of_week
-    self.calendar_nb_book_spans = settings.calendar_nb_book_spans
-    self.calendar_show_histogram = settings.calendar_show_histogram
-    self.calendar_browse_future_months = settings.calendar_browse_future_months
-    self.is_enabled = not (settings.is_enabled == false)
-    self.convert_to_db = settings.convert_to_db
+    self.settings = G_reader_settings:readSetting("statistics", {})
+    self.settings.is_enabled = not (self.settings.is_enabled == false)
     self.ui.menu:registerToMainMenu(self)
     self:checkInitDatabase()
     BookStatusWidget.getStats = function()
-        return self:getStatsBookStatus(self.id_curr_book, self.is_enabled)
+        return self:getStatsBookStatus(self.id_curr_book, self.settings.is_enabled)
     end
     ReaderFooter.getAvgTimePerPage = function()
-        if self.is_enabled then
+        if self.settings.is_enabled then
             return self.avg_time
         end
     end
@@ -177,7 +170,7 @@ function ReaderStatistics:init()
 end
 
 function ReaderStatistics:initData()
-    if self:isDocless() or not self.is_enabled then
+    if self:isDocless() or not self.settings.is_enabled then
         return
     end
     -- first execution
@@ -206,7 +199,7 @@ function ReaderStatistics:initData()
         self.avg_time = self.book_read_time / self.book_read_pages
     else
         -- NOTE: Possibly less weird-looking than initializing this to 0?
-        self.avg_time = math.floor(0.50 * self.page_max_read_sec)
+        self.avg_time = math.floor(0.50 * self.settings.max_sec)
         logger.dbg("ReaderStatistics: Initializing average time per page at 50% of the max value, i.e.,", self.avg_time)
     end
 end
@@ -276,7 +269,7 @@ end
 
 function ReaderStatistics:checkInitDatabase()
     local conn = SQ3.open(db_location)
-    if self.convert_to_db then      -- if conversion to sqlite DB has already been done
+    if self.settings.convert_to_db then      -- if conversion to sqlite DB has already been done
         if not conn:exec("PRAGMA table_info('book');") then
             UIManager:show(ConfirmBox:new{
                 text = T(_([[
@@ -352,7 +345,7 @@ Do you want to create an empty database?
             conn = SQ3.open(db_location)
         end
     else  -- Migrate stats for books in history from metadata.lua to sqlite database
-        self.convert_to_db = true
+        self.settings.convert_to_db = true
         if not conn:exec("PRAGMA table_info('book');") then
             local filename_first_history, quickstart_filename, __
             if #ReadHistory.hist == 1 then
@@ -379,7 +372,6 @@ Please wait…
                 self:createDB(conn)
             end
         end
-        self:saveSettings()
     end
     conn:close()
 end
@@ -593,8 +585,8 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
         conn:exec('BEGIN;')
         stmt = conn:prepare("INSERT OR IGNORE INTO page_stat VALUES(?, ?, ?, ?);")
         local avg_time = math.ceil(book_stats.total_time_in_sec / read_pages)
-        if avg_time > self.page_max_read_sec then
-            avg_time = self.page_max_read_sec
+        if avg_time > self.settings.max_sec then
+            avg_time = self.settings.max_sec
         end
         local first_read_page = book_stats.performance_in_pages[sorted_performance[1]]
         if first_read_page > 1 then
@@ -606,10 +598,10 @@ function ReaderStatistics:addBookStatToDB(book_stats, conn)
         for i=2, #sorted_performance do
             start_open_page = sorted_performance[i-1]
             local diff_time = sorted_performance[i] - sorted_performance[i-1]
-            if diff_time <= self.page_max_read_sec then
+            if diff_time <= self.settings.max_sec then
                 stmt:reset():bind(id_book, book_stats.performance_in_pages[sorted_performance[i-1]],
                     start_open_page, diff_time):step()
-            elseif diff_time > self.page_max_read_sec then --and diff_time <= 2 * avg_time then
+            elseif diff_time > self.settings.max_sec then --and diff_time <= 2 * avg_time then
                 stmt:reset():bind(id_book, book_stats.performance_in_pages[sorted_performance[i-1]],
                     start_open_page, avg_time):step()
             end
@@ -767,9 +759,9 @@ function ReaderStatistics:insertDB(id_book, updated_pagecount)
 
     -- NOTE: See the tail end of the discussions in #6761 for more context on the choice of this heuristic.
     --       Basically, we're counting distinct pages,
-    --       while making sure the sum of durations per distinct page is clamped to self.page_max_read_sec
+    --       while making sure the sum of durations per distinct page is clamped to self.settings.max_sec
     --       This is expressly tailored to a fairer computation of self.avg_time ;).
-    local book_read_pages, book_read_time = conn:rowexec(string.format(STATISTICS_SQL_BOOK_CAPPED_TOTALS_QUERY, self.page_max_read_sec, id_book))
+    local book_read_pages, book_read_time = conn:rowexec(string.format(STATISTICS_SQL_BOOK_CAPPED_TOTALS_QUERY, self.settings.max_sec, id_book))
     -- NOTE: What we cache in the book table is the plain uncapped sum (mainly for deleteBooksByTotalDuration's benefit)...
     local total_read_pages, total_read_time = conn:rowexec(string.format(STATISTICS_SQL_BOOK_TOTALS_QUERY, id_book))
 
@@ -810,7 +802,7 @@ function ReaderStatistics:getPageTimeTotalStats(id_book)
     end
     local conn = SQ3.open(db_location)
     -- NOTE: Similarly, this one is used for time-based estimates and averages, so, use the capped variant
-    local total_pages, total_time = conn:rowexec(string.format(STATISTICS_SQL_BOOK_CAPPED_TOTALS_QUERY, self.page_max_read_sec, id_book))
+    local total_pages, total_time = conn:rowexec(string.format(STATISTICS_SQL_BOOK_CAPPED_TOTALS_QUERY, self.settings.max_sec, id_book))
     conn:close()
 
     if total_pages then
@@ -838,23 +830,22 @@ end
 function ReaderStatistics:getStatisticEnabledMenuItem()
     return {
         text = _("Enabled"),
-        checked_func = function() return self.is_enabled end,
+        checked_func = function() return self.settings.is_enabled end,
         callback = function()
             -- if was enabled, have to save data to file
-            if self.is_enabled and not self:isDocless() then
+            if self.settings.is_enabled and not self:isDocless() then
                 self:insertDB(self.id_curr_book)
                 self.ui.doc_settings:saveSetting("stats", self.data)
             end
 
-            self.is_enabled = not self.is_enabled
+            self.settings.is_enabled = not self.settings.is_enabled
             -- if was disabled have to get data from db
-            if self.is_enabled and not self:isDocless() then
+            if self.settings.is_enabled and not self:isDocless() then
                 self:initData()
                 self.start_current_period = os.time()
                 self.curr_page = self.ui:getCurrentPage()
                 self:resetVolatileStats(self.start_current_period)
             end
-            self:saveSettings()
             if not self:isDocless() then
                 self.view.footer:onUpdateFooter()
             end
@@ -873,21 +864,21 @@ function ReaderStatistics:addToMainMenu(menu_items)
                     {
                         text_func = function()
                             return T(_("Read page duration limits: %1 s / %2 s"),
-                                self.page_min_read_sec, self.page_max_read_sec)
+                                self.settings.min_sec, self.settings.max_sec)
                         end,
                         callback = function(touchmenu_instance)
                             local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
                             local durations_widget
                             durations_widget = DoubleSpinWidget:new{
                                 left_text = _("Min"),
-                                left_value = self.page_min_read_sec,
+                                left_value = self.settings.min_sec,
                                 left_default = DEFAULT_MIN_READ_SEC,
                                 left_min = 3,
                                 left_max = 120,
                                 left_step = 1,
                                 left_hold_step = 10,
                                 right_text = _("Max"),
-                                right_value = self.page_max_read_sec,
+                                right_value = self.settings.max_sec,
                                 right_default = DEFAULT_MAX_READ_SEC,
                                 right_min = 10,
                                 right_max = 7200,
@@ -906,9 +897,8 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                                     if min > max then
                                         min, max = max, min
                                     end
-                                    self.page_min_read_sec = min
-                                    self.page_max_read_sec = max
-                                    self:saveSettings()
+                                    self.settings.min_sec = min
+                                    self.settings.max_sec = max
                                     UIManager:close(durations_widget)
                                     touchmenu_instance:updateItems()
                                 end,
@@ -921,52 +911,52 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                     {
                         text_func = function()
                             return T(_("Calendar weeks start on %1"),
-                                longDayOfWeekTranslation[weekDays[self.calendar_start_day_of_week]])
+                                longDayOfWeekTranslation[weekDays[self.settings.calendar_start_day_of_week]])
                         end,
                         sub_item_table = {
                             { -- Friday (Bangladesh and Maldives)
                                 text = longDayOfWeekTranslation[weekDays[6]],
-                                checked_func = function() return self.calendar_start_day_of_week == 6 end,
-                                callback = function() self.calendar_start_day_of_week = 6 end
+                                checked_func = function() return self.settings.calendar_start_day_of_week == 6 end,
+                                callback = function() self.settings.calendar_start_day_of_week = 6 end
                             },
                             { -- Saturday (some Middle East countries)
                                 text = longDayOfWeekTranslation[weekDays[7]],
-                                checked_func = function() return self.calendar_start_day_of_week == 7 end,
-                                callback = function() self.calendar_start_day_of_week = 7 end
+                                checked_func = function() return self.settings.calendar_start_day_of_week == 7 end,
+                                callback = function() self.settings.calendar_start_day_of_week = 7 end
                             },
                             { -- Sunday
                                 text = longDayOfWeekTranslation[weekDays[1]],
-                                checked_func = function() return self.calendar_start_day_of_week == 1 end,
-                                callback = function() self.calendar_start_day_of_week = 1 end
+                                checked_func = function() return self.settings.calendar_start_day_of_week == 1 end,
+                                callback = function() self.settings.calendar_start_day_of_week = 1 end
                             },
                             { -- Monday
                                 text = longDayOfWeekTranslation[weekDays[2]],
-                                checked_func = function() return self.calendar_start_day_of_week == 2 end,
-                                callback = function() self.calendar_start_day_of_week = 2 end
+                                checked_func = function() return self.settings.calendar_start_day_of_week == 2 end,
+                                callback = function() self.settings.calendar_start_day_of_week = 2 end
                             },
                         },
                     },
                     {
                         text_func = function()
-                            return T(_("Books per calendar day: %1"), self.calendar_nb_book_spans)
+                            return T(_("Books per calendar day: %1"), self.settings.calendar_nb_book_spans)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
                             UIManager:show(SpinWidget:new{
                                 width = math.floor(Screen:getWidth() * 0.6),
-                                value = self.calendar_nb_book_spans,
+                                value = self.settings.calendar_nb_book_spans,
                                 value_min = 1,
                                 value_max = 5,
                                 ok_text = _("Set"),
                                 title_text =  _("Books per calendar day"),
                                 info_text = _("Set the max number of book spans to show for a day"),
                                 callback = function(spin)
-                                    self.calendar_nb_book_spans = spin.value
+                                    self.settings.calendar_nb_book_spans = spin.value
                                     touchmenu_instance:updateItems()
                                 end,
                                 extra_text = _("Use default"),
                                 extra_callback = function()
-                                    self.calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS
+                                    self.settings.calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS
                                     touchmenu_instance:updateItems()
                                 end
                             })
@@ -975,16 +965,16 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                     },
                     {
                         text = _("Show hourly histogram in calendar days"),
-                        checked_func = function() return self.calendar_show_histogram end,
+                        checked_func = function() return self.settings.calendar_show_histogram end,
                         callback = function()
-                            self.calendar_show_histogram = not self.calendar_show_histogram
+                            self.settings.calendar_show_histogram = not self.settings.calendar_show_histogram
                         end,
                     },
                     {
                         text = _("Allow browsing coming months"),
-                        checked_func = function() return self.calendar_browse_future_months end,
+                        checked_func = function() return self.settings.calendar_browse_future_months end,
                         callback = function()
-                            self.calendar_browse_future_months = not self.calendar_browse_future_months
+                            self.settings.calendar_browse_future_months = not self.settings.calendar_browse_future_months
                         end,
                     },
                 },
@@ -1003,7 +993,7 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         kv_pairs = self:getCurrentStat(self.id_curr_book),
                     })
                 end,
-                enabled_func = function() return not self:isDocless() and self.is_enabled end,
+                enabled_func = function() return not self:isDocless() and self.settings.is_enabled end,
             },
             {
                 text = _("Reading progress"),
@@ -1307,7 +1297,7 @@ function ReaderStatistics:getCurrentStat(id_book)
         -- Current book statistics
         -- Includes re-reads
         { _("Total time spent on this book"), util.secondsToClock(total_time_book, false) },
-        -- Capped to self.page_max_read_sec per distinct page
+        -- Capped to self.settings.max_sec per distinct page
         { _("Time spent reading this book"), util.secondsToClock(book_read_time, false) },
         -- per days
         { _("Reading started"), os.date("%Y-%m-%d (%H:%M)", tonumber(first_open))},
@@ -1922,7 +1912,7 @@ function ReaderStatistics:genResetBookSubItemTable()
         callback = function()
             self:resetCurrentBook()
         end,
-        enabled_func = function() return not self:isDocless() and self.is_enabled and self.id_curr_book end,
+        enabled_func = function() return not self:isDocless() and self.settings.is_enabled and self.id_curr_book end,
         separator = true,
     })
     table.insert(sub_item_table, {
@@ -2052,7 +2042,7 @@ function ReaderStatistics:resetCurrentBook()
             -- We also need to reset the time/page/avg tracking
             self.book_read_pages = 0
             self.book_read_time = 0
-            self.avg_time = math.floor(0.50 * self.page_max_read_sec)
+            self.avg_time = math.floor(0.50 * self.settings.max_sec)
             logger.dbg("ReaderStatistics: Initializing average time per page at 50% of the max value, i.e.,", self.avg_time)
 
             -- And the current volatile stats
@@ -2143,7 +2133,7 @@ function ReaderStatistics:onPosUpdate(pos, pageno)
 end
 
 function ReaderStatistics:onPageUpdate(pageno)
-    if self:isDocless() or not self.is_enabled then
+    if self:isDocless() or not self.settings.is_enabled then
         return
     end
 
@@ -2174,7 +2164,7 @@ function ReaderStatistics:onPageUpdate(pageno)
     -- NOTE: If all goes well, given the earlier curr_page != pageno check, curr_duration should always be 0 here.
     -- Compute the difference between now and the previous page's last timestamp
     local diff_time = now_ts - then_ts
-    if diff_time >= self.page_min_read_sec and diff_time <= self.page_max_read_sec then
+    if diff_time >= self.settings.min_sec and diff_time <= self.settings.max_sec then
         self.mem_read_time = self.mem_read_time + diff_time
         -- If it's the first time we're computing a duration for this page, count it as read
         if #page_data == 1 and curr_duration == 0 then
@@ -2182,13 +2172,13 @@ function ReaderStatistics:onPageUpdate(pageno)
         end
         -- Update the tuple with the computed duration
         data_tuple[2] = curr_duration + diff_time
-    elseif diff_time > self.page_max_read_sec then
-        self.mem_read_time = self.mem_read_time + self.page_max_read_sec
+    elseif diff_time > self.settings.max_sec then
+        self.mem_read_time = self.mem_read_time + self.settings.max_sec
         if #page_data == 1 and curr_duration == 0 then
             self.mem_read_pages = self.mem_read_pages + 1
         end
         -- Update the tuple with the computed duration
-        data_tuple[2] = curr_duration + self.page_max_read_sec
+        data_tuple[2] = curr_duration + self.settings.max_sec
     end
 
     -- We want a flush to db every 50 page turns
@@ -2238,20 +2228,20 @@ function ReaderStatistics:importFromFile(base_path, item)
 end
 
 function ReaderStatistics:onCloseDocument()
-    if not self:isDocless() and self.is_enabled then
+    if not self:isDocless() and self.settings.is_enabled then
         self.ui.doc_settings:saveSetting("stats", self.data)
         self:insertDB(self.id_curr_book)
     end
 end
 
 function ReaderStatistics:onAddHighlight()
-    if self.is_enabled then
+    if self.settings.is_enabled then
         self.data.highlights = self.data.highlights + 1
     end
 end
 
 function ReaderStatistics:onDelHighlight()
-    if self.is_enabled then
+    if self.settings.is_enabled then
         if self.data.highlights > 0 then
             self.data.highlights = self.data.highlights - 1
         end
@@ -2259,14 +2249,13 @@ function ReaderStatistics:onDelHighlight()
 end
 
 function ReaderStatistics:onAddNote()
-    if self.is_enabled then
+    if self.settings.is_enabled then
         self.data.notes = self.data.notes + 1
     end
 end
 
 -- Triggered by auto_save_settings_interval_minutes
 function ReaderStatistics:onSaveSettings()
-    self:saveSettings()
     if not self:isDocless() then
         self.ui.doc_settings:saveSetting("stats", self.data)
         self:insertDB(self.id_curr_book)
@@ -2287,20 +2276,6 @@ function ReaderStatistics:onResume()
     self:resetVolatileStats(self.start_current_period)
 end
 
-function ReaderStatistics:saveSettings()
-    local settings = {
-        min_sec = self.page_min_read_sec,
-        max_sec = self.page_max_read_sec,
-        is_enabled = self.is_enabled,
-        convert_to_db = self.convert_to_db,
-        calendar_start_day_of_week = self.calendar_start_day_of_week,
-        calendar_nb_book_spans = self.calendar_nb_book_spans,
-        calendar_show_histogram = self.calendar_show_histogram,
-        calendar_browse_future_months = self.calendar_browse_future_months,
-    }
-    G_reader_settings:saveSetting("statistics", settings)
-end
-
 function ReaderStatistics:onReadSettings(config)
     self.data = config.data.stats or {}
 end
@@ -2319,10 +2294,10 @@ function ReaderStatistics:getCalendarView()
         monthTranslation = monthTranslation,
         shortDayOfWeekTranslation = shortDayOfWeekTranslation,
         longDayOfWeekTranslation = longDayOfWeekTranslation,
-        start_day_of_week = self.calendar_start_day_of_week,
-        nb_book_spans = self.calendar_nb_book_spans,
-        show_hourly_histogram = self.calendar_show_histogram,
-        browse_future_months = self.calendar_browse_future_months,
+        start_day_of_week = self.settings.calendar_start_day_of_week,
+        nb_book_spans = self.settings.calendar_nb_book_spans,
+        show_hourly_histogram = self.settings.calendar_show_histogram,
+        browse_future_months = self.settings.calendar_browse_future_months,
     }
 end
 
@@ -2433,7 +2408,7 @@ function ReaderStatistics:onShowReaderProgress()
 end
 
 function ReaderStatistics:onShowBookStats()
-    if self:isDocless() or not self.is_enabled then return end
+    if self:isDocless() or not self.settings.is_enabled then return end
     local stats = KeyValuePage:new{
         title = _("Current statistics"),
         kv_pairs = self:getCurrentStat(self.id_curr_book),
