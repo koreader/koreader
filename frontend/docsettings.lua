@@ -180,6 +180,15 @@ function DocSettings:delSetting(key)
     self.data[key] = nil
 end
 
+--- Returns a setting, initializing it first with the specified default if necessary.
+--- This ensures thet it actually belongs to the DocSettings object right away.
+function DocSettings:getSetting(key, default)
+    if not self:has(key) then
+        self:saveSetting(key, default)
+    end
+    return self:readSetting(key)
+end
+
 --- Serializes settings and writes them to `metadata.lua`.
 function DocSettings:flush()
     -- write serialized version of the data table into one of
