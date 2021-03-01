@@ -287,6 +287,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
     local request = {
         url      = item_url,
         method   = method and method or "GET",
+        -- Explicitly specify that we don't support compressed content. Some servers will still break RFC2616 14.3 and send crap instead.
         headers  = { ["Accept-Encoding"] = "identity", },
         sink     = ltn12.sink.table(sink),
         username = username,
