@@ -546,6 +546,7 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
             local dummy, code, headers
 
             if parsed.scheme == "http" then
+                local hostname = parsed.host
                 dummy, code, headers = http.request {
                     url         = remote_url,
                     headers     = { ["Host"] = hostname, ["Accept-Encoding"] = "identity", },
