@@ -9,7 +9,6 @@ if not Device:isCervantes() and
     return { disabled = true, }
 end
 
-local DataStorage = require("datastorage")
 local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
