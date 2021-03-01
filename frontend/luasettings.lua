@@ -69,8 +69,25 @@ function LuaSettings:child(key)
     return LuaSettings:wrap(self:readSetting(key))
 end
 
---- Reads a setting.
-function LuaSettings:readSetting(key)
+--[[-- Reads a setting, optionally initializing it to a default.
+
+If default is set, and the key doesn't exist yet, it is initialized to default first.
+This ensures both that the defaults are actually set if necessary,
+and that the returned reference actually belongs to the LuaSettings object straight away,
+without requiring further interaction (e.g., saveSetting) from the caller.
+
+@param key The setting's key
+@param default Initialization data (Optional)
+]]
+function LuaSettings:readSetting(key, default)
+    -- No initialization data: legacy behavior
+    if not default then
+        return self.data[key]
+    end
+
+    if not self:has(key) then
+        self.data[key] = default
+    end
     return self.data[key]
 end
 
@@ -193,15 +210,6 @@ function LuaSettings:removeTableItem(key, index)
     table.remove(settings_table, index)
     self:saveSetting(key, settings_table)
     return self
-end
-
---- Returns a setting, initializing it first with the specified default if necessary.
---- This ensures that it actually belongs to the LuaSettings object right away.
-function LuaSettings:getSetting(key, default)
-    if not self:has(key) then
-        self:saveSetting(key, default)
-    end
-    return self:readSetting(key)
 end
 
 --- Replaces existing settings with table.
