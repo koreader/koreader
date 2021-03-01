@@ -107,8 +107,8 @@ function OPDSBrowser:addServerFromInput(fields)
         title = fields[1],
         url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2]),
         searchable =  (fields[2]:match("%%s") and true or false),
-        username = fields[3],
-        password = fields[4],
+        username = fields[3] ~= "" and fields[3] or nil,
+        password = fields[4] ~= "" and fields[4] or nil,
     }
     table.insert(servers, new_server)
     G_reader_settings:saveSetting("opds_servers", servers)
@@ -124,11 +124,15 @@ function OPDSBrowser:editCalibreFromInput(fields)
     if tonumber(fields[2]) then
         calibre.port = fields[2]
     end
-    if fields[3] then
+    if fields[3] and fields[3] ~= "" then
         calibre.username = fields[3]
+    else
+        calibre.username = nil
     end
-    if fields[4] then
+    if fields[4] and fields[4] ~= "" then
         calibre.password = fields[4]
+    else
+        calibre.password = nil
     end
     G_reader_settings:saveSetting("calibre_opds", calibre)
     self:init()
@@ -418,7 +422,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
     if not feed.entry then
         if #hrefs == 0 then
             UIManager:show(InfoMessage:new{
-                text = _("Catalog not found."),
+                text = _("Failed to parse the catalog."),
             })
         end
         return item_table
@@ -744,8 +748,8 @@ function OPDSBrowser:editServerFromInput(item, fields)
             server.title = fields[1]
             server.url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2])
             server.searchable =  (fields[2]:match("%%s") and true or false)
-            server.username = fields[3]
-            server.password = fields[4]
+            server.username = fields[3] ~= "" and fields[3] or nil
+            server.password = fields[4] ~= "" and fields[4] or nil
         end
         table.insert(servers, server)
     end
