@@ -388,7 +388,7 @@ local ReaderFooter = WidgetContainer:extend{
 }
 
 function ReaderFooter:init()
-    self.settings = G_reader_settings:getTable("footer", {
+    self.settings = G_reader_settings:getSetting("footer", {
         -- enable progress bar by default
         -- disable_progress_bar = true,
         disabled = false,
