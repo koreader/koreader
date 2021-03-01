@@ -181,7 +181,7 @@ function DocSettings:delSetting(key)
 end
 
 --- Returns a setting, initializing it first with the specified default if necessary.
---- This ensures thet it actually belongs to the DocSettings object right away.
+--- This ensures that it actually belongs to the DocSettings object right away.
 function DocSettings:getSetting(key, default)
     if not self:has(key) then
         self:saveSetting(key, default)

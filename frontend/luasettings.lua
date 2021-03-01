@@ -196,7 +196,7 @@ function LuaSettings:removeTableItem(key, index)
 end
 
 --- Returns a setting, initializing it first with the specified default if necessary.
---- This ensures thet it actually belongs to the LuaSettings object right away.
+--- This ensures that it actually belongs to the LuaSettings object right away.
 function LuaSettings:getSetting(key, default)
     if not self:has(key) then
         self:saveSetting(key, default)
