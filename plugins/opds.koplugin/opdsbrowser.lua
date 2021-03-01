@@ -282,14 +282,16 @@ function OPDSBrowser:genItemTableFromRoot()
 end
 
 function OPDSBrowser:fetchFeed(item_url, username, password, method)
-    local request, sink = {}, {}
-    request['url'] = item_url
-    request['method'] = method and method or "GET"
-    request['sink'] = ltn12.sink.table(sink)
-    request['username'] = username
-    request['password'] = password
-    request['headers'] = { ["Accept-Encoding"] = "identity", }
-    logger.info("request", request)
+    local sink = {}
+    local request = {
+        url      = item_url,
+        method   = method and method or "GET",
+        headers  = { ["Accept-Encoding"] = "identity", },
+        sink     = ltn12.sink.table(sink),
+        username = username,
+        password = password
+    }
+    logger.info("Request:", request)
     http.TIMEOUT = 10
     local httpRequest = http.request
     local code, headers = socket.skip(1, httpRequest(request))
