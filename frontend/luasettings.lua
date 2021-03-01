@@ -105,22 +105,22 @@ end
 
 --- Checks if setting exists.
 function LuaSettings:has(key)
-    return self:readSetting(key) ~= nil
+    return self.data[key] ~= nil
 end
 
 --- Checks if setting does not exist.
 function LuaSettings:hasNot(key)
-    return self:readSetting(key) == nil
+    return self.data[key] == nil
 end
 
 --- Checks if setting is `true`.
 function LuaSettings:isTrue(key)
-    return string.lower(tostring(self:readSetting(key))) == "true"
+    return string.lower(tostring(self.data[key])) == "true"
 end
 
 --- Checks if setting is `false`.
 function LuaSettings:isFalse(key)
-    return string.lower(tostring(self:readSetting(key))) == "false"
+    return string.lower(tostring(self.data[key])) == "false"
 end
 
 --- Checks if setting is `nil` or `true`.
