@@ -17,11 +17,14 @@ local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
+local default_autoshutdown_timeout_seconds = 3*24*60*60
+local default_auto_suspend_timeout_seconds = 60*60
+
 local AutoSuspend = WidgetContainer:new{
     name = "autosuspend",
     is_doc_only = false,
-    autoshutdown_timeout_seconds = G_reader_settings:readSetting("autoshutdown_timeout_seconds", 3*24*60*60),
-    auto_suspend_timeout_seconds = G_reader_settings:readSetting("auto_suspend_timeout_seconds", 60*60),
+    autoshutdown_timeout_seconds = G_reader_settings:readSetting("autoshutdown_timeout_seconds") or default_autoshutdown_timeout_seconds,
+    auto_suspend_timeout_seconds = G_reader_settings:readSetting("auto_suspend_timeout_seconds") or default_auto_suspend_timeout_seconds,
     last_action_sec = os.time(),
     standby_prevented = false,
 }
@@ -143,6 +146,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                 title_text = _("Timeout in minutes"),
                 callback = function(autosuspend_spin)
                     self.auto_suspend_timeout_seconds = autosuspend_spin.value * 60
+                    G_reader_settings:saveSetting("auto_suspend_timeout_seconds", self.auto_suspend_timeout_seconds)
                     UIManager:show(InfoMessage:new{
                         text = T(_("The system will automatically suspend after %1 minutes of inactivity."),
                             string.format("%.2f", self.auto_suspend_timeout_seconds / 60)),
@@ -178,6 +182,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                 title_text = _("Timeout in hours"),
                 callback = function(autosuspend_spin)
                     self.autoshutdown_timeout_seconds = math.floor(autosuspend_spin.value * 60 * 60)
+                    G_reader_settings:saveSetting("autoshutdown_timeout_seconds", self.autoshutdown_timeout_seconds)
                     UIManager:show(InfoMessage:new{
                         text = T(_("The system will automatically shut down after %1 hours of inactivity."),
                             string.format("%.2f", self.autoshutdown_timeout_seconds / 60 / 60)),
