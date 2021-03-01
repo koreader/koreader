@@ -56,10 +56,10 @@ function TextEditor:loadSettings()
     --
     -- Allow users to set their prefered font manually in text_editor.lua
     -- (sadly, not via TextEditor itself, as they would be overriden on close)
-    if self.settings:readSetting("normal_font") then
+    if self.settings:has("normal_font") then
         self.normal_font = self.settings:readSetting("normal_font")
     end
-    if self.settings:readSetting("monospace_font") then
+    if self.settings:has("monospace_font") then
         self.monospace_font = self.settings:readSetting("monospace_font")
     end
     self.auto_para_direction = self.settings:nilOrTrue("auto_para_direction")
