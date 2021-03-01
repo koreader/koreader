@@ -283,13 +283,12 @@ end
 
 function OPDSBrowser:fetchFeed(item_url, username, password, method)
     local request, sink = {}, {}
-    local parsed = url.parse(item_url)
-    local hostname = parsed.host
-    local auth = string.format("%s:%s", username, password)
     request['url'] = item_url
     request['method'] = method and method or "GET"
     request['sink'] = ltn12.sink.table(sink)
-    request['headers'] = username and { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname, ["Accept-Encoding"] = "identity", } or { ["Host"] = hostname, ["Accept-Encoding"] = "identity" }
+    request['username'] = username
+    request['password'] = password
+    request['headers'] = { ["Accept-Encoding"] = "identity", }
     logger.info("request", request)
     http.TIMEOUT = 10
     local httpRequest = http.request
@@ -546,21 +545,20 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
             local dummy, code, headers
 
             if parsed.scheme == "http" then
-                local hostname = parsed.host
                 dummy, code, headers = http.request {
                     url         = remote_url,
-                    headers     = { ["Host"] = hostname, ["Accept-Encoding"] = "identity", },
+                    headers     = { ["Accept-Encoding"] = "identity", },
                     sink        = ltn12.sink.file(io.open(local_path, "w")),
                     user        = item.username,
                     password    = item.password
                 }
             elseif parsed.scheme == "https" then
-                local auth = (item.username and item.password) and string.format("%s:%s", item.username, item.password) or nil
-                local hostname = parsed.host
                 dummy, code, headers = http.request {
                     url         = remote_url,
-                    headers     = auth and { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname, ["Accept-Encoding"] = "identity", } or { ["Host"] = hostname, ["Accept-Encoding"] = "identity", },
+                    headers     = { ["Accept-Encoding"] = "identity", },
                     sink        = ltn12.sink.file(io.open(local_path, "w")),
+                    user        = item.username,
+                    password    = item.password
                 }
             else
                 UIManager:show(InfoMessage:new {
