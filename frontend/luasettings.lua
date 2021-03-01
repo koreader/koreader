@@ -76,7 +76,7 @@ This ensures both that the defaults are actually set if necessary,
 and that the returned reference actually belongs to the LuaSettings object straight away,
 without requiring further interaction (e.g., saveSetting) from the caller.
 
-This is mainly useful if the data type you want to retrieve/store is passed by reference (e.g., a table),
+This is mainly useful if the data type you want to retrieve/store is assigned/returned/passed by reference (e.g., a table),
 and you never actually break that reference by assigning another one to the same variable,
 (by e.g., assigning it a new object).
 c.f., https://www.lua.org/manual/5.1/manual.html#2.2
