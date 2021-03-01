@@ -388,7 +388,7 @@ local ReaderFooter = WidgetContainer:extend{
 }
 
 function ReaderFooter:init()
-    self.settings = G_reader_settings:getSetting("footer", {
+    self.settings = G_reader_settings:readSetting("footer", {
         -- enable progress bar by default
         -- disable_progress_bar = true,
         disabled = false,
@@ -890,7 +890,6 @@ function ReaderFooter:addToMainMenu(menu_items)
             end,
             callback = function()
                 self.settings[option] = not self.settings[option]
-                G_reader_settings:saveSetting("footer", self.settings)
                 -- We only need to send a SetPageBottomMargin event when we truly affect the margin
                 local should_signal = false
                 -- only case that we don't need a UI update is enable/disable
@@ -977,7 +976,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 self.mode_index[i] = sort_item.item_table[i].label
                             end
                             self.settings.order = self.mode_index
-                            G_reader_settings:saveSetting("footer", self.settings)
                             self:updateFooterTextGenerator()
                             self:onUpdateFooter()
                             UIManager:setDirty(nil, "ui")
@@ -995,7 +993,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.auto_refresh_time = not self.settings.auto_refresh_time
-                    G_reader_settings:saveSetting("footer", self.settings)
                     self:rescheduleFooterAutoRefreshIfNeeded()
                 end
             },
@@ -1036,7 +1033,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.skim_widget_on_hold = not self.settings.skim_widget_on_hold
-                    G_reader_settings:saveSetting("footer", self.settings)
                 end,
             },
             {
