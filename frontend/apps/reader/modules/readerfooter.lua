@@ -387,7 +387,7 @@ local ReaderFooter = WidgetContainer:extend{
 }
 
 function ReaderFooter:init()
-    self.settings = G_reader_settings:readSetting("footer") or {
+    self.settings = G_reader_settings:getTable("footer", {
         -- enable progress bar by default
         -- disable_progress_bar = true,
         disabled = false,
@@ -414,7 +414,7 @@ function ReaderFooter:init()
         text_font_bold = false,
         container_height = DMINIBAR_CONTAINER_HEIGHT,
         container_bottom_padding = 1, -- unscaled_size_check: ignore
-    }
+    })
 
     -- Remove items not supported by the current device
     if not Device:hasFastWifiStatusQuery() then
