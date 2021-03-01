@@ -632,7 +632,7 @@ function ReaderStatistics:migrateToDB(conn)
     local nr_of_conv_books = 0
     local exclude_titles = {}
     for _, v in pairs(ReadHistory.hist) do
-        local book_stats = DocSettings:open(v.file):readSetting('stats')
+        local book_stats = DocSettings:open(v.file):readSetting("stats")
         if book_stats and book_stats.title == "" then
             book_stats.title = v.file:match("^.+/(.+)$")
         end
