@@ -172,6 +172,9 @@ This ensures both that the defaults are actually set if necessary,
 and that the returned reference actually belongs to the DocSettings object straight away,
 without requiring further interaction (e.g., saveSetting) from the caller.
 
+This is mainly useful if the data type you want to retrieve/store is passed by reference,
+(e.g., a table), c.f., https://www.lua.org/manual/5.1/manual.html#2.2
+
 @param key The setting's key
 @param default Initialization data (Optional)
 ]]
