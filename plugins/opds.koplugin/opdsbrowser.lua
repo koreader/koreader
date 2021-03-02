@@ -784,7 +784,6 @@ function OPDSBrowser:editServerFromInput(item, fields)
             server.username = fields[3] ~= "" and fields[3] or nil
             server.password = fields[4]
         end
-        table.insert(self.opds_servers, server)
     end
     self:init()
 end
