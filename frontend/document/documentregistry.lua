@@ -134,7 +134,8 @@ function DocumentRegistry:getProviders(file)
         local added = false
         local suffix = string.sub(file, -string.len(provider.extension) - 1)
         if string.lower(suffix) == "."..provider.extension then
-            for i, prov_prev in ipairs(providers) do
+            for i=#providers, 1, -1 do
+                local prov_prev = providers[i]
                 if prov_prev.provider == provider.provider then
                     if prov_prev.weight >= provider.weight then
                         added = true
@@ -143,7 +144,7 @@ function DocumentRegistry:getProviders(file)
                     end
                 end
             end
-        -- if extension == provider.extension then
+            -- if extension == provider.extension then
             -- stick highest weighted provider at the front
             if not added and #providers >= 1 and provider.weight > providers[1].weight then
                 table.insert(providers, 1, provider)
