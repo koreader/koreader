@@ -203,6 +203,76 @@ function DocSettings:delSetting(key)
     return self
 end
 
+--- Checks if setting exists.
+function DocSettings:has(key)
+    return self.data[key] ~= nil
+end
+
+--- Checks if setting does not exist.
+function DocSettings:hasNot(key)
+    return self.data[key] == nil
+end
+
+--- Checks if setting is `true`.
+function DocSettings:isTrue(key)
+    return string.lower(tostring(self.data[key])) == "true"
+end
+
+--- Checks if setting is `false`.
+function DocSettings:isFalse(key)
+    return string.lower(tostring(self.data[key])) == "false"
+end
+
+--- Checks if setting is `nil` or `true`.
+function DocSettings:nilOrTrue(key)
+    return self:hasNot(key) or self:isTrue(key)
+end
+
+--- Checks if setting is `nil` or `false`.
+function DocSettings:nilOrFalse(key)
+    return self:hasNot(key) or self:isFalse(key)
+end
+
+--- Flips `nil` or `true` to `false`.
+function DocSettings:flipNilOrTrue(key)
+    if self:nilOrTrue(key) then
+        self:saveSetting(key, false)
+    else
+        self:delSetting(key)
+    end
+    return self
+end
+
+--- Flips `nil` or `false` to `true`.
+function DocSettings:flipNilOrFalse(key)
+    if self:nilOrFalse(key) then
+        self:saveSetting(key, true)
+    else
+        self:delSetting(key)
+    end
+    return self
+end
+
+--- Flips setting to `true`.
+function DocSettings:flipTrue(key)
+    if self:isTrue(key) then
+        self:delSetting(key)
+    else
+        self:saveSetting(key, true)
+    end
+    return self
+end
+
+--- Flips setting to `false`.
+function DocSettings:flipFalse(key)
+    if self:isFalse(key) then
+        self:delSetting(key)
+    else
+        self:saveSetting(key, false)
+    end
+    return self
+end
+
 --- Serializes settings and writes them to `metadata.lua`.
 function DocSettings:flush()
     -- write serialized version of the data table into one of

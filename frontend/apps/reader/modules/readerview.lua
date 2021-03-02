@@ -33,7 +33,7 @@ local ReaderView = OverlapGroup:extend{
         offset = nil,
         bbox = nil,
     },
-    outer_page_color = Blitbuffer.gray(DOUTER_PAGE_COLOR/15),
+    outer_page_color = Blitbuffer.gray(DOUTER_PAGE_COLOR / 15),
     -- highlight with "lighten" or "underscore" or "invert"
     highlight = {
         lighten_factor = 0.2,
@@ -45,12 +45,12 @@ local ReaderView = OverlapGroup:extend{
     highlight_visible = true,
     -- PDF/DjVu continuous paging
     page_scroll = nil,
-    page_bgcolor = Blitbuffer.gray(DBACKGROUND_COLOR/15),
+    page_bgcolor = Blitbuffer.gray(DBACKGROUND_COLOR / 15),
     page_states = {},
     -- properties of the gap drawn between each page in scroll mode:
     page_gap = {
         -- color (0 = white, 8 = gray, 15 = black)
-        color = Blitbuffer.gray((G_reader_settings:readSetting("page_gap_color") or 8)/15),
+        color = Blitbuffer.gray((G_reader_settings:readSetting("page_gap_color") or 8) / 15),
     },
     -- DjVu page rendering mode (used in djvu.c:drawPage())
     render_mode = DRENDER_MODE, -- default to COLOR

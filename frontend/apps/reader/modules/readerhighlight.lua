@@ -1446,23 +1446,19 @@ end
 
 function ReaderHighlight:onReadSettings(config)
     self.view.highlight.saved_drawer = config:readSetting("highlight_drawer") or self.view.highlight.saved_drawer
-    local disable_highlight = config:readSetting("highlight_disabled")
-    if disable_highlight == nil then
-        disable_highlight = G_reader_settings:readSetting("highlight_disabled") or false
-    end
-    self.view.highlight.disabled = disable_highlight
+    self.view.highlight.disabled = config:isTrue("highlight_disabled")
 
     -- panel zoom settings isn't supported in EPUB
     if self.document.info.has_pages then
         local ext = util.getFileNameSuffix(self.ui.document.file)
         G_reader_settings:initializeExtSettings("panel_zoom_enabled", {cbz = true, cbt = true})
         G_reader_settings:initializeExtSettings("panel_zoom_fallback_to_text_selection", {pdf = true})
-        self.panel_zoom_enabled = config:readSetting("panel_zoom_enabled")
-        if self.panel_zoom_enabled == nil then
+        self.panel_zoom_enabled = config:isTrue("panel_zoom_enabled")
+        if config:hasNot("panel_zoom_enabled") then
             self.panel_zoom_enabled = G_reader_settings:getSettingForExt("panel_zoom_enabled", ext) or false
         end
-        self.panel_zoom_fallback_to_text_selection = config:readSetting("panel_zoom_fallback_to_text_selection")
-        if self.panel_zoom_fallback_to_text_selection == nil then
+        self.panel_zoom_fallback_to_text_selection = config:isTrue("panel_zoom_fallback_to_text_selection")
+        if config:hasNot("panel_zoom_fallback_to_text_selection") then
             self.panel_zoom_fallback_to_text_selection = G_reader_settings:getSettingForExt("panel_zoom_fallback_to_text_selection", ext) or false
         end
     end
