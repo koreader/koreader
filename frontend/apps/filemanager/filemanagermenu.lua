@@ -284,6 +284,15 @@ function FileManagerMenu:setUpdateItemTable()
                     local FileManager = require("apps/filemanager/filemanager")
                     if FileManager.instance then FileManager.instance:reinit() end
                 end,
+                help_text = _([[
+"Shorten home folder" will display the home folder itself as "Home" instead of its full path.
+
+Assuming the home folder is:
+`/mnt/onboard/.books`
+A subfolder will be shortened from:
+`/mnt/onboard/.books/Manga/Cells at Work`
+To:
+`Manga/Cells at Work`.]]),
             },
             {
                 text = _("Show filename in Open last/previous menu items"),
