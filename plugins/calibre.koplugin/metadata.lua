@@ -144,11 +144,10 @@ end
 
 -- remove a book from our books table
 function CalibreMetadata:removeBook(lpath)
-    for index, book in ipairs(self.books) do
-        if book.lpath == lpath then
-            table.remove(self.books, index)
-        end
+    local function drop_lpath(t, i, j)
+        return t[i].lpath ~= lpath
     end
+    util.arrayRemove(self.books, drop_lpath)
 end
 
 -- gets the uuid and index of a book from its path
