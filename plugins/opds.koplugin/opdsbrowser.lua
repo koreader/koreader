@@ -36,8 +36,44 @@ local CatalogCache = Cache:new{
 }
 
 local OPDSBrowser = Menu:extend{
-    opds_servers = {},
+    opds_servers = G_reader_settings:readSetting("opds_servers", {
+        {
+            title = "Project Gutenberg",
+            url = "https://m.gutenberg.org/ebooks.opds/?format=opds",
+        },
+        {
+            title = "Project Gutenberg [Searchable]",
+            url = "https://m.gutenberg.org/ebooks/search.mobile/?format=opds&query=%s",
+            searchable = true,
+        },
+        {
+            title = "Feedbooks",
+            url = "https://catalog.feedbooks.com/catalog/public_domain.atom",
+        },
+        {
+            title = "ManyBooks",
+            url = "http://manybooks.net/opds/index.php",
+        },
+        {
+            title = "Internet Archive",
+            url = "https://bookserver.archive.org/",
+        },
+        {
+            title = "textos.info (Spanish)",
+            url = "https://www.textos.info/catalogo.atom",
+        },
+        {
+            title = "Gallica (French)",
+            url = "https://gallica.bnf.fr/opds",
+        },
+        {
+            title = "Gallica [Fr] [Searchable]",
+            url = "https://gallica.bnf.fr/services/engine/search/opds?operation=searchRetrieve&query=(gallica all \"%s\")",
+            searchable = true,
+        },
+    })
     calibre_name = _("Local calibre library"),
+    calibre_opds = G_reader_settings:readSetting("calibre_opds", {})
 
     catalog_type = "application/atom%+xml",
     search_type = "application/opensearchdescription%+xml",
@@ -53,38 +89,13 @@ local OPDSBrowser = Menu:extend{
 }
 
 function OPDSBrowser:init()
-    local servers = G_reader_settings:readSetting("opds_servers")
-    if not servers then -- If there are no saved servers, add some defaults
-        servers = {
-          {
-            title = "Project Gutenberg",
-            url = "https://m.gutenberg.org/ebooks.opds/?format=opds",
-          },
-          {
-             title = "Feedbooks",
-             url = "https://catalog.feedbooks.com/catalog/public_domain.atom",
-          },
-          {
-             title = "ManyBooks",
-             url = "http://manybooks.net/opds/index.php",
-          },
-          {
-             title = "Internet Archive",
-             url = "https://bookserver.archive.org/",
-          },
-          {
-             title = "textos.info (Spanish)",
-             url = "https://www.textos.info/catalogo.atom",
-          },
-          {
-             title = "Gallica (French)",
-             url = "https://gallica.bnf.fr/opds",
-          },
-        }
-        G_reader_settings:saveSetting("opds_servers", servers)
-    elseif servers[4] and servers[4].title == "Internet Archive" and servers[4].url == "http://bookserver.archive.org/catalog/"  then
-        servers[4].url = "https://bookserver.archive.org"
+    -- Update deprecated URLs
+    for _, server in ipairs(self.opds_servers) do
+        if server.url == "http://bookserver.archive.org/catalog/" then
+            server.url = "https://bookserver.archive.org"
+        end
     end
+
     self.item_table = self:genItemTableFromRoot()
     self.catalog_title = nil
     Menu.init(self) -- call parent's init()
@@ -92,7 +103,6 @@ end
 
 function OPDSBrowser:addServerFromInput(fields)
     logger.info("New OPDS catalog input:", fields)
-    local servers = G_reader_settings:readSetting("opds_servers") or {}
     local new_server = {
         title = fields[1],
         url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2]),
@@ -101,31 +111,28 @@ function OPDSBrowser:addServerFromInput(fields)
         -- Allow empty passwords
         password = fields[4],
     }
-    table.insert(servers, new_server)
-    G_reader_settings:saveSetting("opds_servers", servers)
+    table.insert(self.opds_servers, new_server)
     self:init()
 end
 
 function OPDSBrowser:editCalibreFromInput(fields)
     logger.dbg("Edit calibre server input:", fields)
-    local calibre = G_reader_settings:readSetting("calibre_opds") or {}
     if fields[1] then
-        calibre.host = fields[1]
+        self.calibre_opds.host = fields[1]
     end
     if tonumber(fields[2]) then
-        calibre.port = fields[2]
+        self.calibre_opds.port = fields[2]
     end
     if fields[3] and fields[3] ~= "" then
-        calibre.username = fields[3]
+        self.calibre_opds.username = fields[3]
     else
-        calibre.username = nil
+        self.calibre_opds.username = nil
     end
     if fields[4] then
-        calibre.password = fields[4]
+        self.calibre_opds.password = fields[4]
     else
-        calibre.password = nil
+        self.calibre_opds.password = nil
     end
-    G_reader_settings:saveSetting("calibre_opds", calibre)
     self:init()
 end
 
@@ -178,25 +185,24 @@ function OPDSBrowser:addNewCatalog()
 end
 
 function OPDSBrowser:editCalibreServer()
-    local calibre = G_reader_settings:readSetting("calibre_opds") or {}
     self.add_server_dialog = MultiInputDialog:new{
         title = _("Edit local calibre host and port"),
         fields = {
             {
                 --- @todo get IP address of current device
-                text = calibre.host or "192.168.1.1",
+                text = self.calibre_opds.host or "192.168.1.1",
                 hint = _("calibre host"),
             },
             {
-                text = calibre.port and tostring(calibre.port) or "8080",
+                text = self.calibre_opds.port and tostring(self.calibre_opds.port) or "8080",
                 hint = _("calibre port"),
             },
             {
-                text = calibre.username or "",
+                text = self.calibre_opds.username or "",
                 hint = _("Username (optional)"),
             },
             {
-                text = calibre.password or "",
+                text = self.calibre_opds.password or "",
                 hint = _("Password (optional)"),
                 text_type = "password",
             },
@@ -229,8 +235,7 @@ end
 
 function OPDSBrowser:genItemTableFromRoot()
     local item_table = {}
-    local added_servers = G_reader_settings:readSetting("opds_servers") or {}
-    for _, server in ipairs(added_servers) do
+    for _, server in ipairs(self.opds_servers) do
         table.insert(item_table, {
             text = server.title,
             content = server.subtitle,
@@ -242,8 +247,7 @@ function OPDSBrowser:genItemTableFromRoot()
             searchable = server.searchable,
         })
     end
-    local calibre_opds = G_reader_settings:readSetting("calibre_opds") or {}
-    if not calibre_opds.host or not calibre_opds.port then
+    if not self.calibre_opds.host or not self.calibre_opds.port then
         table.insert(item_table, {
             text = self.calibre_name,
             callback = function()
@@ -255,9 +259,9 @@ function OPDSBrowser:genItemTableFromRoot()
         table.insert(item_table, {
             text = self.calibre_name,
             url = string.format("http://%s:%d/opds",
-                calibre_opds.host, calibre_opds.port),
-            username = calibre_opds.username,
-            password = calibre_opds.password,
+                self.calibre_opds.host, self.calibre_opds.port),
+            username = self.calibre_opds.username,
+            password = self.calibre_opds.password,
             editable = true,
             deletable = false,
             searchable = false,
@@ -772,8 +776,7 @@ end
 
 function OPDSBrowser:editServerFromInput(item, fields)
     logger.info("Edit OPDS catalog input:", fields)
-    local servers = {}
-    for _, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
+    for _, server in ipairs(self.opds_servers) do
         if server.title == item.text or server.url == item.url then
             server.title = fields[1]
             server.url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2])
@@ -781,9 +784,8 @@ function OPDSBrowser:editServerFromInput(item, fields)
             server.username = fields[3] ~= "" and fields[3] or nil
             server.password = fields[4]
         end
-        table.insert(servers, server)
+        table.insert(self.opds_servers, server)
     end
-    G_reader_settings:saveSetting("opds_servers", servers)
     self:init()
 end
 
@@ -838,13 +840,12 @@ end
 
 function OPDSBrowser:deleteOPDSServer(item)
     logger.info("Delete OPDS server:", item)
-    local servers = {}
-    for _, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
-        if server.title ~= item.text or server.url ~= item.url then
-            table.insert(servers, server)
+    for i = #self.opds_servers, 1, -1 do
+        local server = self.opds_servers[i]
+        if server.title == item.text or server.url == item.url then
+            table.remove(self.opds_servers, i)
         end
     end
-    G_reader_settings:saveSetting("opds_servers", servers)
     self:init()
 end
 
