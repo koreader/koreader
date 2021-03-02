@@ -194,11 +194,13 @@ end
 --- Saves a setting.
 function DocSettings:saveSetting(key, value)
     self.data[key] = value
+    return self
 end
 
 --- Deletes a setting.
 function DocSettings:delSetting(key)
     self.data[key] = nil
+    return self
 end
 
 --- Serializes settings and writes them to `metadata.lua`.
