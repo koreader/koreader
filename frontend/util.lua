@@ -380,7 +380,7 @@ Swap & pop, like http://lua-users.org/lists/lua-l/2013-11/msg00031.html, but pre
 c.f., https://stackoverflow.com/a/53038524
 
 @table t Lua array to filter
-@func keep_cb Filtering callback. Takes three arguments: table, index, new index. Returns true to *keep* the item.
+@func keep_cb Filtering callback. Takes three arguments: table, index, new index. Returns true to *keep* the item. See link above for potential uses of the third argument.
 
 @usage
 
