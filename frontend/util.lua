@@ -376,7 +376,7 @@ end
 --[[--
 Remove elements from an array, fast.
 
-Swap & pop, like http://lua-users.org/lists/lua-l/2013-11/msg00027.html, but preserves the order.
+Swap & pop, like http://lua-users.org/lists/lua-l/2013-11/msg00027.html / https://stackoverflow.com/a/28942022, but preserving order.
 c.f., https://stackoverflow.com/a/53038524
 
 @table t Lua array to filter
