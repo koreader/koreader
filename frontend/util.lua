@@ -379,8 +379,8 @@ Remove elements from an array, fast.
 Swap & pop, like http://lua-users.org/lists/lua-l/2013-11/msg00031.html, but preserves the order.
 c.f., https://stackoverflow.com/a/53038524
 
-@table t Lua array
-@func Filtering callback. Takes three arguments: table, index, new index. Returns true to *keep* the item.
+@table t Lua array to filter
+@func keep_cb Filtering callback. Takes three arguments: table, index, new index. Returns true to *keep* the item.
 
 @usage
 
@@ -391,11 +391,11 @@ local function drop_b(t, i, j)
 end
 util.arrayRemove(foo, drop_b)
 ]]
-function util.arrayRemove(t, keep_func)
+function util.arrayRemove(t, keep_cb)
     local j, n = 1, #t
 
     for i = 1, n do
-        if keep_func(t, i, j) then
+        if keep_cb(t, i, j) then
             -- Move i's kept value to j's position, if it's not already there.
             if i ~= j then
                 t[j] = t[i]
@@ -427,7 +427,7 @@ end
 --- and if so, return the index.
 ---- @param t Lua table
 ---- @param v
----- @function callback(v1, v2)
+---- @func callback(v1, v2)
 function util.arrayContains(t, v, cb)
     cb = cb or function(v1, v2) return v1 == v2 end
     for _k, _v in ipairs(t) do
@@ -692,7 +692,7 @@ end
 
 --- Recursively scan directory for files inside
 -- @string path
--- @function callback(fullpath, name, attr)
+-- @func callback(fullpath, name, attr)
 function util.findFiles(dir, cb)
     local function scan(current)
         local ok, iter, dir_obj = pcall(lfs.dir, current)
