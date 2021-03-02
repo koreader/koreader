@@ -394,7 +394,7 @@ util.arrayRemove(foo, drop_b)
 function util.arrayRemove(t, keep_func)
     local j, n = 1, #t
 
-    for i=1, n do
+    for i = 1, n do
         if keep_func(t, i, j) then
             -- Move i's kept value to j's position, if it's not already there.
             if i ~= j then
