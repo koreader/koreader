@@ -28,7 +28,7 @@ function ReaderTypeset:onReadSettings(config)
     self.ui.document:setStyleSheet(self.css, tweaks_css)
 
     self.embedded_fonts = config:readSetting("embedded_fonts")
-    if self.embedded_fonts == nil then
+    if config:hasNot("embedded_fonts") then
         -- default to enable embedded fonts
         -- note that it's a bit confusing here:
         -- global settins store 0/1, while document settings store false/true
@@ -42,11 +42,11 @@ function ReaderTypeset:onReadSettings(config)
         self.ui.document:setEmbeddedFonts(0)
     end
 
-    self.embedded_css = config:readSetting("embedded_css")
-    if self.embedded_css == nil then
+    self.embedded_css = config:isTrue("embedded_css")
+    if config:hasNot("embedded_css") then
         -- default to enable embedded CSS
         -- note that it's a bit confusing here:
-        -- global settins store 0/1, while document settings store false/true
+        -- global settings store 0/1, while document settings store false/true
         -- we leave it that way for now to maintain backwards compatibility
         local global = G_reader_settings:readSetting("copt_embedded_css")
         self.embedded_css = (global == nil or global == 1) and true or false
@@ -59,7 +59,7 @@ function ReaderTypeset:onReadSettings(config)
     local block_rendering_default_mode = 3
     self.block_rendering_mode = config:readSetting("copt_block_rendering_mode")
     if not self.block_rendering_mode then
-        if config:readSetting("last_xpointer") then
+        if config:has("last_xpointer") then
             -- We have a last_xpointer: this book was previously opened
             self.block_rendering_mode = 0
         else
@@ -102,7 +102,7 @@ function ReaderTypeset:onReadSettings(config)
 
     -- default to disable smooth scaling for now.
     self.smooth_scaling = config:readSetting("smooth_scaling")
-    if self.smooth_scaling == nil then
+    if config:hasNot("smooth_scaling") then
         local global = G_reader_settings:readSetting("copt_smooth_scaling")
         self.smooth_scaling = (global == nil or global == 0) and 0 or 1
     end
@@ -110,7 +110,7 @@ function ReaderTypeset:onReadSettings(config)
 
     -- default to automagic nightmode-friendly handling of images
     self.nightmode_images = config:readSetting("nightmode_images")
-    if self.nightmode_images == nil then
+    if config:hasNot("nightmode_images") then
         local global = G_reader_settings:readSetting("copt_nightmode_images")
         self.nightmode_images = (global == nil or global == 1) and 1 or 0
     end

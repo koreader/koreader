@@ -32,7 +32,7 @@ function ReaderBookmark:init()
         }
     end
 
-    if not G_reader_settings:readSetting("bookmarks_items_per_page") then
+    if G_reader_settings:hasNot("bookmarks_items_per_page") then
         -- The Bookmarks items per page and items' font size can now be
         -- configured. Previously, the ones set for the file browser
         -- were used. Initialize them from these ones.
@@ -186,7 +186,7 @@ end
 function ReaderBookmark:fixBookmarkSort(config)
     -- for backward compatibility, since previously bookmarks for credocuments
     -- are not well sorted. We need to do a whole sorting for at least once.
-    if not config:readSetting("bookmarks_sorted") then
+    if config:hasNot("bookmarks_sorted") then
         table.sort(self.bookmarks, function(a, b)
             return self:isBookmarkInPageOrder(a, b)
         end)
@@ -197,7 +197,7 @@ function ReaderBookmark:importSavedHighlight(config)
     local textmarks = config:readSetting("highlight") or {}
     -- import saved highlight once, because from now on highlight are added to
     -- bookmarks when they are created.
-    if not config:readSetting("highlights_imported") then
+    if config:hasNot("highlights_imported") then
         for page, marks in pairs(textmarks) do
             for _, mark in ipairs(marks) do
                 page = self.ui.document.info.has_pages and page or mark.pos0

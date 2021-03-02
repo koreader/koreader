@@ -41,7 +41,7 @@ function ReaderToc:init()
         }
     end
 
-    if not G_reader_settings:readSetting("toc_items_per_page") then
+    if G_reader_settings:hasNot("toc_items_per_page") then
         -- The TOC items per page and items' font size can now be
         -- configured. Previously, the ones set for the file browser
         -- were used. Initialize them from these ones.
@@ -137,7 +137,7 @@ end
 function ReaderToc:fillToc()
     if self.toc then return end
     if self.ui.document:canHaveAlternativeToc() then
-        if self.ui.doc_settings:readSetting("alternative_toc") then
+        if self.ui.doc_settings:has("alternative_toc") then
             -- (if the document has a cache, the previously built alternative
             -- TOC was saved and has been reloaded, and this will be avoided)
             if not self.ui.document:isTocAlternativeToc() then
