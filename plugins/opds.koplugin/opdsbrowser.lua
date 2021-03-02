@@ -71,9 +71,9 @@ local OPDSBrowser = Menu:extend{
             url = "https://gallica.bnf.fr/services/engine/search/opds?operation=searchRetrieve&query=(gallica all \"%s\")",
             searchable = true,
         },
-    })
+    }),
     calibre_name = _("Local calibre library"),
-    calibre_opds = G_reader_settings:readSetting("calibre_opds", {})
+    calibre_opds = G_reader_settings:readSetting("calibre_opds", {}),
 
     catalog_type = "application/atom%+xml",
     search_type = "application/opensearchdescription%+xml",
