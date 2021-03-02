@@ -293,7 +293,8 @@ function Terminal:editName(item)
 end
 
 function Terminal:deleteShortcut(item)
-    for i, element in ipairs(self.shortcuts) do
+    for i=#self.shortcuts, 1, -1 do
+        local element = self.shortcuts[i]
         if element.text == item.text and element.commands == item.commands then
             table.remove(self.shortcuts, i)
         end
