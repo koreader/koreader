@@ -841,7 +841,7 @@ function OPDSBrowser:deleteOPDSServer(item)
     logger.info("Delete OPDS server:", item)
     for i = #self.opds_servers, 1, -1 do
         local server = self.opds_servers[i]
-        if server.title == item.text or server.url == item.url then
+        if server.title == item.text and server.url == item.url then
             table.remove(self.opds_servers, i)
         end
     end
