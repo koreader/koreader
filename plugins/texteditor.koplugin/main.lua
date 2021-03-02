@@ -45,6 +45,7 @@ function TextEditor:loadSettings()
         return
     end
     self.settings = LuaSettings:open(self.settings_file)
+    -- NOTE: addToHistory assigns a new object
     self.history = self.settings:readSetting("history") or {}
     self.last_view_pos = self.settings:readSetting("last_view_pos") or {}
     self.last_path = self.settings:readSetting("last_path") or ffiutil.realpath(DataStorage:getDataDir())
@@ -254,7 +255,7 @@ function TextEditor:execWhenDoneFunc()
 end
 
 function TextEditor:removeFromHistory(file_path)
-    for i=#self.history, 1, -1 do
+    for i = #self.history, 1, -1 do
         if self.history[i] == file_path then
             table.remove(self.history, i)
         end

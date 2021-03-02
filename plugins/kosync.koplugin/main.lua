@@ -15,7 +15,7 @@ local random = require("random")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
-if not G_reader_settings:readSetting("device_id") then
+if G_reader_settings:hasNot("device_id") then
     G_reader_settings:saveSetting("device_id", random.uuid())
 end
 
@@ -104,6 +104,7 @@ function KOSync:onDispatcherRegisterActions()
 end
 
 function KOSync:onReaderReady()
+    --- @todo: Viable candidate for a port to the new readSetting API
     local settings = G_reader_settings:readSetting("kosync") or {}
     self.kosync_custom_server = settings.custom_server
     self.kosync_username = settings.username
