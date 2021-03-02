@@ -326,7 +326,7 @@ The recommended value is -2.]]),
                     end
                     return spin_widget
                 end
-                local show_absolute_font_size_widget = G_reader_settings:readSetting("footnote_popup_absolute_font_size") ~= nil
+                local show_absolute_font_size_widget = G_reader_settings:has("footnote_popup_absolute_font_size")
                 spin_widget = get_font_size_widget(show_absolute_font_size_widget)
                 UIManager:show(spin_widget)
             end,
