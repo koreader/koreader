@@ -39,7 +39,7 @@ function SettingsMigration:migrateSettings(config)
     -- Space condensing to Word spacing
     -- From a single number (space condensing) to a table of 2 numbers ({space width scale, space condensing}).
     -- Be conservative and don't change space width scale: use 100%
-    if not config:readSetting("copt_word_spacing") and config:readSetting("copt_space_condensing") then
+    if config:hasNot("copt_word_spacing") and config:has("copt_space_condensing") then
         local space_condensing = config:readSetting("copt_space_condensing")
         logger.info("Migrating old", cfg_class, "CRe space condensing:", space_condensing)
         config:saveSetting("copt_word_spacing", { 100, space_condensing })

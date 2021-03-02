@@ -195,7 +195,7 @@ function ReadHistory:getPreviousFile(current_file)
 end
 
 function ReadHistory:fileDeleted(path)
-    if G_reader_settings:readSetting("autoremove_deleted_items_from_history") then
+    if G_reader_settings:isTrue("autoremove_deleted_items_from_history") then
         self:removeItemByPath(path)
     else
         -- Make it dimed
@@ -210,7 +210,7 @@ function ReadHistory:fileDeleted(path)
 end
 
 function ReadHistory:fileSettingsPurged(path)
-    if G_reader_settings:readSetting("autoremove_deleted_items_from_history") then
+    if G_reader_settings:isTrue("autoremove_deleted_items_from_history") then
         -- Also remove it from history on purge when that setting is enabled
         self:removeItemByPath(path)
     end

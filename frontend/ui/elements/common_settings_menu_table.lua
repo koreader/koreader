@@ -436,7 +436,7 @@ if Device:hasKeys() then
 end
 
 -- Auto-save settings: default value, info text and warning, and menu items
-if G_reader_settings:readSetting("auto_save_settings_interval_minutes") == nil then
+if G_reader_settings:hasNot("auto_save_settings_interval_minutes") then
     -- Default to auto save every 15 mn
     G_reader_settings:saveSetting("auto_save_settings_interval_minutes", 15)
 end
@@ -593,8 +593,7 @@ common_settings.document = {
                 {
                     text = _("Open next file"),
                     enabled_func = function()
-                        return G_reader_settings:readSetting("collate")
-                            ~= "access"
+                        return G_reader_settings:readSetting("collate") ~= "access"
                     end,
                     checked_func = function()
                         return G_reader_settings:readSetting("end_document_action") == "next_file"

@@ -313,8 +313,7 @@ function DocSettings:flush()
             f_out:close()
 
             if self.candidates ~= nil
-            and not G_reader_settings:readSetting(
-                        "preserve_legacy_docsetting") then
+            and G_reader_settings:nilOrFalse("preserve_legacy_docsetting") then
                 for _, k in pairs(self.candidates) do
                     if k[1] ~= f and k[1] ~= f .. ".old" then
                         logger.dbg("Remove legacy file ", k[1])
