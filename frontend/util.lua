@@ -373,6 +373,44 @@ function util.arrayAppend(t1, t2)
     end
 end
 
+--[[--
+Remove elements from an array, fast.
+
+Swap & pop, like http://lua-users.org/lists/lua-l/2013-11/msg00031.html, but preserves the order.
+c.f., https://stackoverflow.com/a/53038524
+
+@table t Lua array
+@func Filtering callback. Takes three arguments: table, index, new index. Returns true to *keep* the item.
+
+@usage
+
+local foo = { "a", "b", "c", "b", "d", "e" }
+local function drop_b(t, i, j)
+    -- Discard any item with value "b"
+    return t[i] ~= "b"
+end
+util.arrayRemove(foo, drop_b)
+]]
+function util.arrayRemove(t, keep_func)
+    local j, n = 1, #t
+
+    for i=1, n do
+        if keep_func(t, i, j) then
+            -- Move i's kept value to j's position, if it's not already there.
+            if i ~= j then
+                t[j] = t[i]
+                t[i] = nil
+            end
+            -- Increment position of where we'll place the next kept value.
+            j = j + 1
+        else
+            t[i] = nil
+        end
+    end
+
+    return t
+end
+
 --- Reverse array elements in-place in table t
 ---- @param t Lua table
 function util.arrayReverse(t)
