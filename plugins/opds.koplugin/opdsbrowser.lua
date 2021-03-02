@@ -17,7 +17,6 @@ local http = require('socket.http')
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local ltn12 = require('ltn12')
-local mime = require('mime')
 local socket = require('socket')
 local url = require('socket.url')
 local util = require("util")
@@ -101,13 +100,14 @@ function OPDSBrowser:init()
 end
 
 function OPDSBrowser:addServerFromInput(fields)
-    logger.info("input catalog", fields)
+    logger.info("New OPDS catalog input:", fields)
     local servers = G_reader_settings:readSetting("opds_servers") or {}
     local new_server = {
         title = fields[1],
         url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2]),
         searchable =  (fields[2]:match("%%s") and true or false),
-        username = fields[3],
+        username = fields[3] ~= "" and fields[3] or nil,
+        -- Allow empty passwords
         password = fields[4],
     }
     table.insert(servers, new_server)
@@ -116,7 +116,7 @@ function OPDSBrowser:addServerFromInput(fields)
 end
 
 function OPDSBrowser:editCalibreFromInput(fields)
-    logger.dbg("input calibre server", fields)
+    logger.dbg("Edit calibre server input:", fields)
     local calibre = G_reader_settings:readSetting("calibre_opds") or {}
     if fields[1] then
         calibre.host = fields[1]
@@ -124,11 +124,15 @@ function OPDSBrowser:editCalibreFromInput(fields)
     if tonumber(fields[2]) then
         calibre.port = fields[2]
     end
-    if fields[3] then
+    if fields[3] and fields[3] ~= "" then
         calibre.username = fields[3]
+    else
+        calibre.username = nil
     end
     if fields[4] then
         calibre.password = fields[4]
+    else
+        calibre.password = nil
     end
     G_reader_settings:saveSetting("calibre_opds", calibre)
     self:init()
@@ -278,15 +282,17 @@ function OPDSBrowser:genItemTableFromRoot()
 end
 
 function OPDSBrowser:fetchFeed(item_url, username, password, method)
-    local request, sink = {}, {}
-    local parsed = url.parse(item_url)
-    local hostname = parsed.host
-    local auth = string.format("%s:%s", username, password)
-    request['url'] = item_url
-    request['method'] = method and method or "GET"
-    request['sink'] = ltn12.sink.table(sink)
-    request['headers'] = username and { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname, } or  { ["Host"] = hostname, }
-    logger.info("request", request)
+    local sink = {}
+    local request = {
+        url      = item_url,
+        method   = method and method or "GET",
+        -- Explicitly specify that we don't support compressed content. Some servers will still break RFC2616 14.3 and send crap instead.
+        headers  = { ["Accept-Encoding"] = "identity", },
+        sink     = ltn12.sink.table(sink),
+        username = username,
+        password = password
+    }
+    logger.info("Request:", request)
     http.TIMEOUT = 10
     local httpRequest = http.request
     local code, headers = socket.skip(1, httpRequest(request))
@@ -330,6 +336,10 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
         UIManager:show(InfoMessage:new{
             text = T(_("Catalog not found.")),
         })
+    elseif code == 406 then
+        UIManager:show(InfoMessage:new{
+            text = T(_("Cannot get catalog. Server refuses to serve uncompressed content.")),
+        })
     else
         UIManager:show(InfoMessage:new{
             text = T(_("Cannot get catalog. Server response code %1."), code),
@@ -365,7 +375,7 @@ end
 function OPDSBrowser:getCatalog(item_url, username, password)
     local ok, catalog = pcall(self.parseFeed, self, item_url, username, password)
     if not ok and catalog then
-        logger.info("cannot get catalog info from", item_url or "nil", catalog)
+        logger.info("Cannot get catalog info from", item_url or "nil", catalog)
         UIManager:show(InfoMessage:new{
             text = T(_("Cannot get catalog info from %1"), (item_url and BD.url(item_url) or "nil")),
         })
@@ -418,7 +428,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
     if not feed.entry then
         if #hrefs == 0 then
             UIManager:show(InfoMessage:new{
-                text = _("Catalog not found."),
+                text = _("Failed to parse the catalog."),
             })
         end
         return item_table
@@ -531,7 +541,7 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
 
     local function download()
         UIManager:scheduleIn(1, function()
-            logger.dbg("downloading file", local_path, "from", remote_url)
+            logger.dbg("Downloading file", local_path, "from", remote_url)
             local parsed = url.parse(remote_url)
             http.TIMEOUT = 20
 
@@ -540,17 +550,18 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
             if parsed.scheme == "http" then
                 dummy, code, headers = http.request {
                     url         = remote_url,
+                    headers     = { ["Accept-Encoding"] = "identity", },
                     sink        = ltn12.sink.file(io.open(local_path, "w")),
                     user        = item.username,
                     password    = item.password
                 }
             elseif parsed.scheme == "https" then
-                local auth = (item.username and item.password) and string.format("%s:%s", item.username, item.password) or nil
-                local hostname = parsed.host
                 dummy, code, headers = http.request {
                     url         = remote_url,
-                    headers     = auth and { Authorization = "Basic " .. mime.b64(auth), ["Host"] = hostname } or nil,
+                    headers     = { ["Accept-Encoding"] = "identity", },
                     sink        = ltn12.sink.file(io.open(local_path, "w")),
+                    user        = item.username,
+                    password    = item.password
                 }
             else
                 UIManager:show(InfoMessage:new {
@@ -560,7 +571,7 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
             end
 
             if code == 200 then
-                logger.dbg("file downloaded to", local_path)
+                logger.dbg("File downloaded to", local_path)
                 if self.file_downloaded_callback then
                     self.file_downloaded_callback(local_path)
                 end
@@ -646,7 +657,7 @@ function OPDSBrowser:showDownloads(item)
             callback = function()
                 require("ui/downloadmgr"):new{
                     onConfirm = function(path)
-                        logger.info("set download directory to", path)
+                        logger.info("Download directory set to", path)
                         G_reader_settings:saveSetting("download_dir", path)
                         UIManager:nextTick(function()
                             UIManager:close(self.download_dialog)
@@ -664,7 +675,7 @@ function OPDSBrowser:showDownloads(item)
 end
 
 function OPDSBrowser:browse(browse_url, username, password)
-    logger.dbg("Browse opds url", browse_url or "nil")
+    logger.dbg("Browse OPDS url", browse_url or "nil")
     table.insert(self.paths, {
         url = browse_url,
         username = username,
@@ -717,7 +728,7 @@ function OPDSBrowser:onMenuSelect(item)
         item.callback()
     -- acquisition
     elseif item.acquisitions and #item.acquisitions > 0 then
-        logger.dbg("downloads available", item)
+        logger.dbg("Downloads available:", item)
         self:showDownloads(item)
     -- navigation
     else
@@ -737,14 +748,14 @@ function OPDSBrowser:onMenuSelect(item)
 end
 
 function OPDSBrowser:editServerFromInput(item, fields)
-    logger.info("input catalog", fields)
+    logger.info("Edit OPDS catalog input:", fields)
     local servers = {}
     for _, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
         if server.title == item.text or server.url == item.url then
             server.title = fields[1]
             server.url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2])
             server.searchable =  (fields[2]:match("%%s") and true or false)
-            server.username = fields[3]
+            server.username = fields[3] ~= "" and fields[3] or nil
             server.password = fields[4]
         end
         table.insert(servers, server)
@@ -754,7 +765,7 @@ function OPDSBrowser:editServerFromInput(item, fields)
 end
 
 function OPDSBrowser:editOPDSServer(item)
-    logger.info("edit", item)
+    logger.info("Edit OPDS Server:", item)
     self.edit_server_dialog = MultiInputDialog:new{
         title = _("Edit OPDS catalog"),
         fields = {
@@ -803,7 +814,7 @@ function OPDSBrowser:editOPDSServer(item)
 end
 
 function OPDSBrowser:deleteOPDSServer(item)
-    logger.info("delete", item)
+    logger.info("Delete OPDS server:", item)
     local servers = {}
     for _, server in ipairs(G_reader_settings:readSetting("opds_servers") or {}) do
         if server.title ~= item.text or server.url ~= item.url then
