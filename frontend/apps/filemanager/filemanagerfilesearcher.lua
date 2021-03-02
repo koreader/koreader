@@ -95,10 +95,7 @@ end
 
 function FileSearcher:onShowFileSearch()
     local dummy = self.search_value
-    local enabled_search_home_dir = true
-    if not G_reader_settings:readSetting("home_dir") then
-        enabled_search_home_dir = false
-    end
+    local enabled_search_home_dir = G_reader_settings:has("home_dir")
     self.search_dialog = InputDialog:new{
         title = _("Search for books by filename"),
         input = self.search_value,

@@ -141,18 +141,9 @@ function ReaderDictionary:init()
         end
         logger.dbg("found", #available_ifos, "dictionaries")
 
-        if not G_reader_settings:readSetting("dicts_order") then
-            G_reader_settings:saveSetting("dicts_order", {})
-        end
-
+        self.dicts_order = G_reader_settings:readSetting("dicts_order", {})
         self:sortAvailableIfos()
-
-        if not G_reader_settings:readSetting("dicts_disabled") then
-            -- Create an empty dict for this setting, so that we can
-            -- access and update it directly through G_reader_settings
-            -- and it will automatically be saved.
-            G_reader_settings:saveSetting("dicts_disabled", {})
-        end
+        self.dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {})
     end
     -- Prepare the -u options to give to sdcv the dictionary order and if some are disabled
     self:updateSdcvDictNamesOptions()
@@ -163,11 +154,9 @@ function ReaderDictionary:init()
 end
 
 function ReaderDictionary:sortAvailableIfos()
-    local dicts_order = G_reader_settings:readSetting("dicts_order")
-
     table.sort(available_ifos, function(lifo, rifo)
-        local lord = dicts_order[lifo.file]
-        local rord = dicts_order[rifo.file]
+        local lord = self.dicts_order[lifo.file]
+        local rord = self.dicts_order[rifo.file]
 
         -- Both ifos without an explicit position -> lexical comparison
         if lord == rord then
@@ -468,9 +457,8 @@ function ReaderDictionary:getNumberOfDictionaries()
     local nb_available = #available_ifos
     local nb_enabled = 0
     local nb_disabled = 0
-    local dicts_disabled = G_reader_settings:readSetting("dicts_disabled")
     for _, ifo in pairs(available_ifos) do
-        if dicts_disabled[ifo.file] then
+        if self.dicts_disabled[ifo.file] then
             nb_disabled = nb_disabled + 1
         else
             nb_enabled = nb_enabled + 1
@@ -526,7 +514,7 @@ end
 
 function ReaderDictionary:showDictionariesMenu(changed_callback)
     -- Work on local copy, save to settings only when SortWidget is closed with the accept button
-    local dicts_disabled = util.tableDeepCopy(G_reader_settings:readSetting("dicts_disabled"))
+    local dicts_disabled = util.tableDeepCopy(self.dicts_disabled)
 
     local sort_items = {}
     for _, ifo in pairs(available_ifos) do
@@ -552,6 +540,7 @@ function ReaderDictionary:showDictionariesMenu(changed_callback)
         callback = function()
             -- Save local copy of dicts_disabled
             G_reader_settings:saveSetting("dicts_disabled", dicts_disabled)
+            self.dicts_disabled = dicts_disabled
 
             -- Write back the sorted items to dicts_order
             local dicts_order = {}
@@ -559,6 +548,7 @@ function ReaderDictionary:showDictionariesMenu(changed_callback)
                 dicts_order[sort_item.ifo.file] = i
             end
             G_reader_settings:saveSetting("dicts_order", dicts_order)
+            self.dicts_order = dicts_order
 
             self:sortAvailableIfos()
 
