@@ -404,6 +404,8 @@ function Screensaver:show(event, fallback_message)
         if G_reader_settings:nilOrFalse("screensaver_white_background") and G_reader_settings:nilOrFalse("screensaver_no_background") then
             background = nil
             no_background = true
+            -- Funky hack to counteract the flash to white we force on most eInk devices...
+            UIManager:setDirty("all", "full")
         end
 
         if no_background and widget == nil then

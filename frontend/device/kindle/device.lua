@@ -200,7 +200,7 @@ function Kindle:intoScreenSaver()
                 if self:hasEinkScreen() and
                    screensaver_type == "cover" or screensaver_type == "random_image" or
                    screensaver_type == "image_file" then
-                    if not G_reader_settings:isTrue("screensaver_no_background") then
+                    if G_reader_settings:nilOrFalse("screensaver_no_background") then
                         self.screen:clear()
                     end
                     self.screen:refreshFull()
