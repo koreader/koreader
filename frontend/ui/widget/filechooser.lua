@@ -25,7 +25,42 @@ local FileChooser = Menu:extend{
     show_path = true,
     parent = nil,
     show_hidden = nil,
-    exclude_dirs = {"%.sdr$"},
+    -- Patterns are wonky because we may be passed an absolute or relative path :/
+    exclude_dirs = {
+        -- KOReader / Kindle
+        "%.sdr$",
+        -- Kobo
+        "^%.adobe-digital-editions$",
+        "^%.kobo$",
+        "^%.kobo-images$",
+        -- macOS
+        "^%.fseventsd$",
+        "^%.Trashes$",
+        "^%.Spotlight-V100$",
+        -- *nix
+        "^%.Trash$",
+        "^%.Trash-%d+$",
+        -- Windows
+        "^RECYCLED$",
+        "^RECYCLER$",
+        "^%$Recycle.Bin$",
+        "^System Volume Information$",
+        -- Plato
+        "^%.thumbnail-previews$",
+        "^%.reading-states$",
+    },
+    exclude_files = {
+        -- macOS
+        "^%.DS_Store$",
+        -- Windows
+        "^Thumbs%.db$",
+        -- Calibre
+        "^driveinfo%.calibre$",
+        "^metadata%.calibre$",
+        -- Plato
+        "^%.fat32-epoch$",
+        "^%.metadata%.json$",
+    },
     collate = "strcoll", -- or collate = "access",
     reverse_collate = false,
     path_items = {}, -- store last browsed location(item index) for each path
@@ -39,10 +74,19 @@ local unreadable_dir_content = {}
 
 function FileChooser:init()
     self.width = Screen:getWidth()
-    -- common dir filter
-    self.dir_filter = function(dirname)
+    -- Common dir exclude list
+    self.dir_shown = function(dirname)
+        print("Running dir_shown on", dirname)
         for _, pattern in ipairs(self.exclude_dirs) do
             if dirname:match(pattern) then return false end
+        end
+        return true
+    end
+    -- Common file exclude list
+    self.file_shown = function(filename)
+        print("Running file_shown on", filename)
+        for _, pattern in ipairs(self.exclude_files) do
+            if filename:match(pattern) then return false end
         end
         return true
     end
@@ -53,7 +97,7 @@ function FileChooser:init()
             unreadable_dir_content[path] = nil
             for f in iter, dir_obj do
                 if count_only then
-                    if self.dir_filter(f) and ((not self.show_hidden and not util.stringStartsWith(f, "."))
+                    if self.dir_shown(f) and self.file_shown(f) and ((not self.show_hidden and not util.stringStartsWith(f, "."))
                         or (self.show_hidden and f ~= "." and f ~= ".." and not util.stringStartsWith(f, "._")))
                     then
                         table.insert(dirs, true)
@@ -63,7 +107,7 @@ function FileChooser:init()
                     local attributes = lfs.attributes(filename)
                     if attributes ~= nil then
                         if attributes.mode == "directory" and f ~= "." and f ~= ".." then
-                            if self.dir_filter(filename) then
+                            if self.dir_shown(filename) then
                                 table.insert(dirs, {name = f,
                                                     suffix = getFileNameSuffix(f),
                                                     fullpath = filename,
@@ -71,22 +115,24 @@ function FileChooser:init()
                             end
                         -- Always ignore macOS resource forks.
                         elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") then
-                            if self.file_filter == nil or self.file_filter(filename) or self.show_unsupported then
-                                local percent_finished = 0
-                                if self.collate == "percent_unopened_first" or self.collate == "percent_unopened_last" then
-                                    if DocSettings:hasSidecarFile(filename) then
-                                        local docinfo = DocSettings:open(filename)
-                                        percent_finished = docinfo.data.percent_finished
-                                        if percent_finished == nil then
-                                            percent_finished = 0
+                            if self.file_shown(filename) then
+                                if self.file_filter == nil or self.file_filter(filename) or self.show_unsupported then
+                                    local percent_finished = 0
+                                    if self.collate == "percent_unopened_first" or self.collate == "percent_unopened_last" then
+                                        if DocSettings:hasSidecarFile(filename) then
+                                            local docinfo = DocSettings:open(filename)
+                                            percent_finished = docinfo.data.percent_finished
+                                            if percent_finished == nil then
+                                                percent_finished = 0
+                                            end
                                         end
                                     end
+                                    table.insert(files, {name = f,
+                                                        suffix = getFileNameSuffix(f),
+                                                        fullpath = filename,
+                                                        attr = attributes,
+                                                        percent_finished = percent_finished })
                                 end
-                                table.insert(files, {name = f,
-                                                     suffix = getFileNameSuffix(f),
-                                                     fullpath = filename,
-                                                     attr = attributes,
-                                                     percent_finished = percent_finished })
                             end
                         end
                     end
