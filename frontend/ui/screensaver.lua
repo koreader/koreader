@@ -244,9 +244,12 @@ function Screensaver:show(event, fallback_message)
     end
 
     local show_message = self:showMessage()
+    -- We'll need to keep track of whether the effective mode is a fallback or not...
+    local fallback_type = false
 
     if screensaver_type == nil then
         show_message = true
+        fallback_type = true
     end
 
     if screensaver_type == "message" then
@@ -342,10 +345,12 @@ function Screensaver:show(event, fallback_message)
                 }
             else
                 show_message = true
+                fallback_type = true
             end
             doc:close()
         else
             show_message = true
+            fallback_type = true
         end
     end
     if screensaver_type == "random_image" then
@@ -356,6 +361,7 @@ function Screensaver:show(event, fallback_message)
         local image_file = getRandomImage(screensaver_dir)
         if image_file == nil then
             show_message = true
+            fallback_type = true
         else
             widget = ImageWidget:new{
                 file = image_file,
@@ -374,6 +380,7 @@ function Screensaver:show(event, fallback_message)
         end
         if lfs.attributes(screensaver_image, "mode") ~= "file" then
             show_message = true
+            fallback_type = true
         else
             widget = ImageWidget:new{
                 file = screensaver_image,
@@ -390,6 +397,7 @@ function Screensaver:show(event, fallback_message)
             widget = Screensaver.getReaderProgress()
         else
             show_message = true
+            fallback_type = true
         end
     end
 
@@ -401,11 +409,13 @@ function Screensaver:show(event, fallback_message)
         -- Unlike image oriented modes, the default in this mode should *NOT* be a black background,
         -- but no background at all.
         -- Handle that properly if the user hasn't set a background preference yet.
-        if G_reader_settings:nilOrFalse("screensaver_white_background") and G_reader_settings:nilOrFalse("screensaver_no_background") then
-            background = nil
-            no_background = true
-            -- Funky hack to counteract the flash to white we force on most eInk devices...
-            UIManager:setDirty("all", "full")
+        if fallback_type then
+            if G_reader_settings:nilOrFalse("screensaver_white_background") and G_reader_settings:nilOrFalse("screensaver_no_background") then
+                background = nil
+                no_background = true
+                -- Funky hack to counteract the flash to white we force on most eInk devices...
+                UIManager:setDirty("all", "full")
+            end
         end
 
         if no_background and widget == nil then
