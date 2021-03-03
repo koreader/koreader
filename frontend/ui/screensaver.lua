@@ -244,7 +244,7 @@ function Screensaver:show(event, fallback_message)
     end
 
     local show_message = self:showMessage()
-    -- We'll need to keep track of whether the effective mode is a fallback or not...
+    -- We'll need to keep track of whether the effective mode is a fallback or not for show_message...
     local fallback_type = false
 
     if screensaver_type == nil then
