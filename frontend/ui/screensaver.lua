@@ -35,6 +35,10 @@ local default_screensaver_message = _("Sleeping")
 local Screensaver = {}
 
 local function getRandomImage(dir)
+    if not dir then
+        return nil
+    end
+
     if string.sub(dir, string.len(dir)) ~= "/" then
        dir = dir .. "/"
     end
@@ -90,7 +94,6 @@ function Screensaver:chooseFolder()
         }
     })
     local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
-                         or DataStorage:getDataDir() .. "/screenshots/"
     self.choose_dialog = ButtonDialogTitle:new{
         title = T(_("Current screensaver image folder:\n%1"), BD.dirpath(screensaver_dir)),
         buttons = buttons
@@ -348,9 +351,6 @@ function Screensaver:show(event, fallback_message)
         if screensaver_dir == nil and prefix ~= "" then
             screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
         end
-        if screensaver_dir == nil then
-            screensaver_dir = DataStorage:getDataDir() .. "/screenshots/"
-        end
         local image_file = getRandomImage(screensaver_dir)
         if image_file == nil then
             show_message = true
@@ -369,9 +369,6 @@ function Screensaver:show(event, fallback_message)
         local screensaver_image = G_reader_settings:readSetting(prefix.."screensaver_image")
         if screensaver_image == nil and prefix ~= "" then
             screensaver_image = G_reader_settings:readSetting("screensaver_image")
-        end
-        if screensaver_image == nil then
-            screensaver_image = DataStorage:getDataDir() .. "/resources/koreader.png"
         end
         if lfs.attributes(screensaver_image, "mode") ~= "file" then
             show_message = true
