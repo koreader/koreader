@@ -74,17 +74,15 @@ local unreadable_dir_content = {}
 
 function FileChooser:init()
     self.width = Screen:getWidth()
-    -- Common dir exclude list
+    -- Standard dir exclusion list
     self.show_dir = function(dirname)
-        print("Running show_dir on", dirname)
         for _, pattern in ipairs(self.exclude_dirs) do
             if dirname:match(pattern) then return false end
         end
         return true
     end
-    -- Common file exclude list
+    -- Standard file exclusion list
     self.show_file = function(filename)
-        print("Running show_file on", filename)
         for _, pattern in ipairs(self.exclude_files) do
             if filename:match(pattern) then return false end
         end
