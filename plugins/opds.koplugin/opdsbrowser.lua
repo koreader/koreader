@@ -23,28 +23,27 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local CatalogCacheItem = CacheItem:new{
-    size = 1024,  -- fixed size for catalog item
+local CatalogCacheItem = CacheItem:new {
+    size = 1024, -- fixed size for catalog item
 }
 
 -- cache catalog parsed from feed xml
-local CatalogCache = Cache:new{
-    max_memsize = 20*1024, -- keep only 20 cache items
+local CatalogCache = Cache:new {
+    max_memsize = 20 * 1024, -- keep only 20 cache items
     current_memsize = 0,
     cache = {},
     cache_order = {},
 }
 
-local OPDSBrowser = Menu:extend{
+local OPDSBrowser = Menu:extend {
     opds_servers = {},
     calibre_name = _("Local calibre library"),
-
     catalog_type = "application/atom%+xml",
     search_type = "application/opensearchdescription%+xml",
+    search_template_type = "application/atom%+xml",
     acquisition_rel = "^http://opds%-spec%.org/acquisition",
     image_rel = "http://opds-spec.org/image",
     thumbnail_rel = "http://opds-spec.org/image/thumbnail",
-
     width = Screen:getWidth(),
     height = Screen:getHeight(),
     no_title = false,
@@ -55,43 +54,43 @@ function OPDSBrowser:init()
     local servers = G_reader_settings:readSetting("opds_servers")
     if not servers then -- If there are no saved servers, add some defaults
         servers = {
-          {
-            title = "Project Gutenberg",
-            url = "https://m.gutenberg.org/ebooks.opds/?format=opds",
-          },
-          {
-            title = "Project Gutenberg [Searchable]",
-            url = "https://m.gutenberg.org/ebooks/search.mobile/?format=opds&query=%s",
-            searchable = true,
-          },
-          {
-             title = "Feedbooks",
-             url = "https://catalog.feedbooks.com/catalog/public_domain.atom",
-          },
-          {
-             title = "ManyBooks",
-             url = "http://manybooks.net/opds/index.php",
-          },
-          {
-             title = "Internet Archive",
-             url = "https://bookserver.archive.org/",
-          },
-          {
-             title = "textos.info (Spanish)",
-             url = "https://www.textos.info/catalogo.atom",
-          },
-          {
-             title = "Gallica (French)",
-             url = "https://gallica.bnf.fr/opds",
-          },
-          {
-             title = "Gallica [Fr] [Searchable]",
-             url = "https://gallica.bnf.fr/services/engine/search/opds?operation=searchRetrieve&query=(gallica all \"%s\")",
-             searchable = true,
-          },
+            {
+                title = "Project Gutenberg",
+                url = "https://m.gutenberg.org/ebooks.opds/?format=opds",
+            },
+            {
+                title = "Project Gutenberg [Searchable]",
+                url = "https://m.gutenberg.org/ebooks/search.mobile/?format=opds&query=%s",
+                searchable = true,
+            },
+            {
+                title = "Feedbooks",
+                url = "https://catalog.feedbooks.com/catalog/public_domain.atom",
+            },
+            {
+                title = "ManyBooks",
+                url = "http://manybooks.net/opds/index.php",
+            },
+            {
+                title = "Internet Archive",
+                url = "https://bookserver.archive.org/",
+            },
+            {
+                title = "textos.info (Spanish)",
+                url = "https://www.textos.info/catalogo.atom",
+            },
+            {
+                title = "Gallica (French)",
+                url = "https://gallica.bnf.fr/opds",
+            },
+            {
+                title = "Gallica [Fr] [Searchable]",
+                url = "https://gallica.bnf.fr/services/engine/search/opds?operation=searchRetrieve&query=(gallica all \"%s\")",
+                searchable = true,
+            },
         }
         G_reader_settings:saveSetting("opds_servers", servers)
-    elseif servers[4] and servers[4].title == "Internet Archive" and servers[4].url == "http://bookserver.archive.org/catalog/"  then
+    elseif servers[4] and servers[4].title == "Internet Archive" and servers[4].url == "http://bookserver.archive.org/catalog/" then
         servers[4].url = "https://bookserver.archive.org"
     end
     self.item_table = self:genItemTableFromRoot()
@@ -105,7 +104,7 @@ function OPDSBrowser:addServerFromInput(fields)
     local new_server = {
         title = fields[1],
         url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2]),
-        searchable =  (fields[2]:match("%%s") and true or false),
+        searchable = (fields[2]:match("%%s") and true or false),
         username = fields[3] ~= "" and fields[3] or nil,
         -- Allow empty passwords
         password = fields[4],
@@ -139,7 +138,7 @@ function OPDSBrowser:editCalibreFromInput(fields)
 end
 
 function OPDSBrowser:addNewCatalog()
-    self.add_server_dialog = MultiInputDialog:new{
+    self.add_server_dialog = MultiInputDialog:new {
         title = _("Add OPDS catalog"),
         fields = {
             {
@@ -188,7 +187,7 @@ end
 
 function OPDSBrowser:editCalibreServer()
     local calibre = G_reader_settings:readSetting("calibre_opds") or {}
-    self.add_server_dialog = MultiInputDialog:new{
+    self.add_server_dialog = MultiInputDialog:new {
         title = _("Edit local calibre host and port"),
         fields = {
             {
@@ -284,11 +283,11 @@ end
 function OPDSBrowser:fetchFeed(item_url, username, password, method)
     local sink = {}
     local request = {
-        url      = item_url,
-        method   = method and method or "GET",
+        url = item_url,
+        method = method and method or "GET",
         -- Explicitly specify that we don't support compressed content. Some servers will still break RFC2616 14.3 and send crap instead.
-        headers  = { ["Accept-Encoding"] = "identity", },
-        sink     = ltn12.sink.table(sink),
+        headers = { ["Accept-Encoding"] = "identity", },
+        sink = ltn12.sink.table(sink),
         username = username,
         password = password
     }
@@ -316,32 +315,32 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
         -- Don't show error messages when we check headers only.
         return
     elseif code == 301 then
-        UIManager:show(InfoMessage:new{
+        UIManager:show(InfoMessage:new {
             text = T(_("The catalog has been permanently moved. Please update catalog URL to '%1'."), BD.url(headers['Location'])),
         })
     elseif code == 302 and item_url:match("^https") and headers.location:match("^http[^s]") then
-        UIManager:show(InfoMessage:new{
+        UIManager:show(InfoMessage:new {
             text = T(_("Insecure HTTPS → HTTP downgrade attempted by redirect from:\n\n'%1'\n\nto\n\n'%2'.\n\nPlease inform the server administrator that many clients disallow this because it could be a downgrade attack."), BD.url(item_url), BD.url(headers.location)),
             icon = "notice-warning",
         })
     elseif code == 401 then
-        UIManager:show(InfoMessage:new{
+        UIManager:show(InfoMessage:new {
             text = T(_("Authentication required for catalog. Please add a username and password.")),
         })
     elseif code == 403 then
-        UIManager:show(InfoMessage:new{
+        UIManager:show(InfoMessage:new {
             text = T(_("Failed to authenticate. Please check your username and password.")),
         })
     elseif code == 404 then
-        UIManager:show(InfoMessage:new{
+        UIManager:show(InfoMessage:new {
             text = T(_("Catalog not found.")),
         })
     elseif code == 406 then
-        UIManager:show(InfoMessage:new{
+        UIManager:show(InfoMessage:new {
             text = T(_("Cannot get catalog. Server refuses to serve uncompressed content.")),
         })
     else
-        UIManager:show(InfoMessage:new{
+        UIManager:show(InfoMessage:new {
             text = T(_("Cannot get catalog. Server response code %1."), code),
         })
     end
@@ -364,7 +363,7 @@ function OPDSBrowser:parseFeed(item_url, username, password)
         feed = self:fetchFeed(item_url, username, password)
         if feed then
             logger.dbg("Caching", hash)
-            CatalogCache:insert(hash, CatalogCacheItem:new{ feed = feed })
+            CatalogCache:insert(hash, CatalogCacheItem:new { feed = feed })
         end
     end
     if feed then
@@ -376,7 +375,7 @@ function OPDSBrowser:getCatalog(item_url, username, password)
     local ok, catalog = pcall(self.parseFeed, self, item_url, username, password)
     if not ok and catalog then
         logger.info("Cannot get catalog info from", item_url or "nil", catalog)
-        UIManager:show(InfoMessage:new{
+        UIManager:show(InfoMessage:new {
             text = T(_("Cannot get catalog info from %1"), (item_url and BD.url(item_url) or "nil")),
         })
         return
@@ -414,6 +413,29 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                         hrefs[link.rel] = build_href(link.href)
                     end
                 end
+                if link.type:find(self.search_type) then
+                    if link.href then
+                        -- parse search descriptor
+                        local searchDescriptor = self:parseFeed(link.href, username, password)
+                        if searchDescriptor and searchDescriptor.OpenSearchDescription and searchDescriptor.OpenSearchDescription.Url then
+                            for _, candidate in ipairs(searchDescriptor.OpenSearchDescription.Url) do
+                                if candidate.type and candidate.template and candidate.type:find(self.search_template_type) then
+                                    item_table.search_template = candidate.template
+                                    -- insert the search item
+
+                                    local item = {}
+                                    item.acquisitions = {}
+                                    item.text = "Search"
+                                    item.callback = function()
+                                        self:browseSearchable(candidate.template, username, password)
+                                    end
+
+                                    table.insert(item_table, item)
+                                end
+                            end
+                        end
+                    end
+                end
             end
         end
     end
@@ -427,7 +449,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
 
     if not feed.entry then
         if #hrefs == 0 then
-            UIManager:show(InfoMessage:new{
+            UIManager:show(InfoMessage:new {
                 text = _("Failed to parse the catalog."),
             })
         end
@@ -440,11 +462,11 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
         if entry.link then
             for _, link in ipairs(entry.link) do
                 if link.type:find(self.catalog_type)
-                        and (not link.rel
-                             or link.rel == "subsection"
-                             or link.rel == "http://opds-spec.org/subsection"
-                             or link.rel == "http://opds-spec.org/sort/popular"
-                             or link.rel == "http://opds-spec.org/sort/new") then
+                    and (not link.rel
+                    or link.rel == "subsection"
+                    or link.rel == "http://opds-spec.org/subsection"
+                    or link.rel == "http://opds-spec.org/sort/popular"
+                    or link.rel == "http://opds-spec.org/sort/new") then
                     item.url = build_href(link.href)
                 end
                 if link.rel then
@@ -549,19 +571,19 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
 
             if parsed.scheme == "http" then
                 dummy, code, headers = http.request {
-                    url         = remote_url,
-                    headers     = { ["Accept-Encoding"] = "identity", },
-                    sink        = ltn12.sink.file(io.open(local_path, "w")),
-                    user        = item.username,
-                    password    = item.password
+                    url = remote_url,
+                    headers = { ["Accept-Encoding"] = "identity", },
+                    sink = ltn12.sink.file(io.open(local_path, "w")),
+                    user = item.username,
+                    password = item.password
                 }
             elseif parsed.scheme == "https" then
                 dummy, code, headers = http.request {
-                    url         = remote_url,
-                    headers     = { ["Accept-Encoding"] = "identity", },
-                    sink        = ltn12.sink.file(io.open(local_path, "w")),
-                    user        = item.username,
-                    password    = item.password
+                    url = remote_url,
+                    headers = { ["Accept-Encoding"] = "identity", },
+                    sink = ltn12.sink.file(io.open(local_path, "w")),
+                    user = item.username,
+                    password = item.password
                 }
             else
                 UIManager:show(InfoMessage:new {
@@ -577,7 +599,7 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
                 end
             elseif code == 302 and remote_url:match("^https") and headers.location:match("^http[^s]") then
                 util.removeFile(local_path)
-                UIManager:show(InfoMessage:new{
+                UIManager:show(InfoMessage:new {
                     text = T(_("Insecure HTTPS → HTTP downgrade attempted by redirect from:\n\n'%1'\n\nto\n\n'%2'.\n\nPlease inform the server administrator that many clients disallow this because it could be a downgrade attack."), BD.url(remote_url), BD.url(headers.location)),
                     icon = "notice-warning",
                 })
@@ -590,7 +612,7 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
             end
         end)
 
-        UIManager:show(InfoMessage:new{
+        UIManager:show(InfoMessage:new {
             text = _("Downloading may take several minutes…"),
             timeout = 1,
         })
@@ -610,7 +632,7 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
 end
 
 function OPDSBrowser:createNewDownloadDialog(path, buttons)
-    self.download_dialog = ButtonDialogTitle:new{
+    self.download_dialog = ButtonDialogTitle:new {
         title = T(_("Download directory:\n%1\n\nDownload file type:"), BD.dirpath(path)),
         buttons = buttons
     }
@@ -619,13 +641,13 @@ end
 function OPDSBrowser:showDownloads(item)
     local acquisitions = item.acquisitions
     local downloadsperline = 2
-    local lines = math.ceil(#acquisitions/downloadsperline)
+    local lines = math.ceil(#acquisitions / downloadsperline)
     local buttons = {}
     for i = 1, lines do
         local line = {}
         for j = 1, downloadsperline do
             local button = {}
-            local index = (i-1)*downloadsperline + j
+            local index = (i - 1) * downloadsperline + j
             local acquisition = acquisitions[index]
             if acquisition then
                 local filetype
@@ -644,7 +666,7 @@ function OPDSBrowser:showDownloads(item)
                     table.insert(line, button)
                 end
             elseif #acquisitions > downloadsperline then
-                table.insert(line, {text=""})
+                table.insert(line, { text = "" })
             end
         end
         table.insert(buttons, line)
@@ -655,7 +677,7 @@ function OPDSBrowser:showDownloads(item)
         {
             text = _("Select another directory"),
             callback = function()
-                require("ui/downloadmgr"):new{
+                require("ui/downloadmgr"):new {
                     onConfirm = function(path)
                         logger.info("Download directory set to", path)
                         G_reader_settings:saveSetting("download_dir", path)
@@ -688,7 +710,7 @@ function OPDSBrowser:browse(browse_url, username, password)
 end
 
 function OPDSBrowser:browseSearchable(browse_url, username, password)
-    self.search_server_dialog = InputDialog:new{
+    self.search_server_dialog = InputDialog:new {
         title = _("Search OPDS catalog"),
         input = "",
         hint = _("Search string"),
@@ -710,7 +732,7 @@ function OPDSBrowser:browseSearchable(browse_url, username, password)
                     callback = function()
                         UIManager:close(self.search_server_dialog)
                         local search = self.search_server_dialog:getInputText():gsub(" ", "+")
-                        local searched_url = browse_url:gsub("%%s", search)
+                        local searched_url = browse_url:gsub("%%s", search):gsub("{searchTerms}", search)
                         self:browse(searched_url, username, password)
                     end,
                 },
@@ -726,11 +748,11 @@ function OPDSBrowser:onMenuSelect(item)
     -- add catalog
     if item.callback then
         item.callback()
-    -- acquisition
+        -- acquisition
     elseif item.acquisitions and #item.acquisitions > 0 then
         logger.dbg("Downloads available:", item)
         self:showDownloads(item)
-    -- navigation
+        -- navigation
     else
         local connect_callback
         if item.searchable then
@@ -754,7 +776,7 @@ function OPDSBrowser:editServerFromInput(item, fields)
         if server.title == item.text or server.url == item.url then
             server.title = fields[1]
             server.url = (fields[2]:match("^%a+://") and fields[2] or "http://" .. fields[2])
-            server.searchable =  (fields[2]:match("%%s") and true or false)
+            server.searchable = (fields[2]:match("%%s") and true or false)
             server.username = fields[3] ~= "" and fields[3] or nil
             server.password = fields[4]
         end
@@ -766,7 +788,7 @@ end
 
 function OPDSBrowser:editOPDSServer(item)
     logger.info("Edit OPDS Server:", item)
-    self.edit_server_dialog = MultiInputDialog:new{
+    self.edit_server_dialog = MultiInputDialog:new {
         title = _("Edit OPDS catalog"),
         fields = {
             {
@@ -827,7 +849,7 @@ end
 
 function OPDSBrowser:onMenuHold(item)
     if item.deletable or item.editable then
-        self.opds_server_dialog = ButtonDialog:new{
+        self.opds_server_dialog = ButtonDialog:new {
             buttons = {
                 {
                     {
@@ -882,7 +904,7 @@ function OPDSBrowser:onNext()
         local hrefs = self.item_table.hrefs
         if hrefs and hrefs.next then
             if not self:appendCatalog(hrefs.next, self.item_table.username, self.item_table.password) then
-                break  -- reach end of paging
+                break -- reach end of paging
             end
         else
             break
