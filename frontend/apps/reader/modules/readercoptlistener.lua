@@ -67,6 +67,14 @@ function ReaderCoptListener:onSetFontSize(font_size)
     self.document.configurable.font_size = font_size
 end
 
+function ReaderCoptListener:onCharging()
+    self:headerRefresh()
+end
+
+function ReaderCoptListener:onNotCharging()
+    self:headerRefresh()
+end
+
 function ReaderCoptListener:onTimeFormatChanged()
     self.ui.document._document:setIntProperty("window.status.clock.12hours", G_reader_settings:isTrue("twelve_hour_clock") and 1 or 0)
 end
@@ -106,6 +114,14 @@ function ReaderCoptListener:rescheduleHeaderRefreshIfNeeded()
         else
             logger.dbg("ReaderCoptListener.headerRefresh rescheduled")
         end
+
+        -- use pollUSB on device not fireing "Charging" and "NotCharging" events
+        -- on Mar. 2021: Android does not have such events. Maybe someone could add them
+        if Device.pollUSB then
+            UIManager:scheduleIn(5, Device.pollUSB) -- 5s seems to be just right at the startup
+        end
+        -- end of the pollUSB workaround
+
     elseif unscheduled then
         logger.dbg("ReaderCoptListener.headerRefresh unscheduled")
     end
