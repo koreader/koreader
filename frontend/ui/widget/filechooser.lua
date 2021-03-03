@@ -75,16 +75,16 @@ local unreadable_dir_content = {}
 function FileChooser:init()
     self.width = Screen:getWidth()
     -- Common dir exclude list
-    self.dir_shown = function(dirname)
-        print("Running dir_shown on", dirname)
+    self.show_dir = function(dirname)
+        print("Running show_dir on", dirname)
         for _, pattern in ipairs(self.exclude_dirs) do
             if dirname:match(pattern) then return false end
         end
         return true
     end
     -- Common file exclude list
-    self.file_shown = function(filename)
-        print("Running file_shown on", filename)
+    self.show_file = function(filename)
+        print("Running show_file on", filename)
         for _, pattern in ipairs(self.exclude_files) do
             if filename:match(pattern) then return false end
         end
@@ -99,17 +99,17 @@ function FileChooser:init()
                 if count_only then
                     if ((not self.show_hidden and not util.stringStartsWith(f, "."))
                          or (self.show_hidden and f ~= "." and f ~= ".." and not util.stringStartsWith(f, "._")))
-                         and self.dir_shown(f)
-                         and self.file_shown(f)
+                         and self.show_dir(f)
+                         and self.show_file(f)
                     then
                         table.insert(dirs, true)
                     end
-                elseif self.show_hidden or not string.match(f, "^%.[^.]") then
+                elseif self.show_hidden or not util.stringStartsWith(f, ".") then
                     local filename = path.."/"..f
                     local attributes = lfs.attributes(filename)
                     if attributes ~= nil then
                         if attributes.mode == "directory" and f ~= "." and f ~= ".." then
-                            if self.dir_shown(f) then
+                            if self.show_dir(f) then
                                 table.insert(dirs, {name = f,
                                                     suffix = getFileNameSuffix(f),
                                                     fullpath = filename,
@@ -117,7 +117,7 @@ function FileChooser:init()
                             end
                         -- Always ignore macOS resource forks.
                         elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") then
-                            if self.file_shown(f) then
+                            if self.show_file(f) then
                                 if self.file_filter == nil or self.file_filter(filename) or self.show_unsupported then
                                     local percent_finished = 0
                                     if self.collate == "percent_unopened_first" or self.collate == "percent_unopened_last" then
