@@ -79,7 +79,7 @@ function JoplinClient:findNoteByTitle(title, notebook_id)
             end
         end
         page = page + 1
-    until(not(has_more))
+    until not has_more
     return false
 
 end
@@ -98,12 +98,12 @@ function JoplinClient:findNotebookByTitle(title)
         local folders = self:_makeRequest(url, "GET")
         has_more = folders.has_more
         for _, folder in ipairs(folders.items) do
-            if folder.title== title then
+            if folder.title == title then
                 return folder.id
             end
         end
         page = page + 1
-    until(not(has_more))
+    until not has_more
     return false
 end
 
