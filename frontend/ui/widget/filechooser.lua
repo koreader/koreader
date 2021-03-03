@@ -63,7 +63,7 @@ local FileChooser = Menu:extend{
     },
     collate = "strcoll", -- or collate = "access",
     reverse_collate = false,
-    path_items = {}, -- store last browsed location(item index) for each path
+    path_items = {}, -- store last browsed location (item index) for each path
     goto_letter = true,
 }
 
