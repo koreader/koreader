@@ -261,6 +261,8 @@ function Screensaver:show(event, fallback_message)
         return
     end
 
+    -- These historical defaults are image-oriented.
+    -- That'll bite us in the ass later on, both for "disable" mode and show_message...
     local widget = nil
     local no_background = false
     local background = Blitbuffer.COLOR_BLACK
@@ -278,7 +280,7 @@ function Screensaver:show(event, fallback_message)
         --       and as such, the default assumes that in "disable" mode, the default background is nil instead of black.
         --       This implies that, for the same legacy reasons, we have to honor the *white* background setting here...
         --       (Which means that you can have no background, a white background, but *NOT* a black background in this mode :/).
-        if not self:whiteBackground() then
+        if G_reader_settings:nilOrFalse("screensaver_white_background") and G_reader_settings:nilOrFalse("screensaver_no_background") then
             background = nil
             no_background = true
         end
@@ -394,6 +396,16 @@ function Screensaver:show(event, fallback_message)
     if show_message == true then
         local screensaver_message = G_reader_settings:readSetting(prefix.."screensaver_message")
         local message_pos = G_reader_settings:readSetting(prefix.."screensaver_message_position")
+
+        -- This is both our default and our fallback.
+        -- Unlike image oriented modes, the default in this mode should *NOT* be a black background,
+        -- but no background at all.
+        -- Handle that properly if the user hasn't set a background preference yet.
+        if G_reader_settings:nilOrFalse("screensaver_white_background") and G_reader_settings:nilOrFalse("screensaver_no_background") then
+            background = nil
+            no_background = true
+        end
+
         if no_background and widget == nil then
             covers_fullscreen = false
         end
