@@ -539,6 +539,7 @@ function ReaderDictionary:showDictionariesMenu(changed_callback)
         callback = function()
             -- Save local copy of dicts_disabled
             G_reader_settings:saveSetting("dicts_disabled", dicts_disabled)
+            -- Update our own reference to that setting
             self.dicts_disabled = dicts_disabled
 
             -- Write back the sorted items to dicts_order

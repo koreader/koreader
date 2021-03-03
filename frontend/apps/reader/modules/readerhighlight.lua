@@ -1175,13 +1175,13 @@ function ReaderHighlight:onCycleHighlightAction()
         dictionary = "search",
         search = nil,
     }
-    local current_action = G_reader_settings:readSetting("default_highlight_action")
     if G_reader_settings:hasNot("default_highlight_action") then
         G_reader_settings:saveSetting("default_highlight_action", "highlight")
         UIManager:show(Notification:new{
             text = _("Default highlight action changed to 'highlight'."),
         })
     else
+        local current_action = G_reader_settings:readSetting("default_highlight_action")
         local next_action = next_actions[current_action]
         G_reader_settings:saveSetting("default_highlight_action", next_action)
         UIManager:show(Notification:new{
@@ -1446,19 +1446,25 @@ end
 
 function ReaderHighlight:onReadSettings(config)
     self.view.highlight.saved_drawer = config:readSetting("highlight_drawer") or self.view.highlight.saved_drawer
-    self.view.highlight.disabled = config:isTrue("highlight_disabled")
+    if config:has("highlight_disabled") then
+        self.view.highlight.disabled = config:isTrue("highlight_disabled")
+    else
+        self.view.highlight.disabled = G_reader_settings:isTrue("highlight_disabled")
+    end
 
     -- panel zoom settings isn't supported in EPUB
     if self.document.info.has_pages then
         local ext = util.getFileNameSuffix(self.ui.document.file)
         G_reader_settings:initializeExtSettings("panel_zoom_enabled", {cbz = true, cbt = true})
         G_reader_settings:initializeExtSettings("panel_zoom_fallback_to_text_selection", {pdf = true})
-        self.panel_zoom_enabled = config:isTrue("panel_zoom_enabled")
-        if config:hasNot("panel_zoom_enabled") then
+        if config:has("panel_zoom_enabled") then
+            self.panel_zoom_enabled = config:isTrue("panel_zoom_enabled")
+        else
             self.panel_zoom_enabled = G_reader_settings:getSettingForExt("panel_zoom_enabled", ext) or false
         end
-        self.panel_zoom_fallback_to_text_selection = config:isTrue("panel_zoom_fallback_to_text_selection")
-        if config:hasNot("panel_zoom_fallback_to_text_selection") then
+        if config:has("panel_zoom_fallback_to_text_selection") then
+            self.panel_zoom_fallback_to_text_selection = config:isTrue("panel_zoom_fallback_to_text_selection")
+        else
             self.panel_zoom_fallback_to_text_selection = G_reader_settings:getSettingForExt("panel_zoom_fallback_to_text_selection", ext) or false
         end
     end

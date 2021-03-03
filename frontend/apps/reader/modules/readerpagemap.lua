@@ -94,12 +94,14 @@ function ReaderPageMap:onReadSettings(config)
     self.max_left_label_width = Screen:scaleBySize(h_margins[1])
     self.max_right_label_width = Screen:scaleBySize(h_margins[2])
 
-    self.show_page_labels = config:readSetting("pagemap_show_page_labels")
-    if config:hasNot("pagemap_show_page_labels") then
+    if config:has("pagemap_show_page_labels") then
+        self.show_page_labels = config:isTrue("pagemap_show_page_labels")
+    else
         self.show_page_labels = G_reader_settings:nilOrTrue("pagemap_show_page_labels")
     end
-    self.use_page_labels = config:readSetting("pagemap_use_page_labels")
-    if config:hasNot("pagemap_use_page_labels") then
+    if config:has("pagemap_use_page_labels") then
+        self.use_page_labels = config:isTrue("pagemap_use_page_labels")
+    else
         self.use_page_labels = G_reader_settings:isTrue("pagemap_use_page_labels")
     end
 end

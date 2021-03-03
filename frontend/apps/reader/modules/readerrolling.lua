@@ -209,13 +209,15 @@ function ReaderRolling:onReadSettings(config)
             end
         end
     end
-    self.show_overlap_enable = config:isTrue("show_overlap_enable")
-    if config:hasNot("show_overlap_enable") then
+    if config:has("show_overlap_enable") then
+        self.show_overlap_enable = config:isTrue("show_overlap_enable")
+    else
         self.show_overlap_enable = DSHOWOVERLAP
     end
 
-    self.inverse_reading_order = config:isTrue("inverse_reading_order")
-    if config:hasNot("inverse_reading_order") then
+    if config:has("inverse_reading_order") then
+        self.inverse_reading_order = config:isTrue("inverse_reading_order")
+    else
         self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
     end
 
@@ -229,8 +231,9 @@ function ReaderRolling:onReadSettings(config)
         G_reader_settings:readSetting("copt_visible_pages") or 1
     self.ui.document:setVisiblePageCount(self.visible_pages)
 
-    self.hide_nonlinear_flows = config:isTrue("hide_nonlinear_flows")
-    if config:hasNot("hide_nonlinear_flows") then
+    if config:has("hide_nonlinear_flows") then
+        self.hide_nonlinear_flows = config:isTrue("hide_nonlinear_flows")
+    else
         self.hide_nonlinear_flows = G_reader_settings:isTrue("hide_nonlinear_flows")
     end
     self.ui.document:setHideNonlinearFlows(self.hide_nonlinear_flows)
@@ -644,8 +647,10 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
     --   followed_link_marker = true: maker shown and not auto removed
     --   followed_link_marker = <number>: removed after <number> seconds
     -- (no real need for a menu item, the default is the finest)
-    local marker_setting = G_reader_settings:readSetting("followed_link_marker")
-    if G_reader_settings:hasNot("followed_link_marker") then
+    local marker_setting
+    if G_reader_settings:has("followed_link_marker") then
+        marker_setting = G_reader_settings:readSetting("followed_link_marker")
+    else
         marker_setting = 1 -- default is: shown and removed after 1 second
     end
 
@@ -1279,11 +1284,14 @@ function ReaderRolling:checkXPointersAndProposeDOMVersionUpgrade()
         -- Switch to default block rendering mode if this book has it set to "legacy",
         -- unless the user had set the global mode to be "legacy".
         -- (see ReaderTypeset:onReadSettings() for the logic of block_rendering_mode)
-        local g_block_rendering_mode = G_reader_settings:readSetting("copt_block_rendering_mode")
+        local g_block_rendering_mode
+        if G_reader_settings:has("copt_block_rendering_mode") then
+            g_block_rendering_mode = G_reader_settings:readSetting("copt_block_rendering_mode")
+        else
+            -- nil means: use default
+            g_block_rendering_mode = 3 -- default in ReaderTypeset:onReadSettings()
+        end
         if g_block_rendering_mode ~= 0 then -- default is not "legacy"
-            if G_reader_settings:hasNot("copt_block_rendering_mode") then -- nil means: use default
-                g_block_rendering_mode = 3 -- default in ReaderTypeset:onReadSettings()
-            end
             -- This setting is actually saved by self.ui.document.configurable
             local block_rendering_mode = self.ui.document.configurable.block_rendering_mode
             if block_rendering_mode == 0 then

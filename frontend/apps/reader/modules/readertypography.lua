@@ -719,36 +719,41 @@ function ReaderTypography:onReadSettings(config)
     end
 
     -- Enable text lang tags attributes by default
-    self.text_lang_embedded_langs = config:readSetting("text_lang_embedded_langs")
-    if config:hasNot("text_lang_embedded_langs") then
+    if config:has("text_lang_embedded_langs") then
+        self.text_lang_embedded_langs = config:isTrue("text_lang_embedded_langs")
+    else
         self.text_lang_embedded_langs = G_reader_settings:nilOrTrue("text_lang_embedded_langs")
     end
     self.ui.document:setTextEmbeddedLangs(self.text_lang_embedded_langs)
 
     -- Enable hyphenation by default
-    self.hyphenation = config:readSetting("hyphenation")
-    if config:hasNot("hyphenation") then
+    if config:has("hyphenation") then
+        self.hyphenation = config:isTrue("hyphenation")
+    else
         self.hyphenation = G_reader_settings:nilOrTrue("hyphenation")
     end
     self.ui.document:setTextHyphenation(self.hyphenation)
 
     -- Checking for soft-hyphens adds a bit of overhead, so have it disabled by default
-    self.hyph_trust_soft_hyphens = config:readSetting("hyph_trust_soft_hyphens")
-    if config:hasNot("hyph_trust_soft_hyphens") then
+    if config:has("hyph_trust_soft_hyphens") then
+        self.hyph_trust_soft_hyphens = config:isTrue("hyph_trust_soft_hyphens")
+    else
         self.hyph_trust_soft_hyphens = G_reader_settings:isTrue("hyph_trust_soft_hyphens")
     end
     self.ui.document:setTrustSoftHyphens(self.hyph_trust_soft_hyphens)
 
     -- Alternative hyphenation method (available with all dicts) to use soft hyphens only
-    self.hyph_soft_hyphens_only = config:readSetting("hyph_soft_hyphens_only")
-    if config:hasNot("hyph_soft_hyphens_only") then
+    if config:has("hyph_soft_hyphens_only") then
+        self.hyph_soft_hyphens_only = config:isTrue("hyph_soft_hyphens_only")
+    else
         self.hyph_soft_hyphens_only = G_reader_settings:isTrue("hyph_soft_hyphens_only")
     end
     self.ui.document:setTextHyphenationSoftHyphensOnly(self.hyph_soft_hyphens_only)
 
     -- Alternative hyphenation method (available with all dicts) to use algorithmic hyphenation
-    self.hyph_force_algorithmic = config:readSetting("hyph_force_algorithmic")
-    if config:hasNot("hyph_force_algorithmic") then
+    if config:has("hyph_force_algorithmic") then
+        self.hyph_force_algorithmic = config:isTrue("hyph_force_algorithmic")
+    else
         self.hyph_force_algorithmic = G_reader_settings:isTrue("hyph_force_algorithmic")
     end
     self.ui.document:setTextHyphenationForceAlgorithmic(self.hyph_force_algorithmic)
@@ -760,8 +765,9 @@ function ReaderTypography:onReadSettings(config)
     -- Default to disable hanging/floating punctuation
     -- (Stored as 0/1 in docsetting for historical reasons, but as true/false
     -- in global settings.)
-    self.floating_punctuation = config:readSetting("floating_punctuation")
-    if config:hasNot("floating_punctuation") then
+    if config:has("floating_punctuation") then
+        self.floating_punctuation = config:readSetting("floating_punctuation")
+    else
         self.floating_punctuation = G_reader_settings:isTrue("floating_punctuation") and 1 or 0
     end
     self:onToggleFloatingPunctuation(self.floating_punctuation)
@@ -770,14 +776,14 @@ function ReaderTypography:onReadSettings(config)
     self.allow_doc_lang_tag_override = false
     -- Use the one manually set for this document
     self.text_lang_tag = config:readSetting("text_lang")
-    if config:has("text_lang") then
+    if self.text_lang_tag then
         logger.dbg("Typography lang: using", self.text_lang_tag, "from doc settings")
         self.ui.document:setTextMainLang(self.text_lang_tag)
         return
     end
     -- Use the one manually set as default (with Hold)
     self.text_lang_tag = G_reader_settings:readSetting("text_lang_default")
-    if G_reader_settings:has("text_lang_default") then
+    if self.text_lang_tag then
         logger.dbg("Typography lang: using default ", self.text_lang_tag)
         self.ui.document:setTextMainLang(self.text_lang_tag)
         return
@@ -786,7 +792,7 @@ function ReaderTypography:onReadSettings(config)
     self.allow_doc_lang_tag_override = true
     -- Use the one manually set as fallback (with Hold)
     self.text_lang_tag = G_reader_settings:readSetting("text_lang_fallback")
-    if G_reader_settings:has("text_lang_fallback") then
+    if self.text_lang_tag then
         logger.dbg("Typography lang: using fallback ", self.text_lang_tag, ", might be overriden by doc language")
         self.ui.document:setTextMainLang(self.text_lang_tag)
         return

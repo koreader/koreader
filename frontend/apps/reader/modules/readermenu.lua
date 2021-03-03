@@ -71,8 +71,9 @@ function ReaderMenu:init()
             end
         end
     end
-    self.activation_menu = G_reader_settings:readSetting("activate_menu")
-    if G_reader_settings:hasNot("activate_menu") then
+    if G_reader_settings:has("activate_menu") then
+        self.activation_menu = G_reader_settings:readSetting("activate_menu")
+    else
         self.activation_menu = "swipe_tap"
     end
 end

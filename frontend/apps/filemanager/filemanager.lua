@@ -169,11 +169,13 @@ function FileManager:setupLayout()
         }
     }
 
-    local show_hidden = G_reader_settings:readSetting("show_hidden")
-    if G_reader_settings:hasNot("show_hidden") then
+    local show_hidden
+    if G_reader_settings:has("show_hidden") then
+        show_hidden = G_reader_settings:isTrue("show_hidden")
+    else
         show_hidden = DSHOWHIDDENFILES
     end
-    local show_unsupported = G_reader_settings:readSetting("show_unsupported")
+    local show_unsupported = G_reader_settings:isTrue("show_unsupported")
     local file_chooser = FileChooser:new{
         -- remember to adjust the height when new item is added to the group
         path = self.root_path,
