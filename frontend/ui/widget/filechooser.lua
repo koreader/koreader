@@ -25,29 +25,29 @@ local FileChooser = Menu:extend{
     show_path = true,
     parent = nil,
     show_hidden = nil,
-    -- Patterns are wonky because we may be passed an absolute or relative path :/
+    -- NOTE: Input is *always* a relative entry name
     exclude_dirs = {
         -- KOReader / Kindle
         "%.sdr$",
         -- Kobo
-        "^%.adobe-digital-editions$",
+        "^%.adobe%-digital%-editions$",
         "^%.kobo$",
-        "^%.kobo-images$",
+        "^%.kobo%-images$",
         -- macOS
         "^%.fseventsd$",
         "^%.Trashes$",
-        "^%.Spotlight-V100$",
+        "^%.Spotlight%-V100$",
         -- *nix
         "^%.Trash$",
-        "^%.Trash-%d+$",
+        "^%.Trash%-%d+$",
         -- Windows
         "^RECYCLED$",
         "^RECYCLER$",
-        "^%$Recycle.Bin$",
+        "^%$Recycle%.Bin$",
         "^System Volume Information$",
         -- Plato
-        "^%.thumbnail-previews$",
-        "^%.reading-states$",
+        "^%.thumbnail%-previews$",
+        "^%.reading%-states$",
     },
     exclude_files = {
         -- macOS
@@ -58,7 +58,7 @@ local FileChooser = Menu:extend{
         "^driveinfo%.calibre$",
         "^metadata%.calibre$",
         -- Plato
-        "^%.fat32-epoch$",
+        "^%.fat32%-epoch$",
         "^%.metadata%.json$",
     },
     collate = "strcoll", -- or collate = "access",
@@ -97,8 +97,10 @@ function FileChooser:init()
             unreadable_dir_content[path] = nil
             for f in iter, dir_obj do
                 if count_only then
-                    if self.dir_shown(f) and self.file_shown(f) and ((not self.show_hidden and not util.stringStartsWith(f, "."))
-                        or (self.show_hidden and f ~= "." and f ~= ".." and not util.stringStartsWith(f, "._")))
+                    if ((not self.show_hidden and not util.stringStartsWith(f, "."))
+                         or (self.show_hidden and f ~= "." and f ~= ".." and not util.stringStartsWith(f, "._")))
+                         and self.dir_shown(f)
+                         and self.file_shown(f)
                     then
                         table.insert(dirs, true)
                     end
@@ -107,7 +109,7 @@ function FileChooser:init()
                     local attributes = lfs.attributes(filename)
                     if attributes ~= nil then
                         if attributes.mode == "directory" and f ~= "." and f ~= ".." then
-                            if self.dir_shown(filename) then
+                            if self.dir_shown(f) then
                                 table.insert(dirs, {name = f,
                                                     suffix = getFileNameSuffix(f),
                                                     fullpath = filename,
@@ -115,7 +117,7 @@ function FileChooser:init()
                             end
                         -- Always ignore macOS resource forks.
                         elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") then
-                            if self.file_shown(filename) then
+                            if self.file_shown(f) then
                                 if self.file_filter == nil or self.file_filter(filename) or self.show_unsupported then
                                     local percent_finished = 0
                                     if self.collate == "percent_unopened_first" or self.collate == "percent_unopened_last" then
