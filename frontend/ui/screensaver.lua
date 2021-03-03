@@ -493,12 +493,12 @@ function Screensaver:expandSpecial(message, fallback)
     -- %A document authors
     -- %S document series
 
-    local ret = message
-
-    local lastfile = G_reader_settings:readSetting("lastfile")
     if G_reader_settings:hasNot("lastfile") then
         return fallback
     end
+
+    local ret = message
+    local lastfile = G_reader_settings:readSetting("lastfile")
 
     local totalpages = 0
     local percent = 0

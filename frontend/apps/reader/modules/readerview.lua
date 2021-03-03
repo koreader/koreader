@@ -758,8 +758,9 @@ function ReaderView:onReadSettings(config)
     -- Keep current rotation by doing nothing when sticky rota is enabled.
     if not locked then
         -- Honor docsettings's rotation
-        rotation_mode = config:readSetting("rotation_mode") -- Doc's
-        if config:hasNot("rotation_mode") then
+        if config:has("rotation_mode") then
+            rotation_mode = config:readSetting("rotation_mode") -- Doc's
+        else
             -- No doc specific rotation, pickup global defaults for the doc type
             if self.ui.document.info.has_pages then
                 rotation_mode = G_reader_settings:readSetting("kopt_rotation_mode") or Screen.ORIENTATION_PORTRAIT

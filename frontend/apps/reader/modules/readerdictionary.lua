@@ -537,18 +537,17 @@ function ReaderDictionary:showDictionariesMenu(changed_callback)
         title = _("Manage installed dictionaries"),
         item_table = sort_items,
         callback = function()
-            -- Save local copy of dicts_disabled
-            G_reader_settings:saveSetting("dicts_disabled", dicts_disabled)
-            -- Update our own reference to that setting
+            -- Update both references to point to that new object
             self.dicts_disabled = dicts_disabled
+            G_reader_settings:saveSetting("dicts_disabled", self.dicts_disabled)
 
             -- Write back the sorted items to dicts_order
             local dicts_order = {}
             for i, sort_item in pairs(sort_items) do
                 dicts_order[sort_item.ifo.file] = i
             end
-            G_reader_settings:saveSetting("dicts_order", dicts_order)
             self.dicts_order = dicts_order
+            G_reader_settings:saveSetting("dicts_order", self.dicts_order)
 
             self:sortAvailableIfos()
 
