@@ -773,33 +773,28 @@ function ReaderTypography:onReadSettings(config)
     self:onToggleFloatingPunctuation(self.floating_punctuation)
 
     -- Decide and set the text main lang tag according to settings
-    self.allow_doc_lang_tag_override = false
-    -- Use the one manually set for this document
-    self.text_lang_tag = config:readSetting("text_lang")
-    if self.text_lang_tag then
+    if config:has("text_lang") then
+        self.allow_doc_lang_tag_override = false
+        -- Use the one manually set for this document
+        self.text_lang_tag = config:readSetting("text_lang")
         logger.dbg("Typography lang: using", self.text_lang_tag, "from doc settings")
-        self.ui.document:setTextMainLang(self.text_lang_tag)
-        return
-    end
-    -- Use the one manually set as default (with Hold)
-    self.text_lang_tag = G_reader_settings:readSetting("text_lang_default")
-    if self.text_lang_tag then
+    elseif G_reader_settings:has("text_lang_default") then
+        self.allow_doc_lang_tag_override = false
+        -- Use the one manually set as default (with Hold)
+        self.text_lang_tag = G_reader_settings:readSetting("text_lang_default")
         logger.dbg("Typography lang: using default ", self.text_lang_tag)
-        self.ui.document:setTextMainLang(self.text_lang_tag)
-        return
-    end
-    -- Document language will be allowed to override the one we set from now on
-    self.allow_doc_lang_tag_override = true
-    -- Use the one manually set as fallback (with Hold)
-    self.text_lang_tag = G_reader_settings:readSetting("text_lang_fallback")
-    if self.text_lang_tag then
+    elseif G_reader_settings:has("text_lang_fallback") then
+        -- Document language will be allowed to override the one we set from now on
+        self.allow_doc_lang_tag_override = true
+        -- Use the one manually set as fallback (with Hold)
+        self.text_lang_tag = G_reader_settings:readSetting("text_lang_fallback")
         logger.dbg("Typography lang: using fallback ", self.text_lang_tag, ", might be overriden by doc language")
-        self.ui.document:setTextMainLang(self.text_lang_tag)
-        return
+    else
+        self.allow_doc_lang_tag_override = true
+        -- None decided, use default (shouldn't be reached)
+        self.text_lang_tag = DEFAULT_LANG_TAG
+        logger.dbg("Typography lang: no lang set, using", self.text_lang_tag)
     end
-    -- None decided, use default (shouldn't be reached)
-    self.text_lang_tag = DEFAULT_LANG_TAG
-    logger.dbg("Typography lang: no lang set, using", self.text_lang_tag)
     self.ui.document:setTextMainLang(self.text_lang_tag)
 end
 
