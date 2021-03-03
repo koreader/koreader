@@ -457,8 +457,8 @@ end
 function MenuItem:getGesPosition(ges)
     local dimen = self[1].dimen
     return {
-        x = math.floor((ges.pos.x - dimen.x) / dimen.w),
-        y = math.floor((ges.pos.y - dimen.y) / dimen.h),
+        x = (ges.pos.x - dimen.x) / dimen.w,
+        y = (ges.pos.y - dimen.y) / dimen.h,
     }
 end
 
