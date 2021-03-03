@@ -59,6 +59,8 @@ local ReaderDictionary = InputContainer:new{
     data_dir = nil,
     dict_window_list = {},
     disable_lookup_history = G_reader_settings:isTrue("disable_lookup_history"),
+    dicts_order = G_reader_settings:readSetting("dicts_order", {}),
+    dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {}),
     lookup_msg = _("Searching dictionary for:\n%1"),
 }
 
@@ -140,10 +142,7 @@ function ReaderDictionary:init()
             end
         end
         logger.dbg("found", #available_ifos, "dictionaries")
-
-        self.dicts_order = G_reader_settings:readSetting("dicts_order", {})
         self:sortAvailableIfos()
-        self.dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {})
     end
     -- Prepare the -u options to give to sdcv the dictionary order and if some are disabled
     self:updateSdcvDictNamesOptions()
