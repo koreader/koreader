@@ -169,8 +169,10 @@ function FileManager:setupLayout()
         }
     }
 
-    local g_show_hidden = G_reader_settings:readSetting("show_hidden")
-    local show_hidden = g_show_hidden == nil and DSHOWHIDDENFILES or g_show_hidden
+    local show_hidden = G_reader_settings:readSetting("show_hidden")
+    if G_reader_settings:hasNot("show_hidden") then
+        show_hidden = DSHOWHIDDENFILES
+    end
     local show_unsupported = G_reader_settings:readSetting("show_unsupported")
     local file_chooser = FileChooser:new{
         -- remember to adjust the height when new item is added to the group
@@ -760,7 +762,7 @@ end
 
 function FileManager:goHome()
     local home_dir = G_reader_settings:readSetting("home_dir")
-    if not home_dir or lfs.attributes(home_dir, "mode") ~= "directory"  then
+    if not home_dir or lfs.attributes(home_dir, "mode") ~= "directory" then
         -- Try some sane defaults, depending on platform
         home_dir = Device.home_dir
     end

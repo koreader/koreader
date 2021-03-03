@@ -108,48 +108,55 @@ end
 
 function ReaderFont:onReadSettings(config)
     self.font_face = config:readSetting("font_face")
-            or G_reader_settings:readSetting("cre_font")
-            or self.ui.document.default_font
+                  or G_reader_settings:readSetting("cre_font")
+                  or self.ui.document.default_font
     self.ui.document:setFontFace(self.font_face)
 
     self.header_font_face = config:readSetting("header_font_face")
-            or G_reader_settings:readSetting("header_font")
-            or self.ui.document.header_font
+                         or G_reader_settings:readSetting("header_font")
+                         or self.ui.document.header_font
     self.ui.document:setHeaderFont(self.header_font_face)
 
     self.font_size = config:readSetting("font_size")
-            or G_reader_settings:readSetting("copt_font_size")
-            or DCREREADER_CONFIG_DEFAULT_FONT_SIZE or 22
+                  or G_reader_settings:readSetting("copt_font_size")
+                  or DCREREADER_CONFIG_DEFAULT_FONT_SIZE
+                  or 22
     self.ui.document:setFontSize(Screen:scaleBySize(self.font_size))
 
     self.font_embolden = config:readSetting("font_embolden")
-            or G_reader_settings:readSetting("copt_font_weight") or 0
+                      or G_reader_settings:readSetting("copt_font_weight")
+                      or 0
     self.ui.document:toggleFontBolder(self.font_embolden)
 
     self.font_hinting = config:readSetting("font_hinting")
-            or G_reader_settings:readSetting("copt_font_hinting") or 2 -- auto (default in cre.cpp)
+                     or G_reader_settings:readSetting("copt_font_hinting")
+                     or 2 -- auto (default in cre.cpp)
     self.ui.document:setFontHinting(self.font_hinting)
 
     self.font_kerning = config:readSetting("font_kerning")
-            or G_reader_settings:readSetting("copt_font_kerning") or 3 -- harfbuzz (slower, but needed for proper arabic)
+                     or G_reader_settings:readSetting("copt_font_kerning")
+                     or 3 -- harfbuzz (slower, but needed for proper arabic)
     self.ui.document:setFontKerning(self.font_kerning)
 
     self.word_spacing = config:readSetting("word_spacing")
-        or G_reader_settings:readSetting("copt_word_spacing") or {95, 75}
+                     or G_reader_settings:readSetting("copt_word_spacing")
+                     or {95, 75}
     self.ui.document:setWordSpacing(self.word_spacing)
 
     self.word_expansion = config:readSetting("word_expansion")
-        or G_reader_settings:readSetting("copt_word_expansion") or 0
+                       or G_reader_settings:readSetting("copt_word_expansion")
+                       or 0
     self.ui.document:setWordExpansion(self.word_expansion)
 
     self.line_space_percent = config:readSetting("line_space_percent")
-            or G_reader_settings:readSetting("copt_line_spacing")
-            or DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM
+                           or G_reader_settings:readSetting("copt_line_spacing")
+                           or DCREREADER_CONFIG_LINE_SPACE_PERCENT_MEDIUM
     self.ui.document:setInterlineSpacePercent(self.line_space_percent)
 
     self.gamma_index = config:readSetting("gamma_index")
-            or G_reader_settings:readSetting("copt_font_gamma")
-            or DCREREADER_CONFIG_DEFAULT_FONT_GAMMA or 15 -- gamma = 1.0
+                    or G_reader_settings:readSetting("copt_font_gamma")
+                    or DCREREADER_CONFIG_DEFAULT_FONT_GAMMA
+                    or 15 -- gamma = 1.0
     self.ui.document:setGammaIndex(self.gamma_index)
 
     -- Dirty hack: we have to add following call in order to set
@@ -439,8 +446,8 @@ function ReaderFont:buildFontsTestDocument()
         f:close()
     end
     local dir = G_reader_settings:readSetting("home_dir")
-    if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
-    if not dir then dir = "." end
+             or require("apps/filemanager/filemanagerutil").getDefaultDir()
+             or "."
     local font_test_final_path = dir .. "/" .. FONT_TEST_FINAL_FILENAME
     f = io.open(font_test_final_path, "w")
     if not f then return end

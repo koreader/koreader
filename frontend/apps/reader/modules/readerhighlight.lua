@@ -1176,7 +1176,7 @@ function ReaderHighlight:onCycleHighlightAction()
         search = nil,
     }
     local current_action = G_reader_settings:readSetting("default_highlight_action")
-    if not current_action then
+    if G_reader_settings:hasNot("default_highlight_action") then
         G_reader_settings:saveSetting("default_highlight_action", "highlight")
         UIManager:show(Notification:new{
             text = _("Default highlight action changed to 'highlight'."),

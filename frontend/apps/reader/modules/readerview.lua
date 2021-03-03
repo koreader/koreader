@@ -759,7 +759,7 @@ function ReaderView:onReadSettings(config)
     if not locked then
         -- Honor docsettings's rotation
         rotation_mode = config:readSetting("rotation_mode") -- Doc's
-        if not rotation_mode then
+        if config:hasNot("rotation_mode") then
             -- No doc specific rotation, pickup global defaults for the doc type
             if self.ui.document.info.has_pages then
                 rotation_mode = G_reader_settings:readSetting("kopt_rotation_mode") or Screen.ORIENTATION_PORTRAIT
@@ -781,8 +781,9 @@ function ReaderView:onReadSettings(config)
     self.page_scroll = page_scroll == 1 and true or false
     self.highlight.saved = config:readSetting("highlight") or {}
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
-    self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height") or
-        G_reader_settings:readSetting("kopt_page_gap_height") or 8)
+    self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height")
+                                              or G_reader_settings:readSetting("kopt_page_gap_height")
+                                              or 8)
 end
 
 function ReaderView:onPageUpdate(new_page_no)
@@ -965,11 +966,12 @@ function ReaderView:checkAutoSaveSettings()
     if not self.settings_last_save_ts then -- reader not yet ready
         return
     end
-    local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
-    if not interval then -- no auto save
+    if G_reader_settings:nilOrFalse("auto_save_settings_interval_minutes") then
+        -- no auto save
         return
     end
 
+    local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
     local now_ts = os.time()
     if now_ts - self.settings_last_save_ts >= interval*60 then
         self.settings_last_save_ts = now_ts

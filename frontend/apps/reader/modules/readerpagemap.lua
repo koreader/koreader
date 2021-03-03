@@ -88,18 +88,18 @@ function ReaderPageMap:resetLayout()
 end
 
 function ReaderPageMap:onReadSettings(config)
-    local h_margins = config:readSetting("copt_h_page_margins") or
-        G_reader_settings:readSetting("copt_h_page_margins") or
-        DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
+    local h_margins = config:readSetting("copt_h_page_margins")
+                   or G_reader_settings:readSetting("copt_h_page_margins")
+                   or DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
     self.max_left_label_width = Screen:scaleBySize(h_margins[1])
     self.max_right_label_width = Screen:scaleBySize(h_margins[2])
 
     self.show_page_labels = config:readSetting("pagemap_show_page_labels")
-    if self.show_page_labels == nil then
+    if config:hasNot("pagemap_show_page_labels") then
         self.show_page_labels = G_reader_settings:nilOrTrue("pagemap_show_page_labels")
     end
     self.use_page_labels = config:readSetting("pagemap_use_page_labels")
-    if self.use_page_labels == nil then
+    if config:hasNot("pagemap_use_page_labels") then
         self.use_page_labels = G_reader_settings:isTrue("pagemap_use_page_labels")
     end
 end

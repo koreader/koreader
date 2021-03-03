@@ -90,9 +90,7 @@ function Screensaver:chooseFolder()
         }
     })
     local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
-    if screensaver_dir == nil then
-        screensaver_dir = DataStorage:getDataDir() .. "/screenshots/"
-    end
+                         or DataStorage:getDataDir() .. "/screenshots/"
     self.choose_dialog = ButtonDialogTitle:new{
         title = T(_("Current screensaver image folder:\n%1"), BD.dirpath(screensaver_dir)),
         buttons = buttons
@@ -152,10 +150,8 @@ function Screensaver:chooseFile(document_cover)
         }
     })
     local screensaver_image = G_reader_settings:readSetting("screensaver_image")
+                           or DataStorage:getDataDir() .. "/resources/koreader.png"
     local screensaver_document_cover = G_reader_settings:readSetting("screensaver_document_cover")
-    if screensaver_image == nil then
-        screensaver_image = DataStorage:getDataDir() .. "/resources/koreader.png"
-    end
     local title = document_cover and T(_("Current screensaver document cover:\n%1"), BD.filepath(screensaver_document_cover))
         or T(_("Current screensaver image:\n%1"), BD.filepath(screensaver_image))
     self.choose_dialog = ButtonDialogTitle:new{
@@ -194,9 +190,7 @@ end
 function Screensaver:setMessage()
     local InputDialog = require("ui/widget/inputdialog")
     local screensaver_message = G_reader_settings:readSetting("screensaver_message")
-    if screensaver_message == nil then
-        screensaver_message = default_screensaver_message
-    end
+                             or default_screensaver_message
     self.input_dialog = InputDialog:new{
         title = "Screensaver message",
         description = _("Enter the message to be displayed by the screensaver. The following escape sequences can be used:\n  %p percentage read\n  %c current page number\n  %t total number of pages\n  %T title\n  %A authors\n  %S series"),
@@ -295,12 +289,12 @@ function Screensaver:show(event, fallback_message)
     end
     if screensaver_type == "cover" then
         lastfile = lastfile ~= nil and lastfile or G_reader_settings:readSetting("lastfile")
-        local exclude = false -- consider it not excluded if there's no docsetting
+        local excluded = false -- consider it not excluded if there's no docsetting
         if DocSettings:hasSidecarFile(lastfile) then
             local doc_settings = DocSettings:open(lastfile)
-            exclude = doc_settings:readSetting("exclude_screensaver")
+            excluded = doc_settings:isTrue("exclude_screensaver")
         end
-        if exclude ~= true then
+        if not excluded then
             if lastfile and lfs.attributes(lastfile, "mode") == "file" then
                 local doc = DocumentRegistry:openDocument(lastfile)
                 if doc.loadDocument then -- CreDocument
@@ -322,7 +316,8 @@ function Screensaver:show(event, fallback_message)
             else
                 screensaver_type = "random_image"
             end
-        else  --fallback to random images if this book cover is excluded
+        else
+            -- fallback to random images if this book cover is excluded
             screensaver_type = "random_image"
         end
     end
@@ -501,7 +496,7 @@ function Screensaver:expandSpecial(message, fallback)
     local ret = message
 
     local lastfile = G_reader_settings:readSetting("lastfile")
-    if not lastfile then
+    if G_reader_settings:hasNot("lastfile") then
         return fallback
     end
 

@@ -81,7 +81,7 @@ function CoverImage:cleanUpImage()
 end
 
 function CoverImage:createCoverImage(doc_settings)
-    if self.enabled and not doc_settings:readSetting("exclude_cover_image") == true then
+    if self.enabled and doc_settings:nilOrFalse("exclude_cover_image") then
         local cover_image = self.ui.document:getCoverPageImage()
         if cover_image then
             local s_w, s_h = Device.screen:getWidth(), Device.screen:getHeight()
@@ -426,10 +426,10 @@ function CoverImage:addToMainMenu(menu_items)
             {
                 text = _("Exclude this book cover"),
                 checked_func = function()
-                    return self.ui and self.ui.doc_settings and self.ui.doc_settings:readSetting("exclude_cover_image") == true
+                    return self.ui and self.ui.doc_settings and self.ui.doc_settings:isTrue("exclude_cover_image")
                 end,
                 callback = function()
-                    if self.ui.doc_settings:readSetting("exclude_cover_image") == true then
+                    if self.ui.doc_settings:isTrue("exclude_cover_image") then
                         self.ui.doc_settings:saveSetting("exclude_cover_image", false)
                         self:createCoverImage(self.ui.doc_settings)
                     else

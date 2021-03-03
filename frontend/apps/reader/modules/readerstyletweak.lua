@@ -327,7 +327,7 @@ function ReaderStyleTweak:updateCssText(apply)
 end
 
 function ReaderStyleTweak:onReadSettings(config)
-    self.enabled = not (config:readSetting("style_tweaks_enabled") == false)
+    self.enabled = config:nilOrTrue("style_tweaks_enabled")
     self.doc_tweaks = config:readSetting("style_tweaks") or {}
     -- Default globally enabled style tweaks (for new installations)
     -- are defined in css_tweaks.lua

@@ -2061,9 +2061,9 @@ end
 
 function ReaderFooter:onReadSettings(config)
     if not self.ui.document.info.has_pages then
-        local h_margins = config:readSetting("copt_h_page_margins") or
-            G_reader_settings:readSetting("copt_h_page_margins") or
-            DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
+        local h_margins = config:readSetting("copt_h_page_margins")
+                       or G_reader_settings:readSetting("copt_h_page_margins")
+                       or DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
         self.book_margins_footer_width = math.floor((h_margins[1] + h_margins[2])/2)
     end
 end

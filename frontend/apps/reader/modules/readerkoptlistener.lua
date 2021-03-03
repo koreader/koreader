@@ -16,15 +16,17 @@ end
 
 function ReaderKoptListener:onReadSettings(config)
     -- normal zoom mode is zoom mode used in non-reflow mode.
-    local normal_zoom_mode = config:readSetting("normal_zoom_mode") or
-                    G_reader_settings:readSetting("zoom_mode") or "page"
+    local normal_zoom_mode = config:readSetting("normal_zoom_mode")
+                          or G_reader_settings:readSetting("zoom_mode")
+                          or "page"
     normal_zoom_mode = util.arrayContains(ReaderZooming.available_zoom_modes, normal_zoom_mode)
-                    and normal_zoom_mode
+                   and normal_zoom_mode
                     or "page"
     self.normal_zoom_mode = normal_zoom_mode
     self:setZoomMode(normal_zoom_mode)
-    self.document.configurable.contrast = config:readSetting("kopt_contrast") or
-                    G_reader_settings:readSetting("kopt_contrast") or 1.0
+    self.document.configurable.contrast = config:readSetting("kopt_contrast")
+                                       or G_reader_settings:readSetting("kopt_contrast")
+                                       or 1.0
     self.ui:handleEvent(Event:new("GammaUpdate", 1/self.document.configurable.contrast))
     -- since K2pdfopt v2.21 negative value of word spacing is also used, for config
     -- compatability we should manually change previous -1 to a more reasonable -0.2

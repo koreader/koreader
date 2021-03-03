@@ -37,7 +37,7 @@ function ReaderBookmark:init()
         -- configured. Previously, the ones set for the file browser
         -- were used. Initialize them from these ones.
         local items_per_page = G_reader_settings:readSetting("items_per_page")
-                                or self.bookmarks_items_per_page_default
+                            or self.bookmarks_items_per_page_default
         G_reader_settings:saveSetting("bookmarks_items_per_page", items_per_page)
         local items_font_size = G_reader_settings:readSetting("items_font_size")
         if items_font_size and items_font_size ~= Menu.getItemFontSize(items_per_page) then

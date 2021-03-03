@@ -185,13 +185,13 @@ function ReaderPaging:onReadSettings(config)
     self.page_positions = config:readSetting("page_positions") or {}
     self:_gotoPage(config:readSetting("last_page") or 1)
     self.show_overlap_enable = config:readSetting("show_overlap_enable")
-    if self.show_overlap_enable == nil then
+    if config:hasNot("show_overlap_enable") then
         self.show_overlap_enable = DSHOWOVERLAP
     end
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:readSetting("flipping_scroll_mode") or false
     self.inverse_reading_order = config:readSetting("inverse_reading_order")
-    if self.inverse_reading_order == nil then
+    if config:hasNot("inverse_reading_order") then
         self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
     end
     for _, v in ipairs(ReaderZooming.zoom_pan_settings) do

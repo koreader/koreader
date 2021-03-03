@@ -72,10 +72,7 @@ function DocumentRegistry:hasProvider(file, mimetype)
     end
     local DocSettings = require("docsettings")
     if DocSettings:hasSidecarFile(file) then
-        local doc_settings_provider = DocSettings:open(file):readSetting("provider")
-        if doc_settings_provider then
-            return true
-        end
+        return DocSettings:open(file):has("provider")
     end
     return false
 end

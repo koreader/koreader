@@ -11,8 +11,9 @@ local _ = require("gettext")
 local ReaderCoptListener = EventListener:new{}
 
 function ReaderCoptListener:onReadSettings(config)
-    local view_mode = config:readSetting("copt_view_mode") or
-           G_reader_settings:readSetting("copt_view_mode") or 0 -- default to "page" mode
+    local view_mode = config:readSetting("copt_view_mode")
+                   or G_reader_settings:readSetting("copt_view_mode")
+                   or 0 -- default to "page" mode
     local view_mode_name = view_mode == 0 and "page" or "scroll"
     -- Let crengine know of the view mode before rendering, as it can
     -- cause a rendering change (2-pages would become 1-page in

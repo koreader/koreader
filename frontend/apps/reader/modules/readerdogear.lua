@@ -56,15 +56,15 @@ end
 function ReaderDogear:onReadSettings(config)
     if not self.ui.document.info.has_pages then
         -- Adjust to CreDocument margins (as done in ReaderTypeset)
-        local h_margins = config:readSetting("copt_h_page_margins") or
-            G_reader_settings:readSetting("copt_h_page_margins") or
-            DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
-        local t_margin = config:readSetting("copt_t_page_margin") or
-            G_reader_settings:readSetting("copt_t_page_margin") or
-            DCREREADER_CONFIG_T_MARGIN_SIZES_LARGE
-        local b_margin = config:readSetting("copt_b_page_margin") or
-            G_reader_settings:readSetting("copt_b_page_margin") or
-            DCREREADER_CONFIG_B_MARGIN_SIZES_LARGE
+        local h_margins = config:readSetting("copt_h_page_margins")
+                       or G_reader_settings:readSetting("copt_h_page_margins")
+                       or DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
+        local t_margin = config:readSetting("copt_t_page_margin")
+                      or G_reader_settings:readSetting("copt_t_page_margin")
+                      or DCREREADER_CONFIG_T_MARGIN_SIZES_LARGE
+        local b_margin = config:readSetting("copt_b_page_margin")
+                      or G_reader_settings:readSetting("copt_b_page_margin")
+                      or DCREREADER_CONFIG_B_MARGIN_SIZES_LARGE
         local margins = { h_margins[1], t_margin, h_margins[2], b_margin }
         self:onSetPageMargins(margins)
     end
