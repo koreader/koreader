@@ -109,6 +109,7 @@ local Device = Generic:new{
             android.dictLookup(text, app, action)
         end
     end,
+    isCharging = false, -- used for pollingUSB, can be removed if "Charging" ant "NotCharging" events are implemented
 
     -- Android is very finicky, and the LuaJIT allocator has a tremendously hard time getting the system
     -- to allocate memory for it in the very specific memory range it requires to store generated code (mcode).
@@ -269,6 +270,24 @@ function Device:init()
     -- check if we ignore the back button completely
     if G_reader_settings:isTrue("android_ignore_back_button") then
         android.setBackButtonIgnored(true)
+    end
+
+    -- this method is only necessary here, as Android backend does not fire "Charging" and "NotCharging" events
+    -- maybe someone want to add those events to the Android incarnation of KOReader, then we can get rid
+    -- of this poll function :))
+    self.pollUSB = function()
+        local UIManager = require("ui/uimanager")
+        local actualCharging = self.powerd:isChargingHW()
+        if self.isCharging ~= actualCharging then
+            self.isCharging = actualCharging
+            local Event = require("ui/event")
+            if actualCharging == true then
+                UIManager:broadcastEvent(Event:new("Charging"))
+            else
+                UIManager:broadcastEvent(Event:new("NotCharging"))
+            end
+        end
+        UIManager:scheduleIn(1.25, Device.pollUSB) -- 1.25s seems to be just right for a snappy userexp.
     end
 
     Generic.init(self)
