@@ -45,7 +45,7 @@ describe("luadata module", function()
 
         Settings:saveSetting("key", {
             a = "b",
-            c = "true",
+            c = true,
             d = false,
         })
 
@@ -55,7 +55,7 @@ describe("luadata module", function()
         assert.True(child:has("a"))
         assert.are.equal(child:readSetting("a"), "b")
         assert.True(child:has("c"))
-        assert.True(child:isTrue("c"))
+        assert.False(child:isTrue("c"))
         assert.True(child:has("d"))
         assert.True(child:isFalse("d"))
         assert.False(child:isTrue("e"))
