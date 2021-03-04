@@ -701,7 +701,7 @@ end
 -- in book settings, no default lang, and book has some language defined.
 function ReaderTypography:onReadSettings(config)
     -- Migrate old readerhyphenation setting, if one was set
-    if config:hasNot("text_lang") and config:hasNot("hyph_alg") then
+    if config:hasNot("text_lang") and config:has("hyph_alg") then
         local hyph_alg = config:readSetting("hyph_alg")
         local dict_info = HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_alg]
         if dict_info then
