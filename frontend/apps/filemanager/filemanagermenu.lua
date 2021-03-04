@@ -407,13 +407,13 @@ To:
                     return G_reader_settings:isTrue("debug")
                 end,
                 callback = function()
-                    G_reader_settings:flipNilOrFalse("debug")
+                    G_reader_settings:toggle("debug")
                     if G_reader_settings:isTrue("debug") then
                         dbg:turnOn()
                     else
                         dbg:setVerbose(false)
                         dbg:turnOff()
-                        G_reader_settings:flipFalse("debug_verbose")
+                        G_reader_settings:makeFalse("debug_verbose")
                     end
                 end,
             },
@@ -426,7 +426,7 @@ To:
                     return G_reader_settings:isTrue("debug_verbose")
                 end,
                 callback = function()
-                    G_reader_settings:flipNilOrFalse("debug_verbose")
+                    G_reader_settings:toggle("debug_verbose")
                     if G_reader_settings:isTrue("debug_verbose") then
                         dbg:setVerbose(true)
                     else
@@ -443,7 +443,7 @@ To:
                 return G_reader_settings:isTrue("dev_startup_no_fbdepth")
             end,
             callback = function()
-                G_reader_settings:flipNilOrFalse("dev_startup_no_fbdepth")
+                G_reader_settings:toggle("dev_startup_no_fbdepth")
                 local InfoMessage = require("ui/widget/infomessage")
                 UIManager:show(InfoMessage:new{
                     text = _("This will take effect on next restart."),
@@ -459,7 +459,7 @@ To:
                 return G_reader_settings:isTrue("dev_abort_on_crash")
             end,
             callback = function()
-                G_reader_settings:flipNilOrFalse("dev_abort_on_crash")
+                G_reader_settings:toggle("dev_abort_on_crash")
                 local InfoMessage = require("ui/widget/infomessage")
                 UIManager:show(InfoMessage:new{
                     text = _("This will take effect on next restart."),
@@ -478,7 +478,7 @@ To:
                 return G_reader_settings:isTrue("dev_no_c_blitter")
             end,
             callback = function()
-                G_reader_settings:flipNilOrFalse("dev_no_c_blitter")
+                G_reader_settings:toggle("dev_no_c_blitter")
                 Blitbuffer:enableCBB(G_reader_settings:nilOrFalse("dev_no_c_blitter"))
             end,
         })
@@ -494,7 +494,7 @@ To:
                 G_reader_settings:saveSetting("dev_no_hw_dither", not Device.screen.hw_dithering)
                 -- Make sure SW dithering gets disabled when we enable HW dithering
                 if Device.screen.hw_dithering and Device.screen.sw_dithering then
-                    G_reader_settings:saveSetting("dev_no_sw_dither", true)
+                    G_reader_settings:makeTrue("dev_no_sw_dither")
                     Device.screen:toggleSWDithering(false)
                 end
                 UIManager:setDirty("all", "full")
@@ -515,7 +515,7 @@ To:
                 G_reader_settings:saveSetting("dev_no_sw_dither", not Device.screen.sw_dithering)
                 -- Make sure HW dithering gets disabled when we enable SW dithering
                 if Device.screen.hw_dithering and Device.screen.sw_dithering then
-                    G_reader_settings:saveSetting("dev_no_hw_dither", true)
+                    G_reader_settings:makeTrue("dev_no_hw_dither")
                     Device.screen:toggleHWDithering(false)
                 end
                 UIManager:setDirty("all", "full")

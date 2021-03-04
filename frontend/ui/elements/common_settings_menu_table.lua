@@ -157,8 +157,8 @@ if Device:isKobo() then
             return G_reader_settings:isTrue("ignore_power_sleepcover")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("ignore_power_sleepcover")
-            G_reader_settings:flipFalse("ignore_open_sleepcover")
+            G_reader_settings:toggle("ignore_power_sleepcover")
+            G_reader_settings:makeFalse("ignore_open_sleepcover")
             UIManager:show(InfoMessage:new{
                 text = _("This will take effect on next restart."),
             })
@@ -171,8 +171,8 @@ if Device:isKobo() then
             return G_reader_settings:isTrue("ignore_open_sleepcover")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("ignore_open_sleepcover")
-            G_reader_settings:flipFalse("ignore_power_sleepcover")
+            G_reader_settings:toggle("ignore_open_sleepcover")
+            G_reader_settings:makeFalse("ignore_power_sleepcover")
             UIManager:show(InfoMessage:new{
                 text = _("This will take effect on next restart."),
             })
