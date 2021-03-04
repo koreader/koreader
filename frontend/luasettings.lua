@@ -138,6 +138,7 @@ function LuaSettings:nilOrFalse(key)
 end
 
 --- Flips `nil` or `true` to `false`, and `false` to `nil`.
+--- e.g., a setting that defaults to true.
 function LuaSettings:flipNilOrTrue(key)
     if self:nilOrTrue(key) then
         self:saveSetting(key, false)
@@ -148,6 +149,7 @@ function LuaSettings:flipNilOrTrue(key)
 end
 
 --- Flips `nil` or `false` to `true`, and `true` to `nil`.
+--- e.g., a setting that defaults to false.
 function LuaSettings:flipNilOrFalse(key)
     if self:nilOrFalse(key) then
         self:saveSetting(key, true)

@@ -234,6 +234,7 @@ function DocSettings:nilOrFalse(key)
 end
 
 --- Flips `nil` or `true` to `false`, and `false` to `nil`.
+--- e.g., a setting that defaults to true.
 function DocSettings:flipNilOrTrue(key)
     if self:nilOrTrue(key) then
         self:saveSetting(key, false)
@@ -244,6 +245,7 @@ function DocSettings:flipNilOrTrue(key)
 end
 
 --- Flips `nil` or `false` to `true`, and `true` to `nil`.
+--- e.g., a setting that defaults to false.
 function DocSettings:flipNilOrFalse(key)
     if self:nilOrFalse(key) then
         self:saveSetting(key, true)
