@@ -385,14 +385,15 @@ function Screensaver:setup(event, fallback_message)
     if G_reader_settings:has(self.prefix .. "screensaver_type") then
         self.screensaver_type = G_reader_settings:readSetting(self.prefix .. "screensaver_type")
     else
-        -- No manually added setting for poweroff/reboot, fallback to using the
-        -- same settings as for suspend that could be set via menus
-        self.prefix = ""
-        -- And display fallback_message over the common screensaver,
-        -- so user can distinguish between suspend (no message) and
-        -- poweroff (overlay message)
-        -- FIXME: I *think* I broke that?
-        self.overlay_message = self.fallback_message
+        if self.prefix and self.prefix ~= "" then
+            -- No manually added setting for poweroff/reboot, fallback to using the
+            -- same settings as for suspend that could be set via menus
+            self.prefix = ""
+            -- And display fallback_message over the common screensaver,
+            -- so user can distinguish between suspend (no message) and
+            -- poweroff (overlay message)
+            self.overlay_message = self.fallback_message
+        end
     end
 
     -- Reset state
