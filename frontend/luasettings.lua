@@ -56,7 +56,7 @@ end
 
     Settings:saveSetting("key", {
         a = "b",
-        c = "true",
+        c = true,
         d = false,
     })
 
