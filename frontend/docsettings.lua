@@ -213,14 +213,14 @@ function DocSettings:hasNot(key)
     return self.data[key] == nil
 end
 
---- Checks if setting is `true`.
+--- Checks if setting is `true` (boolean).
 function DocSettings:isTrue(key)
-    return string.lower(tostring(self.data[key])) == "true"
+    return self.data[key] == true
 end
 
---- Checks if setting is `false`.
+--- Checks if setting is `false` (boolean).
 function DocSettings:isFalse(key)
-    return string.lower(tostring(self.data[key])) == "false"
+    return self.data[key] == false
 end
 
 --- Checks if setting is `nil` or `true`.
