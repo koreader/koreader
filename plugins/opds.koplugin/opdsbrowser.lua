@@ -59,11 +59,6 @@ function OPDSBrowser:init()
                 url = "https://m.gutenberg.org/ebooks.opds/?format=opds",
             },
             {
-                title = "Project Gutenberg [Searchable]",
-                url = "https://m.gutenberg.org/ebooks/search.mobile/?format=opds&query=%s",
-                searchable = true,
-            },
-            {
                 title = "Feedbooks",
                 url = "https://catalog.feedbooks.com/catalog/public_domain.atom",
             },
@@ -82,11 +77,6 @@ function OPDSBrowser:init()
             {
                 title = "Gallica (French)",
                 url = "https://gallica.bnf.fr/opds",
-            },
-            {
-                title = "Gallica [Fr] [Searchable]",
-                url = "https://gallica.bnf.fr/services/engine/search/opds?operation=searchRetrieve&query=(gallica all \"%s\")",
-                searchable = true,
             },
         }
         G_reader_settings:saveSetting("opds_servers", servers)
