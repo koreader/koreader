@@ -84,6 +84,114 @@ local function _getRandomImage(dir)
     return dir .. pics[math.random(i)]
 end
 
+local function expandSpecial(message, fallback)
+    -- Expand special character sequences in given message.
+    -- %p percentage read
+    -- %c current page
+    -- %t total pages
+    -- %T document title
+    -- %A document authors
+    -- %S document series
+
+    if G_reader_settings:hasNot("lastfile") then
+        return fallback
+    end
+
+    local ret = message
+    local lastfile = G_reader_settings:readSetting("lastfile")
+
+    local totalpages = 0
+    local percent = 0
+    local currentpage = 0
+    local title = "N/A"
+    local authors = "N/A"
+    local series = "N/A"
+
+    local instance = require("apps/reader/readerui"):_getRunningInstance()
+    if instance == nil and DocSettings:hasSidecarFile(lastfile) then
+        -- If there's no ReaderUI instance, but the file has sidecar data, use that
+        local docinfo = DocSettings:open(lastfile)
+        totalpages = docinfo.data.doc_pages or totalpages
+        percent = docinfo.data.percent_finished or percent
+        currentpage = Math.round(percent * totalpages)
+        percent = Math.round(percent * 100)
+        if docinfo.data.doc_props then
+            title = docinfo.data.doc_props.title and docinfo.data.doc_props.title ~= "" and docinfo.data.doc_props.title or title
+            authors = docinfo.data.doc_props.authors and docinfo.data.doc_props.authors ~= "" and docinfo.data.doc_props.authors or authors
+            series = docinfo.data.doc_props.series and docinfo.data.doc_props.series ~= "" and docinfo.data.doc_props.series or series
+        end
+        docinfo:close()
+    elseif instance ~= nil and lfs.attributes(lastfile, "mode") == "file" then
+        -- But if we have a ReaderUI instance, and the file stil exists, open it
+        local doc = DocumentRegistry:openDocument(lastfile)
+        currentpage = instance.view.state.page or currentpage
+        totalpages = doc:getPageCount() or totalpages
+        percent = Math.round((currentpage * 100) / totalpages)
+        local props = doc:getProps()
+        if props then
+            title = props.title and props.title ~= "" and props.title or title
+            authors = props.authors and props.authors ~= "" and props.authors or authors
+            series = props.series and props.series ~= "" and props.series or series
+        end
+        doc:close()
+    end
+
+    ret = string.gsub(ret, "%%c", currentpage)
+    ret = string.gsub(ret, "%%t", totalpages)
+    ret = string.gsub(ret, "%%p", percent)
+    ret = string.gsub(ret, "%%T", title)
+    ret = string.gsub(ret, "%%A", authors)
+    ret = string.gsub(ret, "%%S", series)
+
+    return ret
+end
+
+local function addOverlayMessage(widget, text)
+    local FrameContainer = require("ui/widget/container/framecontainer")
+    local RightContainer = require("ui/widget/container/rightcontainer")
+    local Size = require("ui/size")
+    local TextWidget = require("ui/widget/textwidget")
+
+    local face = Font:getFace("infofont")
+    local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
+
+    local textw = TextWidget:new{
+        text = text,
+        face = face,
+    }
+    -- Don't make our message reach full screen width
+    if textw:getWidth() > screen_w * 0.9 then
+        -- Text too wide: use TextBoxWidget for multi lines display
+        textw = TextBoxWidget:new{
+            text = text,
+            face = face,
+            width = math.floor(screen_w * 0.9)
+        }
+    end
+    textw = FrameContainer:new{
+        background = Blitbuffer.COLOR_WHITE,
+        bordersize = Size.border.default,
+        margin = 0,
+        textw,
+    }
+    textw = RightContainer:new{
+        dimen = {
+            w = screen_w,
+            h = textw:getSize().h,
+        },
+        textw,
+    }
+    widget = OverlapGroup:new{
+        dimen = {
+            h = screen_w,
+            w = screen_h,
+        },
+        widget,
+        textw,
+    }
+    return widget
+end
+
 function Screensaver:chooseFolder()
     local buttons = {}
     table.insert(buttons, {
@@ -536,68 +644,6 @@ function Screensaver:show()
     end
 end
 
-local function expandSpecial(message, fallback)
-    -- Expand special character sequences in given message.
-    -- %p percentage read
-    -- %c current page
-    -- %t total pages
-    -- %T document title
-    -- %A document authors
-    -- %S document series
-
-    if G_reader_settings:hasNot("lastfile") then
-        return fallback
-    end
-
-    local ret = message
-    local lastfile = G_reader_settings:readSetting("lastfile")
-
-    local totalpages = 0
-    local percent = 0
-    local currentpage = 0
-    local title = "N/A"
-    local authors = "N/A"
-    local series = "N/A"
-
-    local instance = require("apps/reader/readerui"):_getRunningInstance()
-    if instance == nil and DocSettings:hasSidecarFile(lastfile) then
-        -- If there's no ReaderUI instance, but the file has sidecar data, use that
-        local docinfo = DocSettings:open(lastfile)
-        totalpages = docinfo.data.doc_pages or totalpages
-        percent = docinfo.data.percent_finished or percent
-        currentpage = Math.round(percent * totalpages)
-        percent = Math.round(percent * 100)
-        if docinfo.data.doc_props then
-            title = docinfo.data.doc_props.title and docinfo.data.doc_props.title ~= "" and docinfo.data.doc_props.title or title
-            authors = docinfo.data.doc_props.authors and docinfo.data.doc_props.authors ~= "" and docinfo.data.doc_props.authors or authors
-            series = docinfo.data.doc_props.series and docinfo.data.doc_props.series ~= "" and docinfo.data.doc_props.series or series
-        end
-        docinfo:close()
-    elseif instance ~= nil and lfs.attributes(lastfile, "mode") == "file" then
-        -- But if we have a ReaderUI instance, and the file stil exists, open it
-        local doc = DocumentRegistry:openDocument(lastfile)
-        currentpage = instance.view.state.page or currentpage
-        totalpages = doc:getPageCount() or totalpages
-        percent = Math.round((currentpage * 100) / totalpages)
-        local props = doc:getProps()
-        if props then
-            title = props.title and props.title ~= "" and props.title or title
-            authors = props.authors and props.authors ~= "" and props.authors or authors
-            series = props.series and props.series ~= "" and props.series or series
-        end
-        doc:close()
-    end
-
-    ret = string.gsub(ret, "%%c", currentpage)
-    ret = string.gsub(ret, "%%t", totalpages)
-    ret = string.gsub(ret, "%%p", percent)
-    ret = string.gsub(ret, "%%T", title)
-    ret = string.gsub(ret, "%%A", authors)
-    ret = string.gsub(ret, "%%S", series)
-
-    return ret
-end
-
 function Screensaver:close()
     if self.left_msg == nil then
         return
@@ -622,52 +668,6 @@ function Screensaver:close()
     else
         logger.dbg("tap to exit from screensaver")
     end
-end
-
-local function addOverlayMessage(widget, text)
-    local FrameContainer = require("ui/widget/container/framecontainer")
-    local RightContainer = require("ui/widget/container/rightcontainer")
-    local Size = require("ui/size")
-    local TextWidget = require("ui/widget/textwidget")
-
-    local face = Font:getFace("infofont")
-    local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
-
-    local textw = TextWidget:new{
-        text = text,
-        face = face,
-    }
-    -- Don't make our message reach full screen width
-    if textw:getWidth() > screen_w * 0.9 then
-        -- Text too wide: use TextBoxWidget for multi lines display
-        textw = TextBoxWidget:new{
-            text = text,
-            face = face,
-            width = math.floor(screen_w * 0.9)
-        }
-    end
-    textw = FrameContainer:new{
-        background = Blitbuffer.COLOR_WHITE,
-        bordersize = Size.border.default,
-        margin = 0,
-        textw,
-    }
-    textw = RightContainer:new{
-        dimen = {
-            w = screen_w,
-            h = textw:getSize().h,
-        },
-        textw,
-    }
-    widget = OverlapGroup:new{
-        dimen = {
-            h = screen_w,
-            w = screen_h,
-        },
-        widget,
-        textw,
-    }
-    return widget
 end
 
 return Screensaver
