@@ -271,7 +271,7 @@ function Screensaver:setup(event, fallback_message)
     self.fallback_message = fallback_message
     self.overlay_message = nil
     if G_reader_settings:has(self.prefix .. "screensaver_type") then
-        self.screensaver_type = G_reader_settings:readSetting(self.prefix.."screensaver_type")
+        self.screensaver_type = G_reader_settings:readSetting(self.prefix .. "screensaver_type")
     else
         -- No manually added setting for poweroff/reboot, fallback to using the
         -- same settings as for suspend that could be set via menus
@@ -279,6 +279,7 @@ function Screensaver:setup(event, fallback_message)
         -- And display fallback_message over the common screensaver,
         -- so user can distinguish between suspend (no message) and
         -- poweroff (overlay message)
+        -- FIXME: I *think* I broke that?
         self.overlay_message = self.fallback_message
     end
 
@@ -286,11 +287,6 @@ function Screensaver:setup(event, fallback_message)
     self.lastfile = nil
     self.image = nil
     self.image_file = nil
-
-    -- In as-is mode with no message, we've got nothing more to do :)
-    if self.screensaver_type == "disable" and self.show_message == false then
-        return
-    end
 
     -- Check lastfile and setup the requested mode's resources, or a fallback mode if the required resources are unavailable.
     self.lastfile = G_reader_settings:readSetting("lastfile")
@@ -367,6 +363,12 @@ function Screensaver:setup(event, fallback_message)
             self.show_message = true
         end
     end
+
+    -- Handle the default background depending on the *effective* screensaver mode, now that the fallbacks are in place.
+    if not self:modeIsImage() and G_reader_settings:hasNot("screensaver_background") then
+        -- i.e., the default for modes that display an image is black, but it's none for the others.
+        self.screensaver_background = "none"
+    end
 end
 
 function Screensaver:show()
@@ -413,12 +415,6 @@ function Screensaver:show()
         }
     elseif self.screensaver_type == "readingprogress" then
         widget = Screensaver.getReaderProgress()
-    end
-
-    -- Handle the default background depending on the *effective* screensaver mode, now that the fallbacks are in place.
-    if not self:modeIsImage() and G_reader_settings:hasNot("screensaver_background") then
-        -- i.e., the default for modes that display an image is black, but it's none for the others.
-        self.screensaver_background = "none"
     end
 
     -- Assume that we'll be covering the full-screen by default (either because of a widget, or a background fill).

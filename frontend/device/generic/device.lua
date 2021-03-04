@@ -267,12 +267,13 @@ function Device:onPowerEvent(ev)
         self.powerd:beforeSuspend()
         local UIManager = require("ui/uimanager")
         logger.dbg("Suspending...")
+        -- Let Screensaver set its widget up, so we get accurate info down the line in case fallbacks kick in...
+        Screensaver:setup()
         -- Mostly always suspend in Portrait/Inverted Portrait mode...
         -- ... except when we just show an InfoMessage or when the screensaver
         -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5290).
         -- We also exclude full-screen widgets that work fine in Landscape mode,
         -- like ReadingProgress and BookStatus (c.f., #5724)
-        -- FIXME: Gah, setup needs to run first, but it does stuff that depends on rotation right now...
         if Screensaver:modeExpectsPortrait() then
             self.orig_rotation_mode = self.screen:getRotationMode()
             -- Leave Portrait & Inverted Portrait alone, that works just fine.
