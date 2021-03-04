@@ -226,6 +226,7 @@ end
 
 -- Only used on platforms where we handle suspend ourselves.
 function Device:onPowerEvent(ev)
+    local Screensaver = require("ui/screensaver")
     if self.screen_saver_mode then
         if ev == "Power" or ev == "Resume" then
             if self.is_cover_closed then
@@ -247,7 +248,7 @@ function Device:onPowerEvent(ev)
                 if self.orig_rotation_mode then
                     self.screen:setRotationMode(self.orig_rotation_mode)
                 end
-                require("ui/screensaver"):close()
+                Screensaver:close()
                 if self:needsScreenRefreshAfterResume() then
                     UIManager:scheduleIn(1, function() self.screen:refreshFull() end)
                 end
@@ -297,7 +298,7 @@ function Device:onPowerEvent(ev)
             -- nil it, in case user switched ScreenSaver modes during our lifetime.
             self.orig_rotation_mode = nil
         end
-        require("ui/screensaver"):show()
+        Screensaver:show()
         -- NOTE: show() will return well before the refresh ioctl is even *sent*:
         --       the only thing it's done is *enqueued* the refresh in UIManager's stack.
         --       Which is why the actual suspension needs to be delayed by suspend_wait_timeout,

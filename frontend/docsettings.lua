@@ -273,6 +273,16 @@ function DocSettings:flipFalse(key)
     return self
 end
 
+--- Toggle a setting
+function LuaSettings:toggle(key)
+    if self:nilOrFalse(key) then
+        self:saveSetting(key, true)
+    else
+        self:saveSetting(key, false)
+    end
+    return self
+end
+
 --- Serializes settings and writes them to `metadata.lua`.
 function DocSettings:flush()
     -- write serialized version of the data table into one of

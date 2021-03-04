@@ -177,6 +177,16 @@ function LuaSettings:flipFalse(key)
     return self
 end
 
+--- Toggle a setting
+function LuaSettings:toggle(key)
+    if self:nilOrFalse(key) then
+        self:saveSetting(key, true)
+    else
+        self:saveSetting(key, false)
+    end
+    return self
+end
+
 -- Initializes settings per extension with default values
 function LuaSettings:initializeExtSettings(key, defaults, force_init)
     local curr = self:readSetting(key)

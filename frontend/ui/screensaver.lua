@@ -222,6 +222,44 @@ function Screensaver:setMessage()
 end
 
 function Screensaver:show(event, fallback_message)
+    local show_message
+    if G_reader_settings:has("screensaver_show_message") then
+        show_message = G_reader_settings:isTrue("screensaver_show_message")
+    else
+        show_message = true
+    end
+    local screensaver_type
+    if G_reader_settings:has("screensaver_type") then
+        screensaver_type = G_reader_settings:readSetting("screensaver_type")
+    else
+        screensaver_type = "disable"
+        show_message = true
+    end
+    local screensaver_background
+    if G_reader_settings:has("screensaver_background") then
+        screensaver_background = G_reader_settings:readSetting("screensaver_background")
+    else
+        screensaver_background = "black"
+    end
+    -- Migrate old settings
+    if screensaver_type == "message" then
+        -- Obsolete screensaver_type: migrate to new show_message = true
+        screensaver_type = "disable"
+        G_reader_settings:saveSetting("screensaver_type", "disable")
+        show_message = true
+        G_reader_settings:saveSetting("screensaver_show_message", true)
+    end
+    if G_reader_settings:has("screensaver_no_background") then
+        G_reader_settings:delSetting("screensaver_no_background")
+        screensaver_background = "none"
+        G_reader_settings:saveSetting("screensaver_background", "none")
+    end
+    if G_reader_settings:has("screensaver_white_background") then
+        G_reader_settings:delSetting("screensaver_white_background")
+        screensaver_background = "white"
+        G_reader_settings:saveSetting("screensaver_background", "white")
+    end
+
     -- These 2 (optional) parameters are to support poweroff and reboot actions
     -- on Kobo (see uimanager.lua)
     if self.left_msg then
@@ -231,11 +269,11 @@ function Screensaver:show(event, fallback_message)
     local covers_fullscreen = true -- hint for UIManager:_repaint()
     local overlay_message
     local prefix = event and event.."_" or "" -- "", "poweroff_" or "reboot_"
-    local screensaver_type = G_reader_settings:readSetting(prefix.."screensaver_type")
-    if prefix and not screensaver_type then
+    if G_reader_settings:has(prefix.."screensaver_type") then
+        screensaver_type = G_reader_settings:readSetting(prefix.."screensaver_type")
+    else
         -- No manually added setting for poweroff/reboot, fallback to using the
         -- same settings as for suspend that could be set via menus
-        screensaver_type = G_reader_settings:readSetting("screensaver_type")
         prefix = ""
         -- And display fallback_message over the common screensaver,
         -- so user can distinguish between suspend (no message) and
@@ -243,21 +281,8 @@ function Screensaver:show(event, fallback_message)
         overlay_message = fallback_message
     end
 
-    local show_message = self:showMessage()
     -- We'll need to keep track of whether the effective mode is a fallback or not for show_message...
     local fallback_type = false
-
-    if screensaver_type == nil then
-        show_message = true
-        fallback_type = true
-    end
-
-    if screensaver_type == "message" then
-        -- obsolete screensaver_type: migrate to new show_message = true
-        screensaver_type = "disable"
-        G_reader_settings:saveSetting("screensaver_type", "disable")
-        G_reader_settings:saveSetting("screensaver_show_message", true)
-    end
 
     -- messages can still be shown over "as-is" screensaver
     if screensaver_type == "disable" and show_message == false then
