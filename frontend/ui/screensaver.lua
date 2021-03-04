@@ -29,12 +29,16 @@ if G_reader_settings:readSetting("screensaver_type", "disable") == "message" the
     G_reader_settings:saveSetting("screensaver_show_message", true)
 end
 if G_reader_settings:has("screensaver_no_background") then
+    if G_reader_settings:isTrue("screensaver_no_background") then
+        G_reader_settings:saveSetting("screensaver_background", "none")
+    end
     G_reader_settings:delSetting("screensaver_no_background")
-    G_reader_settings:saveSetting("screensaver_background", "none")
 end
 if G_reader_settings:has("screensaver_white_background") then
+    if G_reader_settings:isTrue("screensaver_white_background") then
+        G_reader_settings:saveSetting("screensaver_background", "white")
+    end
     G_reader_settings:delSetting("screensaver_white_background")
-    G_reader_settings:saveSetting("screensaver_background", "white")
 end
 
 local Screensaver = {
