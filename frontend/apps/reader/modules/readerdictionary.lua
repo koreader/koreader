@@ -58,9 +58,6 @@ end
 local ReaderDictionary = InputContainer:new{
     data_dir = nil,
     dict_window_list = {},
-    disable_lookup_history = G_reader_settings:isTrue("disable_lookup_history"),
-    dicts_order = G_reader_settings:readSetting("dicts_order", {}),
-    dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {}),
     lookup_msg = _("Searching dictionary for:\n%1"),
 }
 
@@ -98,6 +95,10 @@ local function getDictionaryFixHtmlFunc(path)
 end
 
 function ReaderDictionary:init()
+    self.disable_lookup_history = G_reader_settings:isTrue("disable_lookup_history")
+    self.dicts_order = G_reader_settings:readSetting("dicts_order", {})
+    self.dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {})
+
     self.ui.menu:registerToMainMenu(self)
     self.data_dir = STARDICT_DATA_DIR or
         os.getenv("STARDICT_DATA_DIR") or
