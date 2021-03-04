@@ -383,6 +383,19 @@ function OPDSBrowser:genItemTableFromURL(item_url, username, password)
     return self:genItemTableFromCatalog(catalog, item_url, username, password)
 end
 
+function OPDSBrowser:getSearchTemplate(osd_url, username, password)
+    -- parse search descriptor
+    local searchDescriptor = self:parseFeed(osd_url, username, password)
+    if searchDescriptor and searchDescriptor.OpenSearchDescription and searchDescriptor.OpenSearchDescription.Url then
+        for _, candidate in ipairs(searchDescriptor.OpenSearchDescription.Url) do
+            if candidate.type and candidate.template and candidate.type:find(self.search_template_type) then
+                return candidate.template:gsub('{searchTerm}', '%s')
+            end
+        end
+    end
+end
+
+
 function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, password)
     local item_table = {}
     if not catalog then
@@ -406,25 +419,16 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                 end
                 if link.type:find(self.search_type) then
                     if link.href then
-                        -- parse search descriptor
-                        local searchDescriptor = self:parseFeed(link.href, username, password)
-                        if searchDescriptor and searchDescriptor.OpenSearchDescription and searchDescriptor.OpenSearchDescription.Url then
-                            for _, candidate in ipairs(searchDescriptor.OpenSearchDescription.Url) do
-                                if candidate.type and candidate.template and candidate.type:find(self.search_template_type) then
-                                    item_table.search_template = candidate.template
-                                    -- insert the search item
-                                    local item = {}
-                                    item.acquisitions = {}
-                                    item.text = "Search"
-                                    item.callback = function()
-                                        self:browseSearchable(candidate.template, username, password)
-                                    end
-
-                                    table.insert(item_table, item)
-                                    break
-                                end
-                            end
+                        local stpl = self:getSearchTemplate(link.href, username, password)
+                        -- insert the search item
+                        local item = {}
+                        item.acquisitions = {}
+                        item.text = "Search"
+                        item.callback = function()
+                            self:browseSearchable(stpl, username, password)
                         end
+
+                        table.insert(item_table, item)
                     end
                 end
             end
