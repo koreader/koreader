@@ -407,8 +407,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
     if feed.link then
         for _, link in ipairs(feed.link) do
             if link.type ~= nil then
-                if link.type:find(self.catalog_type) or
-                    link.type:find(self.search_type) then
+                if link.type:find(self.catalog_type) then
                     if link.rel and link.href then
                         hrefs[link.rel] = build_href(link.href)
                     end
@@ -422,7 +421,6 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                                 if candidate.type and candidate.template and candidate.type:find(self.search_template_type) then
                                     item_table.search_template = candidate.template
                                     -- insert the search item
-
                                     local item = {}
                                     item.acquisitions = {}
                                     item.text = "Search"
@@ -431,6 +429,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                                     end
 
                                     table.insert(item_table, item)
+                                    break
                                 end
                             end
                         end
