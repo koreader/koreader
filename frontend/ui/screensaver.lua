@@ -179,10 +179,6 @@ function Screensaver:chooseFile(document_cover)
     UIManager:show(self.choose_dialog)
 end
 
-function Screensaver:stretchImages()
-    return G_reader_settings:isTrue("screensaver_stretch_images")
-end
-
 function Screensaver:isExcluded()
     if G_reader_settings:hasNot("lastfile") then
         return false
@@ -247,6 +243,10 @@ function Screensaver:modeIsImage()
         or self.screensaver_type == "image_file"
 end
 
+function Screensaver:withBackground()
+    return self.screensaver_background ~= "none"
+end
+
 function Screensaver:setup(event, fallback_message)
     -- Handle user settings & fallbacks
     if G_reader_settings:has("screensaver_show_message") then
@@ -290,7 +290,6 @@ function Screensaver:setup(event, fallback_message)
         return
     end
 
-    -- FIXME: Untangle the readSetting and nil checks
     local lastfile = G_reader_settings:readSetting("lastfile")
     if self.screensaver_type == "document_cover" then
         -- Set lastfile to the document of which we want to show the cover.
@@ -299,10 +298,13 @@ function Screensaver:setup(event, fallback_message)
     end
     if self.screensaver_type == "cover" then
         lastfile = lastfile ~= nil and lastfile or G_reader_settings:readSetting("lastfile")
-        local excluded = false -- consider it not excluded if there's no docsetting
+        local excluded
         if DocSettings:hasSidecarFile(lastfile) then
             local doc_settings = DocSettings:open(lastfile)
             excluded = doc_settings:isTrue("exclude_screensaver")
+        else
+            -- No DocSetting, not excluded
+            excluded = false
         end
         if not excluded then
             if lastfile and lfs.attributes(lastfile, "mode") == "file" then
@@ -318,7 +320,7 @@ function Screensaver:setup(event, fallback_message)
                         image_disposable = true,
                         height = Screen:getHeight(),
                         width = Screen:getWidth(),
-                        scale_factor = not self:stretchImages() and 0 or nil,
+                        scale_factor = G_reader_settings:isTrue("screensaver_stretch_images") and nil or 0,
                     }
                 else
                     self.screensaver_type = "random_image"
@@ -327,7 +329,7 @@ function Screensaver:setup(event, fallback_message)
                 self.screensaver_type = "random_image"
             end
         else
-            -- fallback to random images if this book cover is excluded
+            -- Fallback to random images if this book cover is excluded
             self.screensaver_type = "random_image"
         end
     end
@@ -368,7 +370,7 @@ function Screensaver:setup(event, fallback_message)
                 alpha = true,
                 height = Screen:getHeight(),
                 width = Screen:getWidth(),
-                scale_factor = not self:stretchImages() and 0 or nil,
+                scale_factor = G_reader_settings:isTrue("screensaver_stretch_images") and nil or 0,
             }
         end
     end
@@ -386,7 +388,7 @@ function Screensaver:setup(event, fallback_message)
                 alpha = true,
                 height = Screen:getHeight(),
                 width = Screen:getWidth(),
-                scale_factor = not self:stretchImages() and 0 or nil,
+                scale_factor = G_reader_settings:isTrue("screensaver_stretch_images") and nil or 0,
             }
         end
     end
@@ -397,18 +399,18 @@ function Screensaver:setup(event, fallback_message)
             self.show_message = true
         end
     end
-
-    -- Handle the default background depending on the *effective* screensaver mode, now that the fallbacks are in place.
-    if not self:modeIsImage() and G_reader_settings:hasNot("screensaver_background") then
-        -- i.e., the default for modes that display an image is black, but it's none for the others.
-        self.screensaver_background = "none"
-    end
 end
 
 function Screensaver:show()
     if self.left_msg then
         UIManager:close(self.left_msg)
         self.left_msg = nil
+    end
+
+    -- Handle the default background depending on the *effective* screensaver mode, now that the fallbacks are in place.
+    if not self:modeIsImage() and G_reader_settings:hasNot("screensaver_background") then
+        -- i.e., the default for modes that display an image is black, but it's none for the others.
+        self.screensaver_background = "none"
     end
 
     -- Assume that we'll be covering the full-screen by default (either because of a widget, or a background fill).
@@ -424,6 +426,7 @@ function Screensaver:show()
     end
 
     if self.show_message == true then
+        -- Handle user settings & fallbacks, with that prefix mess on top...
         local screensaver_message
         if G_reader_settings:has(self.prefix .. "screensaver_message") then
             screensaver_message = G_reader_settings:readSetting(self.prefix .. "screensaver_message")
@@ -451,7 +454,7 @@ function Screensaver:show()
         end
 
         -- The only case where we *won't* cover the full-screen is when we only display a message and no background.
-        if elf.widget == nil and self.screensaver_background == "none" then
+        if self.widget == nil and self.screensaver_background == "none" then
             covers_fullscreen = false
         end
 
@@ -588,7 +591,10 @@ local function expandSpecial(message, fallback)
 end
 
 function Screensaver:close()
-    if self.left_msg == nil then return end
+    if self.left_msg == nil then
+        return
+    end
+
     local screensaver_delay = G_reader_settings:readSetting("screensaver_delay")
     local screensaver_delay_number = tonumber(screensaver_delay)
     if screensaver_delay_number then
