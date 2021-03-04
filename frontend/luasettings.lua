@@ -137,7 +137,7 @@ function LuaSettings:nilOrFalse(key)
     return self:hasNot(key) or self:isFalse(key)
 end
 
---- Flips `nil` or `true` to `false`.
+--- Flips `nil` or `true` to `false`, and `false` to `nil`.
 function LuaSettings:flipNilOrTrue(key)
     if self:nilOrTrue(key) then
         self:saveSetting(key, false)
@@ -147,7 +147,7 @@ function LuaSettings:flipNilOrTrue(key)
     return self
 end
 
---- Flips `nil` or `false` to `true`.
+--- Flips `nil` or `false` to `true`, and `true` to `nil`.
 function LuaSettings:flipNilOrFalse(key)
     if self:nilOrFalse(key) then
         self:saveSetting(key, true)
@@ -157,7 +157,7 @@ function LuaSettings:flipNilOrFalse(key)
     return self
 end
 
---- Flips setting to `true`.
+--- Flips a setting between `true` and `nil`.
 function LuaSettings:flipTrue(key)
     if self:isTrue(key) then
         self:delSetting(key)
@@ -167,7 +167,7 @@ function LuaSettings:flipTrue(key)
     return self
 end
 
---- Flips setting to `false`.
+--- Flips a setting between `false` and `nil`.
 function LuaSettings:flipFalse(key)
     if self:isFalse(key) then
         self:delSetting(key)
@@ -177,19 +177,19 @@ function LuaSettings:flipFalse(key)
     return self
 end
 
--- Unconditionally make a setting `true`.
+-- Unconditionally makes a setting `true`.
 function LuaSettings:makeTrue(key)
     self:saveSetting(key, true)
     return self
 end
 
--- Unconditionally make a setting `false`.
+-- Unconditionally makes a setting `false`.
 function LuaSettings:makeFalse(key)
     self:saveSetting(key, false)
     return self
 end
 
---- Toggle a setting
+--- Toggles a setting
 function LuaSettings:toggle(key)
     if self:nilOrFalse(key) then
         self:saveSetting(key, true)

@@ -407,7 +407,7 @@ To:
                     return G_reader_settings:isTrue("debug")
                 end,
                 callback = function()
-                    G_reader_settings:toggle("debug")
+                    G_reader_settings:flipNilOrFalse("debug")
                     if G_reader_settings:isTrue("debug") then
                         dbg:turnOn()
                     else
@@ -426,7 +426,7 @@ To:
                     return G_reader_settings:isTrue("debug_verbose")
                 end,
                 callback = function()
-                    G_reader_settings:toggle("debug_verbose")
+                    G_reader_settings:flipNilOrFalse("debug_verbose")
                     if G_reader_settings:isTrue("debug_verbose") then
                         dbg:setVerbose(true)
                     else
@@ -443,7 +443,7 @@ To:
                 return G_reader_settings:isTrue("dev_startup_no_fbdepth")
             end,
             callback = function()
-                G_reader_settings:toggle("dev_startup_no_fbdepth")
+                G_reader_settings:flipNilOrFalse("dev_startup_no_fbdepth")
                 local InfoMessage = require("ui/widget/infomessage")
                 UIManager:show(InfoMessage:new{
                     text = _("This will take effect on next restart."),
@@ -459,7 +459,7 @@ To:
                 return G_reader_settings:isTrue("dev_abort_on_crash")
             end,
             callback = function()
-                G_reader_settings:toggle("dev_abort_on_crash")
+                G_reader_settings:flipNilOrFalse("dev_abort_on_crash")
                 local InfoMessage = require("ui/widget/infomessage")
                 UIManager:show(InfoMessage:new{
                     text = _("This will take effect on next restart."),
@@ -478,7 +478,7 @@ To:
                 return G_reader_settings:isTrue("dev_no_c_blitter")
             end,
             callback = function()
-                G_reader_settings:toggle("dev_no_c_blitter")
+                G_reader_settings:flipNilOrFalse("dev_no_c_blitter")
                 Blitbuffer:enableCBB(G_reader_settings:nilOrFalse("dev_no_c_blitter"))
             end,
         })
