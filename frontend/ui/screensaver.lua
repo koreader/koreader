@@ -23,18 +23,19 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local screensaver_provider = {
-    ["jpg"] = true,
-    ["jpeg"] = true,
-    ["png"] = true,
-    ["gif"] = true,
-    ["tif"] = true,
-    ["tiff"] = true,
+local Screensaver = {
+    screensaver_provider = {
+        ["jpg"] = true,
+        ["jpeg"] = true,
+        ["png"] = true,
+        ["gif"] = true,
+        ["tif"] = true,
+        ["tiff"] = true,
+    },
+    default_screensaver_message = _("Sleeping"),
 }
-local default_screensaver_message = _("Sleeping")
-local Screensaver = {}
 
-local function getRandomImage(dir)
+local function _getRandomImage(dir)
     if not dir then
         return nil
     end
@@ -50,7 +51,7 @@ local function getRandomImage(dir)
         for entry in iter, dir_obj do
             if lfs.attributes(dir .. entry, "mode") == "file" then
                 local extension = string.lower(string.match(entry, ".+%.([^.]+)") or "")
-                if screensaver_provider[extension] then
+                if self.screensaver_provider[extension] then
                     i = i + 1
                     pics[i] = entry
                 end
@@ -118,7 +119,7 @@ function Screensaver:chooseFile(document_cover)
                         local suffix = util.getFileNameSuffix(filename)
                         if document_cover and DocumentRegistry:hasProvider(filename) then
                             return true
-                        elseif screensaver_provider[suffix] then
+                        elseif self.screensaver_provider[suffix] then
                             return true
                         end
                     end,
@@ -180,20 +181,25 @@ function Screensaver:showMessage()
     return G_reader_settings:isTrue("screensaver_show_message")
 end
 
-function Screensaver:excluded()
+local function isExcluded()
+    if G_reader_settings:hasNot("lastfile") then
+        return false
+    end
+
     local lastfile = G_reader_settings:readSetting("lastfile")
-    local exclude_ss = false -- consider it not excluded if there's no docsetting
     if DocSettings:hasSidecarFile(lastfile) then
         local doc_settings = DocSettings:open(lastfile)
-        exclude_ss = doc_settings:readSetting("exclude_screensaver")
+        return doc_settings:isTrue("exclude_screensaver")
+    else
+        -- No DocSetting, not excluded
+        return false
     end
-    return exclude_ss or false
 end
 
 function Screensaver:setMessage()
     local InputDialog = require("ui/widget/inputdialog")
     local screensaver_message = G_reader_settings:readSetting("screensaver_message")
-                             or default_screensaver_message
+                             or self.default_screensaver_message
     self.input_dialog = InputDialog:new{
         title = "Screensaver message",
         description = _("Enter the message to be displayed by the screensaver. The following escape sequences can be used:\n  %p percentage read\n  %c current page number\n  %t total number of pages\n  %T title\n  %A authors\n  %S series"),
@@ -242,6 +248,7 @@ function Screensaver:show(event, fallback_message)
         screensaver_background = "black"
     end
     -- Migrate old settings
+    -- FIXME: Move to module-level, so it only happens once.
     if screensaver_type == "message" then
         -- Obsolete screensaver_type: migrate to new show_message = true
         screensaver_type = "disable"
@@ -262,10 +269,7 @@ function Screensaver:show(event, fallback_message)
 
     -- These 2 (optional) parameters are to support poweroff and reboot actions
     -- on Kobo (see uimanager.lua)
-    if self.left_msg then
-        UIManager:close(self.left_msg)
-        self.left_msg = nil
-    end
+
     local covers_fullscreen = true -- hint for UIManager:_repaint()
     local overlay_message
     local prefix = event and event.."_" or "" -- "", "poweroff_" or "reboot_"
@@ -383,7 +387,7 @@ function Screensaver:show(event, fallback_message)
         if screensaver_dir == nil and prefix ~= "" then
             screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
         end
-        local image_file = getRandomImage(screensaver_dir)
+        local image_file = self:_getRandomImage(screensaver_dir)
         if image_file == nil then
             show_message = true
             fallback_type = true
@@ -450,13 +454,13 @@ function Screensaver:show(event, fallback_message)
             screensaver_message = G_reader_settings:readSetting("screensaver_message")
         end
 
-        local fallback = fallback_message or default_screensaver_message
+        local fallback = fallback_message or self.default_screensaver_message
         if screensaver_message == nil then
             screensaver_message = fallback
         else
             -- NOTE: Only attempt to expand if there are special characters in the message.
             if screensaver_message:find("%%") then
-                screensaver_message = self:expandSpecial(screensaver_message, fallback)
+                screensaver_message = expandSpecial(screensaver_message, fallback)
             end
         end
 
@@ -514,7 +518,7 @@ function Screensaver:show(event, fallback_message)
     end
 
     if overlay_message then
-        widget = self:addOverlayMessage(widget, overlay_message)
+        widget = addOverlayMessage(widget, overlay_message)
     end
 
     if widget then
@@ -530,7 +534,280 @@ function Screensaver:show(event, fallback_message)
     end
 end
 
-function Screensaver:expandSpecial(message, fallback)
+function Screensaver:show()
+    if self.left_msg then
+        UIManager:close(self.left_msg)
+        self.left_msg = nil
+    end
+
+    -- These 2 (optional) parameters are to support poweroff and reboot actions
+    -- on Kobo (see uimanager.lua)
+
+    local covers_fullscreen = true -- hint for UIManager:_repaint()
+    local overlay_message
+    local prefix = event and event.."_" or "" -- "", "poweroff_" or "reboot_"
+    if G_reader_settings:has(prefix.."screensaver_type") then
+        screensaver_type = G_reader_settings:readSetting(prefix.."screensaver_type")
+    else
+        -- No manually added setting for poweroff/reboot, fallback to using the
+        -- same settings as for suspend that could be set via menus
+        prefix = ""
+        -- And display fallback_message over the common screensaver,
+        -- so user can distinguish between suspend (no message) and
+        -- poweroff (overlay message)
+        overlay_message = fallback_message
+    end
+
+    -- We'll need to keep track of whether the effective mode is a fallback or not for show_message...
+    local fallback_type = false
+
+    -- messages can still be shown over "as-is" screensaver
+    if screensaver_type == "disable" and show_message == false then
+        return
+    end
+
+    -- These historical defaults are image-oriented.
+    -- That'll bite us in the ass later on, both for "disable" mode and show_message...
+    local widget = nil
+    local no_background = false
+    local background = Blitbuffer.COLOR_BLACK
+    if self:whiteBackground() then
+        background = Blitbuffer.COLOR_WHITE
+    elseif self:noBackground() then
+        background = nil
+        no_background = true
+    end
+
+    -- "as-is" mode obviously requires not mangling the background ;).
+    if screensaver_type == "disable" then
+        -- NOTE: Ideally, "disable" mode should *honor* all the "background" options.
+        --       Unfortunately, the no background option is much more recent than the "disable" mode,
+        --       and as such, the default assumes that in "disable" mode, the default background is nil instead of black.
+        --       This implies that, for the same legacy reasons, we have to honor the *white* background setting here...
+        --       (Which means that you can have no background, a white background, but *NOT* a black background in this mode :/).
+        if G_reader_settings:nilOrFalse("screensaver_white_background") and G_reader_settings:nilOrFalse("screensaver_no_background") then
+            background = nil
+            no_background = true
+        end
+    end
+
+    local lastfile = G_reader_settings:readSetting("lastfile")
+    if screensaver_type == "document_cover" then
+        -- Set lastfile to the document of which we want to show the cover.
+        lastfile = G_reader_settings:readSetting("screensaver_document_cover")
+        screensaver_type = "cover"
+    end
+    if screensaver_type == "cover" then
+        lastfile = lastfile ~= nil and lastfile or G_reader_settings:readSetting("lastfile")
+        local excluded = false -- consider it not excluded if there's no docsetting
+        if DocSettings:hasSidecarFile(lastfile) then
+            local doc_settings = DocSettings:open(lastfile)
+            excluded = doc_settings:isTrue("exclude_screensaver")
+        end
+        if not excluded then
+            if lastfile and lfs.attributes(lastfile, "mode") == "file" then
+                local doc = DocumentRegistry:openDocument(lastfile)
+                if doc.loadDocument then -- CreDocument
+                    doc:loadDocument(false) -- load only metadata
+                end
+                local image = doc:getCoverPageImage()
+                doc:close()
+                if image ~= nil then
+                    widget = ImageWidget:new{
+                        image = image,
+                        image_disposable = true,
+                        height = Screen:getHeight(),
+                        width = Screen:getWidth(),
+                        scale_factor = not self:stretchImages() and 0 or nil,
+                    }
+                else
+                    screensaver_type = "random_image"
+                end
+            else
+                screensaver_type = "random_image"
+            end
+        else
+            -- fallback to random images if this book cover is excluded
+            screensaver_type = "random_image"
+        end
+    end
+    if screensaver_type == "bookstatus" then
+        if lastfile and lfs.attributes(lastfile, "mode") == "file" then
+            local doc = DocumentRegistry:openDocument(lastfile)
+            local doc_settings = DocSettings:open(lastfile)
+            local instance = require("apps/reader/readerui"):_getRunningInstance()
+            if instance ~= nil then
+                widget = BookStatusWidget:new {
+                    thumbnail = doc:getCoverPageImage(),
+                    props = doc:getProps(),
+                    document = doc,
+                    settings = doc_settings,
+                    view = instance.view,
+                    readonly = true,
+                }
+            else
+                show_message = true
+                fallback_type = true
+            end
+            doc:close()
+        else
+            show_message = true
+            fallback_type = true
+        end
+    end
+    if screensaver_type == "random_image" then
+        local screensaver_dir = G_reader_settings:readSetting(prefix.."screensaver_dir")
+        if screensaver_dir == nil and prefix ~= "" then
+            screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
+        end
+        local image_file = self:_getRandomImage(screensaver_dir)
+        if image_file == nil then
+            show_message = true
+            fallback_type = true
+        else
+            widget = ImageWidget:new{
+                file = image_file,
+                file_do_cache = false,
+                alpha = true,
+                height = Screen:getHeight(),
+                width = Screen:getWidth(),
+                scale_factor = not self:stretchImages() and 0 or nil,
+            }
+        end
+    end
+    if screensaver_type == "image_file" then
+        local screensaver_image = G_reader_settings:readSetting(prefix.."screensaver_image")
+        if screensaver_image == nil and prefix ~= "" then
+            screensaver_image = G_reader_settings:readSetting("screensaver_image")
+        end
+        if lfs.attributes(screensaver_image, "mode") ~= "file" then
+            show_message = true
+            fallback_type = true
+        else
+            widget = ImageWidget:new{
+                file = screensaver_image,
+                file_do_cache = false,
+                alpha = true,
+                height = Screen:getHeight(),
+                width = Screen:getWidth(),
+                scale_factor = not self:stretchImages() and 0 or nil,
+            }
+        end
+    end
+    if screensaver_type == "readingprogress" then
+        if Screensaver.getReaderProgress ~= nil then
+            widget = Screensaver.getReaderProgress()
+        else
+            show_message = true
+            fallback_type = true
+        end
+    end
+
+    if show_message == true then
+        local screensaver_message = G_reader_settings:readSetting(prefix.."screensaver_message")
+        local message_pos = G_reader_settings:readSetting(prefix.."screensaver_message_position")
+
+        -- This is both our default and our fallback.
+        -- Unlike image oriented modes, the default in this mode should *NOT* be a black background,
+        -- but no background at all.
+        -- Handle that properly if the user hasn't set a background preference yet.
+        if fallback_type then
+            if G_reader_settings:nilOrFalse("screensaver_white_background") and G_reader_settings:nilOrFalse("screensaver_no_background") then
+                background = nil
+                no_background = true
+                -- Funky hack to counteract the flash to white we force on most eInk devices...
+                UIManager:setDirty("all", "full")
+            end
+        end
+
+        if no_background and widget == nil then
+            covers_fullscreen = false
+        end
+        if screensaver_message == nil and prefix ~= "" then
+            screensaver_message = G_reader_settings:readSetting("screensaver_message")
+        end
+
+        local fallback = fallback_message or self.default_screensaver_message
+        if screensaver_message == nil then
+            screensaver_message = fallback
+        else
+            -- NOTE: Only attempt to expand if there are special characters in the message.
+            if screensaver_message:find("%%") then
+                screensaver_message = expandSpecial(screensaver_message, fallback)
+            end
+        end
+
+        local message_widget
+        if message_pos == "middle" or message_pos == nil then
+            message_widget = InfoMessage:new{
+                text = screensaver_message,
+                readonly = true,
+            }
+        else
+            local face = Font:getFace("infofont")
+            local container
+            if message_pos == "bottom" then
+                container = BottomContainer
+            else
+                container = TopContainer
+            end
+
+            local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
+            message_widget = container:new{
+                dimen = Geom:new{
+                    w = screen_w,
+                    h = screen_h,
+                },
+                TextBoxWidget:new{
+                    text = screensaver_message,
+                    face = face,
+                    width = screen_w,
+                    alignment = "center",
+                }
+            }
+        end
+
+        -- No overlay needed as we just displayed the message
+        overlay_message = nil
+
+        -- check if message_widget should be overlaid on another widget
+        if message_widget then
+            if widget then  -- we have a screensaver widget
+                -- show message_widget on top of previously created widget
+                local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
+                widget = OverlapGroup:new{
+                    dimen = {
+                        h = screen_w,
+                        w = screen_h,
+                    },
+                    widget,
+                    message_widget,
+                }
+            else
+                -- no prevously created widget so just show message widget
+                widget = message_widget
+            end
+        end
+    end
+
+    if overlay_message then
+        widget = addOverlayMessage(widget, overlay_message)
+    end
+
+    if widget then
+        self.left_msg = ScreenSaverWidget:new{
+            widget = widget,
+            background = background,
+            covers_fullscreen = covers_fullscreen,
+        }
+        self.left_msg.modal = true
+        -- Refresh whole screen for other types
+        self.left_msg.dithered = true
+        UIManager:show(self.left_msg, "full")
+    end
+end
+
+local function expandSpecial(message, fallback)
     -- Expand special character sequences in given message.
     -- %p percentage read
     -- %c current page
@@ -615,7 +892,7 @@ function Screensaver:close()
     end
 end
 
-function Screensaver:addOverlayMessage(widget, text)
+local function addOverlayMessage(widget, text)
     local FrameContainer = require("ui/widget/container/framecontainer")
     local RightContainer = require("ui/widget/container/rightcontainer")
     local Size = require("ui/size")
