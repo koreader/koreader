@@ -392,6 +392,7 @@ function Screensaver:setup(event, fallback_message)
             -- And display fallback_message over the common screensaver,
             -- so user can distinguish between suspend (no message) and
             -- poweroff (overlay message)
+            -- FIXME: Still broken.
             self.overlay_message = self.fallback_message
         end
     end
