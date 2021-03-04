@@ -167,7 +167,7 @@ end
 
 --[[-- Reads a setting, optionally initializing it to a default.
 
-If default is set, and the key doesn't exist yet, it is initialized to default first.
+If default is provided, and the key doesn't exist yet, it is initialized to default first.
 This ensures both that the defaults are actually set if necessary,
 and that the returned reference actually belongs to the DocSettings object straight away,
 without requiring further interaction (e.g., saveSetting) from the caller.
