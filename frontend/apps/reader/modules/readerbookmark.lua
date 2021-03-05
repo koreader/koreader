@@ -228,8 +228,8 @@ end
 
 function ReaderBookmark:onSaveSettings()
     self.ui.doc_settings:saveSetting("bookmarks", self.bookmarks)
-    self.ui.doc_settings:saveSetting("bookmarks_sorted", true)
-    self.ui.doc_settings:saveSetting("highlights_imported", true)
+    self.ui.doc_settings:makeTrue("bookmarks_sorted")
+    self.ui.doc_settings:makeTrue("highlights_imported")
 end
 
 function ReaderBookmark:isCurrentPageBookmarked()

@@ -354,14 +354,14 @@ function ReaderPageMap:addToMainMenu(menu_items)
                             return use_page_labels and _("Renderer") or _("Renderer (★)")
                         end,
                         choice1_callback = function()
-                             G_reader_settings:saveSetting("pagemap_use_page_labels", false)
+                             G_reader_settings:makeFalse("pagemap_use_page_labels")
                              if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
                         choice2_text_func = function()
                             return use_page_labels and _("Reference (★)") or _("Reference")
                         end,
                         choice2_callback = function()
-                            G_reader_settings:saveSetting("pagemap_use_page_labels", true)
+                            G_reader_settings:makeTrue("pagemap_use_page_labels")
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
                     })
@@ -387,14 +387,14 @@ function ReaderPageMap:addToMainMenu(menu_items)
                             return show_page_labels and _("Hide") or _("Hide (★)")
                         end,
                         choice1_callback = function()
-                             G_reader_settings:saveSetting("pagemap_show_page_labels", false)
+                             G_reader_settings:makeFalse("pagemap_show_page_labels")
                              if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
                         choice2_text_func = function()
                             return show_page_labels and _("Show (★)") or _("Show")
                         end,
                         choice2_callback = function()
-                            G_reader_settings:saveSetting("pagemap_show_page_labels", true)
+                            G_reader_settings:makeTrue("pagemap_show_page_labels")
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
                     })

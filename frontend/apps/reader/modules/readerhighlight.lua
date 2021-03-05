@@ -1495,13 +1495,13 @@ function ReaderHighlight:toggleDefault()
             return highlight_disabled and _("Disable (★)") or _("Disable")
         end,
         choice1_callback = function()
-            G_reader_settings:saveSetting("highlight_disabled", true)
+            G_reader_settings:makeTrue("highlight_disabled")
         end,
         choice2_text_func = function()
             return highlight_disabled and _("Enable") or _("Enable (★)")
         end,
         choice2_callback = function()
-            G_reader_settings:saveSetting("highlight_disabled", false)
+            G_reader_settings:makeFalse("highlight_disabled")
         end,
     })
 end

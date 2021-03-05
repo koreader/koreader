@@ -193,7 +193,7 @@ function Migration:migrateGestures(caller)
         end
     end
     caller.settings_data:flush()
-    G_reader_settings:saveSetting("gestures_migrated", true)
+    G_reader_settings:makeTrue("gestures_migrated")
 end
 
 return Migration

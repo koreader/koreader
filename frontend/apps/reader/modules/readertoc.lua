@@ -900,7 +900,7 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
                             self:resetToc()
                             self.toc_ticks_ignored_levels = {} -- reset this
                             self.ui.document:buildAlternativeToc()
-                            self.ui.doc_settings:saveSetting("alternative_toc", true)
+                            self.ui.doc_settings:makeTrue("alternative_toc")
                             self:onShowToc()
                             self.view.footer:setTocMarkers(true)
                             self.view.footer:onUpdateFooter()

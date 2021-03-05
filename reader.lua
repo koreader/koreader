@@ -212,7 +212,7 @@ local UIManager = require("ui/uimanager")
 -- and we are not (yet?) able to guess that fact)
 if Device:hasColorScreen() and not G_reader_settings:has("color_rendering") then
     -- enable it to prevent further display of this message
-    G_reader_settings:saveSetting("color_rendering", true)
+    G_reader_settings:makeTrue("color_rendering")
     local InfoMessage = require("ui/widget/infomessage")
     UIManager:show(InfoMessage:new{
         text = _("Documents will be rendered in color on this device.\nIf your device is grayscale, you can disable color rendering in the screen sub-menu for reduced memory usage."),

@@ -299,7 +299,7 @@ end
 
 function ReaderRolling:onSaveSettings()
     -- remove last_percent config since its deprecated
-    self.ui.doc_settings:saveSetting("last_percent", nil)
+    self.ui.doc_settings:delSetting("last_percent")
     self.ui.doc_settings:saveSetting("last_xpointer", self.xpointer)
     -- in scrolling mode, the document may already be closed,
     -- so we have to check the condition to avoid crash function self:getLastPercent()
@@ -398,14 +398,14 @@ function ReaderRolling:addToMainMenu(menu_items)
                     return inverse_reading_order and _("LTR") or _("LTR (★)")
                 end,
                 choice1_callback = function()
-                     G_reader_settings:saveSetting("inverse_reading_order", false)
+                     G_reader_settings:makeFalse("inverse_reading_order")
                      if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
                 choice2_text_func = function()
                     return inverse_reading_order and _("RTL (★)") or _("RTL")
                 end,
                 choice2_callback = function()
-                    G_reader_settings:saveSetting("inverse_reading_order", true)
+                    G_reader_settings:makeTrue("inverse_reading_order")
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
             })
@@ -1351,7 +1351,7 @@ Note that %1 (out of %2) xpaths from your bookmarks and highlights have been nor
         }},
         cancel_text = _("Not for this book"),
         cancel_callback = function()
-            self.ui.doc_settings:saveSetting("cre_keep_old_dom_version", true)
+            self.ui.doc_settings:makeTrue("cre_keep_old_dom_version")
         end,
         ok_text = _("Upgrade now"),
         ok_callback = function()

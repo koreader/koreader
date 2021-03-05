@@ -1109,13 +1109,13 @@ The current default (★) is enabled.]])
             return disable_fuzzy_search and _("Disable (★)") or _("Disable")
         end,
         choice1_callback = function()
-            G_reader_settings:saveSetting("disable_fuzzy_search", true)
+            G_reader_settings:makeTrue("disable_fuzzy_search")
         end,
         choice2_text_func = function()
             return disable_fuzzy_search and _("Enable") or _("Enable (★)")
         end,
         choice2_callback = function()
-            G_reader_settings:saveSetting("disable_fuzzy_search", false)
+            G_reader_settings:makeFalse("disable_fuzzy_search")
         end,
     })
 end

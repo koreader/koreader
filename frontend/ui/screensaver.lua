@@ -26,7 +26,7 @@ local T = require("ffi/util").template
 -- Migrate old settings
 if G_reader_settings:readSetting("screensaver_type", "disable") == "message" then
     G_reader_settings:saveSetting("screensaver_type", "disable")
-    G_reader_settings:saveSetting("screensaver_show_message", true)
+    G_reader_settings:makeTrue("screensaver_show_message")
 end
 if G_reader_settings:has("screensaver_no_background") then
     if G_reader_settings:isTrue("screensaver_no_background") then

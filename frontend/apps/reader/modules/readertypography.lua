@@ -137,11 +137,11 @@ function ReaderTypography:init()
                 -- Tweak the other settings if the default hyph algo happens
                 -- to be one of these:
                 if hyph_alg_default == "@none" then
-                    G_reader_settings:saveSetting("hyphenation", false)
+                    G_reader_settings:makeFalse("hyphenation")
                 elseif hyph_alg_default == "@softhyphens" then
-                    G_reader_settings:saveSetting("hyph_soft_hyphens_only", true)
+                    G_reader_settings:makeTrue("hyph_soft_hyphens_only")
                 elseif hyph_alg_default == "@algorithm" then
-                    G_reader_settings:saveSetting("hyph_force_algorithmic", true)
+                    G_reader_settings:makeTrue("hyph_force_algorithmic")
                 end
             end
         end
@@ -328,13 +328,13 @@ When the book's language tag is not among our presets, no specific features will
                     return text_lang_embedded_langs and _("Ignore") or _("Ignore (★)")
                 end,
                 choice1_callback = function()
-                    G_reader_settings:saveSetting("text_lang_embedded_langs", false)
+                    G_reader_settings:makeFalse("text_lang_embedded_langs")
                 end,
                 choice2_text_func = function()
                     return text_lang_embedded_langs and _("Respect (★)") or _("Respect")
                 end,
                 choice2_callback = function()
-                    G_reader_settings:saveSetting("text_lang_embedded_langs", true)
+                    G_reader_settings:makeTrue("text_lang_embedded_langs")
                 end,
             })
         end,
@@ -361,13 +361,13 @@ When the book's language tag is not among our presets, no specific features will
                     return hyphenation and _("Disable") or _("Disable (★)")
                 end,
                 choice1_callback = function()
-                    G_reader_settings:saveSetting("hyphenation", false)
+                    G_reader_settings:makeFalse("hyphenation")
                 end,
                 choice2_text_func = function()
                     return hyphenation and _("Enable (★)") or _("Enable")
                 end,
                 choice2_callback = function()
-                    G_reader_settings:saveSetting("hyphenation", true)
+                    G_reader_settings:makeTrue("hyphenation")
                 end,
             })
         end,
@@ -447,13 +447,13 @@ These settings will apply to all books with any hyphenation dictionary.
                     return hyph_trust_soft_hyphens and _("Disable") or _("Disable (★)")
                 end,
                 choice1_callback = function()
-                    G_reader_settings:saveSetting("hyph_trust_soft_hyphens", false)
+                    G_reader_settings:makeFalse("hyph_trust_soft_hyphens")
                 end,
                 choice2_text_func = function()
                     return hyph_trust_soft_hyphens and _("Enable (★)") or _("Enable")
                 end,
                 choice2_callback = function()
-                    G_reader_settings:saveSetting("hyph_trust_soft_hyphens", true)
+                    G_reader_settings:makeTrue("hyph_trust_soft_hyphens")
                 end,
             })
         end,
@@ -504,13 +504,13 @@ These settings will apply to all books with any hyphenation dictionary.
                     return hyph_force_algorithmic and _("Disable") or _("Disable (★)")
                 end,
                 choice1_callback = function()
-                    G_reader_settings:saveSetting("hyph_force_algorithmic", false)
+                    G_reader_settings:makeFalse("hyph_force_algorithmic")
                 end,
                 choice2_text_func = function()
                     return hyph_force_algorithmic and _("Enable (★)") or _("Enable")
                 end,
                 choice2_callback = function()
-                    G_reader_settings:saveSetting("hyph_force_algorithmic", true)
+                    G_reader_settings:makeTrue("hyph_force_algorithmic")
                 end,
             })
         end,
@@ -541,13 +541,13 @@ These settings will apply to all books with any hyphenation dictionary.
                     return hyph_soft_hyphens_only and _("Disable") or _("Disable (★)")
                 end,
                 choice1_callback = function()
-                    G_reader_settings:saveSetting("hyph_soft_hyphens_only", false)
+                    G_reader_settings:makeFalse("hyph_soft_hyphens_only")
                 end,
                 choice2_text_func = function()
                     return hyph_soft_hyphens_only and _("Enable (★)") or _("Enable")
                 end,
                 choice2_callback = function()
-                    G_reader_settings:saveSetting("hyph_soft_hyphens_only", true)
+                    G_reader_settings:makeTrue("hyph_soft_hyphens_only")
                 end,
             })
         end,
@@ -625,13 +625,13 @@ function ReaderTypography:makeDefaultFloatingPunctuation()
             return floating_punctuation and _("Disable") or _("Disable (★)")
         end,
         choice1_callback = function()
-            G_reader_settings:saveSetting("floating_punctuation", false)
+            G_reader_settings:makeFalse("floating_punctuation")
         end,
         choice2_text_func = function()
             return floating_punctuation and _("Enable (★)") or _("Enable")
         end,
         choice2_callback = function()
-            G_reader_settings:saveSetting("floating_punctuation", true)
+            G_reader_settings:makeTrue("floating_punctuation")
         end,
     })
 end
@@ -709,11 +709,11 @@ function ReaderTypography:onReadSettings(config)
             -- Set the other settings if the default hyph algo happens
             -- to be one of these:
             if hyph_alg == "@none" then
-                config:saveSetting("hyphenation", false)
+                config:makeFalse("hyphenation")
             elseif hyph_alg == "@softhyphens" then
-                config:saveSetting("hyph_soft_hyphens_only", true)
+                config:makeTrue("hyph_soft_hyphens_only")
             elseif hyph_alg == "@algorithm" then
-                config:saveSetting("hyph_force_algorithmic", true)
+                config:makeTrue("hyph_force_algorithmic")
             end
         end
     end

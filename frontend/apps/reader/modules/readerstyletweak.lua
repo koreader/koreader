@@ -342,7 +342,7 @@ function ReaderStyleTweak:onSaveSettings()
     if self.enabled then
         self.ui.doc_settings:delSetting("style_tweaks_enabled")
     else
-        self.ui.doc_settings:saveSetting("style_tweaks_enabled", false)
+        self.ui.doc_settings:makeFalse("style_tweaks_enabled")
     end
     self.ui.doc_settings:saveSetting("style_tweaks", util.tableSize(self.doc_tweaks) > 0 and self.doc_tweaks or nil)
     G_reader_settings:saveSetting("style_tweaks", self.global_tweaks)

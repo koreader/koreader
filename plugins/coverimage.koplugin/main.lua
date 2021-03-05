@@ -430,10 +430,10 @@ function CoverImage:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     if self.ui.doc_settings:isTrue("exclude_cover_image") then
-                        self.ui.doc_settings:saveSetting("exclude_cover_image", false)
+                        self.ui.doc_settings:makeFalse("exclude_cover_image")
                         self:createCoverImage(self.ui.doc_settings)
                     else
-                        self.ui.doc_settings:saveSetting("exclude_cover_image", true)
+                        self.ui.doc_settings:makeTrue("exclude_cover_image")
                         self:cleanUpImage()
                     end
                     self.ui:saveSettings()

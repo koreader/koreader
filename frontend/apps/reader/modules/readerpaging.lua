@@ -268,14 +268,14 @@ function ReaderPaging:addToMainMenu(menu_items)
                     return inverse_reading_order and _("LTR") or _("LTR (★)")
                 end,
                 choice1_callback = function()
-                     G_reader_settings:saveSetting("inverse_reading_order", false)
+                     G_reader_settings:makeFalse("inverse_reading_order")
                      if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
                 choice2_text_func = function()
                     return inverse_reading_order and _("RTL (★)") or _("RTL")
                 end,
                 choice2_callback = function()
-                    G_reader_settings:saveSetting("inverse_reading_order", true)
+                    G_reader_settings:makeTrue("inverse_reading_order")
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
             })

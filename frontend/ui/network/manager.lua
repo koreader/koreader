@@ -25,7 +25,7 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
     if iter > 25 then
         logger.info("Failed to restore Wi-Fi (after", iter, "iterations)!")
         self.wifi_was_on = false
-        G_reader_settings:saveSetting("wifi_was_on", false)
+        G_reader_settings:makeFalse("wifi_was_on")
         -- If we abort, murder Wi-Fi and the async script first...
         if Device:hasWifiManager() and not Device:isEmulator() then
             os.execute("pkill -TERM restore-wifi-async.sh 2>/dev/null")
@@ -42,7 +42,7 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
 
     if NetworkMgr:isWifiOn() and NetworkMgr:isConnected() then
         self.wifi_was_on = true
-        G_reader_settings:saveSetting("wifi_was_on", true)
+        G_reader_settings:makeTrue("wifi_was_on")
         UIManager:broadcastEvent(Event:new("NetworkConnected"))
         logger.info("Wi-Fi successfully restored (after", iter, "iterations)!")
 
@@ -118,7 +118,7 @@ function NetworkMgr:promptWifiOn(complete_callback)
         ok_text = _("Turn on"),
         ok_callback = function()
             self.wifi_was_on = true
-            G_reader_settings:saveSetting("wifi_was_on", true)
+            G_reader_settings:makeTrue("wifi_was_on")
             self:turnOnWifi(complete_callback)
         end,
     })
@@ -130,7 +130,7 @@ function NetworkMgr:promptWifiOff(complete_callback)
         ok_text = _("Turn off"),
         ok_callback = function()
             self.wifi_was_on = false
-            G_reader_settings:saveSetting("wifi_was_on", false)
+            G_reader_settings:makeFalse("wifi_was_on")
             self:turnOffWifi(complete_callback)
         end,
     })
@@ -142,13 +142,13 @@ function NetworkMgr:promptWifi(complete_callback)
         choice1_text = _("Turn Wi-Fi off"),
         choice1_callback = function()
             self.wifi_was_on = false
-            G_reader_settings:saveSetting("wifi_was_on", false)
+            G_reader_settings:makeFalse("wifi_was_on")
             self:turnOffWifi(complete_callback)
         end,
         choice2_text = _("Connect"),
         choice2_callback = function()
             self.wifi_was_on = true
-            G_reader_settings:saveSetting("wifi_was_on", true)
+            G_reader_settings:makeTrue("wifi_was_on")
             self:turnOnWifi(complete_callback)
         end,
     })
@@ -268,9 +268,9 @@ function NetworkMgr:setHTTPProxy(proxy)
     http.PROXY = proxy
     if proxy then
         G_reader_settings:saveSetting("http_proxy", proxy)
-        G_reader_settings:saveSetting("http_proxy_enabled", true)
+        G_reader_settings:makeTrue("http_proxy_enabled")
     else
-        G_reader_settings:saveSetting("http_proxy_enabled", false)
+        G_reader_settings:makeFalse("http_proxy_enabled")
     end
 end
 
@@ -376,7 +376,7 @@ function NetworkMgr:getWifiToggleMenuTable()
                             --       (It's called connect_callback there).
                             --       This makes this branch somewhat hard to reach, which is why it gets a dedicated prompt below...
                             self.wifi_was_on = false
-                            G_reader_settings:saveSetting("wifi_was_on", false)
+                            G_reader_settings:makeFalse("wifi_was_on")
                             -- NOTE: We're limiting this to only a few platforms, as it might be actually harmful on some devices.
                             --       The intent being to unload kernel modules, and make a subsequent turnOnWifi behave sanely.
                             --       PB: Relies on netagent, no idea what it does, but it's not using this codepath anyway (!hasWifiToggle)
