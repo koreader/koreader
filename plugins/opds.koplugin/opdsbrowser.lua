@@ -533,7 +533,7 @@ function OPDSBrowser.getCurrentDownloadDir()
 end
 
 function OPDSBrowser:downloadFile(item, filetype, remote_url)
-    -- download to user selected directory or last opened dir
+    -- Download to user selected folder or last opened folder.
     local download_dir = self.getCurrentDownloadDir()
     local filename = util.getSafeFilename(item.author .. " - " .. item.title .. "." .. filetype, download_dir)
     local local_path = download_dir .. "/" .. filename
@@ -650,14 +650,14 @@ function OPDSBrowser:showDownloads(item)
         table.insert(buttons, line)
     end
     table.insert(buttons, {})
-    -- set download directory button
+    -- Set download folder button.
     table.insert(buttons, {
         {
-            text = _("Select another directory"),
+            text = _("Select another folder"),
             callback = function()
                 require("ui/downloadmgr"):new{
                     onConfirm = function(path)
-                        logger.info("Download directory set to", path)
+                        logger.info("Download folder set to", path)
                         G_reader_settings:saveSetting("download_dir", path)
                         UIManager:nextTick(function()
                             UIManager:close(self.download_dialog)
