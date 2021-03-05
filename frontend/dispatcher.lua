@@ -599,7 +599,6 @@ arguments are:
     3) optionally a `gestures`object
 --]]--
 function Dispatcher:execute(ui, settings, gesture)
-    print("Dispatcher:execute", ui, settings, gesture)
     for k, v in pairs(settings) do
         if settingsList[k] ~= nil and (settingsList[k].conditions == nil or settingsList[k].conditions == true) then
             if settingsList[k].category == "none" then
@@ -631,8 +630,6 @@ function Dispatcher:execute(ui, settings, gesture)
                         if v == r then value = settingsList[k].configurable.values[i] break end
                     end
                 end
-                print("Have a configurable:", settingsList[k].configurable.name, value)
-                print("Document?", ui.document)
                 -- CreOptions / KoptOptions settings are exposed in the FM's Gesture Manager!
                 if ui.document then
                     ui.document.configurable[settingsList[k].configurable.name] = value
