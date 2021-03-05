@@ -53,7 +53,7 @@ local Screensaver = {
     default_screensaver_message = _("Sleeping"),
 }
 
-local function getRandomImage(dir)
+function Screensaver:_getRandomImage(dir)
     if not dir then
         return nil
     end
@@ -453,7 +453,7 @@ function Screensaver:setup(event, fallback_message)
     if self.screensaver_type == "random_image" then
         local screensaver_dir = G_reader_settings:readSetting(self.prefix .. "screensaver_dir")
                              or G_reader_settings:readSetting("screensaver_dir")
-        self.image_file = getRandomImage(screensaver_dir)
+        self.image_file = self:_getRandomImage(screensaver_dir)
         if self.image_file == nil then
             self.screensaver_type = "disable"
             self.show_message = true
@@ -507,6 +507,7 @@ function Screensaver:show()
     elseif self.screensaver_type == "bookstatus" then
         local doc = DocumentRegistry:openDocument(self.lastfile)
         local doc_settings = DocSettings:open(self.lastfile)
+        local instance = require("apps/reader/readerui"):_getRunningInstance()
         widget = BookStatusWidget:new{
             thumbnail = doc:getCoverPageImage(),
             props = doc:getProps(),
