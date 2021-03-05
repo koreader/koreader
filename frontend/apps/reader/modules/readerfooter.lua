@@ -736,11 +736,7 @@ function ReaderFooter:resetLayout(force_reset)
     if self.settings.disable_progress_bar then
         self.progress_bar.width = 0
     elseif self.settings.progress_bar_position then
-        if self.settings.progress_margin_width == 0 then
-            self.progress_bar.width = new_screen_width
-        else
-            self.progress_bar.width = math.floor(new_screen_width - 2 * self.settings.progress_margin_width)
-        end
+        self.progress_bar.width = math.floor(new_screen_width - 2 * self.settings.progress_margin_width)
     else
         -- In alongside mode, we don't allow custom progressbar margins.
         self.progress_bar.width = math.floor(
@@ -1938,11 +1934,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             self.text_width = self.footer_text:getSize().w
             self.footer_text.height = self.footer_text:getSize().h
         end
-        if self.settings.progress_margin_width == 0 then
-            self.progress_bar.width = self._saved_screen_width
-        else
-            self.progress_bar.width = math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width)
-        end
+        self.progress_bar.width = math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width)
     else
         if self.has_no_mode or text == "" then
             self.text_width = 0
@@ -1950,13 +1942,13 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
         else
             -- Alongside a progress bar, it's the bar's width plus whatever's left, and custom progress bar margins are disabled.
             local text_max_available_ratio = (100 - self.settings.progress_bar_min_width_pct) / 100
-            self.footer_text:setMaxWidth(math.floor(text_max_available_ratio * (self._saved_screen_width - 3 * self.horizontal_margin)))
+            self.footer_text:setMaxWidth(math.floor(text_max_available_ratio * self._saved_screen_width - 2 * self.settings.progress_margin_width - self.horizontal_margin))
             -- Add some spacing between the text and the bar
             self.text_width = self.footer_text:getSize().w + self.horizontal_margin
             self.footer_text.height = self.footer_text:getSize().h
         end
         self.progress_bar.width = math.floor(
-            self._saved_screen_width - 2 * self.horizontal_margin - self.text_width)
+            self._saved_screen_width - 2 * self.settings.progress_margin_width - self.text_width)
     end
 
     if self.separator_line then
