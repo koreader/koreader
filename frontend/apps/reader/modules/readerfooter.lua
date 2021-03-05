@@ -738,9 +738,8 @@ function ReaderFooter:resetLayout(force_reset)
     elseif self.settings.progress_bar_position then
         self.progress_bar.width = math.floor(new_screen_width - 2 * self.settings.progress_margin_width)
     else
-        -- In alongside mode, we don't allow custom progressbar margins.
         self.progress_bar.width = math.floor(
-            new_screen_width - 2 * self.horizontal_margin - self.text_width)
+            new_screen_width - 2 * self.settings.progress_margin_width - self.text_width)
     end
     if self.separator_line then
         self.separator_line.dimen.w = new_screen_width - 2 * self.horizontal_margin
