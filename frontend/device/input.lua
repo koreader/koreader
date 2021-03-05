@@ -1167,7 +1167,6 @@ function Input:waitEvent(now, deadline)
             Event:new("InputError", "Catastrophic")
         }
     end
-
 end
 
 return Input
