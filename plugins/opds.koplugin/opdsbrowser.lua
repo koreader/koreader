@@ -611,7 +611,7 @@ end
 
 function OPDSBrowser:createNewDownloadDialog(path, buttons)
     self.download_dialog = ButtonDialogTitle:new{
-        title = T(_("Download directory:\n%1\n\nDownload file type:"), BD.dirpath(path)),
+        title = T(_("Download folder:\n%1\n\nDownload file type:"), BD.dirpath(path)),
         buttons = buttons
     }
 end
