@@ -477,7 +477,7 @@ function Screensaver:setup(event, fallback_message)
     -- Now that the fallbacks are in place, we know the *effective* screensaver mode.
     -- For non-image modes, make black (which is also the default) synonymous with none.
     -- The reasoning is that disable + show_message, which is our default and fallback,
-    -- looks *terrible* with a black background.
+    -- looks *terrible* with a black background, which is also our default and fallback ;).
     if not self:modeIsImage() and self.screensaver_background == "black" then
         self.screensaver_background = "none"
     end
