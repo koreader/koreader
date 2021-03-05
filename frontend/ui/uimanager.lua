@@ -361,13 +361,6 @@ function UIManager:init()
                 self:sendEvent(input_event)
             end
         end
-    elseif Device:isAndroid() then -- not working as "Charging" and "NotCharging" events are not fired on android now
-        self.event_handlers["Charging"] = function()
-            self:_beforeCharging()
-        end
-        self.event_handlers["NotCharging"] = function()
-            self:_afterNotCharging()
-        end
     elseif Device:isSDL() then
         self.event_handlers["Suspend"] = function()
             self:_beforeSuspend()
