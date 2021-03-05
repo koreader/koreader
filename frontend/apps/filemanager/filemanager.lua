@@ -519,6 +519,7 @@ function FileManager:init()
     end
 
     self:initGesListener()
+    self:handleEvent(Event:new("SetDimensions", self.dimen))
 end
 
 function FileChooser:onBack()
