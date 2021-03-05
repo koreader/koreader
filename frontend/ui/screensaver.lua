@@ -360,7 +360,7 @@ function Screensaver:withBackground()
 end
 
 function Screensaver:setup(event, fallback_message)
-    -- Handle user settings & fallbacks
+    -- Handle user settings & defaults
     if G_reader_settings:has("screensaver_show_message") then
         self.show_message = G_reader_settings:isTrue("screensaver_show_message")
     else
@@ -393,7 +393,6 @@ function Screensaver:setup(event, fallback_message)
             -- And display the provided fallback_message over the screensaver,
             -- so the user can distinguish between suspend (no overlay),
             -- and reboot/poweroff (overlaid message).
-            -- FIXME: Still broken.
             self.overlay_message = self.fallback_message
         end
     end
@@ -540,7 +539,7 @@ function Screensaver:show()
         background = nil
     end
 
-    if self.show_message == true then
+    if self.show_message then
         -- Handle user settings & fallbacks, with that prefix mess on top...
         local screensaver_message
         if G_reader_settings:has(self.prefix .. "screensaver_message") then
