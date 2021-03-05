@@ -475,6 +475,7 @@ function Screensaver:setup(event, fallback_message)
     end
 
     -- Handle the default background depending on the *effective* screensaver mode, now that the fallbacks are in place.
+    -- NOTE: screensaver_background is actually unlikely to be unset, because of the settings migration...
     if not self:modeIsImage() and G_reader_settings:hasNot("screensaver_background") then
         -- i.e., the default for modes that display an image is black, but it's none for the others.
         self.screensaver_background = "none"
@@ -487,8 +488,8 @@ function Screensaver:show()
         self.left_msg = nil
     end
 
-    -- In as-is mode with no message, we've got nothing to show :)
-    if self.screensaver_type == "disable" and self.show_message == false then
+    -- In as-is mode with no message and no overlay, we've got nothing to show :)
+    if self.screensaver_type == "disable" and not self.show_message and not self.overlay_message then
         return
     end
 
