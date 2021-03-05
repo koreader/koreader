@@ -633,7 +633,10 @@ function Dispatcher:execute(ui, settings, gesture)
                 end
                 print("Have a configurable:", settingsList[k].configurable.name, value)
                 print("Document?", ui.document)
-                ui.document.configurable[settingsList[k].configurable.name] = value
+                -- CreOptions / KoptOptions settings are exposed in the FM's Gesture Manager!
+                if ui.document then
+                    ui.document.configurable[settingsList[k].configurable.name] = value
+                end
             end
         end
     end
