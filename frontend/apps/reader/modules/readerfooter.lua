@@ -1916,7 +1916,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             self.footer_text.height = 0
         else
             -- No progress bar, we're only constrained to fit inside self.footer_container
-            self.footer_text:setMaxWidth(self._saved_screen_width - 2 * self.horizontal_margin)
+            self.footer_text:setMaxWidth(math.floor(self._saved_screen_width - 2 * self.horizontal_margin))
             self.text_width = self.footer_text:getSize().w
             self.footer_text.height = self.footer_text:getSize().h
         end
@@ -1931,7 +1931,8 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             if self.settings.align == "center" then
                 self.footer_text:setMaxWidth(math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width))
             else
-                self.footer_text:setMaxWidth(self._saved_screen_width - 2 * self.horizontal_margin)
+                -- Otherwise, we have to constrain ourselves to the container, or weird shit happens.
+                self.footer_text:setMaxWidth(math.floor(self._saved_screen_width - 2 * self.horizontal_margin))
             end
             self.text_width = self.footer_text:getSize().w
             self.footer_text.height = self.footer_text:getSize().h
