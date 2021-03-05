@@ -1927,9 +1927,9 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             self.text_width = 0
             self.footer_text.height = 0
         else
-            -- With a progress bar above or below us, we want to align ourselves to the bar's margins... if text is centered.
+            -- With a progress bar above or below us, we want to align ourselves to the bar's margins... iff text is centered.
             if self.settings.align == "center" then
-                self.footer_text:setMaxWidth(math.floor(self._saved_screen_width - math.max(2 * self.horizontal_margin, 2 * self.settings.progress_margin_width)))
+                self.footer_text:setMaxWidth(math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width))
             else
                 self.footer_text:setMaxWidth(self._saved_screen_width - 2 * self.horizontal_margin)
             end
@@ -1942,7 +1942,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             self.text_width = 0
             self.footer_text.height = 0
         else
-            -- Alongside a progress bar, it's the bar's width plus whatever's left, and custom progress bar margins are disabled.
+            -- Alongside a progress bar, it's the bar's width plus whatever's left.
             local text_max_available_ratio = (100 - self.settings.progress_bar_min_width_pct) / 100
             self.footer_text:setMaxWidth(math.floor(text_max_available_ratio * self._saved_screen_width - 2 * self.settings.progress_margin_width - self.horizontal_margin))
             -- Add some spacing between the text and the bar
