@@ -168,9 +168,8 @@ function Device:init()
 
     self.screen.isBGRFrameBuffer = self.hasBGRFrameBuffer
 
-    local low_pan_rate = G_reader_settings:readSetting("low_pan_rate")
-    if low_pan_rate ~= nil then
-        self.screen.low_pan_rate = low_pan_rate
+    if G_reader_settings:has("low_pan_rate") then
+        self.screen.low_pan_rate = G_reader_settings:readSetting("low_pan_rate")
     else
         self.screen.low_pan_rate = self.hasEinkScreen()
     end

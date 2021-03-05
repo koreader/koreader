@@ -233,7 +233,7 @@ function ZSync:subscribe()
     self.received = {}
     local zsync = self
     require("ui/downloadmgr"):new{
-        show_hidden = G_reader_settings:readSetting("show_hidden"),
+        show_hidden = G_reader_settings:isTrue("show_hidden"),
         onConfirm = function(inbox)
             G_reader_settings:saveSetting("inbox_dir", inbox)
             zsync:onChooseInbox(inbox)

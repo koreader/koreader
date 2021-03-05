@@ -133,10 +133,10 @@ function Calibre:getSearchMenuTable()
                         text = path,
                         keep_menu_open = true,
                         checked_func = function()
-                            return cache:readSetting(path)
+                            return cache:isTrue(path)
                         end,
                         callback = function()
-                            cache:saveSetting(path, not cache:readSetting(path))
+                            cache:toggle(path)
                             cache:flush()
                             CalibreSearch:invalidateCache()
                         end,

@@ -37,7 +37,7 @@ function PathChooser:init()
             self.title = _("Long-press to select")
         end
     end
-    self.show_hidden = G_reader_settings:readSetting("show_hidden")
+    self.show_hidden = G_reader_settings:isTrue("show_hidden")
     if not self.show_files then
         self.file_filter = function() return false end -- filter out regular files
     end

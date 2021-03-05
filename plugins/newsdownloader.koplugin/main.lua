@@ -97,12 +97,10 @@ function NewsDownloader:addToMainMenu(menu_items)
                 text = _("Never download images"),
                 keep_menu_open = true,
                 checked_func = function()
-                    return news_downloader_settings:readSetting("never_download_images")
+                    return news_downloader_settings:isTrue("never_download_images")
                 end,
                 callback = function()
-                    local never_download_images = news_downloader_settings:readSetting("never_download_images") or false
-                    logger.info("NewsDownloader: previous never_download_images: ", never_download_images)
-                    news_downloader_settings:saveSetting("never_download_images", not never_download_images)
+                    news_downloader_settings:toggle("never_download_images")
                     news_downloader_settings:flush()
                 end,
             },
@@ -176,11 +174,11 @@ function NewsDownloader:loadConfigAndProcessFeeds()
         return
     end
 
-    local never_download_images = news_downloader_settings:readSetting("never_download_images") or false
+    local never_download_images = news_downloader_settings:isTrue("never_download_images")
 
     local unsupported_feeds_urls = {}
 
-    local total_feed_entries = table.getn(feed_config)
+    local total_feed_entries = #feed_config
     for idx, feed in ipairs(feed_config) do
         local url = feed[1]
         local limit = feed.limit

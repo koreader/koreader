@@ -275,19 +275,19 @@ function DocSettings:flipFalse(key)
     return self
 end
 
--- Unconditionally makes a setting `true`.
+-- Unconditionally makes a boolean setting `true`.
 function DocSettings:makeTrue(key)
     self:saveSetting(key, true)
     return self
 end
 
--- Unconditionally makes a setting `false`.
+-- Unconditionally makes a boolean setting `false`.
 function DocSettings:makeFalse(key)
     self:saveSetting(key, false)
     return self
 end
 
---- Toggles a setting
+--- Toggles a boolean setting
 function DocSettings:toggle(key)
     if self:nilOrFalse(key) then
         self:saveSetting(key, true)

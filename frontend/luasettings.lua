@@ -179,19 +179,19 @@ function LuaSettings:flipFalse(key)
     return self
 end
 
--- Unconditionally makes a setting `true`.
+-- Unconditionally makes a boolean setting `true`.
 function LuaSettings:makeTrue(key)
     self:saveSetting(key, true)
     return self
 end
 
--- Unconditionally makes a setting `false`.
+-- Unconditionally makes a boolean setting `false`.
 function LuaSettings:makeFalse(key)
     self:saveSetting(key, false)
     return self
 end
 
---- Toggles a setting
+--- Toggles a boolean setting
 function LuaSettings:toggle(key)
     if self:nilOrFalse(key) then
         self:saveSetting(key, true)

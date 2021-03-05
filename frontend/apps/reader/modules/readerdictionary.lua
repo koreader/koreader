@@ -1048,8 +1048,9 @@ function ReaderDictionary:onReadSettings(config)
     if #self.preferred_dictionaries > 0 then
         self:updateSdcvDictNamesOptions()
     end
-    self.disable_fuzzy_search = config:readSetting("disable_fuzzy_search")
-    if self.disable_fuzzy_search == nil then
+    if config:has("disable_fuzzy_search") then
+        self.disable_fuzzy_search = config:isTrue("disable_fuzzy_search")
+    else
         self.disable_fuzzy_search = G_reader_settings:isTrue("disable_fuzzy_search")
     end
 end
