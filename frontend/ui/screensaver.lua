@@ -386,11 +386,8 @@ function Screensaver:setup(event, fallback_message)
     if G_reader_settings:has(self.prefix .. "screensaver_type") then
         self.screensaver_type = G_reader_settings:readSetting(self.prefix .. "screensaver_type")
     else
-        if self.prefix ~= "" then
-            -- No manually added prefixed settings for poweroff/reboot,
-            -- fallback to using the global settings.
-            self.prefix = ""
-            -- And display the provided fallback_message over the screensaver,
+        if event then
+            -- Display the provided fallback_message over the screensaver,
             -- so the user can distinguish between suspend (no overlay),
             -- and reboot/poweroff (overlaid message).
             self.overlay_message = self.fallback_message
