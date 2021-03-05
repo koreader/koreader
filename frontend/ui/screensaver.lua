@@ -484,9 +484,9 @@ function Screensaver:setup(event, fallback_message)
 end
 
 function Screensaver:show()
-    if self.left_msg then
-        UIManager:close(self.left_msg)
-        self.left_msg = nil
+    if self.screensaver_widget then
+        UIManager:close(self.screensaver_widget)
+        self.screensaver_widget = nil
     end
 
     -- In as-is mode with no message and no overlay, we've got nothing to show :)
@@ -634,20 +634,19 @@ function Screensaver:show()
     end
 
     if widget then
-        self.left_msg = ScreenSaverWidget:new{
+        self.screensaver_widget = ScreenSaverWidget:new{
             widget = widget,
             background = background,
             covers_fullscreen = covers_fullscreen,
         }
-        self.left_msg.modal = true
-        -- Refresh whole screen for other types
-        self.left_msg.dithered = true
-        UIManager:show(self.left_msg, "full")
+        self.screensaver_widget.modal = true
+        self.screensaver_widget.dithered = true
+        UIManager:show(self.screensaver_widget, "full")
     end
 end
 
 function Screensaver:close()
-    if self.left_msg == nil then
+    if self.screensaver_widget == nil then
         return
     end
 
@@ -656,16 +655,16 @@ function Screensaver:close()
     if screensaver_delay_number then
         UIManager:scheduleIn(screensaver_delay_number, function()
             logger.dbg("close screensaver")
-            if self.left_msg then
-                UIManager:close(self.left_msg, "full")
-                self.left_msg = nil
+            if self.screensaver_widget then
+                UIManager:close(self.screensaver_widget, "full")
+                self.screensaver_widget = nil
             end
         end)
     elseif screensaver_delay == "disable" or screensaver_delay == nil then
         logger.dbg("close screensaver")
-        if self.left_msg then
-            UIManager:close(self.left_msg, "full")
-            self.left_msg = nil
+        if self.screensaver_widget then
+            UIManager:close(self.screensaver_widget, "full")
+            self.screensaver_widget = nil
         end
     else
         logger.dbg("tap to exit from screensaver")
