@@ -42,7 +42,7 @@ function PathChooser:init()
         self.file_filter = function() return false end -- filter out regular files
     end
     if self.select_directory then
-        -- Let FileChooser display "Long press to select current directory"
+        -- Let FileChooser display "Long press to select current folder"
         self.show_current_dir_for_hold = true
     end
     FileChooser.init(self)
@@ -110,7 +110,7 @@ function PathChooser:onMenuHold(item)
             title = T(_("Select this file?\n\n%1"), BD.filepath(path))
         end
     elseif attr.mode == "directory" then
-        title = T(_("Select this directory?\n\n%1"), BD.dirpath(path))
+        title = T(_("Select this folder?\n\n%1"), BD.dirpath(path))
     else -- just in case we get something else
         title = T(_("Select this path?\n\n%1"), BD.path(path))
     end
