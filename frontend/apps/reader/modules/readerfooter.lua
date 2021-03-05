@@ -1484,6 +1484,9 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 self.settings.progress_margin = false
                                 self.settings.progress_margin_width = self.horizontal_margin
                             end
+                            -- Text alignment is also disabled
+                            self.settings.align = "center"
+
                             self.settings.progress_bar_position = nil
                             self:refreshFooter(true, true)
                         end
