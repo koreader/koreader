@@ -385,13 +385,13 @@ function Screensaver:setup(event, fallback_message)
     if G_reader_settings:has(self.prefix .. "screensaver_type") then
         self.screensaver_type = G_reader_settings:readSetting(self.prefix .. "screensaver_type")
     else
-        if self.prefix and self.prefix ~= "" then
-            -- No manually added setting for poweroff/reboot, fallback to using the
-            -- same settings as for suspend that could be set via menus
+        if self.prefix ~= "" then
+            -- No manually added prefixed settings for poweroff/reboot,
+            -- fallback to using the global settings.
             self.prefix = ""
-            -- And display fallback_message over the common screensaver,
-            -- so user can distinguish between suspend (no message) and
-            -- poweroff (overlay message)
+            -- And display the provided fallback_message over the screensaver,
+            -- so the user can distinguish between suspend (no overlay),
+            -- and reboot/poweroff (overlaid message).
             -- FIXME: Still broken.
             self.overlay_message = self.fallback_message
         end
@@ -452,9 +452,7 @@ function Screensaver:setup(event, fallback_message)
     end
     if self.screensaver_type == "random_image" then
         local screensaver_dir = G_reader_settings:readSetting(self.prefix .. "screensaver_dir")
-        if screensaver_dir == nil and self.prefix ~= "" then
-            screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
-        end
+                             or G_reader_settings:readSetting("screensaver_dir")
         self.image_file = self:_getRandomImage(screensaver_dir)
         if self.image_file == nil then
             self.screensaver_type = "disable"
@@ -463,10 +461,8 @@ function Screensaver:setup(event, fallback_message)
     end
     if self.screensaver_type == "image_file" then
         self.image_file = G_reader_settings:readSetting(self.prefix .. "screensaver_image")
-        if screensaver_image == nil and self.prefix ~= "" then
-            self.image_file = G_reader_settings:readSetting("screensaver_image")
-        end
-        if lfs.attributes(self.image_file, "mode") ~= "file" then
+                       or G_reader_settings:readSetting("screensaver_image")
+        if self.image_file == nil or lfs.attributes(self.image_file, "mode") ~= "file" then
             self.screensaver_type = "disable"
             self.show_message = true
         end
@@ -550,6 +546,7 @@ function Screensaver:show()
             screensaver_message = G_reader_settings:readSetting(self.prefix .. "screensaver_message")
         else
             if G_reader_settings:has("screensaver_message") then
+                -- We prefer the global user setting to the event's fallback message.
                 screensaver_message = G_reader_settings:readSetting("screensaver_message")
             else
                 screensaver_message = self.fallback_message or self.default_screensaver_message
@@ -606,7 +603,7 @@ function Screensaver:show()
             }
         end
 
-        -- No overlay needed as we just displayed the message
+        -- No overlay needed as we just displayed *a* message (not necessarily the event's, though).
         self.overlay_message = nil
 
         -- Check if message_widget should be overlaid on another widget
