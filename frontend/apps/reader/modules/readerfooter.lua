@@ -736,7 +736,11 @@ function ReaderFooter:resetLayout(force_reset)
     if self.settings.disable_progress_bar then
         self.progress_bar.width = 0
     elseif self.settings.progress_bar_position then
-        self.progress_bar.width = math.floor(new_screen_width - math.max(2 * self.horizontal_margin, 2 * self.settings.progress_margin_width))
+        if self.settings.progress_margin_width == 0 then
+            self.progress_bar.width = new_screen_width
+        else
+            self.progress_bar.width = math.floor(new_screen_width - 2 * self.settings.progress_margin_width)
+        end
     else
         -- In alongside mode, we don't allow custom progressbar margins.
         self.progress_bar.width = math.floor(
@@ -1925,12 +1929,20 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             self.text_width = 0
             self.footer_text.height = 0
         else
-            -- With a progress bar above or below us, we want to align ourselves to the bar's margins
-            self.footer_text:setMaxWidth(math.floor(self._saved_screen_width - math.max(2 * self.horizontal_margin, 2 * self.settings.progress_margin_width)))
+            -- With a progress bar above or below us, we want to align ourselves to the bar's margins... if text is centered.
+            if self.settings.align == "center" then
+                self.footer_text:setMaxWidth(math.floor(self._saved_screen_width - math.max(2 * self.horizontal_margin, 2 * self.settings.progress_margin_width)))
+            else
+                self.footer_text:setMaxWidth(self._saved_screen_width - 2 * self.horizontal_margin)
+            end
             self.text_width = self.footer_text:getSize().w
             self.footer_text.height = self.footer_text:getSize().h
         end
-        self.progress_bar.width = math.floor(self._saved_screen_width - math.max(2 * self.horizontal_margin, 2 * self.settings.progress_margin_width))
+        if self.settings.progress_margin_width == 0 then
+            self.progress_bar.width = self._saved_screen_width
+        else
+            self.progress_bar.width = math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width)
+        end
     else
         if self.has_no_mode or text == "" then
             self.text_width = 0
