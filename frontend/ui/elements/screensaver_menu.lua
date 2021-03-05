@@ -121,7 +121,7 @@ return {
                 end,
             },
             {
-                text = _("Black background behind message and images"),
+                text = _("Black background behind images"),
                 checked_func = function()
                     return G_reader_settings:readSetting("screensaver_background") == "black" or G_reader_settings:hasNot("screensaver_background")
                 end,
