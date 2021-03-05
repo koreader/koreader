@@ -1873,6 +1873,14 @@ function ReaderFooter:onUpdateFooter(force_repaint, force_recompute)
     end
 end
 
+function ReaderFooter:onCharging()
+    self:onUpdateFooter(self.view.footer_visible)
+end
+
+function ReaderFooter:onNotCharging()
+    self:onUpdateFooter(self.view.footer_visible)
+end
+
 function ReaderFooter:updateFooterPage(force_repaint, force_recompute)
     if type(self.pageno) ~= "number" then return end
     if self.ui.document:hasHiddenFlows() then
