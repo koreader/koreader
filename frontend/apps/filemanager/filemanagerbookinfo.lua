@@ -80,7 +80,7 @@ function BookInfo:show(file, book_props)
                     book_props = doc_settings:readSetting("doc_props")
                 end
                 if not book_props then
-                    -- File last opened before 20170701 may have a "stats" setting
+                    -- File last opened before 20170701 may have a "stats" setting.
                     -- with partial metadata, or empty metadata if statistics plugin
                     -- was not enabled when book was read (we can guess that from
                     -- the fact that stats.page = 0)
