@@ -184,16 +184,6 @@ end
 function Remarkable:suspend()
     os.execute("./disable-wifi.sh")
     os.execute("systemctl suspend")
-    if isRm2 then
-        -- While device is suspended, when the user presses the power button and wakes up the device,
-        -- a "Power" event is NOT sent.
-        -- So we schedule a manual `UIManager:resume` call just far enough in the future that it won't
-        -- trigger before the `systemctl suspend` command finishes suspending the device
-        local UIManager = require("ui/uimanager")
-        UIManager:scheduleIn(0.5, function()
-            UIManager:resume()
-        end)
-    end
 end
 
 function Remarkable:powerOff()
