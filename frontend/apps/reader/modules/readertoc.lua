@@ -137,7 +137,7 @@ end
 function ReaderToc:fillToc()
     if self.toc then return end
     if self.ui.document:canHaveAlternativeToc() then
-        if self.ui.doc_settings:has("alternative_toc") then
+        if self.ui.doc_settings:isTrue("alternative_toc") then
             -- (if the document has a cache, the previously built alternative
             -- TOC was saved and has been reloaded, and this will be avoided)
             if not self.ui.document:isTocAlternativeToc() then

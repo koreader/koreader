@@ -221,6 +221,7 @@ function Screensaver:chooseFolder()
         }
     })
     local screensaver_dir = G_reader_settings:readSetting("screensaver_dir")
+                         or DataStorage:getDataDir() .. "/screenshots/"
     self.choose_dialog = ButtonDialogTitle:new{
         title = T(_("Current screensaver image folder:\n%1"), BD.dirpath(screensaver_dir)),
         buttons = buttons
@@ -337,7 +338,7 @@ function Screensaver:setMessage()
     self.input_dialog:onShowKeyboard()
 end
 
--- When called after set(), may not match the settings, because it accounts for fallbacks
+-- When called after setup(), may not match the saved settings, because it accounts for fallbacks that might have kicked in.
 function Screensaver:getMode()
    return self.screensaver_type
 end
@@ -465,6 +466,7 @@ function Screensaver:setup(event, fallback_message)
         end
     end
     if self.screensaver_type == "readingprogress" then
+        -- This is implemented by the Statistics plugin
         if Screensaver.getReaderProgress == nil then
             self.screensaver_type = "disable"
             self.show_message = true
