@@ -383,7 +383,7 @@ function OPDSBrowser:getSearchTemplate(osd_url, username, password)
     if search_descriptor and search_descriptor.OpenSearchDescription and search_descriptor.OpenSearchDescription.Url then
         for _, candidate in ipairs(search_descriptor.OpenSearchDescription.Url) do
             if candidate.type and candidate.template and candidate.type:find(self.search_template_type) then
-                return candidate.template:gsub('{searchTerms}', '%%s')
+                return candidate.template:gsub("{searchTerms}", "%%s")
             end
         end
     end
@@ -413,7 +413,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                 end
                 if link.type:find(self.search_type) then
                     if link.href then
-                        local stpl = self:getSearchTemplate(link.href, username, password)
+                        local stpl = self:getSearchTemplate(build_href(link.href), username, password)
                         -- insert the search item
                         local item = {}
                         item.acquisitions = {}
