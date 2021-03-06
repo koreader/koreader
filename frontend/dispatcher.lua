@@ -623,7 +623,7 @@ function Dispatcher:execute(ui, settings, gesture)
                 local arg = v ~= 0 and v or gesture or 0
                 ui:handleEvent(Event:new(settingsList[k].event, arg))
             end
-            if settingsList[k].configurable ~= nil and ui.document then
+            if ui.document and settingsList[k].configurable then
                 local value = v
                 if type(v) ~= "number" then
                     for i, r in ipairs(settingsList[k].args) do
