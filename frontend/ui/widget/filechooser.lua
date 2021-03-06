@@ -52,6 +52,8 @@ local FileChooser = Menu:extend{
     exclude_files = {
         -- macOS
         "^%.DS_Store$",
+        -- *nix
+        "^%.directory$",
         -- Windows
         "^Thumbs%.db$",
         -- Calibre

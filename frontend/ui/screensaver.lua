@@ -43,12 +43,12 @@ end
 
 local Screensaver = {
     screensaver_provider = {
-        ["jpg"] = true,
-        ["jpeg"] = true,
-        ["png"] = true,
-        ["gif"] = true,
-        ["tif"] = true,
-        ["tiff"] = true,
+        jpg  = true,
+        jpeg = true,
+        png  = true,
+        gif  = true,
+        tif  = true,
+        tiff = true,
     },
     default_screensaver_message = _("Sleeping"),
 }
@@ -103,9 +103,9 @@ local function expandSpecial(message, fallback)
     local totalpages = 0
     local percent = 0
     local currentpage = 0
-    local title = "N/A"
-    local authors = "N/A"
-    local series = "N/A"
+    local title = _("N/A")
+    local authors = _("N/A")
+    local series = _("N/A")
 
     local instance = require("apps/reader/readerui"):_getRunningInstance()
     if instance == nil and DocSettings:hasSidecarFile(lastfile) then
