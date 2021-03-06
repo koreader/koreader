@@ -23,7 +23,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
--- Migrate old settings
+-- Migrate old settings from 2021.02 or older.
 if G_reader_settings:readSetting("screensaver_type", "disable") == "message" then
     G_reader_settings:saveSetting("screensaver_type", "disable")
     G_reader_settings:makeTrue("screensaver_show_message")
