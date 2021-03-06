@@ -41,6 +41,7 @@ local OPDSBrowser = Menu:extend{
 
     catalog_type = "application/atom%+xml",
     search_type = "application/opensearchdescription%+xml",
+    search_template_type = "application/atom%+xml",
     acquisition_rel = "^http://opds%-spec%.org/acquisition",
     image_rel = "http://opds-spec.org/image",
     thumbnail_rel = "http://opds-spec.org/image/thumbnail",
@@ -58,11 +59,6 @@ function OPDSBrowser:init()
           {
             title = "Project Gutenberg",
             url = "https://m.gutenberg.org/ebooks.opds/?format=opds",
-          },
-          {
-            title = "Project Gutenberg [Searchable]",
-            url = "https://m.gutenberg.org/ebooks/search.mobile/?format=opds&query=%s",
-            searchable = true,
           },
           {
              title = "Feedbooks",
@@ -83,11 +79,6 @@ function OPDSBrowser:init()
           {
              title = "Gallica (French)",
              url = "https://gallica.bnf.fr/opds",
-          },
-          {
-             title = "Gallica [Fr] [Searchable]",
-             url = "https://gallica.bnf.fr/services/engine/search/opds?operation=searchRetrieve&query=(gallica all \"%s\")",
-             searchable = true,
           },
         }
         G_reader_settings:saveSetting("opds_servers", servers)
@@ -392,6 +383,19 @@ function OPDSBrowser:genItemTableFromURL(item_url, username, password)
     return self:genItemTableFromCatalog(catalog, item_url, username, password)
 end
 
+function OPDSBrowser:getSearchTemplate(osd_url, username, password)
+    -- parse search descriptor
+    local search_descriptor = self:parseFeed(osd_url, username, password)
+    if search_descriptor and search_descriptor.OpenSearchDescription and search_descriptor.OpenSearchDescription.Url then
+        for _, candidate in ipairs(search_descriptor.OpenSearchDescription.Url) do
+            if candidate.type and candidate.template and candidate.type:find(self.search_template_type) then
+                return candidate.template:gsub('{searchTerms}', '%%s')
+            end
+        end
+    end
+end
+
+
 function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, password)
     local item_table = {}
     if not catalog then
@@ -408,10 +412,23 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
     if feed.link then
         for _, link in ipairs(feed.link) do
             if link.type ~= nil then
-                if link.type:find(self.catalog_type) or
-                    link.type:find(self.search_type) then
+                if link.type:find(self.catalog_type) then
                     if link.rel and link.href then
                         hrefs[link.rel] = build_href(link.href)
+                    end
+                end
+                if link.type:find(self.search_type) then
+                    if link.href then
+                        local stpl = self:getSearchTemplate(link.href, username, password)
+                        -- insert the search item
+                        local item = {}
+                        item.acquisitions = {}
+                        item.text = "Search"
+                        item.callback = function()
+                            self:browseSearchable(stpl, username, password)
+                        end
+
+                        table.insert(item_table, item)
                     end
                 end
             end
