@@ -91,7 +91,7 @@ function BookInfo:show(file, book_props)
                         book_props = stats
                     end
                 end
-                -- Files opened after 20170701 have an accurate "doc_pages" setting
+                -- Files opened after 20170701 have an accurate "doc_pages" setting.
                 local doc_pages = doc_settings:readSetting("doc_pages")
                 if doc_pages and book_props then
                     book_props.pages = doc_pages
