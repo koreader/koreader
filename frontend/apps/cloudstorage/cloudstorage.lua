@@ -32,6 +32,7 @@ local CloudStorage = Menu:extend{
 }
 
 function CloudStorage:init()
+    --- @todo: Probably a good candidate for the new readSetting API
     self.cs_settings = self:readSettings()
     self.show_parent = self
     if self.item then

@@ -168,9 +168,8 @@ function Device:init()
 
     self.screen.isBGRFrameBuffer = self.hasBGRFrameBuffer
 
-    local low_pan_rate = G_reader_settings:readSetting("low_pan_rate")
-    if low_pan_rate ~= nil then
-        self.screen.low_pan_rate = low_pan_rate
+    if G_reader_settings:has("low_pan_rate") then
+        self.screen.low_pan_rate = G_reader_settings:readSetting("low_pan_rate")
     else
         self.screen.low_pan_rate = self.hasEinkScreen()
     end
@@ -226,6 +225,7 @@ end
 
 -- Only used on platforms where we handle suspend ourselves.
 function Device:onPowerEvent(ev)
+    local Screensaver = require("ui/screensaver")
     if self.screen_saver_mode then
         if ev == "Power" or ev == "Resume" then
             if self.is_cover_closed then
@@ -247,7 +247,7 @@ function Device:onPowerEvent(ev)
                 if self.orig_rotation_mode then
                     self.screen:setRotationMode(self.orig_rotation_mode)
                 end
-                require("ui/screensaver"):close()
+                Screensaver:close()
                 if self:needsScreenRefreshAfterResume() then
                     UIManager:scheduleIn(1, function() self.screen:refreshFull() end)
                 end
@@ -266,14 +266,14 @@ function Device:onPowerEvent(ev)
         self.powerd:beforeSuspend()
         local UIManager = require("ui/uimanager")
         logger.dbg("Suspending...")
+        -- Let Screensaver set its widget up, so we get accurate info down the line in case fallbacks kick in...
+        Screensaver:setup()
         -- Mostly always suspend in Portrait/Inverted Portrait mode...
         -- ... except when we just show an InfoMessage or when the screensaver
         -- is disabled, as it plays badly with Landscape mode (c.f., #4098 and #5290).
         -- We also exclude full-screen widgets that work fine in Landscape mode,
         -- like ReadingProgress and BookStatus (c.f., #5724)
-        local screensaver_type = G_reader_settings:readSetting("screensaver_type")
-        if screensaver_type ~= "message" and screensaver_type ~= "disable" and
-           screensaver_type ~= "readingprogress" and screensaver_type ~= "bookstatus" then
+        if Screensaver:modeExpectsPortrait() then
             self.orig_rotation_mode = self.screen:getRotationMode()
             -- Leave Portrait & Inverted Portrait alone, that works just fine.
             if bit.band(self.orig_rotation_mode, 1) == 1 then
@@ -285,10 +285,8 @@ function Device:onPowerEvent(ev)
 
             -- On eInk, if we're using a screensaver mode that shows an image,
             -- flash the screen to white first, to eliminate ghosting.
-            if self:hasEinkScreen() and
-               screensaver_type == "cover" or screensaver_type == "random_image" or
-               screensaver_type == "image_file" then
-                if not G_reader_settings:isTrue("screensaver_no_background") then
+            if self:hasEinkScreen() and Screensaver:modeIsImage() then
+                if Screensaver:withBackground() then
                     self.screen:clear()
                 end
                 self.screen:refreshFull()
@@ -297,7 +295,7 @@ function Device:onPowerEvent(ev)
             -- nil it, in case user switched ScreenSaver modes during our lifetime.
             self.orig_rotation_mode = nil
         end
-        require("ui/screensaver"):show()
+        Screensaver:show()
         -- NOTE: show() will return well before the refresh ioctl is even *sent*:
         --       the only thing it's done is *enqueued* the refresh in UIManager's stack.
         --       Which is why the actual suspension needs to be delayed by suspend_wait_timeout,

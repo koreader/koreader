@@ -90,7 +90,7 @@ local Device = Generic:new{
             external.when_back_callback = nil
         end
     end,
-    window = G_reader_settings:readSetting("sdl_window") or {},
+    window = G_reader_settings:readSetting("sdl_window", {}),
 }
 
 local AppImage = Device:new{
@@ -321,12 +321,6 @@ function Device:setDateTime(year, month, day, hour, min, sec)
     else
         return false
     end
-end
-
-function Device:exit()
-    G_reader_settings:saveSetting("sdl_window", self.window)
-    G_reader_settings:flush()
-    Generic.exit(self)
 end
 
 function Emulator:simulateSuspend()

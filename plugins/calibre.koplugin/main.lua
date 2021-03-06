@@ -133,10 +133,10 @@ function Calibre:getSearchMenuTable()
                         text = path,
                         keep_menu_open = true,
                         checked_func = function()
-                            return cache:readSetting(path)
+                            return cache:isTrue(path)
                         end,
                         callback = function()
-                            cache:saveSetting(path, not cache:readSetting(path))
+                            cache:toggle(path)
                             cache:flush()
                             CalibreSearch:invalidateCache()
                         end,
@@ -165,8 +165,7 @@ function Calibre:getSearchMenuTable()
                 return G_reader_settings:isTrue("calibre_search_from_reader")
             end,
             callback = function()
-                local current = G_reader_settings:isTrue("calibre_search_from_reader")
-                G_reader_settings:saveSetting("calibre_search_from_reader", not current)
+                G_reader_settings:toggle("calibre_search_from_reader")
                 UIManager:show(InfoMessage:new{
                     text = _("This will take effect on next restart."),
                 })

@@ -297,7 +297,7 @@ end
 
 -- find books, series or tags
 function CalibreSearch:find(option)
-    for _, opt in pairs(self.search_options) do
+    for _, opt in ipairs(self.search_options) do
         self[opt] = G_reader_settings:nilOrTrue("calibre_search_"..opt)
     end
 

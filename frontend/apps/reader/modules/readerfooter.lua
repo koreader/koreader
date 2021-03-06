@@ -387,7 +387,7 @@ local ReaderFooter = WidgetContainer:extend{
 }
 
 function ReaderFooter:init()
-    self.settings = G_reader_settings:readSetting("footer") or {
+    self.settings = G_reader_settings:readSetting("footer", {
         -- enable progress bar by default
         -- disable_progress_bar = true,
         disabled = false,
@@ -414,7 +414,7 @@ function ReaderFooter:init()
         text_font_bold = false,
         container_height = DMINIBAR_CONTAINER_HEIGHT,
         container_bottom_padding = 1, -- unscaled_size_check: ignore
-    }
+    })
 
     -- Remove items not supported by the current device
     if not Device:hasFastWifiStatusQuery() then
@@ -889,7 +889,6 @@ function ReaderFooter:addToMainMenu(menu_items)
             end,
             callback = function()
                 self.settings[option] = not self.settings[option]
-                G_reader_settings:saveSetting("footer", self.settings)
                 -- We only need to send a SetPageBottomMargin event when we truly affect the margin
                 local should_signal = false
                 -- only case that we don't need a UI update is enable/disable
@@ -976,7 +975,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                                 self.mode_index[i] = sort_item.item_table[i].label
                             end
                             self.settings.order = self.mode_index
-                            G_reader_settings:saveSetting("footer", self.settings)
                             self:updateFooterTextGenerator()
                             self:onUpdateFooter()
                             UIManager:setDirty(nil, "ui")
@@ -994,7 +992,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.auto_refresh_time = not self.settings.auto_refresh_time
-                    G_reader_settings:saveSetting("footer", self.settings)
                     self:rescheduleFooterAutoRefreshIfNeeded()
                 end
             },
@@ -1035,7 +1032,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.skim_widget_on_hold = not self.settings.skim_widget_on_hold
-                    G_reader_settings:saveSetting("footer", self.settings)
                 end,
             },
             {
@@ -1857,7 +1853,7 @@ function ReaderFooter:getAvgTimePerPage()
 end
 
 function ReaderFooter:getDataFromStatistics(title, pages)
-    local sec = "N/A"
+    local sec = _("N/A")
     local average_time_per_page = self:getAvgTimePerPage()
     if average_time_per_page then
         if self.settings.duration_format == "classic" then
@@ -2065,9 +2061,9 @@ end
 
 function ReaderFooter:onReadSettings(config)
     if not self.ui.document.info.has_pages then
-        local h_margins = config:readSetting("copt_h_page_margins") or
-            G_reader_settings:readSetting("copt_h_page_margins") or
-            DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
+        local h_margins = config:readSetting("copt_h_page_margins")
+                       or G_reader_settings:readSetting("copt_h_page_margins")
+                       or DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
         self.book_margins_footer_width = math.floor((h_margins[1] + h_margins[2])/2)
     end
 end

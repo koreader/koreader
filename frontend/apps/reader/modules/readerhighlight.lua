@@ -1175,13 +1175,13 @@ function ReaderHighlight:onCycleHighlightAction()
         dictionary = "search",
         search = nil,
     }
-    local current_action = G_reader_settings:readSetting("default_highlight_action")
-    if not current_action then
+    if G_reader_settings:hasNot("default_highlight_action") then
         G_reader_settings:saveSetting("default_highlight_action", "highlight")
         UIManager:show(Notification:new{
             text = _("Default highlight action changed to 'highlight'."),
         })
     else
+        local current_action = G_reader_settings:readSetting("default_highlight_action")
         local next_action = next_actions[current_action]
         G_reader_settings:saveSetting("default_highlight_action", next_action)
         UIManager:show(Notification:new{
@@ -1446,23 +1446,25 @@ end
 
 function ReaderHighlight:onReadSettings(config)
     self.view.highlight.saved_drawer = config:readSetting("highlight_drawer") or self.view.highlight.saved_drawer
-    local disable_highlight = config:readSetting("highlight_disabled")
-    if disable_highlight == nil then
-        disable_highlight = G_reader_settings:readSetting("highlight_disabled") or false
+    if config:has("highlight_disabled") then
+        self.view.highlight.disabled = config:isTrue("highlight_disabled")
+    else
+        self.view.highlight.disabled = G_reader_settings:isTrue("highlight_disabled")
     end
-    self.view.highlight.disabled = disable_highlight
 
     -- panel zoom settings isn't supported in EPUB
     if self.document.info.has_pages then
         local ext = util.getFileNameSuffix(self.ui.document.file)
         G_reader_settings:initializeExtSettings("panel_zoom_enabled", {cbz = true, cbt = true})
         G_reader_settings:initializeExtSettings("panel_zoom_fallback_to_text_selection", {pdf = true})
-        self.panel_zoom_enabled = config:readSetting("panel_zoom_enabled")
-        if self.panel_zoom_enabled == nil then
+        if config:has("panel_zoom_enabled") then
+            self.panel_zoom_enabled = config:isTrue("panel_zoom_enabled")
+        else
             self.panel_zoom_enabled = G_reader_settings:getSettingForExt("panel_zoom_enabled", ext) or false
         end
-        self.panel_zoom_fallback_to_text_selection = config:readSetting("panel_zoom_fallback_to_text_selection")
-        if self.panel_zoom_fallback_to_text_selection == nil then
+        if config:has("panel_zoom_fallback_to_text_selection") then
+            self.panel_zoom_fallback_to_text_selection = config:isTrue("panel_zoom_fallback_to_text_selection")
+        else
             self.panel_zoom_fallback_to_text_selection = G_reader_settings:getSettingForExt("panel_zoom_fallback_to_text_selection", ext) or false
         end
     end
@@ -1493,13 +1495,13 @@ function ReaderHighlight:toggleDefault()
             return highlight_disabled and _("Disable (★)") or _("Disable")
         end,
         choice1_callback = function()
-            G_reader_settings:saveSetting("highlight_disabled", true)
+            G_reader_settings:makeTrue("highlight_disabled")
         end,
         choice2_text_func = function()
             return highlight_disabled and _("Enable") or _("Enable (★)")
         end,
         choice2_callback = function()
-            G_reader_settings:saveSetting("highlight_disabled", false)
+            G_reader_settings:makeFalse("highlight_disabled")
         end,
     })
 end

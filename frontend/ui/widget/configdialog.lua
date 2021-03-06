@@ -189,7 +189,7 @@ function ConfigOption:init()
     local padding_button = Size.padding.button -- padding for underline below letters and icons
 
     --- @todo Restore setting when there are more advanced settings.
-    --local show_advanced = G_reader_settings:readSetting("show_advanced") or false
+    --local show_advanced = G_reader_settings:isTrue("show_advanced")
     local show_advanced = true
 
     -- Get the width needed by the longest option name shown on the left

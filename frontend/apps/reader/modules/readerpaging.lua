@@ -184,14 +184,16 @@ end
 function ReaderPaging:onReadSettings(config)
     self.page_positions = config:readSetting("page_positions") or {}
     self:_gotoPage(config:readSetting("last_page") or 1)
-    self.show_overlap_enable = config:readSetting("show_overlap_enable")
-    if self.show_overlap_enable == nil then
+    if config:has("show_overlap_enable") then
+        self.show_overlap_enable = config:isTrue("show_overlap_enable")
+    else
         self.show_overlap_enable = DSHOWOVERLAP
     end
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
-    self.flipping_scroll_mode = config:readSetting("flipping_scroll_mode") or false
-    self.inverse_reading_order = config:readSetting("inverse_reading_order")
-    if self.inverse_reading_order == nil then
+    self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
+    if config:has("inverse_reading_order") then
+        self.inverse_reading_order = config:isTrue("inverse_reading_order")
+    else
         self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
     end
     for _, v in ipairs(ReaderZooming.zoom_pan_settings) do
@@ -266,14 +268,14 @@ function ReaderPaging:addToMainMenu(menu_items)
                     return inverse_reading_order and _("LTR") or _("LTR (★)")
                 end,
                 choice1_callback = function()
-                     G_reader_settings:saveSetting("inverse_reading_order", false)
+                     G_reader_settings:makeFalse("inverse_reading_order")
                      if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
                 choice2_text_func = function()
                     return inverse_reading_order and _("RTL (★)") or _("RTL")
                 end,
                 choice2_callback = function()
-                    G_reader_settings:saveSetting("inverse_reading_order", true)
+                    G_reader_settings:makeTrue("inverse_reading_order")
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
             })

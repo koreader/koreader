@@ -236,18 +236,18 @@ function FileManagerMenu:setUpdateItemTable()
                     local current_state = _("Show new files in bold")
                     if G_reader_settings:readSetting("show_file_in_bold") == "opened" then
                         current_state = _("Show opened files in bold")
-                    elseif G_reader_settings:readSetting("show_file_in_bold") == false then
+                    elseif G_reader_settings:isFalse("show_file_in_bold") then
                         current_state = _("Show files in bold") -- with checkmark unchecked
                     end
                     -- Inform that this settings applies only to classic file chooser
                     current_state = T(_("(Classic file browser) %1"), current_state)
                     return current_state
                 end,
-                checked_func = function() return G_reader_settings:readSetting("show_file_in_bold") ~= false end,
+                checked_func = function() return not G_reader_settings:isFalse("show_file_in_bold") end,
                 sub_item_table = {
                     {
                         text = _("Don't show files in bold"),
-                        checked_func = function() return G_reader_settings:readSetting("show_file_in_bold") == false end,
+                        checked_func = function() return G_reader_settings:isFalse("show_file_in_bold") end,
                         callback = function()
                             G_reader_settings:saveSetting("show_file_in_bold", false)
                             self.ui:onRefresh()
@@ -264,7 +264,7 @@ function FileManagerMenu:setUpdateItemTable()
                     {
                         text = _("Show new (not yet opened) files in bold"),
                         checked_func = function()
-                            return G_reader_settings:readSetting("show_file_in_bold") ~= false and G_reader_settings:readSetting("show_file_in_bold") ~= "opened"
+                            return not G_reader_settings:isFalse("show_file_in_bold") and G_reader_settings:readSetting("show_file_in_bold") ~= "opened"
                         end,
                         callback = function()
                             G_reader_settings:delSetting("show_file_in_bold")
@@ -296,12 +296,12 @@ To:
             },
             {
                 text = _("Show filename in Open last/previous menu items"),
-                checked_func = function() return G_reader_settings:readSetting("open_last_menu_show_filename") end,
+                checked_func = function() return G_reader_settings:isTrue("open_last_menu_show_filename") end,
                 callback = function() G_reader_settings:flipNilOrFalse("open_last_menu_show_filename") end,
             },
             {
                 text = _("Auto-remove deleted or purged items from history"),
-                checked_func = function() return G_reader_settings:readSetting("autoremove_deleted_items_from_history") end,
+                checked_func = function() return G_reader_settings:isTrue("autoremove_deleted_items_from_history") end,
                 callback = function() G_reader_settings:flipNilOrFalse("autoremove_deleted_items_from_history") end,
                 separator = true,
             },
@@ -413,7 +413,7 @@ To:
                     else
                         dbg:setVerbose(false)
                         dbg:turnOff()
-                        G_reader_settings:flipFalse("debug_verbose")
+                        G_reader_settings:makeFalse("debug_verbose")
                     end
                 end,
             },
@@ -494,7 +494,7 @@ To:
                 G_reader_settings:saveSetting("dev_no_hw_dither", not Device.screen.hw_dithering)
                 -- Make sure SW dithering gets disabled when we enable HW dithering
                 if Device.screen.hw_dithering and Device.screen.sw_dithering then
-                    G_reader_settings:saveSetting("dev_no_sw_dither", true)
+                    G_reader_settings:makeTrue("dev_no_sw_dither")
                     Device.screen:toggleSWDithering(false)
                 end
                 UIManager:setDirty("all", "full")
@@ -515,7 +515,7 @@ To:
                 G_reader_settings:saveSetting("dev_no_sw_dither", not Device.screen.sw_dithering)
                 -- Make sure HW dithering gets disabled when we enable SW dithering
                 if Device.screen.hw_dithering and Device.screen.sw_dithering then
-                    G_reader_settings:saveSetting("dev_no_hw_dither", true)
+                    G_reader_settings:makeTrue("dev_no_hw_dither")
                     Device.screen:toggleHWDithering(false)
                 end
                 UIManager:setDirty("all", "full")
@@ -621,15 +621,15 @@ To:
     -- main menu tab
     self.menu_items.open_last_document = {
         text_func = function()
-            if not G_reader_settings:isTrue("open_last_menu_show_filename") or not G_reader_settings:readSetting("lastfile") then
+            if not G_reader_settings:isTrue("open_last_menu_show_filename") or G_reader_settings:hasNot("lastfile") then
                 return _("Open last document")
             end
             local last_file = G_reader_settings:readSetting("lastfile")
-            local path, file_name = util.splitFilePathName(last_file); -- luacheck: no unused
+            local path, file_name = util.splitFilePathName(last_file) -- luacheck: no unused
             return T(_("Last: %1"), BD.filename(file_name))
         end,
         enabled_func = function()
-            return G_reader_settings:readSetting("lastfile") ~= nil
+            return G_reader_settings:has("lastfile")
         end,
         callback = function()
             self:onOpenLastDoc()

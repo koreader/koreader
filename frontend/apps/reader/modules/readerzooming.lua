@@ -114,13 +114,13 @@ function ReaderZooming:onReadSettings(config)
                     or G_reader_settings:readSetting("zoom_mode")
                     or self.DEFAULT_ZOOM_MODE
     zoom_mode = util.arrayContains(self.available_zoom_modes, zoom_mode)
-                                and zoom_mode
-                                or self.DEFAULT_ZOOM_MODE
+            and zoom_mode
+             or self.DEFAULT_ZOOM_MODE
     self:setZoomMode(zoom_mode, true) -- avoid informative message on load
     for _, setting in ipairs(self.zoom_pan_settings) do
-        self[setting] = config:readSetting(setting) or
-                    G_reader_settings:readSetting(setting) or
-                    self[setting]
+        self[setting] = config:readSetting(setting)
+                     or G_reader_settings:readSetting(setting)
+                     or self[setting]
     end
 end
 
@@ -433,8 +433,8 @@ function ReaderZooming:getZoom(pageno)
         zoom = self.zoom
     else
         local zoom_factor = self.ui.doc_settings:readSetting("zoom_factor")
-                            or G_reader_settings:readSetting("zoom_factor")
-                            or self.zoom_factor
+                         or G_reader_settings:readSetting("zoom_factor")
+                         or self.zoom_factor
         zoom = zoom_w * zoom_factor
     end
     if zoom and zoom > 10 and not Cache:willAccept(zoom * (self.dimen.w * self.dimen.h + 64)) then

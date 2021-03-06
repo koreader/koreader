@@ -157,8 +157,8 @@ if Device:isKobo() then
             return G_reader_settings:isTrue("ignore_power_sleepcover")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("ignore_power_sleepcover")
-            G_reader_settings:flipFalse("ignore_open_sleepcover")
+            G_reader_settings:toggle("ignore_power_sleepcover")
+            G_reader_settings:makeFalse("ignore_open_sleepcover")
             UIManager:show(InfoMessage:new{
                 text = _("This will take effect on next restart."),
             })
@@ -171,8 +171,8 @@ if Device:isKobo() then
             return G_reader_settings:isTrue("ignore_open_sleepcover")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("ignore_open_sleepcover")
-            G_reader_settings:flipFalse("ignore_power_sleepcover")
+            G_reader_settings:toggle("ignore_open_sleepcover")
+            G_reader_settings:makeFalse("ignore_power_sleepcover")
             UIManager:show(InfoMessage:new{
                 text = _("This will take effect on next restart."),
             })
@@ -436,7 +436,7 @@ if Device:hasKeys() then
 end
 
 -- Auto-save settings: default value, info text and warning, and menu items
-if G_reader_settings:readSetting("auto_save_settings_interval_minutes") == nil then
+if G_reader_settings:hasNot("auto_save_settings_interval_minutes") then
     -- Default to auto save every 15 mn
     G_reader_settings:saveSetting("auto_save_settings_interval_minutes", 15)
 end
@@ -593,8 +593,7 @@ common_settings.document = {
                 {
                     text = _("Open next file"),
                     enabled_func = function()
-                        return G_reader_settings:readSetting("collate")
-                            ~= "access"
+                        return G_reader_settings:readSetting("collate") ~= "access"
                     end,
                     checked_func = function()
                         return G_reader_settings:readSetting("end_document_action") == "next_file"

@@ -11,12 +11,13 @@ local util = require("ffi/util")
 local _ = require("gettext")
 local T = util.template
 
-local FileManagerShortcuts = InputContainer:extend{}
+local FileManagerShortcuts = InputContainer:extend{
+    folder_shortcuts = G_reader_settings:readSetting("folder_shortcuts", {}),
+}
 
 function FileManagerShortcuts:updateItemTable()
     local item_table = {}
-    local folder_shortcuts = G_reader_settings:readSetting("folder_shortcuts") or {}
-    for _, item in ipairs(folder_shortcuts) do
+    for _, item in ipairs(self.folder_shortcuts) do
         table.insert(item_table, {
             text = string.format("%s (%s)", item.text, item.folder),
             folder = item.folder,
@@ -107,7 +108,7 @@ function FileManagerShortcuts:addNewFolder()
 end
 
 function FileManagerShortcuts:addFolderFromInput(friendly_name, folder)
-    for __, item in ipairs(G_reader_settings:readSetting("folder_shortcuts") or {}) do
+    for __, item in ipairs(self.folder_shortcuts) do
         if item.text == friendly_name and item.folder == folder then
             UIManager:show(InfoMessage:new{
                 text = _("A shortcut to this folder already exists."),
@@ -115,12 +116,10 @@ function FileManagerShortcuts:addFolderFromInput(friendly_name, folder)
             return
         end
     end
-    local folder_shortcuts = G_reader_settings:readSetting("folder_shortcuts") or {}
-    table.insert(folder_shortcuts, {
+    table.insert(self.folder_shortcuts, {
         text = friendly_name,
         folder = folder,
     })
-    G_reader_settings:saveSetting("folder_shortcuts", folder_shortcuts)
     self:updateItemTable()
 end
 
@@ -193,25 +192,21 @@ function FileManagerShortcuts:editFolderShortcut(item)
 end
 
 function FileManagerShortcuts:renameFolderShortcut(item, new_name)
-    local folder_shortcuts = {}
-    for _, element in ipairs(G_reader_settings:readSetting("folder_shortcuts") or {}) do
+    for _, element in ipairs(self.folder_shortcuts) do
         if element.text == item.friendly_name and element.folder == item.folder then
             element.text = new_name
         end
-        table.insert(folder_shortcuts, element)
     end
-    G_reader_settings:saveSetting("folder_shortcuts", folder_shortcuts)
     self:updateItemTable()
 end
 
 function FileManagerShortcuts:deleteFolderShortcut(item)
-    local folder_shortcuts = {}
-    for _, element in ipairs(G_reader_settings:readSetting("folder_shortcuts") or {}) do
-        if element.text ~= item.friendly_name or element.folder ~= item.folder then
-            table.insert(folder_shortcuts, element)
+    for i = #self.folder_shortcuts, 1, -1 do
+        local element = self.folder_shortcuts[i]
+        if element.text == item.friendly_name and element.folder == item.folder then
+            table.remove(self.folder_shortcuts, i)
         end
     end
-    G_reader_settings:saveSetting("folder_shortcuts", folder_shortcuts)
     self:updateItemTable()
 end
 

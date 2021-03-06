@@ -342,9 +342,9 @@ function DictQuickLookup:init()
                                 dir = last_file:match("(.*)/")
                             end
                         end
-                        if not dir then dir = G_reader_settings:readSetting("wikipedia_save_dir") end
-                        if not dir then dir = G_reader_settings:readSetting("home_dir") end
-                        if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
+                        if not dir then dir = G_reader_settings:readSetting("wikipedia_save_dir")
+                                           or G_reader_settings:readSetting("home_dir")
+                                           or require("apps/filemanager/filemanagerutil").getDefaultDir() end
                         if not dir or not util.pathExists(dir) then
                             UIManager:show(InfoMessage:new{
                                 text = _("No directory to save article to could be found."),

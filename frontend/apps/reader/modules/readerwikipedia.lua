@@ -175,8 +175,8 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                     local choose_directory = function()
                         -- Default directory as chosen by DictQuickLookup
                         local default_dir = G_reader_settings:readSetting("wikipedia_save_dir")
-                        if not default_dir then default_dir = G_reader_settings:readSetting("home_dir") end
-                        if not default_dir then default_dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
+                                         or G_reader_settings:readSetting("home_dir")
+                                         or require("apps/filemanager/filemanagerutil").getDefaultDir()
                         local dialog
                         dialog = ButtonDialogTitle:new{
                             title = T(_("Current Wikipedia 'Save as EPUB' folder:\n\n%1\n"), BD.dirpath(default_dir)),
@@ -198,9 +198,9 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                                         -- so a user reading a wikipedia article can quickly select
                                         -- it to save related new articles in the same directory
                                         local dir = G_reader_settings:readSetting("wikipedia_save_dir")
-                                        if not dir then dir = G_reader_settings:readSetting("home_dir") end
-                                        if not dir then dir = require("apps/filemanager/filemanagerutil").getDefaultDir() end
-                                        if not dir then dir = "/" end
+                                                 or G_reader_settings:readSetting("home_dir")
+                                                 or require("apps/filemanager/filemanagerutil").getDefaultDir()
+                                                 or "/"
                                         -- If this directory has no subdirectory, we would be displaying
                                         -- a single "..", so use parent directory in that case.
                                         local has_subdirectory = false

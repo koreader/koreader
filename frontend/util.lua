@@ -373,6 +373,44 @@ function util.arrayAppend(t1, t2)
     end
 end
 
+--[[--
+Remove elements from an array, fast.
+
+Swap & pop, like <http://lua-users.org/lists/lua-l/2013-11/msg00027.html> / <https://stackoverflow.com/a/28942022>, but preserving order.
+c.f., <https://stackoverflow.com/a/53038524>
+
+@table t Lua array to filter
+@func keep_cb Filtering callback. Takes three arguments: table, index, new index. Returns true to *keep* the item. See link above for potential uses of the third argument.
+
+@usage
+
+local foo = { "a", "b", "c", "b", "d", "e" }
+local function drop_b(t, i, j)
+    -- Discard any item with value "b"
+    return t[i] ~= "b"
+end
+util.arrayRemove(foo, drop_b)
+]]
+function util.arrayRemove(t, keep_cb)
+    local j, n = 1, #t
+
+    for i = 1, n do
+        if keep_cb(t, i, j) then
+            -- Move i's kept value to j's position, if it's not already there.
+            if i ~= j then
+                t[j] = t[i]
+                t[i] = nil
+            end
+            -- Increment position of where we'll place the next kept value.
+            j = j + 1
+        else
+            t[i] = nil
+        end
+    end
+
+    return t
+end
+
 --- Reverse array elements in-place in table t
 ---- @param t Lua table
 function util.arrayReverse(t)
@@ -389,7 +427,7 @@ end
 --- and if so, return the index.
 ---- @param t Lua table
 ---- @param v
----- @function callback(v1, v2)
+---- @func callback(v1, v2)
 function util.arrayContains(t, v, cb)
     cb = cb or function(v1, v2) return v1 == v2 end
     for _k, _v in ipairs(t) do
@@ -654,7 +692,7 @@ end
 
 --- Recursively scan directory for files inside
 -- @string path
--- @function callback(fullpath, name, attr)
+-- @func callback(fullpath, name, attr)
 function util.findFiles(dir, cb)
     local function scan(current)
         local ok, iter, dir_obj = pcall(lfs.dir, current)

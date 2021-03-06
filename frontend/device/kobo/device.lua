@@ -340,17 +340,15 @@ function Kobo:init()
         self.touchScreenProbe = function()
             -- if user has not set KOBO_TOUCH_MIRRORED yet
             if KOBO_TOUCH_MIRRORED == nil then
-                local switch_xy = G_reader_settings:readSetting("kobo_touch_switch_xy")
                 -- and has no probe before
-                if switch_xy == nil then
+                if G_reader_settings:hasNot("kobo_touch_switch_xy") then
                     local TouchProbe = require("tools/kobo_touch_probe")
                     local UIManager = require("ui/uimanager")
                     UIManager:show(TouchProbe:new{})
                     UIManager:run()
                     -- assuming TouchProbe sets kobo_touch_switch_xy config
-                    switch_xy = G_reader_settings:readSetting("kobo_touch_switch_xy")
                 end
-                self.touch_switch_xy = switch_xy
+                self.touch_switch_xy = G_reader_settings:readSetting("kobo_touch_switch_xy")
             end
             self:initEventAdjustHooks()
         end

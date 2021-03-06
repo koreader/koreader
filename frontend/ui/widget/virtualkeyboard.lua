@@ -218,7 +218,7 @@ function VirtualKey:init()
     (self.keyboard.umlautmode_keys[self.label] ~= nil and self.keyboard.umlautmode) then
         self[1].background = Blitbuffer.COLOR_LIGHT_GRAY
     end
-    self.flash_keyboard = G_reader_settings:readSetting("flash_keyboard") ~= false
+    self.flash_keyboard = G_reader_settings:nilOrTrue("flash_keyboard")
 end
 
 function VirtualKey:genkeyboardLayoutKeyChars()

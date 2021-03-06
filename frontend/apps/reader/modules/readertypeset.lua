@@ -22,13 +22,15 @@ function ReaderTypeset:init()
 end
 
 function ReaderTypeset:onReadSettings(config)
-    self.css = config:readSetting("css") or G_reader_settings:readSetting("copt_css")
-                or self.ui.document.default_css
+    self.css = config:readSetting("css")
+            or G_reader_settings:readSetting("copt_css")
+            or self.ui.document.default_css
     local tweaks_css = self.ui.styletweak:getCssText()
     self.ui.document:setStyleSheet(self.css, tweaks_css)
 
-    self.embedded_fonts = config:readSetting("embedded_fonts")
-    if self.embedded_fonts == nil then
+    if config:has("embedded_fonts") then
+        self.embedded_fonts = config:isTrue("embedded_fonts")
+    else
         -- default to enable embedded fonts
         -- note that it's a bit confusing here:
         -- global settins store 0/1, while document settings store false/true
@@ -42,11 +44,12 @@ function ReaderTypeset:onReadSettings(config)
         self.ui.document:setEmbeddedFonts(0)
     end
 
-    self.embedded_css = config:readSetting("embedded_css")
-    if self.embedded_css == nil then
+    if config:has("embedded_css") then
+        self.embedded_css = config:isTrue("embedded_css")
+    else
         -- default to enable embedded CSS
         -- note that it's a bit confusing here:
-        -- global settins store 0/1, while document settings store false/true
+        -- global settings store 0/1, while document settings store false/true
         -- we leave it that way for now to maintain backwards compatibility
         local global = G_reader_settings:readSetting("copt_embedded_css")
         self.embedded_css = (global == nil or global == 1) and true or false
@@ -56,15 +59,15 @@ function ReaderTypeset:onReadSettings(config)
     -- Block rendering mode: stay with legacy rendering for books
     -- previously opened so bookmarks and highlights stay valid.
     -- For new books, use 'web' mode below in BLOCK_RENDERING_FLAGS
-    local block_rendering_default_mode = 3
-    self.block_rendering_mode = config:readSetting("copt_block_rendering_mode")
-    if not self.block_rendering_mode then
-        if config:readSetting("last_xpointer") then
+    if config:has("copt_block_rendering_mode") then
+        self.block_rendering_mode = config:readSetting("copt_block_rendering_mode")
+    else
+        if config:has("last_xpointer") then
             -- We have a last_xpointer: this book was previously opened
             self.block_rendering_mode = 0
         else
             self.block_rendering_mode = G_reader_settings:readSetting("copt_block_rendering_mode")
-                                            or block_rendering_default_mode
+                                     or 3 -- default to 'web' mode
         end
         -- Let ConfigDialog know so it can update it on screen and have it saved on quit
         self.ui.document.configurable.block_rendering_mode = self.block_rendering_mode
@@ -72,47 +75,52 @@ function ReaderTypeset:onReadSettings(config)
     self:setBlockRenderingMode(self.block_rendering_mode)
 
     -- set render DPI
-    self.render_dpi = config:readSetting("render_dpi") or
-        G_reader_settings:readSetting("copt_render_dpi") or 96
+    self.render_dpi = config:readSetting("render_dpi")
+                   or G_reader_settings:readSetting("copt_render_dpi")
+                   or 96
     self:setRenderDPI(self.render_dpi)
 
     -- uncomment if we want font size to follow DPI changes
     -- self.ui.document:setRenderScaleFontWithDPI(1)
 
     -- set page margins
-    local h_margins = config:readSetting("copt_h_page_margins") or
-        G_reader_settings:readSetting("copt_h_page_margins") or
-        DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
-    local t_margin = config:readSetting("copt_t_page_margin") or
-        G_reader_settings:readSetting("copt_t_page_margin") or
-        DCREREADER_CONFIG_T_MARGIN_SIZES_LARGE
-    local b_margin = config:readSetting("copt_b_page_margin") or
-        G_reader_settings:readSetting("copt_b_page_margin") or
-        DCREREADER_CONFIG_B_MARGIN_SIZES_LARGE
+    local h_margins = config:readSetting("copt_h_page_margins")
+                   or G_reader_settings:readSetting("copt_h_page_margins")
+                   or DCREREADER_CONFIG_H_MARGIN_SIZES_MEDIUM
+    local t_margin = config:readSetting("copt_t_page_margin")
+                  or G_reader_settings:readSetting("copt_t_page_margin")
+                  or DCREREADER_CONFIG_T_MARGIN_SIZES_LARGE
+    local b_margin = config:readSetting("copt_b_page_margin")
+                  or G_reader_settings:readSetting("copt_b_page_margin")
+                  or DCREREADER_CONFIG_B_MARGIN_SIZES_LARGE
     self.unscaled_margins = { h_margins[1], t_margin, h_margins[2], b_margin }
     self:onSetPageMargins(self.unscaled_margins)
-    self.sync_t_b_page_margins = config:readSetting("copt_sync_t_b_page_margins") or
-        G_reader_settings:readSetting("copt_sync_t_b_page_margins") or 0
+    self.sync_t_b_page_margins = config:readSetting("copt_sync_t_b_page_margins")
+                              or G_reader_settings:readSetting("copt_sync_t_b_page_margins")
+                              or 0
     self.sync_t_b_page_margins = self.sync_t_b_page_margins == 1 and true or false
 
     -- default to disable TXT formatting as it does more harm than good
-    self.txt_preformatted = config:readSetting("txt_preformatted") or
-        G_reader_settings:readSetting("txt_preformatted") or 1
+    self.txt_preformatted = config:readSetting("txt_preformatted")
+                         or G_reader_settings:readSetting("txt_preformatted")
+                         or 1
     self:toggleTxtPreFormatted(self.txt_preformatted)
 
     -- default to disable smooth scaling for now.
-    self.smooth_scaling = config:readSetting("smooth_scaling")
-    if self.smooth_scaling == nil then
+    if config:has("smooth_scaling") then
+        self.smooth_scaling = config:isTrue("smooth_scaling")
+    else
         local global = G_reader_settings:readSetting("copt_smooth_scaling")
-        self.smooth_scaling = (global == nil or global == 0) and 0 or 1
+        self.smooth_scaling = (global == nil or global == 0) and false or true
     end
     self:toggleImageScaling(self.smooth_scaling)
 
     -- default to automagic nightmode-friendly handling of images
-    self.nightmode_images = config:readSetting("nightmode_images")
-    if self.nightmode_images == nil then
+    if config:has("nightmode_images") then
+        self.nightmode_images = config:isTrue("nightmode_images")
+    else
         local global = G_reader_settings:readSetting("copt_nightmode_images")
-        self.nightmode_images = (global == nil or global == 1) and 1 or 0
+        self.nightmode_images = (global == nil or global == 1) and true or false
     end
     self:toggleNightmodeImages(self.nightmode_images)
 end

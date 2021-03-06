@@ -45,6 +45,7 @@ function TextEditor:loadSettings()
         return
     end
     self.settings = LuaSettings:open(self.settings_file)
+    -- NOTE: addToHistory assigns a new object
     self.history = self.settings:readSetting("history") or {}
     self.last_view_pos = self.settings:readSetting("last_view_pos") or {}
     self.last_path = self.settings:readSetting("last_path") or ffiutil.realpath(DataStorage:getDataDir())
@@ -56,10 +57,10 @@ function TextEditor:loadSettings()
     --
     -- Allow users to set their prefered font manually in text_editor.lua
     -- (sadly, not via TextEditor itself, as they would be overriden on close)
-    if self.settings:readSetting("normal_font") then
+    if self.settings:has("normal_font") then
         self.normal_font = self.settings:readSetting("normal_font")
     end
-    if self.settings:readSetting("monospace_font") then
+    if self.settings:has("monospace_font") then
         self.monospace_font = self.settings:readSetting("monospace_font")
     end
     self.auto_para_direction = self.settings:nilOrTrue("auto_para_direction")
@@ -254,7 +255,7 @@ function TextEditor:execWhenDoneFunc()
 end
 
 function TextEditor:removeFromHistory(file_path)
-    for i=#self.history, 1, -1 do
+    for i = #self.history, 1, -1 do
         if self.history[i] == file_path then
             table.remove(self.history, i)
         end

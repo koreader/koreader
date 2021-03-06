@@ -61,7 +61,9 @@ function UIManager:init()
         self._entered_poweroff_stage = true
         Device.orig_rotation_mode = Device.screen:getRotationMode()
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
-        require("ui/screensaver"):show("poweroff", _("Powered off"))
+        local Screensaver = require("ui/screensaver")
+        Screensaver:setup("poweroff", _("Powered off"))
+        Screensaver:show()
         if Device:needsScreenRefreshAfterResume() then
             Screen:refreshFull()
         end
@@ -78,7 +80,9 @@ function UIManager:init()
         self._entered_poweroff_stage = true
         Device.orig_rotation_mode = Device.screen:getRotationMode()
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
-        require("ui/screensaver"):show("reboot", _("Rebooting…"))
+        local Screensaver = require("ui/screensaver")
+        Screensaver:setup("reboot", _("Rebooting…"))
+        Screensaver:show()
         if Device:needsScreenRefreshAfterResume() then
             Screen:refreshFull()
         end
@@ -137,12 +141,12 @@ function UIManager:init()
             end
         end
         -- Sleep Cover handling
-        if G_reader_settings:readSetting("ignore_power_sleepcover") then
+        if G_reader_settings:isTrue("ignore_power_sleepcover") then
             -- NOTE: The hardware event itself will wake the kernel up if it's in suspend (:/).
             --       Let the unexpected wakeup guard handle that.
             self.event_handlers["SleepCoverClosed"] = nil
             self.event_handlers["SleepCoverOpened"] = nil
-        elseif G_reader_settings:readSetting("ignore_open_sleepcover") then
+        elseif G_reader_settings:isTrue("ignore_open_sleepcover") then
             -- Just ignore wakeup events, and do NOT set is_cover_closed,
             -- so device/generic/device will let us use the power button to wake ;).
             self.event_handlers["SleepCoverClosed"] = function()

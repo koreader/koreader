@@ -58,7 +58,6 @@ end
 local ReaderDictionary = InputContainer:new{
     data_dir = nil,
     dict_window_list = {},
-    disable_lookup_history = G_reader_settings:isTrue("disable_lookup_history"),
     lookup_msg = _("Searching dictionary for:\n%1"),
 }
 
@@ -96,6 +95,10 @@ local function getDictionaryFixHtmlFunc(path)
 end
 
 function ReaderDictionary:init()
+    self.disable_lookup_history = G_reader_settings:isTrue("disable_lookup_history")
+    self.dicts_order = G_reader_settings:readSetting("dicts_order", {})
+    self.dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {})
+
     self.ui.menu:registerToMainMenu(self)
     self.data_dir = STARDICT_DATA_DIR or
         os.getenv("STARDICT_DATA_DIR") or
@@ -140,19 +143,7 @@ function ReaderDictionary:init()
             end
         end
         logger.dbg("found", #available_ifos, "dictionaries")
-
-        if not G_reader_settings:readSetting("dicts_order") then
-            G_reader_settings:saveSetting("dicts_order", {})
-        end
-
         self:sortAvailableIfos()
-
-        if not G_reader_settings:readSetting("dicts_disabled") then
-            -- Create an empty dict for this setting, so that we can
-            -- access and update it directly through G_reader_settings
-            -- and it will automatically be saved.
-            G_reader_settings:saveSetting("dicts_disabled", {})
-        end
     end
     -- Prepare the -u options to give to sdcv the dictionary order and if some are disabled
     self:updateSdcvDictNamesOptions()
@@ -163,11 +154,9 @@ function ReaderDictionary:init()
 end
 
 function ReaderDictionary:sortAvailableIfos()
-    local dicts_order = G_reader_settings:readSetting("dicts_order")
-
     table.sort(available_ifos, function(lifo, rifo)
-        local lord = dicts_order[lifo.file]
-        local rord = dicts_order[rifo.file]
+        local lord = self.dicts_order[lifo.file]
+        local rord = self.dicts_order[rifo.file]
 
         -- Both ifos without an explicit position -> lexical comparison
         if lord == rord then
@@ -468,9 +457,8 @@ function ReaderDictionary:getNumberOfDictionaries()
     local nb_available = #available_ifos
     local nb_enabled = 0
     local nb_disabled = 0
-    local dicts_disabled = G_reader_settings:readSetting("dicts_disabled")
     for _, ifo in pairs(available_ifos) do
-        if dicts_disabled[ifo.file] then
+        if self.dicts_disabled[ifo.file] then
             nb_disabled = nb_disabled + 1
         else
             nb_enabled = nb_enabled + 1
@@ -526,7 +514,7 @@ end
 
 function ReaderDictionary:showDictionariesMenu(changed_callback)
     -- Work on local copy, save to settings only when SortWidget is closed with the accept button
-    local dicts_disabled = util.tableDeepCopy(G_reader_settings:readSetting("dicts_disabled"))
+    local dicts_disabled = util.tableDeepCopy(self.dicts_disabled)
 
     local sort_items = {}
     for _, ifo in pairs(available_ifos) do
@@ -550,15 +538,17 @@ function ReaderDictionary:showDictionariesMenu(changed_callback)
         title = _("Manage installed dictionaries"),
         item_table = sort_items,
         callback = function()
-            -- Save local copy of dicts_disabled
-            G_reader_settings:saveSetting("dicts_disabled", dicts_disabled)
+            -- Update both references to point to that new object
+            self.dicts_disabled = dicts_disabled
+            G_reader_settings:saveSetting("dicts_disabled", self.dicts_disabled)
 
             -- Write back the sorted items to dicts_order
             local dicts_order = {}
             for i, sort_item in pairs(sort_items) do
                 dicts_order[sort_item.ifo.file] = i
             end
-            G_reader_settings:saveSetting("dicts_order", dicts_order)
+            self.dicts_order = dicts_order
+            G_reader_settings:saveSetting("dicts_order", self.dicts_order)
 
             self:sortAvailableIfos()
 
@@ -1058,8 +1048,9 @@ function ReaderDictionary:onReadSettings(config)
     if #self.preferred_dictionaries > 0 then
         self:updateSdcvDictNamesOptions()
     end
-    self.disable_fuzzy_search = config:readSetting("disable_fuzzy_search")
-    if self.disable_fuzzy_search == nil then
+    if config:has("disable_fuzzy_search") then
+        self.disable_fuzzy_search = config:isTrue("disable_fuzzy_search")
+    else
         self.disable_fuzzy_search = G_reader_settings:isTrue("disable_fuzzy_search")
     end
 end
@@ -1118,13 +1109,13 @@ The current default (★) is enabled.]])
             return disable_fuzzy_search and _("Disable (★)") or _("Disable")
         end,
         choice1_callback = function()
-            G_reader_settings:saveSetting("disable_fuzzy_search", true)
+            G_reader_settings:makeTrue("disable_fuzzy_search")
         end,
         choice2_text_func = function()
             return disable_fuzzy_search and _("Enable") or _("Enable (★)")
         end,
         choice2_callback = function()
-            G_reader_settings:saveSetting("disable_fuzzy_search", false)
+            G_reader_settings:makeFalse("disable_fuzzy_search")
         end,
     })
 end

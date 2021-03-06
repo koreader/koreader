@@ -94,6 +94,7 @@ end
 function SonyPRSTUX:intoScreenSaver()
     local Screensaver = require("ui/screensaver")
     if self.screen_saver_mode == false then
+        Screensaver:setup()
         Screensaver:show()
     end
     self.powerd:beforeSuspend()

@@ -118,8 +118,8 @@ function Gestures:init()
     if not lfs.attributes(gestures_path, "mode") then
         FFIUtil.copyFile(defaults_path, gestures_path)
     end
-    self.ignore_hold_corners = G_reader_settings:readSetting("ignore_hold_corners")
-    self.multiswipes_enabled = G_reader_settings:readSetting("multiswipes_enabled")
+    self.ignore_hold_corners = G_reader_settings:isTrue("ignore_hold_corners")
+    self.multiswipes_enabled = G_reader_settings:isTrue("multiswipes_enabled")
     self.is_docless = self.ui == nil or self.ui.document == nil
     self.ges_mode = self.is_docless and "gesture_fm" or "gesture_reader"
     self.defaults = LuaSettings:open(defaults_path).data[self.ges_mode]
@@ -682,7 +682,7 @@ function Gestures:addToMainMenu(menu_items)
                 text = _("Turn on multiswipes"),
                 checked_func = function() return self.multiswipes_enabled end,
                 callback = function()
-                    G_reader_settings:saveSetting("multiswipes_enabled", not self.multiswipes_enabled)
+                    G_reader_settings:toggle("multiswipes_enabled")
                     self.multiswipes_enabled = G_reader_settings:isTrue("multiswipes_enabled")
                 end,
                 help_text = multiswipes_info_text,
@@ -1118,12 +1118,12 @@ function Gestures:multiswipeAction(multiswipe_directions, ges)
             text = _("You have just performed your first multiswipe gesture.") .."\n\n".. multiswipes_info_text,
             ok_text = _("Turn on"),
             ok_callback = function()
-                G_reader_settings:saveSetting("multiswipes_enabled", true)
+                G_reader_settings:makeTrue("multiswipes_enabled")
                 self.multiswipes_enabled = true
             end,
             cancel_text = _("Turn off"),
             cancel_callback = function()
-                G_reader_settings:saveSetting("multiswipes_enabled", false)
+                G_reader_settings:makeFalse("multiswipes_enabled")
                 self.multiswipes_enabled = false
             end,
         })

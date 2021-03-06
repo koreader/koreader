@@ -26,7 +26,7 @@ require("ffi/zeromq_h")
 local extensions = require("extensions")
 local function getExtensionPathLengths()
     local t = {}
-    for _, v in pairs(extensions) do
+    for _, v in ipairs(extensions) do
         -- magic number from calibre, see
         -- https://github.com/koreader/koreader/pull/6177#discussion_r430753964
         t[v] = 37

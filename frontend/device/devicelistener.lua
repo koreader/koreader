@@ -12,7 +12,7 @@ local T = require("ffi/util").template
 local DeviceListener = InputContainer:new{}
 
 local function _setSetting(name)
-    G_reader_settings:saveSetting(name, true)
+    G_reader_settings:makeTrue(name)
 end
 
 local function _unsetSetting(name)

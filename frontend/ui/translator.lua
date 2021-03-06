@@ -201,7 +201,7 @@ function Translator:genSettingsMenu()
                     return T("%1 (%2)", lang_name, lang_key)
                 end,
                 checked_func = function()
-                    if G_reader_settings:readSetting(setting_name) then
+                    if G_reader_settings:has(setting_name) then
                         return lang_key == G_reader_settings:readSetting(setting_name)
                     else
                         return lang_key == default_checked_item
@@ -252,7 +252,7 @@ end
 
 function Translator:getSourceLanguage()
     if G_reader_settings:isFalse("translator_from_auto_detect") and
-            G_reader_settings:readSetting("translator_from_language") then
+            G_reader_settings:has("translator_from_language") then
         return G_reader_settings:readSetting("translator_from_language")
     end
     return AUTODETECT_LANGUAGE -- "auto"

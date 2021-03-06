@@ -165,19 +165,136 @@ function DocSettings:open(docfile)
     return setmetatable(new, {__index = DocSettings})
 end
 
---- Reads a setting.
-function DocSettings:readSetting(key)
+--[[-- Reads a setting, optionally initializing it to a default.
+
+If default is provided, and the key doesn't exist yet, it is initialized to default first.
+This ensures both that the defaults are actually set if necessary,
+and that the returned reference actually belongs to the DocSettings object straight away,
+without requiring further interaction (e.g., saveSetting) from the caller.
+
+This is mainly useful if the data type you want to retrieve/store is assigned/returned/passed by reference (e.g., a table),
+and you never actually break that reference by assigning another one to the same variable, (by e.g., assigning it a new object).
+c.f., https://www.lua.org/manual/5.1/manual.html#2.2
+
+@param key The setting's key
+@param default Initialization data (Optional)
+]]
+function DocSettings:readSetting(key, default)
+    -- No initialization data: legacy behavior
+    if not default then
+        return self.data[key]
+    end
+
+    if not self:has(key) then
+        self.data[key] = default
+    end
     return self.data[key]
 end
 
 --- Saves a setting.
 function DocSettings:saveSetting(key, value)
     self.data[key] = value
+    return self
 end
 
 --- Deletes a setting.
 function DocSettings:delSetting(key)
     self.data[key] = nil
+    return self
+end
+
+--- Checks if setting exists.
+function DocSettings:has(key)
+    return self.data[key] ~= nil
+end
+
+--- Checks if setting does not exist.
+function DocSettings:hasNot(key)
+    return self.data[key] == nil
+end
+
+--- Checks if setting is `true` (boolean).
+function DocSettings:isTrue(key)
+    return self.data[key] == true
+end
+
+--- Checks if setting is `false` (boolean).
+function DocSettings:isFalse(key)
+    return self.data[key] == false
+end
+
+--- Checks if setting is `nil` or `true`.
+function DocSettings:nilOrTrue(key)
+    return self:hasNot(key) or self:isTrue(key)
+end
+
+--- Checks if setting is `nil` or `false`.
+function DocSettings:nilOrFalse(key)
+    return self:hasNot(key) or self:isFalse(key)
+end
+
+--- Flips `nil` or `true` to `false`, and `false` to `nil`.
+--- e.g., a setting that defaults to true.
+function DocSettings:flipNilOrTrue(key)
+    if self:nilOrTrue(key) then
+        self:saveSetting(key, false)
+    else
+        self:delSetting(key)
+    end
+    return self
+end
+
+--- Flips `nil` or `false` to `true`, and `true` to `nil`.
+--- e.g., a setting that defaults to false.
+function DocSettings:flipNilOrFalse(key)
+    if self:nilOrFalse(key) then
+        self:saveSetting(key, true)
+    else
+        self:delSetting(key)
+    end
+    return self
+end
+
+--- Flips a setting between `true` and `nil`.
+function DocSettings:flipTrue(key)
+    if self:isTrue(key) then
+        self:delSetting(key)
+    else
+        self:saveSetting(key, true)
+    end
+    return self
+end
+
+--- Flips a setting between `false` and `nil`.
+function DocSettings:flipFalse(key)
+    if self:isFalse(key) then
+        self:delSetting(key)
+    else
+        self:saveSetting(key, false)
+    end
+    return self
+end
+
+-- Unconditionally makes a boolean setting `true`.
+function DocSettings:makeTrue(key)
+    self:saveSetting(key, true)
+    return self
+end
+
+-- Unconditionally makes a boolean setting `false`.
+function DocSettings:makeFalse(key)
+    self:saveSetting(key, false)
+    return self
+end
+
+--- Toggles a boolean setting
+function DocSettings:toggle(key)
+    if self:nilOrFalse(key) then
+        self:saveSetting(key, true)
+    else
+        self:saveSetting(key, false)
+    end
+    return self
 end
 
 --- Serializes settings and writes them to `metadata.lua`.
@@ -220,8 +337,7 @@ function DocSettings:flush()
             f_out:close()
 
             if self.candidates ~= nil
-            and not G_reader_settings:readSetting(
-                        "preserve_legacy_docsetting") then
+            and G_reader_settings:nilOrFalse("preserve_legacy_docsetting") then
                 for _, k in pairs(self.candidates) do
                     if k[1] ~= f and k[1] ~= f .. ".old" then
                         logger.dbg("Remove legacy file ", k[1])

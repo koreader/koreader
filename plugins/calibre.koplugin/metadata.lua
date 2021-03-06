@@ -49,7 +49,7 @@ local function findCalibreFiles(dir)
     local function existOrLast(file)
         local fullname
         local options = { file, "." .. file }
-        for _, option in pairs(options) do
+        for _, option in ipairs(options) do
             fullname = dir .. "/" .. option
             if util.fileExists(fullname) then
                 return true, fullname
@@ -144,11 +144,10 @@ end
 
 -- remove a book from our books table
 function CalibreMetadata:removeBook(lpath)
-    for index, book in ipairs(self.books) do
-        if book.lpath == lpath then
-            table.remove(self.books, index)
-        end
+    local function drop_lpath(t, i, j)
+        return t[i].lpath ~= lpath
     end
+    util.arrayRemove(self.books, drop_lpath)
 end
 
 -- gets the uuid and index of a book from its path
@@ -165,7 +164,7 @@ end
 function CalibreMetadata:getBookId(index)
     local book = {}
     book.priKey = index
-    for _, key in pairs({ "uuid", "lpath", "last_modified"}) do
+    for _, key in ipairs({"uuid", "lpath", "last_modified"}) do
         book[key] = self.books[index][key]
     end
     return book

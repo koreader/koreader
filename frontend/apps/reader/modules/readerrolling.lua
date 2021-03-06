@@ -139,9 +139,9 @@ function ReaderRolling:onReadSettings(config)
     -- and highlights with old XPATHs.
     -- (EPUB will use the same correct DOM code no matter what DOM version
     -- we request here.)
-    if not config:readSetting("cre_dom_version") then
+    if config:hasNot("cre_dom_version") then
         -- Not previously set, guess which DOM version to use
-        if config:readSetting("last_xpointer") then
+        if config:has("last_xpointer") then
             -- We have a last_xpointer: this book was previously opened
             -- with possibly a very old version: request the oldest
             config:saveSetting("cre_dom_version", self.ui.document:getOldestDomVersion())
@@ -166,7 +166,7 @@ function ReaderRolling:onReadSettings(config)
         self.ui.typeset:ensureSanerBlockRenderingFlags()
         -- And check if we can migrate to a newest DOM version after
         -- the book is loaded (unless the user told us not to).
-        if not config:readSetting("cre_keep_old_dom_version") then
+        if config:nilOrFalse("cre_keep_old_dom_version") then
             self.ui:registerPostReadyCallback(function()
                 self:checkXPointersAndProposeDOMVersionUpgrade()
             end)
@@ -209,13 +209,15 @@ function ReaderRolling:onReadSettings(config)
             end
         end
     end
-    self.show_overlap_enable = config:readSetting("show_overlap_enable")
-    if self.show_overlap_enable == nil then
+    if config:has("show_overlap_enable") then
+        self.show_overlap_enable = config:isTrue("show_overlap_enable")
+    else
         self.show_overlap_enable = DSHOWOVERLAP
     end
 
-    self.inverse_reading_order = config:readSetting("inverse_reading_order")
-    if self.inverse_reading_order == nil then
+    if config:has("inverse_reading_order") then
+        self.inverse_reading_order = config:isTrue("inverse_reading_order")
+    else
         self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
     end
 
@@ -229,8 +231,9 @@ function ReaderRolling:onReadSettings(config)
         G_reader_settings:readSetting("copt_visible_pages") or 1
     self.ui.document:setVisiblePageCount(self.visible_pages)
 
-    self.hide_nonlinear_flows = config:readSetting("hide_nonlinear_flows")
-    if self.hide_nonlinear_flows == nil then
+    if config:has("hide_nonlinear_flows") then
+        self.hide_nonlinear_flows = config:isTrue("hide_nonlinear_flows")
+    else
         self.hide_nonlinear_flows = G_reader_settings:isTrue("hide_nonlinear_flows")
     end
     self.ui.document:setHideNonlinearFlows(self.hide_nonlinear_flows)
@@ -296,7 +299,7 @@ end
 
 function ReaderRolling:onSaveSettings()
     -- remove last_percent config since its deprecated
-    self.ui.doc_settings:saveSetting("last_percent", nil)
+    self.ui.doc_settings:delSetting("last_percent")
     self.ui.doc_settings:saveSetting("last_xpointer", self.xpointer)
     -- in scrolling mode, the document may already be closed,
     -- so we have to check the condition to avoid crash function self:getLastPercent()
@@ -395,14 +398,14 @@ function ReaderRolling:addToMainMenu(menu_items)
                     return inverse_reading_order and _("LTR") or _("LTR (★)")
                 end,
                 choice1_callback = function()
-                     G_reader_settings:saveSetting("inverse_reading_order", false)
+                     G_reader_settings:makeFalse("inverse_reading_order")
                      if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
                 choice2_text_func = function()
                     return inverse_reading_order and _("RTL (★)") or _("RTL")
                 end,
                 choice2_callback = function()
-                    G_reader_settings:saveSetting("inverse_reading_order", true)
+                    G_reader_settings:makeTrue("inverse_reading_order")
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
             })
@@ -644,8 +647,10 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
     --   followed_link_marker = true: maker shown and not auto removed
     --   followed_link_marker = <number>: removed after <number> seconds
     -- (no real need for a menu item, the default is the finest)
-    local marker_setting = G_reader_settings:readSetting("followed_link_marker")
-    if marker_setting == nil then
+    local marker_setting
+    if G_reader_settings:has("followed_link_marker") then
+        marker_setting = G_reader_settings:readSetting("followed_link_marker")
+    else
         marker_setting = 1 -- default is: shown and removed after 1 second
     end
 
@@ -1279,11 +1284,14 @@ function ReaderRolling:checkXPointersAndProposeDOMVersionUpgrade()
         -- Switch to default block rendering mode if this book has it set to "legacy",
         -- unless the user had set the global mode to be "legacy".
         -- (see ReaderTypeset:onReadSettings() for the logic of block_rendering_mode)
-        local g_block_rendering_mode = G_reader_settings:readSetting("copt_block_rendering_mode")
+        local g_block_rendering_mode
+        if G_reader_settings:has("copt_block_rendering_mode") then
+            g_block_rendering_mode = G_reader_settings:readSetting("copt_block_rendering_mode")
+        else
+            -- nil means: use default
+            g_block_rendering_mode = 3 -- default in ReaderTypeset:onReadSettings()
+        end
         if g_block_rendering_mode ~= 0 then -- default is not "legacy"
-            if not g_block_rendering_mode then -- nil means: use default
-                g_block_rendering_mode = 3 -- default in ReaderTypeset:onReadSettings()
-            end
             -- This setting is actually saved by self.ui.document.configurable
             local block_rendering_mode = self.ui.document.configurable.block_rendering_mode
             if block_rendering_mode == 0 then
@@ -1343,7 +1351,7 @@ Note that %1 (out of %2) xpaths from your bookmarks and highlights have been nor
         }},
         cancel_text = _("Not for this book"),
         cancel_callback = function()
-            self.ui.doc_settings:saveSetting("cre_keep_old_dom_version", true)
+            self.ui.doc_settings:makeTrue("cre_keep_old_dom_version")
         end,
         ok_text = _("Upgrade now"),
         ok_callback = function()

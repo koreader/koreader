@@ -66,7 +66,7 @@ function CoverBrowser:init()
             BookInfoManager:saveSetting("filemanager_display_mode", "list_image_meta")
             BookInfoManager:saveSetting("history_display_mode", "mosaic_image")
         end
-        G_reader_settings:saveSetting("coverbrowser_initial_default_setup_done", true)
+        G_reader_settings:makeTrue("coverbrowser_initial_default_setup_done")
     end
 
     self:setupFileManagerDisplayMode(BookInfoManager:getSetting("filemanager_display_mode"))

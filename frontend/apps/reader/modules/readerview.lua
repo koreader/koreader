@@ -33,7 +33,7 @@ local ReaderView = OverlapGroup:extend{
         offset = nil,
         bbox = nil,
     },
-    outer_page_color = Blitbuffer.gray(DOUTER_PAGE_COLOR/15),
+    outer_page_color = Blitbuffer.gray(DOUTER_PAGE_COLOR / 15),
     -- highlight with "lighten" or "underscore" or "invert"
     highlight = {
         lighten_factor = 0.2,
@@ -45,12 +45,12 @@ local ReaderView = OverlapGroup:extend{
     highlight_visible = true,
     -- PDF/DjVu continuous paging
     page_scroll = nil,
-    page_bgcolor = Blitbuffer.gray(DBACKGROUND_COLOR/15),
+    page_bgcolor = Blitbuffer.gray(DBACKGROUND_COLOR / 15),
     page_states = {},
     -- properties of the gap drawn between each page in scroll mode:
     page_gap = {
         -- color (0 = white, 8 = gray, 15 = black)
-        color = Blitbuffer.gray((G_reader_settings:readSetting("page_gap_color") or 8)/15),
+        color = Blitbuffer.gray((G_reader_settings:readSetting("page_gap_color") or 8) / 15),
     },
     -- DjVu page rendering mode (used in djvu.c:drawPage())
     render_mode = DRENDER_MODE, -- default to COLOR
@@ -758,8 +758,9 @@ function ReaderView:onReadSettings(config)
     -- Keep current rotation by doing nothing when sticky rota is enabled.
     if not locked then
         -- Honor docsettings's rotation
-        rotation_mode = config:readSetting("rotation_mode") -- Doc's
-        if not rotation_mode then
+        if config:has("rotation_mode") then
+            rotation_mode = config:readSetting("rotation_mode") -- Doc's
+        else
             -- No doc specific rotation, pickup global defaults for the doc type
             if self.ui.document.info.has_pages then
                 rotation_mode = G_reader_settings:readSetting("kopt_rotation_mode") or Screen.ORIENTATION_PORTRAIT
@@ -781,8 +782,9 @@ function ReaderView:onReadSettings(config)
     self.page_scroll = page_scroll == 1 and true or false
     self.highlight.saved = config:readSetting("highlight") or {}
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
-    self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height") or
-        G_reader_settings:readSetting("kopt_page_gap_height") or 8)
+    self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height")
+                                              or G_reader_settings:readSetting("kopt_page_gap_height")
+                                              or 8)
 end
 
 function ReaderView:onPageUpdate(new_page_no)
@@ -965,11 +967,12 @@ function ReaderView:checkAutoSaveSettings()
     if not self.settings_last_save_ts then -- reader not yet ready
         return
     end
-    local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
-    if not interval then -- no auto save
+    if G_reader_settings:nilOrFalse("auto_save_settings_interval_minutes") then
+        -- no auto save
         return
     end
 
+    local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
     local now_ts = os.time()
     if now_ts - self.settings_last_save_ts >= interval*60 then
         self.settings_last_save_ts = now_ts

@@ -132,7 +132,7 @@ function AutoTurn:addToMainMenu(menu_items)
                 title_text = _("Timeout in seconds"),
                 cancel_callback = function()
                     self.enabled = false
-                    G_reader_settings:flipFalse("autoturn_enabled")
+                    G_reader_settings:makeFalse("autoturn_enabled")
                     self:_deprecateLastTask()
                     menu:updateItems()
                 end,
@@ -140,7 +140,7 @@ function AutoTurn:addToMainMenu(menu_items)
                     self.autoturn_sec = autoturn_spin.value
                     G_reader_settings:saveSetting("autoturn_timeout_seconds", autoturn_spin.value)
                     self.enabled = true
-                    G_reader_settings:flipTrue("autoturn_enabled")
+                    G_reader_settings:makeTrue("autoturn_enabled")
                     self:_deprecateLastTask()
                     self:_start()
                     menu:updateItems()
