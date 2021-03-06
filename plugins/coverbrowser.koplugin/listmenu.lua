@@ -881,9 +881,6 @@ end
 local ListMenu = {}
 
 function ListMenu:_recalculateDimen()
-    self.dimen.w = self.width
-    self.dimen.h = self.height or Screen:getHeight()
-
     -- Find out available height from other UI elements made in Menu
     self.others_height = 0
     if self.title_bar then -- Menu:init() has been done
@@ -908,7 +905,7 @@ function ListMenu:_recalculateDimen()
         self.itemnum_orig = self.path_items[self.path]
         self.focused_path_orig = self.focused_path
     end
-    local available_height = self.dimen.h - self.others_height - Size.line.thin
+    local available_height = self.inner_dimen.h - self.others_height - Size.line.thin
 
     -- (Note: we can't assign directly to self.perpage and expect it to
     -- be 'nil' if it was not defined, as we'll find instead the value
@@ -943,7 +940,7 @@ function ListMenu:_recalculateDimen()
     -- menu item height based on number of items per page
     -- add space for the separator
     self.item_height = math.floor(available_height / self.perpage) - Size.line.thin
-    self.item_width = self.dimen.w
+    self.item_width = self.inner_dimen.w
     self.item_dimen = Geom:new{
         w = self.item_width,
         h = self.item_height

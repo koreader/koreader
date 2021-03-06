@@ -227,9 +227,9 @@ function FileChooser:genItemTableFromPath(path)
         if dir.name == ".." then
             text = up_folder_arrow
         elseif dir.name == "." then -- possible with show_current_dir_for_hold
-            text = _("Long-press to select current directory")
+            text = _("Long-press to select current folder")
         elseif dir.name == "./." then -- added as content of an unreadable directory
-            text = _("Current directory not readable. Some content may not be shown.")
+            text = _("Current folder not readable. Some content may not be shown.")
         else
             text = dir.name.."/"
             bidi_wrap_func = BD.directory

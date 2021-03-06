@@ -101,7 +101,7 @@ end
 function FileManager:onSetDimensions(dimen)
     -- update listening according to new screen dimen
     if Device:isTouchDevice() then
-        self:initGesListener()
+        self:updateTouchZonesOnScreenResize(dimen)
     end
 end
 
@@ -518,6 +518,7 @@ function FileManager:init()
         table.insert(self, NetworkListener:new{ ui = self })
     end
 
+    self:initGesListener()
     self:handleEvent(Event:new("SetDimensions", self.dimen))
 end
 

@@ -2,6 +2,7 @@ local Device = require("device")
 local Screen = Device.screen
 local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
+local C_ = _.pgettext
 
 -- Get font size numbers as a table of strings
 local tableOfNumbersToTableOfStrings = function(numbers)
@@ -27,6 +28,8 @@ local CreOptions = {
                     "rotation.90CW",
                     "rotation.180UD",
                 },
+                -- For Dispatcher's sake
+                labels = {C_("Rotation", "⤹ 90°"), C_("Rotation", "↑ 0°"), C_("Rotation", "⤸ 90°"), C_("Rotation", "↓ 180°")},
                 alternate = false,
                 values = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
                 args = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},

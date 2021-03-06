@@ -15,6 +15,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local Persist = require("persist")
 local Screen = require("device").screen
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local socket = require("socket")
@@ -384,8 +385,8 @@ function CalibreSearch:browse(option, run, chosen)
         dimen = Screen:getSize(),
     }
     self.search_menu = Menu:new{
-        width = Screen:getWidth()-15,
-        height = Screen:getHeight()-15,
+        width = Screen:getWidth() - (Size.margin.fullscreen_popout * 2),
+        height = Screen:getHeight() - (Size.margin.fullscreen_popout * 2),
         show_parent = menu_container,
         onMenuHold = self.onMenuHold,
         cface = Font:getFace("smallinfofont"),
@@ -444,8 +445,8 @@ function CalibreSearch:showresults(t, title)
         dimen = Screen:getSize(),
     }
     self.search_menu = Menu:new{
-        width = Screen:getWidth()-15,
-        height = Screen:getHeight()-15,
+        width = Screen:getWidth() - (Size.margin.fullscreen_popout * 2),
+        height = Screen:getHeight() - (Size.margin.fullscreen_popout * 2),
         show_parent = menu_container,
         onMenuHold = self.onMenuHold,
         cface = Font:getFace("smallinfofont"),

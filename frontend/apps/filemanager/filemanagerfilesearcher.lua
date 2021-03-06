@@ -5,6 +5,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local BaseUtil = require("ffi/util")
@@ -29,6 +30,9 @@ local FileSearcher = InputContainer:new{
 }
 
 function FileSearcher:readDir()
+    local FileManager = require("apps/filemanager/filemanager")
+    local ReaderUI = require("apps/reader/readerui")
+    local show_unsupported = G_reader_settings:isTrue("show_unsupported")
     self.dirs = {self.path}
     self.files = {}
     while #self.dirs ~= 0 do
@@ -42,10 +46,10 @@ function FileSearcher:readDir()
                 -- Don't traverse hidden folders if we're not showing them
                 if attributes.mode == "directory" and f ~= "." and f ~= ".." and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, ".")) then
                     table.insert(new_dirs, fullpath)
-                    table.insert(self.files, {name = f, path = fullpath, attr = attributes})
+                    table.insert(self.files, {name = f, text = f.."/", attr = attributes, callback = function() FileManager:showFiles(fullpath) end})
                 -- Always ignore macOS resource forks, too.
-                elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") and DocumentRegistry:hasProvider(fullpath) then
-                    table.insert(self.files, {name = f, path = fullpath, attr = attributes})
+                elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") and (show_unsupported or DocumentRegistry:hasProvider(fullpath)) then
+                    table.insert(self.files, {name = f, text = f, attr = attributes, callback = function() ReaderUI:showReader(fullpath) end})
                 end
             end
         end
@@ -54,30 +58,14 @@ function FileSearcher:readDir()
 end
 
 function FileSearcher:setSearchResults()
-    local FileManager = require("apps/filemanager/filemanager")
-    local ReaderUI = require("apps/reader/readerui")
     local keywords = self.search_value
     self.results = {}
-    if keywords == " " then -- one space to show all files
+    if keywords == "*" then -- one * to show all files
         self.results = self.files
     else
         for __,f in pairs(self.files) do
             if string.find(string.lower(f.name), string.lower(keywords)) and string.sub(f.name,-4) ~= ".sdr" then
-                if f.attr.mode == "directory" then
-                    f.text = f.name.."/"
-                    f.name = nil
-                    f.callback = function()
-                        FileManager:showFiles(f.path)
-                    end
-                    table.insert(self.results, f)
-                else
-                    f.text = f.name
-                    f.name = nil
-                    f.callback = function()
-                        ReaderUI:showReader(f.path)
-                    end
-                    table.insert(self.results, f)
-                end
+                table.insert(self.results, f)
             end
         end
     end
@@ -165,8 +153,8 @@ function FileSearcher:showSearchResults()
         dimen = Screen:getSize(),
     }
     self.search_menu = Menu:new{
-        width = Screen:getWidth()-15,
-        height = Screen:getHeight()-15,
+        width = Screen:getWidth() - (Size.margin.fullscreen_popout * 2),
+        height = Screen:getHeight() - (Size.margin.fullscreen_popout * 2),
         show_parent = menu_container,
         onMenuHold = self.onMenuHold,
         cface = Font:getFace("smallinfofont"),

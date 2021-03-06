@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -34,37 +35,37 @@ function ReaderSearch:onShowFulltextSearchInput()
     if BD.mirroredUILayout() then
         backward_text, forward_text = forward_text, backward_text
     end
-    self:onInput{
+
+    self.input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
-        type = "text",
         buttons = {
             {
                 {
                     text = _("Cancel"),
                     callback = function()
-                        self:closeInputDialog()
+                        UIManager:close(self.input_dialog)
                     end,
                 },
                 {
                     text = backward_text,
-                    vsync = true,
                     callback = function()
+                        UIManager:close(self.input_dialog)
                         self:onShowSearchDialog(self.input_dialog:getInputText(), 1)
-                        self:closeInputDialog()
                     end,
                 },
                 {
                     text = forward_text,
-                    vsync = true,
                     is_enter_default = true,
                     callback = function()
+                        UIManager:close(self.input_dialog)
                         self:onShowSearchDialog(self.input_dialog:getInputText(), 0)
-                        self:closeInputDialog()
                     end,
                 },
             },
         },
     }
+    UIManager:show(self.input_dialog)
+    self.input_dialog:onShowKeyboard()
 end
 
 function ReaderSearch:onShowSearchDialog(text, direction)

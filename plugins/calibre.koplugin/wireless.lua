@@ -43,7 +43,11 @@ end
 local function updateDir(dir)
     local FileManager = require("apps/filemanager/filemanager")
     if FileManager:getCurrentDir() == dir then
-        FileManager.instance:reinit(dir)
+        -- getCurrentDir() will return nil (well, nothing, technically) if there isn't an FM instance, so,
+        -- unless we were passed a nil, this is technically redundant.
+        if FileManager.instance then
+            FileManager.instance:reinit(dir)
+        end
     end
 end
 

@@ -658,7 +658,7 @@ describe("Readerfooter module", function()
         tapFooterMenu(fake_menu, "Progress percentage".." (⤠)")
         assert.are.same('⤠ 0%', footer.footer_text.text)
         assert.is.same(false, footer.has_no_mode)
-        assert.is.same(footer.footer_text:getSize().w + footer.text_left_margin,
+        assert.is.same(footer.footer_text:getSize().w + footer.horizontal_margin,
                        footer.text_width)
         tapFooterMenu(fake_menu, "Progress percentage".." (⤠)")
         assert.is.same(true, footer.has_no_mode)

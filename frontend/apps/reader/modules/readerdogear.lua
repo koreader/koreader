@@ -17,7 +17,8 @@ function ReaderDogear:init()
     -- to not overwrite the book text.
     -- For other documents, there is no easy way to know if valuable content
     -- may be hidden by the icon (kopt's page_margin is quite obscure).
-    self.dogear_max_size = math.ceil( math.min(Screen:getWidth(), Screen:getHeight()) / 32)
+    self.dogear_min_size = math.ceil(math.min(Screen:getWidth(), Screen:getHeight()) / 40)
+    self.dogear_max_size = math.ceil(math.min(Screen:getWidth(), Screen:getHeight()) / 32)
     self.dogear_size = nil
     self.dogear_y_offset = 0
     self.top_pad = nil
@@ -38,10 +39,11 @@ function ReaderDogear:setupDogear(new_dogear_size)
         self.vgroup = VerticalGroup:new{
             self.top_pad,
             IconWidget:new{
-                icon = "dogear.opaque",
+                icon = "dogear.alpha",
                 rotation_angle = BD.mirroredUILayout() and 90 or 0,
                 width = self.dogear_size,
                 height = self.dogear_size,
+                alpha = true, -- Keep the alpha layer intact
             }
         }
         self[1] = RightContainer:new{
@@ -79,7 +81,7 @@ function ReaderDogear:onSetPageMargins(margins)
     -- top & right margins and be sure no text is hidden by the icon
     -- (the provided margins are not scaled, so do as ReaderTypeset)
     local margin = Screen:scaleBySize(math.max(margin_top, margin_right))
-    local new_dogear_size = math.min(self.dogear_max_size, margin)
+    local new_dogear_size = math.min(self.dogear_max_size, math.max(self.dogear_min_size, margin))
     self:setupDogear(new_dogear_size)
 end
 
