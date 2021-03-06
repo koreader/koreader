@@ -552,7 +552,13 @@ end
 function OPDSBrowser:downloadFile(item, filetype, remote_url)
     -- Download to user selected folder or last opened folder.
     local download_dir = self.getCurrentDownloadDir()
-    local filename = util.getSafeFilename(item.author .. " - " .. item.title .. "." .. filetype, download_dir)
+
+    local filename = item.title .. "." .. filetype
+    if item.author then
+        filename = item.author .. " - " .. filename
+    end
+
+    filename = util.getSafeFilename(filename, download_dir)
     local local_path = download_dir .. "/" .. filename
     local_path = util.fixUtf8(local_path, "_")
 
