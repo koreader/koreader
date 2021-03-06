@@ -376,8 +376,8 @@ end
 --[[--
 Remove elements from an array, fast.
 
-Swap & pop, like http://lua-users.org/lists/lua-l/2013-11/msg00027.html / https://stackoverflow.com/a/28942022, but preserving order.
-c.f., https://stackoverflow.com/a/53038524
+Swap & pop, like <http://lua-users.org/lists/lua-l/2013-11/msg00027.html> / <https://stackoverflow.com/a/28942022>, but preserving order.
+c.f., <https://stackoverflow.com/a/53038524>
 
 @table t Lua array to filter
 @func keep_cb Filtering callback. Takes three arguments: table, index, new index. Returns true to *keep* the item. See link above for potential uses of the third argument.
