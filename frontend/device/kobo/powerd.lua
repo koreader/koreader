@@ -3,6 +3,7 @@ local NickelConf = require("device/kobo/nickel_conf")
 local PluginShare = require("pluginshare")
 local SysfsLight = require ("device/sysfs_light")
 local ffiUtil = require("ffi/util")
+local RTC = require("ffi/rtc")
 
 local batt_state_folder =
         "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/"
@@ -405,6 +406,9 @@ function KoboPowerD:afterResume()
     end
     -- Turn the frontlight back on
     self:turnOnFrontlight()
+
+    -- Set the system clock to the hardware clock's time.
+    RTC:HCToSys()
 end
 
 return KoboPowerD
