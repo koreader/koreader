@@ -993,6 +993,12 @@ function Menu:updatePageInfo(select_number)
     else
         self.page_info_text:setText(_("No items"))
         self.page_info_text:disableWithoutDimming()
+
+        self.page_info_left_chev:hide()
+        self.page_info_right_chev:hide()
+        self.page_info_first_chev:hide()
+        self.page_info_last_chev:hide()
+        self.page_return_arrow:showHide(self.onReturn ~= nil)
     end
 end
 
