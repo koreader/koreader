@@ -107,8 +107,21 @@ local function expandSpecial(message, fallback)
     local authors = _("N/A")
     local series = _("N/A")
 
-    local instance = require("apps/reader/readerui"):_getRunningInstance()
-    if instance == nil and DocSettings:hasSidecarFile(lastfile) then
+    local ReaderUI = require("apps/reader/readerui")
+    local ui = ReaderUI:_getRunningInstance()
+    if ui then
+        -- If we have a ReaderUI instance, use it.
+        local doc = ui.document
+        currentpage = ui.view.state.page or currentpage
+        totalpages = doc:getPageCount() or totalpages
+        percent = Math.round((currentpage * 100) / totalpages)
+        local props = doc:getProps()
+        if props then
+            title = props.title and props.title ~= "" and props.title or title
+            authors = props.authors and props.authors ~= "" and props.authors or authors
+            series = props.series and props.series ~= "" and props.series or series
+        end
+    elseif DocSettings:hasSidecarFile(lastfile) then
         -- If there's no ReaderUI instance, but the file has sidecar data, use that
         local docinfo = DocSettings:open(lastfile)
         totalpages = docinfo.data.doc_pages or totalpages
@@ -120,20 +133,6 @@ local function expandSpecial(message, fallback)
             authors = docinfo.data.doc_props.authors and docinfo.data.doc_props.authors ~= "" and docinfo.data.doc_props.authors or authors
             series = docinfo.data.doc_props.series and docinfo.data.doc_props.series ~= "" and docinfo.data.doc_props.series or series
         end
-        docinfo:close()
-    elseif instance ~= nil and lfs.attributes(lastfile, "mode") == "file" then
-        -- But if we have a ReaderUI instance, and the file stil exists, open it
-        local doc = DocumentRegistry:openDocument(lastfile)
-        currentpage = instance.view.state.page or currentpage
-        totalpages = doc:getPageCount() or totalpages
-        percent = Math.round((currentpage * 100) / totalpages)
-        local props = doc:getProps()
-        if props then
-            title = props.title and props.title ~= "" and props.title or title
-            authors = props.authors and props.authors ~= "" and props.authors or authors
-            series = props.series and props.series ~= "" and props.series or series
-        end
-        doc:close()
     end
 
     ret = string.gsub(ret, "%%c", currentpage)
@@ -293,17 +292,24 @@ function Screensaver:chooseFile(document_cover)
 end
 
 function Screensaver:isExcluded()
-    if G_reader_settings:hasNot("lastfile") then
-        return false
-    end
-
-    local lastfile = G_reader_settings:readSetting("lastfile")
-    if DocSettings:hasSidecarFile(lastfile) then
-        local doc_settings = DocSettings:open(lastfile)
+    local ReaderUI = require("apps/reader/readerui")
+    local ui = ReaderUI:_getRunningInstance()
+    if ui then
+        local doc_settings = ui.doc_settings
         return doc_settings:isTrue("exclude_screensaver")
     else
-        -- No DocSetting, not excluded
-        return false
+        if G_reader_settings:hasNot("lastfile") then
+            return false
+        end
+
+        local lastfile = G_reader_settings:readSetting("lastfile")
+        if DocSettings:hasSidecarFile(lastfile) then
+            local doc_settings = DocSettings:open(lastfile)
+            return doc_settings:isTrue("exclude_screensaver")
+        else
+            -- No DocSetting, not excluded
+            return false
+        end
     end
 end
 
@@ -401,6 +407,8 @@ function Screensaver:setup(event, fallback_message)
     self.image_file = nil
 
     -- Check lastfile and setup the requested mode's resources, or a fallback mode if the required resources are unavailable.
+    local ReaderUI = require("apps/reader/readerui")
+    local ui = ReaderUI:_getRunningInstance()
     self.lastfile = G_reader_settings:readSetting("lastfile")
     if self.screensaver_type == "document_cover" then
         -- Set lastfile to the document of which we want to show the cover.
@@ -411,7 +419,12 @@ function Screensaver:setup(event, fallback_message)
         self.lastfile = self.lastfile ~= nil and self.lastfile or G_reader_settings:readSetting("lastfile")
         local excluded
         if DocSettings:hasSidecarFile(self.lastfile) then
-            local doc_settings = DocSettings:open(self.lastfile)
+            local doc_settings
+            if ui then
+                doc_settings = ui.doc_settings
+            else
+                doc_settings = DocSettings:open(self.lastfile)
+            end
             excluded = doc_settings:isTrue("exclude_screensaver")
         else
             -- No DocSetting, not excluded
@@ -419,12 +432,17 @@ function Screensaver:setup(event, fallback_message)
         end
         if not excluded then
             if self.lastfile and lfs.attributes(self.lastfile, "mode") == "file" then
-                local doc = DocumentRegistry:openDocument(self.lastfile)
-                if doc.loadDocument then -- CreDocument
-                    doc:loadDocument(false) -- load only metadata
+                if ui then
+                    local doc = ui.document
+                    self.image = doc:getCoverPageImage()
+                else
+                    local doc = DocumentRegistry:openDocument(self.lastfile)
+                    if doc.loadDocument then -- CreDocument
+                        doc:loadDocument(false) -- load only metadata
+                    end
+                    self.image = doc:getCoverPageImage()
+                    doc:close()
                 end
-                self.image = doc:getCoverPageImage()
-                doc:close()
                 if self.image == nil then
                     self.screensaver_type = "random_image"
                 end
@@ -438,8 +456,7 @@ function Screensaver:setup(event, fallback_message)
     end
     if self.screensaver_type == "bookstatus" then
         if self.lastfile and lfs.attributes(self.lastfile, "mode") == "file" then
-            local instance = require("apps/reader/readerui"):_getRunningInstance()
-            if instance == nil then
+            if not ui then
                 self.screensaver_type = "disable"
                 self.show_message = true
             end
@@ -504,18 +521,18 @@ function Screensaver:show()
             scale_factor = G_reader_settings:isTrue("screensaver_stretch_images") and nil or 0,
         }
     elseif self.screensaver_type == "bookstatus" then
-        local doc = DocumentRegistry:openDocument(self.lastfile)
-        local doc_settings = DocSettings:open(self.lastfile)
-        local instance = require("apps/reader/readerui"):_getRunningInstance()
+        local ReaderUI = require("apps/reader/readerui")
+        local ui = ReaderUI:_getRunningInstance()
+        local doc = ui.document
+        local doc_settings = ui.doc_settings
         widget = BookStatusWidget:new{
             thumbnail = doc:getCoverPageImage(),
             props = doc:getProps(),
             document = doc,
             settings = doc_settings,
-            view = instance.view,
+            view = ui.view,
             readonly = true,
         }
-        doc:close()
     elseif self.screensaver_type == "random_image" or self.screensaver_type == "image_file" then
         widget = ImageWidget:new{
             file = self.image_file,
