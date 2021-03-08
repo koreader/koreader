@@ -630,7 +630,7 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
            function(l, r) return l.signal_quality > r.signal_quality end)
         local success = false
         if self.wifi_toggle_long_press then
-            self.wifi_toggle_long_press = false
+            self.wifi_toggle_long_press = nil
         else
             for dummy, network in ipairs(network_list) do
                 if network.password then
