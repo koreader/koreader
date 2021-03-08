@@ -587,7 +587,7 @@ function NetworkMgr:getMenuTable(common_settings)
     end
 end
 
-function NetworkMgr:showNetworkMenu(complete_callback)
+function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
     local info = InfoMessage:new{text = _("Scanning for networks…")}
     UIManager:show(info)
     UIManager:nextTick(function()
@@ -607,49 +607,39 @@ function NetworkMgr:showNetworkMenu(complete_callback)
                 return
             end
         end
-        -- NOTE: Also supports a disconnect_callback, should we use it for something?
-        --       Tearing down Wi-Fi completely when tapping "disconnect" would feel a bit harsh, though...
-        UIManager:show(require("ui/widget/networksetting"):new{
-            network_list = network_list,
-            connect_callback = complete_callback,
-        })
-    end)
-end
 
-function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
-    local info = InfoMessage:new{text = _("Scanning for networks…")}
-    UIManager:show(info)
-    UIManager:nextTick(function()
-        local network_list, err = self:getNetworkList()
-        UIManager:close(info)
-        if network_list == nil then
-            UIManager:show(InfoMessage:new{text = err})
-            return
-        end
         table.sort(network_list,
            function(l, r) return l.signal_quality > r.signal_quality end)
+
         local success = false
         if self.wifi_toggle_long_press then
             self.wifi_toggle_long_press = nil
         else
             for dummy, network in ipairs(network_list) do
-                if network.password then
+                if network.connected then
+                    -- On platforms where we use wpa_supplicant (if we're calling this, we are),
+                    -- the invocation will check its global config, and if an AP configured there is reachable,
+                    -- it'll already have connected to it on its own.
+                    success = true
+                elseif network.password then
                     success = NetworkMgr:authenticateNetwork(network)
-                    if success then
-                        NetworkMgr:obtainIP()
-                        if complete_callback then
-                            complete_callback()
-                        end
-                        UIManager:show(InfoMessage:new{
-                            text = T(_("Connected to network %1"), BD.wrap(network.ssid)),
-                            timeout = 3,
-                        })
-                        break
+                end
+                if success then
+                    NetworkMgr:obtainIP()
+                    if complete_callback then
+                        complete_callback()
                     end
+                    UIManager:show(InfoMessage:new{
+                        text = T(_("Connected to network %1"), BD.wrap(network.ssid)),
+                        timeout = 3,
+                    })
+                    break
                 end
             end
         end
         if not success then
+            -- NOTE: Also supports a disconnect_callback, should we use it for something?
+            --       Tearing down Wi-Fi completely when tapping "disconnect" would feel a bit harsh, though...
             UIManager:show(require("ui/widget/networksetting"):new{
                 network_list = network_list,
                 connect_callback = complete_callback,
