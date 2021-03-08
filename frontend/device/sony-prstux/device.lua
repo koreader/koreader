@@ -153,7 +153,7 @@ function SonyPRSTUX:initNetworkManager(NetworkMgr)
 
     function NetworkMgr:turnOnWifi(complete_callback)
        os.execute("./set-wifi.sh on")
-       self:reconnectOrShowNetworkMenu(complete_callback)
+       self:showNetworkMenu(complete_callback)
     end
 
     function NetworkMgr:getNetworkInterfaceName()

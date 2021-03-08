@@ -112,13 +112,14 @@ function NetworkMgr:releaseIP() end
 function NetworkMgr:restoreWifiAsync() end
 -- End of device specific methods
 
-function NetworkMgr:promptWifiOn(complete_callback)
+function NetworkMgr:promptWifiOn(complete_callback, long_press)
     UIManager:show(ConfirmBox:new{
         text = _("Do you want to turn on Wi-Fi?"),
         ok_text = _("Turn on"),
         ok_callback = function()
             self.wifi_was_on = true
             G_reader_settings:makeTrue("wifi_was_on")
+            self.wifi_toggle_long_press = long_press
             self:turnOnWifi(complete_callback)
         end,
     })
@@ -136,7 +137,7 @@ function NetworkMgr:promptWifiOff(complete_callback)
     })
 end
 
-function NetworkMgr:promptWifi(complete_callback)
+function NetworkMgr:promptWifi(complete_callback, long_press)
     UIManager:show(MultiConfirmBox:new{
         text = _("Wi-Fi is enabled, but you're currently not connected to a network.\nHow would you like to proceed?"),
         choice1_text = _("Turn Wi-Fi off"),
@@ -149,6 +150,7 @@ function NetworkMgr:promptWifi(complete_callback)
         choice2_callback = function()
             self.wifi_was_on = true
             G_reader_settings:makeTrue("wifi_was_on")
+            self.wifi_toggle_long_press = long_press
             self:turnOnWifi(complete_callback)
         end,
     })
@@ -349,7 +351,7 @@ function NetworkMgr:getWifiMenuTable()
 end
 
 function NetworkMgr:getWifiToggleMenuTable()
-    local toggleCallback = function(touchmenu_instance)
+    local toggleCallback = function(touchmenu_instance, long_press)
         local is_wifi_on = NetworkMgr:isWifiOn()
         local is_connected = NetworkMgr:isConnected()
         local fully_connected = is_wifi_on and is_connected
@@ -395,9 +397,9 @@ function NetworkMgr:getWifiToggleMenuTable()
         if fully_connected then
             NetworkMgr:promptWifiOff(complete_callback)
         elseif is_wifi_on and not is_connected then
-            NetworkMgr:promptWifi(complete_callback)
+            NetworkMgr:promptWifi(complete_callback, long_press)
         else
-            NetworkMgr:promptWifiOn(complete_callback)
+            NetworkMgr:promptWifiOn(complete_callback, long_press)
         end
     end
 
@@ -405,13 +407,9 @@ function NetworkMgr:getWifiToggleMenuTable()
         text = _("Wi-Fi connection"),
         enabled_func = function() return Device:hasWifiToggle() end,
         checked_func = function() return NetworkMgr:isWifiOn() end,
-        callback = function(touchmenu_instance)
-            self.wifi_toggle_long_press = false
-            toggleCallback(touchmenu_instance)
-        end,
+        callback = toggleCallback,
         hold_callback = function(touchmenu_instance)
-            self.wifi_toggle_long_press = true
-            toggleCallback(touchmenu_instance)
+            toggleCallback(touchmenu_instance, true)
         end,
     }
 end
@@ -589,7 +587,7 @@ function NetworkMgr:getMenuTable(common_settings)
     end
 end
 
-function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
+function NetworkMgr:showNetworkMenu(complete_callback)
     local info = InfoMessage:new{text = _("Scanning for networks…")}
     UIManager:show(info)
     UIManager:nextTick(function()
@@ -609,11 +607,31 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
                 return
             end
         end
+        -- NOTE: Also supports a disconnect_callback, should we use it for something?
+        --       Tearing down Wi-Fi completely when tapping "disconnect" would feel a bit harsh, though...
+        UIManager:show(require("ui/widget/networksetting"):new{
+            network_list = network_list,
+            connect_callback = complete_callback,
+        })
+    end)
+end
+
+function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
+    local info = InfoMessage:new{text = _("Scanning for networks…")}
+    UIManager:show(info)
+    UIManager:nextTick(function()
+        local network_list, err = self:getNetworkList()
+        UIManager:close(info)
+        if network_list == nil then
+            UIManager:show(InfoMessage:new{text = err})
+            return
+        end
         table.sort(network_list,
            function(l, r) return l.signal_quality > r.signal_quality end)
-
         local success = false
-        if not self.wifi_toggle_long_press then
+        if self.wifi_toggle_long_press then
+            self.wifi_toggle_long_press = false
+        else
             for dummy, network in ipairs(network_list) do
                 if network.password then
                     success = NetworkMgr:authenticateNetwork(network)
@@ -631,10 +649,7 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
                 end
             end
         end
-
         if not success then
-            -- NOTE: Also supports a disconnect_callback, should we use it for something?
-            --       Tearing down Wi-Fi completely when tapping "disconnect" would feel a bit harsh, though...
             UIManager:show(require("ui/widget/networksetting"):new{
                 network_list = network_list,
                 connect_callback = complete_callback,
