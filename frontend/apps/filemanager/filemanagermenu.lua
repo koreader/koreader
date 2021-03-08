@@ -612,7 +612,13 @@ To:
 
     self.menu_items.find_file = {
         -- @translators Search for files by name.
-        text = _("Find a file"),
+        text = _("File search"),
+        help_text = _([[Search a book by filename in the current or home folder and its subfolders.
+
+Search for '*' will show all files.
+Search string supports Lua patterns.
+
+Tap a book in the search results to open it.]]),
         callback = function()
             self.ui:handleEvent(Event:new("ShowFileSearch"))
         end
