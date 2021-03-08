@@ -371,7 +371,7 @@ function Screensaver:setup(event, fallback_message)
     if G_reader_settings:has("screensaver_show_message") then
         self.show_message = G_reader_settings:isTrue("screensaver_show_message")
     else
-        -- We only enable show_message as a fallback when the *type* is unset, too.
+        -- We only enable show_message as a *type* fallback!
         self.show_message = false
     end
     if G_reader_settings:has("screensaver_type") then
