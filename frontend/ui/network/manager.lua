@@ -633,6 +633,8 @@ function NetworkMgr:reconnectOrShowNetworkMenu(complete_callback)
         end
 
         if not success then
+            -- NOTE: Also supports a disconnect_callback, should we use it for something?
+            --       Tearing down Wi-Fi completely when tapping "disconnect" would feel a bit harsh, though...
             UIManager:show(require("ui/widget/networksetting"):new{
                 network_list = network_list,
                 connect_callback = complete_callback,
