@@ -181,7 +181,12 @@ Simple wrapper for @{ffi.rtc.isWakeupAlarmScheduled}.
 --]]
 function WakeupMgr:isWakeupAlarmScheduled()
     local wakeup_scheduled = RTC:isWakeupAlarmScheduled()
-    logger.dbg("isWakeupAlarmScheduled", wakeup_scheduled)
+    if wakeup_scheduled then
+        local alarm = RTC:getWakeupAlarmEpoch()
+        logger.dbg("WakeupMgr:isWakeupAlarmScheduled: An alarm is scheduled for " .. alarm .. os.date(" (%F %T %z)", alarm))
+    else
+        logger.dbg("WakeupMgr:isWakeupAlarmScheduled: No alarm is currently scheduled.")
+    end
     return wakeup_scheduled
 end
 
