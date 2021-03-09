@@ -36,7 +36,7 @@ function AutoSuspend:_enabledShutdown()
     return Device:canPowerOff() and self.autoshutdown_timeout_seconds > 0
 end
 
-function AutoSuspend:_schedule()
+function AutoSuspend:_schedule(shutdown_only)
     if not self:_enabled() and (Device:canPowerOff() and not self:_enabledShutdown()) then
         logger.dbg("AutoSuspend:_schedule is disabled")
         return
@@ -57,17 +57,17 @@ function AutoSuspend:_schedule()
     if delay_shutdown <= 0 then
         logger.dbg("AutoSuspend: initiating shutdown")
         UIManager:poweroff_action()
-    elseif delay_suspend <= 0 then
+    elseif delay_suspend <= 0 and not shutdown_only then
         logger.dbg("AutoSuspend: will suspend the device")
         UIManager:suspend()
     else
-        if self:_enabled() then
+        if self:_enabled() and not shutdown_only then
             logger.dbg("AutoSuspend: scheduling next suspend check in", delay_suspend)
-            UIManager:scheduleIn(delay_suspend, self._schedule, self)
+            UIManager:scheduleIn(delay_suspend, self._schedule, self, shutdown_only)
         end
         if self:_enabledShutdown() then
             logger.dbg("AutoSuspend: scheduling next shutdown check in", delay_shutdown)
-            UIManager:scheduleIn(delay_shutdown, self._schedule, self)
+            UIManager:scheduleIn(delay_shutdown, self._schedule, self, shutdown_only)
         end
     end
 end
@@ -83,6 +83,16 @@ function AutoSuspend:_start()
         logger.dbg("AutoSuspend: start at", now_ts)
         self.last_action_sec = now_ts
         self:_schedule()
+    end
+end
+
+-- Variant that only re-engages the shutdown timer for onUnexpectedWakeupLimit
+function AutoSuspend:_restart()
+    if self:_enabledShutdown() then
+        local now_ts = os.time()
+        logger.dbg("AutoSuspend: restart at", now_ts)
+        self.last_action_sec = now_ts
+        self:_schedule(true)
     end
 end
 
@@ -116,11 +126,15 @@ function AutoSuspend:onResume()
     if self:_enabledShutdown() and Device.wakeup_mgr then
         Device.wakeup_mgr:removeTask(nil, nil, UIManager.poweroff_action)
     end
+    -- Unschedule in case we tripped onUnexpectedWakeupLimit first...
+    self:_unschedule()
     self:_start()
 end
 
 function AutoSuspend:onUnexpectedWakeupLimit()
     logger.dbg("AutoSuspend: onUnexpectedWakeupLimit")
+    -- Only re-engage the *shutdown* schedule to avoid doing the same dance indefinitely.
+    self:_restart()
 end
 
 function AutoSuspend:onAllowStandby()
