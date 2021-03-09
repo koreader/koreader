@@ -37,7 +37,7 @@ function AutoSuspend:_enabledShutdown()
 end
 
 function AutoSuspend:_schedule()
-    if not self:_enabled() then
+    if not self:_enabled() and (Device:canPowerOff() and not self:_enabledShutdown()) then
         logger.dbg("AutoSuspend:_schedule is disabled")
         return
     end
@@ -117,6 +117,10 @@ function AutoSuspend:onResume()
         Device.wakeup_mgr:removeTask(nil, nil, UIManager.poweroff_action)
     end
     self:_start()
+end
+
+function AutoSuspend:onUnexpectedWakeupLimit()
+    logger.dbg("AutoSuspend: onUnexpectedWakeupLimit")
 end
 
 function AutoSuspend:onAllowStandby()
