@@ -112,15 +112,25 @@ function NetworkMgr:releaseIP() end
 function NetworkMgr:restoreWifiAsync() end
 -- End of device specific methods
 
+function NetworkMgr:toggleWifiOn(complete_callback, long_press)
+    self.wifi_was_on = true
+    G_reader_settings:makeTrue("wifi_was_on")
+    self.wifi_toggle_long_press = long_press
+    self:turnOnWifi(complete_callback)
+end
+
+function NetworkMgr:toggleWifiOff(complete_callback)
+    self.wifi_was_on = false
+    G_reader_settings:makeFalse("wifi_was_on")
+    self:turnOffWifi(complete_callback)
+end
+
 function NetworkMgr:promptWifiOn(complete_callback, long_press)
     UIManager:show(ConfirmBox:new{
         text = _("Do you want to turn on Wi-Fi?"),
         ok_text = _("Turn on"),
         ok_callback = function()
-            self.wifi_was_on = true
-            G_reader_settings:makeTrue("wifi_was_on")
-            self.wifi_toggle_long_press = long_press
-            self:turnOnWifi(complete_callback)
+            self:toggleWifiOn(complete_callback, long_press)
         end,
     })
 end
@@ -130,9 +140,7 @@ function NetworkMgr:promptWifiOff(complete_callback)
         text = _("Do you want to turn off Wi-Fi?"),
         ok_text = _("Turn off"),
         ok_callback = function()
-            self.wifi_was_on = false
-            G_reader_settings:makeFalse("wifi_was_on")
-            self:turnOffWifi(complete_callback)
+            self:toggleWifiOff(complete_callback)
         end,
     })
 end
@@ -142,16 +150,11 @@ function NetworkMgr:promptWifi(complete_callback, long_press)
         text = _("Wi-Fi is enabled, but you're currently not connected to a network.\nHow would you like to proceed?"),
         choice1_text = _("Turn Wi-Fi off"),
         choice1_callback = function()
-            self.wifi_was_on = false
-            G_reader_settings:makeFalse("wifi_was_on")
-            self:turnOffWifi(complete_callback)
+            self:toggleWifiOff(complete_callback)
         end,
         choice2_text = _("Connect"),
         choice2_callback = function()
-            self.wifi_was_on = true
-            G_reader_settings:makeTrue("wifi_was_on")
-            self.wifi_toggle_long_press = long_press
-            self:turnOnWifi(complete_callback)
+            self:toggleWifiOn(complete_callback, long_press)
         end,
     })
 end
@@ -395,11 +398,12 @@ function NetworkMgr:getWifiToggleMenuTable()
             end
         end
         if fully_connected then
-            NetworkMgr:promptWifiOff(complete_callback)
+            NetworkMgr:toggleWifiOff(complete_callback)
         elseif is_wifi_on and not is_connected then
+            -- ask whether user wants to connect or turn off wifi
             NetworkMgr:promptWifi(complete_callback, long_press)
         else
-            NetworkMgr:promptWifiOn(complete_callback, long_press)
+            NetworkMgr:toggleWifiOn(complete_callback, long_press)
         end
     end
 
