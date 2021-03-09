@@ -62,11 +62,11 @@ function AutoSuspend:_schedule()
         UIManager:suspend()
     else
         if self:_enabled() then
-            logger.dbg("AutoSuspend: schedule next suspend check in", delay_suspend)
+            logger.dbg("AutoSuspend: scheduling next suspend check in", delay_suspend)
             UIManager:scheduleIn(delay_suspend, self._schedule, self)
         end
         if self:_enabledShutdown() then
-            logger.dbg("AutoSuspend: schedule next shutdown check in", delay_shutdown)
+            logger.dbg("AutoSuspend: scheduling next shutdown check in", delay_shutdown)
             UIManager:scheduleIn(delay_shutdown, self._schedule, self)
         end
     end
