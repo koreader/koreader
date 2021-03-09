@@ -518,7 +518,7 @@ function Screensaver:show()
             image_disposable = true,
             height = Screen:getHeight(),
             width = Screen:getWidth(),
-            scale_factor = G_reader_settings:isTrue("screensaver_stretch_images") and nil or 0,
+            scale_factor = G_reader_settings:nilOrFalse("screensaver_stretch_images") and 0 or nil,
         }
     elseif self.screensaver_type == "bookstatus" then
         local ReaderUI = require("apps/reader/readerui")
@@ -540,7 +540,7 @@ function Screensaver:show()
             alpha = true,
             height = Screen:getHeight(),
             width = Screen:getWidth(),
-            scale_factor = G_reader_settings:isTrue("screensaver_stretch_images") and nil or 0,
+            scale_factor = G_reader_settings:nilOrFalse("screensaver_stretch_images") and 0 or nil,
         }
     elseif self.screensaver_type == "readingprogress" then
         widget = Screensaver.getReaderProgress()
