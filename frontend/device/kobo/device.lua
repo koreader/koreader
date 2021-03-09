@@ -540,7 +540,8 @@ local function check_unexpected_wakeup()
     -- just in case other events like SleepCoverClosed also scheduled a suspend
     UIManager:unschedule(Kobo.suspend)
 
-    if WakeupMgr:isWakeupAlarmScheduled() then
+    -- Do an initial validation to discriminate unscheduled wakeups happening *outside* of the alarm proximity window.
+    if WakeupMgr:isWakeupAlarmScheduled() and WakeupMgr:validateWakeupAlarmByProximity() then
         logger.info("Kobo suspend: scheduled wakeup.")
         local res = WakeupMgr:wakeupAction()
         if not res then
