@@ -74,6 +74,24 @@ local function tryOpenBook()
     end
 end
 
+
+-- A couple helper functions to compute/check aligned values...
+-- c.f., <linux/kernel.h>
+local function ALIGN(x, a)
+    -- (x + (a-1)) & ~(a-1)
+    local mask = a - 1
+    return bit.band(x + mask, bit.bnot(mask))
+end
+
+local function IS_ALIGNED(x, a)
+    -- (x & (a-1)) == 0
+    if bit.band(x, a - 1) == 0 then
+        return true
+    else
+        return false
+    end
+end
+
 function PocketBook:init()
     local raw_input = self.raw_input
     local touch_rotation = raw_input and raw_input.touch_rotation or 0
@@ -97,10 +115,45 @@ function PocketBook:init()
                     fb.forced_rotation = nil
                 end
             end
-            -- if hwrot is still on, nuke swrot
+            -- If hwrot is still on, nuke swrot
             if fb.forced_rotation then
                 fb.is_always_portrait = false
             end
+
+            -- Legacy devices return incomplete/broken data, fix it without breaking saner devices.
+            -- c.f., https://github.com/koreader/koreader-base/blob/50a965c28fd5ea2100257aa9ce2e62c9c301155c/ffi/framebuffer_linux.lua#L119-L189
+            if string.byte(ffi.string(finfo.id, 16), 1, 1) == 0 then
+                local xres_virtual = vinfo.xres_virtual
+                if not IS_ALIGNED(vinfo.xres_virtual, 32) then
+                    vinfo.xres_virtual = ALIGN(vinfo.xres, 32)
+                end
+                local yres_virtual = vinfo.yres_virtual
+                if not IS_ALIGNED(vinfo.yres_virtual, 128) then
+                    vinfo.yres_virtual = ALIGN(vinfo.yres, 128)
+                end
+                local line_length = finfo.line_length
+                finfo.line_length = vinfo.xres_virtual * bit.rshift(vinfo.bits_per_pixel, 3)
+
+                local fb_size = finfo.line_length * vinfo.yres_virtual
+                if fb_size > finfo.smem_len then
+                    if not IS_ALIGNED(yres_virtual, 32) then
+                        vinfo.yres_virtual = ALIGN(vinfo.yres, 32)
+                    else
+                        vinfo.yres_virtual = yres_virtual
+                    end
+                    fb_size = finfo.line_length * vinfo.yres_virtual
+
+                    if fb_size > finfo.smem_len then
+                        --fb_size = finfo.smem_len
+                        finfo.line_length = line_length
+                        vinfo.xres_virtual = xres_virtual
+                        vinfo.yres_virtual = yres_virtual
+
+                        vinfo.xres_virtual = bit.lshift(finfo.line_length, 3) / vinfo.bits_per_pixel
+                    end
+                end
+            end
+
             return self._fb_init(fb, finfo, vinfo)
         end,
         -- raw touch input orientiation is different from the screen
@@ -522,7 +575,7 @@ function PocketBookColorLux:_model_init()
     self.screen.blitbuffer_rotation_mode = self.screen.ORIENTATION_PORTRAIT
     self.screen.native_rotation_mode = self.screen.ORIENTATION_PORTRAIT
 end
-function PocketBookColorLux._fb_init(fb,finfo,vinfo)
+function PocketBookColorLux._fb_init(fb, finfo, vinfo)
     -- Pocketbook Color Lux reports bits_per_pixel = 8, but actually uses an RGB24 framebuffer
     vinfo.bits_per_pixel = 24
     vinfo.xres = vinfo.xres / 3
