@@ -111,7 +111,7 @@ function ReaderTypeset:onReadSettings(config)
         self.smooth_scaling = config:isTrue("smooth_scaling")
     else
         local global = G_reader_settings:readSetting("copt_smooth_scaling")
-        self.smooth_scaling = (global == nil or global == 0) and false or true
+        self.smooth_scaling = global == 1 and true or false
     end
     self:toggleImageScaling(self.smooth_scaling)
 

@@ -694,13 +694,13 @@ function KOSync:saveSettings()
         auto_sync = self.kosync_auto_sync,
         pages_before_update = self.kosync_pages_before_update,
         whisper_forward =
-              (self.kosync_whisper_forward == SYNC_STRATEGY.DEFAULT_FORWARD
-               and nil
-               or self.kosync_whisper_forward),
+              (self.kosync_whisper_forward ~= SYNC_STRATEGY.DEFAULT_FORWARD
+               and self.kosync_whisper_forward
+               or nil),
         whisper_backward =
-              (self.kosync_whisper_backward == SYNC_STRATEGY.DEFAULT_BACKWARD
-               and nil
-               or self.kosync_whisper_backward),
+              (self.kosync_whisper_backward ~= SYNC_STRATEGY.DEFAULT_BACKWARD
+               and self.kosync_whisper_backward
+               or nil),
     }
     G_reader_settings:saveSetting("kosync", settings)
 end
