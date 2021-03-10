@@ -144,9 +144,9 @@ function PocketBook:init()
                     fb_size = finfo.line_length * vinfo.yres_virtual
 
                     if fb_size > finfo.smem_len then
-                        fb_size = finfo.smem_len
+                        --fb_size = finfo.smem_len
                         finfo.line_length = line_length
-                        vinfo.xres_virtual = xres_virtual
+                        --vinfo.xres_virtual = xres_virtual
                         vinfo.yres_virtual = yres_virtual
 
                         vinfo.xres_virtual = bit.lshift(finfo.line_length, 3) / vinfo.bits_per_pixel
