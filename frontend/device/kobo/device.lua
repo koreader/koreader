@@ -540,6 +540,7 @@ local function check_unexpected_wakeup()
     -- just in case other events like SleepCoverClosed also scheduled a suspend
     UIManager:unschedule(Kobo.suspend)
 
+    -- Do an initial validation to discriminate unscheduled wakeups happening *outside* of the alarm proximity window.
     if WakeupMgr:isWakeupAlarmScheduled() and WakeupMgr:validateWakeupAlarmByProximity() then
         logger.info("Kobo suspend: scheduled wakeup.")
         local res = WakeupMgr:wakeupAction()
@@ -557,6 +558,9 @@ local function check_unexpected_wakeup()
             -- Don't put device back to sleep under the following two cases:
             --   1. a resume event triggered Kobo:resume() function
             --   2. trying to put device back to sleep more than 20 times after unexpected wakeup
+            -- Broadcast a specific event, so that AutoSuspend can pick up the baton...
+            local Event = require("ui/event")
+            UIManager:broadcastEvent(Event:new("UnexpectedWakeupLimit"))
             return
         end
 

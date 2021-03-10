@@ -55,7 +55,7 @@ function WakeupMgr:addTask(seconds_from_now, callback)
     if not type(seconds_from_now) == "number" and not type(callback) == "function" then return end
 
     local epoch = RTC:secondsFromNowToEpoch(seconds_from_now)
-    logger.info("WakeupMgr: scheduling wakeup for:", seconds_from_now, epoch)
+    logger.info("WakeupMgr: scheduling wakeup in", seconds_from_now)
 
     local old_upcoming_task = (self._task_queue[1] or {}).epoch
 
@@ -181,7 +181,13 @@ Simple wrapper for @{ffi.rtc.isWakeupAlarmScheduled}.
 --]]
 function WakeupMgr:isWakeupAlarmScheduled()
     local wakeup_scheduled = RTC:isWakeupAlarmScheduled()
-    logger.dbg("isWakeupAlarmScheduled", wakeup_scheduled)
+    if wakeup_scheduled then
+        -- NOTE: This can't return nil given that we're behind an isWakeupAlarmScheduled check.
+        local alarm = RTC:getWakeupAlarmEpoch()
+        logger.dbg("WakeupMgr:isWakeupAlarmScheduled: An alarm is scheduled for " .. alarm .. os.date(" (%F %T %z)", alarm))
+    else
+        logger.dbg("WakeupMgr:isWakeupAlarmScheduled: No alarm is currently scheduled.")
+    end
     return wakeup_scheduled
 end
 
