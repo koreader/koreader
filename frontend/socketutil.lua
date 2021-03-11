@@ -9,6 +9,7 @@ local socket = require("socket")
 local ssl = require("ssl")
 
 local socketutil = {
+    -- Init to the default LuaSocket/LuaSec values
     block_timeout = 60,
     total_timeout = -1,
 }

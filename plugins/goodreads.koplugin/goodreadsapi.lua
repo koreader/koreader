@@ -2,9 +2,10 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local GoodreadsBook = require("goodreadsbook")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
+local http = require("socket.http")
 local url = require('socket.url')
-local socket = require('socket')
-local https = require('ssl.https')
+local socket = require("socket")
+local socketutil = require("socketutil")
 local ltn12 = require('ltn12')
 local _ = require("gettext")
 
@@ -42,14 +43,19 @@ local function genIdUrl(id, userApi)
 end
 
 function GoodreadsApi:fetchXml(s_url)
-    local request, sink = {}, {}
+    local sink = {}
     local parsed = url.parse(s_url)
-    request['url'] = s_url
-    request['method'] = 'GET'
-    request['sink'] = ltn12.sink.table(sink)
-    https.TIMEOUT = 5
-    local httpsRequest = parsed.scheme == 'https' and https.request
-    local headers = socket.skip(2, httpsRequest(request))
+    socketutil:set_timeout()
+    local request = {
+        url     = s_url,
+        method  = "GET",
+        sink    = ltn12.sink.table(sink),
+        headers = {
+            ["User-Agent"] = socketutil.USER_AGENT,
+        },
+        create  = parsed.scheme == "http" and socketutil.http_tcp,
+    }
+    local headers = socket.skip(2, http.request(request))
     if headers == nil then
         return nil
     end
