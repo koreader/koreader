@@ -66,7 +66,7 @@ socketutil.SSL_HANDSHAKE_CODE = "wantread"     -- from LuaSec's ssl.c
 socketutil.SINK_TMOUT_CODE    = "sink timeout" -- from our own socketutil
 
 -- NOTE: Use os.time() for simplicity's sake (we don't really need subsecond precision).
---       LuaSocket itself is already using gettimeofday anyway.
+--       LuaSocket itself is already using gettimeofday anyway (although it does the maths, like ffi/util's getTimestamp).
 --       Proper etiquette would have everyone using clock_gettime(CLOCK_MONOTONIC) for this kind of stuff,
 --       but it's a tad more annoying to use because it's stuffed in librt in old glibc versions,
 --       and I have no idea what macOS & Android do with it (but it is POSIX). Plus, win32.
