@@ -270,7 +270,7 @@ end
 function OPDSBrowser:fetchFeed(item_url, username, password, method)
     local sink = {}
     local parsed = url.parse(item_url)
-    socketutil:set_timeout()
+    socketutil:set_timeout(socketutil.LARGE_BLOCK_TMOUT, socketutil.LARGE_TOTAL_TMOUT)
     local request = {
         url      = item_url,
         method   = method and method or "GET",
