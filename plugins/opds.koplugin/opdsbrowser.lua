@@ -269,6 +269,8 @@ end
 
 function OPDSBrowser:fetchFeed(item_url, username, password, method)
     local sink = {}
+    local parsed = url.parse(item_url)
+    socketutil:set_timeout()
     local request = {
         url      = item_url,
         method   = method and method or "GET",
@@ -277,14 +279,13 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
             ["User-Agent"] = socketutil.USER_AGENT,
             ["Accept-Encoding"] = "identity",
         },
-        create   = socketutil.create_tcp,
+        create   = parsed.scheme == "http" and socketutil.http_tcp,
         sink     = ltn12.sink.table(sink),
         username = username,
         password = password,
     }
     logger.info("Request:", request)
-    local httpRequest = http.request
-    local code, headers = socket.skip(1, httpRequest(request))
+    local code, headers = socket.skip(1, http.request(request))
     -- raise error message when network is unavailable
     if headers == nil then
         error(code)
@@ -565,16 +566,16 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
             logger.dbg("Downloading file", local_path, "from", remote_url)
             local parsed = url.parse(remote_url)
 
-            local dummy, code, headers
-
+            local code, headers
             if parsed.scheme == "http" or parsed.scheme == "https" then
+                socketutil:set_timeout(15, 60)
                 code, headers = socket.skip(1, http.request {
                     url         = remote_url,
                     headers     = {
                         ["User-Agent"]      = socketutil.USER_AGENT,
                         ["Accept-Encoding"] = "identity",
                     },
-                    create      = function() return socketutil.create_tcp(15, 60) end,
+                    create      = parsed.scheme == "http" and socketutil.http_tcp,
                     sink        = ltn12.sink.file(io.open(local_path, "w")),
                     user        = item.username,
                     password    = item.password,

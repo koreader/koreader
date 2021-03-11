@@ -105,18 +105,17 @@ local function getUrlContent(url, timeout, maxtime)
     local ltn12 = require("ltn12")
     local socket = require("socket")
     local socketutil = require("socketutil")
+    local url = require("socket.url")
 
-    local requester
-    if url:sub(1,7) == "http://" then
-        requester = http
-    elseif url:sub(1,8) == "https://" then
-        requester = https
-    else
+    local parsed = url.parse(url)
+    if parsed.scheme ~= "http" and parsed.scheme ~= "https" then
         return false, "Unsupported protocol"
     end
     if not timeout then timeout = 10 end
 
     local sink = {}
+    local parsed = url.parse(url)
+    socketutil:set_timeout(timeout, maxtime or 30)
     local request = {
         url     = url,
         method  = "GET",
@@ -124,10 +123,10 @@ local function getUrlContent(url, timeout, maxtime)
         headers = {
             ["User-Agent"] = socketutil.USER_AGENT,
         },
-        create  = function() return socketutil.create_tcp(timeout, maxtime or 30) end,
+        create  = parsed.scheme == "http" and socketutil.http_tcp,
     }
 
-    local code, headers, status = socket.skip(1, requester.request(request))
+    local code, headers, status = socket.skip(1, http.request(request))
     local content = table.concat(sink) -- empty or content accumulated till now
     -- logger.dbg("code:", code)
     -- logger.dbg("headers:", headers)
@@ -174,7 +173,7 @@ local WIKIPEDIA_IMAGES = 4
 --  return decoded JSON table from Wikipedia
 --]]
 function Wikipedia:loadPage(text, lang, page_type, plain)
-    local url = require('socket.url')
+    local url = require("socket.url")
     local query = ""
     local parsed = url.parse(self:getWikiServer(lang))
     parsed.path = self.wiki_path

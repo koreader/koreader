@@ -1,7 +1,6 @@
 local Version = require("version")
 local ffiutil = require("ffi/util")
 local http = require("socket.http")
-local https = require("ssl.https")
 local logger = require("logger")
 local ltn12 = require("ltn12")
 local socket = require("socket")
@@ -102,6 +101,8 @@ local function getUrlContent(url, timeout, maxtime, redirectCount)
     logger.dbg("timeout:", timeout)
 
     local sink = {}
+    local parsed = socket_url.parse(url)
+    socketutil:set_timeout(timeout, maxtime or 30)
     local request = {
         url     = url,
         method  = "GET",
@@ -109,14 +110,12 @@ local function getUrlContent(url, timeout, maxtime, redirectCount)
         headers = {
             ["User-Agent"] = socketutil.USER_AGENT,
         },
-        create  = function() return socketutil.create_tcp(timeout, maxtime or 30) end,
+        create  = parsed.scheme == "http" and socketutil.http_tcp,
     }
-    local parsed = socket_url.parse(url)
 
-    local httpRequest = parsed.scheme == "http" and http.request or https.request
     logger.dbg("request:", request)
-    local code, headers, status = socket.skip(1, httpRequest(request))
-    logger.dbg("After httpRequest")
+    local code, headers, status = socket.skip(1, http.request(request))
+    logger.dbg("After http.request")
     local content = table.concat(sink) -- empty or content accumulated till now
     logger.dbg("type(code):", type(code))
     logger.dbg("code:", code)

@@ -27,6 +27,7 @@ local logger = require("logger")
 local ltn12 = require("ltn12")
 local socket = require("socket")
 local socketutil = require("socketutil")
+local url = require("socket.url")
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
@@ -541,9 +542,7 @@ end
 ---- @todo separate call to internal API from the download on external server
 function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     local sink = {}
-    local request = {
-        create  = function() return socketutil.create_tcp(10, 30) end,
-    }
+    local request = {}
 
     -- Is it an API call, or a regular file direct download?
     if apiurl:sub(1, 1) == "/" then
@@ -564,6 +563,10 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
         end
     end
 
+    local parsed = url.parse(request.url)
+    socketutil:set_timeout(10, 30)
+    request.create = parsed.scheme == "http" and socketutil.http_tcp
+
     request.method = method
     if filepath ~= "" then
         request.sink = ltn12.sink.file(io.open(filepath, "w"))
@@ -578,8 +581,7 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     logger.dbg("Wallabag: URL     ", request.url)
     logger.dbg("Wallabag: method  ", method)
 
-    local httpRequest = http.request
-    local code, resp_headers = socket.skip(1, httpRequest(request))
+    local code, resp_headers = socket.skip(1, http.request(request))
     -- raise error message when network is unavailable
     if resp_headers == nil then
         logger.dbg("Wallabag: Server error: ", code)

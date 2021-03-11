@@ -1,7 +1,6 @@
 local DocumentRegistry = require("document/documentregistry")
 local FFIUtil = require("ffi/util")
 local http = require("socket.http")
-local https = require("ssl.https")
 local ltn12 = require("ltn12")
 local mime = require("mime")
 local socket = require("socket")
@@ -80,6 +79,8 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
 
     local sink = {}
     local data = [[<?xml version="1.0"?><a:propfind xmlns:a="DAV:"><a:prop><a:resourcetype/></a:prop></a:propfind>]]
+    local parsed = url.parse(webdav_url)
+    socketutil:set_timeout()
     local request = {
         url      = webdav_url,
         method   = "PROPFIND",
@@ -93,11 +94,9 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
         password = pass,
         source   = ltn12.source.string(data),
         sink     = ltn12.sink.table(sink),
-        create   = socketutil.create_tcp,
+        create   = parsed.scheme == "http" and socketutil.http_tcp,
     }
-    local parsed = url.parse(webdav_url)
-    local httpRequest = parsed.scheme == "http" and http.request or https.request
-    local headers_request = socket.skip(1, httpRequest(request))
+    local headers_request = socket.skip(1, http.request(request))
     if headers_request == nil then
         return nil
     end
@@ -157,15 +156,15 @@ end
 
 function WebDavApi:downloadFile(file_url, user, pass, local_path)
     local parsed = url.parse(file_url)
-    local httpRequest = parsed.scheme == "http" and http.request or https.request
-    local code_return = socket.skip(1, httpRequest{
+    socketutil:set_timeout(15, 60)
+    local code_return = socket.skip(1, http.request{
         url      = file_url,
         method   = "GET",
         headers  = {
             ["User-Agent"] = socketutil.USER_AGENT,
         },
         sink     = ltn12.sink.file(io.open(local_path, "w")),
-        create   = function() return socketutil.create_tcp(15, 60) end,
+        create   = parsed.scheme == "http" and socketutil.http_tcp,
         username = user,
         password = pass,
     })

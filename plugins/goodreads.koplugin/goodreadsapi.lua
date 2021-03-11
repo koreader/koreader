@@ -3,10 +3,10 @@ local GoodreadsBook = require("goodreadsbook")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local http = require("socket.http")
-local url = require('socket.url')
+local ltn12 = require("ltn12")
 local socket = require("socket")
 local socketutil = require("socketutil")
-local ltn12 = require('ltn12')
+local url = require("socket.url")
 local _ = require("gettext")
 
 local GoodreadsApi = InputContainer:new {

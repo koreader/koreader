@@ -1,7 +1,6 @@
 local DocumentRegistry = require("document/documentregistry")
 local JSON = require("json")
 local http = require("socket.http")
-local https = require("ssl.https")
 local ltn12 = require("ltn12")
 local socket = require("socket")
 local socketutil = require("socketutil")
@@ -17,6 +16,8 @@ local API_DOWNLOAD_FILE = "https://content.dropboxapi.com/2/files/download"
 
 function DropBoxApi:fetchInfo(token)
     local sink = {}
+    local parsed = url.parse(API_URL_INFO)
+    socketutil:set_timeout()
     local request = {
         url     = API_URL_INFO,
         method  = "POST",
@@ -25,11 +26,9 @@ function DropBoxApi:fetchInfo(token)
             ["Authorization"] = "Bearer " .. token,
         },
         sink    = ltn12.sink.table(sink),
-        create  = socketutil.create_tcp,
+        create  = parsed.scheme == "http" and socketutil.http_tcp,
     }
-    local parsed = url.parse(API_URL_INFO)
-    local httpRequest = parsed.scheme == "http" and http.request or https.request
-    local headers_request = socket.skip(1, httpRequest(request))
+    local headers_request = socket.skip(1, http.request(request))
     local result_response = table.concat(sink)
     if headers_request == nil then
         return nil
@@ -47,6 +46,8 @@ function DropBoxApi:fetchListFolders(path, token)
     local data = "{\"path\": \"" .. path .. "\",\"recursive\": false,\"include_media_info\": false,"..
         "\"include_deleted\": false,\"include_has_explicit_shared_members\": false}"
     local sink = {}
+    local parsed = url.parse(API_LIST_FOLDER)
+    socketutil:set_timeout()
     local request = {
         url     = API_LIST_FOLDER,
         method  = "POST",
@@ -58,11 +59,9 @@ function DropBoxApi:fetchListFolders(path, token)
         },
         source  = ltn12.source.string(data),
         sink    = ltn12.sink.table(sink),
-        create  = socketutil.create_tcp,
+        create  = parsed.scheme == "http" and socketutil.http_tcp,
     }
-    local parsed = url.parse(API_LIST_FOLDER)
-    local httpRequest = parsed.scheme == "http" and http.request or https.request
-    local headers_request = socket.skip(1, httpRequest(request))
+    local headers_request = socket.skip(1, http.request(request))
     if headers_request == nil then
         return nil
     end
@@ -82,8 +81,8 @@ end
 function DropBoxApi:downloadFile(path, token, local_path)
     local parsed = url.parse(API_DOWNLOAD_FILE)
     local data1 = "{\"path\": \"" .. path .. "\"}"
-    local httpRequest = parsed.scheme == "http" and http.request or https.request
-    local code_return = socket.skip(1, httpRequest{
+    socketutil:set_timeout()
+    local code_return = socket.skip(1, http.request{
         url     = API_DOWNLOAD_FILE,
         method  = "GET",
         headers = {
@@ -92,7 +91,7 @@ function DropBoxApi:downloadFile(path, token, local_path)
             ["Dropbox-API-Arg"] = data1,
         },
         sink    = ltn12.sink.file(io.open(local_path, "w")),
-        create  = socketutil.create_tcp,
+        create  = parsed.scheme == "http" and socketutil.http_tcp,
     })
     return code_return
 end

@@ -288,7 +288,6 @@ function Translator:loadPage(text, target_lang, source_lang)
     local socketutil = require("socketutil")
     local url = require("socket.url")
     local http = require("socket.http")
-    local https = require("ssl.https")
     local ltn12 = require("ltn12")
 
     local query = ""
@@ -309,6 +308,7 @@ function Translator:loadPage(text, target_lang, source_lang)
 
     -- HTTP request
     local sink = {}
+    socketutil:set_timeout()
     local request = {
         url     = url.build(parsed),
         method  = "GET",
@@ -316,12 +316,11 @@ function Translator:loadPage(text, target_lang, source_lang)
         headers = {
             ["User-Agent"] = socketutil.USER_AGENT,
         },
-        create  = socketutil.create_tcp,
+        create  = parsed.scheme == "http" and socketutil.http_tcp,
     }
     logger.dbg("Calling", request.url)
-    local httpRequest = parsed.scheme == "http" and http.request or https.request
     -- Skip first argument (body, goes to the sink)
-    local code, headers, status = socket.skip(1, httpRequest(request))
+    local code, headers, status = socket.skip(1, http.request(request))
 
     -- raise error message when network is unavailable
     if headers == nil then
