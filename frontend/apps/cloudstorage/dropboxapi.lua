@@ -81,7 +81,7 @@ end
 function DropBoxApi:downloadFile(path, token, local_path)
     local parsed = url.parse(API_DOWNLOAD_FILE)
     local data1 = "{\"path\": \"" .. path .. "\"}"
-    socketutil:set_timeout()
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TMOUT, socketutil.FILE_TOTAL_TMOUT)
     local code_return = socket.skip(1, http.request{
         url     = API_DOWNLOAD_FILE,
         method  = "GET",

@@ -156,7 +156,7 @@ end
 
 function WebDavApi:downloadFile(file_url, user, pass, local_path)
     local parsed = url.parse(file_url)
-    socketutil:set_timeout(15, 60)
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TMOUT, socketutil.FILE_TOTAL_TMOUT)
     local code_return = socket.skip(1, http.request{
         url      = file_url,
         method   = "GET",

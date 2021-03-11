@@ -19,11 +19,11 @@ socketutil.USER_AGENT = "KOReader/" .. Version:getShortVersion() .. " (https://k
 
 --- Common timeout values
 -- Large content
-socketutil.LARGE_BLOCK_TIMEOUT = 10
-socketutil.LARGE_TOTAL_TIMEOUT = 30
+socketutil.LARGE_BLOCK_TMOUT = 10
+socketutil.LARGE_TOTAL_TMOUT = 30
 -- File downloads
-socketutil.FILE_BLOCK_TIMEOUT = 15
-socketutil.FILE_TOTAL_TIMEOUT = 60
+socketutil.FILE_BLOCK_TMOUT = 15
+socketutil.FILE_TOTAL_TMOUT = 60
 
 --- Update the timeout values
 function socketutil:set_timeout(block_timeout, total_timeout)

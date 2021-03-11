@@ -17,7 +17,7 @@ function InternalDownloadBackend:getResponseAsString(url, redirectCount)
     logger.dbg("InternalDownloadBackend: url :", url)
     local sink = {}
     local parsed = socket_url.parse(url)
-    socketutil:set_timeout()
+    socketutil:set_timeout(socketutil.LARGE_BLOCK_TMOUT, socketutil.LARGE_TOTAL_TMOUT)
     local request = {
         url     = url,
         sink    = ltn12.sink.table(sink),

@@ -564,7 +564,7 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     end
 
     local parsed = url.parse(request.url)
-    socketutil:set_timeout(10, 30)
+    socketutil:set_timeout(socketutil.LARGE_BLOCK_TMOUT, socketutil.LARGE_TOTAL_TMOUT)
     request.create = parsed.scheme == "http" and socketutil.http_tcp
 
     request.method = method
