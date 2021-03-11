@@ -6,6 +6,7 @@ local logger = require("logger")
 local ltn12 = require("ltn12")
 local socket = require("socket")
 local socket_url = require("socket.url")
+local socketutil = require("socketutil")
 local _ = require("gettext")
 local T = ffiutil.template
 
@@ -22,7 +23,6 @@ local max_redirects = 5; --prevent infinite redirects
 
 -- Codes that getUrlContent may get from requester.request()
 local TIMEOUT_CODE = "timeout" -- from socket.lua
-local MAXTIME_CODE = "maxtime reached" -- from sink_table_with_maxtime
 
 -- filter HTML using CSS selector
 local function filter(text, element)
@@ -100,29 +100,17 @@ local function getUrlContent(url, timeout, maxtime, redirectCount)
 
     if not timeout then timeout = 10 end
     logger.dbg("timeout:", timeout)
-    -- timeout needs to be set to "http", even if we use "https"
-    --http.TIMEOUT, https.TIMEOUT = timeout, timeout
 
-    -- "timeout" delay works on socket, and is triggered when
-    -- that time has passed trying to connect, or after connection
-    -- when no data has been read for this time.
-    -- On a slow connection, it may not be triggered (as we could read
-    -- 1 byte every 1 second, not triggering any timeout).
-    -- "maxtime" can be provided to overcome that, and we start counting
-    -- as soon as the first content byte is received (but it is checked
-    -- for only when data is received).
-    -- Setting "maxtime" and "timeout" gives more chance to abort the request when
-    -- it takes too much time (in the worst case: in timeout+maxtime seconds).
-    -- But time taken by DNS lookup cannot easily be accounted for, so
-    -- a request may (when dns lookup takes time) exceed timeout and maxtime...
-    local request, sink = {}, {}
-    if maxtime then
-        request.sink = sink_table_with_maxtime(sink, maxtime)
-    else
-        request.sink = ltn12.sink.table(sink)
-    end
-    request.url = url
-    request.method = "GET"
+    local sink = {}
+    local request = {
+        url     = url,
+        method  = "GET",
+        sink    = ltn12.sink.table(sink),
+        headers = {
+            ["User-Agent"] = socketutil.USER_AGENT,
+        },
+        create  = function() return socketutil.create_tcp(timeout, maxtime or 30) end,
+    }
     local parsed = socket_url.parse(url)
 
     local httpRequest = parsed.scheme == "http" and http.request or https.request
@@ -136,7 +124,7 @@ local function getUrlContent(url, timeout, maxtime, redirectCount)
     logger.dbg("status:", status)
     logger.dbg("#content:", #content)
 
-    if code == TIMEOUT_CODE or code == MAXTIME_CODE then
+    if code == TIMEOUT_CODE then
         logger.warn("request interrupted:", code)
         return false, code
     end

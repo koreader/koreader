@@ -49,7 +49,7 @@ function GoodreadsApi:fetchXml(s_url)
     request['sink'] = ltn12.sink.table(sink)
     https.TIMEOUT = 5
     local httpsRequest = parsed.scheme == 'https' and https.request
-    local headers = socket.skip(1, httpsRequest(request))
+    local headers = socket.skip(2, httpsRequest(request))
     if headers == nil then
         return nil
     end

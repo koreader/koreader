@@ -1,5 +1,6 @@
 local json = require("json")
 local http = require("socket.http")
+local socketutil = require("socketutil")
 local ltn12 = require("ltn12")
 
 local JoplinClient =  {
@@ -20,14 +21,16 @@ function JoplinClient:_makeRequest(url, method, request_body)
     local request_body_json = json.encode(request_body)
     local source = ltn12.source.string(request_body_json)
     http.request{
-        url = url,
-        method = method,
-        sink = ltn12.sink.table(sink),
-        source = source,
+        url     = url,
+        method  = method,
+        sink    = ltn12.sink.table(sink),
+        source  = source,
         headers = {
+            ["User-Agent"] = socketutil.USER_AGENT,
             ["Content-Length"] = #request_body_json,
             ["Content-Type"] = "application/json"
-        }
+        },
+        create  = socketutil.create_tcp,
     }
 
     if not sink[1] then

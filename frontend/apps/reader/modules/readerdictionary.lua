@@ -965,6 +965,7 @@ end
 function ReaderDictionary:downloadDictionary(dict, download_location, continue)
     continue = continue or false
     local socket = require("socket")
+    local socketutil = require("socketutil")
     local http = socket.http
     local https = require("ssl.https")
     local ltn12 = require("ltn12")
@@ -975,15 +976,17 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
 
     if not continue then
         local file_size
-        --local r, c, h = httpRequest {
-        local dummy, headers, dummy = socket.skip(1, httpRequest{
-            method = "HEAD",
-            url = dict.url,
+        -- Skip body & code args
+        local headers = socket.skip(2, httpRequest{
+            method  = "HEAD",
+            url     = dict.url,
+            headers = {
+                ["User-Agent"] = socketutil.USER_AGENT,
+            },
+            create  = socketutil.create_tcp,
             --redirect = true,
         })
-        --logger.dbg(status)
         --logger.dbg(headers)
-        --logger.dbg(code)
         file_size = headers and headers["content-length"]
 
         UIManager:show(ConfirmBox:new{
@@ -1004,10 +1007,14 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
         end)
     end
 
-    local dummy, c, dummy = httpRequest{
-        url = dict.url,
-        sink = ltn12.sink.file(io.open(download_location, "w")),
-    }
+    local c = socket.skip(1, httpRequest{
+        url     = dict.url,
+        sink    = ltn12.sink.file(io.open(download_location, "w")),
+        headers = {
+                ["User-Agent"] = socketutil.USER_AGENT,
+        },
+        create  = socketutil.create_tcp,
+    })
     if c == 200 then
         logger.dbg("file downloaded to", download_location)
     else

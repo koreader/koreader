@@ -284,13 +284,13 @@ Returns decoded JSON table from translate server.
 @treturn string result, or nil
 --]]
 function Translator:loadPage(text, target_lang, source_lang)
-    local socket = require('socket')
-    local url = require('socket.url')
-    local http = require('socket.http')
-    local https = require('ssl.https')
-    local ltn12 = require('ltn12')
+    local socket = require("socket")
+    local socketutil = require("socketutil")
+    local url = require("socket.url")
+    local http = require("socket.http")
+    local https = require("ssl.https")
+    local ltn12 = require("ltn12")
 
-    local request, sink = {}, {}
     local query = ""
     self.trans_params.tl = target_lang
     self.trans_params.sl = source_lang
@@ -308,25 +308,27 @@ function Translator:loadPage(text, target_lang, source_lang)
     parsed.query = query .. "q=" .. url.escape(text)
 
     -- HTTP request
-    request['url'] = url.build(parsed)
+    local sink = {}
+    local request = {
+        url     = url.build(parsed),
+        method  = "GET",
+        sink    = ltn12.sink.table(sink),
+        headers = {
+            ["User-Agent"] = socketutil.USER_AGENT,
+        },
+        create  = socketutil.create_tcp,
+    }
     logger.dbg("Calling", request.url)
-    request['method'] = 'GET'
-    request['sink'] = ltn12.sink.table(sink)
-    -- We may try to set a common User-Agent if it happens we're 403 Forbidden
-    -- request['headers'] = {
-    --     ["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-    -- }
-    http.TIMEOUT, https.TIMEOUT = 10, 10
-    local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    -- first argument returned by skip is code
-    local _, headers, status = socket.skip(1, httpRequest(request))
+    local httpRequest = parsed.scheme == "http" and http.request or https.request
+    -- Skip first argument (body, goes to the sink)
+    local code, headers, status = socket.skip(1, httpRequest(request))
 
     -- raise error message when network is unavailable
     if headers == nil then
         error("Network is unreachable")
     end
 
-    if status ~= "HTTP/1.1 200 OK" then
+    if code ~= 200 then
         logger.warn("translator HTTP status not okay:", status)
         return
     end

@@ -26,6 +26,7 @@ local http = require("socket.http")
 local logger = require("logger")
 local ltn12 = require("ltn12")
 local socket = require("socket")
+local socketutil = require("socketutil")
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
@@ -379,7 +380,7 @@ function Wallabag:getBearerToken()
         ["Content-type"] = "application/json",
         ["Accept"] = "application/json, */*",
         ["Content-Length"] = tostring(#bodyJSON),
-        }
+    }
     local result = self:callAPI("POST", login_url, headers, bodyJSON, "")
 
     if result then
@@ -539,21 +540,27 @@ end
 -- filepath: downloads the file if provided, returns JSON otherwise
 ---- @todo separate call to internal API from the download on external server
 function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
-    local request, sink = {}, {}
+    local sink = {}
+    local request = {
+        create  = function() return socketutil.create_tcp(10, 30) end,
+    }
 
     -- Is it an API call, or a regular file direct download?
     if apiurl:sub(1, 1) == "/" then
         -- API call to our server, has the form "/random/api/call"
         request.url = self.server_url .. apiurl
         if headers == nil then
-            headers = { ["Authorization"] = "Bearer " .. self.access_token, }
+            headers = {
+                ["Authorization"] = "Bearer " .. self.access_token,
+            }
         end
     else
         -- regular url link to a foreign server
         local file_url = apiurl
         request.url = file_url
         if headers == nil then
-            headers = {} -- no need for a token here
+            -- no need for a token here
+            headers = {}
         end
     end
 
@@ -564,13 +571,13 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
         request.sink = ltn12.sink.table(sink)
     end
     request.headers = headers
+    request.headers["User-Agent"] = socketutil.USER_AGENT
     if body ~= "" then
         request.source = ltn12.source.string(body)
     end
     logger.dbg("Wallabag: URL     ", request.url)
     logger.dbg("Wallabag: method  ", method)
 
-    http.TIMEOUT = 30
     local httpRequest = http.request
     local code, resp_headers = socket.skip(1, httpRequest(request))
     -- raise error message when network is unavailable

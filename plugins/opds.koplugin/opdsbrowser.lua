@@ -13,12 +13,13 @@ local NetworkMgr = require("ui/network/manager")
 local OPDSParser = require("opdsparser")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
-local http = require('socket.http')
+local http = require("socket.http")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local ltn12 = require('ltn12')
-local socket = require('socket')
-local url = require('socket.url')
+local ltn12 = require("ltn12")
+local socket = require("socket")
+local socketutil = require("socketutil")
+local url = require("socket.url")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -272,13 +273,16 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
         url      = item_url,
         method   = method and method or "GET",
         -- Explicitly specify that we don't support compressed content. Some servers will still break RFC2616 14.3 and send crap instead.
-        headers  = { ["Accept-Encoding"] = "identity", },
+        headers  = {
+            ["User-Agent"] = socketutil.USER_AGENT,
+            ["Accept-Encoding"] = "identity",
+        },
+        create   = socketutil.create_tcp,
         sink     = ltn12.sink.table(sink),
         username = username,
-        password = password
+        password = password,
     }
     logger.info("Request:", request)
-    http.TIMEOUT = 10
     local httpRequest = http.request
     local code, headers = socket.skip(1, httpRequest(request))
     -- raise error message when network is unavailable
@@ -560,26 +564,33 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
         UIManager:scheduleIn(1, function()
             logger.dbg("Downloading file", local_path, "from", remote_url)
             local parsed = url.parse(remote_url)
-            http.TIMEOUT = 20
 
             local dummy, code, headers
 
             if parsed.scheme == "http" then
-                dummy, code, headers = http.request {
+                code, headers = socket.skip(1, http.request {
                     url         = remote_url,
-                    headers     = { ["Accept-Encoding"] = "identity", },
+                    headers     = {
+                        ["User-Agent"]      = socketutil.USER_AGENT,
+                        ["Accept-Encoding"] = "identity",
+                    },
+                    create      = function() return socketutil.create_tcp(15, 60) end,
                     sink        = ltn12.sink.file(io.open(local_path, "w")),
                     user        = item.username,
-                    password    = item.password
-                }
+                    password    = item.password,
+                })
             elseif parsed.scheme == "https" then
-                dummy, code, headers = http.request {
+                code, headers = socket.skip(1, http.request {
                     url         = remote_url,
-                    headers     = { ["Accept-Encoding"] = "identity", },
+                    headers     = {
+                        ["User-Agent"]      = socketutil.USER_AGENT,
+                        ["Accept-Encoding"] = "identity",
+                    },
+                    create      = function() return socketutil.create_tcp(15, 60) end,
                     sink        = ltn12.sink.file(io.open(local_path, "w")),
                     user        = item.username,
-                    password    = item.password
-                }
+                    password    = item.password,
+                })
             else
                 UIManager:show(InfoMessage:new {
                     text = T(_("Invalid protocol:\n%1"), parsed.scheme),
