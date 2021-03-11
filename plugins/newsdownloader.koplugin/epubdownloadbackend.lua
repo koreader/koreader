@@ -90,7 +90,7 @@ local function getUrlContent(url, timeout, maxtime, redirectCount)
     local request = {
         url     = url,
         method  = "GET",
-        sink    = ltn12.sink.table(sink),
+        sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
     }
 
     logger.dbg("request:", request)
@@ -103,7 +103,7 @@ local function getUrlContent(url, timeout, maxtime, redirectCount)
     logger.dbg("status:", status)
     logger.dbg("#content:", #content)
 
-    if code == TIMEOUT_CODE or code == SSL_HANDSHAKE_CODE then
+    if code == TIMEOUT_CODE or code == SSL_HANDSHAKE_CODE or code == SINK_TMOUT_CODE then
         logger.warn("request interrupted:", code)
         return false, code
     end

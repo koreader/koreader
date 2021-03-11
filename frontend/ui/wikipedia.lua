@@ -98,6 +98,7 @@ end
 -- Codes that getUrlContent may get from http.request()
 local TIMEOUT_CODE = "timeout" -- from LuaSocket's io.c
 local SSL_HANDSHAKE_CODE = "wantread" -- from LuaSec's ssl.c
+local SINK_TMOUT_CODE = "sink timeout" -- from our own socketutil
 
 -- Get URL content
 local function getUrlContent(url, timeout, maxtime)
@@ -118,7 +119,7 @@ local function getUrlContent(url, timeout, maxtime)
     local request = {
         url     = url,
         method  = "GET",
-        sink    = ltn12.sink.table(sink),
+        sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
     }
 
     local code, headers, status = socket.skip(1, http.request(request))
@@ -128,7 +129,7 @@ local function getUrlContent(url, timeout, maxtime)
     -- logger.dbg("status:", status)
     -- logger.dbg("#content:", #content)
 
-    if code == TIMEOUT_CODE or code == SSL_HANDSHAKE_CODE then
+    if code == TIMEOUT_CODE or code == SSL_HANDSHAKE_CODE or code == SINK_TMOUT_CODE then
         logger.warn("request interrupted:", code)
         return false, code
     end
