@@ -2,7 +2,7 @@ local http = require("socket.http")
 local json = require("json")
 local ltn12 = require("ltn12")
 local socketutil = require("socketutil")
-local url = require("socket.url")
+local socket_url = require("socket.url")
 
 local JoplinClient =  {
     server_ip = "localhost",
@@ -21,8 +21,8 @@ function JoplinClient:_makeRequest(url, method, request_body)
     local sink = {}
     local request_body_json = json.encode(request_body)
     local source = ltn12.source.string(request_body_json)
-    local parsed = url.parse(url)
-    socketutil:set_timeout()
+    local parsed = socket_url.parse(url)
+    socketutil:set_timeout(socketutil.LARGE_BLOCK_TMOUT, socketutil.LARGE_TOTAL_TMOUT)
     http.request{
         url     = url,
         method  = method,
