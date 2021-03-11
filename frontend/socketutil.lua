@@ -25,7 +25,7 @@ function socketutil:set_timeout(block_timeout, total_timeout)
    -- 1. LuaSocket's open does a settimeout *after* create
    -- 2. KOSync updates it to a stupidly low value
    http.TIMEOUT = self.block_timeout
-   https.TIMEOUT = self.total_timeout
+   https.TIMEOUT = self.block_timeout
 end
 
 --- Custom `socket.tcp` (LuaSocket) with tighter timeouts, to avoid blocking the UI for too long.
