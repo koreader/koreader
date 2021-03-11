@@ -181,7 +181,6 @@ function OTAManager:checkUpdate()
     local code, _, status = socket.skip(1, http.request{
         url     = ota_update_file,
         sink    = ltn12.sink.file(io.open(local_update_file, "w")),
-        create  = parsed.scheme == "http" and socketutil.http_tcp,
     })
     if code ~= 200 then
         logger.warn("cannot find update file:", status or code or "network unreachable")
