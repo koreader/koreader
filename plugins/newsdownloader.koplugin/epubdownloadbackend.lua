@@ -20,10 +20,6 @@ local EpubDownloadBackend = {
 }
 local max_redirects = 5; --prevent infinite redirects
 
--- Codes that getUrlContent may get from http.request()
-local TIMEOUT_CODE = "timeout" -- from LuaSocket's io.c
-local SSL_HANDSHAKE_CODE = "wantread" -- from LuaSec's ssl.c
-
 -- filter HTML using CSS selector
 local function filter(text, element)
     local htmlparser = require("htmlparser")
@@ -103,7 +99,7 @@ local function getUrlContent(url, timeout, maxtime, redirectCount)
     logger.dbg("status:", status)
     logger.dbg("#content:", #content)
 
-    if code == TIMEOUT_CODE or code == SSL_HANDSHAKE_CODE or code == SINK_TMOUT_CODE then
+    if code == socketutil.TIMEOUT_CODE or code == socketutil.SSL_HANDSHAKE_CODE or code == socketutil.SINK_TMOUT_CODE then
         logger.warn("request interrupted:", code)
         return false, code
     end

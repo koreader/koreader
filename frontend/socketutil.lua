@@ -61,13 +61,18 @@ function socketutil.tcp()
 end
 socket.tcp = socketutil.tcp
 
+--- Various timeout return codes
+socketutil.TIMEOUT_CODE       = "timeout"      -- from LuaSocket's io.c
+socketutil.SSL_HANDSHAKE_CODE = "wantread"     -- from LuaSec's ssl.c
+socketutil.SINK_TMOUT_CODE    = "sink timeout" -- from our own socketutil
+
 --- Custom version of `ltn12.sink.table` that honors total_timeout
 function socketutil.table_sink(t)
     local start_ts = os.time()
     t = t or {}
     local f = function(chunk, err)
         if os.time() - start_ts > socketutil.total_timeout then
-           return nil, "sink timeout"
+           return nil, socketutil.SINK_TMOUT_CODE
         end
         if chunk then table.insert(t, chunk) end
         return 1
@@ -86,7 +91,7 @@ function socketutil.file_sink(handle, io_err)
             else
                 if os.time() - start_ts > socketutil.total_timeout then
                     handle:close()
-                    return nil, "sink timeout"
+                    return nil, socketutil.SINK_TMOUT_CODE
                 end
                 return handle:write(chunk)
             end
