@@ -1178,6 +1178,8 @@ function Input:waitEvent(now, deadline)
             -- Received some other kind of event that we do not know how to specifically handle yet
             return Event:new("GenericInput", ev)
         end
+    elseif ok and not ev then
+        return Event:new("Charging")
     elseif not ok and ev then
         return Event:new("InputError", ev)
 >>>>>>> 2d303187... process events from the android side (charging...)
