@@ -19,14 +19,28 @@ socketutil.USER_AGENT = "KOReader/" .. Version:getShortVersion() .. " (https://k
 
 --- Update the timeout values
 function socketutil:set_timeout(block_timeout, total_timeout)
-   self.block_timeout = block_timeout or 5
-   self.total_timeout = total_timeout or 15
+    -- Allow setting common values
+    if block_timeout and type(block_timeout) == "string" then
+        if block_timeout == "large" then
+            self.block_timeout = 10
+            self.total_timeout = 30
+        elseif block_timeout == "file" then
+            self.block_timeout = 15
+            self.total_timeout = 60
+        else
+            self.block_timeout = 5
+            self.total_timeout = 15
+        end
+    else
+        self.block_timeout = block_timeout or 5
+        self.total_timeout = total_timeout or 15
+    end
 
-   -- Also update the actual LuaSocket & LuaSec constants, because:
-   -- 1. LuaSocket's open does a settimeout *after* create
-   -- 2. KOSync updates it to a stupidly low value
-   http.TIMEOUT = self.block_timeout
-   https.TIMEOUT = self.block_timeout
+    -- Also update the actual LuaSocket & LuaSec constants, because:
+    -- 1. LuaSocket's open does a settimeout *after* create
+    -- 2. KOSync updates it to a stupidly low value
+    http.TIMEOUT = self.block_timeout
+    https.TIMEOUT = self.block_timeout
 end
 
 --- Custom `socket.tcp` (LuaSocket) with tighter timeouts, to avoid blocking the UI for too long.
