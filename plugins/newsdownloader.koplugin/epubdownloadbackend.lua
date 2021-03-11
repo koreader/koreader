@@ -72,23 +72,6 @@ local function filter(text, element)
     return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
 end
 
--- Sink that stores into a table, aborting if maxtime has elapsed
-local function sink_table_with_maxtime(t, maxtime)
-    -- Start counting as soon as this sink is created
-    local start_secs, start_usecs = ffiutil.gettime()
-    local starttime = start_secs + start_usecs/1000000
-    t = t or {}
-    local f = function(chunk, err)
-        local secs, usecs = ffiutil.gettime()
-        if secs + usecs/1000000 - starttime > maxtime then
-            return nil, MAXTIME_CODE
-        end
-        if chunk then table.insert(t, chunk) end
-        return 1
-    end
-    return f, t
-end
-
 -- Get URL content
 local function getUrlContent(url, timeout, maxtime, redirectCount)
     logger.dbg("getUrlContent(", url, ",", timeout, ",", maxtime, ",", redirectCount, ")")
