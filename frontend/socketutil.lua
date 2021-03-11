@@ -97,7 +97,9 @@ function socketutil.file_sink(handle, io_err)
                 return handle:write(chunk)
             end
         end
-    else return nil, io_err or "unable to open file" end
+    else
+        return nil, io_err or "unable to open file"
+    end
 end
 
 return socketutil
