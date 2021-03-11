@@ -58,32 +58,37 @@ function socketutil.tcp()
 end
 socket.tcp = socketutil.tcp
 
---- Filter that can be used by a sink to honor the total_timeout
-local function tick_tock(ctx, chunk, extra)
-    ctx.now_ts = os.time()
-    if ctx.now_ts - ctx.start_ts > socketutil.total_timeout then
-        print("TIMEOUT @", chunk)
-        return nil, ctx
-    else
-        return chunk, ctx
+--- Custom version of `ltn12.sink.table` that honors total_timeout
+function socketutil.table_sink(t)
+    local start_ts = os.time()
+    t = t or {}
+    local f = function(chunk, err)
+        if os.time() - start_ts > socketutil.total_timeout then
+           return nil, "sink timeout"
+        end
+        if chunk then table.insert(t, chunk) end
+        return 1
     end
+    return f, t
 end
 
-function socketutil.timeout_filter()
-    local ctx = {
-        start_ts = os.time(),
-    }
-    print("socketutil.timeout_filter @", ctx.start_ts)
-
-    return ltn12.filter.cycle(tick_tock, ctx)
-end
-
-function socketutil.table_sink()
-    return ltn12.sink.chain(socketutil.timeout_filter(), ltn12.sink.table)
-end
-
-function socketutil.file_sink()
-    return ltn12.sink.chain(socketutil.timeout_filter(), ltn12.sink.file)
+--- Custom version of `ltn12.sink.file` that honors total_timeout
+function socketutil.file_sink(handle, io_err)
+    if handle then
+        local start_ts = os.time()
+        return function(chunk, err)
+            if not chunk then
+                handle:close()
+                return 1
+            else
+                if os.time() - start_ts > socketutil.total_timeout then
+                    handle:close()
+                    return nil, "sink timeout"
+                end
+                return handle:write(chunk)
+            end
+        end
+    else return sink.error(io_err or "unable to open file") end
 end
 
 return socketutil
