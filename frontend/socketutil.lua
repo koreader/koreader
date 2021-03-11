@@ -52,6 +52,9 @@ local real_socket_tcp = socket.tcp
 function socketutil.tcp()
     -- Based on https://stackoverflow.com/a/6021774
     local req_sock = real_socket_tcp()
+    -- Note that this only affects socket polling,
+    -- c.f., LuaSocket's timeout_getretry @ src/timeout.c & usage in src/usocket.c
+    -- Hence the custom sinks below...
     req_sock:settimeout(socketutil.block_timeout, "b")
     req_sock:settimeout(socketutil.total_timeout, "t")
     return req_sock
