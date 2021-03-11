@@ -6,7 +6,6 @@ local Version = require("version")
 local http = require("socket.http")
 local https = require("ssl.https")
 local socket = require("socket")
-local ssl = require("ssl")
 
 local socketutil = {
     -- Init to the default LuaSocket/LuaSec values
