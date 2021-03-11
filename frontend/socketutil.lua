@@ -15,7 +15,10 @@ local socketutil = {
 }
 
 --- Builds a sensible UserAgent that fits Wikipedia's UA policy <https://meta.wikimedia.org/wiki/User-Agent_policy>
-socketutil.USER_AGENT = "KOReader/" .. Version:getShortVersion() .. " (https://koreader.rocks/) " .. http.USERAGENT:gsub(" ", "/")
+local socket_ua = http.USERAGENT
+socketutil.USER_AGENT = "KOReader/" .. Version:getShortVersion() .. " (https://koreader.rocks/) " .. socket_ua:gsub(" ", "/")
+-- Monkey-patch it in LuaSocket, as it already takes care of inserting the appropriate header to requests.
+http.USERAGENT = socketutil.USER_AGENT
 
 --- Common timeout values
 -- Large content
