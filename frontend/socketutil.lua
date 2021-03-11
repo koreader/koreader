@@ -64,11 +64,7 @@ end
 --       but only when it does the automagic scheme handling, not when it's set by the caller :/.
 --       And LuaSec's request function *forbids* setting create, because of similar shenanigans...
 https.tcp = function(params)
-    print("Hai from socketutils' monkey-patched https.tcp")
     params = params or {}
-    for k, v in pairs(params) do
-       print(k, v)
-    end
     -- Default settings
     for k, v in pairs(cfg) do
         params[k] = params[k] or v
