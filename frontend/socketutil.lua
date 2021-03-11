@@ -71,10 +71,12 @@ function socketutil.table_sink(t)
     local start_ts = os.time()
     t = t or {}
     local f = function(chunk, err)
-        if os.time() - start_ts > socketutil.total_timeout then
-           return nil, socketutil.SINK_TMOUT_CODE
+        if chunk then
+            if os.time() - start_ts > socketutil.total_timeout then
+                return nil, socketutil.SINK_TMOUT_CODE
+            end
+            table.insert(t, chunk)
         end
-        if chunk then table.insert(t, chunk) end
         return 1
     end
     return f, t
