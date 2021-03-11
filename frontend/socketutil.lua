@@ -5,6 +5,7 @@ This module contains miscellaneous helper functions for specific to our usage of
 local Version = require("version")
 local http = require("socket.http")
 local https = require("ssl.https")
+local ltn12 = require("ltn12")
 local socket = require("socket")
 
 local socketutil = {
@@ -56,5 +57,33 @@ function socketutil.tcp()
     return req_sock
 end
 socket.tcp = socketutil.tcp
+
+--- Filter that can be used by a sink to honor the total_timeout
+local function tick_tock(ctx, chunk, extra)
+    ctx.now_ts = os.time()
+    if ctx.now_ts - ctx.start_ts > socketutil.total_timeout then
+        print("TIMEOUT @", chunk)
+        return nil, ctx
+    else
+        return chunk, ctx
+    end
+end
+
+function socketutil.timeout_filter()
+    local ctx = {
+        start_ts = os.time(),
+    }
+    print("socketutil.timeout_filter @", ctx.start_ts)
+
+    return ltn12.filter.cycle(tick_tock, ctx)
+end
+
+function socketutil.table_sink()
+    return ltn12.sink.chain(socketutil.timeout_filter(), ltn12.sink.table)
+end
+
+function socketutil.file_sink()
+    return ltn12.sink.chain(socketutil.timeout_filter(), ltn12.sink.file)
+end
 
 return socketutil
