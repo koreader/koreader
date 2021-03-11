@@ -855,6 +855,8 @@ function Input:waitEvent(timeout_us)
             -- some other kind of event that we do not know yet
             return Event:new("GenericInput", ev)
         end
+    elseif ok and not ev then
+        return Event:new("Charging")
     elseif not ok and ev then
         return Event:new("InputError", ev)
     end
