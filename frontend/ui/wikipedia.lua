@@ -119,10 +119,6 @@ local function getUrlContent(url, timeout, maxtime)
         url     = url,
         method  = "GET",
         sink    = ltn12.sink.table(sink),
-        headers = {
-            ["User-Agent"] = socketutil.USER_AGENT,
-        },
-        create  = parsed.scheme == "http" and socketutil.http_tcp,
     }
 
     local code, headers, status = socket.skip(1, http.request(request))

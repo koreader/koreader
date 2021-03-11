@@ -91,10 +91,6 @@ local function getUrlContent(url, timeout, maxtime, redirectCount)
         url     = url,
         method  = "GET",
         sink    = ltn12.sink.table(sink),
-        headers = {
-            ["User-Agent"] = socketutil.USER_AGENT,
-        },
-        create  = parsed.scheme == "http" and socketutil.http_tcp,
     }
 
     logger.dbg("request:", request)

@@ -4,7 +4,6 @@ local http = require("socket.http")
 local ltn12 = require("ltn12")
 local socket = require("socket")
 local socketutil = require("socketutil")
-local url = require("socket.url")
 local util = require("util")
 local _ = require("gettext")
 
@@ -78,13 +77,11 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
 
     local sink = {}
     local data = [[<?xml version="1.0"?><a:propfind xmlns:a="DAV:"><a:prop><a:resourcetype/></a:prop></a:propfind>]]
-    local parsed = url.parse(webdav_url)
     socketutil:set_timeout()
     local request = {
         url      = webdav_url,
         method   = "PROPFIND",
         headers  = {
-            ["User-Agent"]     = socketutil.USER_AGENT,
             ["Content-Type"]   = "application/xml",
             ["Depth"]          = "1",
             ["Content-Length"] = #data,
@@ -93,7 +90,6 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
         password = pass,
         source   = ltn12.source.string(data),
         sink     = ltn12.sink.table(sink),
-        create   = parsed.scheme == "http" and socketutil.http_tcp,
     }
     local headers_request = socket.skip(1, http.request(request))
     if headers_request == nil then
@@ -154,16 +150,11 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
 end
 
 function WebDavApi:downloadFile(file_url, user, pass, local_path)
-    local parsed = url.parse(file_url)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TMOUT, socketutil.FILE_TOTAL_TMOUT)
     local code_return = socket.skip(1, http.request{
         url      = file_url,
         method   = "GET",
-        headers  = {
-            ["User-Agent"] = socketutil.USER_AGENT,
-        },
         sink     = ltn12.sink.file(io.open(local_path, "w")),
-        create   = parsed.scheme == "http" and socketutil.http_tcp,
         username = user,
         password = pass,
     })

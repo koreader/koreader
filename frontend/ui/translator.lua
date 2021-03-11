@@ -313,10 +313,6 @@ function Translator:loadPage(text, target_lang, source_lang)
         url     = url.build(parsed),
         method  = "GET",
         sink    = ltn12.sink.table(sink),
-        headers = {
-            ["User-Agent"] = socketutil.USER_AGENT,
-        },
-        create  = parsed.scheme == "http" and socketutil.http_tcp,
     }
     logger.dbg("Calling", request.url)
     -- Skip first argument (body, goes to the sink)

@@ -2,7 +2,6 @@ local http = require("socket.http")
 local logger = require("logger")
 local ltn12 = require("ltn12")
 local socket = require("socket")
-local socket_url = require("socket.url")
 local socketutil = require("socketutil")
 
 local InternalDownloadBackend = {}
@@ -16,15 +15,10 @@ function InternalDownloadBackend:getResponseAsString(url, redirectCount)
     end
     logger.dbg("InternalDownloadBackend: url :", url)
     local sink = {}
-    local parsed = socket_url.parse(url)
     socketutil:set_timeout(socketutil.LARGE_BLOCK_TMOUT, socketutil.LARGE_TOTAL_TMOUT)
     local request = {
         url     = url,
         sink    = ltn12.sink.table(sink),
-        headers = {
-            ["User-Agent"] = socketutil.USER_AGENT,
-        },
-        create  = parsed.scheme == "http" and socketutil.http_tcp,
     }
     local code, headers, status = socket.skip(1, http.request(request))
 

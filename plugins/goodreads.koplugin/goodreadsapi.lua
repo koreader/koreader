@@ -6,7 +6,6 @@ local http = require("socket.http")
 local ltn12 = require("ltn12")
 local socket = require("socket")
 local socketutil = require("socketutil")
-local url = require("socket.url")
 local _ = require("gettext")
 
 local GoodreadsApi = InputContainer:new {
@@ -44,16 +43,11 @@ end
 
 function GoodreadsApi:fetchXml(s_url)
     local sink = {}
-    local parsed = url.parse(s_url)
     socketutil:set_timeout()
     local request = {
         url     = s_url,
         method  = "GET",
         sink    = ltn12.sink.table(sink),
-        headers = {
-            ["User-Agent"] = socketutil.USER_AGENT,
-        },
-        create  = parsed.scheme == "http" and socketutil.http_tcp,
     }
     local headers = socket.skip(2, http.request(request))
     if headers == nil then
