@@ -110,7 +110,6 @@ function ReaderCoptListener:rescheduleHeaderRefreshIfNeeded()
         else
             logger.dbg("ReaderCoptListener.headerRefresh rescheduled")
         end
-
     elseif unscheduled then
         logger.dbg("ReaderCoptListener.headerRefresh unscheduled")
     end
