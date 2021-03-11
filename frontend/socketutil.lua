@@ -5,7 +5,6 @@ This module contains miscellaneous helper functions for specific to our usage of
 local Version = require("version")
 local http = require("socket.http")
 local https = require("ssl.https")
-local ltn12 = require("ltn12")
 local socket = require("socket")
 
 local socketutil = {
@@ -98,7 +97,7 @@ function socketutil.file_sink(handle, io_err)
                 return handle:write(chunk)
             end
         end
-    else return sink.error(io_err or "unable to open file") end
+    else return nil, io_err or "unable to open file" end
 end
 
 return socketutil
