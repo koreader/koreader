@@ -269,17 +269,14 @@ end
 
 function OPDSBrowser:fetchFeed(item_url, username, password, method)
     local sink = {}
-    local parsed = url.parse(item_url)
     socketutil:set_timeout(socketutil.LARGE_BLOCK_TMOUT, socketutil.LARGE_TOTAL_TMOUT)
     local request = {
         url      = item_url,
         method   = method and method or "GET",
         -- Explicitly specify that we don't support compressed content. Some servers will still break RFC2616 14.3 and send crap instead.
         headers  = {
-            ["User-Agent"] = socketutil.USER_AGENT,
             ["Accept-Encoding"] = "identity",
         },
-        create   = parsed.scheme == "http" and socketutil.http_tcp,
         sink     = ltn12.sink.table(sink),
         username = username,
         password = password,
@@ -572,10 +569,8 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
                 code, headers = socket.skip(1, http.request {
                     url         = remote_url,
                     headers     = {
-                        ["User-Agent"]      = socketutil.USER_AGENT,
                         ["Accept-Encoding"] = "identity",
                     },
-                    create      = parsed.scheme == "http" and socketutil.http_tcp,
                     sink        = ltn12.sink.file(io.open(local_path, "w")),
                     user        = item.username,
                     password    = item.password,

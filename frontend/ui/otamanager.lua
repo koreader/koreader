@@ -168,12 +168,10 @@ function OTAManager:checkUpdate()
     local ltn12 = require("ltn12")
     local socket = require("socket")
     local socketutil = require("socketutil")
-    local url = require("socket.url")
 
     local update_file = (self:getOTAType() == "link") and self:getLinkFilename() or self:getZsyncFilename()
 
     local ota_update_file = self:getOTAServer() .. update_file
-    local parsed = url.parse(ota_update_file)
     local local_update_file = ota_dir .. update_file
     -- download zsync file from OTA server
     logger.dbg("downloading update file", ota_update_file)
