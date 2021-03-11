@@ -47,7 +47,6 @@ end
 --       And LuaSec's own `request` function overload *forbids* setting create, because of similar shenanigans...
 -- TL;DR: Just monkey-patching socket.tcp directly will affect both HTTP & HTTPS
 --        without us having to maintain a tweaked version of LuaSec's `https.tcp` function...
-
 local real_socket_tcp = socket.tcp
 function socketutil.tcp()
     -- Based on https://stackoverflow.com/a/6021774
