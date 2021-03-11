@@ -101,7 +101,6 @@ local TIMEOUT_CODE = "timeout" -- from Luasocket's io.c
 -- Get URL content
 local function getUrlContent(url, timeout, maxtime)
     local http = require("socket.http")
-    local https = require("ssl.https")
     local ltn12 = require("ltn12")
     local socket = require("socket")
     local socketutil = require("socketutil")
