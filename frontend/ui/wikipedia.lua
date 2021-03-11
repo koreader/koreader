@@ -95,7 +95,7 @@ function Wikipedia:getWikiServer(lang)
     return string.format(self.wiki_server, lang or self.default_lang)
 end
 
--- Codes that getUrlContent may get from httprequest()
+-- Codes that getUrlContent may get from http.request()
 local TIMEOUT_CODE = "timeout" -- from LuaSocket's io.c
 local SSL_HANDSHAKE_CODE = "wantread" -- from LuaSec's ssl.c
 
