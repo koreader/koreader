@@ -51,8 +51,8 @@ local real_socket_tcp = socket.tcp
 function socketutil.tcp()
     -- Based on https://stackoverflow.com/a/6021774
     local req_sock = real_socket_tcp()
-    req_sock:settimeout(socketutil.block_timeout, 'b')
-    req_sock:settimeout(socketutil.total_timeout, 't')
+    req_sock:settimeout(socketutil.block_timeout, "b")
+    req_sock:settimeout(socketutil.total_timeout, "t")
     return req_sock
 end
 socket.tcp = socketutil.tcp
