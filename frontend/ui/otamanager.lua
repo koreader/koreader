@@ -28,6 +28,7 @@ local OTAManager = {
         "http://vislab.bjmu.edu.cn/apps/koreader/ota/",
         --]]
         "http://koreader-fr.ak-team.com/",
+        "https://koreader-ota-fr.AUTH-2ac4bfee353948ec8ea7fd1710574097.storage.gra.cloud.ovh.net",
         "http://koreader-pl.ak-team.com/",
         "http://koreader-na.ak-team.com/",
         "http://koreader.ak-team.com/",
@@ -168,10 +169,12 @@ function OTAManager:checkUpdate()
     local ltn12 = require("ltn12")
     local socket = require("socket")
     local socketutil = require("socketutil")
+    local url = require("socket.url")
 
     local update_file = (self:getOTAType() == "link") and self:getLinkFilename() or self:getZsyncFilename()
 
     local ota_update_file = self:getOTAServer() .. update_file
+    local parsed = url.parse(ota_update_file)
     local local_update_file = ota_dir .. update_file
     -- download zsync file from OTA server
     logger.dbg("downloading update file", ota_update_file)
@@ -181,7 +184,7 @@ function OTAManager:checkUpdate()
         headers = {
             ["User-Agent"] = socketutil.USER_AGENT,
         },
-        create  = socketutil.create_tcp,
+        create  = parsed.scheme == "https" and function(t) return socketutil.https_tcp(t) end or socketutil.http_tcp,
     })
     if code ~= 200 then
         logger.warn("cannot find update file:", status or code or "network unreachable")
