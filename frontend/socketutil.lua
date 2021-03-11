@@ -17,24 +17,18 @@ local socketutil = {
 --- Builds a sensible UserAgent that fits Wikipedia's UA policy <https://meta.wikimedia.org/wiki/User-Agent_policy>
 socketutil.USER_AGENT = "KOReader/" .. Version:getShortVersion() .. " (https://koreader.rocks/) " .. http.USERAGENT:gsub(" ", "/")
 
+--- Common timeout values
+-- Large content
+socketutil.LARGE_BLOCK_TIMEOUT = 10
+socketutil.LARGE_TOTAL_TIMEOUT = 30
+-- File downloads
+socketutil.FILE_BLOCK_TIMEOUT = 15
+socketutil.FILE_TOTAL_TIMEOUT = 60
+
 --- Update the timeout values
 function socketutil:set_timeout(block_timeout, total_timeout)
-    -- Allow setting common values
-    if block_timeout and type(block_timeout) == "string" then
-        if block_timeout == "large" then
-            self.block_timeout = 10
-            self.total_timeout = 30
-        elseif block_timeout == "file" then
-            self.block_timeout = 15
-            self.total_timeout = 60
-        else
-            self.block_timeout = 5
-            self.total_timeout = 15
-        end
-    else
-        self.block_timeout = block_timeout or 5
-        self.total_timeout = total_timeout or 15
-    end
+    self.block_timeout = block_timeout or 5
+    self.total_timeout = total_timeout or 15
 
     -- Also update the actual LuaSocket & LuaSec constants, because:
     -- 1. LuaSocket's open does a settimeout *after* create
