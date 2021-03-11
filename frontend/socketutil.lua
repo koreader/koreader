@@ -8,19 +8,32 @@ local https = require("ssl.https")
 local socket = require("socket")
 local ssl = require("ssl")
 
-local socketutil = {}
+local socketutil = {
+    block_timeout = 60,
+    total_timeout = -1,
+}
 
 --- Builds a sensible UserAgent that fits Wikipedia's UA policy <https://meta.wikimedia.org/wiki/User-Agent_policy>
 socketutil.USER_AGENT = "KOReader/" .. Version:getShortVersion() .. " (https://koreader.rocks/) " .. http.USERAGENT:gsub(" ", "/")
 
+--- Update the timeout values
+function socketutil:set_timeout(block_timeout, total_timeout)
+   self.block_timeout = block_timeout or 5
+   self.total_timeout = total_timeout or 15
+
+   -- Also update the actual LuaSocket & LuaSec constants, because:
+   -- 1. LuaSocket's open does a settimeout *after* create
+   -- 2. KOSync updates it to a stupidly low value
+   http.TIMEOUT = self.block_timeout
+   https.TIMEOUT = self.total_timeout
+end
+
 --- Custom `socket.tcp` (LuaSocket) with tighter timeouts, to avoid blocking the UI for too long.
-function socketutil.http_tcp(block_timeout, total_timeout)
-    -- open does a settimeout *after* create(), so, mangle that, too.
-    http.TIMEOUT = block_timeout or 5
+function socketutil.http_tcp()
     -- c.f., https://stackoverflow.com/a/6021774
     local req_sock = socket.tcp()
-    req_sock:settimeout(http.TIMEOUT, 'b')
-    req_sock:settimeout(total_timeout or 15, 't')
+    req_sock:settimeout(socketutil.block_timeout, 'b')
+    req_sock:settimeout(socketutil.total_timeout, 't')
     return req_sock
 end
 
@@ -46,7 +59,11 @@ end
 
 --- Custom `https.tcp` (LuaSec's wrapper around LuaSocket's socket.tcp) with tighter timeouts, to avoid blocking the UI for too long.
 -- NOTE: Keep me in sync w/ LuaSec's in https.lua!
-local function https_tcp(params, block_timeout, total_timeout)
+-- NOTE: We don't really have a better choice than monkey-patching the actual LuaSec function,
+--       because LuaSocket's adjustrequest function (in http.lua) passes the adjusted nreqt table to it,
+--       but only when it does the automagic scheme handling, not when it's set by the caller :/.
+--       And LuaSec's request function *forbids* setting create, because of similar shenanigans...
+https.tcp = function(params)
     print("Hai from socketutils' monkey-patched https.tcp")
     params = params or {}
     for k, v in pairs(params) do
@@ -59,12 +76,11 @@ local function https_tcp(params, block_timeout, total_timeout)
     -- Force client mode
     params.mode = "client"
     -- 'create' function for LuaSocket
-    https.TIMEOUT = block_timeout or 5
     return function ()
         local conn = {}
         conn.sock = socket.try(socket.tcp())
-        conn.sock:settimeout(https.TIMEOUT, 'b')
-        conn.sock:settimeout(total_timeout or 15, 't')
+        conn.sock:settimeout(socketutil.block_timeout, 'b')
+        conn.sock:settimeout(socketutil.total_timeout, 't')
         local st = getmetatable(conn.sock).__index.settimeout
         function conn:settimeout(...)
             return st(self.sock, ...)
@@ -74,17 +90,13 @@ local function https_tcp(params, block_timeout, total_timeout)
             socket.try(self.sock:connect(host, port))
             self.sock = socket.try(ssl.wrap(self.sock, params))
             self.sock:sni(host)
+            self.sock:settimeout(https.TIMEOUT)
             socket.try(self.sock:dohandshake())
             reg(self, getmetatable(self.sock))
             return 1
         end
         return conn
     end
-end
-
-function socketutil.https_tcp(params, block_timeout, total_timeout)
-    local create = https_tcp(params, block_timeout, total_timeout)
-    return create(params)
 end
 
 return socketutil

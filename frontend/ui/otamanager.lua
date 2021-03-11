@@ -178,13 +178,14 @@ function OTAManager:checkUpdate()
     local local_update_file = ota_dir .. update_file
     -- download zsync file from OTA server
     logger.dbg("downloading update file", ota_update_file)
+    socketutil:set_timeout()
     local code, _, status = socket.skip(1, http.request{
         url     = ota_update_file,
         sink    = ltn12.sink.file(io.open(local_update_file, "w")),
         headers = {
             ["User-Agent"] = socketutil.USER_AGENT,
         },
-        create  = parsed.scheme == "https" and function(t) return socketutil.https_tcp(t) end or socketutil.http_tcp,
+        create  = parsed.scheme == "http" and socketutil.http_tcp,
     })
     if code ~= 200 then
         logger.warn("cannot find update file:", status or code or "network unreachable")
