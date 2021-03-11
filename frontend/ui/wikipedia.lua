@@ -104,16 +104,15 @@ local function getUrlContent(url, timeout, maxtime)
     local ltn12 = require("ltn12")
     local socket = require("socket")
     local socketutil = require("socketutil")
-    local url = require("socket.url")
+    local socket_url = require("socket.url")
 
-    local parsed = url.parse(url)
+    local parsed = socket_url.parse(url)
     if parsed.scheme ~= "http" and parsed.scheme ~= "https" then
         return false, "Unsupported protocol"
     end
     if not timeout then timeout = 10 end
 
     local sink = {}
-    local parsed = url.parse(url)
     socketutil:set_timeout(timeout, maxtime or 30)
     local request = {
         url     = url,
