@@ -95,8 +95,9 @@ function Wikipedia:getWikiServer(lang)
     return string.format(self.wiki_server, lang or self.default_lang)
 end
 
--- Codes that getUrlContent may get from requester.request()
-local TIMEOUT_CODE = "timeout" -- from Luasocket's io.c
+-- Codes that getUrlContent may get from httprequest()
+local TIMEOUT_CODE = "timeout" -- from LuaSocket's io.c
+local SSL_HANDSHAKE_CODE = "wantread" -- from LuaSec's ssl.c
 
 -- Get URL content
 local function getUrlContent(url, timeout, maxtime)
@@ -131,7 +132,7 @@ local function getUrlContent(url, timeout, maxtime)
     -- logger.dbg("status:", status)
     -- logger.dbg("#content:", #content)
 
-    if code == TIMEOUT_CODE then
+    if code == TIMEOUT_CODE or code == SSL_HANDSHAKE_CODE then
         logger.warn("request interrupted:", code)
         return false, code
     end
