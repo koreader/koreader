@@ -184,7 +184,7 @@ function OTAManager:checkUpdate()
         headers = {
             ["User-Agent"] = socketutil.USER_AGENT,
         },
-        create  = parsed.scheme == "http" and socketutil.http_tcp or nil,
+        create  = parsed.scheme == "https" and function(t) return socketutil.https_tcp(t) end or socketutil.http_tcp,
     })
     if code ~= 200 then
         logger.warn("cannot find update file:", status or code or "network unreachable")
