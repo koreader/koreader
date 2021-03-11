@@ -567,19 +567,7 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
 
             local dummy, code, headers
 
-            if parsed.scheme == "http" then
-                code, headers = socket.skip(1, http.request {
-                    url         = remote_url,
-                    headers     = {
-                        ["User-Agent"]      = socketutil.USER_AGENT,
-                        ["Accept-Encoding"] = "identity",
-                    },
-                    create      = function() return socketutil.create_tcp(15, 60) end,
-                    sink        = ltn12.sink.file(io.open(local_path, "w")),
-                    user        = item.username,
-                    password    = item.password,
-                })
-            elseif parsed.scheme == "https" then
+            if parsed.scheme == "http" or parsed.scheme == "https" then
                 code, headers = socket.skip(1, http.request {
                     url         = remote_url,
                     headers     = {
