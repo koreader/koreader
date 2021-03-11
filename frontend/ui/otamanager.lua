@@ -28,7 +28,7 @@ local OTAManager = {
         "http://vislab.bjmu.edu.cn/apps/koreader/ota/",
         --]]
         "http://koreader-fr.ak-team.com/",
-        "https://koreader-ota-fr.AUTH-2ac4bfee353948ec8ea7fd1710574097.storage.gra.cloud.ovh.net",
+        "https://koreader-ota-fr.AUTH-2ac4bfee353948ec8ea7fd1710574097.storage.gra.cloud.ovh.net/",
         "http://koreader-pl.ak-team.com/",
         "http://koreader-na.ak-team.com/",
         "http://koreader.ak-team.com/",
@@ -184,7 +184,7 @@ function OTAManager:checkUpdate()
         headers = {
             ["User-Agent"] = socketutil.USER_AGENT,
         },
-        create  = parsed.scheme == "https" and function(t) return socketutil.https_tcp(t) end or socketutil.http_tcp,
+        create  = parsed.scheme == "http" and socketutil.http_tcp or nil,
     })
     if code ~= 200 then
         logger.warn("cannot find update file:", status or code or "network unreachable")

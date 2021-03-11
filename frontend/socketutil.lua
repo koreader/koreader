@@ -6,6 +6,7 @@ local Version = require("version")
 local http = require("socket.http")
 local https = require("ssl.https")
 local socket = require("socket")
+local ssl = require("ssl")
 
 local socketutil = {}
 
@@ -45,8 +46,12 @@ end
 
 --- Custom `https.tcp` (LuaSec's wrapper around LuaSocket's socket.tcp) with tighter timeouts, to avoid blocking the UI for too long.
 -- NOTE: Keep me in sync w/ LuaSec's in https.lua!
-local function https_tcp(params, block_timeout, total_timeout)
+https.tcp = function(params)
+    print("Hai from socketutils' monkey-patched https.tcp")
     params = params or {}
+    for k, v in pairs(params) do
+       print(k, v)
+    end
     -- Default settings
     for k, v in pairs(cfg) do
         params[k] = params[k] or v
@@ -59,7 +64,7 @@ local function https_tcp(params, block_timeout, total_timeout)
         local conn = {}
         conn.sock = socket.try(socket.tcp())
         conn.sock:settimeout(https.TIMEOUT, 'b')
-        conn.sock:settimeout(total_timeout or 15, 't')
+        conn.sock:settimeout(https.TIMEOUT * 3, 't')
         local st = getmetatable(conn.sock).__index.settimeout
         function conn:settimeout(...)
             return st(self.sock, ...)
@@ -75,11 +80,6 @@ local function https_tcp(params, block_timeout, total_timeout)
         end
         return conn
     end
-end
-
-function socketutil.https_tcp(params, block_timeout, total_timeout)
-    local create = https_tcp(params, block_timeout, total_timeout)
-    return create()
 end
 
 return socketutil
