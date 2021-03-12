@@ -1,5 +1,5 @@
 --[[--
-This module contains miscellaneous helper functions for specific to our usage of LuaSocket/LuaSec.
+This module contains miscellaneous helper functions specific to our usage of LuaSocket/LuaSec.
 ]]
 
 local Version = require("version")
