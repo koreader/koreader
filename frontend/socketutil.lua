@@ -27,7 +27,20 @@ socketutil.LARGE_TOTAL_TMOUT = 30
 socketutil.FILE_BLOCK_TMOUT = 15
 socketutil.FILE_TOTAL_TMOUT = 60
 
---- Update the timeout values
+--- Update the timeout values.
+-- Note that this only affects socket polling,
+-- c.f., LuaSocket's timeout_getretry @ src/timeout.c & usage in src/usocket.c
+-- Moreover, the timeout is actually *reset* between polls (via timeout_markstart, e.g. in buffer_meth_receive).
+-- So, in practice, this timeout only helps *very* bad connections (on one end or the other),
+-- and you'd be hard-pressed to ever hit the *total* timeout, since the starting point is reset extremely often.
+-- In our case, we want to enforce an *actual* limit on how much time we're willing to block for, start to finish.
+-- We do that via the custom sinks below, which will start ticking as soon as the first chunk of data is received.
+-- To simplify, in most cases, the socket timeout matters *before* we receive data,
+-- and the sink timeout *once* we've started receiving data (at which point the socket timeout is reset every chunk).
+-- In practice, that means you don't want to set block_timeout too low,
+-- as that's what the socket timeout will end up using most of the time.
+-- Note that name resolution happens earlier and one level lower (e.g., glibc),
+-- so name resolution delays will fall outside of these timeouts.
 function socketutil:set_timeout(block_timeout, total_timeout)
     self.block_timeout = block_timeout or 5
     self.total_timeout = total_timeout or 15
@@ -51,15 +64,6 @@ local real_socket_tcp = socket.tcp
 function socketutil.tcp()
     -- Based on https://stackoverflow.com/a/6021774
     local req_sock = real_socket_tcp()
-    -- Note that this only affects socket polling,
-    -- c.f., LuaSocket's timeout_getretry @ src/timeout.c & usage in src/usocket.c
-    -- Moreover, the timeout is actually *reset* between polls (via timeout_markstart in buffer_meth_receive).
-    -- So, in practice, this timeout only helps *very* bad connections,
-    -- and you'd be hard-pressed to ever hit the *total* timeout, since the starting point is reset extremely often.
-    -- In our case, we want to enforce an *actual* limit on how much time we're willing to block for, start to finish.
-    -- We do that via the custom sinks above, which will start ticking as soon as the first chunk of data is received.
-    -- To simplify, in most cases, the socket timeout matters *before* we receive data,
-    -- and the sink timeout *once* we've sytarted receiving data (at which point the socket timeout is reset every chunk).
     req_sock:settimeout(socketutil.block_timeout, "b")
     req_sock:settimeout(socketutil.total_timeout, "t")
     return req_sock
