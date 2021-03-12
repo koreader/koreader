@@ -53,7 +53,13 @@ function socketutil.tcp()
     local req_sock = real_socket_tcp()
     -- Note that this only affects socket polling,
     -- c.f., LuaSocket's timeout_getretry @ src/timeout.c & usage in src/usocket.c
-    -- Hence the custom sinks below...
+    -- Moreover, the timeout is actually *reset* between polls (via timeout_markstart in buffer_meth_receive).
+    -- So, in practice, this timeout only helps *very* bad connections,
+    -- and you'd be hard-pressed to ever hit the *total* timeout, since the starting point is reset extremely often.
+    -- In our case, we want to enforce an *actual* limit on how much time we're willing to block for, start to finish.
+    -- We do that via the custom sinks above, which will start ticking as soon as the first chunk of data is received.
+    -- To simplify, in most cases, the socket timeout matters *before* we receive data,
+    -- and the sink timeout *once* we've sytarted receiving data (at which point the socket timeout is reset every chunk).
     req_sock:settimeout(socketutil.block_timeout, "b")
     req_sock:settimeout(socketutil.total_timeout, "t")
     return req_sock
