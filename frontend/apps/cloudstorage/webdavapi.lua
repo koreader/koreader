@@ -150,7 +150,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
 end
 
 function WebDavApi:downloadFile(file_url, user, pass, local_path)
-    socketutil:set_timeout(socketutil.FILE_BLOCK_TMOUT, socketutil.FILE_TOTAL_TMOUT)
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     local code_return = socket.skip(1, http.request{
         url      = file_url,
         method   = "GET",

@@ -575,7 +575,7 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     logger.dbg("Wallabag: URL     ", request.url)
     logger.dbg("Wallabag: method  ", method)
 
-    socketutil:set_timeout(socketutil.LARGE_BLOCK_TMOUT, socketutil.LARGE_TOTAL_TMOUT)
+    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
     local code, resp_headers = socket.skip(1, http.request(request))
     -- raise error message when network is unavailable
     if resp_headers == nil then

@@ -21,11 +21,11 @@ http.USERAGENT = socketutil.USER_AGENT
 
 --- Common timeout values
 -- Large content
-socketutil.LARGE_BLOCK_TMOUT = 10
-socketutil.LARGE_TOTAL_TMOUT = 30
+socketutil.LARGE_BLOCK_TIMEOUT = 10
+socketutil.LARGE_TOTAL_TIMEOUT = 30
 -- File downloads
-socketutil.FILE_BLOCK_TMOUT = 15
-socketutil.FILE_TOTAL_TMOUT = 60
+socketutil.FILE_BLOCK_TIMEOUT = 15
+socketutil.FILE_TOTAL_TIMEOUT = 60
 
 --- Update the timeout values.
 -- Note that this only affects socket polling,

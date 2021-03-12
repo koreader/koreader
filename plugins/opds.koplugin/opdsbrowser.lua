@@ -269,7 +269,7 @@ end
 
 function OPDSBrowser:fetchFeed(item_url, username, password, method)
     local sink = {}
-    socketutil:set_timeout(socketutil.LARGE_BLOCK_TMOUT, socketutil.LARGE_TOTAL_TMOUT)
+    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
     local request = {
         url      = item_url,
         method   = method and method or "GET",
@@ -565,7 +565,7 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
 
             local code, headers
             if parsed.scheme == "http" or parsed.scheme == "https" then
-                socketutil:set_timeout(socketutil.FILE_BLOCK_TMOUT, socketutil.FILE_TOTAL_TMOUT)
+                socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
                 code, headers = socket.skip(1, http.request {
                     url         = remote_url,
                     headers     = {

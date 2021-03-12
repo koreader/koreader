@@ -999,7 +999,7 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
         end)
     end
 
-    socketutil:set_timeout(socketutil.FILE_BLOCK_TMOUT, socketutil.FILE_TOTAL_TMOUT)
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     local c = socket.skip(1, http.request{
         url     = dict.url,
         sink    = ltn12.sink.file(io.open(download_location, "w")),

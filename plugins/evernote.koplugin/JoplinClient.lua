@@ -20,7 +20,7 @@ function JoplinClient:_makeRequest(url, method, request_body)
     local sink = {}
     local request_body_json = json.encode(request_body)
     local source = ltn12.source.string(request_body_json)
-    socketutil:set_timeout(socketutil.LARGE_BLOCK_TMOUT, socketutil.LARGE_TOTAL_TMOUT)
+    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
     http.request{
         url     = url,
         method  = method,
