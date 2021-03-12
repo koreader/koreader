@@ -1156,33 +1156,11 @@ function Input:waitEvent(now, deadline)
                 table.insert(handled, Event:new("GenericInput", event))
             end
         end
-<<<<<<< HEAD
         return handled
     elseif ok == false and ev then
         return {
             Event:new("InputError", ev)
         }
-=======
-        self:eventAdjustHook(ev)
-        if ev.type == C.EV_KEY then
-            return self:handleKeyBoardEv(ev)
-        elseif ev.type == C.EV_ABS and ev.code == ABS_OASIS_ORIENTATION then
-            return self:handleOasisOrientationEv(ev)
-        elseif ev.type == C.EV_ABS or ev.type == C.EV_SYN then
-            return self:handleTouchEv(ev)
-        elseif ev.type == C.EV_MSC then
-            return self:handleMiscEv(ev)
-        elseif ev.type == C.EV_SDL then
-            return self:handleSdlEv(ev)
-        else
-            -- Received some other kind of event that we do not know how to specifically handle yet
-            return Event:new("GenericInput", ev)
-        end
-    elseif ok and not ev then
-        return Event:new("Charging")
-    elseif not ok and ev then
-        return Event:new("InputError", ev)
->>>>>>> 2d303187... process events from the android side (charging...)
     elseif ok == nil then
         -- No ok and no ev? Hu oh...
         return {
