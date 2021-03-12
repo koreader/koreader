@@ -71,9 +71,9 @@ end
 socket.tcp = socketutil.tcp
 
 --- Various timeout return codes
-socketutil.TIMEOUT_CODE       = "timeout"      -- from LuaSocket's io.c
-socketutil.SSL_HANDSHAKE_CODE = "wantread"     -- from LuaSec's ssl.c
-socketutil.SINK_TMOUT_CODE    = "sink timeout" -- from our own socketutil
+socketutil.TIMEOUT_CODE         = "timeout"      -- from LuaSocket's io.c
+socketutil.SSL_HANDSHAKE_CODE   = "wantread"     -- from LuaSec's ssl.c
+socketutil.SINK_TIMEOUT_CODE    = "sink timeout" -- from our own socketutil
 
 -- NOTE: Use os.time() for simplicity's sake (we don't really need subsecond precision).
 --       LuaSocket itself is already using gettimeofday anyway (although it does the maths, like ffi/util's getTimestamp).
@@ -87,7 +87,7 @@ function socketutil.table_sink(t)
     local f = function(chunk, err)
         if chunk then
             if os.time() - start_ts > socketutil.total_timeout then
-                return nil, socketutil.SINK_TMOUT_CODE
+                return nil, socketutil.SINK_TIMEOUT_CODE
             end
             table.insert(t, chunk)
         end
@@ -107,7 +107,7 @@ function socketutil.file_sink(handle, io_err)
             else
                 if os.time() - start_ts > socketutil.total_timeout then
                     handle:close()
-                    return nil, socketutil.SINK_TMOUT_CODE
+                    return nil, socketutil.SINK_TIMEOUT_CODE
                 end
                 return handle:write(chunk)
             end

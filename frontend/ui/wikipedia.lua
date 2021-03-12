@@ -124,7 +124,10 @@ local function getUrlContent(url, timeout, maxtime)
     -- logger.dbg("status:", status)
     -- logger.dbg("#content:", #content)
 
-    if code == socketutil.TIMEOUT_CODE or code == socketutil.SSL_HANDSHAKE_CODE or code == socketutil.SINK_TMOUT_CODE then
+    if code == socketutil.TIMEOUT_CODE or
+       code == socketutil.SSL_HANDSHAKE_CODE or
+       code == socketutil.SINK_TIMEOUT_CODE
+    then
         logger.warn("request interrupted:", code)
         return false, code
     end
