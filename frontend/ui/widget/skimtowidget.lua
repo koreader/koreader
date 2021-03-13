@@ -251,15 +251,15 @@ function SkimToWidget:init()
     }
     local bottom_buttons_row = HorizontalGroup:new{
         align = "center",
-        button_minus,
-        small_button_span,
         button_minus_ten,
+        small_button_span,
+        button_minus,
         large_button_span,
         self.current_page_text,
         large_button_span,
-        button_plus_ten,
-        small_button_span,
         button_plus,
+        small_button_span,
+        button_plus_ten,
     }
 
     self.skimto_frame = FrameContainer:new{
@@ -293,7 +293,7 @@ function SkimToWidget:init()
     if Device:hasDPad() then
         self.buttons_layout = {
             { button_chapter_prev, button_bookmark_prev, self.button_bookmark_toggle, button_bookmark_next, button_chapter_next },
-            { button_minus, button_minus_ten, self.current_page_text, button_plus_ten, button_plus },
+            { button_minus_ten, button_minus, self.current_page_text, button_plus, button_plus_ten },
         }
         self.layout = self.buttons_layout
         self.layout[2][1]:onFocus()
