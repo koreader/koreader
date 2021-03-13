@@ -26,6 +26,9 @@ socketutil.LARGE_TOTAL_TIMEOUT = 30
 -- File downloads
 socketutil.FILE_BLOCK_TIMEOUT = 15
 socketutil.FILE_TOTAL_TIMEOUT = 60
+-- Upstream defaults
+socketutil.DEFAULT_BLOCK_TIMEOUT = 60
+socketutil.DEFAULT_TOTAL_TIMEOUT = -1
 
 --- Update the timeout values.
 -- Note that this only affects socket polling,
