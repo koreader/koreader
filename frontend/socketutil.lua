@@ -5,6 +5,7 @@ This module contains miscellaneous helper functions specific to our usage of Lua
 local Version = require("version")
 local http = require("socket.http")
 local https = require("ssl.https")
+local ltn12 = require("ltn12")
 local socket = require("socket")
 
 local socketutil = {
@@ -85,6 +86,10 @@ socketutil.SINK_TIMEOUT_CODE    = "sink timeout" -- from our own socketutil
 --       and I have no idea what macOS & Android do with it (but it is POSIX). Plus, win32.
 --- Custom version of `ltn12.sink.table` that honors total_timeout
 function socketutil.table_sink(t)
+    if socketutil.total_timeout < 0 then
+        return ltn12.sink.table(t)
+    end
+
     local start_ts = os.time()
     t = t or {}
     local f = function(chunk, err)
@@ -101,6 +106,10 @@ end
 
 --- Custom version of `ltn12.sink.file` that honors total_timeout
 function socketutil.file_sink(handle, io_err)
+    if socketutil.total_timeout < 0 then
+        return ltn12.sink.file(handle, io_err)
+    end
+
     if handle then
         local start_ts = os.time()
         return function(chunk, err)
