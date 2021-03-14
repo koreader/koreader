@@ -317,6 +317,7 @@ function Translator:loadPage(text, target_lang, source_lang)
     logger.dbg("Calling", request.url)
     -- Skip first argument (body, goes to the sink)
     local code, headers, status = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
 
     -- raise error message when network is unavailable
     if headers == nil then

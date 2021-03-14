@@ -21,6 +21,7 @@ function InternalDownloadBackend:getResponseAsString(url, redirectCount)
         sink    = ltn12.sink.table(sink),
     }
     local code, headers, status = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
 
     if code ~= 200 then
         logger.dbg("InternalDownloadBackend: HTTP response code <> 200. Response status: ", status)

@@ -31,6 +31,7 @@ function JoplinClient:_makeRequest(url, method, request_body)
             ["Content-Type"] = "application/json"
         },
     }
+    socketutil:reset_timeout()
 
     if not sink[1] then
         error("No response from Joplin Server")

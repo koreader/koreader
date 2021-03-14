@@ -92,6 +92,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
         sink     = ltn12.sink.table(sink),
     }
     local headers_request = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
     if headers_request == nil then
         return nil
     end
@@ -158,6 +159,7 @@ function WebDavApi:downloadFile(file_url, user, pass, local_path)
         username = user,
         password = pass,
     })
+    socketutil:reset_timeout()
     return code_return
 end
 

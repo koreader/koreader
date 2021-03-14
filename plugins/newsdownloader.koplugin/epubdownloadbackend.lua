@@ -88,9 +88,9 @@ local function getUrlContent(url, timeout, maxtime, redirectCount)
         method  = "GET",
         sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
     }
-
     logger.dbg("request:", request)
     local code, headers, status = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
     logger.dbg("After http.request")
     local content = table.concat(sink) -- empty or content accumulated till now
     logger.dbg("type(code):", type(code))

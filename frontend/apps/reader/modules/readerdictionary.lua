@@ -969,15 +969,16 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
     local http = socket.http
     local ltn12 = require("ltn12")
 
-    socketutil:set_timeout()
     if not continue then
         local file_size
         -- Skip body & code args
+        socketutil:set_timeout()
         local headers = socket.skip(2, http.request{
             method  = "HEAD",
             url     = dict.url,
             --redirect = true,
         })
+        socketutil:reset_timeout()
         --logger.dbg(headers)
         file_size = headers and headers["content-length"]
 
@@ -1004,6 +1005,7 @@ function ReaderDictionary:downloadDictionary(dict, download_location, continue)
         url     = dict.url,
         sink    = ltn12.sink.file(io.open(download_location, "w")),
     })
+    socketutil:reset_timeout()
     if c == 200 then
         logger.dbg("file downloaded to", download_location)
     else

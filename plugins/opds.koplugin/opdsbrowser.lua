@@ -283,6 +283,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
     }
     logger.info("Request:", request)
     local code, headers = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
     -- raise error message when network is unavailable
     if headers == nil then
         error(code)
@@ -575,6 +576,7 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
                     user        = item.username,
                     password    = item.password,
                 })
+                socketutil:reset_timeout()
             else
                 UIManager:show(InfoMessage:new {
                     text = T(_("Invalid protocol:\n%1"), parsed.scheme),

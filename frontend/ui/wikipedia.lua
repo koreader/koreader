@@ -118,6 +118,7 @@ local function getUrlContent(url, timeout, maxtime)
     }
 
     local code, headers, status = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
     local content = table.concat(sink) -- empty or content accumulated till now
     -- logger.dbg("code:", code)
     -- logger.dbg("headers:", headers)

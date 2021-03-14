@@ -56,6 +56,15 @@ function socketutil:set_timeout(block_timeout, total_timeout)
     https.TIMEOUT = self.block_timeout
 end
 
+--- Reset timeout values to LuaSocket defaults.
+function socketutil:reset_timeout()
+    self.block_timeout = self.DEFAULT_BLOCK_TIMEOUT
+    self.total_timeout = self.DEFAULT_TOTAL_TIMEOUT
+
+    http.TIMEOUT = self.block_timeout
+    https.TIMEOUT = self.block_timeout
+end
+
 --- Monkey-patch LuaSocket's `socket.tcp` in order to honor tighter timeouts, to avoid blocking the UI for too long.
 -- NOTE: While we could use a custom `create` function for HTTP LuaSocket `request`s,
 --       with HTTPS, the way LuaSocket/LuaSec handles those is much more finicky,

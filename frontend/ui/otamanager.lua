@@ -180,6 +180,7 @@ function OTAManager:checkUpdate()
         url     = ota_update_file,
         sink    = ltn12.sink.file(io.open(local_update_file, "w")),
     })
+    socketutil:reset_timeout()
     if code ~= 200 then
         logger.warn("cannot find update file:", status or code or "network unreachable")
         return

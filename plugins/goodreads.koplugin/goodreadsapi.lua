@@ -50,6 +50,7 @@ function GoodreadsApi:fetchXml(s_url)
         sink    = ltn12.sink.table(sink),
     }
     local headers = socket.skip(2, http.request(request))
+    socketutil:reset_timeout()
     if headers == nil then
         return nil
     end

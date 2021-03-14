@@ -25,6 +25,7 @@ function DropBoxApi:fetchInfo(token)
         sink    = ltn12.sink.table(sink),
     }
     local headers_request = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
     local result_response = table.concat(sink)
     if headers_request == nil then
         return nil
@@ -55,6 +56,7 @@ function DropBoxApi:fetchListFolders(path, token)
         sink    = ltn12.sink.table(sink),
     }
     local headers_request = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
     if headers_request == nil then
         return nil
     end
@@ -83,6 +85,7 @@ function DropBoxApi:downloadFile(path, token, local_path)
         },
         sink    = ltn12.sink.file(io.open(local_path, "w")),
     })
+    socketutil:reset_timeout()
     return code_return
 end
 
