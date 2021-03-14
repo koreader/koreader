@@ -217,6 +217,43 @@ function PdfDocument:saveHighlight(pageno, item)
     page:close()
 end
 
+function PdfDocument:updateHighlightContents(pageno, item, contents)
+    local suffix = util.getFileNameSuffix(self.file)
+    if string.lower(suffix) ~= "pdf" then return end
+
+    if self.is_writable == nil then
+        local handle = io.open(self.file, 'r+b')
+        self.is_writable = handle ~= nil
+        if handle then handle:close() end
+    end
+    if self.is_writable == false then
+        return false
+    end
+    self.is_edited = true
+    -- will also need mupdf_h.lua to be evaluated once
+    -- but this is guaranteed at this point
+    local n = #item.pboxes
+    local quadpoints = ffi.new("float[?]", 8*n)
+    for i=1, n do
+        -- The order must be left bottom, right bottom, left top, right top.
+        -- https://bugs.ghostscript.com/show_bug.cgi?id=695130
+        quadpoints[8*i-8] = item.pboxes[i].x
+        quadpoints[8*i-7] = item.pboxes[i].y + item.pboxes[i].h
+        quadpoints[8*i-6] = item.pboxes[i].x + item.pboxes[i].w
+        quadpoints[8*i-5] = item.pboxes[i].y + item.pboxes[i].h
+        quadpoints[8*i-4] = item.pboxes[i].x
+        quadpoints[8*i-3] = item.pboxes[i].y
+        quadpoints[8*i-2] = item.pboxes[i].x + item.pboxes[i].w
+        quadpoints[8*i-1] = item.pboxes[i].y
+    end
+    local page = self._document:openPage(pageno)
+    local annot = page:getMarkupAnnotation(quadpoints, n)
+    if annot ~= nil then
+        page:updateMarkupAnnotation(annot, contents)
+    end
+    page:close()
+end
+
 function PdfDocument:writeDocument()
     logger.info("writing document to", self.file)
     self._document:writeDocument(self.file)

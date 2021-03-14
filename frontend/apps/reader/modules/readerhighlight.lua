@@ -1441,6 +1441,7 @@ function ReaderHighlight:editHighlight(page, i)
     self.ui.bookmark:renameBookmark({
         page = self.ui.document.info.has_pages and page or item.pos0,
         datetime = item.datetime,
+        pboxes = item.pboxes
     }, true)
 end
 
