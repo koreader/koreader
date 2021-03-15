@@ -83,6 +83,7 @@ function TimeVal:__eq(time_b)
     end
 end
 
+-- If sec is negative, time went backwards!
 function TimeVal:__sub(time_b)
     local diff = TimeVal:new{}
 

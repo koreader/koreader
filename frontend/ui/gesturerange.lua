@@ -41,10 +41,10 @@ function GestureRange:match(gs)
     end
 
     if self.rate then
-        -- This filed restraints the upper limit rate(matches per second).
+        -- This filed restraints the upper limit rate (matches per second).
         -- It's most useful for e-ink devices with less powerfull CPUs and
         -- screens that cannot handle gesture events that otherwise will be
-        -- generated
+        -- generated.
         local last_time = self.last_time or TimeVal:new{}
         if gs.time - last_time > TimeVal:new{usec = 1000000 / self.rate} then
             self.last_time = gs.time

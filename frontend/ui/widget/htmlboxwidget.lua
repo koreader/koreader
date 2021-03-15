@@ -165,7 +165,7 @@ function HtmlBoxWidget:onHoldStartText(_, ges)
         return false -- let event be processed by other widgets
     end
 
-    self.hold_start_tv = TimeVal.now()
+    self.hold_start_tv = TimeVal:monotonic()
 
     return true
 end
@@ -229,7 +229,7 @@ function HtmlBoxWidget:onHoldReleaseText(callback, ges)
         return false
     end
 
-    local hold_duration = TimeVal.now() - self.hold_start_tv
+    local hold_duration = TimeVal:monotonic() - self.hold_start_tv
     hold_duration = hold_duration.sec + (hold_duration.usec/1000000)
 
     local page = self.document:openPage(self.page_number)
