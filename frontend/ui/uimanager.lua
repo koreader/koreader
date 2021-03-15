@@ -512,13 +512,11 @@ end
 function UIManager:schedule(time, action, ...)
     local p, s, e = 1, 1, #self._task_queue
     if e ~= 0 then
-        -- Flatten the TimeVal to a float
-        local ts = time:tonumber()
         -- do a binary insert
         repeat
             p = math.floor(s + (e - s) / 2)
-            local p_ts = self._task_queue[p].time
-            if ts > p_ts then
+            local p_time = self._task_queue[p].time
+            if time > p_time then
                 if s == e then
                     p = e + 1
                     break
@@ -527,7 +525,7 @@ function UIManager:schedule(time, action, ...)
                 else
                     s = p
                 end
-            elseif ts < p_ts then
+            elseif time < p_time then
                 e = p
                 if s == e then
                     break
@@ -1149,7 +1147,7 @@ function UIManager:broadcastEvent(event)
 end
 
 function UIManager:_checkTasks()
-    local now_ts = TimeVal:monotonic():tonumber()
+    local now = TimeVal:monotonic()
     local wait_until = nil
 
     -- task.action may schedule other events
@@ -1161,8 +1159,8 @@ function UIManager:_checkTasks()
             break
         end
         local task = self._task_queue[1]
-        local task_ts = task.time or 0
-        if task_ts <= now_ts then
+        local task_tv = task.time or TimeVal:new{}
+        if task_tv <= now then
             -- remove from table
             table.remove(self._task_queue, 1)
             -- task is pending to be executed right now. do it.
@@ -1573,7 +1571,7 @@ function UIManager:handleInput()
     if wait_until then
         wait_us = math.min(
             wait_us or math.huge,
-            math.floor(wait_until * 1000000))
+            wait_until:tousecs())
     end
 
     -- If we have any ZMQs registered, ZMQ_TIMEOUT is another upper bound.

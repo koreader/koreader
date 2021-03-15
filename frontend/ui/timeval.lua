@@ -150,9 +150,14 @@ function TimeVal:monotonic()
     return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = tonumber(timespec.tv_nsec / 1000)}
 end
 
--- Converts a TimeVal object to a Lua (float) number
+-- Converts a TimeVal object to a Lua (float) number (sec.usecs)
 function TimeVal:tonumber()
     return tonumber(self.sec + self.usec/1000000)
+end
+
+-- Converts a TimeVal object to a Lua (int) number (usecs)
+function TimeVal:tousecs()
+    return tonumber(self.sec * 1000000 + self.usec)
 end
 
 -- Converts a Lua (float) number to a TimeVal object
