@@ -779,14 +779,14 @@ function Input:waitEvent(timeout_us)
     -- wrapper for input.waitForEvents that will retry for some cases
     while true do
         if #self.timer_callbacks > 0 then
-            local wait_deadline = TimeVal:now() + TimeVal:new{
+            local wait_deadline = TimeVal:monotonic() + TimeVal:new{
                 usec = timeout_us
             }
             -- we don't block if there is any timer, set wait to 10us
             while #self.timer_callbacks > 0 do
                 ok, ev = pcall(input.waitForEvent, 100)
                 if ok then break end
-                local tv_now = TimeVal:now()
+                local tv_now = TimeVal:monotonic()
                 if (not timeout_us or tv_now < wait_deadline) then
                     -- check whether timer is up
                     if tv_now >= self.timer_callbacks[1].deadline then
