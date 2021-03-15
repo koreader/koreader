@@ -55,40 +55,26 @@ function TimeVal:new(from_o)
     return o
 end
 
-
+-- Based on <bsd/sys/time.h>
 function TimeVal:__lt(time_b)
-    if self.sec < time_b.sec then
-        return true
-    elseif self.sec > time_b.sec then
-        return false
+    if self.sec == time_b.sec then
+        return self.usec < time_b.usec
     else
-        -- self.sec == time_b.sec
-        if self.usec < time_b.usec then
-            return true
-        else
-            return false
-        end
+        return self.sec < time_b.sec
     end
 end
 
 function TimeVal:__le(time_b)
-    if self.sec < time_b.sec then
-        return true
-    elseif self.sec > time_b.sec then
-        return false
+    if self.sec == time_b.sec then
+        return self.usec <= time_b.usec
     else
-        -- self.sec == time_b.sec
-        if self.usec > time_b.usec then
-            return false
-        else
-            return true
-        end
+        return self.sec <= time_b.sec
     end
 end
 
 function TimeVal:__eq(time_b)
-    if self.sec == time_b.sec and self.usec == time_b.usec then
-        return true
+    if self.sec == time_b.sec then
+        return self.usec == time_b.usec
     else
         return false
     end
@@ -100,10 +86,7 @@ function TimeVal:__sub(time_b)
     diff.sec = self.sec - time_b.sec
     diff.usec = self.usec - time_b.usec
 
-    if diff.sec < 0 and diff.usec > 0 then
-        diff.sec = diff.sec + 1
-        diff.usec = diff.usec - 1000000
-    elseif diff.sec > 0 and diff.usec < 0 then
+    if diff.usec < 0 then
         diff.sec = diff.sec - 1
         diff.usec = diff.usec + 1000000
     end
@@ -122,17 +105,10 @@ function TimeVal:__add(time_b)
 
     sum.sec = self.sec + time_b.sec
     sum.usec = self.usec + time_b.usec
-    if sum.usec > 1000000 then
-        sum.usec = sum.usec - 1000000
-        sum.sec = sum.sec + 1
-    end
 
-    if sum.sec < 0 and sum.usec > 0 then
+    if sum.usec >= 1000000 then
         sum.sec = sum.sec + 1
         sum.usec = sum.usec - 1000000
-    elseif sum.sec > 0 and sum.usec < 0 then
-        sum.sec = sum.sec - 1
-        sum.usec = sum.usec + 1000000
     end
 
     return sum
