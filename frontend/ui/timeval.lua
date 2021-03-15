@@ -94,12 +94,6 @@ function TimeVal:__sub(time_b)
     return diff
 end
 
-dbg:guard(TimeVal, '__sub',
-          function(self, time_b)
-              assert(self.sec > time_b.sec or (self.sec == time_b.sec and self.usec >= time_b.usec),
-                     "Subtract the first timeval from the latest, not vice versa.")
-          end)
-
 function TimeVal:__add(time_b)
     local sum = TimeVal:new{}
 
