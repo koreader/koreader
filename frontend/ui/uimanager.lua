@@ -5,6 +5,7 @@ This module manages widgets.
 local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
+local TimeVal = require("ui/timeval")
 local dbg = require("dbg")
 local logger = require("logger")
 local ffiUtil = require("ffi/util")
@@ -13,7 +14,6 @@ local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
 
-local MILLION = 1000000
 local DEFAULT_FULL_REFRESH_COUNT = 6
 
 -- there is only one instance of this
@@ -512,13 +512,13 @@ end
 function UIManager:schedule(time, action, ...)
     local p, s, e = 1, 1, #self._task_queue
     if e ~= 0 then
-        local us = time[1] * MILLION + time[2]
+        -- Flatten the TimeVal to a float
+        local ts = time:tonumber()
         -- do a binary insert
         repeat
             p = math.floor(s + (e - s) / 2)
-            local ptime = self._task_queue[p].time
-            local ptus = ptime[1] * MILLION + ptime[2]
-            if us > ptus then
+            local p_ts = self._task_queue[p].time
+            if ts > p_ts then
                 if s == e then
                     p = e + 1
                     break
@@ -527,7 +527,7 @@ function UIManager:schedule(time, action, ...)
                 else
                     s = p
                 end
-            elseif us < ptus then
+            elseif ts < p_ts then
                 e = p
                 if s == e then
                     break
@@ -549,7 +549,7 @@ function UIManager:schedule(time, action, ...)
 end
 dbg:guard(UIManager, 'schedule',
     function(self, time, action)
-        assert(time[1] >= 0 and time[2] >= 0, "Only positive time allowed")
+        assert(time.sec >= 0, "Only positive time allowed")
         assert(action ~= nil)
     end)
 
@@ -563,15 +563,7 @@ Schedules a task to be run a certain amount of seconds from now.
 @see unschedule
 ]]
 function UIManager:scheduleIn(seconds, action, ...)
-    local when = { ffiUtil.gettime() }
-    local s = math.floor(seconds)
-    local usecs = (seconds - s) * MILLION
-    when[1] = when[1] + s
-    when[2] = when[2] + usecs
-    if when[2] >= MILLION then
-        when[1] = when[1] + 1
-        when[2] = when[2] - MILLION
-    end
+    local when = TimeVal:monotonic() + TimeVal:fromnumber(seconds)
     self:schedule(when, action, ...)
 end
 dbg:guard(UIManager, 'scheduleIn',
@@ -1065,11 +1057,10 @@ function UIManager:discardEvents(set_or_seconds)
             usecs = 400000
         end
     else -- we expect a number
-        usecs = set_or_seconds * MILLION
+        usecs = set_or_seconds * 1000000
     end
-    local now = { ffiUtil.gettime() }
-    local now_us = now[1] * MILLION + now[2]
-    self._discard_events_till = now_us + usecs
+    local now = TimeVal:monotonic()
+    self._discard_events_till = now + TimeVal:new{usec = usecs}
 end
 
 --[[--
@@ -1082,8 +1073,7 @@ function UIManager:sendEvent(event)
 
     -- Ensure discardEvents
     if self._discard_events_till then
-        local now = { ffiUtil.gettime() }
-        local now_us = now[1] * MILLION + now[2]
+        local now = TimeVal:monotonic()
         if now_us < self._discard_events_till then
             return
         else
@@ -1159,8 +1149,7 @@ function UIManager:broadcastEvent(event)
 end
 
 function UIManager:_checkTasks()
-    local now = { ffiUtil.gettime() }
-    local now_us = now[1] * MILLION + now[2]
+    local now_ts = TimeVal:monotonic():tonumber()
     local wait_until = nil
 
     -- task.action may schedule other events
@@ -1172,11 +1161,8 @@ function UIManager:_checkTasks()
             break
         end
         local task = self._task_queue[1]
-        local task_us = 0
-        if task.time ~= nil then
-            task_us = task.time[1] * MILLION + task.time[2]
-        end
-        if task_us <= now_us then
+        local task_ts = task.time or 0
+        if task_ts <= now_ts then
             -- remove from table
             table.remove(self._task_queue, 1)
             -- task is pending to be executed right now. do it.
@@ -1587,8 +1573,7 @@ function UIManager:handleInput()
     if wait_until then
         wait_us = math.min(
             wait_us or math.huge,
-            (wait_until[1] - now[1]) * MILLION
-            + (wait_until[2] - now[2]))
+            math.floor(wait_until * 1000000))
     end
 
     -- If we have any ZMQs registered, ZMQ_TIMEOUT is another upper bound.

@@ -155,4 +155,11 @@ function TimeVal:tonumber()
     return tonumber(self.sec + self.usec/1000000)
 end
 
+-- Converts a Lua (float) number to a TimeVal object
+function TimeVal:fromnumber(seconds)
+    local sec = math.floor(seconds)
+    local usec = (seconds - sec) * 1000000
+    return TimeVal:new{sec = sec, usec = usec}
+end
+
 return TimeVal
