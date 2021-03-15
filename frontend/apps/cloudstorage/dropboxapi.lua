@@ -1,10 +1,9 @@
 local DocumentRegistry = require("document/documentregistry")
 local JSON = require("json")
-local http = require('socket.http')
-local https = require('ssl.https')
-local ltn12 = require('ltn12')
-local socket = require('socket')
-local url = require('socket.url')
+local http = require("socket.http")
+local ltn12 = require("ltn12")
+local socket = require("socket")
+local socketutil = require("socketutil")
 local _ = require("gettext")
 
 local DropBoxApi = {
@@ -15,17 +14,18 @@ local API_LIST_FOLDER = "https://api.dropboxapi.com/2/files/list_folder"
 local API_DOWNLOAD_FILE = "https://content.dropboxapi.com/2/files/download"
 
 function DropBoxApi:fetchInfo(token)
-    local request, sink = {}, {}
-    local parsed = url.parse(API_URL_INFO)
-    request['url'] = API_URL_INFO
-    request['method'] = 'POST'
-    local headers = { ["Authorization"] = "Bearer ".. token }
-    request['headers'] = headers
-    request['sink'] = ltn12.sink.table(sink)
-    http.TIMEOUT = 5
-    https.TIMEOUT = 5
-    local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    local headers_request = socket.skip(1, httpRequest(request))
+    local sink = {}
+    socketutil:set_timeout()
+    local request = {
+        url     = API_URL_INFO,
+        method  = "POST",
+        headers = {
+            ["Authorization"] = "Bearer " .. token,
+        },
+        sink    = ltn12.sink.table(sink),
+    }
+    local headers_request = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
     local result_response = table.concat(sink)
     if headers_request == nil then
         return nil
@@ -39,23 +39,24 @@ function DropBoxApi:fetchInfo(token)
 end
 
 function DropBoxApi:fetchListFolders(path, token)
-    local request, sink = {}, {}
     if path == nil or path == "/" then path = "" end
-    local parsed = url.parse(API_LIST_FOLDER)
-    request['url'] = API_LIST_FOLDER
-    request['method'] = 'POST'
     local data = "{\"path\": \"" .. path .. "\",\"recursive\": false,\"include_media_info\": false,"..
         "\"include_deleted\": false,\"include_has_explicit_shared_members\": false}"
-    local headers = { ["Authorization"] = "Bearer ".. token,
-        ["Content-Type"] = "application/json" ,
-        ["Content-Length"] = #data}
-    request['headers'] = headers
-    request['source'] = ltn12.source.string(data)
-    request['sink'] = ltn12.sink.table(sink)
-    http.TIMEOUT = 5
-    https.TIMEOUT = 5
-    local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    local headers_request = socket.skip(1, httpRequest(request))
+    local sink = {}
+    socketutil:set_timeout()
+    local request = {
+        url     = API_LIST_FOLDER,
+        method  = "POST",
+        headers = {
+            ["Authorization"]  = "Bearer ".. token,
+            ["Content-Type"]   = "application/json",
+            ["Content-Length"] = #data,
+        },
+        source  = ltn12.source.string(data),
+        sink    = ltn12.sink.table(sink),
+    }
+    local headers_request = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
     if headers_request == nil then
         return nil
     end
@@ -73,20 +74,18 @@ function DropBoxApi:fetchListFolders(path, token)
 end
 
 function DropBoxApi:downloadFile(path, token, local_path)
-    local parsed = url.parse(API_DOWNLOAD_FILE)
-    local url_api = API_DOWNLOAD_FILE
     local data1 = "{\"path\": \"" .. path .. "\"}"
-    local headers = { ["Authorization"] = "Bearer ".. token,
-        ["Dropbox-API-Arg"] = data1}
-    http.TIMEOUT = 5
-    https.TIMEOUT = 5
-    local httpRequest = parsed.scheme == 'http' and http.request or https.request
-    local _, code_return, _ = httpRequest{
-        url = url_api,
-        method = 'GET',
-        headers = headers,
-        sink = ltn12.sink.file(io.open(local_path, "w"))
-    }
+    socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+    local code_return = socket.skip(1, http.request{
+        url     = API_DOWNLOAD_FILE,
+        method  = "GET",
+        headers = {
+            ["Authorization"]   = "Bearer ".. token,
+            ["Dropbox-API-Arg"] = data1,
+        },
+        sink    = ltn12.sink.file(io.open(local_path, "w")),
+    })
+    socketutil:reset_timeout()
     return code_return
 end
 

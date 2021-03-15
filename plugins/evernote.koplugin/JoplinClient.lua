@@ -1,6 +1,7 @@
-local json = require("json")
 local http = require("socket.http")
+local json = require("json")
 local ltn12 = require("ltn12")
+local socketutil = require("socketutil")
 
 local JoplinClient =  {
     server_ip = "localhost",
@@ -19,16 +20,18 @@ function JoplinClient:_makeRequest(url, method, request_body)
     local sink = {}
     local request_body_json = json.encode(request_body)
     local source = ltn12.source.string(request_body_json)
+    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
     http.request{
-        url = url,
-        method = method,
-        sink = ltn12.sink.table(sink),
-        source = source,
+        url     = url,
+        method  = method,
+        sink    = ltn12.sink.table(sink),
+        source  = source,
         headers = {
             ["Content-Length"] = #request_body_json,
             ["Content-Type"] = "application/json"
-        }
+        },
     }
+    socketutil:reset_timeout()
 
     if not sink[1] then
         error("No response from Joplin Server")

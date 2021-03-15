@@ -1,11 +1,11 @@
 local Version = require("version")
 local ffiutil = require("ffi/util")
 local http = require("socket.http")
-local https = require("ssl.https")
 local logger = require("logger")
 local ltn12 = require("ltn12")
 local socket = require("socket")
 local socket_url = require("socket.url")
+local socketutil = require("socketutil")
 local _ = require("gettext")
 local T = ffiutil.template
 
@@ -19,10 +19,6 @@ local EpubDownloadBackend = {
    dismissed_error_code = "Interrupted by user",
 }
 local max_redirects = 5; --prevent infinite redirects
-
--- Codes that getUrlContent may get from requester.request()
-local TIMEOUT_CODE = "timeout" -- from socket.lua
-local MAXTIME_CODE = "maxtime reached" -- from sink_table_with_maxtime
 
 -- filter HTML using CSS selector
 local function filter(text, element)
@@ -72,23 +68,6 @@ local function filter(text, element)
     return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
 end
 
--- Sink that stores into a table, aborting if maxtime has elapsed
-local function sink_table_with_maxtime(t, maxtime)
-    -- Start counting as soon as this sink is created
-    local start_secs, start_usecs = ffiutil.gettime()
-    local starttime = start_secs + start_usecs/1000000
-    t = t or {}
-    local f = function(chunk, err)
-        local secs, usecs = ffiutil.gettime()
-        if secs + usecs/1000000 - starttime > maxtime then
-            return nil, MAXTIME_CODE
-        end
-        if chunk then table.insert(t, chunk) end
-        return 1
-    end
-    return f, t
-end
-
 -- Get URL content
 local function getUrlContent(url, timeout, maxtime, redirectCount)
     logger.dbg("getUrlContent(", url, ",", timeout, ",", maxtime, ",", redirectCount, ")")
@@ -100,35 +79,19 @@ local function getUrlContent(url, timeout, maxtime, redirectCount)
 
     if not timeout then timeout = 10 end
     logger.dbg("timeout:", timeout)
-    -- timeout needs to be set to "http", even if we use "https"
-    --http.TIMEOUT, https.TIMEOUT = timeout, timeout
 
-    -- "timeout" delay works on socket, and is triggered when
-    -- that time has passed trying to connect, or after connection
-    -- when no data has been read for this time.
-    -- On a slow connection, it may not be triggered (as we could read
-    -- 1 byte every 1 second, not triggering any timeout).
-    -- "maxtime" can be provided to overcome that, and we start counting
-    -- as soon as the first content byte is received (but it is checked
-    -- for only when data is received).
-    -- Setting "maxtime" and "timeout" gives more chance to abort the request when
-    -- it takes too much time (in the worst case: in timeout+maxtime seconds).
-    -- But time taken by DNS lookup cannot easily be accounted for, so
-    -- a request may (when dns lookup takes time) exceed timeout and maxtime...
-    local request, sink = {}, {}
-    if maxtime then
-        request.sink = sink_table_with_maxtime(sink, maxtime)
-    else
-        request.sink = ltn12.sink.table(sink)
-    end
-    request.url = url
-    request.method = "GET"
+    local sink = {}
     local parsed = socket_url.parse(url)
-
-    local httpRequest = parsed.scheme == "http" and http.request or https.request
+    socketutil:set_timeout(timeout, maxtime or 30)
+    local request = {
+        url     = url,
+        method  = "GET",
+        sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
+    }
     logger.dbg("request:", request)
-    local code, headers, status = socket.skip(1, httpRequest(request))
-    logger.dbg("After httpRequest")
+    local code, headers, status = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
+    logger.dbg("After http.request")
     local content = table.concat(sink) -- empty or content accumulated till now
     logger.dbg("type(code):", type(code))
     logger.dbg("code:", code)
@@ -136,7 +99,10 @@ local function getUrlContent(url, timeout, maxtime, redirectCount)
     logger.dbg("status:", status)
     logger.dbg("#content:", #content)
 
-    if code == TIMEOUT_CODE or code == MAXTIME_CODE then
+    if code == socketutil.TIMEOUT_CODE or
+       code == socketutil.SSL_HANDSHAKE_CODE or
+       code == socketutil.SINK_TIMEOUT_CODE
+    then
         logger.warn("request interrupted:", code)
         return false, code
     end

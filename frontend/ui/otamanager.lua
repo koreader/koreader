@@ -166,6 +166,8 @@ end
 function OTAManager:checkUpdate()
     local http = require("socket.http")
     local ltn12 = require("ltn12")
+    local socket = require("socket")
+    local socketutil = require("socketutil")
 
     local update_file = (self:getOTAType() == "link") and self:getLinkFilename() or self:getZsyncFilename()
 
@@ -173,11 +175,14 @@ function OTAManager:checkUpdate()
     local local_update_file = ota_dir .. update_file
     -- download zsync file from OTA server
     logger.dbg("downloading update file", ota_update_file)
-    local _, c, _ = http.request{
-        url = ota_update_file,
-        sink = ltn12.sink.file(io.open(local_update_file, "w"))}
-    if c ~= 200 then
-        logger.warn("cannot find update file", c)
+    socketutil:set_timeout()
+    local code, _, status = socket.skip(1, http.request{
+        url     = ota_update_file,
+        sink    = ltn12.sink.file(io.open(local_update_file, "w")),
+    })
+    socketutil:reset_timeout()
+    if code ~= 200 then
+        logger.warn("cannot find update file:", status or code or "network unreachable")
         return
     end
     -- parse OTA package version

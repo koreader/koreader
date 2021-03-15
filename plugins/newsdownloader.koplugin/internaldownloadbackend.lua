@@ -1,9 +1,8 @@
 local http = require("socket.http")
-local https = require("ssl.https")
 local logger = require("logger")
 local ltn12 = require("ltn12")
-local socket = require('socket')
-local socket_url = require("socket.url")
+local socket = require("socket")
+local socketutil = require("socketutil")
 
 local InternalDownloadBackend = {}
 local max_redirects = 5; --prevent infinite redirects
@@ -15,13 +14,14 @@ function InternalDownloadBackend:getResponseAsString(url, redirectCount)
         error("InternalDownloadBackend: reached max redirects: ", redirectCount)
     end
     logger.dbg("InternalDownloadBackend: url :", url)
-    local request, sink = {}, {}
-    request['sink'] = ltn12.sink.table(sink)
-    request['url'] = url
-    local parsed = socket_url.parse(url)
-
-    local httpRequest = parsed.scheme == 'http' and http.request or https.request;
-    local code, headers, status = socket.skip(1, httpRequest(request))
+    local sink = {}
+    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
+    local request = {
+        url     = url,
+        sink    = ltn12.sink.table(sink),
+    }
+    local code, headers, status = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
 
     if code ~= 200 then
         logger.dbg("InternalDownloadBackend: HTTP response code <> 200. Response status: ", status)

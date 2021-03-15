@@ -26,6 +26,7 @@ local http = require("socket.http")
 local logger = require("logger")
 local ltn12 = require("ltn12")
 local socket = require("socket")
+local socketutil = require("socketutil")
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
@@ -379,7 +380,7 @@ function Wallabag:getBearerToken()
         ["Content-type"] = "application/json",
         ["Accept"] = "application/json, */*",
         ["Content-Length"] = tostring(#bodyJSON),
-        }
+    }
     local result = self:callAPI("POST", login_url, headers, bodyJSON, "")
 
     if result then
@@ -539,21 +540,25 @@ end
 -- filepath: downloads the file if provided, returns JSON otherwise
 ---- @todo separate call to internal API from the download on external server
 function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
-    local request, sink = {}, {}
+    local sink = {}
+    local request = {}
 
     -- Is it an API call, or a regular file direct download?
     if apiurl:sub(1, 1) == "/" then
         -- API call to our server, has the form "/random/api/call"
         request.url = self.server_url .. apiurl
         if headers == nil then
-            headers = { ["Authorization"] = "Bearer " .. self.access_token, }
+            headers = {
+                ["Authorization"] = "Bearer " .. self.access_token,
+            }
         end
     else
         -- regular url link to a foreign server
         local file_url = apiurl
         request.url = file_url
         if headers == nil then
-            headers = {} -- no need for a token here
+            -- no need for a token here
+            headers = {}
         end
     end
 
@@ -570,9 +575,9 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     logger.dbg("Wallabag: URL     ", request.url)
     logger.dbg("Wallabag: method  ", method)
 
-    http.TIMEOUT = 30
-    local httpRequest = http.request
-    local code, resp_headers = socket.skip(1, httpRequest(request))
+    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
+    local code, resp_headers = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
     -- raise error message when network is unavailable
     if resp_headers == nil then
         logger.dbg("Wallabag: Server error: ", code)

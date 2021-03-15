@@ -95,84 +95,40 @@ function Wikipedia:getWikiServer(lang)
     return string.format(self.wiki_server, lang or self.default_lang)
 end
 
--- Say who we are to Wikipedia (see https://meta.wikimedia.org/wiki/User-Agent_policy)
-local USER_AGENT = T("KOReader/%1 (https://koreader.rocks/) %2",
-    (lfs.attributes("git-rev", "mode") == "file" and io.open("git-rev", "r"):read("*line") or "devel"),
-    require('socket.http').USERAGENT:gsub(" ", "/") )
-
--- Codes that getUrlContent may get from requester.request()
-local TIMEOUT_CODE = "timeout" -- from socket.lua
-local MAXTIME_CODE = "maxtime reached" -- from sink_table_with_maxtime
-
--- Sink that stores into a table, aborting if maxtime has elapsed
-local function sink_table_with_maxtime(t, maxtime)
-    -- Start counting as soon as this sink is created
-    local start_secs, start_usecs = ffiutil.gettime()
-    local starttime = start_secs + start_usecs/1000000
-    t = t or {}
-    local f = function(chunk, err)
-        local secs, usecs = ffiutil.gettime()
-        if secs + usecs/1000000 - starttime > maxtime then
-            return nil, MAXTIME_CODE
-        end
-        if chunk then table.insert(t, chunk) end
-        return 1
-    end
-    return f, t
-end
-
 -- Get URL content
 local function getUrlContent(url, timeout, maxtime)
-    local socket = require('socket')
-    local ltn12 = require('ltn12')
-    local http = require('socket.http')
-    local https = require('ssl.https')
+    local http = require("socket.http")
+    local ltn12 = require("ltn12")
+    local socket = require("socket")
+    local socketutil = require("socketutil")
+    local socket_url = require("socket.url")
 
-    local requester
-    if url:sub(1,7) == "http://" then
-        requester = http
-    elseif url:sub(1,8) == "https://" then
-        requester = https
-    else
+    local parsed = socket_url.parse(url)
+    if parsed.scheme ~= "http" and parsed.scheme ~= "https" then
         return false, "Unsupported protocol"
     end
     if not timeout then timeout = 10 end
-    -- timeout needs to be set to 'http', even if we use 'https'
-    http.TIMEOUT, https.TIMEOUT = timeout, timeout
 
-    local request = {}
     local sink = {}
-    request['url'] = url
-    request['method'] = 'GET'
-    request['headers'] = {
-        ["User-Agent"] = USER_AGENT,
+    socketutil:set_timeout(timeout, maxtime or 30)
+    local request = {
+        url     = url,
+        method  = "GET",
+        sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
     }
-    -- 'timeout' delay works on socket, and is triggered when
-    -- that time has passed trying to connect, or after connection
-    -- when no data has been read for this time.
-    -- On a slow connection, it may not be triggered (as we could read
-    -- 1 byte every 1 second, not triggering any timeout).
-    -- 'maxtime' can be provided to overcome that, and we start counting
-    -- as soon as the first content byte is received (but it is checked
-    -- for only when data is received).
-    -- Setting 'maxtime' and 'timeout' gives more chance to abort the request when
-    -- it takes too much time (in the worst case: in timeout+maxtime seconds).
-    -- But time taken by DNS lookup cannot easily be accounted for, so
-    -- a request may (when dns lookup takes time) exceed timeout and maxtime...
-    if maxtime then
-        request['sink'] = sink_table_with_maxtime(sink, maxtime)
-    else
-        request['sink'] = ltn12.sink.table(sink)
-    end
 
-    local code, headers, status = socket.skip(1, requester.request(request))
+    local code, headers, status = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
     local content = table.concat(sink) -- empty or content accumulated till now
     -- logger.dbg("code:", code)
     -- logger.dbg("headers:", headers)
     -- logger.dbg("status:", status)
     -- logger.dbg("#content:", #content)
 
-    if code == TIMEOUT_CODE or code == MAXTIME_CODE then
+    if code == socketutil.TIMEOUT_CODE or
+       code == socketutil.SSL_HANDSHAKE_CODE or
+       code == socketutil.SINK_TIMEOUT_CODE
+    then
         logger.warn("request interrupted:", code)
         return false, code
     end
@@ -212,7 +168,7 @@ local WIKIPEDIA_IMAGES = 4
 --  return decoded JSON table from Wikipedia
 --]]
 function Wikipedia:loadPage(text, lang, page_type, plain)
-    local url = require('socket.url')
+    local url = require("socket.url")
     local query = ""
     local parsed = url.parse(self:getWikiServer(lang))
     parsed.path = self.wiki_path
