@@ -14,6 +14,7 @@ A simple module to module to compare and do arithmetic with time values.
 ]]
 
 local dbg = require("dbg")
+local ffi = require("ffi")
 local util = require("ffi/util")
 
 --[[--
