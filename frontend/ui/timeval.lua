@@ -17,6 +17,8 @@ local dbg = require("dbg")
 local ffi = require("ffi")
 local util = require("ffi/util")
 
+local C = ffi.C
+
 --[[--
 TimeVal object.
 
