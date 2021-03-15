@@ -125,4 +125,25 @@ function TimeVal:now()
     return TimeVal:new{sec = sec, usec = usec}
 end
 
+--[[--
+Creates a new TimeVal object based on the current value from the systems MONOTONIC clock source.
+(e.g., clock_gettime(CLOCK_MONOTONIC).
+
+@usage
+    local TimeVal = require("ui/timeval")
+    local tv_start = TimeVal:monotonic()
+    -- Do some stuff.
+    -- You can add and substract `TimeVal` objects.
+    local tv_duration = TimeVal:now() - tv_start
+
+@treturn TimeVal
+]]
+function TimeVal:monotonic()
+    local timespec = ffi.new("struct timespec")
+    C.clock_gettime(C.CLOCK_MONOTONIC, timespec)
+
+    -- TIMESPEC_TO_TIMEVAL
+    return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = tonumber(timespec.tv_nsec / 1000)}
+end
+
 return TimeVal
