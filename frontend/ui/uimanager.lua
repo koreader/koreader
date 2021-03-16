@@ -543,7 +543,6 @@ function UIManager:schedule(time, action, ...)
         argc = select('#', ...),
         args = {...},
     })
-    print("Inserted a task for", time.sec, time.usec, "at", p)
     self._task_queue_dirty = true
 end
 dbg:guard(UIManager, 'schedule',
@@ -563,7 +562,6 @@ Schedules a task to be run a certain amount of seconds from now.
 ]]
 function UIManager:scheduleIn(seconds, action, ...)
     local when = TimeVal:monotonic() + TimeVal:fromnumber(seconds)
-    print("Scheduled a task for", when.sec, when.usec)
     self:schedule(when, action, ...)
 end
 dbg:guard(UIManager, 'scheduleIn',
@@ -1150,7 +1148,6 @@ end
 
 function UIManager:_checkTasks()
     local now = TimeVal:monotonic()
-    print("checking tasks against", now.sec, now.usec)
     local wait_until = nil
 
     -- task.action may schedule other events
@@ -1163,9 +1160,7 @@ function UIManager:_checkTasks()
         end
         local task = self._task_queue[1]
         local task_tv = task.time or TimeVal:new{}
-        print("found a task scheduled for", task_tv.sec, task_tv.usec)
         if task_tv <= now then
-            print("fire task :)")
             -- remove from table
             table.remove(self._task_queue, 1)
             -- task is pending to be executed right now. do it.
