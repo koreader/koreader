@@ -34,7 +34,10 @@ describe("TimeVal module", function()
 
         -- Check that to/from float conversions behave, even for negative values.
         assert.is.same(-5.001, backwards_sub:tonumber())
-        assert.is.same({sec = -6, usec = 999000}, TimeVal:fromnumber(-5.001))
+        local backwards_roundtrip = TimeVal:fromnumber(-5.001)
+        -- Account for rounding errors...
+        backwards_roundtrip.usec = math.ceil(backwards_roundtrip.usec)
+        assert.is.same({sec = -6, usec = 999000}, backwards_roundtrip)
     end)
 
     it("should derive sec and usec from more than 1 sec worth of usec", function()
