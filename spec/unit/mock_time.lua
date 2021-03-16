@@ -22,13 +22,13 @@ function MockTime:install()
         self.original_util_time = util.gettime
         assert(self.original_util_time ~= nil)
     end
-    if original_tv_now == nil then
-        original_tv_now = TimeVal.now
-        assert(original_tv_now ~= nil)
+    if self.original_tv_now == nil then
+        self.original_tv_now = TimeVal.now
+        assert(self.original_tv_now ~= nil)
     end
-    if original_tv_monotonic == nil then
-        original_tv_monotonic = TimeVal.monotonic
-        assert(original_tv_monotonic ~= nil)
+    if self.original_tv_monotonic == nil then
+        self.original_tv_monotonic = TimeVal.monotonic
+        assert(self.original_tv_monotonic ~= nil)
     end
 
     -- Store both REALTIME & MONOTONIC clocks
