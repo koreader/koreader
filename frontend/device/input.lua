@@ -782,7 +782,7 @@ function Input:waitEvent(timeout_us)
             local wait_deadline = TimeVal:monotonic() + TimeVal:new{
                 usec = timeout_us
             }
-            -- we don't block if there aren't any timers, set wait to 100us
+            -- we don't block if there aren't any timers, set wait to 100µs
             while #self.timer_callbacks > 0 do
                 ok, ev = pcall(input.waitForEvent, 100)
                 if ok then break end
