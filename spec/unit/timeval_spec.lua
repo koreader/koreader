@@ -36,9 +36,9 @@ describe("TimeVal module", function()
         assert.is.same(-5.001, backwards_sub:tonumber())
         assert.is.same({sec = -6, usec = 999000}, TimeVal:fromnumber(-5.001))
 
-        local tv = TimeVal:new{ sec = -6, usec = 1001 }
+        local tv = TimeVal:new{ sec = -6, usec = 1000 }
         assert.is.same(-5.999, tv:tonumber())
-        assert.is.same({sec = -6, usec = 1001}, TimeVal:fromnumber(-5.999))
+        assert.is.same({sec = -6, usec = 1000}, TimeVal:fromnumber(-5.999))
 
         -- We lose precision because of rounding if we go higher resolution than a ms...
         tv = TimeVal:new{ sec = -6, usec = 101 }
@@ -53,8 +53,7 @@ describe("TimeVal module", function()
 
         tv = TimeVal:new{ sec = -6, usec = 1 }
         assert.is.same(-6, tv:tonumber())
-        assert.is.same({sec = -6, usec = 2}, TimeVal:fromnumber(-5.999999))
-        --                               ^ precision loss
+        assert.is.same({sec = -6, usec = 1}, TimeVal:fromnumber(-5.999999))
     end)
 
     it("should derive sec and usec from more than 1 sec worth of usec", function()
