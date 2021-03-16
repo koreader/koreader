@@ -461,19 +461,6 @@ function GestureDetector:handleNonTap(tev)
         -- switched from other state, probably from initialState
         -- we return nil in this case
         self.states[slot] = self.tapState
-        if self._has_real_clock_time_ev_time == nil then
-            if tev.timev.sec < TimeVal:now().sec - 600 then
-                -- ev.timev is probably the uptime since device boot
-                -- (which might pause on suspend) that we can't use
-                -- with setTimeout(): we'll use TimeVal:now()
-                self._has_real_clock_time_ev_time = false
-                logger.info("event times are not real clock time: some adjustments will be made")
-            else
-                -- assume they are real clock time
-                self._has_real_clock_time_ev_time = true
-                logger.info("event times are real clock time: no adjustment needed")
-            end
-        end
         logger.dbg("set up hold timer")
         -- Ditto, start counting from *now*, no matter what the input event timestamp says...
         local deadline = TimeVal:monotonic() + TimeVal:new{
