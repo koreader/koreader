@@ -199,17 +199,14 @@ function Device:init()
                         end)
                     end
                 end
-            elseif ev.code == C.MSC_CHARGE then
+            elseif ev.code == C.EVENT_POWER_CONNECTED then
                 local Event = require("ui/event")
-                if ev.value == 1 then
-                    UIManager:broadcastEvent(Event:new("Charging"))
-                elseif ev.value == 0 then
-                    UIManager:broadcastEvent(Event:new("NotCharging"))
-                else
-                    logger.err("Unknow event C.EV_MSC=" .. C.MSC_CHARGE .. " with ev.code=" .. ev.code)
-                end
+                UIManager:broadcastEvent(Event:new("Charging"))
+            elseif ev.code == C.EVENT_POWER_DISCONNECTED then
+                local Event = require("ui/event")
+                UIManager:broadcastEvent(Event:new("NotCharging"))
             else
-                logger.err("Unknow event ev.code=" .. ev.code .. " with ev.code=" .. ev.code)
+                logger.err("Unknow event ev.code=" .. ev.code)
             end
         end,
         hasClipboardText = function()
