@@ -183,13 +183,13 @@ end
 
 -- Converts a TimeVal object to a Lua (int) number (usecs)
 function TimeVal:tousecs()
-    return math.ceil(self.sec * 1000000 + self.usec)
+    return math.floor(self.sec * 1000000 + self.usec + 0.5)
 end
 
 -- Converts a Lua (float) number (sec.usecs) to a TimeVal object
 function TimeVal:fromnumber(seconds)
     local sec = math.floor(seconds)
-    local usec = math.ceil((seconds - sec) * 1000000)
+    local usec = math.floor((seconds - sec) * 1000000 + 0.5)
     return TimeVal:new{sec = sec, usec = usec}
 end
 
