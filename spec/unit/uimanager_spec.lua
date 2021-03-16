@@ -10,7 +10,7 @@ describe("UIManager spec", function()
     end)
 
     it("should consume due tasks", function()
-        now = TimeVal:monotonic()
+        now = TimeVal:now()
         local future = TimeVal:new{ sec = now.sec + 60000, usec = now.usec }
         local future2 = TimeVal:new{ sec = future.sec + 5, usec = future.usec}
         UIManager:quit()
@@ -28,7 +28,7 @@ describe("UIManager spec", function()
     end)
 
     it("should calcualte wait_until properly in checkTasks routine", function()
-        now = TimeVal:monotonic()
+        now = TimeVal:now()
         local future = TimeVal:new{ sec = now.sec + 60000, usec = now.usec }
         UIManager:quit()
         UIManager._task_queue = {
@@ -43,7 +43,7 @@ describe("UIManager spec", function()
     end)
 
     it("should return nil wait_until properly in checkTasks routine", function()
-        now = TimeVal:monotonic()
+        now = TimeVal:now()
         UIManager:quit()
         UIManager._task_queue = {
             { time = TimeVal:new{ sec = now.sec - 10, usec = now.usec }, action = noop, args = {}, argc = 0 },
@@ -55,7 +55,7 @@ describe("UIManager spec", function()
     end)
 
     it("should insert new task properly in empty task queue", function()
-        now = TimeVal:monotonic()
+        now = TimeVal:now()
         UIManager:quit()
         UIManager._task_queue = {}
         assert.are.same(0, #UIManager._task_queue)
@@ -65,7 +65,7 @@ describe("UIManager spec", function()
     end)
 
     it("should insert new task properly in single task queue", function()
-        now = TimeVal:monotonic()
+        now = TimeVal:now()
         local future = TimeVal:new{ sec = now.sec + 10000, usec = now.usec }
         UIManager:quit()
         UIManager._task_queue = {
@@ -90,7 +90,7 @@ describe("UIManager spec", function()
     end)
 
     it("should insert new task in ascendant order", function()
-        now = TimeVal:monotonic()
+        now = TimeVal:now()
         UIManager:quit()
         UIManager._task_queue = {
             { time = TimeVal:new{ sec = now.sec - 10, usec = now.usec }, action = '1', args = {}, argc = 0 },
@@ -115,7 +115,7 @@ describe("UIManager spec", function()
     end)
 
     it("should unschedule all the tasks with the same action", function()
-        now = TimeVal:monotonic()
+        now = TimeVal:now()
         UIManager:quit()
         UIManager._task_queue = {
             { time = TimeVal:new{ sec = now.sec - 15, usec = now.usec }, action = '3', args = {}, argc = 0 },
@@ -133,7 +133,7 @@ describe("UIManager spec", function()
     end)
 
     it("should not have race between unschedule and _checkTasks", function()
-        now = TimeVal:monotonic()
+        now = TimeVal:now()
         local run_count = 0
         local task_to_remove = function()
             run_count = run_count + 1
