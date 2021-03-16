@@ -472,7 +472,7 @@ function GestureDetector:handleNonTap(tev)
         -- we return nil in this case
         self.states[slot] = self.tapState
         logger.dbg("set up hold timer")
-        -- Ditto, start counting from *now*, no matter what the input event timestamp says...
+        -- Ditto, start counting from *now*, no matter what the input event's timestamp says...
         local deadline = TimeVal:now() + TimeVal:new{
             sec = 0, usec = ges_hold_interval
         }
