@@ -10,8 +10,9 @@ local C = ffi.C
 local MockTime = {
     original_os_time = os.time,
     original_util_time = nil,
-    original_tv_now = nil,
+    original_tv_realtime = nil,
     original_tv_monotonic = nil,
+    original_tv_now = nil,
     monotonic = 0,
     realtime = 0,
 }
@@ -22,13 +23,17 @@ function MockTime:install()
         self.original_util_time = util.gettime
         assert(self.original_util_time ~= nil)
     end
-    if self.original_tv_now == nil then
-        self.original_tv_now = TimeVal.now
-        assert(self.original_tv_now ~= nil)
+    if self.original_tv_realtime == nil then
+        self.original_tv_realtime = TimeVal.realtime
+        assert(self.original_tv_realtime ~= nil)
     end
     if self.original_tv_monotonic == nil then
         self.original_tv_monotonic = TimeVal.monotonic
         assert(self.original_tv_monotonic ~= nil)
+    end
+    if self.original_tv_now == nil then
+        self.original_tv_now = TimeVal.now
+        assert(self.original_tv_now ~= nil)
     end
 
     -- Store both REALTIME & MONOTONIC clocks
@@ -45,12 +50,16 @@ function MockTime:install()
         logger.dbg("MockTime:util.gettime: ", self.realtime)
         return self.realtime, 0
     end
-    TimeVal.now = function()
-        logger.dbg("MockTime:TimeVal.now: ", self.realtime)
+    TimeVal.realtime = function()
+        logger.dbg("MockTime:TimeVal.realtime: ", self.realtime)
         return TimeVal:new{ sec = self.realtime }
     end
     TimeVal.monotonic = function()
         logger.dbg("MockTime:TimeVal.monotonic: ", self.monotonic)
+        return TimeVal:new{ sec = self.monotonic }
+    end
+    TimeVal.now = function()
+        logger.dbg("MockTime:TimeVal.now: ", self.monotonic)
         return TimeVal:new{ sec = self.monotonic }
     end
 end
@@ -61,11 +70,14 @@ function MockTime:uninstall()
     if self.original_util_time ~= nil then
         util.gettime = self.original_util_time
     end
-    if self.original_tv_now ~= nil then
-        TimeVal.now = self.original_tv_now
+    if self.original_tv_realtime ~= nil then
+        TimeVal.realtime = self.original_tv_realtime
     end
     if self.original_tv_monotonic ~= nil then
         TimeVal.monotonic = self.original_tv_monotonic
+    end
+    if self.original_tv_now ~= nil then
+        TimeVal.now = self.original_tv_now
     end
 end
 

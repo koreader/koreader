@@ -113,7 +113,8 @@ function TimeVal:__add(time_b)
 end
 
 --[[--
-Creates a new TimeVal object based on the current time.
+Creates a new TimeVal object based on the current wall clock time.
+(e.g., gettimeofday / clock_gettime(CLOCK_REALTIME).
 
 @usage
     local TimeVal = require("ui/timeval")
@@ -124,7 +125,7 @@ Creates a new TimeVal object based on the current time.
 
 @treturn TimeVal
 ]]
-function TimeVal:now()
+function TimeVal:realtime()
     local sec, usec = util.gettime()
     return TimeVal:new{sec = sec, usec = usec}
 end
@@ -142,6 +143,10 @@ function TimeVal:monotonic()
     -- TIMESPEC_TO_TIMEVAL
     return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = tonumber(timespec.tv_nsec / 1000)}
 end
+
+-- Assume anything that requires timestamps expects a monotonic clock source
+-- (e.g., subsequent calls *may* return identical values, but it will *never* go backward).
+TimeVal.now = TimeVal.monotonic
 
 -- Converts a TimeVal object to a Lua (float) number (sec.usecs)
 function TimeVal:tonumber()
