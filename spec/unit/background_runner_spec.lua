@@ -1,9 +1,11 @@
 describe("BackgroundRunner widget tests", function()
-    local Device, PluginShare, MockTime, UIManager
+    local Device, PluginShare, MockTime, UIManager, dbg
 
     setup(function()
         require("commonrequire")
         package.unloadAll()
+        dbg = require("dbg")
+        dbg:turnOn()
         require("document/canvascontext"):init(require("device"))
         -- Device needs to be loaded before UIManager.
         Device = require("device")
@@ -37,12 +39,12 @@ describe("BackgroundRunner widget tests", function()
         })
         notifyBackgroundJobsUpdated()
 
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
-        MockTime:increase_monotonic(9)
+        MockTime:increase(9)
         UIManager:handleInput()
         assert.is_false(executed)
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.is_true(executed)
     end)
@@ -58,15 +60,15 @@ describe("BackgroundRunner widget tests", function()
         })
         notifyBackgroundJobsUpdated()
 
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
 
         for i = 1, 10 do
-            MockTime:increase_monotonic(2)
+            MockTime:increase(2)
             UIManager:handleInput()
             assert.are.equal(i, executed)
         end
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(10, executed)
     end)
@@ -82,15 +84,15 @@ describe("BackgroundRunner widget tests", function()
         })
         notifyBackgroundJobsUpdated()
 
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
 
         for i = 1, 10 do
-            MockTime:increase_monotonic(2)
+            MockTime:increase(2)
             UIManager:handleInput()
             assert.are.equal(i, executed)
         end
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(10, executed)
     end)
@@ -102,20 +104,20 @@ describe("BackgroundRunner widget tests", function()
             repeated = true,
             executable = function()
                 executed = executed + 1
-                MockTime:increase_monotonic(2)
+                MockTime:increase(2)
             end,
         }
         table.insert(PluginShare.backgroundJobs, job)
         notifyBackgroundJobsUpdated()
 
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(1, executed)
         assert.is_true(job.timeout)
         assert.is_true(job.blocked)
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(1, executed)
     end)
@@ -133,7 +135,7 @@ describe("BackgroundRunner widget tests", function()
         notifyBackgroundJobsUpdated()
 
         while job.end_sec == nil do
-            MockTime:increase_monotonic(2)
+            MockTime:increase(2)
             UIManager:handleInput()
         end
 
@@ -158,7 +160,7 @@ describe("BackgroundRunner widget tests", function()
         notifyBackgroundJobsUpdated()
 
         while job.end_sec == nil do
-            MockTime:increase_monotonic(2)
+            MockTime:increase(2)
             UIManager:handleInput()
         end
 
@@ -176,7 +178,7 @@ describe("BackgroundRunner widget tests", function()
         notifyBackgroundJobsUpdated()
 
         while job.end_sec == nil do
-            MockTime:increase_monotonic(2)
+            MockTime:increase(2)
             UIManager:handleInput()
         end
 
@@ -207,7 +209,7 @@ describe("BackgroundRunner widget tests", function()
         notifyBackgroundJobsUpdated()
 
         while job.end_sec == nil do
-            MockTime:increase_monotonic(2)
+            MockTime:increase(2)
             UIManager:handleInput()
         end
 
@@ -222,7 +224,7 @@ describe("BackgroundRunner widget tests", function()
         notifyBackgroundJobsUpdated()
 
         while job.end_sec == nil do
-            MockTime:increase_monotonic(2)
+            MockTime:increase(2)
             UIManager:handleInput()
         end
 
@@ -245,7 +247,7 @@ describe("BackgroundRunner widget tests", function()
         notifyBackgroundJobsUpdated()
 
         while job.end_sec == nil do
-            MockTime:increase_monotonic(2)
+            MockTime:increase(2)
             UIManager:handleInput()
         end
 
@@ -266,15 +268,15 @@ describe("BackgroundRunner widget tests", function()
         })
         notifyBackgroundJobsUpdated()
 
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
 
         for i = 1, 10 do
-            MockTime:increase_monotonic(2)
+            MockTime:increase(2)
             UIManager:handleInput()
             assert.are.equal(i, executed)
         end
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(10, executed)
     end)
@@ -295,15 +297,15 @@ describe("BackgroundRunner widget tests", function()
         })
         notifyBackgroundJobsUpdated()
 
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(1, executed)
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(2, executed)
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(2, executed)
     end)
@@ -320,24 +322,24 @@ describe("BackgroundRunner widget tests", function()
         table.insert(PluginShare.backgroundJobs, job)
         notifyBackgroundJobsUpdated()
 
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(1, executed)
         -- Simulate a suspend event.
         requireBackgroundRunner():onSuspend()
         for i = 1, 10 do
-            MockTime:increase_monotonic(2)
+            MockTime:increase(2)
             UIManager:handleInput()
             assert.are.equal(2, executed)
         end
         -- Simulate a resume event.
         requireBackgroundRunner():onResume()
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(3, executed)
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(4, executed)
     end)
@@ -358,15 +360,15 @@ describe("BackgroundRunner widget tests", function()
             requireBackgroundRunner():onResume()
         end
 
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(1, executed)
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(2, executed)
-        MockTime:increase_monotonic(2)
+        MockTime:increase(2)
         UIManager:handleInput()
         assert.are.equal(3, executed)
     end)
