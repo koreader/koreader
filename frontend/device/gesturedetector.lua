@@ -155,20 +155,23 @@ end
 tap2 is the later tap
 --]]
 function GestureDetector:isTapBounce(tap1, tap2, interval)
+    -- NOTE: If time went backwards, zero the time delta to avoid mishaps.
     local tv_diff = tap2.timev - tap1.timev
+    tv_diff = math.max(0, tv_diff:tousecs())
     return (
         math.abs(tap1.x - tap2.x) < self.SINGLE_TAP_BOUNCE_DISTANCE and
         math.abs(tap1.y - tap2.y) < self.SINGLE_TAP_BOUNCE_DISTANCE and
-        (tv_diff.sec == 0 and (tv_diff.usec) < interval)
+        tv_diff < interval)
     )
 end
 
 function GestureDetector:isDoubleTap(tap1, tap2)
     local tv_diff = tap2.timev - tap1.timev
+    tv_diff = math.max(0, tv_diff:tousecs())
     return (
         math.abs(tap1.x - tap2.x) < self.DOUBLE_TAP_DISTANCE and
         math.abs(tap1.y - tap2.y) < self.DOUBLE_TAP_DISTANCE and
-        (tv_diff.sec == 0 and (tv_diff.usec) < ges_double_tap_interval)
+        tv_diff < ges_double_tap_interval)
     )
 end
 
@@ -181,14 +184,16 @@ function GestureDetector:isTwoFingerTap()
     local y_diff0 = math.abs(self.last_tevs[0].y - self.first_tevs[0].y)
     local y_diff1 = math.abs(self.last_tevs[1].y - self.first_tevs[1].y)
     local tv_diff0 = self.last_tevs[0].timev - self.first_tevs[0].timev
+    tv_diff0 = math.max(0, tv_diff0:tousecs())
     local tv_diff1 = self.last_tevs[1].timev - self.first_tevs[1].timev
+    tv_diff1 = math.max(0, tv_diff1:tousecs())
     return (
         x_diff0 < self.TWO_FINGER_TAP_REGION and
         x_diff1 < self.TWO_FINGER_TAP_REGION and
         y_diff0 < self.TWO_FINGER_TAP_REGION and
         y_diff1 < self.TWO_FINGER_TAP_REGION and
-        tv_diff0.sec == 0 and tv_diff0.usec < ges_two_finger_tap_duration and
-        tv_diff1.sec == 0 and tv_diff1.usec < ges_two_finger_tap_duration
+        tv_diff0 < ges_two_finger_tap_duration and
+        tv_diff1 < ges_two_finger_tap_duration
     )
 end
 
@@ -227,7 +232,8 @@ end
 function GestureDetector:isSwipe(slot)
     if not self.first_tevs[slot] or not self.last_tevs[slot] then return end
     local tv_diff = self.last_tevs[slot].timev - self.first_tevs[slot].timev
-    if (tv_diff.sec == 0) and (tv_diff.usec < ges_swipe_interval) then
+    tv_diff = math.max(0, tv_diff:tousecs())
+    if tv_diff < ges_swipe_interval then
         local x_diff = self.last_tevs[slot].x - self.first_tevs[slot].x
         local y_diff = self.last_tevs[slot].y - self.first_tevs[slot].y
         if x_diff ~= 0 or y_diff ~= 0 then
@@ -581,6 +587,7 @@ function GestureDetector:handlePan(tev)
     else
         local pan_direction, pan_distance = self:getPath(slot)
         local tv_diff = self.last_tevs[slot].timev - self.first_tevs[slot].timev
+        tv_diff = math.max(0, tv_diff:tousecs())
 
         local pan_ev = {
             ges = "pan",
@@ -607,7 +614,7 @@ function GestureDetector:handlePan(tev)
 
         -- delayed pan, used where necessary to reduce potential activation of panning
         -- when swiping is intended (e.g., for the menu or for multiswipe)
-        if not ((tv_diff.sec == 0) and (tv_diff.usec < ges_pan_delayed_interval)) then
+        if not tv_diff < ges_pan_delayed_interval then
             pan_ev.relative_delayed.x = tev.x - self.first_tevs[slot].x
             pan_ev.relative_delayed.y = tev.y - self.first_tevs[slot].y
             pan_ev.distance_delayed = pan_distance
