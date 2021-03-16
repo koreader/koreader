@@ -19,15 +19,20 @@ local util = require("ffi/util")
 
 local C = ffi.C
 
--- We prefer CLOCK_MONOTONIC_COARSE if it's available, as we generally don't need nano/micro second precision,
+-- We prefer CLOCK_MONOTONIC_COARSE if it's available and has a decent resolution,
+-- as we generally don't need nano/micro second precision,
 -- and it can be more than twice as fast as CLOCK_MONOTONIC/CLOCK_REALTIME/gettimeofday...
 local PREFERRED_MONOTONIC_CLOCKID = C.CLOCK_MONOTONIC
 if ffi.os == "Linux" then
     -- Unfortunately, it was only implemented in Linux 2.6.32, and we may run on older kernels than that...
     -- So, just probe it to see if can rely on it.
     local probe_ts = ffi.new("struct timespec")
-    if C.clock_gettime(C.CLOCK_MONOTONIC_COARSE, probe_ts) == 0 then
-        PREFERRED_MONOTONIC_CLOCKID = C.CLOCK_MONOTONIC_COARSE
+    if C.clock_getres(C.CLOCK_MONOTONIC_COARSE, probe_ts) == 0 then
+        -- Now, it usually has a 1ms resolution on modern x86_64 systems,
+        -- but it only provides a 10ms resolution on all my arm devices :/.
+        if probe_ts.tv_sec == 0 and probe_ts.tv_nsec <= 1000000 then
+            PREFERRED_MONOTONIC_CLOCKID = C.CLOCK_MONOTONIC_COARSE
+        end
     end
     probe_ts = nil
 end
