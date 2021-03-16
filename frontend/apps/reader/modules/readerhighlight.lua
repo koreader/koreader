@@ -338,14 +338,14 @@ end
 -- to ensure current highlight has not already been cleared, and that we
 -- are not going to clear a new highlight
 function ReaderHighlight:getClearId()
-    self.clear_id = {} -- The pointer address should be fairly unique
+    self.clear_id = TimeVal:now() -- can act as a unique id
     return self.clear_id
 end
 
 function ReaderHighlight:clear(clear_id)
     if clear_id then -- should be provided by delayed call to clear()
         if clear_id ~= self.clear_id then
-            -- if clear_id is no more valid, highlight has already been
+            -- if clear_id is no longer valid, highlight has already been
             -- cleared since this clear_id was given
             return
         end
