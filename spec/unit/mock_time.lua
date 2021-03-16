@@ -12,6 +12,7 @@ local MockTime = {
     original_util_time = nil,
     original_tv_realtime = nil,
     original_tv_monotonic = nil,
+    original_tv_monotonic_coarse = nil,
     original_tv_now = nil,
     monotonic = 0,
     realtime = 0,
@@ -31,6 +32,10 @@ function MockTime:install()
         self.original_tv_monotonic = TimeVal.monotonic
         assert(self.original_tv_monotonic ~= nil)
     end
+    if self.original_tv_monotonic_coarse == nil then
+        self.original_tv_monotonic_coarse = TimeVal.monotonic_coarse
+        assert(self.original_tv_monotonic_coarse ~= nil)
+    end
     if self.original_tv_now == nil then
         self.original_tv_now = TimeVal.now
         assert(self.original_tv_now ~= nil)
@@ -39,7 +44,7 @@ function MockTime:install()
     -- Store both REALTIME & MONOTONIC clocks
     self.realtime = os.time()
     local timespec = ffi.new("struct timespec")
-    C.clock_gettime(C.CLOCK_MONOTONIC, timespec)
+    C.clock_gettime(C.CLOCK_MONOTONIC_COARSE, timespec)
     self.monotonic = tonumber(timespec.tv_sec)
 
     os.time = function() --luacheck: ignore
@@ -56,6 +61,10 @@ function MockTime:install()
     end
     TimeVal.monotonic = function()
         logger.dbg("MockTime:TimeVal.monotonic: ", self.monotonic)
+        return TimeVal:new{ sec = self.monotonic }
+    end
+    TimeVal.monotonic_coarse = function()
+        logger.dbg("MockTime:TimeVal.monotonic_coarse: ", self.monotonic)
         return TimeVal:new{ sec = self.monotonic }
     end
     TimeVal.now = function()
@@ -75,6 +84,9 @@ function MockTime:uninstall()
     end
     if self.original_tv_monotonic ~= nil then
         TimeVal.monotonic = self.original_tv_monotonic
+    end
+    if self.original_tv_monotonic_coarse ~= nil then
+        TimeVal.monotonic_coarse = self.original_tv_monotonic_coarse
     end
     if self.original_tv_now ~= nil then
         TimeVal.now = self.original_tv_now

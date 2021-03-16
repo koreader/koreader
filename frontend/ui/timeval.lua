@@ -19,6 +19,19 @@ local util = require("ffi/util")
 
 local C = ffi.C
 
+-- We prefer CLOCK_MONOTONIC_COARSE if it's available, as we generally don't need nano/micro second precision,
+-- and it can be more than twice as fast as CLOCK_MONOTONIC/CLOCK_REALTIME/gettimeofday...
+local PREFERRED_MONOTONIC_CLOCKID = C.CLOCK_MONOTONIC
+if ffi.os == "Linux" then
+    -- Unfortunately, it was only implemented in Linux 2.6.32, and we may run on older kernels than that...
+    -- So, just probe it to see if can rely on it.
+    local probe_ts = ffi.new("struct timespec")
+    if C.clock_gettime(C.CLOCK_MONOTONIC_COARSE, probe_ts) == 0 then
+        PREFERRED_MONOTONIC_CLOCKID = C.CLOCK_MONOTONIC_COARSE
+    end
+    probe_ts = nil
+end
+
 --[[--
 TimeVal object.
 
@@ -144,9 +157,18 @@ function TimeVal:monotonic()
     return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = tonumber(timespec.tv_nsec / 1000)}
 end
 
+--- Ditto, but w/ CLOCK_MONOTONIC_COARSE if it's available
+function TimeVal:monotonic_coarse()
+    local timespec = ffi.new("struct timespec")
+    C.clock_gettime(PREFERRED_MONOTONIC_CLOCKID, timespec)
+
+    -- TIMESPEC_TO_TIMEVAL
+    return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = tonumber(timespec.tv_nsec / 1000)}
+end
+
 -- Assume anything that requires timestamps expects a monotonic clock source
 -- (e.g., subsequent calls *may* return identical values, but it will *never* go backward).
-TimeVal.now = TimeVal.monotonic
+TimeVal.now = TimeVal.monotonic_coarse
 
 -- Converts a TimeVal object to a Lua (float) number (sec.usecs)
 function TimeVal:tonumber()
