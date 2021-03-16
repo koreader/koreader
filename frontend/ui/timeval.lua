@@ -162,7 +162,7 @@ function TimeVal:monotonic()
     return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = tonumber(timespec.tv_nsec / 1000)}
 end
 
---- Ditto, but w/ CLOCK_MONOTONIC_COARSE if it's available
+--- Ditto, but w/ CLOCK_MONOTONIC_COARSE if it's available and has a 1ms resolution or better (useq CLOCK_MONOTONIC otherwise).
 function TimeVal:monotonic_coarse()
     local timespec = ffi.new("struct timespec")
     C.clock_gettime(PREFERRED_MONOTONIC_CLOCKID, timespec)
