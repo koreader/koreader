@@ -793,8 +793,8 @@ function Input:waitEvent(timeout_us)
                         local touch_ges = self.timer_callbacks[1].callback()
                         table.remove(self.timer_callbacks, 1)
                         if touch_ges then
-                            -- Do we really need to clear all setTimeout after
-                            -- decided a gesture? FIXME
+                            --- @fixme: Do we really need to clear all the timer callbacks
+                            --          from setTimeout calls after having detected a gesture?
                             self.timer_callbacks = {}
                             self:gestureAdjustHook(touch_ges)
                             return Event:new("Gesture",
