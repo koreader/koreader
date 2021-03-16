@@ -130,15 +130,8 @@ function TimeVal:now()
 end
 
 --[[--
-Creates a new TimeVal object based on the current value from the systems MONOTONIC clock source.
+Creates a new TimeVal object based on the current value from the system's MONOTONIC clock source.
 (e.g., clock_gettime(CLOCK_MONOTONIC).
-
-@usage
-    local TimeVal = require("ui/timeval")
-    local tv_start = TimeVal:monotonic()
-    -- Do some stuff.
-    -- You can add and substract `TimeVal` objects.
-    local tv_duration = TimeVal:now() - tv_start
 
 @treturn TimeVal
 ]]
@@ -160,7 +153,7 @@ function TimeVal:tousecs()
     return tonumber(self.sec * 1000000 + self.usec)
 end
 
--- Converts a Lua (float) number to a TimeVal object
+-- Converts a Lua (float) number (sec.usecs) to a TimeVal object
 function TimeVal:fromnumber(seconds)
     local sec = math.floor(seconds)
     local usec = (seconds - sec) * 1000000
