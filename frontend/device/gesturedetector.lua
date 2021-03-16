@@ -615,7 +615,7 @@ function GestureDetector:handlePan(tev)
 
         -- delayed pan, used where necessary to reduce potential activation of panning
         -- when swiping is intended (e.g., for the menu or for multiswipe)
-        if not tv_diff < ges_pan_delayed_interval then
+        if not (tv_diff < ges_pan_delayed_interval) then
             pan_ev.relative_delayed.x = tev.x - self.first_tevs[slot].x
             pan_ev.relative_delayed.y = tev.y - self.first_tevs[slot].y
             pan_ev.distance_delayed = pan_distance
