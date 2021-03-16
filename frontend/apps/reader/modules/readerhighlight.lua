@@ -338,7 +338,7 @@ end
 -- to ensure current highlight has not already been cleared, and that we
 -- are not going to clear a new highlight
 function ReaderHighlight:getClearId()
-    self.clear_id = TimeVal:monotonic() -- can act as a unique id
+    self.clear_id = {} -- The pointer address should be fairly unique
     return self.clear_id
 end
 
