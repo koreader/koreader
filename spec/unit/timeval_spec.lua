@@ -48,11 +48,13 @@ describe("TimeVal module", function()
 
         tv = TimeVal:new{ sec = -6, usec = 11 }
         assert.is.same(-6, tv:tonumber())
+        --              ^ precision loss
         assert.is.same({sec = -6, usec = 10}, TimeVal:fromnumber(-5.99999))
         --                                ^ precision loss
 
         tv = TimeVal:new{ sec = -6, usec = 1 }
         assert.is.same(-6, tv:tonumber())
+        --              ^ precision loss
         assert.is.same({sec = -6, usec = 1}, TimeVal:fromnumber(-5.999999))
     end)
 
