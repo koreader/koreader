@@ -1072,7 +1072,7 @@ function UIManager:sendEvent(event)
     -- Ensure discardEvents
     if self._discard_events_till then
         local now = TimeVal:monotonic()
-        if now_us < self._discard_events_till then
+        if now < self._discard_events_till then
             return
         else
             self._discard_events_till = nil
@@ -1569,9 +1569,10 @@ function UIManager:handleInput()
 
     -- If there's a timed event pending, that puts an upper bound on how long to wait.
     if wait_until then
+        local wait_tv = wait_until - now
         wait_us = math.min(
             wait_us or math.huge,
-            wait_until:tousecs())
+            wait_tv:tousecs())
     end
 
     -- If we have any ZMQs registered, ZMQ_TIMEOUT is another upper bound.
