@@ -34,10 +34,27 @@ describe("TimeVal module", function()
 
         -- Check that to/from float conversions behave, even for negative values.
         assert.is.same(-5.001, backwards_sub:tonumber())
-        local backwards_roundtrip = TimeVal:fromnumber(-5.001)
-        -- Account for rounding errors...
-        backwards_roundtrip.usec = math.ceil(backwards_roundtrip.usec)
-        assert.is.same({sec = -6, usec = 999000}, backwards_roundtrip)
+        assert.is.same({sec = -6, usec = 999000}, TimeVal:fromnumber(-5.001))
+
+        local tv = TimeVal:new{ sec = -6, usec = 1001 }
+        assert.is.same(-5.999, tv:tonumber())
+        assert.is.same({sec = -6, usec = 1001}, TimeVal:fromnumber(-5.999))
+
+        -- We lose precision because of rounding if we go higher resolution than a ms...
+        tv = TimeVal:new{ sec = -6, usec = 101 }
+        assert.is.same(-5.9999, tv:tonumber())
+        assert.is.same({sec = -6, usec = 100}, TimeVal:fromnumber(-5.9999))
+        --                                 ^ precision loss
+
+        tv = TimeVal:new{ sec = -6, usec = 11 }
+        assert.is.same(-6, tv:tonumber())
+        assert.is.same({sec = -6, usec = 10}, TimeVal:fromnumber(-5.99999))
+        --                                ^ precision loss
+
+        tv = TimeVal:new{ sec = -6, usec = 1 }
+        assert.is.same(-6, tv:tonumber())
+        assert.is.same({sec = -6, usec = 2}, TimeVal:fromnumber(-5.999999))
+        --                               ^ precision loss
     end)
 
     it("should derive sec and usec from more than 1 sec worth of usec", function()

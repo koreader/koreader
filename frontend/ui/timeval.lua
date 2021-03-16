@@ -68,7 +68,7 @@ function TimeVal:new(from_o)
     if o.usec == nil then
         o.usec = 0
     elseif o.usec > 1000000 then
-        o.sec = o.sec + math.floor(o.usec/1000000)
+        o.sec = o.sec + math.floor(o.usec / 1000000)
         o.usec = o.usec % 1000000
     end
     setmetatable(o, self)
@@ -159,7 +159,7 @@ function TimeVal:monotonic()
     C.clock_gettime(C.CLOCK_MONOTONIC, timespec)
 
     -- TIMESPEC_TO_TIMEVAL
-    return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = tonumber(timespec.tv_nsec / 1000)}
+    return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = math.floor(timespec.tv_nsec / 1000)}
 end
 
 --- Ditto, but w/ CLOCK_MONOTONIC_COARSE if it's available and has a 1ms resolution or better (useq CLOCK_MONOTONIC otherwise).
@@ -168,27 +168,28 @@ function TimeVal:monotonic_coarse()
     C.clock_gettime(PREFERRED_MONOTONIC_CLOCKID, timespec)
 
     -- TIMESPEC_TO_TIMEVAL
-    return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = tonumber(timespec.tv_nsec / 1000)}
+    return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = math.floor(timespec.tv_nsec / 1000)}
 end
 
 -- Assume anything that requires timestamps expects a monotonic clock source
 -- (e.g., subsequent calls *may* return identical values, but it will *never* go backward).
 TimeVal.now = TimeVal.monotonic_coarse
 
--- Converts a TimeVal object to a Lua (float) number (sec.usecs)
+-- Converts a TimeVal object to a Lua (float) number (sec.usecs) (accurate to the ms, rounded to 4 decimal places)
 function TimeVal:tonumber()
-    return tonumber(self.sec + self.usec/1000000)
+    -- Round to 4 decimal places
+    return math.floor((self.sec + self.usec / 1000000) * 10000) / 10000
 end
 
 -- Converts a TimeVal object to a Lua (int) number (usecs)
 function TimeVal:tousecs()
-    return tonumber(self.sec * 1000000 + self.usec)
+    return math.ceil(self.sec * 1000000 + self.usec)
 end
 
 -- Converts a Lua (float) number (sec.usecs) to a TimeVal object
 function TimeVal:fromnumber(seconds)
     local sec = math.floor(seconds)
-    local usec = (seconds - sec) * 1000000
+    local usec = math.ceil((seconds - sec) * 1000000)
     return TimeVal:new{sec = sec, usec = usec}
 end
 
