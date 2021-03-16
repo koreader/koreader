@@ -13,7 +13,6 @@ A simple module to module to compare and do arithmetic with time values.
     local tv_duration_seconds_float = tv_duration.sec + tv_duration.usec/1000000
 ]]
 
-local dbg = require("dbg")
 local ffi = require("ffi")
 local util = require("ffi/util")
 
