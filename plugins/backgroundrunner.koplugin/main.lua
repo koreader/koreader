@@ -71,9 +71,10 @@ local _ = require("gettext")
 -- bad_command: boolean, whether the command is not found. Not available for
 --              function executable.
 -- blocked: boolean, whether the job is blocked.
--- start_tv: number, the TimeVal:monotonic when the job was started.
--- end_tv: number, the TimeVal:monotonic when the job was stopped.
--- insert_tv: number, the TimeVal:monotonic when the job was inserted into queue.
+-- start_tv: number, the TimeVal when the job was started.
+-- end_tv: number, the TimeVal when the job was stopped.
+-- insert_tv: number, the TimeVal when the job was inserted into queue.
+-- (All of them in the monotonic time scale, like the main event loop & task queue).
 
 local BackgroundRunner = {
     jobs = PluginShare.backgroundJobs,
@@ -139,7 +140,7 @@ function BackgroundRunner:_executeJob(job)
         CommandRunner:start(job)
         return true
     elseif type(job.executable) == "function" then
-        job.start_tv = TimeVal:monotonic()
+        job.start_tv = TimeVal:now()
         local status, err = pcall(job.executable)
         if status then
             job.result = 0
@@ -147,7 +148,7 @@ function BackgroundRunner:_executeJob(job)
             job.result = 1
             job.exception = err
         end
-        job.end_tv = TimeVal:monotonic()
+        job.end_tv = TimeVal:now()
         self:_finishJob(job)
         return true
     else
@@ -177,7 +178,7 @@ function BackgroundRunner:_execute()
             if job.insert_tv == nil then
                 -- Jobs are first inserted to jobs table from external users.
                 -- So they may not have insert field.
-                job.insert_tv = TimeVal:monotonic()
+                job.insert_tv = TimeVal:now()
             end
             local should_execute = false
             local should_ignore = false
@@ -190,7 +191,7 @@ function BackgroundRunner:_execute()
                 end
             elseif type(job.when) == "number" then
                 if job.when >= 0 then
-                    should_execute = ((TimeVal:monotonic() - job.insert_tv) >= TimeVal:fromnumber(job.when))
+                    should_execute = ((TimeVal:now() - job.insert_tv) >= TimeVal:fromnumber(job.when))
                 else
                     should_ignore = true
                 end
@@ -251,7 +252,7 @@ end
 
 function BackgroundRunner:_insert(job)
     assert(self ~= nil)
-    job.insert_tv = TimeVal:monotonic()
+    job.insert_tv = TimeVal:now()
     table.insert(self.jobs, job)
 end
 

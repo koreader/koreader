@@ -554,14 +554,14 @@ dbg:guard(UIManager, 'schedule',
 --[[--
 Schedules a task to be run a certain amount of seconds from now.
 
-@number seconds scheduling delay in seconds (supports decimal values)
+@number seconds scheduling delay in seconds (supports decimal values, 1ms resolution).
 @func action reference to the task to be scheduled (may be anonymous)
 @param ... optional arguments passed to action
 
 @see unschedule
 ]]
 function UIManager:scheduleIn(seconds, action, ...)
-    local when = TimeVal:monotonic() + TimeVal:fromnumber(seconds)
+    local when = TimeVal:now() + TimeVal:fromnumber(seconds)
     self:schedule(when, action, ...)
 end
 dbg:guard(UIManager, 'scheduleIn',
@@ -1057,7 +1057,7 @@ function UIManager:discardEvents(set_or_seconds)
     else -- we expect a number
         usecs = set_or_seconds * 1000000
     end
-    local now = TimeVal:monotonic()
+    local now = TimeVal:now()
     self._discard_events_till = now + TimeVal:new{usec = usecs}
 end
 
@@ -1071,7 +1071,7 @@ function UIManager:sendEvent(event)
 
     -- Ensure discardEvents
     if self._discard_events_till then
-        local now = TimeVal:monotonic()
+        local now = TimeVal:now()
         if now < self._discard_events_till then
             return
         else
@@ -1147,7 +1147,7 @@ function UIManager:broadcastEvent(event)
 end
 
 function UIManager:_checkTasks()
-    local now = TimeVal:monotonic()
+    local now = TimeVal:now()
     local wait_until = nil
 
     -- task.action may schedule other events
