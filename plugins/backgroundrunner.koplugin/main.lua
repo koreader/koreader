@@ -9,6 +9,7 @@ end
 
 local CommandRunner = require("commandrunner")
 local PluginShare = require("pluginshare")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
@@ -70,9 +71,9 @@ local _ = require("gettext")
 -- bad_command: boolean, whether the command is not found. Not available for
 --              function executable.
 -- blocked: boolean, whether the job is blocked.
--- start_sec: number, the os.time() when the job was started.
--- end_sec: number, the os.time() when the job was stopped.
--- insert_sec: number, the os.time() when the job was inserted into queue.
+-- start_tv: number, the TimeVal:monotonic when the job was started.
+-- end_tv: number, the TimeVal:monotonic when the job was stopped.
+-- insert_tv: number, the TimeVal:monotonic when the job was inserted into queue.
 
 local BackgroundRunner = {
     jobs = PluginShare.backgroundJobs,
@@ -114,7 +115,9 @@ end
 function BackgroundRunner:_finishJob(job)
     assert(self ~= nil)
     if type(job.executable) == "function" then
-        job.timeout = ((job.end_sec - job.start_sec) > 1)
+        local tv_diff = job.end_tv - job.start_tv
+        tv_diff = tv_diff:tonumber()
+        job.timeout = (tv_diff > 1.0)
     end
     job.blocked = job.timeout
     if not job.blocked and self:_shouldRepeat(job) then
@@ -136,7 +139,7 @@ function BackgroundRunner:_executeJob(job)
         CommandRunner:start(job)
         return true
     elseif type(job.executable) == "function" then
-        job.start_sec = os.time()
+        job.start_tv = TimeVal:monotonic()
         local status, err = pcall(job.executable)
         if status then
             job.result = 0
@@ -144,7 +147,7 @@ function BackgroundRunner:_executeJob(job)
             job.result = 1
             job.exception = err
         end
-        job.end_sec = os.time()
+        job.end_tv = TimeVal:monotonic()
         self:_finishJob(job)
         return true
     else
@@ -171,10 +174,10 @@ function BackgroundRunner:_execute()
         local round = 0
         while #self.jobs > 0 do
             local job = table.remove(self.jobs, 1)
-            if job.insert_sec == nil then
-                -- Jobs are first inserted to jobs table from external users. So
-                -- they may not have insert_sec field.
-                job.insert_sec = os.time()
+            if job.insert_tv == nil then
+                -- Jobs are first inserted to jobs table from external users.
+                -- So they may not have insert field.
+                job.insert_tv = TimeVal:monotonic()
             end
             local should_execute = false
             local should_ignore = false
@@ -187,7 +190,7 @@ function BackgroundRunner:_execute()
                 end
             elseif type(job.when) == "number" then
                 if job.when >= 0 then
-                    should_execute = ((os.time() - job.insert_sec) >= job.when)
+                    should_execute = ((TimeVal:monotonic() - job.insert_tv) >= TimeVal:fromnumber(job.when))
                 else
                     should_ignore = true
                 end
@@ -248,7 +251,7 @@ end
 
 function BackgroundRunner:_insert(job)
     assert(self ~= nil)
-    job.insert_sec = os.time()
+    job.insert_tv = TimeVal:monotonic()
     table.insert(self.jobs, job)
 end
 
