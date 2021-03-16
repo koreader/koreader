@@ -786,9 +786,10 @@ function Input:waitEvent(timeout_us)
             while #self.timer_callbacks > 0 do
                 ok, ev = pcall(input.waitForEvent, 100)
                 if ok then break end
-                -- NOTE: If we're able to use CLOCK_MONOTONIC_COARSE, the resolution of the value returned by now will be lower than 100µs (by a factor of ten)!
-                --       Consider using :monotonic to explicitly get 1ns resolution here?
-                local tv_now = TimeVal:now()
+                -- NOTE: If we're able to use CLOCK_MONOTONIC_COARSE, we're only guaranteed 1ms resolution at best.
+                --       Given the default timeout of 100µs, explicitly use CLOCK_MONOTONIC (1ns resolution) here,
+                --       by using :monotonic() instead of :now().
+                local tv_now = TimeVal:monotonic()
                 if (not timeout_us or tv_now < wait_deadline) then
                     -- check whether timer is up
                     if tv_now >= self.timer_callbacks[1].deadline then
