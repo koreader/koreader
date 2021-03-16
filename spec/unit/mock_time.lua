@@ -75,7 +75,7 @@ function MockTime:set_realtime(value)
         return false
     end
     self.realtime = math.floor(value)
-    logger.dbg("MockTime:set realtime ", self.realtime)
+    logger.dbg("MockTime:set_realtime ", self.realtime)
     return true
 end
 
@@ -85,7 +85,7 @@ function MockTime:increase_realtime(value)
         return false
     end
     self.realtime = math.floor(self.realtime + value)
-    logger.dbg("MockTime:increase realtime ", self.realtime)
+    logger.dbg("MockTime:increase_realtime ", self.realtime)
     return true
 end
 
@@ -95,7 +95,7 @@ function MockTime:set_monotonic(value)
         return false
     end
     self.monotonic = math.floor(value)
-    logger.dbg("MockTime:set monotonic ", self.monotonic)
+    logger.dbg("MockTime:set_monotonic ", self.monotonic)
     return true
 end
 
@@ -105,7 +105,31 @@ function MockTime:increase_monotonic(value)
         return false
     end
     self.monotonic = math.floor(self.monotonic + value)
-    logger.dbg("MockTime:increase monotonic ", self.monotonic)
+    logger.dbg("MockTime:increase_monotonic ", self.monotonic)
+    return true
+end
+
+function MockTime:set(value)
+    assert(self ~= nil)
+    if type(value) ~= "number" then
+        return false
+    end
+    self.realtime = math.floor(value)
+    logger.dbg("MockTime:set (realtime) ", self.realtime)
+    self.monotonic = math.floor(value)
+    logger.dbg("MockTime:set (monotonic) ", self.monotonic)
+    return true
+end
+
+function MockTime:increase(value)
+    assert(self ~= nil)
+    if type(value) ~= "number" then
+        return false
+    end
+    self.realtime = math.floor(self.realtime + value)
+    logger.dbg("MockTime:increase (realtime) ", self.realtime)
+    self.monotonic = math.floor(self.monotonic + value)
+    logger.dbg("MockTime:increase (monotonic) ", self.monotonic)
     return true
 end
 
