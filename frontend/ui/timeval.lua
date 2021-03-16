@@ -14,6 +14,7 @@ A simple module to module to compare and do arithmetic with time values.
 ]]
 
 local ffi = require("ffi")
+local dummy = require("ffi/posix_h")
 local util = require("ffi/util")
 
 local C = ffi.C
