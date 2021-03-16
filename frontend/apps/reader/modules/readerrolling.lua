@@ -1113,7 +1113,7 @@ function ReaderRolling:showEngineProgress(percent)
         return
     end
     if percent then
-        local now = TimeVal:monotonic()
+        local now = TimeVal:now()
         if self.engine_progress_update_not_before and now < self.engine_progress_update_not_before then
             return
         end
