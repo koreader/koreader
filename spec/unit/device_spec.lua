@@ -94,13 +94,13 @@ describe("device module", function()
                 type = EV_ABS,
                 code = ABS_X,
                 value = y,
-                time = TimeVal:now(),
+                time = TimeVal:realtime(),
             }
             local ev_y = {
                 type = EV_ABS,
                 code = ABS_Y,
                 value = Screen:getWidth()-x,
-                time = TimeVal:now(),
+                time = TimeVal:realtime(),
             }
 
             kobo_dev.input:eventAdjustHook(ev_x)
