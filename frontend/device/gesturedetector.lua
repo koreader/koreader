@@ -431,11 +431,11 @@ function GestureDetector:handleDoubleTap(tev)
     -- may be the start of a double tap. We'll send it as a single tap after
     -- a timer if no second tap happened in the double tap delay.
     logger.dbg("set up single/double tap timer")
-    -- deadline should be calculated by adding current tap time and the interval
-    -- (No need to compute self._has_real_clock_time_ev_time here, we should always
-    -- have been thru handleNonTap() where it is computed, before getting here)
-    local ref_time = self._has_real_clock_time_ev_time and cur_tap.timev or TimeVal:now()
-    local deadline = ref_time + TimeVal:new{
+    -- deadline should be calculated by adding current tap time and the interval.
+    -- Given that setTimeout expects a monotonic clock source,
+    -- and our input events may use a real clock source instead,
+    -- always base it on *now* instead of the input event's timestamp.
+    local deadline = TimeVal:monotonic() + TimeVal:new{
         sec = 0,
         usec = not self.input.disable_double_tap and ges_double_tap_interval or 0,
     }
@@ -475,8 +475,8 @@ function GestureDetector:handleNonTap(tev)
             end
         end
         logger.dbg("set up hold timer")
-        local ref_time = self._has_real_clock_time_ev_time and tev.timev or TimeVal:now()
-        local deadline = ref_time + TimeVal:new{
+        -- Ditto, start counting from *now*, no matter what the input event timestamp says...
+        local deadline = TimeVal:monotonic() + TimeVal:new{
             sec = 0, usec = ges_hold_interval
         }
         -- Be sure the following setTimeout only react to this tapState

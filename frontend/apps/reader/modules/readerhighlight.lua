@@ -1125,7 +1125,7 @@ function ReaderHighlight:onHoldRelease()
     local long_final_hold = false
     if self.hold_last_tv then
         local hold_duration = TimeVal:monotonic() - self.hold_last_tv
-        hold_duration = hold_duration.sec + hold_duration.usec/1000000
+        hold_duration = hold_duration:tonumber()
         if hold_duration > 3.0 then
             -- We stayed 3 seconds before release without updating selection
             long_final_hold = true
