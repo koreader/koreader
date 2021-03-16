@@ -162,7 +162,7 @@ function GestureDetector:isTapBounce(tap1, tap2, interval)
     return (
         math.abs(tap1.x - tap2.x) < self.SINGLE_TAP_BOUNCE_DISTANCE and
         math.abs(tap1.y - tap2.y) < self.SINGLE_TAP_BOUNCE_DISTANCE and
-        tv_diff < interval)
+        tv_diff < interval
     )
 end
 
@@ -172,7 +172,7 @@ function GestureDetector:isDoubleTap(tap1, tap2)
     return (
         math.abs(tap1.x - tap2.x) < self.DOUBLE_TAP_DISTANCE and
         math.abs(tap1.y - tap2.y) < self.DOUBLE_TAP_DISTANCE and
-        tv_diff < ges_double_tap_interval)
+        tv_diff < ges_double_tap_interval
     )
 end
 
