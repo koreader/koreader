@@ -820,10 +820,11 @@ function Input:waitEvent(timeout_us)
                 -- We've drained all pending input events, causing waitForEvent to time out, check our timers
                 now_tv = TimeVal:now()
                 print("now_tv post-select", now_tv:tonumber())
-                -- FIXME: Given the computations above, we can probably simplify those tests...
+                -- FIXME: Given the computations above, we can probably simplify those tests, as we should have a guarantee than now >= timeout_tv...
                 if (not timeout_us or now_tv < wait_deadline) then
                     -- Check whether the earliest timer to finalize a Gesture detection is up
                     if now_tv >= self.timer_callbacks[1].deadline then
+                        print("Consuming timer callback")
                         local touch_ges = self.timer_callbacks[1].callback()
                         table.remove(self.timer_callbacks, 1)
                         if touch_ges then
