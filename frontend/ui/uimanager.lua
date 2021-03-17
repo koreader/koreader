@@ -1599,7 +1599,7 @@ function UIManager:handleInput()
     self:_standbyTransition()
 
     -- wait for next event
-    local input_event = Input:waitEvent(deadline)
+    local input_event = Input:waitEvent(now, deadline)
 
     -- delegate input_event to handler
     if input_event then
