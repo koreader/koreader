@@ -10,6 +10,7 @@ if not Device:isCervantes() and
 end
 
 local PluginShare = require("pluginshare")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
@@ -24,7 +25,7 @@ local AutoSuspend = WidgetContainer:new{
     is_doc_only = false,
     autoshutdown_timeout_seconds = G_reader_settings:readSetting("autoshutdown_timeout_seconds") or default_autoshutdown_timeout_seconds,
     auto_suspend_timeout_seconds = G_reader_settings:readSetting("auto_suspend_timeout_seconds") or default_auto_suspend_timeout_seconds,
-    last_action_sec = os.time(),
+    last_action_tv = 0,
     standby_prevented = false,
 }
 
@@ -48,9 +49,11 @@ function AutoSuspend:_schedule(shutdown_only)
         delay_suspend = self.auto_suspend_timeout_seconds
         delay_shutdown = self.autoshutdown_timeout_seconds
     else
-        local now_ts = os.time()
-        delay_suspend = self.last_action_sec + self.auto_suspend_timeout_seconds - now_ts
-        delay_shutdown = self.last_action_sec + self.autoshutdown_timeout_seconds - now_ts
+        local now_tv = UIManager:getTime()
+        delay_suspend = self.last_action_tv + TimeVal:new{ sec = self.auto_suspend_timeout_seconds } - now_ts
+        delay_suspend:tonumber()
+        delay_shutdown = self.last_action_tv + TimeVal:new{ sec = self.autoshutdown_timeout_seconds } - now_ts
+        delay_shutdown:tonumber()
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
@@ -79,9 +82,9 @@ end
 
 function AutoSuspend:_start()
     if self:_enabled() or self:_enabledShutdown() then
-        local now_ts = os.time()
-        logger.dbg("AutoSuspend: start at", now_ts)
-        self.last_action_sec = now_ts
+        local now_tv = UIManager:getTime()
+        logger.dbg("AutoSuspend: start at", now_tv:tonumber())
+        self.last_action_tv = now_tv
         self:_schedule()
     end
 end
@@ -89,9 +92,9 @@ end
 -- Variant that only re-engages the shutdown timer for onUnexpectedWakeupLimit
 function AutoSuspend:_restart()
     if self:_enabledShutdown() then
-        local now_ts = os.time()
-        logger.dbg("AutoSuspend: restart at", now_ts)
-        self.last_action_sec = now_ts
+        local now_tv = TimeVal:now()
+        logger.dbg("AutoSuspend: restart at", now_tv:tonumber())
+        self.last_action_tv = now_tv
         self:_schedule(true)
     end
 end
@@ -108,7 +111,7 @@ end
 
 function AutoSuspend:onInputEvent()
     logger.dbg("AutoSuspend: onInputEvent")
-    self.last_action_sec = os.time()
+    self.last_action_tv = UIManager:getTime()
 end
 
 function AutoSuspend:onSuspend()
