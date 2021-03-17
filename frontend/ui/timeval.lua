@@ -34,7 +34,7 @@ if ffi.os == "Linux" then
             PREFERRED_MONOTONIC_CLOCKID = C.CLOCK_MONOTONIC_COARSE
         end
     end
-    probe_ts = nil
+    probe_ts = nil --luacheck: ignore
 end
 
 --[[--
