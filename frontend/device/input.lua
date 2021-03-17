@@ -780,6 +780,7 @@ function Input:waitEvent(timeout_us)
     -- wrapper for input.waitForEvents that will retry for some cases
     while true do
         if #self.timer_callbacks > 0 then
+            -- FIXME: Should we honor the *oroiginal* UIManager deadline? (By using UIManager:getTime instead of now)
             local wait_deadline = TimeVal:now() + TimeVal:new{
                 usec = timeout_us
             }
