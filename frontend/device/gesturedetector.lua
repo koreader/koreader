@@ -56,11 +56,17 @@ local PAN_DELAYED_INTERVAL = 500 * 1000
 local SWIPE_INTERVAL = 900 * 1000
 -- current values
 local ges_tap_interval = G_reader_settings:readSetting("ges_tap_interval") or TAP_INTERVAL
+ges_tap_interval = TimeVal:new{ usec = ges_tap_interval }
 local ges_double_tap_interval = G_reader_settings:readSetting("ges_double_tap_interval") or DOUBLE_TAP_INTERVAL
+ges_double_tap_interval = TimeVal:new{ usec = ges_double_tap_interval }
 local ges_two_finger_tap_duration = G_reader_settings:readSetting("ges_two_finger_tap_duration") or TWO_FINGER_TAP_DURATION
+ges_two_finger_tap_duration = TimeVal:new{ usec = ges_two_finger_tap_duration }
 local ges_hold_interval = G_reader_settings:readSetting("ges_hold_interval") or HOLD_INTERVAL
+ges_hold_interval = TimeVal:new{ usec = ges_hold_interval }
 local ges_pan_delayed_interval = G_reader_settings:readSetting("ges_pan_delayed_interval") or PAN_DELAYED_INTERVAL
+ges_pan_delayed_interval = TimeVal:new{ usec = ges_pan_delayed_interval }
 local ges_swipe_interval = G_reader_settings:readSetting("ges_swipe_interval") or SWIPE_INTERVAL
+ges_swipe_interval = TimeVal:new{ usec = ges_swipe_interval }
 
 local GestureDetector = {
     -- must be initialized with the Input singleton class
@@ -158,7 +164,9 @@ function GestureDetector:isTapBounce(tap1, tap2, interval)
     -- NOTE: If time went backwards, make the delta infinite to avoid misdetections,
     --       as we can no longer compute a sensible value...
     local tv_diff = tap2.timev - tap1.timev
-    tv_diff = tv_diff.sec >= 0 and tv_diff:tousecs() or math.huge
+    if not tv_diff:isPositive() then
+        tv_diff = TimeVal:new{ sec = math.huge }
+    end
     return (
         math.abs(tap1.x - tap2.x) < self.SINGLE_TAP_BOUNCE_DISTANCE and
         math.abs(tap1.y - tap2.y) < self.SINGLE_TAP_BOUNCE_DISTANCE and
@@ -168,7 +176,9 @@ end
 
 function GestureDetector:isDoubleTap(tap1, tap2)
     local tv_diff = tap2.timev - tap1.timev
-    tv_diff = tv_diff.sec >= 0 and tv_diff:tousecs() or math.huge
+    if not tv_diff:isPositive() then
+        tv_diff = TimeVal:new{ sec = math.huge }
+    end
     return (
         math.abs(tap1.x - tap2.x) < self.DOUBLE_TAP_DISTANCE and
         math.abs(tap1.y - tap2.y) < self.DOUBLE_TAP_DISTANCE and
@@ -185,9 +195,13 @@ function GestureDetector:isTwoFingerTap()
     local y_diff0 = math.abs(self.last_tevs[0].y - self.first_tevs[0].y)
     local y_diff1 = math.abs(self.last_tevs[1].y - self.first_tevs[1].y)
     local tv_diff0 = self.last_tevs[0].timev - self.first_tevs[0].timev
-    tv_diff0 = tv_diff0.sec >= 0 and tv_diff0:tousecs() or math.huge
+    if not tv_diff0:isPositive() then
+        tv_diff0 = TimeVal:new{ sec = math.huge }
+    end
     local tv_diff1 = self.last_tevs[1].timev - self.first_tevs[1].timev
-    tv_diff1 = tv_diff1.sec >= 0 and tv_diff1:tousecs() or math.huge
+    if not tv_diff1:isPositive() then
+        tv_diff1 = TimeVal:new{ sec = math.huge }
+    end
     return (
         x_diff0 < self.TWO_FINGER_TAP_REGION and
         x_diff1 < self.TWO_FINGER_TAP_REGION and
@@ -233,7 +247,9 @@ end
 function GestureDetector:isSwipe(slot)
     if not self.first_tevs[slot] or not self.last_tevs[slot] then return end
     local tv_diff = self.last_tevs[slot].timev - self.first_tevs[slot].timev
-    tv_diff = tv_diff.sec >= 0 and tv_diff:tousecs() or math.huge
+    if not tv_diff:isPositive() then
+        tv_diff = TimeVal:new{ sec = math.huge }
+    end
     if tv_diff < ges_swipe_interval then
         local x_diff = self.last_tevs[slot].x - self.first_tevs[slot].x
         local y_diff = self.last_tevs[slot].y - self.first_tevs[slot].y
@@ -271,33 +287,33 @@ end
 
 function GestureDetector:setNewInterval(type, interval)
     if type == "ges_tap_interval" then
-        ges_tap_interval = interval
+        ges_tap_interval = TimeVal:new{ usec = interval }
     elseif type == "ges_double_tap_interval" then
-        ges_double_tap_interval = interval
+        ges_double_tap_interval = TimeVal:new{ usec = interval }
     elseif type == "ges_two_finger_tap_duration" then
-        ges_two_finger_tap_duration = interval
+        ges_two_finger_tap_duration = TimeVal:new{ usec = interval }
     elseif type == "ges_hold_interval" then
-        ges_hold_interval = interval
+        ges_hold_interval = TimeVal:new{ usec = interval }
     elseif type == "ges_pan_delayed_interval" then
-        ges_pan_delayed_interval = interval
+        ges_pan_delayed_interval = TimeVal:new{ usec = interval }
     elseif type == "ges_swipe_interval" then
-        ges_swipe_interval = interval
+        ges_swipe_interval = TimeVal:new{ usec = interval }
     end
 end
 
 function GestureDetector:getInterval(type)
     if type == "ges_tap_interval" then
-        return ges_tap_interval
+        return ges_tap_interval:tousecs()
     elseif type == "ges_double_tap_interval" then
-        return ges_double_tap_interval
+        return ges_double_tap_interval:tousecs()
     elseif type == "ges_two_finger_tap_duration" then
-        return ges_two_finger_tap_duration
+        return ges_two_finger_tap_duration:tousecs()
     elseif type == "ges_hold_interval" then
-        return ges_hold_interval
+        return ges_hold_interval:tousecs()
     elseif type == "ges_pan_delayed_interval" then
-        return ges_pan_delayed_interval
+        return ges_pan_delayed_interval:tousecs()
     elseif type == "ges_swipe_interval" then
-        return ges_swipe_interval
+        return ges_swipe_interval:tousecs()
     end
 end
 
@@ -404,7 +420,7 @@ function GestureDetector:handleDoubleTap(tev)
     local tap_interval = self.input.tap_interval_override or ges_tap_interval
     -- We do tap bounce detection even when double tap is enabled (so, double tap
     -- is triggered when: ges_tap_interval <= delay < ges_double_tap_interval)
-    if tap_interval > 0 and self.last_taps[slot] ~= nil and self:isTapBounce(self.last_taps[slot], cur_tap, tap_interval) then
+    if not tap_interval:isZero() and self.last_taps[slot] ~= nil and self:isTapBounce(self.last_taps[slot], cur_tap, tap_interval) then
         logger.dbg("tap bounce detected in slot", slot, ": ignored")
         -- Simply ignore it, and clear state as this is the end of a touch event
         -- (this doesn't clear self.last_taps[slot], so a 3rd tap can be detected
@@ -445,10 +461,10 @@ function GestureDetector:handleDoubleTap(tev)
     -- always base it on *now* (in the monotonic time scale)
     -- instead of the input event's own timestamp,
     -- which is irrelevant in this context.
-    local deadline = TimeVal:now() + TimeVal:new{
-        sec = 0,
-        usec = not self.input.disable_double_tap and ges_double_tap_interval or 0,
-    }
+    local deadline = TimeVal:now()
+    if not self.input.disable_double_tap then
+        deadline = deadline + ges_double_tap_interval
+    end
     self.input:setTimeout(function()
         logger.dbg("in single/double tap timer", self.last_taps[slot] ~= nil)
         -- double tap will set last_tap to nil so if it is not, then
@@ -473,9 +489,8 @@ function GestureDetector:handleNonTap(tev)
         self.states[slot] = self.tapState
         logger.dbg("set up hold timer")
         -- Ditto, start counting from *now*, no matter what the input event's timestamp says...
-        local deadline = TimeVal:now() + TimeVal:new{
-            sec = 0, usec = ges_hold_interval
-        }
+        local deadline = TimeVal:now() + ges_hold_interval
+        print("setup for", deadline.sec, deadline.usec)
         -- Be sure the following setTimeout only react to this tapState
         local hold_timer_id = tev.timev
         self.hold_timer_id[slot] = hold_timer_id
@@ -591,7 +606,9 @@ function GestureDetector:handlePan(tev)
     else
         local pan_direction, pan_distance = self:getPath(slot)
         local tv_diff = self.last_tevs[slot].timev - self.first_tevs[slot].timev
-        tv_diff = tv_diff.sec >= 0 and tv_diff:tousecs() or math.huge
+        if not tv_diff:isPositive() then
+            tv_diff = TimeVal:new{ sec = math.huge }
+        end
 
         local pan_ev = {
             ges = "pan",

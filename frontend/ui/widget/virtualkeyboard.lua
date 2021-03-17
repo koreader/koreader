@@ -588,6 +588,7 @@ function VirtualKeyPopup:init()
         },
     }
     self.tap_interval_override = G_reader_settings:readSetting("ges_tap_interval_on_keyboard") or 0
+    self.tap_interval_override = TimeVal:new{ usec = self.tap_interval_override }
 
     if Device:hasDPad() then
         self.key_events.PressKey = { {"Press"}, doc = "select key" }
@@ -699,6 +700,7 @@ function VirtualKeyboard:init()
     self.max_layer = keyboard.max_layer
     self:initLayer(self.keyboard_layer)
     self.tap_interval_override = G_reader_settings:readSetting("ges_tap_interval_on_keyboard") or 0
+    self.tap_interval_override = TimeVal:new{ usec = self.tap_interval_override }
     if Device:hasDPad() then
         self.key_events.PressKey = { {"Press"}, doc = "select key" }
     end
