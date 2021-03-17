@@ -19,7 +19,6 @@ local Size = require("ui/size")
 local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
-local socket = require("socket")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
