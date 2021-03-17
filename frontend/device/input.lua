@@ -778,7 +778,7 @@ end
 function Input:waitEvent(now, deadline)
     print("Input:waitEvent", now:tonumber(), deadline and deadline:tonumber() or nil)
     -- On the first iteration of the loop, we don't need to update now, we're following closely (a couple ms) behind UIManager.
-    local ok, ret, ev
+    local ok, ev
     -- wrapper for input.waitForEvents that will retry for some cases
     while true do
         if #self.timer_callbacks > 0 then
@@ -811,12 +811,12 @@ function Input:waitEvent(now, deadline)
                 end
                 print("poll_timeout_us", poll_timeout_us)
 
-                ok, ret, ev = pcall(input.waitForEvent, poll_timeout_us)
+                ok, ev = input.waitForEvent(poll_timeout_us)
                 -- We got an actual input event, process it
-                if ok and ret then break end
+                if ok then break end
 
                 -- Failed w/ something other than ETIMEDOUT, break out and handle the error
-                if ret == nil or (ret == false and ev ~= 110) then break end
+                if ok == nil or (ok == false and ev ~= 110) then break end
 
                 -- We've drained all pending input events, causing waitForEvent to time out, check our timers
                 print("ETIMEDOUT")
@@ -857,33 +857,36 @@ function Input:waitEvent(now, deadline)
                 end
             end
 
-            ok, ret, ev = pcall(input.waitForEvent, poll_timeout_us)
+            ok, ev = input.waitForEvent(poll_timeout_us)
         end -- EOF if #timer_callbacks > 0
-        if ok and ret then
-            break
-        end
 
         -- Handle errors
+        if ok then
+            -- We're good, keep on trucking.
+            break
         -- FIXME: See if the weirdness from https://github.com/koreader/koreader/commit/b71ac38d3b87eb7ea1d9db22d6110144e70135ce is still necessary to handle ^C...
-        if not ret and ev then
+        elseif ok == false then
             if ev == 110 then
-                -- don't report an error on timeout
+                -- Don't report an error on timeout
                 ev = nil
                 break
             elseif ev == 4 then
-                -- don't abort on EINTR, but report it w/ an InputError event
+                -- Don't abort on EINTR, but report it w/ an InputError event
                 break
             else
                 -- Warn & report
                 logger.warn("Polling for input events returned an error:", ev)
             end
+        elseif ok == nil then
+            logger.error("Polling for input events failed catastrophically")
+            -- FIXME: Bail? (e.g., error())
         end
 
         -- We'll need to refresh now on the next iteration
         now = nil
     end
 
-    if ok and ret and ev then
+    if ok and ev then
         if DEBUG.is_on then
             DEBUG:logEv(ev)
             logger.dbg(string.format(
@@ -907,7 +910,7 @@ function Input:waitEvent(now, deadline)
             -- some other kind of event that we do not know yet
             return Event:new("GenericInput", ev)
         end
-    elseif not ok and not ret and ev then
+    elseif ok == false then
         return Event:new("InputError", ev)
     else
         -- No ev? Hu oh...
