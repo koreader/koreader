@@ -776,7 +776,7 @@ end
 
 --- Main event handling.
 function Input:waitEvent(deadline)
-    print("Input:waitEvent")
+    print("Input:waitEvent", deadline and deadline:tonumber() or nil)
     local ok, ev
     -- wrapper for input.waitForEvents that will retry for some cases
     while true do
@@ -843,7 +843,7 @@ function Input:waitEvent(deadline)
             local poll_timeout_us
             -- If UIManager put us on deadline, enforce it, otherwise, block forever.
             if deadline then
-                print("deadline:" deadline:tonumber())
+                print("deadline:", deadline:tonumber())
                 -- Convert that absolute deadline to a µs value relative to *now*, as we may loop multiple times between UI ticks.
                 local now = TimeVal:now()
                 print("now:", now:tonumber())
