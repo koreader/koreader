@@ -319,10 +319,9 @@ function GestureDetector:getInterval(type)
 end
 
 function GestureDetector:clearStates()
-    -- FIXME: Actually clear *all* the slots (pairs on self.states).
-    --        Also, do that and a timer_deadline clear on Suspend.
-    self:clearState(0)
-    self:clearState(1)
+    for k, _ in pairs(self.states) do
+        self:clearState(k)
+    end
 end
 
 function GestureDetector:initialState(tev)

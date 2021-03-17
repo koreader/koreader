@@ -303,6 +303,18 @@ function Input:setTimeout(cb, tv_out)
     end)
 end
 
+function Input:clearTimeouts()
+    self.timer_callbacks = {}
+end
+
+-- Reset the gesture parsing state to a blank slate
+function Input:resetState()
+    if self.gesture_detector then
+        self.gesture_detector:clearStates()
+    end
+    self:clearTimeouts()
+end
+
 function Input:handleKeyBoardEv(ev)
     local keycode = self.event_map[ev.code]
     if not keycode then
@@ -829,7 +841,7 @@ function Input:waitEvent(now, deadline)
                             print("Gesture detection finalized")
                             --- @fixme: Do we really need to clear all the timer callbacks
                             --          from setTimeout calls after having detected a gesture?
-                            self.timer_callbacks = {}
+                            self:clearTimeouts()
                             self:gestureAdjustHook(touch_ges)
                             return Event:new("Gesture",
                                 self.gesture_detector:adjustGesCoordinate(touch_ges)
