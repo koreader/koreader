@@ -42,7 +42,7 @@ local function doBuildHistory()
     ReadHistory.flush(records)
     ReadHistory:reload()
 
-    -- TODO(hzj-jie): Consider to open the history view directly.
+    --- TODO(hzj-jie): Consider to open the history view directly.
     UIManager:show(InfoMessage:new{
         text = _("History view has been updated, use main menu to access it."),
         timeout = 2,
@@ -77,7 +77,7 @@ end
 local function restoreHistory()
     if os.execute("mv '" .. history_backup_file .. "' '" .. history_file .. "'") == 0 then
         ReadHistory:forceReload()
-        -- TODO(hzj-jie): Consider to open the history view directly.
+        --- TODO(hzj-jie): Consider to open the history view directly.
         UIManager:show(InfoMessage:new{
             text = _("Last history view has been restored, use main menu to access it."),
             timeout = 2,
