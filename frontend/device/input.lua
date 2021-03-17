@@ -791,12 +791,16 @@ function Input:waitEvent(timeout_us)
                 local now_tv = TimeVal:now()
                 print("now_tv pre-select", now_tv:tonumber())
                 -- Choose the earliest deadline between the earliest timer deadline, and our full timeout deadline.
-                -- FIXME: Handle timeout_us being nil, which makes wait_dealine < (or at least <=) now...
                 local deadline_tv
-                if self.timer_callbacks[1].deadline < wait_deadline then
+                if not timeout_us then
+                    -- If timeout_us was nil, that makes wait_dealine < (or at least <=) now (i.e., irrelevant).
                     deadline_tv = self.timer_callbacks[1].deadline
                 else
-                    deadline_tv = wait_deadline
+                    if self.timer_callbacks[1].deadline < wait_deadline then
+                        deadline_tv = self.timer_callbacks[1].deadline
+                    else
+                        deadline_tv = wait_deadline
+                    end
                 end
                 print("deadline_tv", deadline_tv:tonumber())
                 -- If we haven't hit that deadline yet, poll until it expires, otherwise,
@@ -805,8 +809,8 @@ function Input:waitEvent(timeout_us)
                 if now_tv < deadline_tv then
                     timeout_tv = deadline_tv - now_tv
                 else
-                    -- FIXME: Possibly even go straight to timeout by setting it to zero...
-                    timeout_tv = TimeVal:new { usec = 100 }
+                    -- We've already blown the deadline: make select return immediately (most likely straight to timeout)
+                    timeout_tv = TimeVal:new{}
                 end
                 print("timeout_tv", timeout_tv:tonumber())
                 -- SLeep for min (deadline - now, timeout_us)!
