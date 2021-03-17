@@ -36,8 +36,9 @@ function AutoTurn:_schedule(settings_id)
     end
 
     local delay = self.last_action_tv + TimeVal:new{ sec = self.autoturn_sec } - UIManager:getTime()
+    delay = delay:tonumber()
 
-    if delay:isZero() or not delay:isPositive() then
+    if delay <= 0 then
         if UIManager:getTopWidget() == "ReaderUI" then
             logger.dbg("AutoTurn: go to next page")
             self.ui:handleEvent(Event:new("GotoViewRel", self.autoturn_distance))
@@ -45,7 +46,6 @@ function AutoTurn:_schedule(settings_id)
         logger.dbg("AutoTurn: schedule in", self.autoturn_sec)
         UIManager:scheduleIn(self.autoturn_sec, function() self:_schedule(settings_id) end)
     else
-        delay = delay:tonumber()
         logger.dbg("AutoTurn: schedule in", delay)
         UIManager:scheduleIn(delay, function() self:_schedule(settings_id) end)
     end
@@ -60,7 +60,7 @@ end
 function AutoTurn:_start()
     if self:_enabled() then
         local now_tv = UIManager:getTime()
-        logger.dbg("AutoTurn: start at", now_tv.sec, now_tv.usec)
+        logger.dbg("AutoTurn: start at", now_tv:tonumber())
         PluginShare.pause_auto_suspend = true
         self.last_action_tv = now_tv
         self:_schedule(self.settings_id)
