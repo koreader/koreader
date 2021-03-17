@@ -332,7 +332,7 @@ function CalibreSearch:find(option)
     else
         self:browse(option,1)
     end
-    logger.info(string.format("search done in %f milliseconds (%s, %s, %s, %s, %s)",
+    logger.info(string.format("search done in %.3f milliseconds (%s, %s, %s, %s, %s)",
         (TimeVal:now() - start):tomsecs(),
         option == "find" and "books" or option,
         "case sensitive: " .. tostring(not self.case_insensitive),
@@ -557,7 +557,7 @@ end
 -- get metadata from cache or calibre files
 function CalibreSearch:getMetadata()
     local start = TimeVal:now()
-    local template = "metadata: %d books imported from %s in %f milliseconds"
+    local template = "metadata: %d books imported from %s in %.3f milliseconds"
 
     -- try to load metadata from cache
     if self.cache_metadata then
