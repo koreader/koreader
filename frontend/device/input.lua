@@ -866,7 +866,7 @@ function Input:waitEvent(now, deadline)
         -- FIXME: See if the weirdness from https://github.com/koreader/koreader/commit/b71ac38d3b87eb7ea1d9db22d6110144e70135ce is still necessary to handle ^C...
         elseif ok == false then
             if ev == 110 then
-                -- Don't report an error on timeout, and go back to UIManager
+                -- Don't report an error on ETIMEDOUT, and go back to UIManager
                 ev = nil
                 break
             elseif ev == 4 then
@@ -908,12 +908,12 @@ function Input:waitEvent(now, deadline)
         elseif ev.type == EV_SDL then
             return self:handleSdlEv(ev)
         else
-            -- some other kind of event that we do not know yet
+            -- Received some other kind of event that we do not know how to specifically handle yet
             return Event:new("GenericInput", ev)
         end
-    elseif ok == false then
+    elseif ok == false and ev then
         return Event:new("InputError", ev)
-    else
+    elseif ok == nil then
         -- No ok and no ev? Hu oh...
         return Event:new("InputError", "Catastrophic")
     end
