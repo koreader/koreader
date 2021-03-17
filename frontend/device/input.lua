@@ -797,7 +797,7 @@ function Input:waitEvent(now, deadline)
                         deadline_is_timer = true
                     end
                 end
-                print("Effective deadline:", deadline:tonumber())
+                print("Effective deadline:", deadline_is_timer, deadline:tonumber())
                 -- If we haven't hit that deadline yet, poll until it expires, otherwise,
                 -- have select return immediately so that we trip the full timeout.
                 now = now or TimeVal:now()
