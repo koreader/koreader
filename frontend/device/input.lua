@@ -792,7 +792,7 @@ function Input:waitEvent(timeout_us)
                 ok, ev = pcall(input.waitForEvent, 100)
                 -- We got an actual input event, process it
                 if ok then break end
-                -- We've drained all pending input events, check our timers
+                -- We've drained all pending input events, causing waitForEvent to time out, check our timers
                 local tv_now = TimeVal:now()
                 print("tv_now", tv_now:tonumber())
                 if (not timeout_us or tv_now < wait_deadline) then
