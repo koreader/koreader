@@ -816,7 +816,7 @@ function Input:waitEvent(now, deadline)
                 if ok and ret then break end
 
                 -- Failed w/ something other than ETIMEDOUT, break out and handle the error
-                if not ret and (not ev or ev ~= 110) then break end
+                if ret == nil or (ret == false and ev ~= 110) then break end
 
                 -- We've drained all pending input events, causing waitForEvent to time out, check our timers
                 print("ETIMEDOUT")
