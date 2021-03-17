@@ -780,28 +780,13 @@ function Input:waitEvent(deadline)
     local ok, ev
     -- wrapper for input.waitForEvents that will retry for some cases
     while true do
-        local poll_timeout_us, now
-        -- If UIManager put us on deadline, enforce it, otherwise, block forever.
-        if deadline then
-            print("deadline:" deadline:tonumber())
-            -- Convert that absolute deadline to a µs value relative to *now*, as we may loop multiple times between UI ticks.
-            now = TimeVal:now()
-            print("now:", now:tonumber())
-            if deadline > now then
-                -- Deadline hasn't been blown yet, honor it.
-                poll_timeout_us = (deadline - now):tousecs()
-            else
-                -- Deadline has been blown, return immediately.
-                poll_timeout_us = 0
-            end
-        end
         if #self.timer_callbacks > 0 then
             -- If we have timers set, we need to honor them once we're done draining the input events.
             while #self.timer_callbacks > 0 do
                 print("Next timer deadline:", self.timer_callbacks[1].deadline:tonumber())
                 -- Choose the earliest deadline between the next timer deadline, and our full timeout deadline.
                 if not deadline then
-                    -- If we don't actually have a full timeout deadline, our job is easy.
+                    -- If we don't actually have a full timeout deadline, just honor the timer's.
                     deadline = self.timer_callbacks[1].deadline
                 else
                     if self.timer_callbacks[1].deadline < deadline then
@@ -811,7 +796,7 @@ function Input:waitEvent(deadline)
                 print("Effective deadline:", deadline:tonumber())
                 -- If we haven't hit that deadline yet, poll until it expires, otherwise,
                 -- have select return immediately so that we trip the full timeout.
-                now = now or TimeVal:now()
+                local now = TimeVal:now()
                 print("now:", now:tonumber())
                 if deadline > now then
                     -- Deadline hasn't been blown yet, honor it.
@@ -821,19 +806,20 @@ function Input:waitEvent(deadline)
                     poll_timeout_us = 0
                 end
                 print("poll_timeout_us", poll_timeout_us)
-                -- SLeep for min (deadline - now, timeout_us)!
+
                 ok, ev = pcall(input.waitForEvent, poll_timeout_us)
                 -- We got an actual input event, process it
                 if ok then break end
+
                 -- We've drained all pending input events, causing waitForEvent to time out, check our timers
                 now = TimeVal:now()
                 print("now post-select", now:tonumber())
-                -- FIXME: Given the computations above, we can probably simplify those tests, as we should have a guarantee than now >= timeout_tv...
+                -- FIXME: Given the computations above, we can probably simplify those tests, as we should have a guarantee than now >= deadline...
                 --        But only if select actually timed out, not if it aborted early because of an actual failure...
                 --        Which means I need to interpret the "error" type early, ideally, by just catching errno, because catching a string programmaticaly is kind of ridiculous...
-                if (not timeout_us or now < wait_deadline) then
+                if now >= deadline then
                     -- Check whether the earliest timer to finalize a Gesture detection is up
-                    if now >= self.timer_callbacks[1].deadline then
+                    if self.timer_callbacks[1] and now >= self.timer_callbacks[1].deadline then
                         print("Consuming timer callback")
                         local touch_ges = self.timer_callbacks[1].callback()
                         table.remove(self.timer_callbacks, 1)
@@ -854,6 +840,22 @@ function Input:waitEvent(deadline)
         else
             -- If there aren't any timers, just block for the requested amount of time.
             -- poll_timeout_us may be nil, in which case waitForEvent blocks indefinitely (i.e., until the next input event ;)).
+            local poll_timeout_us
+            -- If UIManager put us on deadline, enforce it, otherwise, block forever.
+            if deadline then
+                print("deadline:" deadline:tonumber())
+                -- Convert that absolute deadline to a µs value relative to *now*, as we may loop multiple times between UI ticks.
+                local now = TimeVal:now()
+                print("now:", now:tonumber())
+                if deadline > now then
+                    -- Deadline hasn't been blown yet, honor it.
+                    poll_timeout_us = (deadline - now):tousecs()
+                else
+                    -- Deadline has been blown, return immediately.
+                    poll_timeout_us = 0
+                end
+            end
+
             ok, ev = pcall(input.waitForEvent, poll_timeout_us)
         end -- EOF if #timer_callbacks > 0
         if ok then
