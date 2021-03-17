@@ -8,7 +8,6 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local joinPath = require("ffi/util").joinPath
 local lfs = require("libs/libkoreader-lfs")
-local logger = require("logger")
 local _ = require("gettext")
 
 local menuItem = {
