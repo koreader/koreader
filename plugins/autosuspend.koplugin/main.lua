@@ -51,9 +51,9 @@ function AutoSuspend:_schedule(shutdown_only)
     else
         local now_tv = UIManager:getTime()
         delay_suspend = self.last_action_tv + TimeVal:new{ sec = self.auto_suspend_timeout_seconds } - now_tv
-        delay_suspend:tonumber()
+        delay_suspend = delay_suspend:tonumber()
         delay_shutdown = self.last_action_tv + TimeVal:new{ sec = self.autoshutdown_timeout_seconds } - now_tv
-        delay_shutdown:tonumber()
+        delay_shutdown = delay_shutdown:tonumber()
     end
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
