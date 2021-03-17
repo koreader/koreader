@@ -500,7 +500,7 @@ function GestureDetector:handleNonTap(tev)
         self.input:setTimeout(function()
             print("GestureDetector: Hold finalization for slot", slot, "and tv", hold_timer_id:tonumber(), "compared to current tv", self.hold_timer_id[slot] and self.hold_timer_id[slot]:tonumber() or nil)
             -- If the hold_timer_id we set on our first switch to tapState on this slot (e.g., first finger down event),
-            -- back when the timer was setup, is still relevant (e.g., the slot wasn't run through clearState),
+            -- back when the timer was setup, is still relevant (e.g., the slot wasn't run through clearState by a finger up gesture),
             -- then check that we're still in a stationary finger down state (e.g., tapState),
             -- and that the current hold_timer_id for this slot is still the same.
             if self.hold_timer_id[slot] and self.states[slot] == self.tapState and self.hold_timer_id[slot] == hold_timer_id then
