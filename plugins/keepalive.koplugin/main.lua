@@ -1,12 +1,13 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local PluginShare = require("pluginshare")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 
 local menuItem = {
     text = _("Keep alive"),
-    checked = false,
+    checked_func = function() return PluginShare.keepalive end,
 }
 
 local disable
@@ -18,17 +19,16 @@ local function showConfirmBox()
         cancel_text = _("Close"),
         cancel_callback = function()
             disable()
-            menuItem.checked =false
+            PluginShare.keepalive = false
         end,
         ok_text = _("Stay alive"),
         ok_callback = function()
-            menuItem.checked = true
+            PluginShare.keepalive = true
         end,
     })
 end
 
 if Device:isCervantes() or Device:isKobo() then
-    local PluginShare = require("pluginshare")
     enable = function() PluginShare.pause_auto_suspend = true end
     disable = function() PluginShare.pause_auto_suspend = false end
 elseif Device:isKindle() then
