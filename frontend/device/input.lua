@@ -296,6 +296,7 @@ function Input:setTimeout(cb, tv_out)
         callback = cb,
         deadline = tv_out,
     }
+    print("Input:setTimeout:", tv_out:tonumber())
     table.insert(self.timer_callbacks, item)
     table.sort(self.timer_callbacks, function(v1, v2)
         return v1.deadline < v2.deadline
@@ -782,14 +783,18 @@ function Input:waitEvent(timeout_us)
             local wait_deadline = TimeVal:now() + TimeVal:new{
                 usec = timeout_us
             }
-            -- we don't block if there aren't any timers, set wait to 100µs
+            print("Input:waitEvent", timeout_us)
+            print("wait_deadline", wait_deadline:tonumber())
+            -- If we have timers set, we need to check 'em in-between polling for input,
+            -- so we set the wait to a fairly low value, at 100µs
             while #self.timer_callbacks > 0 do
+                print("Thar be timer callbacks for", self.timer_callbacks[1].deadline:tonumber())
                 ok, ev = pcall(input.waitForEvent, 100)
+                -- We got an actual input event, process it
                 if ok then break end
-                -- NOTE: If we're able to use CLOCK_MONOTONIC_COARSE, we're only guaranteed 1ms resolution at best.
-                --       Given the default timeout of 100µs, explicitly use CLOCK_MONOTONIC (1ns resolution) here,
-                --       by using :monotonic() instead of :now().
-                local tv_now = TimeVal:monotonic()
+                -- We've drained all pending input events, check our timers
+                local tv_now = TimeVal:now()
+                print("tv_now", tv_now:tonumber())
                 if (not timeout_us or tv_now < wait_deadline) then
                     -- Check whether the earliest timer to finalize a Gesture detection is up
                     if tv_now >= self.timer_callbacks[1].deadline then
@@ -810,6 +815,7 @@ function Input:waitEvent(timeout_us)
                 end -- EOF if not exceed wait timeout
             end -- while #timer_callbacks > 0
         else
+            -- If there aren't any timers, just block for the requested amount of time.
             ok, ev = pcall(input.waitForEvent, timeout_us)
         end -- EOF if #timer_callbacks > 0
         if ok then
@@ -818,9 +824,10 @@ function Input:waitEvent(timeout_us)
 
         -- ev does contain an error message:
         local timeout_err_msg = "Waiting for input failed: timeout\n"
-        -- ev may not be equal to timeout_err_msg, but it may ends with it
-        -- ("./ffi/SDL2_0.lua:110: Waiting for input failed: timeout" on the emulator)
-        if ev and ev.sub and ev:sub(-timeout_err_msg:len()) == timeout_err_msg then
+        -- Both luaL_error & error will attempt to prepend the filename & linenumber,
+        -- so ev may not be equal to timeout_err_msg, but it will definitely end with it.
+        -- e.g., ("./ffi/SDL2_0.lua:110: Waiting for input failed: timeout" on the emulator)
+        if ev and ev.sub and ev:sub(-#timeout_err_msg) == timeout_err_msg then
             -- don't report an error on timeout
             ev = nil
             break
@@ -829,6 +836,7 @@ function Input:waitEvent(timeout_us)
             os.exit(0, true)
         end
         logger.warn("got error waiting for events:", ev)
+        -- That one should only ever be thrown by input.c, no string shenanigans necessary.
         if ev ~= "Waiting for input failed: 4\n" then
             -- we only abort if the error is not EINTR
             break
