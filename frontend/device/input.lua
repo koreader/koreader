@@ -826,6 +826,7 @@ function Input:waitEvent(now, deadline)
                         local touch_ges = self.timer_callbacks[1].callback()
                         table.remove(self.timer_callbacks, 1)
                         if touch_ges then
+                            print("Gesture detection finalized")
                             --- @fixme: Do we really need to clear all the timer callbacks
                             --          from setTimeout calls after having detected a gesture?
                             self.timer_callbacks = {}
