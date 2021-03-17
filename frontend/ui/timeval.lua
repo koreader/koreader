@@ -164,8 +164,6 @@ end
 
 --- Ditto, but w/ CLOCK_MONOTONIC_COARSE if it's available and has a 1ms resolution or better (useq CLOCK_MONOTONIC otherwise).
 function TimeVal:monotonic_coarse()
-    print("TimeVal:monotonic_coarse")
-    print(debug.traceback())
     local timespec = ffi.new("struct timespec")
     C.clock_gettime(PREFERRED_MONOTONIC_CLOCKID, timespec)
 

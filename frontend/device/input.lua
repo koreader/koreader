@@ -775,8 +775,9 @@ end
 
 
 --- Main event handling.
-function Input:waitEvent(deadline)
-    print("Input:waitEvent", deadline and deadline:tonumber() or nil)
+function Input:waitEvent(now, deadline)
+    print("Input:waitEvent", now:tonumber(), deadline and deadline:tonumber() or nil)
+    -- On the first iteration of the loop, we don't need to update now, we're following closely (a couple ms) behind UIManager.
     local ok, ev
     -- wrapper for input.waitForEvents that will retry for some cases
     while true do
@@ -796,7 +797,7 @@ function Input:waitEvent(deadline)
                 print("Effective deadline:", deadline:tonumber())
                 -- If we haven't hit that deadline yet, poll until it expires, otherwise,
                 -- have select return immediately so that we trip the full timeout.
-                local now = TimeVal:now()
+                now = now or TimeVal:now()
                 print("now:", now:tonumber())
                 if deadline > now then
                     -- Deadline hasn't been blown yet, honor it.
@@ -845,7 +846,7 @@ function Input:waitEvent(deadline)
             if deadline then
                 print("deadline:", deadline:tonumber())
                 -- Convert that absolute deadline to a µs value relative to *now*, as we may loop multiple times between UI ticks.
-                local now = TimeVal:now()
+                now = now or TimeVal:now()
                 print("now:", now:tonumber())
                 if deadline > now then
                     -- Deadline hasn't been blown yet, honor it.
@@ -881,6 +882,9 @@ function Input:waitEvent(deadline)
             -- we only abort if the error is not EINTR
             break
         end
+
+        -- We'll need to refresh now on the next iteration
+        now = nil
     end
 
     if ok and ev then
