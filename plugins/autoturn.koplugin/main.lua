@@ -10,9 +10,9 @@ local T = require("ffi/util").template
 local AutoTurn = WidgetContainer:new{
     name = "autoturn",
     is_doc_only = true,
-    autoturn_sec = G_reader_settings:readSetting("autoturn_timeout_seconds") or 0,
-    autoturn_distance = G_reader_settings:readSetting("autoturn_distance") or 1,
-    enabled = G_reader_settings:isTrue("autoturn_enabled"),
+    autoturn_sec = 0,
+    autoturn_distance = 1,
+    enabled = false,
     settings_id = 0,
     last_action_sec = os.time(),
 }
@@ -83,7 +83,11 @@ end
 
 function AutoTurn:init()
     UIManager.event_hook:registerWidget("InputEvent", self)
-    self.autoturn_sec = self.settings
+    self.autoturn_sec = G_reader_settings:readSetting("autoturn_timeout_seconds") or 0
+    self.autoturn_distance = G_reader_settings:readSetting("autoturn_distance") or 1
+    self.enabled = G_reader_settings:isTrue("autoturn_enabled")
+    self.settings_id = 0
+    self.last_action_sec = os.time()
     self.ui.menu:registerToMainMenu(self)
     self:_deprecateLastTask()
     self:_start()
