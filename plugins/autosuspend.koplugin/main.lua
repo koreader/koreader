@@ -50,9 +50,9 @@ function AutoSuspend:_schedule(shutdown_only)
         delay_shutdown = self.autoshutdown_timeout_seconds
     else
         local now_tv = UIManager:getTime()
-        delay_suspend = self.last_action_tv + TimeVal:new{ sec = self.auto_suspend_timeout_seconds } - now_ts
+        delay_suspend = self.last_action_tv + TimeVal:new{ sec = self.auto_suspend_timeout_seconds } - now_tv
         delay_suspend:tonumber()
-        delay_shutdown = self.last_action_tv + TimeVal:new{ sec = self.autoshutdown_timeout_seconds } - now_ts
+        delay_shutdown = self.last_action_tv + TimeVal:new{ sec = self.autoshutdown_timeout_seconds } - now_tv
         delay_shutdown:tonumber()
     end
 
