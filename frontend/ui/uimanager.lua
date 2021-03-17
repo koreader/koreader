@@ -1575,6 +1575,7 @@ function UIManager:handleInput()
     -- Default to INPUT_TIMEOUT (which may be nil, i.e. block until an event happens).
     local wait_us = self.INPUT_TIMEOUT
 
+    -- FIXME: Actually use nil instead of math.huge, waitEvent already assumes nil == block
     -- If there's a timed event pending, that puts an upper bound on how long to wait.
     if wait_until then
         local wait_tv = wait_until - now

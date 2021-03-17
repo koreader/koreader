@@ -318,6 +318,8 @@ function GestureDetector:getInterval(type)
 end
 
 function GestureDetector:clearStates()
+    -- FIXME: Actually clear *all* the slots (pairs on self.states).
+    --        Also, do that and a timer_deadline clear on Suspend (which means the poll timeout needs to check that there's still a timer on return)
     self:clearState(0)
     self:clearState(1)
 end
