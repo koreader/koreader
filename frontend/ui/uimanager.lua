@@ -29,6 +29,7 @@ local UIManager = {
     event_handlers = nil,
 
     _running = true,
+    _now = 0,
     _window_stack = {},
     _task_queue = {},
     _task_queue_dirty = false,
@@ -1147,7 +1148,7 @@ function UIManager:broadcastEvent(event)
 end
 
 function UIManager:_checkTasks()
-    local now = TimeVal:now()
+    self._now = TimeVal:now()
     local wait_until = nil
 
     -- task.action may schedule other events
@@ -1160,7 +1161,7 @@ function UIManager:_checkTasks()
         end
         local task = self._task_queue[1]
         local task_tv = task.time or TimeVal:new{}
-        if task_tv <= now then
+        if task_tv <= self._now then
             -- remove from table
             table.remove(self._task_queue, 1)
             -- task is pending to be executed right now. do it.
@@ -1175,7 +1176,14 @@ function UIManager:_checkTasks()
         end
     end
 
-    return wait_until, now
+    return wait_until, self._now
+end
+
+--[[--
+Returns a TimeVal object corresponding to the last UI tick.
+]]
+function UIManager:getTime()
+    return self._now
 end
 
 -- precedence of refresh modes:
