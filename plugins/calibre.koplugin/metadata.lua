@@ -257,12 +257,12 @@ function CalibreMetadata:init(dir, is_search)
     local msg
     if is_search then
         msg = string.format("(search) in %f milliseconds: %d books",
-            (TimeVal:now() - start):tousecs() / 1000, #self.books)
+            (TimeVal:now() - start):tomsecs(), #self.books)
     else
         local deleted_count = self:prune()
         self:cleanUnused()
         msg = string.format("in %f milliseconds: %d books. %d pruned",
-            (TimeVal:now() - start):tousecs() / 1000, #self.books, deleted_count)
+            (TimeVal:now() - start):tomsecs(), #self.books, deleted_count)
     end
     logger.info(string.format("calibre info loaded from disk %s", msg))
     return true
