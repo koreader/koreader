@@ -785,19 +785,41 @@ function Input:waitEvent(timeout_us)
             }
             print("Input:waitEvent", timeout_us)
             print("wait_deadline", wait_deadline:tonumber())
-            -- If we have timers set, we need to check 'em in-between polling for input,
-            -- so we set the wait to a fairly low value, at 100µs
+            -- If we have timers set, we need to honor them once we're done draining the input events.
             while #self.timer_callbacks > 0 do
                 print("Thar be timer callbacks for", self.timer_callbacks[1].deadline:tonumber())
-                ok, ev = pcall(input.waitForEvent, 100)
+                local now_tv = TimeVal:now()
+                print("now_tv pre-select", now_tv:tonumber())
+                -- Choose the earliest deadline between the earliest timer deadline, and our full timeout deadline.
+                -- FIXME: Handle timeout_us being nil, which makes wait_dealine < (or at least <=) now...
+                local deadline_tv
+                if self.timer_callbacks[1].deadline < wait_deadline then
+                    deadline_tv = self.timer_callbacks[1].deadline
+                else
+                    deadline_tv = wait_deadline
+                end
+                print("deadline_tv", deadline_tv:tonumber())
+                -- If we haven't hit that deadline yet, poll until it expires, otherwise,
+                -- just poll for a very short time so that we trip the full timeout.
+                local timeout_tv
+                if now_tv < deadline_tv then
+                    timeout_tv = deadline_tv - now_tv
+                else
+                    -- FIXME: Possibly even go straight to timeout by setting it to zero...
+                    timeout_tv = TimeVal:new { usec = 100 }
+                end
+                print("timeout_tv", timeout_tv:tonumber())
+                -- SLeep for min (deadline - now, timeout_us)!
+                ok, ev = pcall(input.waitForEvent, timeout_tv:tousecs())
                 -- We got an actual input event, process it
                 if ok then break end
                 -- We've drained all pending input events, causing waitForEvent to time out, check our timers
-                local tv_now = TimeVal:now()
-                print("tv_now", tv_now:tonumber())
-                if (not timeout_us or tv_now < wait_deadline) then
+                now_tv = TimeVal:now()
+                print("now_tv post-select", now_tv:tonumber())
+                -- FIXME: Given the computations above, we can probably simplify those tests...
+                if (not timeout_us or now_tv < wait_deadline) then
                     -- Check whether the earliest timer to finalize a Gesture detection is up
-                    if tv_now >= self.timer_callbacks[1].deadline then
+                    if now_tv >= self.timer_callbacks[1].deadline then
                         local touch_ges = self.timer_callbacks[1].callback()
                         table.remove(self.timer_callbacks, 1)
                         if touch_ges then
