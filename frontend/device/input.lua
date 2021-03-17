@@ -297,7 +297,7 @@ function Input:setTimeout(cb, tv_out)
         deadline = tv_out,
     }
     table.insert(self.timer_callbacks, item)
-    table.sort(self.timer_callbacks, function(v1,v2)
+    table.sort(self.timer_callbacks, function(v1, v2)
         return v1.deadline < v2.deadline
     end)
 end
@@ -791,11 +791,9 @@ function Input:waitEvent(timeout_us)
                 --       by using :monotonic() instead of :now().
                 local tv_now = TimeVal:monotonic()
                 if (not timeout_us or tv_now < wait_deadline) then
-                    -- check whether timer is up
+                    -- Check whether the earliest timer to finalize a Gesture detection is up
                     if tv_now >= self.timer_callbacks[1].deadline then
-                        print("Input:waitEvent", timeout_us, "now:", tv_now.sec, tv_now.usec, "deadline:", self.timer_callbacks[1].deadline.sec, self.timer_callbacks[1].deadline.usec)
                         local touch_ges = self.timer_callbacks[1].callback()
-                        print("cb result:", touch_ges)
                         table.remove(self.timer_callbacks, 1)
                         if touch_ges then
                             --- @fixme: Do we really need to clear all the timer callbacks
