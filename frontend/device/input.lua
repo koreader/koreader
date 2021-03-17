@@ -812,31 +812,30 @@ function Input:waitEvent(now, deadline)
                 print("poll_timeout_us", poll_timeout_us)
 
                 ok, ev = input.waitForEvent(poll_timeout_us)
-                -- We got an actual input event, process it
+                -- We got an actual input event, go and process it
                 if ok then break end
 
-                -- Failed w/ something other than ETIMEDOUT, break out and handle the error
-                if ok == nil or (ok == false and ev ~= 110) then break end
-
-                -- We've drained all pending input events, causing waitForEvent to time out, check our timers
-                print("ETIMEDOUT")
-                -- Check whether the earliest timer to finalize a Gesture detection is up.
-                -- If our actual select deadline was the timer itself, we're guaranteed to have reached it.
-                -- But if it was a task deadline instead, we to have to check it against the current time.
-                if deadline_is_timer or TimeVal:now() >= self.timer_callbacks[1].deadline then
-                    print("Consuming timer callback")
-                    local touch_ges = self.timer_callbacks[1].callback()
-                    table.remove(self.timer_callbacks, 1)
-                    if touch_ges then
-                        --- @fixme: Do we really need to clear all the timer callbacks
-                        --          from setTimeout calls after having detected a gesture?
-                        self.timer_callbacks = {}
-                        self:gestureAdjustHook(touch_ges)
-                        return Event:new("Gesture",
-                            self.gesture_detector:adjustGesCoordinate(touch_ges)
-                        )
-                    end -- EOF if touch_ges
-                end -- EOF if deadline reached
+                -- If we've drained all pending input events, causing waitForEvent to time out, check our timers
+                if ok == false and ev == 110 then
+                    print("ETIMEDOUT")
+                    -- Check whether the earliest timer to finalize a Gesture detection is up.
+                    -- If our actual select deadline was the timer itself, we're guaranteed to have reached it.
+                    -- But if it was a task deadline instead, we to have to check it against the current time.
+                    if deadline_is_timer or TimeVal:now() >= self.timer_callbacks[1].deadline then
+                        print("Consuming timer callback")
+                        local touch_ges = self.timer_callbacks[1].callback()
+                        table.remove(self.timer_callbacks, 1)
+                        if touch_ges then
+                            --- @fixme: Do we really need to clear all the timer callbacks
+                            --          from setTimeout calls after having detected a gesture?
+                            self.timer_callbacks = {}
+                            self:gestureAdjustHook(touch_ges)
+                            return Event:new("Gesture",
+                                self.gesture_detector:adjustGesCoordinate(touch_ges)
+                            )
+                        end -- if touch_ges
+                    end -- if deadline reached
+                end -- if poll returned ETIMEDOUT
             end -- while #timer_callbacks > 0
         else
             -- If there aren't any timers, just block for the requested amount of time.
@@ -858,27 +857,29 @@ function Input:waitEvent(now, deadline)
             end
 
             ok, ev = input.waitForEvent(poll_timeout_us)
-        end -- EOF if #timer_callbacks > 0
+        end -- if #timer_callbacks > 0
 
         -- Handle errors
         if ok then
-            -- We're good, keep on trucking.
+            -- We're good, process the event and go back to UIManager.
             break
         -- FIXME: See if the weirdness from https://github.com/koreader/koreader/commit/b71ac38d3b87eb7ea1d9db22d6110144e70135ce is still necessary to handle ^C...
         elseif ok == false then
             if ev == 110 then
-                -- Don't report an error on timeout
+                -- Don't report an error on timeout, and go back to UIManager
                 ev = nil
                 break
             elseif ev == 4 then
-                -- Don't abort on EINTR, but report it w/ an InputError event
-                break
+                -- Retry on EINTR
             else
-                -- Warn & report
+                -- Warn, report, and go back to UIManager
                 logger.warn("Polling for input events returned an error:", ev)
+                break
             end
         elseif ok == nil then
+            -- Ditto
             logger.error("Polling for input events failed catastrophically")
+            break
             -- FIXME: Bail? (e.g., error())
         end
 
