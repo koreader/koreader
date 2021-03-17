@@ -13,6 +13,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local RectSpan = require("ui/widget/rectspan")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local Input = Device.input
@@ -73,7 +74,7 @@ function Notification:init()
     local notif_height = self.frame:getSize().h
 
     self:_cleanShownStack()
-    table.insert(Notification._nums_shown, os.time())
+    table.insert(Notification._nums_shown, UIManager:getTime())
     self.num = #Notification._nums_shown
 
     self[1] = VerticalGroup:new{
@@ -101,9 +102,9 @@ function Notification:_cleanShownStack(num)
     -- to follow what is happening).
     -- As a sanity check, we also forget those shown for
     -- more than 30s in case no close event was received.
-    local expire_ts = os.time() - 30
+    local expire_tv = UIManager:getTime() - TimeVal:new{ sec = 30 }
     for i=#Notification._nums_shown, 1, -1 do
-        if Notification._nums_shown[i] and Notification._nums_shown[i] > expire_ts then
+        if Notification._nums_shown[i] and Notification._nums_shown[i] > expire_tv then
             break -- still shown (or not yet expired)
         end
         table.remove(Notification._nums_shown, i)
