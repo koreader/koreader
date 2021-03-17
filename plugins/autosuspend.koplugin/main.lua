@@ -92,7 +92,7 @@ end
 -- Variant that only re-engages the shutdown timer for onUnexpectedWakeupLimit
 function AutoSuspend:_restart()
     if self:_enabledShutdown() then
-        local now_tv = TimeVal:now()
+        local now_tv = UIManager:getTime()
         logger.dbg("AutoSuspend: restart at", now_tv:tonumber())
         self.last_action_tv = now_tv
         self:_schedule(true)
