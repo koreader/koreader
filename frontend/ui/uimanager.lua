@@ -1669,6 +1669,9 @@ end
 function UIManager:_beforeSuspend()
     self:flushSettings()
     self:broadcastEvent(Event:new("Suspend"))
+
+    -- Reset gesture detection state to a blank slate (anything power-manegement related emits KEY events, which don't need gesture detection).
+    Input:resetState()
 end
 
 -- The common operations that should be performed after resuming the device.
