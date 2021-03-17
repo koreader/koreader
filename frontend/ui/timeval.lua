@@ -175,22 +175,32 @@ end
 -- (e.g., subsequent calls *may* return identical values, but it will *never* go backward).
 TimeVal.now = TimeVal.monotonic_coarse
 
--- Converts a TimeVal object to a Lua (float) number (sec.usecs) (accurate to the ms, rounded to 4 decimal places)
+--- Converts a TimeVal object to a Lua (float) number (sec.usecs) (accurate to the ms, rounded to 4 decimal places)
 function TimeVal:tonumber()
     -- Round to 4 decimal places
     return math.floor((self.sec + self.usec / 1000000) * 10000) / 10000
 end
 
--- Converts a TimeVal object to a Lua (int) number (usecs)
+--- Converts a TimeVal object to a Lua (int) number (usecs)
 function TimeVal:tousecs()
     return math.floor(self.sec * 1000000 + self.usec + 0.5)
 end
 
--- Converts a Lua (float) number (sec.usecs) to a TimeVal object
+--- Converts a Lua (float) number (sec.usecs) to a TimeVal object
 function TimeVal:fromnumber(seconds)
     local sec = math.floor(seconds)
     local usec = math.floor((seconds - sec) * 1000000 + 0.5)
     return TimeVal:new{sec = sec, usec = usec}
+end
+
+--- Checks is a TimeVal object is positive
+function TimeVal:isPositive()
+    return self.sec >= 0
+end
+
+--- Checks is a TimeVal object is zero
+function TimeVal:isZero()
+    return self.sec == 0 and self.usec == 0
 end
 
 return TimeVal
