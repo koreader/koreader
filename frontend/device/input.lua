@@ -789,6 +789,9 @@ end
 
 
 --- Main event handling.
+-- `now` corresponds to UIManager:getTime (e.g., a TimeVal), and it's just been updated by UIManager
+-- `deadline` (a TimeVal) is the absolute deadline imposed by UIManager:handleInput() (a.k.a., our main event loop ^^):
+-- it's either nil (meaning block forever waiting for input), or the earliest UIManager deadline (in most cases, that's the next scheduled task).
 function Input:waitEvent(now, deadline)
     print("Input:waitEvent", now:tonumber(), deadline and deadline:tonumber() or nil)
     -- On the first iteration of the loop, we don't need to update now, we're following closely (a couple ms) behind UIManager.
