@@ -8,6 +8,7 @@ of storing it.
 @module koplugin.calibre.metadata
 --]]--
 
+local TimeVal = require("ui/timeval")
 local lfs = require("libs/libkoreader-lfs")
 local rapidjson = require("rapidjson")
 local logger = require("logger")
@@ -232,14 +233,13 @@ end
 -- in a given path. It will find calibre files if they're on disk and
 -- try to load info from them.
 
--- NOTE: you should care about the books table, because it could be huge.
+-- NOTE: Take special notice of the books table, because it could be huge.
 -- If you're not working with the metadata directly (ie: in wireless connections)
 -- you should copy relevant data to another table and free this one to keep things tidy.
 
 function CalibreMetadata:init(dir, is_search)
     if not dir then return end
-    local socket = require("socket")
-    local start = socket.gettime()
+    local start = TimeVal:now()
     self.path = dir
     local ok_meta, ok_drive, file_meta, file_drive = findCalibreFiles(dir)
     self.driveinfo = file_drive
@@ -257,12 +257,12 @@ function CalibreMetadata:init(dir, is_search)
     local msg
     if is_search then
         msg = string.format("(search) in %f milliseconds: %d books",
-            (socket.gettime() - start) * 1000, #self.books)
+            (TimeVal:now() - start):tousecs() / 1000, #self.books)
     else
         local deleted_count = self:prune()
         self:cleanUnused()
         msg = string.format("in %f milliseconds: %d books. %d pruned",
-            (socket.gettime() - start) * 1000, #self.books, deleted_count)
+            (TimeVal:now() - start):tousecs() / 1000, #self.books, deleted_count)
     end
     logger.info(string.format("calibre info loaded from disk %s", msg))
     return true
