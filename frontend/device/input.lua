@@ -778,7 +778,7 @@ end
 function Input:waitEvent(now, deadline)
     print("Input:waitEvent", now:tonumber(), deadline and deadline:tonumber() or nil)
     -- On the first iteration of the loop, we don't need to update now, we're following closely (a couple ms) behind UIManager.
-    local ok, ev
+    local ok, ret, ev
     -- wrapper for input.waitForEvents that will retry for some cases
     while true do
         if #self.timer_callbacks > 0 then
@@ -786,12 +786,15 @@ function Input:waitEvent(now, deadline)
             while #self.timer_callbacks > 0 do
                 print("Next timer deadline:", self.timer_callbacks[1].deadline:tonumber())
                 -- Choose the earliest deadline between the next timer deadline, and our full timeout deadline.
+                local deadline_is_timer = false
                 if not deadline then
                     -- If we don't actually have a full timeout deadline, just honor the timer's.
                     deadline = self.timer_callbacks[1].deadline
+                    deadline_is_timer = true
                 else
                     if self.timer_callbacks[1].deadline < deadline then
                         deadline = self.timer_callbacks[1].deadline
+                        deadline_is_timer = true
                     end
                 end
                 print("Effective deadline:", deadline:tonumber())
@@ -808,35 +811,32 @@ function Input:waitEvent(now, deadline)
                 end
                 print("poll_timeout_us", poll_timeout_us)
 
-                ok, ev = pcall(input.waitForEvent, poll_timeout_us)
+                ok, ret, ev = pcall(input.waitForEvent, poll_timeout_us)
                 -- We got an actual input event, process it
-                if ok then break end
+                if ok and ret then break end
+
+                -- Failed w/ something other than ETIMEDOUT, break out and handle the error
+                if not ret and (not ev or ev ~= 110) then break end
 
                 -- We've drained all pending input events, causing waitForEvent to time out, check our timers
-                now = TimeVal:now()
-                print("now post-select", now:tonumber())
-                -- FIXME: Given the computations above, we can probably simplify those tests, as we should have a guarantee than now >= deadline...
-                --        But only if select actually timed out, not if it aborted early because of an actual failure...
-                --        Which means I need to interpret the "error" type early, ideally, by just catching errno, because catching a string programmaticaly is kind of ridiculous...
-                if now >= deadline then
-                    -- Check whether the earliest timer to finalize a Gesture detection is up
-                    if now >= self.timer_callbacks[1].deadline then
-                        print("Consuming timer callback")
-                        local touch_ges = self.timer_callbacks[1].callback()
-                        table.remove(self.timer_callbacks, 1)
-                        if touch_ges then
-                            --- @fixme: Do we really need to clear all the timer callbacks
-                            --          from setTimeout calls after having detected a gesture?
-                            self.timer_callbacks = {}
-                            self:gestureAdjustHook(touch_ges)
-                            return Event:new("Gesture",
-                                self.gesture_detector:adjustGesCoordinate(touch_ges)
-                            )
-                        end -- EOF if touch_ges
-                    end -- EOF if deadline reached
-                else
-                    break
-                end -- EOF if not exceed wait timeout
+                print("ETIMEDOUT")
+                -- Check whether the earliest timer to finalize a Gesture detection is up.
+                -- If our actual select deadline was the timer itself, we're guaranteed to have reached it.
+                -- But if it was a task deadline instead, we to have to check it against the current time.
+                if deadline_is_timer or TimeVal:now() >= self.timer_callbacks[1].deadline then
+                    print("Consuming timer callback")
+                    local touch_ges = self.timer_callbacks[1].callback()
+                    table.remove(self.timer_callbacks, 1)
+                    if touch_ges then
+                        --- @fixme: Do we really need to clear all the timer callbacks
+                        --          from setTimeout calls after having detected a gesture?
+                        self.timer_callbacks = {}
+                        self:gestureAdjustHook(touch_ges)
+                        return Event:new("Gesture",
+                            self.gesture_detector:adjustGesCoordinate(touch_ges)
+                        )
+                    end -- EOF if touch_ges
+                end -- EOF if deadline reached
             end -- while #timer_callbacks > 0
         else
             -- If there aren't any timers, just block for the requested amount of time.
@@ -857,38 +857,34 @@ function Input:waitEvent(now, deadline)
                 end
             end
 
-            ok, ev = pcall(input.waitForEvent, poll_timeout_us)
+            ok, ret, ev = pcall(input.waitForEvent, poll_timeout_us)
         end -- EOF if #timer_callbacks > 0
-        if ok then
+        if ok and ret then
             break
         end
 
-        -- ev does contain an error message:
-        local timeout_err_msg = "Waiting for input failed: timeout\n"
-        -- Both luaL_error & error will attempt to prepend the filename & linenumber,
-        -- so ev may not be equal to timeout_err_msg, but it will definitely end with it.
-        -- e.g., ("./ffi/SDL2_0.lua:110: Waiting for input failed: timeout" on the emulator)
-        if ev and ev.sub and ev:sub(-#timeout_err_msg) == timeout_err_msg then
-            -- don't report an error on timeout
-            ev = nil
-            break
-        elseif ev == "application forced to quit" then
-            --- @todo return an event that can be handled
-            os.exit(0, true)
-        end
-        logger.warn("got error waiting for events:", ev)
-        -- That one should only ever be thrown by input.c, no string shenanigans necessary.
-        if ev ~= "Waiting for input failed: 4\n" then
-            -- we only abort if the error is not EINTR
-            break
+        -- Handle errors
+        -- FIXME: See if the weirdness from https://github.com/koreader/koreader/commit/b71ac38d3b87eb7ea1d9db22d6110144e70135ce is still necessary to handle ^C...
+        if not ret and ev then
+            if ev == 110 then
+                -- don't report an error on timeout
+                ev = nil
+                break
+            elseif ev == 4 then
+                -- don't abort on EINTR, but report it w/ an InputError event
+                break
+            else
+                -- Warn & report
+                logger.warn("Polling for input events returned an error:", ev)
+            end
         end
 
         -- We'll need to refresh now on the next iteration
         now = nil
     end
 
-    if ok and ev then
-        if DEBUG.is_on and ev then
+    if ok and ret and ev then
+        if DEBUG.is_on then
             DEBUG:logEv(ev)
             logger.dbg(string.format(
                 "%s event => type: %d, code: %d(%s), value: %s, time: %d.%d",
@@ -911,8 +907,11 @@ function Input:waitEvent(now, deadline)
             -- some other kind of event that we do not know yet
             return Event:new("GenericInput", ev)
         end
-    elseif not ok and ev then
+    elseif not ok and not ret and ev then
         return Event:new("InputError", ev)
+    else
+        -- No ev? Hu oh...
+        return Event:new("InputError", "Read error?")
     end
 end
 
