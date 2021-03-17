@@ -804,7 +804,7 @@ function Input:waitEvent(timeout_us)
                 end
                 print("deadline_tv", deadline_tv:tonumber())
                 -- If we haven't hit that deadline yet, poll until it expires, otherwise,
-                -- just poll for a very short time so that we trip the full timeout.
+                -- have select return immediately so that we trip the full timeout.
                 local timeout_tv
                 if now_tv < deadline_tv then
                     timeout_tv = deadline_tv - now_tv
