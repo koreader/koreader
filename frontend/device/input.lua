@@ -882,7 +882,7 @@ function Input:waitEvent(now, deadline)
             -- FIXME: Bail? (e.g., error())
         end
 
-        -- We'll need to refresh now on the next iteration
+        -- We'll need to refresh now on the next iteration, if there is one.
         now = nil
     end
 
@@ -913,8 +913,8 @@ function Input:waitEvent(now, deadline)
     elseif ok == false then
         return Event:new("InputError", ev)
     else
-        -- No ev? Hu oh...
-        return Event:new("InputError", "Read error?")
+        -- No ok and no ev? Hu oh...
+        return Event:new("InputError", "Catastrophic")
     end
 end
 
