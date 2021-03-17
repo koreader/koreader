@@ -820,7 +820,7 @@ function Input:waitEvent(now, deadline)
                 --        Which means I need to interpret the "error" type early, ideally, by just catching errno, because catching a string programmaticaly is kind of ridiculous...
                 if now >= deadline then
                     -- Check whether the earliest timer to finalize a Gesture detection is up
-                    if self.timer_callbacks[1] and now >= self.timer_callbacks[1].deadline then
+                    if now >= self.timer_callbacks[1].deadline then
                         print("Consuming timer callback")
                         local touch_ges = self.timer_callbacks[1].callback()
                         table.remove(self.timer_callbacks, 1)
