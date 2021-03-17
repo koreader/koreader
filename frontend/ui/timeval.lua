@@ -181,9 +181,15 @@ function TimeVal:tonumber()
     return math.floor((self.sec + self.usec / 1000000) * 10000) / 10000
 end
 
---- Converts a TimeVal object to a Lua (int) number (usecs)
+--- Converts a TimeVal object to a Lua (int) number (resolution: 1µs)
 function TimeVal:tousecs()
     return math.floor(self.sec * 1000000 + self.usec + 0.5)
+end
+
+--- Converts a TimeVal object to a Lua (int) number (resolution: 1ms).
+--- (Mainly useful when computing a time lapse for benchmarking purposes).
+function TimeVal:tomsecs()
+    return self:tousecs() / 1000
 end
 
 --- Converts a Lua (float) number (sec.usecs) to a TimeVal object

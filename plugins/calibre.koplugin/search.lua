@@ -333,7 +333,7 @@ function CalibreSearch:find(option)
         self:browse(option,1)
     end
     logger.info(string.format("search done in %f milliseconds (%s, %s, %s, %s, %s)",
-        (TimeVal:now() - start):tousecs() / 1000,
+        (TimeVal:now() - start):tomsecs(),
         option == "find" and "books" or option,
         "case sensitive: " .. tostring(not self.case_insensitive),
         "title: " .. tostring(self.find_by_title),
@@ -581,7 +581,7 @@ function CalibreSearch:getMetadata()
                 end
             end
             if is_newer then
-                logger.info(string.format(template, #cache, "cache", (TimeVal:now() - start):tousecs() / 1000))
+                logger.info(string.format(template, #cache, "cache", (TimeVal:now() - start):tomsecs()))
                 return cache
             else
                 logger.warn("cache is older than metadata, ignoring it")
@@ -606,7 +606,7 @@ function CalibreSearch:getMetadata()
         end
         self.cache_books:save(serialized_table)
     end
-    logger.info(string.format(template, #books, "calibre", (TimeVal:now() - start):tousecs() / 1000))
+    logger.info(string.format(template, #books, "calibre", (TimeVal:now() - start):tomsecs()))
     return books
 end
 
