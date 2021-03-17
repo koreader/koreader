@@ -1572,21 +1572,25 @@ function UIManager:handleInput()
     self:processZMQs()
 
     -- Figure out how long to wait.
+    local deadline
     -- Default to INPUT_TIMEOUT (which may be nil, i.e. block until an event happens).
     local wait_us = self.INPUT_TIMEOUT
-
-    -- FIXME: Actually use nil instead of math.huge, waitEvent already assumes nil == block
-    -- If there's a timed event pending, that puts an upper bound on how long to wait.
-    if wait_until then
-        local wait_tv = wait_until - now
-        wait_us = math.min(
-            wait_us or math.huge,
-            wait_tv:tousecs())
-    end
 
     -- If we have any ZMQs registered, ZMQ_TIMEOUT is another upper bound.
     if #self._zeromqs > 0 then
         wait_us = math.min(wait_us or math.huge, self.ZMQ_TIMEOUT)
+    end
+
+    -- We pass that on as an absolute deadline, not a relative wait time.
+    if wait_us then
+        deadline = now + TimeVal:new{ usec = wait_us }
+    end
+
+    -- If there's a timed event pending, that puts an upper bound on how long to wait.
+    if wait_until and (not deadline or deadline < wait_until) then
+        --             ^ We don't have a TIMEOUT induced deadline
+        --                             ^ We have a TIMEOUT induced deadline that expires *before* our first scheduled task.
+        deadline = wait_until
     end
 
     -- If allowed, entering standby (from which we can wake by input) must trigger in response to event
@@ -1595,7 +1599,7 @@ function UIManager:handleInput()
     self:_standbyTransition()
 
     -- wait for next event
-    local input_event = Input:waitEvent(wait_us)
+    local input_event = Input:waitEvent(deadline)
 
     -- delegate input_event to handler
     if input_event then
