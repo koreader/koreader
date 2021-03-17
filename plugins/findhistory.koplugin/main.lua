@@ -32,7 +32,7 @@ local function doBuildHistory()
     for line in file:lines() do
         local f, t = line:match("(.+) (%d+)")
         table.insert(records, {
-            time = t,
+            time = tonumber(t),
             file = getFilePathFromMetadata(f),
         })
     end
