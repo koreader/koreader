@@ -19,7 +19,7 @@ local function showConfirmBox()
         cancel_text = _("Close"),
         cancel_callback = function()
             disable()
-            PluginShare.keepalive =false
+            PluginShare.keepalive = false
         end,
         ok_text = _("Stay alive"),
         ok_callback = function()
