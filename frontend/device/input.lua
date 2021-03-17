@@ -298,6 +298,8 @@ function Input:setTimeout(cb, tv_out)
     }
     print("Input:setTimeout:", tv_out:tonumber())
     table.insert(self.timer_callbacks, item)
+
+    -- NOTE: The timescale is monotonic, that means stuff should already only be inserted in ascending order ;).
     table.sort(self.timer_callbacks, function(v1, v2)
         return v1.deadline < v2.deadline
     end)
