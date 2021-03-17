@@ -276,6 +276,7 @@ function GestureDetector:switchState(state_new, tev, param)
 end
 
 function GestureDetector:clearState(slot)
+    print("GestureDetector:clearState", slot)
     self.states[slot] = self.initialState
     self.hold_timer_id[slot] = nil
     self.detectings[slot] = false
@@ -495,8 +496,10 @@ function GestureDetector:handleNonTap(tev)
         -- Be sure the following setTimeout only react to this tapState
         local hold_timer_id = tev.timev
         self.hold_timer_id[slot] = hold_timer_id
+        print("GestureDetector:handleNonTap: Updating hold_timer_id for slot", slot, "with tv", tev.timev:tonumber())
         self.input:setTimeout(function()
-            if self.states[slot] == self.tapState and self.hold_timer_id[slot] == hold_timer_id then
+            print("GestureDetector: Hold finalization for slot", slot, "and tv", hold_timer_id:tonumber(), "compared to current tv", self.hold_timer_id[slot] and self.hold_timer_id[slot]:tonumber() or nil)
+            if self.hold_timer_id[slot] and self.states[slot] == self.tapState and self.hold_timer_id[slot] == hold_timer_id then
                 -- timer set in tapState, so we switch to hold
                 logger.dbg("hold gesture detected in slot", slot)
                 return self:switchState("holdState", tev, true)
