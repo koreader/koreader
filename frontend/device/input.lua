@@ -891,6 +891,7 @@ function Input:waitEvent(now, deadline)
                 break
             elseif ev == 4 then
                 -- Retry on EINTR
+                do end -- NOP
             elseif ev == 192 then
                 -- Custom code for Android's APP_CMD_DESTROY => exit sanely.
                 local UIManager = require("ui/uimanager")
