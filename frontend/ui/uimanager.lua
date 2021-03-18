@@ -1772,5 +1772,11 @@ function UIManager:restartKOReader()
     self._exit_code = 85
 end
 
+--- Sanely abort KOReader (e.g., exit sanely, but with a non-zero return code).
+function UIManager:abort()
+    self:quit()
+    self._exit_code = 1
+end
+
 UIManager:init()
 return UIManager
