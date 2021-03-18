@@ -835,8 +835,8 @@ function Input:waitEvent(now, deadline)
                 if ok then break end
 
                 -- If we've drained all pending input events, causing waitForEvent to time out, check our timers
-                if ok == false and ev == 110 then
-                    print("ETIMEDOUT")
+                if ok == false and ev == 62 then
+                    print("ETIME")
                     -- Check whether the earliest timer to finalize a Gesture detection is up.
                     -- If our actual select deadline was the timer itself, we're guaranteed to have reached it.
                     -- But if it was a task deadline instead, we to have to check it against the current time.
@@ -855,7 +855,7 @@ function Input:waitEvent(now, deadline)
                             )
                         end -- if touch_ges
                     end -- if deadline reached
-                end -- if poll returned ETIMEDOUT
+                end -- if poll returned ETIME
             end -- while #timer_callbacks > 0
         else
             -- If there aren't any timers, just block for the requested amount of time.
@@ -885,8 +885,8 @@ function Input:waitEvent(now, deadline)
             -- We're good, process the event and go back to UIManager.
             break
         elseif ok == false then
-            if ev == 110 then
-                -- Don't report an error on ETIMEDOUT, and go back to UIManager
+            if ev == 62 then
+                -- Don't report an error on ETIME, and go back to UIManager
                 ev = nil
                 break
             elseif ev == 4 then
@@ -897,10 +897,11 @@ function Input:waitEvent(now, deadline)
                 break
             end
         elseif ok == nil then
-            -- Ditto
+            -- Something went horribly wrong, abort.
             logger.error("Polling for input events failed catastrophically")
+            local UIManager = require("ui/uimanager")
+            UIManager:abort()
             break
-            -- FIXME: Bail? (e.g., error())
         end
 
         -- We'll need to refresh now on the next iteration, if there is one.
