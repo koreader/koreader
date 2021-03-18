@@ -820,16 +820,17 @@ function Input:waitEvent(now, deadline)
                 -- have select return immediately so that we trip the full timeout.
                 now = now or TimeVal:now()
                 print("now:", now:tonumber())
+                local poll_timeout
                 if deadline > now then
                     -- Deadline hasn't been blown yet, honor it.
-                    poll_timeout_us = (deadline - now):tousecs()
+                    poll_timeout = deadline - now
                 else
                     -- We've already blown the deadline: make select return immediately (most likely straight to timeout)
-                    poll_timeout_us = 0
+                    poll_timeout = TimeVal:new{ sec = 0 }
                 end
-                print("poll_timeout_us", poll_timeout_us)
+                print("poll_timeout:", poll_timeout:tonumber())
 
-                ok, ev = input.waitForEvent(poll_timeout_us)
+                ok, ev = input.waitForEvent(poll_timeout.sec, poll_timeout.usec)
                 -- We got an actual input event, go and process it
                 if ok then break end
 
@@ -859,7 +860,7 @@ function Input:waitEvent(now, deadline)
         else
             -- If there aren't any timers, just block for the requested amount of time.
             -- poll_timeout_us may be nil, in which case waitForEvent blocks indefinitely (i.e., until the next input event ;)).
-            local poll_timeout_us
+            local poll_timeout
             -- If UIManager put us on deadline, enforce it, otherwise, block forever.
             if deadline then
                 print("deadline:", deadline:tonumber())
@@ -868,14 +869,15 @@ function Input:waitEvent(now, deadline)
                 print("now:", now:tonumber())
                 if deadline > now then
                     -- Deadline hasn't been blown yet, honor it.
-                    poll_timeout_us = (deadline - now):tousecs()
+                    poll_timeout = deadline - now
                 else
                     -- Deadline has been blown, return immediately.
-                    poll_timeout_us = 0
+                    poll_timeout = TimeVal:new{ sec = 0 }
                 end
+                print("poll_timeout:", poll_timeout:tonumber())
             end
 
-            ok, ev = input.waitForEvent(poll_timeout_us)
+            ok, ev = input.waitForEvent(poll_timeout and poll_timeout.sec, poll_timeout and poll_timeout.usec)
         end -- if #timer_callbacks > 0
 
         -- Handle errors
