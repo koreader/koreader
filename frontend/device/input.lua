@@ -891,11 +891,6 @@ function Input:waitEvent(now, deadline)
                 break
             elseif ev == 4 then  -- luacheck: ignore
                 -- Retry on EINTR
-            elseif ev == 192 then
-                -- Custom code for Android's APP_CMD_DESTROY => exit sanely.
-                local UIManager = require("ui/uimanager")
-                UIManager:quit()
-                break
             else
                 -- Warn, report, and go back to UIManager
                 logger.warn("Polling for input events returned an error:", ev)
