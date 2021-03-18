@@ -903,7 +903,7 @@ function Input:waitEvent(now, deadline)
             end
         elseif ok == nil then
             -- Something went horribly wrong, abort.
-            logger.error("Polling for input events failed catastrophically")
+            logger.err("Polling for input events failed catastrophically")
             local UIManager = require("ui/uimanager")
             UIManager:abort()
             break
