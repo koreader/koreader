@@ -884,7 +884,6 @@ function Input:waitEvent(now, deadline)
         if ok then
             -- We're good, process the event and go back to UIManager.
             break
-        -- FIXME: See if the weirdness from https://github.com/koreader/koreader/commit/b71ac38d3b87eb7ea1d9db22d6110144e70135ce is still necessary to handle ^C...
         elseif ok == false then
             if ev == 110 then
                 -- Don't report an error on ETIMEDOUT, and go back to UIManager
