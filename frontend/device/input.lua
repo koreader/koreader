@@ -889,9 +889,8 @@ function Input:waitEvent(now, deadline)
                 -- Don't report an error on ETIME, and go back to UIManager
                 ev = nil
                 break
-            elseif ev == 4 then
+            elseif ev == 4 then  -- luacheck: ignore
                 -- Retry on EINTR
-                do end -- NOP
             elseif ev == 192 then
                 -- Custom code for Android's APP_CMD_DESTROY => exit sanely.
                 local UIManager = require("ui/uimanager")
