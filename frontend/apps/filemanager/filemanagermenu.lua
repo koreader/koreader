@@ -525,6 +525,7 @@ To:
     --- @note: Currently, only Kobo implements this quirk
     if Device:hasEinkScreen() and Device:isKobo() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
+            -- @translators Highly technical (ioctl is a Linux API call, the uppercase stuff is a constant). What's translatable is essentially only the action ("bypass") and the article.
             text = _("Bypass the MXCFB_WAIT_FOR_* ioctls"),
             checked_func = function()
                 local mxcfb_bypass_wait_for
