@@ -522,6 +522,22 @@ To:
             end,
         })
     end
+    --- @note: Currently, only Kobo implements this quirk
+    if Device:hasEinkScreen() and Device:isKobo() then
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            text = _("Bypass the MXCFB_WAIT_FOR ioctl"),
+            checked_func = function()
+                return (G_reader_settings:has("mxcfb_bypass_wait_for") and G_reader_settings:isTrue("mxcfb_bypass_wait_for")) or not Device:hasReliableMxcWaitFor()
+            end,
+            callback = function()
+                G_reader_settings:toggle("mxcfb_bypass_wait_for")
+                local InfoMessage = require("ui/widget/infomessage")
+                UIManager:show(InfoMessage:new{
+                    text = _("This will take effect on next restart."),
+                })
+            end,
+        })
+    end
     if Device:isAndroid() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Start E-ink test"),
