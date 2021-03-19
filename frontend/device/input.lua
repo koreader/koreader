@@ -805,25 +805,28 @@ function Input:waitEvent(now, deadline)
                 print("Next timer deadline:", self.timer_callbacks[1].deadline:tonumber())
                 -- Choose the earliest deadline between the next timer deadline, and our full timeout deadline.
                 local deadline_is_timer = false
+                local poll_deadline = nil
                 if not deadline then
                     -- If we don't actually have a full timeout deadline, just honor the timer's.
-                    deadline = self.timer_callbacks[1].deadline
+                    poll_deadline = self.timer_callbacks[1].deadline
                     deadline_is_timer = true
                 else
                     if self.timer_callbacks[1].deadline < deadline then
-                        deadline = self.timer_callbacks[1].deadline
+                        poll_deadline = self.timer_callbacks[1].deadline
                         deadline_is_timer = true
+                    else
+                        poll_deadline = deadline
                     end
                 end
-                print("Effective deadline:", deadline_is_timer, deadline:tonumber())
+                print("Effective deadline:", deadline_is_timer, poll_deadline:tonumber())
                 -- If we haven't hit that deadline yet, poll until it expires, otherwise,
                 -- have select return immediately so that we trip the full timeout.
                 now = now or TimeVal:now()
                 print("now:", now:tonumber())
                 local poll_timeout
-                if deadline > now then
+                if poll_deadline > now then
                     -- Deadline hasn't been blown yet, honor it.
-                    poll_timeout = deadline - now
+                    poll_timeout = poll_deadline - now
                 else
                     -- We've already blown the deadline: make select return immediately (most likely straight to timeout)
                     poll_timeout = TimeVal:new{ sec = 0 }
@@ -854,7 +857,7 @@ function Input:waitEvent(now, deadline)
                                 self.gesture_detector:adjustGesCoordinate(touch_ges)
                             )
                         end -- if touch_ges
-                    end -- if deadline reached
+                    end -- if poll_deadline reached
                 end -- if poll returned ETIME
             end -- while #timer_callbacks > 0
         else
@@ -906,6 +909,7 @@ function Input:waitEvent(now, deadline)
 
         -- We'll need to refresh now on the next iteration, if there is one.
         now = nil
+        print("now needs an update")
     end
 
     if ok and ev then
