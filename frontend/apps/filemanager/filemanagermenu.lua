@@ -542,11 +542,8 @@ To:
                 else
                     mxcfb_bypass_wait_for = not Device:hasReliableMxcWaitFor()
                 end
-                G_reader_settings:saveSetting("mxcfb_bypass_wait_for", not mxcfb_bypass_wait_for)
-                local InfoMessage = require("ui/widget/infomessage")
-                UIManager:show(InfoMessage:new{
-                    text = _("This will take effect on next restart."),
-                })
+                Screen:toggleMxcWaitForBypass(not mxcfb_bypass_wait_for)
+                G_reader_settings:saveSetting("mxcfb_bypass_wait_for", Screen:getMxcWaitForBypass())
             end,
         })
     end
