@@ -13,13 +13,14 @@ local input = require("ffi/input")
 local logger = require("logger")
 local _ = require("gettext")
 
+-- We're going to need a few <linux/input.h> constants...
+local ffi = require("ffi")
+local C = ffi.C
+require("ffi/posix_h")
+require("ffi/linux_input_h")
+
 -- luacheck: push
 -- luacheck: ignore
--- constants from <linux/input.h>
-local EV_SYN = 0
-local EV_KEY = 1
-local EV_ABS = 3
-local EV_MSC = 4
 -- for frontend SDL event handling
 local EV_SDL = 53 -- ASCII code for S
 
@@ -28,29 +29,9 @@ local EVENT_VALUE_KEY_PRESS = 1
 local EVENT_VALUE_KEY_REPEAT = 2
 local EVENT_VALUE_KEY_RELEASE = 0
 
--- Synchronization events (SYN.code).
-local SYN_REPORT = 0
-local SYN_CONFIG = 1
-local SYN_MT_REPORT = 2
-
--- For single-touch events (ABS.code).
-local ABS_X = 00
-local ABS_Y = 01
-local ABS_PRESSURE = 24
-
--- For multi-touch events (ABS.code).
-local ABS_MT_SLOT = 47
-local ABS_MT_TOUCH_MAJOR = 48
-local ABS_MT_WIDTH_MAJOR = 50
-
-local ABS_MT_POSITION_X = 53
-local ABS_MT_POSITION_Y = 54
-local ABS_MT_TRACKING_ID = 57
-local ABS_MT_PRESSURE = 58
-
 -- For Kindle Oasis orientation events (ABS.code)
--- the ABS code of orientation event will be adjusted to -24 from 24(ABS_PRESSURE)
--- as ABS_PRESSURE is also used to detect touch input in KOBO devices.
+-- the ABS code of orientation event will be adjusted to -24 from 24 (C.ABS_PRESSURE)
+-- as C.ABS_PRESSURE is also used to detect touch input in KOBO devices.
 local ABS_OASIS_ORIENTATION = -24
 local DEVICE_ORIENTATION_PORTRAIT_LEFT = 15
 local DEVICE_ORIENTATION_PORTRAIT_RIGHT = 17
@@ -61,9 +42,6 @@ local DEVICE_ORIENTATION_PORTRAIT_ROTATED = 20
 local DEVICE_ORIENTATION_LANDSCAPE = 21
 local DEVICE_ORIENTATION_LANDSCAPE_ROTATED = 22
 
--- For the events of the Forma accelerometer (MSC.code)
-local MSC_RAW = 0x03
-
 -- For the events of the Forma accelerometer (MSC.value)
 local MSC_RAW_GSENSOR_PORTRAIT_DOWN = 0x17
 local MSC_RAW_GSENSOR_PORTRAIT_UP = 0x18
@@ -72,7 +50,6 @@ local MSC_RAW_GSENSOR_LANDSCAPE_LEFT = 0x1a
 -- Not that we care about those, but they are reported, and accurate ;).
 local MSC_RAW_GSENSOR_BACK = 0x1b
 local MSC_RAW_GSENSOR_FRONT = 0x1c
-
 -- luacheck: pop
 
 local _internal_clipboard_text = nil -- holds the last copied text
@@ -236,57 +213,57 @@ end
 
 --- Catalog of predefined hooks.
 function Input:adjustTouchSwitchXY(ev)
-    if ev.type == EV_ABS then
-        if ev.code == ABS_X then
-            ev.code = ABS_Y
-        elseif ev.code == ABS_Y then
-            ev.code = ABS_X
-        elseif ev.code == ABS_MT_POSITION_X then
-            ev.code = ABS_MT_POSITION_Y
-        elseif ev.code == ABS_MT_POSITION_Y then
-            ev.code = ABS_MT_POSITION_X
+    if ev.type == C.EV_ABS then
+        if ev.code == C.ABS_X then
+            ev.code = C.ABS_Y
+        elseif ev.code == C.ABS_Y then
+            ev.code = C.ABS_X
+        elseif ev.code == C.ABS_MT_POSITION_X then
+            ev.code = C.ABS_MT_POSITION_Y
+        elseif ev.code == C.ABS_MT_POSITION_Y then
+            ev.code = C.ABS_MT_POSITION_X
         end
     end
 end
 
 function Input:adjustTouchScale(ev, by)
-    if ev.type == EV_ABS then
-        if ev.code == ABS_X or ev.code == ABS_MT_POSITION_X then
+    if ev.type == C.EV_ABS then
+        if ev.code == C.ABS_X or ev.code == C.ABS_MT_POSITION_X then
             ev.value = by.x * ev.value
         end
-        if ev.code == ABS_Y or ev.code == ABS_MT_POSITION_Y then
+        if ev.code == C.ABS_Y or ev.code == C.ABS_MT_POSITION_Y then
             ev.value = by.y * ev.value
         end
     end
 end
 
 function Input:adjustTouchMirrorX(ev, width)
-    if ev.type == EV_ABS
-    and (ev.code == ABS_X or ev.code == ABS_MT_POSITION_X) then
+    if ev.type == C.EV_ABS
+    and (ev.code == C.ABS_X or ev.code == C.ABS_MT_POSITION_X) then
         ev.value = width - ev.value
     end
 end
 
 function Input:adjustTouchMirrorY(ev, height)
-    if ev.type == EV_ABS
-    and (ev.code == ABS_Y or ev.code == ABS_MT_POSITION_Y) then
+    if ev.type == C.EV_ABS
+    and (ev.code == C.ABS_Y or ev.code == C.ABS_MT_POSITION_Y) then
         ev.value = height - ev.value
     end
 end
 
 function Input:adjustTouchTranslate(ev, by)
-    if ev.type == EV_ABS then
-        if ev.code == ABS_X or ev.code == ABS_MT_POSITION_X then
+    if ev.type == C.EV_ABS then
+        if ev.code == C.ABS_X or ev.code == C.ABS_MT_POSITION_X then
             ev.value = by.x + ev.value
         end
-        if ev.code == ABS_Y or ev.code == ABS_MT_POSITION_Y then
+        if ev.code == C.ABS_Y or ev.code == C.ABS_MT_POSITION_Y then
             ev.value = by.y + ev.value
         end
     end
 end
 
 function Input:adjustKindleOasisOrientation(ev)
-    if ev.type == EV_ABS and ev.code == ABS_PRESSURE then
+    if ev.type == C.EV_ABS and ev.code == C.ABS_PRESSURE then
         ev.code = ABS_OASIS_ORIENTATION
     end
 end
@@ -463,7 +440,7 @@ From kernel document:
 For type B devices, the kernel driver should associate a slot with each
 identified contact, and use that slot to propagate changes for the contact.
 Creation, replacement and destruction of contacts is achieved by modifying
-the ABS_MT_TRACKING_ID of the associated slot.  A non-negative tracking id
+the C.ABS_MT_TRACKING_ID of the associated slot.  A non-negative tracking id
 is interpreted as a contact, and the value -1 denotes an unused slot.  A
 tracking id not previously present is considered new, and a tracking id no
 longer present is considered removed.  Since only changes are propagated,
@@ -472,29 +449,29 @@ end.  Upon receiving an MT event, one simply updates the appropriate
 attribute of the current slot.
 --]]
 function Input:handleTouchEv(ev)
-    if ev.type == EV_ABS then
+    if ev.type == C.EV_ABS then
         if #self.MTSlots == 0 then
             table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
         end
-        if ev.code == ABS_MT_SLOT then
+        if ev.code == C.ABS_MT_SLOT then
             self:addSlotIfChanged(ev.value)
-        elseif ev.code == ABS_MT_TRACKING_ID then
+        elseif ev.code == C.ABS_MT_TRACKING_ID then
             if self.snow_protocol then
                 self:addSlotIfChanged(ev.value)
             end
             self:setCurrentMtSlot("id", ev.value)
-        elseif ev.code == ABS_MT_POSITION_X then
+        elseif ev.code == C.ABS_MT_POSITION_X then
             self:setCurrentMtSlot("x", ev.value)
-        elseif ev.code == ABS_MT_POSITION_Y then
+        elseif ev.code == C.ABS_MT_POSITION_Y then
             self:setCurrentMtSlot("y", ev.value)
 
         -- code to emulate mt protocol on kobos
         -- we "confirm" abs_x, abs_y only when pressure ~= 0
-        elseif ev.code == ABS_X then
+        elseif ev.code == C.ABS_X then
             self:setCurrentMtSlot("abs_x", ev.value)
-        elseif ev.code == ABS_Y then
+        elseif ev.code == C.ABS_Y then
             self:setCurrentMtSlot("abs_y", ev.value)
-        elseif ev.code == ABS_PRESSURE then
+        elseif ev.code == C.ABS_PRESSURE then
             if ev.value ~= 0 then
                 self:setCurrentMtSlot("id", 1)
                 self:confirmAbsxy()
@@ -503,8 +480,8 @@ function Input:handleTouchEv(ev)
                 self:setCurrentMtSlot("id", -1)
             end
         end
-    elseif ev.type == EV_SYN then
-        if ev.code == SYN_REPORT then
+    elseif ev.type == C.EV_SYN then
+        if ev.code == C.SYN_REPORT then
             for _, MTSlot in pairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
                 if self.snow_protocol then
@@ -546,49 +523,49 @@ function Input:handleTouchEvPhoenix(ev)
     -- Hack on handleTouchEV for the Kobo Aura
     -- It seems to be using a custom protocol:
     --        finger 0 down:
-    --            input_report_abs(elan_touch_data.input, ABS_MT_TRACKING_ID, 0);
-    --            input_report_abs(elan_touch_data.input, ABS_MT_TOUCH_MAJOR, 1);
-    --            input_report_abs(elan_touch_data.input, ABS_MT_WIDTH_MAJOR, 1);
-    --            input_report_abs(elan_touch_data.input, ABS_MT_POSITION_X, x1);
-    --            input_report_abs(elan_touch_data.input, ABS_MT_POSITION_Y, y1);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_TRACKING_ID, 0);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_TOUCH_MAJOR, 1);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_WIDTH_MAJOR, 1);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_POSITION_X, x1);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_POSITION_Y, y1);
     --            input_mt_sync (elan_touch_data.input);
     --        finger 1 down:
-    --            input_report_abs(elan_touch_data.input, ABS_MT_TRACKING_ID, 1);
-    --            input_report_abs(elan_touch_data.input, ABS_MT_TOUCH_MAJOR, 1);
-    --            input_report_abs(elan_touch_data.input, ABS_MT_WIDTH_MAJOR, 1);
-    --            input_report_abs(elan_touch_data.input, ABS_MT_POSITION_X, x2);
-    --            input_report_abs(elan_touch_data.input, ABS_MT_POSITION_Y, y2);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_TRACKING_ID, 1);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_TOUCH_MAJOR, 1);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_WIDTH_MAJOR, 1);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_POSITION_X, x2);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_POSITION_Y, y2);
     --            input_mt_sync (elan_touch_data.input);
     --        finger 0 up:
-    --            input_report_abs(elan_touch_data.input, ABS_MT_TRACKING_ID, 0);
-    --            input_report_abs(elan_touch_data.input, ABS_MT_TOUCH_MAJOR, 0);
-    --            input_report_abs(elan_touch_data.input, ABS_MT_WIDTH_MAJOR, 0);
-    --            input_report_abs(elan_touch_data.input, ABS_MT_POSITION_X, last_x);
-    --            input_report_abs(elan_touch_data.input, ABS_MT_POSITION_Y, last_y);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_TRACKING_ID, 0);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_TOUCH_MAJOR, 0);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_WIDTH_MAJOR, 0);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_POSITION_X, last_x);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_POSITION_Y, last_y);
     --            input_mt_sync (elan_touch_data.input);
     --        finger 1 up:
-    --            input_report_abs(elan_touch_data.input, ABS_MT_TRACKING_ID, 1);
-    --            input_report_abs(elan_touch_data.input, ABS_MT_TOUCH_MAJOR, 0);
-    --            input_report_abs(elan_touch_data.input, ABS_MT_WIDTH_MAJOR, 0);
-    --            input_report_abs(elan_touch_data.input, ABS_MT_POSITION_X, last_x2);
-    --            input_report_abs(elan_touch_data.input, ABS_MT_POSITION_Y, last_y2);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_TRACKING_ID, 1);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_TOUCH_MAJOR, 0);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_WIDTH_MAJOR, 0);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_POSITION_X, last_x2);
+    --            input_report_abs(elan_touch_data.input, C.ABS_MT_POSITION_Y, last_y2);
     --            input_mt_sync (elan_touch_data.input);
-    if ev.type == EV_ABS then
+    if ev.type == C.EV_ABS then
         if #self.MTSlots == 0 then
             table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
         end
-        if ev.code == ABS_MT_TRACKING_ID then
+        if ev.code == C.ABS_MT_TRACKING_ID then
             self:addSlotIfChanged(ev.value)
             self:setCurrentMtSlot("id", ev.value)
-        elseif ev.code == ABS_MT_TOUCH_MAJOR and ev.value == 0 then
+        elseif ev.code == C.ABS_MT_TOUCH_MAJOR and ev.value == 0 then
             self:setCurrentMtSlot("id", -1)
-        elseif ev.code == ABS_MT_POSITION_X then
+        elseif ev.code == C.ABS_MT_POSITION_X then
             self:setCurrentMtSlot("x", ev.value)
-        elseif ev.code == ABS_MT_POSITION_Y then
+        elseif ev.code == C.ABS_MT_POSITION_Y then
             self:setCurrentMtSlot("y", ev.value)
         end
-    elseif ev.type == EV_SYN then
-        if ev.code == SYN_REPORT then
+    elseif ev.type == C.EV_SYN then
+        if ev.code == C.SYN_REPORT then
             for _, MTSlot in pairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
             end
@@ -607,23 +584,23 @@ end
 function Input:handleTouchEvLegacy(ev)
     -- Single Touch Protocol. Some devices emit both singletouch and multitouch events.
     -- In those devices the 'handleTouchEv' function doesn't work as expected. Use this function instead.
-    if ev.type == EV_ABS then
+    if ev.type == C.EV_ABS then
         if #self.MTSlots == 0 then
             table.insert(self.MTSlots, self:getMtSlot(self.cur_slot))
         end
-        if ev.code == ABS_X then
+        if ev.code == C.ABS_X then
             self:setCurrentMtSlot("x", ev.value)
-        elseif ev.code == ABS_Y then
+        elseif ev.code == C.ABS_Y then
             self:setCurrentMtSlot("y", ev.value)
-        elseif ev.code == ABS_PRESSURE then
+        elseif ev.code == C.ABS_PRESSURE then
             if ev.value ~= 0 then
                 self:setCurrentMtSlot("id", 1)
             else
                 self:setCurrentMtSlot("id", -1)
             end
         end
-    elseif ev.type == EV_SYN then
-        if ev.code == SYN_REPORT then
+    elseif ev.type == C.EV_SYN then
+        if ev.code == C.SYN_REPORT then
             for _, MTSlot in pairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
             end
@@ -680,7 +657,7 @@ end
 --- Accelerometer on the Forma, c.f., drivers/hwmon/mma8x5x.c
 function Input:handleMiscEvNTX(ev)
     local rotation_mode, screen_mode
-    if ev.code == MSC_RAW then
+    if ev.code == C.MSC_RAW then
         if ev.value == MSC_RAW_GSENSOR_PORTRAIT_UP then
             -- i.e., UR
             rotation_mode = framebuffer.ORIENTATION_PORTRAIT
@@ -934,18 +911,18 @@ function Input:waitEvent(now, deadline)
             DEBUG:logEv(ev)
             logger.dbg(string.format(
                 "%s event => type: %d, code: %d(%s), value: %s, time: %d.%d",
-                ev.type == EV_KEY and "key" or "input",
+                ev.type == C.EV_KEY and "key" or "input",
                 ev.type, ev.code, self.event_map[ev.code], tostring(ev.value),
                 ev.time.sec, ev.time.usec))
         end
         self:eventAdjustHook(ev)
-        if ev.type == EV_KEY then
+        if ev.type == C.EV_KEY then
             return self:handleKeyBoardEv(ev)
-        elseif ev.type == EV_ABS and ev.code == ABS_OASIS_ORIENTATION then
+        elseif ev.type == C.EV_ABS and ev.code == ABS_OASIS_ORIENTATION then
             return self:handleOasisOrientationEv(ev)
-        elseif ev.type == EV_ABS or ev.type == EV_SYN then
+        elseif ev.type == C.EV_ABS or ev.type == C.EV_SYN then
             return self:handleTouchEv(ev)
-        elseif ev.type == EV_MSC then
+        elseif ev.type == C.EV_MSC then
             return self:handleMiscEv(ev)
         elseif ev.type == EV_SDL then
             return self:handleSdlEv(ev)
