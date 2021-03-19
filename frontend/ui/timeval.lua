@@ -134,12 +134,16 @@ end
 Creates a new TimeVal object based on the current wall clock time.
 (e.g., gettimeofday / clock_gettime(CLOCK_REALTIME).
 
+This is a simple wrapper around util.gettime() to get all the niceties of a TimeVal object.
+If you don't need sub-second precision, prefer os.time().
+Which means that, yes, this is a POSIX Epoch ;).
+
 @usage
     local TimeVal = require("ui/timeval")
-    local tv_start = TimeVal:now()
+    local tv_start = TimeVal:realtime()
     -- Do some stuff.
     -- You can add and substract `TimeVal` objects.
-    local tv_duration = TimeVal:now() - tv_start
+    local tv_duration = TimeVal:realtime() - tv_start
 
 @treturn TimeVal
 ]]
@@ -152,6 +156,9 @@ end
 Creates a new TimeVal object based on the current value from the system's MONOTONIC clock source.
 (e.g., clock_gettime(CLOCK_MONOTONIC).
 
+POSIX guarantees that this clock source will *never* go backwards (but it *may* return the same value multiple times).
+On Linux, this will not account for time spent with the device in suspend (unlike CLOCK_BOOTTIME).
+
 @treturn TimeVal
 ]]
 function TimeVal:monotonic()
@@ -162,7 +169,7 @@ function TimeVal:monotonic()
     return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000))}
 end
 
---- Ditto, but w/ CLOCK_MONOTONIC_COARSE if it's available and has a 1ms resolution or better (useq CLOCK_MONOTONIC otherwise).
+--- Ditto, but w/ CLOCK_MONOTONIC_COARSE if it's available and has a 1ms resolution or better (uses CLOCK_MONOTONIC otherwise).
 function TimeVal:monotonic_coarse()
     local timespec = ffi.new("struct timespec")
     C.clock_gettime(PREFERRED_MONOTONIC_CLOCKID, timespec)
@@ -171,8 +178,11 @@ function TimeVal:monotonic_coarse()
     return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000))}
 end
 
--- Assume anything that requires timestamps expects a monotonic clock source
--- (e.g., subsequent calls *may* return identical values, but it will *never* go backward).
+--[[-- Alias for `monotonic_coarse`.
+
+The assumption being anything that requires accurate timestamps expects a monotonic clock source.
+This is certainly true for KOReader's UI scheduling.
+]]
 TimeVal.now = TimeVal.monotonic_coarse
 
 --- Converts a TimeVal object to a Lua (float) number (sec.usecs) (accurate to the ms, rounded to 4 decimal places)
@@ -186,8 +196,10 @@ function TimeVal:tousecs()
     return math.floor(self.sec * 1000000 + self.usec + 0.5)
 end
 
---- Converts a TimeVal object to a Lua (int) number (resolution: 1ms).
---- (Mainly useful when computing a time lapse for benchmarking purposes).
+--[[-- Converts a TimeVal object to a Lua (int) number (resolution: 1ms).
+
+(Mainly useful when computing a time lapse for benchmarking purposes).
+]]
 function TimeVal:tomsecs()
     return self:tousecs() / 1000
 end
