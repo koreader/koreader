@@ -849,8 +849,9 @@ function Input:waitEvent(now, deadline)
                         table.remove(self.timer_callbacks, 1)
                         if touch_ges then
                             print("Gesture detection finalized")
-                            --- @fixme: Do we really need to clear all the timer callbacks
-                            --          from setTimeout calls after having detected a gesture?
+                            -- Most of the timers we'll ever encounter are for finalizing a hold gesture,
+                            -- as such, it makes no sense to try to detect *multiple* subsequent holds.
+                            -- This is why we clear the full list of timers on the first match ;).
                             self:clearTimeouts()
                             self:gestureAdjustHook(touch_ges)
                             return Event:new("Gesture",
