@@ -8,7 +8,7 @@ package.cpath =
 
 -- set search path for 'ffi.load()'
 local ffi = require("ffi")
-local dummy = require("ffi/posix_h")
+require("ffi/posix_h")
 local C = ffi.C
 if ffi.os == "Windows" then
     C._putenv("PATH=libs;common;")
