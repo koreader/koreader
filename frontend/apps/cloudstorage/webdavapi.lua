@@ -87,7 +87,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
             ["Depth"]          = "1",
             ["Content-Length"] = #data,
         },
-        username = user,
+        user     = user,
         password = pass,
         source   = ltn12.source.string(data),
         sink     = ltn12.sink.table(sink),
@@ -162,7 +162,7 @@ function WebDavApi:downloadFile(file_url, user, pass, local_path)
         url      = file_url,
         method   = "GET",
         sink     = ltn12.sink.file(io.open(local_path, "w")),
-        username = user,
+        user     = user,
         password = pass,
     })
     socketutil:reset_timeout()

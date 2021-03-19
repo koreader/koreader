@@ -278,7 +278,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
             ["Accept-Encoding"] = "identity",
         },
         sink     = ltn12.sink.table(sink),
-        username = username,
+        user     = username,
         password = password,
     }
     logger.info("Request:", request)
