@@ -861,8 +861,8 @@ function Input:waitEvent(now, deadline)
                         table.remove(self.timer_callbacks, 1)
                         if touch_ges then
                             print("Gesture detection finalized")
-                            -- Most of the timers we'll ever encounter are for finalizing a hold gesture,
-                            -- as such, it makes no sense to try to detect *multiple* subsequent holds.
+                            -- The timers we'll encounter are for finalizing a hold or (if enabled) double tap gesture,
+                            -- as such, it makes no sense to try to detect *multiple* subsequent gestures.
                             -- This is why we clear the full list of timers on the first match ;).
                             self:clearTimeouts()
                             self:gestureAdjustHook(touch_ges)
