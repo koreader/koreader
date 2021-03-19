@@ -353,6 +353,7 @@ end
 Handles both single and double tap.
 --]]
 function GestureDetector:tapState(tev)
+    print("GestureDetector:tapState", tev.slot, tev.timev:tonumber())
     logger.dbg("in tap state...")
     local slot = tev.slot
     if tev.id == -1 then
@@ -404,6 +405,7 @@ function GestureDetector:tapState(tev)
 end
 
 function GestureDetector:handleDoubleTap(tev)
+    print("GestureDetector:handleDoubleTap", tev.slot, tev.timev:tonumber())
     local slot = tev.slot
     local ges_ev = {
         -- default to single tap
@@ -496,6 +498,7 @@ function GestureDetector:handleDoubleTap(tev)
 end
 
 function GestureDetector:handleNonTap(tev)
+    print("GestureDetector:handleNonTap", tev.slot, tev.timev:tonumber())
     local slot = tev.slot
     if self.states[slot] ~= self.tapState then
         -- switched from other state, probably from initialState
@@ -529,18 +532,17 @@ function GestureDetector:handleNonTap(tev)
             time = tev.timev,
         }
     else
-        -- it is not end of touch event, see if we need to switch to
-        -- other states
+        -- We're still inside a stream of input events, see if we need to switch to other states.
         if (tev.x and math.abs(tev.x - self.first_tevs[slot].x) >= self.PAN_THRESHOLD) or
         (tev.y and math.abs(tev.y - self.first_tevs[slot].y) >= self.PAN_THRESHOLD) then
-            -- if user's finger moved long enough in X or
-            -- Y distance, we switch to pan state
+            -- If user's finger moved far enough on the X or Y axes, switch to pan state.
             return self:switchState("panState", tev)
         end
     end
 end
 
 function GestureDetector:panState(tev)
+    print("GestureDetector:panState", tev.slot, tev.timev:tonumber())
     logger.dbg("in pan state...")
     local slot = tev.slot
     if tev.id == -1 then
@@ -575,6 +577,7 @@ function GestureDetector:panState(tev)
 end
 
 function GestureDetector:handleSwipe(tev)
+    print("GestureDetector:handleSwipe", tev.slot, tev.timev:tonumber())
     local slot = tev.slot
     local swipe_direction, swipe_distance = self:getPath(slot)
     local start_pos = Geom:new{
@@ -618,6 +621,7 @@ function GestureDetector:handleSwipe(tev)
 end
 
 function GestureDetector:handlePan(tev)
+    print("GestureDetector:handlePan", tev.slot, tev.timev:tonumber())
     local slot = tev.slot
     if self.detectings[0] and self.detectings[1] then
         return self:handleTwoFingerPan(tev)
@@ -722,6 +726,7 @@ function GestureDetector:handlePan(tev)
 end
 
 function GestureDetector:handleTwoFingerPan(tev)
+    print("GestureDetector:handleTwoFingerPan", tev.slot, tev.timev:tonumber())
     -- triggering slot
     local tslot = tev.slot
     -- reference slot
@@ -782,6 +787,7 @@ function GestureDetector:handleTwoFingerPan(tev)
 end
 
 function GestureDetector:handlePanRelease(tev)
+    print("GestureDetector:handlePanRelease", tev.slot, tev.timev:tonumber())
     local slot = tev.slot
     local release_pos = Geom:new{
         x = self.last_tevs[slot].x,
@@ -805,9 +811,10 @@ function GestureDetector:handlePanRelease(tev)
 end
 
 function GestureDetector:holdState(tev, hold)
+    print("GestureDetector:holdState", tev.slot, tev.timev:tonumber())
     logger.dbg("in hold state...")
     local slot = tev.slot
-    -- when we switch to hold state, we pass additional param "hold"
+    -- When we switch to hold state, we pass an additional boolean param "hold".
     if tev.id ~= -1 and hold and self.last_tevs[slot].x and self.last_tevs[slot].y then
         self.states[slot] = self.holdState
         return {
