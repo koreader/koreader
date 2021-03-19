@@ -463,10 +463,7 @@ function GestureDetector:handleDoubleTap(tev)
     -- always base it on *now* (in the monotonic time scale)
     -- instead of the input event's own timestamp,
     -- which is irrelevant in this context.
-    local deadline = TimeVal:now()
-    if not self.input.disable_double_tap then
-        deadline = deadline + ges_double_tap_interval
-    end
+    local deadline = TimeVal:now() + ges_double_tap_interval
     self.input:setTimeout(function()
         logger.dbg("in single/double tap timer", self.last_taps[slot] ~= nil)
         -- double tap will set last_tap to nil so if it is not, then
