@@ -525,7 +525,7 @@ To:
     --- @note: Currently, only Kobo implements this quirk
     if Device:hasEinkScreen() and Device:isKobo() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
-            text = _("Bypass the MXCFB_WAIT_FOR ioctl"),
+            text = _("Bypass the MXCFB_WAIT_FOR_* ioctls"),
             checked_func = function()
                 return (G_reader_settings:has("mxcfb_bypass_wait_for") and G_reader_settings:isTrue("mxcfb_bypass_wait_for")) or not Device:hasReliableMxcWaitFor()
             end,
