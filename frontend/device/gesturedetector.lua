@@ -91,7 +91,7 @@ local GestureDetector = {
     },
     -- states are stored in separated slots
     states = {},
-    hold_timer_id = {},
+    pending_hold_timer = {},
     track_ids = {},
     tev_stacks = {},
     -- latest feeded touch event in each slots
@@ -278,7 +278,7 @@ end
 function GestureDetector:clearState(slot)
     print("GestureDetector:clearState", slot)
     self.states[slot] = self.initialState
-    self.hold_timer_id[slot] = nil
+    self.pending_hold_timer[slot] = nil
     self.detectings[slot] = false
     self.first_tevs[slot] = nil
     self.last_tevs[slot] = nil
@@ -503,19 +503,16 @@ function GestureDetector:handleNonTap(tev)
         logger.dbg("set up hold timer")
         -- Ditto, start counting from *now*, no matter what the input event's timestamp says...
         local deadline = TimeVal:now() + ges_hold_interval
-        -- Be sure the following setTimeout only react to this tapState
-        local hold_timer_id = tev.timev
-        self.hold_timer_id[slot] = hold_timer_id
-        print("GestureDetector:handleNonTap: Updating hold_timer_id for slot", slot, "with tv", tev.timev:tonumber())
-        -- Invalidate previous hold timers on that slot
+        print("GestureDetector:handleNonTap: Updating pending_hold_timer for slot", slot)
+        -- Invalidate previous hold timers on that slot so that the following setTimeout will only react to *this* tapState.
         self.input:clearTimeout(slot, "hold")
+        self.pending_hold_timer[slot] = true
         self.input:setTimeout(slot, "hold", function()
-            print("GestureDetector: Hold finalization for slot", slot, "and tv", hold_timer_id:tonumber(), "compared to current tv", self.hold_timer_id[slot] and self.hold_timer_id[slot]:tonumber() or nil)
-            -- If the hold_timer_id we set on our first switch to tapState on this slot (e.g., first finger down event),
+            print("GestureDetector: Hold finalization for slot", slot)
+            -- If the pending_hold_timer we set on our first switch to tapState on this slot (e.g., first finger down event),
             -- back when the timer was setup, is still relevant (e.g., the slot wasn't run through clearState by a finger up gesture),
-            -- then check that we're still in a stationary finger down state (e.g., tapState),
-            -- and that the current hold_timer_id for this slot is still the same.
-            if self.hold_timer_id[slot] and self.states[slot] == self.tapState and self.hold_timer_id[slot] == hold_timer_id then
+            -- then check that we're still in a stationary finger down state (e.g., tapState).
+            if self.pending_hold_timer[slot] and self.states[slot] == self.tapState then
                 -- That means we can switch to hold
                 logger.dbg("hold gesture detected in slot", slot)
                 return self:switchState("holdState", tev, true)
