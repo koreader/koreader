@@ -457,12 +457,23 @@ function GestureDetector:handleDoubleTap(tev)
     -- a timer if no second tap happened in the double tap delay.
     logger.dbg("set up single/double tap timer")
     -- deadline should be calculated by adding current tap time and the interval.
-    -- Given that setTimeout expects a monotonic clock source,
-    -- is actually concerned with the event *loop* itself,
-    -- and our input events may use a real clock source instead,
-    -- always base it on *now* (in the monotonic time scale)
-    -- instead of the input event's own timestamp,
-    -- which is irrelevant in this context.
+    -- NOTE: Given that setTimeout expects a monotonic clock source,
+    --       is actually concerned with the event *loop* itself,
+    --       and our input events may use a real clock source instead,
+    --       always base it on *now* (in the monotonic time scale)
+    --       instead of the input event's own timestamp,
+    --       which is mostly irrelevant in this context.
+    --       In a perfect world, we could assume input events use a sane clock source
+    --       (i.e. MONOTONIC), or enforce it via EVIOCSCLOCKID, but we can't:
+    --       The ioctl requires a fairly recent kernel,
+    --       and there's no way to *query* the current state,
+    --       which makes restoring what the host system expects on exit tricky.
+    --       In practice, the actual gestures are detected based solely on
+    --       input events timestamps, so the comparisons are sane.
+    --       This only potentially pushes back the *finalization*
+    --       of the gesture detection, which is not really an issue in practice.
+    --       (i.e., input events live in their own time scale, UI scheduling in another).
+    --       c.f., #7415
     local deadline = TimeVal:now() + ges_double_tap_interval
     self.input:setTimeout(function()
         logger.dbg("in single/double tap timer", self.last_taps[slot] ~= nil)
