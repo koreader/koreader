@@ -469,7 +469,7 @@ function GestureDetector:handleDoubleTap(tev)
     --       and there's no way to *query* the current state,
     --       which makes restoring what the host system expects on exit tricky.
     --       In practice, the actual gestures are detected based solely on
-    --       input events timestamps, so the comparisons are sane.
+    --       input events timestamps, so the comparisons are as sane as could be.
     --       This only potentially pushes back the *finalization*
     --       of the gesture detection, which is not really an issue in practice.
     --       (i.e., input events live in their own time scale, UI scheduling in another).
