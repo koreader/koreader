@@ -285,8 +285,9 @@ function GestureDetector:clearState(slot)
     self.multiswipe_directions = {}
     self.multiswipe_type = nil
 
-    -- Also clear any pending callbacks on that slot
-    self.input:clearTimeout(slot)
+    -- Also clear any pending hold callbacks on that slot.
+    -- (single taps call this, so we can't clear double_tap callbacks without being caught in an obvious catch-22 ;)).
+    self.input:clearTimeout(slot, "hold")
 end
 
 function GestureDetector:setNewInterval(type, interval)
