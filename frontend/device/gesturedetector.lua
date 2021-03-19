@@ -480,7 +480,7 @@ function GestureDetector:handleDoubleTap(tev)
     --       c.f., #7415
     local deadline = TimeVal:now() + ges_double_tap_interval
     self.input:setTimeout(slot, "double_tap", function()
-        logger.dbg("in single/double tap timer", self.last_taps[slot] ~= nil)
+        logger.dbg("in single/double tap timer, single tap:", self.last_taps[slot] ~= nil)
         -- double tap will set last_tap to nil so if it is not, then
         -- user has not double-tap'ed: it's a single tap
         if self.last_taps[slot] ~= nil then
