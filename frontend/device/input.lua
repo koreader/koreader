@@ -291,8 +291,10 @@ function Input:adjustKindleOasisOrientation(ev)
     end
 end
 
-function Input:setTimeout(cb, tv_out)
+function Input:setTimeout(slot, ges, cb, tv_out)
     local item = {
+        slot     = slot,
+        gesture  = ges,
         callback = cb,
         deadline = tv_out,
     }
@@ -303,6 +305,16 @@ function Input:setTimeout(cb, tv_out)
     table.sort(self.timer_callbacks, function(v1, v2)
         return v1.deadline < v2.deadline
     end)
+end
+
+-- Clear all timeouts for a specific slot (and a specific gesture, if ges is set)
+function Input:clearTimeout(slot, ges)
+    for i = #self.timer_callbacks, 1, -1 do
+        local item = self.timer_callbacks[i]
+        if item.slot == slot and (not ges or item.gesture == ges) then
+            table.remove(self.timer_callbacks, i)
+        end
+    end
 end
 
 function Input:clearTimeouts()
