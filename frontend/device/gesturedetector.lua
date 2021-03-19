@@ -521,13 +521,13 @@ function GestureDetector:handleNonTap(tev)
         print("GestureDetector:handleNonTap: Updating pending_hold_timer for slot", slot)
         -- Invalidate previous hold timers on that slot so that the following setTimeout will only react to *this* tapState.
         self.input:clearTimeout(slot, "hold")
-        self.pending_hold_timer[slot] = tev.timev
-        self.input:setTimeout(slot, "hold", function(timev)
-            print("GestureDetector: Hold finalization for slot", slot, "comparing initial timev", self.pending_hold_timer[slot]:tonumber(), "to current", timev and timev:tonumber() or nil, "at", TimeVal:now():tonumber())
+        self.pending_hold_timer[slot] = true
+        self.input:setTimeout(slot, "hold", function()
+            print("GestureDetector: Hold finalization for slot", slot)
             -- If the pending_hold_timer we set on our first switch to tapState on this slot (e.g., first finger down event),
             -- back when the timer was setup, is still relevant (e.g., the slot wasn't run through clearState by a finger up gesture),
             -- then check that we're still in a stationary finger down state (e.g., tapState).
-            if self.pending_hold_timer[slot] and self.states[slot] == self.tapState and (not timev or self:isHold(self.pending_hold_timer[slot], timev)) then
+            if self.pending_hold_timer[slot] and self.states[slot] == self.tapState then
                 -- That means we can switch to hold
                 logger.dbg("hold gesture detected in slot", slot)
                 return self:switchState("holdState", tev, true)
