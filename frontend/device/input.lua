@@ -912,7 +912,6 @@ function Input:waitEvent(now, deadline)
 
         -- We'll need to refresh now on the next iteration, if there is one.
         now = nil
-        print("now needs an update")
     end
 
     if ok and ev then
