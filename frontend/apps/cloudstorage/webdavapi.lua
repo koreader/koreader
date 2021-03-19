@@ -4,7 +4,6 @@ local http = require("socket.http")
 local ltn12 = require("ltn12")
 local socket = require("socket")
 local socketutil = require("socketutil")
-local mime = require("mime")
 local util = require("util")
 local _ = require("gettext")
 local logger = require("logger")
@@ -80,16 +79,16 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
     local sink = {}
     local data = [[<?xml version="1.0"?><a:propfind xmlns:a="DAV:"><a:prop><a:resourcetype/></a:prop></a:propfind>]]
     socketutil:set_timeout()
-    local auth = string.format("%s:%s", user, pass)
     local request = {
         url      = webdav_url,
         method   = "PROPFIND",
         headers  = {
-            ["Authorization"] = "Basic " .. mime.b64( auth ),
             ["Content-Type"]   = "application/xml",
             ["Depth"]          = "1",
             ["Content-Length"] = #data,
         },
+        username = user,
+        password = pass,
         source   = ltn12.source.string(data),
         sink     = ltn12.sink.table(sink),
     }
@@ -159,14 +158,12 @@ end
 
 function WebDavApi:downloadFile(file_url, user, pass, local_path)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local auth = string.format("%s:%s", user, pass)
     local code_return = socket.skip(1, http.request{
         url      = file_url,
-        headers  = {
-            ["Authorization"] = "Basic " .. mime.b64( auth ),
-        },
         method   = "GET",
         sink     = ltn12.sink.file(io.open(local_path, "w")),
+        username = user,
+        password = pass,
     })
     socketutil:reset_timeout()
     return code_return
