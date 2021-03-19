@@ -186,6 +186,17 @@ function GestureDetector:isDoubleTap(tap1, tap2)
     )
 end
 
+-- Takes TimeVals as input, not a tev
+function GestureDetector:isHold(t1, t2)
+    local tv_diff = t2 - t1
+    if not tv_diff:isPositive() then
+        tv_diff = TimeVal:new{ sec = 0 }
+    end
+    -- NOTE: We cheat by not checking a distance because we're only checking that in tapState,
+    --       which already ensures a stationary finger, by elimination ;).
+    return tv_diff >= ges_hold_interval
+end
+
 function GestureDetector:isTwoFingerTap()
     if self.last_tevs[0] == nil or self.last_tevs[1] == nil then
         return false
@@ -510,13 +521,13 @@ function GestureDetector:handleNonTap(tev)
         print("GestureDetector:handleNonTap: Updating pending_hold_timer for slot", slot)
         -- Invalidate previous hold timers on that slot so that the following setTimeout will only react to *this* tapState.
         self.input:clearTimeout(slot, "hold")
-        self.pending_hold_timer[slot] = true
-        self.input:setTimeout(slot, "hold", function()
-            print("GestureDetector: Hold finalization for slot", slot)
+        self.pending_hold_timer[slot] = tev.timev
+        self.input:setTimeout(slot, "hold", function(timev)
+            print("GestureDetector: Hold finalization for slot", slot, "comparing initial timev", self.pending_hold_timer[slot]:tonumber(), "to current", timev and timev:tonumber() or nil, "at", TimeVal:now():tonumber())
             -- If the pending_hold_timer we set on our first switch to tapState on this slot (e.g., first finger down event),
             -- back when the timer was setup, is still relevant (e.g., the slot wasn't run through clearState by a finger up gesture),
             -- then check that we're still in a stationary finger down state (e.g., tapState).
-            if self.pending_hold_timer[slot] and self.states[slot] == self.tapState then
+            if self.pending_hold_timer[slot] and self.states[slot] == self.tapState and (not timev or self:isHold(self.pending_hold_timer[slot], timev)) then
                 -- That means we can switch to hold
                 logger.dbg("hold gesture detected in slot", slot)
                 return self:switchState("holdState", tev, true)
