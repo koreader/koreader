@@ -82,8 +82,8 @@ function ReaderHighlight:init()
             return {
                 text = _("Search"),
                 callback = function()
-                    _self:onHighlightSearch()
                     UIManager:close(self.highlight_dialog)
+                    _self:onHighlightSearch()
                     -- We don't call _self:onClose(), crengine will highlight
                     -- search matches on the current page, and self:clear()
                     -- would redraw and remove crengine native highlights
@@ -96,11 +96,15 @@ function ReaderHighlight:init()
             return {
                 text = _("Wikipedia"),
                 callback = function()
+                    UIManager:close(self.highlight_dialog)
                     UIManager:scheduleIn(0.1, function()
                         _self:lookupWikipedia()
                         -- We don't call _self:onClose(), we need the highlight
                         -- to still be there, as we may Highlight it from the
-                        -- dict lookup widget
+                        -- dict lookup widget.
+                        -- But we do close ourselves, because DictQuickLookup *will*
+                        -- clear the highlights on close, which would leave us in an undefined state,
+                        -- as we don't get updated.
                     end)
                 end,
             }
@@ -109,6 +113,7 @@ function ReaderHighlight:init()
             return {
                 text = _("Dictionary"),
                 callback = function()
+                    UIManager:close(self.highlight_dialog)
                     _self:onHighlightDictLookup()
                     -- We don't call _self:onClose(), same reason as above
                 end,
