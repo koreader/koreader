@@ -284,6 +284,9 @@ function GestureDetector:clearState(slot)
     self.last_tevs[slot] = nil
     self.multiswipe_directions = {}
     self.multiswipe_type = nil
+
+    -- Also clear any pending callbacks on that slot
+    self.input:clearTimeout(slot)
 end
 
 function GestureDetector:setNewInterval(type, interval)
@@ -475,7 +478,7 @@ function GestureDetector:handleDoubleTap(tev)
     --       (i.e., input events live in their own time scale, UI scheduling in another).
     --       c.f., #7415
     local deadline = TimeVal:now() + ges_double_tap_interval
-    self.input:setTimeout(function()
+    self.input:setTimeout(slot, "double_tap", function()
         logger.dbg("in single/double tap timer", self.last_taps[slot] ~= nil)
         -- double tap will set last_tap to nil so if it is not, then
         -- user has not double-tap'ed: it's a single tap
@@ -504,7 +507,9 @@ function GestureDetector:handleNonTap(tev)
         local hold_timer_id = tev.timev
         self.hold_timer_id[slot] = hold_timer_id
         print("GestureDetector:handleNonTap: Updating hold_timer_id for slot", slot, "with tv", tev.timev:tonumber())
-        self.input:setTimeout(function()
+        -- Invalidate previous hold timers on that slot
+        self.input:clearTimeout(slot, "hold")
+        self.input:setTimeout(slot, "hold", function()
             print("GestureDetector: Hold finalization for slot", slot, "and tv", hold_timer_id:tonumber(), "compared to current tv", self.hold_timer_id[slot] and self.hold_timer_id[slot]:tonumber() or nil)
             -- If the hold_timer_id we set on our first switch to tapState on this slot (e.g., first finger down event),
             -- back when the timer was setup, is still relevant (e.g., the slot wasn't run through clearState by a finger up gesture),
