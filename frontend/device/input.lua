@@ -829,7 +829,7 @@ function Input:waitEvent(now, deadline)
                 if ok then break end
 
                 -- If we've drained all pending input events, causing waitForEvent to time out, check our timers
-                if ok == false and ev == 62 then
+                if ok == false and ev == C.ETIME then
                     print("ETIME")
                     -- Check whether the earliest timer to finalize a Gesture detection is up.
                     -- If our actual select deadline was the timer itself, we're guaranteed to have reached it.
@@ -883,11 +883,11 @@ function Input:waitEvent(now, deadline)
             -- We're good, process the event and go back to UIManager.
             break
         elseif ok == false then
-            if ev == 62 then
+            if ev == C.ETIME then
                 -- Don't report an error on ETIME, and go back to UIManager
                 ev = nil
                 break
-            elseif ev == 4 then  -- luacheck: ignore
+            elseif ev == C.EINTR then  -- luacheck: ignore
                 -- Retry on EINTR
             else
                 -- Warn, report, and go back to UIManager
