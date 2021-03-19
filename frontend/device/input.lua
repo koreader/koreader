@@ -849,7 +849,22 @@ function Input:waitEvent(now, deadline)
 
                 ok, ev = input.waitForEvent(poll_timeout.sec, poll_timeout.usec)
                 -- We got an actual input event, go and process it
-                if ok then break end
+                if ok then
+                    -- But before that, check if we can't satisfy our earliest timer callback, first...
+                    -- They're all concerned about a time delta between *input event* timestamps,
+                    -- while the timeout we rely on below is in the UI's timescale,
+                    -- so we might get an earlier match here ;).
+                    local touch_ges = self.timer_callbacks[1].callback(TimeVal:new(ev.time))
+                    if touch_ges then
+                        -- It was a match, send it to UIManager *without* dropping the just-received input event...
+                        self:clearTimeouts()
+                        self:gestureAdjustHook(touch_ges)
+                        local UIManager = require("ui/uimanager")
+                        UIManager:handleInputEvent(Event:new("Gesture",
+                                self.gesture_detector:adjustGesCoordinate(touch_ges)))
+                    end
+                    break
+                end
 
                 -- If we've drained all pending input events, causing waitForEvent to time out, check our timers
                 if ok == false and ev == 62 then
