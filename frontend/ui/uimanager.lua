@@ -1181,6 +1181,18 @@ end
 
 --[[--
 Returns a TimeVal object corresponding to the last UI tick.
+
+This is essentially a cached TimeVal:now(), computed at the top of every iteration of the main UI loop,
+(right before checking/running scheduled tasks).
+This is mainly useful to compute/schedule stuff in the same time scale as the UI loop (i.e., MONOTONIC),
+without having to resort to a syscall.
+It should never be significantly stale (i.e., it should be precise enough),
+unless you're blocking the UI for a significant amount of time in the same UI tick.
+
+Prefer the appropriate TimeVal method for your needs if you require perfect accuracy
+(e.g., when you're actually working on the event loop *itself* (UIManager, Input, GestureDetector)).
+
+This is *NOT* wall clock time (REALTIME).
 ]]
 function UIManager:getTime()
     return self._now
