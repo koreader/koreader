@@ -859,6 +859,9 @@ function Input:waitEvent(now, deadline)
                         end -- if touch_ges
                     end -- if poll_deadline reached
                 end -- if poll returned ETIME
+
+                -- Refresh now on the next iteration (e.g., when we have multiple timers to check)
+                now = nil
             end -- while #timer_callbacks > 0
         else
             -- If there aren't any timers, just block for the requested amount of time.
