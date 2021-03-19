@@ -527,10 +527,22 @@ To:
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Bypass the MXCFB_WAIT_FOR_* ioctls"),
             checked_func = function()
-                return (G_reader_settings:has("mxcfb_bypass_wait_for") and G_reader_settings:isTrue("mxcfb_bypass_wait_for")) or not Device:hasReliableMxcWaitFor()
+                local mxcfb_bypass_wait_for
+                if G_reader_settings:has("mxcfb_bypass_wait_for") then
+                    mxcfb_bypass_wait_for = G_reader_settings:isTrue("mxcfb_bypass_wait_for")
+                else
+                    mxcfb_bypass_wait_for = not Device:hasReliableMxcWaitFor()
+                end
+                return mxcfb_bypass_wait_for
             end,
             callback = function()
-                G_reader_settings:toggle("mxcfb_bypass_wait_for")
+                local mxcfb_bypass_wait_for
+                if G_reader_settings:has("mxcfb_bypass_wait_for") then
+                    mxcfb_bypass_wait_for = G_reader_settings:isTrue("mxcfb_bypass_wait_for")
+                else
+                    mxcfb_bypass_wait_for = not Device:hasReliableMxcWaitFor()
+                end
+                G_reader_settings:saveSetting("mxcfb_bypass_wait_for", not mxcfb_bypass_wait_for)
                 local InfoMessage = require("ui/widget/infomessage")
                 UIManager:show(InfoMessage:new{
                     text = _("This will take effect on next restart."),

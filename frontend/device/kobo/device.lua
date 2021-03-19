@@ -281,7 +281,12 @@ local KoboLuna = Kobo:new{
 
 function Kobo:init()
     -- Check if we need to disable MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls...
-    local mxcfb_bypass_wait_for = (G_reader_settings:has("mxcfb_bypass_wait_for") and G_reader_settings:isTrue("mxcfb_bypass_wait_for")) or not self:hasReliableMxcWaitFor()
+    local mxcfb_bypass_wait_for
+    if G_reader_settings:has("mxcfb_bypass_wait_for") then
+        mxcfb_bypass_wait_for = G_reader_settings:isTrue("mxcfb_bypass_wait_for")
+    else
+        mxcfb_bypass_wait_for = not self:hasReliableMxcWaitFor()
+    end
 
     self.screen = require("ffi/framebuffer_mxcfb"):new{
         device = self,
