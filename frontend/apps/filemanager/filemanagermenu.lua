@@ -451,8 +451,8 @@ To:
             end,
         })
     end
-    --- @note Currently, only Kobo has a fancy crash display (#5328)
-    if Device:isKobo() then
+    --- @note Currently, only Kobo, rM & PB have a fancy crash display (#5328)
+    if Device:isKobo() or Device:isRemarkable() or Device:isPocketBook() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Always abort on crash"),
             checked_func = function()
