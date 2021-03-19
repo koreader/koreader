@@ -426,7 +426,7 @@ function DictQuickLookup:init()
                 {
                     id = "highlight",
                     text = self:getHighlightText(),
-                    enabled = self.highlight ~= nil,
+                    enabled = not self:isDocless() and self.highlight ~= nil,
                     callback = function()
                         if self:getHighlightText() == highlight_strings.highlight then
                             self.ui:handleEvent(Event:new("Highlight"))
@@ -482,7 +482,7 @@ function DictQuickLookup:init()
                         and ( #self.wiki_languages > 1 and BD.wrap(self.wiki_languages[1]).." > "..BD.wrap(self.wiki_languages[2])
                                                         or self.wiki_languages[1] ) -- (this " > " will be auro-mirrored by bidi)
                         or _("Search"),
-                    enabled = not self.is_wiki and true or #self.wiki_languages > 1,
+                    enabled = not self:isDocless() and (not self.is_wiki and true or #self.wiki_languages > 1),
                     callback = function()
                         if self.is_wiki then
                             self:resyncWikiLanguages(true) -- rotate & resync them
