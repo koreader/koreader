@@ -1111,6 +1111,14 @@ function DictQuickLookup:onHoldClose(no_clear)
     return true
 end
 
+function DictQuickLookup:onCloseWidget()
+    -- If ReaderHighlight's dialog is currently, shown, close it, because we may have just cleared highlights,
+    -- and it doesn't have the opportunity to refresh its state.
+    if self.ui and self.ui.highlight then
+        self.ui.highlight:onClose()
+    end
+end
+
 function DictQuickLookup:onSwipe(arg, ges)
     if ges.pos:intersectWith(self.definition_widget.dimen) then
     -- if we want changeDict to still work with swipe outside window :
