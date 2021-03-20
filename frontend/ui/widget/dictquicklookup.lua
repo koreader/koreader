@@ -370,16 +370,14 @@ function DictQuickLookup:init()
                                                     self:onHoldClose(true)
                                                     -- close current ReaderUI in 1 sec, and create a new one
                                                     UIManager:scheduleIn(1.0, function()
-                                                        local ReaderUI = require("apps/reader/readerui")
-                                                        local reader = ReaderUI:_getRunningInstance()
-                                                        if reader then
+                                                        if self.ui then
                                                             -- close Highlight menu if any still shown
-                                                            if reader.highlight then
-                                                                reader.highlight:onClose()
+                                                            if self.ui.highlight then
+                                                                self.ui.highlight:onClose()
                                                             end
-                                                            reader:onClose()
+                                                            self.ui:onClose()
                                                         end
-                                                        ReaderUI:showReader(epub_path)
+                                                        self.ui:showReader(epub_path)
                                                     end)
                                                 end,
                                             })
