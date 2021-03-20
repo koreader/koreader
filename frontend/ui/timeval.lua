@@ -178,6 +178,15 @@ function TimeVal:monotonic_coarse()
     return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000))}
 end
 
+--- Ditto, but w/ CLOCK_BOOTTIME (will return a TimeVal set to 0, 0 if the clock source is unsupported, as it's 2.6.39+)
+function TimeVal:boottime()
+    local timespec = ffi.new("struct timespec")
+    C.clock_gettime(C.CLOCK_BOOTTIME, timespec)
+
+    -- TIMESPEC_TO_TIMEVAL
+    return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000))}
+end
+
 --[[-- Alias for `monotonic_coarse`.
 
 The assumption being anything that requires accurate timestamps expects a monotonic clock source.
