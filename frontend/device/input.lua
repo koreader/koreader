@@ -268,36 +268,42 @@ function Input:adjustKindleOasisOrientation(ev)
     end
 end
 
-function Input:setTimeout(slot, ges, cb, deadline)
+function Input:setTimeout(slot, ges, cb, origin, delay)
     local item = {
         slot     = slot,
         gesture  = ges,
         callback = cb,
-        deadline = deadline,
     }
 
+    -- We're going to need the clock source id for these events from GestureDetector
+    local clock = self.gesture_detector:getClockSource()
+
     -- If we're on a platform with the timerfd backend, handle that
+    local timerfd
     if input.setTimer then
-        -- We're going to need the clock source id from GestureDetector
-        local clock = self.gesture_detector:getClockSource()
-        local timerfd = input.setTimer(clock, deadline.sec, deadline.usec)
-        if timerfd then
+        local deadline = origin + delay
+        timerfd = input.setTimer(clock, deadline.sec, deadline.usec)
+    end
+    if timerfd then
             -- It worked, tweak the table a bit to make it clear the deadline will be handled by the kernel
-            item.deadline = nil
-            item.timerfd  = timerfd
+            item.timerfd = timerfd
+            item.dealine = nil
             print("Input:setTimeout via timerfd:", deadline:tonumber())
-        end
     else
+        -- No timerfd, we'll compute a poll timeout ourselves.
+        local deadline
+        -- If the event's clocksource is monotonic, we can use it directly.
+        if clock == C.CLOCK_MONOTONIC then
+            deadline = origin + delay
+        else
+            -- Otherwise, fudge it by using a current timestamp in the UI time scale (MONOTONIC).
+            -- This isn't the end of the world in practice.
+            dealine = TimeVal:now() + delay
+        end
+        item.dealine = deadline
         print("Input:setTimeout:", deadline:tonumber())
     end
     table.insert(self.timer_callbacks, item)
-
-    -- NOTE: The timescale is monotonic, that means stuff should already only be inserted in ascending order ;).
-    --[[
-    table.sort(self.timer_callbacks, function(v1, v2)
-        return v1.deadline < v2.deadline
-    end)
-    --]]
 end
 
 -- Clear all timeouts for a specific slot (and a specific gesture, if ges is set)
@@ -305,12 +311,25 @@ function Input:clearTimeout(slot, ges)
     for i = #self.timer_callbacks, 1, -1 do
         local item = self.timer_callbacks[i]
         if item.slot == slot and (not ges or item.gesture == ges) then
+            -- If the timerfd backend is in use, close the fd, too
+            if item.timerfd then
+                input.clearTimer(item.timerfd)
+            end
             table.remove(self.timer_callbacks, i)
         end
     end
 end
 
 function Input:clearTimeouts()
+    -- If the timerfd backend is in use, close the fds, too
+    if input.setTimer then
+        for _, item in ipairs(self.timer_callbacks) do
+            if item.timerfd then
+                input.clearTimer(item.timerfd)
+            end
+        end
+    end
+
     self.timer_callbacks = {}
 end
 
