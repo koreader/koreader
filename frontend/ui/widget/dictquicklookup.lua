@@ -879,6 +879,13 @@ function DictQuickLookup:onCloseWidget()
             end
         end
     end
+
+    -- If ReaderHighlight's dialog is currently, shown, close it, because we may have just cleared highlights,
+    -- and it doesn't have the opportunity to refresh its state.
+    if self.ui and self.ui.highlight then
+        self.ui.highlight:onClose()
+    end
+
     -- NOTE: Drop region to make it a full-screen flash
     UIManager:setDirty(nil, function()
         return "flashui", nil
@@ -1107,14 +1114,6 @@ function DictQuickLookup:onHoldClose(no_clear)
         table.remove(self.window_list, i)
     end
     return true
-end
-
-function DictQuickLookup:onCloseWidget()
-    -- If ReaderHighlight's dialog is currently, shown, close it, because we may have just cleared highlights,
-    -- and it doesn't have the opportunity to refresh its state.
-    if self.ui and self.ui.highlight then
-        self.ui.highlight:onClose()
-    end
 end
 
 function DictQuickLookup:onSwipe(arg, ges)
