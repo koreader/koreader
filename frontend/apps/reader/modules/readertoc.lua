@@ -961,7 +961,9 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
                     break
                 end
             end
-            toc_ticks_levels[#toc_ticks_levels].separator = true
+            if #toc_ticks_levels > 0 then
+                toc_ticks_levels[#toc_ticks_levels].separator = true
+            end
             table.insert(toc_ticks_levels, {
                 text = _("Bind chapter navigation to ticks"),
                 help_text = _([[Entries from ToC levels that are ignored in the progress bars will still be used for chapter navigation and 'page/time left until next chapter' in the footer.
