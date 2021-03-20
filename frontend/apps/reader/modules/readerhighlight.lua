@@ -1434,6 +1434,11 @@ function ReaderHighlight:deleteHighlight(page, i, bookmark_item)
             datetime = removed.datetime,
         })
     end
+    local setting = G_reader_settings:readSetting("save_document")
+    if setting ~= "disable" then
+        logger.dbg("delete highlight from document", removed)
+        self.ui.document:deleteHighlight(page, removed)
+    end
 end
 
 function ReaderHighlight:editHighlight(page, i)

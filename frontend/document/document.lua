@@ -483,6 +483,10 @@ function Document:saveHighlight(pageno, item)
     return nil
 end
 
+function Document:deleteHighlight(pageno, item)
+    return nil
+end
+
 function Document:updateHighlightContents(pageno, item, contents)
     return nil
 end

@@ -194,6 +194,20 @@ function PdfDocument:saveHighlight(pageno, item)
     page:close()
 end
 
+function Document:deleteHighlight(pageno, item)
+    local can_write = self:_checkIfWritable()
+    if can_write ~= true then return can_write end
+
+    self.is_edited = true
+    local quadpoints, n = self:_quadpointsFromPboxes(item.pboxes)
+    local page = self._document:openPage(pageno)
+    local annot = page:getMarkupAnnotation(quadpoints, n)
+    if annot ~= nil then
+        page:deleteMarkupAnnotation(annot)
+    end
+    return nil
+end
+
 function PdfDocument:updateHighlightContents(pageno, item, contents)
     local can_write = self:_checkIfWritable()
     if can_write ~= true then return can_write end
