@@ -304,6 +304,8 @@ end
 function Input:resetState()
     if self.gesture_detector then
         self.gesture_detector:clearStates()
+        -- Resets the clock source probe
+        self.gesture_detector:resetClockSource()
     end
     self:clearTimeouts()
 end
