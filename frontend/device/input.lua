@@ -268,14 +268,28 @@ function Input:adjustKindleOasisOrientation(ev)
     end
 end
 
-function Input:setTimeout(slot, ges, cb, tv_out)
+function Input:setTimeout(slot, ges, cb, deadline)
     local item = {
         slot     = slot,
         gesture  = ges,
         callback = cb,
-        deadline = tv_out,
+        deadline = deadline,
     }
-    print("Input:setTimeout:", tv_out:tonumber())
+
+    -- If we're on a platform with the timerfd backend, handle that
+    if input.setTimer then
+        -- We're going to need the clock source id from GestureDetector
+        local clock = self.gesture_detector:getClockSource()
+        local timerfd = input.setTimer(clock, deadline.sec, deadline.usec)
+        if timerfd then
+            -- It worked, tweak the table a bit to make it clear the deadline will be handled by the kernel
+            item.deadline = nil
+            item.timerfd  = timerfd
+            print("Input:setTimeout via timerfd:", deadline:tonumber())
+        end
+    else
+        print("Input:setTimeout:", deadline:tonumber())
+    end
     table.insert(self.timer_callbacks, item)
 
     -- NOTE: The timescale is monotonic, that means stuff should already only be inserted in ascending order ;).
