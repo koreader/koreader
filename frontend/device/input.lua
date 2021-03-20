@@ -299,7 +299,7 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
         else
             -- Otherwise, fudge it by using a current timestamp in the UI time scale (MONOTONIC).
             -- This isn't the end of the world in practice.
-            dealine = TimeVal:now() + delay
+            deadline = TimeVal:now() + delay
         end
         item.deadline = deadline
         print("Input:setTimeout:", deadline:tonumber())
@@ -828,7 +828,7 @@ end
 function Input:waitEvent(now, deadline)
     print("Input:waitEvent", now:tonumber(), deadline and deadline:tonumber() or nil)
     -- On the first iteration of the loop, we don't need to update now, we're following closely (a couple ms) behind UIManager.
-    local ok, ev
+    local ok, ev, timerfd
     -- wrapper for input.waitForEvents that will retry for some cases
     while true do
         if #self.timer_callbacks > 0 then
@@ -836,7 +836,7 @@ function Input:waitEvent(now, deadline)
             while #self.timer_callbacks > 0 do
                 -- Choose the earliest deadline between the next timer deadline, and our full timeout deadline.
                 local deadline_is_timer = false
-                local poll_deadline = nil
+                local poll_deadline
                 -- If the timer's deadline is handled via timerfd, that's easy
                 if self.timer_callbacks[1].timerfd then
                     print("Next timer deadline:", self.timer_callbacks[1].deadline:tonumber(), "via timerfd:", self.timer_callbacks[1].timerfd)
