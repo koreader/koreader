@@ -83,7 +83,6 @@ function ReaderHighlight:init()
                 text = _("Search"),
                 callback = function()
                     _self:onHighlightSearch()
-                    UIManager:close(self.highlight_dialog)
                     self.highlight_dialog = nil
                     -- We don't call _self:onClose(), crengine will highlight
                     -- search matches on the current page, and self:clear()
@@ -1395,6 +1394,10 @@ end
 
 function ReaderHighlight:onHighlightSearch()
     logger.dbg("search highlight")
+    -- First, if our dialog is still shown, close it.
+    if self.highlight_dialog then
+        UIManager:close(self.highlight_dialog)
+    end
     self:highlightFromHoldPos()
     if self.selected_text then
         local text = util.stripPunctuation(cleanupSelectedText(self.selected_text.text))
