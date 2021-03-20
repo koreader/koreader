@@ -54,7 +54,6 @@ local DictQuickLookup = InputContainer:new{
     -- refresh_callback will be called before we trigger full refresh in onSwipe
     refresh_callback = nil,
     html_dictionary_link_tapped_callback = nil,
-    no_clear = nil,
 }
 
 local highlight_strings = {
@@ -881,6 +880,12 @@ function DictQuickLookup:onCloseWidget()
         end
     end
 
+    -- If ReaderHighlight's dialog is currently shown, close it, because we may have just cleared highlights,
+    -- and it doesn't have the opportunity to refresh its state, so its Highlight & Note buttons are still enabled.
+    if self.ui and self.ui.highlight and self.ui.highlight.highlight_dialog then
+        self.ui.highlight:onClose()
+    end
+
     -- NOTE: Drop region to make it a full-screen flash
     UIManager:setDirty(nil, function()
         return "flashui", nil
@@ -1083,7 +1088,7 @@ function DictQuickLookup:onClose()
             table.remove(self.window_list, i)
         end
     end
-    if self.highlight and not self.no_clear then
+    if self.highlight then
         -- delay unhighlight of selection, so we can see where we stopped when
         -- back from our journey into dictionary or wikipedia
         local clear_id = self.highlight:getClearId()

@@ -378,16 +378,16 @@ function ReaderWikipedia:initLanguages(word)
     end
 end
 
-function ReaderWikipedia:onLookupWikipedia(word, is_sane, box, get_fullpage, forced_lang, no_clear)
+function ReaderWikipedia:onLookupWikipedia(word, is_sane, box, get_fullpage, forced_lang)
     -- Wrapped through Trapper, as we may be using Trapper:dismissableRunInSubprocess() in it
     Trapper:wrap(function()
-        self:lookupWikipedia(word, is_sane, box, get_fullpage, forced_lang, no_clear)
+        self:lookupWikipedia(word, is_sane, box, get_fullpage, forced_lang)
     end)
     return true
 end
 
-function ReaderWikipedia:lookupWikipedia(word, is_sane, box, get_fullpage, forced_lang, no_clear)
-    if NetworkMgr:willRerunWhenOnline(function() self:lookupWikipedia(word, is_sane, box, get_fullpage, forced_lang, no_clear) end) then
+function ReaderWikipedia:lookupWikipedia(word, is_sane, box, get_fullpage, forced_lang)
+    if NetworkMgr:willRerunWhenOnline(function() self:lookupWikipedia(word, is_sane, box, get_fullpage, forced_lang) end) then
         -- Not online yet, nothing more to do here, NetworkMgr will forward the callback and run it once connected!
         return
     end
@@ -521,7 +521,7 @@ function ReaderWikipedia:lookupWikipedia(word, is_sane, box, get_fullpage, force
         }
         logger.dbg("dummy result table:", word, results)
     end
-    self:showDict(word, results, box, nil, no_clear)
+    self:showDict(word, results, box)
 end
 
 -- override onSaveSettings in ReaderDictionary

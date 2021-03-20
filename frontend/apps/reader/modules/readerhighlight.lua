@@ -1389,8 +1389,7 @@ end
 
 function ReaderHighlight:lookupWikipedia()
     if self.selected_text then
-        -- Last arg is to request not clearing the highlight
-        self.ui:handleEvent(Event:new("LookupWikipedia", cleanupSelectedText(self.selected_text.text), nil, nil, nil, nil, true))
+        self.ui:handleEvent(Event:new("LookupWikipedia", cleanupSelectedText(self.selected_text.text)))
     end
 end
 
@@ -1407,8 +1406,7 @@ function ReaderHighlight:onHighlightDictLookup()
     logger.dbg("dictionary lookup highlight")
     self:highlightFromHoldPos()
     if self.selected_text then
-        -- Last arg is to request not clearing the highlight
-        self.ui:handleEvent(Event:new("LookupWord", cleanupSelectedText(self.selected_text.text), nil, nil, nil, nil, true))
+        self.ui:handleEvent(Event:new("LookupWord", cleanupSelectedText(self.selected_text.text)))
     end
 end
 
