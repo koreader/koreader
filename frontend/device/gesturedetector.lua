@@ -533,25 +533,7 @@ function GestureDetector:handleDoubleTap(tev)
     -- may be the start of a double tap. We'll send it as a single tap after
     -- a timer if no second tap happened in the double tap delay.
     logger.dbg("set up single/double tap timer")
-    -- deadline should be calculated by adding current tap time and the interval.
-    -- NOTE: Given that setTimeout expects a monotonic clock source,
-    --       is actually concerned with the event *loop* itself,
-    --       and our input events may use a real clock source instead,
-    --       always base it on *now* (in the monotonic time scale)
-    --       instead of the input event's own timestamp,
-    --       which is mostly irrelevant in this context.
-    --       In a perfect world, we could assume input events use a sane clock source
-    --       (i.e. MONOTONIC), or enforce it via EVIOCSCLOCKID, but we can't:
-    --       The ioctl requires a fairly recent kernel,
-    --       and there's no way to *query* the current state,
-    --       which makes restoring what the host system expects on exit tricky.
-    --       In practice, the actual gestures are detected based solely on
-    --       input events timestamps, so the comparisons are as sane as could be.
-    --       This only potentially pushes back the *finalization*
-    --       of the gesture detection, which is not really an issue in practice.
-    --       (i.e., input events live in their own time scale, UI scheduling in another).
-    --       c.f., #7415
-    local deadline = TimeVal:now() + ges_double_tap_interval
+    -- setTimeout will handle computing the deadline in the least lossy way possible given the platform.
     self.input:setTimeout(slot, "double_tap", function()
         logger.dbg("in single/double tap timer, single tap:", self.last_taps[slot] ~= nil)
         -- double tap will set last_tap to nil so if it is not, then
@@ -562,7 +544,7 @@ function GestureDetector:handleDoubleTap(tev)
             logger.dbg("single tap detected in slot", slot, ges_ev.pos)
             return ges_ev
         end
-    end, deadline)
+    end, tev.timev, ges_double_tap_interval)
     -- we are already at the end of touch event
     -- so reset the state
     self:clearState(slot)
@@ -576,8 +558,6 @@ function GestureDetector:handleNonTap(tev)
         -- we return nil in this case
         self.states[slot] = self.tapState
         logger.dbg("set up hold timer")
-        -- Ditto, start counting from *now*, no matter what the input event's timestamp says...
-        local deadline = TimeVal:now() + ges_hold_interval
         print("GestureDetector:handleNonTap: Updating pending_hold_timer for slot", slot)
         -- Invalidate previous hold timers on that slot so that the following setTimeout will only react to *this* tapState.
         self.input:clearTimeout(slot, "hold")
@@ -592,7 +572,7 @@ function GestureDetector:handleNonTap(tev)
                 logger.dbg("hold gesture detected in slot", slot)
                 return self:switchState("holdState", tev, true)
             end
-        end, deadline)
+        end, tev.timev, ges_hold_interval)
         return {
             ges = "touch",
             pos = Geom:new{
