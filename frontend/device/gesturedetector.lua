@@ -47,6 +47,11 @@ local TimeVal = require("ui/timeval")
 local logger = require("logger")
 local util = require("util")
 
+-- We're going to need some clockid_t constants
+local ffi = require("ffi")
+local C = ffi.C
+require("ffi/posix_h")
+
 -- default values (all the time parameters are in microseconds)
 local TAP_INTERVAL = 0 * 1000
 local DOUBLE_TAP_INTERVAL = 300 * 1000
@@ -103,6 +108,8 @@ local GestureDetector = {
     detectings = {},
     -- for single/double tap
     last_taps = {},
+    -- for timestamp clocksource detection
+    clock_id = nil,
 }
 
 function GestureDetector:new(o)
@@ -295,6 +302,7 @@ function GestureDetector:clearState(slot)
     self.last_tevs[slot] = nil
     self.multiswipe_directions = {}
     self.multiswipe_type = nil
+    self.clock_id = nil
 
     -- Also clear any pending hold callbacks on that slot.
     -- (single taps call this, so we can't clear double_tap callbacks without being caught in an obvious catch-22 ;)).
@@ -361,10 +369,54 @@ function GestureDetector:initialState(tev)
 end
 
 --[[--
+Attempts to figure out which clock source tap events are using...
+]]
+function GestureDetector:probeClockSource(timev)
+    -- We'll check if that timestamp is +/- 2.5s away from the three potential clock sources supported by evdev.
+    -- We have bigger issues than this if we're parsing events more than 3s late ;).
+    local threshold = TimeVal:new{ sec = 2, usec = 500000 }
+
+    -- Start w/ REALTIME, because it's the easiest to detect ;).
+    local realtime = TimeVal:realtime_coarse()
+    -- clock-threshold <= timev <= clock+threshold
+    if timev >= realtime - threshold and timev <= realtime + threshold then
+        self.clock_id = C.CLOCK_REALTIME
+        logger.info("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_REALTIME")
+        return
+    end
+
+    -- Then MONOTONIC, as it's (hopefully) more common than BOOTTIME (and also guaranteed to be an usable clock source)
+    local monotonic = TimeVal:monotonic_coarse()
+    if timev >= monotonic - threshold and timev <= monotonic + threshold then
+        self.clock_id = C.CLOCK_MONOTONIC
+        logger.info("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_MONOTONIC")
+        return
+    end
+
+    -- Finally, BOOTTIME
+    local boottime = TimeVal:boottime()
+    if timev >= boottime - threshold and timev <= boottime + threshold then
+        self.clock_id = C.CLOCK_BOOTTIME
+        logger.info("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_BOOTTIME")
+        return
+    end
+
+    -- If we're here, the detection was inconclusive :/
+    self.clock_id = -1
+    logger.info("GestureDetector:probeClockSource: Touch event clock source detection was inconclusive")
+end
+
+--[[--
 Handles both single and double tap.
 --]]
 function GestureDetector:tapState(tev)
     print("GestureDetector:tapState", tev.slot, tev.timev:tonumber())
+
+    -- Attempt to detect the clock source for these events (we reset it on suspend to discriminate MONOTONIC from BOOTTIME).
+    if not self.clock_id then
+        self:probeClockSource(tev.timev)
+    end
+
     logger.dbg("in tap state...")
     local slot = tev.slot
     if tev.id == -1 then
