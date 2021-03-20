@@ -372,7 +372,7 @@ function DictQuickLookup:init()
                                                     UIManager:scheduleIn(1.0, function()
                                                         if self.ui then
                                                             -- close Highlight menu if any still shown
-                                                            if self.ui.highlight then
+                                                            if self.ui.highlight and self.ui.highlight.highlight_dialog then
                                                                 self.ui.highlight:onClose()
                                                             end
                                                             self.ui:onClose()
@@ -882,7 +882,7 @@ function DictQuickLookup:onCloseWidget()
 
     -- If ReaderHighlight's dialog is currently, shown, close it, because we may have just cleared highlights,
     -- and it doesn't have the opportunity to refresh its state.
-    if self.ui and self.ui.highlight then
+    if self.ui and self.ui.highlight and self.ui.highlight.highlight_dialog then
         self.ui.highlight:onClose()
     end
 

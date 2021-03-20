@@ -84,6 +84,7 @@ function ReaderHighlight:init()
                 callback = function()
                     _self:onHighlightSearch()
                     UIManager:close(self.highlight_dialog)
+                    self.highlight_dialog = nil
                     -- We don't call _self:onClose(), crengine will highlight
                     -- search matches on the current page, and self:clear()
                     -- would redraw and remove crengine native highlights
@@ -1482,6 +1483,7 @@ end
 
 function ReaderHighlight:onClose()
     UIManager:close(self.highlight_dialog)
+    self.highlight_dialog = nil
     -- clear highlighted text
     self:clear()
 end
