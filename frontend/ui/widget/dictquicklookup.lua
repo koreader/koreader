@@ -61,6 +61,25 @@ local highlight_strings = {
     unhighlight = _("Unhighlight"),
 }
 
+function DictQuickLookup:canSearch()
+    if self:isDocless() then
+        return false
+    end
+
+    if self.is_wiki then
+        if #self.wiki_languages > 1 then
+            return true
+        end
+    else
+        -- This is to prevent an ineffective button when we're launched from the Reader's menu.
+        if self.ui.highlight.selected_text then
+            return true
+        end
+    end
+
+    return false
+end
+
 function DictQuickLookup:init()
     self.dict_font_size = G_reader_settings:readSetting("dict_font_size") or 20
     self.content_face = Font:getFace("cfont", self.dict_font_size)
@@ -480,7 +499,7 @@ function DictQuickLookup:init()
                         and ( #self.wiki_languages > 1 and BD.wrap(self.wiki_languages[1]).." > "..BD.wrap(self.wiki_languages[2])
                                                         or self.wiki_languages[1] ) -- (this " > " will be auro-mirrored by bidi)
                         or _("Search"),
-                    enabled = not self:isDocless() and (not self.is_wiki and true or #self.wiki_languages > 1),
+                    enabled = self:canSearch(),
                     callback = function()
                         if self.is_wiki then
                             self:resyncWikiLanguages(true) -- rotate & resync them
