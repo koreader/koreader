@@ -67,6 +67,7 @@ function DictQuickLookup:canSearch()
     end
 
     if self.is_wiki then
+        -- In the Wiki variant of this widget, the Search button is coopted to cycle between enabled languages.
         if #self.wiki_languages > 1 then
             return true
         end
