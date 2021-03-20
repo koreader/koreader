@@ -302,7 +302,6 @@ function GestureDetector:clearState(slot)
     self.last_tevs[slot] = nil
     self.multiswipe_directions = {}
     self.multiswipe_type = nil
-    self.clock_id = nil
 
     -- Also clear any pending hold callbacks on that slot.
     -- (single taps call this, so we can't clear double_tap callbacks without being caught in an obvious catch-22 ;)).
@@ -404,6 +403,14 @@ function GestureDetector:probeClockSource(timev)
     -- If we're here, the detection was inconclusive :/
     self.clock_id = -1
     logger.info("GestureDetector:probeClockSource: Touch event clock source detection was inconclusive")
+end
+
+function GestureDetector:getClockSource()
+    return self.clock_id
+end
+
+function GestureDetector:resetClockSource()
+    self.clock_id = nil
 end
 
 --[[--
