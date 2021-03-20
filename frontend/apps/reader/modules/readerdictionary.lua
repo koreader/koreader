@@ -396,7 +396,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
     end
 end
 
-function ReaderDictionary:onLookupWord(word, is_sane, box, highlight, link)
+function ReaderDictionary:onLookupWord(word, is_sane, box, highlight, link, no_clear)
     logger.dbg("dict lookup word:", word, box)
     -- escape quotes and other funny characters in word
     word = self:cleanSelection(word, is_sane)
@@ -406,7 +406,7 @@ function ReaderDictionary:onLookupWord(word, is_sane, box, highlight, link)
 
     -- Wrapped through Trapper, as we may be using Trapper:dismissablePopen() in it
     Trapper:wrap(function()
-        self:stardictLookup(word, self.enabled_dict_names, not self.disable_fuzzy_search, box, link)
+        self:stardictLookup(word, self.enabled_dict_names, not self.disable_fuzzy_search, box, link, no_clear)
     end)
     return true
 end
@@ -812,7 +812,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     return final_results
 end
 
-function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, link)
+function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, link, no_clear)
     if word == "" then
         return
     end
@@ -858,10 +858,10 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
         return
     end
 
-    self:showDict(word, tidyMarkup(results), box, link)
+    self:showDict(word, tidyMarkup(results), box, link, no_clear)
 end
 
-function ReaderDictionary:showDict(word, results, box, link)
+function ReaderDictionary:showDict(word, results, box, link, no_clear)
     if results and results[1] then
         logger.dbg("showing quick lookup window", word, results)
         self.dict_window = DictQuickLookup:new{
@@ -888,6 +888,7 @@ function ReaderDictionary:showDict(word, results, box, link)
             html_dictionary_link_tapped_callback = function(dictionary, html_link)
                 self:onHtmlDictionaryLinkTapped(dictionary, html_link)
             end,
+            no_clear = no_clear,
         }
         table.insert(self.dict_window_list, self.dict_window)
         if self.lookup_progress_msg then
