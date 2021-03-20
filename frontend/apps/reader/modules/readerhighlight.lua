@@ -83,7 +83,6 @@ function ReaderHighlight:init()
                 text = _("Search"),
                 callback = function()
                     _self:onHighlightSearch()
-                    self.highlight_dialog = nil
                     -- We don't call _self:onClose(), crengine will highlight
                     -- search matches on the current page, and self:clear()
                     -- would redraw and remove crengine native highlights
@@ -562,6 +561,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                     self:deleteHighlight(page, index)
                     -- other part outside of the dialog may be dirty
                     UIManager:close(self.edit_highlight_dialog, "ui")
+                    self.edit_highlight_dialog = nil
                 end,
             },
             {
@@ -569,6 +569,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 callback = function()
                     self:editHighlight(page, index)
                     UIManager:close(self.edit_highlight_dialog)
+                    self.edit_highlight_dialog = nil
                 end,
             },
             {
@@ -577,6 +578,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                     self.selected_text = self.view.highlight.saved[page][index]
                     self:onShowHighlightMenu()
                     UIManager:close(self.edit_highlight_dialog)
+                    self.edit_highlight_dialog = nil
                 end,
             },
         }
@@ -1383,6 +1385,7 @@ function ReaderHighlight:addNote()
     local page, index = self:saveHighlight()
     self:editHighlight(page, index)
     UIManager:close(self.edit_highlight_dialog)
+    self.edit_highlight_dialog = nil
     self.ui:handleEvent(Event:new("AddNote"))
 end
 
@@ -1397,6 +1400,7 @@ function ReaderHighlight:onHighlightSearch()
     -- First, if our dialog is still shown, close it.
     if self.highlight_dialog then
         UIManager:close(self.highlight_dialog)
+        self.highlight_dialog = nil
     end
     self:highlightFromHoldPos()
     if self.selected_text then
