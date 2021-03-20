@@ -23,6 +23,8 @@ local C = ffi.C
 -- as we generally don't need nano/micro second precision,
 -- and it can be more than twice as fast as CLOCK_MONOTONIC/CLOCK_REALTIME/gettimeofday...
 local PREFERRED_MONOTONIC_CLOCKID = C.CLOCK_MONOTONIC
+-- Ditto for REALTIME (for :realtime_coarse only, :realtime uses gettimeofday ;)).
+local PREFERRED_REALTIME_CLOCKID = C.CLOCK_REALTIME
 if ffi.os == "Linux" then
     -- Unfortunately, it was only implemented in Linux 2.6.32, and we may run on older kernels than that...
     -- So, just probe it to see if can rely on it.
@@ -32,6 +34,11 @@ if ffi.os == "Linux" then
         -- but it only provides a 10ms resolution on all my arm devices :/.
         if probe_ts.tv_sec == 0 and probe_ts.tv_nsec <= 1000000 then
             PREFERRED_MONOTONIC_CLOCKID = C.CLOCK_MONOTONIC_COARSE
+        end
+    end
+    if C.clock_getres(C.CLOCK_REALTIME_COARSE, probe_ts) == 0 then
+        if probe_ts.tv_sec == 0 and probe_ts.tv_nsec <= 1000000 then
+            PREFERRED_REALTIME_CLOCKID = C.CLOCK_REALTIME_COARSE
         end
     end
     probe_ts = nil --luacheck: ignore
@@ -173,6 +180,15 @@ end
 function TimeVal:monotonic_coarse()
     local timespec = ffi.new("struct timespec")
     C.clock_gettime(PREFERRED_MONOTONIC_CLOCKID, timespec)
+
+    -- TIMESPEC_TO_TIMEVAL
+    return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000))}
+end
+
+--- Ditto, but w/ CLOCK_REALTIME_COARSE if it's available and has a 1ms resolution or better (uses CLOCK_REALTIME otherwise).
+function TimeVal:realtime_coarse()
+    local timespec = ffi.new("struct timespec")
+    C.clock_gettime(PREFERRED_REALTIME_CLOCKID, timespec)
 
     -- TIMESPEC_TO_TIMEVAL
     return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000))}
