@@ -833,7 +833,7 @@ end
 function Input:waitEvent(now, deadline)
     print("Input:waitEvent", now:tonumber(), deadline and deadline:tonumber() or nil)
     -- On the first iteration of the loop, we don't need to update now, we're following closely (a couple ms) behind UIManager.
-    local ok, ev, timerfd
+    local ok, ev
     -- wrapper for input.waitForEvents that will retry for some cases
     while true do
         if #self.timer_callbacks > 0 then
@@ -877,6 +877,7 @@ function Input:waitEvent(now, deadline)
                 end
                 print("poll_timeout:", poll_timeout:tonumber())
 
+                local timerfd
                 ok, ev, timerfd = input.waitForEvent(poll_timeout.sec, poll_timeout.usec)
                 -- We got an actual input event, go and process it
                 if ok then break end
