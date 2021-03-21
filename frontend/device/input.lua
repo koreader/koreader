@@ -282,7 +282,12 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
     -- If we're on a platform with the timerfd backend, handle that
     local timerfd
     if input.setTimer then
-        deadline = origin + delay
+        -- If GestureDetector's clock source probing was inconclusive, do this on the UI timescale instead.
+        if clock == -1 then
+            deadline = TimeVal:now() + delay
+        else
+            deadline = origin + delay
+        end
         timerfd = input.setTimer(clock, deadline.sec, deadline.usec)
     end
     if timerfd then
