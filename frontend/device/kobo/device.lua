@@ -49,6 +49,8 @@ local Kobo = Generic:new{
     canHWInvert = yes,
     home_dir = "/mnt/onboard",
     canToggleMassStorage = yes,
+    -- MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls are generally reliable
+    hasReliableMxcWaitFor = yes,
 }
 
 --- @todo hasKeys for some devices?
@@ -259,6 +261,12 @@ local KoboStorm = Kobo:new{
         nl_max = 10,
         nl_inverted = true,
     },
+    -- NOTE: The Libra apparently suffers from a mysterious issue where completely innocuous WAIT_FOR_UPDATE_COMPLETE ioctls
+    --       will mysteriously fail with a timeout (5s)...
+    --       This obviously leads to *terrible* user experience, so, until more is understood avout the issue,
+    --       bypass this ioctl on this device.
+    --       c.f., https://github.com/koreader/koreader/issues/7340
+    hasReliableMxcWaitFor = no,
 }
 
 -- Kobo Nia:
@@ -272,7 +280,20 @@ local KoboLuna = Kobo:new{
 }
 
 function Kobo:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg, is_always_portrait = self.isAlwaysPortrait()}
+    -- Check if we need to disable MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls...
+    local mxcfb_bypass_wait_for
+    if G_reader_settings:has("mxcfb_bypass_wait_for") then
+        mxcfb_bypass_wait_for = G_reader_settings:isTrue("mxcfb_bypass_wait_for")
+    else
+        mxcfb_bypass_wait_for = not self:hasReliableMxcWaitFor()
+    end
+
+    self.screen = require("ffi/framebuffer_mxcfb"):new{
+        device = self,
+        debug = logger.dbg,
+        is_always_portrait = self.isAlwaysPortrait(),
+        mxcfb_bypass_wait_for = mxcfb_bypass_wait_for,
+    }
     if self.screen.fb_bpp == 32 then
         -- Ensure we decode images properly, as our framebuffer is BGRA...
         logger.info("Enabling Kobo @ 32bpp BGR tweaks")

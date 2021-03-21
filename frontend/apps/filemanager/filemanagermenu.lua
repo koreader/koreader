@@ -451,8 +451,8 @@ To:
             end,
         })
     end
-    --- @note Currently, only Kobo has a fancy crash display (#5328)
-    if Device:isKobo() then
+    --- @note Currently, only Kobo, rM & PB have a fancy crash display (#5328)
+    if Device:isKobo() or Device:isRemarkable() or Device:isPocketBook() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Always abort on crash"),
             checked_func = function()
@@ -519,6 +519,35 @@ To:
                     Device.screen:toggleHWDithering(false)
                 end
                 UIManager:setDirty("all", "full")
+            end,
+        })
+    end
+    --- @note: Currently, only Kobo implements this quirk
+    if Device:hasEinkScreen() and Device:isKobo() then
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            -- @translators Highly technical (ioctl is a Linux API call, the uppercase stuff is a constant). What's translatable is essentially only the action ("bypass") and the article.
+            text = _("Bypass the MXCFB_WAIT_FOR_* ioctls"),
+            checked_func = function()
+                local mxcfb_bypass_wait_for
+                if G_reader_settings:has("mxcfb_bypass_wait_for") then
+                    mxcfb_bypass_wait_for = G_reader_settings:isTrue("mxcfb_bypass_wait_for")
+                else
+                    mxcfb_bypass_wait_for = not Device:hasReliableMxcWaitFor()
+                end
+                return mxcfb_bypass_wait_for
+            end,
+            callback = function()
+                local mxcfb_bypass_wait_for
+                if G_reader_settings:has("mxcfb_bypass_wait_for") then
+                    mxcfb_bypass_wait_for = G_reader_settings:isTrue("mxcfb_bypass_wait_for")
+                else
+                    mxcfb_bypass_wait_for = not Device:hasReliableMxcWaitFor()
+                end
+                G_reader_settings:saveSetting("mxcfb_bypass_wait_for", not mxcfb_bypass_wait_for)
+                local InfoMessage = require("ui/widget/infomessage")
+                UIManager:show(InfoMessage:new{
+                    text = _("This will take effect on next restart."),
+                })
             end,
         })
     end
