@@ -6,6 +6,7 @@ local socket = require("socket")
 local socketutil = require("socketutil")
 local util = require("util")
 local _ = require("gettext")
+local logger = require("logger")
 
 local WebDavApi = {
 }
@@ -86,7 +87,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
             ["Depth"]          = "1",
             ["Content-Length"] = #data,
         },
-        username = user,
+        user     = user,
         password = pass,
         source   = ltn12.source.string(data),
         sink     = ltn12.sink.table(sink),
@@ -94,6 +95,11 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
     local headers_request = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
     if headers_request == nil then
+        return nil
+    elseif headers_request < 200 or headers_request >= 300 then
+        -- got a response, but it wasn't a success (e.g. auth failure)
+        logger.dbg(headers_request)
+        logger.dbg(table.concat(sink))
         return nil
     end
 
@@ -156,7 +162,7 @@ function WebDavApi:downloadFile(file_url, user, pass, local_path)
         url      = file_url,
         method   = "GET",
         sink     = ltn12.sink.file(io.open(local_path, "w")),
-        username = user,
+        user     = user,
         password = pass,
     })
     socketutil:reset_timeout()
