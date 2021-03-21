@@ -6,6 +6,7 @@ local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
+
 local ReaderSearch = InputContainer:new{
     direction = 0, -- 0 for search forward, 1 for search backward
     case_insensitive = true, -- default to case insensitive
@@ -145,11 +146,9 @@ function ReaderSearch:onShowSearchDialog(text, direction)
                 -- Don't add result pages to location ("Go back") stack
                 neglect_current_location = true
             else
-                UIManager:show(
-                    Notification:new{
-                        text = "Not found",
-                    }
-                )
+                UIManager:show(Notification:new{
+                    text = "Not found",
+                })
             end
         end
     end
