@@ -149,7 +149,7 @@ function ReaderSearch:onShowSearchDialog(text, direction)
                 UIManager:show(
                     Notification:new{
                         text = T(_("'%1' not found"), text),
-                        timeout = 3
+                        timeout = 3,
                     }
                 )
             end
