@@ -2,8 +2,8 @@ local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
+local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
-local InfoMessage = require("ui/widget/infomessage")
 local T = require("ffi/util").template
 local logger = require("logger")
 local _ = require("gettext")
@@ -148,9 +148,9 @@ function ReaderSearch:onShowSearchDialog(text, direction)
                 neglect_current_location = true
             else
                 UIManager:show(
-                    InfoMessage:new{
+                    Notification:new{
                         text = T(_("'%1' not found"), text),
-                        timeout = 2
+                        timeout = 3
                     }
                 )
             end
