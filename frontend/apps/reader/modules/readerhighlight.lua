@@ -83,7 +83,6 @@ function ReaderHighlight:init()
                 text = _("Search"),
                 callback = function()
                     _self:onHighlightSearch()
-                    UIManager:close(self.highlight_dialog)
                     -- We don't call _self:onClose(), crengine will highlight
                     -- search matches on the current page, and self:clear()
                     -- would redraw and remove crengine native highlights
@@ -100,7 +99,7 @@ function ReaderHighlight:init()
                         _self:lookupWikipedia()
                         -- We don't call _self:onClose(), we need the highlight
                         -- to still be there, as we may Highlight it from the
-                        -- dict lookup widget
+                        -- dict lookup widget.
                     end)
                 end,
             }
@@ -562,6 +561,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                     self:deleteHighlight(page, index)
                     -- other part outside of the dialog may be dirty
                     UIManager:close(self.edit_highlight_dialog, "ui")
+                    self.edit_highlight_dialog = nil
                 end,
             },
             {
@@ -569,6 +569,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 callback = function()
                     self:editHighlight(page, index)
                     UIManager:close(self.edit_highlight_dialog)
+                    self.edit_highlight_dialog = nil
                 end,
             },
             {
@@ -577,6 +578,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                     self.selected_text = self.view.highlight.saved[page][index]
                     self:onShowHighlightMenu()
                     UIManager:close(self.edit_highlight_dialog)
+                    self.edit_highlight_dialog = nil
                 end,
             },
         }
@@ -1383,6 +1385,7 @@ function ReaderHighlight:addNote()
     local page, index = self:saveHighlight()
     self:editHighlight(page, index)
     UIManager:close(self.edit_highlight_dialog)
+    self.edit_highlight_dialog = nil
     self.ui:handleEvent(Event:new("AddNote"))
 end
 
@@ -1394,6 +1397,11 @@ end
 
 function ReaderHighlight:onHighlightSearch()
     logger.dbg("search highlight")
+    -- First, if our dialog is still shown, close it.
+    if self.highlight_dialog then
+        UIManager:close(self.highlight_dialog)
+        self.highlight_dialog = nil
+    end
     self:highlightFromHoldPos()
     if self.selected_text then
         local text = util.stripPunctuation(cleanupSelectedText(self.selected_text.text))
@@ -1482,6 +1490,7 @@ end
 
 function ReaderHighlight:onClose()
     UIManager:close(self.highlight_dialog)
+    self.highlight_dialog = nil
     -- clear highlighted text
     self:clear()
 end
