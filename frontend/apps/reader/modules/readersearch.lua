@@ -6,7 +6,6 @@ local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
-local T = require("ffi/util").template
 local ReaderSearch = InputContainer:new{
     direction = 0, -- 0 for search forward, 1 for search backward
     case_insensitive = true, -- default to case insensitive
@@ -148,8 +147,7 @@ function ReaderSearch:onShowSearchDialog(text, direction)
             else
                 UIManager:show(
                     Notification:new{
-                        text = T(_("'%1' not found"), text),
-                        timeout = 3,
+                        text = "Not found",
                     }
                 )
             end
