@@ -32,10 +32,10 @@ local CreOptions = {
                         }
                     else
                         return {
-                            "rotation.90CCW",
-                            "rotation.0UR",
-                            "rotation.90CW",
-                            "rotation.180UD",
+                            "rotation.L.90CCW",
+                            "rotation.L.0UR",
+                            "rotation.L.90CW",
+                            "rotation.L.180UD",
                         }
                     end
                 end,
