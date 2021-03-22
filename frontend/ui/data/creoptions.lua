@@ -22,12 +22,23 @@ local CreOptions = {
             {
                 name = "rotation_mode",
                 name_text = _("Rotation"),
-                item_icons = {
-                    "rotation.P.90CCW",
-                    "rotation.P.0UR",
-                    "rotation.P.90CW",
-                    "rotation.P.180UD",
-                },
+                item_icons_func = function(configurable)
+                    if optionsutil.enableIfEquals(configurable, "rotation_mode", Screen.ORIENTATION_PORTRAIT) or optionsutil.enableIfEquals(configurable, "rotation_mode", Screen.ORIENTATION_PORTRAIT_ROTATED) then
+                        return {
+                            "rotation.P.90CCW",
+                            "rotation.P.0UR",
+                            "rotation.P.90CW",
+                            "rotation.P.180UD",
+                        }
+                    else
+                        return {
+                            "rotation.90CCW",
+                            "rotation.0UR",
+                            "rotation.90CW",
+                            "rotation.180UD",
+                        }
+                    end
+                end,
                 -- For Dispatcher's sake
                 labels = {C_("Rotation", "⤹ 90°"), C_("Rotation", "↑ 0°"), C_("Rotation", "⤸ 90°"), C_("Rotation", "↓ 180°")},
                 alternate = false,
