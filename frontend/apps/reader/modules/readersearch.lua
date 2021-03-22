@@ -147,7 +147,7 @@ function ReaderSearch:onShowSearchDialog(text, direction)
                 neglect_current_location = true
             else
                 UIManager:show(Notification:new{
-                    text = "Not found",
+                    text = _("Not found"),
                 })
             end
         end
