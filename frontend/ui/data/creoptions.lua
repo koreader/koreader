@@ -23,10 +23,10 @@ local CreOptions = {
                 name = "rotation_mode",
                 name_text = _("Rotation"),
                 item_icons = {
-                    "rotation.90CCW",
-                    "rotation.0UR",
-                    "rotation.90CW",
-                    "rotation.180UD",
+                    "rotation.P.90CCW",
+                    "rotation.P.0UR",
+                    "rotation.P.90CW",
+                    "rotation.P.180UD",
                 },
                 -- For Dispatcher's sake
                 labels = {C_("Rotation", "⤹ 90°"), C_("Rotation", "↑ 0°"), C_("Rotation", "⤸ 90°"), C_("Rotation", "↓ 180°")},
