@@ -167,18 +167,22 @@ function ReaderSearch:onShowSearchDialog(text, direction)
             {
                 {
                     text = from_start_text,
+                    vsync = true,
                     callback = do_search(self.searchFromStart, text),
                 },
                 {
                     text = backward_text,
+                    vsync = true,
                     callback = do_search(self.searchNext, text, 1),
                 },
                 {
                     text = forward_text,
+                    vsync = true,
                     callback = do_search(self.searchNext, text, 0),
                 },
                 {
                     text = from_end_text,
+                    vsync = true,
                     callback = do_search(self.searchFromEnd, text),
                 },
             }
