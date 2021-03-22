@@ -30,7 +30,7 @@ local KoptOptions = {
                 name = "rotation_mode",
                 name_text = _("Rotation"),
                 item_icons_func = function()
-                    if Device.screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT then
+                    if Screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT then
                         -- P, 0UR
                         return {
                             "rotation.P.90CCW",
@@ -38,7 +38,7 @@ local KoptOptions = {
                             "rotation.P.90CW",
                             "rotation.P.180UD",
                         }
-                    elseif Device.screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT_ROTATED then
+                    elseif Screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT_ROTATED then
                         -- P, 180UD
                         return {
                             "rotation.P.90CW",
@@ -46,7 +46,7 @@ local KoptOptions = {
                             "rotation.P.90CCW",
                             "rotation.P.0UR",
                         }
-                    elseif Device.screen:getRotationMode() == Screen.ORIENTATION_LANDSCAPE then
+                    elseif Screen:getRotationMode() == Screen.ORIENTATION_LANDSCAPE then
                         -- L, 90CW
                         return {
                             "rotation.L.90CCW",

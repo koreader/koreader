@@ -23,7 +23,7 @@ local CreOptions = {
                 name = "rotation_mode",
                 name_text = _("Rotation"),
                 item_icons_func = function()
-                    if Device.screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT then
+                    if Screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT then
                         -- P, 0UR
                         return {
                             "rotation.P.90CCW",
@@ -31,7 +31,7 @@ local CreOptions = {
                             "rotation.P.90CW",
                             "rotation.P.180UD",
                         }
-                    elseif Device.screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT_ROTATED then
+                    elseif Screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT_ROTATED then
                         -- P, 180UD
                         return {
                             "rotation.P.90CW",
@@ -39,7 +39,7 @@ local CreOptions = {
                             "rotation.P.90CCW",
                             "rotation.P.0UR",
                         }
-                    elseif Device.screen:getRotationMode() == Screen.ORIENTATION_LANDSCAPE then
+                    elseif Screen:getRotationMode() == Screen.ORIENTATION_LANDSCAPE then
                         -- L, 90CW
                         return {
                             "rotation.L.90CCW",
@@ -63,7 +63,7 @@ local CreOptions = {
                 values = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
                 args = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
                 default_arg = 0,
-                current_func = function() return Device.screen:getRotationMode() end,
+                current_func = function() return Screen:getRotationMode() end,
                 event = "SetRotationMode",
                 name_text_hold_callback = optionsutil.showValues,
             },
@@ -79,7 +79,7 @@ local CreOptions = {
                 --[[ Commented out, to have it also available in portrait mode
                 current_func = function()
                     -- If not in landscape mode, shows "1" as selected
-                    if Device.screen:getScreenMode() ~= "landscape" then
+                    if Screen:getScreenMode() ~= "landscape" then
                         return 1
                     end
                     -- if we return nil, ConfigDialog will pick the one from the
@@ -88,7 +88,7 @@ local CreOptions = {
                 ]]--
                 enabled_func = function(configurable)
                     return optionsutil.enableIfEquals(configurable, "view_mode", 0) -- "page" mode
-                        -- and Device.screen:getScreenMode() == "landscape"
+                        -- and Screen:getScreenMode() == "landscape"
                 end,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Render the document on half the screen width and display two pages at once with a single page number. This makes it look like two columns.
@@ -631,7 +631,7 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                 args = {true, false},
                 default_arg = nil,
                 event = "ToggleNightmodeImages",
-                show_func = function() return Device.screen.night_mode end,
+                show_func = function() return Screen.night_mode end,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Disable the automagic inversion of images when nightmode is enabled. Useful if your book contains mainly inlined mathematical content or scene break art.]]),
             },
