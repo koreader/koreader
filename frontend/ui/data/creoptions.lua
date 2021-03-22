@@ -22,7 +22,7 @@ local CreOptions = {
             {
                 name = "rotation_mode",
                 name_text = _("Rotation"),
-                item_icons_func = function(configurable)
+                item_icons_func = function()
                     if Device.screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT then
                         -- P, 0UR
                         return {
