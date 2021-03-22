@@ -8,8 +8,8 @@ A simple module to module to compare and do arithmetic with time values.
     -- Do some stuff.
     -- You can add and subtract `TimeVal` objects.
     local tv_duration = TimeVal:now() - tv_start
-    -- If you need more precision (like 2.5 s),
-    -- you can add the milliseconds to the seconds.
+    -- If you need more precision (like 2.5s),
+    -- you can add the microseconds to the seconds.
     local tv_duration_seconds_float = tv_duration.sec + tv_duration.usec/1000000
 ]]
 
