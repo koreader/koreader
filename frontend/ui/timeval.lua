@@ -45,11 +45,11 @@ if ffi.os == "Linux" then
 end
 
 --[[--
-TimeVal object.
+TimeVal object. Maps to a POSIX struct timeval (<sys/time.h>).
 
 @table TimeVal
 @int sec floored number of seconds
-@int usec remaining number of milliseconds
+@int usec number of microseconds past that second.
 ]]
 local TimeVal = {
     sec = 0,
