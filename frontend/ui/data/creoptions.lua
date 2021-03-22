@@ -39,8 +39,8 @@ local CreOptions = {
                             "rotation.P.90CCW",
                             "rotation.P.0UR",
                         }
-                    elseif Device.screen:getRotationMode() == Screen.ORIENTATION_LANDSCAPE_ROTATED then
-                        -- L, 90CCW
+                    elseif Device.screen:getRotationMode() == Screen.ORIENTATION_LANDSCAPE then
+                        -- L, 90CW
                         return {
                             "rotation.L.90CCW",
                             "rotation.L.0UR",
@@ -48,7 +48,7 @@ local CreOptions = {
                             "rotation.L.180UD",
                         }
                     else
-                        -- L, 90CW
+                        -- L, 90CCW
                         return {
                             "rotation.L.90CW",
                             "rotation.L.180UD",
