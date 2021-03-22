@@ -23,19 +23,37 @@ local CreOptions = {
                 name = "rotation_mode",
                 name_text = _("Rotation"),
                 item_icons_func = function(configurable)
-                    if optionsutil.enableIfEquals(configurable, "rotation_mode", Screen.ORIENTATION_PORTRAIT) or optionsutil.enableIfEquals(configurable, "rotation_mode", Screen.ORIENTATION_PORTRAIT_ROTATED) then
+                    if Device.screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT then
+                        -- P, 0UR
                         return {
                             "rotation.P.90CCW",
                             "rotation.P.0UR",
                             "rotation.P.90CW",
                             "rotation.P.180UD",
                         }
-                    else
+                    elseif Device.screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT then
+                        -- P, 180UD
+                        return {
+                            "rotation.P.90CW",
+                            "rotation.P.180UD",
+                            "rotation.P.90CCW",
+                            "rotation.P.0UR",
+                        }
+                    elseif Device.screen:getRotationMode() == Screen.ORIENTATION_LANDSCAPE_ROTATED then
+                        -- L, 90CCW
                         return {
                             "rotation.L.90CCW",
                             "rotation.L.0UR",
                             "rotation.L.90CW",
                             "rotation.L.180UD",
+                        }
+                    else
+                        -- L, 90CW
+                        return {
+                            "rotation.L.90CW",
+                            "rotation.L.180UD",
+                            "rotation.L.90CCW",
+                            "rotation.L.0UR",
                         }
                     end
                 end,
