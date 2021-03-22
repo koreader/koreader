@@ -205,7 +205,7 @@ function Document:deleteHighlight(pageno, item)
     if annot ~= nil then
         page:deleteMarkupAnnotation(annot)
     end
-    return nil
+    page:close()
 end
 
 function PdfDocument:updateHighlightContents(pageno, item, contents)
