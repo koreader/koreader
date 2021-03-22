@@ -21,9 +21,6 @@ require("ffi/linux_input_h")
 
 -- luacheck: push
 -- luacheck: ignore
--- for frontend SDL event handling
-local EV_SDL = 53 -- ASCII code for S
-
 -- key press event values (KEY.value)
 local EVENT_VALUE_KEY_PRESS = 1
 local EVENT_VALUE_KEY_REPEAT = 2
@@ -983,7 +980,7 @@ function Input:waitEvent(now, deadline)
             return self:handleTouchEv(ev)
         elseif ev.type == C.EV_MSC then
             return self:handleMiscEv(ev)
-        elseif ev.type == EV_SDL then
+        elseif ev.type == C.EV_SDL then
             return self:handleSdlEv(ev)
         else
             -- Received some other kind of event that we do not know how to specifically handle yet
