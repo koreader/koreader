@@ -562,9 +562,9 @@ Schedules a task to be run a certain amount of seconds from now.
 @see unschedule
 ]]
 function UIManager:scheduleIn(seconds, action, ...)
-    -- NOTE: If we blocked for a significant amount of time in the current UI frame, this might be noticeable stale...
-    --       (e.g., unscheduled wakeup guard on Kobo).
-    local when = self._now + TimeVal:fromnumber(seconds)
+    -- We might run significantly late inside an UI frame, so we can't use the cached value here.
+    -- It would also cause some bad interactions with the way nextTick & co behave.
+    local when = TimeVal:now() + TimeVal:fromnumber(seconds)
     self:schedule(when, action, ...)
 end
 dbg:guard(UIManager, 'scheduleIn',
