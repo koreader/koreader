@@ -9,7 +9,7 @@ local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Mupdf = require("ffi/mupdf")
 local Screen = Device.screen
-local TimeVal = require("ui/timeval")
+local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util  = require("util")
 
