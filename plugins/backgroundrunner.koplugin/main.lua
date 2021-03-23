@@ -140,7 +140,7 @@ function BackgroundRunner:_executeJob(job)
         CommandRunner:start(job)
         return true
     elseif type(job.executable) == "function" then
-        job.start_tv = TimeVal:now()
+        job.start_tv = UIManager:getTime()
         local status, err = pcall(job.executable)
         if status then
             job.result = 0
@@ -178,7 +178,7 @@ function BackgroundRunner:_execute()
             if job.insert_tv == nil then
                 -- Jobs are first inserted to jobs table from external users.
                 -- So they may not have insert field.
-                job.insert_tv = TimeVal:now()
+                job.insert_tv = UIManager:getTime()
             end
             local should_execute = false
             local should_ignore = false
@@ -191,7 +191,7 @@ function BackgroundRunner:_execute()
                 end
             elseif type(job.when) == "number" then
                 if job.when >= 0 then
-                    should_execute = ((TimeVal:now() - job.insert_tv) >= TimeVal:fromnumber(job.when))
+                    should_execute = ((UIManager:getTime() - job.insert_tv) >= TimeVal:fromnumber(job.when))
                 else
                     should_ignore = true
                 end
