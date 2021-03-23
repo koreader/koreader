@@ -597,9 +597,11 @@ end
 function ReaderBookmark:renameBookmark(item, from_highlight)
     if from_highlight then
         -- Called by ReaderHighlight:editHighlight, we need to find the bookmark
+        local pboxes = item.pboxes
         for i=1, #self.bookmarks do
             if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
                 item = self.bookmarks[i]
+                item.pboxes = pboxes
                 if item.text == nil or item.text == "" then
                     -- Make up bookmark text as done in onShowBookmark
                     local page = item.page
@@ -647,6 +649,10 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                                 if item.text == self.bookmarks[i].text and  item.pos0 == self.bookmarks[i].pos0 and
                                     item.pos1 == self.bookmarks[i].pos1 and item.page == self.bookmarks[i].page then
                                     self.bookmarks[i].text = value
+                                    local setting = G_reader_settings:readSetting("save_document")
+                                    if setting ~= "disable" then
+                                        self.ui.document:updateHighlightContents(item.page, item, value)
+                                    end
                                     UIManager:close(self.input)
                                     if not from_highlight then
                                         self.refresh()
