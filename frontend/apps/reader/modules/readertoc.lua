@@ -915,12 +915,13 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
     -- might be useful to have the footer and SkimTo progress bar less crowded.
     -- This also affects the footer current chapter title, but leave the ToC itself unchanged.
     local genTocLevelIgnoreMenuItem = function(level)
-        if not self.ticks or not self.ticks[level] then
+        local ticks = self:getTocTicks()
+        if not ticks[level] then
             return
         end
         return {
             text_func = function()
-                return T(_("%1 entries at ToC depth %2"), #self.ticks[level], level)
+                return T(_("%1 entries at ToC depth %2"), #ticks[level], level)
             end,
             checked_func = function()
                 return not self.toc_ticks_ignored_levels[level]
@@ -936,18 +937,18 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
     menu_items.toc_ticks_level_ignore = {
         text_func = function()
             local nb_ticks = 0
-            if self.ticks then
-                for level=1, #self.ticks do
-                    if not self.toc_ticks_ignored_levels[level] then
-                        nb_ticks = nb_ticks + #self.ticks[level]
-                    end
+            local ticks = self:getTocTicks()
+            for level=1, #ticks do
+                if not self.toc_ticks_ignored_levels[level] then
+                    nb_ticks = nb_ticks + #ticks[level]
                 end
             end
             return T(_("Progress bars: %1 ticks"), nb_ticks)
         end,
         help_text = _([[The progress bars in the footer and the skim dialog can become cramped when the table of contents is complex. This allows you to restrict the number of tick marks.]]),
         enabled_func = function()
-            return self.ticks and #self.ticks > 0
+            local ticks = self:getTocTicks()
+            return #ticks > 0
         end,
         sub_item_table_func = function()
             local toc_ticks_levels = {}
