@@ -338,7 +338,7 @@ end
 -- to ensure current highlight has not already been cleared, and that we
 -- are not going to clear a new highlight
 function ReaderHighlight:getClearId()
-    self.clear_id = TimeVal:now() -- can act as a unique id
+    self.clear_id = UIManager:getTime() -- can act as a unique id
     return self.clear_id
 end
 
@@ -681,7 +681,7 @@ function ReaderHighlight:_resetHoldTimer(clear)
     if clear then
         self.hold_last_tv = nil
     else
-        self.hold_last_tv = TimeVal:now()
+        self.hold_last_tv = UIManager:getTime()
     end
 end
 
@@ -1124,7 +1124,7 @@ end
 function ReaderHighlight:onHoldRelease()
     local long_final_hold = false
     if self.hold_last_tv then
-        local hold_duration = TimeVal:now() - self.hold_last_tv
+        local hold_duration = UIManager:getTime() - self.hold_last_tv
         if hold_duration > TimeVal:new{ sec = 3 } then
             -- We stayed 3 seconds before release without updating selection
             long_final_hold = true
