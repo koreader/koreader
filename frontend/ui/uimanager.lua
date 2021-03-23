@@ -1582,6 +1582,7 @@ function UIManager:handleInput()
     self:processZMQs()
 
     -- Figure out how long to wait.
+    -- Ultimately, that'll be the earliest of INPUT_TIMEOUT, ZMQ_TIMEOUT or the next earliest scheduled task.
     local deadline
     -- Default to INPUT_TIMEOUT (which may be nil, i.e. block until an event happens).
     local wait_us = self.INPUT_TIMEOUT
@@ -1596,10 +1597,10 @@ function UIManager:handleInput()
         deadline = now + TimeVal:new{ usec = wait_us }
     end
 
-    -- If there's a timed event pending, that puts an upper bound on how long to wait.
-    if wait_until and (not deadline or deadline < wait_until) then
-        --             ^ We don't have a TIMEOUT induced deadline
-        --                             ^ We have a TIMEOUT induced deadline that expires *before* our first scheduled task.
+    -- If there's a scheduled task pending, that puts an upper bound on how long to wait.
+    if wait_until and (not deadline or wait_until < deadline) then
+        --             ^ We don't have a TIMEOUT induced deadline, making the choice easy.
+        --                             ^ We have a task scheduled for *before* our TIMEOUT induced deadline.
         deadline = wait_until
     end
 
