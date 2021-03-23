@@ -29,7 +29,7 @@ local UIManager = {
     event_handlers = nil,
 
     _running = true,
-    _now = 0,
+    _now = TimeVal:now(),
     _window_stack = {},
     _task_queue = {},
     _task_queue_dirty = false,
