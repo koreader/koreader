@@ -1073,7 +1073,7 @@ function UIManager:sendEvent(event)
 
     -- Ensure discardEvents
     if self._discard_events_till then
-        if self._now < self._discard_events_till then
+        if TimeVal:now() < self._discard_events_till then
             return
         else
             self._discard_events_till = nil
