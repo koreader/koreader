@@ -25,7 +25,7 @@ local AutoSuspend = WidgetContainer:new{
     is_doc_only = false,
     autoshutdown_timeout_seconds = G_reader_settings:readSetting("autoshutdown_timeout_seconds") or default_autoshutdown_timeout_seconds,
     auto_suspend_timeout_seconds = G_reader_settings:readSetting("auto_suspend_timeout_seconds") or default_auto_suspend_timeout_seconds,
-    last_action_tv = TimeVal:new{},
+    last_action_tv = TimeVal:now(),
     standby_prevented = false,
 }
 
