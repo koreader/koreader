@@ -37,7 +37,7 @@ function CommandRunner:start(job)
     assert(self.pio == nil)
     assert(self.job == nil)
     self.job = job
-    self.job.start_tv = TimeVal:now()
+    self.job.start_tv = UIManager:getTime()
     assert(type(self.job.executable) == "string")
     local command = self:createEnvironment() .. " " ..
                     "sh plugins/backgroundrunner.koplugin/luawrapper.sh " ..
