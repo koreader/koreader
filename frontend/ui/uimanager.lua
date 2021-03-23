@@ -562,7 +562,7 @@ Schedules a task to be run a certain amount of seconds from now.
 @see unschedule
 ]]
 function UIManager:scheduleIn(seconds, action, ...)
-    local when = TimeVal:now() + TimeVal:fromnumber(seconds)
+    local when = self._now + TimeVal:fromnumber(seconds)
     self:schedule(when, action, ...)
 end
 dbg:guard(UIManager, 'scheduleIn',
@@ -1058,8 +1058,7 @@ function UIManager:discardEvents(set_or_seconds)
     else -- we expect a number
         usecs = set_or_seconds * 1000000
     end
-    local now = TimeVal:now()
-    self._discard_events_till = now + TimeVal:new{usec = usecs}
+    self._discard_events_till = self._now + TimeVal:new{usec = usecs}
 end
 
 --[[--
@@ -1072,8 +1071,7 @@ function UIManager:sendEvent(event)
 
     -- Ensure discardEvents
     if self._discard_events_till then
-        local now = TimeVal:now()
-        if now < self._discard_events_till then
+        if self._now < self._discard_events_till then
             return
         else
             self._discard_events_till = nil
