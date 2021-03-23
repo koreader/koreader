@@ -15,7 +15,7 @@ local AutoTurn = WidgetContainer:new{
     autoturn_distance = 1,
     enabled = false,
     settings_id = 0,
-    last_action_tv = 0,
+    last_action_tv = TimeVal:new{},
 }
 
 function AutoTurn:_enabled()
