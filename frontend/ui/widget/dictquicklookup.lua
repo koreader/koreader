@@ -20,6 +20,7 @@ local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -153,7 +154,7 @@ function DictQuickLookup:init()
                 -- callback function when HoldReleaseText is handled as args
                 args = function(text, hold_duration)
                     local lookup_target
-                    if hold_duration < 3.0 then
+                    if hold_duration < TimeVal:new{ sec = 3 } then
                         -- do this lookup in the same domain (dict/wikipedia)
                         lookup_target = self.is_wiki and "LookupWikipedia" or "LookupWord"
                     else
