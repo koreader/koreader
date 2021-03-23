@@ -285,6 +285,9 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
         else
             deadline = origin + delay
         end
+        -- What this does is essentially to ask the kernel to wake us up when the timer expires,
+        -- instead of ensuring that ourselves via a polling timeout.
+        -- This ensures perfect accuracy, and allows it to be computed in the event's own timescale.
         timerfd = input.setTimer(clock, deadline.sec, deadline.usec)
     end
     if timerfd then
@@ -295,12 +298,12 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
             print("Input:setTimeout via timerfd:", deadline:tonumber())
     else
         -- No timerfd, we'll compute a poll timeout ourselves.
-        -- If the event's clocksource is monotonic, we can use it directly.
         if clock == C.CLOCK_MONOTONIC then
+            -- If the event's clocksource is monotonic, we can use it directly.
             deadline = origin + delay
         else
-            -- Otherwise, fudge it by using a current timestamp in the UI time scale (MONOTONIC).
-            -- This isn't the end of the world in practice.
+            -- Otherwise, fudge it by using a current timestamp in the UI's timescale (MONOTONIC).
+            -- This isn't the end of the world in practice (c.f., #7415).
             deadline = TimeVal:now() + delay
         end
         item.deadline = deadline
@@ -319,7 +322,7 @@ function Input:clearTimeout(slot, ges)
     for i = #self.timer_callbacks, 1, -1 do
         local item = self.timer_callbacks[i]
         if item.slot == slot and (not ges or item.gesture == ges) then
-            -- If the timerfd backend is in use, close the fd, too
+            -- If the timerfd backend is in use, close the fd and free the list's node, too.
             if item.timerfd then
                 input.clearTimer(item.timerfd)
             end
@@ -829,7 +832,7 @@ end
 -- in much less common cases, that's the earliest of UIManager.INPUT_TIMEOUT (currently, only KOSync ever sets it) or UIManager.ZMQ_TIMEOUT if there are pending ZMQs).
 function Input:waitEvent(now, deadline)
     print("Input:waitEvent", now:tonumber(), deadline and deadline:tonumber() or nil)
-    -- On the first iteration of the loop, we don't need to update now, we're following closely (a couple ms) behind UIManager.
+    -- On the first iteration of the loop, we don't need to update now, we're following closely (a couple ms at most) behind UIManager.
     local ok, ev
     -- wrapper for input.waitForEvents that will retry for some cases
     while true do
@@ -861,7 +864,7 @@ function Input:waitEvent(now, deadline)
                 end
                 print("Effective deadline:", deadline_is_timer, poll_deadline:tonumber())
                 -- If we haven't hit that deadline yet, poll until it expires, otherwise,
-                -- have select return immediately so that we trip the full timeout.
+                -- have select return immediately so that we trip a timeout.
                 now = now or TimeVal:now()
                 print("now:", now:tonumber())
                 local poll_timeout
@@ -890,7 +893,9 @@ function Input:waitEvent(now, deadline)
                         print("Consuming timer callback")
                         local touch_ges = self.timer_callbacks[1].callback()
                         table.remove(self.timer_callbacks, 1)
-                        -- If it was a timerfd, we also need to close the fd
+                        -- If it was a timerfd, we also need to close the fd.
+                        -- NOTE: The fact that deadlines are sorted *should* ensure that the timerfd that expired
+                        --       is actually the first of the list without us having to double-check that...
                         if timerfd then
                             input.clearTimer(timerfd)
                         end
@@ -913,7 +918,7 @@ function Input:waitEvent(now, deadline)
             end -- while #timer_callbacks > 0
         else
             -- If there aren't any timers, just block for the requested amount of time.
-            -- poll_timeout_us may be nil, in which case waitForEvent blocks indefinitely (i.e., until the next input event ;)).
+            -- deadline may be nil, in which case waitForEvent blocks indefinitely (i.e., until the next input event ;)).
             local poll_timeout
             -- If UIManager put us on deadline, enforce it, otherwise, block forever.
             if deadline then
