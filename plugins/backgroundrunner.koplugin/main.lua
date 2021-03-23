@@ -16,7 +16,8 @@ local logger = require("logger")
 local _ = require("gettext")
 
 -- BackgroundRunner is an experimental feature to execute non-critical jobs in
--- background. A job is defined as a table in PluginShare.backgroundJobs table.
+-- the background.
+-- A job is defined as a table in PluginShare.backgroundJobs table.
 -- It contains at least following items:
 -- when: number, string or function
 --   number: the delay in seconds
@@ -27,9 +28,9 @@ local _ = require("gettext")
 --             executed immediately.
 --
 -- repeated: boolean or function or nil or number
---   boolean: true to repeated the job once it finished.
---   function: if the return value of the function is true, repeated the job
---             once it finished. If the function throws an error, it equals to
+--   boolean: true to repeat the job once it finished.
+--   function: if the return value of the function is true, repeat the job
+--             once it finishes. If the function throws an error, it equals to
 --             return false.
 --   nil: same as false.
 --   number: times to repeat.
@@ -177,7 +178,7 @@ function BackgroundRunner:_execute()
             local job = table.remove(self.jobs, 1)
             if job.insert_tv == nil then
                 -- Jobs are first inserted to jobs table from external users.
-                -- So they may not have insert field.
+                -- So they may not have an insert field.
                 job.insert_tv = UIManager:getTime()
             end
             local should_execute = false
@@ -252,7 +253,7 @@ end
 
 function BackgroundRunner:_insert(job)
     assert(self ~= nil)
-    job.insert_tv = TimeVal:now()
+    job.insert_tv = UIManager:getTime()
     table.insert(self.jobs, job)
 end
 
