@@ -562,6 +562,8 @@ Schedules a task to be run a certain amount of seconds from now.
 @see unschedule
 ]]
 function UIManager:scheduleIn(seconds, action, ...)
+    -- NOTE: If we blocked for a significant amount of time in the current UI frame, this might be noticeable stale...
+    --       (e.g., unscheduled wakeup guard on Kobo).
     local when = self._now + TimeVal:fromnumber(seconds)
     self:schedule(when, action, ...)
 end
