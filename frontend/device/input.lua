@@ -48,7 +48,7 @@ local MSC_RAW_GSENSOR_LANDSCAPE_LEFT = 0x1a
 local MSC_RAW_GSENSOR_BACK = 0x1b
 local MSC_RAW_GSENSOR_FRONT = 0x1c
 
--- For debug logging of ev.code
+-- For debug logging of ev.type
 local linux_evdev_type_map = {
     [C.EV_SYN] = "EV_SYN",
     [C.EV_KEY] = "EV_KEY",
@@ -66,6 +66,7 @@ local linux_evdev_type_map = {
     [C.EV_SDL] = "EV_SDL",
 }
 
+-- For debug logging of ev.code
 local linux_evdev_code_map = {
     [C.SYN_REPORT] = "SYN_REPORT",
     [C.SYN_CONFIG] = "SYN_CONFIG",
