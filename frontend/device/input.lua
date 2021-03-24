@@ -67,11 +67,14 @@ local linux_evdev_type_map = {
 }
 
 -- For debug logging of ev.code
-local linux_evdev_code_map = {
+local linux_evdev_syn_code_map = {
     [C.SYN_REPORT] = "SYN_REPORT",
     [C.SYN_CONFIG] = "SYN_CONFIG",
     [C.SYN_MT_REPORT] = "SYN_MT_REPORT",
     [C.SYN_DROPPED] = "SYN_DROPPED",
+}
+
+local linux_evdev_abs_code_map = {
     [C.ABS_X] = "ABS_X",
     [C.ABS_Y] = "ABS_Y",
     [C.ABS_PRESSURE] = "ABS_PRESSURE",
@@ -90,8 +93,11 @@ local linux_evdev_code_map = {
     [C.ABS_MT_DISTANCE] = "ABS_MT_DISTANCE",
     [C.ABS_MT_TOOL_X] = "ABS_MT_TOOL_X",
     [C.ABS_MT_TOOL_Y] = "ABS_MT_TOOL_Y",
-    [C.MSC_RAW] = "MSC_RAW",
     [ABS_OASIS_ORIENTATION] = "ABS_OASIS_ORIENTATION",
+}
+
+local linux_evdev_msc_code_map = {
+    [C.MSC_RAW] = "MSC_RAW",
 }
 -- luacheck: pop
 
@@ -1021,10 +1027,25 @@ function Input:waitEvent(now, deadline)
                     "key event => code: %d (%s), value: %s, time: %d.%d",
                     ev.code, self.event_map[ev.code], ev.value,
                     ev.time.sec, ev.time.usec))
-            else
+            elseif ev.type == C.EV_SYN then
                 logger.dbg(string.format(
                     "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
-                    ev.type, linux_evdev_type_map[ev.type], ev.code, linux_evdev_code_map[ev.code], ev.value,
+                    ev.type, linux_evdev_type_map[ev.type], ev.code, linux_evdev_syn_code_map[ev.code], ev.value,
+                    ev.time.sec, ev.time.usec))
+            elseif ev.type == C.EV_ABS then
+                logger.dbg(string.format(
+                    "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
+                    ev.type, linux_evdev_type_map[ev.type], ev.code, linux_evdev_abs_code_map[ev.code], ev.value,
+                    ev.time.sec, ev.time.usec))
+            elseif ev.type == C.EV_MSC then
+                logger.dbg(string.format(
+                    "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
+                    ev.type, linux_evdev_type_map[ev.type], ev.code, linux_evdev_msc_code_map[ev.code], ev.value,
+                    ev.time.sec, ev.time.usec))
+            else
+                logger.dbg(string.format(
+                    "input event => type: %d (%s), code: %d, value: %s, time: %d.%d",
+                    ev.type, linux_evdev_type_map[ev.type], ev.code, ev.value,
                     ev.time.sec, ev.time.usec))
             end
         end
