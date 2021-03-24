@@ -93,7 +93,6 @@ local linux_evdev_abs_code_map = {
     [C.ABS_MT_DISTANCE] = "ABS_MT_DISTANCE",
     [C.ABS_MT_TOOL_X] = "ABS_MT_TOOL_X",
     [C.ABS_MT_TOOL_Y] = "ABS_MT_TOOL_Y",
-    [ABS_OASIS_ORIENTATION] = "ABS_OASIS_ORIENTATION",
 }
 
 local linux_evdev_msc_code_map = {
