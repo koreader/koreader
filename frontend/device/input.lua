@@ -47,6 +47,48 @@ local MSC_RAW_GSENSOR_LANDSCAPE_LEFT = 0x1a
 -- Not that we care about those, but they are reported, and accurate ;).
 local MSC_RAW_GSENSOR_BACK = 0x1b
 local MSC_RAW_GSENSOR_FRONT = 0x1c
+
+-- For debug logging of ev.code
+local linux_evdev_code_map = {
+    [C.EV_SYN] = "EV_SYN",
+    [C.EV_KEY] = "EV_KEY",
+    [C.EV_REL] = "EV_REL",
+    [C.EV_ABS] = "EV_ABS",
+    [C.EV_MSC] = "EV_MSC",
+    [C.EV_SW] = "EV_SW",
+    [C.EV_LED] = "EV_LED",
+    [C.EV_SND] = "EV_SND",
+    [C.EV_REP] = "EV_REP",
+    [C.EV_FF] = "EV_FF",
+    [C.EV_PWR] = "EV_PWR",
+    [C.EV_FF_STATUS] = "EV_FF_STATUS",
+    [C.EV_MAX] = "EV_MAX",
+    [C.EV_SDL] = "EV_SDL",
+    [C.SYN_REPORT] = "SYN_REPORT",
+    [C.SYN_CONFIG] = "SYN_CONFIG",
+    [C.SYN_MT_REPORT] = "SYN_MT_REPORT",
+    [C.SYN_DROPPED] = "SYN_DROPPED",
+    [C.ABS_X] = "ABS_X",
+    [C.ABS_Y] = "ABS_Y",
+    [C.ABS_PRESSURE] = "ABS_PRESSURE",
+    [C.ABS_MT_SLOT] = "ABS_MT_SLOT",
+    [C.ABS_MT_TOUCH_MAJOR] = "ABS_MT_TOUCH_MAJOR",
+    [C.ABS_MT_TOUCH_MINOR] = "ABS_MT_TOUCH_MINOR",
+    [C.ABS_MT_WIDTH_MAJOR] = "ABS_MT_WIDTH_MAJOR",
+    [C.ABS_MT_WIDTH_MINOR] = "ABS_MT_WIDTH_MINOR",
+    [C.ABS_MT_ORIENTATION] = "ABS_MT_ORIENTATION",
+    [C.ABS_MT_POSITION_X] = "ABS_MT_POSITION_X",
+    [C.ABS_MT_POSITION_Y] = "ABS_MT_POSITION_Y",
+    [C.ABS_MT_TOOL_TYPE] = "ABS_MT_TOOL_TYPE",
+    [C.ABS_MT_BLOB_ID] = "ABS_MT_BLOB_ID",
+    [C.ABS_MT_TRACKING_ID] = "ABS_MT_TRACKING_ID",
+    [C.ABS_MT_PRESSURE] = "ABS_MT_PRESSURE",
+    [C.ABS_MT_DISTANCE] = "ABS_MT_DISTANCE",
+    [C.ABS_MT_TOOL_X] = "ABS_MT_TOOL_X",
+    [C.ABS_MT_TOOL_Y] = "ABS_MT_TOOL_Y",
+    [C.MSC_RAW] = "MSC_RAW",
+    [ABS_OASIS_ORIENTATION] = "ABS_OASIS_ORIENTATION",
+}
 -- luacheck: pop
 
 local _internal_clipboard_text = nil -- holds the last copied text
@@ -970,11 +1012,17 @@ function Input:waitEvent(now, deadline)
     if ok and ev then
         if DEBUG.is_on then
             DEBUG:logEv(ev)
-            logger.dbg(string.format(
-                "%s event => type: %d, code: %d(%s), value: %s, time: %d.%d",
-                ev.type == C.EV_KEY and "key" or "input",
-                ev.type, ev.code, self.event_map[ev.code], tostring(ev.value),
-                ev.time.sec, ev.time.usec))
+            if ev.type == C.EV_KEY then
+                logger.dbg(string.format(
+                    "key event => type: %d, code: %d (%s), value: %s, time: %d.%d",
+                    ev.type, ev.code, self.event_map[ev.code], ev.value,
+                    ev.time.sec, ev.time.usec))
+            else
+                logger.dbg(string.format(
+                    "input event => type: %d, code: %d (%s), value: %s, time: %d.%d",
+                    ev.type, ev.code, linux_evdev_code_map[ev.code], ev.value,
+                    ev.time.sec, ev.time.usec))
+            end
         end
         self:eventAdjustHook(ev)
         if ev.type == C.EV_KEY then
