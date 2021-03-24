@@ -49,7 +49,7 @@ local MSC_RAW_GSENSOR_BACK = 0x1b
 local MSC_RAW_GSENSOR_FRONT = 0x1c
 
 -- For debug logging of ev.code
-local linux_evdev_code_map = {
+local linux_evdev_type_map = {
     [C.EV_SYN] = "EV_SYN",
     [C.EV_KEY] = "EV_KEY",
     [C.EV_REL] = "EV_REL",
@@ -64,6 +64,9 @@ local linux_evdev_code_map = {
     [C.EV_FF_STATUS] = "EV_FF_STATUS",
     [C.EV_MAX] = "EV_MAX",
     [C.EV_SDL] = "EV_SDL",
+}
+
+local linux_evdev_code_map = {
     [C.SYN_REPORT] = "SYN_REPORT",
     [C.SYN_CONFIG] = "SYN_CONFIG",
     [C.SYN_MT_REPORT] = "SYN_MT_REPORT",
@@ -1014,13 +1017,13 @@ function Input:waitEvent(now, deadline)
             DEBUG:logEv(ev)
             if ev.type == C.EV_KEY then
                 logger.dbg(string.format(
-                    "key event => type: %d, code: %d (%s), value: %s, time: %d.%d",
-                    ev.type, ev.code, self.event_map[ev.code], ev.value,
+                    "key event => code: %d (%s), value: %s, time: %d.%d",
+                    ev.code, self.event_map[ev.code], ev.value,
                     ev.time.sec, ev.time.usec))
             else
                 logger.dbg(string.format(
-                    "input event => type: %d, code: %d (%s), value: %s, time: %d.%d",
-                    ev.type, ev.code, linux_evdev_code_map[ev.code], ev.value,
+                    "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
+                    ev.type, linux_evdev_type_map[ev.type], ev.code, linux_evdev_code_map[ev.code], ev.value,
                     ev.time.sec, ev.time.usec))
             end
         end
