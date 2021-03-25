@@ -74,6 +74,7 @@ function ReaderSearch:onShowSearchDialog(text, direction)
     local current_page
     local do_search = function(search_func, _text, param)
         return function()
+            local valid_link
             local res = search_func(self, _text, param)
             if res then
                 if self.ui.document.info.has_pages then
@@ -88,7 +89,6 @@ function ReaderSearch:onShowSearchDialog(text, direction)
                     -- sometimes even xpointers that resolve to no page.
                     -- We need to loop thru all the results until we find one suitable,
                     -- to follow its link and go to the next/prev page with occurences.
-                    local valid_link
                     -- If backward search, results are already in a reversed order, so we'll
                     -- start from the nearest to current page one.
                     for _, r in ipairs(res) do
@@ -145,9 +145,16 @@ function ReaderSearch:onShowSearchDialog(text, direction)
                 end
                 -- Don't add result pages to location ("Go back") stack
                 neglect_current_location = true
-            else
+            end
+            if res==nil or (current_page~=nil and valid_link==nil) then
+                local notification_text
+                if self._expect_back_results then
+                    notification_text = _("No results backward")
+                else
+                    notification_text = _("No results forward")
+                end
                 UIManager:show(Notification:new{
-                    text = _("Not found"),
+                    text = notification_text,
                 })
             end
         end
