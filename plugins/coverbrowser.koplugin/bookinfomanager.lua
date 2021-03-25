@@ -691,7 +691,6 @@ function BookInfoManager:extractInBackground(files)
             local cover_specs = files[idx].cover_specs
             logger.dbg("  BG extracting:", filepath)
             self:extractBookInfo(filepath, cover_specs)
-            FFIUtil.usleep(100000) -- give main process 100ms of free cpu to do its processing
         end
         logger.dbg("  BG extraction done")
     end
