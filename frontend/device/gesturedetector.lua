@@ -294,7 +294,6 @@ function GestureDetector:switchState(state_new, tev, param)
 end
 
 function GestureDetector:clearState(slot)
-    print("GestureDetector:clearState", slot)
     self.states[slot] = self.initialState
     self.pending_hold_timer[slot] = nil
     self.detectings[slot] = false
@@ -417,8 +416,6 @@ end
 Handles both single and double tap.
 --]]
 function GestureDetector:tapState(tev)
-    print("GestureDetector:tapState", tev.slot, tev.timev:tonumber())
-
     -- Attempt to detect the clock source for these events (we reset it on suspend to discriminate MONOTONIC from BOOTTIME).
     if not self.clock_id then
         self:probeClockSource(tev.timev)
@@ -475,7 +472,6 @@ function GestureDetector:tapState(tev)
 end
 
 function GestureDetector:handleDoubleTap(tev)
-    print("GestureDetector:handleDoubleTap", tev.slot, tev.timev:tonumber())
     local slot = tev.slot
     local ges_ev = {
         -- default to single tap
@@ -551,19 +547,16 @@ function GestureDetector:handleDoubleTap(tev)
 end
 
 function GestureDetector:handleNonTap(tev)
-    print("GestureDetector:handleNonTap", tev.slot, tev.timev:tonumber())
     local slot = tev.slot
     if self.states[slot] ~= self.tapState then
         -- switched from other state, probably from initialState
         -- we return nil in this case
         self.states[slot] = self.tapState
         logger.dbg("set up hold timer")
-        print("GestureDetector:handleNonTap: Updating pending_hold_timer for slot", slot)
         -- Invalidate previous hold timers on that slot so that the following setTimeout will only react to *this* tapState.
         self.input:clearTimeout(slot, "hold")
         self.pending_hold_timer[slot] = true
         self.input:setTimeout(slot, "hold", function()
-            print("GestureDetector: Hold finalization for slot", slot)
             -- If the pending_hold_timer we set on our first switch to tapState on this slot (e.g., first finger down event),
             -- back when the timer was setup, is still relevant (e.g., the slot wasn't run through clearState by a finger up gesture),
             -- then check that we're still in a stationary finger down state (e.g., tapState).
@@ -593,7 +586,6 @@ function GestureDetector:handleNonTap(tev)
 end
 
 function GestureDetector:panState(tev)
-    print("GestureDetector:panState", tev.slot, tev.timev:tonumber())
     logger.dbg("in pan state...")
     local slot = tev.slot
     if tev.id == -1 then
@@ -628,7 +620,6 @@ function GestureDetector:panState(tev)
 end
 
 function GestureDetector:handleSwipe(tev)
-    print("GestureDetector:handleSwipe", tev.slot, tev.timev:tonumber())
     local slot = tev.slot
     local swipe_direction, swipe_distance = self:getPath(slot)
     local start_pos = Geom:new{
@@ -672,7 +663,6 @@ function GestureDetector:handleSwipe(tev)
 end
 
 function GestureDetector:handlePan(tev)
-    print("GestureDetector:handlePan", tev.slot, tev.timev:tonumber())
     local slot = tev.slot
     if self.detectings[0] and self.detectings[1] then
         return self:handleTwoFingerPan(tev)
@@ -777,7 +767,6 @@ function GestureDetector:handlePan(tev)
 end
 
 function GestureDetector:handleTwoFingerPan(tev)
-    print("GestureDetector:handleTwoFingerPan", tev.slot, tev.timev:tonumber())
     -- triggering slot
     local tslot = tev.slot
     -- reference slot
@@ -838,7 +827,6 @@ function GestureDetector:handleTwoFingerPan(tev)
 end
 
 function GestureDetector:handlePanRelease(tev)
-    print("GestureDetector:handlePanRelease", tev.slot, tev.timev:tonumber())
     local slot = tev.slot
     local release_pos = Geom:new{
         x = self.last_tevs[slot].x,
@@ -862,7 +850,6 @@ function GestureDetector:handlePanRelease(tev)
 end
 
 function GestureDetector:holdState(tev, hold)
-    print("GestureDetector:holdState", tev.slot, tev.timev:tonumber())
     logger.dbg("in hold state...")
     local slot = tev.slot
     -- When we switch to hold state, we pass an additional boolean param "hold".
