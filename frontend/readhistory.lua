@@ -101,9 +101,10 @@ function ReadHistory:_reduce()
 end
 
 -- Flushes current history table into file.
-function ReadHistory.flush(hist)
+function ReadHistory:_flush()
+    assert(self ~= nil)
     local content = {}
-    for _, v in ipairs(hist) do
+    for _, v in ipairs(self.hist) do
         table.insert(content, {
             time = v.time,
             file = v.file
@@ -113,11 +114,6 @@ function ReadHistory.flush(hist)
     f:write("return " .. dump(content) .. "\n")
     ffiutil.fsyncOpenedFile(f) -- force flush to the storage device
     f:close()
-end
-
-function ReadHistory:_flush()
-    assert(self ~= nil)
-    ReadHistory.flush(self.hist)
 end
 
 --- Reads history table from file.
@@ -301,13 +297,6 @@ function ReadHistory:reload()
     end
 
     return false
-end
-
---- Forces reloading history from history_file. It's useful when restoring the
--- history file.
-function ReadHistory:forceReload()
-    self.last_read_time = 0
-    return self:reload()
 end
 
 ReadHistory:_init()
