@@ -26,7 +26,7 @@ function GestureRange:match(gs)
         -- Sometimes the widget's dimensions are not available when creating a GestureRange
         -- for some action, so we accept a range function that will only be called at match() time instead.
         -- e.g. range = function() return self.dimen end
-        -- That's because most widget's dimensions are only set at paintTo() time.
+        -- That's because most widgets' dimensions are only set at paintTo() time:
         -- e.g., with InputContainer, the x and y fields of `self.dimen`.
         local range
         if type(self.range) == "function" then
@@ -41,8 +41,8 @@ function GestureRange:match(gs)
 
     if self.rate then
         -- This field sets up rate-limiting (in matches per second).
-        -- It's mostly useful for e-ink devices with less powerful CPUs
-        -- and screens that cannot handle gesture events that would otherwise be generated.
+        -- It's mostly useful for e-Ink devices with less powerful CPUs
+        -- and screens that cannot handle the amount of gesture events that would otherwise be generated.
         local last_time = self.last_time or TimeVal:new{}
         if gs.time - last_time > TimeVal:new{usec = 1000000 / self.rate} then
             self.last_time = gs.time
