@@ -8,6 +8,8 @@ A simple module to module to compare and do arithmetic with time values.
     -- Do some stuff.
     -- You can add and subtract `TimeVal` objects.
     local tv_duration = TimeVal:now() - tv_start
+    -- And convert that object to various more human-readable formats, e.g.,
+    print(string.format("Stuff took %.3fms", tv_duration:tomsecs()))
 ]]
 
 local ffi = require("ffi")
