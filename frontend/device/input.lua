@@ -324,14 +324,14 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
     }
 
     -- We're going to need the clock source id for these events from GestureDetector
-    local clock = self.gesture_detector:getClockSource()
+    local clock_id = self.gesture_detector:getClockSource()
     local deadline
 
     -- If we're on a platform with the timerfd backend, handle that
     local timerfd
     if input.setTimer then
         -- If GestureDetector's clock source probing was inconclusive, do this on the UI timescale instead.
-        if clock == -1 then
+        if clock_id == -1 then
             deadline = TimeVal:now() + delay
         else
             deadline = origin + delay
@@ -339,7 +339,7 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
         -- What this does is essentially to ask the kernel to wake us up when the timer expires,
         -- instead of ensuring that ourselves via a polling timeout.
         -- This ensures perfect accuracy, and allows it to be computed in the event's own timescale.
-        timerfd = input.setTimer(clock, deadline.sec, deadline.usec)
+        timerfd = input.setTimer(clock_id, deadline.sec, deadline.usec)
     end
     if timerfd then
             -- It worked, tweak the table a bit to make it clear the deadline will be handled by the kernel
@@ -348,7 +348,7 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
             item.deadline = deadline
     else
         -- No timerfd, we'll compute a poll timeout ourselves.
-        if clock == C.CLOCK_MONOTONIC then
+        if clock_id == C.CLOCK_MONOTONIC then
             -- If the event's clocksource is monotonic, we can use it directly.
             deadline = origin + delay
         else
