@@ -74,10 +74,11 @@ function ReaderSearch:onShowSearchDialog(text, direction)
     local current_page
     local do_search = function(search_func, _text, param)
         return function()
-            local valid_link
+            local no_results = true -- for notification
             local res = search_func(self, _text, param)
             if res then
                 if self.ui.document.info.has_pages then
+                    no_results = false
                     self.ui.link:onGotoLink({page = res.page - 1}, neglect_current_location)
                     self.view.highlight.temp[res.page] = res
                 else
@@ -89,6 +90,7 @@ function ReaderSearch:onShowSearchDialog(text, direction)
                     -- sometimes even xpointers that resolve to no page.
                     -- We need to loop thru all the results until we find one suitable,
                     -- to follow its link and go to the next/prev page with occurences.
+                    local valid_link
                     -- If backward search, results are already in a reversed order, so we'll
                     -- start from the nearest to current page one.
                     for _, r in ipairs(res) do
@@ -140,18 +142,19 @@ function ReaderSearch:onShowSearchDialog(text, direction)
                         end
                     end
                     if valid_link then
+                        no_results = false
                         self.ui.link:onGotoLink({xpointer=valid_link}, neglect_current_location)
                     end
                 end
                 -- Don't add result pages to location ("Go back") stack
                 neglect_current_location = true
             end
-            if res==nil or (current_page~=nil and valid_link==nil) then
+            if no_results then
                 local notification_text
                 if self._expect_back_results then
-                    notification_text = _("No results backward")
+                    notification_text = _("No results on previous pages")
                 else
-                    notification_text = _("No results forward")
+                    notification_text = _("No results on following pages")
                 end
                 UIManager:show(Notification:new{
                     text = notification_text,
