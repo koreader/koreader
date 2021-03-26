@@ -142,7 +142,7 @@ Creates a new TimeVal object based on the current wall clock time.
 
 This is a simple wrapper around util.gettime() to get all the niceties of a TimeVal object.
 If you don't need sub-second precision, prefer os.time().
-Which means that, yes, this is a POSIX Epoch ;).
+Which means that, yes, this is a fancier POSIX Epoch ;).
 
 @usage
     local TimeVal = require("ui/timeval")
