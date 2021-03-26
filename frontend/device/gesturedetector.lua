@@ -563,6 +563,7 @@ function GestureDetector:handleNonTap(tev)
             if self.pending_hold_timer[slot] and self.states[slot] == self.tapState then
                 -- That means we can switch to hold
                 logger.dbg("hold gesture detected in slot", slot)
+                self.pending_hold_timer[slot] = nil
                 return self:switchState("holdState", tev, true)
             end
         end, tev.timev, ges_hold_interval)
