@@ -882,7 +882,7 @@ end
 function Input:waitEvent(now, deadline)
     -- On the first iteration of the loop, we don't need to update now, we're following closely (a couple ms at most) behind UIManager.
     local ok, ev
-    -- wrapper for input.waitForEvents that will retry for some cases
+    -- Wrapper around the platform-specific input.waitForEvent (which itself is generally poll-like).
     while true do
         if #self.timer_callbacks > 0 then
             -- If we have timers set, we need to honor them once we're done draining the input events.
@@ -962,13 +962,13 @@ function Input:waitEvent(now, deadline)
             local poll_timeout
             -- If UIManager put us on deadline, enforce it, otherwise, block forever.
             if deadline then
-                -- Convert that absolute deadline to a µs value relative to *now*, as we may loop multiple times between UI ticks.
+                -- Convert that absolute deadline to value relative to *now*, as we may loop multiple times between UI ticks.
                 now = now or TimeVal:now()
                 if deadline > now then
                     -- Deadline hasn't been blown yet, honor it.
                     poll_timeout = deadline - now
                 else
-                    -- Deadline has been blown, return immediately.
+                    -- Deadline has been blown: make select return immediately.
                     poll_timeout = TimeVal:new{ sec = 0 }
                 end
             end
