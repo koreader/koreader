@@ -106,7 +106,6 @@ local order = {
         "text_editor",
         "profiles",
         "qrclipboard",
-        "findhistory",
         "----------------------------",
         "more_tools",
     },
