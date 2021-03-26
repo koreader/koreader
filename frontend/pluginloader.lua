@@ -66,7 +66,8 @@ function PluginLoader:loadPlugins()
     else
         local data_dir = require("datastorage"):getDataDir()
         if data_dir ~= "." then
-            G_reader_settings:saveSetting("extra_plugin_paths", { data_dir .. "/plugins/" })
+            extra_paths = { data_dir .. "/plugins/" }
+            G_reader_settings:saveSetting("extra_plugin_paths", extra_paths)
         end
     end
 
