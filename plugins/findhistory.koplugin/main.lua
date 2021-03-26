@@ -112,4 +112,6 @@ function FindHistory:addToMainMenu(menu_items)
     menu_items.findhistory = menuItem
 end
 
+require("findhistory_insert_menu")
+
 return FindHistory
