@@ -795,7 +795,8 @@ function KindleOasis2:init()
     self.input.open("fake_events")
 end
 
--- For now, assume that the KOA3 doesn't do anything differently than the KOA2
+-- For now, assume that the KOA3 doesn't do anything differently than the KOA2.
+--- @fixme: That means, possibly among other things, that frontlight warmth needs to be implemented.
 KindleOasis3.init = KindleOasis2.init
 
 function KindleBasic2:init()
