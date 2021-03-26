@@ -210,7 +210,7 @@ This is certainly true for KOReader's UI scheduling.
 ]]
 TimeVal.now = TimeVal.monotonic_coarse
 
---- Converts a TimeVal object to a Lua (float) number (sec.usecs) (accurate to the ms, rounded to 4 decimal places)
+--- Converts a TimeVal object to a Lua (decimal) number (sec.usecs) (accurate to the ms, rounded to 4 decimal places)
 function TimeVal:tonumber()
     -- Round to 4 decimal places
     return math.floor((self.sec + self.usec / 1000000) * 10000) / 10000
@@ -229,7 +229,7 @@ function TimeVal:tomsecs()
     return self:tousecs() / 1000
 end
 
---- Converts a Lua (float) number (sec.usecs) to a TimeVal object
+--- Converts a Lua (decimal) number (sec.usecs) to a TimeVal object
 function TimeVal:fromnumber(seconds)
     local sec = math.floor(seconds)
     local usec = math.floor((seconds - sec) * 1000000 + 0.5)
