@@ -152,7 +152,7 @@ function ReaderSearch:onShowSearchDialog(text, direction)
             if no_results then
                 local notification_text
                 if self._expect_back_results then
-                    notification_text = _("No results on previous pages")
+                    notification_text = _("No results on preceding pages")
                 else
                     notification_text = _("No results on following pages")
                 end
