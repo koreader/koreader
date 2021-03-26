@@ -49,6 +49,10 @@ local Kobo = Generic:new{
     canHWInvert = yes,
     home_dir = "/mnt/onboard",
     canToggleMassStorage = yes,
+    -- New devices *may* be REAGL-aware, but generally don't expect explicit REAGL requests, default to not.
+    isREAGL = no,
+    -- Mark 7 devices sport an updated driver.
+    isMk7 = no,
     -- MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls are generally reliable
     hasReliableMxcWaitFor = yes,
 }
@@ -125,6 +129,8 @@ local KoboPhoenix = Kobo:new{
     display_dpi = 212,
     -- The bezel covers 10 pixels at the bottom:
     viewport = Geom:new{x=0, y=0, w=758, h=1014},
+    -- NOTE: AFAICT, the Aura was the only one explicitly requiring REAGL requests...
+    isREAGL = yes,
     -- NOTE: May have a buggy kernel, according to the nightmode hack...
     canHWInvert = no,
 }
@@ -148,6 +154,7 @@ local KoboSnow = Kobo:new{
 --- @fixme Check if the Clara fix actually helps here... (#4015)
 local KoboSnowRev2 = Kobo:new{
     model = "Kobo_snow_r2",
+    isMk7 = yes,
     hasFrontlight = yes,
     touch_snow_protocol = true,
     display_dpi = 265,
@@ -167,9 +174,9 @@ local KoboStar = Kobo:new{
 }
 
 -- Kobo Aura second edition, Rev 2:
---- @fixme Confirm that this is accurate? If it is, and matches the Rev1, ditch the special casing.
 local KoboStarRev2 = Kobo:new{
     model = "Kobo_star_r2",
+    isMk7 = yes,
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
     display_dpi = 212,
@@ -194,6 +201,7 @@ local KoboPika = Kobo:new{
 -- Kobo Clara HD:
 local KoboNova = Kobo:new{
     model = "Kobo_nova",
+    isMk7 = yes,
     canToggleChargingLED = yes,
     hasFrontlight = yes,
     touch_snow_protocol = true,
@@ -219,6 +227,7 @@ local KoboNova = Kobo:new{
 --       There's also a CM_ROTARY_ENABLE command, but which seems to do as much nothing as the STATUS one...
 local KoboFrost = Kobo:new{
     model = "Kobo_frost",
+    isMk7 = yes,
     canToggleChargingLED = yes,
     hasFrontlight = yes,
     hasKeys = yes,
@@ -243,6 +252,7 @@ local KoboFrost = Kobo:new{
 -- NOTE: Assume the same quirks as the Forma apply.
 local KoboStorm = Kobo:new{
     model = "Kobo_storm",
+    isMk7 = yes,
     canToggleChargingLED = yes,
     hasFrontlight = yes,
     hasKeys = yes,
@@ -273,6 +283,7 @@ local KoboStorm = Kobo:new{
 --- @fixme: Untested, assume it's Clara-ish for now.
 local KoboLuna = Kobo:new{
     model = "Kobo_luna",
+    isMk7 = yes,
     canToggleChargingLED = yes,
     hasFrontlight = yes,
     touch_snow_protocol = true,
@@ -303,6 +314,10 @@ function Kobo:init()
     -- Automagically set this so we never have to remember to do it manually ;p
     if self:hasNaturalLight() and self.frontlight_settings and self.frontlight_settings.frontlight_mixer then
         self.hasNaturalLightMixer = yes
+    end
+    -- Ditto
+    if self:isMk7() then
+        self.canHWDither = yes
     end
 
     self.powerd = require("device/kobo/powerd"):new{device = self}
