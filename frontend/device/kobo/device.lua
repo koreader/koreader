@@ -40,8 +40,6 @@ local Kobo = Generic:new{
     isAlwaysPortrait = yes,
     -- we don't need an extra refreshFull on resume, thank you very much.
     needsScreenRefreshAfterResume = no,
-    -- the internal storage mount point users can write to
-    internal_storage_mount_point = "/mnt/onboard/",
     -- currently only the Aura One and Forma have coloured frontlights
     hasNaturalLight = no,
     hasNaturalLightMixer = no,
