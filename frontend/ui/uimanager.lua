@@ -1042,7 +1042,7 @@ function UIManager:discardEvents(set_or_seconds)
         self._discard_events_till = nil
         return
     end
-    local usecs
+    local delay
     if set_or_seconds == true then
         -- Use an adequate delay to account for device refresh duration
         -- so any events happening in this delay (ie. before a widget
@@ -1052,15 +1052,15 @@ function UIManager:discardEvents(set_or_seconds)
             -- sometimes > 500ms on some devices/temperatures.
             -- So, block for 400ms (to have it displayed) + 400ms
             -- for user reaction to it
-            usecs = 800000
+            delay = TimeVal:new{ usec = 800000 }
         else
             -- On non-eInk screen, display is usually instantaneous
-            usecs = 400000
+            delay = TimeVal:new{ usec = 400000 }
         end
     else -- we expect a number
-        usecs = set_or_seconds * 1000000
+        delay = TimeVal:new{ sec = set_or_seconds }
     end
-    self._discard_events_till = self._now + TimeVal:new{usec = usecs}
+    self._discard_events_till = self._now + delay
 end
 
 --[[--
