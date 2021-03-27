@@ -736,7 +736,7 @@ function OPDSBrowser:browseSearchable(browse_url, username, password)
 end
 
 function OPDSBrowser:onMenuSelect(item)
-    self.catalog_title = item.text or _("OPDS Catalog")
+    self.catalog_title = self.catalog_title or _("OPDS Catalog")
     -- add catalog
     if item.callback then
         item.callback()
@@ -746,6 +746,7 @@ function OPDSBrowser:onMenuSelect(item)
         self:showDownloads(item)
     -- navigation
     else
+        self.catalog_title = item.text or self.catalog_title
         local connect_callback
         if item.searchable then
             connect_callback = function()
