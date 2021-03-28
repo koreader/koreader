@@ -203,7 +203,7 @@ function Screensaver:chooseFolder()
                         logger.dbg("set screensaver directory to", path)
                         G_reader_settings:saveSetting("screensaver_dir", path)
                         UIManager:show(InfoMessage:new{
-                            text = T(_("Screensaver directory set to:\n%1"), BD.dirpath(path)),
+                            text = T(_("Screensaver folder set to:\n%1"), BD.dirpath(path)),
                             timeout = 3,
                         })
                     end,

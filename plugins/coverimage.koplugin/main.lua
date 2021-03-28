@@ -27,7 +27,7 @@ local function pathOk(filename)
     elseif name == "" then
         return false, _("Please enter a filename at the end of the path.")
     elseif lfs.attributes(filename, "mode") == "directory" then
-        return false, T(_("The path \"%1\" must point to a file, but it points to a directory."), filename)
+        return false, T(_("The path \"%1\" must point to a file, but it points to a folder."), filename)
     end
 
     return true

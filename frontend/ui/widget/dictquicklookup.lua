@@ -367,7 +367,7 @@ function DictQuickLookup:init()
                                            or require("apps/filemanager/filemanagerutil").getDefaultDir() end
                         if not dir or not util.pathExists(dir) then
                             UIManager:show(InfoMessage:new{
-                                text = _("No directory to save article to could be found."),
+                                text = _("No folder to save article to could be found."),
                             })
                             return
                         end
