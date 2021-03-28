@@ -39,7 +39,18 @@ local DEVICE_ORIENTATION_PORTRAIT_ROTATED = 20
 local DEVICE_ORIENTATION_LANDSCAPE = 21
 local DEVICE_ORIENTATION_LANDSCAPE_ROTATED = 22
 
+-- Kindle Oasis 2 & 3 variant
+-- c.f., drivers/input/misc/accel/bma2x2.c
+local UPWARD_PORTRAIT_UP_INTERRUPT_HAPPENED     = 15
+local UPWARD_PORTRAIT_DOWN_INTERRUPT_HAPPENED   = 16
+local UPWARD_LANDSCAPE_LEFT_INTERRUPT_HAPPENED  = 17
+local UPWARD_LANDSCAPE_RIGHT_INTERRUPT_HAPPENED = 18
+
+-- For the events of the Forma accelerometer (MSC.code)
+local MSC_RAW = 0x03
+
 -- For the events of the Forma accelerometer (MSC.value)
+-- c.f., drivers/hwmon/mma8x5x.c
 local MSC_RAW_GSENSOR_PORTRAIT_DOWN = 0x17
 local MSC_RAW_GSENSOR_PORTRAIT_UP = 0x18
 local MSC_RAW_GSENSOR_LANDSCAPE_RIGHT = 0x19
@@ -715,22 +726,46 @@ end
 
 function Input:handleOasisOrientationEv(ev)
     local rotation_mode, screen_mode
-    if ev.value == DEVICE_ORIENTATION_PORTRAIT
-        or ev.value == DEVICE_ORIENTATION_PORTRAIT_LEFT
-        or ev.value == DEVICE_ORIENTATION_PORTRAIT_RIGHT then
-        rotation_mode = framebuffer.ORIENTATION_PORTRAIT
-        screen_mode = 'portrait'
-    elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE then
-        rotation_mode = framebuffer.ORIENTATION_LANDSCAPE
-        screen_mode = 'landscape'
-    elseif ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED
-        or ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED_LEFT
-        or ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED_RIGHT then
-        rotation_mode = framebuffer.ORIENTATION_PORTRAIT_ROTATED
-        screen_mode = 'portrait'
-    elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE_ROTATED then
-        rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
-        screen_mode = 'landscape'
+    if self.device:isZelda() then
+        if ev.value == UPWARD_PORTRAIT_UP_INTERRUPT_HAPPENED then
+            -- i.e., UR
+            rotation_mode = framebuffer.ORIENTATION_PORTRAIT
+            screen_mode = 'portrait'
+        elseif ev.value == UPWARD_LANDSCAPE_LEFT_INTERRUPT_HAPPENED then
+            -- i.e., CW
+            rotation_mode = framebuffer.ORIENTATION_LANDSCAPE
+            screen_mode = 'landscape'
+        elseif ev.value == UPWARD_PORTRAIT_DOWN_INTERRUPT_HAPPENED then
+            -- i.e., UD
+            rotation_mode = framebuffer.ORIENTATION_PORTRAIT_ROTATED
+            screen_mode = 'portrait'
+        elseif ev.value == UPWARD_LANDSCAPE_RIGHT_INTERRUPT_HAPPENED then
+            -- i.e., CCW
+            rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
+            screen_mode = 'landscape'
+        end
+    else
+        if ev.value == DEVICE_ORIENTATION_PORTRAIT
+            or ev.value == DEVICE_ORIENTATION_PORTRAIT_LEFT
+            or ev.value == DEVICE_ORIENTATION_PORTRAIT_RIGHT then
+            -- i.e., UR
+            rotation_mode = framebuffer.ORIENTATION_PORTRAIT
+            screen_mode = 'portrait'
+        elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE then
+            -- i.e., CW
+            rotation_mode = framebuffer.ORIENTATION_LANDSCAPE
+            screen_mode = 'landscape'
+        elseif ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED
+            or ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED_LEFT
+            or ev.value == DEVICE_ORIENTATION_PORTRAIT_ROTATED_RIGHT then
+            -- i.e., UD
+            rotation_mode = framebuffer.ORIENTATION_PORTRAIT_ROTATED
+            screen_mode = 'portrait'
+        elseif ev.value == DEVICE_ORIENTATION_LANDSCAPE_ROTATED then
+            -- i.e., CCW
+            rotation_mode = framebuffer.ORIENTATION_LANDSCAPE_ROTATED
+            screen_mode = 'landscape'
+        end
     end
 
     local old_rotation_mode = self.device.screen:getRotationMode()
@@ -749,7 +784,7 @@ function Input:handleOasisOrientationEv(ev)
     end
 end
 
---- Accelerometer on the Forma, c.f., drivers/hwmon/mma8x5x.c
+--- Accelerometer on the Forma
 function Input:handleMiscEvNTX(ev)
     local rotation_mode, screen_mode
     if ev.code == C.MSC_RAW then
