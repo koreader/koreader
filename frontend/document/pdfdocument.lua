@@ -176,7 +176,7 @@ function PdfDocument:getPageLinks(pageno)
 end
 
 -- returns nil if file is not a pdf, true if document is a writable pdf, false else
-local function _checkIfWritable()
+local function PdfDocument:_checkIfWritable()
     local suffix = util.getFileNameSuffix(self.file)
     if string.lower(suffix) ~= "pdf" then return nil end
     if self.is_writable == nil then
@@ -208,7 +208,7 @@ local function _quadpointsFromPboxes(pboxes)
 end
 
 function PdfDocument:saveHighlight(pageno, item)
-    local can_write = _checkIfWritable()
+    local can_write = self:_checkIfWritable()
     if can_write ~= true then return can_write end
 
     self.is_edited = true
@@ -227,7 +227,7 @@ function PdfDocument:saveHighlight(pageno, item)
 end
 
 function Document:deleteHighlight(pageno, item)
-    local can_write = _checkIfWritable()
+    local can_write = self:_checkIfWritable()
     if can_write ~= true then return can_write end
 
     self.is_edited = true
@@ -241,7 +241,7 @@ function Document:deleteHighlight(pageno, item)
 end
 
 function PdfDocument:updateHighlightContents(pageno, item, contents)
-    local can_write = _checkIfWritable()
+    local can_write = self:_checkIfWritable()
     if can_write ~= true then return can_write end
 
     self.is_edited = true
