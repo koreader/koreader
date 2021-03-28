@@ -234,7 +234,6 @@ function DocumentRegistry:closeDocument(file)
 end
 
 -- load implementations:
-
 require("document/credocument"):register(DocumentRegistry)
 require("document/pdfdocument"):register(DocumentRegistry)
 require("document/djvudocument"):register(DocumentRegistry)

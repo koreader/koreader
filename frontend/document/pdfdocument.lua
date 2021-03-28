@@ -226,7 +226,7 @@ function PdfDocument:saveHighlight(pageno, item)
     page:close()
 end
 
-function Document:deleteHighlight(pageno, item)
+function PdfDocument:deleteHighlight(pageno, item)
     local can_write = self:_checkIfWritable()
     if can_write ~= true then return can_write end
 
