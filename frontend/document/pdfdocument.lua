@@ -176,7 +176,7 @@ function PdfDocument:getPageLinks(pageno)
 end
 
 -- returns nil if file is not a pdf, true if document is a writable pdf, false else
-local function PdfDocument:_checkIfWritable()
+function PdfDocument:_checkIfWritable()
     local suffix = util.getFileNameSuffix(self.file)
     if string.lower(suffix) ~= "pdf" then return nil end
     if self.is_writable == nil then
