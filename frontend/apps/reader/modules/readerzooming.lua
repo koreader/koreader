@@ -110,9 +110,22 @@ function ReaderZooming:init()
 end
 
 function ReaderZooming:onReadSettings(config)
+    -- If we have a composite zoom_mode stored, use that.
     local zoom_mode = config:readSetting("zoom_mode")
-                    or G_reader_settings:readSetting("zoom_mode")
-                    or self.DEFAULT_ZOOM_MODE
+                   or G_reader_settings:readSetting("zoom_mode")
+    -- Otherwise, build it from the split genus & type settings
+    if not zoom_mode then
+        local zoom_mode_genus = config:readSetting("kopt_zoom_mode_genus")
+                             or G_reader_settings:readSetting("kopt_zoom_mode_genus")
+        local zoom_mode_type = config:readSetting("kopt_zoom_mode_type")
+                            or G_reader_settings:readSetting("kopt_zoom_mode_type")
+        if zoom_mode_genus or zoom_mode_type then
+            -- Handle defaults
+            zoom_mode_genus = zoom_mode_genus or "page"
+            zoom_mode_type = zoom_mode_type or "width"
+            zoom_mode = zoom_mode_genus .. zoom_mode_type
+        end
+    end
     zoom_mode = util.arrayContains(self.available_zoom_modes, zoom_mode)
             and zoom_mode
              or self.DEFAULT_ZOOM_MODE
@@ -125,6 +138,7 @@ function ReaderZooming:onReadSettings(config)
 end
 
 function ReaderZooming:onSaveSettings()
+    print("ReaderZooming:onSaveSettings", self.orig_zoom_mode, self.zoom_mode)
     self.ui.doc_settings:saveSetting("zoom_mode", self.orig_zoom_mode or self.zoom_mode)
     for _, setting in ipairs(self.zoom_pan_settings) do
         self.ui.doc_settings:saveSetting(setting, self[setting])
@@ -185,6 +199,12 @@ end
 function ReaderZooming:onRotationUpdate(rotation)
     self.rotation = rotation
     self:setZoom()
+end
+
+function ReaderZooming:onSetScrollMode(page_scroll)
+    print("ReaderZooming:onSetScrollMode", page_scroll)
+    print("Setting zoom mode to", self.zoom_mode)
+    self:setZoomMode(self.zoom_mode)
 end
 
 function ReaderZooming:onZoom(direction)
@@ -305,6 +325,8 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
 end
 
 function ReaderZooming:onSetZoomMode(new_mode)
+    print("ReaderZooming:onSetZoomMode", new_mode)
+    print(debug.traceback())
     self.view.zoom_mode = new_mode
     if self.zoom_mode ~= new_mode then
         logger.info("setting zoom mode to", new_mode)
@@ -492,6 +514,8 @@ function ReaderZooming:genSetZoomModeCallBack(mode)
 end
 
 function ReaderZooming:setZoomMode(mode, no_warning)
+    print("ReaderZooming:setZoomMode", mode, no_warning)
+    print(debug.traceback())
     if not no_warning and self.ui.view.page_scroll then
         local message
         if self.paged_modes[mode] then

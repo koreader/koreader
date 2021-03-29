@@ -732,6 +732,7 @@ function ReaderView:onSetFullScreen(full_screen)
 end
 
 function ReaderView:onSetScrollMode(page_scroll)
+    print("ReaderView:onSetScrollMode", page_scroll)
     if self.ui.document.info.has_pages and page_scroll
             and self.ui.zooming.paged_modes[self.zoom_mode] then
         UIManager:show(InfoMessage:new{
