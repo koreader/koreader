@@ -270,7 +270,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 name = "zoom_direction",
                 name_text = _("Direction"),
                 enabled_func = function(config)
-                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0) and config.zoom_mode_genus < 3
+                    return optionsutil.enableIfEquals(config, "text_wrap", 0) and config.zoom_mode_genus < 3
                 end,
                 item_icons = {
                     "direction.LRTB",

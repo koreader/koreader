@@ -143,6 +143,13 @@ function ReaderZooming:onReadSettings(config)
     zoom_mode = util.arrayContains(self.available_zoom_modes, zoom_mode)
             and zoom_mode
              or self.DEFAULT_ZOOM_MODE
+
+    -- If the document was *closed* with reflow enabled, we won't be able to salvage the previous zoom mode,
+    -- so don't even pretend to, and reset to the default zoom mode.
+    if config:has("kopt_text_wrap") and config:readSetting("kopt_text_wrap") == 1 then
+        zoom_mode = self.DEFAULT_ZOOM_MODE
+    end
+
     self:setZoomMode(zoom_mode, true) -- avoid informative message on load
     for _, setting in ipairs(self.zoom_pan_settings) do
         self[setting] = config:readSetting(setting)
