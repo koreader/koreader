@@ -273,7 +273,7 @@ describe("device module", function()
 
             mock_ffi_input = require('ffi/input')
             stub(mock_ffi_input, "waitForEvent")
-            mock_ffi_input.waitForEvent.returns({
+            mock_ffi_input.waitForEvent.returns(true, {
                 type = 3,
                 time = {
                     usec = 450565,
