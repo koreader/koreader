@@ -175,53 +175,6 @@ function PdfDocument:getPageLinks(pageno)
     return links
 end
 
-function PdfDocument:saveHighlight(pageno, item)
-    local can_write = self:_checkIfWritable()
-    if can_write ~= true then return can_write end
-
-    self.is_edited = true
-    local quadpoints, n = self:_quadpointsFromPboxes(item.pboxes)
-    local page = self._document:openPage(pageno)
-    local annot_type = C.PDF_ANNOT_HIGHLIGHT
-    if item.drawer == "lighten" then
-        annot_type = C.PDF_ANNOT_HIGHLIGHT
-    elseif item.drawer == "underscore" then
-        annot_type = C.PDF_ANNOT_UNDERLINE
-    elseif item.drawer == "strikeout" then
-        annot_type = C.PDF_ANNOT_STRIKEOUT
-    end
-    page:addMarkupAnnotation(quadpoints, n, annot_type)
-    page:close()
-end
-
-function Document:deleteHighlight(pageno, item)
-    local can_write = self:_checkIfWritable()
-    if can_write ~= true then return can_write end
-
-    self.is_edited = true
-    local quadpoints, n = self:_quadpointsFromPboxes(item.pboxes)
-    local page = self._document:openPage(pageno)
-    local annot = page:getMarkupAnnotation(quadpoints, n)
-    if annot ~= nil then
-        page:deleteMarkupAnnotation(annot)
-    end
-    page:close()
-end
-
-function PdfDocument:updateHighlightContents(pageno, item, contents)
-    local can_write = self:_checkIfWritable()
-    if can_write ~= true then return can_write end
-
-    self.is_edited = true
-    local quadpoints, n = self:_quadpointsFromPboxes(item.pboxes)
-    local page = self._document:openPage(pageno)
-    local annot = page:getMarkupAnnotation(quadpoints, n)
-    if annot ~= nil then
-        page:updateMarkupAnnotation(annot, contents)
-    end
-    page:close()
-end
-
 -- returns nil if file is not a pdf, true if document is a writable pdf, false else
 function PdfDocument:_checkIfWritable()
     local suffix = util.getFileNameSuffix(self.file)
@@ -234,7 +187,7 @@ function PdfDocument:_checkIfWritable()
     return self.is_writable
 end
 
-function PdfDocument:_quadpointsFromPboxes(pboxes)
+local function _quadpointsFromPboxes(pboxes)
     -- will also need mupdf_h.lua to be evaluated once
     -- but this is guaranteed at this point
     local n = #pboxes
@@ -252,6 +205,53 @@ function PdfDocument:_quadpointsFromPboxes(pboxes)
         quadpoints[8*i-1] = pboxes[i].y
     end
     return quadpoints, n
+end
+
+function PdfDocument:saveHighlight(pageno, item)
+    local can_write = self:_checkIfWritable()
+    if can_write ~= true then return can_write end
+
+    self.is_edited = true
+    local quadpoints, n = _quadpointsFromPboxes(item.pboxes)
+    local page = self._document:openPage(pageno)
+    local annot_type = C.PDF_ANNOT_HIGHLIGHT
+    if item.drawer == "lighten" then
+        annot_type = C.PDF_ANNOT_HIGHLIGHT
+    elseif item.drawer == "underscore" then
+        annot_type = C.PDF_ANNOT_UNDERLINE
+    elseif item.drawer == "strikeout" then
+        annot_type = C.PDF_ANNOT_STRIKEOUT
+    end
+    page:addMarkupAnnotation(quadpoints, n, annot_type)
+    page:close()
+end
+
+function PdfDocument:deleteHighlight(pageno, item)
+    local can_write = self:_checkIfWritable()
+    if can_write ~= true then return can_write end
+
+    self.is_edited = true
+    local quadpoints, n = _quadpointsFromPboxes(item.pboxes)
+    local page = self._document:openPage(pageno)
+    local annot = page:getMarkupAnnotation(quadpoints, n)
+    if annot ~= nil then
+        page:deleteMarkupAnnotation(annot)
+    end
+    page:close()
+end
+
+function PdfDocument:updateHighlightContents(pageno, item, contents)
+    local can_write = self:_checkIfWritable()
+    if can_write ~= true then return can_write end
+
+    self.is_edited = true
+    local quadpoints, n = _quadpointsFromPboxes(item.pboxes)
+    local page = self._document:openPage(pageno)
+    local annot = page:getMarkupAnnotation(quadpoints, n)
+    if annot ~= nil then
+        page:updateMarkupAnnotation(annot, contents)
+    end
+    page:close()
 end
 
 function PdfDocument:writeDocument()
