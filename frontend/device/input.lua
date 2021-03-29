@@ -812,6 +812,7 @@ function Input:waitEvent(timeout_us)
         if ok then
             break
         end
+
         -- ev does contain an error message:
         local timeout_err_msg = "Waiting for input failed: timeout\n"
         -- ev may not be equal to timeout_err_msg, but it may ends with it
@@ -858,7 +859,6 @@ function Input:waitEvent(timeout_us)
     elseif not ok and ev then
         return Event:new("InputError", ev)
     end
-
 end
 
 return Input
