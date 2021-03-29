@@ -64,7 +64,7 @@ local KoptOptions = {
                         }
                     end
                 end,
-                -- For Dispatcher's sake
+                -- For Dispatcher & onMakeDefault's sake
                 labels = {C_("Rotation", "⤹ 90°"), C_("Rotation", "↑ 0°"), C_("Rotation", "⤸ 90°"), C_("Rotation", "↓ 180°")},
                 alternate = false,
                 values = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
@@ -236,6 +236,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 },
                 alternate = false,
                 values = {4, 3, 2, 1, 0},
+                labels = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
                 default_value = 4,
                 event = "DefineZoom",
                 args = {"page", "content", "columns", "rows", "manual"},
@@ -259,6 +260,16 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 },
                 alternate = false,
                 values = {7, 6, 5, 4, 3, 2, 1, 0},
+                labels = {
+                    _("Left to Right, Top to Bottom"),
+                    _("Top to Bottom, Left to Right"),
+                    _("Left to Right, Bottom to Top"),
+                    _("Bottom to Top, Left to Right"),
+                    _("Bottom to Top, Right to Left"),
+                    _("Right to Left, Bottom to Top"),
+                    _("Top to Bottom, Right to Left"),
+                    _("Right to Left, Top to Bottom"),
+                },
                 default_value = 7,
                 event = "DefineZoom",
                 args = {7, 6, 5, 4, 3, 2, 1, 0},
@@ -574,7 +585,7 @@ This can also be used to remove some gray background or to convert a grayscale o
                     "column.two",
                     "column.three",
                 },
-                values = {1,2,3},
+                values = {1, 2, 3},
                 default_value = DKOPTREADER_CONFIG_MAX_COLUMNS,
                 enabled_func = function(configurable)
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
