@@ -119,6 +119,10 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             {
                 name = "zoom_overlap_h",
                 name_text = _("Horizontal overlap"),
+                enabled_func = function(configurable, document)
+                    -- NOTE: document.is_reflowable is wonky as hell, don't trust it.
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
                 buttonprogress = true,
                 fine_tune = true,
                 values = {0, 12, 24, 36, 48, 60, 72, 84},
@@ -137,6 +141,10 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             {
                 name = "zoom_overlap_v",
                 name_text = _("Vertical overlap"),
+                enabled_func = function(configurable, document)
+                    -- NOTE: document.is_reflowable is wonky as hell, don't trust it.
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
                 buttonprogress = true,
                 fine_tune = true,
                 values = {0, 12, 24, 36, 48, 60, 72, 84},
@@ -157,7 +165,6 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 name_text = _("Fit"),
                 enabled_func = function(configurable, document)
                     -- NOTE: document.is_reflowable is wonky as hell, don't trust it.
-                    print("text_wrap:", configurable.text_wrap)
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
                 end,
                 toggle = {_("full"), _("width"), _("height")},
@@ -181,6 +188,10 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                     return _("Number")
                 end,
                 name_text_true_values = true,
+                enabled_func = function(configurable, document)
+                    -- NOTE: document.is_reflowable is wonky as hell, don't trust it.
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
                 show_true_value_func = function(str)
                     return string.format("%.1f", str)
                 end,
@@ -207,6 +218,10 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 name = "zoom_factor",
                 name_text = _("Zoom factor"),
                 name_text_true_values = true,
+                enabled_func = function(configurable, document)
+                    -- NOTE: document.is_reflowable is wonky as hell, don't trust it.
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
                 show_true_value_func = function(str)
                     return string.format("%.1f", str)
                 end,
@@ -233,7 +248,6 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 name_text = _("Zoom to"),
                 enabled_func = function(configurable, document)
                     -- NOTE: document.is_reflowable is wonky as hell, don't trust it.
-                    print("text_wrap:", configurable.text_wrap)
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
                 end,
                 -- toggle = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
@@ -256,7 +270,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 name = "zoom_direction",
                 name_text = _("Direction"),
                 enabled_func = function(config)
-                    return config.zoom_mode_genus < 3
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0) and config.zoom_mode_genus < 3
                 end,
                 item_icons = {
                     "direction.LRTB",
