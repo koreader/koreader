@@ -144,15 +144,10 @@ function ReaderZooming:onReadSettings(config)
             and zoom_mode
              or self.DEFAULT_ZOOM_MODE
 
-    -- If the document was *closed* with reflow enabled, we won't be able to salvage the previous zoom mode,
-    -- so don't even pretend to, and reset to the default zoom mode.
-    if config:has("kopt_text_wrap") and config:readSetting("kopt_text_wrap") == 1 then
-        zoom_mode = self.DEFAULT_ZOOM_MODE
-        self.ui.document.configurable.zoom_mode_genus = 4
-        self.ui.document.configurable.zoom_mode_type = 1
-    end
+    -- Don't stomp on normal_zoom_mode in ReaderKoptListener if we're reflowed...
+    local is_reflowed = config:has("kopt_text_wrap") and config:readSetting("kopt_text_wrap") == 1
 
-    self:setZoomMode(zoom_mode, true) -- avoid informative message on load
+    self:setZoomMode(zoom_mode, true, is_reflowed) -- avoid informative message on load
     for _, setting in ipairs(self.zoom_pan_settings) do
         self[setting] = config:readSetting(setting)
                      or G_reader_settings:readSetting(setting)
@@ -517,7 +512,7 @@ function ReaderZooming:genSetZoomModeCallBack(mode)
     end
 end
 
-function ReaderZooming:setZoomMode(mode, no_warning)
+function ReaderZooming:setZoomMode(mode, no_warning, is_reflowed)
     if not no_warning and self.ui.view.page_scroll then
         local message
         if self.paged_modes[mode] then
@@ -537,7 +532,8 @@ Please enable page view instead of continuous view (scroll mode).]])
         end
     end
 
-    self.ui:handleEvent(Event:new("SetZoomMode", mode))
+    -- Dirty hack to prevent ReaderKoptListener from stomping on normal_zoom_mode...
+    self.ui:handleEvent(Event:new("SetZoomMode", mode, is_reflowed and "koptlistener"))
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
 end
 
