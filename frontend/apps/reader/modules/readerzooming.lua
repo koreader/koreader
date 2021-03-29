@@ -148,6 +148,8 @@ function ReaderZooming:onReadSettings(config)
     -- so don't even pretend to, and reset to the default zoom mode.
     if config:has("kopt_text_wrap") and config:readSetting("kopt_text_wrap") == 1 then
         zoom_mode = self.DEFAULT_ZOOM_MODE
+        self.ui.document.configurable.zoom_mode_genus = 4
+        self.ui.document.configurable.zoom_mode_type = 1
     end
 
     self:setZoomMode(zoom_mode, true) -- avoid informative message on load
