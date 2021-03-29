@@ -163,7 +163,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 event = "DefineZoom",
                 args = {"full", "width", "height"},
                 name_text_hold_callback = optionsutil.showValues,
-                help_text = _([[Set what to fit.]]),
+                help_text = _([[Set how the page should be resized to fit the screen.]]),
             },
             {
                 name = "zoom_range_number",
