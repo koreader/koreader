@@ -67,7 +67,7 @@ function TextEditor:loadSettings()
     self.auto_para_direction = self.settings:nilOrTrue("auto_para_direction")
     self.force_ltr_para_direction = self.settings:isTrue("force_ltr_para_direction")
     self.qr_code_export = self.settings:nilOrTrue("qr_code_export")
-    self.show_kbd_on_start = self.settings:nilOrTrue("show_kbd_on_start")
+    self.show_keyboard_on_start = self.settings:nilOrTrue("show_keyboard_on_start")
 end
 
 function TextEditor:onFlushSettings()
@@ -80,7 +80,7 @@ function TextEditor:onFlushSettings()
         self.settings:saveSetting("auto_para_direction", self.auto_para_direction)
         self.settings:saveSetting("force_ltr_para_direction", self.force_ltr_para_direction)
         self.settings:saveSetting("qr_code_export", self.qr_code_export)
-        self.settings:saveSetting("show_kbd_on_start", self.show_kbd_on_start)
+        self.settings:saveSetting("show_keyboard_on_start", self.show_keyboard_on_start)
         self.settings:flush()
     end
 end
@@ -173,10 +173,10 @@ Export text to QR code, that can be scanned, for example, by a phone.]]),
                 {
                     text = _("Show keyboard on start"),
                     checked_func = function()
-                        return self.show_kbd_on_start
+                        return self.show_keyboard_on_start
                     end,
                     callback = function()
-                        self.show_kbd_on_start = not self.show_kbd_on_start
+                        self.show_keyboard_on_start = not self.show_keyboard_on_start
                     end,
                 },
             },
@@ -516,7 +516,7 @@ function TextEditor:editFile(file_path, readonly)
         cursor_at_end = false,
         readonly = readonly,
         add_nav_bar = true,
-        keyboard_hidden = not self.show_kbd_on_start,
+        keyboard_hidden = not self.show_keyboard_on_start,
         scroll_by_pan = true,
         buttons = {buttons_first_row},
         -- Set/save view and cursor position callback
