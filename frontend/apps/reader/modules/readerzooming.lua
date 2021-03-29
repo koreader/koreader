@@ -218,12 +218,6 @@ function ReaderZooming:onRotationUpdate(rotation)
     self:setZoom()
 end
 
-function ReaderZooming:onSetScrollMode(page_scroll)
-    print("ReaderZooming:onSetScrollMode", page_scroll)
-    print("Setting zoom mode to", self.zoom_mode)
-    self:setZoomMode(self.zoom_mode)
-end
-
 function ReaderZooming:onZoom(direction)
     logger.info("zoom", direction)
     if direction == "in" then
