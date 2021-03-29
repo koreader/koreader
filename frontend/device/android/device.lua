@@ -205,8 +205,6 @@ function Device:init()
             elseif ev.code == C.ALOOPER_FIFO_POWER_DISCONNECTED then
                 local Event = require("ui/event")
                 UIManager:broadcastEvent(Event:new("NotCharging"))
-            else
-                logger.err("Unknow event ev.code=" .. ev.code)
             end
         end,
         hasClipboardText = function()
