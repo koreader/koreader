@@ -28,6 +28,18 @@ local ReaderZooming = InputContainer:new{
         "rows",
         "manual",
     },
+    zoom_mode_genus_map = {
+        [4] = "page",
+        [3] = "content",
+        [2] = "columns",
+        [1] = "rows",
+        [0] = "manual",
+    },
+    zoom_mode_type_map = {
+        [2] = "",
+        [1] = "width",
+        [0] = "height",
+    },
     -- default to nil so we can trigger ZoomModeUpdate events on start up
     zoom_mode = nil,
     DEFAULT_ZOOM_MODE = "pagewidth",
@@ -113,16 +125,21 @@ function ReaderZooming:onReadSettings(config)
     -- If we have a composite zoom_mode stored, use that.
     local zoom_mode = config:readSetting("zoom_mode")
                    or G_reader_settings:readSetting("zoom_mode")
+    print("Composite zoom_mode:", zoom_mode)
     -- Otherwise, build it from the split genus & type settings
     if not zoom_mode then
         local zoom_mode_genus = config:readSetting("kopt_zoom_mode_genus")
                              or G_reader_settings:readSetting("kopt_zoom_mode_genus")
         local zoom_mode_type = config:readSetting("kopt_zoom_mode_type")
                             or G_reader_settings:readSetting("kopt_zoom_mode_type")
+        print("zoom_mode_genus:", zoom_mode_genus)
+        print("zoom_mode_type:", zoom_mode_type)
         if zoom_mode_genus or zoom_mode_type then
             -- Handle defaults
-            zoom_mode_genus = zoom_mode_genus or "page"
-            zoom_mode_type = zoom_mode_type or "width"
+            zoom_mode_genus = zoom_mode_genus or 4
+            zoom_mode_type = zoom_mode_type or 1
+            zoom_mode_genus = self.zoom_mode_genus_map[zoom_mode_genus]
+            zoom_mode_type = self.zoom_mode_type_map[zoom_mode_type]
             zoom_mode = zoom_mode_genus .. zoom_mode_type
         end
     end
@@ -234,18 +251,8 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     })[config.zoom_direction]
     local zoom_range_number = config.zoom_range_number
     local zoom_factor = config.zoom_factor
-    local zoom_mode_genus = ({
-        [4] = "page",
-        [3] = "content",
-        [2] = "columns",
-        [1] = "rows",
-        [0] = "manual",
-    })[config.zoom_mode_genus]
-    local zoom_mode_type = ({
-        [2] = "",
-        [1] = "width",
-        [0] = "height",
-    })[config.zoom_mode_type]
+    local zoom_mode_genus = self.zoom_mode_genus_map[config.zoom_mode_genus]
+    local zoom_mode_type = self.zoom_mode_type_map[config.zoom_mode_type]
     settings.zoom_overlap_h = config.zoom_overlap_h
     settings.zoom_overlap_v = config.zoom_overlap_v
     if btn == "set_zoom_overlap_h" then
