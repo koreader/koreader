@@ -50,15 +50,11 @@ function AutoSuspend:_schedule(shutdown_only)
         delay_shutdown = self.autoshutdown_timeout_seconds
     else
         local now_tv = UIManager:getTime()
-        print("self.last_action_tv:", self.last_action_tv:tonumber())
-        print("now_tv:", now_tv:tonumber())
         delay_suspend = self.last_action_tv + TimeVal:new{ sec = self.auto_suspend_timeout_seconds } - now_tv
         delay_suspend = delay_suspend:tonumber()
         delay_shutdown = self.last_action_tv + TimeVal:new{ sec = self.autoshutdown_timeout_seconds } - now_tv
         delay_shutdown = delay_shutdown:tonumber()
     end
-    print("delay_suspend:", delay_suspend)
-    print("delay_shutdown:", delay_shutdown)
 
     -- Try to shutdown first, as we may have been woken up from suspend just for the sole purpose of doing that.
     if delay_shutdown <= 0 then
@@ -114,7 +110,6 @@ function AutoSuspend:init()
 end
 
 function AutoSuspend:onInputEvent()
-    print("AutoSuspend:onInputEvent")
     logger.dbg("AutoSuspend: onInputEvent")
     self.last_action_tv = UIManager:getTime()
 end
