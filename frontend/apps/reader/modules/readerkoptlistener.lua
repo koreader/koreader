@@ -22,7 +22,6 @@ function ReaderKoptListener:onReadSettings(config)
     normal_zoom_mode = util.arrayContains(ReaderZooming.available_zoom_modes, normal_zoom_mode)
                    and normal_zoom_mode
                     or "page"
-    print("ReaderKoptListener:onReadSettings", normal_zoom_mode)
     self.normal_zoom_mode = normal_zoom_mode
     self:setZoomMode(normal_zoom_mode)
     self.document.configurable.contrast = config:readSetting("kopt_contrast")
@@ -41,14 +40,12 @@ function ReaderKoptListener:onSaveSettings()
 end
 
 function ReaderKoptListener:onRestoreZoomMode()
-    print("ReaderKoptListener:onRestoreZoomMode", self.normal_zoom_mode)
     -- "RestoreZoomMode" event is sent when reflow mode on/off is toggled
     self:setZoomMode(self.normal_zoom_mode)
     return true
 end
 
 function ReaderKoptListener:onSetZoomMode(zoom_mode, orig)
-    print("ReaderKoptListener:onSetZoomMode", zoom_mode, orig)
     if orig == "koptlistener" then return end
     -- capture zoom mode set outside of koptlistener which should always be normal zoom mode
     self.normal_zoom_mode = zoom_mode
