@@ -158,6 +158,16 @@ Enable this if you are mostly editing code, HTML, CSS…]]),
                     callback = function()
                         self.force_ltr_para_direction = not self.force_ltr_para_direction
                     end,
+                    separator = true,
+                },
+                {
+                    text = _("Show keyboard on start"),
+                    checked_func = function()
+                        return self.show_keyboard_on_start
+                    end,
+                    callback = function()
+                        self.show_keyboard_on_start = not self.show_keyboard_on_start
+                    end,
                 },
                 {
                     text = _("Enable QR code export"),
@@ -168,15 +178,6 @@ Export text to QR code, that can be scanned, for example, by a phone.]]),
                     end,
                     callback = function()
                         self.qr_code_export = not self.qr_code_export
-                    end,
-                },
-                {
-                    text = _("Show keyboard on start"),
-                    checked_func = function()
-                        return self.show_keyboard_on_start
-                    end,
-                    callback = function()
-                        self.show_keyboard_on_start = not self.show_keyboard_on_start
                     end,
                 },
             },
