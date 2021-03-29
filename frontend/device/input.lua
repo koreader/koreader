@@ -917,20 +917,24 @@ function Input:waitEvent(now, deadline)
                         end
                     end
                 end
-                -- If we haven't hit that deadline yet, poll until it expires, otherwise,
-                -- have select return immediately so that we trip a timeout.
-                now = now or TimeVal:now()
                 local poll_timeout
-                if poll_deadline > now then
-                    -- Deadline hasn't been blown yet, honor it.
-                    poll_timeout = poll_deadline - now
-                else
-                    -- We've already blown the deadline: make select return immediately (most likely straight to timeout)
-                    poll_timeout = TimeVal:new{ sec = 0 }
+                -- With the timerfd backend, poll_deadline is set to deadline, which might be nil, in which case,
+                -- we can happily block forever, like in the no timer_callbacks branch below ;).
+                if poll_deadline then
+                    -- If we haven't hit that deadline yet, poll until it expires, otherwise,
+                    -- have select return immediately so that we trip a timeout.
+                    now = now or TimeVal:now()
+                    if poll_deadline > now then
+                        -- Deadline hasn't been blown yet, honor it.
+                        poll_timeout = poll_deadline - now
+                    else
+                        -- We've already blown the deadline: make select return immediately (most likely straight to timeout)
+                        poll_timeout = TimeVal:new{ sec = 0 }
+                    end
                 end
 
                 local timerfd
-                ok, ev, timerfd = input.waitForEvent(poll_timeout.sec, poll_timeout.usec)
+                ok, ev, timerfd = input.waitForEvent(poll_timeout and poll_timeout.sec, poll_timeout and poll_timeout.usec)
                 -- We got an actual input event, go and process it
                 if ok then break end
 
