@@ -501,29 +501,18 @@ function ConfigOption:init()
                 -- so we use some negative padding to eat a bit on their padding.
                 local underline_padding = - math.floor(0.05 * icon_size)
                 for d = 1, items_count do
-                    -- Prefer a per-icon enabled if available
-                    print("original enabled:", enabled)
-                    local icon_enabled = self.options[c].enabled_funcs and self.options[c].enabled_funcs[d](self.config.configurable, self.config.document) or enabled
-                    if self.options[c].enabled_funcs then
-                        print("w/ enabled_funcs")
-                        print("result:", self.options[c].enabled_funcs[d](self.config.configurable, self.config.document))
-                        icon_enabled = self.options[c].enabled_funcs[d](self.config.configurable, self.config.document)
-                    else
-                        icon_enabled = enabled
-                    end
-                    print("new enabled:", icon_enabled)
                     local option_item = OptionIconItem:new{
                         icon = IconWidget:new{
                             icon = item_icons[d],
-                            dim = not icon_enabled,
+                            dim = not enabled,
                             width = icon_size,
                             height = icon_size,
                         },
                         underline_padding = underline_padding,
                         padding_left = d > 1 and horizontal_half_padding,
                         padding_right = d < items_count and horizontal_half_padding,
-                        color = d == current_item and (icon_enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY) or Blitbuffer.COLOR_WHITE,
-                        enabled = icon_enabled,
+                        color = d == current_item and (enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY) or Blitbuffer.COLOR_WHITE,
+                        enabled = enabled,
                     }
                     option_items[d] = option_item
                     option_item.items = option_items

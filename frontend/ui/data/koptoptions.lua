@@ -155,6 +155,11 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             {
                 name = "zoom_mode_type",
                 name_text = _("Fit"),
+                enabled_func = function(configurable, document)
+                    -- NOTE: document.is_reflowable is wonky as hell, don't trust it.
+                    print("text_wrap:", configurable.text_wrap)
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
                 toggle = {_("full"), _("width"), _("height")},
                 alternate = false,
                 values = {2, 1, 0},
@@ -226,25 +231,11 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             {
                 name = "zoom_mode_genus",
                 name_text = _("Zoom to"),
-                -- Per-icon enabled state, to disable everything except page & content when reflow is enabled.
-                enabled_funcs = {
-                    function() return true end,
-                    function() return true end,
-                    function(configurable, document)
-                        -- NOTE: document.is_reflowable is wonky as hell.
-                        print("text_wrap:", configurable.text_wrap)
-                        return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
-                    end,
-                    function(configurable, document)
-                        return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
-                    end,
-                    function(configurable, document)
-                        return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
-                    end,
-                    function(configurable, document)
-                        return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
-                    end,
-                },
+                enabled_func = function(configurable, document)
+                    -- NOTE: document.is_reflowable is wonky as hell, don't trust it.
+                    print("text_wrap:", configurable.text_wrap)
+                    return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
+                end,
                 -- toggle = {_("page"), _("content"), _("columns"), _("rows"), _("manual")},
                 item_icons = {
                     "zoom.page",
