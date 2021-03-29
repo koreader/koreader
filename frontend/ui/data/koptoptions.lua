@@ -158,7 +158,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 toggle = {_("full"), _("width"), _("height")},
                 alternate = false,
                 values = {2, 1, 0},
-                default_value = 2,
+                default_value = 1,
                 show_func = function(config) return config and config.zoom_mode_genus > 2 end,
                 event = "DefineZoom",
                 args = {"full", "width", "height"},

@@ -30,7 +30,7 @@ local ReaderZooming = InputContainer:new{
     },
     -- default to nil so we can trigger ZoomModeUpdate events on start up
     zoom_mode = nil,
-    DEFAULT_ZOOM_MODE = "page",
+    DEFAULT_ZOOM_MODE = "pagewidth",
     -- for pan mode: fit to width/zoom_factor,
     -- with overlap of zoom_overlap_h % (horizontally)
     -- and zoom_overlap_v % (vertically).
