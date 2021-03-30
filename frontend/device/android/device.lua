@@ -199,10 +199,10 @@ function Device:init()
                         end)
                     end
                 end
-            elseif ev.code == C.ALOOPER_FIFO_POWER_CONNECTED then
+            elseif ev.code == C.AEVENT_POWER_CONNECTED then
                 local Event = require("ui/event")
                 UIManager:broadcastEvent(Event:new("Charging"))
-            elseif ev.code == C.ALOOPER_FIFO_POWER_DISCONNECTED then
+            elseif ev.code == C.AEVENT_POWER_DISCONNECTED then
                 local Event = require("ui/event")
                 UIManager:broadcastEvent(Event:new("NotCharging"))
             end
