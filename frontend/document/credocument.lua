@@ -934,7 +934,7 @@ function CreDocument:setupFallbackFontFaces()
     -- names than ',' or ';', without the need to have to use quotes.
     local s_fallbacks = table.concat(fallbacks, "|")
     logger.dbg("CreDocument: set fallback font faces:", s_fallbacks)
-    self._document:setStringProperty("crengine.font.fallback.face", s_fallbacks)
+    self._document:setStringProperty("crengine.font.fallback.faces", s_fallbacks)
 end
 
 -- To use the new crengine language typography facilities (hyphenation, line breaking,
