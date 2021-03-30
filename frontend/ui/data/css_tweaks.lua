@@ -796,7 +796,8 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
                 css = [[
 .footnote, .footnotes, .fn,
 .note, .note1, .note2, .note3,
-.ntb, .ntb-txt, .ntb-txt-j
+.ntb, .ntb-txt, .ntb-txt-j,
+.voetnoten
 {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
@@ -812,7 +813,8 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
                 css = [[
 .footnote, .footnotes, .fn,
 .note, .note1, .note2, .note3,
-.ntb, .ntb-txt, .ntb-txt-j
+.ntb, .ntb-txt, .ntb-txt-j,
+.voetnoten
 {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
