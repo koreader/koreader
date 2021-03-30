@@ -9,13 +9,15 @@ end
 
 local CommandRunner = require("commandrunner")
 local PluginShare = require("pluginshare")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 
 -- BackgroundRunner is an experimental feature to execute non-critical jobs in
--- background. A job is defined as a table in PluginShare.backgroundJobs table.
+-- the background.
+-- A job is defined as a table in PluginShare.backgroundJobs table.
 -- It contains at least following items:
 -- when: number, string or function
 --   number: the delay in seconds
@@ -26,9 +28,9 @@ local _ = require("gettext")
 --             executed immediately.
 --
 -- repeated: boolean or function or nil or number
---   boolean: true to repeated the job once it finished.
---   function: if the return value of the function is true, repeated the job
---             once it finished. If the function throws an error, it equals to
+--   boolean: true to repeat the job once it finished.
+--   function: if the return value of the function is true, repeat the job
+--             once it finishes. If the function throws an error, it equals to
 --             return false.
 --   nil: same as false.
 --   number: times to repeat.
@@ -70,9 +72,10 @@ local _ = require("gettext")
 -- bad_command: boolean, whether the command is not found. Not available for
 --              function executable.
 -- blocked: boolean, whether the job is blocked.
--- start_sec: number, the os.time() when the job was started.
--- end_sec: number, the os.time() when the job was stopped.
--- insert_sec: number, the os.time() when the job was inserted into queue.
+-- start_tv: number, the TimeVal when the job was started.
+-- end_tv: number, the TimeVal when the job was stopped.
+-- insert_tv: number, the TimeVal when the job was inserted into queue.
+-- (All of them in the monotonic time scale, like the main event loop & task queue).
 
 local BackgroundRunner = {
     jobs = PluginShare.backgroundJobs,
@@ -114,7 +117,9 @@ end
 function BackgroundRunner:_finishJob(job)
     assert(self ~= nil)
     if type(job.executable) == "function" then
-        job.timeout = ((job.end_sec - job.start_sec) > 1)
+        local tv_diff = job.end_tv - job.start_tv
+        local threshold = TimeVal:new{ sec = 1 }
+        job.timeout = (tv_diff > threshold)
     end
     job.blocked = job.timeout
     if not job.blocked and self:_shouldRepeat(job) then
@@ -136,7 +141,7 @@ function BackgroundRunner:_executeJob(job)
         CommandRunner:start(job)
         return true
     elseif type(job.executable) == "function" then
-        job.start_sec = os.time()
+        job.start_tv = UIManager:getTime()
         local status, err = pcall(job.executable)
         if status then
             job.result = 0
@@ -144,7 +149,7 @@ function BackgroundRunner:_executeJob(job)
             job.result = 1
             job.exception = err
         end
-        job.end_sec = os.time()
+        job.end_tv = TimeVal:now()
         self:_finishJob(job)
         return true
     else
@@ -171,10 +176,10 @@ function BackgroundRunner:_execute()
         local round = 0
         while #self.jobs > 0 do
             local job = table.remove(self.jobs, 1)
-            if job.insert_sec == nil then
-                -- Jobs are first inserted to jobs table from external users. So
-                -- they may not have insert_sec field.
-                job.insert_sec = os.time()
+            if job.insert_tv == nil then
+                -- Jobs are first inserted to jobs table from external users.
+                -- So they may not have an insert field.
+                job.insert_tv = UIManager:getTime()
             end
             local should_execute = false
             local should_ignore = false
@@ -187,7 +192,7 @@ function BackgroundRunner:_execute()
                 end
             elseif type(job.when) == "number" then
                 if job.when >= 0 then
-                    should_execute = ((os.time() - job.insert_sec) >= job.when)
+                    should_execute = ((UIManager:getTime() - job.insert_tv) >= TimeVal:fromnumber(job.when))
                 else
                     should_ignore = true
                 end
@@ -248,7 +253,7 @@ end
 
 function BackgroundRunner:_insert(job)
     assert(self ~= nil)
-    job.insert_sec = os.time()
+    job.insert_tv = UIManager:getTime()
     table.insert(self.jobs, job)
 end
 

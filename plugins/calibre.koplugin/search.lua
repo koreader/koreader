@@ -16,9 +16,9 @@ local Menu = require("ui/widget/menu")
 local Persist = require("persist")
 local Screen = require("device").screen
 local Size = require("ui/size")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
-local socket = require("socket")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -323,7 +323,7 @@ function CalibreSearch:find(option)
     end
 
     -- measure time elapsed searching
-    local start = socket.gettime()
+    local start = TimeVal:now()
     if option == "find" then
         local books = self:findBooks(self.search_value)
         local result = self:bookCatalog(books)
@@ -331,9 +331,8 @@ function CalibreSearch:find(option)
     else
         self:browse(option,1)
     end
-    local elapsed = socket.gettime() - start
-    logger.info(string.format("search done in %f milliseconds (%s, %s, %s, %s, %s)",
-        elapsed * 1000,
+    logger.info(string.format("search done in %.3f milliseconds (%s, %s, %s, %s, %s)",
+        (TimeVal:now() - start):tomsecs(),
         option == "find" and "books" or option,
         "case sensitive: " .. tostring(not self.case_insensitive),
         "title: " .. tostring(self.find_by_title),
@@ -556,8 +555,8 @@ end
 
 -- get metadata from cache or calibre files
 function CalibreSearch:getMetadata()
-    local start = socket.gettime()
-    local template = "metadata: %d books imported from %s in %f milliseconds"
+    local start = TimeVal:now()
+    local template = "metadata: %d books imported from %s in %.3f milliseconds"
 
     -- try to load metadata from cache
     if self.cache_metadata then
@@ -581,8 +580,7 @@ function CalibreSearch:getMetadata()
                 end
             end
             if is_newer then
-                local elapsed = socket.gettime() - start
-                logger.info(string.format(template, #cache, "cache", elapsed * 1000))
+                logger.info(string.format(template, #cache, "cache", (TimeVal:now() - start):tomsecs()))
                 return cache
             else
                 logger.warn("cache is older than metadata, ignoring it")
@@ -607,8 +605,7 @@ function CalibreSearch:getMetadata()
         end
         self.cache_books:save(serialized_table)
     end
-    local elapsed = socket.gettime() - start
-    logger.info(string.format(template, #books, "calibre", elapsed * 1000))
+    logger.info(string.format(template, #books, "calibre", (TimeVal:now() - start):tomsecs()))
     return books
 end
 

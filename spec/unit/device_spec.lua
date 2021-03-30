@@ -94,13 +94,13 @@ describe("device module", function()
                 type = EV_ABS,
                 code = ABS_X,
                 value = y,
-                time = TimeVal:now(),
+                time = TimeVal:realtime(),
             }
             local ev_y = {
                 type = EV_ABS,
                 code = ABS_Y,
                 value = Screen:getWidth()-x,
-                time = TimeVal:now(),
+                time = TimeVal:realtime(),
             }
 
             kobo_dev.input:eventAdjustHook(ev_x)
@@ -273,7 +273,7 @@ describe("device module", function()
 
             mock_ffi_input = require('ffi/input')
             stub(mock_ffi_input, "waitForEvent")
-            mock_ffi_input.waitForEvent.returns({
+            mock_ffi_input.waitForEvent.returns(true, {
                 type = 3,
                 time = {
                     usec = 450565,

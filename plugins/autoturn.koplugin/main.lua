@@ -1,6 +1,7 @@
 local Device = require("device")
 local Event = require("ui/event")
 local PluginShare = require("pluginshare")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
@@ -10,11 +11,11 @@ local T = require("ffi/util").template
 local AutoTurn = WidgetContainer:new{
     name = "autoturn",
     is_doc_only = true,
-    autoturn_sec = G_reader_settings:readSetting("autoturn_timeout_seconds") or 0,
-    autoturn_distance = G_reader_settings:readSetting("autoturn_distance") or 1,
-    enabled = G_reader_settings:isTrue("autoturn_enabled"),
+    autoturn_sec = 0,
+    autoturn_distance = 1,
+    enabled = false,
     settings_id = 0,
-    last_action_sec = os.time(),
+    last_action_tv = TimeVal:now(),
 }
 
 function AutoTurn:_enabled()
@@ -34,7 +35,8 @@ function AutoTurn:_schedule(settings_id)
         return
     end
 
-    local delay = self.last_action_sec + self.autoturn_sec - os.time()
+    local delay = self.last_action_tv + TimeVal:new{ sec = self.autoturn_sec } - UIManager:getTime()
+    delay = delay:tonumber()
 
     if delay <= 0 then
         if UIManager:getTopWidget() == "ReaderUI" then
@@ -57,10 +59,10 @@ end
 
 function AutoTurn:_start()
     if self:_enabled() then
-        local now_ts = os.time()
-        logger.dbg("AutoTurn: start at", now_ts)
+        local now_tv = UIManager:getTime()
+        logger.dbg("AutoTurn: start at", now_tv:tonumber())
         PluginShare.pause_auto_suspend = true
-        self.last_action_sec = now_ts
+        self.last_action_tv = now_tv
         self:_schedule(self.settings_id)
 
         local text
@@ -83,7 +85,10 @@ end
 
 function AutoTurn:init()
     UIManager.event_hook:registerWidget("InputEvent", self)
-    self.autoturn_sec = self.settings
+    self.autoturn_sec = G_reader_settings:readSetting("autoturn_timeout_seconds") or 0
+    self.autoturn_distance = G_reader_settings:readSetting("autoturn_distance") or 1
+    self.enabled = G_reader_settings:isTrue("autoturn_enabled")
+    self.settings_id = 0
     self.ui.menu:registerToMainMenu(self)
     self:_deprecateLastTask()
     self:_start()
@@ -96,7 +101,7 @@ end
 
 function AutoTurn:onInputEvent()
     logger.dbg("AutoTurn: onInputEvent")
-    self.last_action_sec = os.time()
+    self.last_action_tv = UIManager:getTime()
 end
 
 -- We do not want autoturn to turn pages during the suspend process.

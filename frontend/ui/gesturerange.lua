@@ -3,9 +3,9 @@ local TimeVal = require("ui/timeval")
 local GestureRange = {
     -- gesture matching type
     ges = nil,
-    -- spatial range limits the gesture emitting position
+    -- spatial range, limits the gesture emitting position
     range = nil,
-    -- temproal range limits the gesture emitting rate
+    -- temporal range, limits the gesture emitting rate
     rate = nil,
     -- scale limits of this gesture
     scale = nil,
@@ -23,12 +23,11 @@ function GestureRange:match(gs)
         return false
     end
     if self.range then
-        -- sometimes widget dimenension is not available when creating a gesturerage
-        -- for some action, now we accept a range function that will be later called
-        -- and the result of which will be used to check gesture match
+        -- Sometimes the widget's dimensions are not available when creating a GestureRange
+        -- for some action, so we accept a range function that will only be called at match() time instead.
         -- e.g. range = function() return self.dimen end
-        -- for inputcontainer given that the x and y field of `self.dimen` is only
-        -- filled when the inputcontainer is painted into blitbuffer
+        -- That's because most widgets' dimensions are only set at paintTo() time:
+        -- e.g., with InputContainer, the x and y fields of `self.dimen`.
         local range
         if type(self.range) == "function" then
             range = self.range()
@@ -41,10 +40,9 @@ function GestureRange:match(gs)
     end
 
     if self.rate then
-        -- This filed restraints the upper limit rate(matches per second).
-        -- It's most useful for e-ink devices with less powerfull CPUs and
-        -- screens that cannot handle gesture events that otherwise will be
-        -- generated
+        -- This field sets up rate-limiting (in matches per second).
+        -- It's mostly useful for e-Ink devices with less powerful CPUs
+        -- and screens that cannot handle the amount of gesture events that would otherwise be generated.
         local last_time = self.last_time or TimeVal:new{}
         if gs.time - last_time > TimeVal:new{usec = 1000000 / self.rate} then
             self.last_time = gs.time

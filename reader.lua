@@ -46,8 +46,6 @@ if lang_locale then
     _.changeLang(lang_locale)
 end
 
-local dummy = require("ffi/posix_h")
-
 -- Try to turn the C blitter on/off, and synchronize setting so that UI config reflects real state
 local bb = require("ffi/blitbuffer")
 bb:setUseCBB(is_cbb_enabled)

@@ -1,5 +1,4 @@
 local Generic = require("device/generic/device") -- <= look at this file!
-local TimeVal = require("ui/timeval")
 local logger = require("logger")
 
 local function yes() return true end
@@ -58,7 +57,6 @@ local Remarkable1 = Remarkable:new{
 
 function Remarkable1:adjustTouchEvent(ev, by)
     if ev.type == EV_ABS then
-        ev.time = TimeVal:now()
         -- Mirror X and Y and scale up both X & Y as touch input is different res from
         -- display
         if ev.code == ABS_MT_POSITION_X then
@@ -81,7 +79,6 @@ local Remarkable2 = Remarkable:new{
 }
 
 function Remarkable2:adjustTouchEvent(ev, by)
-    ev.time = TimeVal:now()
     if ev.type == EV_ABS then
         -- Mirror Y and scale up both X & Y as touch input is different res from
         -- display

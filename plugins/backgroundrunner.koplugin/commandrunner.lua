@@ -1,4 +1,5 @@
 local logger = require("logger")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 
 local CommandRunner = {
@@ -36,7 +37,7 @@ function CommandRunner:start(job)
     assert(self.pio == nil)
     assert(self.job == nil)
     self.job = job
-    self.job.start_sec = os.time()
+    self.job.start_tv = UIManager:getTime()
     assert(type(self.job.executable) == "string")
     local command = self:createEnvironment() .. " " ..
                     "sh plugins/backgroundrunner.koplugin/luawrapper.sh " ..
@@ -76,7 +77,7 @@ function CommandRunner:poll()
         UIManager:allowStandby()
         self.pio:close()
         self.pio = nil
-        self.job.end_sec = os.time()
+        self.job.end_tv = TimeVal:now()
         local job = self.job
         self.job = nil
         return job

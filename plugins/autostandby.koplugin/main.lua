@@ -63,7 +63,7 @@ function AutoStandby:addToMainMenu(menu_items)
     }
 end
 
--- We've received touch/key event, so delay stadby accordingly
+-- We've received touch/key event, so delay standby accordingly
 function AutoStandby:onInputEvent()
     logger.dbg("AutoStandby:onInputevent() instance=", tostring(self))
     local config = self.settings.data

@@ -13,6 +13,7 @@ local LuaData = require("luadata")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
 local SortWidget = require("ui/widget/sortwidget")
+local TimeVal = require("ui/timeval")
 local Trapper = require("ui/trapper")
 local UIManager = require("ui/uimanager")
 local ffiUtil  = require("ffi/util")
@@ -109,7 +110,7 @@ function ReaderDictionary:init()
     -- Allow quick interruption or dismiss of search result window
     -- with tap if done before this delay. After this delay, the
     -- result window is shown and dismiss prevented for a few 100ms
-    self.quick_dismiss_before_delay = 3
+    self.quick_dismiss_before_delay = TimeVal:new{ sec = 3 }
 
     -- Gather info about available dictionaries
     if not available_ifos then
@@ -846,9 +847,9 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
 
     self:showLookupInfo(word, self.lookup_msg_delay)
 
-    self._lookup_start_ts = ffiUtil.getTimestamp()
+    self._lookup_start_tv = UIManager:getTime()
     local results = self:startSdcv(word, dict_names, fuzzy_search)
-    if results and results.lookup_cancelled and ffiUtil.getDuration(self._lookup_start_ts) <= self.quick_dismiss_before_delay then
+    if results and results.lookup_cancelled and TimeVal:now() - self._lookup_start_tv <= self.quick_dismiss_before_delay then
         -- If interrupted quickly just after launch, don't display anything
         -- (this might help avoiding refreshes and the need to dismiss
         -- after accidental long-press when holding a device).
@@ -907,7 +908,7 @@ function ReaderDictionary:showDict(word, results, box, link)
     self:dismissLookupInfo()
     if results and results[1] then
         UIManager:show(self.dict_window)
-        if not results.lookup_cancelled and self._lookup_start_ts and ffiUtil.getDuration(self._lookup_start_ts) > self.quick_dismiss_before_delay then
+        if not results.lookup_cancelled and self._lookup_start_tv and TimeVal:now() - self._lookup_start_tv > self.quick_dismiss_before_delay then
             -- If the search took more than a few seconds to be done, discard
             -- queued and coming up events to avoid a voluntary dismissal
             -- (because the user felt the result would not come) to kill the
