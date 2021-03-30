@@ -46,9 +46,6 @@ local UPWARD_PORTRAIT_DOWN_INTERRUPT_HAPPENED   = 16
 local UPWARD_LANDSCAPE_LEFT_INTERRUPT_HAPPENED  = 17
 local UPWARD_LANDSCAPE_RIGHT_INTERRUPT_HAPPENED = 18
 
--- For the events of the Forma accelerometer (MSC.code)
-local MSC_RAW = 0x03
-
 -- For the events of the Forma accelerometer (MSC.value)
 -- c.f., drivers/hwmon/mma8x5x.c
 local MSC_RAW_GSENSOR_PORTRAIT_DOWN = 0x17
