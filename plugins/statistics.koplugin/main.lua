@@ -58,12 +58,6 @@ local STATISTICS_SQL_BOOK_TOTALS_QUERY = [[
 
 local ReaderStatistics = Widget:extend{
     name = "statistics",
-    page_min_read_sec = DEFAULT_MIN_READ_SEC,
-    page_max_read_sec = DEFAULT_MAX_READ_SEC,
-    calendar_start_day_of_week = DEFAULT_CALENDAR_START_DAY_OF_WEEK,
-    calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS,
-    calendar_show_histogram = true,
-    calendar_browse_future_months = false,
     start_current_period = 0,
     curr_page = 0,
     id_curr_book = nil,
@@ -137,8 +131,16 @@ function ReaderStatistics:init()
     end
     self.start_current_period = os.time()
     self:resetVolatileStats()
-    self.settings = G_reader_settings:readSetting("statistics", {})
-    self.settings.is_enabled = not (self.settings.is_enabled == false)
+    self.settings = G_reader_settings:readSetting("statistics", {
+        min_sec = DEFAULT_MIN_READ_SEC,
+        max_sec = DEFAULT_MAX_READ_SEC,
+        is_enabled = true,
+        convert_to_db = nil,
+        calendar_start_day_of_week = DEFAULT_CALENDAR_START_DAY_OF_WEEK,
+        calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS,
+        calendar_show_histogram = true,
+        calendar_browse_future_months = false,
+    })
     self.ui.menu:registerToMainMenu(self)
     self:checkInitDatabase()
     BookStatusWidget.getStats = function()
