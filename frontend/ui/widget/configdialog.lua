@@ -168,7 +168,7 @@ end
 
 function OptionIconItem:onHoldSelect()
     self.config:onMakeDefault(self.name, self.name_text,
-                    self.values, self.values, self.current_item)
+                    self.values, self.labels or self.values, self.current_item)
     return true
 end
 
@@ -519,6 +519,7 @@ function ConfigOption:init()
                     option_item.name = self.options[c].name
                     option_item.name_text = name_text or self.options[c].alt_name_text
                     option_item.values = self.options[c].values
+                    option_item.labels = self.options[c].labels
                     option_item.args = self.options[c].args
                     option_item.event = self.options[c].event
                     option_item.current_item = d
