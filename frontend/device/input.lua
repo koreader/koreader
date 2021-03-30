@@ -22,22 +22,22 @@ require("ffi/linux_input_h")
 -- luacheck: push
 -- luacheck: ignore
 -- key press event values (KEY.value)
-local EVENT_VALUE_KEY_PRESS = 1
-local EVENT_VALUE_KEY_REPEAT = 2
+local EVENT_VALUE_KEY_PRESS   = 1
+local EVENT_VALUE_KEY_REPEAT  = 2
 local EVENT_VALUE_KEY_RELEASE = 0
 
 -- For Kindle Oasis orientation events (ABS.code)
 -- the ABS code of orientation event will be adjusted to -24 from 24 (C.ABS_PRESSURE)
 -- as C.ABS_PRESSURE is also used to detect touch input in KOBO devices.
-local ABS_OASIS_ORIENTATION = -24
-local DEVICE_ORIENTATION_PORTRAIT_LEFT = 15
-local DEVICE_ORIENTATION_PORTRAIT_RIGHT = 17
-local DEVICE_ORIENTATION_PORTRAIT = 19
-local DEVICE_ORIENTATION_PORTRAIT_ROTATED_LEFT = 16
+local ABS_OASIS_ORIENTATION                     = -24
+local DEVICE_ORIENTATION_PORTRAIT_LEFT          = 15
+local DEVICE_ORIENTATION_PORTRAIT_RIGHT         = 17
+local DEVICE_ORIENTATION_PORTRAIT               = 19
+local DEVICE_ORIENTATION_PORTRAIT_ROTATED_LEFT  = 16
 local DEVICE_ORIENTATION_PORTRAIT_ROTATED_RIGHT = 18
-local DEVICE_ORIENTATION_PORTRAIT_ROTATED = 20
-local DEVICE_ORIENTATION_LANDSCAPE = 21
-local DEVICE_ORIENTATION_LANDSCAPE_ROTATED = 22
+local DEVICE_ORIENTATION_PORTRAIT_ROTATED       = 20
+local DEVICE_ORIENTATION_LANDSCAPE              = 21
+local DEVICE_ORIENTATION_LANDSCAPE_ROTATED      = 22
 
 -- Kindle Oasis 2 & 3 variant
 -- c.f., drivers/input/misc/accel/bma2x2.c
@@ -48,13 +48,13 @@ local UPWARD_LANDSCAPE_RIGHT_INTERRUPT_HAPPENED = 18
 
 -- For the events of the Forma accelerometer (MSC.value)
 -- c.f., drivers/hwmon/mma8x5x.c
-local MSC_RAW_GSENSOR_PORTRAIT_DOWN = 0x17
-local MSC_RAW_GSENSOR_PORTRAIT_UP = 0x18
-local MSC_RAW_GSENSOR_LANDSCAPE_RIGHT = 0x19
-local MSC_RAW_GSENSOR_LANDSCAPE_LEFT = 0x1a
+local MSC_RAW_GSENSOR_PORTRAIT_DOWN             = 0x17
+local MSC_RAW_GSENSOR_PORTRAIT_UP               = 0x18
+local MSC_RAW_GSENSOR_LANDSCAPE_RIGHT           = 0x19
+local MSC_RAW_GSENSOR_LANDSCAPE_LEFT            = 0x1a
 -- Not that we care about those, but they are reported, and accurate ;).
-local MSC_RAW_GSENSOR_BACK = 0x1b
-local MSC_RAW_GSENSOR_FRONT = 0x1c
+local MSC_RAW_GSENSOR_BACK                      = 0x1b
+local MSC_RAW_GSENSOR_FRONT                     = 0x1c
 
 -- For debug logging of ev.type
 local linux_evdev_type_map = {
