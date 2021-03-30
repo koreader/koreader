@@ -478,7 +478,7 @@ function TextEditor:editFile(file_path, readonly)
     local buttons_first_row = {}  -- First button on first row, that will be filled with Reset|Save|Close
     if is_lua then
         table.insert(buttons_first_row, {
-            text = _("Check Lua"),
+            text = _("Lua check"),
             callback = function()
                 local parse_error = util.checkLuaSyntax(input:getInputText())
                 if parse_error then
