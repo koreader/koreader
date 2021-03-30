@@ -46,7 +46,7 @@ local UPWARD_PORTRAIT_DOWN_INTERRUPT_HAPPENED   = 16
 local UPWARD_LANDSCAPE_LEFT_INTERRUPT_HAPPENED  = 17
 local UPWARD_LANDSCAPE_RIGHT_INTERRUPT_HAPPENED = 18
 
--- For the events of the Forma accelerometer (MSC.value)
+-- For the events of the Forma & Libra accelerometers (MSC.value)
 -- c.f., drivers/hwmon/mma8x5x.c
 local MSC_RAW_GSENSOR_PORTRAIT_DOWN             = 0x17
 local MSC_RAW_GSENSOR_PORTRAIT_UP               = 0x18
@@ -498,7 +498,7 @@ function Input:handleKeyBoardEv(ev)
         or keycode == "RPgFwd" then
             --- @fixme Crappy event staggering!
             --
-            -- The Forma repeats every 80ms after a 400ms delay, and 500ms roughly corresponds to a flashing update,
+            -- The Forma & co repeats every 80ms after a 400ms delay, and 500ms roughly corresponds to a flashing update,
             -- so stuff is usually in sync when you release the key.
             -- Obvious downside is that this ends up slower than just mashing the key.
             --
@@ -781,7 +781,7 @@ function Input:handleOasisOrientationEv(ev)
     end
 end
 
---- Accelerometer on the Forma
+--- Accelerometer on the Forma/Libra
 function Input:handleMiscEvNTX(ev)
     local rotation_mode, screen_mode
     if ev.code == C.MSC_RAW then
