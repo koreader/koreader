@@ -2161,6 +2161,11 @@ function ReaderFooter:onTapFooter(ges)
 end
 
 function ReaderFooter:onHoldFooter()
+    -- We're lower priority than readerhighlight_hold, which means it's already been tripped by the time we got here.
+    -- If it actually had something to do, ReaderHighlight would have stopped propagating the event,
+    -- so we can safely clear ReaderHighlight state here, otherwise it'll get confused on the next tap...
+    -- (c.f., #7464)
+    self.ui.highlight:clear()
     if self.mode == self.mode_list.off then return end
     if self.settings.skim_widget_on_hold then
         self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
