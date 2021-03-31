@@ -227,10 +227,14 @@ function FileManager:setupLayout()
     local fileManager = self
 
     function file_chooser:onFileHold(file)  -- luacheck: ignore
+        local is_file = lfs.attributes(file, "mode") == "file"
+        local is_folder = lfs.attributes(file, "mode") == "directory"
+        local is_not_parent_folder = BaseUtil.basename(file) ~= ".."
         local buttons = {
             {
                 {
                     text = C_("File", "Copy"),
+                    enabled = is_not_parent_folder,
                     callback = function()
                         copyFile(file)
                         UIManager:close(self.file_dialog)
@@ -264,6 +268,7 @@ function FileManager:setupLayout()
             {
                 {
                     text = _("Cut"),
+                    enabled = is_not_parent_folder,
                     callback = function()
                         cutFile(file)
                         UIManager:close(self.file_dialog)
@@ -271,6 +276,7 @@ function FileManager:setupLayout()
                 },
                 {
                     text = _("Delete"),
+                    enabled = is_not_parent_folder,
                     callback = function()
                         UIManager:show(ConfirmBox:new{
                             text = _("Are you sure that you want to delete this file?\n") .. BD.filepath(file) .. ("\n") .. _("If you delete a file, it is permanently lost."),
@@ -286,6 +292,7 @@ function FileManager:setupLayout()
                 },
                 {
                     text = _("Rename"),
+                    enabled = is_not_parent_folder,
                     callback = function()
                         UIManager:close(self.file_dialog)
                         fileManager.rename_dialog = InputDialog:new{
@@ -320,7 +327,7 @@ function FileManager:setupLayout()
             },
         }
 
-        if lfs.attributes(file, "mode") == "file" and Device:canExecuteScript(file) then
+        if is_file and Device:canExecuteScript(file) then
             -- NOTE: We populate the empty separator, in order not to mess with the button reordering code in CoverMenu
             table.insert(buttons[3],
                 {
@@ -361,7 +368,7 @@ function FileManager:setupLayout()
             )
         end
 
-        if lfs.attributes(file, "mode") == "file" then
+        if is_file then
             table.insert(buttons, {
                 {
                     text = _("Open with…"),
@@ -422,7 +429,7 @@ function FileManager:setupLayout()
                 })
             end
         end
-        if lfs.attributes(file, "mode") == "directory" then
+        if is_folder then
             local realpath = BaseUtil.realpath(file)
             table.insert(buttons, {
                 {
@@ -436,8 +443,8 @@ function FileManager:setupLayout()
         end
 
         local title
-        if lfs.attributes(file, "mode") == "directory" then
-            title = BD.directory(file:match("([^/]+)$"))
+        if is_folder then
+            title = BD.directory(file:match("([^/]+)$")).."/"
         else
             title = BD.filename(file:match("([^/]+)$"))
         end
