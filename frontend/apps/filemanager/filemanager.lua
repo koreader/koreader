@@ -444,7 +444,7 @@ function FileManager:setupLayout()
 
         local title
         if is_folder then
-            title = BD.directory(file:match("([^/]+)$")).."/"
+            title = BD.directory(file:match("([^/]+)$"))
         else
             title = BD.filename(file:match("([^/]+)$"))
         end
