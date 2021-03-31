@@ -996,15 +996,25 @@ function Input:waitEvent(now, deadline)
                 -- If we've drained all pending input events, causing waitForEvent to time out, check our timers
                 if ok == false and ev == C.ETIME then
                     -- Check whether the earliest timer to finalize a Gesture detection is up.
-                    -- If we were woken up by a timerfd, that means the timerfd backend is in use, of course,
-                    -- and it also means that we're guaranteed to have reached its deadline.
-                    -- When the timerfd backend is *NOT* in use,
-                    -- that's only a guarantee when our actual select deadline was the timer itself!
-                    -- But if it was a task deadline instead, we to have to check it against the current time.
-                    -- We have to make sure to only do that on systems without timerfd, because:
-                    -- 1. it's unnecessary with timerfd
-                    -- 2. the timer's deadline may not be in the same time base as TimeVal:now (i.e., MONOTONIC)!
-                    if timerfd or (not with_timerfd and (deadline_is_timer or TimeVal:now() >= self.timer_callbacks[1].deadline)) then
+                    local consume_callback = false
+                    if timerfd then
+                        -- If we were woken up by a timerfd, that means the timerfd backend is in use, of course,
+                        -- and it also means that we're guaranteed to have reached its deadline.
+                        consume_callback = true
+                    elseif not with_timerfd then
+                        -- On systems without timerfd, we have a few more cases to handle...
+                        if deadline_is_timer then
+                            -- When the timerfd backend is *NOT* in use,
+                            -- that's only a guarantee when our actual select deadline was the timer itself!
+                            consume_callback = true
+                        elseif TimeVal:now() >= self.timer_callbacks[1].deadline then
+                            -- But if it was a task deadline instead, we to have to check the timer's against the current time,
+                            -- to double-check whether we blew it or not.
+                            consume_callback = true
+                        end
+                    end
+
+                    if consume_callback then
                         local touch_ges = self.timer_callbacks[1].callback()
                         table.remove(self.timer_callbacks, 1)
                         -- If it was a timerfd, we also need to close the fd.
