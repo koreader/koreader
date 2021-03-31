@@ -82,7 +82,6 @@ local linux_evdev_syn_code_map = {
     [C.SYN_DROPPED] = "SYN_DROPPED",
 }
 
--- For debug logging of ev.code
 local linux_evdev_key_code_map = {
     [C.BTN_TOOL_PEN] = "BTN_TOOL_PEN",
     [C.BTN_TOOL_FINGER] = "BTN_TOOL_FINGER",
