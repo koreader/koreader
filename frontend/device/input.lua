@@ -82,6 +82,15 @@ local linux_evdev_syn_code_map = {
     [C.SYN_DROPPED] = "SYN_DROPPED",
 }
 
+-- For debug logging of ev.code
+local linux_evdev_key_code_map = {
+    [C.BTN_TOOL_PEN] = "BTN_TOOL_PEN",
+    [C.BTN_TOOL_FINGER] = "BTN_TOOL_FINGER",
+    [C.BTN_TOOL_RUBBER] = "BTN_TOOL_RUBBER",
+    [C.BTN_TOUCH] = "BTN_TOUCH",
+    [C.BTN_STYLUS] = "BTN_STYLUS",
+}
+
 local linux_evdev_abs_code_map = {
     [C.ABS_X] = "ABS_X",
     [C.ABS_Y] = "ABS_Y",
@@ -98,6 +107,8 @@ local linux_evdev_abs_code_map = {
     [C.ABS_MT_BLOB_ID] = "ABS_MT_BLOB_ID",
     [C.ABS_MT_TRACKING_ID] = "ABS_MT_TRACKING_ID",
     [C.ABS_MT_PRESSURE] = "ABS_MT_PRESSURE",
+    [C.ABS_TILT_X] = "ABS_TILT_X",
+    [C.ABS_TILT_Y] = "ABS_TILT_Y",
     [C.ABS_MT_DISTANCE] = "ABS_MT_DISTANCE",
     [C.ABS_MT_TOOL_X] = "ABS_MT_TOOL_X",
     [C.ABS_MT_TOOL_Y] = "ABS_MT_TOOL_Y",
@@ -1055,7 +1066,7 @@ function Input:waitEvent(now, deadline)
             if ev.type == C.EV_KEY then
                 logger.dbg(string.format(
                     "key event => code: %d (%s), value: %s, time: %d.%d",
-                    ev.code, self.event_map[ev.code], ev.value,
+                    ev.code, self.event_map[ev.code] or linux_evdev_key_code_map[ev.code], ev.value,
                     ev.time.sec, ev.time.usec))
             elseif ev.type == C.EV_SYN then
                 logger.dbg(string.format(
