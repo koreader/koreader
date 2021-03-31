@@ -15,6 +15,33 @@ local API_LIST_FOLDER = "https://api.dropboxapi.com/2/files/list_folder"
 local API_DOWNLOAD_FILE = "https://content.dropboxapi.com/2/files/download"
 local API_LIST_ADD_FOLDER = "https://api.dropboxapi.com/2/files/list_folder/continue"
 
+function DropBoxApi:showFilesAndFoldersV2(path, token)
+    local dropbox_files = {}
+    local tag, text
+    local ls_dropbox = self:fetchListFolders(path, token)
+    if ls_dropbox == nil or ls_dropbox.entries == nil then return false end
+    for _, files in ipairs(ls_dropbox.entries) do
+        text = files.name
+        tag = files[".tag"]
+        if tag == "folder" then 
+            table.insert(dropbox_files, {
+                text = text,
+                type = "folder",
+                url = files.path_display,
+            })
+        end
+        if tag == "file" and (DocumentRegistry:hasProvider(text) or G_reader_settings:isTrue("show_unsupported")) then
+            table.insert(dropbox_files, {
+                text = text,
+                type = "file",
+                url = files.path_display,
+                size = files.size,
+            })
+        end
+    end
+    return dropbox_files
+end
+
 function DropBoxApi:fetchInfo(token)
     local sink = {}
     socketutil:set_timeout()
