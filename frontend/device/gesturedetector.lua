@@ -205,18 +205,21 @@ function GestureDetector:isHold(t1, t2)
 end
 
 function GestureDetector:isTwoFingerTap()
-    if self.last_tevs[0] == nil or self.last_tevs[1] == nil then
+    local s1 = self.input.main_finger_slot
+    local s2 = self.input.main_finger_slot + 1
+
+    if self.last_tevs[s1] == nil or self.last_tevs[1] == nil then
         return false
     end
-    local x_diff0 = math.abs(self.last_tevs[0].x - self.first_tevs[0].x)
-    local x_diff1 = math.abs(self.last_tevs[1].x - self.first_tevs[1].x)
-    local y_diff0 = math.abs(self.last_tevs[0].y - self.first_tevs[0].y)
-    local y_diff1 = math.abs(self.last_tevs[1].y - self.first_tevs[1].y)
-    local tv_diff0 = self.last_tevs[0].timev - self.first_tevs[0].timev
+    local x_diff0 = math.abs(self.last_tevs[s1].x - self.first_tevs[s1].x)
+    local x_diff1 = math.abs(self.last_tevs[s2].x - self.first_tevs[s2].x)
+    local y_diff0 = math.abs(self.last_tevs[s1].y - self.first_tevs[s1].y)
+    local y_diff1 = math.abs(self.last_tevs[s2].y - self.first_tevs[s2].y)
+    local tv_diff0 = self.last_tevs[s1].timev - self.first_tevs[s1].timev
     if not tv_diff0:isPositive() then
         tv_diff0 = TimeVal:new{ sec = math.huge }
     end
-    local tv_diff1 = self.last_tevs[1].timev - self.first_tevs[1].timev
+    local tv_diff1 = self.last_tevs[s2].timev - self.first_tevs[s2].timev
     if not tv_diff1:isPositive() then
         tv_diff1 = TimeVal:new{ sec = math.huge }
     end
@@ -424,17 +427,19 @@ function GestureDetector:tapState(tev)
     logger.dbg("in tap state...")
     local slot = tev.slot
     if tev.id == -1 then
+        local s1 = self.input.main_finger_slot
+        local s2 = self.input.main_finger_slot + 1
         -- end of tap event
-        if self.detectings[0] and self.detectings[1] then
+        if self.detectings[s1] and self.detectings[s2] then
             if self:isTwoFingerTap() then
                 local pos0 = Geom:new{
-                    x = self.last_tevs[0].x,
-                    y = self.last_tevs[0].y,
+                    x = self.last_tevs[s1].x,
+                    y = self.last_tevs[s1].y,
                     w = 0, h = 0,
                 }
                 local pos1 = Geom:new{
-                    x = self.last_tevs[1].x,
-                    y = self.last_tevs[1].y,
+                    x = self.last_tevs[s2].x,
+                    y = self.last_tevs[s2].y,
                     w = 0, h = 0,
                 }
                 local tap_span = pos0:distance(pos1)
@@ -592,7 +597,9 @@ function GestureDetector:panState(tev)
     if tev.id == -1 then
         -- end of pan, signal swipe gesture if necessary
         if self:isSwipe(slot) then
-            if self.detectings[0] and self.detectings[1] then
+            local s1 = self.input.main_finger_slot
+            local s2 = self.input.main_finger_slot + 1
+            if self.detectings[s1] and self.detectings[s2] then
                 local ges_ev = self:handleTwoFingerPan(tev)
                 self:clearStates()
                 if ges_ev then
@@ -665,7 +672,9 @@ end
 
 function GestureDetector:handlePan(tev)
     local slot = tev.slot
-    if self.detectings[0] and self.detectings[1] then
+    local s1 = self.input.main_finger_slot
+    local s2 = self.input.main_finger_slot + 1
+    if self.detectings[s1] and self.detectings[s2] then
         return self:handleTwoFingerPan(tev)
     else
         local pan_direction, pan_distance = self:getPath(slot)
@@ -768,10 +777,12 @@ function GestureDetector:handlePan(tev)
 end
 
 function GestureDetector:handleTwoFingerPan(tev)
+    local s1 = self.input.main_finger_slot
+    local s2 = self.input.main_finger_slot + 1
     -- triggering slot
     local tslot = tev.slot
     -- reference slot
-    local rslot = tslot == 1 and 0 or 1
+    local rslot = tslot == s2 and s1 or s2
     local tpan_dir, tpan_dis = self:getPath(tslot)
     local tstart_pos = Geom:new{
         x = self.first_tevs[tslot].x,
@@ -839,7 +850,9 @@ function GestureDetector:handlePanRelease(tev)
         pos = release_pos,
         time = tev.timev,
     }
-    if self.detectings[0] and self.detectings[1] then
+    local s1 = self.input.main_finger_slot
+    local s2 = self.input.main_finger_slot + 1
+    if self.detectings[s1] and self.detectings[s2] then
         logger.dbg("two finger pan release detected")
         pan_ev.ges = "two_finger_pan_release"
         self:clearStates()

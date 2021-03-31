@@ -122,6 +122,8 @@ local linux_evdev_msc_code_map = {
 local _internal_clipboard_text = nil -- holds the last copied text
 
 local Input = {
+    -- must point to the device implementation when instantiating
+    device = nil,
     -- this depends on keyboard layout and should be overridden:
     event_map = {},
     -- adapters are post processing functions that transform a given event to another event
@@ -184,13 +186,10 @@ local Input = {
     repeat_count = 0,
 
     -- touch state:
+    main_finger_slot = 0,
     cur_slot = 0,
     MTSlots = {},
-    ev_slots = {
-        [0] = {
-            slot = 0,
-        }
-    },
+    ev_slots = {},
     gesture_detector = nil,
 
     -- simple internal clipboard implementation, can be overidden to use system clipboard
@@ -214,6 +213,16 @@ function Input:new(o)
 end
 
 function Input:init()
+    -- Handle default finger slot
+    if self.device.main_finger_slot then
+        self.main_finger_slot = self.device.main_finger_slot
+    end
+    self.ev_slots = {
+        [self.main_finger_slot] = {
+            slot = self.main_finger_slot,
+        },
+    }
+
     self.gesture_detector = GestureDetector:new{
         screen = self.device.screen,
         input = self,
