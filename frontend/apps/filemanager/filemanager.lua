@@ -895,7 +895,7 @@ function FileManager:pasteHere(file)
             if mode == "file" then
                 text = T(_("The file %1 already exists. Do you want to overwrite it?"), BD.filename(basename))
             else
-                text = T(_("The directory %1 already exists. Do you want to overwrite it?"), BD.directory(basename))
+                text = T(_("The folder %1 already exists. Do you want to overwrite it?"), BD.directory(basename))
             end
 
             UIManager:show(ConfirmBox:new {
