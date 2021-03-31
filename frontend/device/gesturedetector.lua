@@ -208,7 +208,7 @@ function GestureDetector:isTwoFingerTap()
     local s1 = self.input.main_finger_slot
     local s2 = self.input.main_finger_slot + 1
 
-    if self.last_tevs[s1] == nil or self.last_tevs[1] == nil then
+    if self.last_tevs[s1] == nil or self.last_tevs[s2] == nil then
         return false
     end
     local x_diff0 = math.abs(self.last_tevs[s1].x - self.first_tevs[s1].x)
