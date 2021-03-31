@@ -216,6 +216,7 @@ function Input:init()
     -- Handle default finger slot
     if self.device.main_finger_slot then
         self.main_finger_slot = self.device.main_finger_slot
+        self.cur_slot = self.device.main_finger_slot
     end
     self.ev_slots = {
         [self.main_finger_slot] = {
