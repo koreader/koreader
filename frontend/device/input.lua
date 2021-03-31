@@ -1002,10 +1002,10 @@ function Input:waitEvent(now, deadline)
                         -- and it also means that we're guaranteed to have reached its deadline.
                         consume_callback = true
                     elseif not with_timerfd then
-                        -- On systems without timerfd, we have a few more cases to handle...
+                        -- On systems where the timerfd backend is *NOT* in use, we have a few more cases to handle...
                         if deadline_is_timer then
-                            -- When the timerfd backend is *NOT* in use,
-                            -- that's only a guarantee when our actual select deadline was the timer itself!
+                            -- We're only guaranteed to have blown the timer's deadline
+                            -- when our actual select deadline *was* the timer's!
                             consume_callback = true
                         elseif TimeVal:now() >= self.timer_callbacks[1].deadline then
                             -- But if it was a task deadline instead, we to have to check the timer's against the current time,
