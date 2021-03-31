@@ -951,11 +951,13 @@ function Input:waitEvent(now, deadline)
             while #self.timer_callbacks > 0 do
                 -- Choose the earliest deadline between the next timer deadline, and our full timeout deadline.
                 local deadline_is_timer = false
+                local with_timerfd = false
                 local poll_deadline
                 -- If the timer's deadline is handled via timerfd, that's easy
                 if self.timer_callbacks[1].timerfd then
                     -- We use the ultimate deadline, as the kernel will just signal us when the timer expires during polling.
                     poll_deadline = deadline
+                    with_timerfd = true
                 else
                     if not deadline then
                         -- If we don't actually have a full timeout deadline, just honor the timer's.
@@ -994,10 +996,15 @@ function Input:waitEvent(now, deadline)
                 -- If we've drained all pending input events, causing waitForEvent to time out, check our timers
                 if ok == false and ev == C.ETIME then
                     -- Check whether the earliest timer to finalize a Gesture detection is up.
-                    -- If we were woken up by a timerfd, or if our actual select deadline was the timer itself,
-                    -- we're guaranteed to have reached it.
+                    -- If we were woken up by a timerfd, that means the timerfd backend is in use, of course,
+                    -- and it also means that we're guaranteed to have reached its deadline.
+                    -- When the timerfd backend is *NOT* in use,
+                    -- that's only a guarantee when our actual select deadline was the timer itself!
                     -- But if it was a task deadline instead, we to have to check it against the current time.
-                    if timerfd or (deadline_is_timer or TimeVal:now() >= self.timer_callbacks[1].deadline) then
+                    -- We have to make sure to only do that on systems without timerfd, because:
+                    -- 1. it's unnecessary with timerfd
+                    -- 2. the timer's deadline may not be in the same time base as TimeVal:now (i.e., MONOTONIC)!
+                    if timerfd or (not with_timerfd and (deadline_is_timer or TimeVal:now() >= self.timer_callbacks[1].deadline)) then
                         local touch_ges = self.timer_callbacks[1].callback()
                         table.remove(self.timer_callbacks, 1)
                         -- If it was a timerfd, we also need to close the fd.
