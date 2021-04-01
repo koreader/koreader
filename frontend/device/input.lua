@@ -1121,17 +1121,35 @@ function Input:waitEvent(now, deadline)
             end
             self:eventAdjustHook(event)
             if event.type == C.EV_KEY then
-                table.insert(handled, self:handleKeyBoardEv(event))
+                local handled_ev = self:handleKeyBoardEv(event)
+                print(handled_ev)
+                if handled_ev then
+                    table.insert(handled, handled_ev)
+                end
             elseif event.type == C.EV_ABS and event.code == ABS_OASIS_ORIENTATION then
-                table.insert(handled, self:handleOasisOrientationEv(event))
+                local handled_ev = self:handleOasisOrientationEv(event)
+                print(handled_ev)
+                if handled_ev then
+                    table.insert(handled, handled_ev)
+                end
             elseif event.type == C.EV_ABS or event.type == C.EV_SYN then
-                local parsed = self:handleTouchEv(event)
-                print(parsed)
-                table.insert(handled, parsed)
+                local handled_ev = self:handleTouchEv(event)
+                print(handled_ev)
+                if handled_ev then
+                    table.insert(handled, handled_ev)
+                end
             elseif event.type == C.EV_MSC then
-                table.insert(handled, self:handleMiscEv(event))
+                local handled_ev = self:handleMiscEv(event)
+                print(handled_ev)
+                if handled_ev then
+                    table.insert(handled, handled_ev)
+                end
             elseif event.type == C.EV_SDL then
-                table.insert(handled, self:handleSdlEv(event))
+                local handled_ev = self:handleSdlEv(event)
+                print(handled_ev)
+                if handled_ev then
+                    table.insert(handled, handled_ev)
+                end
             else
                 -- Received some other kind of event that we do not know how to specifically handle yet
                 table.insert(handled, Event:new("GenericInput", event))
