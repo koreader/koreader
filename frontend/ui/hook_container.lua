@@ -51,18 +51,19 @@ function HookContainer:registerWidget(name, widget)
     print("HookContainer:registerWidget", name, widget)
     self:_assertIsValidName(name)
     assert(type(widget) == "table")
-    -- Store *that* in a ref, and unregister *that*, duh''
-    self:register(name, function(args)
+    -- *That* is the function we actually register and need to unregister later, so keep a ref to it...
+    local hook_func = function(args)
         local f = widget["on" .. name]
         self:_assertIsValidFunction(f)
         f(widget, args)
-    end)
+    end
+    self:register(name, hook_func)
     local original_close_widget = widget.onCloseWidget
     self:_assertIsValidFunctionOrNil(original_close_widget)
     widget.onCloseWidget = function()
         if original_close_widget then original_close_widget(widget) end
-        print("Asking to unregister", widget["on" .. name]) -- Spoiler alert: wrong ref.
-        self:unregister(name, widget["on" .. name])
+        print("Asking to unregister", hook_func)
+        self:unregister(name, hook_func)
     end
 end
 
