@@ -932,6 +932,7 @@ end
 -- it's either nil (meaning block forever waiting for input), or the earliest UIManager deadline (in most cases, that's the next scheduled task,
 -- in much less common cases, that's the earliest of UIManager.INPUT_TIMEOUT (currently, only KOSync ever sets it) or UIManager.ZMQ_TIMEOUT if there are pending ZMQs).
 function Input:waitEvent(now, deadline)
+    print("Input:waitEvent", now:tonumber(), deadline:tonumber())
     -- On the first iteration of the loop, we don't need to update now, we're following closely (a couple ms at most) behind UIManager.
     local ok, ev
     -- Wrapper around the platform-specific input.waitForEvent (which itself is generally poll-like).
@@ -957,17 +958,21 @@ function Input:waitEvent(now, deadline)
                     -- We use the ultimate deadline, as the kernel will just signal us when the timer expires during polling.
                     poll_deadline = deadline
                     with_timerfd = true
+                    print("timerfd, use input deadline", poll_deadline:tonumber())
                 else
                     if not deadline then
                         -- If we don't actually have a full timeout deadline, just honor the timer's.
                         poll_deadline = self.timer_callbacks[1].deadline
                         deadline_is_timer = true
+                        print("no input deadline, use timer deadline", poll_deadline:tonumber())
                     else
                         if self.timer_callbacks[1].deadline < deadline then
                             poll_deadline = self.timer_callbacks[1].deadline
                             deadline_is_timer = true
+                            print("timer < input; use timer deadline", poll_deadline:tonumber())
                         else
                             poll_deadline = deadline
+                            print("timer > input; use input deadline", poll_deadline:tonumber())
                         end
                     end
                 end
@@ -986,6 +991,7 @@ function Input:waitEvent(now, deadline)
                         poll_timeout = TimeVal:new{ sec = 0 }
                     end
                 end
+                print("w/ timer: effective deadline", poll_timeout:tonumber())
 
                 local timerfd
                 ok, ev, timerfd = input.waitForEvent(poll_timeout and poll_timeout.sec, poll_timeout and poll_timeout.usec)
@@ -994,22 +1000,26 @@ function Input:waitEvent(now, deadline)
 
                 -- If we've drained all pending input events, causing waitForEvent to time out, check our timers
                 if ok == false and ev == C.ETIME then
+                    print("ETIME")
                     -- Check whether the earliest timer to finalize a Gesture detection is up.
                     local consume_callback = false
                     if timerfd then
                         -- If we were woken up by a timerfd, that means the timerfd backend is in use, of course,
                         -- and it also means that we're guaranteed to have reached its deadline.
                         consume_callback = true
+                        print("timerfd, consume callback")
                     elseif not with_timerfd then
                         -- On systems where the timerfd backend is *NOT* in use, we have a few more cases to handle...
                         if deadline_is_timer then
                             -- We're only guaranteed to have blown the timer's deadline
                             -- when our actual select deadline *was* the timer's!
                             consume_callback = true
+                            print("deadline timer, consume callback")
                         elseif TimeVal:now() >= self.timer_callbacks[1].deadline then
                             -- But if it was a task deadline instead, we to have to check the timer's against the current time,
                             -- to double-check whether we blew it or not.
                             consume_callback = true
+                            print("deadline blown, consume callback")
                         end
                     end
 
@@ -1054,6 +1064,7 @@ function Input:waitEvent(now, deadline)
                     poll_timeout = TimeVal:new{ sec = 0 }
                 end
             end
+            print("w/o timer: effective deadline", poll_timeout:tonumber())
 
             ok, ev = input.waitForEvent(poll_timeout and poll_timeout.sec, poll_timeout and poll_timeout.usec)
         end -- if #timer_callbacks > 0
