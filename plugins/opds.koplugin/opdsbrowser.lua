@@ -706,13 +706,11 @@ end
 
 function OPDSBrowser:browseSearchable(browse_url, username, password)
     self.search_server_dialog = InputDialog:new{
-        title = _("Search OPDS catalog"),
+        title = _("Enter author/title to search for"),
         input = "",
-        hint = _("Search string"),
         -- @translators: This is an input hint for something to search for in an OPDS catalog, namely a famous author everyone knows. It probably doesn't need to be localized, but this is just here in case another name or book title would be more appropriate outside of a European context.
         input_hint = _("Alexandre Dumas"),
         input_type = "string",
-        description = _("%s in url will be replaced by your input"),
         buttons = {
             {
                 {
@@ -739,7 +737,7 @@ function OPDSBrowser:browseSearchable(browse_url, username, password)
 end
 
 function OPDSBrowser:onMenuSelect(item)
-    self.catalog_title = item.text or _("OPDS Catalog")
+    self.catalog_title = item.text or _("OPDS catalog")
     -- add catalog
     if item.callback then
         item.callback()
@@ -785,7 +783,7 @@ function OPDSBrowser:editOPDSServer(item)
         fields = {
             {
                 text = item.text or "",
-                hint = _("Catalog Name"),
+                hint = _("Catalog name"),
             },
             {
                 text = item.url or "",
