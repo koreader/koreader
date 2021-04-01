@@ -48,6 +48,8 @@ local Screen = Device.screen
 local T = BaseUtil.template
 
 local FileManager = InputContainer:extend{
+    registered_modules = {},
+
     title = _("KOReader"),
     root_path = lfs.currentdir(),
     onExit = function() end,
@@ -518,6 +520,8 @@ function FileManager:init()
                 local name = plugin_module.name
                 if name then self[name] = plugin_or_err end
                 table.insert(self, plugin_or_err)
+                -- Keep track of 'em in an easy to iterate place, for deregistration purposes...
+                table.insert(self.registered_modules, plugin_or_err)
                 logger.info("FM loaded plugin", name,
                             "at", plugin_module.path)
             end
@@ -760,6 +764,13 @@ function FileManager:onClose()
     UIManager:close(self)
     if self.onExit then
         self:onExit()
+    end
+    -- Tear down registered modules.
+    -- This is useful for modules that aren't proper Widgets, yet register event hooks...
+    for i, module in ipairs(self.registered_modules) do
+        if module.onCloseWidget then
+            module:onCloseWidget()
+        end
     end
     return true
 end

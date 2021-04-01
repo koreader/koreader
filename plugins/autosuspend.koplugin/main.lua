@@ -111,12 +111,11 @@ function AutoSuspend:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function AutoSuspend:fini()
-    logger.dbg("AutoSuspend: fini", tostring(self))
+-- For even_hook deregistration purposes
+function AutoSuspend:onCloseWidget()
+    logger.dbg("AutoSuspend: onCloseWidget", tostring(self))
     if Device:isPocketBook() and not Device:canSuspend() then return end
-    -- We're not a real Widget, we don't have an onCloseWidget, so the hook cannot be unregistered automatically...
     self:_unschedule()
-    UIManager.event_hook:unregister("InputEvent", self.onInputEvent)
 end
 
 function AutoSuspend:onInputEvent()

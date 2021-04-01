@@ -722,10 +722,11 @@ function ReaderUI:onClose(full_refresh)
         _running_instance = nil
     end
 
-    -- Tear down registered modules
+    -- Tear down registered modules.
+    -- This is useful for modules that aren't proper Widgets, yet register event hooks...
     for i, module in ipairs(self.registered_modules) do
-        if module.fini then
-            module:fini()
+        if module.onCloseWidget then
+            module:onCloseWidget()
         end
     end
 end
