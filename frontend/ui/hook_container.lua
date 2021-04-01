@@ -75,18 +75,13 @@ function HookContainer:unregister(name, func)
         return false
     end
 
-    local popped = false
-    for i = #self[name], 1, -1 do
-        local f = self[name][i]
+    for i, f in ipairs(self[name]) do
         if f == func then
             table.remove(self[name], i)
-            popped = true
+            return true
         end
     end
-    if #self[name] == 0 then
-        self[name] = nil
-    end
-    return popped
+    return false
 end
 
 --- Execute all registered functions of name. Must be called with self.
