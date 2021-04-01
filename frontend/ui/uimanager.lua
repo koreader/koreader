@@ -1549,7 +1549,7 @@ end
 -- Process all pending events on all registered ZMQs.
 function UIManager:processZMQs()
     for _, zeromq in ipairs(self._zeromqs) do
-        for input_event in zeromq.waitEvent,zeromq do
+        for input_event in zeromq.waitEvent, zeromq do
             self:handleInputEvent(input_event)
         end
     end
@@ -1616,7 +1616,9 @@ function UIManager:handleInput()
 
     -- delegate input_event to handler
     if input_event then
-        self:handleInputEvent(input_event)
+        for i, ev in ipairs(input_event) do
+            self:handleInputEvent(ev)
+        end
     end
 
     if self.looper then

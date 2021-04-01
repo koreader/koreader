@@ -1086,57 +1086,64 @@ function Input:waitEvent(now, deadline)
         now = nil
     end
 
+    local handled = {}
     if ok and ev then
-        if DEBUG.is_on then
-            DEBUG:logEv(ev)
-            if ev.type == C.EV_KEY then
-                logger.dbg(string.format(
-                    "key event => code: %d (%s), value: %s, time: %d.%d",
-                    ev.code, self.event_map[ev.code] or linux_evdev_key_code_map[ev.code], ev.value,
-                    ev.time.sec, ev.time.usec))
-            elseif ev.type == C.EV_SYN then
-                logger.dbg(string.format(
-                    "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
-                    ev.type, linux_evdev_type_map[ev.type], ev.code, linux_evdev_syn_code_map[ev.code], ev.value,
-                    ev.time.sec, ev.time.usec))
-            elseif ev.type == C.EV_ABS then
-                logger.dbg(string.format(
-                    "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
-                    ev.type, linux_evdev_type_map[ev.type], ev.code, linux_evdev_abs_code_map[ev.code], ev.value,
-                    ev.time.sec, ev.time.usec))
-            elseif ev.type == C.EV_MSC then
-                logger.dbg(string.format(
-                    "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
-                    ev.type, linux_evdev_type_map[ev.type], ev.code, linux_evdev_msc_code_map[ev.code], ev.value,
-                    ev.time.sec, ev.time.usec))
+        for i, event in ipairs(ev) do
+            logger.dbg(i, event)
+            if DEBUG.is_on then
+                DEBUG:logEv(event)
+                if event.type == C.EV_KEY then
+                    logger.dbg(string.format(
+                        "key event => code: %d (%s), value: %s, time: %d.%d",
+                        event.code, self.event_map[event.code] or linux_evdev_key_code_map[event.code], event.value,
+                        event.time.sec, event.time.usec))
+                elseif event.type == C.EV_SYN then
+                    logger.dbg(string.format(
+                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
+                        event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_syn_code_map[event.code], event.value,
+                        event.time.sec, event.time.usec))
+                elseif event.type == C.EV_ABS then
+                    logger.dbg(string.format(
+                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
+                        event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_abs_code_map[event.code], event.value,
+                        event.time.sec, event.time.usec))
+                elseif event.type == C.EV_MSC then
+                    logger.dbg(string.format(
+                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
+                        event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_msc_code_map[event.code], event.value,
+                        event.time.sec, event.time.usec))
+                else
+                    logger.dbg(string.format(
+                        "input event => type: %d (%s), code: %d, value: %s, time: %d.%d",
+                        event.type, linux_evdev_type_map[event.type], event.code, event.value,
+                        event.time.sec, event.time.usec))
+                end
+            end
+            self:eventAdjustHook(event)
+            if event.type == C.EV_KEY then
+                table.insert(handled, self:handleKeyBoardEv(event))
+            elseif event.type == C.EV_ABS and event.code == ABS_OASIS_ORIENTATION then
+                table.insert(handled, self:handleOasisOrientationEv(event))
+            elseif event.type == C.EV_ABS or event.type == C.EV_SYN then
+                local parsed = self:handleTouchEv(event)
+                print(parsed)
+                table.insert(handled, parsed)
+            elseif event.type == C.EV_MSC then
+                table.insert(handled, self:handleMiscEv(event))
+            elseif event.type == C.EV_SDL then
+                table.insert(handled, self:handleSdlEv(event))
             else
-                logger.dbg(string.format(
-                    "input event => type: %d (%s), code: %d, value: %s, time: %d.%d",
-                    ev.type, linux_evdev_type_map[ev.type], ev.code, ev.value,
-                    ev.time.sec, ev.time.usec))
+                -- Received some other kind of event that we do not know how to specifically handle yet
+                table.insert(handled, Event:new("GenericInput", event))
             end
         end
-        self:eventAdjustHook(ev)
-        if ev.type == C.EV_KEY then
-            return self:handleKeyBoardEv(ev)
-        elseif ev.type == C.EV_ABS and ev.code == ABS_OASIS_ORIENTATION then
-            return self:handleOasisOrientationEv(ev)
-        elseif ev.type == C.EV_ABS or ev.type == C.EV_SYN then
-            return self:handleTouchEv(ev)
-        elseif ev.type == C.EV_MSC then
-            return self:handleMiscEv(ev)
-        elseif ev.type == C.EV_SDL then
-            return self:handleSdlEv(ev)
-        else
-            -- Received some other kind of event that we do not know how to specifically handle yet
-            return Event:new("GenericInput", ev)
-        end
     elseif ok == false and ev then
-        return Event:new("InputError", ev)
+        table.insert(handled, Event:new("InputError", ev))
     elseif ok == nil then
         -- No ok and no ev? Hu oh...
-        return Event:new("InputError", "Catastrophic")
+        table.insert(handled, Event:new("InputError", "Catastrophic"))
     end
+    return handled
 end
 
 return Input
