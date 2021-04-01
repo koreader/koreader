@@ -1091,8 +1091,8 @@ function Input:waitEvent(now, deadline)
 
     if ok and ev then
         local handled = {}
+        -- We're guaranteed that ev is an array of event tables. Might be an array of *one* event, but an array nontheless ;).
         for i, event in ipairs(ev) do
-            logger.dbg(i, event)
             if DEBUG.is_on then
                 DEBUG:logEv(event)
                 if event.type == C.EV_KEY then
@@ -1125,32 +1125,27 @@ function Input:waitEvent(now, deadline)
             self:eventAdjustHook(event)
             if event.type == C.EV_KEY then
                 local handled_ev = self:handleKeyBoardEv(event)
-                print(handled_ev)
                 if handled_ev then
                     table.insert(handled, handled_ev)
                 end
             elseif event.type == C.EV_ABS and event.code == ABS_OASIS_ORIENTATION then
                 local handled_ev = self:handleOasisOrientationEv(event)
-                print(handled_ev)
                 if handled_ev then
                     table.insert(handled, handled_ev)
                 end
             elseif event.type == C.EV_ABS or event.type == C.EV_SYN then
                 local handled_ev = self:handleTouchEv(event)
-                print(handled_ev)
                 -- We don't gnerate an Event for *every* input event, so, make sure we don't push nil values to the array
                 if handled_ev then
                     table.insert(handled, handled_ev)
                 end
             elseif event.type == C.EV_MSC then
                 local handled_ev = self:handleMiscEv(event)
-                print(handled_ev)
                 if handled_ev then
                     table.insert(handled, handled_ev)
                 end
             elseif event.type == C.EV_SDL then
                 local handled_ev = self:handleSdlEv(event)
-                print(handled_ev)
                 if handled_ev then
                     table.insert(handled, handled_ev)
                 end
