@@ -1028,9 +1028,9 @@ function Input:waitEvent(now, deadline)
                             -- This is why we clear the full list of timers on the first match ;).
                             self:clearTimeouts()
                             self:gestureAdjustHook(touch_ges)
-                            return Event:new("Gesture",
+                            return { Event:new("Gesture",
                                 self.gesture_detector:adjustGesCoordinate(touch_ges)
-                            )
+                            ) }
                         end -- if touch_ges
                     end -- if poll_deadline reached
                 end -- if poll returned ETIME
@@ -1086,8 +1086,8 @@ function Input:waitEvent(now, deadline)
         now = nil
     end
 
-    local handled = {}
     if ok and ev then
+        local handled = {}
         for i, event in ipairs(ev) do
             logger.dbg(i, event)
             if DEBUG.is_on then
@@ -1155,13 +1155,13 @@ function Input:waitEvent(now, deadline)
                 table.insert(handled, Event:new("GenericInput", event))
             end
         end
+        return handled
     elseif ok == false and ev then
-        table.insert(handled, Event:new("InputError", ev))
+        return { Event:new("InputError", ev) }
     elseif ok == nil then
         -- No ok and no ev? Hu oh...
-        table.insert(handled, Event:new("InputError", "Catastrophic"))
+        return { Event:new("InputError", "Catastrophic") }
     end
-    return handled
 end
 
 return Input
