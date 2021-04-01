@@ -1588,27 +1588,22 @@ function UIManager:handleInput()
     local deadline
     -- Default to INPUT_TIMEOUT (which may be nil, i.e. block until an event happens).
     local wait_us = self.INPUT_TIMEOUT
-    print("UIManager: INPUT", wait_us)
 
     -- If we have any ZMQs registered, ZMQ_TIMEOUT is another upper bound.
     if #self._zeromqs > 0 then
         wait_us = math.min(wait_us or math.huge, self.ZMQ_TIMEOUT)
-        print("UIManager: ZMQ", wait_us)
     end
 
     -- We pass that on as an absolute deadline, not a relative wait time.
     if wait_us then
         deadline = now + TimeVal:new{ usec = wait_us }
-        print("UIManager: INPUT+ZMQ", deadline:tonumber())
     end
 
-    print("UIManager: wait_until, deadline", wait_until and wait_until:tonumber(), deadline and deadline:tonumber())
     -- If there's a scheduled task pending, that puts an upper bound on how long to wait.
     if wait_until and (not deadline or wait_until < deadline) then
         --             ^ We don't have a TIMEOUT induced deadline, making the choice easy.
         --                             ^ We have a task scheduled for *before* our TIMEOUT induced deadline.
         deadline = wait_until
-        print("UIManager: TASK", deadline:tonumber())
     end
 
     -- If allowed, entering standby (from which we can wake by input) must trigger in response to event
