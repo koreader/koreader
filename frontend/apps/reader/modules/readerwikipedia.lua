@@ -37,7 +37,7 @@ end
 
 function ReaderWikipedia:lookupInput()
     self.input_dialog = InputDialog:new{
-        title = _("Enter words to look up on Wikipedia"),
+        title = _("Enter word(s) to look up"),
         input = "",
         input_type = "text",
         buttons = {
@@ -49,7 +49,7 @@ function ReaderWikipedia:lookupInput()
                     end,
                 },
                 {
-                    text = _("Search Wikipedia"),
+                    text = _("Look up"),
                     is_enter_default = true,
                     callback = function()
                         UIManager:close(self.input_dialog)
@@ -249,7 +249,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                             local text = _([[
 Wikipedia articles can be saved as an EPUB for more comfortable reading.
 
-You can select an existing directory, or use a default directory named "Wikipedia" in your reader's home folder.
+You can select an existing folder, or use a default folder named "Wikipedia" in your reader's home folder.
 
 Where do you want them saved?]])
                             UIManager:show(ConfirmBox:new{
@@ -442,7 +442,7 @@ function ReaderWikipedia:lookupWikipedia(word, is_sane, box, get_fullpage, force
     else
         self.lookup_msg = T(_("Searching Wikipedia %2 for:\n%1"), "%1", lang:upper())
         req_failure_text = _("Failed searching Wikipedia.")
-        no_result_text = _("No Wikipedia articles matching search term.")
+        no_result_text = _("No results.")
     end
     self:showLookupInfo(display_word)
 
