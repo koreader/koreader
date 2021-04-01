@@ -1034,11 +1034,11 @@ function Input:waitEvent(now, deadline)
                         end -- if touch_ges
                     end -- if poll_deadline reached
                 else
-                    -- Something went wrong, jump to error handling
+                    -- Something went wrong, jump to error handling *now*
                     break
                 end -- if poll returned ETIME
 
-                -- Refresh now on the next iteration (e.g., when we have multiple timers to check)
+                -- Refresh now on the next iteration (e.g., when we have multiple timers to check, and we just timed out)
                 now = nil
             end -- while #timer_callbacks > 0
         else
