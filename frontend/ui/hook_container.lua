@@ -35,6 +35,7 @@ end
 -- @tparam string name The name of the hook. Can only be an non-empty string.
 -- @tparam function func The function to handle the hook. Can only be a function.
 function HookContainer:register(name, func)
+    print("HookContainer:register", name, func)
     self:_assertIsValidName(name)
     self:_assertIsValidFunction(func)
     if self[name] == nil then
@@ -47,8 +48,10 @@ end
 -- @tparam string name The name of the hook. Can only be an non-empty string.
 -- @tparam table widget The widget to handle the hook. Can only be a table with required functions.
 function HookContainer:registerWidget(name, widget)
+    print("HookContainer:registerWidget", name, widget)
     self:_assertIsValidName(name)
     assert(type(widget) == "table")
+    -- Store *that* in a ref, and unregister *that*, duh''
     self:register(name, function(args)
         local f = widget["on" .. name]
         self:_assertIsValidFunction(f)
@@ -58,6 +61,7 @@ function HookContainer:registerWidget(name, widget)
     self:_assertIsValidFunctionOrNil(original_close_widget)
     widget.onCloseWidget = function()
         if original_close_widget then original_close_widget(widget) end
+        print("Asking to unregister", widget["on" .. name]) -- Spoiler alert: wrong ref.
         self:unregister(name, widget["on" .. name])
     end
 end
@@ -67,19 +71,27 @@ end
 -- @tparam function func The function to handle the hook. Can only be a function.
 -- @treturn boolean Return true if the function is found and removed, otherwise false.
 function HookContainer:unregister(name, func)
+    print("HookContainer:unregister", name, func)
     self:_assertIsValidName(name)
     self:_assertIsValidFunction(func)
     if self[name] == nil then
         return false
     end
 
-    for i, f in ipairs(self[name]) do
+    local popped = false
+    for i = #self[name], 1, -1 do
+        local f = self[name][i]
+        print("found f", f)
         if f == func then
             table.remove(self[name], i)
-            return true
+            popped = true
         end
     end
-    return false
+    if #self[name] == 0 then
+        self[name] = nil
+    end
+    print("popped?", popped)
+    return popped
 end
 
 --- Execute all registered functions of name. Must be called with self.
