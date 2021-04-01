@@ -85,6 +85,7 @@ return {
             return G_reader_settings:isTrue("screensaver_show_message") or G_reader_settings:hasNot("screensaver_type")
         end,
         callback = function()
+            -- NOTE: Since the default is nil, the first toggle will keep it checked (but true instead of nil).
             G_reader_settings:toggle("screensaver_show_message")
         end,
         separator = true,
