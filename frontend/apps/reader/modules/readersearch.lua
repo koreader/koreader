@@ -2,6 +2,7 @@ local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
+local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -73,9 +74,11 @@ function ReaderSearch:onShowSearchDialog(text, direction)
     local current_page
     local do_search = function(search_func, _text, param)
         return function()
+            local no_results = true -- for notification
             local res = search_func(self, _text, param)
             if res then
                 if self.ui.document.info.has_pages then
+                    no_results = false
                     self.ui.link:onGotoLink({page = res.page - 1}, neglect_current_location)
                     self.view.highlight.temp[res.page] = res
                 else
@@ -139,11 +142,23 @@ function ReaderSearch:onShowSearchDialog(text, direction)
                         end
                     end
                     if valid_link then
+                        no_results = false
                         self.ui.link:onGotoLink({xpointer=valid_link}, neglect_current_location)
                     end
                 end
                 -- Don't add result pages to location ("Go back") stack
                 neglect_current_location = true
+            end
+            if no_results then
+                local notification_text
+                if self._expect_back_results then
+                    notification_text = _("No results on preceding pages")
+                else
+                    notification_text = _("No results on following pages")
+                end
+                UIManager:show(Notification:new{
+                    text = notification_text,
+                })
             end
         end
     end
