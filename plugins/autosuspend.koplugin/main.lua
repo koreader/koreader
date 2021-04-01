@@ -100,8 +100,7 @@ function AutoSuspend:_restart()
 end
 
 function AutoSuspend:init()
-    logger.dbg("AutoSuspend: init", tostring(self))
-    print(debug.traceback())
+    logger.dbg("AutoSuspend: init")
     if Device:isPocketBook() and not Device:canSuspend() then return end
     UIManager.event_hook:registerWidget("InputEvent", self)
     self:_unschedule()
@@ -111,15 +110,15 @@ function AutoSuspend:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
--- For even_hook deregistration purposes
+-- For event_hook automagic deregistration purposes
 function AutoSuspend:onCloseWidget()
-    logger.dbg("AutoSuspend: onCloseWidget", tostring(self))
+    logger.dbg("AutoSuspend: onCloseWidget")
     if Device:isPocketBook() and not Device:canSuspend() then return end
     self:_unschedule()
 end
 
 function AutoSuspend:onInputEvent()
-    logger.dbg("AutoSuspend: onInputEvent", tostring(self))
+    logger.dbg("AutoSuspend: onInputEvent")
     self.last_action_tv = UIManager:getTime()
 end
 
