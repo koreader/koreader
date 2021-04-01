@@ -1616,7 +1616,8 @@ function UIManager:handleInput()
 
     -- delegate input_event to handler
     if input_event then
-        for i, ev in ipairs(input_event) do
+        -- Handle the full batch of events
+        for __, ev in ipairs(input_event) do
             self:handleInputEvent(ev)
         end
     end
@@ -1639,7 +1640,7 @@ end
 
 
 function UIManager:onRotation()
-    self:setDirty('all', 'full')
+    self:setDirty("all", "full")
     self:forceRePaint()
 end
 

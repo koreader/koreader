@@ -1091,8 +1091,8 @@ function Input:waitEvent(now, deadline)
 
     if ok and ev then
         local handled = {}
-        -- We're guaranteed that ev is an array of event tables. Might be an array of *one* event, but an array nontheless ;).
-        for i, event in ipairs(ev) do
+        -- We're guaranteed that ev is an array of event tables. Might be an array of *one* event, but an array nonetheless ;).
+        for __, event in ipairs(ev) do
             if DEBUG.is_on then
                 DEBUG:logEv(event)
                 if event.type == C.EV_KEY then
