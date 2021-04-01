@@ -1186,7 +1186,7 @@ end
 
 function DictQuickLookup:lookupInputWord(hint)
     self.input_dialog = InputDialog:new{
-        title = _("Enter word(s) to look up"),
+        title = _("Enter search query"),
         input = hint,
         input_hint = hint or "",
         input_type = "text",
