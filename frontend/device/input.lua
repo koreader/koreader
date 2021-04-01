@@ -1033,10 +1033,10 @@ function Input:waitEvent(now, deadline)
                             ) }
                         end -- if touch_ges
                     end -- if poll_deadline reached
+                else
+                    -- Something went wrong, jump to error handling
+                    break
                 end -- if poll returned ETIME
-
-                -- Something went wrong
-                if ok == nil then break end
 
                 -- Refresh now on the next iteration (e.g., when we have multiple timers to check)
                 now = nil
