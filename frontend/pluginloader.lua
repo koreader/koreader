@@ -84,8 +84,8 @@ function PluginLoader:loadPlugins()
     for element in pairs(OBSOLETE_PLUGINS) do
         plugins_disabled[element] = true
     end
-    for _,lookup_path in ipairs(lookup_path_list) do
-        logger.info('Loading plugins from directory:', lookup_path)
+    for _, lookup_path in ipairs(lookup_path_list) do
+        logger.info("Loading plugins from directory:", lookup_path)
         for entry in lfs.dir(lookup_path) do
             local plugin_root = lookup_path.."/"..entry
             local mode = lfs.attributes(plugin_root, "mode")
@@ -124,7 +124,7 @@ function PluginLoader:loadPlugins()
     end
 
     -- set package path for all loaded plugins
-    for _,plugin in ipairs(self.enabled_plugins) do
+    for _, plugin in ipairs(self.enabled_plugins) do
         package.path = string.format("%s;%s/?.lua", package.path, plugin.path)
         package.cpath = string.format("%s;%s/lib/?.so", package.cpath, plugin.path)
     end
@@ -193,7 +193,7 @@ function PluginLoader:createPluginInstance(plugin, attr)
     if ok then  -- re is a plugin instance
         return ok, re
     else  -- re is the error message
-        logger.err('Failed to initialize', plugin.name, 'plugin: ', re)
+        logger.err("Failed to initialize", plugin.name, "plugin: ", re)
         return nil, re
     end
 end

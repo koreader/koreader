@@ -100,6 +100,8 @@ function AutoSuspend:_restart()
 end
 
 function AutoSuspend:init()
+    print("AutoSuspend:init")
+    print(debug.traceback())
     if Device:isPocketBook() and not Device:canSuspend() then return end
     UIManager.event_hook:registerWidget("InputEvent", self)
     self:_unschedule()
