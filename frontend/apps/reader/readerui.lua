@@ -64,6 +64,7 @@ local T = ffiUtil.template
 local ReaderUI = InputContainer:new{
     name = "ReaderUI",
     active_widgets = {},
+    registered_modules = {},
 
     -- if we have a parent container, it must be referenced for now
     dialog = nil,
@@ -86,6 +87,8 @@ function ReaderUI:registerModule(name, ui_module, always_active)
         -- to get events even when hidden
         table.insert(self.active_widgets, ui_module)
     end
+    -- Keep track of 'em in an easy to iterate place, for deregistration purposes...
+    table.insert(self.registered_modules, ui_module)
 end
 
 function ReaderUI:registerPostInitCallback(callback)
@@ -717,6 +720,13 @@ function ReaderUI:onClose(full_refresh)
     Cache:serialize()
     if _running_instance == self then
         _running_instance = nil
+    end
+
+    -- Tear down registered modules
+    for i, module in ipairs(self.registered_modules) do
+        if module.fini then
+            module:fini()
+        end
     end
 end
 

@@ -100,7 +100,7 @@ function AutoSuspend:_restart()
 end
 
 function AutoSuspend:init()
-    print("AutoSuspend:init")
+    logger.dbg("AutoSuspend: init", tostring(self))
     print(debug.traceback())
     if Device:isPocketBook() and not Device:canSuspend() then return end
     UIManager.event_hook:registerWidget("InputEvent", self)
@@ -111,8 +111,16 @@ function AutoSuspend:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
+function AutoSuspend:fini()
+    logger.dbg("AutoSuspend: fini", tostring(self))
+    if Device:isPocketBook() and not Device:canSuspend() then return end
+    -- We're not a real Widget, we don't have an onCloseWidget, so the hook cannot be unregistered automatically...
+    self:_unschedule()
+    UIManager.event_hook:unregister("InputEvent", self.onInputEvent)
+end
+
 function AutoSuspend:onInputEvent()
-    logger.dbg("AutoSuspend: onInputEvent")
+    logger.dbg("AutoSuspend: onInputEvent", tostring(self))
     self.last_action_tv = UIManager:getTime()
 end
 
