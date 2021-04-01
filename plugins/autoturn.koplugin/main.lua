@@ -94,6 +94,11 @@ function AutoTurn:init()
     self:_start()
 end
 
+function AutoTurn:onCloseWidget()
+    logger.dbg("AutoTurn: onCloseWidget")
+    self:_deprecateLastTask()
+end
+
 function AutoTurn:onCloseDocument()
     logger.dbg("AutoTurn: onCloseDocument")
     self:_deprecateLastTask()
