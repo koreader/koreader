@@ -37,7 +37,7 @@ end
 
 function ReaderWikipedia:lookupInput()
     self.input_dialog = InputDialog:new{
-        title = _("Enter word(s) to look up"),
+        title = _("Enter search query"),
         input = "",
         input_type = "text",
         buttons = {
