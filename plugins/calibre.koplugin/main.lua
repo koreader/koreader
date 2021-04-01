@@ -60,8 +60,8 @@ end
 
 function Calibre:onDispatcherRegisterActions()
     Dispatcher:registerAction("calibre_search", { category="none", event="CalibreSearch", title=_("Calibre search"), device=true,})
-    Dispatcher:registerAction("calibre_browse_tags", { category="none", event="CalibreBrowseTags", title=_("Browse Calibre tags"), device=true,})
-    Dispatcher:registerAction("calibre_browse_series", { category="none", event="CalibreBrowseSeries", title=_("Browse Calibre series"), device=true, separator=true,})
+    Dispatcher:registerAction("calibre_browse_tags", { category="none", event="CalibreBrowseTags", title=_("Browse all calibre tags"), device=true,})
+    Dispatcher:registerAction("calibre_browse_series", { category="none", event="CalibreBrowseSeries", title=_("Browse all calibre series"), device=true, separator=true,})
 end
 
 function Calibre:init()
