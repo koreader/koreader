@@ -82,6 +82,14 @@ local linux_evdev_syn_code_map = {
     [C.SYN_DROPPED] = "SYN_DROPPED",
 }
 
+local linux_evdev_key_code_map = {
+    [C.BTN_TOOL_PEN] = "BTN_TOOL_PEN",
+    [C.BTN_TOOL_FINGER] = "BTN_TOOL_FINGER",
+    [C.BTN_TOOL_RUBBER] = "BTN_TOOL_RUBBER",
+    [C.BTN_TOUCH] = "BTN_TOUCH",
+    [C.BTN_STYLUS] = "BTN_STYLUS",
+}
+
 local linux_evdev_abs_code_map = {
     [C.ABS_X] = "ABS_X",
     [C.ABS_Y] = "ABS_Y",
@@ -98,6 +106,8 @@ local linux_evdev_abs_code_map = {
     [C.ABS_MT_BLOB_ID] = "ABS_MT_BLOB_ID",
     [C.ABS_MT_TRACKING_ID] = "ABS_MT_TRACKING_ID",
     [C.ABS_MT_PRESSURE] = "ABS_MT_PRESSURE",
+    [C.ABS_TILT_X] = "ABS_TILT_X",
+    [C.ABS_TILT_Y] = "ABS_TILT_Y",
     [C.ABS_MT_DISTANCE] = "ABS_MT_DISTANCE",
     [C.ABS_MT_TOOL_X] = "ABS_MT_TOOL_X",
     [C.ABS_MT_TOOL_Y] = "ABS_MT_TOOL_Y",
@@ -111,6 +121,8 @@ local linux_evdev_msc_code_map = {
 local _internal_clipboard_text = nil -- holds the last copied text
 
 local Input = {
+    -- must point to the device implementation when instantiating
+    device = nil,
     -- this depends on keyboard layout and should be overridden:
     event_map = {},
     -- adapters are post processing functions that transform a given event to another event
@@ -173,13 +185,10 @@ local Input = {
     repeat_count = 0,
 
     -- touch state:
+    main_finger_slot = 0,
     cur_slot = 0,
     MTSlots = {},
-    ev_slots = {
-        [0] = {
-            slot = 0,
-        }
-    },
+    ev_slots = {},
     gesture_detector = nil,
 
     -- simple internal clipboard implementation, can be overidden to use system clipboard
@@ -203,6 +212,17 @@ function Input:new(o)
 end
 
 function Input:init()
+    -- Handle default finger slot
+    if self.device.main_finger_slot then
+        self.main_finger_slot = self.device.main_finger_slot
+        self.cur_slot = self.device.main_finger_slot
+    end
+    self.ev_slots = {
+        [self.main_finger_slot] = {
+            slot = self.main_finger_slot,
+        },
+    }
+
     self.gesture_detector = GestureDetector:new{
         screen = self.device.screen,
         input = self,
@@ -930,11 +950,13 @@ function Input:waitEvent(now, deadline)
             while #self.timer_callbacks > 0 do
                 -- Choose the earliest deadline between the next timer deadline, and our full timeout deadline.
                 local deadline_is_timer = false
+                local with_timerfd = false
                 local poll_deadline
                 -- If the timer's deadline is handled via timerfd, that's easy
                 if self.timer_callbacks[1].timerfd then
                     -- We use the ultimate deadline, as the kernel will just signal us when the timer expires during polling.
                     poll_deadline = deadline
+                    with_timerfd = true
                 else
                     if not deadline then
                         -- If we don't actually have a full timeout deadline, just honor the timer's.
@@ -973,10 +995,25 @@ function Input:waitEvent(now, deadline)
                 -- If we've drained all pending input events, causing waitForEvent to time out, check our timers
                 if ok == false and ev == C.ETIME then
                     -- Check whether the earliest timer to finalize a Gesture detection is up.
-                    -- If we were woken up by a timerfd, or if our actual select deadline was the timer itself,
-                    -- we're guaranteed to have reached it.
-                    -- But if it was a task deadline instead, we to have to check it against the current time.
-                    if timerfd or (deadline_is_timer or TimeVal:now() >= self.timer_callbacks[1].deadline) then
+                    local consume_callback = false
+                    if timerfd then
+                        -- If we were woken up by a timerfd, that means the timerfd backend is in use, of course,
+                        -- and it also means that we're guaranteed to have reached its deadline.
+                        consume_callback = true
+                    elseif not with_timerfd then
+                        -- On systems where the timerfd backend is *NOT* in use, we have a few more cases to handle...
+                        if deadline_is_timer then
+                            -- We're only guaranteed to have blown the timer's deadline
+                            -- when our actual select deadline *was* the timer's!
+                            consume_callback = true
+                        elseif TimeVal:now() >= self.timer_callbacks[1].deadline then
+                            -- But if it was a task deadline instead, we to have to check the timer's against the current time,
+                            -- to double-check whether we blew it or not.
+                            consume_callback = true
+                        end
+                    end
+
+                    if consume_callback then
                         local touch_ges = self.timer_callbacks[1].callback()
                         table.remove(self.timer_callbacks, 1)
                         -- If it was a timerfd, we also need to close the fd.
@@ -1055,7 +1092,7 @@ function Input:waitEvent(now, deadline)
             if ev.type == C.EV_KEY then
                 logger.dbg(string.format(
                     "key event => code: %d (%s), value: %s, time: %d.%d",
-                    ev.code, self.event_map[ev.code], ev.value,
+                    ev.code, self.event_map[ev.code] or linux_evdev_key_code_map[ev.code], ev.value,
                     ev.time.sec, ev.time.usec))
             elseif ev.type == C.EV_SYN then
                 logger.dbg(string.format(
