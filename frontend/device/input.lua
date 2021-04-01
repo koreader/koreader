@@ -936,13 +936,14 @@ function Input:waitEvent(now, deadline)
     local ok, ev
     -- Wrapper around the platform-specific input.waitForEvent (which itself is generally poll-like, and supposed to poll *once*).
     -- Speaking of input.waitForEvent, it can return:
-    -- * true, ev: When a batch of input events was read. ev is an array of tables themselves mapped after the input_event <linux/input.h> struct.
+    -- * true, ev: When a batch of input events was read.
+    --             ev is an array of event tables, themselves mapped after the input_event <linux/input.h> struct.
     -- * false, errno, timerfd: When no input event was read, possibly for benign reasons.
-    --                        One such common case is after a polling timeout, in which case errno is C.ETIME.
-    --                        If the timerfd backend is in use, and the early return was caused by a timerfd expiring,
-    --                        it returns false, C.ETIME, timerfd; where timerfd is a C pointer (i.e., light userdata)
-    --                        to the timerfd node that expired (so as to be able to free it later, c.f., input/timerfd-callbacks.h).
-    --                        Otherwise, errno is the actual error code from the backend (e.g., select's errno for the C backend).
+    --                          One such common case is after a polling timeout, in which case errno is C.ETIME.
+    --                          If the timerfd backend is in use, and the early return was caused by a timerfd expiring,
+    --                          it returns false, C.ETIME, timerfd; where timerfd is a C pointer (i.e., light userdata)
+    --                          to the timerfd node that expired (so as to be able to free it later, c.f., input/timerfd-callbacks.h).
+    --                          Otherwise, errno is the actual error code from the backend (e.g., select's errno for the C backend).
     -- * nil: When something terrible happened (e.g., fatal poll/read failure). We abort in such cases.
     while true do
         if #self.timer_callbacks > 0 then
