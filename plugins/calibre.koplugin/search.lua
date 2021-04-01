@@ -180,7 +180,7 @@ local CalibreSearch = InputContainer:new{
 
 function CalibreSearch:ShowSearch()
     self.search_dialog = InputDialog:new{
-        title = _("Search books"),
+        title = _("Enter string to search for"),
         input = self.search_value,
         buttons = {
             {
@@ -214,7 +214,7 @@ function CalibreSearch:ShowSearch()
                 },
                 {
                     -- @translators Search for books in calibre Library, via on-device metadata (as setup by Calibre's 'Send To Device').
-                    text = _("Find books"),
+                    text = _("Search books"),
                     enabled = true,
                     callback = function()
                         self.search_value = self.search_dialog:getInputText()
@@ -318,7 +318,7 @@ function CalibreSearch:find(option)
     -- this shouldn't happen unless the user disabled all libraries or they are empty.
     if #self.books == 0 then
         logger.warn("no metadata to search, aborting")
-        self:prompt(_("No metadata found"))
+        self:prompt(_("No results in metadata"))
         return
     end
 
@@ -439,7 +439,7 @@ end
 -- show search results
 function CalibreSearch:showresults(t, title)
     if not title then
-        title = _("Search Results")
+        title = _("Search results")
     end
     local menu_container = CenterContainer:new{
         dimen = Screen:getSize(),
