@@ -1039,7 +1039,7 @@ function Input:waitEvent(now, deadline)
                     break
                 end -- if poll returned ETIME
 
-                -- Refresh now on the next iteration (e.g., when we have multiple timers to check, and we just timed out)
+                -- Refresh now on the next iteration (e.g., when we have multiple timers to check, and we've just timed out)
                 now = nil
             end -- while #timer_callbacks > 0
         else
