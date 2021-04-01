@@ -347,7 +347,7 @@ function DictQuickLookup:init()
                                            or require("apps/filemanager/filemanagerutil").getDefaultDir() end
                         if not dir or not util.pathExists(dir) then
                             UIManager:show(InfoMessage:new{
-                                text = _("No directory to save article to could be found."),
+                                text = _("No folder to save article to could be found."),
                             })
                             return
                         end
@@ -1186,7 +1186,7 @@ end
 
 function DictQuickLookup:lookupInputWord(hint)
     self.input_dialog = InputDialog:new{
-        title = _("Input lookup word"),
+        title = _("Enter word(s) to look up"),
         input = hint,
         input_hint = hint or "",
         input_type = "text",
@@ -1199,7 +1199,7 @@ function DictQuickLookup:lookupInputWord(hint)
                     end,
                 },
                 {
-                    text = _("Lookup"),
+                    text = _("Look up"),
                     is_enter_default = true,
                     callback = function()
                         self:closeInputDialog()
