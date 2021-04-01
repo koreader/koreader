@@ -934,9 +934,9 @@ end
 function Input:waitEvent(now, deadline)
     -- On the first iteration of the loop, we don't need to update now, we're following closely (a couple ms at most) behind UIManager.
     local ok, ev
-    -- Wrapper around the platform-specific input.waitForEvent (which itself is generally poll-like).
+    -- Wrapper around the platform-specific input.waitForEvent (which itself is generally poll-like, and supposed to poll *once*).
     -- Speaking of input.waitForEvent, it can return:
-    -- * true, ev: When an input event was read. ev is a table mapped after the input_event <linux/input.h> struct.
+    -- * true, ev: When a batch of input events was read. ev is an array of tables themselves mapped after the input_event <linux/input.h> struct.
     -- * false, errno, timerfd: When no input event was read, possibly for benign reasons.
     --                        One such common case is after a polling timeout, in which case errno is C.ETIME.
     --                        If the timerfd backend is in use, and the early return was caused by a timerfd expiring,
@@ -1135,6 +1135,7 @@ function Input:waitEvent(now, deadline)
             elseif event.type == C.EV_ABS or event.type == C.EV_SYN then
                 local handled_ev = self:handleTouchEv(event)
                 print(handled_ev)
+                -- We don't gnerate an Event for *every* input event, so, make sure we don't push nil values to the array
                 if handled_ev then
                     table.insert(handled, handled_ev)
                 end
