@@ -1155,7 +1155,7 @@ function Input:waitEvent(now, deadline)
         end
         return handled
     elseif ok == false and ev then
-        return { Event:new("InputError", ev) }
+        return { Event:new("InputError", string.format("%d: %s", ev, ffi.string(C.strerror(ev)))) }
     elseif ok == nil then
         -- No ok and no ev? Hu oh...
         return { Event:new("InputError", "Catastrophic") }
