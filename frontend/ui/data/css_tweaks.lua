@@ -824,20 +824,6 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
             },
         },
         {
-            id = "epub_switch_show_case";
-            title = _("Toggle alternative EPUB content"),
-            description = _([[
-The EPUB3 format allows a
-<epub:switch> <epub:case> <epub:default>
-construct to provide alternative content to engines that support optional features.
-KOReader currently falls back to hiding all <epub:case> content and shows the <epub:default> content (usually an image).
-This tweak toggles this behavior, and may show the <epub:case> content as plain text.]]),
-            css = [[
-switch > case    { display: inline; }
-switch > default { display: none; }
-            ]],
-        },
-        {
             id = "no_pseudo_element_before_after";
             title = _("Disable before/after pseudo elements"),
             description = _([[Disable generated text from ::before and ::after pseudo elements, usually used to add cosmetic text around some content.]]),
