@@ -332,8 +332,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
                         value_min = 8,
                         value_max = 32,
                         default_value = 20,
-                        ok_text = _("Set size"),
-                        title_text =  _("Dictionary font size"),
+                        title_text = _("Dictionary font size"),
                         callback = function(spin)
                             G_reader_settings:saveSetting("dict_font_size", spin.value)
                             if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -679,7 +678,7 @@ end
 
 function ReaderDictionary:onShowDictionaryLookup()
     self.dictionary_lookup_dialog = InputDialog:new{
-        title = _("Enter a word to look up"),
+        title = _("Enter a word or phrase to look up"),
         input = "",
         input_type = "text",
         buttons = {
@@ -798,7 +797,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
             {
                 dict = "",
                 word = word,
-                definition = lookup_cancelled and _("Dictionary lookup interrupted.") or _("No definition found."),
+                definition = lookup_cancelled and _("Dictionary lookup interrupted.") or _("No results."),
                 no_result = true,
                 lookup_cancelled = lookup_cancelled,
             }
