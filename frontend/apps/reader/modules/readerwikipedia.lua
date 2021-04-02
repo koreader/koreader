@@ -37,7 +37,7 @@ end
 
 function ReaderWikipedia:lookupInput()
     self.input_dialog = InputDialog:new{
-        title = _("Enter search query"),
+        title = _("Enter a word or phrase to look up"),
         input = "",
         input_type = "text",
         buttons = {
@@ -49,7 +49,7 @@ function ReaderWikipedia:lookupInput()
                     end,
                 },
                 {
-                    text = _("Look up"),
+                    text = _("Search Wikipedia"),
                     is_enter_default = true,
                     callback = function()
                         UIManager:close(self.input_dialog)
