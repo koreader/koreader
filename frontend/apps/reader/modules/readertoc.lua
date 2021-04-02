@@ -564,8 +564,14 @@ end
 function ReaderToc:updateCurrentNode()
     if #self.collapsed_toc > 0 and self.pageno then
         for i, v in ipairs(self.collapsed_toc) do
-            if v.page > self.pageno then
-                self.collapsed_toc.current = i > 1 and i - 1 or 1
+            if v.page >= self.pageno then
+                if v.page == self.pageno then
+                    -- Use first TOC item on current page (which may have others)
+                    self.collapsed_toc.current = i
+                else
+                    -- Use previous TOC item (if any), which is on a previous page
+                    self.collapsed_toc.current = i > 1 and i - 1 or 1
+                end
                 return
             end
         end
