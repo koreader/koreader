@@ -677,7 +677,7 @@ end
 
 function ReaderDictionary:onShowDictionaryLookup()
     self.dictionary_lookup_dialog = InputDialog:new{
-        title = _("Enter search query"),
+        title = _("Enter a word or phrase to look up"),
         input = "",
         input_type = "text",
         buttons = {
@@ -689,7 +689,7 @@ function ReaderDictionary:onShowDictionaryLookup()
                     end,
                 },
                 {
-                    text = _("Look up"),
+                    text = _("Search dictionary"),
                     is_enter_default = true,
                     callback = function()
                         UIManager:close(self.dictionary_lookup_dialog)
