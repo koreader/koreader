@@ -499,12 +499,14 @@ function TouchMenu:init()
     self.page_info_left_chev = Button:new{
         icon = chevron_left,
         callback = function() self:onPrevPage() end,
+        hold_callback = function() self:onFirstPage() end,
         bordersize = 0,
         show_parent = self.show_parent,
     }
     self.page_info_right_chev = Button:new{
         icon = chevron_right,
         callback = function() self:onNextPage() end,
+        hold_callback = function() self:onLastPage() end,
         bordersize = 0,
         show_parent = self.show_parent,
     }
@@ -787,6 +789,18 @@ function TouchMenu:onPrevPage()
     return true
 end
 
+function TouchMenu:onFirstPage()
+    self.page = 1
+    self:updateItems()
+    return true
+end
+
+function TouchMenu:onLastPage()
+    self.page = self.page_num
+    self:updateItems()
+    return true
+end
+
 function TouchMenu:onSwipe(arg, ges_ev)
     local direction = BD.flipDirectionIfMirroredUILayout(ges_ev.direction)
     if direction == "west" then
@@ -838,6 +852,16 @@ function TouchMenu:onMenuSelect(item)
             table.insert(self.item_table_stack, self.item_table)
             self.item_table = sub_item_table
             self.page = 1
+            if self.item_table.open_on_menu_item_id_func then
+                self:_recalculatePageLayout() -- we need an accurate self.perpage
+                local open_id = self.item_table.open_on_menu_item_id_func()
+                for i = 1, #self.item_table do
+                    if self.item_table[i].menu_item_id == open_id then
+                        self.page = math.floor( (i - 1) / self.perpage ) + 1
+                        break
+                    end
+                end
+            end
             self:updateItems()
         end
     end

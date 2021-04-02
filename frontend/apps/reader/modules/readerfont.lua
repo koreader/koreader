@@ -96,8 +96,12 @@ function ReaderFont:init()
             end,
             checked_func = function()
                 return v == self.font_face
-            end
+            end,
+            menu_item_id = v,
         })
+    end
+    self.face_table.open_on_menu_item_id_func = function()
+        return self.font_face
     end
     self.ui.menu:registerToMainMenu(self)
 end
@@ -332,7 +336,9 @@ function ReaderFont:addToMainMenu(menu_items)
     self.face_table.max_per_page = 5
     -- insert table to main reader menu
     menu_items.change_font = {
-        text = self.font_menu_title,
+        text_func = function()
+            return T(_("Font: %1"), BD.wrap(self.font_face))
+        end,
         sub_item_table = self.face_table,
     }
 end
