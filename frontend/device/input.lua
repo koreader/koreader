@@ -361,6 +361,7 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
         -- If GestureDetector's clock source probing was inconclusive, do this on the UI timescale instead.
         if clock_id == -1 then
             deadline = TimeVal:now() + delay
+            clock_id = C.CLOCK_MONOTONIC
         else
             deadline = origin + delay
         end
