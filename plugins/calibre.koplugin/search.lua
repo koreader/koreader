@@ -180,7 +180,7 @@ local CalibreSearch = InputContainer:new{
 
 function CalibreSearch:ShowSearch()
     self.search_dialog = InputDialog:new{
-        title = _("Enter string to search for"),
+        title = _("Calibre metadata search"),
         input = self.search_value,
         buttons = {
             {
