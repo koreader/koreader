@@ -1611,13 +1611,13 @@ function UIManager:handleInput()
     -- Anywhere else breaks preventStandby/allowStandby invariants used by background jobs while UI is left running.
     self:_standbyTransition()
 
-    -- wait for next event
-    local input_event = Input:waitEvent(now, deadline)
+    -- wait for next batch of events
+    local input_events = Input:waitEvent(now, deadline)
 
-    -- delegate input_event to handler
-    if input_event then
+    -- delegate each input event to handler
+    if input_events then
         -- Handle the full batch of events
-        for __, ev in ipairs(input_event) do
+        for __, ev in ipairs(input_events) do
             self:handleInputEvent(ev)
         end
     end
