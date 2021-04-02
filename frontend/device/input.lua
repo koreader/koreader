@@ -1029,9 +1029,7 @@ function Input:waitEvent(now, deadline)
                             -- This is why we clear the full list of timers on the first match ;).
                             self:clearTimeouts()
                             self:gestureAdjustHook(touch_ges)
-                            return {
-                                Event:new("Gesture", self.gesture_detector:adjustGesCoordinate(touch_ges))
-                            }
+                            return { Event:new("Gesture", self.gesture_detector:adjustGesCoordinate(touch_ges)) }
                         end -- if touch_ges
                     end -- if poll_deadline reached
                 else
