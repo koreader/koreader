@@ -94,7 +94,8 @@ local KoboDahlia = Kobo:new{
     model = "Kobo_dahlia",
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
-    -- There's no slot 0, the first finger gets assigned slot 1, and the second slot 2
+    -- There's no slot 0, the first finger gets assigned slot 1, and the second slot 2.
+    -- NOTE: Could be queried at runtime via EVIOCGABS on ABS_MT_TRACKING_ID (minimum field).
     main_finger_slot = 1,
     display_dpi = 265,
     -- the bezel covers the top 11 pixels:
