@@ -1075,7 +1075,7 @@ function Input:waitEvent(now, deadline)
                 -- Retry on EINTR
             else
                 -- Warn, report, and go back to UIManager
-                logger.warn("Polling for input events returned an error:", ev)
+                logger.warn("Polling for input events returned an error:", ev, "->", ffi.string(C.strerror(ev)))
                 break
             end
         elseif ok == nil then
@@ -1158,7 +1158,7 @@ function Input:waitEvent(now, deadline)
         return handled
     elseif ok == false and ev then
         return {
-            Event:new("InputError", string.format("%d: %s", ev, ffi.string(C.strerror(ev))))
+            Event:new("InputError", ev)
         }
     elseif ok == nil then
         -- No ok and no ev? Hu oh...
