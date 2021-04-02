@@ -109,7 +109,7 @@ function Calibre:addToMainMenu(menu_items)
     -- insert the metadata search
     if G_reader_settings:isTrue("calibre_search_from_reader") or not self.ui.view then
         menu_items.find_book_in_calibre_catalog = {
-            text = _("Calibre search"),
+            text = _("Calibre metadata search"),
             callback = function()
                 CalibreSearch:ShowSearch()
             end
