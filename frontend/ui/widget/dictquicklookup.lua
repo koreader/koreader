@@ -1199,11 +1199,7 @@ function DictQuickLookup:lookupInputWord(hint)
                     end,
                 },
                 {
-                    if self.is_wiki then
-                        text = _("Search Wikipedia")
-                    else
-                        text = _("Search dictionary")
-                    end,
+                    text = self.is_wiki and _("Search Wikipedia") or _("Search dictionary"),
                     is_enter_default = true,
                     callback = function()
                         self:closeInputDialog()
