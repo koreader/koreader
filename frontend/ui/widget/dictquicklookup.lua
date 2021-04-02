@@ -1186,7 +1186,7 @@ end
 
 function DictQuickLookup:lookupInputWord(hint)
     self.input_dialog = InputDialog:new{
-        title = _("Enter search query"),
+        title = _("Enter a word or phrase to look up"),
         input = hint,
         input_hint = hint or "",
         input_type = "text",
@@ -1199,7 +1199,11 @@ function DictQuickLookup:lookupInputWord(hint)
                     end,
                 },
                 {
-                    text = _("Look up"),
+                    if self.is_wiki then
+                        text = _("Search Wikipedia")
+                    else
+                        text = _("Search dictionary")
+                    end,
                     is_enter_default = true,
                     callback = function()
                         self:closeInputDialog()
