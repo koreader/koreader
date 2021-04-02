@@ -361,6 +361,7 @@ function Input:setTimeout(slot, ges, cb, origin, delay)
         -- If GestureDetector's clock source probing was inconclusive, do this on the UI timescale instead.
         if clock_id == -1 then
             deadline = TimeVal:now() + delay
+            clock_id = C.CLOCK_MONOTONIC
         else
             deadline = origin + delay
         end
@@ -934,15 +935,16 @@ end
 function Input:waitEvent(now, deadline)
     -- On the first iteration of the loop, we don't need to update now, we're following closely (a couple ms at most) behind UIManager.
     local ok, ev
-    -- Wrapper around the platform-specific input.waitForEvent (which itself is generally poll-like).
+    -- Wrapper around the platform-specific input.waitForEvent (which itself is generally poll-like, and supposed to poll *once*).
     -- Speaking of input.waitForEvent, it can return:
-    -- * true, ev: When an input event was read. ev is a table mapped after the input_event <linux/input.h> struct.
+    -- * true, ev: When a batch of input events was read.
+    --             ev is an array of event tables, themselves mapped after the input_event <linux/input.h> struct.
     -- * false, errno, timerfd: When no input event was read, possibly for benign reasons.
-    --                        One such common case is after a polling timeout, in which case errno is C.ETIME.
-    --                        If the timerfd backend is in use, and the early return was caused by a timerfd expiring,
-    --                        it returns false, C.ETIME, timerfd; where timerfd is a C pointer (i.e., light userdata)
-    --                        to the timerfd node that expired (so as to be able to free it later, c.f., input/timerfd-callbacks.h).
-    --                        Otherwise, errno is the actual error code from the backend (e.g., select's errno for the C backend).
+    --                          One such common case is after a polling timeout, in which case errno is C.ETIME.
+    --                          If the timerfd backend is in use, and the early return was caused by a timerfd expiring,
+    --                          it returns false, C.ETIME, timerfd; where timerfd is a C pointer (i.e., light userdata)
+    --                          to the timerfd node that expired (so as to be able to free it later, c.f., input/timerfd-callbacks.h).
+    --                          Otherwise, errno is the actual error code from the backend (e.g., select's errno for the C backend).
     -- * nil: When something terrible happened (e.g., fatal poll/read failure). We abort in such cases.
     while true do
         if #self.timer_callbacks > 0 then
@@ -1028,14 +1030,17 @@ function Input:waitEvent(now, deadline)
                             -- This is why we clear the full list of timers on the first match ;).
                             self:clearTimeouts()
                             self:gestureAdjustHook(touch_ges)
-                            return Event:new("Gesture",
-                                self.gesture_detector:adjustGesCoordinate(touch_ges)
-                            )
+                            return {
+                                Event:new("Gesture", self.gesture_detector:adjustGesCoordinate(touch_ges))
+                            }
                         end -- if touch_ges
                     end -- if poll_deadline reached
+                else
+                    -- Something went wrong, jump to error handling *now*
+                    break
                 end -- if poll returned ETIME
 
-                -- Refresh now on the next iteration (e.g., when we have multiple timers to check)
+                -- Refresh now on the next iteration (e.g., when we have multiple timers to check, and we've just timed out)
                 now = nil
             end -- while #timer_callbacks > 0
         else
@@ -1071,7 +1076,7 @@ function Input:waitEvent(now, deadline)
                 -- Retry on EINTR
             else
                 -- Warn, report, and go back to UIManager
-                logger.warn("Polling for input events returned an error:", ev)
+                logger.warn("Polling for input events returned an error:", ev, "->", ffi.string(C.strerror(ev)))
                 break
             end
         elseif ok == nil then
@@ -1087,55 +1092,80 @@ function Input:waitEvent(now, deadline)
     end
 
     if ok and ev then
-        if DEBUG.is_on then
-            DEBUG:logEv(ev)
-            if ev.type == C.EV_KEY then
-                logger.dbg(string.format(
-                    "key event => code: %d (%s), value: %s, time: %d.%d",
-                    ev.code, self.event_map[ev.code] or linux_evdev_key_code_map[ev.code], ev.value,
-                    ev.time.sec, ev.time.usec))
-            elseif ev.type == C.EV_SYN then
-                logger.dbg(string.format(
-                    "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
-                    ev.type, linux_evdev_type_map[ev.type], ev.code, linux_evdev_syn_code_map[ev.code], ev.value,
-                    ev.time.sec, ev.time.usec))
-            elseif ev.type == C.EV_ABS then
-                logger.dbg(string.format(
-                    "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
-                    ev.type, linux_evdev_type_map[ev.type], ev.code, linux_evdev_abs_code_map[ev.code], ev.value,
-                    ev.time.sec, ev.time.usec))
-            elseif ev.type == C.EV_MSC then
-                logger.dbg(string.format(
-                    "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
-                    ev.type, linux_evdev_type_map[ev.type], ev.code, linux_evdev_msc_code_map[ev.code], ev.value,
-                    ev.time.sec, ev.time.usec))
+        local handled = {}
+        -- We're guaranteed that ev is an array of event tables. Might be an array of *one* event, but an array nonetheless ;).
+        for __, event in ipairs(ev) do
+            if DEBUG.is_on then
+                DEBUG:logEv(event)
+                if event.type == C.EV_KEY then
+                    logger.dbg(string.format(
+                        "key event => code: %d (%s), value: %s, time: %d.%d",
+                        event.code, self.event_map[event.code] or linux_evdev_key_code_map[event.code], event.value,
+                        event.time.sec, event.time.usec))
+                elseif event.type == C.EV_SYN then
+                    logger.dbg(string.format(
+                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
+                        event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_syn_code_map[event.code], event.value,
+                        event.time.sec, event.time.usec))
+                elseif event.type == C.EV_ABS then
+                    logger.dbg(string.format(
+                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
+                        event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_abs_code_map[event.code], event.value,
+                        event.time.sec, event.time.usec))
+                elseif event.type == C.EV_MSC then
+                    logger.dbg(string.format(
+                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
+                        event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_msc_code_map[event.code], event.value,
+                        event.time.sec, event.time.usec))
+                else
+                    logger.dbg(string.format(
+                        "input event => type: %d (%s), code: %d, value: %s, time: %d.%d",
+                        event.type, linux_evdev_type_map[event.type], event.code, event.value,
+                        event.time.sec, event.time.usec))
+                end
+            end
+            self:eventAdjustHook(event)
+            if event.type == C.EV_KEY then
+                local handled_ev = self:handleKeyBoardEv(event)
+                if handled_ev then
+                    table.insert(handled, handled_ev)
+                end
+            elseif event.type == C.EV_ABS and event.code == ABS_OASIS_ORIENTATION then
+                local handled_ev = self:handleOasisOrientationEv(event)
+                if handled_ev then
+                    table.insert(handled, handled_ev)
+                end
+            elseif event.type == C.EV_ABS or event.type == C.EV_SYN then
+                local handled_ev = self:handleTouchEv(event)
+                -- We don't gnerate an Event for *every* input event, so, make sure we don't push nil values to the array
+                if handled_ev then
+                    table.insert(handled, handled_ev)
+                end
+            elseif event.type == C.EV_MSC then
+                local handled_ev = self:handleMiscEv(event)
+                if handled_ev then
+                    table.insert(handled, handled_ev)
+                end
+            elseif event.type == C.EV_SDL then
+                local handled_ev = self:handleSdlEv(event)
+                if handled_ev then
+                    table.insert(handled, handled_ev)
+                end
             else
-                logger.dbg(string.format(
-                    "input event => type: %d (%s), code: %d, value: %s, time: %d.%d",
-                    ev.type, linux_evdev_type_map[ev.type], ev.code, ev.value,
-                    ev.time.sec, ev.time.usec))
+                -- Received some other kind of event that we do not know how to specifically handle yet
+                table.insert(handled, Event:new("GenericInput", event))
             end
         end
-        self:eventAdjustHook(ev)
-        if ev.type == C.EV_KEY then
-            return self:handleKeyBoardEv(ev)
-        elseif ev.type == C.EV_ABS and ev.code == ABS_OASIS_ORIENTATION then
-            return self:handleOasisOrientationEv(ev)
-        elseif ev.type == C.EV_ABS or ev.type == C.EV_SYN then
-            return self:handleTouchEv(ev)
-        elseif ev.type == C.EV_MSC then
-            return self:handleMiscEv(ev)
-        elseif ev.type == C.EV_SDL then
-            return self:handleSdlEv(ev)
-        else
-            -- Received some other kind of event that we do not know how to specifically handle yet
-            return Event:new("GenericInput", ev)
-        end
+        return handled
     elseif ok == false and ev then
-        return Event:new("InputError", ev)
+        return {
+            Event:new("InputError", ev)
+        }
     elseif ok == nil then
         -- No ok and no ev? Hu oh...
-        return Event:new("InputError", "Catastrophic")
+        return {
+            Event:new("InputError", "Catastrophic")
+        }
     end
 end
 

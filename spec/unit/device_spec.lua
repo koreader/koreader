@@ -274,13 +274,15 @@ describe("device module", function()
             mock_ffi_input = require('ffi/input')
             stub(mock_ffi_input, "waitForEvent")
             mock_ffi_input.waitForEvent.returns(true, {
-                type = 3,
-                time = {
-                    usec = 450565,
-                    sec = 1471081881
-                },
-                code = 24,
-                value = 16
+                {
+                    type = 3,
+                    time = {
+                        usec = 450565,
+                        sec = 1471081881
+                    },
+                    code = 24,
+                    value = 16
+                }
             })
 
             local UIManager = require("ui/uimanager")

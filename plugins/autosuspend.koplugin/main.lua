@@ -100,6 +100,7 @@ function AutoSuspend:_restart()
 end
 
 function AutoSuspend:init()
+    logger.dbg("AutoSuspend: init")
     if Device:isPocketBook() and not Device:canSuspend() then return end
     UIManager.event_hook:registerWidget("InputEvent", self)
     self:_unschedule()
@@ -107,6 +108,13 @@ function AutoSuspend:init()
     -- self.ui is nil in the testsuite
     if not self.ui or not self.ui.menu then return end
     self.ui.menu:registerToMainMenu(self)
+end
+
+-- For event_hook automagic deregistration purposes
+function AutoSuspend:onCloseWidget()
+    logger.dbg("AutoSuspend: onCloseWidget")
+    if Device:isPocketBook() and not Device:canSuspend() then return end
+    self:_unschedule()
 end
 
 function AutoSuspend:onInputEvent()
