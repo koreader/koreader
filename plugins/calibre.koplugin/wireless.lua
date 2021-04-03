@@ -662,11 +662,10 @@ function CalibreWireless:sendToCalibre(arg)
 
     self:sendJsonData("OK", { fileLength = file_size })
 
-    local chunk_size = 1024
-    local data = file:read(chunk_size)
-    while data ~= nil do
+    while true do
+        local data = file:read(4096)
+        if not data then break end
         self.calibre_socket:send(data)
-        data = file:read(chunk_size)
     end
 
     file:close()
