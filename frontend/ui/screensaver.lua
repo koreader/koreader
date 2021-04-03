@@ -23,7 +23,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
--- Migrate old settings from 2021.02 or older.
+-- Migrate settings from 2021.02 or older.
 if G_reader_settings:readSetting("screensaver_type") == "message" then
     G_reader_settings:saveSetting("screensaver_type", "disable")
     G_reader_settings:makeTrue("screensaver_show_message")
@@ -39,6 +39,32 @@ if G_reader_settings:has("screensaver_white_background") then
         G_reader_settings:saveSetting("screensaver_background", "white")
     end
     G_reader_settings:delSetting("screensaver_white_background")
+end
+-- Migrate settings from 2021.03 or older.
+if G_reader_settings:has("screensaver_background") then
+    G_reader_settings:saveSetting("screensaver_img_background", G_reader_settings:readSetting("screensaver_background"))
+    G_reader_settings:delSetting("screensaver_background")
+end
+
+-- Default settings
+if G_reader_settings:hasNot("screensaver_show_message") then
+    G_reader_settings:makeFalse("screensaver_show_message")
+end
+if G_reader_settings:hasNot("screensaver_type") then
+    G_reader_settings:saveSetting("screensaver_type", "disable")
+    G_reader_settings:makeTrue("screensaver_show_message")
+end
+if G_reader_settings:hasNot("screensaver_img_background") then
+    G_reader_settings:saveSetting("screensaver_img_background", "black")
+end
+if G_reader_settings:hasNot("screensaver_msg_background") then
+    G_reader_settings:saveSetting("screensaver_msg_background", "none")
+end
+if G_reader_settings:hasNot("screensaver_message_position") then
+    G_reader_settings:saveSetting("screensaver_message_position", "middle")
+end
+if G_reader_settings:hasNot("screensaver_delay") then
+    G_reader_settings:hasNot("screensaver_delay", "disable")
 end
 
 local Screensaver = {
