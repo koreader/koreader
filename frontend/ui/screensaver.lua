@@ -64,7 +64,7 @@ if G_reader_settings:hasNot("screensaver_message_position") then
     G_reader_settings:saveSetting("screensaver_message_position", "middle")
 end
 if G_reader_settings:hasNot("screensaver_delay") then
-    G_reader_settings:hasNot("screensaver_delay", "disable")
+    G_reader_settings:saveSetting("screensaver_delay", "disable")
 end
 
 local Screensaver = {
