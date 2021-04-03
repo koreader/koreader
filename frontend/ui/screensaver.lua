@@ -393,24 +393,10 @@ function Screensaver:withBackground()
 end
 
 function Screensaver:setup(event, fallback_message)
-    -- Handle user settings & defaults
-    if G_reader_settings:has("screensaver_show_message") then
-        self.show_message = G_reader_settings:isTrue("screensaver_show_message")
-    else
-        -- We only enable show_message as a *type* fallback!
-        self.show_message = false
-    end
-    if G_reader_settings:has("screensaver_type") then
-        self.screensaver_type = G_reader_settings:readSetting("screensaver_type")
-    else
-        self.screensaver_type = "disable"
-        self.show_message = true
-    end
-    if G_reader_settings:has("screensaver_background") then
-        self.screensaver_background = G_reader_settings:readSetting("screensaver_background")
-    else
-        self.screensaver_background = "black"
-    end
+    self.show_message = G_reader_settings:isTrue("screensaver_show_message")
+    self.screensaver_type = G_reader_settings:readSetting("screensaver_type")
+    local screensaver_img_background = G_reader_settings:readSetting("screensaver_img_background")
+    local screensaver_msg_background = G_reader_settings:readSetting("screensaver_msg_background")
 
     -- These 2 (optional) parameters are to support poweroff and reboot actions on Kobo (c.f., UIManager)
     self.prefix = event and event .. "_" or "" -- "", "poweroff_" or "reboot_"
@@ -516,12 +502,11 @@ function Screensaver:setup(event, fallback_message)
         end
     end
 
-    -- Now that the fallbacks are in place, we know the *effective* screensaver mode.
-    -- For non-image modes, make black (which is also the default) synonymous with none.
-    -- The reasoning is that disable + show_message, which is our default and fallback,
-    -- looks *terrible* with a black background, which is also our default and fallback ;).
-    if not self:modeIsImage() and self.screensaver_background == "black" then
-        self.screensaver_background = "none"
+    -- Use the right background setting depending on the effective mode, now that fallbacks have kicked in.
+    if self:modeIsImage() then
+        self.screensaver_background = screensaver_img_background
+    else
+        self.screensaver_background = screensaver_msg_background
     end
 end
 
@@ -606,11 +591,7 @@ function Screensaver:show()
         if G_reader_settings:has(self.prefix .. "screensaver_message_position") then
             message_pos = G_reader_settings:readSetting(self.prefix .. "screensaver_message_position")
         else
-            if G_reader_settings:has("screensaver_message_position") then
-                message_pos = G_reader_settings:readSetting("screensaver_message_position")
-            else
-                message_pos = "middle"
-            end
+            message_pos = G_reader_settings:readSetting("screensaver_message_position")
         end
 
         -- The only case where we *won't* cover the full-screen is when we only display a message and no background.
@@ -702,7 +683,7 @@ function Screensaver:close()
                 self.screensaver_widget = nil
             end
         end)
-    elseif screensaver_delay == "disable" or screensaver_delay == nil then
+    elseif screensaver_delay == "disable" then
         logger.dbg("close screensaver")
         if self.screensaver_widget then
             UIManager:close(self.screensaver_widget, "full")
