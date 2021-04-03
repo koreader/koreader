@@ -63,6 +63,9 @@ end
 if G_reader_settings:hasNot("screensaver_message_position") then
     G_reader_settings:saveSetting("screensaver_message_position", "middle")
 end
+if G_reader_settings:hasNot("screensaver_stretch_images") then
+    G_reader_settings:makeFalse("screensaver_stretch_images")
+end
 if G_reader_settings:hasNot("screensaver_delay") then
     G_reader_settings:saveSetting("screensaver_delay", "disable")
 end
@@ -529,7 +532,7 @@ function Screensaver:show()
             image_disposable = true,
             height = Screen:getHeight(),
             width = Screen:getWidth(),
-            scale_factor = G_reader_settings:nilOrFalse("screensaver_stretch_images") and 0 or nil,
+            scale_factor = G_reader_settings:isFalse("screensaver_stretch_images") and 0 or nil,
         }
     elseif self.screensaver_type == "bookstatus" then
         local ReaderUI = require("apps/reader/readerui")
@@ -551,7 +554,7 @@ function Screensaver:show()
             alpha = true,
             height = Screen:getHeight(),
             width = Screen:getWidth(),
-            scale_factor = G_reader_settings:nilOrFalse("screensaver_stretch_images") and 0 or nil,
+            scale_factor = G_reader_settings:isFalse("screensaver_stretch_images") and 0 or nil,
         }
     elseif self.screensaver_type == "readingprogress" then
         widget = Screensaver.getReaderProgress()
