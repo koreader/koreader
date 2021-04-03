@@ -644,9 +644,20 @@ end
 
 function CalibreWireless:sendToCalibre(arg)
     logger.dbg("GET_BOOK_FILE_SEGMENT", arg)
-    -- not implemented yet, we just send an invalid opcode to raise a control error in calibre.
-    -- If we don't do this calibre will wait *a lot* for the file(s)
-    self:sendJsonData('NOOP', {})
+    local inbox_dir = G_reader_settings:readSetting("inbox_dir")
+    local path = inbox_dir .. "/" .. arg.lpath
+
+    local file = io.open(path, "rb")
+    if file == nil then
+        self:sendJsonData('NOOP', {})
+        return
+    end
+
+    local data = file:read("*all")
+    file:close()
+
+    self:sendJsonData('OK', { fileLength = #data })
+    self.calibre_socket:send(data)
 end
 
 function CalibreWireless:isCalibreAtLeast(x,y,z)
