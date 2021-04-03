@@ -13,6 +13,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local rapidjson = require("rapidjson")
 local sha = require("ffi/sha2")
@@ -647,17 +648,28 @@ function CalibreWireless:sendToCalibre(arg)
     local inbox_dir = G_reader_settings:readSetting("inbox_dir")
     local path = inbox_dir .. "/" .. arg.lpath
 
-    local file = io.open(path, "rb")
-    if not file then
-        self:sendJsonData('NOOP', {})
+    local file_size = lfs.attributes(path, "size")
+    if not file_size then
+        self:sendJsonData("NOOP", {})
         return
     end
 
-    local data = file:read("*all")
-    file:close()
+    local file = io.open(path, "rb")
+    if not file then
+        self:sendJsonData("NOOP", {})
+        return
+    end
 
-    self:sendJsonData('OK', { fileLength = #data })
-    self.calibre_socket:send(data)
+    self:sendJsonData("OK", { fileLength = file_size })
+
+    local chunk_size = 1024
+    local data = file:read(chunk_size)
+    while data ~= nil do
+        self.calibre_socket:send(data)
+        data = file:read(chunk_size)
+    end
+
+    file:close()
 end
 
 function CalibreWireless:isCalibreAtLeast(x,y,z)
