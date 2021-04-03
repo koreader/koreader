@@ -648,7 +648,7 @@ function CalibreWireless:sendToCalibre(arg)
     local path = inbox_dir .. "/" .. arg.lpath
 
     local file = io.open(path, "rb")
-    if file == nil then
+    if not file then
         self:sendJsonData('NOOP', {})
         return
     end
