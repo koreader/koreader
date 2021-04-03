@@ -37,7 +37,7 @@ local ReaderView = OverlapGroup:extend{
     outer_page_color = Blitbuffer.gray(DOUTER_PAGE_COLOR / 15),
     -- highlight with "lighten" or "underscore" or "invert"
     highlight = {
-        lighten_factor = 0.2,
+        lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor") or 0.2,
         temp_drawer = "invert",
         temp = {},
         saved_drawer = "lighten",
