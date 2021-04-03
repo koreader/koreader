@@ -123,130 +123,140 @@ return {
                 end,
             },
             {
-                text = _("Black background behind images"),
-                enabled_func = function()
-                    return G_reader_settings:readSetting("screensaver_type") ~= "disable"
-                end,
-                checked_func = function()
-                    return G_reader_settings:readSetting("screensaver_img_background") == "black"
-                end,
-                callback = function()
-                    G_reader_settings:saveSetting("screensaver_img_background", "black")
-                end,
-            },
-            {
-                text = _("White background behind images"),
-                enabled_func = function()
-                    return G_reader_settings:readSetting("screensaver_type") ~= "disable"
-                end,
-                checked_func = function()
-                    return G_reader_settings:readSetting("screensaver_img_background") == "white"
-                end,
-                callback = function()
-                    G_reader_settings:saveSetting("screensaver_img_background", "white")
-                end,
-            },
-            {
-                text = _("Leave background as-is behind images"),
-                enabled_func = function()
-                    return G_reader_settings:readSetting("screensaver_type") ~= "disable"
-                end,
-                checked_func = function()
-                    return G_reader_settings:readSetting("screensaver_img_background") == "none"
-                end,
-                callback = function()
-                    G_reader_settings:saveSetting("screensaver_img_background", "none")
-                end,
-            },
-            {
-                text = _("Stretch covers and images to fit screen"),
-                enabled_func = function()
-                    return G_reader_settings:readSetting("screensaver_type") ~= "disable"
-                end,
-                checked_func = function()
-                    return G_reader_settings:isTrue("screensaver_stretch_images")
-                end,
-                callback = function()
-                    G_reader_settings:toggle("screensaver_stretch_images")
-                end,
-                separator = true,
-            },
-            {
-                text = _("Black background behind message"),
-                enabled_func = function()
-                    return G_reader_settings:readSetting("screensaver_type") == "disable" and G_reader_settings:isTrue("screensaver_show_message")
-                end,
-                checked_func = function()
-                    return G_reader_settings:readSetting("screensaver_msg_background") == "black"
-                end,
-                callback = function()
-                    G_reader_settings:saveSetting("screensaver_msg_background", "black")
-                end,
-            },
-            {
-                text = _("White background behind message"),
-                enabled_func = function()
-                    return G_reader_settings:readSetting("screensaver_type") == "disable" and G_reader_settings:isTrue("screensaver_show_message")
-                end,
-                checked_func = function()
-                    return G_reader_settings:readSetting("screensaver_msg_background") == "white"
-                end,
-                callback = function()
-                    G_reader_settings:saveSetting("screensaver_msg_background", "white")
-                end,
-            },
-            {
-                text = _("Leave background as-is behind message"),
-                enabled_func = function()
-                    return G_reader_settings:readSetting("screensaver_type") == "disable" and G_reader_settings:isTrue("screensaver_show_message")
-                end,
-                checked_func = function()
-                    return G_reader_settings:readSetting("screensaver_msg_background") == "none"
-                end,
-                callback = function()
-                    G_reader_settings:saveSetting("screensaver_msg_background", "none")
-                end,
-            },
-            {
-                text = _("Screensaver message position"),
+                text = _("Covers and images settings"),
                 sub_item_table = {
                     {
-                        text = _("Top"),
+                        text = _("Black background behind covers and images"),
                         enabled_func = function()
-                            return G_reader_settings:isTrue("screensaver_show_message")
+                            return G_reader_settings:readSetting("screensaver_type") ~= "disable"
                         end,
                         checked_func = function()
-                            return G_reader_settings:readSetting("screensaver_message_position") == "top"
+                            return G_reader_settings:readSetting("screensaver_img_background") == "black"
                         end,
                         callback = function()
-                            G_reader_settings:saveSetting("screensaver_message_position", "top")
-                        end
+                            G_reader_settings:saveSetting("screensaver_img_background", "black")
+                        end,
                     },
                     {
-                        text = _("Middle"),
+                        text = _("White background behind covers and images"),
                         enabled_func = function()
-                            return G_reader_settings:isTrue("screensaver_show_message")
+                            return G_reader_settings:readSetting("screensaver_type") ~= "disable"
                         end,
                         checked_func = function()
-                            return G_reader_settings:readSetting("screensaver_message_position") == "middle"
+                            return G_reader_settings:readSetting("screensaver_img_background") == "white"
                         end,
                         callback = function()
-                            G_reader_settings:saveSetting("screensaver_message_position", "middle")
-                        end
+                            G_reader_settings:saveSetting("screensaver_img_background", "white")
+                        end,
                     },
                     {
-                        text = _("Bottom"),
+                        text = _("Leave background as-is behind covers and images"),
                         enabled_func = function()
-                            return G_reader_settings:isTrue("screensaver_show_message")
+                            return G_reader_settings:readSetting("screensaver_type") ~= "disable"
                         end,
                         checked_func = function()
-                            return G_reader_settings:readSetting("screensaver_message_position") == "bottom"
+                            return G_reader_settings:readSetting("screensaver_img_background") == "none"
                         end,
                         callback = function()
-                            G_reader_settings:saveSetting("screensaver_message_position", "bottom")
-                        end
+                            G_reader_settings:saveSetting("screensaver_img_background", "none")
+                        end,
                     },
-                }
+                    {
+                        text = _("Stretch covers and images to fit screen"),
+                        enabled_func = function()
+                            return G_reader_settings:readSetting("screensaver_type") ~= "disable"
+                        end,
+                        checked_func = function()
+                            return G_reader_settings:isTrue("screensaver_stretch_images")
+                        end,
+                        callback = function()
+                            G_reader_settings:toggle("screensaver_stretch_images")
+                        end,
+                        separator = true,
+                    },
+                },
+            },
+            {
+                text = _("Message settings"),
+                sub_item_table = {
+                    {
+                        text = _("Black background behind message"),
+                        enabled_func = function()
+                            return G_reader_settings:readSetting("screensaver_type") == "disable" and G_reader_settings:isTrue("screensaver_show_message")
+                        end,
+                        checked_func = function()
+                            return G_reader_settings:readSetting("screensaver_msg_background") == "black"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("screensaver_msg_background", "black")
+                        end,
+                    },
+                    {
+                        text = _("White background behind message"),
+                        enabled_func = function()
+                            return G_reader_settings:readSetting("screensaver_type") == "disable" and G_reader_settings:isTrue("screensaver_show_message")
+                        end,
+                        checked_func = function()
+                            return G_reader_settings:readSetting("screensaver_msg_background") == "white"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("screensaver_msg_background", "white")
+                        end,
+                    },
+                    {
+                        text = _("Leave background as-is behind message"),
+                        enabled_func = function()
+                            return G_reader_settings:readSetting("screensaver_type") == "disable" and G_reader_settings:isTrue("screensaver_show_message")
+                        end,
+                        checked_func = function()
+                            return G_reader_settings:readSetting("screensaver_msg_background") == "none"
+                        end,
+                        callback = function()
+                            G_reader_settings:saveSetting("screensaver_msg_background", "none")
+                        end,
+                    },
+                    {
+                        text = _("Message position"),
+                        sub_item_table = {
+                            {
+                                text = _("Top"),
+                                enabled_func = function()
+                                    return G_reader_settings:isTrue("screensaver_show_message")
+                                end,
+                                checked_func = function()
+                                    return G_reader_settings:readSetting("screensaver_message_position") == "top"
+                                end,
+                                callback = function()
+                                    G_reader_settings:saveSetting("screensaver_message_position", "top")
+                                end
+                            },
+                            {
+                                text = _("Middle"),
+                                enabled_func = function()
+                                    return G_reader_settings:isTrue("screensaver_show_message")
+                                end,
+                                checked_func = function()
+                                    return G_reader_settings:readSetting("screensaver_message_position") == "middle"
+                                end,
+                                callback = function()
+                                    G_reader_settings:saveSetting("screensaver_message_position", "middle")
+                                end
+                            },
+                            {
+                                text = _("Bottom"),
+                                enabled_func = function()
+                                    return G_reader_settings:isTrue("screensaver_show_message")
+                                end,
+                                checked_func = function()
+                                    return G_reader_settings:readSetting("screensaver_message_position") == "bottom"
+                                end,
+                                callback = function()
+                                    G_reader_settings:saveSetting("screensaver_message_position", "bottom")
+                                end
+                            },
+                        },
+                    },
+                },
             },
             {
                 text = _("Keep the screensaver on screen after wakeup"),
@@ -296,8 +306,8 @@ return {
                             G_reader_settings:saveSetting("screensaver_delay", "tap")
                         end
                     },
-                }
-            }
-        }
-    }
+                },
+            },
+        },
+    },
 }
