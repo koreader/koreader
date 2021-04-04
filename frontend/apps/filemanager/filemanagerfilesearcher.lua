@@ -82,7 +82,7 @@ function FileSearcher:close()
                                      self.search_value)
             }
         )
-        end
+    end
 end
 
 function FileSearcher:onShowFileSearch()
