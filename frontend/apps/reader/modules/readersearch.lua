@@ -70,6 +70,7 @@ function ReaderSearch:onShowFulltextSearchInput()
 end
 
 function ReaderSearch:onShowSearchDialog(text, direction)
+    if text == '' then return end
     local neglect_current_location = false
     local current_page
     local do_search = function(search_func, _text, param)
@@ -212,7 +213,6 @@ end
 
 function ReaderSearch:search(pattern, origin)
     logger.dbg("search pattern", pattern)
-    if pattern == nil or pattern == '' then return end
     local direction = self.direction
     local case = self.case_insensitive
     local page = self.view.state.page
