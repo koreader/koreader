@@ -323,7 +323,7 @@ function ReaderHighlight:genHighlightDrawerMenu()
             callback = function()
                 self.view.highlight.disabled = not self.view.highlight.disabled
             end,
-            hold_callback = function(touchmenu_instance)
+            hold_callback = function()
                 self:toggleDefault()
             end,
             separator = true,
@@ -331,6 +331,37 @@ function ReaderHighlight:genHighlightDrawerMenu()
         get_highlight_style("lighten"),
         get_highlight_style("underscore"),
         get_highlight_style("invert"),
+        {
+            text_func = function()
+                return T(_("Highlight opacity: %1"), G_reader_settings:readSetting("highlight_lighten_factor", 0.2))
+            end,
+            enabled_func = function()
+                return not self.view.highlight.disabled and self.view.highlight.saved_drawer == "lighten"
+            end,
+            callback = function()
+                local SpinWidget = require("ui/widget/spinwidget")
+                local curr_val = G_reader_settings:readSetting("highlight_lighten_factor", 0.2)
+                local items = SpinWidget:new{
+                    width = math.floor(Screen:getWidth() * 0.6),
+                    value = curr_val,
+                    value_min = 0,
+                    value_max = 1,
+                    precision = "%.2f",
+                    value_step = 0.1,
+                    value_hold_step = 0.25,
+                    default_value = 0.2,
+                    keep_shown_on_apply = true,
+                    title_text =  _("Highlight opacity"),
+                    info_text = _("The higher the value, the darker the highlight."),
+                    callback = function(spin)
+                        G_reader_settings:saveSetting("highlight_lighten_factor", spin.value)
+                        self.view.highlight.lighten_factor = spin.value
+                        UIManager:setDirty(self.dialog, "ui")
+                    end
+                }
+                UIManager:show(items)
+            end,
+        },
     }
 end
 
