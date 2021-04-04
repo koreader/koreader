@@ -1222,6 +1222,7 @@ function DictQuickLookup:lookupInputWord(hint)
                     text = self.is_wiki and _("Search Wikipedia") or _("Search dictionary"),
                     is_enter_default = true,
                     callback = function()
+                        if self.input_dialog:getInputText() == "" then return end
                         self:closeInputDialog()
                         self:onClose()
                         self:inputLookup()
