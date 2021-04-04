@@ -67,6 +67,14 @@ function ReaderCoptListener:onSetFontSize(font_size)
     self.document.configurable.font_size = font_size
 end
 
+function ReaderCoptListener:onCharging()
+    self:headerRefresh()
+end
+
+function ReaderCoptListener:onNotCharging()
+    self:headerRefresh()
+end
+
 function ReaderCoptListener:onTimeFormatChanged()
     self.ui.document._document:setIntProperty("window.status.clock.12hours", G_reader_settings:isTrue("twelve_hour_clock") and 1 or 0)
 end
