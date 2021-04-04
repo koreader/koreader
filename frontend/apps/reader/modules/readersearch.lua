@@ -70,7 +70,7 @@ function ReaderSearch:onShowFulltextSearchInput()
 end
 
 function ReaderSearch:onShowSearchDialog(text, direction)
-    if text == '' then return end
+    if text == "" then return end
     local neglect_current_location = false
     local current_page
     local do_search = function(search_func, _text, param)
