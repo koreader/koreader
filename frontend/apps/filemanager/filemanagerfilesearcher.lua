@@ -70,19 +70,19 @@ function FileSearcher:setSearchResults()
 end
 
 function FileSearcher:close()
-        UIManager:close(self.search_dialog)
-        self:readDir() --- @todo this probably doesn't need to be repeated once it's been done
-        self:setSearchResults() --- @todo doesn't have to be repeated if the search term is the same
-        if #self.results > 0 then
-            self:showSearchResults() --- @todo something about no results
-        else
-            UIManager:show(
-                InfoMessage:new{
-                    text = BaseUtil.template(_("No results for '%1'."),
-                                         self.search_value)
-                }
-            )
-            end
+    UIManager:close(self.search_dialog)
+    self:readDir() --- @todo this probably doesn't need to be repeated once it's been done
+    self:setSearchResults() --- @todo doesn't have to be repeated if the search term is the same
+    if #self.results > 0 then
+        self:showSearchResults()
+    else
+        UIManager:show(
+            InfoMessage:new{
+                text = BaseUtil.template(_("No results for '%1'."),
+                                     self.search_value)
+            }
+        )
+        end
 end
 
 function FileSearcher:onShowFileSearch()
