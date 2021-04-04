@@ -52,6 +52,7 @@ function ReaderWikipedia:lookupInput()
                     text = _("Search Wikipedia"),
                     is_enter_default = true,
                     callback = function()
+                        if self.input_dialog:getInputText() == "" then return end
                         UIManager:close(self.input_dialog)
                         -- Trust that input text does not need any cleaning (allows querying for "-suffix")
                         self:onLookupWikipedia(self.input_dialog:getInputText(), true)
