@@ -50,6 +50,7 @@ function ReaderSearch:onShowFulltextSearchInput()
                 {
                     text = backward_text,
                     callback = function()
+                        if self.input_dialog:getInputText() == "" then return end
                         UIManager:close(self.input_dialog)
                         self:onShowSearchDialog(self.input_dialog:getInputText(), 1)
                     end,
@@ -58,6 +59,7 @@ function ReaderSearch:onShowFulltextSearchInput()
                     text = forward_text,
                     is_enter_default = true,
                     callback = function()
+                        if self.input_dialog:getInputText() == "" then return end
                         UIManager:close(self.input_dialog)
                         self:onShowSearchDialog(self.input_dialog:getInputText(), 0)
                     end,
@@ -70,7 +72,6 @@ function ReaderSearch:onShowFulltextSearchInput()
 end
 
 function ReaderSearch:onShowSearchDialog(text, direction)
-    if text == "" then return end
     local neglect_current_location = false
     local current_page
     local do_search = function(search_func, _text, param)
