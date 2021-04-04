@@ -84,7 +84,7 @@ function FileSearcher:close()
             else
                 UIManager:show(
                     InfoMessage:new{
-                        text = BaseUtil.template(_("No results for '%1'"),
+                        text = BaseUtil.template(_("No results for '%1'."),
                                              self.search_value)
                     }
                 )
