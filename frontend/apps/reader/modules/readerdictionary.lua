@@ -693,6 +693,7 @@ function ReaderDictionary:onShowDictionaryLookup()
                     text = _("Search dictionary"),
                     is_enter_default = true,
                     callback = function()
+                        if self.dictionary_lookup_dialog:getInputText() == "" then return end
                         UIManager:close(self.dictionary_lookup_dialog)
                         -- Trust that input text does not need any cleaning (allows querying for "-suffix")
                         self:onLookupWord(self.dictionary_lookup_dialog:getInputText(), true)
