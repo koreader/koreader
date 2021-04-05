@@ -51,7 +51,7 @@ ko_update_check() {
         rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
         unset BLOCKS CPOINTS
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
-        sync
+        /bin/sync
 
         if [ ${USING_BUTTON_LISTEN} -eq 0 ]; then
             systemctl start button-listen
