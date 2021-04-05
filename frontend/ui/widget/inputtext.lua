@@ -120,6 +120,7 @@ if Device:isTouchDevice() or Device:hasDPad() then
             if self.parent.onSwitchFocus then
                 self.parent:onSwitchFocus(self)
             end
+            if #self.charlist == 0 then return end
             local textwidget_offset = self.margin + self.bordersize + self.padding
             local x = ges.pos.x - self._frame_textwidget.dimen.x - textwidget_offset
             local y = ges.pos.y - self._frame_textwidget.dimen.y - textwidget_offset
