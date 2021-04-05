@@ -6,8 +6,10 @@ if not (Device.isAndroid() or Device.isEmulator() or Device.isRemarkable() or De
     return { disabled = true }
 end
 
+local ConfirmBox = require("ui/widget/confirmbox")
 local Blitbuffer = require("ffi/blitbuffer")
 local InfoMessage = require("ui/widget/infomessage")
+local DataStorage = require("datastorage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local RenderImage = require("ui/renderimage")
@@ -51,10 +53,13 @@ function CoverImage:init()
     self.cover_image_stretch_limit = G_reader_settings:readSetting("cover_image_stretch_limit") or 5
     self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "black"
     self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or "cover_fallback.png"
+    self.cover_image_cache_path = G_reader_settings:readSetting("cover_image_cache_path") or DataStorage:getDataDir() .. "/cache/"
+    self.cover_image_cache_maxfiles = G_reader_settings:readSetting("cover_image_cache_maxfiles") or 36
+    self.cover_image_cache_maxsize = G_reader_settings:readSetting("cover_image_cache_maxsize") or 5 -- MiB
+    self.cover_image_cache_prefix = "CI_CACHE_"
     self.enabled = G_reader_settings:isTrue("cover_image_enabled")
     self.fallback = G_reader_settings:isTrue("cover_image_fallback")
     self.ui.menu:registerToMainMenu(self)
-
 end
 
 function CoverImage:_enabled()
@@ -84,12 +89,27 @@ function CoverImage:createCoverImage(doc_settings)
     if self.enabled and doc_settings:nilOrFalse("exclude_cover_image") then
         local cover_image = self.ui.document:getCoverPageImage()
         if cover_image then
+            local act_format = self.cover_image_format == "auto" and self.cover_image_extension or self.cover_image_format
+            local cache_file = self.cover_image_cache_path .. self.cover_image_cache_prefix
+                .. self.ui.document:getProps().title
+
+            if act_format == "auto" then
+                cache_file = cache_file .. ".jpg"
+            else
+                cache_file = cache_file .. "." .. act_format
+            end
+
+            if lfs.attributes(cache_file, "mode") == "file" then
+                ffiutil.copyFile(cache_file, self.cover_image_path)
+                lfs.touch(cache_file) -- update date
+                return
+            end
+
             local s_w, s_h = Device.screen:getWidth(), Device.screen:getHeight()
             local i_w, i_h = cover_image:getWidth(), cover_image:getHeight()
             local scale_factor = math.min(s_w / i_w, s_h / i_h)
 
             if self.cover_image_background == "none" or scale_factor == 1 then
-                local act_format = self.cover_image_format == "auto" and self.cover_image_extension or self.cover_image_format
                 if not cover_image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality) then
                     UIManager:show(InfoMessage:new{
                         text = _("Error writing file") .. "\n" .. self.cover_image_path,
@@ -97,6 +117,8 @@ function CoverImage:createCoverImage(doc_settings)
                     })
                 end
                 cover_image:free()
+                ffiutil.copyFile(self.cover_image_path, cache_file)
+                self:cleanCache()
                 return
             end
 
@@ -132,7 +154,6 @@ function CoverImage:createCoverImage(doc_settings)
 
             cover_image:free()
 
-            local act_format = self.cover_image_format == "auto" and self.cover_image_extension or self.cover_image_format
             if not image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality) then
                 UIManager:show(InfoMessage:new{
                     text = _("Error writing file") .. "\n" .. self.cover_image_path,
@@ -142,6 +163,9 @@ function CoverImage:createCoverImage(doc_settings)
 
             image:free()
             logger.dbg("CoverImage: image written to " .. self.cover_image_path)
+
+            ffiutil.copyFile(self.cover_image_path, cache_file)
+            self:cleanCache()
         end
     end
 end
@@ -156,6 +180,63 @@ end
 function CoverImage:onReaderReady(doc_settings)
     logger.dbg("CoverImage: onReaderReady")
     self:createCoverImage(doc_settings)
+end
+
+function CoverImage:emptyCache()
+    for entry in lfs.dir(self.cover_image_cache_path) do
+        if entry ~= "." and entry ~= ".." then
+            local file = self.cover_image_cache_path .. entry
+            if entry:sub(1,self.cover_image_cache_prefix:len()) == self.cover_image_cache_prefix
+                and lfs.attributes(file, "mode") == "file" then
+                    os.remove(file)
+            end
+        end
+    end
+end
+
+function CoverImage:cleanCache()
+    if not self:isCacheEnabled() then
+        self:emptyCache()
+        return
+    end
+
+    local cache_count = 0
+    local cache_size_KiB = 0
+    local files = {}
+    for entry in lfs.dir(self.cover_image_cache_path) do
+        if entry ~= "." and entry ~= ".." then
+            local file = self.cover_image_cache_path .. entry
+            if entry:sub(1,self.cover_image_cache_prefix:len()) == self.cover_image_cache_prefix
+                and lfs.attributes(file, "mode") == "file" then
+                cache_count = cache_count + 1
+                files[cache_count] = {
+                    name = file,
+                    size = math.floor((lfs.attributes(file).size + 1023) / 1024), -- round up to KiB
+                    mod = lfs.attributes(file).modification,
+                }
+                cache_size_KiB = cache_size_KiB + files[cache_count].size -- size in KiB
+            end
+        end
+    end
+    logger.dbg("CoverImage: start - cache size: "..cache_size_KiB .. " KiB, cached files: " .. cache_count)
+
+    -- delete the oldest files first
+    table.sort(files, function(a, b) return a.mod < b.mod end)
+    local index = 1
+    while (cache_count > self.cover_image_cache_maxfiles and self.cover_image_cache_maxfiles ~= 0)
+        or (cache_size_KiB > self.cover_image_cache_maxsize * 1024 and self.cover_image_cache_maxsize ~= 0)
+        and index <= #files do
+        os.remove(files[index].name)
+        cache_count = cache_count - 1
+        cache_size_KiB = cache_size_KiB - files[index].size
+        index = index + 1
+    end
+    logger.dbg("CoverImage: clean - cache size: "..cache_size_KiB .. " KiB, cached files: " .. cache_count)
+end
+
+function CoverImage:isCacheEnabled()
+    return self.cover_image_cache_maxfiles >= 0 and self.cover_image_cache_maxsize >= 0
+        and lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
 end
 
 local about_text = _([[
@@ -193,7 +274,7 @@ function CoverImage:addToMainMenu(menu_items)
                 checked_func = function()
                     return self.cover_image_path ~= "" and pathOk(self.cover_image_path)
                 end,
-                help_text = _("The cover of the current book will be stored in this file."),
+                help_text = _("The cover of the current book or the fallback image will be stored in this file."),
                 keep_menu_open = true,
                 callback = function(menu)
                     local InputDialog = require("ui/widget/inputdialog")
@@ -446,6 +527,7 @@ function CoverImage:addToMainMenu(menu_items)
                 checked_func = function()
                     return lfs.attributes(self.cover_image_fallback_path, "mode") == "file"
                 end,
+                help_text = _("This file will used as cover image on document close."),
                 keep_menu_open = true,
                 callback = function(menu)
                     local InputDialog = require("ui/widget/inputdialog")
@@ -500,6 +582,156 @@ function CoverImage:addToMainMenu(menu_items)
                     G_reader_settings:saveSetting("cover_image_fallback", self.fallback)
                 end,
                 separator = true,
+            },
+            -- menu entry: Cache
+            {
+                text = _("Cover image cache"),
+                checked_func = function()
+                    return self:isCacheEnabled()
+                end,
+                sub_item_table = {
+                    {
+                    text = _("Path to cover cache"),
+                    checked_func = function()
+                        return lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
+                    end,
+                    keep_menu_open = true,
+                    callback = function(menu)
+                        local InputDialog = require("ui/widget/inputdialog")
+                        local sample_input
+                        sample_input = InputDialog:new{
+                            title = _("Cover image cache path"),
+                            input = self.cover_image_cache_path,
+                            input_type = "string",
+                            buttons = {
+                                {
+                                    {
+                                        text = _("Cancel"),
+                                        callback = function()
+                                            UIManager:close(sample_input)
+                                        end,
+                                    },
+                                    {
+                                        text = _("Save"),
+                                        is_enter_default = true,
+                                        callback = function()
+                                            self.cover_image_cache_path = sample_input:getInputText()
+                                            G_reader_settings:saveSetting("cover_image_cache_path", self.cover_image_cache_path)
+                                            if lfs.attributes(self.cover_image_cache_path, "mode") ~= "directory"
+                                                and self.cover_image_cache_path ~= "" then
+                                                -- todo: Ask if the folder should be created
+                                                UIManager:show(InfoMessage:new{
+                                                    text = T(_("\"%1\" \nis not a valid folder!"),
+                                                        self.cover_image_cache_path),
+                                                    show_icon = true,
+                                                    timeout = 10,
+                                                })
+                                            end
+                                            if not self.cover_image_cache_path:find("/$") then
+                                                self.cover_image_cache_path = self.cover_image_cache_path .. "/"
+                                            end
+                                            UIManager:close(sample_input)
+                                            menu:updateItems()
+                                        end,
+                                    },
+                                }
+                            },
+                        }
+                        UIManager:show(sample_input)
+                        sample_input:onShowKeyboard()
+                    end,
+                    },
+                    {
+                        text_func = function()
+                            local number
+                            if self.cover_image_cache_maxfiles > 0 then
+                                number = self.cover_image_cache_maxfiles
+                            elseif self.cover_image_cache_maxfiles == 0 then
+                                number = "unlimited"
+                            else
+                                number = "off"
+                            end
+                            return T(_("Maximum number of cached covers (%1)"), number)
+                        end,
+                        help_text = _("If set to zero the number of cache files is unlimited.\nIf set to -1 the cache is disabled."),
+                        checked_func = function()
+                            return self.cover_image_cache_maxfiles >= 0
+                        end,
+                        callback = function(touchmenu_instance)
+                            local SpinWidget = require("ui/widget/spinwidget")
+                            local old_maxfiles = self.cover_image_cache_maxfiles
+                            local size_spinner = SpinWidget:new{
+                                width = math.floor(Device.screen:getWidth() * 0.6),
+                                value = old_maxfiles,
+                                value_min = -1,
+                                value_max = 100,
+                                default_value = 12,
+                                title_text =  _("Number of covers."),
+                                ok_text = _("Set"),
+                                callback = function(spin)
+                                    if self.enabled and spin.value ~= old_maxfiles then
+                                        self.cover_image_cache_maxfiles = spin.value
+                                        G_reader_settings:saveSetting("cover_image_cache_maxfiles", self.cover_image_cache_maxfiles)
+                                        self:cleanCache()
+                                    end
+                                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                                end
+                            }
+                            UIManager:show(size_spinner)
+                        end,
+                    },
+                    {
+                        text_func = function()
+                            local number
+                            if self.cover_image_cache_maxsize > 0 then
+                                number = self.cover_image_cache_maxsize
+                            elseif self.cover_image_cache_maxsize == 0 then
+                                number = "unlimited"
+                            else
+                                number = "off"
+                            end
+                            return T(_("Maximum size of cached covers (%1MiB)"), number)
+                        end,
+                        help_text = _("If set to zero the cache size is unlimited.\nIf set to -1 the cache is disabled."),
+                        checked_func = function()
+                            return self.cover_image_cache_maxsize >= 0
+                        end,
+                        callback = function(touchmenu_instance)
+                            local SpinWidget = require("ui/widget/spinwidget")
+                            local old_maxsize = self.cover_image_cache_maxsize
+                            local size_spinner = SpinWidget:new{
+                                width = math.floor(Device.screen:getWidth() * 0.6),
+                                value = old_maxsize,
+                                value_min = -1,
+                                value_max = 100,
+                                default_value = 12,
+                                title_text =  _("Cache size."),
+                                ok_text = _("Set"),
+                                callback = function(spin)
+                                    if self.enabled and spin.value ~= old_maxsize then
+                                        self.cover_image_cache_maxsize = spin.value
+                                        G_reader_settings:saveSetting("cover_image_cache_maxsize", self.cover_image_cache_maxsize)
+                                        self:cleanCache()
+                                    end
+                                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                                end
+                            }
+                            UIManager:show(size_spinner)
+                        end,
+                    },
+                    {
+                        text = _("Clear cached covers"),
+                        callback = function()
+                            UIManager:show(ConfirmBox:new{
+                                text = _("Do you really want to clear the cover image cache?"),
+                                ok_text = _("Clear"),
+                                ok_callback = function()
+                                    self:emptyCache()
+                                end,
+                            })
+                        end,
+                    },
+                },
             },
         },
     }
