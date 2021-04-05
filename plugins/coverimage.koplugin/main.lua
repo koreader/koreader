@@ -85,20 +85,24 @@ function CoverImage:cleanUpImage()
     end
 end
 
+function CoverImage:getCacheFile()
+    local cache_file = self.cover_image_cache_path .. self.cover_image_cache_prefix .. self.ui.document:getProps().title
+        .. "_" .. self.cover_image_quality .. "_" .. self.cover_image_stretch_limit .. "_" .. self.cover_image_background
+
+    local act_format = self.cover_image_format == "auto" and self.cover_image_extension or self.cover_image_format
+    if act_format == "auto" then
+        cache_file = cache_file .. ".jpg"
+    else
+        cache_file = cache_file .. "." .. act_format
+    end
+    return cache_file
+end
+
 function CoverImage:createCoverImage(doc_settings)
     if self.enabled and doc_settings:nilOrFalse("exclude_cover_image") then
         local cover_image = self.ui.document:getCoverPageImage()
         if cover_image then
-            local act_format = self.cover_image_format == "auto" and self.cover_image_extension or self.cover_image_format
-            local cache_file = self.cover_image_cache_path .. self.cover_image_cache_prefix
-                .. self.ui.document:getProps().title
-
-            if act_format == "auto" then
-                cache_file = cache_file .. ".jpg"
-            else
-                cache_file = cache_file .. "." .. act_format
-            end
-
+            local cache_file = self:getCacheFile()
             if lfs.attributes(cache_file, "mode") == "file" then
                 ffiutil.copyFile(cache_file, self.cover_image_path)
                 lfs.touch(cache_file) -- update date
@@ -110,6 +114,7 @@ function CoverImage:createCoverImage(doc_settings)
             local scale_factor = math.min(s_w / i_w, s_h / i_h)
 
             if self.cover_image_background == "none" or scale_factor == 1 then
+                local act_format = self.cover_image_format == "auto" and self.cover_image_extension or self.cover_image_format
                 if not cover_image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality) then
                     UIManager:show(InfoMessage:new{
                         text = _("Error writing file") .. "\n" .. self.cover_image_path,
@@ -154,6 +159,7 @@ function CoverImage:createCoverImage(doc_settings)
 
             cover_image:free()
 
+            local act_format = self.cover_image_format == "auto" and self.cover_image_extension or self.cover_image_format
             if not image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality) then
                 UIManager:show(InfoMessage:new{
                     text = _("Error writing file") .. "\n" .. self.cover_image_path,
