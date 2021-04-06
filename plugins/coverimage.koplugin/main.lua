@@ -20,6 +20,10 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
+local PathChooser = require("ui/widget/pathchooser")
+local Screen = require("device").screen
+local InputDialog = require("ui/widget/inputdialog")
+
 local function pathOk(filename)
     local path, name = util.splitFilePathName(filename)
     if not Device:isValidPath(path) then -- isValidPath expects a trailing slash
@@ -75,7 +79,7 @@ function CoverImage:cleanUpImage()
         os.remove(self.cover_image_path)
     elseif lfs.attributes(self.cover_image_fallback_path, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
-            text = T(_("\"%1\" \nis not a valid image file!\nA valid fallback image is required in Cover-Image."), self.cover_image_fallback_path),
+            text = T(_("\"%1\"\nis not a valid image file!\nA valid fallback image is required in Cover-Image."), self.cover_image_fallback_path),
             show_icon = true,
             timeout = 10,
         })
@@ -245,6 +249,57 @@ function CoverImage:isCacheEnabled()
         and lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
 end
 
+function CoverImage:choosePathFile(setting, path_only, new_file)
+    local old_path, old_name = util.splitFilePathName(self[setting])
+    local path_chooser = PathChooser:new{
+        select_directory = true,
+        select_file = not path_only,
+        height = Screen:getHeight(),
+        path = old_path,
+        onConfirm = function(dir_path)
+            if path_only  then
+                if not dir_path:find("/$") then
+                    dir_path = dir_path .. "/"
+                end
+                G_reader_settings:saveSetting(setting, dir_path)
+                self[setting] = dir_path
+                return
+            end
+
+            if new_file then
+                local file_input
+                if lfs.attributes(dir_path, "mode" ) == "directory" then
+                    dir_path = dir_path .. "/"
+                end
+
+                file_input = InputDialog:new{
+                    title =  _("Enter filename"),
+--                    input = dir_path == "/" and "/" or dir_path,
+                    input = dir_path,
+                    buttons = {{
+                        {
+                            text = _("Cancel"),
+                        },
+                        {
+                            text = _("Save"),
+                            callback = function()
+                                local file_path = file_input:getInputText()
+                                UIManager:close(file_input)
+                                self[setting] = file_input:getInputText()
+                            end,
+                        },
+                    }},
+                }
+                UIManager:show(file_input)
+                file_input:onShowKeyboard()
+            end
+        end,
+    }
+    UIManager:show(path_chooser)
+end
+
+
+
 local about_text = _([[
 This plugin saves the current book cover to a file. That file can be used as a screensaver on certain Android devices, such as Tolinos.
 
@@ -276,58 +331,19 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: filename dialog
             {
-                text = _("Set image path"),
+                text = _("Set image"),
                 checked_func = function()
                     return self.cover_image_path ~= "" and pathOk(self.cover_image_path)
                 end,
-                help_text = _("The cover of the current book or the fallback image will be stored in this file."),
+                help_text = _([[The cover of the current book or the fallback image will be stored in this file.
+
+To select a new file, you will have to:
+
+- First select a directory
+- Then enter a name for the new file]]),
                 keep_menu_open = true,
                 callback = function(menu)
-                    local InputDialog = require("ui/widget/inputdialog")
-                    local sample_input
-                    sample_input = InputDialog:new{
-                        title = _("Screensaver image filename"),
-                        input = self.cover_image_path,
-                        input_type = "string",
-                        description = _("You can enter the filename of the cover image here."),
-                        buttons = {
-                            {
-                                {
-                                    text = _("Cancel"),
-                                    callback = function()
-                                        UIManager:close(sample_input)
-                                    end,
-                                },
-                                {
-                                    text = _("Save"),
-                                    is_enter_default = true,
-                                    callback = function()
-                                        local new_cover_image_path = sample_input:getInputText()
-                                        if new_cover_image_path ~= self.cover_image_path then
-                                            self:cleanUpImage() -- with old filename
-                                            self.cover_image_path = new_cover_image_path -- update filename
-                                            G_reader_settings:saveSetting("cover_image_path", self.cover_image_path)
-                                            local is_path_ok, is_path_ok_message = pathOk(self.cover_image_path)
-                                            if self.cover_image_path ~= "" and is_path_ok then
-                                                self:createCoverImage(self.ui.doc_settings) -- with new filename
-                                            else
-                                                self.enabled = false
-                                                UIManager:show(InfoMessage:new{
-                                                    text = is_path_ok_message,
-                                                    show_icon = true,
-                                                })
-                                            end
-                                        end
-                                        self.cover_image_extension = getExtension(self.cover_image_path)
-                                        UIManager:close(sample_input)
-                                        menu:updateItems()
-                                    end,
-                                },
-                            }
-                        },
-                    }
-                    UIManager:show(sample_input)
-                    sample_input:onShowKeyboard()
+                    self:choosePathFile("cover_image_path", false, true)
                 end,
             },
             -- menu entry: enable
@@ -536,45 +552,8 @@ function CoverImage:addToMainMenu(menu_items)
                 help_text = _("This file will used as cover image on document close."),
                 keep_menu_open = true,
                 callback = function(menu)
-                    local InputDialog = require("ui/widget/inputdialog")
-                    local sample_input
-                    sample_input = InputDialog:new{
-                        title = _("Fallback image filename"),
-                        input = self.cover_image_fallback_path,
-                        input_type = "string",
-                        description = _("Leave this empty to remove the cover when the document is closed."),
-                        buttons = {
-                            {
-                                {
-                                    text = _("Cancel"),
-                                    callback = function()
-                                        UIManager:close(sample_input)
-                                    end,
-                                },
-                                {
-                                    text = _("Save"),
-                                    is_enter_default = true,
-                                    callback = function()
-                                        self.cover_image_fallback_path = sample_input:getInputText()
-                                        G_reader_settings:saveSetting("cover_image_fallback_path", self.cover_image_fallback_path)
-                                        if lfs.attributes(self.cover_image_fallback_path, "mode") ~= "file"
-                                            and self.cover_image_fallback_path ~= "" then
-                                            UIManager:show(InfoMessage:new{
-                                                text = T(_("\"%1\" \nis not a valid image file!\nA valid fallback image is required in Cover-Image"),
-                                                    self.cover_image_fallback_path),
-                                                show_icon = true,
-                                                timeout = 10,
-                                            })
-                                        end
-                                        UIManager:close(sample_input)
-                                        menu:updateItems()
-                                    end,
-                                },
-                            }
-                        },
-                    }
-                    UIManager:show(sample_input)
-                    sample_input:onShowKeyboard()
+                    self:choosePathFile("cover_image_fallback_path", false, false)
+
                 end,
             },
             -- menu entry: fallback
@@ -602,7 +581,7 @@ function CoverImage:addToMainMenu(menu_items)
                         return lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
                     end,
                     keep_menu_open = true,
-                    callback = function(menu)
+--[[                    callback = function(menu)
                         local InputDialog = require("ui/widget/inputdialog")
                         local sample_input
                         sample_input = InputDialog:new{
@@ -627,7 +606,7 @@ function CoverImage:addToMainMenu(menu_items)
                                                 and self.cover_image_cache_path ~= "" then
                                                 -- todo: Ask if the folder should be created
                                                 UIManager:show(InfoMessage:new{
-                                                    text = T(_("\"%1\" \nis not a valid folder!"),
+                                                    text = T(_("\"%1\"\nis not a valid folder!"),
                                                         self.cover_image_cache_path),
                                                     show_icon = true,
                                                     timeout = 10,
@@ -645,7 +624,19 @@ function CoverImage:addToMainMenu(menu_items)
                         }
                         UIManager:show(sample_input)
                         sample_input:onShowKeyboard()
-                    end,
+                    end,]]
+
+                    callback = function()
+                        self:choosePathFile("cover_image_cache_path", true, false)
+
+
+                    end
+
+
+
+
+
+
                     },
                     {
                         text_func = function()
