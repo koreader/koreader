@@ -192,6 +192,7 @@ function CoverImage:onReaderReady(doc_settings)
     self:createCoverImage(doc_settings)
 end
 
+-- cache handling functions
 function CoverImage:emptyCache()
     for entry in lfs.dir(self.cover_image_cache_path) do
         if entry ~= "." and entry ~= ".." then
@@ -276,30 +277,27 @@ end
 chooses a path or (an existing) file
 
 @string setting is the G_reader_setting which is used and changed
-@boolean path_only just selects a path, no file handling
+@boolean folder_only just selects a path, no file handling
 @boolean new_file allows to enter a new filename, or use just an existing file
 @function migrate(a,b) callback to a function to mangle old folder/file with new folder/file.
     Can used for migrating the contents of the old path to the new one
 ]]
-function CoverImage:choosePathFile(setting, path_only, new_file, migrate)
+function CoverImage:choosePathFile(setting, folder_only, new_file, migrate)
     local old_path, old_name = util.splitFilePathName(self[setting])
     local path_chooser = PathChooser:new{
         select_directory = true,
-        select_file = not path_only,
+        select_file = not folder_only,
         height = Screen:getHeight(),
         path = old_path,
         onConfirm = function(dir_path)
-            if path_only  then
+            if folder_only then -- just select a folder
                 if not dir_path:find("/$") then
                     dir_path = dir_path .. "/"
                 end
                 migrate(self, self[setting], dir_path)
                 self[setting] = dir_path
                 G_reader_settings:saveSetting(setting, dir_path)
-                return
-            end
-
-            if new_file then
+            elseif new_file then -- new filename should be entered
                 local file_input
                 if lfs.attributes(dir_path, "mode" ) == "directory" then
                     dir_path = dir_path .. "/"
@@ -329,11 +327,11 @@ function CoverImage:choosePathFile(setting, path_only, new_file, migrate)
                 }
                 UIManager:show(file_input)
                 file_input:onShowKeyboard()
-            else
+            else -- an existing file selected
                 if migrate and self[setting] and self[setting] ~= "" then
-                    migrate(self, self[setting], new_file)
+                    migrate(self, self[setting], dir_path)
                 end
-                self[setting] = file
+                self[setting] = dir_path
                 G_reader_settings:saveSetting(setting, dir_path)
 
             end
@@ -708,6 +706,7 @@ function CoverImage:addToMainMenu(menu_items)
                     },
                     {
                         text = _("Clear cached covers"),
+                        keep_menu_open = true,
                         callback = function()
                             local cache_count, cache_size_KiB
                                 = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
