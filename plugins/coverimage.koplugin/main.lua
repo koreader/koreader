@@ -363,6 +363,8 @@ function CoverImage:sizeSpinner(touchmenu_instance, setting, title, min, max)
     UIManager:show(size_spinner)
 end
 
+-------------- menus and longer texts -----------
+
 local about_text = _([[
 This plugin saves the current book cover to a file. That file can be used as a screensaver on certain Android devices, such as Tolinos.
 
@@ -381,6 +383,253 @@ You can either choose an existing file:
 or specify a new file:
 - First select a directory
 - Then enter a name for the new file]])
+
+-- menu entry: Cache settings
+function CoverImage:cover_image_cache_menu()
+    return {
+        text = _("Cover image cache settings"),
+        checked_func = function()
+            return self:isCacheEnabled()
+        end,
+        sub_item_table = {
+            {
+            text = _("Cover cache folder"),
+            checked_func = function()
+                return lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
+            end,
+            keep_menu_open = true,
+            callback = function()
+                UIManager:show(ConfirmBox:new{
+                    text = _("Select a cache folder. The contents of the old folder will be migrated."),
+                    ok_text = _("Yes"),
+                    cancel_text = _("No"),
+                    ok_callback = function()
+                        self:choosePathFile("cover_image_cache_path", true, false, self.migrateCache)
+                    end,
+                })
+            end,
+            },
+            {
+                text_func = function()
+                    local number
+                    if self.cover_image_cache_maxfiles > 0 then
+                        number = self.cover_image_cache_maxfiles
+                    elseif self.cover_image_cache_maxfiles == 0 then
+                        number = _("unlimited")
+                    else
+                        number = _("off")
+                    end
+                    return T(_("Maximum number of cached covers (%1)"), number)
+                end,
+                help_text = _("If set to zero the number of cache files is unlimited.\nIf set to -1 the cache is disabled."),
+                checked_func = function()
+                    return self.cover_image_cache_maxfiles >= 0
+                end,
+                callback = function(touchmenu_instance)
+                    self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxfiles", _("Number of covers"), -1, 100)
+                end,
+            },
+            {
+                text_func = function()
+                    local number
+                    if self.cover_image_cache_maxsize > 0 then
+                        number = self.cover_image_cache_maxsize
+                    elseif self.cover_image_cache_maxsize == 0 then
+                        number = _("unlimited")
+                    else
+                        number = _("off")
+                    end
+                    return T(_("Maximum size of cached covers (%1MiB)"), number)
+                end,
+                help_text = _("If set to zero the cache size is unlimited.\nIf set to -1 the cache is disabled."),
+                checked_func = function()
+                    return self.cover_image_cache_maxsize >= 0
+                end,
+                callback = function(touchmenu_instance)
+                    self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxsize", _("Cache size"), -1, 100)
+                end,
+            },
+            {
+                text = _("Clear cached covers"),
+                keep_menu_open = true,
+                callback = function()
+                    local cache_count, cache_size_KiB
+                        = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
+                    local clear_text = T(_("Do you really want to clear the cover image cache?\nIt contains %1 files and uses %1 MiB."),
+                        cache_count, cache_size_KiB / 1024)
+                    UIManager:show(ConfirmBox:new{
+                        text = clear_text,
+                        ok_text = _("Clear"),
+                        ok_callback = function()
+                            self:emptyCache()
+                        end,
+                    })
+                end,
+            },
+        },
+    }
+end
+
+-- menu entry: scale, background, format
+function CoverImage:cover_image_sbf_menu()
+    return {
+        text = _("Size, background and format"),
+        enabled_func = function()
+            return self.enabled
+        end,
+        sub_item_table = {
+            {
+                text_func = function()
+                    return T(_("Aspect ratio stretch threshold (%1%)"), self.cover_image_stretch_limit )
+                end,
+                help_text_func = function()
+                    return T(_("If the image and the screen have a similar aspect ratio (±%1%), stretch the image instead of keeping its aspect ratio."), self.cover_image_stretch_limit )
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local old_stretch_limit = self.cover_image_stretch_limit
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local size_spinner = SpinWidget:new{
+                        width = math.floor(Device.screen:getWidth() * 0.6),
+                        value = old_stretch_limit,
+                        value_min = 0,
+                        value_max = 25,
+                        default_value = 5,
+                        title_text =  _("Set stretch threshold"),
+                        ok_text = _("Set"),
+                        callback = function(spin)
+                            if self.enabled and spin.value ~= old_stretch_limit then
+                                self.cover_image_stretch_limit = spin.value
+                                G_reader_settings:saveSetting("cover_image_stretch_limit", self.cover_image_stretch_limit)
+                                self:createCoverImage(self.ui.doc_settings)
+                            end
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end
+                    }
+                    UIManager:show(size_spinner)
+                    if self.enabled and old_stretch_limit ~= self.cover_image_stretch_limit then
+                        self:createCoverImage(self.ui.doc_settings)
+                    end
+                end,
+            },
+            {
+                text = _("Fit to screen, black background"),
+                checked_func = function()
+                    return self.cover_image_background == "black"
+                end,
+                callback = function()
+                    local old_background = self.cover_image_background
+                    self.cover_image_background = "black"
+                    G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
+                    if self.enabled and old_background ~= self.cover_image_background then
+                        self:createCoverImage(self.ui.doc_settings)
+                    end
+                end,
+            },
+            {
+                text = _("Fit to screen, white background"),
+                checked_func = function()
+                    return self.cover_image_background == "white"
+                end,
+                callback = function()
+                    local old_background = self.cover_image_background
+                    self.cover_image_background = "white"
+                    G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
+                    if self.enabled and old_background ~= self.cover_image_background then
+                        self:createCoverImage(self.ui.doc_settings)
+                    end
+                end,
+            },
+            {
+                text = _("Fit to screen, gray background"),
+                checked_func = function()
+                    return self.cover_image_background == "gray"
+                end,
+                callback = function()
+                    local old_background = self.cover_image_background
+                    self.cover_image_background = "gray"
+                    G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
+                    if self.enabled and old_background ~= self.cover_image_background then
+                        self:createCoverImage(self.ui.doc_settings)
+                    end
+                end,
+            },
+            {
+                text = _("Original image"),
+                checked_func = function()
+                    return self.cover_image_background == "none"
+                end,
+                callback = function()
+                    local old_background = self.cover_image_background
+                    self.cover_image_background = "none"
+                    G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
+                    if self.enabled and old_background ~= self.cover_image_background then
+                        self:createCoverImage(self.ui.doc_settings)
+                    end
+                end,
+                separator = true,
+            },
+            -- menu entries: File format
+            {
+                text = _("File format derived from filename"),
+                help_text = _("If the file format is not supported, then JPG will be used."),
+                checked_func = function()
+                    return self.cover_image_format == "auto"
+                end,
+                callback = function()
+                    local old_cover_image_format = self.cover_image_format
+                    self.cover_image_format = "auto"
+                    G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
+                    if self.enabled and old_cover_image_format ~= self.cover_image_format then
+                        self:createCoverImage(self.ui.doc_settings)
+                    end
+                end,
+            },
+            {
+                text = _("JPG file format"),
+                checked_func = function()
+                    return self.cover_image_format == "jpg"
+                end,
+                callback = function()
+                    local old_cover_image_format = self.cover_image_format
+                    self.cover_image_format = "jpg"
+                    G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
+                    if self.enabled and old_cover_image_format ~= self.cover_image_format then
+                        self:createCoverImage(self.ui.doc_settings)
+                    end
+                end,
+            },
+            {
+                text = _("PNG file format"),
+                checked_func = function()
+                    return self.cover_image_format == "png"
+                end,
+                callback = function()
+                    local old_cover_image_format = self.cover_image_format
+                    self.cover_image_format = "png"
+                    G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
+                    if self.enabled and old_cover_image_format ~= self.cover_image_format then
+                        self:createCoverImage(self.ui.doc_settings)
+                    end
+                end,
+            },
+            {
+                text = _("BMP file format"),
+                checked_func = function()
+                    return self.cover_image_format == "bmp"
+                end,
+                callback = function()
+                    local old_cover_image_format = self.cover_image_format
+                    self.cover_image_format = "bmp"
+                    G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
+                    if self.enabled and old_cover_image_format ~= self.cover_image_format then
+                        self:createCoverImage(self.ui.doc_settings)
+                    end
+                end,
+            },
+        }
+    }
+end
 
 function CoverImage:addToMainMenu(menu_items)
     menu_items.coverimage = {
@@ -440,164 +689,8 @@ function CoverImage:addToMainMenu(menu_items)
                     end
                 end,
             },
-            -- menu entry: scale book cover
-            {
-                text = _("Size, background and format"),
-                enabled_func = function()
-                    return self.enabled
-                end,
-                sub_item_table = {
-                    {
-                        text_func = function()
-                            return T(_("Aspect ratio stretch threshold (%1%)"), self.cover_image_stretch_limit )
-                        end,
-                        help_text_func = function()
-                            return T(_("If the image and the screen have a similar aspect ratio (±%1%), stretch the image instead of keeping its aspect ratio."), self.cover_image_stretch_limit )
-                        end,
-                        keep_menu_open = true,
-                        callback = function(touchmenu_instance)
-                            local old_stretch_limit = self.cover_image_stretch_limit
-                            local SpinWidget = require("ui/widget/spinwidget")
-                            local size_spinner = SpinWidget:new{
-                                width = math.floor(Device.screen:getWidth() * 0.6),
-                                value = old_stretch_limit,
-                                value_min = 0,
-                                value_max = 25,
-                                default_value = 5,
-                                title_text =  _("Set stretch threshold"),
-                                ok_text = _("Set"),
-                                callback = function(spin)
-                                    if self.enabled and spin.value ~= old_stretch_limit then
-                                        self.cover_image_stretch_limit = spin.value
-                                        G_reader_settings:saveSetting("cover_image_stretch_limit", self.cover_image_stretch_limit)
-                                        self:createCoverImage(self.ui.doc_settings)
-                                    end
-                                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                                end
-                            }
-                            UIManager:show(size_spinner)
-                            if self.enabled and old_stretch_limit ~= self.cover_image_stretch_limit then
-                                self:createCoverImage(self.ui.doc_settings)
-                            end
-                        end,
-                    },
-                    {
-                        text = _("Fit to screen, black background"),
-                        checked_func = function()
-                            return self.cover_image_background == "black"
-                        end,
-                        callback = function()
-                            local old_background = self.cover_image_background
-                            self.cover_image_background = "black"
-                            G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
-                            if self.enabled and old_background ~= self.cover_image_background then
-                                self:createCoverImage(self.ui.doc_settings)
-                            end
-                        end,
-                    },
-                    {
-                        text = _("Fit to screen, white background"),
-                        checked_func = function()
-                            return self.cover_image_background == "white"
-                        end,
-                        callback = function()
-                            local old_background = self.cover_image_background
-                            self.cover_image_background = "white"
-                            G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
-                            if self.enabled and old_background ~= self.cover_image_background then
-                                self:createCoverImage(self.ui.doc_settings)
-                            end
-                        end,
-                    },
-                    {
-                        text = _("Fit to screen, gray background"),
-                        checked_func = function()
-                            return self.cover_image_background == "gray"
-                        end,
-                        callback = function()
-                            local old_background = self.cover_image_background
-                            self.cover_image_background = "gray"
-                            G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
-                            if self.enabled and old_background ~= self.cover_image_background then
-                                self:createCoverImage(self.ui.doc_settings)
-                            end
-                        end,
-                    },
-                    {
-                        text = _("Original image"),
-                        checked_func = function()
-                            return self.cover_image_background == "none"
-                        end,
-                        callback = function()
-                            local old_background = self.cover_image_background
-                            self.cover_image_background = "none"
-                            G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
-                            if self.enabled and old_background ~= self.cover_image_background then
-                                self:createCoverImage(self.ui.doc_settings)
-                            end
-                        end,
-                        separator = true,
-                    },
-                    -- menu entries: File format
-                    {
-                        text = _("File format derived from filename"),
-                        help_text = _("If the file format is not supported, then JPG will be used."),
-                        checked_func = function()
-                            return self.cover_image_format == "auto"
-                        end,
-                        callback = function()
-                            local old_cover_image_format = self.cover_image_format
-                            self.cover_image_format = "auto"
-                            G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
-                            if self.enabled and old_cover_image_format ~= self.cover_image_format then
-                                self:createCoverImage(self.ui.doc_settings)
-                            end
-                        end,
-                    },
-                    {
-                        text = _("JPG file format"),
-                        checked_func = function()
-                            return self.cover_image_format == "jpg"
-                        end,
-                        callback = function()
-                            local old_cover_image_format = self.cover_image_format
-                            self.cover_image_format = "jpg"
-                            G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
-                            if self.enabled and old_cover_image_format ~= self.cover_image_format then
-                                self:createCoverImage(self.ui.doc_settings)
-                            end
-                        end,
-                    },
-                    {
-                        text = _("PNG file format"),
-                        checked_func = function()
-                            return self.cover_image_format == "png"
-                        end,
-                        callback = function()
-                            local old_cover_image_format = self.cover_image_format
-                            self.cover_image_format = "png"
-                            G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
-                            if self.enabled and old_cover_image_format ~= self.cover_image_format then
-                                self:createCoverImage(self.ui.doc_settings)
-                            end
-                        end,
-                    },
-                    {
-                        text = _("BMP file format"),
-                        checked_func = function()
-                            return self.cover_image_format == "bmp"
-                        end,
-                        callback = function()
-                            local old_cover_image_format = self.cover_image_format
-                            self.cover_image_format = "bmp"
-                            G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
-                            if self.enabled and old_cover_image_format ~= self.cover_image_format then
-                                self:createCoverImage(self.ui.doc_settings)
-                            end
-                        end,
-                    },
-                }
-            },
+            -- menu entry: scale, background, format
+            self:cover_image_sbf_menu(),
             -- menu entry: exclude this cover
             {
                 text = _("Exclude this book cover"),
@@ -640,89 +733,8 @@ function CoverImage:addToMainMenu(menu_items)
                 end,
                 separator = true,
             },
-            -- menu entry: Cache
-            {
-                text = _("Cover image cache settings"),
-                checked_func = function()
-                    return self:isCacheEnabled()
-                end,
-                sub_item_table = {
-                    {
-                    text = _("Cover cache folder"),
-                    checked_func = function()
-                        return lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
-                    end,
-                    keep_menu_open = true,
-                    callback = function()
-                        UIManager:show(ConfirmBox:new{
-                            text = _("Select a cache folder. The contents of the old folder will be migrated."),
-                            ok_text = _("Yes"),
-                            cancel_text = _("No"),
-                            ok_callback = function()
-                                self:choosePathFile("cover_image_cache_path", true, false, self.migrateCache)
-                            end,
-                        })
-                    end,
-                    },
-                    {
-                        text_func = function()
-                            local number
-                            if self.cover_image_cache_maxfiles > 0 then
-                                number = self.cover_image_cache_maxfiles
-                            elseif self.cover_image_cache_maxfiles == 0 then
-                                number = _("unlimited")
-                            else
-                                number = _("off")
-                            end
-                            return T(_("Maximum number of cached covers (%1)"), number)
-                        end,
-                        help_text = _("If set to zero the number of cache files is unlimited.\nIf set to -1 the cache is disabled."),
-                        checked_func = function()
-                            return self.cover_image_cache_maxfiles >= 0
-                        end,
-                        callback = function(touchmenu_instance)
-                            self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxfiles", _("Number of covers"), -1, 100)
-                        end,
-                    },
-                    {
-                        text_func = function()
-                            local number
-                            if self.cover_image_cache_maxsize > 0 then
-                                number = self.cover_image_cache_maxsize
-                            elseif self.cover_image_cache_maxsize == 0 then
-                                number = _("unlimited")
-                            else
-                                number = _("off")
-                            end
-                            return T(_("Maximum size of cached covers (%1MiB)"), number)
-                        end,
-                        help_text = _("If set to zero the cache size is unlimited.\nIf set to -1 the cache is disabled."),
-                        checked_func = function()
-                            return self.cover_image_cache_maxsize >= 0
-                        end,
-                        callback = function(touchmenu_instance)
-                            self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxsize", _("Cache size"), -1, 100)
-                        end,
-                    },
-                    {
-                        text = _("Clear cached covers"),
-                        keep_menu_open = true,
-                        callback = function()
-                            local cache_count, cache_size_KiB
-                                = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
-                            local clear_text = T(_("Do you really want to clear the cover image cache?\nIt contains %1 files and uses %1 MiB."),
-                                cache_count, cache_size_KiB / 1024)
-                            UIManager:show(ConfirmBox:new{
-                                text = clear_text,
-                                ok_text = _("Clear"),
-                                ok_callback = function()
-                                    self:emptyCache()
-                                end,
-                            })
-                        end,
-                    },
-                },
-            },
+            -- menu entry: Cache settings
+            self:cover_image_cache_menu(),
         },
     }
 end
