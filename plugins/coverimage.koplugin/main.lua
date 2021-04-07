@@ -327,35 +327,45 @@ function CoverImage:choosePathFile(setting, folder_only, new_file, migrate)
                 }
                 UIManager:show(file_input)
                 file_input:onShowKeyboard()
-            else -- an existing file selected
+            else -- just select an existing file
                 if migrate and self[setting] and self[setting] ~= "" then
                     migrate(self, self[setting], dir_path)
                 end
                 self[setting] = dir_path
                 G_reader_settings:saveSetting(setting, dir_path)
-
             end
         end,
     }
     UIManager:show(path_chooser)
 end
 
-function CoverImage:sizeSpinner(touchmenu_instance, setting, title, min, max)
+--[[--
+changes a G_reader_setting with an size spinner
+
+@touchmenu_instance used
+@string setting is the G_reader_setting which is used and changed
+@string title shown in the spinner
+@int min minimum value of the spinner
+@int max maximum value of the spinner
+@int default default value of the spinner
+@function callback to call, when spinner changed the value
+]]
+function CoverImage:sizeSpinner(touchmenu_instance, setting, title, min, max, default, callback)
     local SpinWidget = require("ui/widget/spinwidget")
-    local old_maxfiles = self[setting]
+    local old_val = self[setting]
     local size_spinner = SpinWidget:new{
     width = math.floor(Device.screen:getWidth() * 0.6),
-    value = old_maxfiles,
+    value = self[setting],
     value_min = min,
         value_max = max,
-        default_value = 12,
+        default_value = default,
         title_text = title,
         ok_text = _("Set"),
         callback = function(spin)
-            if self.enabled and spin.value ~= old_maxfiles then
-                self.cover_image_cache_maxfiles = spin.value
-                G_reader_settings:saveSetting("cover_image_cache_maxfiles", self[setting])
-                self:cleanCache()
+            if self.enabled and spin.value ~= old_val then
+                self[setting] = spin.value
+                G_reader_settings:saveSetting(setting, self[setting])
+                callback(self)
             end
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end
@@ -426,7 +436,7 @@ function CoverImage:cover_image_cache_menu()
                     return self.cover_image_cache_maxfiles >= 0
                 end,
                 callback = function(touchmenu_instance)
-                    self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxfiles", _("Number of covers"), -1, 100)
+                    self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxfiles", _("Number of covers"), -1, 100, 36, self.cleanCache)
                 end,
             },
             {
@@ -446,7 +456,7 @@ function CoverImage:cover_image_cache_menu()
                     return self.cover_image_cache_maxsize >= 0
                 end,
                 callback = function(touchmenu_instance)
-                    self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxsize", _("Cache size"), -1, 100)
+                    self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxsize", _("Cache size"), -1, 100, 5, self.cleanCache)
                 end,
             },
             {
