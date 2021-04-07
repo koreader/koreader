@@ -204,19 +204,14 @@ function CoverImage:emptyCache()
     end
 end
 
-function CoverImage:cleanCache()
-    if not self:isCacheEnabled() then
-        self:emptyCache()
-        return
-    end
-
+function CoverImage:getCacheFiles(cache_path, cache_prefix)
     local cache_count = 0
     local cache_size_KiB = 0
     local files = {}
     for entry in lfs.dir(self.cover_image_cache_path) do
         if entry ~= "." and entry ~= ".." then
-            local file = self.cover_image_cache_path .. entry
-            if entry:sub(1,self.cover_image_cache_prefix:len()) == self.cover_image_cache_prefix
+            local file = cache_path .. entry
+            if entry:sub(1,self.cover_image_cache_prefix:len()) == cache_prefix
                 and lfs.attributes(file, "mode") == "file" then
                 cache_count = cache_count + 1
                 files[cache_count] = {
@@ -229,6 +224,16 @@ function CoverImage:cleanCache()
         end
     end
     logger.dbg("CoverImage: start - cache size: "..cache_size_KiB .. " KiB, cached files: " .. cache_count)
+    return cache_count, cache_size_KiB, files
+end
+
+function CoverImage:cleanCache()
+    if not self:isCacheEnabled() then
+        self:emptyCache()
+        return
+    end
+
+    local cache_count, cache_size_KiB, files = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
 
     -- delete the oldest files first
     table.sort(files, function(a, b) return a.mod < b.mod end)
@@ -249,7 +254,34 @@ function CoverImage:isCacheEnabled()
         and lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
 end
 
-function CoverImage:choosePathFile(setting, path_only, new_file)
+function CoverImage:migrateCache(old_path, new_path)
+    for entry in lfs.dir(old_path) do
+        if entry ~= "." and entry ~= ".."   then
+            local old_file = old_path .. entry
+            if lfs.attributes(old_file, "mode") == "file" and entry:sub(1,self.cover_image_cache_prefix:len()) == self.cover_image_cache_prefix then
+                local old_access_time = lfs.attributes(old_file, "access")
+                local new_file = new_path .. entry
+                os.rename(old_file, new_file)
+                lfs.touch(old_file, old_access_time) -- restore original time
+            end
+        end
+    end
+end
+
+function CoverImage:migrateCover(old_file, new_file)
+    os.rename(old_file, new_file)
+end
+
+--[[--
+chooses a path or (an existing) file
+
+@string setting is the G_reader_setting which is used and changed
+@boolean path_only just selects a path, no file handling
+@boolean new_file allows to enter a new filename, or use just an existing file
+@function migrate(a,b) callback to a function to mangle old folder/file with new folder/file.
+    Can used for migrating the contents of the old path to the new one
+]]
+function CoverImage:choosePathFile(setting, path_only, new_file, migrate)
     local old_path, old_name = util.splitFilePathName(self[setting])
     local path_chooser = PathChooser:new{
         select_directory = true,
@@ -261,8 +293,9 @@ function CoverImage:choosePathFile(setting, path_only, new_file)
                 if not dir_path:find("/$") then
                     dir_path = dir_path .. "/"
                 end
-                G_reader_settings:saveSetting(setting, dir_path)
+                migrate(self, self[setting], dir_path)
                 self[setting] = dir_path
+                G_reader_settings:saveSetting(setting, dir_path)
                 return
             end
 
@@ -283,22 +316,54 @@ function CoverImage:choosePathFile(setting, path_only, new_file)
                         {
                             text = _("Save"),
                             callback = function()
-                                local file_path = file_input:getInputText()
                                 UIManager:close(file_input)
-                                self[setting] = file_input:getInputText()
+                                local file = file_input:getInputText()
+                                if migrate and self[setting] and self[setting] ~= "" then
+                                    migrate(self, self[setting], file)
+                                end
+                                self[setting] = file
+                                G_reader_settings:saveSetting(setting, file)
                             end,
                         },
                     }},
                 }
                 UIManager:show(file_input)
                 file_input:onShowKeyboard()
+            else
+                if migrate and self[setting] and self[setting] ~= "" then
+                    migrate(self, self[setting], new_file)
+                end
+                self[setting] = file
+                G_reader_settings:saveSetting(setting, dir_path)
+
             end
         end,
     }
     UIManager:show(path_chooser)
 end
 
-
+function CoverImage:sizeSpinner(touchmenu_instance, setting, title, min, max)
+    local SpinWidget = require("ui/widget/spinwidget")
+    local old_maxfiles = self[setting]
+    local size_spinner = SpinWidget:new{
+    width = math.floor(Device.screen:getWidth() * 0.6),
+    value = old_maxfiles,
+    value_min = min,
+        value_max = max,
+        default_value = 12,
+        title_text = title,
+        ok_text = _("Set"),
+        callback = function(spin)
+            if self.enabled and spin.value ~= old_maxfiles then
+                self.cover_image_cache_maxfiles = spin.value
+                G_reader_settings:saveSetting("cover_image_cache_maxfiles", self[setting])
+                self:cleanCache()
+            end
+            if touchmenu_instance then touchmenu_instance:updateItems() end
+        end
+    }
+    UIManager:show(size_spinner)
+end
 
 local about_text = _([[
 This plugin saves the current book cover to a file. That file can be used as a screensaver on certain Android devices, such as Tolinos.
@@ -309,6 +374,15 @@ If fallback is activated, the fallback file will be copied to the screensaver fi
 If the filename is empty or the file doesn't exist, the cover file will be deleted and the system screensaver will be used instead.
 
 If the fallback image isn't activated, the screensaver image will stay in place after closing a book.]])
+
+local set_image_text = _([[The cover of the current book or the fallback image will be stored in this file.
+
+You can either choose an existing file:
+- Select a file
+
+or specify a new file:
+- First select a directory
+- Then enter a name for the new file]])
 
 function CoverImage:addToMainMenu(menu_items)
     menu_items.coverimage = {
@@ -335,15 +409,16 @@ function CoverImage:addToMainMenu(menu_items)
                 checked_func = function()
                     return self.cover_image_path ~= "" and pathOk(self.cover_image_path)
                 end,
-                help_text = _([[The cover of the current book or the fallback image will be stored in this file.
-
-To select a new file, you will have to:
-
-- First select a directory
-- Then enter a name for the new file]]),
                 keep_menu_open = true,
-                callback = function(menu)
-                    self:choosePathFile("cover_image_path", false, true)
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = set_image_text,
+                        ok_text = _("Yes"),
+                        cancel_text = _("No"),
+                        ok_callback = function()
+                            self:choosePathFile("cover_image_path", false, true, self.migrateCover)
+                        end,
+                    })
                 end,
             },
             -- menu entry: enable
@@ -545,15 +620,14 @@ To select a new file, you will have to:
             },
             -- menu entry: set fallback image
             {
-                text = _("Set fallback image path"),
+                text = _("Select fallback image"),
                 checked_func = function()
                     return lfs.attributes(self.cover_image_fallback_path, "mode") == "file"
                 end,
                 help_text = _("This file will be used as a cover image on document close."),
                 keep_menu_open = true,
-                callback = function(menu)
+                callback = function()
                     self:choosePathFile("cover_image_fallback_path", false, false)
-
                 end,
             },
             -- menu entry: fallback
@@ -570,70 +644,27 @@ To select a new file, you will have to:
             },
             -- menu entry: Cache
             {
-                text = _("Cover image cache"),
+                text = _("Cover image cache settings"),
                 checked_func = function()
                     return self:isCacheEnabled()
                 end,
                 sub_item_table = {
                     {
-                    text = _("Path to cover cache"),
+                    text = _("Cover cache folder"),
                     checked_func = function()
                         return lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
                     end,
                     keep_menu_open = true,
---[[                    callback = function(menu)
-                        local InputDialog = require("ui/widget/inputdialog")
-                        local sample_input
-                        sample_input = InputDialog:new{
-                            title = _("Cover image cache path"),
-                            input = self.cover_image_cache_path,
-                            input_type = "string",
-                            buttons = {
-                                {
-                                    {
-                                        text = _("Cancel"),
-                                        callback = function()
-                                            UIManager:close(sample_input)
-                                        end,
-                                    },
-                                    {
-                                        text = _("Save"),
-                                        is_enter_default = true,
-                                        callback = function()
-                                            self.cover_image_cache_path = sample_input:getInputText()
-                                            G_reader_settings:saveSetting("cover_image_cache_path", self.cover_image_cache_path)
-                                            if lfs.attributes(self.cover_image_cache_path, "mode") ~= "directory"
-                                                and self.cover_image_cache_path ~= "" then
-                                                -- todo: Ask if the folder should be created
-                                                UIManager:show(InfoMessage:new{
-                                                    text = T(_("\"%1\"\nis not a valid folder!"),
-                                                        self.cover_image_cache_path),
-                                                    show_icon = true,
-                                                    timeout = 10,
-                                                })
-                                            end
-                                            if not self.cover_image_cache_path:find("/$") then
-                                                self.cover_image_cache_path = self.cover_image_cache_path .. "/"
-                                            end
-                                            UIManager:close(sample_input)
-                                            menu:updateItems()
-                                        end,
-                                    },
-                                }
-                            },
-                        }
-                        UIManager:show(sample_input)
-                        sample_input:onShowKeyboard()
-                    end,]]
-
                     callback = function()
-                        self:choosePathFile("cover_image_cache_path", true, false)
-
-
-                    end
-
-
-
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Select a cache folder. The contents of the old folder will be migrated."),
+                            ok_text = _("Yes"),
+                            cancel_text = _("No"),
+                            ok_callback = function()
+                                self:choosePathFile("cover_image_cache_path", true, false, self.migrateCache)
+                            end,
+                        })
+                    end,
                     },
                     {
                         text_func = function()
@@ -652,26 +683,7 @@ To select a new file, you will have to:
                             return self.cover_image_cache_maxfiles >= 0
                         end,
                         callback = function(touchmenu_instance)
-                            local SpinWidget = require("ui/widget/spinwidget")
-                            local old_maxfiles = self.cover_image_cache_maxfiles
-                            local size_spinner = SpinWidget:new{
-                                width = math.floor(Device.screen:getWidth() * 0.6),
-                                value = old_maxfiles,
-                                value_min = -1,
-                                value_max = 100,
-                                default_value = 12,
-                                title_text =  _("Number of covers."),
-                                ok_text = _("Set"),
-                                callback = function(spin)
-                                    if self.enabled and spin.value ~= old_maxfiles then
-                                        self.cover_image_cache_maxfiles = spin.value
-                                        G_reader_settings:saveSetting("cover_image_cache_maxfiles", self.cover_image_cache_maxfiles)
-                                        self:cleanCache()
-                                    end
-                                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                                end
-                            }
-                            UIManager:show(size_spinner)
+                            self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxfiles", _("Number of covers"), -1, 100)
                         end,
                     },
                     {
@@ -691,33 +703,18 @@ To select a new file, you will have to:
                             return self.cover_image_cache_maxsize >= 0
                         end,
                         callback = function(touchmenu_instance)
-                            local SpinWidget = require("ui/widget/spinwidget")
-                            local old_maxsize = self.cover_image_cache_maxsize
-                            local size_spinner = SpinWidget:new{
-                                width = math.floor(Device.screen:getWidth() * 0.6),
-                                value = old_maxsize,
-                                value_min = -1,
-                                value_max = 100,
-                                default_value = 12,
-                                title_text =  _("Cache size."),
-                                ok_text = _("Set"),
-                                callback = function(spin)
-                                    if self.enabled and spin.value ~= old_maxsize then
-                                        self.cover_image_cache_maxsize = spin.value
-                                        G_reader_settings:saveSetting("cover_image_cache_maxsize", self.cover_image_cache_maxsize)
-                                        self:cleanCache()
-                                    end
-                                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                                end
-                            }
-                            UIManager:show(size_spinner)
+                            self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxsize", _("Cache size"), -1, 100)
                         end,
                     },
                     {
                         text = _("Clear cached covers"),
                         callback = function()
+                            local cache_count, cache_size_KiB
+                                = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
+                            local clear_text = T(_("Do you really want to clear the cover image cache?\nIt contains %1 files and uses %1 MiB."),
+                                cache_count, cache_size_KiB / 1024)
                             UIManager:show(ConfirmBox:new{
-                                text = _("Do you really want to clear the cover image cache?"),
+                                text = clear_text,
                                 ok_text = _("Clear"),
                                 ok_callback = function()
                                     self:emptyCache()
