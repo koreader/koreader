@@ -263,7 +263,7 @@ function CoverImage:migrateCache(old_path, new_path)
                 local old_access_time = lfs.attributes(old_file, "access")
                 local new_file = new_path .. entry
                 os.rename(old_file, new_file)
-                lfs.touch(old_file, old_access_time) -- restore original time
+                lfs.touch(new_file, old_access_time) -- restore original time
             end
         end
     end
@@ -355,7 +355,7 @@ function CoverImage:sizeSpinner(touchmenu_instance, setting, title, min, max, de
     local old_val = self[setting]
     local size_spinner = SpinWidget:new{
     width = math.floor(Device.screen:getWidth() * 0.6),
-    value = self[setting],
+    value = old_val,
     value_min = min,
         value_max = max,
         default_value = default,
