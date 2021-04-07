@@ -549,7 +549,7 @@ To select a new file, you will have to:
                 checked_func = function()
                     return lfs.attributes(self.cover_image_fallback_path, "mode") == "file"
                 end,
-                help_text = _("This file will used as cover image on document close."),
+                help_text = _("This file will be used as a cover image on document close."),
                 keep_menu_open = true,
                 callback = function(menu)
                     self:choosePathFile("cover_image_fallback_path", false, false)
@@ -634,9 +634,6 @@ To select a new file, you will have to:
 
 
 
-
-
-
                     },
                     {
                         text_func = function()
@@ -644,9 +641,9 @@ To select a new file, you will have to:
                             if self.cover_image_cache_maxfiles > 0 then
                                 number = self.cover_image_cache_maxfiles
                             elseif self.cover_image_cache_maxfiles == 0 then
-                                number = "unlimited"
+                                number = _("unlimited")
                             else
-                                number = "off"
+                                number = _("off")
                             end
                             return T(_("Maximum number of cached covers (%1)"), number)
                         end,
@@ -683,9 +680,9 @@ To select a new file, you will have to:
                             if self.cover_image_cache_maxsize > 0 then
                                 number = self.cover_image_cache_maxsize
                             elseif self.cover_image_cache_maxsize == 0 then
-                                number = "unlimited"
+                                number = _("unlimited")
                             else
-                                number = "off"
+                                number = _("off")
                             end
                             return T(_("Maximum size of cached covers (%1MiB)"), number)
                         end,
