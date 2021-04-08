@@ -397,7 +397,7 @@ or specify a new file:
 -- menu entry: Cache settings
 function CoverImage:cover_image_cache_menu()
     return {
-        text = _("Cover image cache settings"),
+        text = _("Cache settings"),
         checked_func = function()
             return self:isCacheEnabled()
         end,
@@ -663,6 +663,11 @@ function CoverImage:addToMainMenu(menu_items)
             -- menu entry: filename dialog
             {
                 text = _("Set image"),
+                help_text_func = function()
+                    local text = self.cover_image_path
+                    text = text ~= "" and text or _("not set")
+                    return T(_("The actual cover image path is:\n%1"), text)
+                end,
                 checked_func = function()
                     return self.cover_image_path ~= "" and pathOk(self.cover_image_path)
                 end,
@@ -722,10 +727,14 @@ function CoverImage:addToMainMenu(menu_items)
             -- menu entry: set fallback image
             {
                 text = _("Select fallback image"),
+                help_text_func = function()
+                    local text = self.cover_image_fallback_path
+                    text = text ~= "" and text or _("not set")
+                    return T(_("The fallback image used on document close is:\n%1"), text)
+                end,
                 checked_func = function()
                     return lfs.attributes(self.cover_image_fallback_path, "mode") == "file"
                 end,
-                help_text = _("This file will be used as a cover image on document close."),
                 keep_menu_open = true,
                 callback = function()
                     self:choosePathFile("cover_image_fallback_path", false, false)
