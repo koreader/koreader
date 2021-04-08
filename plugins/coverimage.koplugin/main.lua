@@ -456,7 +456,7 @@ function CoverImage:menu_entry_cache()
                 return lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
             end,
             help_text_func = function()
-                return T(_("The actual cache path is:\n%1"), self.cover_image_cache_path)
+                return T(_("Current cache path:\n%1"), self.cover_image_cache_path)
             end,
             callback = function(touchmenu_instance)
                 UIManager:show(ConfirmBox:new{
@@ -614,7 +614,7 @@ function CoverImage:addToMainMenu(menu_items)
                 help_text_func = function()
                     local text = self.cover_image_path
                     text = text ~= "" and text or _("not set")
-                    return T(_("The actual cover image path is:\n%1"), text)
+                    return T(_("Current cover image path:\n%1"), text)
                 end,
                 checked_func = function()
                     return self.cover_image_path ~= "" and pathOk(self.cover_image_path)
