@@ -395,7 +395,7 @@ or specify a new file:
 - Then enter a name for the new file]])
 
 -- menu entry: Cache settings
-function CoverImage:menu_cache()
+function CoverImage:menu_entry_cache()
     return {
         text = _("Cache settings"),
         checked_func = function()
@@ -480,7 +480,7 @@ function CoverImage:menu_cache()
     }
 end
 
-function CoverImage:menu_select_format(title, format)
+function CoverImage:menu_entry_format(title, format)
     return {
         text = title,
         checked_func = function()
@@ -498,7 +498,7 @@ function CoverImage:menu_select_format(title, format)
 end
 
 -- menu entry: scale, background, format
-function CoverImage:menu_sbf()
+function CoverImage:menu_entry_sbf()
     return {
         text = _("Size, background and format"),
         enabled_func = function()
@@ -612,9 +612,9 @@ function CoverImage:menu_sbf()
                     end
                 end,
             },
-            self:menu_select_format(_("JPG file format"), "jpg"),
-            self:menu_select_format(_("PNG file format"), "png"),
-            self:menu_select_format(_("BMP file format"), "bmp"),
+            self:menu_entry_format(_("JPG file format"), "jpg"),
+            self:menu_entry_format(_("PNG file format"), "png"),
+            self:menu_entry_format(_("BMP file format"), "bmp"),
         },
     }
 end
@@ -683,7 +683,7 @@ function CoverImage:addToMainMenu(menu_items)
                 end,
             },
             -- menu entry: scale, background, format
-            self:menu_sbf(),
+            self:menu_entry_sbf(),
             -- menu entry: exclude this cover
             {
                 text = _("Exclude this book cover"),
@@ -731,7 +731,7 @@ function CoverImage:addToMainMenu(menu_items)
                 separator = true,
             },
             -- menu entry: Cache settings
-            self:menu_cache(),
+            self:menu_entry_cache(),
         },
     }
 end
