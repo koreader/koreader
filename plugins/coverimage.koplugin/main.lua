@@ -625,7 +625,7 @@ function CoverImage:addToMainMenu(menu_items)
                 help_text_func = function()
                     local text = self.cover_image_path
                     text = text ~= "" and text or _("not set")
-                    return T(_("The actual cover image path:\n%1"), text)
+                    return T(_("The actual cover image path is:\n%1"), text)
                 end,
                 checked_func = function()
                     return self.cover_image_path ~= "" and pathOk(self.cover_image_path)
@@ -689,7 +689,7 @@ function CoverImage:addToMainMenu(menu_items)
                 help_text_func = function()
                     local text = self.cover_image_fallback_path
                     text = text ~= "" and text or _("not set")
-                    return T(_("The fallback image used on document close:\n%1"), text)
+                    return T(_("The fallback image used on document close is:\n%1"), text)
                 end,
                 checked_func = function()
                     return lfs.attributes(self.cover_image_fallback_path, "mode") == "file"
