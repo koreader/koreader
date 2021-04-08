@@ -754,7 +754,7 @@ function Menu:init()
                     --- @todo Support utf8 lowercase.
                     local filename = FFIUtil.basename(v.path):lower()
                     local search_string = self.page_info_text.input_dialog:getInputText():lower()
-                    if search_string = "" then return end
+                    if search_string == "" then return end
                     local i, _ = filename:find(search_string)
                     if i == 1 and not v.is_go_up then
                         self:onGotoPage(math.ceil(k / self.perpage))
