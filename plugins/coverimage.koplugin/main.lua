@@ -386,7 +386,7 @@ end
 local about_text = _([[
 This plugin saves the current book cover to a file. That file can be used as a screensaver on certain Android devices, such as Tolinos.
 
-If enabled, the cover image of the actual file is stored in the selected screensaver file. Books can be excluded if desired.
+If enabled, the cover image of the current file is stored in the selected screensaver file. Books can be excluded if desired.
 
 If fallback is activated, the fallback file will be copied to the screensaver file on book closing.
 If the filename is empty or the file doesn't exist, the cover file will be deleted and the system screensaver will be used instead.
