@@ -459,7 +459,6 @@ function CoverImage:menu_entry_cache()
                 return lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
             end,
             help_text = T(_("The actual cache path is:\n%1"), self.cover_image_cache_path),
-            keep_menu_open = true,
             callback = function(touchmenu_instance)
                 UIManager:show(ConfirmBox:new{
                     text = _("Select a cache folder. The contents of the old folder will be migrated."),
@@ -473,7 +472,6 @@ function CoverImage:menu_entry_cache()
             },
             {
                 text = _("Clear cached covers"),
-                keep_menu_open = true,
                 callback = function()
                     local cache_count, cache_size_KiB
                         = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
@@ -486,6 +484,7 @@ function CoverImage:menu_entry_cache()
                         end,
                     })
                 end,
+                keep_menu_open = true,
             },
         },
     }
@@ -541,7 +540,6 @@ function CoverImage:menu_entry_sbf()
                 help_text_func = function()
                     return T(_("If the image and the screen have a similar aspect ratio (±%1%), stretch the image instead of keeping its aspect ratio."), self.cover_image_stretch_limit )
                 end,
-                keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local function createCover()
                         self:createCoverImage(self.ui.doc_settings)
@@ -602,12 +600,12 @@ function CoverImage:addToMainMenu(menu_items)
             -- menu entry: about cover image
             {
                 text = _("About cover image"),
-                keep_menu_open = true,
                 callback = function()
                     UIManager:show(InfoMessage:new{
                         text = about_text,
                     })
                 end,
+                keep_menu_open = true,
                 separator = true,
             },
             -- menu entry: filename dialog
@@ -621,7 +619,6 @@ function CoverImage:addToMainMenu(menu_items)
                 checked_func = function()
                     return self.cover_image_path ~= "" and pathOk(self.cover_image_path)
                 end,
-                keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     UIManager:show(ConfirmBox:new{
                         text = set_image_text,
@@ -685,7 +682,6 @@ function CoverImage:addToMainMenu(menu_items)
                 checked_func = function()
                     return lfs.attributes(self.cover_image_fallback_path, "mode") == "file"
                 end,
-                keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     self:choosePathFile(touchmenu_instance, "cover_image_fallback_path", false, false)
                 end,
