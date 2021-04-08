@@ -287,10 +287,9 @@ function InputContainer:onInput(input, ignore_first_hold_release)
                     text = input.ok_text or _("OK"),
                     is_enter_default = true,
                     callback = function()
-                        if input.allow_blank_input or self.input_dialog:getInputText() ~= "" then
-                            input.callback(self.input_dialog:getInputText())
-                            self:closeInputDialog()
-                        end
+                        if input.deny_blank_input and self.input_dialog:getInputText() == "" then return end
+                        input.callback(self.input_dialog:getInputText())
+                        self:closeInputDialog()
                     end,
                 },
             },
