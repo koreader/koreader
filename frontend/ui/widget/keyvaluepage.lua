@@ -433,6 +433,7 @@ function KeyValuePage:init()
             hint_func = function()
                 return "(" .. "1 - " .. self.pages .. ")"
             end,
+            deny_blank_input = true
             callback = function(input)
                 local page = tonumber(input)
                 if page and page >= 1 and page <= self.pages then
