@@ -55,12 +55,17 @@ function CoverImage:init()
     self.cover_image_stretch_limit = G_reader_settings:readSetting("cover_image_stretch_limit") or 8
     self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "black"
     self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or ""
-    self.cover_image_cache_path = G_reader_settings:readSetting("cover_image_cache_path") or DataStorage:getDataDir() .. "/cache/"
+    self.cover_image_cache_path = G_reader_settings:readSetting("cover_image_cache_path") or DataStorage:getDataDir() .. "/data/cover_image.cache/"
     self.cover_image_cache_maxfiles = G_reader_settings:readSetting("cover_image_cache_maxfiles") or 36
     self.cover_image_cache_maxsize = G_reader_settings:readSetting("cover_image_cache_maxsize") or 5 -- MiB
-    self.cover_image_cache_prefix = "CI_CACHE_"
+    self.cover_image_cache_prefix = "cover_"
     self.enabled = G_reader_settings:isTrue("cover_image_enabled")
     self.fallback = G_reader_settings:isTrue("cover_image_fallback")
+
+    if not lfs.attributes(self.cover_image_cache_path, "mode") then
+        lfs.mkdir(self.cover_image_cache_path)
+    end
+
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -246,6 +251,8 @@ end
 function CoverImage:isCacheEnabled()
     return self.cover_image_cache_maxfiles >= 0 and self.cover_image_cache_maxsize >= 0
         and lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
+        and self.cover_image_cache_path ~= "./cache/" -- interferres with frontent cache-framework; quick and dirty check
+        and self.cover_image_cache_path ~= lfs.currentdir() .. "/cache/"  -- interferres with frontent cache-framework
 end
 
 -- callback for choosePathFile()
@@ -454,6 +461,8 @@ function CoverImage:menu_entry_cache()
             text = _("Cover cache folder"),
             checked_func = function()
                 return lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
+                    and self.cover_image_cache_path ~= "./cache/" -- interferres with frontent cache-framework
+                    and self.cover_image_cache_path ~= lfs.currentdir() .. "/cache/"  -- interferres with frontent cache-framework
             end,
             help_text_func = function()
                 return T(_("Current cache path:\n%1"), self.cover_image_cache_path)
