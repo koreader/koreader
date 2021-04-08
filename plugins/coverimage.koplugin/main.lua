@@ -395,7 +395,7 @@ or specify a new file:
 - Then enter a name for the new file]])
 
 -- menu entry: Cache settings
-function CoverImage:cover_image_cache_menu()
+function CoverImage:menu_cache()
     return {
         text = _("Cache settings"),
         checked_func = function()
@@ -480,8 +480,25 @@ function CoverImage:cover_image_cache_menu()
     }
 end
 
+function CoverImage:menu_select_format(title, format)
+    return {
+        text = title,
+        checked_func = function()
+            return self.cover_image_format == format
+        end,
+        callback = function()
+            local old_cover_image_format = self.cover_image_format
+            self.cover_image_format = format
+            G_reader_settings:saveSetting("cover_image_format", format)
+            if self.enabled and old_cover_image_format ~= format then
+                self:createCoverImage(self.ui.doc_settings)
+            end
+        end,
+    }
+end
+
 -- menu entry: scale, background, format
-function CoverImage:cover_image_sbf_menu()
+function CoverImage:menu_sbf()
     return {
         text = _("Size, background and format"),
         enabled_func = function()
@@ -595,49 +612,10 @@ function CoverImage:cover_image_sbf_menu()
                     end
                 end,
             },
-            {
-                text = _("JPG file format"),
-                checked_func = function()
-                    return self.cover_image_format == "jpg"
-                end,
-                callback = function()
-                    local old_cover_image_format = self.cover_image_format
-                    self.cover_image_format = "jpg"
-                    G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
-                    if self.enabled and old_cover_image_format ~= self.cover_image_format then
-                        self:createCoverImage(self.ui.doc_settings)
-                    end
-                end,
-            },
-            {
-                text = _("PNG file format"),
-                checked_func = function()
-                    return self.cover_image_format == "png"
-                end,
-                callback = function()
-                    local old_cover_image_format = self.cover_image_format
-                    self.cover_image_format = "png"
-                    G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
-                    if self.enabled and old_cover_image_format ~= self.cover_image_format then
-                        self:createCoverImage(self.ui.doc_settings)
-                    end
-                end,
-            },
-            {
-                text = _("BMP file format"),
-                checked_func = function()
-                    return self.cover_image_format == "bmp"
-                end,
-                callback = function()
-                    local old_cover_image_format = self.cover_image_format
-                    self.cover_image_format = "bmp"
-                    G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
-                    if self.enabled and old_cover_image_format ~= self.cover_image_format then
-                        self:createCoverImage(self.ui.doc_settings)
-                    end
-                end,
-            },
-        }
+            self:menu_select_format(_("JPG file format"), "jpg"),
+            self:menu_select_format(_("PNG file format"), "png"),
+            self:menu_select_format(_("BMP file format"), "bmp"),
+        },
     }
 end
 
@@ -705,7 +683,7 @@ function CoverImage:addToMainMenu(menu_items)
                 end,
             },
             -- menu entry: scale, background, format
-            self:cover_image_sbf_menu(),
+            self:menu_sbf(),
             -- menu entry: exclude this cover
             {
                 text = _("Exclude this book cover"),
@@ -753,7 +731,7 @@ function CoverImage:addToMainMenu(menu_items)
                 separator = true,
             },
             -- menu entry: Cache settings
-            self:cover_image_cache_menu(),
+            self:menu_cache(),
         },
     }
 end
