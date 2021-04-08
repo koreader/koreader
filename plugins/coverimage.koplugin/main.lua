@@ -65,14 +65,6 @@ function CoverImage:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function CoverImage:_enabled()
-    return self.enabled
-end
-
-function CoverImage:_fallback()
-    return self.fallback
-end
-
 function CoverImage:cleanUpImage()
     if self.cover_image_fallback_path == "" or not self.fallback then
         os.remove(self.cover_image_path)
@@ -645,7 +637,7 @@ function CoverImage:addToMainMenu(menu_items)
             {
                 text = _("Save cover image"),
                 checked_func = function()
-                    return self:_enabled() and pathOk(self.cover_image_path)
+                    return self.enabled and pathOk(self.cover_image_path)
                 end,
                 enabled_func = function()
                     return self.cover_image_path ~= "" and pathOk(self.cover_image_path)
@@ -702,7 +694,7 @@ function CoverImage:addToMainMenu(menu_items)
             {
                 text = _("Turn on fallback image"),
                 checked_func = function()
-                    return self:_fallback()
+                    return self.fallback
                 end,
                 enabled_func = function()
                     return lfs.attributes(self.cover_image_fallback_path, "mode") == "file"
