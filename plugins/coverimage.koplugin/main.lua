@@ -51,7 +51,6 @@ local CoverImage = WidgetContainer:new{
 function CoverImage:init()
     self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or ""
     self.cover_image_format = G_reader_settings:readSetting("cover_image_format") or "auto"
-    self.cover_image_extension = getExtension(self.cover_image_path)
     self.cover_image_quality = G_reader_settings:readSetting("cover_image_quality") or 75
     self.cover_image_stretch_limit = G_reader_settings:readSetting("cover_image_stretch_limit") or 8
     self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "black"
@@ -84,7 +83,7 @@ function CoverImage:getCacheFile()
     local cache_file = self.cover_image_cache_path .. self.cover_image_cache_prefix .. self.ui.document:getProps().title
         .. "_" .. self.cover_image_quality .. "_" .. self.cover_image_stretch_limit .. "_" .. self.cover_image_background
 
-    local act_format = self.cover_image_format == "auto" and self.cover_image_extension or self.cover_image_format
+    local act_format = self.cover_image_format
     if act_format == "auto" then
         cache_file = cache_file .. ".jpg"
     else
@@ -109,7 +108,7 @@ function CoverImage:createCoverImage(doc_settings)
             local scale_factor = math.min(s_w / i_w, s_h / i_h)
 
             if self.cover_image_background == "none" or scale_factor == 1 then
-                local act_format = self.cover_image_format == "auto" and self.cover_image_extension or self.cover_image_format
+                local act_format = self.cover_image_format == "auto" and "jpg" or self.cover_image_format
                 if not cover_image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality) then
                     UIManager:show(InfoMessage:new{
                         text = _("Error writing file") .. "\n" .. self.cover_image_path,
@@ -154,7 +153,7 @@ function CoverImage:createCoverImage(doc_settings)
 
             cover_image:free()
 
-            local act_format = self.cover_image_format == "auto" and self.cover_image_extension or self.cover_image_format
+            local act_format = self.cover_image_format == "auto" and "jpg" or self.cover_image_format
             if not image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality) then
                 UIManager:show(InfoMessage:new{
                     text = _("Error writing file") .. "\n" .. self.cover_image_path,
@@ -277,7 +276,7 @@ end
 --[[--
 chooses a path or (an existing) file
 
-@touchmenu_instance
+@touchmenu_instance for updating of the menu
 @string setting is the G_reader_setting which is used and changed
 @boolean folder_only just selects a path, no file handling
 @boolean new_file allows to enter a new filename, or use just an existing file
@@ -348,9 +347,9 @@ function CoverImage:choosePathFile(touchmenu_instance, setting, folder_only, new
 end
 
 --[[--
-changes a G_reader_setting with an size spinner
+changes a G_reader_setting with a size spinner
 
-@touchmenu_instance used
+@touchmenu_instance used for updating the menu
 @string setting is the G_reader_setting which is used and changed
 @string title shown in the spinner
 @int min minimum value of the spinner
@@ -537,6 +536,7 @@ function CoverImage:menu_entry_sbf()
                     return T(_("Aspect ratio stretch threshold (%1)"),
                         self.cover_image_stretch_limit ~= 0 and self.cover_image_stretch_limit .."%" or "off")
                 end,
+                keep_menu_open = true,
                 help_text_func = function()
                     return T(_("If the image and the screen have a similar aspect ratio (±%1%), stretch the image instead of keeping its aspect ratio."), self.cover_image_stretch_limit )
                 end,
