@@ -53,7 +53,7 @@ function CoverImage:init()
     self.cover_image_format = G_reader_settings:readSetting("cover_image_format") or "auto"
     self.cover_image_extension = getExtension(self.cover_image_path)
     self.cover_image_quality = G_reader_settings:readSetting("cover_image_quality") or 75
-    self.cover_image_stretch_limit = G_reader_settings:readSetting("cover_image_stretch_limit") or 5
+    self.cover_image_stretch_limit = G_reader_settings:readSetting("cover_image_stretch_limit") or 8
     self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "black"
     self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or ""
     self.cover_image_cache_path = G_reader_settings:readSetting("cover_image_cache_path") or DataStorage:getDataDir() .. "/cache/"
@@ -377,7 +377,9 @@ function CoverImage:sizeSpinner(touchmenu_instance, setting, title, min, max, de
             if self.enabled and spin.value ~= old_val then
                 self[setting] = spin.value
                 G_reader_settings:saveSetting(setting, self[setting])
-                callback(self)
+                if callback then
+                    callback(self)
+                end
             end
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end
@@ -539,37 +541,21 @@ function CoverImage:menu_entry_sbf()
         sub_item_table = {
             {
                 text_func = function()
-                    return T(_("Aspect ratio stretch threshold (%1%)"), self.cover_image_stretch_limit )
+                    return T(_("Aspect ratio stretch threshold (%1)"),
+                        self.cover_image_stretch_limit ~= 0 and self.cover_image_stretch_limit .."%" or "off")
                 end,
                 help_text_func = function()
                     return T(_("If the image and the screen have a similar aspect ratio (±%1%), stretch the image instead of keeping its aspect ratio."), self.cover_image_stretch_limit )
                 end,
                 keep_menu_open = true,
-                ----------- xxxxxxxxxxxxxxxx move out of menu todo spinner?
                 callback = function(touchmenu_instance)
-                    local old_stretch_limit = self.cover_image_stretch_limit
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local size_spinner = SpinWidget:new{
-                        width = math.floor(Device.screen:getWidth() * 0.6),
-                        value = old_stretch_limit,
-                        value_min = 0,
-                        value_max = 25,
-                        default_value = 5,
-                        title_text =  _("Set stretch threshold"),
-                        ok_text = _("Set"),
-                        callback = function(spin)
-                            if self.enabled and spin.value ~= old_stretch_limit then
-                                self.cover_image_stretch_limit = spin.value
-                                G_reader_settings:saveSetting("cover_image_stretch_limit", self.cover_image_stretch_limit)
-                                self:createCoverImage(self.ui.doc_settings)
-                            end
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                    function createCoverIfNecessary()
+                        if self.enabled and old_stretch_limit ~= self.cover_image_stretch_limit then
+                            self:createCoverImage(self.ui.doc_settings)
                         end
-                    }
-                    UIManager:show(size_spinner)
-                    if self.enabled and old_stretch_limit ~= self.cover_image_stretch_limit then
-                        self:createCoverImage(self.ui.doc_settings)
                     end
+                    local old_stretch_limit = self.cover_image_stretch_limit
+                    self:sizeSpinner(touchmenu_instance, "cover_image_stretch_limit", _("Set strech threshold"), 0, 20, 8, createCoverIfNecessary)
                 end,
             },
             self:menu_entry_background("black"),
