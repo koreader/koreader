@@ -191,7 +191,10 @@ function CoverImage:onReaderReady(doc_settings)
     self:createCoverImage(doc_settings)
 end
 
+---------------------------
 -- cache handling functions
+---------------------------
+
 function CoverImage:emptyCache()
     for entry in lfs.dir(self.cover_image_cache_path) do
         if entry ~= "." and entry ~= ".." then
@@ -256,6 +259,9 @@ end
 
 -- callback for choosePathFile()
 function CoverImage:migrateCache(old_path, new_path)
+    if old_path == new_path then
+        return
+    end
     for entry in lfs.dir(old_path) do
         if entry ~= "." and entry ~= ".."   then
             local old_file = old_path .. entry
@@ -271,7 +277,9 @@ end
 
 -- callback for choosePathFile()
 function CoverImage:migrateCover(old_file, new_file)
-    os.rename(old_file, new_file)
+    if old_file ~= new_file then
+        os.rename(old_file, new_file)
+    end
 end
 
 --[[--
@@ -285,7 +293,7 @@ chooses a path or (an existing) file
     Can used for migrating the contents of the old path to the new one
 ]]
 function CoverImage:choosePathFile(touchmenu_instance, setting, folder_only, new_file, migrate)
-    local old_path, old_name = util.splitFilePathName(self[setting])
+    local old_path, old_name = util.splitFilePathName(self[setting]) -- luacheck: no unused
     UIManager:show(PathChooser:new{
         select_directory = true,
         select_file = not folder_only,
@@ -335,7 +343,6 @@ function CoverImage:choosePathFile(touchmenu_instance, setting, folder_only, new
                 }
                 UIManager:show(file_input)
                 file_input:onShowKeyboard()
-                return
             elseif mode == "file" then   -- just select an existing file
                 if migrate then
                     migrate(self, self[setting], dir_path)
@@ -345,7 +352,6 @@ function CoverImage:choosePathFile(touchmenu_instance, setting, folder_only, new
                 if touchmenu_instance then
                     touchmenu_instance:updateItems()
                 end
-                return
             end
         end,
     })
@@ -365,10 +371,10 @@ changes a G_reader_setting with an size spinner
 function CoverImage:sizeSpinner(touchmenu_instance, setting, title, min, max, default, callback)
     local SpinWidget = require("ui/widget/spinwidget")
     local old_val = self[setting]
-    local size_spinner = SpinWidget:new{
-    width = math.floor(Device.screen:getWidth() * 0.6),
-    value = old_val,
-    value_min = min,
+    UIManager:show(SpinWidget:new{
+        width = math.floor(Device.screen:getWidth() * 0.6),
+        value = old_val,
+        value_min = min,
         value_max = max,
         default_value = default,
         title_text = title,
@@ -383,8 +389,7 @@ function CoverImage:sizeSpinner(touchmenu_instance, setting, title, min, max, de
             end
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end
-    }
-    UIManager:show(size_spinner)
+    })
 end
 
 -------------- menus and longer texts -----------
@@ -480,10 +485,9 @@ function CoverImage:menu_entry_cache()
                 callback = function()
                     local cache_count, cache_size_KiB
                         = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
-                    local clear_text = T(_("Do you really want to clear the cover image cache?\nIt contains %1 files and uses %1 MiB."),
-                        cache_count, cache_size_KiB / 1024)
                     UIManager:show(ConfirmBox:new{
-                        text = clear_text,
+                        text =  T(_("Do you really want to clear the cover image cache?\nThe cache contains %1 files and uses %2 MiB."),
+                            cache_count, math.floor((cache_size_KiB + 1023) / 1024)),
                         ok_text = _("Clear"),
                         ok_callback = function()
                             self:emptyCache()
@@ -513,7 +517,6 @@ function CoverImage:menu_entry_format(title, format)
 end
 
 function CoverImage:menu_entry_background(color)
-
     return {
         text = _("Fit to screen, " .. color .. " background"),
         checked_func = function()
@@ -529,7 +532,6 @@ function CoverImage:menu_entry_background(color)
         end,
     }
 end
-
 
 -- menu entry: scale, background, format
 function CoverImage:menu_entry_sbf()
@@ -549,13 +551,10 @@ function CoverImage:menu_entry_sbf()
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
-                    function createCoverIfNecessary()
-                        if self.enabled and old_stretch_limit ~= self.cover_image_stretch_limit then
-                            self:createCoverImage(self.ui.doc_settings)
-                        end
+                    local function createCover()
+                        self:createCoverImage(self.ui.doc_settings)
                     end
-                    local old_stretch_limit = self.cover_image_stretch_limit
-                    self:sizeSpinner(touchmenu_instance, "cover_image_stretch_limit", _("Set strech threshold"), 0, 20, 8, createCoverIfNecessary)
+                    self:sizeSpinner(touchmenu_instance, "cover_image_stretch_limit", _("Set strech threshold"), 0, 20, 8, createCover)
                 end,
             },
             self:menu_entry_background("black"),
