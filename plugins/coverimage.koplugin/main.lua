@@ -292,10 +292,8 @@ function CoverImage:choosePathFile(touchmenu_instance, setting, folder_only, new
         height = Screen:getHeight(),
         path = old_path,
         onConfirm = function(dir_path)
-            local mode = lfs.attributes(dir_path, "mode" )
-            print("xxxxxxxxxxxxx mode="..mode)
+            local mode = lfs.attributes(dir_path, "mode")
             if folder_only then -- just select a folder
-                print("xxxxxxxxxxxxxxxxxx A")
                 if not dir_path:find("/$") then
                     dir_path = dir_path .. "/"
                 end
@@ -458,7 +456,9 @@ function CoverImage:menu_entry_cache()
             checked_func = function()
                 return lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
             end,
-            help_text = T(_("The actual cache path is:\n%1"), self.cover_image_cache_path),
+            help_text_func = function()
+                return T(_("The actual cache path is:\n%1"), self.cover_image_cache_path)
+            end,
             callback = function(touchmenu_instance)
                 UIManager:show(ConfirmBox:new{
                     text = _("Select a cache folder. The contents of the old folder will be migrated."),
