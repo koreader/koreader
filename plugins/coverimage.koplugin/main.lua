@@ -392,7 +392,7 @@ You can either choose an existing file:
 
 or specify a new file:
 - First select a directory
-- Then enter a name for the new file]])
+- Then add the name of the new file]])
 
 -- menu entry: Cache settings
 function CoverImage:menu_entry_cache()
@@ -402,23 +402,6 @@ function CoverImage:menu_entry_cache()
             return self:isCacheEnabled()
         end,
         sub_item_table = {
-            {
-            text = _("Cover cache folder"),
-            checked_func = function()
-                return lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
-            end,
-            keep_menu_open = true,
-            callback = function()
-                UIManager:show(ConfirmBox:new{
-                    text = _("Select a cache folder. The contents of the old folder will be migrated."),
-                    ok_text = _("Yes"),
-                    cancel_text = _("No"),
-                    ok_callback = function()
-                        self:choosePathFile("cover_image_cache_path", true, false, self.migrateCache)
-                    end,
-                })
-            end,
-            },
             {
                 text_func = function()
                     local number
@@ -458,6 +441,24 @@ function CoverImage:menu_entry_cache()
                 callback = function(touchmenu_instance)
                     self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxsize", _("Cache size"), -1, 100, 5, self.cleanCache)
                 end,
+            },
+            {
+            text = _("Cover cache folder"),
+            checked_func = function()
+                return lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
+            end,
+            help_text = T(_("The actual cache path is:\n%1"), self.cover_image_cache_path),
+            keep_menu_open = true,
+            callback = function()
+                UIManager:show(ConfirmBox:new{
+                    text = _("Select a cache folder. The contents of the old folder will be migrated."),
+                    ok_text = _("Yes"),
+                    cancel_text = _("No"),
+                    ok_callback = function()
+                        self:choosePathFile("cover_image_cache_path", true, false, self.migrateCache)
+                    end,
+                })
+            end,
             },
             {
                 text = _("Clear cached covers"),
