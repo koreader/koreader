@@ -147,6 +147,18 @@ function FileManagerCollection:onShowColl(collection)
         _manager = self,
         collection = collection,
     }
+
+    -- Handle rotation events
+    local this = self
+    function self.coll_menu:onSetRotationMode(rotation)
+        if rotation ~= nil and rotation ~= Screen:getRotationMode() then
+            UIManager:close(this.coll_menu)
+            Screen:setRotationMode(rotation)
+            this:onShowColl()
+        end
+        return true
+    end
+
     self:updateItemTable()
     self.coll_menu.close_callback = function()
         -- Close it at next tick so it stays displayed
