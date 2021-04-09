@@ -403,14 +403,17 @@ If the filename is empty or the file doesn't exist, the cover file will be delet
 
 If fallback is disabled, the screensaver image will stay in place after closing a book.]])
 
-local set_image_text = _([[The cover of the current book or the fallback image will be stored in this file.
-
+local set_image_text = _([[
 You can either choose an existing file:
 - Select a file
 
 or specify a new file:
 - First select a directory
-- Then add the name of the new file]])
+- Then add the name of the new file
+
+or delete the path:
+- First select a directory
+- Clear the name of the file]])
 
 -- menu entry: Cache settings
 function CoverImage:menu_entry_cache()
@@ -695,7 +698,14 @@ function CoverImage:addToMainMenu(menu_items)
                     return lfs.attributes(self.cover_image_fallback_path, "mode") == "file"
                 end,
                 callback = function(touchmenu_instance)
-                    self:choosePathFile(touchmenu_instance, "cover_image_fallback_path", false, false)
+                    UIManager:show(ConfirmBox:new{
+                        text = set_image_text,
+                        ok_text = _("Yes"),
+                        cancel_text = _("No"),
+                        ok_callback = function()
+                            self:choosePathFile(touchmenu_instance, "cover_image_fallback_path", false, true)
+                        end,
+                    })
                 end,
             },
             -- menu entry: fallback
