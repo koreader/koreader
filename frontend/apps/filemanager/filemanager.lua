@@ -495,12 +495,8 @@ function FileManager:init()
     self.active_widgets = { screenshoter } -- to get events even when hidden
 
     table.insert(self, self.menu)
-    table.insert(self, FileManagerHistory:new{
-        ui = self,
-    })
-    table.insert(self, FileManagerCollection:new{
-        ui = self,
-    })
+    table.insert(self, FileManagerHistory:new{ ui = self })
+    table.insert(self, FileManagerCollection:new{ ui = self })
     table.insert(self, FileManagerFileSearcher:new{ ui = self })
     table.insert(self, FileManagerShortcuts:new{ ui = self })
     table.insert(self, ReaderDictionary:new{ ui = self })

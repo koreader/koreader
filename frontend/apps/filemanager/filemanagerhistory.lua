@@ -123,6 +123,23 @@ function FileManagerHistory:onMenuHold(item)
     return true
 end
 
+-- Can't *actually* name it onSetRotationMode, or it also fires in FM itself ;).
+function FileManagerHistory:MenuSetRotationModeHandler(rotation)
+    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
+        UIManager:close(self._manager.hist_menu)
+        -- Also re-layout ReaderView or FileManager itself
+        if self._manager.ui.view and self._manager.ui.view.onSetRotationMode then
+            self._manager.ui.view:onSetRotationMode(rotation)
+        elseif self._manager.ui.onSetRotationMode then
+            self._manager.ui:onSetRotationMode(rotation)
+        else
+            Screen:setRotationMode(rotation)
+        end
+        self._manager:onShowHist()
+    end
+    return true
+end
+
 function FileManagerHistory:onShowHist()
     self.hist_menu = Menu:new{
         ui = self.ui,
@@ -132,19 +149,9 @@ function FileManagerHistory:onShowHist()
         is_borderless = true,
         is_popout = false,
         onMenuHold = self.onMenuHold,
+        onSetRotationMode = self.MenuSetRotationModeHandler,
         _manager = self,
     }
-
-    -- Handle rotation events
-    local this = self
-    function self.hist_menu:onSetRotationMode(rotation)
-        if rotation ~= nil and rotation ~= Screen:getRotationMode() then
-            UIManager:close(this.hist_menu)
-            Screen:setRotationMode(rotation)
-            this:onShowHist()
-        end
-        return true
-    end
 
     self:updateItemTable()
     self.hist_menu.close_callback = function()
