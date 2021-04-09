@@ -300,7 +300,7 @@ else
         if start_with == "history" then
             local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
             UIManager:nextTick(function()
-                FileManagerHistory:onShowHist(last_file)
+                FileManagerHistory:onShowHist()
             end)
         elseif start_with == "favorites" then
             local FileManagerCollection = require("apps/filemanager/filemanagercollection")

@@ -134,6 +134,18 @@ function FileManagerHistory:onShowHist()
         onMenuHold = self.onMenuHold,
         _manager = self,
     }
+
+    -- Handle rotation events
+    local this = self
+    function self.hist_menu:onSetRotationMode(rotation)
+        if rotation ~= nil and rotation ~= Screen:getRotationMode() then
+            UIManager:close(this.hist_menu)
+            Screen:setRotationMode(rotation)
+            this:onShowHist()
+        end
+        return true
+    end
+
     self:updateItemTable()
     self.hist_menu.close_callback = function()
         -- Close it at next tick so it stays displayed
