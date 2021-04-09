@@ -417,6 +417,8 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                 if link.type:find(self.search_type) then
                     if link.href then
                         local stpl = self:getSearchTemplate(build_href(link.href), username, password)
+                        -- The OpenSearchDescription/Url template field might *also* be a relative path...
+                        stpl = build_href(stpl)
                         -- insert the search item
                         local item = {}
                         item.acquisitions = {}
