@@ -378,10 +378,10 @@ To:
         text = _("Developer options"),
         sub_item_table = {
             {
-                text = _("Clear readers' caches"),
+                text = _("Clear caches"),
                 callback = function()
                     UIManager:show(ConfirmBox:new{
-                        text = _("Clear cache/ and cr3cache/ ?"),
+                        text = _("Clear the cache folder?"),
                         ok_callback = function()
                             local DataStorage = require("datastorage")
                             local cachedir = DataStorage:getDataDir() .. "/cache"
@@ -389,13 +389,12 @@ To:
                                 FFIUtil.purgeDir(cachedir)
                             end
                             lfs.mkdir(cachedir)
-                            -- Also remove from Cache objet references to
-                            -- the cache files we just deleted
+                            -- Also remove from the Cache objet references to the cache files we've just deleted
                             local Cache = require("cache")
                             Cache.cached = {}
                             local InfoMessage = require("ui/widget/infomessage")
                             UIManager:show(InfoMessage:new{
-                                text = _("Caches cleared. Please exit and restart KOReader."),
+                                text = _("Caches cleared. Please restart KOReader."),
                             })
                         end,
                     })
