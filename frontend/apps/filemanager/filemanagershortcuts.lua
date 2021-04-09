@@ -229,6 +229,18 @@ function FileManagerShortcuts:onShowFolderShortcutsDialog()
         onMenuHold = self.onMenuHold,
         _manager = self,
     }
+
+    -- Handle rotation events
+    local this = self
+    function self.fm_bookmark:onSetRotationMode(rotation)
+        if rotation ~= nil and rotation ~= Screen:getRotationMode() then
+            UIManager:close(this.fm_bookmark)
+            Screen:setRotationMode(rotation)
+            this:onShowFolderShortcutsDialog()
+        end
+        return true
+    end
+
     self:updateItemTable()
     UIManager:show(self.fm_bookmark)
 end
