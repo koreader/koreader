@@ -24,6 +24,7 @@ local T = require("ffi/util").template
 local PathChooser = require("ui/widget/pathchooser")
 local Screen = require("device").screen
 local InputDialog = require("ui/widget/inputdialog")
+local realpath = ffiutil.realpath
 
 -- todo: please check the default paths directly on the depending device
 -- todo: Wouldn't we like an android.deviceIdentifier() method, so we can use better default paths?
@@ -76,7 +77,7 @@ function CoverImage:init()
     self.cover_image_stretch_limit = G_reader_settings:readSetting("cover_image_stretch_limit") or 8
     self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "black"
     self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or ""
-    self.cover_image_cache_path = G_reader_settings:readSetting("cover_image_cache_path") or DataStorage:getDataDir() .. "/data/cover_image.cache/"
+    self.cover_image_cache_path = G_reader_settings:readSetting("cover_image_cache_path") or DataStorage:getDataDir() .. "/cache/cover_image.cache/"
     self.cover_image_cache_maxfiles = G_reader_settings:readSetting("cover_image_cache_maxfiles") or 36
     self.cover_image_cache_maxsize = G_reader_settings:readSetting("cover_image_cache_maxsize") or 5 -- MiB
     self.cover_image_cache_prefix = "cover_"
@@ -263,10 +264,16 @@ function CoverImage:cleanCache()
 end
 
 function CoverImage:isCacheEnabled()
-    return self.cover_image_cache_maxfiles >= 0 and self.cover_image_cache_maxsize >= 0
-        and lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
-        and self.cover_image_cache_path ~= "./cache/" -- interferres with frontent cache-framework; quick and dirty check
-        and self.cover_image_cache_path ~= lfs.currentdir() .. "/cache/"  -- interferres with frontent cache-framework
+    if Device.isAndroid() then
+        return self.cover_image_cache_maxfiles >= 0 and self.cover_image_cache_maxsize >= 0
+            and lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
+            and self.cover_image_cache_path ~= android.getExternalStoragePath() .. "/koreader/cache/"  -- interferes with frontent cache-framework
+    else
+        return self.cover_image_cache_maxfiles >= 0 and self.cover_image_cache_maxsize >= 0
+            and lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
+            and self.cover_image_cache_path ~= "./cache/" -- interferes with frontent cache-framework; quick and dirty check
+            and self.cover_image_cache_path ~= realpath("./cache/") .. "/" -- interferes with frontent cache-framework; quick and dirty check
+    end
 end
 
 -- callback for choosePathFile()
@@ -481,8 +488,7 @@ function CoverImage:menu_entry_cache()
             text = _("Cover cache folder"),
             checked_func = function()
                 return lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
-                    and self.cover_image_cache_path ~= "./cache/" -- interferres with frontent cache-framework
-                    and self.cover_image_cache_path ~= lfs.currentdir() .. "/cache/"  -- interferres with frontent cache-framework
+                    and self:isCacheEnabled()
             end,
             help_text_func = function()
                 return T(_("Current cache path:\n%1"), self.cover_image_cache_path)
