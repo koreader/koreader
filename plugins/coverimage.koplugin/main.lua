@@ -201,7 +201,9 @@ end
 ---------------------------
 
 function CoverImage:getCacheFile()
-    return self.cover_image_cache_path .. self.cover_image_cache_prefix .. self.ui.document:getProps().title
+    local path, document_name = util.splitFilePathName(self.ui.document.file) --luacheck: no unsused
+    -- use document_name here. Title may contain characters not allowed on every filesystem (esp. vfat on /sdcard)
+    return self.cover_image_cache_path .. self.cover_image_cache_prefix .. document_name
         .. "_" .. self.cover_image_quality .. "_" .. self.cover_image_stretch_limit .. "_" .. self.cover_image_background
         .. "_" .. self.cover_image_format .. "." .. getExtension(self.cover_image_path)
 end
