@@ -6,6 +6,7 @@ if not (Device.isAndroid() or Device.isEmulator() or Device.isRemarkable() or De
     return { disabled = true }
 end
 
+local A, android = pcall(require, "android")  -- luacheck: ignore
 local ConfirmBox = require("ui/widget/confirmbox")
 local Blitbuffer = require("ffi/blitbuffer")
 local InfoMessage = require("ui/widget/infomessage")
@@ -23,6 +24,26 @@ local T = require("ffi/util").template
 local PathChooser = require("ui/widget/pathchooser")
 local Screen = require("device").screen
 local InputDialog = require("ui/widget/inputdialog")
+
+-- todo: please check the default paths directly on the depending device
+-- todo: Wouldn't we like an android.deviceIdentifier() method, so we can use better default paths?
+local function getDefaultCoverPath()
+    if Device.isEmulator() then
+        return DataStorage:getDataDir() .. "/"
+    elseif Device.isAndroid() then
+        if android.prop.product == "ntx_6sl" then -- Tolino HD4 and other
+            return android.getExternalStoragePath() .. "/suspend_others.jpg"
+        else
+            return "cover.jpg"
+        end
+    elseif Device.isRemarkable() then
+        return "/usr/share/remarkable/poweroff.png"
+    elseif Device.isPocketBook() then
+        return "/mnt/ext1/system/logo/offlogo/cover.bmp"
+    else
+        return "cover.jpg"
+    end
+end
 
 local function pathOk(filename)
     local path, name = util.splitFilePathName(filename)
@@ -49,7 +70,7 @@ local CoverImage = WidgetContainer:new{
 }
 
 function CoverImage:init()
-    self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or ""
+    self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or getDefaultCoverPath()
     self.cover_image_format = G_reader_settings:readSetting("cover_image_format") or "auto"
     self.cover_image_quality = G_reader_settings:readSetting("cover_image_quality") or 75
     self.cover_image_stretch_limit = G_reader_settings:readSetting("cover_image_stretch_limit") or 8
