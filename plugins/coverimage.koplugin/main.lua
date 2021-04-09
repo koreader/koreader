@@ -263,22 +263,26 @@ function CoverImage:cleanCache()
     logger.dbg("CoverImage: clean - cache size: ".. cache_size_KiB .. " KiB, cached files: " .. cache_count)
 end
 
-function CoverImage:isCacheEnabled()
+function CoverImage:isCacheEnabled(path)
+    if not path then
+        path = self.cover_image_cache_path
+    end
     if Device.isAndroid() then
         return self.cover_image_cache_maxfiles >= 0 and self.cover_image_cache_maxsize >= 0
-            and lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
-            and self.cover_image_cache_path ~= android.getExternalStoragePath() .. "/koreader/cache/"  -- interferes with frontent cache-framework
+            and lfs.attributes(path, "mode") == "directory"
+            and path ~= "/sdcard/koreader/cache/"  -- interferes with frontent cache-framework
+            and realpath(path) ~= realpath(android.getExternalStoragePath() .. "/koreader/cache/")  -- interferes with frontent cache-framework
     else
         return self.cover_image_cache_maxfiles >= 0 and self.cover_image_cache_maxsize >= 0
-            and lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
-            and self.cover_image_cache_path ~= "./cache/" -- interferes with frontent cache-framework; quick and dirty check
-            and self.cover_image_cache_path ~= realpath("./cache/") .. "/" -- interferes with frontent cache-framework; quick and dirty check
+            and lfs.attributes(path, "mode") == "directory"
+            and path ~= "./cache/" -- interferes with frontent cache-framework; quick and dirty check
+            and realpath(path) ~= realpath("./cache/") -- interferes with frontent cache-framework; quick and dirty check
     end
 end
 
 -- callback for choosePathFile()
 function CoverImage:migrateCache(old_path, new_path)
-    if old_path == new_path then
+    if old_path == new_path or not self:isCacheEnabled(new_path) then
         return
     end
     for entry in lfs.dir(old_path) do
