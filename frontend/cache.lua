@@ -39,6 +39,9 @@ end
 
 local cache_path = DataStorage:getDataDir() .. "/cache/"
 
+-- NOTE: Before 2021.04, fontlist used to squat our folder, needlessly polluting our state tracking.
+os.remove(cache_path .. "/fontinfo.dat")
+
 --[[
 -- return a snapshot of disk cached items for subsequent check
 --]]

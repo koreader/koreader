@@ -9,6 +9,7 @@ local dbg = require("dbg")
 
 local FontList = {
     fontdir = "./fonts",
+    cachedir = DataStorage:getDataDir() .. "/cache/fontlist", -- in a subdirectory, so as not to mess w/ the Cache module.
     fontlist = {},
     fontinfo = {},
     fontnames = {},
@@ -169,12 +170,15 @@ function FontList:getFontList()
     if #self.fontlist > 0 then return self.fontlist end
 
     local cache = Persist:new{
-        path = DataStorage:getDataDir() .. "/cache/fontinfo.dat"
+        path = self.cachedir .. "/fontinfo.dat"
     }
 
     local t, err = cache:load()
     if not t then
         logger.info(cache.path, err, "initializing it")
+
+        -- Create new subdirectory
+        lfs.mkdir(self.cachedir)
     end
     self.fontinfo = t or {}
 
