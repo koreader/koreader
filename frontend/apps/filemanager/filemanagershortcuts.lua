@@ -214,6 +214,21 @@ function FileManagerShortcuts:onSetDimensions(dimen)
     self.dimen = dimen
 end
 
+function FileManagerShortcuts:MenuSetRotationModeHandler(rotation)
+    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
+        UIManager:close(self._manager.fm_bookmark)
+        if self._manager.ui.view and self._manager.ui.view.onSetRotationMode then
+            self._manager.ui.view:onSetRotationMode(rotation)
+        elseif self._manager.ui.onSetRotationMode then
+            self._manager.ui:onSetRotationMode(rotation)
+        else
+            Screen:setRotationMode(rotation)
+        end
+        self._manager:onShowFolderShortcutsDialog()
+    end
+    return true
+end
+
 function FileManagerShortcuts:onShowFolderShortcutsDialog()
     self.fm_bookmark = Menu:new{
         title = _("Folder shortcuts"),
@@ -227,19 +242,9 @@ function FileManagerShortcuts:onShowFolderShortcutsDialog()
         is_borderless = true,
         curr_path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile(),
         onMenuHold = self.onMenuHold,
+        onSetRotationMode = self.MenuSetRotationModeHandler,
         _manager = self,
     }
-
-    -- Handle rotation events
-    local this = self
-    function self.fm_bookmark:onSetRotationMode(rotation)
-        if rotation ~= nil and rotation ~= Screen:getRotationMode() then
-            UIManager:close(this.fm_bookmark)
-            Screen:setRotationMode(rotation)
-            this:onShowFolderShortcutsDialog()
-        end
-        return true
-    end
 
     self:updateItemTable()
     UIManager:show(self.fm_bookmark)

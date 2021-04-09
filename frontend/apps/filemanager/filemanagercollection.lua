@@ -135,6 +135,21 @@ function FileManagerCollection:onMenuHold(item)
     return true
 end
 
+function FileManagerCollection:MenuSetRotationModeHandler(rotation)
+    if rotation ~= nil and rotation ~= Screen:getRotationMode() then
+        UIManager:close(self._manager.coll_menu)
+        if self._manager.ui.view and self._manager.ui.view.onSetRotationMode then
+            self._manager.ui.view:onSetRotationMode(rotation)
+        elseif self._manager.ui.onSetRotationMode then
+            self._manager.ui:onSetRotationMode(rotation)
+        else
+            Screen:setRotationMode(rotation)
+        end
+        self._manager:onShowColl()
+    end
+    return true
+end
+
 function FileManagerCollection:onShowColl(collection)
     self.coll_menu = Menu:new{
         ui = self.ui,
@@ -144,20 +159,10 @@ function FileManagerCollection:onShowColl(collection)
         is_borderless = true,
         is_popout = false,
         onMenuHold = self.onMenuHold,
+        onSetRotationMode = self.MenuSetRotationModeHandler,
         _manager = self,
         collection = collection,
     }
-
-    -- Handle rotation events
-    local this = self
-    function self.coll_menu:onSetRotationMode(rotation)
-        if rotation ~= nil and rotation ~= Screen:getRotationMode() then
-            UIManager:close(this.coll_menu)
-            Screen:setRotationMode(rotation)
-            this:onShowColl()
-        end
-        return true
-    end
 
     self:updateItemTable()
     self.coll_menu.close_callback = function()
