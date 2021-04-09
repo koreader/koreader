@@ -237,7 +237,7 @@ function CoverImage:getCacheFiles(cache_path, cache_prefix)
             end
         end
     end
-    logger.dbg("CoverImage: start - cache size: "..cache_size_KiB .. " KiB, cached files: " .. cache_count)
+    logger.dbg("CoverImage: start - cache size: ".. cache_size_KiB .. " KiB, cached files: " .. cache_count)
     return cache_count, cache_size_KiB, files
 end
 
@@ -260,7 +260,7 @@ function CoverImage:cleanCache()
         cache_size_KiB = cache_size_KiB - files[index].size
         index = index + 1
     end
-    logger.dbg("CoverImage: clean - cache size: "..cache_size_KiB .. " KiB, cached files: " .. cache_count)
+    logger.dbg("CoverImage: clean - cache size: ".. cache_size_KiB .. " KiB, cached files: " .. cache_count)
 end
 
 function CoverImage:isCacheEnabled()
