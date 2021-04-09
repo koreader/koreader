@@ -1227,7 +1227,7 @@ function DictQuickLookup:lookupInputWord(hint)
                     is_enter_default = not self.is_wiki,
                     callback = function()
                         if self.input_dialog:getInputText() == "" then return end
-                        self.is_wiki=false
+                        self.is_wiki = false
                         self:closeInputDialog()
                         self:inputLookup()
                     end,
@@ -1245,7 +1245,7 @@ function DictQuickLookup:lookupInputWord(hint)
                     is_enter_default = self.is_wiki,
                     callback = function()
                         if self.input_dialog:getInputText() == "" then return end
-                        self.is_wiki=true
+                        self.is_wiki = true
                         self:closeInputDialog()
                         self:inputLookup()
                     end,
