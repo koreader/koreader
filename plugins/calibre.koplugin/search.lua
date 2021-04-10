@@ -18,6 +18,7 @@ local Screen = require("device").screen
 local Size = require("ui/size")
 local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local rapidjson = require("rapidjson")
 local util = require("util")
@@ -169,12 +170,12 @@ local CalibreSearch = InputContainer:new{
         "find_by_path",
     },
 
+    cache_dir = DataStorage:getDataDir() .. "/cache/calibre",
     cache_libs = Persist:new{
-        path = DataStorage:getDataDir() .. "/cache/calibre-libraries.lua",
+        path = DataStorage:getDataDir() .. "/cache/calibre/libraries.lua",
     },
-
     cache_books = Persist:new{
-        path = DataStorage:getDataDir() .. "/cache/calibre-books.dat",
+        path = DataStorage:getDataDir() .. "/cache/calibre/books.dat",
         codec = "bitser",
     },
 }
@@ -495,6 +496,7 @@ function CalibreSearch:prompt(message)
                 paths = paths .. "\n" .. _("SD card") .. ": " .. sd_paths
             end
 
+            lfs.mkdir(self.cache_dir)
             self.cache_libs:save(self.libraries)
             self:invalidateCache()
             self.books = self:getMetadata()
@@ -604,7 +606,11 @@ function CalibreSearch:getMetadata()
         for index, book in ipairs(books) do
             table.insert(serialized_table, index, removeNull(book))
         end
-        self.cache_books:save(serialized_table)
+        lfs.mkdir(self.cache_dir)
+        local ok, err = self.cache_books:save(serialized_table)
+        if not ok then
+            logger.info("Failed to serialize calibre metadata cache:", err)
+        end
     end
     logger.info(string.format(template, #books, "calibre", (TimeVal:now() - start):tomsecs()))
     return books

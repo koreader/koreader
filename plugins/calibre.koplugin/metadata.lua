@@ -242,6 +242,7 @@ function CalibreMetadata:init(dir, is_search)
 
     local msg
     if is_search then
+        self:cleanUnused()
         msg = string.format("(search) in %.3f milliseconds: %d books",
             (TimeVal:now() - start):tomsecs(), #self.books)
     else
