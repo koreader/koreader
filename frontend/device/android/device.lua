@@ -9,6 +9,7 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
+local realpath = FFIUtil.realpath
 
 local function yes() return true end
 local function no() return false end
@@ -390,7 +391,15 @@ function Device:canExecuteScript(file)
 end
 
 function Device:isValidPath(path)
-    return android.isPathInsideSandbox(path)
+    -- the fast check
+    if android.isPathInsideSandbox(path) then
+        return true
+    end
+
+    -- the thorough check
+    local real_ext_storage = realpath(android.getExternalStoragePath())
+    local real_path = realpath(path)
+    return real_path:sub(1, #real_ext_storage) == real_ext_storage
 end
 
 --swallow all events
