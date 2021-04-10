@@ -13,6 +13,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local rapidjson = require("rapidjson")
 local sha = require("ffi/sha2")
@@ -644,9 +645,30 @@ end
 
 function CalibreWireless:sendToCalibre(arg)
     logger.dbg("GET_BOOK_FILE_SEGMENT", arg)
-    -- not implemented yet, we just send an invalid opcode to raise a control error in calibre.
-    -- If we don't do this calibre will wait *a lot* for the file(s)
-    self:sendJsonData('NOOP', {})
+    local inbox_dir = G_reader_settings:readSetting("inbox_dir")
+    local path = inbox_dir .. "/" .. arg.lpath
+
+    local file_size = lfs.attributes(path, "size")
+    if not file_size then
+        self:sendJsonData("NOOP", {})
+        return
+    end
+
+    local file = io.open(path, "rb")
+    if not file then
+        self:sendJsonData("NOOP", {})
+        return
+    end
+
+    self:sendJsonData("OK", { fileLength = file_size })
+
+    while true do
+        local data = file:read(4096)
+        if not data then break end
+        self.calibre_socket:send(data)
+    end
+
+    file:close()
 end
 
 function CalibreWireless:isCalibreAtLeast(x,y,z)
