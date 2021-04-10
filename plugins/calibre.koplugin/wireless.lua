@@ -679,12 +679,12 @@ function CalibreWireless:sendToCalibre(arg)
     file:close()
 end
 
-function CalibreWireless:isCalibreAtLeast(x,y,z)
+function CalibreWireless:isCalibreAtLeast(x, y, z)
     local v = self.calibre.version
-    local function semanticVersion(a,b,c)
+    local function semanticVersion(a, b, c)
         return ((a * 100000) + (b * 1000)) + c
     end
-    return semanticVersion(v[1],v[2],v[3]) >= semanticVersion(x,y,z)
+    return semanticVersion(v[1], v[2], v[3]) >= semanticVersion(x, y, z)
 end
 
 return CalibreWireless
