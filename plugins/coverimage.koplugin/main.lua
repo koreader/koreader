@@ -7,24 +7,22 @@ if not (Device.isAndroid() or Device.isEmulator() or Device.isRemarkable() or De
 end
 
 local A, android = pcall(require, "android")  -- luacheck: ignore
-local ConfirmBox = require("ui/widget/confirmbox")
 local Blitbuffer = require("ffi/blitbuffer")
-local InfoMessage = require("ui/widget/infomessage")
+local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
+local PathChooser = require("ui/widget/pathchooser")
 local UIManager = require("ui/uimanager")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local RenderImage = require("ui/renderimage")
+local Screen = require("device").screen
+local T = require("ffi/util").template
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
-local T = require("ffi/util").template
-
-local PathChooser = require("ui/widget/pathchooser")
-local Screen = require("device").screen
-local InputDialog = require("ui/widget/inputdialog")
-local realpath = ffiutil.realpath
 
 -- todo: please check the default paths directly on the depending device
 -- todo: Wouldn't we like an android.deviceIdentifier() method, so we can use better default paths?
@@ -85,9 +83,7 @@ function CoverImage:init()
     self.enabled = G_reader_settings:isTrue("cover_image_enabled")
     self.fallback = G_reader_settings:isTrue("cover_image_fallback")
 
-    if not lfs.attributes(self.cover_image_cache_path, "mode") then
-        lfs.mkdir(self.cover_image_cache_path)
-    end
+    lfs.mkdir(self.cover_image_cache_path)
 
     self.ui.menu:registerToMainMenu(self)
 end
@@ -202,7 +198,7 @@ end
 ---------------------------
 
 function CoverImage:getCacheFile()
-    local path, document_name = util.splitFilePathName(self.ui.document.file) --luacheck: no unsused
+    local dummy, document_name = util.splitFilePathName(self.ui.document.file)
     -- use document_name here. Title may contain characters not allowed on every filesystem (esp. vfat on /sdcard)
     return self.cover_image_cache_path .. self.cover_image_cache_prefix .. document_name
         .. "_" .. self.cover_image_quality .. "_" .. self.cover_image_stretch_limit .. "_" .. self.cover_image_background
@@ -213,7 +209,7 @@ function CoverImage:emptyCache()
     for entry in lfs.dir(self.cover_image_cache_path) do
         if entry ~= "." and entry ~= ".." then
             local file = self.cover_image_cache_path .. entry
-            if entry:sub(1,self.cover_image_cache_prefix:len()) == self.cover_image_cache_prefix
+            if entry:sub(1, self.cover_image_cache_prefix:len()) == self.cover_image_cache_prefix
                 and lfs.attributes(file, "mode") == "file" then
                     os.remove(file)
             end
@@ -228,7 +224,7 @@ function CoverImage:getCacheFiles(cache_path, cache_prefix)
     for entry in lfs.dir(self.cover_image_cache_path) do
         if entry ~= "." and entry ~= ".." then
             local file = cache_path .. entry
-            if entry:sub(1,self.cover_image_cache_prefix:len()) == cache_prefix
+            if entry:sub(1, self.cover_image_cache_prefix:len()) == cache_prefix
                 and lfs.attributes(file, "mode") == "file" then
                 cache_count = cache_count + 1
                 files[cache_count] = {
@@ -274,12 +270,12 @@ function CoverImage:isCacheEnabled(path)
         return self.cover_image_cache_maxfiles >= 0 and self.cover_image_cache_maxsize >= 0
             and lfs.attributes(path, "mode") == "directory"
             and path ~= "/sdcard/koreader/cache/"  -- interferes with frontent cache-framework
-            and realpath(path) ~= realpath(android.getExternalStoragePath() .. "/koreader/cache/")  -- interferes with frontent cache-framework
+            and ffiutil.realpath(path) ~= ffiutil.realpath(android.getExternalStoragePath() .. "/koreader/cache/")  -- interferes with frontent cache-framework
     else
         return self.cover_image_cache_maxfiles >= 0 and self.cover_image_cache_maxsize >= 0
             and lfs.attributes(path, "mode") == "directory"
             and path ~= "./cache/" -- interferes with frontent cache-framework; quick and dirty check
-            and realpath(path) ~= realpath("./cache/") -- interferes with frontent cache-framework; quick and dirty check
+            and ffiutil.realpath(path) ~= ffiutil.realpath("./cache/") -- interferes with frontent cache-framework; quick and dirty check
     end
 end
 
@@ -291,7 +287,7 @@ function CoverImage:migrateCache(old_path, new_path)
     for entry in lfs.dir(old_path) do
         if entry ~= "." and entry ~= ".."   then
             local old_file = old_path .. entry
-            if lfs.attributes(old_file, "mode") == "file" and entry:sub(1,self.cover_image_cache_prefix:len()) == self.cover_image_cache_prefix then
+            if lfs.attributes(old_file, "mode") == "file" and entry:sub(1, self.cover_image_cache_prefix:len()) == self.cover_image_cache_prefix then
                 local old_access_time = lfs.attributes(old_file, "access")
                 local new_file = new_path .. entry
                 os.rename(old_file, new_file)
@@ -312,14 +308,14 @@ end
 chooses a path or (an existing) file
 
 @touchmenu_instance for updating of the menu
-@string setting is the G_reader_setting which is used and changed
+@string setting is the G_reader_setting key which is used and changed
 @boolean folder_only just selects a path, no file handling
 @boolean new_file allows to enter a new filename, or use just an existing file
 @function migrate(a,b) callback to a function to mangle old folder/file with new folder/file.
-    Can used for migrating the contents of the old path to the new one
+    Can be used for migrating the contents of the old path to the new one
 ]]
 function CoverImage:choosePathFile(touchmenu_instance, setting, folder_only, new_file, migrate)
-    local old_path, old_name = util.splitFilePathName(self[setting]) -- luacheck: no unused
+    local old_path, dummy = util.splitFilePathName(self[setting])
     UIManager:show(PathChooser:new{
         select_directory = true,
         select_file = not folder_only,
@@ -382,10 +378,10 @@ function CoverImage:choosePathFile(touchmenu_instance, setting, folder_only, new
 end
 
 --[[--
-changes a G_reader_setting with a size spinner
+Update a specific G_reader_setting's value via a Spinner
 
 @touchmenu_instance used for updating the menu
-@string setting is the G_reader_setting which is used and changed
+@string setting is the G_reader_setting key which is used and changed
 @string title shown in the spinner
 @int min minimum value of the spinner
 @int max maximum value of the spinner

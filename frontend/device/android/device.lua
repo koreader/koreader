@@ -9,7 +9,6 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
-local realpath = FFIUtil.realpath
 
 local function yes() return true end
 local function no() return false end
@@ -397,8 +396,8 @@ function Device:isValidPath(path)
     end
 
     -- the thorough check
-    local real_ext_storage = realpath(android.getExternalStoragePath())
-    local real_path = realpath(path)
+    local real_ext_storage = FFIUtil.realpath(android.getExternalStoragePath())
+    local real_path = FFIUtil.realpath(path)
     return real_path:sub(1, #real_ext_storage) == real_ext_storage
 end
 
