@@ -125,16 +125,8 @@ end
 
 -- saves books' metadata to JSON file
 function CalibreMetadata:saveBookList()
-    -- replace bad table values with null
     local file = self.metadata
     local books = self.books
-    for index, book in ipairs(books) do
-        for key, item in pairs(book) do
-            if type(item) == "userdata" then
-                books[index][key] = rapidjson.null
-            end
-        end
-    end
     rapidjson.dump(rapidjson.array(books), file, { pretty = true })
 end
 
@@ -173,13 +165,7 @@ end
 
 -- gets the book metadata at the given index
 function CalibreMetadata:getBookMetadata(index)
-    local book = self.books[index]
-    for key, value in pairs(book) do
-        if type(value) == "userdata" then
-            book[key] = rapidjson.null
-        end
-    end
-    return book
+    return self.books[index]
 end
 
 -- removes deleted books from table
