@@ -21,6 +21,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local md5 = require("ffi/sha2").md5
 local util = require("util")
 local _ = require("gettext")
 
@@ -182,9 +183,10 @@ end
 function CoverImage:getCacheFile()
     local dummy, document_name = util.splitFilePathName(self.ui.document.file)
     -- use document_name here. Title may contain characters not allowed on every filesystem (esp. vfat on /sdcard)
-    return self.cover_image_cache_path .. self.cover_image_cache_prefix .. document_name
-        .. "_" .. self.cover_image_quality .. "_" .. self.cover_image_stretch_limit .. "_" .. self.cover_image_background
-        .. "_" .. self.cover_image_format .. "." .. getExtension(self.cover_image_path)
+    local key = document_name .. "_" .. self.cover_image_quality .. "_" .. self.cover_image_stretch_limit .. "_"
+        .. self.cover_image_background .. "_" .. self.cover_image_format
+
+    return self.cover_image_cache_path .. self.cover_image_cache_prefix .. md5(key) .. "." .. getExtension(self.cover_image_path)
 end
 
 function CoverImage:emptyCache()
