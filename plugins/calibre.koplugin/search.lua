@@ -19,6 +19,7 @@ local Size = require("ui/size")
 local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local rapidjson = require("rapidjson")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -84,7 +85,7 @@ end
 local function getBooksBySeries(t, series)
     local result = {}
     for _, book in ipairs(t) do
-        if book.series and type(book.series) ~= "function" then
+        if book.series and book.series ~= rapidjson.null then
             if book.series == series then
                 table.insert(result, book)
             end
@@ -112,7 +113,7 @@ end
 local function searchBySeries(t, query, case_insensitive)
     local freq = {}
     for _, book in ipairs(t) do
-        if book.series and type(book.series) ~= "function" then
+        if book.series and book.series ~= rapidjson.null then
             if match(book.series, query, case_insensitive) then
                 freq[book.series] = (freq[book.series] or 0) + 1
             end
@@ -147,7 +148,7 @@ local function getBookInfo(book)
         tags = _("Tags:") .. " " .. tags
     end
     local series
-    if book.series and type(book.series) ~= "function" then
+    if book.series and book.series ~= rapidjson.null then
         series = _("Series:") .. " " .. book.series
     end
     return string.format("%s\n%s\n%s%s%s", title, authors,
@@ -594,7 +595,7 @@ function CalibreSearch:getMetadata()
         local serialized_table = {}
         local function removeNull(t)
             for _, key in ipairs({"series", "series_index"}) do
-                if type(t[key]) == "function" then
+                if t[key] == rapidjson.null then
                     t[key] = nil
                 end
             end
