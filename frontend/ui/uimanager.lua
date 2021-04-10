@@ -538,7 +538,6 @@ function UIManager:schedule(time, action, ...)
             end
         until e < s
     end
-    print("UIManager:schedule: scheduled task", action, "for", time:tonumber())
     table.insert(self._task_queue, p, {
         time = time,
         action = action,
@@ -1150,7 +1149,6 @@ end
 
 function UIManager:_checkTasks()
     self._now = TimeVal:now()
-    print("UIManager:_checkTasks @", self._now:tonumber())
     local wait_until = nil
 
     -- task.action may schedule other events
@@ -1170,7 +1168,6 @@ function UIManager:_checkTasks()
             -- NOTE: be careful that task.action() might modify
             -- _task_queue here. So need to avoid race condition
             task.action(unpack(task.args, 1, task.argc))
-            print("UIManager:_checkTasks: consumed task", task.action, "scheduled for", task.time:tonumber())
         else
             -- queue is sorted in ascendant order, safe to assume all items
             -- are future tasks for now
@@ -1179,7 +1176,6 @@ function UIManager:_checkTasks()
         end
     end
 
-    print("UIManager:_checkTasks next:", wait_until and wait_until:tonumber())
     return wait_until, self._now
 end
 
@@ -1359,7 +1355,6 @@ in which case, nothing is repainted, but the refreshes are still drained and exe
 @local Not to be used outside of UIManager!
 --]]
 function UIManager:_repaint()
-    print("UIManager:_repaint @ frame", self._now:tonumber())
     -- flag in which we will record if we did any repaints at all
     -- will trigger a refresh if set.
     local dirty = false
@@ -1460,7 +1455,6 @@ end
 
 --- Explicitly drain the paint & refresh queues *now*, instead of waiting for the next UI tick.
 function UIManager:forceRePaint()
-    print("UIManager:forceRePaint")
     self:_repaint()
 end
 
@@ -1614,9 +1608,7 @@ function UIManager:handleInput()
     end
 
     -- Run ZMQs if any
-    print("UIManager:handleInput: #ZMQs:", #self._zeromqs)
     self:processZMQs()
-    print("UIManager:handleInput: Returned from processZMQs", #self._zeromqs)
 
     -- If allowed, entering standby (from which we can wake by input) must trigger in response to event
     -- this function emits (plugin), or within waitEvent() right after (hardware).
@@ -1625,7 +1617,6 @@ function UIManager:handleInput()
 
     -- wait for next batch of events
     local input_events = Input:waitEvent(now, deadline)
-    print("UIManager:handleInput: returned from Input:waitEvent", now:tonumber(), deadline and deadline:tonumber())
 
     -- delegate each input event to handler
     if input_events then
