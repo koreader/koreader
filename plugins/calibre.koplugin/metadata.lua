@@ -130,7 +130,7 @@ function CalibreMetadata:saveBookList()
     local books = self.books
     for index, book in ipairs(books) do
         for key, item in pairs(book) do
-            if type(item) == "function" then
+            if type(item) == "userdata" then
                 books[index][key] = rapidjson.null
             end
         end
@@ -175,7 +175,7 @@ end
 function CalibreMetadata:getBookMetadata(index)
     local book = self.books[index]
     for key, value in pairs(book) do
-        if type(value) == "function" then
+        if type(value) == "userdata" then
             book[key] = rapidjson.null
         end
     end
