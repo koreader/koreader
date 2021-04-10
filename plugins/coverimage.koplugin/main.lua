@@ -48,7 +48,11 @@ end
 
 local function pathOk(filename)
     local path, name = util.splitFilePathName(filename)
-    if not Device:isValidPath(path) then -- isValidPath expects a trailing slash
+
+    -- as isValidPath() does not check the realpath on android, tweak this here.
+    -- once isValidPath is updated this can be deleted
+    local android_tweak = "/mnt/media_rw/"
+    if path:sub(1,android_tweak:len()) ~= android_tweak and not Device:isValidPath(path) then -- isValidPath expects a trailing slash
         return false, T(_("Path \"%1\" isn't in a writable location."), path)
     elseif not util.pathExists(path:gsub("/$", "")) then -- pathExists expects no trailing slash
         return false, T(_("The path \"%1\" doesn't exist."), path)
