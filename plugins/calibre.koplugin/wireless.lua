@@ -149,15 +149,19 @@ function CalibreWireless:initCalibreMQ(host, port)
                             msg = T(_("Connected to calibre server at %1"),
                                 BD.ltr(T("%1:%2", host, port)))
                         end
+                        logger.info("UIManager: show calibre IM")
                         UIManager:show(InfoMessage:new{
                             text = msg,
                             timeout = 2,
                         })
+                        -- Force a new UI tick *now*, as ZMQ screws with the event loop.
+                        --UIManager:forceRePaint()
                     end
                     self.connect_message = true
+                    logger.info("Schedule Calibre IM")
                     UIManager:scheduleIn(1, self.password_check_callback)
                     if self.failed_connect_callback then
-                        --don't disconnect if we connect in 10 seconds
+                        -- Don't disconnect if we connect in 10 seconds
                         UIManager:unschedule(self.failed_connect_callback)
                     end
                 end
