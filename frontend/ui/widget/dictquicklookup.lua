@@ -21,6 +21,7 @@ local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local TimeVal = require("ui/timeval")
+local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -1213,22 +1214,43 @@ function DictQuickLookup:lookupInputWord(hint)
         buttons = {
             {
                 {
+                    text = _("Translate"),
+                    is_enter_default = false,
+                    callback = function()
+                        if self.input_dialog:getInputText() == "" then return end
+                        self:closeInputDialog()
+                        Translator:showTranslation(self.input_dialog:getInputText())
+                    end,
+                },
+                {
+                    text = _("Search Wikipedia"),
+                    is_enter_default = self.is_wiki,
+                    callback = function()
+                        if self.input_dialog:getInputText() == "" then return end
+                        self.is_wiki = true
+                        self:closeInputDialog()
+                        self:inputLookup()
+                    end,
+                },
+            },
+            {
+                {
                     text = _("Cancel"),
                     callback = function()
                         self:closeInputDialog()
                     end,
                 },
                 {
-                    text = self.is_wiki and _("Search Wikipedia") or _("Search dictionary"),
-                    is_enter_default = true,
+                    text = _("Search dictionary"),
+                    is_enter_default = not self.is_wiki,
                     callback = function()
                         if self.input_dialog:getInputText() == "" then return end
+                        self.is_wiki = false
                         self:closeInputDialog()
-                        self:onClose()
                         self:inputLookup()
                     end,
                 },
-            }
+            },
         },
     }
     UIManager:show(self.input_dialog)
