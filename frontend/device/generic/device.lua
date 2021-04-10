@@ -4,6 +4,7 @@ Generic device abstraction.
 This module defines stubs for common methods.
 --]]
 
+local DataStorage = require("datastorage")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -498,6 +499,10 @@ end
 -- Device specific method to check if the startup script has been updated
 function Device:isStartupScriptUpToDate()
     return true
+end
+
+function Device:getDefaultCoverPath()
+    return DataStorage:getDataDir() .. "/cover.jpg"
 end
 
 --- Unpack an archive.

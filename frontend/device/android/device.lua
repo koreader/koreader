@@ -460,6 +460,15 @@ function Device:untar(archive, extract_to)
     return android.untar(archive, extract_to)
 end
 
+-- todo: Wouldn't we like an android.deviceIdentifier() method, so we can use better default paths?
+function Device:getDefaultCoverPath()
+    if android.prop.product == "ntx_6sl" then -- Tolino HD4 and other
+    return android.getExternalStoragePath() .. "/suspend_others.jpg"
+    else
+        return "cover.jpg"
+    end
+end
+
 android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",
     android.prop.version, getCodename(), Device.firmware_rev, android.prop.flavor))
 

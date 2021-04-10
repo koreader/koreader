@@ -195,6 +195,10 @@ end
 
 logger.info(string.format("Starting %s", rm_model))
 
+function Remarkable:getDefaultCoverPath()
+    return "/usr/share/remarkable/poweroff.png"
+end
+
 if isRm2 then
     if not os.getenv("RM2FB_SHIM") then
         error("reMarkable2 requires RM2FB to work (https://github.com/ddvk/remarkable2-framebuffer)")

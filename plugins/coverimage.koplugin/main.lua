@@ -24,25 +24,7 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 
--- todo: please check the default paths directly on the depending device
--- todo: Wouldn't we like an android.deviceIdentifier() method, so we can use better default paths?
-local function getDefaultCoverPath()
-    if Device.isEmulator() then
-        return DataStorage:getDataDir() .. "/"
-    elseif Device.isAndroid() then
-        if android.prop.product == "ntx_6sl" then -- Tolino HD4 and other
-            return android.getExternalStoragePath() .. "/suspend_others.jpg"
-        else
-            return "cover.jpg"
-        end
-    elseif Device.isRemarkable() then
-        return "/usr/share/remarkable/poweroff.png"
-    elseif Device.isPocketBook() then
-        return "/mnt/ext1/system/logo/offlogo/cover.bmp"
-    else
-        return "cover.jpg"
-    end
-end
+-- todo: please check the default paths directly on the depending Device:getDefaultCoverPath()
 
 local function pathOk(filename)
     local path, name = util.splitFilePathName(filename)
@@ -70,7 +52,7 @@ local CoverImage = WidgetContainer:new{
 }
 
 function CoverImage:init()
-    self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or getDefaultCoverPath()
+    self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or Device:getDefaultCoverPath()
     self.cover_image_format = G_reader_settings:readSetting("cover_image_format") or "auto"
     self.cover_image_quality = G_reader_settings:readSetting("cover_image_quality") or 75
     self.cover_image_stretch_limit = G_reader_settings:readSetting("cover_image_stretch_limit") or 8
