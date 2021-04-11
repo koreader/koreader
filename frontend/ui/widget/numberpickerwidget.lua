@@ -126,7 +126,7 @@ function NumberPickerWidget:init()
         callback_input = function()
             input_dialog = InputDialog:new{
                 title = _("Enter number"),
-                input_hint = T("(%1 - %2)", self.value_min, self.value_max),
+                input_hint = T("%1 (%2 - %3)", self.formatted_value, self.value_min, self.value_max),
                 input_type = "number",
                 buttons = {
                     {
@@ -140,7 +140,6 @@ function NumberPickerWidget:init()
                             text = _("OK"),
                             is_enter_default = true,
                             callback = function()
-                                input_dialog:closeInputDialog()
                                 local input_value = tonumber(input_dialog:getInputText())
                                 if input_value and input_value >= self.value_min and input_value <= self.value_max then
                                     self.value = input_value
