@@ -18,16 +18,12 @@ local Screen = require("device").screen
 local Size = require("ui/size")
 local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
-local ffi = require("ffi")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local rapidjson = require("rapidjson")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
-
-local C = ffi.C
-require("ffi/posix_h")
 
 -- get root dir for disk scans
 local function getDefaultRootDir()
