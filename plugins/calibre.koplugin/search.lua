@@ -612,7 +612,7 @@ function CalibreSearch:getMetadata()
     if self.cache_metadata then
         local serialized_table = {}
         local function removeNull(t)
-            for _, key in ipairs({"series", "series_index", "uuid"}) do
+            for _, key in ipairs({"series", "series_index"}) do
                 if t[key] == rapidjson.null then
                     t[key] = nil
                 end

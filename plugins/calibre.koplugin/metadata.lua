@@ -27,9 +27,20 @@ local used_metadata = {
     "series_index"
 }
 
-local function slim(book)
+-- The search metadata cache requires an even smaller subset
+local search_used_metadata = {
+    "lpath",
+    "size",
+    "title",
+    "authors",
+    "tags",
+    "series",
+    "series_index"
+}
+
+local function slim(book, is_search)
     local slim_book = {}
-    for _, k in ipairs(used_metadata) do
+    for _, k in ipairs(is_search and search_used_metadata or used_metadata) do
         if k == "series" or k == "series_index" then
             slim_book[k] = book[k] or rapidjson.null
         elseif k == "tags" then
@@ -186,13 +197,13 @@ function CalibreMetadata:prune()
 end
 
 -- removes unused metadata from books
-function CalibreMetadata:cleanUnused(read_only)
+function CalibreMetadata:cleanUnused(is_search)
     for index, book in ipairs(self.books) do
-        self.books[index] = slim(book)
+        self.books[index] = slim(book, is_search)
     end
 
     -- We don't want to stomp on the library's actual JSON db for metadata searches.
-    if read_only then
+    if is_search then
         return
     end
 
@@ -248,7 +259,7 @@ function CalibreMetadata:init(dir, is_search)
 
     local msg
     if is_search then
-        self:cleanUnused(true)
+        self:cleanUnused(is_search)
         msg = string.format("(search) in %.3f milliseconds: %d books",
             (TimeVal:now() - start):tomsecs(), #self.books)
     else
