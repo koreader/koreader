@@ -582,12 +582,12 @@ function CalibreSearch:getMetadata()
             local utc_ts = tonumber(os.date("!%s"))
             local local_ts = os.time()
             local utc_diff = local_ts - utc_ts
-            -- Account for DST, because everything is terrible.
+            -- Account for DST *again*, to counteract mktime's handling of it in strftime...
             if tm.isdst then
                 utc_diff = utc_diff + 3600
             end
             date = date + utc_diff
-            logger.dbg("CalibreSearch:getMetadata: Cache timestamp   :", file_timestamp)
+            logger.dbg("CalibreSearch:getMetadata: Cache timestamp   :", file_timestamp, os.date("!%FT%T.000000+00:00", file_timestamp))
             logger.dbg("CalibreSearch:getMetadata: Metadata timestamp:", date, timestamp)
 
             return file_timestamp > date
