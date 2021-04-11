@@ -44,6 +44,22 @@ if from_version < Version:getNormalizedVersion("v2021.03") then
     end
 end
 
+-- Statistics, https://github.com/koreader/koreader/pull/7471
+if from_version < Version:getNormalizedVersion("v2021.03-12") then
+    logger.info("Running one-time migration for v2021.03-12")
+
+    local statistics = G_reader_settings:readSetting("statistics", {})
+    count = 0
+    for _, _ in pairs(statistics) do
+        count = count + 1
+    end
+
+    -- If we don't have the full set of keys, wipe the table to let the plugin re-initialize it correctly.
+    if count < 8 then
+        G_reader_settings:delSetting("statistics")
+    end
+end
+
 -- ScreenSaver, https://github.com/koreader/koreader/pull/7496
 if from_version < Version:getNormalizedVersion("v2021.03-35") then
     logger.info("Running one-time migration for v2021.03-35")

@@ -143,12 +143,6 @@ function ReaderStatistics:init()
         calendar_browse_future_months = false,
     }
     self.settings = G_reader_settings:readSetting("statistics", default_settings)
-    -- Handle a snafu in 2021.03 that could lead to an empty settings table on fresh installs.
-    for k, v in pairs(default_settings) do
-        if self.settings[k] == nil then
-            self.settings[k] = v
-        end
-    end
 
     self.ui.menu:registerToMainMenu(self)
     self:checkInitDatabase()
