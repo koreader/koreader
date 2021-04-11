@@ -49,7 +49,7 @@ if from_version < Version:getNormalizedVersion("v2021.03-12") then
     logger.info("Running one-time migration for v2021.03-12")
 
     local statistics = G_reader_settings:readSetting("statistics", {})
-    count = 0
+    local count = 0
     for _, _ in pairs(statistics) do
         count = count + 1
     end
@@ -77,7 +77,7 @@ if from_version < Version:getNormalizedVersion("v2021.03-43") then
 
     -- NOTE: Before 2021.04, fontlist used to squat our folder, needlessly polluting our state tracking.
     local cache_path = DataStorage:getDataDir() .. "/cache"
-    local new_path = cache .. "/fontlist"
+    local new_path = cache_path .. "/fontlist"
     lfs.mkdir(new_path)
     os.rename(cache_path .. "/fontinfo.dat", new_path .. "/fontinfo.dat")
 end
@@ -88,7 +88,7 @@ if from_version < Version:getNormalizedVersion("v2021.03-47") then
 
     -- Ditto for Calibre
     local cache_path = DataStorage:getDataDir() .. "/cache"
-    local new_path = cache .. "/calibre"
+    local new_path = cache_path .. "/calibre"
     lfs.mkdir(new_path)
     os.rename(cache_path .. "/calibre-libraries.lua", new_path .. "/libraries.lua")
     os.rename(cache_path .. "/calibre-books.dat", new_path .. "/books.dat")
