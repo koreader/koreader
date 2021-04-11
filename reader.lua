@@ -172,6 +172,9 @@ if Device:hasEinkScreen() then
     end
 end
 
+-- Handle one time migration in case of an upgrade...
+require("ui/data/onetime_migration")
+
 -- Handle global settings migration
 local SettingsMigration = require("ui/data/settings_migration")
 SettingsMigration:migrateSettings(G_reader_settings)
