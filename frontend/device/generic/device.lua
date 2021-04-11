@@ -106,6 +106,9 @@ local Device = {
     -- (c.f., https://github.com/koreader/koreader/pull/5211#issuecomment-521304139)
     hasFastWifiStatusQuery = no,
 
+    -- set to yes on devices with system fonts
+    hasSystemFonts = no,
+
     canOpenLink = no,
     openLink = no,
     canExternalDictLookup = no,

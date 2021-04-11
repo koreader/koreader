@@ -64,6 +64,7 @@ local Device = Generic:new{
     needsScreenRefreshAfterResume = no,
     hasColorScreen = yes,
     hasEinkScreen = no,
+    hasSystemFonts = yes,
     canSuspend = no,
     startTextInput = SDL.startTextInput,
     stopTextInput = SDL.stopTextInput,

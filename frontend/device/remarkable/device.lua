@@ -39,6 +39,7 @@ local Remarkable = Generic:new{
     canPowerOff = yes,
     isTouchDevice = yes,
     hasFrontlight = no,
+    hasSystemFonts = yes,
     display_dpi = 226,
     -- Despite the SoC supporting it, it's finicky in practice (#6772)
     canHWInvert = no,

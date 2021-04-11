@@ -75,9 +75,6 @@ export TESSDATA_PREFIX="data"
 # export dict directory
 export STARDICT_DATA_DIR="data/dict"
 
-# export external font directory
-export EXT_FONT_DIR="/usr/share/fonts/ttf;/usr/share/fonts/opentype"
-
 # We'll want to ensure Portrait rotation to allow us to use faster blitting codepaths @ 8bpp,
 # so remember the current one before fbdepth does its thing.
 ORIG_FB_ROTA="$(./fbdepth -o)"
