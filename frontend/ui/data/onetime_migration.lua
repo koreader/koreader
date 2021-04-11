@@ -59,9 +59,11 @@ end
 if from_version < Version:getNormalizedVersion("v2021.03-43") then
     logger.info("Running one-time migration for v2021.03-43")
 
-    local cache_path = DataStorage:getDataDir() .. "/cache/"
     -- NOTE: Before 2021.04, fontlist used to squat our folder, needlessly polluting our state tracking.
-    os.remove(cache_path .. "/fontinfo.dat")
+    local cache_path = DataStorage:getDataDir() .. "/cache"
+    local new_path = cache .. "/fontlist"
+    lfs.mkdir(new_path)
+    os.rename(cache_path .. "/fontinfo.dat", new_path .. "/fontinfo.dat")
 end
 
 -- Calibre, cache migration, https://github.com/koreader/koreader/pull/7528
@@ -69,8 +71,11 @@ if from_version < Version:getNormalizedVersion("v2021.03-47") then
     logger.info("Running one-time migration for v2021.03-47")
 
     -- Ditto for Calibre
-    os.remove(cache_path .. "/calibre-libraries.lua")
-    os.remove(cache_path .. "/calibre-books.dat")
+    local cache_path = DataStorage:getDataDir() .. "/cache"
+    local new_path = cache .. "/calibre"
+    lfs.mkdir(new_path)
+    os.rename(cache_path .. "/calibre-libraries.lua", new_path .. "/libraries.lua")
+    os.rename(cache_path .. "/calibre-books.dat", new_path .. "/books.dat")
 end
 
 -- We're done, store the current migration version
