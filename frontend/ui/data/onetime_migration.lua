@@ -26,8 +26,49 @@ if from_version < Version:getNormalizedVersion("v2019.12") then
     SettingsMigration:migrateSettings(G_reader_settings)
 end
 
--- NOTE: ReaderTypography handles a few things @ init that could perhaps be moved here with minor refactoring...
---       https://github.com/koreader/koreader/pull/6072
+-- ReaderTypography, https://github.com/koreader/koreader/pull/6072
+if from_version < Version:getNormalizedVersion("v2020.05") then
+    logger.info("Running one-time migration for v2020.05")
+
+    local ReaderTypography = require("apps/reader/modules/readertypography")
+    -- Migrate old readerhyphenation settings
+    -- (but keep them in case one goes back to a previous version)
+    if G_reader_settings:hasNot("text_lang_default") and G_reader_settings:hasNot("text_lang_fallback") then
+        local g_text_lang_set = false
+        local hyph_alg_default = G_reader_settings:readSetting("hyph_alg_default")
+        if hyph_alg_default then
+            local dict_info = ReaderTypography.HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_alg_default]
+            if dict_info then
+                G_reader_settings:saveSetting("text_lang_default", dict_info[2])
+                g_text_lang_set = true
+                -- Tweak the other settings if the default hyph algo happens to be one of these:
+                if hyph_alg_default == "@none" then
+                    G_reader_settings:makeFalse("hyphenation")
+                elseif hyph_alg_default == "@softhyphens" then
+                    G_reader_settings:makeTrue("hyph_soft_hyphens_only")
+                elseif hyph_alg_default == "@algorithm" then
+                    G_reader_settings:makeTrue("hyph_force_algorithmic")
+                end
+            end
+        end
+        local hyph_alg_fallback = G_reader_settings:readSetting("hyph_alg_fallback")
+        if not g_text_lang_set and hyph_alg_fallback then
+            local dict_info = ReaderTypography.HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_alg_fallback]
+            if dict_info then
+                G_reader_settings:saveSetting("text_lang_fallback", dict_info[2])
+                g_text_lang_set = true
+                -- We can't really tweak other settings if the hyph algo fallback happens to be
+                -- @none, @softhyphens, @algortihm...
+            end
+        end
+        if not g_text_lang_set then
+            -- If nothing migrated, set the fallback to DEFAULT_LANG_TAG,
+            -- as we'll always have one of text_lang_default/_fallback set.
+            G_reader_settings:saveSetting("text_lang_fallback", ReaderTypography.DEFAULT_LANG_TAG)
+        end
+    end
+end
+
 -- NOTE: ReaderRolling, on the other hand, does some lower-level things @ onReadSettings tied to CRe that would be much harder to factor out.
 --       https://github.com/koreader/koreader/pull/1930
 -- NOTE: The Gestures plugin also handles this on its own, but deals with it sanely.
