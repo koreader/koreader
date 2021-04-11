@@ -470,7 +470,7 @@ function Device:getDefaultCoverPath()
     if android.prop.product == "ntx_6sl" then -- Tolino HD4 and other
         return android.getExternalStoragePath() .. "/suspend_others.jpg"
     else
-        return "cover.jpg"
+        return android.getExternalStoragePath() .. "/cover.jpg"
     end
 end
 
