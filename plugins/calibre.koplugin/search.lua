@@ -564,14 +564,14 @@ function CalibreSearch:getMetadata()
     -- try to load metadata from cache
     if self.cache_metadata then
         local function cacheIsNewer(timestamp)
-            local file_timestamp = self.cache_books:timestamp()
+            local cache_timestamp = self.cache_books:timestamp()
             -- stat returns a true Epoch (UTC)
-            if not timestamp or not file_timestamp then return false end
+            if not timestamp or not cache_timestamp then return false end
             local Y, M, D, h, m, s = timestamp:match("(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)")
             -- calibre also stores this in UTC (c.f., calibre.utils.date.isoformat)...
             -- But os.time uses mktime, which converts it to *local* time...
             -- Meaning we'll have to jump through a lot of stupid hoops to make the two agree...
-            local date = os.time({year = Y, month = M, day = D, hour = h, min = m, sec = s})
+            local meta_timestamp = os.time({year = Y, month = M, day = D, hour = h, min = m, sec = s})
             -- To that end, compute the local timezone's offset to UTC via strftime's %z token...
             local tz = os.date("%z") -- +hhmm or -hhmm
             -- We deal with a time_t, so, convert that to seconds...
@@ -580,11 +580,11 @@ function CalibreSearch:getMetadata()
             if tz_sign == "-" then
                 utc_diff = -utc_diff
             end
-            date = date + utc_diff
-            logger.dbg("CalibreSearch:getMetadata: Cache timestamp   :", file_timestamp, os.date("!%FT%T.000000+00:00", file_timestamp))
-            logger.dbg("CalibreSearch:getMetadata: Metadata timestamp:", date, timestamp)
+            meta_timestamp = meta_timestamp + utc_diff
+            logger.dbg("CalibreSearch:getMetadata: Cache timestamp   :", cache_timestamp, os.date("!%FT%T.000000+00:00", cache_timestamp), os.date("%F %T %z", cache_timestamp))
+            logger.dbg("CalibreSearch:getMetadata: Metadata timestamp:", meta_timestamp, timestamp, os.date("%F %T %z", meta_timestamp))
 
-            return file_timestamp > date
+            return cache_timestamp > meta_timestamp
         end
 
         local cache, err = self.cache_books:load()
