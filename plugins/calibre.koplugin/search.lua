@@ -573,15 +573,20 @@ function CalibreSearch:getMetadata()
             if not timestamp or not file_timestamp then return false end
             local Y, M, D, h, m, s = timestamp:match("(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)")
             -- calibre also stores this in UTC...
-            -- But os.time uses mktime, which converts this to *local* time...
-            -- So, temporarily switch to UTC to get an accurate result
-            local oldtz = os.getenv("TZ")
-            C.setenv("TZ", "UTC0", 1)
-            local date = os.time({year = Y, month = M, day = D, hour = h, min = m, sec = s})
-            C.unsetenv("TZ")
-            if oldtz then
-                C.setenv("TZ", oldtz, 1)
+            -- But os.time uses mktime, which converts this to *local* time,
+            -- so, instead, request an UTC Epoch via os.date and its magic bang prefix...
+            -- We'll also need the current DST flag...
+            local tm = os.date("*t")
+            local date = os.time({year = Y, month = M, day = D, hour = h, min = m, sec = s, isdst = tm.isdst})
+            -- So, use os.date and its magic bang prefix to get an actual UTC Epoch, in order to compute the local-to-UTC offset...
+            local utc_ts = tonumber(os.date("!%s"))
+            local local_ts = os.time()
+            local utc_diff = local_ts - utc_ts
+            -- Account for DST, because everything is terrible.
+            if tm.isdst then
+                utc_diff = utc_diff + 3600
             end
+            date = date + utc_diff
             logger.dbg("CalibreSearch:getMetadata: Cache timestamp   :", file_timestamp)
             logger.dbg("CalibreSearch:getMetadata: Metadata timestamp:", date, timestamp)
 
