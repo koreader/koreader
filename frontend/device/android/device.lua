@@ -398,7 +398,12 @@ function Device:isValidPath(path)
     -- the thorough check
     local real_ext_storage = FFIUtil.realpath(android.getExternalStoragePath())
     local real_path = FFIUtil.realpath(path)
-    return real_path:sub(1, #real_ext_storage) == real_ext_storage
+
+    if real_path then
+        return real_path:sub(1, #real_ext_storage) == real_ext_storage
+    else
+        return false
+    end
 end
 
 --swallow all events
@@ -463,7 +468,7 @@ end
 -- todo: Wouldn't we like an android.deviceIdentifier() method, so we can use better default paths?
 function Device:getDefaultCoverPath()
     if android.prop.product == "ntx_6sl" then -- Tolino HD4 and other
-    return android.getExternalStoragePath() .. "/suspend_others.jpg"
+        return android.getExternalStoragePath() .. "/suspend_others.jpg"
     else
         return "cover.jpg"
     end
