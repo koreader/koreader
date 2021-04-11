@@ -52,14 +52,17 @@ local CoverImage = WidgetContainer:new{
     is_doc_only = true,
 }
 
+local default_cache_path = DataStorage:getDataDir() .. "/cache/cover_image.cache/"
+local default_fallback_path = DataStorage:getDataDir() .. "/"
+
 function CoverImage:init()
     self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or Device:getDefaultCoverPath()
     self.cover_image_format = G_reader_settings:readSetting("cover_image_format") or "auto"
     self.cover_image_quality = G_reader_settings:readSetting("cover_image_quality") or 75
     self.cover_image_stretch_limit = G_reader_settings:readSetting("cover_image_stretch_limit") or 8
     self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "black"
-    self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or ""
-    self.cover_image_cache_path = G_reader_settings:readSetting("cover_image_cache_path") or DataStorage:getDataDir() .. "/cache/cover_image.cache/"
+    self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or default_fallback_path
+    self.cover_image_cache_path = G_reader_settings:readSetting("cover_image_cache_path") or default_cache_path
     self.cover_image_cache_maxfiles = G_reader_settings:readSetting("cover_image_cache_maxfiles") or 36
     self.cover_image_cache_maxsize = G_reader_settings:readSetting("cover_image_cache_maxsize") or 5 -- MiB
     self.cover_image_cache_prefix = "cover_"
@@ -471,26 +474,8 @@ function CoverImage:menu_entry_cache()
                     self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxsize", _("Cache size"), -1, 100, 5, self.cleanCache)
                 end,
             },
-            {
-            text = _("Cover cache folder"),
-            checked_func = function()
-                return lfs.attributes(self.cover_image_cache_path, "mode") == "directory"
-                    and self:isCacheEnabled()
-            end,
-            help_text_func = function()
-                return T(_("Current cache path:\n%1"), self.cover_image_cache_path)
-            end,
-            callback = function(touchmenu_instance)
-                UIManager:show(ConfirmBox:new{
-                    text = _("Select a cache folder. The contents of the old folder will be migrated."),
-                    ok_text = _("Yes"),
-                    cancel_text = _("No"),
-                    ok_callback = function()
-                        self:choosePathFile(touchmenu_instance, "cover_image_cache_path", true, false, self.migrateCache)
-                    end,
-                })
-            end,
-            },
+            self:menu_entry_set_path("cover_image_cache_path", _("Cover cache folder"), _("Current cache path:\n%1"),
+                ("Select a cache folder. The contents of the old folder will be migrated."), default_cache_path, true, false, self.migrateCache),
             {
                 text = _("Clear cached covers"),
                 callback = function()
@@ -508,6 +493,43 @@ function CoverImage:menu_entry_cache()
                 keep_menu_open = true,
             },
         },
+    }
+end
+
+function CoverImage:menu_entry_set_path(setting, title, help, info, default, folder_only, new_file, migrate)
+    return {
+        text = title,
+        help_text_func = function()
+            local text = self[setting]
+            text = text ~= "" and text or _("not set")
+            return T(help, text)
+        end,
+        checked_func = function()
+            return self[setting] ~= "" and (pathOk(self[setting]) or folder_only)
+        end,
+        callback = function(touchmenu_instance)
+            UIManager:show(ConfirmBox:new{
+                text = info,
+                ok_text = _("Yes"),
+                cancel_text = _("No"),
+                ok_callback = function()
+                    self:choosePathFile(touchmenu_instance, setting, folder_only, new_file, migrate)
+                end,
+                other_buttons = {{
+                {
+                    text = _("Default"),
+                    callback = function()
+                        self[setting] = default
+                        G_reader_settings:saveSetting(setting, default)
+                        if touchmenu_instance then
+                            touchmenu_instance:updateItems()
+                        end
+                    end
+
+                }
+            }},
+            })
+        end,
     }
 end
 
@@ -631,27 +653,8 @@ function CoverImage:addToMainMenu(menu_items)
                 separator = true,
             },
             -- menu entry: filename dialog
-            {
-                text = _("Set image path"),
-                help_text_func = function()
-                    local text = self.cover_image_path
-                    text = text ~= "" and text or _("not set")
-                    return T(_("Current cover image path:\n%1"), text)
-                end,
-                checked_func = function()
-                    return self.cover_image_path ~= "" and pathOk(self.cover_image_path)
-                end,
-                callback = function(touchmenu_instance)
-                    UIManager:show(ConfirmBox:new{
-                        text = set_image_text,
-                        ok_text = _("Yes"),
-                        cancel_text = _("No"),
-                        ok_callback = function()
-                            self:choosePathFile(touchmenu_instance, "cover_image_path", false, true, self.migrateCover)
-                        end,
-                    })
-                end,
-            },
+            self:menu_entry_set_path("cover_image_path", _("Set image path"), _("Current Cover image path:\n%1"), set_image_text,
+                 Device:getDefaultCoverPath(), false, true, self.migrateCover),
             -- menu entry: enable
             {
                 text = _("Save cover image"),
@@ -694,27 +697,8 @@ function CoverImage:addToMainMenu(menu_items)
                 separator = true,
             },
             -- menu entry: set fallback image
-            {
-                text = _("Select fallback image"),
-                help_text_func = function()
-                    local text = self.cover_image_fallback_path
-                    text = text ~= "" and text or _("not set")
-                    return T(_("The fallback image used on document close is:\n%1"), text)
-                end,
-                checked_func = function()
-                    return lfs.attributes(self.cover_image_fallback_path, "mode") == "file"
-                end,
-                callback = function(touchmenu_instance)
-                    UIManager:show(ConfirmBox:new{
-                        text = set_image_text,
-                        ok_text = _("Yes"),
-                        cancel_text = _("No"),
-                        ok_callback = function()
-                            self:choosePathFile(touchmenu_instance, "cover_image_fallback_path", false, true)
-                        end,
-                    })
-                end,
-            },
+            self:menu_entry_set_path("cover_image_fallback_path", _("Set fallback path"),
+                _("The fallback image used on document close is:\n%1"), set_image_text, default_fallback_path, false, true),
             -- menu entry: fallback
             {
                 text = _("Turn on fallback image"),
