@@ -582,6 +582,8 @@ function CalibreSearch:getMetadata()
             if oldtz then
                 C.setenv("TZ", oldtz, 1)
             end
+            logger.dbg("CalibreSearch:getMetadata: Cache timestamp   :", file_timestamp)
+            logger.dbg("CalibreSearch:getMetadata: Metadata timestamp:", date, timestamp)
 
             return file_timestamp > date
         end
