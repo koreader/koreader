@@ -186,10 +186,16 @@ function CalibreMetadata:prune()
 end
 
 -- removes unused metadata from books
-function CalibreMetadata:cleanUnused()
+function CalibreMetadata:cleanUnused(read_only)
     for index, book in ipairs(self.books) do
         self.books[index] = slim(book)
     end
+
+    -- We don't want to stomp on the library's actual JSON db for metadata searches.
+    if read_only then
+        return
+    end
+
     self:saveBookList()
 end
 
@@ -242,7 +248,7 @@ function CalibreMetadata:init(dir, is_search)
 
     local msg
     if is_search then
-        self:cleanUnused()
+        self:cleanUnused(true)
         msg = string.format("(search) in %.3f milliseconds: %d books",
             (TimeVal:now() - start):tomsecs(), #self.books)
     else
