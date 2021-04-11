@@ -126,7 +126,7 @@ function NumberPickerWidget:init()
         callback_input = function()
             input_dialog = InputDialog:new{
                 title = _("Enter number"),
-                input = self.formatted_value,
+                input_hint = T("(%1 - %2)", self.value_min, self.value_max),
                 input_type = "number",
                 buttons = {
                     {
