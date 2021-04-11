@@ -162,7 +162,10 @@ if from_version < Version:getNormalizedVersion("v2021.03-43") then
     local cache_path = DataStorage:getDataDir() .. "/cache"
     local new_path = cache_path .. "/fontlist"
     lfs.mkdir(new_path)
-    os.rename(cache_path .. "/fontinfo.dat", new_path .. "/fontinfo.dat")
+    local ok, err = os.rename(cache_path .. "/fontinfo.dat", new_path .. "/fontinfo.dat")
+    if not ok then
+       logger.warn("os.rename:", err)
+    end
 end
 
 -- Calibre, cache migration, https://github.com/koreader/koreader/pull/7528
@@ -173,8 +176,14 @@ if from_version < Version:getNormalizedVersion("v2021.03-47") then
     local cache_path = DataStorage:getDataDir() .. "/cache"
     local new_path = cache_path .. "/calibre"
     lfs.mkdir(new_path)
-    os.rename(cache_path .. "/calibre-libraries.lua", new_path .. "/libraries.lua")
-    os.rename(cache_path .. "/calibre-books.dat", new_path .. "/books.dat")
+    local ok, err = os.rename(cache_path .. "/calibre-libraries.lua", new_path .. "/libraries.lua")
+    if not ok then
+       logger.warn("os.rename:", err)
+    end
+    ok, err = os.rename(cache_path .. "/calibre-books.dat", new_path .. "/books.dat")
+    if not ok then
+       logger.warn("os.rename:", err)
+    end
 end
 
 -- We're done, store the current migration version
