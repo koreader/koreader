@@ -581,8 +581,8 @@ function CalibreSearch:getMetadata()
                 utc_diff = -utc_diff
             end
             meta_timestamp = meta_timestamp + utc_diff
-            logger.dbg("CalibreSearch:getMetadata: Cache timestamp   :", cache_timestamp, os.date("!%FT%T.000000+00:00", cache_timestamp), os.date("%F %T %z", cache_timestamp))
-            logger.dbg("CalibreSearch:getMetadata: Metadata timestamp:", meta_timestamp, timestamp, os.date("%F %T %z", meta_timestamp))
+            logger.dbg("CalibreSearch:getMetadata: Cache timestamp   :", cache_timestamp, os.date("!%FT%T.000000+00:00", cache_timestamp), os.date("(%F %T %z)", cache_timestamp))
+            logger.dbg("CalibreSearch:getMetadata: Metadata timestamp:", meta_timestamp, timestamp, os.date("(%F %T %z)", meta_timestamp))
 
             return cache_timestamp > meta_timestamp
         end
