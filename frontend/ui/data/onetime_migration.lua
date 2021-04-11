@@ -96,6 +96,29 @@ if from_version < Version:getNormalizedVersion("v2021.03") then
     end
 end
 
+-- OPDS, same as above
+if from_version < Version:getNormalizedVersion("v2021.03") then
+    logger.info("Running one-time migration for v2021.03")
+
+    local opds_servers = G_reader_settings:readSetting("opds_servers")
+    if not opds_servers then
+        return
+    end
+
+    -- Update deprecated URLs
+    for _, server in ipairs(opds_servers) do
+        if server.url == "http://bookserver.archive.org/catalog/" then
+            server.url = "https://bookserver.archive.org"
+        elseif server.url = "http://m.gutenberg.org/ebooks.opds/?format=opds" then
+            server.url = "https://m.gutenberg.org/ebooks.opds/?format=opds"
+        elseif server.url = "http://www.feedbooks.com/publicdomain/catalog.atom" then
+            server.url = "https://catalog.feedbooks.com/catalog/public_domain.atom"
+        end
+        -- TODO: Punt "Gallica [Fr] [Searchable]" & "Project Gutenberg [Searchable]"
+    end
+    G_reader_settings:saveSetting("opds_servers", opds_servers)
+end
+
 -- Statistics, https://github.com/koreader/koreader/pull/7471
 if from_version < Version:getNormalizedVersion("v2021.03-12") then
     logger.info("Running one-time migration for v2021.03-12")
