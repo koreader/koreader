@@ -12,6 +12,15 @@ local from_version = G_reader_settings:readSetting("last_migration_version", 0)
 
 -- Keep this in rough chronological order, with a reference to the PR that implemented the change.
 
+-- Global settings, https://github.com/koreader/koreader/pull/4945 & https://github.com/koreader/koreader/pull/5655
+-- Limit the check to the most recent update. ReaderUI calls this one unconditionally to update docsettings, too.
+if from_version < Version:getNormalizedVersion("v2019.12") then
+    logger.info("Running one-time migration for v2019.12")
+
+    local SettingsMigration = require("ui/data/settings_migration")
+    SettingsMigration:migrateSettings(G_reader_settings)
+end
+
 -- ScreenSaver, https://github.com/koreader/koreader/pull/7371
 if from_version < Version:getNormalizedVersion("v2021.03") then
     logger.info("Running one-time migration for v2021.03")
