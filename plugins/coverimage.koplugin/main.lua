@@ -27,8 +27,23 @@ local _ = require("gettext")
 
 -- todo: please check the default paths directly on the depending Device:getDefaultCoverPath()
 
+
+local function isPathAllowed(path)
+    -- don't allow a path that interferes with frontent cache-framework; quick and dirty check
+    if Device.isAndroid() then
+        return path ~= "/sdcard/koreader/cache/"
+            and ffiutil.realpath(path) ~= ffiutil.realpath(android.getExternalStoragePath() .. "/koreader/cache/")
+    else
+        return path ~= "./cache/" and ffiutil.realpath(path) ~= ffiutil.realpath("./cache/")
+    end
+end
+
 local function pathOk(filename)
     local path, name = util.splitFilePathName(filename)
+
+    if not isPathAllowed(path) then
+        return false
+    end
 
     if not Device:isValidPath(path) then -- isValidPath expects a trailing slash
         return false, T(_("Path \"%1\" isn't in a writable location."), path)
@@ -257,17 +272,9 @@ function CoverImage:isCacheEnabled(path)
     if not path then
         path = self.cover_image_cache_path
     end
-    if Device.isAndroid() then
-        return self.cover_image_cache_maxfiles >= 0 and self.cover_image_cache_maxsize >= 0
-            and lfs.attributes(path, "mode") == "directory"
-            and path ~= "/sdcard/koreader/cache/"  -- interferes with frontent cache-framework
-            and ffiutil.realpath(path) ~= ffiutil.realpath(android.getExternalStoragePath() .. "/koreader/cache/")  -- interferes with frontent cache-framework
-    else
-        return self.cover_image_cache_maxfiles >= 0 and self.cover_image_cache_maxsize >= 0
-            and lfs.attributes(path, "mode") == "directory"
-            and path ~= "./cache/" -- interferes with frontent cache-framework; quick and dirty check
-            and ffiutil.realpath(path) ~= ffiutil.realpath("./cache/") -- interferes with frontent cache-framework; quick and dirty check
-    end
+
+    return self.cover_image_cache_maxfiles >= 0 and self.cover_image_cache_maxsize >= 0
+        and lfs.attributes(path, "mode") == "directory" and isPathAllowed(path)
 end
 
 -- callback for choosePathFile()
@@ -509,7 +516,8 @@ function CoverImage:menu_entry_set_path(setting, title, help, info, default, fol
             return T(help, text)
         end,
         checked_func = function()
-            return self[setting] ~= "" and (pathOk(self[setting]) or folder_only)
+            return pathOk(self[setting]) or (isPathAllowed(self[setting]) and folder_only)
+
         end,
         callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
