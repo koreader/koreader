@@ -38,7 +38,7 @@ local function isPathAllowed(path)
     end
 end
 
-local function pathOk(filename)
+local function isFilenameOk(filename)
     local path, name = util.splitFilePathName(filename)
 
     if not isPathAllowed(path) then
@@ -99,7 +99,7 @@ function CoverImage:cleanUpImage()
             timeout = 10,
         })
         os.remove(self.cover_image_path)
-    elseif pathOk(self.cover_image_path) then
+    elseif isFilenameOk(self.cover_image_path) then
         ffiutil.copyFile(self.cover_image_fallback_path, self.cover_image_path)
     end
 end
@@ -195,7 +195,7 @@ function CoverImage:onReaderReady(doc_settings)
 end
 
 function CoverImage:fallbackEnabled()
-    return self.fallback and pathOk(self.cover_image_fallback_path)
+    return self.fallback and isFilenameOk(self.cover_image_fallback_path)
 end
 
 ---------------------------
@@ -516,7 +516,7 @@ function CoverImage:menu_entry_set_path(setting, title, help, info, default, fol
             return T(help, text)
         end,
         checked_func = function()
-            return pathOk(self[setting]) or (isPathAllowed(self[setting]) and folder_only)
+            return isFilenameOk(self[setting]) or (isPathAllowed(self[setting]) and folder_only)
 
         end,
         callback = function(touchmenu_instance)
@@ -671,10 +671,10 @@ function CoverImage:addToMainMenu(menu_items)
             {
                 text = _("Save cover image"),
                 checked_func = function()
-                    return self.enabled and pathOk(self.cover_image_path)
+                    return self.enabled and isFilenameOk(self.cover_image_path)
                 end,
                 enabled_func = function()
-                    return self.cover_image_path ~= "" and pathOk(self.cover_image_path)
+                    return self.cover_image_path ~= "" and isFilenameOk(self.cover_image_path)
                 end,
                 callback = function()
                     if self.cover_image_path ~= "" then
