@@ -39,12 +39,6 @@ end
 
 local cache_path = DataStorage:getDataDir() .. "/cache/"
 
--- NOTE: Before 2021.04, fontlist used to squat our folder, needlessly polluting our state tracking.
-os.remove(cache_path .. "/fontinfo.dat")
--- Ditto for Calibre
-os.remove(cache_path .. "/calibre-libraries.lua")
-os.remove(cache_path .. "/calibre-books.dat")
-
 --[[
 -- return a snapshot of disk cached items for subsequent check
 --]]
