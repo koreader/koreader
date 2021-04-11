@@ -105,16 +105,21 @@ if from_version < Version:getNormalizedVersion("v2021.03") then
         return
     end
 
-    -- Update deprecated URLs
-    for _, server in ipairs(opds_servers) do
+    -- Update deprecated URLs & remove deprecated entries
+    for i = #opds_servers, 1, -1 do
+        local server = opds_servers[i]
+
         if server.url == "http://bookserver.archive.org/catalog/" then
             server.url = "https://bookserver.archive.org"
-        elseif server.url = "http://m.gutenberg.org/ebooks.opds/?format=opds" then
+        elseif server.url == "http://m.gutenberg.org/ebooks.opds/?format=opds" then
             server.url = "https://m.gutenberg.org/ebooks.opds/?format=opds"
-        elseif server.url = "http://www.feedbooks.com/publicdomain/catalog.atom" then
+        elseif server.url == "http://www.feedbooks.com/publicdomain/catalog.atom" then
             server.url = "https://catalog.feedbooks.com/catalog/public_domain.atom"
         end
-        -- TODO: Punt "Gallica [Fr] [Searchable]" & "Project Gutenberg [Searchable]"
+
+        if server.title == "Gallica [Fr] [Searchable]" or server.title == "Project Gutenberg [Searchable]" then
+            table.remove(opds_servers, i)
+        end
     end
     G_reader_settings:saveSetting("opds_servers", opds_servers)
 end
