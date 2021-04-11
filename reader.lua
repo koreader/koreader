@@ -172,12 +172,12 @@ if Device:hasEinkScreen() then
     end
 end
 
--- Handle one time migration stuff (settings, deprecation, ...) in case of an upgrade...
-require("ui/data/onetime_migration")
-
 -- Document renderers canvas
 local CanvasContext = require("document/canvascontext")
 CanvasContext:init(Device)
+
+-- Handle one time migration stuff (settings, deprecation, ...) in case of an upgrade...
+require("ui/data/onetime_migration")
 
 -- Touch screen (this may display some widget, on first install on Kobo Touch,
 -- so have it done after CanvasContext:init() but before Bidi.setup() to not
