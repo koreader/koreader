@@ -75,7 +75,7 @@ function CoverImage:init()
 end
 
 function CoverImage:cleanUpImage()
-    if self.cover_image_fallback_path == "" or not self.fallback then
+    if self.cover_image_fallback_path == "" or not self:fallbackEnabled() then
         os.remove(self.cover_image_path)
     elseif lfs.attributes(self.cover_image_fallback_path, "mode") ~= "file" then
         UIManager:show(InfoMessage:new{
@@ -169,7 +169,7 @@ end
 
 function CoverImage:onCloseDocument()
     logger.dbg("CoverImage: onCloseDocument")
-    if self.fallback then
+    if self:fallbackEnabled() then
         self:cleanUpImage()
     end
 end
@@ -177,6 +177,10 @@ end
 function CoverImage:onReaderReady(doc_settings)
     logger.dbg("CoverImage: onReaderReady")
     self:createCoverImage(doc_settings)
+end
+
+function CoverImage:fallbackEnabled()
+    return self.fallback and pathOk(self.cover_image_fallback_path)
 end
 
 ---------------------------
@@ -638,7 +642,7 @@ function CoverImage:addToMainMenu(menu_items)
         sorting_hint = "screen",
         text = _("Cover image"),
         checked_func = function()
-            return self.enabled or self.fallback
+            return self.enabled or self:fallbackEnabled()
         end,
         sub_item_table = {
             -- menu entry: about cover image
@@ -703,14 +707,16 @@ function CoverImage:addToMainMenu(menu_items)
             {
                 text = _("Turn on fallback image"),
                 checked_func = function()
-                    return self.fallback
+                    return self:fallbackEnabled()
                 end,
                 enabled_func = function()
                     return lfs.attributes(self.cover_image_fallback_path, "mode") == "file"
                 end,
                 callback = function()
                     self.fallback = not self.fallback
+                    self.fallback = self.fallback and self:fallbackEnabled()
                     G_reader_settings:saveSetting("cover_image_fallback", self.fallback)
+                    self:cleanUpImage()
                 end,
                 separator = true,
             },
