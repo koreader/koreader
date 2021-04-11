@@ -18,12 +18,16 @@ local Screen = require("device").screen
 local Size = require("ui/size")
 local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
+local ffi = require("ffi")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local rapidjson = require("rapidjson")
 local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
+
+local C = ffi.C
+require("ffi/posix_h")
 
 -- get root dir for disk scans
 local function getDefaultRootDir()
@@ -565,9 +569,20 @@ function CalibreSearch:getMetadata()
     if self.cache_metadata then
         local function cacheIsNewer(timestamp)
             local file_timestamp = self.cache_books:timestamp()
+            -- stat returns a true Epoch (UTC)
             if not timestamp or not file_timestamp then return false end
             local Y, M, D, h, m, s = timestamp:match("(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)")
+            -- calibre also stores this in UTC...
+            -- But os.time uses mktime, which converts this to *local* time...
+            -- So, temporarily switch to UTC to get an accurate result
+            local oldtz = os.getenv("TZ")
+            C.setenv("TZ", "UTC0", 1)
             local date = os.time({year = Y, month = M, day = D, hour = h, min = m, sec = s})
+            C.unsetenv("TZ")
+            if oldtz then
+                C.setenv("TZ", oldtz, 1)
+            end
+
             return file_timestamp > date
         end
 
@@ -596,7 +611,7 @@ function CalibreSearch:getMetadata()
     if self.cache_metadata then
         local serialized_table = {}
         local function removeNull(t)
-            for _, key in ipairs({"series", "series_index"}) do
+            for _, key in ipairs({"series", "series_index", "uuid"}) do
                 if t[key] == rapidjson.null then
                     t[key] = nil
                 end
