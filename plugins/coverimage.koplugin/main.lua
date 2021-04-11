@@ -308,7 +308,7 @@ chooses a path or (an existing) file
 function CoverImage:choosePathFile(touchmenu_instance, setting, folder_only, new_file, migrate)
     local old_path, dummy = util.splitFilePathName(self[setting])
     UIManager:show(PathChooser:new{
-        select_directory = true,
+        select_directory = folder_only or new_file,
         select_file = not folder_only,
         height = Screen:getHeight(),
         path = old_path,
@@ -702,7 +702,7 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: set fallback image
             self:menu_entry_set_path("cover_image_fallback_path", _("Set fallback path"),
-                _("The fallback image used on document close is:\n%1"), set_image_text, default_fallback_path, false, true),
+                _("The fallback image used on document close is:\n%1"), _("You can select a fallback image."), default_fallback_path, false, false),
             -- menu entry: fallback
             {
                 text = _("Turn on fallback image"),
