@@ -128,7 +128,11 @@ end
 if from_version < Version:getNormalizedVersion("v2021.03-12") then
     logger.info("Running one-time migration for v2021.03-12")
 
-    local ReaderStatistics = require("plugins/statistics.koplugin/main")
+    local package_path = package.path
+    package.path = string.format("%s/?.lua;%s", "plugins/statistics.koplugin", package_path)
+    local ReaderStatistics = dofile("plugins/statistics.koplugin/main.lua")
+    package.path = package_path
+
     local settings = G_reader_settings:readSetting("statistics", ReaderStatistics.default_settings)
     -- Handle a snafu in 2021.03 that could lead to an empty settings table on fresh installs.
     for k, v in pairs(ReaderStatistics.default_settings) do
