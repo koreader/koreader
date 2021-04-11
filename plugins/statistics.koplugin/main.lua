@@ -125,6 +125,17 @@ function ReaderStatistics:isDocless()
     return self.ui == nil or self.ui.document == nil
 end
 
+ReaderStatistics.default_settings = {
+    min_sec = DEFAULT_MIN_READ_SEC,
+    max_sec = DEFAULT_MAX_READ_SEC,
+    is_enabled = true,
+    convert_to_db = nil,
+    calendar_start_day_of_week = DEFAULT_CALENDAR_START_DAY_OF_WEEK,
+    calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS,
+    calendar_show_histogram = true,
+    calendar_browse_future_months = false,
+}
+
 function ReaderStatistics:init()
     if not self:isDocless() and self.ui.document.is_pic then
         return
@@ -132,17 +143,7 @@ function ReaderStatistics:init()
     self.start_current_period = os.time()
     self:resetVolatileStats()
 
-    local default_settings = {
-        min_sec = DEFAULT_MIN_READ_SEC,
-        max_sec = DEFAULT_MAX_READ_SEC,
-        is_enabled = true,
-        convert_to_db = nil,
-        calendar_start_day_of_week = DEFAULT_CALENDAR_START_DAY_OF_WEEK,
-        calendar_nb_book_spans = DEFAULT_CALENDAR_NB_BOOK_SPANS,
-        calendar_show_histogram = true,
-        calendar_browse_future_months = false,
-    }
-    self.settings = G_reader_settings:readSetting("statistics", default_settings)
+    self.settings = G_reader_settings:readSetting("statistics", self.default_settings)
 
     self.ui.menu:registerToMainMenu(self)
     self:checkInitDatabase()

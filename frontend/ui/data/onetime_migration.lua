@@ -100,16 +100,15 @@ end
 if from_version < Version:getNormalizedVersion("v2021.03-12") then
     logger.info("Running one-time migration for v2021.03-12")
 
-    local statistics = G_reader_settings:readSetting("statistics", {})
-    local count = 0
-    for _, _ in pairs(statistics) do
-        count = count + 1
+    local ReaderStatistics = require("plugins/statistics.koplugin/main.lua")
+    local settings = G_reader_settings:readSetting("statistics", ReaderStatistics.default_settings)
+    -- Handle a snafu in 2021.03 that could lead to an empty settings table on fresh installs.
+    for k, v in pairs(ReaderStatistics.default_settings) do
+        if settings[k] == nil then
+            settings[k] = v
+        end
     end
-
-    -- If we don't have the full set of keys, wipe the table to let the plugin re-initialize it correctly.
-    if count < 8 then
-        G_reader_settings:delSetting("statistics")
-    end
+    G_reader_settings:saveSetting("statistics", settings)
 end
 
 -- ScreenSaver, https://github.com/koreader/koreader/pull/7496
