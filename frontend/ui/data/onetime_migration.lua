@@ -26,6 +26,12 @@ if from_version < Version:getNormalizedVersion("v2019.12") then
     SettingsMigration:migrateSettings(G_reader_settings)
 end
 
+-- NOTE: ReaderTypography handles a few things @ init that could perhaps be moved here with minor refactoring...
+--       https://github.com/koreader/koreader/pull/6072
+-- NOTE: ReaderRolling, on the other hand, does some lower-level things @ onReadSettings tied to CRe that would be much harder to factor out.
+--       https://github.com/koreader/koreader/pull/1930
+-- NOTE: The Gestures plugin also handles this on its own, but deals with it sanely.
+
 -- ScreenSaver, https://github.com/koreader/koreader/pull/7371
 if from_version < Version:getNormalizedVersion("v2021.03") then
     logger.info("Running one-time migration for v2021.03")
