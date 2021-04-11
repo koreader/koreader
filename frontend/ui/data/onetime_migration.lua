@@ -10,6 +10,11 @@ local logger = require("logger")
 -- Retrieve the last migration version
 local from_version = G_reader_settings:readSetting("last_migration_version", 0)
 
+-- If we haven't actually changed version since the last launch, we're done.
+if from_version == Version:getNormalizedCurrentVersion() then
+    return
+end
+
 -- Keep this in rough chronological order, with a reference to the PR that implemented the change.
 
 -- Global settings, https://github.com/koreader/koreader/pull/4945 & https://github.com/koreader/koreader/pull/5655
