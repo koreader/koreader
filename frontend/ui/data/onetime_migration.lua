@@ -3,15 +3,17 @@ Centralizes any and all one time migration concerns.
 --]]
 
 local DataStorage = require("datastorage")
-local Version = require("version")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
--- Retrieve the last migration version
-local from_version = G_reader_settings:readSetting("last_migration_version", 0)
+-- Date at which the last migration snippet was added
+local CURRENT_MIGRATION_DATE = 20210413
 
--- If we haven't actually changed version since the last launch, we're done.
-if from_version == Version:getCurrentDate() then
+-- Retrieve the last migration version
+local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
+
+-- If there's nothing new to migrate since the last time, we're done.
+if last_migration_date == CURRENT_MIGRATION_DATE then
     return
 end
 
@@ -19,7 +21,7 @@ end
 
 -- Global settings, https://github.com/koreader/koreader/pull/4945 & https://github.com/koreader/koreader/pull/5655
 -- Limit the check to the most recent update. ReaderUI calls this one unconditionally to update docsettings, too.
-if from_version < 20191129 then
+if last_migration_date < 20191129 then
     logger.info("Performing one-time migration for 20191129")
 
     local SettingsMigration = require("ui/data/settings_migration")
@@ -27,7 +29,7 @@ if from_version < 20191129 then
 end
 
 -- ReaderTypography, https://github.com/koreader/koreader/pull/6072
-if from_version < 20200421 then
+if last_migration_date < 20200421 then
     logger.info("Performing one-time migration for 20200421")
 
     local ReaderTypography = require("apps/reader/modules/readertypography")
@@ -74,7 +76,7 @@ end
 -- NOTE: The Gestures plugin also handles its settings migration its own, but deals with it sanely.
 
 -- ScreenSaver, https://github.com/koreader/koreader/pull/7371
-if from_version < 20210306 then
+if last_migration_date < 20210306 then
     logger.info("Performing one-time migration for 20210306 (1/2)")
 
     -- Migrate settings from 2021.02 or older.
@@ -97,7 +99,7 @@ if from_version < 20210306 then
 end
 
 -- OPDS, same as above
-if from_version < 20210306 then
+if last_migration_date < 20210306 then
     logger.info("Performing one-time migration for 20210306 (2/2)")
 
     local opds_servers = G_reader_settings:readSetting("opds_servers")
@@ -123,7 +125,7 @@ if from_version < 20210306 then
 end
 
 -- Statistics, https://github.com/koreader/koreader/pull/7471
-if from_version < 20210330 then
+if last_migration_date < 20210330 then
     logger.info("Performing one-time migration for 20210330")
 
     local package_path = package.path
@@ -142,7 +144,7 @@ if from_version < 20210330 then
 end
 
 -- ScreenSaver, https://github.com/koreader/koreader/pull/7496
-if from_version < 20210404 then
+if last_migration_date < 20210404 then
     logger.info("Performing one-time migration for 20210404")
 
     -- Migrate settings from 2021.03 or older.
@@ -153,7 +155,7 @@ if from_version < 20210404 then
 end
 
 -- Fontlist, cache migration, https://github.com/koreader/koreader/pull/7524
-if from_version < 20210409 then
+if last_migration_date < 20210409 then
     logger.info("Performing one-time migration for 20210409")
 
     -- NOTE: Before 2021.04, fontlist used to squat our folder, needlessly polluting our state tracking.
@@ -171,7 +173,7 @@ if from_version < 20210409 then
 end
 
 -- Calibre, cache migration, https://github.com/koreader/koreader/pull/7528
-if from_version < 20210412 then
+if last_migration_date < 20210412 then
     logger.info("Performing one-time migration for 20210412")
 
     -- Ditto for Calibre
@@ -192,5 +194,5 @@ if from_version < 20210412 then
     Cache:refreshSnapshot()
 end
 
--- We're done, store the current migration version
-G_reader_settings:saveSetting("last_migration_version", Version:getCurrentDate())
+-- We're done, store the current migration date
+G_reader_settings:saveSetting("last_migration_date", CURRENT_MIGRATION_DATE)
