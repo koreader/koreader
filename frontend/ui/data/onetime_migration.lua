@@ -9,6 +9,8 @@ local logger = require("logger")
 
 -- Retrieve the last migration version
 local from_version = G_reader_settings:readSetting("last_migration_version", 0)
+print("from_version:", from_version)
+print("Version:getCurrentDate():", Version:getCurrentDate())
 
 -- If we haven't actually changed version since the last launch, we're done.
 if from_version == Version:getCurrentDate() then
@@ -101,27 +103,25 @@ if from_version < 20210306 then
     logger.info("Running one-time migration for 20210306 (2/2)")
 
     local opds_servers = G_reader_settings:readSetting("opds_servers")
-    if not opds_servers then
-        return
-    end
+    if opds_servers then
+        -- Update deprecated URLs & remove deprecated entries
+        for i = #opds_servers, 1, -1 do
+            local server = opds_servers[i]
 
-    -- Update deprecated URLs & remove deprecated entries
-    for i = #opds_servers, 1, -1 do
-        local server = opds_servers[i]
+            if server.url == "http://bookserver.archive.org/catalog/" then
+                server.url = "https://bookserver.archive.org"
+            elseif server.url == "http://m.gutenberg.org/ebooks.opds/?format=opds" then
+                server.url = "https://m.gutenberg.org/ebooks.opds/?format=opds"
+            elseif server.url == "http://www.feedbooks.com/publicdomain/catalog.atom" then
+                server.url = "https://catalog.feedbooks.com/catalog/public_domain.atom"
+            end
 
-        if server.url == "http://bookserver.archive.org/catalog/" then
-            server.url = "https://bookserver.archive.org"
-        elseif server.url == "http://m.gutenberg.org/ebooks.opds/?format=opds" then
-            server.url = "https://m.gutenberg.org/ebooks.opds/?format=opds"
-        elseif server.url == "http://www.feedbooks.com/publicdomain/catalog.atom" then
-            server.url = "https://catalog.feedbooks.com/catalog/public_domain.atom"
+            if server.title == "Gallica [Fr] [Searchable]" or server.title == "Project Gutenberg [Searchable]" then
+                table.remove(opds_servers, i)
+            end
         end
-
-        if server.title == "Gallica [Fr] [Searchable]" or server.title == "Project Gutenberg [Searchable]" then
-            table.remove(opds_servers, i)
-        end
+        G_reader_settings:saveSetting("opds_servers", opds_servers)
     end
-    G_reader_settings:saveSetting("opds_servers", opds_servers)
 end
 
 -- Statistics, https://github.com/koreader/koreader/pull/7471
