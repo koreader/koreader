@@ -2,8 +2,13 @@ local Generic = require("device/generic/device")
 local Geom = require("ui/geometry")
 local WakeupMgr = require("device/wakeupmgr")
 local logger = require("logger")
+local ffi = require("ffi")
 local util = require("ffi/util")
 local _ = require("gettext")
+
+local C = ffi.C
+require("ffi/posix_h")
+require("ffi/linux_input_h")
 
 local function yes() return true end
 local function no() return false end
@@ -95,7 +100,7 @@ local KoboDahlia = Kobo:new{
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
     -- There's no slot 0, the first finger gets assigned slot 1, and the second slot 2.
-    -- NOTE: Could be queried at runtime via EVIOCGABS on ABS_MT_TRACKING_ID (minimum field).
+    -- NOTE: Could be queried at runtime via EVIOCGABS on C.ABS_MT_TRACKING_ID (minimum field).
     main_finger_slot = 1,
     display_dpi = 265,
     -- the bezel covers the top 11 pixels:
@@ -460,10 +465,8 @@ end
 
 function Kobo:supportsScreensaver() return true end
 
-local ABS_MT_TRACKING_ID = 57
-local EV_ABS = 3
 local adjustTouchAlyssum = function(self, ev)
-    if ev.type == EV_ABS and ev.code == ABS_MT_TRACKING_ID then
+    if ev.type == C.EV_ABS and ev.code == C.ABS_MT_TRACKING_ID then
         ev.value = ev.value - 1
     end
 end

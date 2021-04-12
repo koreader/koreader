@@ -3,6 +3,7 @@ describe("device module", function()
     local mock_fb, mock_input
     local iopen = io.open
     local osgetenv = os.getenv
+    local ffi, C
 
     setup(function()
         mock_fb = {
@@ -20,6 +21,9 @@ describe("device module", function()
         }
         require("commonrequire")
         package.unloadAll()
+        ffi = require("ffi")
+        C = ffi.C
+        require("ffi/linux_input_h")
         require("document/canvascontext"):init(require("device"))
     end)
 
@@ -86,19 +90,16 @@ describe("device module", function()
             G_reader_settings:saveSetting("kobo_touch_switch_xy", true)
             kobo_dev:touchScreenProbe()
             local x, y = Screen:getWidth()-5, 10
-            local EV_ABS = 3
-            local ABS_X = 00
-            local ABS_Y = 01
             -- mirror x, then switch_xy
             local ev_x = {
-                type = EV_ABS,
-                code = ABS_X,
+                type = C.EV_ABS,
+                code = C.ABS_X,
                 value = y,
                 time = TimeVal:realtime(),
             }
             local ev_y = {
-                type = EV_ABS,
-                code = ABS_Y,
+                type = C.EV_ABS,
+                code = C.ABS_Y,
                 value = Screen:getWidth()-x,
                 time = TimeVal:realtime(),
             }
@@ -106,9 +107,9 @@ describe("device module", function()
             kobo_dev.input:eventAdjustHook(ev_x)
             kobo_dev.input:eventAdjustHook(ev_y)
             assert.is.same(x, ev_y.value)
-            assert.is.same(ABS_X, ev_y.code)
+            assert.is.same(C.ABS_X, ev_y.code)
             assert.is.same(y, ev_x.value)
-            assert.is.same(ABS_Y, ev_x.code)
+            assert.is.same(C.ABS_Y, ev_x.code)
 
             -- reset eventAdjustHook
             kobo_dev.input.eventAdjustHook = function() end
@@ -137,18 +138,15 @@ describe("device module", function()
             assert.truthy(kobo_dev:needsTouchScreenProbe())
             kobo_dev:touchScreenProbe()
             local x, y = Screen:getWidth()-5, 10
-            local EV_ABS = 3
-            local ABS_X = 00
-            local ABS_Y = 01
             local ev_x = {
-                type = EV_ABS,
-                code = ABS_X,
+                type = C.EV_ABS,
+                code = C.ABS_X,
                 value = y,
                 time = {sec = 1000}
             }
             local ev_y = {
-                type = EV_ABS,
-                code = ABS_Y,
+                type = C.EV_ABS,
+                code = C.ABS_Y,
                 value = Screen:getWidth()-x,
                 time = {sec = 1000}
             }
@@ -156,9 +154,9 @@ describe("device module", function()
             kobo_dev.input:eventAdjustHook(ev_x)
             kobo_dev.input:eventAdjustHook(ev_y)
             assert.is.same(x, ev_y.value)
-            assert.is.same(ABS_X, ev_y.code)
+            assert.is.same(C.ABS_X, ev_y.code)
             assert.is.same(y, ev_x.value)
-            assert.is.same(ABS_Y, ev_x.code)
+            assert.is.same(C.ABS_Y, ev_x.code)
 
             -- reset eventAdjustHook
             kobo_dev.input.eventAdjustHook = function() end
@@ -275,12 +273,12 @@ describe("device module", function()
             stub(mock_ffi_input, "waitForEvent")
             mock_ffi_input.waitForEvent.returns(true, {
                 {
-                    type = 3,
+                    type = C.EV_ABS,
                     time = {
                         usec = 450565,
                         sec = 1471081881
                     },
-                    code = 24,
+                    code = 24, -- C.ABS_PRESSURE -> ABS_OASIS_ORIENTATION
                     value = 16
                 }
             })
