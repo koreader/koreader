@@ -14,6 +14,7 @@ A simple module to module to compare and do arithmetic with time values.
 
 local ffi = require("ffi")
 require("ffi/posix_h")
+local logger = require("logger")
 local util = require("ffi/util")
 
 local C = ffi.C
@@ -35,11 +36,13 @@ if ffi.os == "Linux" then
             PREFERRED_MONOTONIC_CLOCKID = C.CLOCK_MONOTONIC_COARSE
         end
     end
+    logger.dbg("TimeVal: Preferred MONOTONIC clock source is", PREFERRED_MONOTONIC_CLOCKID == C.CLOCK_MONOTONIC_COARSE and "CLOCK_MONOTONIC_COARSE" or "CLOCK_MONOTONIC")
     if C.clock_getres(C.CLOCK_REALTIME_COARSE, probe_ts) == 0 then
         if probe_ts.tv_sec == 0 and probe_ts.tv_nsec <= 1000000 then
             PREFERRED_REALTIME_CLOCKID = C.CLOCK_REALTIME_COARSE
         end
     end
+    logger.dbg("TimeVal: Preferred REALTIME clock source is", PREFERRED_REALTIME_CLOCKID == C.CLOCK_REALTIME_COARSE and "CLOCK_REALTIME_COARSE" or "CLOCK_REALTIME")
     probe_ts = nil --luacheck: ignore
 end
 
