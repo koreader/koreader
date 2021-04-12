@@ -125,6 +125,8 @@ function ReaderStatistics:isDocless()
     return self.ui == nil or self.ui.document == nil
 end
 
+-- NOTE: This is used in a migration script by ui/data/onetime_migration,
+--       which is why it's public.
 ReaderStatistics.default_settings = {
     min_sec = DEFAULT_MIN_READ_SEC,
     max_sec = DEFAULT_MAX_READ_SEC,

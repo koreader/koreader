@@ -17,6 +17,8 @@ local ReaderTypography = InputContainer:new{}
 -- This is used to migrate old hyph settings, and to show the currently
 -- used hyph dict language in the hyphenation menu.
 -- It will be completed with info from the LANGUAGES table below.
+-- NOTE: Actual migration is handled in ui/data/onetime_migration,
+--       which is why this hash is public.
 ReaderTypography.HYPH_DICT_NAME_TO_LANG_NAME_TAG = {
     ["@none"]                = { "@none",           "en" },
     ["@softhyphens"]         = { "@softhyphens",    "en" },
