@@ -164,6 +164,10 @@ if from_version < 20210409 then
     if not ok then
        logger.warn("os.rename:", err)
     end
+
+    -- Make sure Cache gets the memo
+    local Cache = require("cache")
+    Cache:refreshSnapshot()
 end
 
 -- Calibre, cache migration, https://github.com/koreader/koreader/pull/7528
@@ -182,6 +186,10 @@ if from_version < 20210412 then
     if not ok then
        logger.warn("os.rename:", err)
     end
+
+    -- Make sure Cache gets the memo
+    local Cache = require("cache")
+    Cache:refreshSnapshot()
 end
 
 -- We're done, store the current migration version

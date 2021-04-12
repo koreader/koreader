@@ -154,7 +154,7 @@ function Cache:serialize()
     -- calculate disk cache size
     local cached_size = 0
     local sorted_caches = {}
-    for _,file in pairs(self.cached) do
+    for _, file in pairs(self.cached) do
         table.insert(sorted_caches, {file=file, time=lfs.attributes(file, "access")})
         cached_size = cached_size + (lfs.attributes(file, "size") or 0)
     end
@@ -195,6 +195,11 @@ function Cache:clear()
     self.cache = {}
     self.cache_order = {}
     self.current_memsize = 0
+end
+
+-- Refresh the disk snapshot (mainly used by ui/data/onetime_migration)
+function Cache:refreshSnapshot()
+    self.cached = getDiskCache()
 end
 
 return Cache
