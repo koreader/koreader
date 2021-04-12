@@ -19,7 +19,7 @@ local function readFile(file, bytes)
 end
 
 local codecs = {
-    -- bitser: binary form, fast encode/decode, low size. Not human readable.
+    -- bitser: binary format, fast encode/decode, low size. Not human readable.
     bitser = {
         id = "bitser",
         reads_from_file = false,
@@ -40,8 +40,8 @@ local codecs = {
             return t
         end,
     },
-    -- luajit: binary form, optimized for speed, not size (combine w/ zstd if necessary). Not human readable.
-    --         Slightly larger data format than bitser, *much* faster to decode, slightly faster to encode.
+    -- luajit: binary format, optimized for speed, not size (combine w/ zstd if necessary). Not human readable.
+    --         Slightly larger on-disk representation than bitser, *much* faster to decode, slightly faster to encode.
     luajit = {
         id = "luajit",
         reads_from_file = false,
