@@ -94,6 +94,7 @@ local linux_evdev_abs_code_map = {
     [C.ABS_X] = "ABS_X",
     [C.ABS_Y] = "ABS_Y",
     [C.ABS_PRESSURE] = "ABS_PRESSURE",
+    [C.ABS_DISTANCE] = "ABS_DISTANCE",
     [C.ABS_MT_SLOT] = "ABS_MT_SLOT",
     [C.ABS_MT_TOUCH_MAJOR] = "ABS_MT_TOUCH_MAJOR",
     [C.ABS_MT_TOUCH_MINOR] = "ABS_MT_TOUCH_MINOR",
