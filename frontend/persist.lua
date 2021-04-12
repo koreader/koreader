@@ -40,7 +40,7 @@ local codecs = {
             return t
         end,
     },
-    -- luajit: binary form, optimized for speed, not size (combine w/ zstd if necessary).  Not human readable.
+    -- luajit: binary form, optimized for speed, not size (combine w/ zstd if necessary). Not human readable.
     --         Slightly larger data format than bitser, *much* faster to decode, slightly faster to encode.
     luajit = {
         id = "luajit",
