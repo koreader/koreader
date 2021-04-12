@@ -543,6 +543,9 @@ function CoverImage:menu_entry_set_path(key, title, help, info, default, folder_
                 {
                     text = _("Default"),
                     callback = function()
+                        if migrate then
+                            migrate(self, self[key],default)
+                        end
                         self[key] = default
                         G_reader_settings:saveSetting(key, default)
                         if touchmenu_instance then
