@@ -396,7 +396,8 @@ function GestureDetector:probeClockSource(timev)
 
     -- Finally, BOOTTIME
     local boottime = TimeVal:boottime()
-    if timev >= boottime - threshold and timev <= boottime + threshold then
+    -- NOTE: It was implemented in Linux 2.6.39, so, reject 0, which would mean it's unsupported...
+    if not boottime:isZero() and timev >= boottime - threshold and timev <= boottime + threshold then
         self.clock_id = C.CLOCK_BOOTTIME
         logger.info("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_BOOTTIME")
         return
