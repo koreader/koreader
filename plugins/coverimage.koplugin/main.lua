@@ -30,7 +30,12 @@ local _ = require("gettext")
 
 local function isPathAllowed(path)
     -- don't allow a path that interferes with frontent cache-framework; quick and dirty check
-    if Device.isAndroid() then
+
+    if not Device:isValidPath(path) then -- isValidPath expects a trailing slash
+        return false
+    elseif not util.pathExists(path:gsub("/$", "")) then -- pathExists expects no trailing slash
+        return false
+    elseif Device.isAndroid() then
         return path ~= "/sdcard/koreader/cache/"
             and ffiutil.realpath(path) ~= ffiutil.realpath(android.getExternalStoragePath() .. "/koreader/cache/")
     else
@@ -45,16 +50,7 @@ local function isFilenameOk(filename)
         return false
     end
 
-    if not Device:isValidPath(path) then -- isValidPath expects a trailing slash
-        return false, T(_("Path \"%1\" isn't in a writable location."), path)
-    elseif not util.pathExists(path:gsub("/$", "")) then -- pathExists expects no trailing slash
-        return false, T(_("The path \"%1\" doesn't exist."), path)
-    elseif name == "" then
-        return false, _("Please enter a filename at the end of the path.")
-    elseif lfs.attributes(filename, "mode") == "directory" then
-        return false, T(_("The path \"%1\" must point to a file, but it points to a folder."), filename)
-    end
-    return true
+    return name ~="" and lfs.attributes(filename, "mode") ~= "directory"
 end
 
 local function getExtension(filename)
@@ -517,7 +513,6 @@ function CoverImage:menu_entry_set_path(setting, title, help, info, default, fol
         end,
         checked_func = function()
             return isFilenameOk(self[setting]) or (isPathAllowed(self[setting]) and folder_only)
-
         end,
         callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
