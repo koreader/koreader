@@ -405,6 +405,11 @@ function GestureDetector:probeClockSource(timev)
     -- If we're here, the detection was inconclusive :/
     self.clock_id = -1
     logger.info("GestureDetector:probeClockSource: Touch event clock source detection was inconclusive")
+    -- Print all all the gory details in debug mode when this happens...
+    logger.dbg("Input frame    :", timev:tonumber())
+    logger.dbg("CLOCK_REALTIME :", realtime:tonumber())
+    logger.dbg("CLOCK_MONOTONIC:", monotonic:tonumber())
+    logger.dbg("CLOCK_BOOTTIME :", boottime:tonumber())
 end
 
 function GestureDetector:getClockSource()
