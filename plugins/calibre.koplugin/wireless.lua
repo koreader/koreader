@@ -148,14 +148,12 @@ function CalibreWireless:JSONReceiveCallback(host, port)
                     msg = T(_("Connected to calibre server at %1"),
                         BD.ltr(T("%1:%2", this.calibre_socket.host, this.calibre_socket.port)))
                 end
-                logger.info("UIManager: show calibre IM")
                 UIManager:show(InfoMessage:new{
                     text = msg,
                     timeout = 2,
                 })
             end
             this.connect_message = true
-            logger.info("Schedule Calibre IM")
             UIManager:scheduleIn(1, this.password_check_callback)
             if this.failed_connect_callback then
                 -- Don't disconnect if we connect in 10 seconds
