@@ -79,6 +79,7 @@ local Remarkable2 = Remarkable:new{
 }
 
 function Remarkable2:adjustTouchEvent(ev, by)
+    ev.time = nil -- stylus input and touchscreen input have conflicting event clocks, so just toss them all out
     if ev.type == EV_ABS then
         -- Mirror Y and scale up both X & Y as touch input is different res from
         -- display
