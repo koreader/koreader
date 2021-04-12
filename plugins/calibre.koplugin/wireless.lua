@@ -127,41 +127,49 @@ function CalibreWireless:checkCalibreServer(host, port)
     return false
 end
 
+-- Standard JSON/control opcodes receive callback
+function CalibreWireless:JSONReceiveCallback(host, port)
+    -- NOTE: Closure trickery because we need a reference to *this* self *inside* the callback,
+    --       which will be called as a function from another object (namely, StreamMessageQueue).
+    local this = self
+    return function(data)
+        this:onReceiveJSON(data)
+        if not this.connect_message then
+            this.password_check_callback = function()
+                local msg
+                if this.invalid_password then
+                    msg = _("Invalid password")
+                    this.invalid_password = nil
+                    this:disconnect()
+                elseif this.disconnected_by_server then
+                    msg = _("Disconnected by calibre")
+                    this.disconnected_by_server = nil
+                else
+                    msg = T(_("Connected to calibre server at %1"),
+                        BD.ltr(T("%1:%2", this.calibre_socket.host, this.calibre_socket.port)))
+                end
+                UIManager:show(InfoMessage:new{
+                    text = msg,
+                    timeout = 2,
+                })
+            end
+            this.connect_message = true
+            UIManager:scheduleIn(1, this.password_check_callback)
+            if this.failed_connect_callback then
+                -- Don't disconnect if we connect in 10 seconds
+                UIManager:unschedule(this.failed_connect_callback)
+            end
+        end
+    end
+end
+
 function CalibreWireless:initCalibreMQ(host, port)
     local StreamMessageQueue = require("ui/message/streammessagequeue")
     if self.calibre_socket == nil then
         self.calibre_socket = StreamMessageQueue:new{
             host = host,
             port = port,
-            receiveCallback = function(data)
-                self:onReceiveJSON(data)
-                if not self.connect_message then
-                    self.password_check_callback = function()
-                        local msg
-                        if self.invalid_password then
-                            msg = _("Invalid password")
-                            self.invalid_password = nil
-                            self:disconnect()
-                        elseif self.disconnected_by_server then
-                            msg = _("Disconnected by calibre")
-                            self.disconnected_by_server = nil
-                        else
-                            msg = T(_("Connected to calibre server at %1"),
-                                BD.ltr(T("%1:%2", host, port)))
-                        end
-                        UIManager:show(InfoMessage:new{
-                            text = msg,
-                            timeout = 2,
-                        })
-                    end
-                    self.connect_message = true
-                    UIManager:scheduleIn(1, self.password_check_callback)
-                    if self.failed_connect_callback then
-                        --don't disconnect if we connect in 10 seconds
-                        UIManager:unschedule(self.failed_connect_callback)
-                    end
-                end
-            end,
+            receiveCallback = self:JSONReceiveCallback(),
         }
         self.calibre_socket:start()
         self.calibre_messagequeue = UIManager:insertZMQ(self.calibre_socket)
@@ -524,7 +532,7 @@ function CalibreWireless:sendBook(arg)
     else
         local msg = T(_("Can't receive file %1/%2: %3\nNo space left on device"),
             arg.thisBook + 1, arg.totalBooks, BD.filepath(filename))
-        if self:isCalibreAtLeast(4,18,0) then
+        if self:isCalibreAtLeast(4, 18, 0) then
             -- report the error back to calibre
             self:sendJsonData('ERROR', {message = msg})
             return
@@ -561,11 +569,9 @@ function CalibreWireless:sendBook(arg)
                 CalibreMetadata:saveBookList()
                 updateDir(inbox_dir)
             end
-            -- switch to JSON data receiving mode
-            calibre_socket.receiveCallback = function(json_data)
-                calibre_device:onReceiveJSON(json_data)
-            end
-            -- if calibre sends multiple files there may be left JSON data
+            -- switch back to JSON data receiving mode
+            calibre_socket.receiveCallback = calibre_device:JSONReceiveCallback()
+            -- if calibre sends multiple files there may be leftover JSON data
             calibre_device.buffer = data:sub(#to_write_data + 1) or ""
             --logger.info("device buffer", calibre_device.buffer)
             if calibre_device.buffer ~= "" then
@@ -671,12 +677,12 @@ function CalibreWireless:sendToCalibre(arg)
     file:close()
 end
 
-function CalibreWireless:isCalibreAtLeast(x,y,z)
+function CalibreWireless:isCalibreAtLeast(x, y, z)
     local v = self.calibre.version
-    local function semanticVersion(a,b,c)
+    local function semanticVersion(a, b, c)
         return ((a * 100000) + (b * 1000)) + c
     end
-    return semanticVersion(v[1],v[2],v[3]) >= semanticVersion(x,y,z)
+    return semanticVersion(v[1], v[2], v[3]) >= semanticVersion(x, y, z)
 end
 
 return CalibreWireless

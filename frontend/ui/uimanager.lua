@@ -1580,9 +1580,10 @@ function UIManager:handleInput()
         self:_repaint()
     until not self._task_queue_dirty
 
-    -- run ZMQs if any
-    self:processZMQs()
-
+    -- NOTE: Compute deadline *before* processing ZMQs, in order to be able to catch tasks scheduled *during*
+    --       the final ZMQ callback.
+    --       This ensures that we get to honor a single ZMQ_TIMEOUT *after* the final ZMQ callback,
+    --       which gives us a chance for another iteration, meaning going through _checkTasks to catch said scheduled tasks.
     -- Figure out how long to wait.
     -- Ultimately, that'll be the earliest of INPUT_TIMEOUT, ZMQ_TIMEOUT or the next earliest scheduled task.
     local deadline
@@ -1605,6 +1606,9 @@ function UIManager:handleInput()
         --                             ^ We have a task scheduled for *before* our TIMEOUT induced deadline.
         deadline = wait_until
     end
+
+    -- Run ZMQs if any
+    self:processZMQs()
 
     -- If allowed, entering standby (from which we can wake by input) must trigger in response to event
     -- this function emits (plugin), or within waitEvent() right after (hardware).
