@@ -73,7 +73,7 @@ end
 
 -- NOTE: ReaderRolling, on the other hand, does some lower-level things @ onReadSettings tied to CRe that would be much harder to factor out.
 --       https://github.com/koreader/koreader/pull/1930
--- NOTE: The Gestures plugin also handles its settings migration its own, but deals with it sanely.
+-- NOTE: The Gestures plugin also handles its settings migration on its own, but deals with it sanely.
 
 -- ScreenSaver, https://github.com/koreader/koreader/pull/7371
 if last_migration_date < 20210306 then
