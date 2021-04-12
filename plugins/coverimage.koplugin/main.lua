@@ -43,7 +43,7 @@ local function isPathAllowed(path)
     end
 end
 
-local function isFilenameOk(filename)
+local function isFileOk(filename)
     local path, name = util.splitFilePathName(filename)
 
     if not isPathAllowed(path) then
@@ -95,7 +95,7 @@ function CoverImage:cleanUpImage()
             timeout = 10,
         })
         os.remove(self.cover_image_path)
-    elseif isFilenameOk(self.cover_image_path) then
+    elseif isFileOk(self.cover_image_path) then
         ffiutil.copyFile(self.cover_image_fallback_path, self.cover_image_path)
     end
 end
@@ -191,7 +191,7 @@ function CoverImage:onReaderReady(doc_settings)
 end
 
 function CoverImage:fallbackEnabled()
-    return self.fallback and isFilenameOk(self.cover_image_fallback_path)
+    return self.fallback and isFileOk(self.cover_image_fallback_path)
 end
 
 ---------------------------
@@ -302,14 +302,14 @@ end
 chooses a path or (an existing) file
 
 @touchmenu_instance for updating of the menu
-@string setting is the G_reader_setting key which is used and changed
+@string key is the G_reader_setting key which is used and changed
 @boolean folder_only just selects a path, no file handling
 @boolean new_file allows to enter a new filename, or use just an existing file
 @function migrate(a,b) callback to a function to mangle old folder/file with new folder/file.
     Can be used for migrating the contents of the old path to the new one
 ]]
-function CoverImage:choosePathFile(touchmenu_instance, setting, folder_only, new_file, migrate)
-    local old_path, dummy = util.splitFilePathName(self[setting])
+function CoverImage:choosePathFile(touchmenu_instance, key, folder_only, new_file, migrate)
+    local old_path, dummy = util.splitFilePathName(self[key])
     UIManager:show(PathChooser:new{
         select_directory = folder_only or new_file,
         select_file = not folder_only,
@@ -322,10 +322,10 @@ function CoverImage:choosePathFile(touchmenu_instance, setting, folder_only, new
                     dir_path = dir_path .. "/"
                 end
                 if migrate then
-                    migrate(self, self[setting], dir_path)
+                    migrate(self, self[key], dir_path)
                 end
-                self[setting] = dir_path
-                G_reader_settings:saveSetting(setting, dir_path)
+                self[key] = dir_path
+                G_reader_settings:saveSetting(key, dir_path)
                 if touchmenu_instance then
                     touchmenu_instance:updateItems()
                 end
@@ -342,11 +342,11 @@ function CoverImage:choosePathFile(touchmenu_instance, setting, folder_only, new
                             text = _("Save"),
                             callback = function()
                                 local file = file_input:getInputText()
-                                if migrate and self[setting] and self[setting] ~= "" then
-                                    migrate(self, self[setting], file)
+                                if migrate and self[key] and self[key] ~= "" then
+                                    migrate(self, self[key], file)
                                 end
-                                self[setting] = file
-                                G_reader_settings:saveSetting(setting, file)
+                                self[key] = file
+                                G_reader_settings:saveSetting(key, file)
                                 if touchmenu_instance then
                                     touchmenu_instance:updateItems()
                                 end
@@ -359,10 +359,10 @@ function CoverImage:choosePathFile(touchmenu_instance, setting, folder_only, new
                 file_input:onShowKeyboard()
             elseif mode == "file" then   -- just select an existing file
                 if migrate then
-                    migrate(self, self[setting], dir_path)
+                    migrate(self, self[key], dir_path)
                 end
-                self[setting] = dir_path
-                G_reader_settings:saveSetting(setting, dir_path)
+                self[key] = dir_path
+                G_reader_settings:saveSetting(key, dir_path)
                 if touchmenu_instance then
                     touchmenu_instance:updateItems()
                 end
@@ -485,12 +485,14 @@ function CoverImage:menu_entry_cache()
                 ("Select a cache folder. The contents of the old folder will be migrated."), default_cache_path, true, false, self.migrateCache),
             {
                 text = _("Clear cached covers"),
-                callback = function()
+                help_text_func = function()
                     local cache_count, cache_size_KiB
                         = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
+                    return T(_("The cache contains %1 files and uses %2 MiB."), cache_count, math.floor((cache_size_KiB + 1023) / 1024))
+                end,
+                callback = function()
                     UIManager:show(ConfirmBox:new{
-                        text =  T(_("Do you really want to clear the cover image cache?\nThe cache contains %1 files and uses %2 MiB."),
-                            cache_count, math.floor((cache_size_KiB + 1023) / 1024)),
+                        text =  _("Do you really want to clear the cover image cache?"),
                         ok_text = _("Clear"),
                         ok_callback = function()
                             self:emptyCache()
@@ -503,16 +505,28 @@ function CoverImage:menu_entry_cache()
     }
 end
 
-function CoverImage:menu_entry_set_path(setting, title, help, info, default, folder_only, new_file, migrate)
+--[[--
+Menu entry for setting an specific G_reader_setting key for a path/file
+
+@string key is the G_reader_setting key which is used and changed
+@string title shown in the menu
+@string help shown in the menu
+@string info shown in the menu (if containing %1, the value of the key is shown)
+@string the default value
+@bool folder_only sets if only folders can be selected
+@bool new_file sets if a new filename can be entered
+@function migrate a callback for example moving the folder contents
+]]
+function CoverImage:menu_entry_set_path(key, title, help, info, default, folder_only, new_file, migrate)
     return {
         text = title,
         help_text_func = function()
-            local text = self[setting]
+            local text = self[key]
             text = text ~= "" and text or _("not set")
             return T(help, text)
         end,
         checked_func = function()
-            return isFilenameOk(self[setting]) or (isPathAllowed(self[setting]) and folder_only)
+            return isFileOk(self[key]) or (isPathAllowed(self[key]) and folder_only)
         end,
         callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
@@ -520,14 +534,14 @@ function CoverImage:menu_entry_set_path(setting, title, help, info, default, fol
                 ok_text = _("Yes"),
                 cancel_text = _("No"),
                 ok_callback = function()
-                    self:choosePathFile(touchmenu_instance, setting, folder_only, new_file, migrate)
+                    self:choosePathFile(touchmenu_instance, key, folder_only, new_file, migrate)
                 end,
                 other_buttons = {{
                 {
                     text = _("Default"),
                     callback = function()
-                        self[setting] = default
-                        G_reader_settings:saveSetting(setting, default)
+                        self[key] = default
+                        G_reader_settings:saveSetting(key, default)
                         if touchmenu_instance then
                             touchmenu_instance:updateItems()
                         end
@@ -666,10 +680,10 @@ function CoverImage:addToMainMenu(menu_items)
             {
                 text = _("Save cover image"),
                 checked_func = function()
-                    return self.enabled and isFilenameOk(self.cover_image_path)
+                    return self.enabled and isFileOk(self.cover_image_path)
                 end,
                 enabled_func = function()
-                    return self.cover_image_path ~= "" and isFilenameOk(self.cover_image_path)
+                    return self.cover_image_path ~= "" and isFileOk(self.cover_image_path)
                 end,
                 callback = function()
                     if self.cover_image_path ~= "" then
