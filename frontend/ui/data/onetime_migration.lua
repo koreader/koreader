@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20210413
+local CURRENT_MIGRATION_DATE = 20210414
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -196,6 +196,17 @@ if last_migration_date < 20210412 then
     -- Make sure Cache gets the memo
     local Cache = require("cache")
     Cache:refreshSnapshot()
+end
+
+-- Calibre, cache encoding format change, https://github.com/koreader/koreader/pull/7543
+if last_migration_date < 20210414 then
+    logger.info("Performing one-time migration for 20210414")
+
+    local cache_path = DataStorage:getDataDir() .. "/cache/calibre"
+    ok, err = os.remove(cache_path .. "/books.dat")
+    if not ok then
+       logger.warn("os.remove:", err)
+    end
 end
 
 -- We're done, store the current migration date
