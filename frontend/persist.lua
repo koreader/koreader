@@ -6,7 +6,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local zstd = require("ffi/zstd")
 
---local C = ffi.C
+local C = ffi.C
 
 local function readFile(file, bytes)
     local f, str, err
@@ -27,6 +27,7 @@ local codecs = {
     bitser = {
         id = "bitser",
         reads_from_file = false,
+        writes_to_file = false,
 
         serialize = function(t)
             local ok, str = pcall(bitser.dumps, t)
@@ -49,6 +50,7 @@ local codecs = {
     luajit = {
         id = "luajit",
         reads_from_file = false,
+        writes_to_file = false,
 
         serialize = function(t)
             local ok, str = pcall(buffer.encode, t)
@@ -69,19 +71,56 @@ local codecs = {
     -- zstd: luajit, but compressed w/ zstd ;).
     zstd = {
         id = "zstd",
-        reads_from_file = false,
+        reads_from_file = true,
+        writes_to_file = true,
 
-        serialize = function(t)
+        serialize = function(t, as_bytecode, path)
             local ok, str = pcall(buffer.encode, t)
             if not ok then
                 return nil, "cannot serialize " .. tostring(t) .. " (" .. str .. ")"
             end
+
             local cbuff, clen = zstd.zstd_compress(str, #str)
-            return ffi.string(cbuff, clen)
+
+            local f = C.fopen(path, "w+b")
+            if f == nil then
+                return nil, "fopen: " .. ffi.string(C.strerror(ffi.errno()))
+            end
+            if C.fwrite(cbuff, 1, clen, f) < clen then
+                C.fclose(f)
+                return nil, "failed to write file"
+            end
+            C.fclose(f)
+
+            return true
         end,
 
-        deserialize = function(cstr)
-            local buff, ulen = zstd.zstd_uncompress(cstr, #cstr)
+        deserialize = function(path)
+            local f = C.fopen(path, "rb")
+            if f == nil then
+                return nil, "fopen: " .. ffi.string(C.strerror(ffi.errno()))
+            end
+            local fd = C.fileno(f)
+            local st = ffi.new("struct stat")
+            if C.fstat(fd, st) == -1 then
+                C.fclose(f)
+                return nil, "fstat: " .. ffi.string(C.strerror(ffi.errno()))
+            end
+            local data = C.malloc(st.st_size, 1)
+            if data == nil then
+                C.fclose(f)
+                return nil, "failed to allocate read buffer"
+            end
+            if C.fread(data, 1, st.st_size, f) < st.st_size or C.ferror(f) ~= 0 then
+                C.free(data)
+                C.fclose(f)
+                return nil, "failed to read file"
+            end
+            C.fclose(f)
+
+            local buff, ulen = zstd.zstd_uncompress(data, st.st_size)
+            C.free(data)
+
             local str = ffi.string(buff, ulen)
             local ok, t = pcall(buffer.decode, str)
             if not ok then
@@ -94,6 +133,7 @@ local codecs = {
     dump = {
         id = "dump",
         reads_from_file = true,
+        writes_to_file = false,
 
         serialize = function(t, as_bytecode)
             local content
@@ -170,16 +210,23 @@ end
 
 function Persist:save(t, as_bytecode)
     local str, file, err
-    str, err = codecs[self.codec].serialize(t, as_bytecode)
-    if not str then
-        return nil, err
+    if codecs[self.codec].writes_to_file then
+        str, err = codecs[self.codec].serialize(t, as_bytecode, self.path)
+        if not str then
+            return nil, err
+        end
+    else
+        str, err = codecs[self.codec].serialize(t, as_bytecode)
+        if not str then
+            return nil, err
+        end
+        file, err = io.open(self.path, "wb")
+        if not file then
+            return nil, err
+        end
+        file:write(str)
+        file:close()
     end
-    file, err = io.open(self.path, "wb")
-    if not file then
-        return nil, err
-    end
-    file:write(str)
-    file:close()
     return true
 end
 
