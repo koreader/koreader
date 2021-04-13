@@ -1,8 +1,12 @@
 local bitser = require("ffi/bitser")
 local buffer = require("string.buffer")
 local dump = require("dump")
+local ffi = require("ffi")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local zstd = require("ffi/zstd")
+
+local C = ffi.C
 
 local function readFile(file, bytes)
     local f, str, err
@@ -23,6 +27,7 @@ local codecs = {
     bitser = {
         id = "bitser",
         reads_from_file = false,
+        writes_to_file = false,
 
         serialize = function(t)
             local ok, str = pcall(bitser.dumps, t)
@@ -45,6 +50,7 @@ local codecs = {
     luajit = {
         id = "luajit",
         reads_from_file = false,
+        writes_to_file = false,
 
         serialize = function(t)
             local ok, str = pcall(buffer.encode, t)
@@ -62,10 +68,74 @@ local codecs = {
             return t
         end,
     },
-    -- dump: human readable, pretty printed, fast enough for most user cases.
+    -- zstd: luajit, but compressed w/ zstd ;). Much smaller, at a very small performance cost (decompressing is *fast*).
+    zstd = {
+        id = "zstd",
+        reads_from_file = true,
+        writes_to_file = true,
+
+        serialize = function(t, as_bytecode, path)
+            local ok, str = pcall(buffer.encode, t)
+            if not ok then
+                return nil, "cannot serialize " .. tostring(t) .. " (" .. str .. ")"
+            end
+
+            local cbuff, clen = zstd.zstd_compress(str, #str)
+
+            local f = C.fopen(path, "wb")
+            if f == nil then
+                return nil, "fopen: " .. ffi.string(C.strerror(ffi.errno()))
+            end
+            if C.fwrite(cbuff, 1, clen, f) < clen then
+                C.fclose(f)
+                C.free(cbuff)
+                return nil, "failed to write file"
+            end
+            C.fclose(f)
+            C.free(cbuff)
+
+            return true
+        end,
+
+        deserialize = function(path)
+            local f = C.fopen(path, "rb")
+            if f == nil then
+                return nil, "fopen: " .. ffi.string(C.strerror(ffi.errno()))
+            end
+            local size = lfs.attributes(path, "size")
+            -- NOTE: In a perfect world, we'd just mmap the file.
+            --       But that's problematic on a portability level: while mmap is POSIX, implementations differ,
+            --       and some old platforms don't support mmap-on-vfat (Legacy Kindle) :'(.
+            local data = C.malloc(size)
+            if data == nil then
+                C.fclose(f)
+                return nil, "failed to allocate read buffer"
+            end
+            if C.fread(data, 1, size, f) < size or C.ferror(f) ~= 0 then
+                C.free(data)
+                C.fclose(f)
+                return nil, "failed to read file"
+            end
+            C.fclose(f)
+
+            local buff, ulen = zstd.zstd_uncompress(data, size)
+            C.free(data)
+
+            local str = ffi.string(buff, ulen)
+            C.free(buff)
+
+            local ok, t = pcall(buffer.decode, str)
+            if not ok then
+                return nil, "malformed serialized data (" .. t .. ")"
+            end
+            return t
+        end,
+    },
+    -- dump: human readable, pretty printed, fast enough for most use cases.
     dump = {
         id = "dump",
         reads_from_file = true,
+        writes_to_file = false,
 
         serialize = function(t, as_bytecode)
             local content
@@ -141,17 +211,24 @@ function Persist:load()
 end
 
 function Persist:save(t, as_bytecode)
-    local str, file, err
-    str, err = codecs[self.codec].serialize(t, as_bytecode)
-    if not str then
-        return nil, err
+    if codecs[self.codec].writes_to_file then
+        local ok, err = codecs[self.codec].serialize(t, as_bytecode, self.path)
+        if not ok then
+            return nil, err
+        end
+    else
+        local str, err = codecs[self.codec].serialize(t, as_bytecode)
+        if not str then
+            return nil, err
+        end
+        local file
+        file, err = io.open(self.path, "wb")
+        if not file then
+            return nil, err
+        end
+        file:write(str)
+        file:close()
     end
-    file, err = io.open(self.path, "wb")
-    if not file then
-        return nil, err
-    end
-    file:write(str)
-    file:close()
     return true
 end
 

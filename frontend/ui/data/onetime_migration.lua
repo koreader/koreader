@@ -203,7 +203,7 @@ if last_migration_date < 20210414 then
     logger.info("Performing one-time migration for 20210414")
 
     local cache_path = DataStorage:getDataDir() .. "/cache/calibre"
-    ok, err = os.remove(cache_path .. "/books.dat")
+    local ok, err = os.remove(cache_path .. "/books.dat")
     if not ok then
        logger.warn("os.remove:", err)
     end
