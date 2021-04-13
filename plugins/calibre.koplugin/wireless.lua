@@ -132,7 +132,8 @@ function CalibreWireless:JSONReceiveCallback(host, port)
     -- NOTE: Closure trickery because we need a reference to *this* self *inside* the callback,
     --       which will be called as a function from another object (namely, StreamMessageQueue).
     local this = self
-    return function(data)
+    return function(t)
+        local data = table.concat(t)
         this:onReceiveJSON(data)
         if not this.connect_message then
             this.password_check_callback = function()
@@ -546,9 +547,10 @@ function CalibreWireless:sendBook(arg)
         end
     end
     -- switching to raw data receiving mode
-    self.calibre_socket.receiveCallback = function(data)
-        --logger.info("receive file data", #data)
-        --logger.info("Memory usage KB:", collectgarbage("count"))
+    self.calibre_socket.receiveCallback = function(t)
+        local data = table.concat(t)
+        logger.info("receive file data", #data)
+        logger.info("Memory usage KB:", collectgarbage("count"))
         local to_write_data = data:sub(1, to_write_bytes)
         if fits then
             outfile:write(to_write_data)
