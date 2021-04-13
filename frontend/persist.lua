@@ -88,6 +88,7 @@ local codecs = {
             end
             if C.fwrite(cbuff, 1, clen, f) < clen then
                 C.fclose(f)
+                C.free(cbuff)
                 return nil, "failed to write file"
             end
             C.fclose(f)
