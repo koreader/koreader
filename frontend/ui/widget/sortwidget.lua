@@ -206,7 +206,7 @@ function SortWidget:init()
         show_parent = self,
     }
     self.footer_first_up = Button:new{
-        icon=chevron_first,
+        icon = chevron_first,
         width = self.footer_button_width,
         callback = function()
             if self.marked > 0 then
@@ -220,7 +220,7 @@ function SortWidget:init()
         show_parent = self,
     }
     self.footer_last_down = Button:new{
-        icon=chevron_last,
+        icon = chevron_last,
         width = self.footer_button_width,
         callback = function()
             if self.marked > 0 then
@@ -234,7 +234,7 @@ function SortWidget:init()
         show_parent = self,
     }
     self.footer_cancel = Button:new{
-        text = "Cancel",
+        text = _("Cancel"),
         width = self.footer_button_width,
         callback = function() self:onClose() end,
         bordersize = 0,
@@ -243,7 +243,7 @@ function SortWidget:init()
         show_parent = self,
     }
     self.footer_ok = Button:new{
-        text= "Save",
+        text = _("Save"),
         width = self.footer_button_width,
         callback = function() self:onReturn() end,
         bordersize = 0,
