@@ -58,8 +58,10 @@ end
 function StreamMessageQueue:waitEvent()
     local data = ""
     -- Successive zframes may come in batches of tens or hundreds in some cases.
-    -- If they are concatenated in a single loop, it may consume a significant amount
-    -- of memory. And it's fairly easy to trigger when receiving file data from Calibre.
+    -- Since we buffer each frame's data in a Lua string,
+    -- and then let the caller concatenate those,
+    -- it may consume a significant amount of memory.
+    -- And it's fairly easy to trigger when receiving file data from Calibre.
     -- So, throttle reception to 256 packages at most in one waitEvent loop,
     -- after which we immediately call receiveCallback.
     local wait_packages = 256
