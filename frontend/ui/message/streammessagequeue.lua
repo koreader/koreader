@@ -56,7 +56,6 @@ function StreamMessageQueue:handleZframe(frame)
 end
 
 function StreamMessageQueue:waitEvent()
-    local data = ""
     -- Successive zframes may come in batches of tens or hundreds in some cases.
     -- Since we buffer each frame's data in a Lua string,
     -- and then let the caller concatenate those,
