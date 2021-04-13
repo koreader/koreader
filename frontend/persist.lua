@@ -1,8 +1,12 @@
 local bitser = require("ffi/bitser")
 local buffer = require("string.buffer")
 local dump = require("dump")
+local ffi = require("ffi")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local zstd = require("ffi/zstd")
+
+--local C = ffi.C
 
 local function readFile(file, bytes)
     local f, str, err
@@ -55,6 +59,30 @@ local codecs = {
         end,
 
         deserialize = function(str)
+            local ok, t = pcall(buffer.decode, str)
+            if not ok then
+                return nil, "malformed serialized data (" .. t .. ")"
+            end
+            return t
+        end,
+    },
+    -- zstd: luajit, but compressed w/ zstd ;).
+    zstd = {
+        id = "zstd",
+        reads_from_file = false,
+
+        serialize = function(t)
+            local ok, str = pcall(buffer.encode, t)
+            if not ok then
+                return nil, "cannot serialize " .. tostring(t) .. " (" .. str .. ")"
+            end
+            local cbuff, clen = zstd.zstd_compress(str, #str)
+            return ffi.string(cbuff, clen)
+        end,
+
+        deserialize = function(cstr)
+            local buff, ulen = zstd.zstd_uncompress(cstr, #cstr)
+            local str = ffi.string(buff, ulen)
             local ok, t = pcall(buffer.decode, str)
             if not ok then
                 return nil, "malformed serialized data (" .. t .. ")"

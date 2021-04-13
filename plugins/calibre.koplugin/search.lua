@@ -176,7 +176,7 @@ local CalibreSearch = InputContainer:new{
     },
     cache_books = Persist:new{
         path = DataStorage:getDataDir() .. "/cache/calibre/books.dat",
-        codec = "luajit",
+        codec = "zstd",
     },
 }
 
