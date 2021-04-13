@@ -103,6 +103,9 @@ local codecs = {
                 return nil, "fopen: " .. ffi.string(C.strerror(ffi.errno()))
             end
             local size = lfs.attributes(path, "size")
+            -- NOTE: In a perfect world, we'd just mmap the file.
+            --       But that's problematic on a portability level: while mmap is POSIX, implementations differ,
+            --       and some old platforms don't support mmap-on-vfat (Legacy Kindle) :'(.
             local data = C.malloc(size)
             if data == nil then
                 C.fclose(f)
