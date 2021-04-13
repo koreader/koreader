@@ -100,25 +100,20 @@ local codecs = {
             if f == nil then
                 return nil, "fopen: " .. ffi.string(C.strerror(ffi.errno()))
             end
-            local fd = C.fileno(f)
-            local st = ffi.new("struct stat")
-            if C.fstat(fd, st) == -1 then
-                C.fclose(f)
-                return nil, "fstat: " .. ffi.string(C.strerror(ffi.errno()))
-            end
-            local data = C.malloc(st.st_size, 1)
+            local size = lfs.attribute(path, "size")
+            local data = C.malloc(size, 1)
             if data == nil then
                 C.fclose(f)
                 return nil, "failed to allocate read buffer"
             end
-            if C.fread(data, 1, st.st_size, f) < st.st_size or C.ferror(f) ~= 0 then
+            if C.fread(data, 1, size, f) < size or C.ferror(f) ~= 0 then
                 C.free(data)
                 C.fclose(f)
                 return nil, "failed to read file"
             end
             C.fclose(f)
 
-            local buff, ulen = zstd.zstd_uncompress(data, st.st_size)
+            local buff, ulen = zstd.zstd_uncompress(data, size)
             C.free(data)
 
             local str = ffi.string(buff, ulen)
