@@ -414,19 +414,18 @@ function SortWidget:_populateItems()
     end
     local chevron_first = "chevron.first"
     local chevron_last = "chevron.last"
+    local move_up = "move.up"
+    local move_down = "move.down"
     if BD.mirroredUILayout() then
         chevron_first, chevron_last = chevron_last, chevron_first
+        move_up, move_down = move_down, move_up
     end
     if self.marked > 0 then
-        self.footer_first_up:setText("▲", self.footer_button_width)
-        self.footer_last_down:setText("▼", self.footer_button_width)
+        self.footer_first_up:setIcon(move_up, self.footer_button_width)
+        self.footer_last_down:setIcon(move_down, self.footer_button_width)
     else
-        self.footer_first_up.text = nil
-        self.footer_first_up:init()
-        self.footer_first_up:setIcon(chevron_first)
-        self.footer_last_down.text = nil
-        self.footer_last_down:init()
-        self.footer_last_down:setIcon(chevron_last)
+        self.footer_first_up:setIcon(chevron_first, self.footer_button_width)
+        self.footer_last_down:setIcon(chevron_last, self.footer_button_width)
     end
     self.footer_left:enableDisable(self.show_page > 1)
     self.footer_right:enableDisable(self.show_page < self.pages)
