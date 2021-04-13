@@ -100,8 +100,8 @@ local codecs = {
             if f == nil then
                 return nil, "fopen: " .. ffi.string(C.strerror(ffi.errno()))
             end
-            local size = lfs.attribute(path, "size")
-            local data = C.malloc(size, 1)
+            local size = lfs.attributes(path, "size")
+            local data = C.malloc(size)
             if data == nil then
                 C.fclose(f)
                 return nil, "failed to allocate read buffer"
