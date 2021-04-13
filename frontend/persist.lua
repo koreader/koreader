@@ -91,6 +91,7 @@ local codecs = {
                 return nil, "failed to write file"
             end
             C.fclose(f)
+            C.free(cbuff)
 
             return true
         end,
@@ -117,6 +118,8 @@ local codecs = {
             C.free(data)
 
             local str = ffi.string(buff, ulen)
+            C.free(buff)
+
             local ok, t = pcall(buffer.decode, str)
             if not ok then
                 return nil, "malformed serialized data (" .. t .. ")"
