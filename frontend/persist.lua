@@ -68,7 +68,7 @@ local codecs = {
             return t
         end,
     },
-    -- zstd: luajit, but compressed w/ zstd ;).
+    -- zstd: luajit, but compressed w/ zstd ;). Much smaller, at a very small performance cost (decompressing is *fast*).
     zstd = {
         id = "zstd",
         reads_from_file = true,
@@ -127,7 +127,7 @@ local codecs = {
             return t
         end,
     },
-    -- dump: human readable, pretty printed, fast enough for most user cases.
+    -- dump: human readable, pretty printed, fast enough for most use cases.
     dump = {
         id = "dump",
         reads_from_file = true,
