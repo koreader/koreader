@@ -396,7 +396,8 @@ function GestureDetector:probeClockSource(timev)
 
     -- Finally, BOOTTIME
     local boottime = TimeVal:boottime()
-    if timev >= boottime - threshold and timev <= boottime + threshold then
+    -- NOTE: It was implemented in Linux 2.6.39, so, reject 0, which would mean it's unsupported...
+    if not boottime:isZero() and timev >= boottime - threshold and timev <= boottime + threshold then
         self.clock_id = C.CLOCK_BOOTTIME
         logger.info("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_BOOTTIME")
         return
@@ -405,6 +406,11 @@ function GestureDetector:probeClockSource(timev)
     -- If we're here, the detection was inconclusive :/
     self.clock_id = -1
     logger.info("GestureDetector:probeClockSource: Touch event clock source detection was inconclusive")
+    -- Print all all the gory details in debug mode when this happens...
+    logger.dbg("Input frame    :", timev:tonumber())
+    logger.dbg("CLOCK_REALTIME :", realtime:tonumber())
+    logger.dbg("CLOCK_MONOTONIC:", monotonic:tonumber())
+    logger.dbg("CLOCK_BOOTTIME :", boottime:tonumber())
 end
 
 function GestureDetector:getClockSource()

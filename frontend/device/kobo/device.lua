@@ -95,7 +95,8 @@ local KoboDahlia = Kobo:new{
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
     -- There's no slot 0, the first finger gets assigned slot 1, and the second slot 2.
-    -- NOTE: Could be queried at runtime via EVIOCGABS on ABS_MT_TRACKING_ID (minimum field).
+    -- NOTE: Could be queried at runtime via EVIOCGABS on C.ABS_MT_TRACKING_ID (minimum field).
+    --       Used to be handled via an adjustTouchAlyssum hook that just mangled ABS_MT_TRACKING_ID values.
     main_finger_slot = 1,
     display_dpi = 265,
     -- the bezel covers the top 11 pixels:
@@ -184,7 +185,7 @@ local KoboAlyssum = Kobo:new{
     model = "Kobo_alyssum",
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
-    touch_alyssum_protocol = true,
+    main_finger_slot = 1,
     display_dpi = 300,
 }
 
@@ -192,7 +193,7 @@ local KoboAlyssum = Kobo:new{
 local KoboPika = Kobo:new{
     model = "Kobo_pika",
     touch_phoenix_protocol = true,
-    touch_alyssum_protocol = true,
+    main_finger_slot = 1,
 }
 
 -- Kobo Clara HD:
@@ -460,14 +461,6 @@ end
 
 function Kobo:supportsScreensaver() return true end
 
-local ABS_MT_TRACKING_ID = 57
-local EV_ABS = 3
-local adjustTouchAlyssum = function(self, ev)
-    if ev.type == EV_ABS and ev.code == ABS_MT_TRACKING_ID then
-        ev.value = ev.value - 1
-    end
-end
-
 function Kobo:initEventAdjustHooks()
     -- it's called KOBO_TOUCH_MIRRORED in defaults.lua, but what it
     -- actually did in its original implementation was to switch X/Y.
@@ -485,10 +478,6 @@ function Kobo:initEventAdjustHooks()
             --- @fixme what if we change the screen portrait mode?
             self.screen:getWidth()
         )
-    end
-
-    if self.touch_alyssum_protocol then
-        self.input:registerEventAdjustHook(adjustTouchAlyssum)
     end
 
     if self.touch_snow_protocol then

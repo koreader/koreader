@@ -3,6 +3,9 @@ local PluginShare = require("pluginshare")
 local ffi = require("ffi")
 local logger = require("logger")
 
+local C = ffi.C
+require("ffi/linux_input_h")
+
 local function yes() return true end
 local function no() return false end
 
@@ -21,19 +24,13 @@ local SonyPRSTUX = Generic:new{
 
 
 -- sony's driver does not inform of ID, so we overwrite the TOUCH_MAJOR
--- event to fake an ID event. a width == 0 means the finger was lift.
+-- event to fake an ID event. a width == 0 means the finger was lifted.
 -- after all events are received, we reset the counter
 
 local next_touch_id = 0
-local ABS_MT_TRACKING_ID = 57
-local ABS_MT_TOUCH_MAJOR = 48
-local EV_SYN = 0
-local EV_ABS = 3
-local SYN_REPORT = 0
-local SYN_MT_REPORT = 2
 local adjustTouchEvt = function(self, ev)
-    if ev.type == EV_ABS and ev.code == ABS_MT_TOUCH_MAJOR then
-        ev.code = ABS_MT_TRACKING_ID
+    if ev.type == C.EV_ABS and ev.code == C.ABS_MT_TOUCH_MAJOR then
+        ev.code = C.ABS_MT_TRACKING_ID
         if ev.value ~= 0 then
             ev.value = next_touch_id
         else
@@ -42,13 +39,13 @@ local adjustTouchEvt = function(self, ev)
 
         next_touch_id = next_touch_id + 1
 
-        logger.dbg('adjusted id: ', ev.value)
-    elseif ev.type == EV_SYN and ev.code == SYN_REPORT then
+        logger.dbg("adjusted id: ", ev.value)
+    elseif ev.type == C.EV_SYN and ev.code == C.SYN_REPORT then
         next_touch_id = 0
-        logger.dbg('reset id: ', ev.code, ev.value)
-        ev.code = SYN_MT_REPORT
-    elseif ev.type == EV_SYN and ev.code == SYN_MT_REPORT then
-        ev.code = SYN_REPORT
+        logger.dbg("reset id: ", ev.code, ev.value)
+        ev.code = C.SYN_MT_REPORT
+    elseif ev.type == C.EV_SYN and ev.code == C.SYN_MT_REPORT then
+        ev.code = C.SYN_REPORT
     end
 end
 
@@ -84,7 +81,7 @@ function SonyPRSTUX:setDateTime(year, month, day, hour, min, sec)
         command = string.format("date -s '%d:%d'",hour, min)
     end
     if os.execute(command) == 0 then
-        os.execute('hwclock -u -w')
+        os.execute("hwclock -u -w")
         return true
     else
         return false
@@ -198,7 +195,7 @@ local SonyPRSTUX_T2 = SonyPRSTUX:new{
     display_dpi = 166,
 }
 
-logger.info('SoftwareVersion: ', SonyPRSTUX:getSoftwareVersion())
+logger.info("SoftwareVersion: ", SonyPRSTUX:getSoftwareVersion())
 
 local codename = SonyPRSTUX:getDeviceModel()
 
