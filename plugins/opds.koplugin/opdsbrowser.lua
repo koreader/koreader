@@ -80,13 +80,6 @@ local OPDSBrowser = Menu:extend{
 }
 
 function OPDSBrowser:init()
-    -- Update deprecated URLs
-    for _, server in ipairs(self.opds_servers) do
-        if server.url == "http://bookserver.archive.org/catalog/" then
-            server.url = "https://bookserver.archive.org"
-        end
-    end
-
     self.item_table = self:genItemTableFromRoot()
     self.catalog_title = nil
     Menu.init(self) -- call parent's init()

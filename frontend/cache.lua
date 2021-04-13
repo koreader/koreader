@@ -39,12 +39,6 @@ end
 
 local cache_path = DataStorage:getDataDir() .. "/cache/"
 
--- NOTE: Before 2021.04, fontlist used to squat our folder, needlessly polluting our state tracking.
-os.remove(cache_path .. "/fontinfo.dat")
--- Ditto for Calibre
-os.remove(cache_path .. "/calibre-libraries.lua")
-os.remove(cache_path .. "/calibre-books.dat")
-
 --[[
 -- return a snapshot of disk cached items for subsequent check
 --]]
@@ -160,7 +154,7 @@ function Cache:serialize()
     -- calculate disk cache size
     local cached_size = 0
     local sorted_caches = {}
-    for _,file in pairs(self.cached) do
+    for _, file in pairs(self.cached) do
         table.insert(sorted_caches, {file=file, time=lfs.attributes(file, "access")})
         cached_size = cached_size + (lfs.attributes(file, "size") or 0)
     end
@@ -201,6 +195,11 @@ function Cache:clear()
     self.cache = {}
     self.cache_order = {}
     self.current_memsize = 0
+end
+
+-- Refresh the disk snapshot (mainly used by ui/data/onetime_migration)
+function Cache:refreshSnapshot()
+    self.cached = getDiskCache()
 end
 
 return Cache

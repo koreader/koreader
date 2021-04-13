@@ -172,13 +172,12 @@ if Device:hasEinkScreen() then
     end
 end
 
--- Handle global settings migration
-local SettingsMigration = require("ui/data/settings_migration")
-SettingsMigration:migrateSettings(G_reader_settings)
-
 -- Document renderers canvas
 local CanvasContext = require("document/canvascontext")
 CanvasContext:init(Device)
+
+-- Handle one time migration stuff (settings, deprecation, ...) in case of an upgrade...
+require("ui/data/onetime_migration")
 
 -- Touch screen (this may display some widget, on first install on Kobo Touch,
 -- so have it done after CanvasContext:init() but before Bidi.setup() to not

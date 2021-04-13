@@ -12,10 +12,14 @@ local C_ = _.pgettext
 local T = require("ffi/util").template
 local Screen = Device.screen
 
+local ReaderTypography = InputContainer:new{}
+
 -- This is used to migrate old hyph settings, and to show the currently
 -- used hyph dict language in the hyphenation menu.
 -- It will be completed with info from the LANGUAGES table below.
-local HYPH_DICT_NAME_TO_LANG_NAME_TAG = {
+-- NOTE: Actual migration is handled in ui/data/onetime_migration,
+--       which is why this hash is public.
+ReaderTypography.HYPH_DICT_NAME_TO_LANG_NAME_TAG = {
     ["@none"]                = { "@none",           "en" },
     ["@softhyphens"]         = { "@softhyphens",    "en" },
     ["@algorithm"]           = { "@algorithm",      "en" },
@@ -93,7 +97,7 @@ local LANGUAGES = {
     { "zu",               {"zul"},   "H   ",   _("Zulu"),                   "Zulu.pattern" },
 }
 
-local DEFAULT_LANG_TAG = "en-US" -- English_US.pattern is loaded by default in crengine
+ReaderTypography.DEFAULT_LANG_TAG = "en-US" -- English_US.pattern is loaded by default in crengine
 
 local LANG_TAG_TO_LANG_NAME = {}
 local LANG_ALIAS_TO_LANG_TAG = {}
@@ -106,11 +110,9 @@ for __, v in ipairs(LANGUAGES) do
         end
     end
     if hyph_filename then
-        HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_filename] = { lang_name, lang_tag }
+        ReaderTypography.HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_filename] = { lang_name, lang_tag }
     end
 end
-
-local ReaderTypography = InputContainer:new{}
 
 function ReaderTypography:init()
     self.menu_table = {}
@@ -123,44 +125,6 @@ function ReaderTypography:init()
     self.hyph_soft_hyphens_only = false
     self.hyph_force_algorithmic = false
     self.floating_punctuation = 0
-
-    -- Migrate old readerhyphenation settings (but keep them in case one
-    -- go back to a previous version)
-    if G_reader_settings:hasNot("text_lang_default") and G_reader_settings:hasNot("text_lang_fallback") then
-        local g_text_lang_set = false
-        local hyph_alg_default = G_reader_settings:readSetting("hyph_alg_default")
-        if hyph_alg_default then
-            local dict_info = HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_alg_default]
-            if dict_info then
-                G_reader_settings:saveSetting("text_lang_default", dict_info[2])
-                g_text_lang_set = true
-                -- Tweak the other settings if the default hyph algo happens
-                -- to be one of these:
-                if hyph_alg_default == "@none" then
-                    G_reader_settings:makeFalse("hyphenation")
-                elseif hyph_alg_default == "@softhyphens" then
-                    G_reader_settings:makeTrue("hyph_soft_hyphens_only")
-                elseif hyph_alg_default == "@algorithm" then
-                    G_reader_settings:makeTrue("hyph_force_algorithmic")
-                end
-            end
-        end
-        local hyph_alg_fallback = G_reader_settings:readSetting("hyph_alg_fallback")
-        if not g_text_lang_set and hyph_alg_fallback then
-            local dict_info = HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_alg_fallback]
-            if dict_info then
-                G_reader_settings:saveSetting("text_lang_fallback", dict_info[2])
-                g_text_lang_set = true
-                -- We can't really tweak other settings if the hyph algo fallback
-                -- happens to be @none, @softhyphens, @algortihm...
-            end
-        end
-        if not g_text_lang_set then
-            -- If nothing migrated, set the fallback to DEFAULT_LANG_TAG,
-            -- as we'll always have one of text_lang_default/_fallback set.
-            G_reader_settings:saveSetting("text_lang_fallback", DEFAULT_LANG_TAG)
-        end
-    end
 
     local info_text = _([[
 Some languages have specific typographic rules: these include hyphenation, line breaking rules, and language specific glyph variants.
@@ -639,7 +603,7 @@ end
 
 function ReaderTypography:getCurrentDefaultHyphDictLanguage()
     local hyph_dict_name = self.ui.document:getTextMainLangDefaultHyphDictionary()
-    local dict_info = HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_dict_name]
+    local dict_info = self.HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_dict_name]
     if dict_info then
         hyph_dict_name = dict_info[1]
     else -- shouldn't happen
@@ -703,7 +667,7 @@ function ReaderTypography:onReadSettings(config)
     -- Migrate old readerhyphenation setting, if one was set
     if config:hasNot("text_lang") and config:has("hyph_alg") then
         local hyph_alg = config:readSetting("hyph_alg")
-        local dict_info = HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_alg]
+        local dict_info = self.HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_alg]
         if dict_info then
             config:saveSetting("text_lang", dict_info[2])
             -- Set the other settings if the default hyph algo happens
@@ -792,7 +756,7 @@ function ReaderTypography:onReadSettings(config)
     else
         self.allow_doc_lang_tag_override = true
         -- None decided, use default (shouldn't be reached)
-        self.text_lang_tag = DEFAULT_LANG_TAG
+        self.text_lang_tag = self.DEFAULT_LANG_TAG
         logger.dbg("Typography lang: no lang set, using", self.text_lang_tag)
     end
     self.ui.document:setTextMainLang(self.text_lang_tag)
