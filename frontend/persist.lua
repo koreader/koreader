@@ -82,7 +82,7 @@ local codecs = {
 
             local cbuff, clen = zstd.zstd_compress(str, #str)
 
-            local f = C.fopen(path, "w+b")
+            local f = C.fopen(path, "wb")
             if f == nil then
                 return nil, "fopen: " .. ffi.string(C.strerror(ffi.errno()))
             end
