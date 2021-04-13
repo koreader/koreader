@@ -549,8 +549,8 @@ function CalibreWireless:sendBook(arg)
     -- switching to raw data receiving mode
     self.calibre_socket.receiveCallback = function(t)
         local data = table.concat(t)
-        logger.info("receive file data", #data)
-        logger.info("Memory usage KB:", collectgarbage("count"))
+        --logger.info("receive file data", #data)
+        --logger.info("Memory usage KB:", collectgarbage("count"))
         local to_write_data = data:sub(1, to_write_bytes)
         if fits then
             outfile:write(to_write_data)
