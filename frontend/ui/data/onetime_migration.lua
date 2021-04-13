@@ -128,19 +128,23 @@ end
 if last_migration_date < 20210330 then
     logger.info("Performing one-time migration for 20210330")
 
+    -- c.f., PluginLoader
     local package_path = package.path
     package.path = string.format("%s/?.lua;%s", "plugins/statistics.koplugin", package_path)
-    local ReaderStatistics = dofile("plugins/statistics.koplugin/main.lua")
+    local ok, ReaderStatistics = pcall(dofile, "plugins/statistics.koplugin/main.lua")
     package.path = package_path
-
-    local settings = G_reader_settings:readSetting("statistics", ReaderStatistics.default_settings)
-    -- Handle a snafu in 2021.03 that could lead to an empty settings table on fresh installs.
-    for k, v in pairs(ReaderStatistics.default_settings) do
-        if settings[k] == nil then
-            settings[k] = v
+    if not ok or not ReaderStatistics then
+        logger.warn("Error when loading plugins/statistics.koplugin/main.lua:", ReaderStatistics)
+    else
+        local settings = G_reader_settings:readSetting("statistics", ReaderStatistics.default_settings)
+        -- Handle a snafu in 2021.03 that could lead to an empty settings table on fresh installs.
+        for k, v in pairs(ReaderStatistics.default_settings) do
+            if settings[k] == nil then
+                settings[k] = v
+            end
         end
+        G_reader_settings:saveSetting("statistics", settings)
     end
-    G_reader_settings:saveSetting("statistics", settings)
 end
 
 -- ScreenSaver, https://github.com/koreader/koreader/pull/7496
