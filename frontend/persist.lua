@@ -208,17 +208,17 @@ function Persist:load()
 end
 
 function Persist:save(t, as_bytecode)
-    local str, file, err
     if codecs[self.codec].writes_to_file then
-        str, err = codecs[self.codec].serialize(t, as_bytecode, self.path)
-        if not str then
+        local ok, err = codecs[self.codec].serialize(t, as_bytecode, self.path)
+        if not ok then
             return nil, err
         end
     else
-        str, err = codecs[self.codec].serialize(t, as_bytecode)
+        local str, err = codecs[self.codec].serialize(t, as_bytecode)
         if not str then
             return nil, err
         end
+        local file
         file, err = io.open(self.path, "wb")
         if not file then
             return nil, err
