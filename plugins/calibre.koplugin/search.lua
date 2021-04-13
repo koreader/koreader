@@ -176,7 +176,7 @@ local CalibreSearch = InputContainer:new{
     },
     cache_books = Persist:new{
         path = DataStorage:getDataDir() .. "/cache/calibre/books.dat",
-        codec = "bitser",
+        codec = "luajit",
     },
 }
 
@@ -590,6 +590,7 @@ function CalibreSearch:getMetadata()
         local cache, err = self.cache_books:load()
         if not cache then
             logger.warn("invalid cache:", err)
+            self:invalidateCache()
         else
             local is_newer = true
             for path, enabled in pairs(self.libraries) do

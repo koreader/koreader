@@ -1,4 +1,5 @@
 local bitser = require("ffi/bitser")
+local buffer = require("string.buffer")
 local dump = require("dump")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -18,7 +19,7 @@ local function readFile(file, bytes)
 end
 
 local codecs = {
-    -- bitser: binary form, fast encode/decode, low size. Not human readable.
+    -- bitser: binary format, fast encode/decode, low size. Not human readable.
     bitser = {
         id = "bitser",
         reads_from_file = false,
@@ -26,7 +27,7 @@ local codecs = {
         serialize = function(t)
             local ok, str = pcall(bitser.dumps, t)
             if not ok then
-                return nil, "cannot serialize " .. tostring(t)
+                return nil, "cannot serialize " .. tostring(t) .. " (" .. str .. ")"
             end
             return str
         end,
@@ -34,7 +35,29 @@ local codecs = {
         deserialize = function(str)
             local ok, t = pcall(bitser.loads, str)
             if not ok then
-                return nil, "malformed serialized data"
+                return nil, "malformed serialized data: " .. t
+            end
+            return t
+        end,
+    },
+    -- luajit: binary format, optimized for speed, not size (combine w/ zstd if necessary). Not human readable.
+    --         Slightly larger on-disk representation than bitser, *much* faster to decode, slightly faster to encode.
+    luajit = {
+        id = "luajit",
+        reads_from_file = false,
+
+        serialize = function(t)
+            local ok, str = pcall(buffer.encode, t)
+            if not ok then
+                return nil, "cannot serialize " .. tostring(t) .. " (" .. str .. ")"
+            end
+            return str
+        end,
+
+        deserialize = function(str)
+            local ok, t = pcall(buffer.decode, str)
+            if not ok then
+                return nil, "malformed serialized data (" .. t .. ")"
             end
             return t
         end,
