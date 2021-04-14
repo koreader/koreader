@@ -607,8 +607,10 @@ function Input:handleTouchEv(ev)
         end
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
+            -- Promote our event's time table to a real TimeVal
+            setmetatable(ev.time, TimeVal)
             for _, MTSlot in pairs(self.MTSlots) do
-                self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
+                self:setMtSlot(MTSlot.slot, "timev", ev.time)
                 if self.snow_protocol then
                     -- if a slot appears in the current touch event, set "used"
                     self:setMtSlot(MTSlot.slot, "used", true)
@@ -622,7 +624,7 @@ function Input:handleTouchEv(ev)
                     table.insert(self.MTSlots, slot)
                     if not slot.used then
                         slot.id = -1
-                        slot.timev = TimeVal:new(ev.time)
+                        slot.timev = ev.time
                     end
                 end
             end
@@ -691,8 +693,9 @@ function Input:handleTouchEvPhoenix(ev)
         end
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
+            setmetatable(ev.time, TimeVal)
             for _, MTSlot in pairs(self.MTSlots) do
-                self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
+                self:setMtSlot(MTSlot.slot, "timev", ev.time)
             end
             -- feed ev in all slots to state machine
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
@@ -726,8 +729,9 @@ function Input:handleTouchEvLegacy(ev)
         end
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
+            setmetatable(ev.time, TimeVal)
             for _, MTSlot in pairs(self.MTSlots) do
-                self:setMtSlot(MTSlot.slot, "timev", TimeVal:new(ev.time))
+                self:setMtSlot(MTSlot.slot, "timev", ev.time)
             end
 
             -- feed ev in all slots to state machine
