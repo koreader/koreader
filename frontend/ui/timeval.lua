@@ -248,4 +248,11 @@ function TimeVal:isZero()
     return self.sec == 0 and self.usec == 0
 end
 
+--- We often need a const TimeVal set to zero...
+--- LuaJIT doesn't actually support const values (Lua 5.4+): Do *NOT* modify it.
+TimeVal.zero = TimeVal:new{ sec = 0, usec = 0 }
+
+--- Ditto for one set to math.huge
+TimeVal.huge = TimeVal:new{ sec = math.huge, usec = 0 }
+
 return TimeVal

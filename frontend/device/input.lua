@@ -990,7 +990,7 @@ function Input:waitEvent(now, deadline)
                         poll_timeout = poll_deadline - now
                     else
                         -- We've already blown the deadline: make select return immediately (most likely straight to timeout)
-                        poll_timeout = TimeVal:new{ sec = 0 }
+                        poll_timeout = TimeVal.zero
                     end
                 end
 
@@ -1061,7 +1061,7 @@ function Input:waitEvent(now, deadline)
                     poll_timeout = deadline - now
                 else
                     -- Deadline has been blown: make select return immediately.
-                    poll_timeout = TimeVal:new{ sec = 0 }
+                    poll_timeout = TimeVal.zero
                 end
             end
 

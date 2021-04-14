@@ -190,7 +190,8 @@ function Device:init()
                     w = 0, h = 0,
                 }
 
-                local timev = TimeVal:new(ev.time)
+                setmetatable(ev.time, TimeVal)
+                local timev = ev.time
 
                 local fake_ges = {
                     ges = "pan",
