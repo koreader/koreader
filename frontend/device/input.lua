@@ -888,6 +888,7 @@ function Input:setMtSlot(slot, key, val)
     end
 
     self.ev_slots[slot][key] = val
+    print("Input:setMtSlot(slot, key, val)", slot, key, val, self.ev_slots[slot])
 end
 
 function Input:setCurrentMtSlot(key, val)

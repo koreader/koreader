@@ -157,10 +157,7 @@ function GestureDetector:deepCopyEv(tev)
         y = tev.y,
         id = tev.id,
         slot = tev.slot,
-        timev = TimeVal:new{
-            sec = tev.timev.sec,
-            usec = tev.timev.usec,
-        }
+        timev = tev.timev, -- No need to make a deep copy of this one, the ref is updated on each SYN_REPORT.
     }
 end
 
@@ -297,6 +294,7 @@ function GestureDetector:switchState(state_new, tev, param)
 end
 
 function GestureDetector:clearState(slot)
+    print("clearState", slot)
     self.states[slot] = self.initialState
     self.pending_hold_timer[slot] = nil
     self.detectings[slot] = false
@@ -360,7 +358,12 @@ function GestureDetector:initialState(tev)
                 -- user starts a new touch motion
                 if not self.detectings[slot] then
                     self.detectings[slot] = true
+                    print("shallow copy of", tev, "in slot", slot, tev.timev)
+                    -- NOTE: We can't use a simple reference, because tev is actually Input's self.ev_slots[slot],
+                    --       and *that* is a fixed reference for a given slot!
+                    --       Here, we really want to rememver the *first* tev, so, make a copy of it.
                     self.first_tevs[slot] = self:deepCopyEv(tev)
+                    print("self.first_tevs[slot]", self.first_tevs[slot], self.first_tevs[slot].timev)
                     -- default to tap state
                     return self:switchState("tapState", tev)
                 end
@@ -589,6 +592,8 @@ function GestureDetector:handleNonTap(tev)
         }
     else
         -- We're still inside a stream of input events, see if we need to switch to other states.
+        print("tev:", tev.timev:tonumber(), tev.timev, tev)
+        print("first_tevs:", self.first_tevs[slot].timev:tonumber(), self.first_tevs[slot].timev, self.first_tevs[slot])
         if (tev.x and math.abs(tev.x - self.first_tevs[slot].x) >= self.PAN_THRESHOLD) or
         (tev.y and math.abs(tev.y - self.first_tevs[slot].y) >= self.PAN_THRESHOLD) then
             -- If user's finger moved far enough on the X or Y axes, switch to pan state.
@@ -684,6 +689,9 @@ function GestureDetector:handlePan(tev)
         return self:handleTwoFingerPan(tev)
     else
         local pan_direction, pan_distance = self:getPath(slot)
+        print("tev:", tev.timev:tonumber(), tev.timev)
+        print("last_tevs:", self.last_tevs[slot].timev:tonumber(), self.last_tevs[slot].timev)
+        print("first_tevs:", self.first_tevs[slot].timev:tonumber(), self.first_tevs[slot].timev)
         local tv_diff = self.last_tevs[slot].timev - self.first_tevs[slot].timev
         if not tv_diff:isPositive() then
             tv_diff = TimeVal.huge
