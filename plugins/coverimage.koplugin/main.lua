@@ -77,7 +77,7 @@ function CoverImage:init()
     self.cover_image_cache_maxfiles = G_reader_settings:readSetting("cover_image_cache_maxfiles") or 36
     self.cover_image_cache_maxsize = G_reader_settings:readSetting("cover_image_cache_maxsize") or 5 -- MiB
     self.cover_image_cache_prefix = "cover_"
-    self.enabled = G_reader_settings:isTrue("cover_image_enabled")
+    self.cover = G_reader_settings:isTrue("cover_image_enabled")
     self.fallback = G_reader_settings:isTrue("cover_image_fallback")
 
     lfs.mkdir(self.cover_image_cache_path)
@@ -101,7 +101,7 @@ function CoverImage:cleanUpImage()
 end
 
 function CoverImage:createCoverImage(doc_settings)
-    if self.enabled and doc_settings:nilOrFalse("exclude_cover_image") then
+    if self:coverEnabled() and doc_settings:nilOrFalse("exclude_cover_image") then
         local cover_image = self.ui.document:getCoverPageImage()
         if cover_image then
             local cache_file = self:getCacheFile()
@@ -192,6 +192,10 @@ end
 
 function CoverImage:fallbackEnabled()
     return self.fallback and isFileOk(self.cover_image_fallback_path)
+end
+
+function CoverImage:coverEnabled()
+    return self.cover and isFileOk(self.cover_image_path)
 end
 
 ---------------------------
@@ -397,7 +401,7 @@ function CoverImage:sizeSpinner(touchmenu_instance, setting, title, min, max, de
         title_text = title,
         ok_text = _("Set"),
         callback = function(spin)
-            if self.enabled and spin.value ~= old_val then
+            if self:coverEnabled() and spin.value ~= old_val then
                 self[setting] = spin.value
                 G_reader_settings:saveSetting(setting, self[setting])
                 if callback then
@@ -570,7 +574,7 @@ function CoverImage:menu_entry_format(title, format)
             local old_cover_image_format = self.cover_image_format
             self.cover_image_format = format
             G_reader_settings:saveSetting("cover_image_format", format)
-            if self.enabled and old_cover_image_format ~= format then
+            if self:coverEnabld() and old_cover_image_format ~= format then
                 self:createCoverImage(self.ui.doc_settings)
             end
         end,
@@ -587,7 +591,7 @@ function CoverImage:menu_entry_background(color)
             local old_background = self.cover_image_background
             self.cover_image_background = color
             G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
-            if self.enabled and old_background ~= self.cover_image_background then
+            if self:coverEnabled() and old_background ~= self.cover_image_background then
                 self:createCoverImage(self.ui.doc_settings)
             end
         end,
@@ -599,7 +603,7 @@ function CoverImage:menu_entry_sbf()
     return {
         text = _("Size, background and format"),
         enabled_func = function()
-            return self.enabled
+            return self:coverEnabled()
         end,
         sub_item_table = {
             {
@@ -630,7 +634,7 @@ function CoverImage:menu_entry_sbf()
                     local old_background = self.cover_image_background
                     self.cover_image_background = "none"
                     G_reader_settings:saveSetting("cover_image_background", self.cover_image_background)
-                    if self.enabled and old_background ~= self.cover_image_background then
+                    if self:coverEnabled() and old_background ~= self.cover_image_background then
                         self:createCoverImage(self.ui.doc_settings)
                     end
                 end,
@@ -647,7 +651,7 @@ function CoverImage:menu_entry_sbf()
                     local old_cover_image_format = self.cover_image_format
                     self.cover_image_format = "auto"
                     G_reader_settings:saveSetting("cover_image_format", self.cover_image_format)
-                    if self.enabled and old_cover_image_format ~= self.cover_image_format then
+                    if self:coverEnabled() and old_cover_image_format ~= self.cover_image_format then
                         self:createCoverImage(self.ui.doc_settings)
                     end
                 end,
@@ -665,7 +669,7 @@ function CoverImage:addToMainMenu(menu_items)
         sorting_hint = "screen",
         text = _("Cover image"),
         checked_func = function()
-            return self.enabled or self:fallbackEnabled()
+            return self:coverEnabled() or self:fallbackEnabled()
         end,
         sub_item_table = {
             -- menu entry: about cover image
@@ -686,16 +690,17 @@ function CoverImage:addToMainMenu(menu_items)
             {
                 text = _("Save cover image"),
                 checked_func = function()
-                    return self.enabled and isFileOk(self.cover_image_path)
+                    return self:coverEnabled()
                 end,
                 enabled_func = function()
                     return self.cover_image_path ~= "" and isFileOk(self.cover_image_path)
                 end,
                 callback = function()
                     if self.cover_image_path ~= "" then
-                        self.enabled = not self.enabled
-                        G_reader_settings:saveSetting("cover_image_enabled", self.enabled)
-                        if self.enabled then
+                        self.cover = not self.cover
+                        self.cover = self.cover and self:coverEnabled()
+                        G_reader_settings:saveSetting("cover_image_enabled", self.cover)
+                        if self:coverEnabled() then
                             self:createCoverImage(self.ui.doc_settings)
                         else
                             self:cleanUpImage()
@@ -739,7 +744,9 @@ function CoverImage:addToMainMenu(menu_items)
                     self.fallback = not self.fallback
                     self.fallback = self.fallback and self:fallbackEnabled()
                     G_reader_settings:saveSetting("cover_image_fallback", self.fallback)
-                    self:cleanUpImage()
+                    if not self:coverEnabled() then
+                        self:cleanUpImage()
+                    end
                 end,
                 separator = true,
             },
