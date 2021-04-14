@@ -36,7 +36,7 @@ a touch event should have following format:
         timev = TimeVal:new{...},
     }
 
-Don't confuse `tev` with raw evs from kernel, `tev` is build according to ev.
+Don't confuse `tev` with raw evs from kernel, `tev` is built according to ev.
 
 @{GestureDetector:feedEvent|GestureDetector:feedEvent(tev)} will return a
 detection result when you feed a touch release event to it.
@@ -143,6 +143,10 @@ function GestureDetector:feedEvent(tevs)
             end
             local ges = self.states[slot](self, tev)
             if tev.id ~= -1 then
+                -- NOTE: tev is actually a simple reference to Input's self.ev_slots[slot],
+                --       which means self.last_tevs[slot] doesn't actually point to the *previous*
+                --       input frame for a given slot, but always points to the *current* input frame for that slot!
+                --       Compare to self.first_tevs below, which does create a copy...
                 self.last_tevs[slot] = tev
             end
             -- return no more than one gesture
@@ -157,10 +161,7 @@ function GestureDetector:deepCopyEv(tev)
         y = tev.y,
         id = tev.id,
         slot = tev.slot,
-        timev = TimeVal:new{
-            sec = tev.timev.sec,
-            usec = tev.timev.usec,
-        }
+        timev = tev.timev, -- No need to make a copy of this one, tev.timev is re-assigned to a new object on every SYN_REPORT
     }
 end
 
@@ -172,7 +173,7 @@ function GestureDetector:isTapBounce(tap1, tap2, interval)
     --       as we can no longer compute a sensible value...
     local tv_diff = tap2.timev - tap1.timev
     if not tv_diff:isPositive() then
-        tv_diff = TimeVal:new{ sec = math.huge }
+        tv_diff = TimeVal.huge
     end
     return (
         math.abs(tap1.x - tap2.x) < self.SINGLE_TAP_BOUNCE_DISTANCE and
@@ -184,7 +185,7 @@ end
 function GestureDetector:isDoubleTap(tap1, tap2)
     local tv_diff = tap2.timev - tap1.timev
     if not tv_diff:isPositive() then
-        tv_diff = TimeVal:new{ sec = math.huge }
+        tv_diff = TimeVal.huge
     end
     return (
         math.abs(tap1.x - tap2.x) < self.DOUBLE_TAP_DISTANCE and
@@ -197,7 +198,7 @@ end
 function GestureDetector:isHold(t1, t2)
     local tv_diff = t2 - t1
     if not tv_diff:isPositive() then
-        tv_diff = TimeVal:new{ sec = 0 }
+        tv_diff = TimeVal.zero
     end
     -- NOTE: We cheat by not checking a distance because we're only checking that in tapState,
     --       which already ensures a stationary finger, by elimination ;).
@@ -217,11 +218,11 @@ function GestureDetector:isTwoFingerTap()
     local y_diff1 = math.abs(self.last_tevs[s2].y - self.first_tevs[s2].y)
     local tv_diff0 = self.last_tevs[s1].timev - self.first_tevs[s1].timev
     if not tv_diff0:isPositive() then
-        tv_diff0 = TimeVal:new{ sec = math.huge }
+        tv_diff0 = TimeVal.huge
     end
     local tv_diff1 = self.last_tevs[s2].timev - self.first_tevs[s2].timev
     if not tv_diff1:isPositive() then
-        tv_diff1 = TimeVal:new{ sec = math.huge }
+        tv_diff1 = TimeVal.huge
     end
     return (
         x_diff0 < self.TWO_FINGER_TAP_REGION and
@@ -269,7 +270,7 @@ function GestureDetector:isSwipe(slot)
     if not self.first_tevs[slot] or not self.last_tevs[slot] then return end
     local tv_diff = self.last_tevs[slot].timev - self.first_tevs[slot].timev
     if not tv_diff:isPositive() then
-        tv_diff = TimeVal:new{ sec = math.huge }
+        tv_diff = TimeVal.huge
     end
     if tv_diff < ges_swipe_interval then
         local x_diff = self.last_tevs[slot].x - self.first_tevs[slot].x
@@ -360,6 +361,9 @@ function GestureDetector:initialState(tev)
                 -- user starts a new touch motion
                 if not self.detectings[slot] then
                     self.detectings[slot] = true
+                    -- NOTE: We can't use a simple reference, because tev is actually Input's self.ev_slots[slot],
+                    --       and *that* is a fixed reference for a given slot!
+                    --       Here, we really want to rememver the *first* tev, so, make a copy of it.
                     self.first_tevs[slot] = self:deepCopyEv(tev)
                     -- default to tap state
                     return self:switchState("tapState", tev)
@@ -686,7 +690,7 @@ function GestureDetector:handlePan(tev)
         local pan_direction, pan_distance = self:getPath(slot)
         local tv_diff = self.last_tevs[slot].timev - self.first_tevs[slot].timev
         if not tv_diff:isPositive() then
-            tv_diff = TimeVal:new{ sec = math.huge }
+            tv_diff = TimeVal.huge
         end
 
         local pan_ev = {

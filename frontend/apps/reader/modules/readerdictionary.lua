@@ -110,7 +110,7 @@ function ReaderDictionary:init()
     -- Allow quick interruption or dismiss of search result window
     -- with tap if done before this delay. After this delay, the
     -- result window is shown and dismiss prevented for a few 100ms
-    self.quick_dismiss_before_delay = TimeVal:new{ sec = 3 }
+    self.quick_dismiss_before_delay = TimeVal:new{ sec = 3, usec = 0 }
 
     -- Gather info about available dictionaries
     if not available_ifos then

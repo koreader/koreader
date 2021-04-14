@@ -195,7 +195,7 @@ function FootnoteWidget:init()
                 -- callback function when HoldReleaseText is handled as args
                 args = function(text, hold_duration)
                     if self.dialog then
-                        local lookup_target = hold_duration < TimeVal:new{ sec = 3 } and "LookupWord" or "LookupWikipedia"
+                        local lookup_target = hold_duration < TimeVal:new{ sec = 3, usec = 0 } and "LookupWord" or "LookupWikipedia"
                         self.dialog:handleEvent(
                             Event:new(lookup_target, text)
                         )

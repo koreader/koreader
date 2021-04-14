@@ -1052,13 +1052,13 @@ function UIManager:discardEvents(set_or_seconds)
             -- sometimes > 500ms on some devices/temperatures.
             -- So, block for 400ms (to have it displayed) + 400ms
             -- for user reaction to it
-            delay = TimeVal:new{ usec = 800000 }
+            delay = TimeVal:new{ sec = 0, usec = 800000 }
         else
             -- On non-eInk screen, display is usually instantaneous
-            delay = TimeVal:new{ usec = 400000 }
+            delay = TimeVal:new{ sec = 0, usec = 400000 }
         end
     else -- we expect a number
-        delay = TimeVal:new{ sec = set_or_seconds }
+        delay = TimeVal:new{ sec = set_or_seconds, usec = 0 }
     end
     self._discard_events_till = self._now + delay
 end
@@ -1160,7 +1160,7 @@ function UIManager:_checkTasks()
             break
         end
         local task = self._task_queue[1]
-        local task_tv = task.time or TimeVal:new{}
+        local task_tv = task.time or TimeVal.zero
         if task_tv <= self._now then
             -- remove from table
             table.remove(self._task_queue, 1)

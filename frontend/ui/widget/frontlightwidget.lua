@@ -34,7 +34,7 @@ local FrontLightWidget = InputContainer:new{
     -- This should stay active during natural light configuration
     is_always_active = true,
     rate = Screen.low_pan_rate and 3 or 30,     -- Widget update rate.
-    last_time = TimeVal:new{},                  -- Tracks last update time to prevent update spamming.
+    last_time = TimeVal.zero,                   -- Tracks last update time to prevent update spamming.
 }
 
 function FrontLightWidget:init()
@@ -643,8 +643,8 @@ function FrontLightWidget:onTapProgress(arg, ges_ev)
         -- But limit the widget update frequency on E Ink.
         if Screen.low_pan_rate then
             local current_time = TimeVal:now()
-            local last_time = self.last_time or TimeVal:new{}
-            if current_time - last_time > TimeVal:new{usec = 1000000 / self.rate} then
+            local last_time = self.last_time or TimeVal.zero
+            if current_time - last_time > TimeVal:new{ usec = 1000000 / self.rate } then
                 self.last_time = current_time
             else
                 -- Schedule a final update after we stop panning.
