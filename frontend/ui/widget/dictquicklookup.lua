@@ -155,7 +155,7 @@ function DictQuickLookup:init()
                 -- callback function when HoldReleaseText is handled as args
                 args = function(text, hold_duration)
                     local lookup_target
-                    if hold_duration < TimeVal:new{ sec = 3 } then
+                    if hold_duration < TimeVal:new{ sec = 3, usec = 0 } then
                         -- do this lookup in the same domain (dict/wikipedia)
                         lookup_target = self.is_wiki and "LookupWikipedia" or "LookupWord"
                     else

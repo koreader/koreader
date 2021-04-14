@@ -43,8 +43,8 @@ function GestureRange:match(gs)
         -- This field sets up rate-limiting (in matches per second).
         -- It's mostly useful for e-Ink devices with less powerful CPUs
         -- and screens that cannot handle the amount of gesture events that would otherwise be generated.
-        local last_time = self.last_time or TimeVal:new{}
-        if gs.time - last_time > TimeVal:new{usec = 1000000 / self.rate} then
+        local last_time = self.last_time or TimeVal.zero
+        if gs.time - last_time > TimeVal:new{ usec = 1000000 / self.rate } then
             self.last_time = gs.time
         else
             return false

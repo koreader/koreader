@@ -112,7 +112,7 @@ end
 
 -- If sec is negative, time went backwards!
 function TimeVal:__sub(time_b)
-    local diff = TimeVal:new{}
+    local diff = TimeVal:new{ sec = 0, usec = 0 }
 
     diff.sec = self.sec - time_b.sec
     diff.usec = self.usec - time_b.usec
@@ -126,7 +126,7 @@ function TimeVal:__sub(time_b)
 end
 
 function TimeVal:__add(time_b)
-    local sum = TimeVal:new{}
+    local sum = TimeVal:new{ sec = 0, usec = 0 }
 
     sum.sec = self.sec + time_b.sec
     sum.usec = self.usec + time_b.usec
@@ -158,7 +158,7 @@ Which means that, yes, this is a fancier POSIX Epoch ;).
 ]]
 function TimeVal:realtime()
     local sec, usec = util.gettime()
-    return TimeVal:new{sec = sec, usec = usec}
+    return TimeVal:new{ sec = sec, usec = usec }
 end
 
 --[[--
@@ -175,7 +175,7 @@ function TimeVal:monotonic()
     C.clock_gettime(C.CLOCK_MONOTONIC, timespec)
 
     -- TIMESPEC_TO_TIMEVAL
-    return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000))}
+    return TimeVal:new{ sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000)) }
 end
 
 --- Ditto, but w/ CLOCK_MONOTONIC_COARSE if it's available and has a 1ms resolution or better (uses CLOCK_MONOTONIC otherwise).
@@ -184,7 +184,7 @@ function TimeVal:monotonic_coarse()
     C.clock_gettime(PREFERRED_MONOTONIC_CLOCKID, timespec)
 
     -- TIMESPEC_TO_TIMEVAL
-    return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000))}
+    return TimeVal:new{ sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000)) }
 end
 
 --- Ditto, but w/ CLOCK_REALTIME_COARSE if it's available and has a 1ms resolution or better (uses CLOCK_REALTIME otherwise).
@@ -193,7 +193,7 @@ function TimeVal:realtime_coarse()
     C.clock_gettime(PREFERRED_REALTIME_CLOCKID, timespec)
 
     -- TIMESPEC_TO_TIMEVAL
-    return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000))}
+    return TimeVal:new{ sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000)) }
 end
 
 --- Ditto, but w/ CLOCK_BOOTTIME (will return a TimeVal set to 0, 0 if the clock source is unsupported, as it's 2.6.39+)
@@ -202,7 +202,7 @@ function TimeVal:boottime()
     C.clock_gettime(C.CLOCK_BOOTTIME, timespec)
 
     -- TIMESPEC_TO_TIMEVAL
-    return TimeVal:new{sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000))}
+    return TimeVal:new{ sec = tonumber(timespec.tv_sec), usec = math.floor(tonumber(timespec.tv_nsec / 1000)) }
 end
 
 --[[-- Alias for `monotonic_coarse`.
@@ -235,7 +235,7 @@ end
 function TimeVal:fromnumber(seconds)
     local sec = math.floor(seconds)
     local usec = math.floor((seconds - sec) * 1000000 + 0.5)
-    return TimeVal:new{sec = sec, usec = usec}
+    return TimeVal:new{ sec = sec, usec = usec }
 end
 
 --- Checks if a TimeVal object is positive
@@ -247,5 +247,12 @@ end
 function TimeVal:isZero()
     return self.sec == 0 and self.usec == 0
 end
+
+--- We often need a const TimeVal set to zero...
+--- LuaJIT doesn't actually support const values (Lua 5.4+): Do *NOT* modify it.
+TimeVal.zero = TimeVal:new{ sec = 0, usec = 0 }
+
+--- Ditto for one set to math.huge
+TimeVal.huge = TimeVal:new{ sec = math.huge, usec = 0 }
 
 return TimeVal

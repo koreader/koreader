@@ -118,7 +118,7 @@ function BackgroundRunner:_finishJob(job)
     assert(self ~= nil)
     if type(job.executable) == "function" then
         local tv_diff = job.end_tv - job.start_tv
-        local threshold = TimeVal:new{ sec = 1 }
+        local threshold = TimeVal:new{ sec = 1, usec = 0 }
         job.timeout = (tv_diff > threshold)
     end
     job.blocked = job.timeout

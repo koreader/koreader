@@ -975,7 +975,7 @@ function ReaderView:checkAutoSaveSettings()
     end
 
     local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
-    interval = TimeVal:new{ sec = interval*60 }
+    interval = TimeVal:new{ sec = interval*60, usec = 0 }
     local now_tv = UIManager:getTime()
     if now_tv - self.settings_last_save_tv >= interval then
         self.settings_last_save_tv = now_tv
