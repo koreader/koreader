@@ -544,7 +544,7 @@ local Menu = FocusManager:new{
     -- height will be calculated according to item number if not given
     height = nil,
     header_padding = Size.padding.large,
-    dimen = Geom:new{},
+    dimen = nil,
     item_table = {},
     item_shortcuts = {
         "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
@@ -606,8 +606,7 @@ end
 function Menu:init()
     self.show_parent = self.show_parent or self
     self.item_table_stack = {}
-    self.dimen.w = self.width
-    self.dimen.h = self.height or Screen:getHeight()
+    self.dimen = Geom:new{ w = self.width, h = self.height or Screen:getHeight() }
     if self.dimen.h > Screen:getHeight() or self.dimen.h == nil then
         self.dimen.h = Screen:getHeight()
     end

@@ -331,7 +331,7 @@ function CalibreSearch:find(option)
         local result = self:bookCatalog(books)
         self:showresults(result)
     else
-        self:browse(option,1)
+        self:browse(option, 1)
     end
     logger.info(string.format("search done in %.3f milliseconds (%s, %s, %s, %s, %s)",
         (TimeVal:now() - start):tomsecs(),
