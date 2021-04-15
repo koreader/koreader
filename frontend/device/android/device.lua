@@ -425,6 +425,8 @@ function Device:showLightDialog()
     until (android.lights.dialogState() ~= C.ALIGHTS_DIALOG_OPENED)
 
     local GestureDetector = require("device/gesturedetector")
+    -- clearStates needs a reference to the actual Input singleton...
+    GestureDetector.input = self.input
     GestureDetector:clearStates()
 
     local action = android.lights.dialogState()
