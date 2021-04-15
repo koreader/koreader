@@ -161,7 +161,7 @@ function GestureDetector:deepCopyEv(tev)
         y = tev.y,
         id = tev.id,
         slot = tev.slot,
-        timev = tev.timev, -- No need to make a copy of this one, the ref in the source object is updated on each SYN_REPORT
+        timev = tev.timev, -- No need to make a copy of this one, tev.timev is re-assigned to a new object on every SYN_REPORT
     }
 end
 
