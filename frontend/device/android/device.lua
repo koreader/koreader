@@ -142,7 +142,10 @@ function Device:init()
             elseif ev.code == C.APP_CMD_GAINED_FOCUS
                 or ev.code == C.APP_CMD_INIT_WINDOW
                 or ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
+                logger.info("window gained focus")
                 this.device.screen:_updateWindow()
+            elseif ev.code == C.APP_CMD_LOST_FOCUS then
+                logger.info("window lost focus")
             elseif ev.code == C.APP_CMD_TERM_WINDOW then
                 this.device.input:resetState()
             elseif ev.code == C.APP_CMD_CONFIG_CHANGED then
@@ -424,7 +427,7 @@ function Device:showLightDialog()
         FFIUtil.usleep(25000) -- sleep 25ms before checking if the light dialog was closed
     until (android.lights.dialogState() ~= C.ALIGHTS_DIALOG_OPENED)
 
-    -- FIXME: Move to APP_CMD_LOST_FOCUS handler instead?
+    --- @fixme: Move to APP_CMD_LOST_FOCUS handler instead?
     self.input:resetState()
 
     local action = android.lights.dialogState()

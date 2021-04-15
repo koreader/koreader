@@ -280,8 +280,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
     return true
 end
 
--- Currently, we are assuming the 'warmth' has the same min/max limits
--- as 'brightness'.
+-- Currently, we are assuming the 'warmth' has the same min/max limits as 'brightness'.
 function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
     local button_group_down = HorizontalGroup:new{ align = "center" }
     local button_group_up = HorizontalGroup:new{ align = "center" }
