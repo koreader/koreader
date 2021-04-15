@@ -280,8 +280,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
     return true
 end
 
--- Currently, we are assuming the 'warmth' has the same min/max limits
--- as 'brightness'.
+-- Currently, we are assuming the 'warmth' has the same min/max limits as 'brightness'.
 function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
     local button_group_down = HorizontalGroup:new{ align = "center" }
     local button_group_up = HorizontalGroup:new{ align = "center" }
@@ -323,7 +322,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
 
         for i = math.floor(num_warmth / step) + 1, self.steps - 1 do
             table.insert(warmth_group, self.fl_prog_button:new{
-                             text="",
+                             text = "",
                              enabled = not self.powerd.auto_warmth,
                              callback = function()
                                  self:setProgress(self.fl_cur, step, i * step)

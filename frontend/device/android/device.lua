@@ -143,7 +143,8 @@ function Device:init()
                 or ev.code == C.APP_CMD_INIT_WINDOW
                 or ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
                 this.device.screen:_updateWindow()
-            elseif ev.code == C.APP_CMD_TERM_WINDOW then
+            elseif ev.code == C.APP_CMD_LOST_FOCUS
+                or ev.code == C.APP_CMD_TERM_WINDOW then
                 this.device.input:resetState()
             elseif ev.code == C.APP_CMD_CONFIG_CHANGED then
                 -- orientation and size changes
@@ -393,39 +394,17 @@ function Device:isValidPath(path)
     return android.isPathInsideSandbox(path)
 end
 
---swallow all events
-local function processEvents()
-    local events = ffi.new("int[1]")
-    local source = ffi.new("struct android_poll_source*[1]")
-    local poll_state = android.lib.ALooper_pollAll(-1, nil, events, ffi.cast("void**", source))
-    if poll_state >= 0 then
-        if source[0] ~= nil then
-            if source[0].id == C.LOOPER_ID_MAIN then
-                local cmd = android.glue.android_app_read_cmd(android.app)
-                android.glue.android_app_pre_exec_cmd(android.app, cmd)
-                android.glue.android_app_post_exec_cmd(android.app, cmd)
-            elseif source[0].id == C.LOOPER_ID_INPUT then
-                local event = ffi.new("AInputEvent*[1]")
-                while android.lib.AInputQueue_getEvent(android.app.inputQueue, event) >= 0 do
-                    if android.lib.AInputQueue_preDispatchEvent(android.app.inputQueue, event[0]) == 0 then
-                        android.lib.AInputQueue_finishEvent(android.app.inputQueue, event[0], 1)
-                    end
-                end
-            end
-        end
-    end
+function Device:showLightDialog()
+    -- Delay it until next tick so that the event loop gets a chance to drain the input queue,
+    -- and consume the APP_CMD_LOST_FOCUS event.
+    -- This helps prevent ANRs on Tolino (c.f., #6583 & #7552).
+    local UIManager = require("ui/uimanager")
+    UIManager:nextTick(function() self:_showLightDialog() end)
 end
 
-function Device:showLightDialog()
+function Device:_showLightDialog()
     local title = android.isEink() and _("Frontlight settings") or _("Light settings")
     android.lights.showDialog(title, _("Brightness"), _("Warmth"), _("OK"), _("Cancel"))
-    repeat
-        processEvents() -- swallow all events, including the last one
-        FFIUtil.usleep(25000) -- sleep 25ms before next check if dialog was quit
-    until (android.lights.dialogState() ~= C.ALIGHTS_DIALOG_OPENED)
-
-    local GestureDetector = require("device/gesturedetector")
-    GestureDetector:clearStates()
 
     local action = android.lights.dialogState()
     if action == C.ALIGHTS_DIALOG_OK then
