@@ -142,12 +142,9 @@ function Device:init()
             elseif ev.code == C.APP_CMD_GAINED_FOCUS
                 or ev.code == C.APP_CMD_INIT_WINDOW
                 or ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
-                logger.info("window gained focus")
                 this.device.screen:_updateWindow()
             elseif ev.code == C.APP_CMD_LOST_FOCUS then
-                logger.info("window lost focus")
-                this.device.input:resetState()
-            elseif ev.code == C.APP_CMD_TERM_WINDOW then
+                or ev.code == C.APP_CMD_TERM_WINDOW then
                 this.device.input:resetState()
             elseif ev.code == C.APP_CMD_CONFIG_CHANGED then
                 -- orientation and size changes
@@ -397,33 +394,6 @@ function Device:isValidPath(path)
     return android.isPathInsideSandbox(path)
 end
 
--- Swallow all events
---[[
-local function voidEvents()
-    local events = ffi.new("int[1]")
-    local source = ffi.new("struct android_poll_source*[1]")
-    local poll_state = android.lib.ALooper_pollAll(-1, nil, events, ffi.cast("void**", source))
-    if poll_state >= 0 then
-        if poll_state == C.LOOPER_ID_MAIN then
-            local cmd = android.glue.android_app_read_cmd(android.app)
-            android.glue.android_app_pre_exec_cmd(android.app, cmd)
-            logger.dbg("Swallowed cmd", cmd)
-            android.glue.android_app_post_exec_cmd(android.app, cmd)
-        elseif poll_state == C.LOOPER_ID_INPUT then
-            local event = ffi.new("AInputEvent*[1]")
-            while android.lib.AInputQueue_getEvent(android.app.inputQueue, event) >= 0 do
-                if android.lib.AInputQueue_preDispatchEvent(android.app.inputQueue, event[0]) == 0 then
-                    logger.dbg("Swallowed input event", android.lib.AInputEvent_getType(event[0]))
-                    android.lib.AInputQueue_finishEvent(android.app.inputQueue, event[0], 1)
-                end
-            end
-        end
-    elseif poll_state == C.ALOOPER_POLL_ERROR then
-        return
-    end
-end
---]]
-
 function Device:showLightDialog()
     -- Delay it until next tick so that the event loop gets a chance to drain the input queue,
     -- and consume the APP_CMD_LOST_FOCUS event.
@@ -435,14 +405,6 @@ end
 function Device:_showLightDialog()
     local title = android.isEink() and _("Frontlight settings") or _("Light settings")
     android.lights.showDialog(title, _("Brightness"), _("Warmth"), _("OK"), _("Cancel"))
-    --[[
-    -- NOTE: The need to throw these events into the void to avoid an ANR appears to be a Tolino quirk...
-    --       c.f., #6583 & #7552
-    repeat
-        voidEvents() -- swallow all events, including the last one
-        FFIUtil.usleep(25000) -- sleep 25ms before checking if the light dialog was closed
-    until (android.lights.dialogState() ~= C.ALIGHTS_DIALOG_OPENED)
-    --]]
 
     local action = android.lights.dialogState()
     if action == C.ALIGHTS_DIALOG_OK then
