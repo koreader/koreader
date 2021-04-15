@@ -417,7 +417,7 @@ end
 TouchMenu widget for hierarchical menus
 --]]
 local TouchMenu = FocusManager:new{
-    tab_item_table = {},
+    tab_item_table = nil,
     -- for returning in multi-level menus
     item_table_stack = nil,
     item_table = nil,
@@ -476,6 +476,7 @@ function TouchMenu:init()
     self.key_events.PrevPage = { {Input.group.PgBack}, doc = "previous page" }
     self.key_events.Press = { {"Press"}, doc = "chose selected item" }
 
+    self.tab_item_table = {}
     local icons = {}
     for _, v in ipairs(self.tab_item_table) do
         table.insert(icons, v.icon)

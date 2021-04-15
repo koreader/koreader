@@ -180,12 +180,13 @@ local SortWidget = InputContainer:new{
     show_page = 1,
     use_top_page_count = false,
     -- table of items to sort
-    item_table = {},
+    item_table = nil,
     callback = nil,
 }
 
 function SortWidget:init()
     -- no item is selected on start
+    self.item_table = {}
     self.marked = 0
     self.dimen = Geom:new{
         w = self.width or Screen:getWidth(),
