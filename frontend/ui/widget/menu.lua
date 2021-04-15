@@ -545,7 +545,7 @@ local Menu = FocusManager:new{
     height = nil,
     header_padding = Size.padding.large,
     dimen = nil,
-    item_table = nil,
+    item_table = nil, -- NOT mandatory (will be empty)
     item_shortcuts = {
         "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
         "A", "S", "D", "F", "G", "H", "J", "K", "L", "Del",
@@ -605,7 +605,7 @@ end
 
 function Menu:init()
     self.show_parent = self.show_parent or self
-    self.item_table = {}
+    self.item_table = self.item_table or {}
     self.item_table_stack = {}
     self.dimen = Geom:new{ w = self.width, h = self.height or Screen:getHeight() }
     if self.dimen.h > Screen:getHeight() or self.dimen.h == nil then
