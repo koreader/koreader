@@ -308,19 +308,20 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
     end
 
     if self.natural_light and num_warmth then
-        for i = 0, math.floor(num_warmth / step) do
+        local curr_warmth_step = math.floor(num_warmth / step)
+        for i = 0, curr_warmth_step do
             table.insert(warmth_group, self.fl_prog_button:new{
                              text = "",
-                             preselect = true,
+                             preselect = curr_warmth_step > 0 and true or false,
                              enabled = not self.powerd.auto_warmth,
-                             background = button_color,
+                             background = curr_warmth_step > 0 and button_color or nil,
                              callback = function()
                                  self:setProgress(self.fl_cur, step, i * step)
                              end
             })
         end
 
-        for i = math.floor(num_warmth / step) + 1, self.steps - 1 do
+        for i = curr_warmth_step + 1, self.steps - 1 do
             table.insert(warmth_group, self.fl_prog_button:new{
                              text = "",
                              enabled = not self.powerd.auto_warmth,
