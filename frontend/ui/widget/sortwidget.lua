@@ -149,7 +149,7 @@ local SortWidget = InputContainer:new{
     -- index for the first item to show
     show_page = 1,
     -- table of items to sort
-    item_table = {},
+    item_table = nil, -- mandatory
     callback = nil,
 }
 
