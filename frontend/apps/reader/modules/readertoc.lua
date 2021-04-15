@@ -10,6 +10,7 @@ local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util  = require("util")
@@ -600,7 +601,7 @@ function ReaderToc:onShowToc()
     self:fillToc()
     -- build menu items
     if #self.toc > 0 and not self.toc[1].text then
-        for _,v in ipairs(self.toc) do
+        for _, v in ipairs(self.toc) do
             v.text = self.toc_indent:rep(v.depth-1)..self:cleanUpTocTitle(v.title, true)
             v.mandatory = v.page
             if self.ui.document:hasHiddenFlows() then
@@ -642,7 +643,7 @@ function ReaderToc:onShowToc()
     local items_per_page = G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_default
     local items_font_size = G_reader_settings:readSetting("toc_items_font_size") or Menu.getItemFontSize(items_per_page)
     -- Estimate expand/collapse icon size
-    -- *2/5 to acount for Menu top title and bottom icons, and add some air between consecutive icons
+    -- *2/5 to acount for Menu top title and bottom icons, and add some space between consecutive icons
     local icon_size = math.floor(Screen:getHeight() / items_per_page * 2/5)
     local button_width = icon_size * 2
     self.expand_button = Button:new{
@@ -683,6 +684,9 @@ function ReaderToc:onShowToc()
         end
     end
 
+    -- NOTE: We request smaller padding between items, because we inflate the Button's width on the left,
+    --       mainly to give it a larger tap zone.
+    --       This yields *slightly* better alignment between state & mandatory (in terms of effective margins).
     local button_size = self.expand_button:getSize()
     local toc_menu = Menu:new{
         title = _("Table of Contents"),
@@ -698,6 +702,7 @@ function ReaderToc:onShowToc()
         align_baselines = true,
         items_per_page = items_per_page,
         items_font_size = items_font_size,
+        items_padding = math.floor(Size.padding.fullscreen / 2), -- c.f., note above. menu's default is twice that.
         line_color = require("ffi/blitbuffer").COLOR_WHITE,
         on_close_ges = {
             GestureRange:new{
