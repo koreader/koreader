@@ -704,7 +704,7 @@ function ReaderToc:onShowToc()
         align_baselines = true,
         items_per_page = items_per_page,
         items_font_size = items_font_size,
-        items_padding = can_collapse and math.floor(Size.padding.fullscreen / 2) or nil, -- c.f., note above. menu's default is twice that.
+        items_padding = can_collapse and math.floor(Size.padding.fullscreen / 2) or nil, -- c.f., note above. Menu's default is twice that.
         line_color = require("ffi/blitbuffer").COLOR_WHITE,
         on_close_ges = {
             GestureRange:new{
@@ -752,7 +752,9 @@ function ReaderToc:onShowToc()
     function toc_menu:onMenuHold(item)
         -- Trim toc_indent
         local trimmed_text = util.ltrim(item.text)
+        -- Match the items' width
         local infomessage = InfoMessage:new{
+            width = Screen:getWidth() - (Size.padding.fullscreen * (can_collapse and 4 or 3)),
             show_icon = false,
             text = trimmed_text,
         }
