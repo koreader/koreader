@@ -424,10 +424,8 @@ function Device:showLightDialog()
         FFIUtil.usleep(25000) -- sleep 25ms before checking if the light dialog was closed
     until (android.lights.dialogState() ~= C.ALIGHTS_DIALOG_OPENED)
 
-    local GestureDetector = require("device/gesturedetector")
-    -- clearStates needs a reference to the actual Input singleton...
-    GestureDetector.input = self.input
-    GestureDetector:clearStates()
+    -- FIXME: Move to APP_CMD_LOST_FOCUS handler instead?
+    self.input:resetState()
 
     local action = android.lights.dialogState()
     if action == C.ALIGHTS_DIALOG_OK then
