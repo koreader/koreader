@@ -422,6 +422,8 @@ end
 function Device:showLightDialog()
     local title = android.isEink() and _("Frontlight settings") or _("Light settings")
     android.lights.showDialog(title, _("Brightness"), _("Warmth"), _("OK"), _("Cancel"))
+    -- NOTE: The need to throw these events into the void to avoid an ANR appears to be a Tolino quirk...
+    --       c.f., #6583 & #7552
     repeat
         voidEvents() -- swallow all events, including the last one
         FFIUtil.usleep(25000) -- sleep 25ms before checking if the light dialog was closed
