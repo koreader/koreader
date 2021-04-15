@@ -666,6 +666,7 @@ function ReaderToc:onShowToc()
     }
 
     -- update collapsible state
+    local can_collapse = false
     if #self.toc > 0 and #self.collapsed_toc == 0 then
         local depth = 0
         for i = #self.toc, 1, -1 do
@@ -676,6 +677,7 @@ function ReaderToc:onShowToc()
                     callback = function() self:expandToc(i) end,
                     indent = self.toc_indent:rep(v.depth-1),
                 }
+                can_collapse = true
             end
             if v.depth < self.collapse_depth then
                 table.insert(self.collapsed_toc, 1, v)
@@ -684,14 +686,14 @@ function ReaderToc:onShowToc()
         end
     end
 
-    -- NOTE: We request smaller padding between items, because we inflate the Button's width on the left,
-    --       mainly to give it a larger tap zone.
+    -- NOTE: If the ToC actually has multiple depth levels, we request smaller padding between items,
+    --       because we inflate the state Button's width on the left, mainly to give it a larger tap zone.
     --       This yields *slightly* better alignment between state & mandatory (in terms of effective margins).
     local button_size = self.expand_button:getSize()
     local toc_menu = Menu:new{
         title = _("Table of Contents"),
         item_table = self.collapsed_toc,
-        state_size = button_size,
+        state_size = can_collapse and button_size or nil,
         ui = self.ui,
         is_borderless = true,
         is_popout = false,
@@ -702,7 +704,7 @@ function ReaderToc:onShowToc()
         align_baselines = true,
         items_per_page = items_per_page,
         items_font_size = items_font_size,
-        items_padding = math.floor(Size.padding.fullscreen / 2), -- c.f., note above. menu's default is twice that.
+        items_padding = can_collapse and math.floor(Size.padding.fullscreen / 2) or nil, -- c.f., note above. menu's default is twice that.
         line_color = require("ffi/blitbuffer").COLOR_WHITE,
         on_close_ges = {
             GestureRange:new{
