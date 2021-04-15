@@ -1101,8 +1101,8 @@ function ReaderRolling:handleEngineCallback(ev, ...)
     -- ignore other events
 end
 
-local ENGINE_PROGRESS_INITIAL_DELAY = TimeVal:new{ sec = 2 }
-local ENGINE_PROGRESS_UPDATE_DELAY = TimeVal:new{ usec = 500000 }
+local ENGINE_PROGRESS_INITIAL_DELAY = TimeVal:new{ sec = 2, usec = 0 }
+local ENGINE_PROGRESS_UPDATE_DELAY = TimeVal:new{ sec = 0, usec = 500000 }
 
 function ReaderRolling:showEngineProgress(percent)
     if G_reader_settings and G_reader_settings:isFalse("cre_show_progress") then

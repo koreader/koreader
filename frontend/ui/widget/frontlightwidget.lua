@@ -644,7 +644,7 @@ function FrontLightWidget:onTapProgress(arg, ges_ev)
         if Screen.low_pan_rate then
             local current_time = TimeVal:now()
             local last_time = self.last_time or TimeVal.zero
-            if current_time - last_time > TimeVal:new{usec = 1000000 / self.rate} then
+            if current_time - last_time > TimeVal:new{ usec = 1000000 / self.rate } then
                 self.last_time = current_time
             else
                 -- Schedule a final update after we stop panning.

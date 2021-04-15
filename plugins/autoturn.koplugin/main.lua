@@ -35,7 +35,7 @@ function AutoTurn:_schedule(settings_id)
         return
     end
 
-    local delay = self.last_action_tv + TimeVal:new{ sec = self.autoturn_sec } - UIManager:getTime()
+    local delay = self.last_action_tv + TimeVal:new{ sec = self.autoturn_sec, usec = 0 } - UIManager:getTime()
     delay = delay:tonumber()
 
     if delay <= 0 then
