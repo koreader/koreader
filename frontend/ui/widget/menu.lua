@@ -407,7 +407,7 @@ function MenuItem:init()
     }
     local hgroup = HorizontalGroup:new{
         align = "center",
-        HorizontalSpan:new{ width = Size.padding.fullscreen },
+        HorizontalSpan:new{ width = self.items_padding or Size.padding.fullscreen },
     }
     if self.shortcut then
         table.insert(hgroup, ItemShortCutIcon:new{
@@ -873,6 +873,7 @@ function Menu:init()
         radius = self.is_popout and math.floor(self.dimen.w / 20) or 0,
         content
     }
+
     ------------------------------------------
     -- start to set up input event callback --
     ------------------------------------------
@@ -1066,6 +1067,7 @@ function Menu:updateItems(select_number)
                 multilines_show_more_text = multilines_show_more_text,
                 align_baselines = self.align_baselines,
                 line_color = self.line_color,
+                items_padding = self.items_padding,
             }
             table.insert(self.item_group, item_tmp)
             -- this is for focus manager
