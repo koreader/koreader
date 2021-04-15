@@ -11,6 +11,7 @@ local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util  = require("util")
@@ -601,7 +602,7 @@ function ReaderToc:onShowToc()
     self:fillToc()
     -- build menu items
     if #self.toc > 0 and not self.toc[1].text then
-        for _,v in ipairs(self.toc) do
+        for _, v in ipairs(self.toc) do
             v.text = self.toc_indent:rep(v.depth-1)..self:cleanUpTocTitle(v.title, true)
             v.mandatory = v.page
             if self.ui.document:hasHiddenFlows() then
@@ -644,7 +645,7 @@ function ReaderToc:onShowToc()
     local items_font_size = G_reader_settings:readSetting("toc_items_font_size") or Menu.getItemFontSize(items_per_page)
     local items_show_separator = G_reader_settings:isTrue("toc_items_show_separator")
     -- Estimate expand/collapse icon size
-    -- *2/5 to acount for Menu top title and bottom icons, and add some air between consecutive icons
+    -- *2/5 to acount for Menu top title and bottom icons, and add some space between consecutive icons
     local icon_size = math.floor(Screen:getHeight() / items_per_page * 2/5)
     local button_width = icon_size * 2
     self.expand_button = Button:new{
@@ -667,6 +668,7 @@ function ReaderToc:onShowToc()
     }
 
     -- update collapsible state
+    local can_collapse = false
     if #self.toc > 0 and #self.collapsed_toc == 0 then
         local depth = 0
         for i = #self.toc, 1, -1 do
@@ -677,6 +679,7 @@ function ReaderToc:onShowToc()
                     callback = function() self:expandToc(i) end,
                     indent = self.toc_indent:rep(v.depth-1),
                 }
+                can_collapse = true
             end
             if v.depth < self.collapse_depth then
                 table.insert(self.collapsed_toc, 1, v)
@@ -685,11 +688,14 @@ function ReaderToc:onShowToc()
         end
     end
 
+    -- NOTE: If the ToC actually has multiple depth levels, we request smaller padding between items,
+    --       because we inflate the state Button's width on the left, mainly to give it a larger tap zone.
+    --       This yields *slightly* better alignment between state & mandatory (in terms of effective margins).
     local button_size = self.expand_button:getSize()
     local toc_menu = Menu:new{
         title = _("Table of Contents"),
         item_table = self.collapsed_toc,
-        state_size = button_size,
+        state_size = can_collapse and button_size or nil,
         ui = self.ui,
         is_borderless = true,
         is_popout = false,
@@ -700,7 +706,8 @@ function ReaderToc:onShowToc()
         align_baselines = true,
         items_per_page = items_per_page,
         items_font_size = items_font_size,
-        line_color = items_show_separator and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE,
+        items_padding = can_collapse and math.floor(Size.padding.fullscreen / 2) or nil, -- c.f., note above. Menu's default is twice that.
+        line_color = items_show_separator and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",
@@ -747,7 +754,10 @@ function ReaderToc:onShowToc()
     function toc_menu:onMenuHold(item)
         -- Trim toc_indent
         local trimmed_text = util.ltrim(item.text)
+        -- Match the items' width
         local infomessage = InfoMessage:new{
+            width = Screen:getWidth() - (Size.padding.fullscreen * (can_collapse and 4 or 3)),
+            alignment = "center",
             show_icon = false,
             text = trimmed_text,
         }
