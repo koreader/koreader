@@ -627,6 +627,12 @@ function FrontLightWidget:naturalLightConfigClose()
 end
 
 function FrontLightWidget:onTapProgress(arg, ges_ev)
+    -- The throttling has a tendency to wreak a bit of a havoc,
+    -- so, if the widget hasn't been repainted yet, go away.
+    if not self.fl_group.dimen or not self.light_frame.dimen then
+        return true
+    end
+
     if ges_ev.pos:intersectWith(self.fl_group.dimen) then
         -- Unschedule any pending updates.
         UIManager:unschedule(self.update)
