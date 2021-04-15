@@ -88,7 +88,7 @@ local MenuCloseButton = InputContainer:new{
     overlap_align = "right",
     padding_right = 0,
     menu = nil,
-    dimen = Geom:new{},
+    dimen = nil,
 }
 
 function MenuCloseButton:init()
