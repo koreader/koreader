@@ -234,20 +234,18 @@ function SortWidget:init()
         show_parent = self,
     }
     self.footer_cancel = Button:new{
-        text = _("Cancel"),
+        icon = "cancel",
         width = self.footer_button_width,
         callback = function() self:onClose() end,
         bordersize = 0,
-        padding = 0,
         radius = 0,
         show_parent = self,
     }
     self.footer_ok = Button:new{
-        text = _("Save"),
+        icon = "check",
         width = self.footer_button_width,
         callback = function() self:onReturn() end,
         bordersize = 0,
-        padding = 0,
         radius = 0,
         show_parent = self,
     }
