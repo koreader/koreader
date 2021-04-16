@@ -20,6 +20,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
+local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -149,12 +150,15 @@ local SortWidget = InputContainer:new{
     -- index for the first item to show
     show_page = 1,
     -- table of items to sort
-    item_table = nil, -- mandatory
+    item_table = nil, -- mandatory (array)
     callback = nil,
 }
 
 function SortWidget:init()
-    self.marked = 0 -- no item is selected on start
+    -- no item is selected on start
+    self.marked = 0
+    self.orig_item_table = nil
+
     self.dimen = Geom:new{
         w = self.width or Screen:getWidth(),
         h = self.height or Screen:getHeight(),
@@ -234,7 +238,7 @@ function SortWidget:init()
         show_parent = self,
     }
     self.footer_cancel = Button:new{
-        icon = "cancel",
+        icon = "exit",
         width = self.footer_button_width,
         callback = function() self:onClose() end,
         bordersize = 0,
@@ -369,6 +373,10 @@ end
 function SortWidget:moveItem(diff)
     local move_to = self.marked + diff
     if move_to > 0 and move_to <= #self.item_table then
+        -- Remember the original state to support Cancel
+        if not self.orig_item_table then
+            self.orig_item_table = util.tableDeepCopy(self.item_table)
+        end
         table.insert(self.item_table, move_to, table.remove(self.item_table, self.marked))
         self.show_page = math.ceil(move_to / self.items_per_page)
         self.marked = move_to
@@ -412,16 +420,17 @@ function SortWidget:_populateItems()
     end
     local chevron_first = "chevron.first"
     local chevron_last = "chevron.last"
-    local move_up = "move.up"
-    local move_down = "move.down"
     if BD.mirroredUILayout() then
         chevron_first, chevron_last = chevron_last, chevron_first
-        move_up, move_down = move_down, move_up
     end
     if self.marked > 0 then
-        self.footer_first_up:setIcon(move_up, self.footer_button_width)
-        self.footer_last_down:setIcon(move_down, self.footer_button_width)
+        self.footer_cancel:setIcon("cancel", self.footer_button_width)
+        self.footer_cancel.callback = function() self:onCancel() end
+        self.footer_first_up:setIcon("move.up", self.footer_button_width)
+        self.footer_last_down:setIcon("move.down", self.footer_button_width)
     else
+        self.footer_cancel:setIcon("exit", self.footer_button_width)
+        self.footer_cancel.callback = function() self:onClose() end
         self.footer_first_up:setIcon(chevron_first, self.footer_button_width)
         self.footer_last_down:setIcon(chevron_last, self.footer_button_width)
     end
@@ -475,9 +484,41 @@ function SortWidget:onClose()
     return true
 end
 
+function SortWidget:onCancel()
+    self.marked = 0
+    if self.orig_item_table then
+        -- We can't break the reference to self.item_table, as that's what the callback uses to update the original data...
+        -- So, do this in two passes: empty it, then re-fill it from the copy.
+        for i = #self.item_table, 1, -1 do
+            self.item_table[i] = nil
+        end
+
+        for __, item in ipairs(self.orig_item_table) do
+            table.insert(self.item_table, item)
+        end
+
+        self.orig_item_table = nil
+    end
+
+    self:goToPage(self.show_page)
+    return true
+end
+
 function SortWidget:onReturn()
-    UIManager:close(self)
-    if self.callback then self:callback() end
+    -- The callback we were passed is usually responsible for passing along the re-ordered table itself,
+    -- as well as items' enabled flag, if any, meaning we have to honor it even if nothing was moved.
+    if self.callback then
+        self:callback()
+    end
+
+    -- If we're not in the middle of moving stuff around, just exit.
+    if self.marked == 0 then
+        return self:onClose()
+    end
+
+    self.marked = 0
+    self.orig_item_table = nil
+    self:goToPage(self.show_page)
     return true
 end
 

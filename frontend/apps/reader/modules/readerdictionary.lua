@@ -542,9 +542,9 @@ function ReaderDictionary:showDictionariesMenu(changed_callback)
             self.dicts_disabled = dicts_disabled
             G_reader_settings:saveSetting("dicts_disabled", self.dicts_disabled)
 
-            -- Write back the sorted items to dicts_order
+            -- Write back the sorted items array to dicts_order
             local dicts_order = {}
-            for i, sort_item in pairs(sort_items) do
+            for i, sort_item in ipairs(sort_items) do
                 dicts_order[sort_item.ifo.file] = i
             end
             self.dicts_order = dicts_order
