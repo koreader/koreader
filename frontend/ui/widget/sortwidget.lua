@@ -340,7 +340,7 @@ function SortWidget:init()
 end
 
 function SortWidget:nextPage()
-    local new_page = math.min(self.show_page + 1, self.pages)
+    local new_page = math.min(self.show_page+1, self.pages)
     if new_page > self.show_page then
         self.show_page = new_page
         if self.marked > 0 then
@@ -351,7 +351,7 @@ function SortWidget:nextPage()
 end
 
 function SortWidget:prevPage()
-    local new_page = math.max(self.show_page - 1, 1)
+    local new_page = math.max(self.show_page-1, 1)
     if new_page < self.show_page then
         self.show_page = new_page
         if self.marked > 0 then
