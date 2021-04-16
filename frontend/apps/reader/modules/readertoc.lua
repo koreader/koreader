@@ -707,7 +707,7 @@ function ReaderToc:onShowToc()
         items_per_page = items_per_page,
         items_font_size = items_font_size,
         items_padding = can_collapse and math.floor(Size.padding.fullscreen / 2) or nil, -- c.f., note above. Menu's default is twice that.
-        line_color = items_show_separator and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE
+        line_color = items_show_separator and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE,
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",
