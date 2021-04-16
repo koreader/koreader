@@ -61,7 +61,7 @@ local InfoMessage = InputContainer:new{
     icon = "notice-info",
     alpha = nil, -- if image or icon have an alpha channel (default to true for icons, false for images
     dismiss_callback = nil,
-    -- Passed to  TextBoxWidget
+    -- Passed to TextBoxWidget
     alignment = "left",
     -- In case we'd like to use it to display some text we know a few more things about:
     lang = nil,
