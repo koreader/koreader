@@ -178,7 +178,7 @@ function SortWidget:init()
     self.width_widget = self.dimen.w - 2 * padding
     self.item_width = self.dimen.w - 2 * padding
     self.footer_center_width = math.floor(self.width_widget * 22 / 100)
-    self.footer_button_width = self.width_widget * 12 / 100
+    self.footer_button_width = math.floor(self.width_widget * 12 / 100)
     self.item_height = Size.item.height_big
     -- group for footer
     local chevron_left = "chevron.left"
