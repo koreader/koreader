@@ -83,15 +83,16 @@ function ReaderCoptListener:updateHeader()
     -- Have crengine display accurate time and battery on its next drawing
     self.ui.rolling:updateBatteryState()
     self.ui.document:resetBufferCache() -- be sure next repaint is a redrawing
-    -- Force a repaint (we could avoid it if the top menu is shown as it
-    -- would fully cover the header, but let's not bother)
-    UIManager:setDirty(self.view.dialog, "ui",
-        Geom:new{
-            x = 0, y = 0,
-            w = Device.screen:getWidth(),
-            h = self.ui.document:getHeaderHeight(),
-        }
-    )
+    -- Force a refresh if we're not hidden behind another widget
+    if UIManager:getTopWidget() == "ReaderUI" then
+        UIManager:setDirty(self.view.dialog, "ui",
+            Geom:new{
+                x = 0, y = 0,
+                w = Device.screen:getWidth(),
+                h = self.ui.document:getHeaderHeight(),
+            }
+        )
+    end
 end
 
 function ReaderCoptListener:unscheduleHeaderRefresh()
