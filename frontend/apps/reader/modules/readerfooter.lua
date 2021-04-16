@@ -1873,14 +1873,6 @@ function ReaderFooter:onUpdateFooter(force_repaint, force_recompute)
     end
 end
 
-function ReaderFooter:onCharging()
-    self:onUpdateFooter(self.view.footer_visible)
-end
-
-function ReaderFooter:onNotCharging()
-    self:onUpdateFooter(self.view.footer_visible)
-end
-
 function ReaderFooter:updateFooterPage(force_repaint, force_recompute)
     if type(self.pageno) ~= "number" then return end
     if self.ui.document:hasHiddenFlows() then
@@ -2230,22 +2222,40 @@ function ReaderFooter:onCloseDocument()
     self:unscheduleFooterAutoRefresh()
 end
 
+-- Used by event handlers that can trip without direct UI interaction...
+function ReaderFooter:maybeUpdateFooter()
+    -- ...so we need to avoid stomping over unsuspecting widgets (usually, ScreenSaver).
+    if UIManager:getTopWidget() == "ReaderUI" then
+        self:onUpdateFooter(self.view.footer_visible)
+    else
+        self:onUpdateFooter()
+    end
+end
+
 function ReaderFooter:onFrontlightStateChanged()
     if self.settings.frontlight then
-        self:onUpdateFooter(true)
+        self:maybeUpdateFooter()
     end
 end
 
 function ReaderFooter:onNetworkConnected()
     if self.settings.wifi_status then
-        self:onUpdateFooter(true)
+        self:maybeUpdateFooter()
     end
 end
 
 function ReaderFooter:onNetworkDisconnected()
     if self.settings.wifi_status then
-        self:onUpdateFooter(true)
+        self:maybeUpdateFooter()
     end
+end
+
+function ReaderFooter:onCharging()
+    self:maybeUpdateFooter()
+end
+
+function ReaderFooter:onNotCharging()
+    self:maybeUpdateFooter()
 end
 
 function ReaderFooter:onSetRotationMode()
