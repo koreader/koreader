@@ -306,7 +306,7 @@ function SortWidget:init()
         sort_page = self,
     }
     -- setup main content
-    self.item_margin = self.item_height / 8
+    self.item_margin = math.floor(self.item_height / 8)
     local line_height = self.item_height + self.item_margin
     local content_height = self.dimen.h - self.title_bar:getSize().h - vertical_footer:getSize().h - padding
     self.items_per_page = math.floor(content_height / line_height)
