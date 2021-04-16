@@ -1054,7 +1054,7 @@ Enabling this option will restrict display to the chapter titles of progress bar
         end,
     }
     menu_items.toc_items_show_separator = {
-        text = _("Show ToC entries separator"),
+        text = _("Add a separator between ToC entries"),
         keep_menu_open = true,
         checked_func = function()
             return G_reader_settings:isTrue("toc_items_show_separator")
