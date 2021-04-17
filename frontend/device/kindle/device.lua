@@ -488,7 +488,7 @@ function Kindle3:init()
     }
     self.input = require("device/input"):new{
         device = self,
-        event_map = require("device/kindle/event_map_keyboard"),
+        event_map = require("device/kindle/event_map_kindle4"),
     }
     self.keyboard_layout = require("device/kindle/keyboard_layout")
     self.input.open("/dev/input/event0")
