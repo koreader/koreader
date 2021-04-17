@@ -116,7 +116,10 @@ function FileManager:setupLayout()
         padding_left = Size.padding.large,
         padding_right = Size.padding.large,
         padding_bottom = 0,
-        callback = function() self:goHome() end,
+        callback = function()
+            self:goHome()
+            self:onRefresh()
+        end,
         hold_callback = function() self:setHome() end,
     }
 
