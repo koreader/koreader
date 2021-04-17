@@ -64,6 +64,12 @@ function UIManager:init()
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
         local Screensaver = require("ui/screensaver")
         Screensaver:setup("poweroff", _("Powered off"))
+        if Device:hasEinkScreen() and Screensaver:modeIsImage() then
+            if Screensaver:withBackground() then
+                Screen:clear()
+            end
+            Screen:refreshFull()
+        end
         Screensaver:show()
         if Device:needsScreenRefreshAfterResume() then
             Screen:refreshFull()
@@ -83,6 +89,12 @@ function UIManager:init()
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
         local Screensaver = require("ui/screensaver")
         Screensaver:setup("reboot", _("Rebooting…"))
+        if Device:hasEinkScreen() and Screensaver:modeIsImage() then
+            if Screensaver:withBackground() then
+                Screen:clear()
+            end
+            Screen:refreshFull()
+        end
         Screensaver:show()
         if Device:needsScreenRefreshAfterResume() then
             Screen:refreshFull()
