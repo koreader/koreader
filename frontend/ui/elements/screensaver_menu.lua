@@ -194,7 +194,7 @@ return {
                             G_reader_settings:saveSetting("screensaver_msg_background", "none")
                         end,
                     },
-                    {   
+                    {
                         text = _("Disable reboot/poweroff message"),
                         checked_func = function()
                             return G_reader_settings:isTrue("screensaver_disable_fallbackmsg")
