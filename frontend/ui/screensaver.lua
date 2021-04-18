@@ -46,8 +46,8 @@ end
 if G_reader_settings:hasNot("screensaver_delay") then
     G_reader_settings:saveSetting("screensaver_delay", "disable")
 end
-if G_reader_settings:hasNot("screensaver_disable_fallbackmsg") then
-    G_reader_settings:makeFalse("screensaver_disable_fallbackmsg")
+if G_reader_settings:hasNot("screensaver_hide_fallback_msg") then
+    G_reader_settings:makeFalse("screensaver_hide_fallback_msg")
 end
 
 local Screensaver = {
@@ -388,7 +388,7 @@ function Screensaver:setup(event, fallback_message)
     if G_reader_settings:has(self.prefix .. "screensaver_type") then
         self.screensaver_type = G_reader_settings:readSetting(self.prefix .. "screensaver_type")
     else
-        if event and not G_reader_settings:isTrue("screensaver_disable_fallbackmsg") then
+        if event and G_reader_settings:isFalse("screensaver_hide_fallback_msg") then
             -- Display the provided fallback_message over the screensaver,
             -- so the user can distinguish between suspend (no overlay),
             -- and reboot/poweroff (overlaid message).
