@@ -538,8 +538,6 @@ function CoverImage:menu_entry_set_path(key, title, help, info, default, folder_
         callback = function(touchmenu_instance)
             UIManager:show(ConfirmBox:new{
                 text = info,
-                ok_text = _("Yes"),
-                cancel_text = _("No"),
                 ok_callback = function()
                     self:choosePathFile(touchmenu_instance, key, folder_only, new_file, migrate)
                 end,
