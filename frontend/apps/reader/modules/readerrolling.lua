@@ -349,13 +349,21 @@ function ReaderRolling:setupTouchZones()
             id = "tap_forward",
             ges = "tap",
             screen_zone = forward_zone,
-            handler = function() return self:onGotoViewRel(1) end,
+            handler = function()
+                if G_reader_settings:readSetting("page_turns") ~= "swipe" then
+                    return self:onGotoViewRel(1)
+                end
+            end,
         },
         {
             id = "tap_backward",
             ges = "tap",
             screen_zone = backward_zone,
-            handler = function() return self:onGotoViewRel(-1) end,
+            handler = function()
+                if G_reader_settings:readSetting("page_turns") ~= "swipe" then
+                    return self:onGotoViewRel(-1)
+                end
+            end,
         },
         {
             id = "rolling_swipe",
@@ -363,7 +371,11 @@ function ReaderRolling:setupTouchZones()
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
-            handler = function(ges) return self:onSwipe(nil, ges) end
+            handler = function(ges)
+                if G_reader_settings:readSetting("page_turns") ~= "tap" then
+                    return self:onSwipe(nil, ges)
+                end
+            end
         },
         {
             id = "rolling_pan",
