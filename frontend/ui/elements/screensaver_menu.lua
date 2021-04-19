@@ -195,6 +195,15 @@ return {
                         end,
                     },
                     {
+                        text = _("Hide reboot/poweroff message"),
+                        checked_func = function()
+                            return G_reader_settings:isTrue("screensaver_hide_fallback_msg")
+                        end,
+                        callback = function()
+                            G_reader_settings:toggle("screensaver_hide_fallback_msg")
+                        end,
+                    },
+                    {
                         text = _("Message position"),
                         sub_item_table = {
                             {
