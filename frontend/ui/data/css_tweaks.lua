@@ -539,6 +539,17 @@ table, tcaption, tr, th, td { border: black solid 1px; border-collapse: collapse
             separator = true,
         },
         {
+            id = "a_italic";
+            title = _("Links always italic"),
+            css = [[a, a * { font-style: italic !important; }]],
+        },
+        {
+            id = "a_not_italic";
+            title = _("Links never italic"),
+            css = [[a, a * { font-style: normal !important; }]],
+            separator = true,
+        },
+        {
             id = "a_underline";
             title = _("Links always underlined"),
             css = [[a[href], a[href] * { text-decoration: underline !important; }]],
