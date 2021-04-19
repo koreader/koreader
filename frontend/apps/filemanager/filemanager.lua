@@ -118,7 +118,6 @@ function FileManager:setupLayout()
         padding_bottom = 0,
         callback = function()
             self:goHome()
-            self:onRefresh()
         end,
         hold_callback = function() self:setHome() end,
     }
@@ -785,6 +784,8 @@ function FileManager:goHome()
         -- Jump to the first page if we're already home
         if self.file_chooser.path and home_dir == self.file_chooser.path then
             self.file_chooser:onGotoPage(1)
+            -- Also pick up new content, if any.
+            self.file_chooser:refreshPath()
         else
             self.file_chooser:changeToPath(home_dir)
         end
