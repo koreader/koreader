@@ -42,6 +42,7 @@ function CanvasContext:init(device)
     self.isKindle = device.isKindle
     self.isPocketBook = device.isPocketBook
     self.should_restrict_JIT = device.should_restrict_JIT
+    self.hasSystemFonts = device.hasSystemFonts
     self:setColorRenderingEnabled(device.screen.isColorEnabled())
 
     -- NOTE: Kobo's fb is BGR, not RGB. Handle the conversion in MuPDF if needed.

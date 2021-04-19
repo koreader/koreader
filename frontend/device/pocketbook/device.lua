@@ -28,6 +28,7 @@ local PocketBook = Generic:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
+    hasSystemFonts = yes,
     canSuspend = no,
     canReboot = yes,
     canPowerOff = yes,
