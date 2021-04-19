@@ -668,7 +668,6 @@ function ReaderToc:onShowToc()
     }
 
     -- update collapsible state
-    local can_collapse = false
     if #self.toc > 0 and #self.collapsed_toc == 0 then
         local depth = 0
         for i = #self.toc, 1, -1 do
@@ -679,7 +678,6 @@ function ReaderToc:onShowToc()
                     callback = function() self:expandToc(i) end,
                     indent = self.toc_indent:rep(v.depth-1),
                 }
-                can_collapse = true
             end
             if v.depth < self.collapse_depth then
                 table.insert(self.collapsed_toc, 1, v)
@@ -687,6 +685,7 @@ function ReaderToc:onShowToc()
             depth = v.depth
         end
     end
+    local can_collapse = self:getMaxDepth() > 1
 
     -- NOTE: If the ToC actually has multiple depth levels, we request smaller padding between items,
     --       because we inflate the state Button's width on the left, mainly to give it a larger tap zone.
