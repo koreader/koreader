@@ -523,8 +523,6 @@ function ReaderRolling:onSwipe(_, ges)
     else
         -- update footer (time & battery)
         self.view.footer:onUpdateFooter()
-        -- trigger full refresh
-        UIManager:setDirty(nil, "full")
     end
 end
 
