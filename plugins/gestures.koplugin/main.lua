@@ -43,6 +43,10 @@ local gestures_list = {
     hold_bottom_right_corner = _("Bottom right"),
     one_finger_swipe_down = "⇓",
     one_finger_swipe_up = "⇑",
+    one_finger_swipe_northeast = "⇗",
+    one_finger_swipe_northwest = "⇖",
+    one_finger_swipe_southeast = "⇘",
+    one_finger_swipe_southwest = "⇙",
     one_finger_swipe_left_edge_down = _("Left edge down"),
     one_finger_swipe_left_edge_up = _("Left edge up"),
     one_finger_swipe_right_edge_down = _("Right edge down"),
@@ -714,7 +718,7 @@ function Gestures:addToMainMenu(menu_items)
             },
             {
                 text = _("One-finger swipe"),
-                sub_item_table = self:genSubItemTable({"one_finger_swipe_down", "one_finger_swipe_up", "one_finger_swipe_left_edge_down", "one_finger_swipe_left_edge_up", "one_finger_swipe_right_edge_down", "one_finger_swipe_right_edge_up", "one_finger_swipe_top_edge_right", "one_finger_swipe_top_edge_left", "one_finger_swipe_bottom_edge_right", "one_finger_swipe_bottom_edge_left"}),
+                sub_item_table = self:genSubItemTable({"one_finger_swipe_down", "one_finger_swipe_up", "one_finger_swipe_northeast", "one_finger_swipe_northwest", "one_finger_swipe_southeast", "one_finger_swipe_southwest", "one_finger_swipe_left_edge_down", "one_finger_swipe_left_edge_up", "one_finger_swipe_right_edge_down", "one_finger_swipe_right_edge_up", "one_finger_swipe_top_edge_right", "one_finger_swipe_top_edge_left", "one_finger_swipe_bottom_edge_right", "one_finger_swipe_bottom_edge_left"}),
             },
             {
                 text = _("Double tap"),
@@ -943,6 +947,22 @@ function Gestures:setupGesture(ges)
         ges_type = "swipe"
         zone = zone_fullscreen
         direction = {north = true}
+    elseif ges == "one_finger_swipe_northeast" then
+        ges_type = "swipe"
+        zone = zone_fullscreen
+        direction = {northeast = true}
+    elseif ges == "one_finger_swipe_northwest" then
+        ges_type = "swipe"
+        zone = zone_fullscreen
+        direction = {northwest = true}
+    elseif ges == "one_finger_swipe_southeast" then
+        ges_type = "swipe"
+        zone = zone_fullscreen
+        direction = {southeast = true}
+    elseif ges == "one_finger_swipe_southwest" then
+        ges_type = "swipe"
+        zone = zone_fullscreen
+        direction = {southwest = true}
     elseif ges == "one_finger_swipe_left_edge_down" then
         ges_type = "swipe"
         zone = zone_left_edge
