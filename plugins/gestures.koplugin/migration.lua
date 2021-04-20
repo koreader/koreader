@@ -49,12 +49,12 @@ function Migration:convertAction(location, ges, action)
         result = {page_jmp = -1,}
     elseif action == "next_chapter" then
         result = {next_chapter = true,}
+    elseif action == "prev_chapter" then
+        result = {prev_chapter = true,}
     elseif action == "first_page" then
         result = {first_page = true,}
     elseif action == "last_page" then
         result = {last_page = true,}
-    elseif action == "prev_chapter" then
-        result = {prev_chapter = true,}
     elseif action == "next_bookmark" then
         result = {next_bookmark = true,}
     elseif action == "prev_bookmark" then
