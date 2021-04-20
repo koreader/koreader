@@ -371,9 +371,7 @@ function ReaderRolling:setupTouchZones()
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
-            handler = function(ges)
-                return self:onSwipe(nil, ges)
-            end
+            handler = function(ges) return self:onSwipe(nil, ges) end,
         },
         {
             id = "rolling_pan",
@@ -382,7 +380,7 @@ function ReaderRolling:setupTouchZones()
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
-            handler = function(ges) return self:onPan(nil, ges) end
+            handler = function(ges) return self:onPan(nil, ges) end,
         },
     })
 end

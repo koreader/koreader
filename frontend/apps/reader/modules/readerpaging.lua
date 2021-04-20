@@ -167,9 +167,7 @@ function ReaderPaging:setupTouchZones()
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
-            handler = function(ges)
-                return self:onSwipe(nil, ges)
-            end
+            handler = function(ges) return self:onSwipe(nil, ges) end,
         },
         {
             id = "paging_pan",
@@ -178,7 +176,7 @@ function ReaderPaging:setupTouchZones()
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
-            handler = function(ges) return self:onPan(nil, ges) end
+            handler = function(ges) return self:onPan(nil, ges) end,
         },
         {
             id = "paging_pan_release",
@@ -186,7 +184,7 @@ function ReaderPaging:setupTouchZones()
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
-            handler = function(ges) return self:onPanRelease(nil, ges) end
+            handler = function(ges) return self:onPanRelease(nil, ges) end,
         },
     })
 end
