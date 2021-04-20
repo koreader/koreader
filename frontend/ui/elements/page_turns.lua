@@ -6,7 +6,7 @@ return {
         {
             text = _("Disable taps"),
             checked_func = function()
-                G_reader_settings:isTrue("page_turns_disable_tap")
+                return G_reader_settings:isTrue("page_turns_disable_tap")
             end,
             callback = function()
                 G_reader_settings:toggle("page_turns_disable_tap")
@@ -15,7 +15,7 @@ return {
         {
             text = _("Disable swipes"),
             checked_func = function()
-                G_reader_settings:isTrue("page_turns_disable_swipe")
+                return G_reader_settings:isTrue("page_turns_disable_swipe")
             end,
             callback = function()
                 G_reader_settings:toggle("page_turns_disable_swipe")
