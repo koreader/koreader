@@ -34,11 +34,6 @@ function ReaderConfig:init()
     else
         self.activation_menu = "swipe_tap"
     end
-    if G_reader_settings:has("page_turns") then
-        self.activation_menu = G_reader_settings:readSetting("page_turns")
-    else
-        self.activation_menu = "swipe_tap"
-    end
 end
 
 function ReaderConfig:initGesListener()

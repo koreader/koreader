@@ -350,7 +350,7 @@ function ReaderRolling:setupTouchZones()
             ges = "tap",
             screen_zone = forward_zone,
             handler = function()
-                if G_reader_settings:readSetting("page_turns") ~= "swipe" then
+                if G_reader_settings:nilOrFalse("page_turns_disable_tap") then
                     return self:onGotoViewRel(1)
                 end
             end,
@@ -360,7 +360,7 @@ function ReaderRolling:setupTouchZones()
             ges = "tap",
             screen_zone = backward_zone,
             handler = function()
-                if G_reader_settings:readSetting("page_turns") ~= "swipe" then
+                if G_reader_settings:nilOrFalse("page_turns_disable_tap") then
                     return self:onGotoViewRel(-1)
                 end
             end,
@@ -372,9 +372,7 @@ function ReaderRolling:setupTouchZones()
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
             handler = function(ges)
-                if G_reader_settings:readSetting("page_turns") ~= "tap" then
-                    return self:onSwipe(nil, ges)
-                end
+                return self:onSwipe(nil, ges)
             end
         },
         {
@@ -521,16 +519,20 @@ end
 function ReaderRolling:onSwipe(_, ges)
     local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
     if direction == "west" then
-        if self.inverse_reading_order then
-            self:onGotoViewRel(-1)
-        else
-            self:onGotoViewRel(1)
+        if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
+            if self.inverse_reading_order then
+                self:onGotoViewRel(-1)
+            else
+                self:onGotoViewRel(1)
+            end
         end
     elseif direction == "east" then
-        if self.inverse_reading_order then
-            self:onGotoViewRel(1)
-        else
-            self:onGotoViewRel(-1)
+        if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
+            if self.inverse_reading_order then
+                self:onGotoViewRel(1)
+            else
+                self:onGotoViewRel(-1)
+            end
         end
     else
         -- update footer (time & battery)
