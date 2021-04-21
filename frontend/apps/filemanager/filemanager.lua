@@ -381,7 +381,7 @@ function FileManager:setupLayout()
             table.insert(buttons, {
                 {
                     text = _("Open with…"),
-                    enabled = DocumentRegistry:getProviders(file) == nil or #(DocumentRegistry:getProviders(file)) > 1 or fileManager.texteditor,
+                    enabled = true,
                     callback = function()
                         UIManager:close(self.file_dialog)
                         local one_time_providers = {}
