@@ -581,7 +581,7 @@ end
 
 function CoverImage:menu_entry_background(color)
     return {
-        text = _("Fit to screen, " .. color .. " background"),
+        text = T(_("Fit to screen, %1 background"), color),
         checked_func = function()
             return self.cover_image_background == color
         end,
