@@ -363,6 +363,10 @@ function PocketBook:getDeviceModel()
     return ffi.string(inkview.GetDeviceModel())
 end
 
+function PocketBook:getDefaultCoverPath()
+    return "/mnt/ext1/system/logo/offlogo/cover.bmp"
+end
+
 -- Pocketbook HW rotation modes start from landsape, CCW
 local function landscape_ccw() return {
     1, 0, 3, 2,         -- PORTRAIT, LANDSCAPE, PORTRAIT_180, LANDSCAPE_180
