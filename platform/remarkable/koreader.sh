@@ -181,7 +181,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
             ./fbink -q -b -O -m -y 2 "KOReader will restart in 15 sec."
         fi
         # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
-        # shellcheck disable=SC2039
+        # shellcheck disable=SC2039,SC3003
         ./fbink -q -b -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} -- $'\xf0\x9f\x92\xa3'
         # And then print the tail end of the log on the bottom of the screen...
         crashLog="$(tail -n 25 crash.log | sed -e 's/\t/    /g')"
