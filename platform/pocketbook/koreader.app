@@ -31,9 +31,20 @@ ko_update_check() {
         FILESIZE="$(stat -c %b "${NEWUPDATE}")"
         BLOCKS="$((FILESIZE / 20))"
         export CPOINTS="$((BLOCKS / 100))"
+        # NOTE: We don't run as root, but folders created over USBMS are owned by root, which yields fun permission shenanigans...
+        #       c.f., https://github.com/koreader/koreader/issues/7581
+        KO_PB_TARLOG="/tmp/.koreader.tar"
         # shellcheck disable=SC2016
-        cd /mnt/ext1 && "${KOREADER_DIR}/tar" xf "${NEWUPDATE}" --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='${KOREADER_DIR}/fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))'
+        "${KOREADER_DIR}/tar" --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='${KOREADER_DIR}/fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))' -C "/mnt/ext1" -xf "${NEWUPDATE}" 2>"${KO_PB_TARLOG}"
         fail=$?
+        # As mentioned above, filter out potential chmod & utime failures...
+        if [ "${fail}" -ne 0 ]; then
+            if [ "$(grep -Evc '(Cannot utime|Cannot change mode|Exiting with failure status due to previous errors)' "${KO_PB_TARLOG}")" -eq "0" ]; then
+                # No other errors, we're good!
+                fail=0
+            fi
+        fi
+        rm -f "${KO_PB_TARLOG}"
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
             mv "${NEWUPDATE}" "${INSTALLED}"
@@ -44,7 +55,7 @@ ko_update_check() {
             "${KOREADER_DIR}/fbink" -q -y -6 -pmh "Update failed :("
             "${KOREADER_DIR}/fbink" -q -y -5 -pm "KOReader may fail to function properly!"
         fi
-        rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
+        rm -f "${NEWUPDATE}" # always purge newupdate to prevent update loops
         unset BLOCKS CPOINTS
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
         sync
