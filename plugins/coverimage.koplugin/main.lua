@@ -499,7 +499,7 @@ function CoverImage:menu_entry_cache()
                 end,
                 callback = function()
                     UIManager:show(ConfirmBox:new{
-                        text =  _("Cear the cover image cache?"),
+                        text =  _("Clear the cover image cache?"),
                         ok_text = _("Clear"),
                         ok_callback = function()
                             self:emptyCache()
