@@ -433,11 +433,11 @@ You can either choose an existing file:
 - Select a file
 
 or specify a new file:
-- First select a directory
+- First select a folder
 - Then add the name of the new file
 
 or delete the path:
-- First select a directory
+- First select a folder
 - Clear the name of the file]])
 
 -- menu entry: Cache settings
