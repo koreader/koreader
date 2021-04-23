@@ -14,14 +14,19 @@ ko_update_check() {
     INSTALLED="${KOREADER_DIR}/ota/koreader.installed.tar"
     if [ -f "${NEWUPDATE}" ]; then
         ./fbink -q -y -7 -pmh "Updating KOReader"
+        # Setup the FBInk daemon
+        export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
+        rm -f "${FBINK_NAMED_PIPE}"
+        FBINK_PID="$(./fbink --daemon 1 %KOREADER% -q -y -6 -P 0)"
         # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
         # NOTE: %B should always be 512 in our case, so let stat do part of the maths for us instead of using %s ;).
         FILESIZE="$(stat -c %b "${NEWUPDATE}")"
         BLOCKS="$((FILESIZE / 20))"
         export CPOINTS="$((BLOCKS / 100))"
         # shellcheck disable=SC2016
-        ./tar xf "${NEWUPDATE}" --strip-components=1 --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='./fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))'
+        ./tar xf "${NEWUPDATE}" --strip-components=1 --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='echo -n $((TAR_CHECKPOINT / CPOINTS)) > ${FBINK_NAMED_PIPE}'
         fail=$?
+        kill -TERM "${FBINK_PID}"
         # Cleanup behind us...
         if [ "${fail}" -eq 0 ]; then
             mv "${NEWUPDATE}" "${INSTALLED}"
@@ -32,8 +37,9 @@ ko_update_check() {
             ./fbink -q -y -6 -pmh "Update failed :("
             ./fbink -q -y -5 -pm "KOReader may fail to function properly!"
         fi
-        rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
-        unset BLOCKS CPOINTS
+        rm -f "${NEWUPDATE}" # always purge newupdate to prevent update loops
+        unset CPOINTS FBINK_NAMED_PIPE
+        unset BLOCKS FILESIZE FBINK_PID
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
         sync
     fi
