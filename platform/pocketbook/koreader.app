@@ -59,8 +59,6 @@ ko_update_check() {
         unset BLOCKS CPOINTS
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
         sync
-        # Don't forget to go back home, for proper restart behavior
-        cd ${KOREADER_DIR} || exit
     fi
 }
 
