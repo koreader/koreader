@@ -720,7 +720,11 @@ function Gestures:addToMainMenu(menu_items)
             },
             {
                 text = _("One-finger swipe"),
-                sub_item_table = self:genSubItemTable({"one_finger_swipe_east", "one_finger_swipe_west", "one_finger_swipe_south", "one_finger_swipe_north", "one_finger_swipe_northeast", "one_finger_swipe_northwest", "one_finger_swipe_southeast", "one_finger_swipe_southwest", "one_finger_swipe_left_edge_down", "one_finger_swipe_left_edge_up", "one_finger_swipe_right_edge_down", "one_finger_swipe_right_edge_up", "one_finger_swipe_top_edge_right", "one_finger_swipe_top_edge_left", "one_finger_swipe_bottom_edge_right", "one_finger_swipe_bottom_edge_left"}),
+                sub_item_table = self:genSubItemTable({"one_finger_swipe_east", "one_finger_swipe_west", "one_finger_swipe_south", "one_finger_swipe_north", "one_finger_swipe_northeast", "one_finger_swipe_northwest", "one_finger_swipe_southeast", "one_finger_swipe_southwest"}),
+            },
+            {
+                text = _("One-finger edge swipe"),
+                sub_item_table = self:genSubItemTable({"one_finger_swipe_left_edge_down", "one_finger_swipe_left_edge_up", "one_finger_swipe_right_edge_down", "one_finger_swipe_right_edge_up", "one_finger_swipe_top_edge_right", "one_finger_swipe_top_edge_left", "one_finger_swipe_bottom_edge_right", "one_finger_swipe_bottom_edge_left"}),
             },
             {
                 text = _("Double tap"),
