@@ -221,11 +221,6 @@ function ReaderFont:onSetFontSize(new_size)
     self.font_size = new_size
     self.ui.document:setFontSize(Screen:scaleBySize(new_size))
     self.ui:handleEvent(Event:new("UpdatePos"))
-    -- avoid refresh competition and messup
-    -- UIManager:show(Notification:new{
-    --     text = T( _("Font size set to %1."), self.font_size),
-    -- })
-
     return true
 end
 
@@ -301,11 +296,6 @@ end
 function ReaderFont:setFont(face)
     if face and self.font_face ~= face then
         self.font_face = face
-        -- avoid refresh competition and messup
-        -- UIManager:show(Notification:new{
-        --     text = T( _("Redrawing with font %1."), face),
-        -- })
-
         self.ui.document:setFontFace(face)
         -- signal readerrolling to update pos in new height
         self.ui:handleEvent(Event:new("UpdatePos"))
