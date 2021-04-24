@@ -444,8 +444,10 @@ function ReaderPaging:onSwipe(_, ges)
     else
         -- update footer (time & battery)
         self.view.footer:onUpdateFooter()
-        -- trigger full refresh
-        UIManager:setDirty(nil, "full")
+        if G_reader_settings:nilOrFalse("disable_refresh_swipes") then
+            -- trigger full refresh
+            UIManager:setDirty(nil, "full")
+        end
     end
 end
 

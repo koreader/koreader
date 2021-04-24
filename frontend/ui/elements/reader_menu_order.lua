@@ -134,6 +134,7 @@ local order = {
         "----------------------------",
         "menu_activate",
         "page_turns",
+        "disable_refresh_swipes",
         "ignore_hold_corners",
         "screen_disable_double_tab",
     },
