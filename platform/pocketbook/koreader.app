@@ -39,7 +39,7 @@ ko_update_check() {
         #       c.f., https://github.com/koreader/koreader/issues/7581
         KO_PB_TARLOG="/tmp/.koreader.tar"
         # shellcheck disable=SC2016
-        "${KOREADER_DIR}/tar" --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='echo -n $((TAR_CHECKPOINT / CPOINTS)) > ${FBINK_NAMED_PIPE}' -C "/mnt/ext1" -xf "${NEWUPDATE}" 2>"${KO_PB_TARLOG}"
+        "${KOREADER_DIR}/tar" --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='printf "%s" $((TAR_CHECKPOINT / CPOINTS)) > ${FBINK_NAMED_PIPE}' -C "/mnt/ext1" -xf "${NEWUPDATE}" 2>"${KO_PB_TARLOG}"
         fail=$?
         kill -TERM "${FBINK_PID}"
         # As mentioned above, filter out potential chmod & utime failures...
