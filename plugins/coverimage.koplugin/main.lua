@@ -441,7 +441,7 @@ or delete the path:
 - Clear the name of the file]])
 
 -- menu entry: Cache settings
-function CoverImage:menu_entry_cache()
+function CoverImage:menuEntryCache()
     return {
         text = _("Cache settings"),
         checked_func = function()
@@ -488,7 +488,7 @@ function CoverImage:menu_entry_cache()
                     self:sizeSpinner(touchmenu_instance, "cover_image_cache_maxsize", _("Cache size"), -1, 100, 5, self.cleanCache)
                 end,
             },
-            self:menu_entry_set_path("cover_image_cache_path", _("Cover cache folder"), _("Current cache path:\n%1"),
+            self:menuEntrySetPath("cover_image_cache_path", _("Cover cache folder"), _("Current cache path:\n%1"),
                 ("Select a cache folder. The contents of the old folder will be migrated."), default_cache_path, true, false, self.migrateCache),
             {
                 text = _("Clear cached covers"),
@@ -524,7 +524,7 @@ Menu entry for setting an specific G_reader_setting key for a path/file
 @bool new_file sets if a new filename can be entered
 @function migrate a callback for example moving the folder contents
 ]]
-function CoverImage:menu_entry_set_path(key, title, help, info, default, folder_only, new_file, migrate)
+function CoverImage:menuEntrySetPath(key, title, help, info, default, folder_only, new_file, migrate)
     return {
         text = title,
         help_text_func = function()
@@ -562,7 +562,7 @@ function CoverImage:menu_entry_set_path(key, title, help, info, default, folder_
     }
 end
 
-function CoverImage:menu_entry_format(title, format)
+function CoverImage:menuEntryFormat(title, format)
     return {
         text = title,
         checked_func = function()
@@ -579,9 +579,9 @@ function CoverImage:menu_entry_format(title, format)
     }
 end
 
-function CoverImage:menu_entry_background(color)
+function CoverImage:menuEntryBackground(color, color_translatable)
     return {
-        text = T(_("Fit to screen, %1 background"), color),
+        text = T(_("Fit to screen, %1 background"), _(color_translatable)),
         checked_func = function()
             return self.cover_image_background == color
         end,
@@ -597,7 +597,7 @@ function CoverImage:menu_entry_background(color)
 end
 
 -- menu entry: scale, background, format
-function CoverImage:menu_entry_sbf()
+function CoverImage:menuEntrySBF()
     return {
         text = _("Size, background and format"),
         enabled_func = function()
@@ -620,9 +620,9 @@ function CoverImage:menu_entry_sbf()
                     self:sizeSpinner(touchmenu_instance, "cover_image_stretch_limit", _("Set strech threshold"), 0, 20, 8, createCover)
                 end,
             },
-            self:menu_entry_background("black"),
-            self:menu_entry_background("white"),
-            self:menu_entry_background("gray"),
+            self:menuEntryBackground("black", _("black")),
+            self:menuEntryBackground("white", _("white")),
+            self:menuEntryBackground("gray", _("gray")),
             {
                 text = _("Original image"),
                 checked_func = function()
@@ -654,9 +654,9 @@ function CoverImage:menu_entry_sbf()
                     end
                 end,
             },
-            self:menu_entry_format(_("JPG file format"), "jpg"),
-            self:menu_entry_format(_("PNG file format"), "png"),
-            self:menu_entry_format(_("BMP file format"), "bmp"),
+            self:menuEntryFormat(_("JPG file format"), "jpg"),
+            self:menuEntryFormat(_("PNG file format"), "png"),
+            self:menuEntryFormat(_("BMP file format"), "bmp"),
         },
     }
 end
@@ -682,7 +682,7 @@ function CoverImage:addToMainMenu(menu_items)
                 separator = true,
             },
             -- menu entry: filename dialog
-            self:menu_entry_set_path("cover_image_path", _("Set image path"), _("Current Cover image path:\n%1"), set_image_text,
+            self:menuEntrySetPath("cover_image_path", _("Set image path"), _("Current Cover image path:\n%1"), set_image_text,
                  Device:getDefaultCoverPath(), false, true, self.migrateCover),
             -- menu entry: enable
             {
@@ -707,7 +707,7 @@ function CoverImage:addToMainMenu(menu_items)
                 end,
             },
             -- menu entry: scale, background, format
-            self:menu_entry_sbf(),
+            self:menuEntrySBF(),
             -- menu entry: exclude this cover
             {
                 text = _("Exclude this book cover"),
@@ -727,7 +727,7 @@ function CoverImage:addToMainMenu(menu_items)
                 separator = true,
             },
             -- menu entry: set fallback image
-            self:menu_entry_set_path("cover_image_fallback_path", _("Set fallback path"),
+            self:menuEntrySetPath("cover_image_fallback_path", _("Set fallback path"),
                 _("The fallback image used on document close is:\n%1"), _("You can select a fallback image."), default_fallback_path, false, false),
             -- menu entry: fallback
             {
@@ -749,7 +749,7 @@ function CoverImage:addToMainMenu(menu_items)
                 separator = true,
             },
             -- menu entry: Cache settings
-            self:menu_entry_cache(),
+            self:menuEntryCache(),
         },
     }
 end
