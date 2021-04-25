@@ -91,7 +91,7 @@ end
 
 function MoveToArchive:moveFileToArchive(file)
     local move_done_text = _("Book moved.\nDo you want to open it from the archive folder?")
-    self:commonProcess(file, is_move_process, moved_done_text)
+    self:commonProcess(file, true, move_done_text)
 end
 
 function MoveToArchive:copyToArchive()
