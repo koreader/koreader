@@ -22,18 +22,16 @@ end
 function Ftp:downloadFile(item, address, user, pass, path, close)
     local url = FtpApi:generateUrl(address, util.urlEncode(user), util.urlEncode(pass)) .. item.url
     logger.dbg("downloadFile url", url)
-    local response = FtpApi:ftpGet(url, "retr")
+    path = util.fixUtf8(path, "_")
+    local file, err = io.open(path, "w")
+    if not file then
+        UIManager:show(InfoMessage:new{
+            text = T(_("Could not save file to %1:\n%2"), BD.filepath(path), err),
+        })
+        return
+    end
+    local response = FtpApi:ftpGet(url, "retr", ltn12.sink.file(file))
     if response ~= nil then
-        path = util.fixUtf8(path, "_")
-        local file, err = io.open(path, "w")
-        if not file then
-            UIManager:show(InfoMessage:new{
-                text = T(_("Could not save file to %1:\n%2"), BD.filepath(path), err),
-            })
-            return
-        end
-        file:write(response)
-        file:close()
         local __, filename = util.splitFilePathName(path)
         if G_reader_settings:isTrue("show_unsupported") and not DocumentRegistry:hasProvider(filename) then
             UIManager:show(InfoMessage:new{
