@@ -28,14 +28,13 @@ function MoveToArchive:init()
 
     for index, value in ipairs(self.ui.status.additional_actions) do
             local title = value["title"]
-        
             if not (title  == nil) then -- I somehow always got an extra nil table, so I skip this here.
                 if title == popup_text then is_in_popup = true end
             end
     end
 
     if not is_in_popup then 
-        local callback = function(file) 
+        local callback = function(file)
             self:moveFileToArchive (file)
         end
 

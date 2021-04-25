@@ -22,7 +22,7 @@ local ReaderStatus = InputContainer:new {
 
     -- Using table.insert plugins can add their actions to self.ui.status.additional_actions
     -- Example: {title = "title", callback = callback}
-    -- All callbacks get the file. 
+    -- All callbacks get the file.
     additional_actions = {
     }
 }
@@ -133,7 +133,7 @@ function ReaderStatus:onEndOfBook()
         -- A counter so we can see if there's a final line we have to add.
         local additional_count = 0
 
-        -- A loop to place additional plugin actions into the menu 
+        -- A loop to place additional plugin actions into the menu
         for index, value in ipairs(self.additional_actions) do
             local title = value["title"]
             local callback = value["callback"]
@@ -143,7 +143,7 @@ function ReaderStatus:onEndOfBook()
 
                 local button =  {
                    text = _(title),
-                   callback = function() 
+                   callback = function()
                         callback(self.document.file)
                         self:openFileBrowser()
                    end
@@ -164,7 +164,7 @@ function ReaderStatus:onEndOfBook()
         end
 
 
-        -- Position a cancel button at the bottom. 
+        -- Position a cancel button at the bottom.
         table.insert(buttons,
             {
                 {
