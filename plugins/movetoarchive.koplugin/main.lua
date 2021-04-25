@@ -13,6 +13,8 @@ local util = require("frontend/util")
 local BaseUtil = require("ffi/util")
 local _ = require("gettext")
 
+local SETTINGS = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua"))
+
 local MoveToArchive = WidgetContainer:new{
     name = "movetoarchive",
 }
@@ -41,10 +43,18 @@ function MoveToArchive:init()
         table.insert(self.ui.status.additional_actions, {title = popup_text, callback = callback})
     end
 
-    self.settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua"))
-    self.archive_dir_path = self.settings:readSetting("archive_dir")
-    self.last_copied_from_dir = self.settings:readSetting("last_copied_from_dir")
+    self.archive_dir_path = self:getSetting("archive_dir")
+    self.last_copied_from_dir = self.getSetting("last_copied_from_dir")
 
+end
+
+function MoveToArchive:getSetting(key)
+    return SETTINGS:readSetting(key)
+end
+
+function MoveToArchive:setSetting(key, value)
+    SETTINGS:saveSetting(key, value)
+    SETTINGS:flush()
 end
 
 function MoveToArchive:addToMainMenu(menu_items)
