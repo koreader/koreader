@@ -131,13 +131,6 @@ function FileManager:setupLayout()
         padding_right = Size.padding.large,
         padding_bottom = 0,
         callback = function() self:onShowPlusMenu() end,
-        hold_callback = function()
-            self:onRefresh()
-            UIManager:show(InfoMessage:new{
-                text = _("Content refreshed."),
-                timeout = 2,
-            })
-        end,
     }
 
     self.path_text = TextWidget:new{
@@ -1153,6 +1146,14 @@ end
 
 function FileManager:onHome()
     return self:goHome()
+end
+
+function FileManager:onRefreshContent()
+    self:onRefresh()
+    UIManager:show(InfoMessage:new{
+        text = _("Content refreshed."),
+        timeout = 2,
+    })
 end
 
 return FileManager
