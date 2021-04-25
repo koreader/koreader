@@ -7,6 +7,7 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ReaderUI = require("apps/reader/readerui")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
+local ltn12 = require("ltn12")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
