@@ -22,6 +22,13 @@ function MoveToArchive:init()
     self.settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua"))
     self.archive_dir_path = self.settings:readSetting("archive_dir")
     self.last_copied_from_dir = self.settings:readSetting("last_copied_from_dir")
+    table.insert(self.ui.status.additional_actions, {
+        text = _("Move to archive"),
+        callback = function()
+            print('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+            self:moveFileToArchive(self.document.file)
+        end,
+    })
 end
 
 function MoveToArchive:addToMainMenu(menu_items)
@@ -76,21 +83,25 @@ function MoveToArchive:addToMainMenu(menu_items)
 end
 
 function MoveToArchive:moveToArchive()
+    self:moveFileToArchive(self.ui.document.file)
+end
+
+function MoveToArchive:moveFileToArchive(file)
     local move_done_text = _("Book moved.\nDo you want to open it from the archive folder?")
-    self:commonProcess(true, move_done_text)
+    self:commonProcess(file, is_move_process, moved_done_text)
 end
 
 function MoveToArchive:copyToArchive()
     local copy_done_text = _("Book copied.\nDo you want to open it from the archive folder?")
-    self:commonProcess(false, copy_done_text)
+    self:commonProcess(self.ui.document.file, false, copy_done_text)
 end
 
-function MoveToArchive:commonProcess(is_move_process, moved_done_text)
+function MoveToArchive:commonProcess(file, is_move_process, moved_done_text)
     if not self.archive_dir_path then
         self:showNoArchiveConfirmBox()
         return
     end
-    local document_full_path = self.ui.document.file
+    local document_full_path = file
     local filename
     self.last_copied_from_dir, filename = util.splitFilePathName(document_full_path)
 
