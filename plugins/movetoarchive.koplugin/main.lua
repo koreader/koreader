@@ -11,8 +11,6 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local util = require("frontend/util")
 local BaseUtil = require("ffi/util")
-local CheckButton = require("ui/widget/CheckButton")
-local OverlapGroup = require("ui/widget/overlapgroup")
 local _ = require("gettext")
 
 local SETTINGS = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua"))
@@ -117,6 +115,17 @@ function MoveToArchive:addToMainMenu(menu_items)
                     end
                 end,
             },
+            {
+                text = _("Open document after move withouth popup"),
+                checked_func = function() return self:getSetting("show_file_after_move") == 1 end,
+                callback = function()
+                    if self:getSetting("show_file_after_move") == 1 then
+                        self:setSetting("show_file_after_move", 0)
+                    else
+                        self:setSetting("show_file_after_move", 1)
+                    end
+                end,
+            },
         },
     }
 end
@@ -170,7 +179,11 @@ function MoveToArchive:commonProcess(file, is_move_process, moved_done_text)
             end,
         })
     else
-        self:openFileBrowser(self.last_copied_from_dir)
+        if self:getSetting("show_file_after_move") == 1 then
+            ReaderUI:showReader(dest_file)
+        else
+            self:openFileBrowser(self.last_copied_from_dir)
+        end
     end
 
 end
