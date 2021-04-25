@@ -13,22 +13,48 @@ local util = require("frontend/util")
 local BaseUtil = require("ffi/util")
 local _ = require("gettext")
 
+local SETTINGS = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua"))
+
 local MoveToArchive = WidgetContainer:new{
     name = "movetoarchive",
 }
 
 function MoveToArchive:init()
     self.ui.menu:registerToMainMenu(self)
-    self.settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua"))
-    self.archive_dir_path = self.settings:readSetting("archive_dir")
-    self.last_copied_from_dir = self.settings:readSetting("last_copied_from_dir")
-    table.insert(self.ui.status.additional_actions, {
-        text = _("Move to archive"),
-        callback = function()
-            print('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
-            self:moveFileToArchive(self.document.file)
-        end,
-    })
+
+
+    -- BEGIN Register an action for moving files to the archive when the document is finished
+
+    local is_in_popup = false
+    local popup_text = "Move to archive"
+
+    for index, value in ipairs(self.ui.status.additional_actions) do
+            local title = value["title"]
+            if not (title  == nil) then -- I somehow always got an extra nil table, so I skip this here.
+                if title == popup_text then is_in_popup = true end
+            end
+    end
+
+    if not is_in_popup then 
+        local callback = function(file)
+            self:moveFileToArchive (file)
+        end
+
+        table.insert(self.ui.status.additional_actions, {title = popup_text, callback = callback})
+    end
+
+    self.archive_dir_path = self:getSetting("archive_dir")
+    self.last_copied_from_dir = self.getSetting("last_copied_from_dir")
+
+end
+
+function MoveToArchive:getSetting(key)
+    return SETTINGS:readSetting(key)
+end
+
+function MoveToArchive:setSetting(key, value)
+    SETTINGS:saveSetting(key, value)
+    SETTINGS:flush()
 end
 
 function MoveToArchive:addToMainMenu(menu_items)
@@ -77,7 +103,29 @@ function MoveToArchive:addToMainMenu(menu_items)
                 callback = function()
                     self:setArchiveDirectory()
                 end,
-            }
+            },
+            {
+                text = _("Show popup after move"),
+                checked_func = function() return self:getSetting("popup_after_move") == 1 end,
+                callback = function()
+                    if self:getSetting("popup_after_move") == 1 then
+                        self:setSetting("popup_after_move", 0)
+                    else
+                        self:setSetting("popup_after_move", 1)
+                    end
+                end,
+            },
+            {
+                text = _("Open document after move withouth popup"),
+                checked_func = function() return self:getSetting("show_file_after_move") == 1 end,
+                callback = function()
+                    if self:getSetting("show_file_after_move") == 1 then
+                        self:setSetting("show_file_after_move", 0)
+                    else
+                        self:setSetting("show_file_after_move", 1)
+                    end
+                end,
+            },
         },
     }
 end
@@ -88,7 +136,7 @@ end
 
 function MoveToArchive:moveFileToArchive(file)
     local move_done_text = _("Book moved.\nDo you want to open it from the archive folder?")
-    self:commonProcess(file, is_move_process, moved_done_text)
+    self:commonProcess(file, true, move_done_text)
 end
 
 function MoveToArchive:copyToArchive()
@@ -105,8 +153,7 @@ function MoveToArchive:commonProcess(file, is_move_process, moved_done_text)
     local filename
     self.last_copied_from_dir, filename = util.splitFilePathName(document_full_path)
 
-    self.settings:saveSetting("last_copied_from_dir", self.last_copied_from_dir)
-    self.settings:flush()
+    self:setSetting("last_copied_from_dir", self.last_copied_from_dir)
 
     self.ui:onClose()
     if is_move_process then
@@ -119,23 +166,33 @@ function MoveToArchive:commonProcess(file, is_move_process, moved_done_text)
     local dest_file = string.format("%s%s", self.archive_dir_path, filename)
     ReadHistory:updateItemByPath(document_full_path, dest_file) -- (will update "lastfile" if needed)
     ReadCollection:updateItemByPath(document_full_path, dest_file)
-    UIManager:show(ConfirmBox:new{
-        text = moved_done_text,
-        ok_callback = function ()
+    
+    local popup = self:getSetting("popup_after_move")
+    if popup == 1 then
+        UIManager:show(ConfirmBox:new{
+            text = moved_done_text,
+            ok_callback = function ()
+                ReaderUI:showReader(dest_file)
+            end,
+            cancel_callback = function ()
+                self:openFileBrowser(self.last_copied_from_dir)
+            end,
+        })
+    else
+        if self:getSetting("show_file_after_move") == 1 then
             ReaderUI:showReader(dest_file)
-        end,
-        cancel_callback = function ()
+        else
             self:openFileBrowser(self.last_copied_from_dir)
-        end,
-    })
+        end
+    end
+
 end
 
 function MoveToArchive:setArchiveDirectory()
     require("ui/downloadmgr"):new{
         onConfirm = function(path)
             self.archive_dir_path = ("%s/"):format(path)
-            self.settings:saveSetting("archive_dir", self.archive_dir_path)
-            self.settings:flush()
+            self:setSetting("archive_dir", self.archive_dir_path)
         end,
     }:chooseDir()
 end

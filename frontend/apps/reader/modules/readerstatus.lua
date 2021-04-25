@@ -18,7 +18,13 @@ local ReaderStatus = InputContainer:new {
         modified = "",
     },
     enabled = true,
-    total_pages = 0
+    total_pages = 0,
+
+    -- Using table.insert plugins can add their actions to self.ui.status.additional_actions
+    -- Example: {title = "title", callback = callback}
+    -- All callbacks get the file.
+    additional_actions = {
+    }
 }
 
 function ReaderStatus:init()
@@ -118,22 +124,57 @@ function ReaderStatus:onEndOfBook()
                     end,
                 },
             },
+        }
+
+
+        -- A temporary value that is used to buffer lines.
+        local additional_line = {}
+
+        -- A counter so we can see if there's a final line we have to add.
+        local additional_count = 0
+
+        -- A loop to place additional plugin actions into the menu
+        for index, value in ipairs(self.additional_actions) do
+            local title = value["title"]
+            local callback = value["callback"]
+
+            if not (title  == nil) then -- I somehow always got an extra nil table, so I skip this here.
+                additional_count = additional_count + 1
+
+                local button =  {
+                   text = _(title),
+                   callback = function()
+                        callback(self.document.file)
+                   end
+                }
+
+                table.insert(additional_line, button)
+
+                if index % 2 == 0 then -- Every two buttons we add a new line
+                    table.insert(buttons, additional_line)
+                    additional_line = {}
+                end
+            end
+        end
+
+        -- Finally we add the last line to the interface
+        if additional_count % 2 == 1 then --  We have a single button at the end.
+            table.insert(buttons, additional_line)
+        end
+
+
+        -- Position a cancel button at the bottom.
+        table.insert(buttons,
             {
-                {
-                    text = _("Move to archive"),
-                    callback = function()
-                        local MoveToArchive = require("plugins/movetoarchive.koplugin/main")
-                        MoveToArchive:moveFileToArchive(self.document.file)
-                    end,
-                },
                 {
                     text = _("Cancel"),
                     callback = function()
                         UIManager:close(choose_action)
                     end,
                 },
-            },
-        }
+            })
+
+
         choose_action = ButtonDialogTitle:new{
             name = "end_document",
             title = _("You've reached the end of the document.\nWhat would you like to do?"),
