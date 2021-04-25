@@ -145,7 +145,6 @@ function ReaderStatus:onEndOfBook()
                    text = _(title),
                    callback = function()
                         callback(self.document.file)
-                        self:openFileBrowser()
                    end
                 }
 
