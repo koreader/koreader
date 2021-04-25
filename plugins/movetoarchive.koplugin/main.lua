@@ -31,12 +31,7 @@ function MoveToArchive:init()
     self.settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua"))
     self.archive_dir_path = self.settings:readSetting("archive_dir")
     self.last_copied_from_dir = self.settings:readSetting("last_copied_from_dir")
-    table.insert(self.ui.status.additional_actions, {
-        text = _("Move to archive"),
-        callback = function()
-            self:moveFileToArchive(self.document.file)
-        end,
-    })
+
 end
 
 function MoveToArchive:addToMainMenu(menu_items)
