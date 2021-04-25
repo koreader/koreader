@@ -21,12 +21,26 @@ function MoveToArchive:init()
     self.ui.menu:registerToMainMenu(self)
 
 
-    -- Register an action for moving files to the archive when the document is finished
-    local callback = function(file) 
-        self:moveFileToArchive (file)
+    -- BEGIN Register an action for moving files to the archive when the document is finished
+
+    local is_in_popup = false
+    local popup_text = "Move to archive"
+
+    for index, value in ipairs(self.ui.status.additional_actions) do
+            local title = value["title"]
+        
+            if not (title  == nil) then -- I somehow always got an extra nil table, so I skip this here.
+                if title == popup_text then is_in_popup = true end
+            end
     end
 
-    table.insert(self.ui.status.additional_actions, {title = "Move To Archive", callback = callback})
+    if not is_in_popup then 
+        local callback = function(file) 
+            self:moveFileToArchive (file)
+        end
+
+        table.insert(self.ui.status.additional_actions, {title = popup_text, callback = callback})
+    end
 
     self.settings = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua"))
     self.archive_dir_path = self.settings:readSetting("archive_dir")
