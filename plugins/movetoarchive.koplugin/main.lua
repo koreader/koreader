@@ -11,6 +11,8 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local util = require("frontend/util")
 local BaseUtil = require("ffi/util")
+local CheckButton = require("ui/widget/CheckButton")
+local OverlapGroup = require("ui/widget/overlapgroup")
 local _ = require("gettext")
 
 local SETTINGS = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), "move_to_archive_settings.lua"))
@@ -103,7 +105,18 @@ function MoveToArchive:addToMainMenu(menu_items)
                 callback = function()
                     self:setArchiveDirectory()
                 end,
-            }
+            },
+            {
+                text = _("Show popup after move"),
+                checked_func = function() return self:getSetting("popup_after_move") == 1 end,
+                callback = function()
+                    if self:getSetting("popup_after_move") == 1 then
+                        self:setSetting("popup_after_move", 0)
+                    else
+                        self:setSetting("popup_after_move", 1)
+                    end
+                end,
+            },
         },
     }
 end
@@ -131,8 +144,7 @@ function MoveToArchive:commonProcess(file, is_move_process, moved_done_text)
     local filename
     self.last_copied_from_dir, filename = util.splitFilePathName(document_full_path)
 
-    self.settings:saveSetting("last_copied_from_dir", self.last_copied_from_dir)
-    self.settings:flush()
+    self:setSetting("last_copied_from_dir", self.last_copied_from_dir)
 
     self.ui:onClose()
     if is_move_process then
@@ -145,23 +157,29 @@ function MoveToArchive:commonProcess(file, is_move_process, moved_done_text)
     local dest_file = string.format("%s%s", self.archive_dir_path, filename)
     ReadHistory:updateItemByPath(document_full_path, dest_file) -- (will update "lastfile" if needed)
     ReadCollection:updateItemByPath(document_full_path, dest_file)
-    UIManager:show(ConfirmBox:new{
-        text = moved_done_text,
-        ok_callback = function ()
-            ReaderUI:showReader(dest_file)
-        end,
-        cancel_callback = function ()
-            self:openFileBrowser(self.last_copied_from_dir)
-        end,
-    })
+    
+    local popup = self:getSetting("popup_after_move")
+    if popup == 1 then
+        UIManager:show(ConfirmBox:new{
+            text = moved_done_text,
+            ok_callback = function ()
+                ReaderUI:showReader(dest_file)
+            end,
+            cancel_callback = function ()
+                self:openFileBrowser(self.last_copied_from_dir)
+            end,
+        })
+    else
+        self:openFileBrowser(self.last_copied_from_dir)
+    end
+
 end
 
 function MoveToArchive:setArchiveDirectory()
     require("ui/downloadmgr"):new{
         onConfirm = function(path)
             self.archive_dir_path = ("%s/"):format(path)
-            self.settings:saveSetting("archive_dir", self.archive_dir_path)
-            self.settings:flush()
+            self:setSetting("archive_dir", self.archive_dir_path)
         end,
     }:chooseDir()
 end
