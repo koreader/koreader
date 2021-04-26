@@ -607,7 +607,7 @@ function CoverImage:menuEntrySBF()
             {
                 text_func = function()
                     return T(_("Aspect ratio stretch threshold (%1)"),
-                        self.cover_image_stretch_limit ~= 0 and self.cover_image_stretch_limit .."%" or "off")
+                        self.cover_image_stretch_limit ~= 0 and self.cover_image_stretch_limit .."%" or _("off"))
                 end,
                 keep_menu_open = true,
                 help_text_func = function()
