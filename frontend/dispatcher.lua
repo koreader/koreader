@@ -93,6 +93,7 @@ local settingsList = {
     folder_shortcuts = { category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true, separator=true,},
 
     -- reader settings
+    toggle_status_bar = { category="none", event="TapFooter", title=_("Toggle status bar"), rolling=true, paging=true, separator=true,},
     prev_chapter = { category="none", event="GotoPrevChapter", title=_("Previous chapter"), rolling=true, paging=true,},
     next_chapter = { category="none", event="GotoNextChapter", title=_("Next chapter"), rolling=true, paging=true,},
     first_page = { category="none", event="GoToBeginning", title=_("First page"), rolling=true, paging=true,},
@@ -219,6 +220,8 @@ local dispatcher_menu_order = {
     "folder_shortcuts",
 
     -- reader
+    "toggle_status_bar",
+    
     "page_jmp",
     "prev_chapter",
     "next_chapter",
