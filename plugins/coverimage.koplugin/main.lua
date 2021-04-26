@@ -572,7 +572,7 @@ function CoverImage:menuEntryFormat(title, format)
             local old_cover_image_format = self.cover_image_format
             self.cover_image_format = format
             G_reader_settings:saveSetting("cover_image_format", format)
-            if self:coverEnabld() and old_cover_image_format ~= format then
+            if self:coverEnabled() and old_cover_image_format ~= format then
                 self:createCoverImage(self.ui.doc_settings)
             end
         end,
