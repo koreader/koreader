@@ -221,7 +221,6 @@ local dispatcher_menu_order = {
 
     -- reader
     "toggle_status_bar",
-    
     "page_jmp",
     "prev_chapter",
     "next_chapter",
