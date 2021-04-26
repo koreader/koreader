@@ -47,6 +47,7 @@ function PluginLoader:loadPlugins()
 
     self.enabled_plugins = {}
     self.disabled_plugins = {}
+    self.loaded_plugins = {}
     local lookup_path_list = { DEFAULT_PLUGIN_PATH }
     local extra_paths = G_reader_settings:readSetting("extra_plugin_paths")
     if extra_paths then
@@ -191,11 +192,16 @@ end
 function PluginLoader:createPluginInstance(plugin, attr)
     local ok, re = pcall(plugin.new, plugin, attr)
     if ok then  -- re is a plugin instance
+        self.loaded_plugins[plugin.name] = true
         return ok, re
     else  -- re is the error message
         logger.err("Failed to initialize", plugin.name, "plugin: ", re)
         return nil, re
     end
+end
+
+function PluginLoader:isPluginLoaded(name)
+   return self.loaded_plugins[name] == true
 end
 
 return PluginLoader
