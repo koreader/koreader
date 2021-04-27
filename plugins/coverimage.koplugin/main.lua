@@ -294,30 +294,30 @@ function CoverImage:cleanCache()
         -- see function description 2.b)
         if cache_size_KiB > self.cover_image_cache_maxsize * 1024 then
             -- find the maximum number of oldest files to delete (to fit space requirement)
-            local largest_oldest_files = {}
-            local largest_oldest_files_index = 1
+            local oldest_files = {}
+            local oldest_files_index = 1
             local best_cache_size_KiB = cache_size_KiB
             while best_cache_size_KiB > self.cover_image_cache_maxsize * 1024 and self.cover_image_cache_maxsize ~= 0
                 and files_index > 0 do
-                largest_oldest_files[largest_oldest_files_index] = files[files_index]
+                oldest_files[oldest_files_index] = files[files_index]
                 best_cache_size_KiB = best_cache_size_KiB - files[files_index].size
                 files_index = files_index - 1
-                largest_oldest_files_index = largest_oldest_files_index + 1
+                oldest_files_index = oldest_files_index + 1
             end
 
             -- see function descriptoion 2.c)
-            if #largest_oldest_files > 0 then
+            if #oldest_files > 0 then
                 -- sort the oldest files for size
-                table.sort(largest_oldest_files, function(a, b) return a.size > b.size end)
+                table.sort(oldest_files, function(a, b) return a.size > b.size end)
                 -- delete until space requirement is fit
-                largest_oldest_files_index = 1
+                oldest_files_index = 1
                 while cache_size_KiB > self.cover_image_cache_maxsize * 1024 and self.cover_image_cache_maxsize ~= 0
-                    and largest_oldest_files_index <= #largest_oldest_files do
-                    os.remove(largest_oldest_files[largest_oldest_files_index].name)
-                    logger.dbg("CoverImage: removed because of cache size: " .. largest_oldest_files[largest_oldest_files_index].name)
+                    and oldest_files_index <= #oldest_files do
+                    os.remove(oldest_files[oldest_files_index].name)
+                    logger.dbg("CoverImage: removed because of cache size: " .. oldest_files[oldest_files_index].name)
                     cache_count = cache_count - 1
-                    cache_size_KiB = cache_size_KiB - largest_oldest_files[largest_oldest_files_index].size
-                    largest_oldest_files_index = largest_oldest_files_index + 1
+                    cache_size_KiB = cache_size_KiB - oldest_files[oldest_files_index].size
+                    oldest_files_index = oldest_files_index + 1
                 end
             end
         end
