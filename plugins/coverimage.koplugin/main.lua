@@ -296,16 +296,16 @@ function CoverImage:cleanCache()
             -- find the maximum number of oldest files to delete (to fit space requirement)
             local oldest_files = {}
             local oldest_files_index = 1
-            local best_cache_size_KiB = cache_size_KiB
-            while best_cache_size_KiB > self.cover_image_cache_maxsize * 1024 and self.cover_image_cache_maxsize ~= 0
+            local oldest_cache_size_KiB = cache_size_KiB
+            while oldest_cache_size_KiB > self.cover_image_cache_maxsize * 1024 and self.cover_image_cache_maxsize ~= 0
                 and files_index > 0 do
                 oldest_files[oldest_files_index] = files[files_index]
-                best_cache_size_KiB = best_cache_size_KiB - files[files_index].size
+                oldest_cache_size_KiB = oldest_cache_size_KiB - files[files_index].size
                 files_index = files_index - 1
                 oldest_files_index = oldest_files_index + 1
             end
 
-            -- see function descriptoion 2.c)
+            -- see function description 2.c)
             if #oldest_files > 0 then
                 -- sort the oldest files for size
                 table.sort(oldest_files, function(a, b) return a.size > b.size end)
