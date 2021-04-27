@@ -288,12 +288,11 @@ function CoverImage:cleanCache()
         print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx remove very oldest: "..files[1].name)
         cache_count = cache_count - 1
         cache_size_KiB = cache_size_KiB - files[1].size
-        table.remove(files, 1)  -- delete entry
 
         -- see function description 2.b)
         if cache_size_KiB > self.cover_image_cache_maxsize * 1024 then
             -- find the maximum number of oldest files to delete (to fit space requirement)
-            local index = 1
+            local index = 2 -- start with second file, because the first (oldest) was deleted in 2.a)
             local largest_oldest_files = {}
             local best_cache_size_KiB = cache_size_KiB
             while best_cache_size_KiB > self.cover_image_cache_maxsize * 1024 and self.cover_image_cache_maxsize ~= 0
@@ -303,7 +302,6 @@ function CoverImage:cleanCache()
                 best_cache_size_KiB = best_cache_size_KiB - files[index].size
                 index = index + 1
             end
-            files = {} -- not needed anymore as the potential deletable files are stored in largest_oldest_files
 
             -- see function descriptoion 2.c)
             if #largest_oldest_files > 0 then
