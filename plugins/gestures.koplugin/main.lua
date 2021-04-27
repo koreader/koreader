@@ -707,12 +707,8 @@ function Gestures:addToMainMenu(menu_items)
                 sub_item_table = self:genSubItemTable({"hold_top_left_corner", "hold_top_right_corner", "hold_bottom_left_corner", "hold_bottom_right_corner"}),
             },
             {
-                text = _("Short diagonal swipe"),
-                sub_item_table = self:genMenu("short_diagonal_swipe"),
-            },
-            {
                 text = _("One-finger swipe"),
-                sub_item_table = self:genSubItemTable({"one_finger_swipe_left_edge_down", "one_finger_swipe_left_edge_up", "one_finger_swipe_right_edge_down", "one_finger_swipe_right_edge_up", "one_finger_swipe_top_edge_right", "one_finger_swipe_top_edge_left", "one_finger_swipe_bottom_edge_right", "one_finger_swipe_bottom_edge_left"}),
+                sub_item_table = self:genSubItemTable({"short_diagonal_swipe", "one_finger_swipe_left_edge_down", "one_finger_swipe_left_edge_up", "one_finger_swipe_right_edge_down", "one_finger_swipe_right_edge_up", "one_finger_swipe_top_edge_right", "one_finger_swipe_top_edge_left", "one_finger_swipe_bottom_edge_right", "one_finger_swipe_bottom_edge_left"}),
             },
             {
                 text = _("Double tap"),
