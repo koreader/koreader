@@ -472,13 +472,13 @@ function CoverImage:menuEntryCache()
                 text_func = function()
                     local number
                     if self.cover_image_cache_maxsize > 0 then
-                        number = self.cover_image_cache_maxsize
+                        number = self.cover_image_cache_maxsize .. "MiB"
                     elseif self.cover_image_cache_maxsize == 0 then
                         number = _("unlimited")
                     else
                         number = _("off")
                     end
-                    return T(_("Maximum size of cached covers (%1MiB)"), number)
+                    return T(_("Maximum size of cached covers (%1)"), number)
                 end,
                 help_text = _("If set to zero the cache size is unlimited.\nIf set to -1 the cache is disabled."),
                 checked_func = function()
