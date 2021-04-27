@@ -699,7 +699,7 @@ end
 
 function ReaderUI:onClose(full_refresh)
     logger.dbg("closing reader")
-    PluginLoader:dtor()
+    PluginLoader:finalize()
     Device:notifyBookState(nil, nil)
     if full_refresh == nil then
         full_refresh = true

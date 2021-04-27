@@ -216,7 +216,7 @@ function PluginLoader:getPluginInstance(name)
 end
 
 -- *MUST* be called on destruction of whatever called createPluginInstance!
-function PluginLoader:dtor()
+function PluginLoader:finalize()
     -- Unpin stale references
     self.loaded_plugins = {}
 end
