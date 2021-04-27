@@ -242,7 +242,7 @@ function CoverImage:getCacheFiles(cache_path, cache_prefix)
             end
         end
     end
-    logger.dbg("CoverImage: start - cache size: ".. cache_size_KiB .. " KiB, cached files: " .. cache_count)
+    logger.dbg("CoverImage: cache size: " .. cache_size_KiB .. " KiB, cached files: " .. cache_count)
     return cache_count, cache_size_KiB, files
 end
 
@@ -265,7 +265,6 @@ function CoverImage:cleanCache()
     local cache_count, cache_size_KiB, files = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
 
     if cache_count <= self.cover_image_cache_maxfiles and cache_size_KiB <= self.cover_image_cache_maxsize * 1024 then
-        logger.dbg("CoverImage: cache size: ".. cache_size_KiB .. " KiB, cached files: " .. cache_count)
         return
     end
 
@@ -276,7 +275,7 @@ function CoverImage:cleanCache()
     -- see function description 1.)
     while cache_count > self.cover_image_cache_maxfiles and self.cover_image_cache_maxfiles ~= 0 and files_index > 0 do
         os.remove(files[files_index].name) -- remove oldest
-        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx removed because of cache count: "..files[files_index].name)
+        logger.dbg("CoverImage: removed because of cache count: " .. files[files_index].name)
         cache_count = cache_count - 1
         cache_size_KiB = cache_size_KiB - files[files_index].size
 --        table.remove(files, 1)  -- delete entry
@@ -287,7 +286,7 @@ function CoverImage:cleanCache()
     if cache_size_KiB > self.cover_image_cache_maxsize * 1024 and files_index > 0 then
         -- see function description 2.a)
         os.remove(files[files_index].name) -- remove oldest
-        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx remove very oldest: "..files[files_index].name)
+        logger.dbg("CoverImage: removed very oldest: " .. files[files_index].name)
         cache_count = cache_count - 1
         cache_size_KiB = cache_size_KiB - files[files_index].size
         files_index = files_index - 1
@@ -301,7 +300,6 @@ function CoverImage:cleanCache()
             while best_cache_size_KiB > self.cover_image_cache_maxsize * 1024 and self.cover_image_cache_maxsize ~= 0
                 and files_index > 0 do
                 largest_oldest_files[largest_oldest_files_index] = files[files_index]
-                print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx probably size remove: "..files[files_index].name)
                 best_cache_size_KiB = best_cache_size_KiB - files[files_index].size
                 files_index = files_index - 1
                 largest_oldest_files_index = largest_oldest_files_index + 1
@@ -316,7 +314,7 @@ function CoverImage:cleanCache()
                 while cache_size_KiB > self.cover_image_cache_maxsize * 1024 and self.cover_image_cache_maxsize ~= 0
                     and largest_oldest_files_index <= #largest_oldest_files do
                     os.remove(largest_oldest_files[largest_oldest_files_index].name)
-                    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx size remove: "..largest_oldest_files[largest_oldest_files_index].name)
+                    logger.dbg("CoverImage: removed because of cache size: " .. largest_oldest_files[largest_oldest_files_index].name)
                     cache_count = cache_count - 1
                     cache_size_KiB = cache_size_KiB - largest_oldest_files[largest_oldest_files_index].size
                     largest_oldest_files_index = largest_oldest_files_index + 1
@@ -325,7 +323,7 @@ function CoverImage:cleanCache()
         end
     end
 
-    logger.dbg("CoverImage: clean - cache size: ".. cache_size_KiB .. " KiB, cached files: " .. cache_count)
+    logger.dbg("CoverImage: clean - cache size: " .. cache_size_KiB .. " KiB, cached files: " .. cache_count)
 end
 
 function CoverImage:isCacheEnabled(path)
