@@ -17,6 +17,7 @@ local UIManager = require("ui/uimanager")
 local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
 local T = require("ffi/util").template
+local Util = require("util")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
@@ -472,7 +473,7 @@ function CoverImage:menuEntryCache()
                 text_func = function()
                     local number
                     if self.cover_image_cache_maxsize > 0 then
-                        number = T(_("%1 MB"), self.cover_image_cache_maxsize)
+                        number = Util.getFriendlySize(self.cover_image_cache_maxsize * 1e6)
                     elseif self.cover_image_cache_maxsize == 0 then
                         number = _("unlimited")
                     else
