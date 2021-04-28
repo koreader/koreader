@@ -13,7 +13,7 @@ function optionsutil.enableIfEquals(configurable, option, value)
     return configurable[option] == value
 end
 
-function optionsutil.showValues(configurable, option, prefix)
+function optionsutil.showValues(configurable, option, prefix, document)
     local default = G_reader_settings:readSetting(prefix.."_"..option.name)
     local current = configurable[option.name]
     local value_default, value_current
@@ -97,6 +97,10 @@ function optionsutil.showValues(configurable, option, prefix)
     local help_text = ""
     if option.help_text then
         help_text = T("\n%1\n", option.help_text)
+    end
+    if option.help_text_func then
+        -- Allow for concatenating a dynamic help_text_func to a static help_text
+        help_text = T("%1\n%2\n", help_text, option.help_text_func(configurable, document))
     end
     local text
     local name_text = option.name_text_func
