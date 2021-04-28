@@ -3,6 +3,7 @@ local Screen = Device.screen
 local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
 local C_ = _.pgettext
+local T = require("ffi/util").template
 
 -- Get font size numbers as a table of strings
 local tableOfNumbersToTableOfStrings = function(numbers)
@@ -493,16 +494,6 @@ Note that your selected font size is not affected by this setting.]]),
         icon = "appbar.contrast",
         options = {
             {
-                name = "font_weight",
-                name_text = _("Font Weight"),
-                toggle = {_("regular"), _("bold")},
-                values = {0, 1},
-                default_value = 0,
-                args = {0, 1},
-                event = "ToggleFontBolder",
-                name_text_hold_callback = optionsutil.showValues,
-            },
-            {
                 name = "font_gamma",
                 name_text = _("Contrast"),
                 buttonprogress = true,
@@ -527,6 +518,39 @@ Note that your selected font size is not affected by this setting.]]),
                                    41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56 };
                     value_step = 1,
                 },
+            },
+            {
+                name = "font_base_weight",
+                name_text = _("Font Weight"),
+                toggle = { "-1", "-½", "0", "+½", "+1", "+1½", "+3" },
+                values = { -1, -0.5, 0, 0.5, 1, 1.5, 3 },
+                args = { -1, -0.5, 0, 0.5, 1, 1.5, 3 },
+                default_value = 0,
+                event = "SetFontBaseWeight",
+                more_options = true,
+                more_options_param = {
+                    value_min = -3,
+                    value_max = 5.5,
+                    value_step = 0.25,
+                    precision = "%+.2f",
+                    value_hold_step = 1,
+                },
+                help_text = _([[Set the font weight delta from "regular" to apply to all fonts.
+
+- 0 will use the "regular (400)" variation of a font.
+- +1 will use the "medium (500)" variation of a font if available
+- +3 will use the "bold (700)" variation of a font if available
+If a font variation is not available, as well as for fractional adjustments, a font variation will be synthesized from the nearest available weight of the font.]]),
+                help_text_func = function(configurable, document)
+                    local font_face = document:getFontFace()
+                    local available_weights = cre.getFontFaceAvailableWeights(font_face)
+                    return T(_("The default font '%1' is available in %2."), font_face, table.concat(available_weights, ", "))
+                end,
+                name_text_hold_callback = optionsutil.showValues,
+                name_text_true_values = true,
+                show_true_value_func = function(val)
+                    return string.format("%d", 400+val*100)
+                end,
             },
             {
                 name = "font_hinting",
