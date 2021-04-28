@@ -299,7 +299,7 @@ function ConfigOption:init()
                     hold_callback = function()
                         if self.options[c].name_text_hold_callback then
                             self.options[c].name_text_hold_callback(self.config.configurable, self.options[c],
-                                self.config.config_options.prefix)
+                                self.config.config_options.prefix, self.config.document)
                         end
                     end,
                 }

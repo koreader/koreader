@@ -127,10 +127,10 @@ function ReaderFont:onReadSettings(config)
                   or 22
     self.ui.document:setFontSize(Screen:scaleBySize(self.font_size))
 
-    self.font_embolden = config:readSetting("font_embolden")
-                      or G_reader_settings:readSetting("copt_font_weight")
+    self.font_base_weight = config:readSetting("font_base_weight")
+                      or G_reader_settings:readSetting("copt_font_base_weight")
                       or 0
-    self.ui.document:toggleFontBolder(self.font_embolden)
+    self.ui.document:setFontBaseWeight(self.font_base_weight)
 
     self.font_hinting = config:readSetting("font_hinting")
                      or G_reader_settings:readSetting("copt_font_hinting")
@@ -238,9 +238,9 @@ function ReaderFont:onSetLineSpace(space)
     return true
 end
 
-function ReaderFont:onToggleFontBolder(toggle)
-    self.font_embolden = toggle
-    self.ui.document:toggleFontBolder(toggle)
+function ReaderFont:onSetFontBaseWeight(weight)
+    self.font_base_weight = weight
+    self.ui.document:setFontBaseWeight(weight)
     self.ui:handleEvent(Event:new("UpdatePos"))
     return true
 end
@@ -288,7 +288,7 @@ function ReaderFont:onSaveSettings()
     self.ui.doc_settings:saveSetting("font_face", self.font_face)
     self.ui.doc_settings:saveSetting("header_font_face", self.header_font_face)
     self.ui.doc_settings:saveSetting("font_size", self.font_size)
-    self.ui.doc_settings:saveSetting("font_embolden", self.font_embolden)
+    self.ui.doc_settings:saveSetting("font_base_weight", self.font_base_weight)
     self.ui.doc_settings:saveSetting("font_hinting", self.font_hinting)
     self.ui.doc_settings:saveSetting("font_kerning", self.font_kerning)
     self.ui.doc_settings:saveSetting("word_spacing", self.word_spacing)

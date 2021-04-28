@@ -146,7 +146,7 @@ local settingsList = {
     render_dpi = {category="string", rolling=true},
     line_spacing = {category="absolutenumber", rolling=true, separator=true,},
     font_size = {category="absolutenumber", title=_("Set font size to %1"), rolling=true},
-    font_weight = {category="string", rolling=true},
+    font_base_weight = {category="string", rolling=true},
     font_gamma = {category="string", rolling=true},
     font_hinting = {category="string", rolling=true},
     font_kerning = {category="string", rolling=true, separator=true,},
@@ -251,7 +251,7 @@ local dispatcher_menu_order = {
     "decrease_font",
     "font_size",
     "font_gamma",
-    "font_weight",
+    "font_base_weight",
     "font_hinting",
     "font_kerning",
 
