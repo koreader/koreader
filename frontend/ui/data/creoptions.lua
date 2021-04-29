@@ -538,13 +538,13 @@ Note that your selected font size is not affected by this setting.]]),
                 help_text = _([[Set the font weight delta from "regular" to apply to all fonts.
 
 - 0 will use the "regular (400)" variation of a font.
-- +1 will use the "medium (500)" variation of a font if available
-- +3 will use the "bold (700)" variation of a font if available
-If a font variation is not available, as well as for fractional adjustments, a font variation will be synthesized from the nearest available weight of the font.]]),
+- +1 will use the "medium (500)" variation of a font if available.
+- +3 will use the "bold (700)" variation of a font if available.
+If a font variation is not available, as well as for fractional adjustments, it will be synthesized from the nearest available weight.]]),
                 help_text_func = function(configurable, document)
                     local font_face = document:getFontFace()
                     local available_weights = cre.getFontFaceAvailableWeights(font_face)
-                    return T(_("The default font '%1' is available in %2."), font_face, table.concat(available_weights, ", "))
+                    return T(_("The default font '%1' provides the following weight classes: %2."), font_face, table.concat(available_weights, ", "))
                 end,
                 name_text_hold_callback = optionsutil.showValues,
                 name_text_true_values = true,
