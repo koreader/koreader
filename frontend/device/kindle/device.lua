@@ -897,13 +897,6 @@ end
 
 KindleDXG.exit = Kindle3.exit
 
-function KindleVoyage:outofScreenSaver()
-    Kindle.outofScreenSaver(self)
-    local UIManager = require("ui/uimanager")
-    UIManager:nextTick(function()
-        self:resetInputs()
-    end)
-end
 
 ----------------- device recognition: -------------------
 

@@ -1708,6 +1708,11 @@ end
 
 -- The common operations that should be performed after resuming the device.
 function UIManager:_afterResume()
+    if Device.model == "KindleVoyage" then
+        -- Does not work, triggers seg fault
+        -- Device:resetInputs()
+        self:restartKOReader()
+    end
     self:broadcastEvent(Event:new("Resume"))
 end
 
