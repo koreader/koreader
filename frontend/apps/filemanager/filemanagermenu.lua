@@ -129,11 +129,6 @@ function FileManagerMenu:onOpenLastDoc()
     if self.menu_container then
         self:onCloseFileManagerMenu()
     end
-
-    local FileManager = require("apps/filemanager/filemanager")
-    if FileManager.instance then
-        FileManager.instance:onClose()
-    end
 end
 
 function FileManagerMenu:setUpdateItemTable()
@@ -378,10 +373,10 @@ To:
         text = _("Developer options"),
         sub_item_table = {
             {
-                text = _("Clear readers' caches"),
+                text = _("Clear caches"),
                 callback = function()
                     UIManager:show(ConfirmBox:new{
-                        text = _("Clear cache/ and cr3cache/ ?"),
+                        text = _("Clear the cache folder?"),
                         ok_callback = function()
                             local DataStorage = require("datastorage")
                             local cachedir = DataStorage:getDataDir() .. "/cache"
@@ -389,13 +384,12 @@ To:
                                 FFIUtil.purgeDir(cachedir)
                             end
                             lfs.mkdir(cachedir)
-                            -- Also remove from Cache objet references to
-                            -- the cache files we just deleted
+                            -- Also remove from the Cache objet references to the cache files we've just deleted
                             local Cache = require("cache")
                             Cache.cached = {}
                             local InfoMessage = require("ui/widget/infomessage")
                             UIManager:show(InfoMessage:new{
-                                text = _("Caches cleared. Please exit and restart KOReader."),
+                                text = _("Caches cleared. Please restart KOReader."),
                             })
                         end,
                     })
@@ -451,8 +445,8 @@ To:
             end,
         })
     end
-    --- @note Currently, only Kobo has a fancy crash display (#5328)
-    if Device:isKobo() then
+    --- @note Currently, only Kobo, rM & PB have a fancy crash display (#5328)
+    if Device:isKobo() or Device:isRemarkable() or Device:isPocketBook() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Always abort on crash"),
             checked_func = function()
@@ -519,6 +513,35 @@ To:
                     Device.screen:toggleHWDithering(false)
                 end
                 UIManager:setDirty("all", "full")
+            end,
+        })
+    end
+    --- @note: Currently, only Kobo implements this quirk
+    if Device:hasEinkScreen() and Device:isKobo() then
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            -- @translators Highly technical (ioctl is a Linux API call, the uppercase stuff is a constant). What's translatable is essentially only the action ("bypass") and the article.
+            text = _("Bypass the MXCFB_WAIT_FOR_* ioctls"),
+            checked_func = function()
+                local mxcfb_bypass_wait_for
+                if G_reader_settings:has("mxcfb_bypass_wait_for") then
+                    mxcfb_bypass_wait_for = G_reader_settings:isTrue("mxcfb_bypass_wait_for")
+                else
+                    mxcfb_bypass_wait_for = not Device:hasReliableMxcWaitFor()
+                end
+                return mxcfb_bypass_wait_for
+            end,
+            callback = function()
+                local mxcfb_bypass_wait_for
+                if G_reader_settings:has("mxcfb_bypass_wait_for") then
+                    mxcfb_bypass_wait_for = G_reader_settings:isTrue("mxcfb_bypass_wait_for")
+                else
+                    mxcfb_bypass_wait_for = not Device:hasReliableMxcWaitFor()
+                end
+                G_reader_settings:saveSetting("mxcfb_bypass_wait_for", not mxcfb_bypass_wait_for)
+                local InfoMessage = require("ui/widget/infomessage")
+                UIManager:show(InfoMessage:new{
+                    text = _("This will take effect on next restart."),
+                })
             end,
         })
     end
@@ -612,7 +635,13 @@ To:
 
     self.menu_items.find_file = {
         -- @translators Search for files by name.
-        text = _("Find a file"),
+        text = _("File search"),
+        help_text = _([[Search a book by filename in the current or home folder and its subfolders.
+
+A search for '*' will show all files.
+Search string supports Lua patterns.
+
+Tap a book in the search results to open it.]]),
         callback = function()
             self.ui:handleEvent(Event:new("ShowFileSearch"))
         end

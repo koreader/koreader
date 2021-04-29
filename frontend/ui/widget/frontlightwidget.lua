@@ -34,7 +34,7 @@ local FrontLightWidget = InputContainer:new{
     -- This should stay active during natural light configuration
     is_always_active = true,
     rate = Screen.low_pan_rate and 3 or 30,     -- Widget update rate.
-    last_time = TimeVal:new{},                  -- Tracks last update time to prevent update spamming.
+    last_time = TimeVal.zero,                   -- Tracks last update time to prevent update spamming.
 }
 
 function FrontLightWidget:init()
@@ -280,8 +280,7 @@ function FrontLightWidget:setProgress(num, step, num_warmth)
     return true
 end
 
--- Currently, we are assuming the 'warmth' has the same min/max limits
--- as 'brightness'.
+-- Currently, we are assuming the 'warmth' has the same min/max limits as 'brightness'.
 function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
     local button_group_down = HorizontalGroup:new{ align = "center" }
     local button_group_up = HorizontalGroup:new{ align = "center" }
@@ -309,21 +308,22 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
     end
 
     if self.natural_light and num_warmth then
-        for i = 0, math.floor(num_warmth / step) do
+        local curr_warmth_step = math.floor(num_warmth / step)
+        for i = 0, curr_warmth_step do
             table.insert(warmth_group, self.fl_prog_button:new{
                              text = "",
-                             preselect = true,
+                             preselect = curr_warmth_step > 0 and true or false,
                              enabled = not self.powerd.auto_warmth,
-                             background = button_color,
+                             background = curr_warmth_step > 0 and button_color or nil,
                              callback = function()
                                  self:setProgress(self.fl_cur, step, i * step)
                              end
             })
         end
 
-        for i = math.floor(num_warmth / step) + 1, self.steps - 1 do
+        for i = curr_warmth_step + 1, self.steps - 1 do
             table.insert(warmth_group, self.fl_prog_button:new{
-                             text="",
+                             text = "",
                              enabled = not self.powerd.auto_warmth,
                              callback = function()
                                  self:setProgress(self.fl_cur, step, i * step)
@@ -627,6 +627,12 @@ function FrontLightWidget:naturalLightConfigClose()
 end
 
 function FrontLightWidget:onTapProgress(arg, ges_ev)
+    -- The throttling has a tendency to wreak a bit of a havoc,
+    -- so, if the widget hasn't been repainted yet, go away.
+    if not self.fl_group.dimen or not self.light_frame.dimen then
+        return true
+    end
+
     if ges_ev.pos:intersectWith(self.fl_group.dimen) then
         -- Unschedule any pending updates.
         UIManager:unschedule(self.update)
@@ -643,8 +649,8 @@ function FrontLightWidget:onTapProgress(arg, ges_ev)
         -- But limit the widget update frequency on E Ink.
         if Screen.low_pan_rate then
             local current_time = TimeVal:now()
-            local last_time = self.last_time or TimeVal:new{}
-            if current_time - last_time > TimeVal:new{usec = 1000000 / self.rate} then
+            local last_time = self.last_time or TimeVal.zero
+            if current_time - last_time > TimeVal:new{ usec = 1000000 / self.rate } then
                 self.last_time = current_time
             else
                 -- Schedule a final update after we stop panning.

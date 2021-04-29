@@ -349,13 +349,21 @@ function ReaderRolling:setupTouchZones()
             id = "tap_forward",
             ges = "tap",
             screen_zone = forward_zone,
-            handler = function() return self:onGotoViewRel(1) end,
+            handler = function()
+                if G_reader_settings:nilOrFalse("page_turns_disable_tap") then
+                    return self:onGotoViewRel(1)
+                end
+            end,
         },
         {
             id = "tap_backward",
             ges = "tap",
             screen_zone = backward_zone,
-            handler = function() return self:onGotoViewRel(-1) end,
+            handler = function()
+                if G_reader_settings:nilOrFalse("page_turns_disable_tap") then
+                    return self:onGotoViewRel(-1)
+                end
+            end,
         },
         {
             id = "rolling_swipe",
@@ -363,7 +371,7 @@ function ReaderRolling:setupTouchZones()
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
-            handler = function(ges) return self:onSwipe(nil, ges) end
+            handler = function(ges) return self:onSwipe(nil, ges) end,
         },
         {
             id = "rolling_pan",
@@ -372,7 +380,7 @@ function ReaderRolling:setupTouchZones()
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
-            handler = function(ges) return self:onPan(nil, ges) end
+            handler = function(ges) return self:onPan(nil, ges) end,
         },
     })
 end
@@ -509,16 +517,20 @@ end
 function ReaderRolling:onSwipe(_, ges)
     local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
     if direction == "west" then
-        if self.inverse_reading_order then
-            self:onGotoViewRel(-1)
-        else
-            self:onGotoViewRel(1)
+        if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
+            if self.inverse_reading_order then
+                self:onGotoViewRel(-1)
+            else
+                self:onGotoViewRel(1)
+            end
         end
     elseif direction == "east" then
-        if self.inverse_reading_order then
-            self:onGotoViewRel(1)
-        else
-            self:onGotoViewRel(-1)
+        if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
+            if self.inverse_reading_order then
+                self:onGotoViewRel(1)
+            else
+                self:onGotoViewRel(-1)
+            end
         end
     else
         -- update footer (time & battery)
@@ -1101,8 +1113,8 @@ function ReaderRolling:handleEngineCallback(ev, ...)
     -- ignore other events
 end
 
-local ENGINE_PROGRESS_INITIAL_DELAY = TimeVal:new{ sec = 2 }
-local ENGINE_PROGRESS_UPDATE_DELAY = TimeVal:new{ usec = 500000 }
+local ENGINE_PROGRESS_INITIAL_DELAY = TimeVal:new{ sec = 2, usec = 0 }
+local ENGINE_PROGRESS_UPDATE_DELAY = TimeVal:new{ sec = 0, usec = 500000 }
 
 function ReaderRolling:showEngineProgress(percent)
     if G_reader_settings and G_reader_settings:isFalse("cre_show_progress") then

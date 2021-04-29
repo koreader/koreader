@@ -3,6 +3,7 @@ local Screen = Device.screen
 local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
 local C_ = _.pgettext
+local T = require("ffi/util").template
 
 -- Get font size numbers as a table of strings
 local tableOfNumbersToTableOfStrings = function(numbers)
@@ -22,19 +23,48 @@ local CreOptions = {
             {
                 name = "rotation_mode",
                 name_text = _("Rotation"),
-                item_icons = {
-                    "rotation.90CCW",
-                    "rotation.0UR",
-                    "rotation.90CW",
-                    "rotation.180UD",
-                },
-                -- For Dispatcher's sake
+                item_icons_func = function()
+                    if Screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT then
+                        -- P, 0UR
+                        return {
+                            "rotation.P.90CCW",
+                            "rotation.P.0UR",
+                            "rotation.P.90CW",
+                            "rotation.P.180UD",
+                        }
+                    elseif Screen:getRotationMode() == Screen.ORIENTATION_PORTRAIT_ROTATED then
+                        -- P, 180UD
+                        return {
+                            "rotation.P.90CW",
+                            "rotation.P.180UD",
+                            "rotation.P.90CCW",
+                            "rotation.P.0UR",
+                        }
+                    elseif Screen:getRotationMode() == Screen.ORIENTATION_LANDSCAPE then
+                        -- L, 90CW
+                        return {
+                            "rotation.L.90CCW",
+                            "rotation.L.0UR",
+                            "rotation.L.90CW",
+                            "rotation.L.180UD",
+                        }
+                    else
+                        -- L, 90CCW
+                        return {
+                            "rotation.L.90CW",
+                            "rotation.L.180UD",
+                            "rotation.L.90CCW",
+                            "rotation.L.0UR",
+                        }
+                    end
+                end,
+                -- For Dispatcher & onMakeDefault's sake
                 labels = {C_("Rotation", "⤹ 90°"), C_("Rotation", "↑ 0°"), C_("Rotation", "⤸ 90°"), C_("Rotation", "↓ 180°")},
                 alternate = false,
                 values = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
                 args = {Screen.ORIENTATION_LANDSCAPE_ROTATED, Screen.ORIENTATION_PORTRAIT, Screen.ORIENTATION_LANDSCAPE, Screen.ORIENTATION_PORTRAIT_ROTATED},
                 default_arg = 0,
-                current_func = function() return Device.screen:getRotationMode() end,
+                current_func = function() return Screen:getRotationMode() end,
                 event = "SetRotationMode",
                 name_text_hold_callback = optionsutil.showValues,
             },
@@ -50,7 +80,7 @@ local CreOptions = {
                 --[[ Commented out, to have it also available in portrait mode
                 current_func = function()
                     -- If not in landscape mode, shows "1" as selected
-                    if Device.screen:getScreenMode() ~= "landscape" then
+                    if Screen:getScreenMode() ~= "landscape" then
                         return 1
                     end
                     -- if we return nil, ConfigDialog will pick the one from the
@@ -59,7 +89,7 @@ local CreOptions = {
                 ]]--
                 enabled_func = function(configurable)
                     return optionsutil.enableIfEquals(configurable, "view_mode", 0) -- "page" mode
-                        -- and Device.screen:getScreenMode() == "landscape"
+                        -- and Screen:getScreenMode() == "landscape"
                 end,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Render the document on half the screen width and display two pages at once with a single page number. This makes it look like two columns.
@@ -464,16 +494,6 @@ Note that your selected font size is not affected by this setting.]]),
         icon = "appbar.contrast",
         options = {
             {
-                name = "font_weight",
-                name_text = _("Font Weight"),
-                toggle = {_("regular"), _("bold")},
-                values = {0, 1},
-                default_value = 0,
-                args = {0, 1},
-                event = "ToggleFontBolder",
-                name_text_hold_callback = optionsutil.showValues,
-            },
-            {
                 name = "font_gamma",
                 name_text = _("Contrast"),
                 buttonprogress = true,
@@ -498,6 +518,39 @@ Note that your selected font size is not affected by this setting.]]),
                                    41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56 };
                     value_step = 1,
                 },
+            },
+            {
+                name = "font_base_weight",
+                name_text = _("Font Weight"),
+                toggle = { "-1", "-½", "0", "+½", "+1", "+1½", "+3" },
+                values = { -1, -0.5, 0, 0.5, 1, 1.5, 3 },
+                args = { -1, -0.5, 0, 0.5, 1, 1.5, 3 },
+                default_value = 0,
+                event = "SetFontBaseWeight",
+                more_options = true,
+                more_options_param = {
+                    value_min = -3,
+                    value_max = 5.5,
+                    value_step = 0.25,
+                    precision = "%+.2f",
+                    value_hold_step = 1,
+                },
+                help_text = _([[Set the font weight delta from "regular" to apply to all fonts.
+
+- 0 will use the "regular (400)" variation of a font.
+- +1 will use the "medium (500)" variation of a font if available
+- +3 will use the "bold (700)" variation of a font if available
+If a font variation is not available, as well as for fractional adjustments, a font variation will be synthesized from the nearest available weight of the font.]]),
+                help_text_func = function(configurable, document)
+                    local font_face = document:getFontFace()
+                    local available_weights = cre.getFontFaceAvailableWeights(font_face)
+                    return T(_("The default font '%1' is available in %2."), font_face, table.concat(available_weights, ", "))
+                end,
+                name_text_hold_callback = optionsutil.showValues,
+                name_text_true_values = true,
+                show_true_value_func = function(val)
+                    return string.format("%d", 400+val*100)
+                end,
             },
             {
                 name = "font_hinting",
@@ -602,7 +655,7 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                 args = {true, false},
                 default_arg = nil,
                 event = "ToggleNightmodeImages",
-                show_func = function() return Device.screen.night_mode end,
+                show_func = function() return Screen.night_mode end,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Disable the automagic inversion of images when nightmode is enabled. Useful if your book contains mainly inlined mathematical content or scene break art.]]),
             },

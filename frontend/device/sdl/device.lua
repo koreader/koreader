@@ -64,6 +64,7 @@ local Device = Generic:new{
     needsScreenRefreshAfterResume = no,
     hasColorScreen = yes,
     hasEinkScreen = no,
+    hasSystemFonts = yes,
     canSuspend = no,
     startTextInput = SDL.startTextInput,
     stopTextInput = SDL.stopTextInput,
@@ -190,7 +191,7 @@ function Device:init()
                     w = 0, h = 0,
                 }
 
-                local timev = TimeVal:new(ev.time)
+                setmetatable(ev.time, TimeVal)
 
                 local fake_ges = {
                     ges = "pan",
@@ -205,7 +206,7 @@ function Device:init()
                         y = 100*scrolled_y,
                     },
                     pos = pos,
-                    time = timev,
+                    time = ev.time,
                     mousewheel_direction = scrolled_y,
                 }
                 local fake_ges_release = {
@@ -215,7 +216,7 @@ function Device:init()
                     relative = fake_ges.relative,
                     relative_delayed = fake_ges.relative_delayed,
                     pos = pos,
-                    time = timev,
+                    time = ev.time,
                 }
                 local fake_pan_ev = Event:new("Pan", nil, fake_ges)
                 local fake_release_ev = Event:new("Gesture", fake_ges_release)

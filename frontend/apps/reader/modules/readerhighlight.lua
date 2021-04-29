@@ -83,7 +83,6 @@ function ReaderHighlight:init()
                 text = _("Search"),
                 callback = function()
                     _self:onHighlightSearch()
-                    UIManager:close(self.highlight_dialog)
                     -- We don't call _self:onClose(), crengine will highlight
                     -- search matches on the current page, and self:clear()
                     -- would redraw and remove crengine native highlights
@@ -100,7 +99,7 @@ function ReaderHighlight:init()
                         _self:lookupWikipedia()
                         -- We don't call _self:onClose(), we need the highlight
                         -- to still be there, as we may Highlight it from the
-                        -- dict lookup widget
+                        -- dict lookup widget.
                     end)
                 end,
             }
@@ -324,7 +323,7 @@ function ReaderHighlight:genHighlightDrawerMenu()
             callback = function()
                 self.view.highlight.disabled = not self.view.highlight.disabled
             end,
-            hold_callback = function(touchmenu_instance)
+            hold_callback = function()
                 self:toggleDefault()
             end,
             separator = true,
@@ -332,6 +331,37 @@ function ReaderHighlight:genHighlightDrawerMenu()
         get_highlight_style("lighten"),
         get_highlight_style("underscore"),
         get_highlight_style("invert"),
+        {
+            text_func = function()
+                return T(_("Highlight opacity: %1"), G_reader_settings:readSetting("highlight_lighten_factor", 0.2))
+            end,
+            enabled_func = function()
+                return not self.view.highlight.disabled and self.view.highlight.saved_drawer == "lighten"
+            end,
+            callback = function()
+                local SpinWidget = require("ui/widget/spinwidget")
+                local curr_val = G_reader_settings:readSetting("highlight_lighten_factor", 0.2)
+                local items = SpinWidget:new{
+                    width = math.floor(Screen:getWidth() * 0.6),
+                    value = curr_val,
+                    value_min = 0,
+                    value_max = 1,
+                    precision = "%.2f",
+                    value_step = 0.1,
+                    value_hold_step = 0.25,
+                    default_value = 0.2,
+                    keep_shown_on_apply = true,
+                    title_text =  _("Highlight opacity"),
+                    info_text = _("The higher the value, the darker the highlight."),
+                    callback = function(spin)
+                        G_reader_settings:saveSetting("highlight_lighten_factor", spin.value)
+                        self.view.highlight.lighten_factor = spin.value
+                        UIManager:setDirty(self.dialog, "ui")
+                    end
+                }
+                UIManager:show(items)
+            end,
+        },
     }
 end
 
@@ -339,14 +369,14 @@ end
 -- to ensure current highlight has not already been cleared, and that we
 -- are not going to clear a new highlight
 function ReaderHighlight:getClearId()
-    self.clear_id = TimeVal.now() -- can act as a unique id
+    self.clear_id = UIManager:getTime() -- can act as a unique id
     return self.clear_id
 end
 
 function ReaderHighlight:clear(clear_id)
     if clear_id then -- should be provided by delayed call to clear()
         if clear_id ~= self.clear_id then
-            -- if clear_id is no more valid, highlight has already been
+            -- if clear_id is no longer valid, highlight has already been
             -- cleared since this clear_id was given
             return
         end
@@ -562,6 +592,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                     self:deleteHighlight(page, index)
                     -- other part outside of the dialog may be dirty
                     UIManager:close(self.edit_highlight_dialog, "ui")
+                    self.edit_highlight_dialog = nil
                 end,
             },
             {
@@ -569,6 +600,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 callback = function()
                     self:editHighlight(page, index)
                     UIManager:close(self.edit_highlight_dialog)
+                    self.edit_highlight_dialog = nil
                 end,
             },
             {
@@ -577,6 +609,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                     self.selected_text = self.view.highlight.saved[page][index]
                     self:onShowHighlightMenu()
                     UIManager:close(self.edit_highlight_dialog)
+                    self.edit_highlight_dialog = nil
                 end,
             },
         }
@@ -679,7 +712,7 @@ function ReaderHighlight:_resetHoldTimer(clear)
     if clear then
         self.hold_last_tv = nil
     else
-        self.hold_last_tv = TimeVal.now()
+        self.hold_last_tv = UIManager:getTime()
     end
 end
 
@@ -1122,9 +1155,8 @@ end
 function ReaderHighlight:onHoldRelease()
     local long_final_hold = false
     if self.hold_last_tv then
-        local hold_duration = TimeVal.now() - self.hold_last_tv
-        hold_duration = hold_duration.sec + hold_duration.usec/1000000
-        if hold_duration > 3.0 then
+        local hold_duration = UIManager:getTime() - self.hold_last_tv
+        if hold_duration > TimeVal:new{ sec = 3, usec = 0 } then
             -- We stayed 3 seconds before release without updating selection
             long_final_hold = true
         end
@@ -1383,6 +1415,7 @@ function ReaderHighlight:addNote()
     local page, index = self:saveHighlight()
     self:editHighlight(page, index)
     UIManager:close(self.edit_highlight_dialog)
+    self.edit_highlight_dialog = nil
     self.ui:handleEvent(Event:new("AddNote"))
 end
 
@@ -1394,6 +1427,11 @@ end
 
 function ReaderHighlight:onHighlightSearch()
     logger.dbg("search highlight")
+    -- First, if our dialog is still shown, close it.
+    if self.highlight_dialog then
+        UIManager:close(self.highlight_dialog)
+        self.highlight_dialog = nil
+    end
     self:highlightFromHoldPos()
     if self.selected_text then
         local text = util.stripPunctuation(cleanupSelectedText(self.selected_text.text))
@@ -1434,6 +1472,11 @@ function ReaderHighlight:deleteHighlight(page, i, bookmark_item)
             datetime = removed.datetime,
         })
     end
+    local setting = G_reader_settings:readSetting("save_document")
+    if setting ~= "disable" then
+        logger.dbg("delete highlight from document", removed)
+        self.ui.document:deleteHighlight(page, removed)
+    end
 end
 
 function ReaderHighlight:editHighlight(page, i)
@@ -1441,6 +1484,7 @@ function ReaderHighlight:editHighlight(page, i)
     self.ui.bookmark:renameBookmark({
         page = self.ui.document.info.has_pages and page or item.pos0,
         datetime = item.datetime,
+        pboxes = item.pboxes
     }, true)
 end
 
@@ -1482,6 +1526,7 @@ end
 
 function ReaderHighlight:onClose()
     UIManager:close(self.highlight_dialog)
+    self.highlight_dialog = nil
     -- clear highlighted text
     self:clear()
 end

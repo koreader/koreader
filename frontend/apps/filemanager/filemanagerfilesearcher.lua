@@ -23,10 +23,6 @@ local FileSearcher = InputContainer:new{
     results = {},
     items = 0,
     commands = nil,
-
-    --filemanagersearch
-    use_previous_search_results = false,
-    lastsearch = nil,
 }
 
 function FileSearcher:readDir()
@@ -74,30 +70,24 @@ function FileSearcher:setSearchResults()
 end
 
 function FileSearcher:close()
-    if self.search_value then
-        UIManager:close(self.search_dialog)
-        if string.len(self.search_value) > 0 then
-            self:readDir() --- @todo this probably doesn't need to be repeated once it's been done
-            self:setSearchResults() --- @todo doesn't have to be repeated if the search term is the same
-            if #self.results > 0 then
-                self:showSearchResults() --- @todo something about no results
-            else
-                UIManager:show(
-                    InfoMessage:new{
-                        text = BaseUtil.template(_("Found no files matching '%1'."),
-                                             self.search_value)
-                    }
-                )
-            end
-        end
+    UIManager:close(self.search_dialog)
+    self:readDir() --- @todo this probably doesn't need to be repeated once it's been done
+    self:setSearchResults() --- @todo doesn't have to be repeated if the search term is the same
+    if #self.results > 0 then
+        self:showSearchResults()
+    else
+        UIManager:show(
+            InfoMessage:new{
+                text = BaseUtil.template(_("No results for '%1'."),
+                                     self.search_value)
+            }
+        )
     end
 end
 
 function FileSearcher:onShowFileSearch()
-    local dummy = self.search_value
-    local enabled_search_home_dir = G_reader_settings:has("home_dir")
     self.search_dialog = InputDialog:new{
-        title = _("Search for books by filename"),
+        title = _("Enter filename to search for"),
         input = self.search_value,
         width = math.floor(Screen:getWidth() * 0.9),
         buttons = {
@@ -111,30 +101,23 @@ function FileSearcher:onShowFileSearch()
                     end,
                 },
                 {
-                    text = _("Current folder"),
-                    enabled = true,
+                    text = _("Home folder"),
+                    enabled = G_reader_settings:has("home_dir"),
                     callback = function()
-                        self.path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile()
                         self.search_value = self.search_dialog:getInputText()
-                        if self.search_value == dummy then -- probably DELETE this if/else block
-                            self.use_previous_search_results = true
-                        else
-                            self.use_previous_search_results = false
-                        end
+                        if self.search_value == "" then return end
+                        self.path = G_reader_settings:readSetting("home_dir")
                         self:close()
                     end,
                 },
                 {
-                    text = _("Home folder"),
-                    enabled = enabled_search_home_dir,
+                    text = _("Current folder"),
+                    enabled = true,
+                    is_enter_default = true,
                     callback = function()
-                        self.path = G_reader_settings:readSetting("home_dir")
                         self.search_value = self.search_dialog:getInputText()
-                        if self.search_value == dummy then -- probably DELETE this if/else block
-                            self.use_previous_search_results = true
-                        else
-                            self.use_previous_search_results = false
-                        end
+                        if self.search_value == "" then return end
+                        self.path = self.ui.file_chooser and self.ui.file_chooser.path or self.ui:getLastDirFile()
                         self:close()
                     end,
                 },
@@ -162,7 +145,7 @@ function FileSearcher:showSearchResults()
         UIManager:close(menu_container)
     end
     table.sort(self.results, function(v1,v2) return v1.text < v2.text end)
-    self.search_menu:switchItemTable(_("Search Results"), self.results)
+    self.search_menu:switchItemTable(_("Search results"), self.results)
     UIManager:show(menu_container)
 end
 

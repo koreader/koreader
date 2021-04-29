@@ -36,7 +36,7 @@ a touch event should have following format:
         timev = TimeVal:new{...},
     }
 
-Don't confuse `tev` with raw evs from kernel, `tev` is build according to ev.
+Don't confuse `tev` with raw evs from kernel, `tev` is built according to ev.
 
 @{GestureDetector:feedEvent|GestureDetector:feedEvent(tev)} will return a
 detection result when you feed a touch release event to it.
@@ -47,6 +47,11 @@ local TimeVal = require("ui/timeval")
 local logger = require("logger")
 local util = require("util")
 
+-- We're going to need some clockid_t constants
+local ffi = require("ffi")
+local C = ffi.C
+require("ffi/posix_h")
+
 -- default values (all the time parameters are in microseconds)
 local TAP_INTERVAL = 0 * 1000
 local DOUBLE_TAP_INTERVAL = 300 * 1000
@@ -56,11 +61,17 @@ local PAN_DELAYED_INTERVAL = 500 * 1000
 local SWIPE_INTERVAL = 900 * 1000
 -- current values
 local ges_tap_interval = G_reader_settings:readSetting("ges_tap_interval") or TAP_INTERVAL
+ges_tap_interval = TimeVal:new{ usec = ges_tap_interval }
 local ges_double_tap_interval = G_reader_settings:readSetting("ges_double_tap_interval") or DOUBLE_TAP_INTERVAL
+ges_double_tap_interval = TimeVal:new{ usec = ges_double_tap_interval }
 local ges_two_finger_tap_duration = G_reader_settings:readSetting("ges_two_finger_tap_duration") or TWO_FINGER_TAP_DURATION
+ges_two_finger_tap_duration = TimeVal:new{ usec = ges_two_finger_tap_duration }
 local ges_hold_interval = G_reader_settings:readSetting("ges_hold_interval") or HOLD_INTERVAL
+ges_hold_interval = TimeVal:new{ usec = ges_hold_interval }
 local ges_pan_delayed_interval = G_reader_settings:readSetting("ges_pan_delayed_interval") or PAN_DELAYED_INTERVAL
+ges_pan_delayed_interval = TimeVal:new{ usec = ges_pan_delayed_interval }
 local ges_swipe_interval = G_reader_settings:readSetting("ges_swipe_interval") or SWIPE_INTERVAL
+ges_swipe_interval = TimeVal:new{ usec = ges_swipe_interval }
 
 local GestureDetector = {
     -- must be initialized with the Input singleton class
@@ -85,7 +96,7 @@ local GestureDetector = {
     },
     -- states are stored in separated slots
     states = {},
-    hold_timer_id = {},
+    pending_hold_timer = {},
     track_ids = {},
     tev_stacks = {},
     -- latest feeded touch event in each slots
@@ -97,6 +108,8 @@ local GestureDetector = {
     detectings = {},
     -- for single/double tap
     last_taps = {},
+    -- for timestamp clocksource detection
+    clock_id = nil,
 }
 
 function GestureDetector:new(o)
@@ -130,6 +143,10 @@ function GestureDetector:feedEvent(tevs)
             end
             local ges = self.states[slot](self, tev)
             if tev.id ~= -1 then
+                -- NOTE: tev is actually a simple reference to Input's self.ev_slots[slot],
+                --       which means self.last_tevs[slot] doesn't actually point to the *previous*
+                --       input frame for a given slot, but always points to the *current* input frame for that slot!
+                --       Compare to self.first_tevs below, which does create a copy...
                 self.last_tevs[slot] = tev
             end
             -- return no more than one gesture
@@ -144,10 +161,7 @@ function GestureDetector:deepCopyEv(tev)
         y = tev.y,
         id = tev.id,
         slot = tev.slot,
-        timev = TimeVal:new{
-            sec = tev.timev.sec,
-            usec = tev.timev.usec,
-        }
+        timev = tev.timev, -- No need to make a copy of this one, tev.timev is re-assigned to a new object on every SYN_REPORT
     }
 end
 
@@ -155,40 +169,68 @@ end
 tap2 is the later tap
 --]]
 function GestureDetector:isTapBounce(tap1, tap2, interval)
+    -- NOTE: If time went backwards, make the delta infinite to avoid misdetections,
+    --       as we can no longer compute a sensible value...
     local tv_diff = tap2.timev - tap1.timev
+    if not tv_diff:isPositive() then
+        tv_diff = TimeVal.huge
+    end
     return (
         math.abs(tap1.x - tap2.x) < self.SINGLE_TAP_BOUNCE_DISTANCE and
         math.abs(tap1.y - tap2.y) < self.SINGLE_TAP_BOUNCE_DISTANCE and
-        (tv_diff.sec == 0 and (tv_diff.usec) < interval)
+        tv_diff < interval
     )
 end
 
 function GestureDetector:isDoubleTap(tap1, tap2)
     local tv_diff = tap2.timev - tap1.timev
+    if not tv_diff:isPositive() then
+        tv_diff = TimeVal.huge
+    end
     return (
         math.abs(tap1.x - tap2.x) < self.DOUBLE_TAP_DISTANCE and
         math.abs(tap1.y - tap2.y) < self.DOUBLE_TAP_DISTANCE and
-        (tv_diff.sec == 0 and (tv_diff.usec) < ges_double_tap_interval)
+        tv_diff < ges_double_tap_interval
     )
 end
 
+-- Takes TimeVals as input, not a tev
+function GestureDetector:isHold(t1, t2)
+    local tv_diff = t2 - t1
+    if not tv_diff:isPositive() then
+        tv_diff = TimeVal.zero
+    end
+    -- NOTE: We cheat by not checking a distance because we're only checking that in tapState,
+    --       which already ensures a stationary finger, by elimination ;).
+    return tv_diff >= ges_hold_interval
+end
+
 function GestureDetector:isTwoFingerTap()
-    if self.last_tevs[0] == nil or self.last_tevs[1] == nil then
+    local s1 = self.input.main_finger_slot
+    local s2 = self.input.main_finger_slot + 1
+
+    if self.last_tevs[s1] == nil or self.last_tevs[s2] == nil then
         return false
     end
-    local x_diff0 = math.abs(self.last_tevs[0].x - self.first_tevs[0].x)
-    local x_diff1 = math.abs(self.last_tevs[1].x - self.first_tevs[1].x)
-    local y_diff0 = math.abs(self.last_tevs[0].y - self.first_tevs[0].y)
-    local y_diff1 = math.abs(self.last_tevs[1].y - self.first_tevs[1].y)
-    local tv_diff0 = self.last_tevs[0].timev - self.first_tevs[0].timev
-    local tv_diff1 = self.last_tevs[1].timev - self.first_tevs[1].timev
+    local x_diff0 = math.abs(self.last_tevs[s1].x - self.first_tevs[s1].x)
+    local x_diff1 = math.abs(self.last_tevs[s2].x - self.first_tevs[s2].x)
+    local y_diff0 = math.abs(self.last_tevs[s1].y - self.first_tevs[s1].y)
+    local y_diff1 = math.abs(self.last_tevs[s2].y - self.first_tevs[s2].y)
+    local tv_diff0 = self.last_tevs[s1].timev - self.first_tevs[s1].timev
+    if not tv_diff0:isPositive() then
+        tv_diff0 = TimeVal.huge
+    end
+    local tv_diff1 = self.last_tevs[s2].timev - self.first_tevs[s2].timev
+    if not tv_diff1:isPositive() then
+        tv_diff1 = TimeVal.huge
+    end
     return (
         x_diff0 < self.TWO_FINGER_TAP_REGION and
         x_diff1 < self.TWO_FINGER_TAP_REGION and
         y_diff0 < self.TWO_FINGER_TAP_REGION and
         y_diff1 < self.TWO_FINGER_TAP_REGION and
-        tv_diff0.sec == 0 and tv_diff0.usec < ges_two_finger_tap_duration and
-        tv_diff1.sec == 0 and tv_diff1.usec < ges_two_finger_tap_duration
+        tv_diff0 < ges_two_finger_tap_duration and
+        tv_diff1 < ges_two_finger_tap_duration
     )
 end
 
@@ -227,7 +269,10 @@ end
 function GestureDetector:isSwipe(slot)
     if not self.first_tevs[slot] or not self.last_tevs[slot] then return end
     local tv_diff = self.last_tevs[slot].timev - self.first_tevs[slot].timev
-    if (tv_diff.sec == 0) and (tv_diff.usec < ges_swipe_interval) then
+    if not tv_diff:isPositive() then
+        tv_diff = TimeVal.huge
+    end
+    if tv_diff < ges_swipe_interval then
         local x_diff = self.last_tevs[slot].x - self.first_tevs[slot].x
         local y_diff = self.last_tevs[slot].y - self.first_tevs[slot].y
         if x_diff ~= 0 or y_diff ~= 0 then
@@ -254,49 +299,54 @@ end
 
 function GestureDetector:clearState(slot)
     self.states[slot] = self.initialState
-    self.hold_timer_id[slot] = nil
+    self.pending_hold_timer[slot] = nil
     self.detectings[slot] = false
     self.first_tevs[slot] = nil
     self.last_tevs[slot] = nil
     self.multiswipe_directions = {}
     self.multiswipe_type = nil
+
+    -- Also clear any pending hold callbacks on that slot.
+    -- (single taps call this, so we can't clear double_tap callbacks without being caught in an obvious catch-22 ;)).
+    self.input:clearTimeout(slot, "hold")
 end
 
 function GestureDetector:setNewInterval(type, interval)
     if type == "ges_tap_interval" then
-        ges_tap_interval = interval
+        ges_tap_interval = TimeVal:new{ usec = interval }
     elseif type == "ges_double_tap_interval" then
-        ges_double_tap_interval = interval
+        ges_double_tap_interval = TimeVal:new{ usec = interval }
     elseif type == "ges_two_finger_tap_duration" then
-        ges_two_finger_tap_duration = interval
+        ges_two_finger_tap_duration = TimeVal:new{ usec = interval }
     elseif type == "ges_hold_interval" then
-        ges_hold_interval = interval
+        ges_hold_interval = TimeVal:new{ usec = interval }
     elseif type == "ges_pan_delayed_interval" then
-        ges_pan_delayed_interval = interval
+        ges_pan_delayed_interval = TimeVal:new{ usec = interval }
     elseif type == "ges_swipe_interval" then
-        ges_swipe_interval = interval
+        ges_swipe_interval = TimeVal:new{ usec = interval }
     end
 end
 
 function GestureDetector:getInterval(type)
     if type == "ges_tap_interval" then
-        return ges_tap_interval
+        return ges_tap_interval:tousecs()
     elseif type == "ges_double_tap_interval" then
-        return ges_double_tap_interval
+        return ges_double_tap_interval:tousecs()
     elseif type == "ges_two_finger_tap_duration" then
-        return ges_two_finger_tap_duration
+        return ges_two_finger_tap_duration:tousecs()
     elseif type == "ges_hold_interval" then
-        return ges_hold_interval
+        return ges_hold_interval:tousecs()
     elseif type == "ges_pan_delayed_interval" then
-        return ges_pan_delayed_interval
+        return ges_pan_delayed_interval:tousecs()
     elseif type == "ges_swipe_interval" then
-        return ges_swipe_interval
+        return ges_swipe_interval:tousecs()
     end
 end
 
 function GestureDetector:clearStates()
-    self:clearState(0)
-    self:clearState(1)
+    for k, _ in pairs(self.states) do
+        self:clearState(k)
+    end
 end
 
 function GestureDetector:initialState(tev)
@@ -311,6 +361,9 @@ function GestureDetector:initialState(tev)
                 -- user starts a new touch motion
                 if not self.detectings[slot] then
                     self.detectings[slot] = true
+                    -- NOTE: We can't use a simple reference, because tev is actually Input's self.ev_slots[slot],
+                    --       and *that* is a fixed reference for a given slot!
+                    --       Here, we really want to rememver the *first* tev, so, make a copy of it.
                     self.first_tevs[slot] = self:deepCopyEv(tev)
                     -- default to tap state
                     return self:switchState("tapState", tev)
@@ -321,23 +374,82 @@ function GestureDetector:initialState(tev)
 end
 
 --[[--
+Attempts to figure out which clock source tap events are using...
+]]
+function GestureDetector:probeClockSource(timev)
+    -- We'll check if that timestamp is +/- 2.5s away from the three potential clock sources supported by evdev.
+    -- We have bigger issues than this if we're parsing events more than 3s late ;).
+    local threshold = TimeVal:new{ sec = 2, usec = 500000 }
+
+    -- Start w/ REALTIME, because it's the easiest to detect ;).
+    local realtime = TimeVal:realtime_coarse()
+    -- clock-threshold <= timev <= clock+threshold
+    if timev >= realtime - threshold and timev <= realtime + threshold then
+        self.clock_id = C.CLOCK_REALTIME
+        logger.info("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_REALTIME")
+        return
+    end
+
+    -- Then MONOTONIC, as it's (hopefully) more common than BOOTTIME (and also guaranteed to be an usable clock source)
+    local monotonic = TimeVal:monotonic_coarse()
+    if timev >= monotonic - threshold and timev <= monotonic + threshold then
+        self.clock_id = C.CLOCK_MONOTONIC
+        logger.info("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_MONOTONIC")
+        return
+    end
+
+    -- Finally, BOOTTIME
+    local boottime = TimeVal:boottime()
+    -- NOTE: It was implemented in Linux 2.6.39, so, reject 0, which would mean it's unsupported...
+    if not boottime:isZero() and timev >= boottime - threshold and timev <= boottime + threshold then
+        self.clock_id = C.CLOCK_BOOTTIME
+        logger.info("GestureDetector:probeClockSource: Touch event timestamps appear to use CLOCK_BOOTTIME")
+        return
+    end
+
+    -- If we're here, the detection was inconclusive :/
+    self.clock_id = -1
+    logger.info("GestureDetector:probeClockSource: Touch event clock source detection was inconclusive")
+    -- Print all all the gory details in debug mode when this happens...
+    logger.dbg("Input frame    :", timev:tonumber())
+    logger.dbg("CLOCK_REALTIME :", realtime:tonumber())
+    logger.dbg("CLOCK_MONOTONIC:", monotonic:tonumber())
+    logger.dbg("CLOCK_BOOTTIME :", boottime:tonumber())
+end
+
+function GestureDetector:getClockSource()
+    return self.clock_id
+end
+
+function GestureDetector:resetClockSource()
+    self.clock_id = nil
+end
+
+--[[--
 Handles both single and double tap.
 --]]
 function GestureDetector:tapState(tev)
+    -- Attempt to detect the clock source for these events (we reset it on suspend to discriminate MONOTONIC from BOOTTIME).
+    if not self.clock_id then
+        self:probeClockSource(tev.timev)
+    end
+
     logger.dbg("in tap state...")
     local slot = tev.slot
     if tev.id == -1 then
+        local s1 = self.input.main_finger_slot
+        local s2 = self.input.main_finger_slot + 1
         -- end of tap event
-        if self.detectings[0] and self.detectings[1] then
+        if self.detectings[s1] and self.detectings[s2] then
             if self:isTwoFingerTap() then
                 local pos0 = Geom:new{
-                    x = self.last_tevs[0].x,
-                    y = self.last_tevs[0].y,
+                    x = self.last_tevs[s1].x,
+                    y = self.last_tevs[s1].y,
                     w = 0, h = 0,
                 }
                 local pos1 = Geom:new{
-                    x = self.last_tevs[1].x,
-                    y = self.last_tevs[1].y,
+                    x = self.last_tevs[s2].x,
+                    y = self.last_tevs[s2].y,
                     w = 0, h = 0,
                 }
                 local tap_span = pos0:distance(pos1)
@@ -397,7 +509,7 @@ function GestureDetector:handleDoubleTap(tev)
     local tap_interval = self.input.tap_interval_override or ges_tap_interval
     -- We do tap bounce detection even when double tap is enabled (so, double tap
     -- is triggered when: ges_tap_interval <= delay < ges_double_tap_interval)
-    if tap_interval > 0 and self.last_taps[slot] ~= nil and self:isTapBounce(self.last_taps[slot], cur_tap, tap_interval) then
+    if not tap_interval:isZero() and self.last_taps[slot] ~= nil and self:isTapBounce(self.last_taps[slot], cur_tap, tap_interval) then
         logger.dbg("tap bounce detected in slot", slot, ": ignored")
         -- Simply ignore it, and clear state as this is the end of a touch event
         -- (this doesn't clear self.last_taps[slot], so a 3rd tap can be detected
@@ -410,6 +522,7 @@ function GestureDetector:handleDoubleTap(tev)
                 self:isDoubleTap(self.last_taps[slot], cur_tap) then
         -- it is a double tap
         self:clearState(slot)
+        self.input:clearTimeout(slot, "double_tap")
         ges_ev.ges = "double_tap"
         self.last_taps[slot] = nil
         logger.dbg("double tap detected in slot", slot)
@@ -431,16 +544,9 @@ function GestureDetector:handleDoubleTap(tev)
     -- may be the start of a double tap. We'll send it as a single tap after
     -- a timer if no second tap happened in the double tap delay.
     logger.dbg("set up single/double tap timer")
-    -- deadline should be calculated by adding current tap time and the interval
-    -- (No need to compute self._has_real_clock_time_ev_time here, we should always
-    -- have been thru handleNonTap() where it is computed, before getting here)
-    local ref_time = self._has_real_clock_time_ev_time and cur_tap.timev or TimeVal:now()
-    local deadline = ref_time + TimeVal:new{
-        sec = 0,
-        usec = not self.input.disable_double_tap and ges_double_tap_interval or 0,
-    }
-    self.input:setTimeout(function()
-        logger.dbg("in single/double tap timer", self.last_taps[slot] ~= nil)
+    -- setTimeout will handle computing the deadline in the least lossy way possible given the platform.
+    self.input:setTimeout(slot, "double_tap", function()
+        logger.dbg("in single/double tap timer, single tap:", self.last_taps[slot] ~= nil)
         -- double tap will set last_tap to nil so if it is not, then
         -- user has not double-tap'ed: it's a single tap
         if self.last_taps[slot] ~= nil then
@@ -449,7 +555,7 @@ function GestureDetector:handleDoubleTap(tev)
             logger.dbg("single tap detected in slot", slot, ges_ev.pos)
             return ges_ev
         end
-    end, deadline)
+    end, tev.timev, ges_double_tap_interval)
     -- we are already at the end of touch event
     -- so reset the state
     self:clearState(slot)
@@ -461,34 +567,21 @@ function GestureDetector:handleNonTap(tev)
         -- switched from other state, probably from initialState
         -- we return nil in this case
         self.states[slot] = self.tapState
-        if self._has_real_clock_time_ev_time == nil then
-            if tev.timev.sec < TimeVal:now().sec - 600 then
-                -- ev.timev is probably the uptime since device boot
-                -- (which might pause on suspend) that we can't use
-                -- with setTimeout(): we'll use TimeVal:now()
-                self._has_real_clock_time_ev_time = false
-                logger.info("event times are not real clock time: some adjustments will be made")
-            else
-                -- assume they are real clock time
-                self._has_real_clock_time_ev_time = true
-                logger.info("event times are real clock time: no adjustment needed")
-            end
-        end
         logger.dbg("set up hold timer")
-        local ref_time = self._has_real_clock_time_ev_time and tev.timev or TimeVal:now()
-        local deadline = ref_time + TimeVal:new{
-            sec = 0, usec = ges_hold_interval
-        }
-        -- Be sure the following setTimeout only react to this tapState
-        local hold_timer_id = tev.timev
-        self.hold_timer_id[slot] = hold_timer_id
-        self.input:setTimeout(function()
-            if self.states[slot] == self.tapState and self.hold_timer_id[slot] == hold_timer_id then
-                -- timer set in tapState, so we switch to hold
+        -- Invalidate previous hold timers on that slot so that the following setTimeout will only react to *this* tapState.
+        self.input:clearTimeout(slot, "hold")
+        self.pending_hold_timer[slot] = true
+        self.input:setTimeout(slot, "hold", function()
+            -- If the pending_hold_timer we set on our first switch to tapState on this slot (e.g., first finger down event),
+            -- back when the timer was setup, is still relevant (e.g., the slot wasn't run through clearState by a finger up gesture),
+            -- then check that we're still in a stationary finger down state (e.g., tapState).
+            if self.pending_hold_timer[slot] and self.states[slot] == self.tapState then
+                -- That means we can switch to hold
                 logger.dbg("hold gesture detected in slot", slot)
+                self.pending_hold_timer[slot] = nil
                 return self:switchState("holdState", tev, true)
             end
-        end, deadline)
+        end, tev.timev, ges_hold_interval)
         return {
             ges = "touch",
             pos = Geom:new{
@@ -499,12 +592,10 @@ function GestureDetector:handleNonTap(tev)
             time = tev.timev,
         }
     else
-        -- it is not end of touch event, see if we need to switch to
-        -- other states
+        -- We're still inside a stream of input events, see if we need to switch to other states.
         if (tev.x and math.abs(tev.x - self.first_tevs[slot].x) >= self.PAN_THRESHOLD) or
         (tev.y and math.abs(tev.y - self.first_tevs[slot].y) >= self.PAN_THRESHOLD) then
-            -- if user's finger moved long enough in X or
-            -- Y distance, we switch to pan state
+            -- If user's finger moved far enough on the X or Y axes, switch to pan state.
             return self:switchState("panState", tev)
         end
     end
@@ -516,7 +607,9 @@ function GestureDetector:panState(tev)
     if tev.id == -1 then
         -- end of pan, signal swipe gesture if necessary
         if self:isSwipe(slot) then
-            if self.detectings[0] and self.detectings[1] then
+            local s1 = self.input.main_finger_slot
+            local s2 = self.input.main_finger_slot + 1
+            if self.detectings[s1] and self.detectings[s2] then
                 local ges_ev = self:handleTwoFingerPan(tev)
                 self:clearStates()
                 if ges_ev then
@@ -589,11 +682,16 @@ end
 
 function GestureDetector:handlePan(tev)
     local slot = tev.slot
-    if self.detectings[0] and self.detectings[1] then
+    local s1 = self.input.main_finger_slot
+    local s2 = self.input.main_finger_slot + 1
+    if self.detectings[s1] and self.detectings[s2] then
         return self:handleTwoFingerPan(tev)
     else
         local pan_direction, pan_distance = self:getPath(slot)
         local tv_diff = self.last_tevs[slot].timev - self.first_tevs[slot].timev
+        if not tv_diff:isPositive() then
+            tv_diff = TimeVal.huge
+        end
 
         local pan_ev = {
             ges = "pan",
@@ -620,7 +718,7 @@ function GestureDetector:handlePan(tev)
 
         -- delayed pan, used where necessary to reduce potential activation of panning
         -- when swiping is intended (e.g., for the menu or for multiswipe)
-        if not ((tv_diff.sec == 0) and (tv_diff.usec < ges_pan_delayed_interval)) then
+        if not (tv_diff < ges_pan_delayed_interval) then
             pan_ev.relative_delayed.x = tev.x - self.first_tevs[slot].x
             pan_ev.relative_delayed.y = tev.y - self.first_tevs[slot].y
             pan_ev.distance_delayed = pan_distance
@@ -689,10 +787,12 @@ function GestureDetector:handlePan(tev)
 end
 
 function GestureDetector:handleTwoFingerPan(tev)
+    local s1 = self.input.main_finger_slot
+    local s2 = self.input.main_finger_slot + 1
     -- triggering slot
     local tslot = tev.slot
     -- reference slot
-    local rslot = tslot == 1 and 0 or 1
+    local rslot = tslot == s2 and s1 or s2
     local tpan_dir, tpan_dis = self:getPath(tslot)
     local tstart_pos = Geom:new{
         x = self.first_tevs[tslot].x,
@@ -760,7 +860,9 @@ function GestureDetector:handlePanRelease(tev)
         pos = release_pos,
         time = tev.timev,
     }
-    if self.detectings[0] and self.detectings[1] then
+    local s1 = self.input.main_finger_slot
+    local s2 = self.input.main_finger_slot + 1
+    if self.detectings[s1] and self.detectings[s2] then
         logger.dbg("two finger pan release detected")
         pan_ev.ges = "two_finger_pan_release"
         self:clearStates()
@@ -774,7 +876,7 @@ end
 function GestureDetector:holdState(tev, hold)
     logger.dbg("in hold state...")
     local slot = tev.slot
-    -- when we switch to hold state, we pass additional param "hold"
+    -- When we switch to hold state, we pass an additional boolean param "hold".
     if tev.id ~= -1 and hold and self.last_tevs[slot].x and self.last_tevs[slot].y then
         self.states[slot] = self.holdState
         return {

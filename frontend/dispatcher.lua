@@ -93,6 +93,7 @@ local settingsList = {
     folder_shortcuts = { category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true, separator=true,},
 
     -- reader settings
+    toggle_status_bar = { category="none", event="TapFooter", title=_("Toggle status bar"), rolling=true, paging=true, separator=true,},
     prev_chapter = { category="none", event="GotoPrevChapter", title=_("Previous chapter"), rolling=true, paging=true,},
     next_chapter = { category="none", event="GotoNextChapter", title=_("Next chapter"), rolling=true, paging=true,},
     first_page = { category="none", event="GoToBeginning", title=_("First page"), rolling=true, paging=true,},
@@ -145,7 +146,7 @@ local settingsList = {
     render_dpi = {category="string", rolling=true},
     line_spacing = {category="absolutenumber", rolling=true, separator=true,},
     font_size = {category="absolutenumber", title=_("Set font size to %1"), rolling=true},
-    font_weight = {category="string", rolling=true},
+    font_base_weight = {category="string", rolling=true},
     font_gamma = {category="string", rolling=true},
     font_hinting = {category="string", rolling=true},
     font_kerning = {category="string", rolling=true, separator=true,},
@@ -219,6 +220,8 @@ local dispatcher_menu_order = {
     "folder_shortcuts",
 
     -- reader
+    "toggle_status_bar",
+
     "page_jmp",
     "prev_chapter",
     "next_chapter",
@@ -248,7 +251,7 @@ local dispatcher_menu_order = {
     "decrease_font",
     "font_size",
     "font_gamma",
-    "font_weight",
+    "font_base_weight",
     "font_hinting",
     "font_kerning",
 

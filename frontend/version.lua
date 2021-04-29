@@ -67,4 +67,22 @@ function Version:getShortVersion()
     return self.short
 end
 
+--- Returns the release date of the current version of KOReader, YYYYmmdd, in UTC.
+--- Technically closer to the build date, but close enough where official builds are concerned ;).
+-- @treturn int date
+function Version:getBuildDate()
+    if not self.date then
+        local lfs = require("libs/libkoreader-lfs")
+        local mtime = lfs.attributes("git-rev", "modification")
+        if mtime then
+            local ts = os.date("!%Y%m%d", mtime)
+            self.date = tonumber(ts) or 0
+        else
+            -- No git-rev file?
+            self.date = 0
+        end
+    end
+    return self.date
+end
+
 return Version

@@ -135,7 +135,7 @@ local footerTextGeneratorMap = {
                 return (prefix .. " %d"):format(powerd:frontlightIntensity())
             end
         else
-            if footer.settings.hide_empty_generators then
+            if footer.settings.all_at_once and footer.settings.hide_empty_generators then
                 return ""
             else
                 return T(_("%1 Off"), prefix)
@@ -189,7 +189,7 @@ local footerTextGeneratorMap = {
         local symbol_type = footer.settings.item_prefix or "icons"
         local prefix = symbol_prefix[symbol_type].bookmark_count
         local bookmark_count = footer.ui.bookmark:getNumberOfBookmarks()
-        if footer.settings.hide_empty_generators and bookmark_count == 0 then
+        if footer.settings.all_at_once and footer.settings.hide_empty_generators and bookmark_count == 0 then
             return ""
         end
         return prefix .. " " .. tostring(bookmark_count)
@@ -310,7 +310,7 @@ local footerTextGeneratorMap = {
             if NetworkMgr:isWifiOn() then
                 return symbol_prefix.icons.wifi_status
             else
-                if footer.settings.hide_empty_generators then
+                if footer.settings.all_at_once and footer.settings.hide_empty_generators then
                     return ""
                 else
                     return symbol_prefix.icons.wifi_status_off
@@ -321,7 +321,7 @@ local footerTextGeneratorMap = {
             if NetworkMgr:isWifiOn() then
                 return T(_("%1 On"), prefix)
             else
-                if footer.settings.hide_empty_generators then
+                if footer.settings.all_at_once and footer.settings.hide_empty_generators then
                     return ""
                 else
                     return T(_("%1 Off"), prefix)
@@ -984,6 +984,20 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
             },
             getMinibarOption("all_at_once", self.updateFooterTextGenerator),
+            {
+                text = _("Hide empty items"),
+                help_text = _([[This will hide values like 0 or off.]]),
+                enabled_func = function()
+                    return self.settings.all_at_once
+                end,
+                checked_func = function()
+                    return self.settings.hide_empty_generators
+                end,
+                callback = function()
+                    self.settings.hide_empty_generators = not self.settings.hide_empty_generators
+                    self:refreshFooter(true, true)
+                end,
+            },
             getMinibarOption("reclaim_height"),
             {
                 text = _("Auto refresh"),
@@ -1002,17 +1016,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self.settings.bottom_horizontal_separator = not self.settings.bottom_horizontal_separator
-                    self:refreshFooter(true, true)
-                end,
-            },
-            {
-                text = _("Hide empty items"),
-                help_text = _([[This will hide values like 0 or off.]]),
-                checked_func = function()
-                    return self.settings.hide_empty_generators
-                end,
-                callback = function()
-                    self.settings.hide_empty_generators = not self.settings.hide_empty_generators
                     self:refreshFooter(true, true)
                 end,
             },
@@ -2161,6 +2164,11 @@ function ReaderFooter:onTapFooter(ges)
 end
 
 function ReaderFooter:onHoldFooter()
+    -- We're lower priority than readerhighlight_hold, which means it's already been tripped by the time we got here.
+    -- If it actually had something to do, ReaderHighlight would have stopped propagating the event,
+    -- so we can safely clear ReaderHighlight state here, otherwise it'll get confused on the next tap...
+    -- (c.f., #7464)
+    self.ui.highlight:clear()
     if self.mode == self.mode_list.off then return end
     if self.settings.skim_widget_on_hold then
         self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
@@ -2217,22 +2225,40 @@ function ReaderFooter:onCloseDocument()
     self:unscheduleFooterAutoRefresh()
 end
 
+-- Used by event handlers that can trip without direct UI interaction...
+function ReaderFooter:maybeUpdateFooter()
+    -- ...so we need to avoid stomping over unsuspecting widgets (usually, ScreenSaver).
+    if UIManager:getTopWidget() == "ReaderUI" then
+        self:onUpdateFooter(self.view.footer_visible)
+    else
+        self:onUpdateFooter()
+    end
+end
+
 function ReaderFooter:onFrontlightStateChanged()
     if self.settings.frontlight then
-        self:onUpdateFooter(true)
+        self:maybeUpdateFooter()
     end
 end
 
 function ReaderFooter:onNetworkConnected()
     if self.settings.wifi_status then
-        self:onUpdateFooter(true)
+        self:maybeUpdateFooter()
     end
 end
 
 function ReaderFooter:onNetworkDisconnected()
     if self.settings.wifi_status then
-        self:onUpdateFooter(true)
+        self:maybeUpdateFooter()
     end
+end
+
+function ReaderFooter:onCharging()
+    self:maybeUpdateFooter()
+end
+
+function ReaderFooter:onNotCharging()
+    self:maybeUpdateFooter()
 end
 
 function ReaderFooter:onSetRotationMode()

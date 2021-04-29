@@ -118,6 +118,14 @@ function CreDocument:engineInit()
                 end
             end
         end
+        -- Make sure registered fonts have a proper entry at weight 400 and 700 when
+        -- possible, to avoid having synthesized fonts for these normal and bold weights.
+        -- This allows restoring a bit of the previous behaviour of crengine when it
+        -- wasn't handling font styles, and associated for each typeface one single
+        -- font to regular (400) and one to bold (700).
+        -- It should ensure we use real fonts (and not synthesized ones) for normal text
+        -- and bold text with the font_base_weight setting set to its default value of 0 (=400).
+        cre.regularizeRegisteredFontsWeights(true) -- true to print what modifications were made
 
         engine_initialized = true
     end
@@ -934,7 +942,7 @@ function CreDocument:setupFallbackFontFaces()
     -- names than ',' or ';', without the need to have to use quotes.
     local s_fallbacks = table.concat(fallbacks, "|")
     logger.dbg("CreDocument: set fallback font faces:", s_fallbacks)
-    self._document:setStringProperty("crengine.font.fallback.face", s_fallbacks)
+    self._document:setStringProperty("crengine.font.fallback.faces", s_fallbacks)
 end
 
 -- To use the new crengine language typography facilities (hyphenation, line breaking,
@@ -1067,9 +1075,12 @@ function CreDocument:setInterlineSpacePercent(percent)
     self._document:setDefaultInterlineSpace(percent)
 end
 
-function CreDocument:toggleFontBolder(toggle)
-    logger.dbg("CreDocument: toggle font bolder", toggle)
-    self._document:setIntProperty("font.face.weight.embolden", toggle)
+function CreDocument:setFontBaseWeight(weight)
+    -- In frontend, we use: 0, 1, -0.5, a delta from the regular weight of 400.
+    -- crengine expects for these: 400, 500, 350
+    local cre_weight = math.floor(400 + weight*100)
+    logger.dbg("CreDocument: set font base weight", weight, "=", cre_weight)
+    self._document:setIntProperty("font.face.base.weight", cre_weight)
 end
 
 function CreDocument:getGammaLevel()

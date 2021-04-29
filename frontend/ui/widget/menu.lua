@@ -88,7 +88,7 @@ local MenuCloseButton = InputContainer:new{
     overlap_align = "right",
     padding_right = 0,
     menu = nil,
-    dimen = Geom:new{},
+    dimen = nil,
 }
 
 function MenuCloseButton:init()
@@ -407,7 +407,7 @@ function MenuItem:init()
     }
     local hgroup = HorizontalGroup:new{
         align = "center",
-        HorizontalSpan:new{ width = Size.padding.fullscreen },
+        HorizontalSpan:new{ width = self.items_padding or Size.padding.fullscreen },
     }
     if self.shortcut then
         table.insert(hgroup, ItemShortCutIcon:new{
@@ -544,8 +544,8 @@ local Menu = FocusManager:new{
     -- height will be calculated according to item number if not given
     height = nil,
     header_padding = Size.padding.large,
-    dimen = Geom:new{},
-    item_table = {},
+    dimen = nil,
+    item_table = nil, -- NOT mandatory (will be empty)
     item_shortcuts = {
         "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
         "A", "S", "D", "F", "G", "H", "J", "K", "L", "Del",
@@ -605,9 +605,9 @@ end
 
 function Menu:init()
     self.show_parent = self.show_parent or self
+    self.item_table = self.item_table or {}
     self.item_table_stack = {}
-    self.dimen.w = self.width
-    self.dimen.h = self.height or Screen:getHeight()
+    self.dimen = Geom:new{ w = self.width, h = self.height or Screen:getHeight() }
     if self.dimen.h > Screen:getHeight() or self.dimen.h == nil then
         self.dimen.h = Screen:getHeight()
     end
@@ -733,8 +733,8 @@ function Menu:init()
                     local page = tonumber(self.page_info_text.input_dialog:getInputText())
                     if page and page >= 1 and page <= self.page_num then
                         self:onGotoPage(page)
+                        self.page_info_text:closeInputDialog()
                     end
-                    self.page_info_text:closeInputDialog()
                 end,
             },
         },
@@ -754,6 +754,7 @@ function Menu:init()
                     --- @todo Support utf8 lowercase.
                     local filename = FFIUtil.basename(v.path):lower()
                     local search_string = self.page_info_text.input_dialog:getInputText():lower()
+                    if search_string == "" then return end
                     local i, _ = filename:find(search_string)
                     if i == 1 and not v.is_go_up then
                         self:onGotoPage(math.ceil(k / self.perpage))
@@ -872,6 +873,7 @@ function Menu:init()
         radius = self.is_popout and math.floor(self.dimen.w / 20) or 0,
         content
     }
+
     ------------------------------------------
     -- start to set up input event callback --
     ------------------------------------------
@@ -1065,6 +1067,7 @@ function Menu:updateItems(select_number)
                 multilines_show_more_text = multilines_show_more_text,
                 align_baselines = self.align_baselines,
                 line_color = self.line_color,
+                items_padding = self.items_padding,
             }
             table.insert(self.item_group, item_tmp)
             -- this is for focus manager

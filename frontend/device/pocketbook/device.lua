@@ -28,6 +28,7 @@ local PocketBook = Generic:new{
     isTouchDevice = yes,
     hasKeys = yes,
     hasFrontlight = yes,
+    hasSystemFonts = yes,
     canSuspend = no,
     canReboot = yes,
     canPowerOff = yes,
@@ -360,6 +361,10 @@ end
 
 function PocketBook:getDeviceModel()
     return ffi.string(inkview.GetDeviceModel())
+end
+
+function PocketBook:getDefaultCoverPath()
+    return "/mnt/ext1/system/logo/offlogo/cover.bmp"
 end
 
 -- Pocketbook HW rotation modes start from landsape, CCW

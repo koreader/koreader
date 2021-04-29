@@ -595,14 +595,17 @@ function ReaderBookmark:updateBookmark(item)
 end
 
 function ReaderBookmark:renameBookmark(item, from_highlight)
+    local bookmark
     if from_highlight then
         -- Called by ReaderHighlight:editHighlight, we need to find the bookmark
-        for i=1, #self.bookmarks do
-            if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
-                item = self.bookmarks[i]
-                if item.text == nil or item.text == "" then
+        local pboxes = item.pboxes
+        for __, bm in ipairs(self.bookmarks) do
+            if item.datetime == bm.datetime and item.page == bm.page then
+                bookmark = bm
+                bookmark.pboxes = pboxes
+                if bookmark.text == nil or bookmark.text == "" then
                     -- Make up bookmark text as done in onShowBookmark
-                    local page = item.page
+                    local page = bookmark.page
                     if not self.ui.document.info.has_pages then
                         page = self.ui.document:getPageFromXPointer(page)
                         if self.ui.document:hasHiddenFlows() then
@@ -613,18 +616,20 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                             end
                         end
                     end
-                    item.text = T(_("Page %1 %2 @ %3"), page, item.notes, item.datetime)
+                    bookmark.text = T(_("Page %1 %2 @ %3"), page, bookmark.notes, bookmark.datetime)
                 end
                 break
             end
         end
-        if item.text == nil then -- bookmark not found
+        if bookmark.text == nil then -- bookmark not found
             return
         end
+    else
+        bookmark = item
     end
     self.input = InputDialog:new{
         title = _("Rename bookmark"),
-        input = item.text,
+        input = bookmark.text,
         input_type = "text",
         allow_newline = true,
         cursor_at_end = false,
@@ -643,10 +648,17 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                     callback = function()
                         local value = self.input:getInputValue()
                         if value ~= "" then
-                            for i=1, #self.bookmarks do
-                                if item.text == self.bookmarks[i].text and  item.pos0 == self.bookmarks[i].pos0 and
-                                    item.pos1 == self.bookmarks[i].pos1 and item.page == self.bookmarks[i].page then
-                                    self.bookmarks[i].text = value
+                            for __, bm in ipairs(self.bookmarks) do
+                                if bookmark.text == bm.text and  bookmark.pos0 == bm.pos0 and
+                                    bookmark.pos1 == bm.pos1 and bookmark.page == bm.page then
+                                    bm.text = value
+                                    -- A bookmark isn't necessarily a highlight (it doesn't have pboxes)
+                                    if bookmark.pboxes then
+                                        local setting = G_reader_settings:readSetting("save_document")
+                                        if setting ~= "disable" then
+                                            self.ui.document:updateHighlightContents(bookmark.page, bookmark, value)
+                                        end
+                                    end
                                     UIManager:close(self.input)
                                     if not from_highlight then
                                         self.refresh()

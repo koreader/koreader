@@ -1,6 +1,9 @@
 local Generic = require("device/generic/device") -- <= look at this file!
 local TimeVal = require("ui/timeval")
 local logger = require("logger")
+local ffi = require("ffi")
+local C = ffi.C
+require("ffi/linux_input_h")
 
 local function yes() return true end
 local function no() return false end
@@ -16,11 +19,6 @@ local function getModel()
     return model == "reMarkable 2.0", model
 end
 
-local EV_ABS = 3
-local ABS_X = 00
-local ABS_Y = 01
-local ABS_MT_POSITION_X = 53
-local ABS_MT_POSITION_Y = 54
 -- Resolutions from libremarkable src/framebuffer/common.rs
 local screen_width = 1404 -- unscaled_size_check: ignore
 local screen_height = 1872 -- unscaled_size_check: ignore
@@ -40,6 +38,7 @@ local Remarkable = Generic:new{
     canPowerOff = yes,
     isTouchDevice = yes,
     hasFrontlight = no,
+    hasSystemFonts = yes,
     display_dpi = 226,
     -- Despite the SoC supporting it, it's finicky in practice (#6772)
     canHWInvert = no,
@@ -57,14 +56,13 @@ local Remarkable1 = Remarkable:new{
 }
 
 function Remarkable1:adjustTouchEvent(ev, by)
-    if ev.type == EV_ABS then
-        ev.time = TimeVal:now()
+    if ev.type == C.EV_ABS then
         -- Mirror X and Y and scale up both X & Y as touch input is different res from
         -- display
-        if ev.code == ABS_MT_POSITION_X then
+        if ev.code == C.ABS_MT_POSITION_X then
             ev.value = (Remarkable1.mt_width - ev.value) *  by.mt_scale_x
         end
-        if ev.code == ABS_MT_POSITION_Y then
+        if ev.code == C.ABS_MT_POSITION_Y then
             ev.value = (Remarkable1.mt_height - ev.value) * by.mt_scale_y
         end
     end
@@ -81,26 +79,32 @@ local Remarkable2 = Remarkable:new{
 }
 
 function Remarkable2:adjustTouchEvent(ev, by)
-    ev.time = TimeVal:now()
-    if ev.type == EV_ABS then
+    if ev.type == C.EV_ABS then
         -- Mirror Y and scale up both X & Y as touch input is different res from
         -- display
-        if ev.code == ABS_MT_POSITION_X then
+        if ev.code == C.ABS_MT_POSITION_X then
             ev.value = (ev.value) * by.mt_scale_x
         end
-        if ev.code == ABS_MT_POSITION_Y then
+        if ev.code == C.ABS_MT_POSITION_Y then
             ev.value = (Remarkable2.mt_height - ev.value) * by.mt_scale_y
         end
+    end
+
+    -- Wacom uses CLOCK_REALTIME, but the Touchscreen spits out frozen timestamps.
+    -- Inject CLOCK_MONOTONIC timestamps at the end of every input frame in order to have consistent gesture detection across input devices.
+    -- c.f., #7536
+    if ev.type == C.EV_SYN and ev.code == C.SYN_REPORT then
+       ev.time = TimeVal:now()
     end
 end
 
 local adjustAbsEvt = function(self, ev)
-    if ev.type == EV_ABS then
-        if ev.code == ABS_X then
-            ev.code = ABS_Y
+    if ev.type == C.EV_ABS then
+        if ev.code == C.ABS_X then
+            ev.code = C.ABS_Y
             ev.value = (wacom_height - ev.value) * wacom_scale_y
-        elseif ev.code == ABS_Y then
-            ev.code = ABS_X
+        elseif ev.code == C.ABS_Y then
+            ev.code = C.ABS_X
             ev.value = ev.value * wacom_scale_x
         end
     end
@@ -187,8 +191,6 @@ function Remarkable:suspend()
 end
 
 function Remarkable:powerOff()
-    self.screen:clear()
-    self.screen:refreshFull()
     os.execute("systemctl poweroff")
 end
 
@@ -197,6 +199,10 @@ function Remarkable:reboot()
 end
 
 logger.info(string.format("Starting %s", rm_model))
+
+function Remarkable:getDefaultCoverPath()
+    return "/usr/share/remarkable/poweroff.png"
+end
 
 if isRm2 then
     if not os.getenv("RM2FB_SHIM") then

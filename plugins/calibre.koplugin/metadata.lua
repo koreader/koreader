@@ -8,6 +8,7 @@ of storing it.
 @module koplugin.calibre.metadata
 --]]--
 
+local TimeVal = require("ui/timeval")
 local lfs = require("libs/libkoreader-lfs")
 local rapidjson = require("rapidjson")
 local logger = require("logger")
@@ -26,9 +27,20 @@ local used_metadata = {
     "series_index"
 }
 
-local function slim(book)
+-- The search metadata cache requires an even smaller subset
+local search_used_metadata = {
+    "lpath",
+    "size",
+    "title",
+    "authors",
+    "tags",
+    "series",
+    "series_index"
+}
+
+local function slim(book, is_search)
     local slim_book = {}
-    for _, k in ipairs(used_metadata) do
+    for _, k in ipairs(is_search and search_used_metadata or used_metadata) do
         if k == "series" or k == "series_index" then
             slim_book[k] = book[k] or rapidjson.null
         elseif k == "tags" then
@@ -124,16 +136,8 @@ end
 
 -- saves books' metadata to JSON file
 function CalibreMetadata:saveBookList()
-    -- replace bad table values with null
     local file = self.metadata
     local books = self.books
-    for index, book in ipairs(books) do
-        for key, item in pairs(book) do
-            if type(item) == "function" then
-                books[index][key] = rapidjson.null
-            end
-        end
-    end
     rapidjson.dump(rapidjson.array(books), file, { pretty = true })
 end
 
@@ -172,13 +176,7 @@ end
 
 -- gets the book metadata at the given index
 function CalibreMetadata:getBookMetadata(index)
-    local book = self.books[index]
-    for key, value in pairs(book) do
-        if type(value) == "function" then
-            book[key] = rapidjson.null
-        end
-    end
-    return book
+    return self.books[index]
 end
 
 -- removes deleted books from table
@@ -199,10 +197,16 @@ function CalibreMetadata:prune()
 end
 
 -- removes unused metadata from books
-function CalibreMetadata:cleanUnused()
+function CalibreMetadata:cleanUnused(is_search)
     for index, book in ipairs(self.books) do
-        self.books[index] = slim(book)
+        self.books[index] = slim(book, is_search)
     end
+
+    -- We don't want to stomp on the library's actual JSON db for metadata searches.
+    if is_search then
+        return
+    end
+
     self:saveBookList()
 end
 
@@ -232,14 +236,13 @@ end
 -- in a given path. It will find calibre files if they're on disk and
 -- try to load info from them.
 
--- NOTE: you should care about the books table, because it could be huge.
+-- NOTE: Take special notice of the books table, because it could be huge.
 -- If you're not working with the metadata directly (ie: in wireless connections)
 -- you should copy relevant data to another table and free this one to keep things tidy.
 
 function CalibreMetadata:init(dir, is_search)
     if not dir then return end
-    local socket = require("socket")
-    local start = socket.gettime()
+    local start = TimeVal:now()
     self.path = dir
     local ok_meta, ok_drive, file_meta, file_drive = findCalibreFiles(dir)
     self.driveinfo = file_drive
@@ -256,13 +259,14 @@ function CalibreMetadata:init(dir, is_search)
 
     local msg
     if is_search then
-        msg = string.format("(search) in %f milliseconds: %d books",
-            (socket.gettime() - start) * 1000, #self.books)
+        self:cleanUnused(is_search)
+        msg = string.format("(search) in %.3f milliseconds: %d books",
+            (TimeVal:now() - start):tomsecs(), #self.books)
     else
         local deleted_count = self:prune()
         self:cleanUnused()
-        msg = string.format("in %f milliseconds: %d books. %d pruned",
-            (socket.gettime() - start) * 1000, #self.books, deleted_count)
+        msg = string.format("in %.3f milliseconds: %d books. %d pruned",
+            (TimeVal:now() - start):tomsecs(), #self.books, deleted_count)
     end
     logger.info(string.format("calibre info loaded from disk %s", msg))
     return true

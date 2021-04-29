@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local Blitbuffer = require("ffi/blitbuffer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -10,6 +11,7 @@ local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util  = require("util")
@@ -564,8 +566,14 @@ end
 function ReaderToc:updateCurrentNode()
     if #self.collapsed_toc > 0 and self.pageno then
         for i, v in ipairs(self.collapsed_toc) do
-            if v.page > self.pageno then
-                self.collapsed_toc.current = i > 1 and i - 1 or 1
+            if v.page >= self.pageno then
+                if v.page == self.pageno then
+                    -- Use first TOC item on current page (which may have others)
+                    self.collapsed_toc.current = i
+                else
+                    -- Use previous TOC item (if any), which is on a previous page
+                    self.collapsed_toc.current = i > 1 and i - 1 or 1
+                end
                 return
             end
         end
@@ -594,7 +602,7 @@ function ReaderToc:onShowToc()
     self:fillToc()
     -- build menu items
     if #self.toc > 0 and not self.toc[1].text then
-        for _,v in ipairs(self.toc) do
+        for _, v in ipairs(self.toc) do
             v.text = self.toc_indent:rep(v.depth-1)..self:cleanUpTocTitle(v.title, true)
             v.mandatory = v.page
             if self.ui.document:hasHiddenFlows() then
@@ -635,8 +643,9 @@ function ReaderToc:onShowToc()
 
     local items_per_page = G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_default
     local items_font_size = G_reader_settings:readSetting("toc_items_font_size") or Menu.getItemFontSize(items_per_page)
+    local items_show_separator = G_reader_settings:isTrue("toc_items_show_separator")
     -- Estimate expand/collapse icon size
-    -- *2/5 to acount for Menu top title and bottom icons, and add some air between consecutive icons
+    -- *2/5 to acount for Menu top title and bottom icons, and add some space between consecutive icons
     local icon_size = math.floor(Screen:getHeight() / items_per_page * 2/5)
     local button_width = icon_size * 2
     self.expand_button = Button:new{
@@ -676,12 +685,16 @@ function ReaderToc:onShowToc()
             depth = v.depth
         end
     end
+    local can_collapse = self:getMaxDepth() > 1
 
+    -- NOTE: If the ToC actually has multiple depth levels, we request smaller padding between items,
+    --       because we inflate the state Button's width on the left, mainly to give it a larger tap zone.
+    --       This yields *slightly* better alignment between state & mandatory (in terms of effective margins).
     local button_size = self.expand_button:getSize()
     local toc_menu = Menu:new{
         title = _("Table of Contents"),
         item_table = self.collapsed_toc,
-        state_size = button_size,
+        state_size = can_collapse and button_size or nil,
         ui = self.ui,
         is_borderless = true,
         is_popout = false,
@@ -692,7 +705,8 @@ function ReaderToc:onShowToc()
         align_baselines = true,
         items_per_page = items_per_page,
         items_font_size = items_font_size,
-        line_color = require("ffi/blitbuffer").COLOR_WHITE,
+        items_padding = can_collapse and math.floor(Size.padding.fullscreen / 2) or nil, -- c.f., note above. Menu's default is twice that.
+        line_color = items_show_separator and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE,
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",
@@ -739,7 +753,10 @@ function ReaderToc:onShowToc()
     function toc_menu:onMenuHold(item)
         -- Trim toc_indent
         local trimmed_text = util.ltrim(item.text)
+        -- Match the items' width
         local infomessage = InfoMessage:new{
+            width = Screen:getWidth() - (Size.padding.fullscreen * (can_collapse and 4 or 3)),
+            alignment = "center",
             show_icon = false,
             text = trimmed_text,
         }
@@ -915,12 +932,13 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
     -- might be useful to have the footer and SkimTo progress bar less crowded.
     -- This also affects the footer current chapter title, but leave the ToC itself unchanged.
     local genTocLevelIgnoreMenuItem = function(level)
-        if not self.ticks or not self.ticks[level] then
+        local ticks = self:getTocTicks()
+        if not ticks[level] then
             return
         end
         return {
             text_func = function()
-                return T(_("%1 entries at ToC depth %2"), #self.ticks[level], level)
+                return T(_("%1 entries at ToC depth %2"), #ticks[level], level)
             end,
             checked_func = function()
                 return not self.toc_ticks_ignored_levels[level]
@@ -936,18 +954,18 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
     menu_items.toc_ticks_level_ignore = {
         text_func = function()
             local nb_ticks = 0
-            if self.ticks then
-                for level=1, #self.ticks do
-                    if not self.toc_ticks_ignored_levels[level] then
-                        nb_ticks = nb_ticks + #self.ticks[level]
-                    end
+            local ticks = self:getTocTicks()
+            for level=1, #ticks do
+                if not self.toc_ticks_ignored_levels[level] then
+                    nb_ticks = nb_ticks + #ticks[level]
                 end
             end
             return T(_("Progress bars: %1 ticks"), nb_ticks)
         end,
         help_text = _([[The progress bars in the footer and the skim dialog can become cramped when the table of contents is complex. This allows you to restrict the number of tick marks.]]),
         enabled_func = function()
-            return self.ticks and #self.ticks > 0
+            local ticks = self:getTocTicks()
+            return #ticks > 0
         end,
         sub_item_table_func = function()
             local toc_ticks_levels = {}
@@ -961,7 +979,9 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
                     break
                 end
             end
-            toc_ticks_levels[#toc_ticks_levels].separator = true
+            if #toc_ticks_levels > 0 then
+                toc_ticks_levels[#toc_ticks_levels].separator = true
+            end
             table.insert(toc_ticks_levels, {
                 text = _("Bind chapter navigation to ticks"),
                 help_text = _([[Entries from ToC levels that are ignored in the progress bars will still be used for chapter navigation and 'page/time left until next chapter' in the footer.
@@ -1041,6 +1061,16 @@ Enabling this option will restrict display to the chapter titles of progress bar
             }
             UIManager:show(items_font)
         end,
+    }
+    menu_items.toc_items_show_separator = {
+        text = _("Add a separator between ToC entries"),
+        keep_menu_open = true,
+        checked_func = function()
+            return G_reader_settings:isTrue("toc_items_show_separator")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("toc_items_show_separator")
+        end
     }
 end
 

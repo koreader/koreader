@@ -3,7 +3,10 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 
---[[ Font settings for desktop linux, mac and android ]]--
+--[[ Font settings for systems with multiple font dirs ]]--
+
+local LINUX_FONT_PATH = "share/fonts"
+local MACOS_FONT_PATH = "Library/fonts"
 
 local function getDir(isUser)
     local home = Device.home_dir
@@ -20,11 +23,16 @@ local function getDir(isUser)
         else
             return "/ebrmain/adobefonts;/ebrmain/fonts"
         end
+    elseif Device:isRemarkable() then
+        return isUser and string.format("%s/.local/%s", home, LINUX_FONT_PATH)
+            or string.format("/usr/%s", LINUX_FONT_PATH)
     elseif Device:isDesktop() or Device:isEmulator() then
         if jit.os == "OSX" then
-            return isUser and home .. "/Library/fonts" or "/Library/fonts"
+            return isUser and string.format("%s/%s", home, MACOS_FONT_PATH)
+                or string.format("/%s", MACOS_FONT_PATH)
         else
-            return isUser and home .. "/.local/share/fonts" or "/usr/share/fonts"
+            return isUser and string.format("%s/.local/%s", home, LINUX_FONT_PATH)
+                or string.format("/usr/%s", LINUX_FONT_PATH)
         end
     end
 end

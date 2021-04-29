@@ -5,6 +5,7 @@ This module manages widgets.
 local Device = require("device")
 local Event = require("ui/event")
 local Geom = require("ui/geometry")
+local TimeVal = require("ui/timeval")
 local dbg = require("dbg")
 local logger = require("logger")
 local ffiUtil = require("ffi/util")
@@ -13,7 +14,6 @@ local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
 
-local MILLION = 1000000
 local DEFAULT_FULL_REFRESH_COUNT = 6
 
 -- there is only one instance of this
@@ -29,6 +29,7 @@ local UIManager = {
     event_handlers = nil,
 
     _running = true,
+    _now = TimeVal:now(),
     _window_stack = {},
     _task_queue = {},
     _task_queue_dirty = false,
@@ -63,6 +64,12 @@ function UIManager:init()
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
         local Screensaver = require("ui/screensaver")
         Screensaver:setup("poweroff", _("Powered off"))
+        if Device:hasEinkScreen() and Screensaver:modeIsImage() then
+            if Screensaver:withBackground() then
+                Screen:clear()
+            end
+            Screen:refreshFull()
+        end
         Screensaver:show()
         if Device:needsScreenRefreshAfterResume() then
             Screen:refreshFull()
@@ -82,6 +89,12 @@ function UIManager:init()
         Screen:setRotationMode(Screen.ORIENTATION_PORTRAIT)
         local Screensaver = require("ui/screensaver")
         Screensaver:setup("reboot", _("Rebooting…"))
+        if Device:hasEinkScreen() and Screensaver:modeIsImage() then
+            if Screensaver:withBackground() then
+                Screen:clear()
+            end
+            Screen:refreshFull()
+        end
         Screensaver:show()
         if Device:needsScreenRefreshAfterResume() then
             Screen:refreshFull()
@@ -512,13 +525,11 @@ end
 function UIManager:schedule(time, action, ...)
     local p, s, e = 1, 1, #self._task_queue
     if e ~= 0 then
-        local us = time[1] * MILLION + time[2]
         -- do a binary insert
         repeat
             p = math.floor(s + (e - s) / 2)
-            local ptime = self._task_queue[p].time
-            local ptus = ptime[1] * MILLION + ptime[2]
-            if us > ptus then
+            local p_time = self._task_queue[p].time
+            if time > p_time then
                 if s == e then
                     p = e + 1
                     break
@@ -527,7 +538,7 @@ function UIManager:schedule(time, action, ...)
                 else
                     s = p
                 end
-            elseif us < ptus then
+            elseif time < p_time then
                 e = p
                 if s == e then
                     break
@@ -549,29 +560,23 @@ function UIManager:schedule(time, action, ...)
 end
 dbg:guard(UIManager, 'schedule',
     function(self, time, action)
-        assert(time[1] >= 0 and time[2] >= 0, "Only positive time allowed")
+        assert(time.sec >= 0, "Only positive time allowed")
         assert(action ~= nil)
     end)
 
 --[[--
 Schedules a task to be run a certain amount of seconds from now.
 
-@number seconds scheduling delay in seconds (supports decimal values)
+@number seconds scheduling delay in seconds (supports decimal values, 1ms resolution).
 @func action reference to the task to be scheduled (may be anonymous)
 @param ... optional arguments passed to action
 
 @see unschedule
 ]]
 function UIManager:scheduleIn(seconds, action, ...)
-    local when = { ffiUtil.gettime() }
-    local s = math.floor(seconds)
-    local usecs = (seconds - s) * MILLION
-    when[1] = when[1] + s
-    when[2] = when[2] + usecs
-    if when[2] >= MILLION then
-        when[1] = when[1] + 1
-        when[2] = when[2] - MILLION
-    end
+    -- We might run significantly late inside an UI frame, so we can't use the cached value here.
+    -- It would also cause some bad interactions with the way nextTick & co behave.
+    local when = TimeVal:now() + TimeVal:fromnumber(seconds)
     self:schedule(when, action, ...)
 end
 dbg:guard(UIManager, 'scheduleIn',
@@ -1049,7 +1054,7 @@ function UIManager:discardEvents(set_or_seconds)
         self._discard_events_till = nil
         return
     end
-    local usecs
+    local delay
     if set_or_seconds == true then
         -- Use an adequate delay to account for device refresh duration
         -- so any events happening in this delay (ie. before a widget
@@ -1059,17 +1064,15 @@ function UIManager:discardEvents(set_or_seconds)
             -- sometimes > 500ms on some devices/temperatures.
             -- So, block for 400ms (to have it displayed) + 400ms
             -- for user reaction to it
-            usecs = 800000
+            delay = TimeVal:new{ sec = 0, usec = 800000 }
         else
             -- On non-eInk screen, display is usually instantaneous
-            usecs = 400000
+            delay = TimeVal:new{ sec = 0, usec = 400000 }
         end
     else -- we expect a number
-        usecs = set_or_seconds * MILLION
+        delay = TimeVal:new{ sec = set_or_seconds, usec = 0 }
     end
-    local now = { ffiUtil.gettime() }
-    local now_us = now[1] * MILLION + now[2]
-    self._discard_events_till = now_us + usecs
+    self._discard_events_till = self._now + delay
 end
 
 --[[--
@@ -1082,9 +1085,7 @@ function UIManager:sendEvent(event)
 
     -- Ensure discardEvents
     if self._discard_events_till then
-        local now = { ffiUtil.gettime() }
-        local now_us = now[1] * MILLION + now[2]
-        if now_us < self._discard_events_till then
+        if TimeVal:now() < self._discard_events_till then
             return
         else
             self._discard_events_till = nil
@@ -1159,8 +1160,7 @@ function UIManager:broadcastEvent(event)
 end
 
 function UIManager:_checkTasks()
-    local now = { ffiUtil.gettime() }
-    local now_us = now[1] * MILLION + now[2]
+    self._now = TimeVal:now()
     local wait_until = nil
 
     -- task.action may schedule other events
@@ -1172,11 +1172,8 @@ function UIManager:_checkTasks()
             break
         end
         local task = self._task_queue[1]
-        local task_us = 0
-        if task.time ~= nil then
-            task_us = task.time[1] * MILLION + task.time[2]
-        end
-        if task_us <= now_us then
+        local task_tv = task.time or TimeVal.zero
+        if task_tv <= self._now then
             -- remove from table
             table.remove(self._task_queue, 1)
             -- task is pending to be executed right now. do it.
@@ -1191,7 +1188,26 @@ function UIManager:_checkTasks()
         end
     end
 
-    return wait_until, now
+    return wait_until, self._now
+end
+
+--[[--
+Returns a TimeVal object corresponding to the last UI tick.
+
+This is essentially a cached TimeVal:now(), computed at the top of every iteration of the main UI loop,
+(right before checking/running scheduled tasks).
+This is mainly useful to compute/schedule stuff in the same time scale as the UI loop (i.e., MONOTONIC),
+without having to resort to a syscall.
+It should never be significantly stale (i.e., it should be precise enough),
+unless you're blocking the UI for a significant amount of time in the same UI tick.
+
+Prefer the appropriate TimeVal method for your needs if you require perfect accuracy
+(e.g., when you're actually working on the event loop *itself* (UIManager, Input, GestureDetector)).
+
+This is *NOT* wall clock time (REALTIME).
+]]
+function UIManager:getTime()
+    return self._now
 end
 
 -- precedence of refresh modes:
@@ -1545,7 +1561,7 @@ end
 -- Process all pending events on all registered ZMQs.
 function UIManager:processZMQs()
     for _, zeromq in ipairs(self._zeromqs) do
-        for input_event in zeromq.waitEvent,zeromq do
+        for input_event in zeromq.waitEvent, zeromq do
             self:handleInputEvent(input_event)
         end
     end
@@ -1576,37 +1592,50 @@ function UIManager:handleInput()
         self:_repaint()
     until not self._task_queue_dirty
 
-    -- run ZMQs if any
-    self:processZMQs()
-
+    -- NOTE: Compute deadline *before* processing ZMQs, in order to be able to catch tasks scheduled *during*
+    --       the final ZMQ callback.
+    --       This ensures that we get to honor a single ZMQ_TIMEOUT *after* the final ZMQ callback,
+    --       which gives us a chance for another iteration, meaning going through _checkTasks to catch said scheduled tasks.
     -- Figure out how long to wait.
+    -- Ultimately, that'll be the earliest of INPUT_TIMEOUT, ZMQ_TIMEOUT or the next earliest scheduled task.
+    local deadline
     -- Default to INPUT_TIMEOUT (which may be nil, i.e. block until an event happens).
     local wait_us = self.INPUT_TIMEOUT
-
-    -- If there's a timed event pending, that puts an upper bound on how long to wait.
-    if wait_until then
-        wait_us = math.min(
-            wait_us or math.huge,
-            (wait_until[1] - now[1]) * MILLION
-            + (wait_until[2] - now[2]))
-    end
 
     -- If we have any ZMQs registered, ZMQ_TIMEOUT is another upper bound.
     if #self._zeromqs > 0 then
         wait_us = math.min(wait_us or math.huge, self.ZMQ_TIMEOUT)
     end
 
+    -- We pass that on as an absolute deadline, not a relative wait time.
+    if wait_us then
+        deadline = now + TimeVal:new{ usec = wait_us }
+    end
+
+    -- If there's a scheduled task pending, that puts an upper bound on how long to wait.
+    if wait_until and (not deadline or wait_until < deadline) then
+        --             ^ We don't have a TIMEOUT induced deadline, making the choice easy.
+        --                             ^ We have a task scheduled for *before* our TIMEOUT induced deadline.
+        deadline = wait_until
+    end
+
+    -- Run ZMQs if any
+    self:processZMQs()
+
     -- If allowed, entering standby (from which we can wake by input) must trigger in response to event
     -- this function emits (plugin), or within waitEvent() right after (hardware).
     -- Anywhere else breaks preventStandby/allowStandby invariants used by background jobs while UI is left running.
     self:_standbyTransition()
 
-    -- wait for next event
-    local input_event = Input:waitEvent(wait_us)
+    -- wait for next batch of events
+    local input_events = Input:waitEvent(now, deadline)
 
-    -- delegate input_event to handler
-    if input_event then
-        self:handleInputEvent(input_event)
+    -- delegate each input event to handler
+    if input_events then
+        -- Handle the full batch of events
+        for __, ev in ipairs(input_events) do
+            self:handleInputEvent(ev)
+        end
     end
 
     if self.looper then
@@ -1627,7 +1656,7 @@ end
 
 
 function UIManager:onRotation()
-    self:setDirty('all', 'full')
+    self:setDirty("all", "full")
     self:forceRePaint()
 end
 
@@ -1672,6 +1701,9 @@ end
 function UIManager:_beforeSuspend()
     self:flushSettings()
     self:broadcastEvent(Event:new("Suspend"))
+
+    -- Reset gesture detection state to a blank slate (anything power-management related emits KEY events, which don't need gesture detection).
+    Input:resetState()
 end
 
 -- The common operations that should be performed after resuming the device.
@@ -1770,6 +1802,12 @@ function UIManager:restartKOReader()
     self:quit()
     -- This is just a magic number to indicate the restart request for shell scripts.
     self._exit_code = 85
+end
+
+--- Sanely abort KOReader (e.g., exit sanely, but with a non-zero return code).
+function UIManager:abort()
+    self:quit()
+    self._exit_code = 1
 end
 
 UIManager:init()

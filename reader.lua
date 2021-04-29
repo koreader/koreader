@@ -46,8 +46,6 @@ if lang_locale then
     _.changeLang(lang_locale)
 end
 
-local dummy = require("ffi/posix_h")
-
 -- Try to turn the C blitter on/off, and synchronize setting so that UI config reflects real state
 local bb = require("ffi/blitbuffer")
 bb:setUseCBB(is_cbb_enabled)
@@ -174,13 +172,12 @@ if Device:hasEinkScreen() then
     end
 end
 
--- Handle global settings migration
-local SettingsMigration = require("ui/data/settings_migration")
-SettingsMigration:migrateSettings(G_reader_settings)
-
 -- Document renderers canvas
 local CanvasContext = require("document/canvascontext")
 CanvasContext:init(Device)
+
+-- Handle one time migration stuff (settings, deprecation, ...) in case of an upgrade...
+require("ui/data/onetime_migration")
 
 -- Touch screen (this may display some widget, on first install on Kobo Touch,
 -- so have it done after CanvasContext:init() but before Bidi.setup() to not
@@ -302,7 +299,7 @@ else
         if start_with == "history" then
             local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
             UIManager:nextTick(function()
-                FileManagerHistory:onShowHist(last_file)
+                FileManagerHistory:onShowHist()
             end)
         elseif start_with == "favorites" then
             local FileManagerCollection = require("apps/filemanager/filemanagercollection")

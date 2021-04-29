@@ -132,13 +132,21 @@ function ReaderPaging:setupTapTouchZones()
             id = "tap_forward",
             ges = "tap",
             screen_zone = forward_zone,
-            handler = function() return self:onGotoViewRel(1) end,
+            handler = function()
+                if G_reader_settings:nilOrFalse("page_turns_disable_tap") then
+                    return self:onGotoViewRel(1)
+                end
+            end,
         },
         {
             id = "tap_backward",
             ges = "tap",
             screen_zone = backward_zone,
-            handler = function() return self:onGotoViewRel(-1) end,
+            handler = function()
+                if G_reader_settings:nilOrFalse("page_turns_disable_tap") then
+                    return self:onGotoViewRel(-1)
+                end
+            end,
         },
     })
 end
@@ -159,7 +167,7 @@ function ReaderPaging:setupTouchZones()
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
-            handler = function(ges) return self:onSwipe(nil, ges) end
+            handler = function(ges) return self:onSwipe(nil, ges) end,
         },
         {
             id = "paging_pan",
@@ -168,7 +176,7 @@ function ReaderPaging:setupTouchZones()
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
-            handler = function(ges) return self:onPan(nil, ges) end
+            handler = function(ges) return self:onPan(nil, ges) end,
         },
         {
             id = "paging_pan_release",
@@ -176,7 +184,7 @@ function ReaderPaging:setupTouchZones()
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
-            handler = function(ges) return self:onPanRelease(nil, ges) end
+            handler = function(ges) return self:onPanRelease(nil, ges) end,
         },
     })
 end
@@ -418,16 +426,20 @@ function ReaderPaging:onSwipe(_, ges)
     elseif self.page_flipping_mode and self.original_page then
         self:_gotoPage(self.original_page)
     elseif direction == "west" then
-        if self.inverse_reading_order then
-            self:onGotoViewRel(-1)
-        else
-            self:onGotoViewRel(1)
+        if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
+            if self.inverse_reading_order then
+                self:onGotoViewRel(-1)
+            else
+                self:onGotoViewRel(1)
+            end
         end
     elseif direction == "east" then
-        if self.inverse_reading_order then
-            self:onGotoViewRel(1)
-        else
-            self:onGotoViewRel(-1)
+        if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
+            if self.inverse_reading_order then
+                self:onGotoViewRel(1)
+            else
+                self:onGotoViewRel(-1)
+            end
         end
     else
         -- update footer (time & battery)

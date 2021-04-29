@@ -168,7 +168,7 @@ end
 
 function OptionIconItem:onHoldSelect()
     self.config:onMakeDefault(self.name, self.name_text,
-                    self.values, self.values, self.current_item)
+                    self.values, self.labels or self.values, self.current_item)
     return true
 end
 
@@ -299,7 +299,7 @@ function ConfigOption:init()
                     hold_callback = function()
                         if self.options[c].name_text_hold_callback then
                             self.options[c].name_text_hold_callback(self.config.configurable, self.options[c],
-                                self.config.config_options.prefix)
+                                self.config.config_options.prefix, self.config.document)
                         end
                     end,
                 }
@@ -486,8 +486,11 @@ function ConfigOption:init()
             end
 
             -- Icons (ex: columns, text align, with PDF)
-            if self.options[c].item_icons then
-                local items_count = #self.options[c].item_icons
+            local item_icons = self.options[c].item_icons_func and
+                               self.options[c].item_icons_func(self.config.configurable, self.config.document) or
+                               self.options[c].item_icons
+            if item_icons then
+                local items_count = #item_icons
                 local icon_max_height = math.min(option_height, max_icon_height)
                 local icon_max_width = math.floor(option_widget_width / items_count)
                 local icon_size = math.min(icon_max_height, icon_max_width)
@@ -497,17 +500,17 @@ function ConfigOption:init()
                 -- We don't want the underline to be that far away from the image content,
                 -- so we use some negative padding to eat a bit on their padding.
                 local underline_padding = - math.floor(0.05 * icon_size)
-                for d = 1, #self.options[c].item_icons do
+                for d = 1, items_count do
                     local option_item = OptionIconItem:new{
                         icon = IconWidget:new{
-                            icon = self.options[c].item_icons[d],
+                            icon = item_icons[d],
                             dim = not enabled,
                             width = icon_size,
                             height = icon_size,
                         },
                         underline_padding = underline_padding,
                         padding_left = d > 1 and horizontal_half_padding,
-                        padding_right = d < #self.options[c].item_icons and horizontal_half_padding,
+                        padding_right = d < items_count and horizontal_half_padding,
                         color = d == current_item and (enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY) or Blitbuffer.COLOR_WHITE,
                         enabled = enabled,
                     }
@@ -516,6 +519,7 @@ function ConfigOption:init()
                     option_item.name = self.options[c].name
                     option_item.name_text = name_text or self.options[c].alt_name_text
                     option_item.values = self.options[c].values
+                    option_item.labels = self.options[c].labels
                     option_item.args = self.options[c].args
                     option_item.event = self.options[c].event
                     option_item.current_item = d
