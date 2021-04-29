@@ -1,6 +1,7 @@
 local Device = require("device")
 
 if not Device:isCervantes() and
+    not Device:isKindle() and
     not Device:isKobo() and
     not Device:isRemarkable() and
     not Device:isSDL() and
