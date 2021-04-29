@@ -116,7 +116,9 @@ function FileManager:setupLayout()
         padding_left = Size.padding.large,
         padding_right = Size.padding.large,
         padding_bottom = 0,
-        callback = function() self:goHome() end,
+        callback = function()
+            self:goHome()
+        end,
         hold_callback = function() self:setHome() end,
     }
 
@@ -129,6 +131,13 @@ function FileManager:setupLayout()
         padding_right = Size.padding.large,
         padding_bottom = 0,
         callback = function() self:onShowPlusMenu() end,
+        hold_callback = function()
+            self:onRefresh()
+            UIManager:show(InfoMessage:new{
+                text = _("Content refreshed."),
+                timeout = 2,
+            })
+        end,
     }
 
     self.path_text = TextWidget:new{
@@ -227,13 +236,21 @@ function FileManager:setupLayout()
     local fileManager = self
 
     function file_chooser:onFileHold(file)  -- luacheck: ignore
+        local is_file = lfs.attributes(file, "mode") == "file"
+        local is_folder = lfs.attributes(file, "mode") == "directory"
+        local is_not_parent_folder = BaseUtil.basename(file) ~= ".."
         local buttons = {
             {
                 {
                     text = C_("File", "Copy"),
+                    enabled = is_not_parent_folder,
                     callback = function()
                         copyFile(file)
                         UIManager:close(self.file_dialog)
+                        UIManager:show(InfoMessage:new{
+                            text = T(_("Copied to clipboard:\n%1"), BD.filepath(file)),
+                            timeout = 2,
+                        })
                     end,
                 },
                 {
@@ -264,32 +281,40 @@ function FileManager:setupLayout()
             {
                 {
                     text = _("Cut"),
+                    enabled = is_not_parent_folder,
                     callback = function()
                         cutFile(file)
                         UIManager:close(self.file_dialog)
+                        UIManager:show(InfoMessage:new{
+                            text = T(_("Cut to clipboard:\n%1"), BD.filepath(file)),
+                            timeout = 2,
+                        })
                     end,
                 },
                 {
                     text = _("Delete"),
+                    enabled = is_not_parent_folder,
                     callback = function()
+                        UIManager:close(self.file_dialog)
                         UIManager:show(ConfirmBox:new{
-                            text = _("Are you sure that you want to delete this file?\n") .. BD.filepath(file) .. ("\n") .. _("If you delete a file, it is permanently lost."),
+                            text = is_file and T(_("Delete file?\n%1\nIf you delete a file, it is permanently lost."), BD.filepath(file)) or
+                                T(_("Delete folder?\n%1\nIf you delete a folder, its content is permanently lost."), BD.filepath(file)),
                             ok_text = _("Delete"),
                             ok_callback = function()
                                 deleteFile(file)
                                 require("readhistory"):fileDeleted(file)
                                 self:refreshPath()
-                                UIManager:close(self.file_dialog)
                             end,
                         })
                     end,
                 },
                 {
                     text = _("Rename"),
+                    enabled = is_not_parent_folder,
                     callback = function()
                         UIManager:close(self.file_dialog)
                         fileManager.rename_dialog = InputDialog:new{
-                            title = _("Rename file"),
+                            title = is_file and _("Rename file") or _("Rename folder"),
                             input = BaseUtil.basename(file),
                             buttons = {{
                                 {
@@ -303,9 +328,11 @@ function FileManager:setupLayout()
                                     text = _("Rename"),
                                     enabled = true,
                                     callback = function()
-                                        renameFile(file)
-                                        self:refreshPath()
-                                        UIManager:close(fileManager.rename_dialog)
+                                        if fileManager.rename_dialog:getInputText() ~= "" then
+                                            renameFile(file)
+                                            self:refreshPath()
+                                            UIManager:close(fileManager.rename_dialog)
+                                        end
                                     end,
                                 },
                             }},
@@ -320,7 +347,7 @@ function FileManager:setupLayout()
             },
         }
 
-        if lfs.attributes(file, "mode") == "file" and Device:canExecuteScript(file) then
+        if is_file and Device:canExecuteScript(file) then
             -- NOTE: We populate the empty separator, in order not to mess with the button reordering code in CoverMenu
             table.insert(buttons[3],
                 {
@@ -361,7 +388,7 @@ function FileManager:setupLayout()
             )
         end
 
-        if lfs.attributes(file, "mode") == "file" then
+        if is_file then
             table.insert(buttons, {
                 {
                     text = _("Open with…"),
@@ -422,7 +449,7 @@ function FileManager:setupLayout()
                 })
             end
         end
-        if lfs.attributes(file, "mode") == "directory" then
+        if is_folder then
             local realpath = BaseUtil.realpath(file)
             table.insert(buttons, {
                 {
@@ -436,7 +463,7 @@ function FileManager:setupLayout()
         end
 
         local title
-        if lfs.attributes(file, "mode") == "directory" then
+        if is_folder then
             title = BD.directory(file:match("([^/]+)$"))
         else
             title = BD.filename(file:match("([^/]+)$"))
@@ -488,12 +515,8 @@ function FileManager:init()
     self.active_widgets = { screenshoter } -- to get events even when hidden
 
     table.insert(self, self.menu)
-    table.insert(self, FileManagerHistory:new{
-        ui = self,
-    })
-    table.insert(self, FileManagerCollection:new{
-        ui = self,
-    })
+    table.insert(self, FileManagerHistory:new{ ui = self })
+    table.insert(self, FileManagerCollection:new{ ui = self })
     table.insert(self, FileManagerFileSearcher:new{ ui = self })
     table.insert(self, FileManagerShortcuts:new{ ui = self })
     table.insert(self, ReaderDictionary:new{ ui = self })
@@ -574,7 +597,7 @@ function FileManager:tapPlus()
                 callback = function()
                     UIManager:close(self.file_dialog)
                     self.input_dialog = InputDialog:new{
-                        title = _("Create new folder"),
+                        title = _("New folder"),
                         input_type = "text",
                         buttons = {
                             {
@@ -587,10 +610,10 @@ function FileManager:tapPlus()
                                 {
                                     text = _("Create"),
                                     callback = function()
-                                        self:closeInputDialog()
                                         local new_folder = self.input_dialog:getInputText()
                                         if new_folder and new_folder ~= "" then
                                             self:createFolder(self.file_chooser.path, new_folder)
+                                            self:closeInputDialog()
                                         end
                                     end,
                                 },
@@ -772,6 +795,8 @@ function FileManager:goHome()
         -- Jump to the first page if we're already home
         if self.file_chooser.path and home_dir == self.file_chooser.path then
             self.file_chooser:onGotoPage(1)
+            -- Also pick up new content, if any.
+            self.file_chooser:refreshPath()
         else
             self.file_chooser:changeToPath(home_dir)
         end
@@ -831,6 +856,7 @@ end
 function FileManager:pasteHere(file)
     if self.clipboard then
         file = BaseUtil.realpath(file)
+        local orig_basename = BaseUtil.basename(self.clipboard)
         local orig = BaseUtil.realpath(self.clipboard)
         local dest = lfs.attributes(file, "mode") == "directory" and
             file or file:match("(.*/)")
@@ -842,13 +868,13 @@ function FileManager:pasteHere(file)
             end
             if BaseUtil.execute(self.cp_bin, "-r", orig, dest) == 0 then
                 UIManager:show(InfoMessage:new {
-                    text = T(_("Copied to: %1"), BD.dirpath(dest)),
+                    text = T(_("Copied:\n%1\nto:\n%2"), BD.filepath(orig_basename), BD.dirpath(dest)),
                     timeout = 2,
                 })
             else
                 UIManager:show(InfoMessage:new {
-                    text = T(_("An error occurred while trying to copy %1"), BD.filepath(orig)),
-                    timeout = 2,
+                    text = T(_("Failed to copy:\n%1\nto:\n%2"), BD.filepath(orig_basename), BD.dirpath(dest)),
+                    icon = "notice-warning",
                 })
             end
         end
@@ -864,13 +890,13 @@ function FileManager:pasteHere(file)
                 require("readhistory"):updateItemByPath(orig, dest_file) -- (will update "lastfile" if needed)
                 ReadCollection:updateItemByPath(orig, dest_file)
                 UIManager:show(InfoMessage:new {
-                    text = T(_("Moved to: %1"), BD.dirpath(dest)),
+                    text = T(_("Moved:\n%1\nto:\n%2"), BD.filepath(orig_basename), BD.dirpath(dest)),
                     timeout = 2,
                 })
             else
                 UIManager:show(InfoMessage:new {
-                    text = T(_("An error occurred while trying to move %1"), BD.filepath(orig)),
-                    timeout = 2,
+                    text = T(_("Failed to move:\n%1\nto:\n%2"), BD.filepath(orig_basename), BD.dirpath(dest)),
+                    icon = "notice-warning",
                 })
             end
         end
@@ -886,9 +912,9 @@ function FileManager:pasteHere(file)
         if mode == "file" or mode == "directory" then
             local text
             if mode == "file" then
-                text = T(_("The file %1 already exists. Do you want to overwrite it?"), BD.filename(basename))
+                text = T(_("File already exists:\n%1\nOverwrite file?"), BD.filename(basename))
             else
-                text = T(_("The directory %1 already exists. Do you want to overwrite it?"), BD.directory(basename))
+                text = T(_("Folder already exists:\n%1\nOverwrite folder?"), BD.directory(basename))
             end
 
             UIManager:show(ConfirmBox:new {
@@ -911,17 +937,18 @@ end
 function FileManager:createFolder(curr_folder, new_folder)
     local folder = string.format("%s/%s", curr_folder, new_folder)
     local code = BaseUtil.execute(self.mkdir_bin, folder)
-    local text
     if code == 0 then
         self:onRefresh()
-        text = T(_("Folder created:\n%1"), BD.directory(new_folder))
+        UIManager:show(InfoMessage:new{
+            text = T(_("Created folder:\n%1"), BD.directory(new_folder)),
+            timeout = 2,
+        })
     else
-        text = _("The folder has not been created.")
+        UIManager:show(InfoMessage:new{
+            text = T(_("Failed to create folder:\n%1"), BD.directory(new_folder)),
+            icon = "notice-warning",
+        })
     end
-    UIManager:show(InfoMessage:new{
-        text = text,
-        timeout = 2,
-    })
 end
 
 function FileManager:deleteFile(file)
@@ -929,7 +956,8 @@ function FileManager:deleteFile(file)
     local file_abs_path = BaseUtil.realpath(file)
     if file_abs_path == nil then
         UIManager:show(InfoMessage:new{
-            text = T(_("File %1 not found"), BD.filepath(file)),
+            text = T(_("File not found:\n%1"), BD.filepath(file)),
+            icon = "notice-warning",
         })
         return
     end
@@ -953,12 +981,14 @@ function FileManager:deleteFile(file)
         end
         ReadCollection:removeItemByPath(file, is_dir)
         UIManager:show(InfoMessage:new{
-            text = T(_("Deleted %1"), BD.filepath(file)),
+            text = is_dir and T(_("Deleted folder:\n%1"), BD.filepath(file)) or
+                T(_("Deleted file:\n%1"), BD.filepath(file)),
             timeout = 2,
         })
     else
         UIManager:show(InfoMessage:new{
-            text = T(_("An error occurred while trying to delete %1"), BD.filepath(file)),
+            text = T(_("Failed to delete:\n%1"), BD.filepath(file)),
+            icon = "notice-warning",
         })
     end
 end
@@ -971,7 +1001,7 @@ function FileManager:renameFile(file)
             ReadCollection:updateItemByPath(file, dest)
             if lfs.attributes(dest, "mode") == "file" then
                 local doc = require("docsettings")
-                local move_history = true;
+                local move_history = true
                 if lfs.attributes(doc:getHistoryPath(file), "mode") == "file" and
                    not self:moveFile(doc:getHistoryPath(file), doc:getHistoryPath(dest)) then
                    move_history = false
@@ -982,21 +1012,26 @@ function FileManager:renameFile(file)
                 end
                 if move_history then
                     UIManager:show(InfoMessage:new{
-                        text = T(_("Renamed from %1 to %2"), BD.filepath(file), BD.filepath(dest)),
+                        text = T(_("Renamed file:\n%1\nto:\n%2"), BD.filepath(file), BD.filepath(dest)),
                         timeout = 2,
                     })
                 else
                     UIManager:show(InfoMessage:new{
-                        text = T(
-                            _("Failed to move history data of %1 to %2.\nThe reading history may be lost."),
+                        text = T(_("Renamed file:\n%1\nto:\n%2\n\nFailed to move history data.\nThe reading history may be lost."),
                             BD.filepath(file), BD.filepath(dest)),
+                        icon = "notice-warning",
                     })
                 end
+            else
+                UIManager:show(InfoMessage:new{
+                    text = T(_("Renamed folder:\n%1\nto:\n%2"), BD.filepath(file), BD.filepath(dest)),
+                    timeout = 2,
+                })
             end
         else
             UIManager:show(InfoMessage:new{
-                text = T(
-                    _("Failed to rename from %1 to %2"), BD.filepath(file), BD.filepath(dest)),
+                text = T(_("Failed to rename:\n%1\nto:\n%2"), BD.filepath(file), BD.filepath(dest)),
+                icon = "notice-warning",
             })
         end
     end

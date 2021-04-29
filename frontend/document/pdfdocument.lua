@@ -175,35 +175,44 @@ function PdfDocument:getPageLinks(pageno)
     return links
 end
 
-function PdfDocument:saveHighlight(pageno, item)
+-- returns nil if file is not a pdf, true if document is a writable pdf, false else
+function PdfDocument:_checkIfWritable()
     local suffix = util.getFileNameSuffix(self.file)
-    if string.lower(suffix) ~= "pdf" then return end
-
+    if string.lower(suffix) ~= "pdf" then return nil end
     if self.is_writable == nil then
         local handle = io.open(self.file, 'r+b')
         self.is_writable = handle ~= nil
         if handle then handle:close() end
     end
-    if self.is_writable == false then
-        return false
-    end
-    self.is_edited = true
+    return self.is_writable
+end
+
+local function _quadpointsFromPboxes(pboxes)
     -- will also need mupdf_h.lua to be evaluated once
     -- but this is guaranteed at this point
-    local n = #item.pboxes
+    local n = #pboxes
     local quadpoints = ffi.new("float[?]", 8*n)
     for i=1, n do
         -- The order must be left bottom, right bottom, left top, right top.
         -- https://bugs.ghostscript.com/show_bug.cgi?id=695130
-        quadpoints[8*i-8] = item.pboxes[i].x
-        quadpoints[8*i-7] = item.pboxes[i].y + item.pboxes[i].h
-        quadpoints[8*i-6] = item.pboxes[i].x + item.pboxes[i].w
-        quadpoints[8*i-5] = item.pboxes[i].y + item.pboxes[i].h
-        quadpoints[8*i-4] = item.pboxes[i].x
-        quadpoints[8*i-3] = item.pboxes[i].y
-        quadpoints[8*i-2] = item.pboxes[i].x + item.pboxes[i].w
-        quadpoints[8*i-1] = item.pboxes[i].y
+        quadpoints[8*i-8] = pboxes[i].x
+        quadpoints[8*i-7] = pboxes[i].y + pboxes[i].h
+        quadpoints[8*i-6] = pboxes[i].x + pboxes[i].w
+        quadpoints[8*i-5] = pboxes[i].y + pboxes[i].h
+        quadpoints[8*i-4] = pboxes[i].x
+        quadpoints[8*i-3] = pboxes[i].y
+        quadpoints[8*i-2] = pboxes[i].x + pboxes[i].w
+        quadpoints[8*i-1] = pboxes[i].y
     end
+    return quadpoints, n
+end
+
+function PdfDocument:saveHighlight(pageno, item)
+    local can_write = self:_checkIfWritable()
+    if can_write ~= true then return can_write end
+
+    self.is_edited = true
+    local quadpoints, n = _quadpointsFromPboxes(item.pboxes)
     local page = self._document:openPage(pageno)
     local annot_type = C.PDF_ANNOT_HIGHLIGHT
     if item.drawer == "lighten" then
@@ -214,6 +223,34 @@ function PdfDocument:saveHighlight(pageno, item)
         annot_type = C.PDF_ANNOT_STRIKEOUT
     end
     page:addMarkupAnnotation(quadpoints, n, annot_type)
+    page:close()
+end
+
+function PdfDocument:deleteHighlight(pageno, item)
+    local can_write = self:_checkIfWritable()
+    if can_write ~= true then return can_write end
+
+    self.is_edited = true
+    local quadpoints, n = _quadpointsFromPboxes(item.pboxes)
+    local page = self._document:openPage(pageno)
+    local annot = page:getMarkupAnnotation(quadpoints, n)
+    if annot ~= nil then
+        page:deleteMarkupAnnotation(annot)
+    end
+    page:close()
+end
+
+function PdfDocument:updateHighlightContents(pageno, item, contents)
+    local can_write = self:_checkIfWritable()
+    if can_write ~= true then return can_write end
+
+    self.is_edited = true
+    local quadpoints, n = _quadpointsFromPboxes(item.pboxes)
+    local page = self._document:openPage(pageno)
+    local annot = page:getMarkupAnnotation(quadpoints, n)
+    if annot ~= nil then
+        page:updateMarkupAnnotation(annot, contents)
+    end
     page:close()
 end
 

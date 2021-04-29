@@ -89,6 +89,7 @@ local Device = Generic:new{
     hasClipboard = yes,
     hasOTAUpdates = canUpdateApk,
     hasFastWifiStatusQuery = yes,
+    hasSystemFonts = yes,
     canOpenLink = yes,
     openLink = function(self, link)
         if not link or type(link) ~= "string" then return end
@@ -143,6 +144,9 @@ function Device:init()
                 or ev.code == C.APP_CMD_INIT_WINDOW
                 or ev.code == C.APP_CMD_WINDOW_REDRAW_NEEDED then
                 this.device.screen:_updateWindow()
+            elseif ev.code == C.APP_CMD_LOST_FOCUS
+                or ev.code == C.APP_CMD_TERM_WINDOW then
+                this.device.input:resetState()
             elseif ev.code == C.APP_CMD_CONFIG_CHANGED then
                 -- orientation and size changes
                 if android.screen.width ~= android.getScreenWidth()
@@ -197,6 +201,12 @@ function Device:init()
                         end)
                     end
                 end
+            elseif ev.code == C.AEVENT_POWER_CONNECTED then
+                local Event = require("ui/event")
+                UIManager:broadcastEvent(Event:new("Charging"))
+            elseif ev.code == C.AEVENT_POWER_DISCONNECTED then
+                local Event = require("ui/event")
+                UIManager:broadcastEvent(Event:new("NotCharging"))
             end
         end,
         hasClipboardText = function()
@@ -382,42 +392,33 @@ function Device:canExecuteScript(file)
 end
 
 function Device:isValidPath(path)
-    return android.isPathInsideSandbox(path)
-end
+    -- the fast check
+    if android.isPathInsideSandbox(path) then
+        return true
+    end
 
---swallow all events
-local function processEvents()
-    local events = ffi.new("int[1]")
-    local source = ffi.new("struct android_poll_source*[1]")
-    local poll_state = android.lib.ALooper_pollAll(-1, nil, events, ffi.cast("void**", source))
-    if poll_state >= 0 then
-        if source[0] ~= nil then
-            if source[0].id == C.LOOPER_ID_MAIN then
-                local cmd = android.glue.android_app_read_cmd(android.app)
-                android.glue.android_app_pre_exec_cmd(android.app, cmd)
-                android.glue.android_app_post_exec_cmd(android.app, cmd)
-            elseif source[0].id == C.LOOPER_ID_INPUT then
-                local event = ffi.new("AInputEvent*[1]")
-                while android.lib.AInputQueue_getEvent(android.app.inputQueue, event) >= 0 do
-                    if android.lib.AInputQueue_preDispatchEvent(android.app.inputQueue, event[0]) == 0 then
-                        android.lib.AInputQueue_finishEvent(android.app.inputQueue, event[0], 1)
-                    end
-                end
-            end
-        end
+    -- the thorough check
+    local real_ext_storage = FFIUtil.realpath(android.getExternalStoragePath())
+    local real_path = FFIUtil.realpath(path)
+
+    if real_path then
+        return real_path:sub(1, #real_ext_storage) == real_ext_storage
+    else
+        return false
     end
 end
 
 function Device:showLightDialog()
+    -- Delay it until next tick so that the event loop gets a chance to drain the input queue,
+    -- and consume the APP_CMD_LOST_FOCUS event.
+    -- This helps prevent ANRs on Tolino (c.f., #6583 & #7552).
+    local UIManager = require("ui/uimanager")
+    UIManager:nextTick(function() self:_showLightDialog() end)
+end
+
+function Device:_showLightDialog()
     local title = android.isEink() and _("Frontlight settings") or _("Light settings")
     android.lights.showDialog(title, _("Brightness"), _("Warmth"), _("OK"), _("Cancel"))
-    repeat
-        processEvents() -- swallow all events, including the last one
-        FFIUtil.usleep(25000) -- sleep 25ms before next check if dialog was quit
-    until (android.lights.dialogState() ~= C.ALIGHTS_DIALOG_OPENED)
-
-    local GestureDetector = require("device/gesturedetector")
-    GestureDetector:clearStates()
 
     local action = android.lights.dialogState()
     if action == C.ALIGHTS_DIALOG_OK then
@@ -442,6 +443,15 @@ end
 
 function Device:untar(archive, extract_to)
     return android.untar(archive, extract_to)
+end
+
+-- todo: Wouldn't we like an android.deviceIdentifier() method, so we can use better default paths?
+function Device:getDefaultCoverPath()
+    if android.prop.product == "ntx_6sl" then -- Tolino HD4 and other
+        return android.getExternalStoragePath() .. "/suspend_others.jpg"
+    else
+        return android.getExternalStoragePath() .. "/cover.jpg"
+    end
 end
 
 android.LOGI(string.format("Android %s - %s (API %d) - flavor: %s",

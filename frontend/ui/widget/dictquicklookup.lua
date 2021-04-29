@@ -20,6 +20,8 @@ local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
+local TimeVal = require("ui/timeval")
+local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -60,6 +62,26 @@ local highlight_strings = {
     highlight =_("Highlight"),
     unhighlight = _("Unhighlight"),
 }
+
+function DictQuickLookup:canSearch()
+    if self:isDocless() then
+        return false
+    end
+
+    if self.is_wiki then
+        -- In the Wiki variant of this widget, the Search button is coopted to cycle between enabled languages.
+        if #self.wiki_languages > 1 then
+            return true
+        end
+    else
+        -- This is to prevent an ineffective button when we're launched from the Reader's menu.
+        if self.ui.highlight.selected_text then
+            return true
+        end
+    end
+
+    return false
+end
 
 function DictQuickLookup:init()
     self.dict_font_size = G_reader_settings:readSetting("dict_font_size") or 20
@@ -133,7 +155,7 @@ function DictQuickLookup:init()
                 -- callback function when HoldReleaseText is handled as args
                 args = function(text, hold_duration)
                     local lookup_target
-                    if hold_duration < 3.0 then
+                    if hold_duration < TimeVal:new{ sec = 3, usec = 0 } then
                         -- do this lookup in the same domain (dict/wikipedia)
                         lookup_target = self.is_wiki and "LookupWikipedia" or "LookupWord"
                     else
@@ -347,7 +369,7 @@ function DictQuickLookup:init()
                                            or require("apps/filemanager/filemanagerutil").getDefaultDir() end
                         if not dir or not util.pathExists(dir) then
                             UIManager:show(InfoMessage:new{
-                                text = _("No directory to save article to could be found."),
+                                text = _("No folder to save article to could be found."),
                             })
                             return
                         end
@@ -370,16 +392,14 @@ function DictQuickLookup:init()
                                                     self:onHoldClose(true)
                                                     -- close current ReaderUI in 1 sec, and create a new one
                                                     UIManager:scheduleIn(1.0, function()
-                                                        local ReaderUI = require("apps/reader/readerui")
-                                                        local reader = ReaderUI:_getRunningInstance()
-                                                        if reader then
+                                                        if self.ui then
                                                             -- close Highlight menu if any still shown
-                                                            if reader.highlight then
-                                                                reader.highlight:onClose()
+                                                            if self.ui.highlight and self.ui.highlight.highlight_dialog then
+                                                                self.ui.highlight:onClose()
                                                             end
-                                                            reader:onClose()
+                                                            self.ui:onClose()
                                                         end
-                                                        ReaderUI:showReader(epub_path)
+                                                        self.ui:showReader(epub_path)
                                                     end)
                                                 end,
                                             })
@@ -426,7 +446,7 @@ function DictQuickLookup:init()
                 {
                     id = "highlight",
                     text = self:getHighlightText(),
-                    enabled = self.highlight ~= nil,
+                    enabled = not self:isDocless() and self.highlight ~= nil,
                     callback = function()
                         if self:getHighlightText() == highlight_strings.highlight then
                             self.ui:handleEvent(Event:new("Highlight"))
@@ -482,7 +502,7 @@ function DictQuickLookup:init()
                         and ( #self.wiki_languages > 1 and BD.wrap(self.wiki_languages[1]).." > "..BD.wrap(self.wiki_languages[2])
                                                         or self.wiki_languages[1] ) -- (this " > " will be auro-mirrored by bidi)
                         or _("Search"),
-                    enabled = not self.is_wiki and true or #self.wiki_languages > 1,
+                    enabled = self:canSearch(),
                     callback = function()
                         if self.is_wiki then
                             self:resyncWikiLanguages(true) -- rotate & resync them
@@ -881,6 +901,7 @@ function DictQuickLookup:onCloseWidget()
             end
         end
     end
+
     -- NOTE: Drop region to make it a full-screen flash
     UIManager:setDirty(nil, function()
         return "flashui", nil
@@ -1186,11 +1207,32 @@ end
 
 function DictQuickLookup:lookupInputWord(hint)
     self.input_dialog = InputDialog:new{
-        title = _("Input lookup word"),
+        title = _("Enter a word or phrase to look up"),
         input = hint,
         input_hint = hint or "",
         input_type = "text",
         buttons = {
+            {
+                {
+                    text = _("Translate"),
+                    is_enter_default = false,
+                    callback = function()
+                        if self.input_dialog:getInputText() == "" then return end
+                        self:closeInputDialog()
+                        Translator:showTranslation(self.input_dialog:getInputText())
+                    end,
+                },
+                {
+                    text = _("Search Wikipedia"),
+                    is_enter_default = self.is_wiki,
+                    callback = function()
+                        if self.input_dialog:getInputText() == "" then return end
+                        self.is_wiki = true
+                        self:closeInputDialog()
+                        self:inputLookup()
+                    end,
+                },
+            },
             {
                 {
                     text = _("Cancel"),
@@ -1199,15 +1241,16 @@ function DictQuickLookup:lookupInputWord(hint)
                     end,
                 },
                 {
-                    text = _("Lookup"),
-                    is_enter_default = true,
+                    text = _("Search dictionary"),
+                    is_enter_default = not self.is_wiki,
                     callback = function()
+                        if self.input_dialog:getInputText() == "" then return end
+                        self.is_wiki = false
                         self:closeInputDialog()
-                        self:onClose()
                         self:inputLookup()
                     end,
                 },
-            }
+            },
         },
     }
     UIManager:show(self.input_dialog)

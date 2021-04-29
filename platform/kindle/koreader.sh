@@ -121,6 +121,10 @@ ko_update_check() {
         logmsg "Updating KOReader . . ."
         # Let our checkpoint script handle the detailed visual feedback...
         eips_print_bottom_centered "Updating KOReader" 3
+        # Setup the FBInk daemon
+        export FBINK_NAMED_PIPE="/tmp/koreader.fbink"
+        rm -f "${FBINK_NAMED_PIPE}"
+        FBINK_PID="$(/var/tmp/fbink --daemon 1 %KOREADER% -q -y -6 -P 0)"
         # NOTE: See frontend/ui/otamanager.lua for a few more details on how we squeeze a percentage out of tar's checkpoint feature
         # NOTE: %B should always be 512 in our case, so let stat do part of the maths for us instead of using %s ;).
         FILESIZE="$(stat -c %b "${NEWUPDATE}")"
@@ -132,8 +136,9 @@ ko_update_check() {
         #       which we cannot use because it's been mounted noexec for a few years now...
         cp -pf "${KOREADER_DIR}/tar" /var/tmp/gnutar
         # shellcheck disable=SC2016
-        /var/tmp/gnutar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='/var/tmp/fbink -q -y -6 -P $(($TAR_CHECKPOINT/$CPOINTS))' -C "/mnt/us" -xf "${NEWUPDATE}"
+        /var/tmp/gnutar --no-same-permissions --no-same-owner --checkpoint="${CPOINTS}" --checkpoint-action=exec='printf "%s" $((TAR_CHECKPOINT / CPOINTS)) > ${FBINK_NAMED_PIPE}' -C "/mnt/us" -xf "${NEWUPDATE}"
         fail=$?
+        kill -TERM "${FBINK_PID}"
         # And remove our temporary tar binary...
         rm -f /var/tmp/gnutar
         # Cleanup behind us...
@@ -153,8 +158,9 @@ ko_update_check() {
             eips_print_bottom_centered "Update failed :(" 2
             eips_print_bottom_centered "KOReader may fail to function properly" 1
         fi
-        rm -f "${NEWUPDATE}" # always purge newupdate in all cases to prevent update loop
-        unset BLOCKS CPOINTS
+        rm -f "${NEWUPDATE}" # always purge newupdate to prevent update loops
+        unset CPOINTS FBINK_NAMED_PIPE
+        unset BLOCKS FILESIZE FBINK_PID
         # Ensure everything is flushed to disk before we restart. This *will* stall for a while on slow storage!
         sync
     fi

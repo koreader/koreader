@@ -161,10 +161,10 @@ function Button:setText(text, width)
     end
 end
 
-function Button:setIcon(icon)
+function Button:setIcon(icon, width)
     if icon ~= self.icon then
         self.icon = icon
-        self.width = nil
+        self.width = width
         self:init()
     end
 end

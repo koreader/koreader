@@ -96,8 +96,12 @@ function ReaderFont:init()
             end,
             checked_func = function()
                 return v == self.font_face
-            end
+            end,
+            menu_item_id = v,
         })
+    end
+    self.face_table.open_on_menu_item_id_func = function()
+        return self.font_face
     end
     self.ui.menu:registerToMainMenu(self)
 end
@@ -123,10 +127,10 @@ function ReaderFont:onReadSettings(config)
                   or 22
     self.ui.document:setFontSize(Screen:scaleBySize(self.font_size))
 
-    self.font_embolden = config:readSetting("font_embolden")
-                      or G_reader_settings:readSetting("copt_font_weight")
+    self.font_base_weight = config:readSetting("font_base_weight")
+                      or G_reader_settings:readSetting("copt_font_base_weight")
                       or 0
-    self.ui.document:toggleFontBolder(self.font_embolden)
+    self.ui.document:setFontBaseWeight(self.font_base_weight)
 
     self.font_hinting = config:readSetting("font_hinting")
                      or G_reader_settings:readSetting("copt_font_hinting")
@@ -234,9 +238,9 @@ function ReaderFont:onSetLineSpace(space)
     return true
 end
 
-function ReaderFont:onToggleFontBolder(toggle)
-    self.font_embolden = toggle
-    self.ui.document:toggleFontBolder(toggle)
+function ReaderFont:onSetFontBaseWeight(weight)
+    self.font_base_weight = weight
+    self.ui.document:setFontBaseWeight(weight)
     self.ui:handleEvent(Event:new("UpdatePos"))
     return true
 end
@@ -284,7 +288,7 @@ function ReaderFont:onSaveSettings()
     self.ui.doc_settings:saveSetting("font_face", self.font_face)
     self.ui.doc_settings:saveSetting("header_font_face", self.header_font_face)
     self.ui.doc_settings:saveSetting("font_size", self.font_size)
-    self.ui.doc_settings:saveSetting("font_embolden", self.font_embolden)
+    self.ui.doc_settings:saveSetting("font_base_weight", self.font_base_weight)
     self.ui.doc_settings:saveSetting("font_hinting", self.font_hinting)
     self.ui.doc_settings:saveSetting("font_kerning", self.font_kerning)
     self.ui.doc_settings:saveSetting("word_spacing", self.word_spacing)
@@ -332,7 +336,9 @@ function ReaderFont:addToMainMenu(menu_items)
     self.face_table.max_per_page = 5
     -- insert table to main reader menu
     menu_items.change_font = {
-        text = self.font_menu_title,
+        text_func = function()
+            return T(_("Font: %1"), BD.wrap(self.font_face))
+        end,
         sub_item_table = self.face_table,
     }
 end

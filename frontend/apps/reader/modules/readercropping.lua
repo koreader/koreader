@@ -20,6 +20,8 @@ function ReaderCropping:onPageCrop(mode)
     -- backup original zoom mode as cropping use "page" zoom mode
     self.orig_zoom_mode = self.view.zoom_mode
     if mode == "auto" then
+        --- @fixme: This is weird. "auto" crop happens to be the default, yet the default zoom mode/genus is "page", not "content".
+        ---         This effectively yields different results whether auto is enabled by default, or toggled at runtime...
         if self.document.configurable.text_wrap ~= 1 then
             self:setCropZoomMode(true)
         end
@@ -154,6 +156,10 @@ function ReaderCropping:setCropZoomMode(confirmed)
         self:setZoomMode(zoom_mode_type
                     and "content"..zoom_mode_type
                     or self.orig_zoom_mode)
+        -- Update the configurable, too
+        self.document.configurable.zoom_mode_genus = zoom_mode_type
+                                                 and 3 -- "content"
+                                                  or 4 -- "page"
         self.ui:handleEvent(Event:new("InitScrollPageStates"))
     else
         self:setZoomMode(self.orig_zoom_mode)

@@ -40,8 +40,6 @@ local Kobo = Generic:new{
     isAlwaysPortrait = yes,
     -- we don't need an extra refreshFull on resume, thank you very much.
     needsScreenRefreshAfterResume = no,
-    -- the internal storage mount point users can write to
-    internal_storage_mount_point = "/mnt/onboard/",
     -- currently only the Aura One and Forma have coloured frontlights
     hasNaturalLight = no,
     hasNaturalLightMixer = no,
@@ -49,6 +47,12 @@ local Kobo = Generic:new{
     canHWInvert = yes,
     home_dir = "/mnt/onboard",
     canToggleMassStorage = yes,
+    -- New devices *may* be REAGL-aware, but generally don't expect explicit REAGL requests, default to not.
+    isREAGL = no,
+    -- Mark 7 devices sport an updated driver.
+    isMk7 = no,
+    -- MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls are generally reliable
+    hasReliableMxcWaitFor = yes,
 }
 
 --- @todo hasKeys for some devices?
@@ -89,10 +93,10 @@ local KoboDaylight = Kobo:new{
 local KoboDahlia = Kobo:new{
     model = "Kobo_dahlia",
     hasFrontlight = yes,
-    -- NOTE: The hardware can technically track 2 different fingers, but we don't seem to be able to figure it out...
-    hasMultitouch = no,
     touch_phoenix_protocol = true,
-    -- There's no slot 0, the first finger gets assigned slot 1, and the second slot 2
+    -- There's no slot 0, the first finger gets assigned slot 1, and the second slot 2.
+    -- NOTE: Could be queried at runtime via EVIOCGABS on C.ABS_MT_TRACKING_ID (minimum field).
+    --       Used to be handled via an adjustTouchAlyssum hook that just mangled ABS_MT_TRACKING_ID values.
     main_finger_slot = 1,
     display_dpi = 265,
     -- the bezel covers the top 11 pixels:
@@ -123,6 +127,8 @@ local KoboPhoenix = Kobo:new{
     display_dpi = 212,
     -- The bezel covers 10 pixels at the bottom:
     viewport = Geom:new{x=0, y=0, w=758, h=1014},
+    -- NOTE: AFAICT, the Aura was the only one explicitly requiring REAGL requests...
+    isREAGL = yes,
     -- NOTE: May have a buggy kernel, according to the nightmode hack...
     canHWInvert = no,
 }
@@ -146,6 +152,7 @@ local KoboSnow = Kobo:new{
 --- @fixme Check if the Clara fix actually helps here... (#4015)
 local KoboSnowRev2 = Kobo:new{
     model = "Kobo_snow_r2",
+    isMk7 = yes,
     hasFrontlight = yes,
     touch_snow_protocol = true,
     display_dpi = 265,
@@ -165,9 +172,9 @@ local KoboStar = Kobo:new{
 }
 
 -- Kobo Aura second edition, Rev 2:
---- @fixme Confirm that this is accurate? If it is, and matches the Rev1, ditch the special casing.
 local KoboStarRev2 = Kobo:new{
     model = "Kobo_star_r2",
+    isMk7 = yes,
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
     display_dpi = 212,
@@ -178,7 +185,7 @@ local KoboAlyssum = Kobo:new{
     model = "Kobo_alyssum",
     hasFrontlight = yes,
     touch_phoenix_protocol = true,
-    touch_alyssum_protocol = true,
+    main_finger_slot = 1,
     display_dpi = 300,
 }
 
@@ -186,12 +193,13 @@ local KoboAlyssum = Kobo:new{
 local KoboPika = Kobo:new{
     model = "Kobo_pika",
     touch_phoenix_protocol = true,
-    touch_alyssum_protocol = true,
+    main_finger_slot = 1,
 }
 
 -- Kobo Clara HD:
 local KoboNova = Kobo:new{
     model = "Kobo_nova",
+    isMk7 = yes,
     canToggleChargingLED = yes,
     hasFrontlight = yes,
     touch_snow_protocol = true,
@@ -217,6 +225,7 @@ local KoboNova = Kobo:new{
 --       There's also a CM_ROTARY_ENABLE command, but which seems to do as much nothing as the STATUS one...
 local KoboFrost = Kobo:new{
     model = "Kobo_frost",
+    isMk7 = yes,
     canToggleChargingLED = yes,
     hasFrontlight = yes,
     hasKeys = yes,
@@ -241,6 +250,7 @@ local KoboFrost = Kobo:new{
 -- NOTE: Assume the same quirks as the Forma apply.
 local KoboStorm = Kobo:new{
     model = "Kobo_storm",
+    isMk7 = yes,
     canToggleChargingLED = yes,
     hasFrontlight = yes,
     hasKeys = yes,
@@ -259,12 +269,19 @@ local KoboStorm = Kobo:new{
         nl_max = 10,
         nl_inverted = true,
     },
+    -- NOTE: The Libra apparently suffers from a mysterious issue where completely innocuous WAIT_FOR_UPDATE_COMPLETE ioctls
+    --       will mysteriously fail with a timeout (5s)...
+    --       This obviously leads to *terrible* user experience, so, until more is understood avout the issue,
+    --       bypass this ioctl on this device.
+    --       c.f., https://github.com/koreader/koreader/issues/7340
+    hasReliableMxcWaitFor = no,
 }
 
 -- Kobo Nia:
 --- @fixme: Untested, assume it's Clara-ish for now.
 local KoboLuna = Kobo:new{
     model = "Kobo_luna",
+    isMk7 = yes,
     canToggleChargingLED = yes,
     hasFrontlight = yes,
     touch_snow_protocol = true,
@@ -272,7 +289,20 @@ local KoboLuna = Kobo:new{
 }
 
 function Kobo:init()
-    self.screen = require("ffi/framebuffer_mxcfb"):new{device = self, debug = logger.dbg, is_always_portrait = self.isAlwaysPortrait()}
+    -- Check if we need to disable MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls...
+    local mxcfb_bypass_wait_for
+    if G_reader_settings:has("mxcfb_bypass_wait_for") then
+        mxcfb_bypass_wait_for = G_reader_settings:isTrue("mxcfb_bypass_wait_for")
+    else
+        mxcfb_bypass_wait_for = not self:hasReliableMxcWaitFor()
+    end
+
+    self.screen = require("ffi/framebuffer_mxcfb"):new{
+        device = self,
+        debug = logger.dbg,
+        is_always_portrait = self.isAlwaysPortrait(),
+        mxcfb_bypass_wait_for = mxcfb_bypass_wait_for,
+    }
     if self.screen.fb_bpp == 32 then
         -- Ensure we decode images properly, as our framebuffer is BGRA...
         logger.info("Enabling Kobo @ 32bpp BGR tweaks")
@@ -282,6 +312,10 @@ function Kobo:init()
     -- Automagically set this so we never have to remember to do it manually ;p
     if self:hasNaturalLight() and self.frontlight_settings and self.frontlight_settings.frontlight_mixer then
         self.hasNaturalLightMixer = yes
+    end
+    -- Ditto
+    if self:isMk7() then
+        self.canHWDither = yes
     end
 
     self.powerd = require("device/kobo/powerd"):new{device = self}
@@ -312,16 +346,6 @@ function Kobo:init()
         }
     }
     self.wakeup_mgr = WakeupMgr:new()
-
-    -- Tweak initial slot, if necessary
-    if self.main_finger_slot then
-        self.input.cur_slot = self.main_finger_slot
-        self.input.ev_slots = {
-            [self.main_finger_slot] = {
-                slot = self.main_finger_slot,
-            }
-        }
-    end
 
     Generic.init(self)
 
@@ -437,14 +461,6 @@ end
 
 function Kobo:supportsScreensaver() return true end
 
-local ABS_MT_TRACKING_ID = 57
-local EV_ABS = 3
-local adjustTouchAlyssum = function(self, ev)
-    if ev.type == EV_ABS and ev.code == ABS_MT_TRACKING_ID then
-        ev.value = ev.value - 1
-    end
-end
-
 function Kobo:initEventAdjustHooks()
     -- it's called KOBO_TOUCH_MIRRORED in defaults.lua, but what it
     -- actually did in its original implementation was to switch X/Y.
@@ -462,10 +478,6 @@ function Kobo:initEventAdjustHooks()
             --- @fixme what if we change the screen portrait mode?
             self.screen:getWidth()
         )
-    end
-
-    if self.touch_alyssum_protocol then
-        self.input:registerEventAdjustHook(adjustTouchAlyssum)
     end
 
     if self.touch_snow_protocol then

@@ -539,6 +539,17 @@ table, tcaption, tr, th, td { border: black solid 1px; border-collapse: collapse
             separator = true,
         },
         {
+            id = "a_italic";
+            title = _("Links always italic"),
+            css = [[a, a * { font-style: italic !important; }]],
+        },
+        {
+            id = "a_not_italic";
+            title = _("Links never italic"),
+            css = [[a, a * { font-style: normal !important; }]],
+            separator = true,
+        },
+        {
             id = "a_underline";
             title = _("Links always underlined"),
             css = [[a[href], a[href] * { text-decoration: underline !important; }]],
@@ -796,7 +807,8 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
                 css = [[
 .footnote, .footnotes, .fn,
 .note, .note1, .note2, .note3,
-.ntb, .ntb-txt, .ntb-txt-j
+.ntb, .ntb-txt, .ntb-txt-j,
+.voetnoten
 {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
@@ -812,7 +824,8 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
                 css = [[
 .footnote, .footnotes, .fn,
 .note, .note1, .note2, .note3,
-.ntb, .ntb-txt, .ntb-txt-j
+.ntb, .ntb-txt, .ntb-txt-j,
+.voetnoten
 {
     -cr-hint: footnote-inpage;
     margin: 0 !important;
@@ -820,20 +833,6 @@ This tweak can be duplicated as a user style tweak when books contain footnotes 
 }
                 ]],
             },
-        },
-        {
-            id = "epub_switch_show_case";
-            title = _("Toggle alternative EPUB content"),
-            description = _([[
-The EPUB3 format allows a
-<epub:switch> <epub:case> <epub:default>
-construct to provide alternative content to engines that support optional features.
-KOReader currently falls back to hiding all <epub:case> content and shows the <epub:default> content (usually an image).
-This tweak toggles this behavior, and may show the <epub:case> content as plain text.]]),
-            css = [[
-switch > case    { display: inline; }
-switch > default { display: none; }
-            ]],
         },
         {
             id = "no_pseudo_element_before_after";

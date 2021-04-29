@@ -94,7 +94,7 @@ function KindlePowerD:setIntensityHW(intensity)
         -- NOTE: when intensity is 0, we want to *really* kill the light, so do it manually
         -- (asking lipc to set it to 0 would in fact set it to > 0 on ! canTurnFrontlightOff Kindles).
         -- We do *both* to make the fl restore on resume less jarring on devices where lipc 0 != off.
-        os.execute("echo -n ".. intensity .." > " .. self.fl_intensity_file)
+        os.execute("printf '%s' ".. intensity .." > " .. self.fl_intensity_file)
     end
 end
 

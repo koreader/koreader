@@ -13,6 +13,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local InfoMessage = require("ui/widget/infomessage")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local rapidjson = require("rapidjson")
 local sha = require("ffi/sha2")
@@ -126,41 +127,50 @@ function CalibreWireless:checkCalibreServer(host, port)
     return false
 end
 
+-- Standard JSON/control opcodes receive callback
+function CalibreWireless:JSONReceiveCallback(host, port)
+    -- NOTE: Closure trickery because we need a reference to *this* self *inside* the callback,
+    --       which will be called as a function from another object (namely, StreamMessageQueue).
+    local this = self
+    return function(t)
+        local data = table.concat(t)
+        this:onReceiveJSON(data)
+        if not this.connect_message then
+            this.password_check_callback = function()
+                local msg
+                if this.invalid_password then
+                    msg = _("Invalid password")
+                    this.invalid_password = nil
+                    this:disconnect()
+                elseif this.disconnected_by_server then
+                    msg = _("Disconnected by calibre")
+                    this.disconnected_by_server = nil
+                else
+                    msg = T(_("Connected to calibre server at %1"),
+                        BD.ltr(T("%1:%2", this.calibre_socket.host, this.calibre_socket.port)))
+                end
+                UIManager:show(InfoMessage:new{
+                    text = msg,
+                    timeout = 2,
+                })
+            end
+            this.connect_message = true
+            UIManager:scheduleIn(1, this.password_check_callback)
+            if this.failed_connect_callback then
+                -- Don't disconnect if we connect in 10 seconds
+                UIManager:unschedule(this.failed_connect_callback)
+            end
+        end
+    end
+end
+
 function CalibreWireless:initCalibreMQ(host, port)
     local StreamMessageQueue = require("ui/message/streammessagequeue")
     if self.calibre_socket == nil then
         self.calibre_socket = StreamMessageQueue:new{
             host = host,
             port = port,
-            receiveCallback = function(data)
-                self:onReceiveJSON(data)
-                if not self.connect_message then
-                    self.password_check_callback = function()
-                        local msg
-                        if self.invalid_password then
-                            msg = _("Invalid password")
-                            self.invalid_password = nil
-                            self:disconnect()
-                        elseif self.disconnected_by_server then
-                            msg = _("Disconnected by calibre")
-                            self.disconnected_by_server = nil
-                        else
-                            msg = T(_("Connected to calibre server at %1"),
-                                BD.ltr(T("%1:%2", host, port)))
-                        end
-                        UIManager:show(InfoMessage:new{
-                            text = msg,
-                            timeout = 2,
-                        })
-                    end
-                    self.connect_message = true
-                    UIManager:scheduleIn(1, self.password_check_callback)
-                    if self.failed_connect_callback then
-                        --don't disconnect if we connect in 10 seconds
-                        UIManager:unschedule(self.failed_connect_callback)
-                    end
-                end
-            end,
+            receiveCallback = self:JSONReceiveCallback(),
         }
         self.calibre_socket:start()
         self.calibre_messagequeue = UIManager:insertZMQ(self.calibre_socket)
@@ -523,7 +533,7 @@ function CalibreWireless:sendBook(arg)
     else
         local msg = T(_("Can't receive file %1/%2: %3\nNo space left on device"),
             arg.thisBook + 1, arg.totalBooks, BD.filepath(filename))
-        if self:isCalibreAtLeast(4,18,0) then
+        if self:isCalibreAtLeast(4, 18, 0) then
             -- report the error back to calibre
             self:sendJsonData('ERROR', {message = msg})
             return
@@ -537,7 +547,8 @@ function CalibreWireless:sendBook(arg)
         end
     end
     -- switching to raw data receiving mode
-    self.calibre_socket.receiveCallback = function(data)
+    self.calibre_socket.receiveCallback = function(t)
+        local data = table.concat(t)
         --logger.info("receive file data", #data)
         --logger.info("Memory usage KB:", collectgarbage("count"))
         local to_write_data = data:sub(1, to_write_bytes)
@@ -560,11 +571,9 @@ function CalibreWireless:sendBook(arg)
                 CalibreMetadata:saveBookList()
                 updateDir(inbox_dir)
             end
-            -- switch to JSON data receiving mode
-            calibre_socket.receiveCallback = function(json_data)
-                calibre_device:onReceiveJSON(json_data)
-            end
-            -- if calibre sends multiple files there may be left JSON data
+            -- switch back to JSON data receiving mode
+            calibre_socket.receiveCallback = calibre_device:JSONReceiveCallback()
+            -- if calibre sends multiple files there may be leftover JSON data
             calibre_device.buffer = data:sub(#to_write_data + 1) or ""
             --logger.info("device buffer", calibre_device.buffer)
             if calibre_device.buffer ~= "" then
@@ -644,17 +653,38 @@ end
 
 function CalibreWireless:sendToCalibre(arg)
     logger.dbg("GET_BOOK_FILE_SEGMENT", arg)
-    -- not implemented yet, we just send an invalid opcode to raise a control error in calibre.
-    -- If we don't do this calibre will wait *a lot* for the file(s)
-    self:sendJsonData('NOOP', {})
+    local inbox_dir = G_reader_settings:readSetting("inbox_dir")
+    local path = inbox_dir .. "/" .. arg.lpath
+
+    local file_size = lfs.attributes(path, "size")
+    if not file_size then
+        self:sendJsonData("NOOP", {})
+        return
+    end
+
+    local file = io.open(path, "rb")
+    if not file then
+        self:sendJsonData("NOOP", {})
+        return
+    end
+
+    self:sendJsonData("OK", { fileLength = file_size })
+
+    while true do
+        local data = file:read(4096)
+        if not data then break end
+        self.calibre_socket:send(data)
+    end
+
+    file:close()
 end
 
-function CalibreWireless:isCalibreAtLeast(x,y,z)
+function CalibreWireless:isCalibreAtLeast(x, y, z)
     local v = self.calibre.version
-    local function semanticVersion(a,b,c)
+    local function semanticVersion(a, b, c)
         return ((a * 100000) + (b * 1000)) + c
     end
-    return semanticVersion(v[1],v[2],v[3]) >= semanticVersion(x,y,z)
+    return semanticVersion(v[1], v[2], v[3]) >= semanticVersion(x, y, z)
 end
 
 return CalibreWireless

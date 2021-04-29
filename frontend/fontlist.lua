@@ -9,6 +9,7 @@ local dbg = require("dbg")
 
 local FontList = {
     fontdir = "./fonts",
+    cachedir = DataStorage:getDataDir() .. "/cache/fontlist", -- in a subdirectory, so as not to mess w/ the Cache module.
     fontlist = {},
     fontinfo = {},
     fontnames = {},
@@ -93,11 +94,7 @@ local function isInFontsBlacklist(f)
 end
 
 local function getExternalFontDir()
-    if CanvasContext.isAndroid() or
-        CanvasContext.isDesktop() or
-        CanvasContext.isEmulator() or
-        CanvasContext.isPocketBook()
-    then
+    if CanvasContext.hasSystemFonts() then
         return require("frontend/ui/elements/font_settings"):getPath()
     else
         return os.getenv("EXT_FONT_DIR")
@@ -169,12 +166,15 @@ function FontList:getFontList()
     if #self.fontlist > 0 then return self.fontlist end
 
     local cache = Persist:new{
-        path = DataStorage:getDataDir() .. "/cache/fontinfo.dat"
+        path = self.cachedir .. "/fontinfo.dat"
     }
 
     local t, err = cache:load()
     if not t then
         logger.info(cache.path, err, "initializing it")
+
+        -- Create new subdirectory
+        lfs.mkdir(self.cachedir)
     end
     self.fontinfo = t or {}
 

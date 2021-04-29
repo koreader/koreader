@@ -132,7 +132,7 @@ describe("BackgroundRunner widget tests", function()
         table.insert(PluginShare.backgroundJobs, job)
         notifyBackgroundJobsUpdated()
 
-        while job.end_sec == nil do
+        while job.end_tv == nil do
             MockTime:increase(2)
             UIManager:handleInput()
         end
@@ -157,7 +157,7 @@ describe("BackgroundRunner widget tests", function()
         table.insert(PluginShare.backgroundJobs, job)
         notifyBackgroundJobsUpdated()
 
-        while job.end_sec == nil do
+        while job.end_tv == nil do
             MockTime:increase(2)
             UIManager:handleInput()
         end
@@ -171,11 +171,11 @@ describe("BackgroundRunner widget tests", function()
             ENV1 = "yes",
             ENV2 = "no",
         }
-        job.end_sec = nil
+        job.end_tv = nil
         table.insert(PluginShare.backgroundJobs, job)
         notifyBackgroundJobsUpdated()
 
-        while job.end_sec == nil do
+        while job.end_tv == nil do
             MockTime:increase(2)
             UIManager:handleInput()
         end
@@ -206,7 +206,7 @@ describe("BackgroundRunner widget tests", function()
         table.insert(PluginShare.backgroundJobs, job)
         notifyBackgroundJobsUpdated()
 
-        while job.end_sec == nil do
+        while job.end_tv == nil do
             MockTime:increase(2)
             UIManager:handleInput()
         end
@@ -216,12 +216,12 @@ describe("BackgroundRunner widget tests", function()
         assert.is_false(job.timeout)
         assert.is_false(job.bad_command)
 
-        job.end_sec = nil
+        job.end_tv = nil
         env2 = "no"
         table.insert(PluginShare.backgroundJobs, job)
         notifyBackgroundJobsUpdated()
 
-        while job.end_sec == nil do
+        while job.end_tv == nil do
             MockTime:increase(2)
             UIManager:handleInput()
         end
@@ -244,7 +244,7 @@ describe("BackgroundRunner widget tests", function()
         table.insert(PluginShare.backgroundJobs, job)
         notifyBackgroundJobsUpdated()
 
-        while job.end_sec == nil do
+        while job.end_tv == nil do
             MockTime:increase(2)
             UIManager:handleInput()
         end

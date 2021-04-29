@@ -44,6 +44,11 @@ function AutoStandby:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
+function AutoStandby:onCloseWidget()
+    logger.dbg("AutoStandby:onCloseWidget() instance=", tostring(self))
+    UIManager:unschedule(AutoStandby.allow)
+end
+
 function AutoStandby:addToMainMenu(menu_items)
     menu_items.autostandby = {
         sorting_hint = "device",
@@ -63,7 +68,7 @@ function AutoStandby:addToMainMenu(menu_items)
     }
 end
 
--- We've received touch/key event, so delay stadby accordingly
+-- We've received touch/key event, so delay standby accordingly
 function AutoStandby:onInputEvent()
     logger.dbg("AutoStandby:onInputevent() instance=", tostring(self))
     local config = self.settings.data

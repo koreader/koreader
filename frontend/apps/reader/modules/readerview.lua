@@ -13,6 +13,7 @@ local OverlapGroup = require("ui/widget/overlapgroup")
 local ReaderDogear = require("apps/reader/modules/readerdogear")
 local ReaderFlipping = require("apps/reader/modules/readerflipping")
 local ReaderFooter = require("apps/reader/modules/readerfooter")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
 local logger = require("logger")
@@ -36,7 +37,7 @@ local ReaderView = OverlapGroup:extend{
     outer_page_color = Blitbuffer.gray(DOUTER_PAGE_COLOR / 15),
     -- highlight with "lighten" or "underscore" or "invert"
     highlight = {
-        lighten_factor = 0.2,
+        lighten_factor = G_reader_settings:readSetting("highlight_lighten_factor", 0.2),
         temp_drawer = "invert",
         temp = {},
         saved_drawer = "lighten",
@@ -71,7 +72,7 @@ local ReaderView = OverlapGroup:extend{
     -- in flipping state
     flipping_visible = false,
     -- to ensure periodic flush of settings
-    settings_last_save_ts = nil,
+    settings_last_save_tv = nil,
 }
 
 function ReaderView:init()
@@ -733,7 +734,8 @@ end
 
 function ReaderView:onSetScrollMode(page_scroll)
     if self.ui.document.info.has_pages and page_scroll
-            and self.ui.zooming.paged_modes[self.zoom_mode] then
+            and self.ui.zooming.paged_modes[self.zoom_mode]
+            and self.ui.document.configurable.text_wrap == 0 then
         UIManager:show(InfoMessage:new{
             text = _([[
 Continuous view (scroll mode) works best with zoom to page width, zoom to content width or zoom to rows.
@@ -954,17 +956,17 @@ function ReaderView:onCloseDocument()
 end
 
 function ReaderView:onReaderReady()
-    self.settings_last_save_ts = os.time()
+    self.settings_last_save_tv = UIManager:getTime()
 end
 
 function ReaderView:onResume()
     -- As settings were saved on suspend, reset this on resume,
     -- as there's no need for a possibly immediate save.
-    self.settings_last_save_ts = os.time()
+    self.settings_last_save_tv = UIManager:getTime()
 end
 
 function ReaderView:checkAutoSaveSettings()
-    if not self.settings_last_save_ts then -- reader not yet ready
+    if not self.settings_last_save_tv then -- reader not yet ready
         return
     end
     if G_reader_settings:nilOrFalse("auto_save_settings_interval_minutes") then
@@ -973,9 +975,10 @@ function ReaderView:checkAutoSaveSettings()
     end
 
     local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
-    local now_ts = os.time()
-    if now_ts - self.settings_last_save_ts >= interval*60 then
-        self.settings_last_save_ts = now_ts
+    interval = TimeVal:new{ sec = interval*60, usec = 0 }
+    local now_tv = UIManager:getTime()
+    if now_tv - self.settings_last_save_tv >= interval then
+        self.settings_last_save_tv = now_tv
         -- I/O, delay until after the pageturn
         UIManager:tickAfterNext(function()
             self.ui:saveSettings()

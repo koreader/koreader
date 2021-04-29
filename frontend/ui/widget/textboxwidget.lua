@@ -24,7 +24,6 @@ local RenderText = require("ui/rendertext")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
-local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local Math = require("optmath")
 local logger = require("logger")
@@ -1790,7 +1789,7 @@ function TextBoxWidget:onHoldStartText(_, ges)
         return false -- let event be processed by other widgets
     end
 
-    self.hold_start_tv = TimeVal.now()
+    self.hold_start_tv = UIManager:getTime()
     return true
 end
 
@@ -1822,8 +1821,7 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
         return false
     end
 
-    local hold_duration = TimeVal.now() - self.hold_start_tv
-    hold_duration = hold_duration.sec + hold_duration.usec/1000000
+    local hold_duration = UIManager:getTime() - self.hold_start_tv
 
     -- If page contains an image, check if Hold is on this image and deal
     -- with it directly
@@ -1917,7 +1915,7 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
         -- to consider when looking for word boundaries)
         local selected_text = self._xtext:getSelectedWords(sel_start_idx, sel_end_idx, 50)
 
-        logger.dbg("onHoldReleaseText (duration:", hold_duration, ") :",
+        logger.dbg("onHoldReleaseText (duration:", hold_duration:tonumber(), ") :",
                         sel_start_idx, ">", sel_end_idx, "=", selected_text)
         callback(selected_text, hold_duration)
         return true
@@ -1935,7 +1933,7 @@ function TextBoxWidget:onHoldReleaseText(callback, ges)
     end
 
     local selected_text = table.concat(self.charlist, "", sel_start_idx, sel_end_idx)
-    logger.dbg("onHoldReleaseText (duration:", hold_duration, ") :", sel_start_idx, ">", sel_end_idx, "=", selected_text)
+    logger.dbg("onHoldReleaseText (duration:", hold_duration:tonumber(), ") :", sel_start_idx, ">", sel_end_idx, "=", selected_text)
     callback(selected_text, hold_duration)
     return true
 end

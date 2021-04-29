@@ -4,6 +4,7 @@ Generic device abstraction.
 This module defines stubs for common methods.
 --]]
 
+local DataStorage = require("datastorage")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -105,6 +106,9 @@ local Device = {
     -- set to yes on devices that have a non-blocking isWifiOn implementation
     -- (c.f., https://github.com/koreader/koreader/pull/5211#issuecomment-521304139)
     hasFastWifiStatusQuery = no,
+
+    -- set to yes on devices with system fonts
+    hasSystemFonts = no,
 
     canOpenLink = no,
     openLink = no,
@@ -498,6 +502,10 @@ end
 -- Device specific method to check if the startup script has been updated
 function Device:isStartupScriptUpToDate()
     return true
+end
+
+function Device:getDefaultCoverPath()
+    return DataStorage:getDataDir() .. "/cover.jpg"
 end
 
 --- Unpack an archive.

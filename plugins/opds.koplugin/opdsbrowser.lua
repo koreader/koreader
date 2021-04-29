@@ -80,13 +80,6 @@ local OPDSBrowser = Menu:extend{
 }
 
 function OPDSBrowser:init()
-    -- Update deprecated URLs
-    for _, server in ipairs(self.opds_servers) do
-        if server.url == "http://bookserver.archive.org/catalog/" then
-            server.url = "https://bookserver.archive.org"
-        end
-    end
-
     self.item_table = self:genItemTableFromRoot()
     self.catalog_title = nil
     Menu.init(self) -- call parent's init()
@@ -278,7 +271,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
             ["Accept-Encoding"] = "identity",
         },
         sink     = ltn12.sink.table(sink),
-        username = username,
+        user     = username,
         password = password,
     }
     logger.info("Request:", request)
@@ -417,6 +410,8 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                 if link.type:find(self.search_type) then
                     if link.href then
                         local stpl = self:getSearchTemplate(build_href(link.href), username, password)
+                        -- The OpenSearchDescription/Url template field might *also* be a relative path...
+                        stpl = build_href(stpl)
                         -- insert the search item
                         local item = {}
                         item.acquisitions = {}
@@ -705,7 +700,6 @@ function OPDSBrowser:browseSearchable(browse_url, username, password)
     self.search_server_dialog = InputDialog:new{
         title = _("Search OPDS catalog"),
         input = "",
-        hint = _("Search string"),
         -- @translators: This is an input hint for something to search for in an OPDS catalog, namely a famous author everyone knows. It probably doesn't need to be localized, but this is just here in case another name or book title would be more appropriate outside of a European context.
         input_hint = _("Alexandre Dumas"),
         input_type = "string",
@@ -736,7 +730,7 @@ function OPDSBrowser:browseSearchable(browse_url, username, password)
 end
 
 function OPDSBrowser:onMenuSelect(item)
-    self.catalog_title = item.text or _("OPDS Catalog")
+    self.catalog_title = self.catalog_title or _("OPDS Catalog")
     -- add catalog
     if item.callback then
         item.callback()
@@ -746,6 +740,7 @@ function OPDSBrowser:onMenuSelect(item)
         self:showDownloads(item)
     -- navigation
     else
+        self.catalog_title = item.text or self.catalog_title
         local connect_callback
         if item.searchable then
             connect_callback = function()
@@ -782,7 +777,7 @@ function OPDSBrowser:editOPDSServer(item)
         fields = {
             {
                 text = item.text or "",
-                hint = _("Catalog Name"),
+                hint = _("Catalog name"),
             },
             {
                 text = item.url or "",
