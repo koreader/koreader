@@ -496,11 +496,7 @@ function CoverImage:menuEntryCache()
                 help_text_func = function()
                     local cache_count, cache_size_KB
                         = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
-<<<<<<< HEAD
                     return T(_("The cache contains %1 files and uses %2."), cache_count, Util.getFriendlySize(cache_size_KB * 1000))
-=======
-                    return T(_("The cache contains %1 files and uses %2 MB."), cache_count, math.floor((cache_size_KB + 999) / 1000))
->>>>>>> 00e621f4... translatable, change KiB to KB, MiB to MB
                 end,
                 callback = function()
                     UIManager:show(ConfirmBox:new{
