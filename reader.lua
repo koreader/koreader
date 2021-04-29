@@ -299,7 +299,9 @@ else
         if start_with == "history" then
             local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
             UIManager:nextTick(function()
-                FileManagerHistory:onShowHist()
+                FileManagerHistory:new{
+                    ui = FileManager.instance,
+                }:onShowHist()
             end)
         elseif start_with == "favorites" then
             local FileManagerCollection = require("apps/filemanager/filemanagercollection")
