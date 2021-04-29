@@ -259,19 +259,35 @@ local facet_sample = [[
 ]]
 
 describe("OPDS module #nocov", function()
+    local socketutil
     local OPDSParser, OPDSBrowser
-    local orig_path
+    local orig_path, orig_lbt, orig_ltt, orig_fbt, orig_ftt
 
     setup(function()
         orig_path = package.path
         package.path = "plugins/opds.koplugin/?.lua;" .. package.path
         require("commonrequire")
+        socketutil = require("socketutil")
         OPDSParser = require("opdsparser")
         OPDSBrowser = require("opdsbrowser")
+
+        -- Make the timeouts more lenient to avoid spurious test failures
+        orig_lbt = socketutil.LARGE_BLOCK_TIMEOUT
+        socketutil.LARGE_BLOCK_TIMEOUT = socketutil.DEFAULT_BLOCK_TIMEOUT
+        orig_ltt = socketutil.LARGE_TOTAL_TIMEOUT
+        socketutil.LARGE_TOTAL_TIMEOUT = socketutil.DEFAULT_TOTAL_TIMEOUT
+        orig_fbt = socketutil.FILE_BLOCK_TIMEOUT
+        socketutil.FILE_BLOCK_TIMEOUT = socketutil.DEFAULT_BLOCK_TIMEOUT
+        orig_ftt = socketutil.FILE_TOTAL_TIMEOUT
+        socketutil.FILE_TOTAL_TIMEOUT = socketutil.DEFAULT_TOTAL_TIMEOUT
     end)
 
     teardown(function()
         package.path = orig_path
+        socketutil.LARGE_BLOCK_TIMEOUT = orig_lbt
+        socketutil.LARGE_TOTAL_TIMEOUT = orig_ltt
+        socketutil.FILE_BLOCK_TIMEOUT = orig_fbt
+        socketutil.FILE_TOTAL_TIMEOUT = orig_ftt
     end)
 
     describe("OPDS parser module", function()
