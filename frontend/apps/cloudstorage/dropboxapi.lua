@@ -5,6 +5,7 @@ local ltn12 = require("ltn12")
 local socket = require("socket")
 local socketutil = require("socketutil")
 local _ = require("gettext")
+local logger = require("logger")
 
 local DropBoxApi = {
 }
@@ -12,6 +13,7 @@ local DropBoxApi = {
 local API_URL_INFO = "https://api.dropboxapi.com/2/users/get_current_account"
 local API_LIST_FOLDER = "https://api.dropboxapi.com/2/files/list_folder"
 local API_DOWNLOAD_FILE = "https://content.dropboxapi.com/2/files/download"
+local API_LIST_ADD_FOLDER = "https://api.dropboxapi.com/2/files/list_folder/continue"
 
 function DropBoxApi:fetchInfo(token)
     local sink = {}
@@ -64,6 +66,12 @@ function DropBoxApi:fetchListFolders(path, token)
     if result_response ~= "" then
         local ret, result = pcall(JSON.decode, result_response)
         if ret then
+            -- Check if more results, and then get them
+            if result.has_more then
+              logger.dbg("Found additional files")
+              result = self:fetchAdditionalFolders(result, token)
+            end
+
             return result
         else
             return nil
@@ -161,5 +169,50 @@ function DropBoxApi:showFiles(path, token)
     end
     return dropbox_files
 end
+
+
+function DropBoxApi:fetchAdditionalFolders(response, token)
+  local out = response
+  local cursor = response.cursor
+
+  repeat
+    local num_entries = #out.entries
+    local data = "{\"cursor\": \"" .. cursor .. "\"}"
+
+    local sink = {}
+    socketutil:set_timeout()
+    local request = {
+        url     = API_LIST_ADD_FOLDER,
+        method  = "POST",
+        headers = {
+            ["Authorization"]  = "Bearer ".. token,
+            ["Content-Type"]   = "application/json",
+            ["Content-Length"] = #data,
+        },
+        source  = ltn12.source.string(data),
+        sink    = ltn12.sink.table(sink),
+    }
+    local headers_request = socket.skip(1, http.request(request))
+    socketutil:reset_timeout()
+
+    local result_response = table.concat(sink)
+    local ret, result = pcall(JSON.decode, result_response)
+
+    for k,v in pairs(result.entries) do
+      out.entries[num_entries + k] = v
+    end
+
+    if not ret then
+      return nil
+    end
+
+    if result.has_more then
+      cursor = result.cursor
+    end
+  until not result.has_more
+
+  return out
+end
+
 
 return DropBoxApi
