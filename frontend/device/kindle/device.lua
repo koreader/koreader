@@ -634,6 +634,11 @@ function KindleVoyage:init()
 
     Kindle.init(self)
 
+    self:resetInputs()
+end
+
+function KindleVoyage:resetInputs()
+    require("ffi/input"):closeAll()
     self.input.open(self.touch_dev)
     self.input.open("/dev/input/event2") -- WhisperTouch
     self.input.open("fake_events")
@@ -892,6 +897,13 @@ end
 
 KindleDXG.exit = Kindle3.exit
 
+function KindleVoyage:outofScreenSaver()
+    Kindle.outofScreenSaver(self)
+    local UIManager = require("ui/uimanager")
+    UIManager:nextTick(function()
+        self:resetInputs()
+    end)
+end
 
 ----------------- device recognition: -------------------
 
