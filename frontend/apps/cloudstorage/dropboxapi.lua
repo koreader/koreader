@@ -194,16 +194,19 @@ function DropBoxApi:fetchAdditionalFolders(response, token)
     }
     local headers_request = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
+    if headers_request == nil then
+        return nil
+    end
 
     local result_response = table.concat(sink)
     local ret, result = pcall(JSON.decode, result_response)
 
-    for k,v in pairs(result.entries) do
-      out.entries[num_entries + k] = v
-    end
-
     if not ret then
       return nil
+    end
+    
+    for k,v in pairs(result.entries) do
+      out.entries[num_entries + k] = v
     end
 
     if result.has_more then
