@@ -40,6 +40,10 @@ end
 
 local PluginLoader = {
     show_info = true,
+    enabled_plugins = nil,
+    disabled_plugins = nil,
+    loaded_plugins = nil,
+    all_plugins = nil,
 }
 
 function PluginLoader:loadPlugins()
@@ -47,6 +51,7 @@ function PluginLoader:loadPlugins()
 
     self.enabled_plugins = {}
     self.disabled_plugins = {}
+    self.loaded_plugins = {}
     local lookup_path_list = { DEFAULT_PLUGIN_PATH }
     local extra_paths = G_reader_settings:readSetting("extra_plugin_paths")
     if extra_paths then
@@ -135,26 +140,26 @@ function PluginLoader:loadPlugins()
 end
 
 function PluginLoader:genPluginManagerSubItem()
-    local enabled_plugins, disabled_plugins = {}, {}
-    if self.all_plugins == nil then
+    if not self.all_plugins then
+        local enabled_plugins, disabled_plugins = self:loadPlugins()
         self.all_plugins = {}
-        enabled_plugins, disabled_plugins = self:loadPlugins()
-    end
 
-    for _, plugin in ipairs(enabled_plugins) do
-        local element = getMenuTable(plugin)
-        element.enable = true
-        table.insert(self.all_plugins, element)
-    end
-
-    for _, plugin in ipairs(disabled_plugins) do
-        local element = getMenuTable(plugin)
-        element.enable = false
-        if not OBSOLETE_PLUGINS[element.name] then
+        for _, plugin in ipairs(enabled_plugins) do
+            local element = getMenuTable(plugin)
+            element.enable = true
             table.insert(self.all_plugins, element)
         end
+
+        for _, plugin in ipairs(disabled_plugins) do
+            local element = getMenuTable(plugin)
+            element.enable = false
+            if not OBSOLETE_PLUGINS[element.name] then
+                table.insert(self.all_plugins, element)
+            end
+        end
+
+        table.sort(self.all_plugins, function(v1, v2) return v1.fullname < v2.fullname end)
     end
-    table.sort(self.all_plugins, function(v1, v2) return v1.fullname < v2.fullname end)
 
     local plugin_table = {}
     for __, plugin in ipairs(self.all_plugins) do
@@ -191,11 +196,29 @@ end
 function PluginLoader:createPluginInstance(plugin, attr)
     local ok, re = pcall(plugin.new, plugin, attr)
     if ok then  -- re is a plugin instance
+        self.loaded_plugins[plugin.name] = re
         return ok, re
     else  -- re is the error message
         logger.err("Failed to initialize", plugin.name, "plugin: ", re)
         return nil, re
     end
+end
+
+--- Checks if a specific plugin is instantiated
+function PluginLoader:isPluginLoaded(name)
+   return self.loaded_plugins[name] ~= nil
+end
+
+--- Returns the current instance of a specific Plugin (if any)
+--- (NOTE: You can also usually access it via self.ui[plugin_name])
+function PluginLoader:getPluginInstance(name)
+   return self.loaded_plugins[name]
+end
+
+-- *MUST* be called on destruction of whatever called createPluginInstance!
+function PluginLoader:finalize()
+    -- Unpin stale references
+    self.loaded_plugins = {}
 end
 
 return PluginLoader

@@ -771,6 +771,7 @@ end
 
 function FileManager:onClose()
     logger.dbg("close filemanager")
+    PluginLoader:finalize()
     self:handleEvent(Event:new("SaveSettings"))
     G_reader_settings:flush()
     UIManager:close(self)
