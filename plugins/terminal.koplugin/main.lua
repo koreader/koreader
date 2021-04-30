@@ -22,7 +22,7 @@ local Terminal = WidgetContainer:new{
     name = "terminal",
     command = "",
     dump_file = util.realpath(DataStorage:getDataDir()) .. "/terminal_output.txt",
-    items_per_page = G_reader_settings:readSetting("items_per_page") or 16,
+    items_per_page = 16,
     settings = LuaSettings:open(DataStorage:getSettingsDir() .. "/terminal_shortcuts.lua"),
     shortcuts_dialog = nil,
     shortcuts_menu = nil,
@@ -38,6 +38,7 @@ end
 function Terminal:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
+    self.items_per_page = G_reader_settings:readSetting("items_per_page") or 16
     self.shortcuts = self.settings:readSetting("shortcuts", {})
 end
 
