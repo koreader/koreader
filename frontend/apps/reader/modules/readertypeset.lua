@@ -164,7 +164,7 @@ function ReaderTypeset:onSetBlockRenderingMode(mode)
         _("web"),
     }
     UIManager:show(Notification:new{
-        text = T( _("Font hinting set to %1."), rendering_text[mode + 1]),
+        text = T( _("Render mode set to %1."), rendering_text[mode + 1]),
     })
     return true
 end
