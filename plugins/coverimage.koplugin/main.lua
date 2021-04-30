@@ -17,7 +17,6 @@ local UIManager = require("ui/uimanager")
 local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
 local T = require("ffi/util").template
-local Util = require("util")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
@@ -473,7 +472,7 @@ function CoverImage:menuEntryCache()
                 text_func = function()
                     local number
                     if self.cover_image_cache_maxsize > 0 then
-                        number = Util.getFriendlySize(self.cover_image_cache_maxsize * 1e6)
+                        number = util.getFriendlySize(self.cover_image_cache_maxsize * 1e6)
                     elseif self.cover_image_cache_maxsize == 0 then
                         number = _("unlimited")
                     else
@@ -496,7 +495,7 @@ function CoverImage:menuEntryCache()
                 help_text_func = function()
                     local cache_count, cache_size_KB
                         = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
-                    return T(_("The cache contains %1 files and uses %2."), cache_count, Util.getFriendlySize(cache_size_KB * 1000))
+                    return T(_("The cache contains %1 files and uses %2."), cache_count, util.getFriendlySize(cache_size_KB * 1000))
                 end,
                 callback = function()
                     UIManager:show(ConfirmBox:new{
