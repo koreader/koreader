@@ -170,7 +170,6 @@ function DropBoxApi:showFiles(path, token)
     return dropbox_files
 end
 
-
 function DropBoxApi:fetchAdditionalFolders(response, token)
   local out = response
   local cursor = response.cursor
