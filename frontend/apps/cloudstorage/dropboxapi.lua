@@ -205,8 +205,8 @@ function DropBoxApi:fetchAdditionalFolders(response, token)
       return nil
     end
     
-    for k,v in pairs(result.entries) do
-      out.entries[num_entries + k] = v
+    for __, v in ipairs(result.entries) do
+      table.insert(out.entries, v)
     end
 
     if result.has_more then
