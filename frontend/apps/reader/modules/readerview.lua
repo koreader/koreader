@@ -9,6 +9,7 @@ local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local IconWidget = require("ui/widget/iconwidget")
 local InfoMessage = require("ui/widget/infomessage")
+local Notification = require("ui/widget/notification")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ReaderDogear = require("apps/reader/modules/readerdogear")
 local ReaderFlipping = require("apps/reader/modules/readerflipping")
@@ -869,6 +870,9 @@ function ReaderView:onSetViewMode(new_mode)
         self.view_mode = new_mode
         self.ui.document:setViewMode(new_mode)
         self.ui:handleEvent(Event:new("ChangeViewMode"))
+        UIManager:show(Notification:new{
+            text = T( _("View mode set to %1."), new_mode),
+        })
     end
 end
 
