@@ -1,11 +1,11 @@
 local DocumentRegistry = require("document/documentregistry")
 local JSON = require("json")
 local http = require("socket.http")
+local logger = require("logger")
 local ltn12 = require("ltn12")
 local socket = require("socket")
 local socketutil = require("socketutil")
 local _ = require("gettext")
-local logger = require("logger")
 
 local DropBoxApi = {
 }
