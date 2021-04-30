@@ -215,5 +215,4 @@ function DropBoxApi:fetchAdditionalFolders(response, token)
   return out
 end
 
-
 return DropBoxApi
