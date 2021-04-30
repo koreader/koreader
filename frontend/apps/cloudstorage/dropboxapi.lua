@@ -176,7 +176,6 @@ function DropBoxApi:fetchAdditionalFolders(response, token)
   local cursor = response.cursor
 
   repeat
-    local num_entries = #out.entries
     local data = "{\"cursor\": \"" .. cursor .. "\"}"
 
     local sink = {}
@@ -204,7 +203,7 @@ function DropBoxApi:fetchAdditionalFolders(response, token)
     if not ret then
       return nil
     end
-    
+
     for __, v in ipairs(result.entries) do
       table.insert(out.entries, v)
     end
