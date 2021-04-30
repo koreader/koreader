@@ -230,11 +230,11 @@ end
 
 function ReaderFont:onSetLineSpace(space)
     self.line_space_percent = math.min(200, math.max(50, space))
+    self.ui.document:setInterlineSpacePercent(self.line_space_percent)
+    self.ui:handleEvent(Event:new("UpdatePos"))
     UIManager:show(Notification:new{
         text = T( _("Line spacing set to %1%."), self.line_space_percent),
     })
-    self.ui.document:setInterlineSpacePercent(self.line_space_percent)
-    self.ui:handleEvent(Event:new("UpdatePos"))
     return true
 end
 
@@ -242,6 +242,9 @@ function ReaderFont:onSetFontBaseWeight(weight)
     self.font_base_weight = weight
     self.ui.document:setFontBaseWeight(weight)
     self.ui:handleEvent(Event:new("UpdatePos"))
+    UIManager:show(Notification:new{
+        text = T( _("Font weight set to %1."), weight),
+    })
     return true
 end
 
@@ -249,6 +252,14 @@ function ReaderFont:onSetFontHinting(mode)
     self.font_hinting = mode
     self.ui.document:setFontHinting(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
+    local hint_text = {
+        _("off"),
+        _("native"),
+        _("auto"),
+    }
+    UIManager:show(Notification:new{
+        text = T( _("Font hinting set to %1."), hint_text[mode + 1]),
+    })
     return true
 end
 
@@ -256,6 +267,15 @@ function ReaderFont:onSetFontKerning(mode)
     self.font_kerning = mode
     self.ui.document:setFontKerning(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
+    local kerning_text = {
+        _("off"),
+        _("fast"),
+        _("good"),
+        _("best"),
+    }
+    UIManager:show(Notification:new{
+        text = T( _("Font kerning set to %1."), kerning_text[mode + 1]),
+    })
     return true
 end
 
@@ -263,6 +283,9 @@ function ReaderFont:onSetWordSpacing(values)
     self.word_spacing = values
     self.ui.document:setWordSpacing(values)
     self.ui:handleEvent(Event:new("UpdatePos"))
+    UIManager:show(Notification:new{
+        text = T( _("Word spacing: scaling set to %1, reduction to %2."), values[1], values[2]),
+    })
     return true
 end
 
@@ -270,6 +293,9 @@ function ReaderFont:onSetWordExpansion(value)
     self.word_expansion = value
     self.ui.document:setWordExpansion(value)
     self.ui:handleEvent(Event:new("UpdatePos"))
+    UIManager:show(Notification:new{
+        text = T( _("Word expansion set to %1."), value),
+    })
     return true
 end
 

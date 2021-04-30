@@ -5,6 +5,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local Math = require("optmath")
+local Notification = require("ui/widget/notification")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local Screen = require("device").screen
@@ -156,6 +157,15 @@ end
 
 function ReaderTypeset:onSetBlockRenderingMode(mode)
     self:setBlockRenderingMode(mode)
+    local rendering_text = {
+        _("legacy"),
+        _("flat"),
+        _("book"),
+        _("web"),
+    }
+    UIManager:show(Notification:new{
+        text = T( _("Font hinting set to %1."), rendering_text[mode + 1]),
+    })
     return true
 end
 
@@ -177,6 +187,9 @@ local OBSOLETED_CSS = {
 
 function ReaderTypeset:onSetRenderDPI(dpi)
     self:setRenderDPI(dpi)
+    UIManager:show(Notification:new{
+        text = T( _("Zoom set to %1 dpi."), dpi),
+    })
     return true
 end
 
