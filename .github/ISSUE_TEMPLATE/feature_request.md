@@ -7,6 +7,21 @@ assignees: ''
 
 ---
 
+# Feature request
+
+**Please note we will close your issue without comment if you delete, do not read or do not fill out the issue checklist below and provide ALL the requested information. If you repeatedly fail to use the issue template, we will block you from ever submitting issues to KOReader again.**
+
+- [ ] checked that the feature wasn't yet requested
+
+<!-- There're a few labels that help you to understand what's the status of a ticket
+
+     Please check that your feature request doesn't match any ticket labeled as 'enhancement'.
+     Also keep in mind that some feature requests can be labeled 'wontfix' or 'out-of-scope', so
+     check these two. 
+-->
+
+- [ ] checked that the feature wasn't yet requested
+
 **Does your feature request involve difficulty completing a task? Please describe.**
 A clear and concise description of what the problem is. Ex. I think it takes too many steps to [...]
 
