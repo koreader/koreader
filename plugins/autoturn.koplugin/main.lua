@@ -14,24 +14,17 @@ local AutoTurn = WidgetContainer:new{
     autoturn_sec = 0,
     autoturn_distance = 1,
     enabled = false,
-    settings_id = 0,
-    last_action_tv = TimeVal:now(),
+    last_action_tv = TimeVal.zero,
+    task = nil,
 }
 
 function AutoTurn:_enabled()
     return self.enabled and self.autoturn_sec > 0
 end
 
-function AutoTurn:_schedule(settings_id)
+function AutoTurn:_schedule()
     if not self:_enabled() then
         logger.dbg("AutoTurn:_schedule is disabled")
-        return
-    end
-    if self.settings_id ~= settings_id then
-        logger.dbg("AutoTurn:_schedule registered settings_id",
-                   settings_id,
-                   "does not equal to current one",
-                   self.settings_id)
         return
     end
 
@@ -44,17 +37,19 @@ function AutoTurn:_schedule(settings_id)
             self.ui:handleEvent(Event:new("GotoViewRel", self.autoturn_distance))
         end
         logger.dbg("AutoTurn: schedule in", self.autoturn_sec)
-        UIManager:scheduleIn(self.autoturn_sec, function() self:_schedule(settings_id) end)
+        UIManager:scheduleIn(self.autoturn_sec, self.task)
     else
         logger.dbg("AutoTurn: schedule in", delay)
-        UIManager:scheduleIn(delay, function() self:_schedule(settings_id) end)
+        UIManager:scheduleIn(delay, self.task)
     end
 end
 
-function AutoTurn:_deprecateLastTask()
+function AutoTurn:_unschedule()
     PluginShare.pause_auto_suspend = false
-    self.settings_id = self.settings_id + 1
-    logger.dbg("AutoTurn: deprecateLastTask", self.settings_id)
+    if self.task then
+        logger.dbg("AutoTurn: unschedule")
+        UIManager:unschedule(self.task)
+    end
 end
 
 function AutoTurn:_start()
@@ -63,7 +58,7 @@ function AutoTurn:_start()
         logger.dbg("AutoTurn: start at", now_tv:tonumber())
         PluginShare.pause_auto_suspend = true
         self.last_action_tv = now_tv
-        self:_schedule(self.settings_id)
+        self:_schedule()
 
         local text
         if self.autoturn_distance == 1 then
@@ -88,20 +83,22 @@ function AutoTurn:init()
     self.autoturn_sec = G_reader_settings:readSetting("autoturn_timeout_seconds") or 0
     self.autoturn_distance = G_reader_settings:readSetting("autoturn_distance") or 1
     self.enabled = G_reader_settings:isTrue("autoturn_enabled")
-    self.settings_id = 0
     self.ui.menu:registerToMainMenu(self)
-    self:_deprecateLastTask()
+    self.task = function()
+        self:_schedule()
+    end
     self:_start()
 end
 
 function AutoTurn:onCloseWidget()
     logger.dbg("AutoTurn: onCloseWidget")
-    self:_deprecateLastTask()
+    self:_unschedule()
+    self.task = nil
 end
 
 function AutoTurn:onCloseDocument()
     logger.dbg("AutoTurn: onCloseDocument")
-    self:_deprecateLastTask()
+    self:_unschedule()
 end
 
 function AutoTurn:onInputEvent()
@@ -113,7 +110,7 @@ end
 -- Unschedule it and restart after resume.
 function AutoTurn:onSuspend()
     logger.dbg("AutoTurn: onSuspend")
-    self:_deprecateLastTask()
+    self:_unschedule()
 end
 
 function AutoTurn:onResume()
@@ -143,7 +140,7 @@ function AutoTurn:addToMainMenu(menu_items)
                 cancel_callback = function()
                     self.enabled = false
                     G_reader_settings:makeFalse("autoturn_enabled")
-                    self:_deprecateLastTask()
+                    self:_unschedule()
                     menu:updateItems()
                 end,
                 callback = function(autoturn_spin)
@@ -151,7 +148,7 @@ function AutoTurn:addToMainMenu(menu_items)
                     G_reader_settings:saveSetting("autoturn_timeout_seconds", autoturn_spin.value)
                     self.enabled = true
                     G_reader_settings:makeTrue("autoturn_enabled")
-                    self:_deprecateLastTask()
+                    self:_unschedule()
                     self:_start()
                     menu:updateItems()
                 end,
@@ -176,7 +173,7 @@ function AutoTurn:addToMainMenu(menu_items)
                     self.autoturn_distance = autoturn_spin.value
                     G_reader_settings:saveSetting("autoturn_distance", autoturn_spin.value)
                     if self.enabled then
-                        self:_deprecateLastTask()
+                        self:_unschedule()
                         self:_start()
                     end
                     menu:updateItems()
