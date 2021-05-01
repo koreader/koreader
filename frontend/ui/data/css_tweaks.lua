@@ -136,7 +136,7 @@ h1 + h6, h2 + h6, h3 + h6, h4 + h6, h5 + h6 { page-break-before: avoid !importan
             },
             {
                 id = "page-break-after-body";
-                title = _("New page after <body>"),
+                title = _("New page on next <body>"),
                 css = [[body { page-break-after: always !important; }]],
             },
         },
