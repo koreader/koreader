@@ -283,9 +283,13 @@ function CalibreSearch:bookCatalog(t, option)
             entry.text = string.format("%s - %s", book.title, book.authors[1])
         end
         entry.callback = function()
+            local Event = require("ui/event")
+            UIManager:broadcastEvent(Event:new("SetupShowReader"))
+
+            self.search_menu:onClose()
+
             local ReaderUI = require("apps/reader/readerui")
             ReaderUI:showReader(book.rootpath .. "/" .. book.lpath)
-            self.search_menu:onClose()
         end
         table.insert(catalog, entry)
     end

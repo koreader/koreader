@@ -122,13 +122,17 @@ function FileManagerMenu:onOpenLastDoc()
         })
         return
     end
-    local ReaderUI = require("apps/reader/readerui")
-    ReaderUI:showReader(last_file)
 
-    -- only close menu if we were called from the menu
+    -- Only close menu if we were called from the menu
     if self.menu_container then
+        -- Mimic's FileManager's onShowingReader refresh optimizations
+        self.ui.tearing_down = true
+        self.ui.dithered = nil
         self:onCloseFileManagerMenu()
     end
+
+    local ReaderUI = require("apps/reader/readerui")
+    ReaderUI:showReader(last_file)
 end
 
 function FileManagerMenu:setUpdateItemTable()
@@ -784,7 +788,7 @@ function FileManagerMenu:onShowMenu(tab_index)
         }
     end
 
-    main_menu.close_callback = function ()
+    main_menu.close_callback = function()
         self:onCloseFileManagerMenu()
     end
 

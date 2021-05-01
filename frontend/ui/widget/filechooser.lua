@@ -540,7 +540,6 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
                         ok_callback = function()
                             DocumentRegistry:setProvider(file, provider, false)
 
-                            filemanager_instance:onClose()
                             reader_ui:showReader(file, provider)
                             UIManager:close(self.set_provider_dialog)
                         end,
@@ -554,14 +553,12 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
                         ok_callback = function()
                             DocumentRegistry:setProvider(file, provider, true)
 
-                            filemanager_instance:onClose()
                             reader_ui:showReader(file, provider)
                             UIManager:close(self.set_provider_dialog)
                         end,
                     })
                 else
                     -- just once
-                    filemanager_instance:onClose()
                     reader_ui:showReader(file, provider)
                     UIManager:close(self.set_provider_dialog)
                 end

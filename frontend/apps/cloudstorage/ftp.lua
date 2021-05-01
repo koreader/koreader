@@ -20,7 +20,7 @@ function Ftp:run(address, user, pass, path)
     return FtpApi:listFolder(url, path)
 end
 
-function Ftp:downloadFile(item, address, user, pass, path, close)
+function Ftp:downloadFile(item, address, user, pass, path, callback_close)
     local url = FtpApi:generateUrl(address, util.urlEncode(user), util.urlEncode(pass)) .. item.url
     logger.dbg("downloadFile url", url)
     path = util.fixUtf8(path, "_")
@@ -43,7 +43,13 @@ function Ftp:downloadFile(item, address, user, pass, path, close)
                 text = T(_("File saved to:\n%1\nWould you like to read the downloaded book now?"),
                     BD.filepath(path)),
                 ok_callback = function()
-                    close()
+                    local Event = require("ui/event")
+                    UIManager:broadcastEvent(Event:new("SetupShowReader"))
+
+                    if callback_close then
+                        callback_close()
+                    end
+
                     ReaderUI:showReader(path)
                 end
             })

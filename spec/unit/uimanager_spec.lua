@@ -326,33 +326,76 @@ describe("UIManager spec", function()
         UIManager:broadcastEvent("foo")
         assert.is.same(#UIManager._window_stack, 0)
 
+        -- Remember that the stack is processed top to bottom!
+        -- Test making a hole in the middle of the stack.
         UIManager._window_stack = {
             {
                 widget = {
                     handleEvent = function()
-                        UIManager._window_stack[1] = nil
-                        UIManager._window_stack[2] = nil
-                        UIManager._window_stack[3] = nil
+                        assert.truthy(true)
                     end
                 }
             },
             {
                 widget = {
                     handleEvent = function()
-                        assert.falsy(true);
+                        assert.falsy(true)
                     end
                 }
             },
             {
                 widget = {
                     handleEvent = function()
-                        assert.falsy(true);
+                        assert.falsy(true)
+                    end
+                }
+            },
+            {
+                widget = {
+                    handleEvent = function()
+                        table.remove(UIManager._window_stack, #UIManager._window_stack - 2)
+                        table.remove(UIManager._window_stack, #UIManager._window_stack - 2)
+                        table.remove(UIManager._window_stack, #UIManager._window_stack - 1)
+                    end
+                }
+            },
+            {
+                widget = {
+                    handleEvent = function()
+                        assert.truthy(true)
                     end
                 }
             },
         }
         UIManager:broadcastEvent("foo")
-        assert.is.same(0, #UIManager._window_stack)
+        assert.is.same(2, #UIManager._window_stack)
+
+        -- Test inserting a new widget in the stack
+        local new_widget = {
+            widget = {
+                handleEvent = function()
+                    assert.truthy(true)
+                end
+            }
+        }
+        UIManager._window_stack = {
+            {
+                widget = {
+                    handleEvent = function()
+                        table.insert(UIManager._window_stack, new_widget)
+                    end
+                }
+            },
+            {
+                widget = {
+                    handleEvent = function()
+                        assert.truthy(true)
+                    end
+                }
+            },
+        }
+        UIManager:broadcastEvent("foo")
+        assert.is.same(3, #UIManager._window_stack)
     end)
 
     it("should handle stack change when closing widgets", function()

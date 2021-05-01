@@ -284,6 +284,7 @@ else
     if start_with == "last" and last_file then
         local ReaderUI = require("apps/reader/readerui")
         UIManager:nextTick(function()
+            -- Instantiate RD
             ReaderUI:showReader(last_file)
         end)
         exit_code = UIManager:run()
@@ -292,10 +293,11 @@ else
         local home_dir =
             G_reader_settings:readSetting("home_dir") or Device.home_dir or lfs.currentdir()
         UIManager:nextTick(function()
+            -- Instantiate FM
             FileManager:showFiles(home_dir)
         end)
-        -- Always open history on top of filemanager so closing history
-        -- doesn't result in exit.
+        -- Always open FM modules on top of filemanager, so closing 'em doesn't result in an exit
+        -- because of an empty widget stack, and so they can interact with the FM instance as expected.
         if start_with == "history" then
             local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
             UIManager:nextTick(function()

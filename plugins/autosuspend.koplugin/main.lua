@@ -110,8 +110,8 @@ function AutoSuspend:init()
     self.auto_suspend_timeout_seconds = G_reader_settings:readSetting("auto_suspend_timeout_seconds") or default_auto_suspend_timeout_seconds
 
     UIManager.event_hook:registerWidget("InputEvent", self)
-    -- We need an instance-specific function reference to schedule, because when going from FM to RD,
-    -- we instantiate the RD instance *before* tearing down the old FM instance.
+    -- We need an instance-specific function reference to schedule, because in some rare cases,
+    -- we may instantiate a new plugin instance *before* tearing down the old one.
     self.task = function(shutdown_only)
         self:_schedule(shutdown_only)
     end
