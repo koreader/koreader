@@ -222,7 +222,6 @@ function FileManager:setupLayout()
     end
 
     function file_chooser:onFileSelect(file)  -- luacheck: ignore
-        FileManager.instance:onClose()
         ReaderUI:showReader(file)
         return true
     end
@@ -507,6 +506,7 @@ function FileManager:setupLayout()
     end
 end
 
+-- NOTE: The only thing that will *ever* instantiate a new FileManager object is our very own showFiles below!
 function FileManager:init()
     self:setupLayout()
 
@@ -781,6 +781,21 @@ function FileManager:onClose()
     return true
 end
 
+function FileManager:onShowingReader()
+    -- Allows us to optimize out a few useless refreshes in various CloseWidgets handlers...
+    self.tearing_down = true
+    -- Clear the dither flag to prevent it from infecting the queue and re-inserting a full-screen refresh...
+    self.dithered = nil
+
+    self:onClose()
+end
+
+-- Same as above, except we don't close it yet. Useful for plugins that need to close custom Menus before calling showReader.
+function FileManager:onSetupShowReader()
+    self.tearing_down = true
+    self.dithered = nil
+end
+
 function FileManager:onRefresh()
     self.file_chooser:refreshPath()
     return true
@@ -826,9 +841,7 @@ function FileManager:openRandomFile(dir)
             text = T(_("Do you want to open %1?"), BD.filename(BaseUtil.basename(random_file))),
             choice1_text = _("Open"),
             choice1_callback = function()
-                FileManager.instance:onClose()
                 ReaderUI:showReader(random_file)
-
             end,
             -- @translators Another file. This is a button on the open random file dialog. It presents a file with the choices Open/Another.
             choice2_text = _("Another"),
@@ -1152,6 +1165,10 @@ function FileManager:showFiles(path, focused_file)
         end
     }
     UIManager:show(file_manager)
+
+    -- NOTE: This is a bit clunky. This ought to be private and accessed via a getCurrentInstance method, àla ReaderUI.
+    --       But, it points to the *current* FM instance, and is nil'ed on exit.
+    --       As such, code outside of FileManager can just check/use FileManager.instance (which they do. extensively).
     self.instance = file_manager
 end
 

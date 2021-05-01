@@ -17,7 +17,7 @@ function WebDav:run(address, user, pass, path)
     return WebDavApi:listFolder(address, user, pass, path)
 end
 
-function WebDav:downloadFile(item, address, username, password, local_path, close)
+function WebDav:downloadFile(item, address, username, password, local_path, callback_close)
     local code_response = WebDavApi:downloadFile(address .. WebDavApi:urlEncode( item.url ), username, password, local_path)
     if code_response == 200 then
         local __, filename = util.splitFilePathName(local_path)
@@ -30,7 +30,13 @@ function WebDav:downloadFile(item, address, username, password, local_path, clos
                 text = T(_("File saved to:\n%1\nWould you like to read the downloaded book now?"),
                     BD.filepath(local_path)),
                 ok_callback = function()
-                    close()
+                    local Event = require("ui/event")
+                    UIManager:broadcastEvent(Event:new("SetupShowReader"))
+
+                    if callback_close then
+                        callback_close()
+                    end
+
                     ReaderUI:showReader(local_path)
                 end
             })

@@ -376,7 +376,7 @@ function ReaderMenu:onShowMenu(tab_index)
         }
     end
 
-    main_menu.close_callback = function ()
+    main_menu.close_callback = function()
         self.ui:handleEvent(Event:new("CloseReaderMenu"))
     end
 

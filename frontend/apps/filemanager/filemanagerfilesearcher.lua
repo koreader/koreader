@@ -42,10 +42,24 @@ function FileSearcher:readDir()
                 -- Don't traverse hidden folders if we're not showing them
                 if attributes.mode == "directory" and f ~= "." and f ~= ".." and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, ".")) then
                     table.insert(new_dirs, fullpath)
-                    table.insert(self.files, {name = f, text = f.."/", attr = attributes, callback = function() FileManager:showFiles(fullpath) end})
+                    table.insert(self.files, {
+                        name = f,
+                        text = f.."/",
+                        attr = attributes,
+                        callback = function()
+                            FileManager:showFiles(fullpath)
+                        end,
+                    })
                 -- Always ignore macOS resource forks, too.
                 elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") and (show_unsupported or DocumentRegistry:hasProvider(fullpath)) then
-                    table.insert(self.files, {name = f, text = f, attr = attributes, callback = function() ReaderUI:showReader(fullpath) end})
+                    table.insert(self.files, {
+                        name = f,
+                        text = f,
+                        attr = attributes,
+                        callback = function()
+                            ReaderUI:showReader(fullpath)
+                        end,
+                    })
                 end
             end
         end

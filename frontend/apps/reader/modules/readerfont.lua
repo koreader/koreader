@@ -188,7 +188,7 @@ function ReaderFont:onShowFontMenu()
         dimen = Screen:getSize(),
         main_menu,
     }
-    main_menu.close_callback = function ()
+    main_menu.close_callback = function()
         UIManager:close(menu_container)
     end
     -- show menu
