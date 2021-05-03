@@ -3,7 +3,7 @@ Inheritable abstraction for cache items
 --]]
 
 local CacheItem = {
-    size = 64, -- some reasonable default for simple Lua values / small tables
+    size = 128, -- some reasonable default for a small table
 }
 
 function CacheItem:new(o)

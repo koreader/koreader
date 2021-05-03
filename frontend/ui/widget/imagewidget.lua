@@ -39,7 +39,7 @@ end
 local DPI_SCALE = get_dpi_scale()
 
 local ImageCache = Cache:new{
-    max_memsize = 5*1024*1024, -- 5M of image cache
+    max_memsize = 8*1024*1024, -- 8M of image cache
     current_memsize = 0,
     cache = {},
     -- this will hold the LRU order of the cache

@@ -152,9 +152,9 @@ function PdfDocument:getUsedBBox(pageno)
     if used.x1 > pwidth then used.x1 = pwidth end
     if used.y0 < 0 then used.y0 = 0 end
     if used.y1 > pheight then used.y1 = pheight end
-    --- @todo Give size for cacheitem?  02.12 2012 (houqp)
     Cache:insert(hash, CacheItem:new{
         ubbox = used,
+        size = 256, -- might be closer to 160
     })
     page:close()
     return used
@@ -170,6 +170,7 @@ function PdfDocument:getPageLinks(pageno)
     local links = page:getPageLinks()
     Cache:insert(hash, CacheItem:new{
         links = links,
+        size = 64 + (8 * 32 * #links),
     })
     page:close()
     return links

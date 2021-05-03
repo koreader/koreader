@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20210414
+local CURRENT_MIGRATION_DATE = 20210503
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -207,6 +207,14 @@ if last_migration_date < 20210414 then
     if not ok then
        logger.warn("os.remove:", err)
     end
+end
+
+-- Cache, migration to Persist, https://github.com/koreader/koreader/pull/7624
+if last_migration_date < 20210503 then
+    logger.info("Performing one-time migration for 20210503")
+
+    local Cache = require("cache")
+    Cache:clearDiskCache()
 end
 
 -- We're done, store the current migration date

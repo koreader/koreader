@@ -27,13 +27,13 @@ DHINTCOUNT = 1
 DRENDER_MODE = 0 -- 0 is COLOUR
 
 -- minimum cache size
-DGLOBAL_CACHE_SIZE_MINIMUM = 1024*1024*10
+DGLOBAL_CACHE_SIZE_MINIMUM = 1024*1024*16
 
 -- proportion of system free memory used as global cache
 DGLOBAL_CACHE_FREE_PROPORTION = 0.4
 
 -- maximum cache size
-DGLOBAL_CACHE_SIZE_MAXIMUM = 1024*1024*60
+DGLOBAL_CACHE_SIZE_MAXIMUM = 1024*1024*64
 
 -- background colour in non scroll mode: 8 = gray, 0 = white, 15 = black
 DBACKGROUND_COLOR = 0
