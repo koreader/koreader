@@ -113,7 +113,7 @@ function RenderText:getGlyph(face, charcode, bold)
         return
     end
     glyph = CacheItem:new{rendered_glyph}
-    glyph.size = glyph[1].bb:getWidth() * glyph[1].bb:getHeight() / 2 + 32
+    glyph.size = tonumber(glyph[1].bb.stride) * glyph[1].bb.h + 320
     GlyphCache:insert(hash, glyph)
     return rendered_glyph
 end
@@ -314,7 +314,7 @@ function RenderText:getGlyphByIndex(face, glyphindex, bold)
         return
     end
     glyph = CacheItem:new{rendered_glyph}
-    glyph.size = glyph[1].bb:getWidth() * glyph[1].bb:getHeight() / 2 + 32
+    glyph.size = tonumber(glyph[1].bb.stride) * glyph[1].bb.h + 320
     GlyphCache:insert(hash, glyph)
     return rendered_glyph
 end

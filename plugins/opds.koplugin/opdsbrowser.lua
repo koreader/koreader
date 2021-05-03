@@ -30,7 +30,7 @@ local CatalogCacheItem = CacheItem:new{
 
 -- cache catalog parsed from feed xml
 local CatalogCache = Cache:new{
-    max_memsize = 20*1024, -- keep only 20 cache items
+    max_memsize = 20*1024, -- keep only 20 items
     current_memsize = 0,
     cache = {},
     cache_order = {},

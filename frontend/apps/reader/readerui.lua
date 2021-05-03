@@ -733,13 +733,13 @@ function ReaderUI:onClose(full_refresh)
     if self.dialog ~= self then
         self:saveSettings()
     end
+    -- serialize last used items for later launch
+    Cache:serialize()
     if self.document ~= nil then
         logger.dbg("closing document")
         self:notifyCloseDocument()
     end
     UIManager:close(self.dialog, full_refresh and "full")
-    -- serialize last used items for later launch
-    Cache:serialize()
     if _running_instance == self then
         _running_instance = nil
     end

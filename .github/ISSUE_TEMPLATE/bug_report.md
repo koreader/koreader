@@ -29,3 +29,12 @@ Android won't have a crash.log file because Google restricts what apps can log, 
 Please try to include the relevant sections in your issue description.
 You can upload the whole `crash.log` file on GitHub by dragging and
 dropping it onto this textbox.
+
+If you instead opt to inline it, please do so behind a spoiler tag:
+<details>
+  <summary>crash.log</summary>
+  
+```
+<Paste crash.log content here>
+```
+</details>
