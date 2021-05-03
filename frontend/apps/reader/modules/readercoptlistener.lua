@@ -134,7 +134,7 @@ function ReaderCoptListener:onResume()
         return
     end
 
-    ReaderCoptListener:rescheduleHeaderRefreshIfNeeded()
+    self:headerRefresh()
 end
 
 function ReaderCoptListener:onOutOfScreenSaver()

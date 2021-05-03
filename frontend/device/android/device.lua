@@ -168,6 +168,9 @@ function Device:init()
                     end
                 end
                 -- to-do: keyboard connected, disconnected
+            elseif ev.code == C.APP_CMD_START then
+                local Event = require("ui/event")
+                UIManager:broadcastEvent(Event:new("Resume"))
             elseif ev.code == C.APP_CMD_RESUME then
                 if external.when_back_callback then
                     external.when_back_callback()
@@ -201,6 +204,9 @@ function Device:init()
                         end)
                     end
                 end
+            elseif ev.code == C.APP_CMD_STOP then
+                local Event = require("ui/event")
+                UIManager:broadcastEvent(Event:new("Suspend"))
             elseif ev.code == C.AEVENT_POWER_CONNECTED then
                 local Event = require("ui/event")
                 UIManager:broadcastEvent(Event:new("Charging"))
