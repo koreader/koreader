@@ -142,6 +142,7 @@ function ReaderCoptListener:onOutOfScreenSaver()
         return
     end
 
+    self._delayed_screensaver = nil
     self:headerRefresh()
 end
 
