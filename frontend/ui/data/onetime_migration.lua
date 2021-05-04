@@ -171,9 +171,9 @@ if last_migration_date < 20210409 then
        logger.warn("os.rename:", err)
     end
 
-    -- Make sure Cache gets the memo
-    local Cache = require("cache")
-    Cache:refreshSnapshot()
+    -- Make sure DocCache gets the memo
+    local DocCache = require("document/doccache")
+    DocCache:refreshSnapshot()
 end
 
 -- Calibre, cache migration, https://github.com/koreader/koreader/pull/7528
@@ -193,9 +193,9 @@ if last_migration_date < 20210412 then
        logger.warn("os.rename:", err)
     end
 
-    -- Make sure Cache gets the memo
-    local Cache = require("cache")
-    Cache:refreshSnapshot()
+    -- Make sure DocCache gets the memo
+    local DocCache = require("document/doccache")
+    DocCache:refreshSnapshot()
 end
 
 -- Calibre, cache encoding format change, https://github.com/koreader/koreader/pull/7543
@@ -209,12 +209,12 @@ if last_migration_date < 20210414 then
     end
 end
 
--- Cache, migration to Persist, https://github.com/koreader/koreader/pull/7624
+-- DocCache, migration to Persist, https://github.com/koreader/koreader/pull/7624
 if last_migration_date < 20210503 then
     logger.info("Performing one-time migration for 20210503")
 
-    local Cache = require("cache")
-    Cache:clearDiskCache()
+    local DocCache = require("document/doccache")
+    DocCache:clearDiskCache()
 end
 
 -- We're done, store the current migration date

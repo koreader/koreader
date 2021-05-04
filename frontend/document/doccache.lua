@@ -1,0 +1,24 @@
+--[[
+"Global" LRU cache used by Document & friends.
+--]]
+
+local Cache = require("cache")
+local CanvasContext = require("document/canvascontext")
+local DataStorage = require("datastorage")
+
+local function calcCacheMemSize()
+    local min = DGLOBAL_CACHE_SIZE_MINIMUM
+    local max = DGLOBAL_CACHE_SIZE_MAXIMUM
+    local calc = Cache:_calcFreeMem() * (DGLOBAL_CACHE_FREE_PROPORTION or 0)
+    return math.min(max, math.max(min, calc))
+end
+
+local DocCache = Cache:new{
+    size = calcCacheMemSize(),
+    -- Average item size is a screen's worth of bitmap, mixed with a few much smaller tables (pgdim, pglinks, etc.), hence the / 3
+    avg_itemsize = math.floor(CanvasContext:getWidth() * CanvasContext:getHeight() * (CanvasContext.is_color_rendering_enabled and 4 or 1) / 3),
+    disk_cache = true,
+    cache_path = DataStorage:getDataDir() .. "/cache/",
+}
+
+return DocCache

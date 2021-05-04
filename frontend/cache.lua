@@ -1,15 +1,61 @@
 --[[
-A global LRU cache
+A LRU cache, based on https://github.com/starius/lua-lru
 ]]--
 
-local DataStorage = require("datastorage")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local lru = require("ffi/lru")
 local md5 = require("ffi/sha2").md5
 
 local CanvasContext = require("document/canvascontext")
 if CanvasContext.should_restrict_JIT then
     jit.off(true, true)
+end
+
+local Cache = {
+    -- Cache configuration:
+    -- Max storage space, in bytes
+    size = 8 * 1024 * 1024,
+    -- Average item size is used to compute the amount of slots in the LRU
+    avg_itemsize = 8196,
+    -- Generally, only DocCache uses this
+    disk_cache = false,
+    cache_path = nil,
+}
+
+function Cache:new(o)
+    o = o or {}
+    setmetatable(o, self)
+    self.__index = self
+    if o.init then o:init() end
+    return o
+end
+
+function Cache:init()
+    -- Compute the amount of slots in the LRU based on the max size & the average item size
+    self.slots = math.floor(self.size / self.avg_itemsize)
+    self.cache = lru.new(self.slots, self.size)
+
+    if self.disk_cache then
+        self.cached = self:_getDiskCache()
+    else
+        -- No need to go through our own check or even get methods if there's no disk cache, hit lru directly
+        self.check = self.cache.get
+    end
+end
+
+--[[
+-- return a snapshot of disk cached items for subsequent check
+--]]
+function Cache:_getDiskCache()
+    local cached = {}
+    for key_md5 in lfs.dir(self.cache_path) do
+        local file = self.cache_path .. key_md5
+        if lfs.attributes(file, "mode") == "file" then
+            cached[key_md5] = file
+        end
+    end
+    return cached
 end
 
 -- For documentation purposes, here's a battle-tested shell version of calcFreeMem
@@ -37,7 +83,7 @@ end
 --]]
 
 -- And here's our simplified Lua version...
-local function calcFreeMem()
+function Cache:_calcFreeMem()
     local memtotal, memfree, memavailable, buffers, cached
 
     local meminfo = io.open("/proc/meminfo", "r")
@@ -101,98 +147,23 @@ local function calcFreeMem()
     end
 end
 
-local function calcCacheMemSize()
-    local min = DGLOBAL_CACHE_SIZE_MINIMUM
-    local max = DGLOBAL_CACHE_SIZE_MAXIMUM
-    local calc = calcFreeMem() * (DGLOBAL_CACHE_FREE_PROPORTION or 0)
-    return math.min(max, math.max(min, calc))
-end
-
-local cache_path = DataStorage:getDataDir() .. "/cache/"
-
---[[
--- return a snapshot of disk cached items for subsequent check
---]]
-local function getDiskCache()
-    local cached = {}
-    for key_md5 in lfs.dir(cache_path) do
-        local file = cache_path .. key_md5
-        if lfs.attributes(file, "mode") == "file" then
-            cached[key_md5] = file
-        end
-    end
-    return cached
-end
-
-local Cache = {
-    -- cache configuration:
-    max_memsize = calcCacheMemSize(),
-    -- cache state:
-    current_memsize = 0,
-    -- associative cache
-    cache = {},
-    -- this will hold the LRU order of the cache
-    cache_order = {},
-    -- disk Cache snapshot
-    cached = getDiskCache(),
-}
-
-function Cache:new(o)
-    o = o or {}
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end
-
--- internal: remove reference in cache_order list
-function Cache:_unref(key)
-    for i = #self.cache_order, 1, -1 do
-        if self.cache_order[i] == key then
-            table.remove(self.cache_order, i)
-            break
-        end
-    end
-end
-
--- internal: free cache item
-function Cache:_free(key)
-    self.current_memsize = self.current_memsize - self.cache[key].size
-    self.cache[key]:onFree()
-    self.cache[key] = nil
-end
-
--- drop an item named via key from the cache
-function Cache:drop(key)
-    if not self.cache[key] then return end
-
-    self:_unref(key)
-    self:_free(key)
-end
-
 function Cache:insert(key, object)
-    -- make sure that one key only exists once: delete existing
-    self:drop(key)
-    -- If this object is single-handledly too large for the cache, we're done
-    if object.size > self.max_memsize then
+    -- If this object is single-handledly too large for the cache, don't cache it.
+    if not self:willAccept(object.size) then
         logger.warn("Too much memory would be claimed by caching", key)
         return
     end
-    -- If inserting this obect would blow the cache's watermark,
-    -- start dropping least recently used items first.
-    -- (they are at the end of the cache_order array)
-    while self.current_memsize + object.size > self.max_memsize do
-        local removed_key = table.remove(self.cache_order)
-        if removed_key then
-            self:_free(removed_key)
-        else
-            logger.warn("Cache accounting is broken")
-            break
-        end
-    end
-    -- Insert new object in front of the LRU order
-    table.insert(self.cache_order, 1, key)
-    self.cache[key] = object
-    self.current_memsize = self.current_memsize + object.size
+
+    self.cache:set(key, object, object.size)
+
+    -- Accounting debugging
+    --[[
+    print(string.format("Cache %s (%d/%d) [%.2f/%.2f @ ~%db] inserted %db key: %s",
+                        self,
+                        self.cache:used_slots(), self.slots, self.cache:used_size() / 1024 / 1024,
+                        self.size / 1024 / 1024, self.cache:used_size() / self.cache:used_slots(),
+                        object.size, key))
+    --]]
 end
 
 --[[
@@ -200,13 +171,9 @@ end
 --  if ItemClass is given, disk cache is also checked.
 --]]
 function Cache:check(key, ItemClass)
-    if self.cache[key] then
-        if self.cache_order[1] ~= key then
-            -- Move key in front of the LRU list (i.e., MRU)
-            self:_unref(key)
-            table.insert(self.cache_order, 1, key)
-        end
-        return self.cache[key]
+    local value = self.cache:get(key)
+    if value then
+        return value
     elseif ItemClass then
         local cached = self.cached[md5(key)]
         if cached then
@@ -225,12 +192,21 @@ function Cache:check(key, ItemClass)
     end
 end
 
+-- Shortcut when disk_cache is disabled
+function Cache:get(key)
+    return self.cache:get(key)
+end
+
 function Cache:willAccept(size)
-    -- We only allow single objects to fill 75% of the cache
-    return size*4 < self.max_memsize*3
+    -- We only allow a single object to fill 75% of the cache
+    return size*4 < self.size*3
 end
 
 function Cache:serialize()
+    if not self.disk_cache then
+        return
+    end
+
     -- Calculate the current disk cache size
     local cached_size = 0
     local sorted_caches = {}
@@ -243,11 +219,9 @@ function Cache:serialize()
     -- Only serialize the second most recently used cache item (as the MRU would be the *hinted* page).
     local mru_key
     local mru_found = 0
-    for _, key in ipairs(self.cache_order) do
-        local cache_item = self.cache[key]
-
+    for key, item in self.cache:pairs() do
         -- Only dump cache items that actually request persistence
-        if cache_item.persistent and cache_item.dump then
+        if item.persistent and item.dump then
             mru_key = key
             mru_found = mru_found + 1
             if mru_found >= 2 then
@@ -257,12 +231,12 @@ function Cache:serialize()
         end
     end
     if mru_key then
-        local cache_full_path = cache_path .. md5(mru_key)
+        local cache_full_path = self.cache_path .. md5(mru_key)
         local cache_file_exists = lfs.attributes(cache_full_path)
 
         if not cache_file_exists then
             logger.dbg("Dumping cache item", mru_key)
-            local cache_item = self.cache[mru_key]
+            local cache_item = self.cache:get(mru_key)
             local cache_size = cache_item:dump(cache_full_path)
             if cache_size then
                 cached_size = cached_size + cache_size
@@ -271,7 +245,7 @@ function Cache:serialize()
     end
 
     -- Allocate the same amount of storage to the disk cache than the memory cache
-    while cached_size > self.max_memsize do
+    while cached_size > self.size do
         -- discard the least recently used cache
         local discarded = table.remove(sorted_caches)
         if discarded then
@@ -288,17 +262,12 @@ end
 
 -- Blank the cache
 function Cache:clear()
-    for k, _ in pairs(self.cache) do
-        self.cache[k]:onFree()
-    end
-    self.cache = {}
-    self.cache_order = {}
-    self.current_memsize = 0
+    self.cache:clear()
 end
 
 -- Terribly crappy workaround: evict half the cache if we appear to be redlining on free RAM...
 function Cache:memoryPressureCheck()
-    local memfree, memtotal = calcFreeMem()
+    local memfree, memtotal = self:_calcFreeMem()
 
     -- Nonsensical values? (!Linux), skip this.
     if memtotal == 0 then
@@ -308,10 +277,7 @@ function Cache:memoryPressureCheck()
     -- If less that 20% of the total RAM is free, drop half the Cache...
     if memfree / memtotal < 0.20 then
         logger.warn("Running low on memory, evicting half of the cache...")
-        for i = #self.cache_order / 2, 1, -1 do
-            local removed_key = table.remove(self.cache_order)
-            self:_free(removed_key)
-        end
+        self.cache:chop()
 
         -- And finish by forcing a GC sweep now...
         collectgarbage()
@@ -321,11 +287,19 @@ end
 
 -- Refresh the disk snapshot (mainly used by ui/data/onetime_migration)
 function Cache:refreshSnapshot()
-    self.cached = getDiskCache()
+    if not self.disk_cache then
+        return
+    end
+
+    self.cached = self:_getDiskCache()
 end
 
 -- Evict the disk cache (ditto)
 function Cache:clearDiskCache()
+    if not self.disk_cache then
+        return
+    end
+
     for _, file in pairs(self.cached) do
         os.remove(file)
     end

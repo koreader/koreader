@@ -16,6 +16,7 @@ function CacheItem:new(o)
     return o
 end
 
+-- Called on eviction
 function CacheItem:onFree()
 end
 
