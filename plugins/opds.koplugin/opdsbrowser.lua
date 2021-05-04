@@ -25,15 +25,14 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 
 local CatalogCacheItem = CacheItem:new{
-    size = 1024,  -- fixed size for catalog item
+    size = 1024,  -- fixed size for catalog items
 }
 
 -- cache catalog parsed from feed xml
 local CatalogCache = Cache:new{
-    max_memsize = 20*1024, -- keep only 20 items
-    current_memsize = 0,
-    cache = {},
-    cache_order = {},
+    -- Make it 20 slots
+    size = 20 * CatalogCacheItem.size,
+    avg_itemsize = CatalogCacheItem.size,
 }
 
 local OPDSBrowser = Menu:extend{
