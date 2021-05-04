@@ -6,10 +6,8 @@ local logger = require("logger")
 local TileCacheItem = CacheItem:new{}
 
 function TileCacheItem:onFree()
-    if self.bb.free then
-        logger.dbg("free blitbuffer", self.bb)
-        self.bb:free()
-    end
+    logger.dbg("TileCacheItem: free blitbuffer", self.bb)
+    self.bb:free()
 end
 
 --- @note: Perhaps one day we'll be able to teach bitser or string.buffer about custom structs with pointers to buffers,

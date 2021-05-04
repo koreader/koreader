@@ -5,10 +5,10 @@ It works using data gathered from a document interface.
 ]]--
 
 local BD = require("ui/bidi")
-local Cache = require("cache")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DeviceListener = require("device/devicelistener")
+local DocCache = require("document/doccache")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
@@ -733,8 +733,8 @@ function ReaderUI:onClose(full_refresh)
     if self.dialog ~= self then
         self:saveSettings()
     end
-    -- serialize last used items for later launch
-    Cache:serialize()
+    -- Serialize the most recently displayed page for later launch
+    DocCache:serialize()
     if self.document ~= nil then
         logger.dbg("closing document")
         self:notifyCloseDocument()

@@ -16,6 +16,9 @@ function CacheItem:new(o)
     return o
 end
 
+-- Called on eviction.
+-- We generally use it to free C/FFI ressources *immediately* (as opposed to relying on our Userdata/FFI finalizers to do it "later" on GC).
+-- c.f., TileCacheItem, GlyphCacheItem & ImageCacheItem
 function CacheItem:onFree()
 end
 

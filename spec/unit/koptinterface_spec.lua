@@ -1,10 +1,10 @@
 describe("Koptinterface module", function()
-    local DocumentRegistry, Koptinterface, Cache
+    local DocCache, DocumentRegistry, Koptinterface
     setup(function()
         require("commonrequire")
+        DocCache = require("document/doccache")
         DocumentRegistry = require("document/documentregistry")
         Koptinterface = require("document/koptinterface")
-        Cache = require("cache")
     end)
 
     local tall_pdf = "spec/front/unit/data/tall.pdf"
@@ -19,7 +19,7 @@ describe("Koptinterface module", function()
         doc.configurable.text_wrap = 0
         complex_doc.configurable.text_wrap = 0
         paper_doc.configurable.text_wrap = 0
-        Cache:clear()
+        DocCache:clear()
     end)
 
     after_each(function()
