@@ -238,6 +238,30 @@ function TimeVal:fromnumber(seconds)
     return TimeVal:new{ sec = sec, usec = usec }
 end
 
+--[[-- Compare a past *MONOTONIC* TimeVal object to *now*, returning the elapsed time between the two. (sec.usecs variant)
+
+Returns a Lua (decimal) number (sec.usecs) (accurate to the ms, rounded to 4 decimal places) (i.e., :tonumber())
+]]
+function TimeVal:getDuration(start_tv)
+   return (TimeVal:now() - start_tv):tonumber()
+end
+
+--[[-- Compare a past *MONOTONIC* TimeVal object to *now*, returning the elapsed time between the two. (µs variant)
+
+Returns a Lua (int) number (resolution: 1µs) (i.e., :tousecs())
+]]
+function TimeVal:getDurationUs(start_tv)
+   return (TimeVal:now() - start_tv):tousecs()
+end
+
+--[[-- Compare a past *MONOTONIC* TimeVal object to *now*, returning the elapsed time between the two. (ms variant)
+
+Returns a Lua (int) number (resolution: 1ms) (i.e., :tomsecs())
+]]
+function TimeVal:getDurationMs(start_tv)
+   return (TimeVal:now() - start_tv):tomsecs()
+end
+
 --- Checks if a TimeVal object is positive
 function TimeVal:isPositive()
     return self.sec >= 0
