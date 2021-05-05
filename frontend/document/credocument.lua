@@ -1443,9 +1443,15 @@ function CreDocument:setupCallCache()
     local addStatMiss = no_op
     local addStatHit = no_op
     local dumpStats = no_op
+    local now = function()
+        return TimeVal.zero
+    end
     if do_stats then
         -- cache statistics
         self._call_cache_stats = {}
+        now = function()
+            return TimeVal:now()
+        end
         addStatMiss = function(name, starttime, not_cached)
             local duration = TimeVal:getDuration(starttime)
             if not self._call_cache_stats[name] then
@@ -1667,7 +1673,7 @@ function CreDocument:setupCallCache()
             elseif cache_by_tag then
                 is_cached = true
                 self[name] = function(...)
-                    local starttime = TimeVal:now()
+                    local starttime = now()
                     local cache_key = name .. asString(select(2, ...))
                     local results = self._callCacheTagGet(cache_key)
                     if results then
@@ -1688,7 +1694,7 @@ function CreDocument:setupCallCache()
             elseif cache_global then
                 is_cached = true
                 self[name] = function(...)
-                    local starttime = TimeVal:now()
+                    local starttime = now()
                     local cache_key = name .. asString(select(2, ...))
                     local results = self._callCacheGet(cache_key)
                     if results then
@@ -1708,7 +1714,7 @@ function CreDocument:setupCallCache()
             if do_stats_include_not_cached and not is_cached then
                 local func2 = self[name] -- might already be wrapped
                 self[name] = function(...)
-                    local starttime = TimeVal:now()
+                    local starttime = now()
                     local results = { func2(...) }
                     addStatMiss(name, starttime, true) -- not_cached = true
                     return unpack(results)
@@ -1730,7 +1736,7 @@ function CreDocument:setupCallCache()
         elseif current_buffer_tag ~= current_tag then
             do_draw = true
         end
-        local starttime = TimeVal:now()
+        local starttime = now()
         if do_draw then
             if do_log then logger.dbg("callCache: ########## drawCurrentView: full draw") end
             CreDocument.drawCurrentView(_self, target, x, y, rect, pos)
