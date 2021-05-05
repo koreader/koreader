@@ -1756,8 +1756,14 @@ function CreDocument:setupCallCache()
     -- Dump statistics on close
     if do_stats then
         self.close = function(_self)
-            CreDocument.close(_self)
             dumpStats()
+            CreDocument._callCacheReset(_self)
+            CreDocument.close(_self)
+        end
+    else
+        self.close = function(_self)
+            CreDocument._callCacheReset(_self)
+            CreDocument.close(_self)
         end
     end
 end
