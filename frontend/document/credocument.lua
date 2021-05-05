@@ -7,10 +7,12 @@ local Geom = require("ui/geometry")
 local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
 local TimeVal = require("ui/timeval")
+local buffer = require("string.buffer")
 local ffi = require("ffi")
 local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local lru = require("ffi/lru")
 
 -- engine can be initialized only once, on first document opened
 local engine_initialized = false
@@ -303,11 +305,12 @@ function CreDocument:_readMetadata()
 end
 
 function CreDocument:close()
-    Document.close(self)
     if self.buffer then
         self.buffer:free()
         self.buffer = nil
     end
+
+    Document.close(self)
 end
 
 function CreDocument:updateColorRendering()
@@ -1370,82 +1373,76 @@ function CreDocument:setupCallCache()
 
     -- reset full cache
     self._callCacheReset = function()
-        self._call_cache = {}
-        self._call_cache_tags_lru = {}
+        -- "Global" cache, a simple key, value store for *this* document
+        self._global_call_cache = {}
+        -- "Tags" cache, an LRU cache of per-tag simple key, value stores. 10 slots.
+        if self._tag_list_call_cache then
+            self._tag_list_call_cache:clear()
+        else
+            self._tag_list_call_cache = lru.new(10)
+        end
+        -- i.e., the only thing that follows any sort of LRU eviction logic is the *list* of tag caches.
+        -- Each individual cache itself is just a simple key, value store (i.e., a hash map).
+        -- Points to said per-tag cache for the current tag.
+        self._tag_call_cache = nil
+        -- Stores the key for said current tag
+        self._current_call_cache_tag = nil
+    end
+    self._callCacheDestroy = function()
+        --- @note: Explicitly destroying the references to the caches is apparently necessary to get their content collected by the GC...
+        ---        c.f., https://github.com/koreader/koreader/pull/7634#discussion_r627820424
+        self._global_call_cache = nil
+        self._tag_list_call_cache = nil
+        self._tag_call_cache = nil
+        self._current_call_cache_tag = nil
     end
     -- global cache
     self._callCacheGet = function(key)
-        return self._call_cache[key]
+        return self._global_call_cache[key]
     end
     self._callCacheSet = function(key, value)
-        self._call_cache[key] = value
+        self._global_call_cache[key] = value
     end
 
-    -- nb of by-tag sub-caches to keep
-    self._call_cache_keep_tags_nb = 10
     -- current tag (page, pos) sub-cache
     self._callCacheSetCurrentTag = function(tag)
-        if not self._call_cache[tag] then
-            self._call_cache[tag] = {}
+        -- If it already exists, return it and make it the MRU
+        self._tag_call_cache = self._tag_list_call_cache:get(tag)
+        if not self._tag_call_cache then
+            -- Otherwise, create it and insert it in the list cache, evicting the LRU tag cache if necessary.
+            -- NOTE: We need CacheItem for its NOP onFree eviction callback.
+            self._tag_call_cache = CacheItem:new{}
+            self._tag_list_call_cache:set(tag, self._tag_call_cache)
         end
-        self._call_cache_current_tag = tag
-        -- clean up LRU tag list
-        if self._call_cache_tags_lru[1] ~= tag then
-            for i = #self._call_cache_tags_lru, 1, -1 do
-                if self._call_cache_tags_lru[i] == tag then
-                    table.remove(self._call_cache_tags_lru, i)
-                elseif i > self._call_cache_keep_tags_nb then
-                    self._call_cache[self._call_cache_tags_lru[i]] = nil
-                    table.remove(self._call_cache_tags_lru, i)
-                end
-            end
-            table.insert(self._call_cache_tags_lru, 1, tag)
-        end
+        self._current_call_cache_tag = tag
     end
     self._callCacheGetCurrentTag = function(tag)
-        return self._call_cache_current_tag
+        return self._current_call_cache_tag
     end
     -- per current tag cache
     self._callCacheTagGet = function(key)
-        if self._call_cache_current_tag and self._call_cache[self._call_cache_current_tag] then
-            return self._call_cache[self._call_cache_current_tag][key]
+        if self._tag_call_cache then
+            return self._tag_call_cache[key]
         end
     end
     self._callCacheTagSet = function(key, value)
-        if self._call_cache_current_tag and self._call_cache[self._call_cache_current_tag] then
-            self._call_cache[self._call_cache_current_tag][key] = value
+        if self._tag_call_cache then
+            self._tag_call_cache[key] = value
         end
     end
     self._callCacheReset()
-
-    -- serialize function arguments as a single string, to be used as a table key
-    local asString = function(...)
-        local sargs = {} -- args as string
-        for i, arg in ipairs({...}) do
-            local sarg
-            if type(arg) == "table" then
-                -- We currently don't get nested tables, and only keyword tables
-                local items = {}
-                for k, v in pairs(arg) do
-                    table.insert(items, tostring(k)..tostring(v))
-                end
-                table.sort(items)
-                sarg = table.concat(items, "|")
-            else
-                sarg = tostring(arg)
-            end
-            table.insert(sargs, sarg)
-        end
-        return table.concat(sargs, "|")
-    end
 
     local no_op = function() end
     local addStatMiss = no_op
     local addStatHit = no_op
     local dumpStats = no_op
+    local now = no_op
     if do_stats then
         -- cache statistics
         self._call_cache_stats = {}
+        now = function()
+            return TimeVal:now()
+        end
         addStatMiss = function(name, starttime, not_cached)
             local duration = TimeVal:getDuration(starttime)
             if not self._call_cache_stats[name] then
@@ -1474,12 +1471,12 @@ function CreDocument:setupCallCache()
             local util = require("util")
             local res = {}
             table.insert(res, "CRE call cache content:")
-            table.insert(res, string.format("     all: %d items", util.tableSize(self._call_cache)))
-            table.insert(res, string.format("  global: %d items", util.tableSize(self._call_cache) - #self._call_cache_tags_lru))
-            table.insert(res, string.format("    tags: %d items", #self._call_cache_tags_lru))
-            for i=1, #self._call_cache_tags_lru do
-                table.insert(res, string.format("          '%s': %d items", self._call_cache_tags_lru[i],
-                        util.tableSize(self._call_cache[self._call_cache_tags_lru[i]])))
+            table.insert(res, string.format("     all: %d items", util.tableSize(self._global_call_cache) + self._tag_list_call_cache:used_slots()))
+            table.insert(res, string.format("  global: %d items", util.tableSize(self._global_call_cache)))
+            table.insert(res, string.format("    tags: %d items", self._tag_list_call_cache:used_slots()))
+            for tag, tag_cache in self._tag_list_call_cache:pairs() do
+                table.insert(res, string.format("          '%s': %d items", tag,
+                        util.tableSize(tag_cache)))
             end
             local hit_keys = {}
             local nohit_keys = {}
@@ -1667,8 +1664,8 @@ function CreDocument:setupCallCache()
             elseif cache_by_tag then
                 is_cached = true
                 self[name] = function(...)
-                    local starttime = TimeVal:now()
-                    local cache_key = name .. asString(select(2, ...))
+                    local starttime = now()
+                    local cache_key = name .. buffer.encode({select(2, ...)})
                     local results = self._callCacheTagGet(cache_key)
                     if results then
                         if do_log then logger.dbg("callCache:", name, "cache hit:", cache_key) end
@@ -1688,8 +1685,8 @@ function CreDocument:setupCallCache()
             elseif cache_global then
                 is_cached = true
                 self[name] = function(...)
-                    local starttime = TimeVal:now()
-                    local cache_key = name .. asString(select(2, ...))
+                    local starttime = now()
+                    local cache_key = name .. buffer.encode({select(2, ...)})
                     local results = self._callCacheGet(cache_key)
                     if results then
                         if do_log then logger.dbg("callCache:", name, "cache hit:", cache_key) end
@@ -1708,7 +1705,7 @@ function CreDocument:setupCallCache()
             if do_stats_include_not_cached and not is_cached then
                 local func2 = self[name] -- might already be wrapped
                 self[name] = function(...)
-                    local starttime = TimeVal:now()
+                    local starttime = now()
                     local results = { func2(...) }
                     addStatMiss(name, starttime, true) -- not_cached = true
                     return unpack(results)
@@ -1719,8 +1716,8 @@ function CreDocument:setupCallCache()
     -- We override a bit more specifically the one responsible for drawing page
     self.drawCurrentView = function(_self, target, x, y, rect, pos)
         local do_draw = false
-        local current_tag = self._callCacheGetCurrentTag()
-        local current_buffer_tag = self._callCacheGet("current_buffer_tag")
+        local current_tag = _self._callCacheGetCurrentTag()
+        local current_buffer_tag = _self._callCacheGet("current_buffer_tag")
         if _self.buffer and (_self.buffer.w ~= rect.w or _self.buffer.h ~= rect.h) then
             do_draw = true
         elseif not _self.buffer then
@@ -1730,12 +1727,12 @@ function CreDocument:setupCallCache()
         elseif current_buffer_tag ~= current_tag then
             do_draw = true
         end
-        local starttime = TimeVal:now()
+        local starttime = now()
         if do_draw then
             if do_log then logger.dbg("callCache: ########## drawCurrentView: full draw") end
             CreDocument.drawCurrentView(_self, target, x, y, rect, pos)
             addStatMiss("drawCurrentView", starttime)
-            self._callCacheSet("current_buffer_tag", current_tag)
+            _self._callCacheSet("current_buffer_tag", current_tag)
         else
             if do_log then logger.dbg("callCache: ---------- drawCurrentView: light draw") end
             target:blitFrom(_self.buffer, x, y, 0, 0, rect.w, rect.h)
@@ -1745,8 +1742,14 @@ function CreDocument:setupCallCache()
     -- Dump statistics on close
     if do_stats then
         self.close = function(_self)
-            CreDocument.close(_self)
             dumpStats()
+            _self._callCacheDestroy()
+            CreDocument.close(_self)
+        end
+    else
+        self.close = function(_self)
+            _self._callCacheDestroy()
+            CreDocument.close(_self)
         end
     end
 end
