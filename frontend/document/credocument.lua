@@ -1358,10 +1358,10 @@ function CreDocument:setupCallCache()
         return
     end
     logger.dbg("CreDocument: using cre call cache")
-    local do_stats = G_reader_settings:isTrue("use_cre_call_cache_log_stats")
+    local do_stats = true -- G_reader_settings:isTrue("use_cre_call_cache_log_stats")
     -- Tune these when debugging
-    local do_stats_include_not_cached = false
-    local do_log = false
+    local do_stats_include_not_cached = true
+    local do_log = true
 
     -- Beware below for luacheck warnings "shadowing upvalue argument 'self'":
     -- the 'self' we got and use here, and the one we may get implicitely
@@ -1378,7 +1378,7 @@ function CreDocument:setupCallCache()
         if self._call_cache_tags then
             self._call_cache_tags:clear()
         else
-            self._call_cache_tags = lru:new(10)
+            self._call_cache_tags = lru.new(10)
         end
         -- i.e., the only thing that follows any sort of LRU eviction logic is the *list* of tag caches.
         -- Each individual cache itself is just a simple key, value store (i.e., a hash map).
@@ -1757,12 +1757,12 @@ function CreDocument:setupCallCache()
     if do_stats then
         self.close = function(_self)
             dumpStats()
-            CreDocument._callCacheReset(_self)
+            self._callCacheReset()
             CreDocument.close(_self)
         end
     else
         self.close = function(_self)
-            CreDocument._callCacheReset(_self)
+            self._callCacheReset()
             CreDocument.close(_self)
         end
     end
