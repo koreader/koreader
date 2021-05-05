@@ -1,4 +1,5 @@
 local Blitbuffer = require("ffi/blitbuffer")
+local CacheItem = require("cacheitem")
 local CanvasContext = require("document/canvascontext")
 local DataStorage = require("datastorage")
 local Document = require("document/document")
@@ -11,6 +12,7 @@ local ffi = require("ffi")
 local C = ffi.C
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local lru = require("ffi/lru")
 
 -- engine can be initialized only once, on first document opened
 local engine_initialized = false
@@ -1370,50 +1372,53 @@ function CreDocument:setupCallCache()
 
     -- reset full cache
     self._callCacheReset = function()
-        self._call_cache = {}
-        self._call_cache_tags_lru = {}
+        -- "Global" cache, a simple key, value store for *this* document
+        self._call_cache_global = {}
+        -- "Tags" cache, an LRU cache of per-tag simple key, value stores. 10 slots.
+        if self._call_cache_tags then
+            self._call_cache_tags:clear()
+        else
+            self._call_cache_tags = lru:new(10)
+        end
+        -- i.e., the only thing that follows any sort of LRU eviction logic is the *list* of tag caches.
+        -- Each individual cache itself is just a simple key, value store (i.e., a hash map).
+        -- Points to said per-tag cache for the current tag.
+        self._call_cache_tag = nil
+        -- Stores the key for said current tag
+        self._call_cache_current_tag = nil
     end
     -- global cache
     self._callCacheGet = function(key)
-        return self._call_cache[key]
+        return self._call_cache_global[key]
     end
     self._callCacheSet = function(key, value)
-        self._call_cache[key] = value
+        self._call_cache_global[key] = value
     end
 
-    -- nb of by-tag sub-caches to keep
-    self._call_cache_keep_tags_nb = 10
     -- current tag (page, pos) sub-cache
     self._callCacheSetCurrentTag = function(tag)
-        if not self._call_cache[tag] then
-            self._call_cache[tag] = {}
+        -- If it already exists, return it and make it the MRU
+        self._call_cache_tag = self._call_cache_tags:get(tag)
+        if not self._call_cache_tag then
+            -- Otherwise, create it and insert it in the list cache, evicting the LRU tag cache if necessary.
+            -- NOTE: We need CacheItem for its NOP onFree eviction callback.
+            self._call_cache_tag = CacheItem:new{}
+            self._call_cache_tags:set(tag, self._call_cache_tag)
         end
         self._call_cache_current_tag = tag
-        -- clean up LRU tag list
-        if self._call_cache_tags_lru[1] ~= tag then
-            for i = #self._call_cache_tags_lru, 1, -1 do
-                if self._call_cache_tags_lru[i] == tag then
-                    table.remove(self._call_cache_tags_lru, i)
-                elseif i > self._call_cache_keep_tags_nb then
-                    self._call_cache[self._call_cache_tags_lru[i]] = nil
-                    table.remove(self._call_cache_tags_lru, i)
-                end
-            end
-            table.insert(self._call_cache_tags_lru, 1, tag)
-        end
     end
     self._callCacheGetCurrentTag = function(tag)
         return self._call_cache_current_tag
     end
     -- per current tag cache
     self._callCacheTagGet = function(key)
-        if self._call_cache_current_tag and self._call_cache[self._call_cache_current_tag] then
-            return self._call_cache[self._call_cache_current_tag][key]
+        if self._call_cache_tag then
+            return self._call_cache_tag[key]
         end
     end
     self._callCacheTagSet = function(key, value)
-        if self._call_cache_current_tag and self._call_cache[self._call_cache_current_tag] then
-            self._call_cache[self._call_cache_current_tag][key] = value
+        if self._call_cache_tag then
+            self._call_cache_tag[key] = value
         end
     end
     self._callCacheReset()
@@ -1480,12 +1485,12 @@ function CreDocument:setupCallCache()
             local util = require("util")
             local res = {}
             table.insert(res, "CRE call cache content:")
-            table.insert(res, string.format("     all: %d items", util.tableSize(self._call_cache)))
-            table.insert(res, string.format("  global: %d items", util.tableSize(self._call_cache) - #self._call_cache_tags_lru))
-            table.insert(res, string.format("    tags: %d items", #self._call_cache_tags_lru))
-            for i=1, #self._call_cache_tags_lru do
-                table.insert(res, string.format("          '%s': %d items", self._call_cache_tags_lru[i],
-                        util.tableSize(self._call_cache[self._call_cache_tags_lru[i]])))
+            table.insert(res, string.format("     all: %d items", util.tableSize(self._call_cache_global) + self._call_cache_tags:used_slots()))
+            table.insert(res, string.format("  global: %d items", util.tableSize(self._call_cache_global)))
+            table.insert(res, string.format("    tags: %d items", self._call_cache_tags:used_slots()))
+            for tag, tag_cache in self._call_cache_tags:pairs() do
+                table.insert(res, string.format("          '%s': %d items", tag,
+                        util.tableSize(tag_cache)))
             end
             local hit_keys = {}
             local nohit_keys = {}
