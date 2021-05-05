@@ -254,13 +254,15 @@ function OTAManager:fetchAndProcessUpdate()
                 ok_callback = function()
                     local isAndroid, android = pcall(require, "android")
                     if isAndroid then
+                        local ffi = require("ffi")
+                        local C = ffi.C
                         -- try to download the package
                         local ok = android.download(link, ota_package)
-                        if ok == 1 then
-                            android.notification(T(_("The file %1 already exists."), ota_package))
-                        elseif ok == 0 then
+                        if ok == C.ADOWNLOAD_EXISTS then
+                            Device:install()
+                        elseif ok == C.ADOWNLOAD_OK then
                             android.notification(T(_("Downloading %1"), ota_package))
-                        else
+                        elseif ok == C.ADOWNLOAD_FAILED then
                             UIManager:show(ConfirmBox:new{
                                 text = _("Your device seems to be unable to download packages.\nRetry using the browser?"),
                                 ok_text = _("Retry"),
