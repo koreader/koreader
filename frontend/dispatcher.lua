@@ -19,6 +19,7 @@ Each setting contains:
 * section: under which menu to display (currently: device, filemanager, rolling, paging)
     and optionally
 * min/max: for number
+* step: for number
 * default
 * args: allowed values for string.
 * toggle: display name for args
@@ -125,8 +126,8 @@ local settingsList = {
     panel_zoom_toggle = { category="none", event="TogglePanelZoomSetting", title=_("Toggle panel zoom"), paging=true, separator=true,},
 
     -- rolling reader settings
-    increase_font = { category="incrementalnumber", event="IncreaseFontSize", min=1, max=255, title=_("Increase font size by %1"), rolling=true,},
-    decrease_font = { category="incrementalnumber", event="DecreaseFontSize", min=1, max=255, title=_("Decrease font size by %1"), rolling=true,},
+    increase_font = { category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size by %1"), rolling=true},
+    decrease_font = { category="incrementalnumber", event="DecreaseFontSize", min=0.5, max=255, step=0.5, title=_("Decrease font size by %1"), rolling=true},
 
     -- paging reader settings
     toggle_page_flipping = { category="none", event="TogglePageFlipping", title=_("Toggle page flipping"), paging=true,},
@@ -146,7 +147,7 @@ local settingsList = {
     block_rendering_mode = {category="string", rolling=true},
     render_dpi = {category="string", rolling=true},
     line_spacing = {category="absolutenumber", rolling=true, separator=true,},
-    font_size = {category="absolutenumber", title=_("Set font size to %1"), rolling=true},
+    font_size = {category="absolutenumber", title=_("Set font size to %1"), rolling=true, step=0.5},
     font_base_weight = {category="string", rolling=true},
     font_gamma = {category="string", rolling=true},
     font_hinting = {category="string", rolling=true},
@@ -416,14 +417,19 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                     end,
                     callback = function(touchmenu_instance)
                         local SpinWidget = require("ui/widget/spinwidget")
+                        local requested_precision = settingsList[k].precision
+                        if settingsList[k].step and math.floor(settingsList[k].step) ~= settingsList[k].step then
+                            requested_precision = "%0.1f"
+                        end
                         local items = SpinWidget:new{
                             width = math.floor(Screen:getWidth() * 0.6),
                             value = location[settings] ~= nil and location[settings][k] or settingsList[k].default or 0,
                             value_min = settingsList[k].min,
-                            value_step = 1,
+                            value_step = settingsList[k].step or 1,
+                            precision = requested_precision,
                             value_hold_step = 5,
                             value_max = settingsList[k].max,
-                            default_value = 0,
+                            default_value = settingsList[k].default,
                             title_text = Dispatcher:getNameFromItem(k, location, settings),
                             callback = function(spin)
                                 if location[settings] == nil then
@@ -457,12 +463,17 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                     end,
                     callback = function(touchmenu_instance)
                         local _ = require("gettext")
+                        local requested_precision = settingsList[k].precision
+                        if settingsList[k].step and math.floor(settingsList[k].step) ~= settingsList[k].step then
+                            requested_precision = "%0.1f"
+                        end
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
                             width = math.floor(Screen:getWidth() * 0.6),
                             value = location[settings] ~= nil and location[settings][k] or 0,
                             value_min = settingsList[k].min,
-                            value_step = 1,
+                            value_step = settingsList[k].step or 1,
+                            precision = requested_precision,
                             value_hold_step = 5,
                             value_max = settingsList[k].max,
                             default_value = 0,
