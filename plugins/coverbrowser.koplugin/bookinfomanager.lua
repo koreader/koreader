@@ -7,6 +7,7 @@ local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local RenderImage = require("ui/renderimage")
 local SQ3 = require("lua-ljsqlite3/init")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -124,9 +125,9 @@ function BookInfoManager:init()
     self.subprocesses_collector = nil
     self.subprocesses_collect_interval = 10 -- do that every 10 seconds
     self.subprocesses_pids = {}
-    self.subprocesses_last_added_ts = nil
-    self.subprocesses_killall_timeout_seconds = 300 -- cleanup timeout for stuck subprocesses
-    -- 300 seconds should be enough to open and get info from 9-10 books
+    self.subprocesses_last_added_tv = TimeVal.zero
+    self.subprocesses_killall_timeout_tv = TimeVal:new{ sec = 300, usec = 0 } -- cleanup timeout for stuck subprocesses
+    -- 300 seconds should be more than enough to open and get info from 9-10 books
     -- Whether to use former blitbuffer:scale() (default to using MuPDF)
     self.use_legacy_image_scaling = G_reader_settings:isTrue("legacy_image_scaling")
     -- We will use a temporary directory for crengine cache while indexing
@@ -643,7 +644,7 @@ function BookInfoManager:collectSubprocesses()
             -- the user has not left FileManager or changed page - that would
             -- have caused a terminateBackgroundJobs() - if we're here, it's
             -- that user has left reader in FileBrower and went away)
-            if FFIUtil.getTimestamp() > self.subprocesses_last_added_ts + self.subprocesses_killall_timeout_seconds then
+            if TimeVal:now() > self.subprocesses_last_added_tv + self.subprocesses_killall_timeout_tv then
                 logger.warn("Some subprocesses were running for too long, killing them")
                 self:terminateBackgroundJobs()
                 -- we'll collect them next time we're run
@@ -707,7 +708,7 @@ function BookInfoManager:extractInBackground(files)
     -- counter on each task, and undo that inside collectSubprocesses() zombie reaper.
     UIManager:preventStandby()
     table.insert(self.subprocesses_pids, task_pid)
-    self.subprocesses_last_added_ts = FFIUtil.getTimestamp()
+    self.subprocesses_last_added_tv = TimeVal:now()
 
     -- We need to collect terminated jobs pids (so they do not stay "zombies"
     -- and fill linux processes table)
