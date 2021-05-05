@@ -338,7 +338,7 @@ function CalibreSearch:find(option)
         self:browse(option, 1)
     end
     logger.info(string.format("search done in %.3f milliseconds (%s, %s, %s, %s, %s)",
-        (TimeVal:now() - start):tomsecs(),
+        TimeVal:getDurationMs(start),
         option == "find" and "books" or option,
         "case sensitive: " .. tostring(not self.case_insensitive),
         "title: " .. tostring(self.find_by_title),
@@ -604,7 +604,7 @@ function CalibreSearch:getMetadata()
                 end
             end
             if is_newer then
-                logger.info(string.format(template, #cache, "cache", (TimeVal:now() - start):tomsecs()))
+                logger.info(string.format(template, #cache, "cache", TimeVal:getDurationMs(start)))
                 return cache
             else
                 logger.warn("cache is older than metadata, ignoring it")
@@ -633,7 +633,7 @@ function CalibreSearch:getMetadata()
             logger.info("Failed to serialize calibre metadata cache:", err)
         end
     end
-    logger.info(string.format(template, #books, "calibre", (TimeVal:now() - start):tomsecs()))
+    logger.info(string.format(template, #books, "calibre", TimeVal:getDurationMs(start)))
     return books
 end
 
