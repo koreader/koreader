@@ -221,7 +221,7 @@ function ReaderFont:onSetFontSize(new_size)
     self.font_size = new_size
     self.ui.document:setFontSize(Screen:scaleBySize(new_size))
     self.ui:handleEvent(Event:new("UpdatePos"))
-        UIManager:show(Notification:new{
+    UIManager:show(Notification:new{
         text = T( _("Font size set to %1."), self.font_size),
     })
     return true
