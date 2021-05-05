@@ -340,6 +340,25 @@ function Device:info()
     return self.model
 end
 
+function Device:install()
+    local Event = require("ui/event")
+    local UIManager = require("ui/uimanager")
+    local ConfirmBox = require("ui/widget/confirmbox")
+    UIManager:show(ConfirmBox:new{
+        text = _("Update is ready. Install it now?"),
+        ok_text = _("Install"),
+        ok_callback = function()
+            local save_quit = function()
+                self:saveSettings()
+                UIManager:quit()
+                UIManager.exit_code = 85
+            end
+            UIManager:broadcastEvent(Event:new("Exit", save_quit))
+        end,
+    })
+end
+
+
 -- Hardware specific method to track opened/closed books (nil on book close)
 function Device:notifyBookState(title, document) end
 

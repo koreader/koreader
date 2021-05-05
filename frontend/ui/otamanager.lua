@@ -49,21 +49,6 @@ local ota_channels = {
     nightly = _("Development"),
 }
 
-local function showRestartMessage()
-    UIManager:show(ConfirmBox:new{
-        text = _("KOReader will be updated on next restart.\nWould you like to restart now?"),
-        ok_text = _("Restart"),
-        ok_callback = function()
-            local save_quit = function()
-                Device:saveSettings()
-                UIManager:quit()
-                UIManager._exit_code = 85
-            end
-            UIManager:broadcastEvent(Event:new("Exit", save_quit))
-        end,
-    })
-end
-
 -- Try to detect WARIO+ Kindle boards (i.MX6 & i.MX7)
 function OTAManager:_isKindleWarioOrMore()
     local cpu_hw = nil
@@ -285,7 +270,7 @@ function OTAManager:fetchAndProcessUpdate()
                     })
                     UIManager:scheduleIn(1, function()
                         if OTAManager:zsync() == 0 then
-                            showRestartMessage()
+                            Device:install()
                             -- Make it clear that zsync is done
                             if self.can_pretty_print then
                                 os.execute("./fbink -q -y -7 -pm ' '  ' '")
@@ -311,7 +296,7 @@ function OTAManager:fetchAndProcessUpdate()
                                     -- And then relaunch zsync in full download mode...
                                     UIManager:scheduleIn(1, function()
                                         if OTAManager:zsync(true) == 0 then
-                                            showRestartMessage()
+                                            Device:install()
                                             -- Make it clear that zsync is done
                                             if self.can_pretty_print then
                                                 os.execute("./fbink -q -y -7 -pm ' '  ' '")

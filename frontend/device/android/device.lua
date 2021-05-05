@@ -463,7 +463,7 @@ function Device:install()
     local UIManager = require("ui/uimanager")
     local ConfirmBox = require("ui/widget/confirmbox")
     UIManager:show(ConfirmBox:new{
-        text = _("Update ready, do you want to install?"),
+        text = _("Update is ready, Install it now?"),
         ok_text = _("Install"),
         ok_callback = function()
             android.ota.install()
