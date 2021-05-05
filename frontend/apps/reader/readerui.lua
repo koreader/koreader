@@ -620,7 +620,7 @@ function ReaderUI:doShowReader(file, provider)
         FileManager.instance:onClose()
     end
 
-    UIManager:show(reader)
+    UIManager:show(reader, "full")
     _running_instance = reader
 end
 
