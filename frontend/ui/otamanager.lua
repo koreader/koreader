@@ -231,6 +231,8 @@ function OTAManager:fetchAndProcessUpdate()
             update_ok_text = _("Downgrade")
         end
 
+        local wait_for_download = _("Downloading may take several minutes…")
+
         if OTAManager:getOTAType() == "link" then
             UIManager:show(ConfirmBox:new{
                 text = update_message,
@@ -245,7 +247,10 @@ function OTAManager:fetchAndProcessUpdate()
                         if ok == C.ADOWNLOAD_EXISTS then
                             Device:install()
                         elseif ok == C.ADOWNLOAD_OK then
-                            android.notification(T(_("Downloading %1"), ota_package))
+                            UIManager:show(InfoMessage:new{
+                                text = wait_for_download,
+                                timeout = 3,
+                            })
                         elseif ok == C.ADOWNLOAD_FAILED then
                             UIManager:show(ConfirmBox:new{
                                 text = _("Your device seems to be unable to download packages.\nRetry using the browser?"),
@@ -264,7 +269,7 @@ function OTAManager:fetchAndProcessUpdate()
                 ok_text = update_ok_text,
                 ok_callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = _("Downloading may take several minutes…"),
+                        text = wait_for_download,
                         timeout = 3,
                     })
                     UIManager:scheduleIn(1, function()
