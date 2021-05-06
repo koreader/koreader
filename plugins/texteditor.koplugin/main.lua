@@ -33,7 +33,7 @@ local TextEditor = WidgetContainer:new{
 }
 
 function TextEditor:onDispatcherRegisterActions()
-    Dispatcher:registerAction("edit_last_edited_file", { category = "none", event = "OpenLastEditedFile", title = _("Texteditor: open last file"), device = true, separator = true, })
+    Dispatcher:registerAction("edit_last_edited_file", { category = "none", event = "OpenLastEditedFile", title = _("Text editor: open last file"), device = true, separator = true, })
 end
 
 function TextEditor:init()
@@ -102,9 +102,11 @@ function TextEditor:getSubMenuItems()
             text = _("Settings"),
             sub_item_table = {
                 {
-                    text = _("Text font size"),
+                    text_func = function()
+                        return T(_("Text font size (%1)"), self.font_size)
+                    end,
                     keep_menu_open = true,
-                    callback = function()
+                    callback = function(touchmenu_instance)
                         local SpinWidget = require("ui/widget/spinwidget")
                         local font_size = self.font_size
                         UIManager:show(SpinWidget:new{
@@ -116,6 +118,7 @@ function TextEditor:getSubMenuItems()
                             title_text =  _("Text font size"),
                             callback = function(spin)
                                 self.font_size = spin.value
+                                touchmenu_instance:updateItems()
                             end,
                         })
                     end,
@@ -179,6 +182,29 @@ Export text to QR code, that can be scanned, for example, by a phone.]]),
                     callback = function()
                         self.qr_code_export = not self.qr_code_export
                     end,
+                    separator = true,
+                },
+                {
+                    text = _("Clean text editor history"),
+                    enabled_func = function()
+                        return #self.history > 0
+                    end,
+                    keep_menu_open = true,
+                    callback = function(touchmenu_instance)
+                        UIManager:show(ConfirmBox:new{
+                            text = _("Clean text editor history?"),
+                            ok_text = _("Clean"),
+                            ok_callback = function()
+                                self.history = {}
+                                self.last_view_pos = {}
+                                -- remove history items from the parent menu
+                                while #touchmenu_instance.item_table_stack[2] > 3 do
+                                    table.remove(touchmenu_instance.item_table_stack[2])
+                                end
+                                touchmenu_instance:updateItems()
+                            end,
+                        })
+                end,
                 },
             },
             separator = true,
@@ -227,8 +253,7 @@ Export text to QR code, that can be scanned, for example, by a phone.]]),
                 end
                 UIManager:show(ConfirmBox:new{
                     text = text,
-                    ok_text = _("Yes"),
-                    cancel_text = _("No"),
+                    ok_text = _("Remove"),
                     ok_callback = function()
                         self:removeFromHistory(file_path)
                         -- Also remove from menu itself
@@ -297,7 +322,7 @@ function TextEditor:newFile()
     UIManager:show(ConfirmBox:new{
         text = _([[To start editing a new file, you will have to:
 
-- First select a directory
+- First select a folder
 - Then enter a name for the new file
 - And start editing it
 
@@ -368,8 +393,7 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
     if not possibly_new_file and not attr then
         UIManager:show(ConfirmBox:new{
             text = T(_("This file does not exist anymore:\n\n%1\n\nDo you want to create it and start editing it?"), BD.filepath(file_path)),
-            ok_text = _("Yes"),
-            cancel_text = _("No"),
+            ok_text = _("Create"),
             ok_callback = function()
                 -- go again thru there with possibly_new_file=true
                 self:checkEditFile(file_path, from_history, true)
@@ -404,8 +428,7 @@ function TextEditor:checkEditFile(file_path, from_history, possibly_new_file)
             UIManager:show(ConfirmBox:new{
                 text = T(_("This file is %2:\n\n%1\n\nAre you sure you want to open it?\n\nOpening big files may take some time."),
                     BD.filepath(file_path), util.getFriendlySize(attr.size)),
-                ok_text = _("Yes"),
-                cancel_text = _("No"),
+                ok_text = _("Open"),
                 ok_callback = function()
                     self:editFile(file_path, readonly)
                 end,
