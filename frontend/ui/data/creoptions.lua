@@ -306,6 +306,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 args = {"page", "scroll"},
                 default_arg = "page",
                 event = "SetViewMode",
+                no_notification = G_reader_settings:readSetting("copt_no_notification") or false,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[- 'page' mode splits the text into pages, at the most acceptable places (page numbers and the number of pages may change when you change fonts, margins, styles, etc.).
 - 'continuous' mode allows you to scroll the text like you would in a web browser (the 'Page Overlap' setting is only available in this mode).]]),
@@ -319,6 +320,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 args = {0, 1, 2, 3},
                 default_arg = 2,
                 event = "SetBlockRenderingMode",
+                no_notification = G_reader_settings:readSetting("copt_no_notification") or false,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[
 - 'legacy' uses original CR3 block rendering code.
@@ -338,6 +340,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 default_value = 96,
                 args = {0, 48, 96, 167, 212, 300},
                 event = "SetRenderDPI",
+                no_notification = G_reader_settings:readSetting("copt_no_notification") or false,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Sets the DPI used to scale absolute CSS units and images:
 - off: ignore absolute units (old engine behavior).
@@ -375,6 +378,7 @@ Note that your selected font size is not affected by this setting.]]),
                   value_hold_step = 5,
                 },
                 event = "SetLineSpace",
+                no_notification = G_reader_settings:readSetting("copt_no_notification") or false,
                 args = {
                     DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_TINY,
                     DCREREADER_CONFIG_LINE_SPACE_PERCENT_TINY,
@@ -413,6 +417,7 @@ Note that your selected font size is not affected by this setting.]]),
                 default_value = DCREREADER_CONFIG_DEFAULT_FONT_SIZE,
                 args = DCREREADER_CONFIG_FONT_SIZES,
                 event = "SetFontSize",
+                no_notification = G_reader_settings:readSetting("copt_no_notification") or false,
             },
             {
                 name = "font_fine_tune",
@@ -432,6 +437,7 @@ Note that your selected font size is not affected by this setting.]]),
                 },
                 values = {},
                 event = "ChangeSize",
+                no_notification = G_reader_settings:readSetting("copt_no_notification") or false,
                 args = {"decrease", "increase"},
                 alternate = false,
                 name_text_hold_callback = function(configurable, __, prefix)
@@ -477,6 +483,7 @@ Note that your selected font size is not affected by this setting.]]),
                     DCREREADER_CONFIG_WORD_SPACING_LARGE,
                 },
                 event = "SetWordSpacing",
+                no_notification = G_reader_settings:readSetting("copt_no_notification") or false,
                 help_text = _([[Tells the rendering engine by how much to scale the width of each 'space' character in the text from its regular width, and by how much it can additionally reduce them to make more words fit on a line (100% means no reduction).]]),
                 name_text_hold_callback = optionsutil.showValues,
                 name_text_true_values = true,
@@ -511,6 +518,7 @@ Note that your selected font size is not affected by this setting.]]),
                     DCREREADER_CONFIG_WORD_EXPANSION_MORE,
                 },
                 event = "SetWordExpansion",
+                no_notification = G_reader_settings:readSetting("copt_no_notification") or false,
                 help_text = _([[On justified lines having too wide spaces, allow distributing the excessive space into words by expanding them with letter spacing. This sets the max allowed letter spacing as a % of the font size.]]),
                 name_text_hold_callback = optionsutil.showValues,
                 name_text_true_values = true,
@@ -531,6 +539,7 @@ Note that your selected font size is not affected by this setting.]]),
                 default_pos = 2,
                 values = {10, 15, 25, 30, 36, 43, 49, 56},
                 event = "SetFontGamma",
+                no_notification = G_reader_settings:readSetting("copt_no_notification") or false,
                 args = {10, 15, 25, 30, 36, 43, 49, 56},
                 -- gamma values for these indexes are:
                 labels = {0.8, 1.0, 1.45, 1.90, 2.50, 4.0, 8.0, 15.0},
@@ -557,6 +566,7 @@ Note that your selected font size is not affected by this setting.]]),
                 args = { -1, -0.5, 0, 0.5, 1, 1.5, 3 },
                 default_value = 0,
                 event = "SetFontBaseWeight",
+                no_notification = G_reader_settings:readSetting("copt_no_notification") or false,
                 more_options = true,
                 more_options_param = {
                     value_min = -3,
@@ -584,6 +594,7 @@ If a font variation is not available, as well as for fractional adjustments, it 
             },
             {
                 name = "font_hinting",
+                no_notification = G_reader_settings:readSetting("copt_no_notification") or false,
                 name_text = _("Font Hinting"),
                 toggle = {_("off"), _("native"), _("auto")},
                 values = {0, 1, 2},
@@ -605,6 +616,7 @@ If a font variation is not available, as well as for fractional adjustments, it 
                 default_value = 3,
                 args = {0, 1, 2, 3},
                 event = "SetFontKerning",
+                no_notification = G_reader_settings:readSetting("copt_no_notification") or false,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Font kerning is the process of adjusting the spacing between individual letter forms, to achieve a visually pleasing result.
 
@@ -643,6 +655,7 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                 args = {false, true},
                 default_arg = nil,
                 event = "ToggleEmbeddedStyleSheet",
+                no_notification = G_reader_settings:readSetting("copt_no_notification") or false,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Enable or disable publisher stylesheets embedded in the book.
 (Note that less radical changes can be achieved via Style Tweaks in the main menu.)]]),
@@ -656,6 +669,7 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                 args = {false, true},
                 default_arg = nil,
                 event = "ToggleEmbeddedFonts",
+                no_notification = G_reader_settings:readSetting("copt_no_notification") or false,
                 enabled_func = function(configurable)
                     return optionsutil.enableIfEquals(configurable, "embedded_css", 1)
                 end,
@@ -672,6 +686,7 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                 args = {false, true},
                 default_arg = nil,
                 event = "ToggleImageScaling",
+                no_notification = G_reader_settings:readSetting("copt_no_notification") or false,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[- 'fast' uses a fast but inaccurate scaling algorithm when scaling images.
 - 'best' switches to a more costly but vastly more pleasing and accurate algorithm.]]),
