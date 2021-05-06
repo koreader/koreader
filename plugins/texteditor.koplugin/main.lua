@@ -97,7 +97,8 @@ end
 function TextEditor:getSubMenuItems()
     self:loadSettings()
     self.whenDoneFunc = nil -- discard reference to previous TouchMenu instance
-    local sub_item_table = {
+    local sub_item_table
+    sub_item_table = {
         {
             text = _("Settings"),
             sub_item_table = {
@@ -198,8 +199,8 @@ Export text to QR code, that can be scanned, for example, by a phone.]]),
                                 self.history = {}
                                 self.last_view_pos = {}
                                 -- remove history items from the parent menu
-                                while #touchmenu_instance.item_table_stack[2] > 3 do
-                                    table.remove(touchmenu_instance.item_table_stack[2])
+                                for _ = #sub_item_table, 4, -1 do
+                                    table.remove(sub_item_table)
                                 end
                                 touchmenu_instance:updateItems()
                             end,
