@@ -38,7 +38,7 @@ local function runUserScripts(dir, migration, parent)
     end
 end
 
-if android.prop.flavor ~= "fdroid" then
+if android.prop.runtimeChanges then
     -- run scripts once after an update of koreader,
     -- it can also trigger a recursive migration of user data
     local run_once_scripts = path .. "/koreader/scripts.afterupdate"
