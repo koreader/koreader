@@ -87,7 +87,7 @@ function OptionTextItem:onTapSelect()
     self.underline_container.color = Blitbuffer.COLOR_BLACK
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
-                    self.events, self.current_item, self.hide_on_apply)
+                    self.events, self.current_item, self.hide_on_apply, self.no_notification)
     UIManager:setDirty(self.config, function()
         return "fast", self[1].dimen
     end)
@@ -159,7 +159,7 @@ function OptionIconItem:onTapSelect()
     self.underline_container.color = Blitbuffer.COLOR_BLACK
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
-                    self.events, self.current_item, self.hide_on_apply)
+                    self.events, self.current_item, self.hide_on_apply, self.no_notification)
     UIManager:setDirty(self.config, function()
         return "fast", self[1].dimen
     end)
@@ -478,6 +478,7 @@ function ConfigOption:init()
                     option_item.args = self.options[c].args
                     option_item.event = self.options[c].event
                     option_item.current_item = d
+                    option_item.no_notification = self.options[c].no_notification
                     option_item.hide_on_apply = self.options[c].hide_on_apply
                     option_item.config = self.config
                     option_item.document = self.document
@@ -523,6 +524,7 @@ function ConfigOption:init()
                     option_item.args = self.options[c].args
                     option_item.event = self.options[c].event
                     option_item.current_item = d
+                    option_item.no_notification = self.options[c].no_notification
                     option_item.hide_on_apply = self.options[c].hide_on_apply
                     option_item.config = self.config
                     table.insert(option_items_group, option_item)
@@ -555,6 +557,7 @@ function ConfigOption:init()
                     args = self.options[c].args,
                     event = self.options[c].event,
                     events = self.options[c].events,
+                    no_notification = self.options[c].no_notification,
                     hide_on_apply = self.options[c].hide_on_apply,
                     config = self.config,
                     enabled = enabled,
@@ -600,7 +603,8 @@ function ConfigOption:init()
                                 self.options[c].event, arg, name_text, self.options[c].more_options_param)
                         else
                             self.config:onConfigChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].hide_on_apply)
+                                self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].hide_on_apply,
+                                self.options[c].no_notification)
                         end
                         UIManager:setDirty(self.config, function()
                             return "fast", switch.dimen
@@ -937,8 +941,8 @@ function ConfigDialog:onConfigChoice(option_name, option_value)
     return true
 end
 
-function ConfigDialog:onConfigEvent(option_event, option_arg, when_applied_callback)
-    self.ui:handleEvent(Event:new(option_event, option_arg, when_applied_callback))
+function ConfigDialog:onConfigEvent(option_event, option_arg, when_applied_callback, no_notification)
+    self.ui:handleEvent(Event:new(option_event, option_arg, when_applied_callback, no_notification))
     return true
 end
 
@@ -950,7 +954,7 @@ function ConfigDialog:onConfigEvents(option_events, arg_index)
     return true
 end
 
-function ConfigDialog:onConfigChoose(values, name, event, args, events, position, hide_on_apply)
+function ConfigDialog:onConfigChoose(values, name, event, args, events, position, hide_on_apply, no_notification)
     UIManager:tickAfterNext(function()
         -- Repainting may be delayed depending on options
         local refresh_dialog_func = function()
@@ -984,7 +988,7 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
         end
         if event then
             args = args or {}
-            self:onConfigEvent(event, args[position], when_applied_callback)
+            self:onConfigEvent(event, args[position], when_applied_callback, no_notification)
         end
         if events then
             self:onConfigEvents(events, position)

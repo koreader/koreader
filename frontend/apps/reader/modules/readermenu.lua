@@ -3,6 +3,7 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Screensaver = require("ui/screensaver")
 local UIManager = require("ui/uimanager")
@@ -224,6 +225,22 @@ function ReaderMenu:setUpdateItemTable()
     self.menu_items.plugin_management = {
         text = _("Plugin management"),
         sub_item_table = PluginLoader:genPluginManagerSubItem()
+    }
+
+    self.menu_items.notifications = {
+        text = _("Verbose notifications"),
+        help_text = _("You can turn verbose popup notifications on or off"),
+        checked_func = function()
+            return not G_reader_settings:readSetting("copt_no_notification")
+        end,
+        callback = function()
+            local value = G_reader_settings:readSetting("copt_no_notification") or false
+            G_reader_settings:saveSetting("copt_no_notification", not value)
+
+            UIManager:show(InfoMessage:new{
+                text = _("This will take effect on next restart.")
+        })
+        end
     }
     -- main menu tab
     -- insert common info
