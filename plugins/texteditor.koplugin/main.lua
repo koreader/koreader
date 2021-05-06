@@ -33,7 +33,7 @@ local TextEditor = WidgetContainer:new{
 }
 
 function TextEditor:onDispatcherRegisterActions()
-    Dispatcher:registerAction("edit_last_edited_file", { category = "none", event = "OpenLastEditedFile", title = _("Text editor: open last file"), device = true, separator = true, })
+    Dispatcher:registerAction("edit_last_edited_file", { category = "none", event = "OpenLastEditedFile", title = _("Text editor: open last file"), device = true, separator = true})
 end
 
 function TextEditor:init()
@@ -199,8 +199,10 @@ Export text to QR code, that can be scanned, for example, by a phone.]]),
                                 self.history = {}
                                 self.last_view_pos = {}
                                 -- remove history items from the parent menu
-                                for _ = #sub_item_table, 4, -1 do
-                                    table.remove(sub_item_table)
+                                for j = #sub_item_table, 1, -1 do
+                                    if sub_item_table[j]._texteditor_id then
+                                        table.remove(sub_item_table)
+                                    end
                                 end
                                 touchmenu_instance:updateItems()
                             end,
