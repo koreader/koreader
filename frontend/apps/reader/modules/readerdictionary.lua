@@ -287,14 +287,18 @@ function ReaderDictionary:addToMainMenu(menu_items)
             },
             {
                 text = _("Clean dictionary lookup history"),
+                enabled_func = function()
+                    return lookup_history:has("lookup_history")
+                end,
                 keep_menu_open = true,
-                callback = function()
+                callback = function(touchmenu_instance)
                     UIManager:show(ConfirmBox:new{
                         text = _("Clean dictionary lookup history?"),
                         ok_text = _("Clean"),
                         ok_callback = function()
                             -- empty data table to replace current one
                             lookup_history:reset{}
+                            touchmenu_instance:updateItems()
                         end,
                     })
                 end,
