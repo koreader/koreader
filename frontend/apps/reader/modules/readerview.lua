@@ -865,14 +865,16 @@ function ReaderView:onMarginUpdate()
     self.ui:handleEvent(Event:new("ReZoom"))
 end
 
-function ReaderView:onSetViewMode(new_mode)
+function ReaderView:onSetViewMode(new_mode, callback, no_notification)
     if new_mode ~= self.view_mode then
         self.view_mode = new_mode
         self.ui.document:setViewMode(new_mode)
         self.ui:handleEvent(Event:new("ChangeViewMode"))
-        UIManager:show(Notification:new{
-            text = T( _("View mode set to %1."), new_mode),
-        })
+        if no_notification == nil or not no_notification then
+            UIManager:show(Notification:new{
+                text = T( _("View mode set to %1."), new_mode),
+            })
+        end
     end
 end
 

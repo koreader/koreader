@@ -135,18 +135,36 @@ function ReaderTypeset:onSaveSettings()
     self.ui.doc_settings:saveSetting("nightmode_images", self.nightmode_images)
 end
 
-function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
+function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle, callback, no_notification)
     self:toggleEmbeddedStyleSheet(toggle)
+    if no_notification == nil or not no_notification then
+        local parameter = toggle and _("on") or _("off")
+        UIManager:show(Notification:new{
+            text = T( _("Embedded styles are %1."), parameter),
+        })
+    end
     return true
 end
 
-function ReaderTypeset:onToggleEmbeddedFonts(toggle)
+function ReaderTypeset:onToggleEmbeddedFonts(toggle, callback, no_notification)
     self:toggleEmbeddedFonts(toggle)
+    if no_notification == nil or not no_notification then
+        local parameter = toggle and _("on") or _("off")
+        UIManager:show(Notification:new{
+            text = T( _("Embedded fonts are %1."), parameter),
+        })
+    end
     return true
 end
 
-function ReaderTypeset:onToggleImageScaling(toggle)
+function ReaderTypeset:onToggleImageScaling(toggle, callback, no_notification)
     self:toggleImageScaling(toggle)
+    if no_notification == nil or not no_notification then
+        local parameter = toggle and _("best") or _("fast")
+        UIManager:show(Notification:new{
+            text = T( _("Image saling is set to %1."), parameter),
+        })
+    end
     return true
 end
 
@@ -155,17 +173,19 @@ function ReaderTypeset:onToggleNightmodeImages(toggle)
     return true
 end
 
-function ReaderTypeset:onSetBlockRenderingMode(mode)
+function ReaderTypeset:onSetBlockRenderingMode(mode, callback, no_notification)
     self:setBlockRenderingMode(mode)
-    local rendering_text = {
-        _("legacy"),
-        _("flat"),
-        _("book"),
-        _("web"),
-    }
-    UIManager:show(Notification:new{
-        text = T( _("Render mode set to %1."), rendering_text[mode + 1]),
-    })
+    if no_notification == nil or not no_notification then
+        local rendering_text = {
+            _("legacy"),
+            _("flat"),
+            _("book"),
+            _("web"),
+        }
+        UIManager:show(Notification:new{
+            text = T( _("Render mode set to %1."), rendering_text[mode + 1]),
+        })
+    end
     return true
 end
 
@@ -185,11 +205,13 @@ local OBSOLETED_CSS = {
     "txt.css",
 }
 
-function ReaderTypeset:onSetRenderDPI(dpi)
+function ReaderTypeset:onSetRenderDPI(dpi, callback, no_notification)
     self:setRenderDPI(dpi)
-    UIManager:show(Notification:new{
-        text = T( _("Zoom set to %1 dpi."), dpi),
-    })
+    if no_notification == nil or not no_notification then
+        UIManager:show(Notification:new{
+            text = T( _("Zoom set to %1 dpi."), dpi),
+        })
+    end
     return true
 end
 

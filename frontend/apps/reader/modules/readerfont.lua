@@ -206,98 +206,114 @@ function ReaderFont:onChangeSize(direction, font_delta)
     return true
 end
 
-function ReaderFont:onSetFontSize(new_size)
+function ReaderFont:onSetFontSize(new_size, callback, no_notification)
     if new_size > 255 then new_size = 255 end
     if new_size < 12 then new_size = 12 end
 
     self.font_size = new_size
     self.ui.document:setFontSize(Screen:scaleBySize(new_size))
     self.ui:handleEvent(Event:new("UpdatePos"))
-    UIManager:show(Notification:new{
-        text = T( _("Font size set to %1."), self.font_size),
-    })
+    if no_notification == nil or not no_notification then
+        UIManager:show(Notification:new{
+            text = T( _("Font size set to %1."), self.font_size),
+        })
+    end
     return true
 end
 
-function ReaderFont:onSetLineSpace(space)
+function ReaderFont:onSetLineSpace(space, callback, no_notification)
     self.line_space_percent = math.min(200, math.max(50, space))
     self.ui.document:setInterlineSpacePercent(self.line_space_percent)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    UIManager:show(Notification:new{
-        text = T( _("Line spacing set to %1%."), self.line_space_percent),
-    })
+    if no_notification == nil or not no_notification then
+        UIManager:show(Notification:new{
+            text = T( _("Line spacing set to %1%."), self.line_space_percent),
+        })
+    end
     return true
 end
 
-function ReaderFont:onSetFontBaseWeight(weight)
+function ReaderFont:onSetFontBaseWeight(weight, callback, no_notification)
     self.font_base_weight = weight
     self.ui.document:setFontBaseWeight(weight)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    UIManager:show(Notification:new{
-        text = T( _("Font weight set to %1."), weight),
-    })
+    if no_notification == nil or not no_notification then
+        UIManager:show(Notification:new{
+            text = T( _("Font weight set to %1."), weight),
+        })
+    end
     return true
 end
 
-function ReaderFont:onSetFontHinting(mode)
+function ReaderFont:onSetFontHinting(mode, callback, no_notification)
     self.font_hinting = mode
     self.ui.document:setFontHinting(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    local hint_text = {
-        _("off"),
-        _("native"),
-        _("auto"),
-    }
-    UIManager:show(Notification:new{
-        text = T( _("Font hinting set to %1."), hint_text[mode + 1]),
-    })
+    if no_notification == nil or not no_notification then
+        local hint_text = {
+            _("off"),
+            _("native"),
+            _("auto"),
+        }
+        UIManager:show(Notification:new{
+            text = T( _("Font hinting set to %1."), hint_text[mode + 1]),
+        })
+    end
     return true
 end
 
-function ReaderFont:onSetFontKerning(mode)
+function ReaderFont:onSetFontKerning(mode, callback, no_notification)
     self.font_kerning = mode
     self.ui.document:setFontKerning(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    local kerning_text = {
-        _("off"),
-        _("fast"),
-        _("good"),
-        _("best"),
-    }
-    UIManager:show(Notification:new{
-        text = T( _("Font kerning set to %1."), kerning_text[mode + 1]),
-    })
+    if no_notification == nil or not no_notification then
+        local kerning_text = {
+            _("off"),
+            _("fast"),
+            _("good"),
+            _("best"),
+        }
+        UIManager:show(Notification:new{
+            text = T( _("Font kerning set to %1."), kerning_text[mode + 1]),
+        })
+    end
     return true
 end
 
-function ReaderFont:onSetWordSpacing(values)
+function ReaderFont:onSetWordSpacing(values, callback, no_notification)
     self.word_spacing = values
     self.ui.document:setWordSpacing(values)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    UIManager:show(Notification:new{
-        text = T( _("Word spacing: scaling set to %1, reduction to %2."), values[1], values[2]),
-    })
+    if no_notification == nil or not no_notification then
+        UIManager:show(Notification:new{
+            text = T( _("Word spacing: scaling set to %1, reduction to %2."), values[1], values[2]),
+        })
+    end
     return true
 end
 
-function ReaderFont:onSetWordExpansion(value)
+function ReaderFont:onSetWordExpansion(value, callback, no_notification)
     self.word_expansion = value
     self.ui.document:setWordExpansion(value)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    UIManager:show(Notification:new{
-        text = T( _("Word expansion set to %1."), value),
-    })
+    if no_notification == nil or not no_notification then
+        UIManager:show(Notification:new{
+            text = T( _("Word expansion set to %1."), value),
+        })
+    end
     return true
 end
 
-function ReaderFont:onSetFontGamma(gamma)
+function ReaderFont:onSetFontGamma(gamma, callback, no_notification)
     self.gamma_index = gamma
     self.ui.document:setGammaIndex(self.gamma_index)
     local gamma_level = self.ui.document:getGammaLevel()
-    UIManager:show(Notification:new{
-        text = T( _("Font gamma set to %1."), gamma_level),
-    })
     self.ui:handleEvent(Event:new("RedrawCurrentView"))
+    if no_notification == nil or not no_notification then
+        UIManager:show(Notification:new{
+            text = T( _("Font gamma set to %1."), gamma_level),
+        })
+    end
     return true
 end
 

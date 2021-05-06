@@ -164,6 +164,7 @@ local order = {
         "terminal",
         "----------------------------",
         "plugin_management",
+        "notifications",
     },
     search = {
         "dictionary_lookup",
