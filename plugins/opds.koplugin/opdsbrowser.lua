@@ -2,7 +2,6 @@ local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Cache = require("cache")
-local CacheItem = require("cacheitem")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
@@ -24,15 +23,10 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local CatalogCacheItem = CacheItem:new{
-    size = 1024,  -- fixed size for catalog items
-}
-
 -- cache catalog parsed from feed xml
 local CatalogCache = Cache:new{
-    -- Make it 20 slots
-    size = 20 * CatalogCacheItem.size,
-    avg_itemsize = CatalogCacheItem.size,
+    -- Make it 20 slots, with no storage space constraints
+    slots = 20,
 }
 
 local OPDSBrowser = Menu:extend{
@@ -328,23 +322,21 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
 end
 
 function OPDSBrowser:parseFeed(item_url, username, password)
-    local feed
     local feed_last_modified = self:fetchFeed(item_url, username, password, "HEAD")
     local hash = "opds|catalog|" .. item_url
     if feed_last_modified then
         hash = hash .. "|" .. feed_last_modified
     end
 
-    local cache = CatalogCache:check(hash)
-    if cache then
+    local feed = CatalogCache:check(hash)
+    if feed then
         logger.dbg("Cache hit for", hash)
-        feed = cache.feed
     else
         logger.dbg("Cache miss for", hash)
         feed = self:fetchFeed(item_url, username, password)
         if feed then
             logger.dbg("Caching", hash)
-            CatalogCache:insert(hash, CatalogCacheItem:new{ feed = feed })
+            CatalogCache:insert(hash, feed)
         end
     end
     if feed then

@@ -5,7 +5,6 @@ Text rendering module.
 local bit = require("bit")
 local Font = require("ui/font")
 local Cache = require("cache")
-local CacheItem = require("cacheitem")
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local logger = require("logger")
@@ -24,17 +23,11 @@ end
 local RenderText = {}
 
 local GlyphCache = Cache:new{
-    -- 1 MiB of glyph cache, with 1024 slots
-    size = 1 * 1024 * 1024,
-    avg_itemsize = 1024,
+    -- 1024 slots
+    slots = 1024,
+    -- Rely on our FFI finalizer to free the BBs on GC
+    enable_eviction_cb = false,
 }
-
-local GlyphCacheItem = CacheItem:new{}
-
-function GlyphCacheItem:onFree()
-    logger.dbg("GlyphCacheItem: free blitbuffer", self.bb)
-    self.bb:free()
-end
 
 -- iterator over UTF8 encoded characters in a string
 local function utf8Chars(input_text)
@@ -117,16 +110,7 @@ function RenderText:getGlyph(face, charcode, bold)
         logger.warn("error rendering glyph (charcode=", charcode, ") for face", face)
         return
     end
-    glyph = GlyphCacheItem:new{
-        bb = rendered_glyph.bb,
-        l  = rendered_glyph.l,
-        t  = rendered_glyph.t,
-        r  = rendered_glyph.r,
-        ax = rendered_glyph.ax,
-        ay = rendered_glyph.ay,
-    }
-    glyph.size = tonumber(glyph.bb.stride) * glyph.bb.h + 320
-    GlyphCache:insert(hash, glyph)
+    GlyphCache:insert(hash, rendered_glyph)
     return rendered_glyph
 end
 
@@ -325,16 +309,7 @@ function RenderText:getGlyphByIndex(face, glyphindex, bold)
         logger.warn("error rendering glyph (glyphindex=", glyphindex, ") for face", face)
         return
     end
-    glyph = GlyphCacheItem:new{
-        bb = rendered_glyph.bb,
-        l  = rendered_glyph.l,
-        t  = rendered_glyph.t,
-        r  = rendered_glyph.r,
-        ax = rendered_glyph.ax,
-        ay = rendered_glyph.ay,
-    }
-    glyph.size = tonumber(glyph.bb.stride) * glyph.bb.h + 320
-    GlyphCache:insert(hash, glyph)
+    GlyphCache:insert(hash, rendered_glyph)
     return rendered_glyph
 end
 
