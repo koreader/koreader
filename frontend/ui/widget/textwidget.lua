@@ -214,6 +214,9 @@ function TextWidget:_measureWithXText()
                 -- no bold: xtext does synthetized bold with normal metrics
         end
         local max_width = self.max_width - reserved_width
+        if max_width <= 0 then -- avoid _xtext:makeLine() crash
+            max_width = self.max_width
+        end
         if self.truncate_left then
             line_start = self._xtext:getSegmentFromEnd(max_width)
         end

@@ -75,7 +75,7 @@ function DictQuickLookup:canSearch()
         end
     else
         -- This is to prevent an ineffective button when we're launched from the Reader's menu.
-        if self.ui.highlight.selected_text then
+        if self.highlight then
             return true
         end
     end
