@@ -306,7 +306,6 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 args = {"page", "scroll"},
                 default_arg = "page",
                 event = "SetViewMode",
-                verbosity = 10,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[- 'page' mode splits the text into pages, at the most acceptable places (page numbers and the number of pages may change when you change fonts, margins, styles, etc.).
 - 'continuous' mode allows you to scroll the text like you would in a web browser (the 'Page Overlap' setting is only available in this mode).]]),
@@ -320,7 +319,6 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 args = {0, 1, 2, 3},
                 default_arg = 2,
                 event = "SetBlockRenderingMode",
-                verbosity = 10,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[
 - 'legacy' uses original CR3 block rendering code.
@@ -340,7 +338,6 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                 default_value = 96,
                 args = {0, 48, 96, 167, 212, 300},
                 event = "SetRenderDPI",
-                verbosity = 10,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Sets the DPI used to scale absolute CSS units and images:
 - off: ignore absolute units (old engine behavior).
@@ -378,8 +375,6 @@ Note that your selected font size is not affected by this setting.]]),
                   value_hold_step = 5,
                 },
                 event = "SetLineSpace",
-                verbosity = 20,
-                more_verbosity = 30,
                 args = {
                     DCREREADER_CONFIG_LINE_SPACE_PERCENT_X_TINY,
                     DCREREADER_CONFIG_LINE_SPACE_PERCENT_TINY,
@@ -418,7 +413,6 @@ Note that your selected font size is not affected by this setting.]]),
                 default_value = DCREREADER_CONFIG_DEFAULT_FONT_SIZE,
                 args = DCREREADER_CONFIG_FONT_SIZES,
                 event = "SetFontSize",
-                verbosity = 10,
             },
             {
                 name = "font_fine_tune",
@@ -438,8 +432,6 @@ Note that your selected font size is not affected by this setting.]]),
                 },
                 values = {},
                 event = "ChangeSizeFine",
-                verbosity = 40,
-                more_verbosity = 30,
                 args = {"decrease", "increase"},
                 alternate = false,
                 name_text_hold_callback = function(configurable, __, prefix)
@@ -473,8 +465,6 @@ Note that your selected font size is not affected by this setting.]]),
                     event = "SetWordSpacing",
                 },
                 toggle = {_("small"), _("medium"), _("large")},
-                verbosity = 20,
-                more_verbosity = 30,
                 values = {
                     DCREREADER_CONFIG_WORD_SPACING_SMALL,
                     DCREREADER_CONFIG_WORD_SPACING_MEDIUM,
@@ -521,8 +511,6 @@ Note that your selected font size is not affected by this setting.]]),
                     DCREREADER_CONFIG_WORD_EXPANSION_MORE,
                 },
                 event = "SetWordExpansion",
-                verbosity = 20,
-                more_verbosity = 30,
                 help_text = _([[On justified lines having too wide spaces, allow distributing the excessive space into words by expanding them with letter spacing. This sets the max allowed letter spacing as a % of the font size.]]),
                 name_text_hold_callback = optionsutil.showValues,
                 name_text_true_values = true,
@@ -543,8 +531,6 @@ Note that your selected font size is not affected by this setting.]]),
                 default_pos = 2,
                 values = {10, 15, 25, 30, 36, 43, 49, 56},
                 event = "SetFontGamma",
-                verbosity = 20,
-                more_verbosity = 30,
                 args = {10, 15, 25, 30, 36, 43, 49, 56},
                 -- gamma values for these indexes are:
                 labels = {0.8, 1.0, 1.45, 1.90, 2.50, 4.0, 8.0, 15.0},
@@ -571,8 +557,6 @@ Note that your selected font size is not affected by this setting.]]),
                 args = { -1, -0.5, 0, 0.5, 1, 1.5, 3 },
                 default_value = 0,
                 event = "SetFontBaseWeight",
-                verbosity = 10,
-                more_verbosity = 30,
                 more_options = true,
                 more_options_param = {
                     value_min = -3,
@@ -606,7 +590,6 @@ If a font variation is not available, as well as for fractional adjustments, it 
                 default_value = 2,
                 args = {0, 1, 2},
                 event = "SetFontHinting",
-                verbosity = 10,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Font hinting is the process by which fonts are adjusted for maximum readability on the screen's pixel grid.
 
@@ -622,7 +605,6 @@ If a font variation is not available, as well as for fractional adjustments, it 
                 default_value = 3,
                 args = {0, 1, 2, 3},
                 event = "SetFontKerning",
-                verbosity = 10,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Font kerning is the process of adjusting the spacing between individual letter forms, to achieve a visually pleasing result.
 
@@ -661,7 +643,6 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                 args = {false, true},
                 default_arg = nil,
                 event = "ToggleEmbeddedStyleSheet",
-                verbosity = 10,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Enable or disable publisher stylesheets embedded in the book.
 (Note that less radical changes can be achieved via Style Tweaks in the main menu.)]]),
@@ -675,7 +656,6 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                 args = {false, true},
                 default_arg = nil,
                 event = "ToggleEmbeddedFonts",
-                verbosity = 10,
                 enabled_func = function(configurable)
                     return optionsutil.enableIfEquals(configurable, "embedded_css", 1)
                 end,
@@ -692,7 +672,6 @@ Whether enabled or disabled, KOReader's own status bar at the bottom of the scre
                 args = {false, true},
                 default_arg = nil,
                 event = "ToggleImageScaling",
-                verbosity = 10,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[- 'fast' uses a fast but inaccurate scaling algorithm when scaling images.
 - 'best' switches to a more costly but vastly more pleasing and accurate algorithm.]]),

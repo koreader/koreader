@@ -15,6 +15,7 @@ local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local Notification = require("ui/widget/notification")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -218,7 +219,7 @@ function ToggleSwitch:onTapSelect(arg, gev)
     end
     if self.toggle[self.position] ~= "⋮" then
         self.config:onConfigChoose(self.values, self.name,
-            self.event, self.args, self.events, self.position, self.hide_on_apply, self.verbosity)
+            self.event, self.args, self.events, self.position, self.hide_on_apply, Notification.SOURCE_BOTTOM_MENU_TOGGLE)
         UIManager:setDirty(self.config, function()
             return "ui", self.dimen
         end)
