@@ -356,8 +356,10 @@ function DeviceListener:onRestart()
 end
 
 function DeviceListener:onFullRefresh()
-    self.ui:handleEvent(Event:new("UpdateFooter"))
-    UIManager:setDirty("all", "full")
+    if self.ui and self.ui.view then
+        self.ui:handleEvent(Event:new("UpdateFooter", self.ui.view.footer_visible))
+    end
+    UIManager:setDirty(nil, "full")
 end
 
 return DeviceListener
