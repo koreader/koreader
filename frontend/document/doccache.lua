@@ -17,6 +17,8 @@ local DocCache = Cache:new{
     size = calcCacheMemSize(),
     -- Average item size is a screen's worth of bitmap, mixed with a few much smaller tables (pgdim, pglinks, etc.), hence the / 3
     avg_itemsize = math.floor(CanvasContext:getWidth() * CanvasContext:getHeight() * (CanvasContext.is_color_rendering_enabled and 4 or 1) / 3),
+    -- Rely on CacheItem's eviction callback to free resources *immediately* on eviction.
+    enable_eviction_cb = true,
     disk_cache = true,
     cache_path = DataStorage:getDataDir() .. "/cache/",
 }
