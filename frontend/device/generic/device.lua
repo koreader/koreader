@@ -270,6 +270,8 @@ function Device:onPowerEvent(ev)
         self.powerd:beforeSuspend()
         local UIManager = require("ui/uimanager")
         logger.dbg("Suspending...")
+        -- Add the current state of the SleepCover flag...
+        logger.dbg("Sleep cover is", self.is_cover_closed and "closed" or "open")
         -- Let Screensaver set its widget up, so we get accurate info down the line in case fallbacks kick in...
         Screensaver:setup()
         -- Mostly always suspend in Portrait/Inverted Portrait mode...
@@ -325,7 +327,11 @@ function Device:onPowerEvent(ev)
                     network_manager:turnOffWifi()
                 end
             end
-            UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
+            -- Only actually schedule suspension if we're still supposed to go to sleep,
+            -- because the Wi-Fi stuff above may have blocked for a significant amount of time...
+            if self.screen_saver_mode then
+                UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
+            end
         end)
     end
 end
