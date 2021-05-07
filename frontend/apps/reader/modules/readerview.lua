@@ -73,6 +73,9 @@ local ReaderView = OverlapGroup:extend{
     flipping_visible = false,
     -- to ensure periodic flush of settings
     settings_last_save_tv = nil,
+    -- might be directly updated by readerpaging/readerrolling when
+    -- they handle some panning/scrolling, to request "fast" refreshes
+    currently_scrolling = false,
 }
 
 function ReaderView:init()
@@ -614,7 +617,7 @@ function ReaderView:recalculate()
     end
     -- Flag a repaint so self:paintTo will be called
     -- NOTE: This is also unfortunately called during panning, essentially making sure we'll never be using "fast" for pans ;).
-    UIManager:setDirty(self.dialog, "partial")
+    UIManager:setDirty(self.dialog, self.currently_scrolling and "fast" or "partial")
 end
 
 function ReaderView:PanningUpdate(dx, dy)

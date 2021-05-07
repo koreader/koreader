@@ -217,6 +217,7 @@ function Device:init()
                     relative_delayed = fake_ges.relative_delayed,
                     pos = pos,
                     time = ev.time,
+                    from_mousewheel = true,
                 }
                 local fake_pan_ev = Event:new("Pan", nil, fake_ges)
                 local fake_release_ev = Event:new("Gesture", fake_ges_release)
