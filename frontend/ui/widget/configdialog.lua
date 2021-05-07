@@ -33,6 +33,10 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
+local bor = bit.bor
+local band = bit.band
+local bxor = bit.bxor
+
 local OptionTextItem = InputContainer:new{}
 
 function OptionTextItem:init()
@@ -88,7 +92,7 @@ function OptionTextItem:onTapSelect()
     self.underline_container.color = Blitbuffer.COLOR_BLACK
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
-                    self.events, self.current_item, self.hide_on_apply, self.verbosity)
+                    self.events, self.current_item, self.hide_on_apply, Notification.SOURCE_BOTTOM_MENU_ICON)
     UIManager:setDirty(self.config, function()
         return "fast", self[1].dimen
     end)
@@ -160,7 +164,7 @@ function OptionIconItem:onTapSelect()
     self.underline_container.color = Blitbuffer.COLOR_BLACK
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
-                    self.events, self.current_item, self.hide_on_apply, self.verbosity)
+                    self.events, self.current_item, self.hide_on_apply, Notification.SOURCE_BOTTOM_MENU_ICON)
     UIManager:setDirty(self.config, function()
         return "fast", self[1].dimen
     end)
@@ -557,7 +561,6 @@ function ConfigOption:init()
                     event = self.options[c].event,
                     events = self.options[c].events,
                     hide_on_apply = self.options[c].hide_on_apply,
-                    verbosity = self.options[c].verbosity,
                     config = self.config,
                     enabled = enabled,
                     row_count = row_count,
@@ -567,7 +570,8 @@ function ConfigOption:init()
                                 self.options[c].more_options_param.show_true_value_func = self.options[c].show_true_value_func
                             end
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, arg, name_text, self.options[c].more_options_param, self.options[c].more_verbosity)
+                                self.options[c].event, arg, name_text, self.options[c].more_options_param,
+                                Notification.SOURCE_BOTTOM_MENU_MORE)
                         end
                     end
                 }
@@ -596,14 +600,14 @@ function ConfigOption:init()
                         if arg == "-" or arg == "+" then
                             self.config:onConfigFineTuneChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].hide_on_apply,
-                                self.options[c].fine_tune_param)
+                                self.options[c].fine_tune_param, Notification.SOURCE_BOTTOM_MENU_FINE)
                         elseif arg == "⋮" then
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, arg, name_text, self.options[c].more_options_param, self.options[c].more_verbosity)
+                                self.options[c].event, arg, name_text, self.options[c].more_options_param, Notification.SOURCE_BOTTOM_MENU_MORE)
                         else
                             self.config:onConfigChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].hide_on_apply,
-                                self.options[c].verbosity)
+                                Notification.SOURCE_BOTTOM_MENU_TOGGLE)
                         end
                         UIManager:setDirty(self.config, function()
                             return "fast", switch.dimen
@@ -935,33 +939,31 @@ function ConfigDialog:onShowConfigPanel(index)
 end
 
 function ConfigDialog:onConfigChoice(option_name, option_value)
+    -- ToDO notification for activityIndicator check
     self.configurable[option_name] = option_value
     self.ui:handleEvent(Event:new("StartActivityIndicator"))
     return true
 end
 
-function ConfigDialog:onConfigEvent(option_event, option_arg, when_applied_callback, verbosity)
-    Notification:setNotificationSource(2)
-    Notification:setNotificationVerbosity(verbosity or 0)
+function ConfigDialog:onConfigEvent(option_event, option_arg, when_applied_callback, source)
     self.ui:handleEvent(Event:new(option_event, option_arg, when_applied_callback))
-    Notification:setNotificationSource(0)
-    Notification:setNotificationVerbosity(0)
     return true
 end
 
-function ConfigDialog:onConfigEvents(option_events, arg_index, verbosity)
-    Notification:setNotificationSource(2)
-    Notification:setNotificationVerbosity(verbosity or 0)
+function ConfigDialog:onConfigEvents(option_events, arg_index, source)
     for i=1, #option_events do
         option_events[i].args = option_events[i].args or {}
         self.ui:handleEvent(Event:new(option_events[i].event, option_events[i].args[arg_index]))
     end
-    Notification:setNotificationSource(0)
-    Notification:setNotificationVerbosity(0)
     return true
 end
 
-function ConfigDialog:onConfigChoose(values, name, event, args, events, position, hide_on_apply, verbosity)
+function ConfigDialog:onConfigChoose(values, name, event, args, events, position, hide_on_apply, source)
+    if #values == 0 then -- this is a toggle which is not selectable (eg. increase, decrease)
+        Notification:setNotificationSource(Notification.SOURCE_BOTTOM_MENU_FINE)
+    else
+        Notification:setNotificationSource(source)
+    end
     UIManager:tickAfterNext(function()
         -- Repainting may be delayed depending on options
         local refresh_dialog_func = function()
@@ -995,10 +997,10 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
         end
         if event then
             args = args or {}
-            self:onConfigEvent(event, args[position], when_applied_callback, verbosity)
+            self:onConfigEvent(event, args[position], when_applied_callback, Notification.SOURCE_BOTTOM_MENU_TOGGLE)
         end
         if events then
-            self:onConfigEvents(events, position, verbosity)
+            self:onConfigEvents(events, position, Notification.SOURCE_BOTTOM_MENU_TOGGLE)
         end
         -- Even if each toggle refreshes itself when toggled, we still
         -- need to update and repaint the whole config panel, as other
@@ -1013,6 +1015,7 @@ end
 
 -- Tweaked variant used with the fine_tune variant of buttonprogress (direction can only be "-" or "+")
 function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, direction, hide_on_apply, params)
+    Notification:setNotificationSource(source)
     UIManager:tickAfterNext(function()
         -- Repainting may be delayed depending on options
         local refresh_dialog_func = function()
@@ -1095,10 +1098,10 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
                     arg = arg + 1
                 end
             end
-            self:onConfigEvent(event, arg, when_applied_callback, verbosity)
+            self:onConfigEvent(event, arg, when_applied_callback, 666)
         end
         if events then
-            self:onConfigEvents(events, direction, verbosity)
+            self:onConfigEvents(events, direction, 666)
         end
         -- Even if each toggle refreshes itself when toggled, we still
         -- need to update and repaint the whole config panel, as other
@@ -1113,7 +1116,8 @@ end
 
 -- Tweaked variant used with the more options variant of buttonprogress and fine tune with numpicker
 -- events are not supported
-function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, more_options_param, more_verbosity)
+function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, more_options_param, source)
+    Notification:setNotificationSource(source)
     if not more_options_param then
         more_options_param = {}
     end
@@ -1217,7 +1221,7 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             -- it actually do it when provided a callback as argument
                             local dummy_callback = when_applied_callback and function() end
                             args = args or {}
-                            self:onConfigEvent(event, value_tables, dummy_callback, more_verbosity)
+                            self:onConfigEvent(event, value_tables, dummy_callback, Notification.SOURCE_BOTTOM_MENU_MORE)
                             self:update()
                         end
                     end,
@@ -1311,12 +1315,13 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             args = args or {}
                             if more_options_param.value_table then
                                 if more_options_param.args_table then
-                                    self:onConfigEvent(event, more_options_param.args_table[spin.value_index], dummy_callback, more_verbosity)
+                                    self:onConfigEvent(event, more_options_param.args_table[spin.value_index], dummy_callback,
+                                        Notification.SOURCE_BOTTOM_MENU_MORE)
                                 else
-                                    self:onConfigEvent(event, spin.value_index, dummy_callback, more_verbosity)
+                                    self:onConfigEvent(event, spin.value_index, dummy_callback, Notification.SOURCE_BOTTOM_MENU_MORE)
                                 end
                             else
-                                self:onConfigEvent(event, spin.value, dummy_callback, more_verbosity)
+                                self:onConfigEvent(event, spin.value, dummy_callback, Notification.SOURCE_BOTTOM_MENU_MORE)
                             end
                             self:update()
                         end

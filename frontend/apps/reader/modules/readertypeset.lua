@@ -138,21 +138,21 @@ end
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
     self:toggleEmbeddedStyleSheet(toggle)
     local parameter = toggle and _("on") or _("off")
-    Notification:notification(T( _("Embedded styles are %1."), parameter))
+    Notification:notify(T( _("Embedded styles are %1."), parameter))
     return true
 end
 
 function ReaderTypeset:onToggleEmbeddedFonts(toggle)
     self:toggleEmbeddedFonts(toggle)
     local parameter = toggle and _("on") or _("off")
-    Notification:notification(T( _("Embedded fonts are %1."), parameter))
+    Notification:notify(T( _("Embedded fonts are %1."), parameter))
     return true
 end
 
 function ReaderTypeset:onToggleImageScaling(toggle)
     self:toggleImageScaling(toggle)
     local parameter = toggle and _("best") or _("fast")
-    Notification:notification(T( _("Image saling is set to %1."), parameter))
+    Notification:notify(T( _("Image saling is set to %1."), parameter))
     return true
 end
 
@@ -169,7 +169,7 @@ function ReaderTypeset:onSetBlockRenderingMode(mode)
         _("book"),
         _("web"),
     }
-    Notification:notification(T( _("Render mode set to %1."), rendering_text[mode + 1]))
+    Notification:notify(T( _("Render mode set to %1."), rendering_text[mode + 1]))
     return true
 end
 
@@ -191,7 +191,7 @@ local OBSOLETED_CSS = {
 
 function ReaderTypeset:onSetRenderDPI(dpi)
     self:setRenderDPI(dpi)
-    Notification:notification(T( _("Zoom set to %1 dpi."), dpi))
+    Notification:notify(T( _("Zoom set to %1 dpi."), dpi))
     return true
 end
 

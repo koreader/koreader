@@ -19,10 +19,9 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local Input = Device.input
 local Screen = Device.screen
 
-local SOURCE_ALL = 0
-local SOURCE_DISPATCHER = 1
-local SOURCE_BOTTOM_MENU = 2
-local SOURCE_GESTURE = 4
+local bor = bit.bor
+local band = bit.band
+local bxor = bit.bxor
 
 local Notification = InputContainer:new{
     face = Font:getFace("x_smallinfofont"),
@@ -34,8 +33,14 @@ local Notification = InputContainer:new{
 
     _nums_shown = {}, -- array of stacked notifications
 
-    source = 0,
-    verbosity = 0,
+    SOURCE_NONE = 0,
+    SOURCE_BOTTOM_MENU_ICON = 1,
+    SOURCE_BOTTOM_MENU_TOGGLE = 2,
+    SOURCE_BOTTOM_MENU_FINE = 4,
+    SOURCE_BOTTOM_MENU_MORE = 8,
+    SOURCE_DISPATCHER = 16,
+    SOURCE_GESTURE = 32,
+    SOURCE_TEST = 64,
 }
 
 function Notification:init()
@@ -105,13 +110,10 @@ function Notification:setNotificationSource(source)
     self.source = source
 end
 
-function Notification:setNotificationVerbosity(requested_verbosity)
-    self.verbosity = requested_verbosity
-end
-
-function Notification:notification(text, requested_level)
+function Notification:notify(text)
     local val = G_reader_settings:readSetting("verbosity_popups")
-    if self.source ~= SOURCE_BOTTOM_MENU or (val and self.verbosity >= val) then
+
+    if self.source and band(val, self.source) ~= 0 then
         UIManager:show(Notification:new{
             text = text,
         })
