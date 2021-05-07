@@ -33,6 +33,7 @@ local ReaderFont = require("apps/reader/modules/readerfont")
 local ReaderGoto = require("apps/reader/modules/readergoto")
 local ReaderHinting = require("apps/reader/modules/readerhinting")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
+local ReaderScrolling = require("apps/reader/modules/readerscrolling")
 local ReaderKoptListener = require("apps/reader/modules/readerkoptlistener")
 local ReaderLink = require("apps/reader/modules/readerlink")
 local ReaderMenu = require("apps/reader/modules/readermenu")
@@ -334,6 +335,13 @@ function ReaderUI:init()
         })
     end
     self.disable_double_tap = G_reader_settings:nilOrTrue("disable_double_tap")
+    -- scrolling (scroll settings + inertial scrolling)
+    self:registerModule("scrolling", ReaderScrolling:new{
+        pan_rate = pan_rate,
+        dialog = self.dialog,
+        ui = self,
+        view = self.view,
+    })
     -- back location stack
     self:registerModule("back", ReaderBack:new{
         ui = self,
