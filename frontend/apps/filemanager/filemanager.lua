@@ -131,13 +131,6 @@ function FileManager:setupLayout()
         padding_right = Size.padding.large,
         padding_bottom = 0,
         callback = function() self:onShowPlusMenu() end,
-        hold_callback = function()
-            self:onRefresh()
-            UIManager:show(InfoMessage:new{
-                text = _("Content refreshed."),
-                timeout = 2,
-            })
-        end,
     }
 
     self.path_text = TextWidget:new{
@@ -222,7 +215,6 @@ function FileManager:setupLayout()
     end
 
     function file_chooser:onFileSelect(file)  -- luacheck: ignore
-        FileManager.instance:onClose()
         ReaderUI:showReader(file)
         return true
     end
@@ -507,6 +499,7 @@ function FileManager:setupLayout()
     end
 end
 
+-- NOTE: The only thing that will *ever* instantiate a new FileManager object is our very own showFiles below!
 function FileManager:init()
     self:setupLayout()
 
@@ -771,6 +764,7 @@ end
 
 function FileManager:onClose()
     logger.dbg("close filemanager")
+    PluginLoader:finalize()
     self:handleEvent(Event:new("SaveSettings"))
     G_reader_settings:flush()
     UIManager:close(self)
@@ -778,6 +772,21 @@ function FileManager:onClose()
         self:onExit()
     end
     return true
+end
+
+function FileManager:onShowingReader()
+    -- Allows us to optimize out a few useless refreshes in various CloseWidgets handlers...
+    self.tearing_down = true
+    -- Clear the dither flag to prevent it from infecting the queue and re-inserting a full-screen refresh...
+    self.dithered = nil
+
+    self:onClose()
+end
+
+-- Same as above, except we don't close it yet. Useful for plugins that need to close custom Menus before calling showReader.
+function FileManager:onSetupShowReader()
+    self.tearing_down = true
+    self.dithered = nil
 end
 
 function FileManager:onRefresh()
@@ -825,9 +834,7 @@ function FileManager:openRandomFile(dir)
             text = T(_("Do you want to open %1?"), BD.filename(BaseUtil.basename(random_file))),
             choice1_text = _("Open"),
             choice1_callback = function()
-                FileManager.instance:onClose()
                 ReaderUI:showReader(random_file)
-
             end,
             -- @translators Another file. This is a button on the open random file dialog. It presents a file with the choices Open/Another.
             choice2_text = _("Another"),
@@ -1151,6 +1158,10 @@ function FileManager:showFiles(path, focused_file)
         end
     }
     UIManager:show(file_manager)
+
+    -- NOTE: This is a bit clunky. This ought to be private and accessed via a getCurrentInstance method, àla ReaderUI.
+    --       But, it points to the *current* FM instance, and is nil'ed on exit.
+    --       As such, code outside of FileManager can just check/use FileManager.instance (which they do. extensively).
     self.instance = file_manager
 end
 
@@ -1174,6 +1185,14 @@ end
 
 function FileManager:onHome()
     return self:goHome()
+end
+
+function FileManager:onRefreshContent()
+    self:onRefresh()
+    UIManager:show(InfoMessage:new{
+        text = _("Content refreshed."),
+        timeout = 2,
+    })
 end
 
 return FileManager

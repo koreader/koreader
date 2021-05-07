@@ -75,7 +75,7 @@ function CoverImage:init()
     self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or default_fallback_path
     self.cover_image_cache_path = G_reader_settings:readSetting("cover_image_cache_path") or default_cache_path
     self.cover_image_cache_maxfiles = G_reader_settings:readSetting("cover_image_cache_maxfiles") or 36
-    self.cover_image_cache_maxsize = G_reader_settings:readSetting("cover_image_cache_maxsize") or 5 -- MiB
+    self.cover_image_cache_maxsize = G_reader_settings:readSetting("cover_image_cache_maxsize") or 5 -- MB
     self.cover_image_cache_prefix = "cover_"
     self.cover = G_reader_settings:isTrue("cover_image_enabled")
     self.fallback = G_reader_settings:isTrue("cover_image_fallback")
@@ -225,7 +225,7 @@ end
 
 function CoverImage:getCacheFiles(cache_path, cache_prefix)
     local cache_count = 0
-    local cache_size_KiB = 0
+    local cache_size_KB = 0
     local files = {}
     for entry in lfs.dir(self.cover_image_cache_path) do
         if entry ~= "." and entry ~= ".." then
@@ -235,15 +235,15 @@ function CoverImage:getCacheFiles(cache_path, cache_prefix)
                 cache_count = cache_count + 1
                 files[cache_count] = {
                     name = file,
-                    size = math.floor((lfs.attributes(file).size + 1023) / 1024), -- round up to KiB
+                    size = math.floor((lfs.attributes(file).size + 999) / 1000), -- round up to KB
                     mod = lfs.attributes(file).modification,
                 }
-                cache_size_KiB = cache_size_KiB + files[cache_count].size -- size in KiB
+                cache_size_KB = cache_size_KB + files[cache_count].size -- size in KB
             end
         end
     end
-    logger.dbg("CoverImage: start - cache size: ".. cache_size_KiB .. " KiB, cached files: " .. cache_count)
-    return cache_count, cache_size_KiB, files
+    logger.dbg("CoverImage: start - cache size: ".. cache_size_KB .. " KB, cached files: " .. cache_count)
+    return cache_count, cache_size_KB, files
 end
 
 function CoverImage:cleanCache()
@@ -252,20 +252,20 @@ function CoverImage:cleanCache()
         return
     end
 
-    local cache_count, cache_size_KiB, files = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
+    local cache_count, cache_size_KB, files = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
 
     -- delete the oldest files first
     table.sort(files, function(a, b) return a.mod < b.mod end)
     local index = 1
     while (cache_count > self.cover_image_cache_maxfiles and self.cover_image_cache_maxfiles ~= 0)
-        or (cache_size_KiB > self.cover_image_cache_maxsize * 1024 and self.cover_image_cache_maxsize ~= 0)
+        or (cache_size_KB > self.cover_image_cache_maxsize * 1000 and self.cover_image_cache_maxsize ~= 0)
         and index <= #files do
         os.remove(files[index].name)
         cache_count = cache_count - 1
-        cache_size_KiB = cache_size_KiB - files[index].size
+        cache_size_KB = cache_size_KB - files[index].size
         index = index + 1
     end
-    logger.dbg("CoverImage: clean - cache size: ".. cache_size_KiB .. " KiB, cached files: " .. cache_count)
+    logger.dbg("CoverImage: clean - cache size: ".. cache_size_KB .. " KB, cached files: " .. cache_count)
 end
 
 function CoverImage:isCacheEnabled(path)
@@ -472,13 +472,13 @@ function CoverImage:menuEntryCache()
                 text_func = function()
                     local number
                     if self.cover_image_cache_maxsize > 0 then
-                        number = self.cover_image_cache_maxsize
+                        number = util.getFriendlySize(self.cover_image_cache_maxsize * 1e6)
                     elseif self.cover_image_cache_maxsize == 0 then
                         number = _("unlimited")
                     else
                         number = _("off")
                     end
-                    return T(_("Maximum size of cached covers (%1MiB)"), number)
+                    return T(_("Maximum size of cached covers (%1)"), number)
                 end,
                 help_text = _("If set to zero the cache size is unlimited.\nIf set to -1 the cache is disabled."),
                 checked_func = function()
@@ -493,9 +493,9 @@ function CoverImage:menuEntryCache()
             {
                 text = _("Clear cached covers"),
                 help_text_func = function()
-                    local cache_count, cache_size_KiB
+                    local cache_count, cache_size_KB
                         = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
-                    return T(_("The cache contains %1 files and uses %2 MiB."), cache_count, math.floor((cache_size_KiB + 1023) / 1024))
+                    return T(_("The cache contains %1 files and uses %2."), cache_count, util.getFriendlySize(cache_size_KB * 1000))
                 end,
                 callback = function()
                     UIManager:show(ConfirmBox:new{

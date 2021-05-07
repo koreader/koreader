@@ -94,7 +94,8 @@ local codecs = {
             C.fclose(f)
             C.free(cbuff)
 
-            return true
+            --- @note: Slight API extension for TileCacheItem, which needs to know the on-disk size, and saves us a :size() call
+            return true, clen
         end,
 
         deserialize = function(path)
@@ -216,6 +217,9 @@ function Persist:save(t, as_bytecode)
         if not ok then
             return nil, err
         end
+
+        -- c.f., note above, err is the on-disk size
+        return true, err
     else
         local str, err = codecs[self.codec].serialize(t, as_bytecode)
         if not str then

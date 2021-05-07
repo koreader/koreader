@@ -155,12 +155,7 @@ function FileManagerHistory:onShowHist()
 
     self:updateItemTable()
     self.hist_menu.close_callback = function()
-        -- Close it at next tick so it stays displayed
-        -- while a book is opening (avoids a transient
-        -- display of the underlying File Browser)
-        UIManager:nextTick(function()
-            UIManager:close(self.hist_menu)
-        end)
+        UIManager:close(self.hist_menu)
     end
     UIManager:show(self.hist_menu)
     return true

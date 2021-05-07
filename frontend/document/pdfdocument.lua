@@ -1,6 +1,6 @@
-local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local CanvasContext = require("document/canvascontext")
+local DocCache = require("document/doccache")
 local DocSettings = require("docsettings")
 local Document = require("document/document")
 local DrawContext = require("ffi/drawcontext")
@@ -139,7 +139,7 @@ end
 
 function PdfDocument:getUsedBBox(pageno)
     local hash = "pgubbox|"..self.file.."|"..self.reflowable_font_size.."|"..pageno
-    local cached = Cache:check(hash)
+    local cached = DocCache:check(hash)
     if cached then
         return cached.ubbox
     end
@@ -152,9 +152,9 @@ function PdfDocument:getUsedBBox(pageno)
     if used.x1 > pwidth then used.x1 = pwidth end
     if used.y0 < 0 then used.y0 = 0 end
     if used.y1 > pheight then used.y1 = pheight end
-    --- @todo Give size for cacheitem?  02.12 2012 (houqp)
-    Cache:insert(hash, CacheItem:new{
+    DocCache:insert(hash, CacheItem:new{
         ubbox = used,
+        size = 256, -- might be closer to 160
     })
     page:close()
     return used
@@ -162,14 +162,15 @@ end
 
 function PdfDocument:getPageLinks(pageno)
     local hash = "pglinks|"..self.file.."|"..self.reflowable_font_size.."|"..pageno
-    local cached = Cache:check(hash)
+    local cached = DocCache:check(hash)
     if cached then
         return cached.links
     end
     local page = self._document:openPage(pageno)
     local links = page:getPageLinks()
-    Cache:insert(hash, CacheItem:new{
+    DocCache:insert(hash, CacheItem:new{
         links = links,
+        size = 64 + (8 * 32 * #links),
     })
     page:close()
     return links

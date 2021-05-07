@@ -24,12 +24,17 @@ end
 local RenderText = {}
 
 local GlyphCache = Cache:new{
-    max_memsize = 512*1024,
-    current_memsize = 0,
-    cache = {},
-    -- this will hold the LRU order of the cache
-    cache_order = {}
+    -- 1 MiB of glyph cache, with 1024 slots
+    size = 1 * 1024 * 1024,
+    avg_itemsize = 1024,
 }
+
+local GlyphCacheItem = CacheItem:new{}
+
+function GlyphCacheItem:onFree()
+    logger.dbg("GlyphCacheItem: free blitbuffer", self.bb)
+    self.bb:free()
+end
 
 -- iterator over UTF8 encoded characters in a string
 local function utf8Chars(input_text)
@@ -92,7 +97,7 @@ function RenderText:getGlyph(face, charcode, bold)
     local glyph = GlyphCache:check(hash)
     if glyph then
         -- cache hit
-        return glyph[1]
+        return glyph
     end
     local rendered_glyph = face.ftface:renderGlyph(charcode, bold)
     if face.ftface:checkGlyph(charcode) == 0 then
@@ -112,8 +117,15 @@ function RenderText:getGlyph(face, charcode, bold)
         logger.warn("error rendering glyph (charcode=", charcode, ") for face", face)
         return
     end
-    glyph = CacheItem:new{rendered_glyph}
-    glyph.size = glyph[1].bb:getWidth() * glyph[1].bb:getHeight() / 2 + 32
+    glyph = GlyphCacheItem:new{
+        bb = rendered_glyph.bb,
+        l  = rendered_glyph.l,
+        t  = rendered_glyph.t,
+        r  = rendered_glyph.r,
+        ax = rendered_glyph.ax,
+        ay = rendered_glyph.ay,
+    }
+    glyph.size = tonumber(glyph.bb.stride) * glyph.bb.h + 320
     GlyphCache:insert(hash, glyph)
     return rendered_glyph
 end
@@ -306,15 +318,22 @@ function RenderText:getGlyphByIndex(face, glyphindex, bold)
     local glyph = GlyphCache:check(hash)
     if glyph then
         -- cache hit
-        return glyph[1]
+        return glyph
     end
     local rendered_glyph = face.ftface:renderGlyphByIndex(glyphindex, bold and face.embolden_half_strength)
     if not rendered_glyph then
         logger.warn("error rendering glyph (glyphindex=", glyphindex, ") for face", face)
         return
     end
-    glyph = CacheItem:new{rendered_glyph}
-    glyph.size = glyph[1].bb:getWidth() * glyph[1].bb:getHeight() / 2 + 32
+    glyph = GlyphCacheItem:new{
+        bb = rendered_glyph.bb,
+        l  = rendered_glyph.l,
+        t  = rendered_glyph.t,
+        r  = rendered_glyph.r,
+        ax = rendered_glyph.ax,
+        ay = rendered_glyph.ay,
+    }
+    glyph.size = tonumber(glyph.bb.stride) * glyph.bb.h + 320
     GlyphCache:insert(hash, glyph)
     return rendered_glyph
 end

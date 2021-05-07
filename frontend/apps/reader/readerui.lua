@@ -5,10 +5,10 @@ It works using data gathered from a document interface.
 ]]--
 
 local BD = require("ui/bidi")
-local Cache = require("cache")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DeviceListener = require("device/devicelistener")
+local DocCache = require("document/doccache")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local Event = require("ui/event")
@@ -52,6 +52,7 @@ local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
 local Screenshoter = require("ui/widget/screenshoter")
 local SettingsMigration = require("ui/data/settings_migration")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local ffiUtil  = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
@@ -277,19 +278,19 @@ function ReaderUI:init()
         end
         -- make sure we render document first before calling any callback
         self:registerPostInitCallback(function()
-            local start_ts = ffiUtil.getTimestamp()
+            local start_tv = TimeVal:now()
             if not self.document:loadDocument() then
                 self:dealWithLoadDocumentFailure()
             end
-            logger.dbg(string.format("  loading took %.3f seconds", ffiUtil.getDuration(start_ts)))
+            logger.dbg(string.format("  loading took %.3f seconds", TimeVal:getDuration(start_tv)))
 
             -- used to read additional settings after the document has been
             -- loaded (but not rendered yet)
             self:handleEvent(Event:new("PreRenderDocument", self.doc_settings))
 
-            start_ts = ffiUtil.getTimestamp()
+            start_tv = TimeVal:now()
             self.document:render()
-            logger.dbg(string.format("  rendering took %.3f seconds", ffiUtil.getDuration(start_ts)))
+            logger.dbg(string.format("  rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
 
             -- Uncomment to output the built DOM (for debugging)
             -- logger.dbg(self.document:getHTMLFromXPointer(".0", 0x6830))
@@ -480,6 +481,21 @@ function ReaderUI:showFileManager(file)
     end
 end
 
+function ReaderUI:onShowingReader()
+    -- Allows us to optimize out a few useless refreshes in various CloseWidgets handlers...
+    self.tearing_down = true
+    self.dithered = nil
+
+    self:onClose()
+end
+
+-- Same as above, except we don't close it yet. Useful for plugins that need to close custom Menus before calling showReader.
+function ReaderUI:onSetupShowReader()
+    self.tearing_down = true
+    self.dithered = nil
+end
+
+--- @note: Will sanely close existing FileManager/ReaderUI instance for you!
 function ReaderUI:showReader(file, provider)
     logger.dbg("show reader ui")
 
@@ -497,6 +513,10 @@ function ReaderUI:showReader(file, provider)
         self:showFileManager(file)
         return
     end
+
+    -- We can now signal the existing ReaderUI/FileManager instances that it's time to go bye-bye...
+    UIManager:broadcastEvent(Event:new("ShowingReader"))
+
     -- prevent crash due to incompatible bookmarks
     --- @todo Split bookmarks from metadata and do per-engine in conversion.
     provider = provider or DocumentRegistry:getProvider(file)
@@ -550,7 +570,7 @@ end
 local _running_instance = nil
 function ReaderUI:doShowReader(file, provider)
     logger.info("opening file", file)
-    -- keep only one instance running
+    -- Keep only one instance running
     if _running_instance then
         _running_instance:onClose()
     end
@@ -591,12 +611,17 @@ function ReaderUI:doShowReader(file, provider)
     end
     Device:notifyBookState(title, document)
 
-    UIManager:show(reader)
-    _running_instance = reader
+    -- This is mostly for the few callers that bypass the coroutine shenanigans and call doShowReader directly,
+    -- instead of showReader...
+    -- Otherwise, showReader will have taken care of that *before* instantiating a new RD,
+    -- in order to ensure a sane ordering of plugins teardown -> instantiation.
     local FileManager = require("apps/filemanager/filemanager")
     if FileManager.instance then
         FileManager.instance:onClose()
     end
+
+    UIManager:show(reader)
+    _running_instance = reader
 end
 
 function ReaderUI:_getRunningInstance()
@@ -699,6 +724,7 @@ end
 
 function ReaderUI:onClose(full_refresh)
     logger.dbg("closing reader")
+    PluginLoader:finalize()
     Device:notifyBookState(nil, nil)
     if full_refresh == nil then
         full_refresh = true
@@ -708,13 +734,13 @@ function ReaderUI:onClose(full_refresh)
     if self.dialog ~= self then
         self:saveSettings()
     end
+    -- Serialize the most recently displayed page for later launch
+    DocCache:serialize()
     if self.document ~= nil then
         logger.dbg("closing document")
         self:notifyCloseDocument()
     end
     UIManager:close(self.dialog, full_refresh and "full")
-    -- serialize last used items for later launch
-    Cache:serialize()
     if _running_instance == self then
         _running_instance = nil
     end
@@ -755,6 +781,11 @@ end
 function ReaderUI:reloadDocument(after_close_callback)
     local file = self.document.file
     local provider = getmetatable(self.document).__index
+
+    -- Mimic onShowingReader's refresh optimizations
+    self.tearing_down = true
+    self.dithered = nil
+
     self:handleEvent(Event:new("CloseReaderMenu"))
     self:handleEvent(Event:new("CloseConfigMenu"))
     self.highlight:onClose() -- close highlight dialog if any
@@ -763,15 +794,22 @@ function ReaderUI:reloadDocument(after_close_callback)
         -- allow caller to do stuff between close an re-open
         after_close_callback(file, provider)
     end
+
     self:showReader(file, provider)
 end
 
 function ReaderUI:switchDocument(new_file)
     if not new_file then return end
+
+    -- Mimic onShowingReader's refresh optimizations
+    self.tearing_down = true
+    self.dithered = nil
+
     self:handleEvent(Event:new("CloseReaderMenu"))
     self:handleEvent(Event:new("CloseConfigMenu"))
     self.highlight:onClose() -- close highlight dialog if any
     self:onClose(false)
+
     self:showReader(new_file)
 end
 

@@ -97,6 +97,9 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
     self.settings:saveSetting("last_copied_from_dir", self.last_copied_from_dir)
     self.settings:flush()
 
+    local Event = require("ui/event")
+    UIManager:broadcastEvent(Event:new("SetupShowReader"))
+
     self.ui:onClose()
     if is_move_process then
         FileManager:moveFile(document_full_path, self.archive_dir_path)
@@ -110,10 +113,10 @@ function MoveToArchive:commonProcess(is_move_process, moved_done_text)
     ReadCollection:updateItemByPath(document_full_path, dest_file)
     UIManager:show(ConfirmBox:new{
         text = moved_done_text,
-        ok_callback = function ()
+        ok_callback = function()
             ReaderUI:showReader(dest_file)
         end,
-        cancel_callback = function ()
+        cancel_callback = function()
             self:openFileBrowser(self.last_copied_from_dir)
         end,
     })

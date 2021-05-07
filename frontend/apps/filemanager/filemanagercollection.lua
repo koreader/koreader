@@ -166,12 +166,7 @@ function FileManagerCollection:onShowColl(collection)
 
     self:updateItemTable()
     self.coll_menu.close_callback = function()
-        -- Close it at next tick so it stays displayed
-        -- while a book is opening (avoids a transient
-        -- display of the underlying File Browser)
-        UIManager:nextTick(function()
-            UIManager:close(self.coll_menu)
-        end)
+        UIManager:close(self.coll_menu)
     end
     UIManager:show(self.coll_menu)
     return true

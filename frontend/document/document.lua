@@ -1,7 +1,7 @@
 local Blitbuffer = require("ffi/blitbuffer")
-local Cache = require("cache")
 local CacheItem = require("cacheitem")
 local Configurable = require("configurable")
+local DocCache = require("document/doccache")
 local DrawContext = require("ffi/drawcontext")
 local CanvasContext = require("document/canvascontext")
 local Geom = require("ui/geometry")
@@ -93,9 +93,19 @@ end
 -- this might be overridden by a document implementation
 function Document:close()
     local DocumentRegistry = require("document/documentregistry")
-    if self.is_open and DocumentRegistry:closeDocument(self.file) == 0 then
-        self.is_open = false
-        self._document:close()
+    if self.is_open then
+        if DocumentRegistry:closeDocument(self.file) == 0 then
+            self.is_open = false
+            self._document:close()
+            self._document = nil
+
+            -- NOTE: DocumentRegistry:openDocument will force a GC sweep the next time we open a Document.
+            --       MµPDF will also do a bit of spring cleaning of its internal cache when opening a *different* document.
+        else
+            logger.warn("Tried to close a document with *multiple* remaining hot references")
+        end
+    else
+        logger.warn("Tried to close an already closed document")
     end
 end
 
@@ -162,14 +172,14 @@ end
 -- this might be overridden by a document implementation
 function Document:getNativePageDimensions(pageno)
     local hash = "pgdim|"..self.file.."|"..pageno
-    local cached = Cache:check(hash)
+    local cached = DocCache:check(hash)
     if cached then
         return cached[1]
     end
     local page = self._document:openPage(pageno)
     local page_size_w, page_size_h = page:getSize(self.dc_null)
     local page_size = Geom:new{ w = page_size_w, h = page_size_h }
-    Cache:insert(hash, CacheItem:new{ page_size })
+    DocCache:insert(hash, CacheItem:new{ page_size })
     page:close()
     return page_size
 end
@@ -362,10 +372,10 @@ end
 function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     local hash_excerpt
     local hash = self:getFullPageHash(pageno, zoom, rotation, gamma, render_mode, self.render_color)
-    local tile = Cache:check(hash, TileCacheItem)
+    local tile = DocCache:check(hash, TileCacheItem)
     if not tile then
         hash_excerpt = hash.."|"..tostring(rect)
-        tile = Cache:check(hash_excerpt)
+        tile = DocCache:check(hash_excerpt)
     end
     if tile then return tile end
 
@@ -375,7 +385,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     -- this will be the size we actually render
     local size = page_size
     -- we prefer to render the full page, if it fits into cache
-    if not Cache:willAccept(size.w * size.h + 64) then
+    if not DocCache:willAccept(size.w * size.h * (self.render_color and 4 or 1) + 512) then
         -- whole page won't fit into cache
         logger.dbg("rendering only part of the page")
         --- @todo figure out how to better segment the page
@@ -392,11 +402,11 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     -- prepare cache item with contained blitbuffer
     tile = TileCacheItem:new{
         persistent = true,
-        size = size.w * size.h + 64, -- estimation
         excerpt = size,
         pageno = pageno,
         bb = Blitbuffer.new(size.w, size.h, self.render_color and self.color_bb_type or nil)
     }
+    tile.size = tonumber(tile.bb.stride) * tile.bb.h + 512 -- estimation
 
     -- create a draw context
     local dc = DrawContext.new()
@@ -420,7 +430,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     local page = self._document:openPage(pageno)
     page:draw(dc, tile.bb, size.x, size.y, render_mode)
     page:close()
-    Cache:insert(hash, tile)
+    DocCache:insert(hash, tile)
 
     self:postRenderPage()
     return tile
@@ -429,6 +439,9 @@ end
 -- a hint for the cache engine to paint a full page to the cache
 --- @todo this should trigger a background operation
 function Document:hintPage(pageno, zoom, rotation, gamma, render_mode)
+    --- @note: Crappy safeguard around memory issues like in #7627: if we're eating too much RAM, drop half the cache...
+    DocCache:memoryPressureCheck()
+
     logger.dbg("hinting page", pageno)
     self:renderPage(pageno, nil, zoom, rotation, gamma, render_mode)
 end

@@ -39,20 +39,19 @@ end
 local DPI_SCALE = get_dpi_scale()
 
 local ImageCache = Cache:new{
-    max_memsize = 5*1024*1024, -- 5M of image cache
-    current_memsize = 0,
-    cache = {},
-    -- this will hold the LRU order of the cache
-    cache_order = {}
+    -- 8 MiB of image cache, with 128 slots
+    -- Overwhelmingly used for our icons, which are tiny in size, and not very numerous (< 100),
+    -- but also by ImageViewer (on files, which we never do), and ScreenSaver (again, on image files, but not covers),
+    -- hence the leeway.
+    size = 8 * 1024 * 1024,
+    avg_itemsize = 64 * 1024,
 }
 
 local ImageCacheItem = CacheItem:new{}
 
 function ImageCacheItem:onFree()
-    if self.bb.free then
-        logger.dbg("free image blitbuffer", self.bb)
-        self.bb:free()
-    end
+    logger.dbg("ImageCacheItem: free blitbuffer", self.bb)
+    self.bb:free()
 end
 
 local ImageWidget = Widget:new{

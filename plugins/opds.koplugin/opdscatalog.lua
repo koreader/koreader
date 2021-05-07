@@ -31,7 +31,11 @@ function OPDSCatalog:init()
                 ok_text = _("Read now"),
                 cancel_text = _("Read later"),
                 ok_callback = function()
+                    local Event = require("ui/event")
+                    UIManager:broadcastEvent(Event:new("SetupShowReader"))
+
                     self:onClose()
+
                     ReaderUI:showReader(downloaded_file)
                 end
             })
