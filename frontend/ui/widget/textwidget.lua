@@ -214,6 +214,9 @@ function TextWidget:_measureWithXText()
                 -- no bold: xtext does synthetized bold with normal metrics
         end
         local max_width = self.max_width - reserved_width
+        if max_width <= 0 then -- avoid _xtext:makeLine() crash
+            max_width = self.max_width
+        end
         if self.truncate_left then
             line_start = self._xtext:getSegmentFromEnd(max_width)
         end
@@ -311,7 +314,6 @@ end
 function TextWidget:setText(text)
     if text ~= self.text then
         self.text = text
-        self._updated = false
         self:free()
     end
 end
@@ -324,7 +326,6 @@ dbg:guard(TextWidget, "setText",
 function TextWidget:setMaxWidth(max_width)
     if max_width ~= self.max_width then
         self.max_width = max_width
-        self._updated = false
         self:free()
     end
 end
@@ -378,6 +379,7 @@ function TextWidget:free()
         self._xtext:free()
         self._xtext = nil
     end
+    self._updated = false
 end
 
 function TextWidget:onCloseWidget()
