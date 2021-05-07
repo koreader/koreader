@@ -30,6 +30,7 @@ Each setting contains:
 local CreOptions = require("ui/data/creoptions")
 local Device = require("device")
 local Event = require("ui/event")
+local Notification = require("ui/widget/notification")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
@@ -615,6 +616,7 @@ arguments are:
     3) optionally a `gestures`object
 --]]--
 function Dispatcher:execute(ui, settings, gesture)
+    Notification:setNotificationSource(1)
     for k, v in pairs(settings) do
         if settingsList[k] ~= nil and (settingsList[k].conditions == nil or settingsList[k].conditions == true) then
             if settingsList[k].category == "none" then
@@ -650,6 +652,7 @@ function Dispatcher:execute(ui, settings, gesture)
             end
         end
     end
+    Notification:setNotificationSource(0)
 end
 
 return Dispatcher
