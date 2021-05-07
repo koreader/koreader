@@ -14,10 +14,16 @@ end
 
 local Cache = {
     -- Cache configuration:
-    -- Max storage space, in bytes
+    -- Max storage space, in bytes (or number of slots if unlimited_storage is true)
     size = 8 * 1024 * 1024,
-    -- Average item size is used to compute the amount of slots in the LRU
+    -- Average item size is used to compute the amount of slots in the LRU.
     avg_itemsize = 8196,
+    -- Should LRU not impose a storage space limitation, and only a slot count (in which case, size is taken to mean slots)?
+    -- c.f., CatalogCache
+    unlimited_storage = false,
+    -- Should LRU call the object's onFree method on eviction? Implies using CacheItem instead of plain tables/objects.
+    -- c.f., DocCache
+    with_eviction_cb = false,
     -- Generally, only DocCache uses this
     disk_cache = false,
     cache_path = nil,
@@ -32,15 +38,30 @@ function Cache:new(o)
 end
 
 function Cache:init()
-    -- Compute the amount of slots in the LRU based on the max size & the average item size
-    self.slots = math.floor(self.size / self.avg_itemsize)
-    self.cache = lru.new(self.slots, self.size)
+    if self.unlimited_storage then
+        -- Caller doesn't care about storage space, just slot count
+        self.slots = self.size
+        self.cache = lru.new(self.slots, nil, self.with_eviction_cb)
+    else
+        -- Compute the amount of slots in the LRU based on the max size & the average item size
+        self.slots = math.floor(self.size / self.avg_itemsize)
+        self.cache = lru.new(self.slots, self.size, self.with_eviction_cb)
+    end
 
     if self.disk_cache then
         self.cached = self:_getDiskCache()
     else
         -- No need to go through our own check or even get methods if there's no disk cache, hit lru directly
         self.check = self.cache.get
+    end
+
+    if not self.with_eviction_cb then
+        -- We won't be using CacheItem here, so we can pass the size manually if necessary.
+        -- e.g., insert's signature is now (key, value, size), instead of relying on CacheItem's size field.
+        self.insert = self.cache.set
+
+        -- With debug info (c.f., below)
+        --self.insert = self.set
     end
 end
 
@@ -157,14 +178,25 @@ function Cache:insert(key, object)
     self.cache:set(key, object, object.size)
 
     -- Accounting debugging
-    --[[
+    --self:_insertion_stats(key, object.size)
+end
+
+--[[
+function Cache:set(key, object, size)
+    self.cache:set(key, object, size)
+
+    -- Accounting debugging
+    self:_insertion_stats(key, size)
+end
+
+function Cache:_insertion_stats(key, size)
     print(string.format("Cache %s (%d/%d) [%.2f/%.2f @ ~%db] inserted %db key: %s",
                         self,
                         self.cache:used_slots(), self.slots, self.cache:used_size() / 1024 / 1024,
                         self.size / 1024 / 1024, self.cache:used_size() / self.cache:used_slots(),
-                        object.size, key))
-    --]]
+                        size or 0, key))
 end
+--]]
 
 --[[
 --  check for cache item by key

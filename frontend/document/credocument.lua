@@ -1379,7 +1379,7 @@ function CreDocument:setupCallCache()
         if self._tag_list_call_cache then
             self._tag_list_call_cache:clear()
         else
-            self._tag_list_call_cache = lru.new(10)
+            self._tag_list_call_cache = lru.new(10, nil, false)
         end
         -- i.e., the only thing that follows any sort of LRU eviction logic is the *list* of tag caches.
         -- Each individual cache itself is just a simple key, value store (i.e., a hash map).
@@ -1410,8 +1410,7 @@ function CreDocument:setupCallCache()
         self._tag_call_cache = self._tag_list_call_cache:get(tag)
         if not self._tag_call_cache then
             -- Otherwise, create it and insert it in the list cache, evicting the LRU tag cache if necessary.
-            -- NOTE: We need CacheItem for its NOP onFree eviction callback.
-            self._tag_call_cache = CacheItem:new{}
+            self._tag_call_cache = {}
             self._tag_list_call_cache:set(tag, self._tag_call_cache)
         end
         self._current_call_cache_tag = tag
