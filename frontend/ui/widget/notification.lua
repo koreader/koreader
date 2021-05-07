@@ -19,6 +19,11 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local Input = Device.input
 local Screen = Device.screen
 
+local SOURCE_ALL = 0
+local SOURCE_DISPATCHER = 1
+local SOURCE_BOTTOM_MENU = 2
+local SOURCE_GESTURE = 4
+
 local Notification = InputContainer:new{
     face = Font:getFace("x_smallinfofont"),
     text = "Null Message",
@@ -28,6 +33,9 @@ local Notification = InputContainer:new{
     toast = true, -- closed on any event, and let the event propagate to next top widget
 
     _nums_shown = {}, -- array of stacked notifications
+
+    source = 0,
+    verbosity = 0,
 }
 
 function Notification:init()
@@ -91,6 +99,25 @@ function Notification:init()
         },
         self.frame,
     }
+end
+
+function Notification:setNotificationSource(source)
+    self.source = source
+end
+
+function Notification:setNotificationVerbosity(requested_verbosity)
+    self.verbosity = requested_verbosity
+end
+
+function Notification:notification(text, requested_level)
+    local val = G_reader_settings:readSetting("verbosity_popups")
+    if self.source ~= SOURCE_BOTTOM_MENU or (val and self.verbosity >= val) then
+        UIManager:show(Notification:new{
+            text = text,
+        })
+        return true
+    end
+    return false
 end
 
 function Notification:_cleanShownStack(num)
