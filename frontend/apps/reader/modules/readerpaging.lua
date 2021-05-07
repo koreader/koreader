@@ -423,8 +423,10 @@ function ReaderPaging:onSwipe(_, ges)
     local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
     if self.bookmark_flipping_mode then
         self:bookmarkFlipping(self.current_page, ges)
+        return true
     elseif self.page_flipping_mode and self.original_page then
         self:_gotoPage(self.original_page)
+        return true
     elseif direction == "west" then
         if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
             if self.inverse_reading_order then
@@ -432,6 +434,7 @@ function ReaderPaging:onSwipe(_, ges)
             else
                 self:onGotoViewRel(1)
             end
+            return true
         end
     elseif direction == "east" then
         if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
@@ -440,12 +443,8 @@ function ReaderPaging:onSwipe(_, ges)
             else
                 self:onGotoViewRel(-1)
             end
+            return true
         end
-    else
-        -- update footer (time & battery)
-        self.view.footer:onUpdateFooter()
-        -- trigger full refresh
-        UIManager:setDirty(nil, "full")
     end
 end
 
