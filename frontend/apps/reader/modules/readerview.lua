@@ -755,6 +755,7 @@ In combination with zoom to fit page, page height, content height, content or co
     end
     self:recalculate()
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
+    Notification.notify(T(_("View Mode set to %1."), (page_scroll == true and _("page") or _("continuous")) ))
 end
 
 function ReaderView:onReadSettings(config)
@@ -851,7 +852,7 @@ end
 
 function ReaderView:onFontSizeUpdate(font_size)
     self.ui:handleEvent(Event:new("ReZoom", font_size))
-    Notification:notification(T( _("Font zoom set to %1."), font_size))
+    Notification.notify(T(_("Font zoom set to %1."), font_size))
 
 end
 
@@ -872,7 +873,7 @@ function ReaderView:onSetViewMode(new_mode)
         self.view_mode = new_mode
         self.ui.document:setViewMode(new_mode)
         self.ui:handleEvent(Event:new("ChangeViewMode"))
-        Notification:notification(T( _("View mode set to %1."), new_mode))
+        Notification.notify(T( _("View mode set to %1."), new_mode))
     end
 end
 

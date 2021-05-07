@@ -217,7 +217,7 @@ function ReaderFont:onSetFontSize(new_size)
     self.font_size = new_size
     self.ui.document:setFontSize(Screen:scaleBySize(new_size))
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notification(T(_("Font size set to %1."), self.font_size))
+    Notification:notify(T(_("Font size set to %1."), self.font_size))
     return true
 end
 
@@ -225,7 +225,7 @@ function ReaderFont:onSetLineSpace(space)
     self.line_space_percent = math.min(200, math.max(50, space))
     self.ui.document:setInterlineSpacePercent(self.line_space_percent)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notification(T(_("Line spacing set to %1%."), self.line_space_percent))
+    Notification:notify(T(_("Line spacing set to %1%."), self.line_space_percent))
     return true
 end
 
@@ -233,7 +233,7 @@ function ReaderFont:onSetFontBaseWeight(weight)
     self.font_base_weight = weight
     self.ui.document:setFontBaseWeight(weight)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notification(T(_("Font weight set to %1."), weight))
+    Notification:notify(T(_("Font weight set to %1."), weight))
     return true
 end
 
@@ -246,7 +246,7 @@ function ReaderFont:onSetFontHinting(mode)
         _("native"),
         _("auto"),
     }
-    Notification:notification(T(_("Font hinting set to %1."), hint_text[mode + 1]))
+    Notification:notify(T(_("Font hinting set to %1."), hint_text[mode + 1]))
     return true
 end
 
@@ -260,7 +260,7 @@ function ReaderFont:onSetFontKerning(mode)
         _("good"),
         _("best"),
     }
-    Notification:notification(T(_("Font kerning set to %1."), kerning_text[mode + 1]))
+    Notification:notify(T(_("Font kerning set to %1."), kerning_text[mode + 1]))
     return true
 end
 
@@ -268,7 +268,7 @@ function ReaderFont:onSetWordSpacing(values)
     self.word_spacing = values
     self.ui.document:setWordSpacing(values)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notification(T(_("Word spacing: scaling set to %1, reduction to %2."), values[1], values[2]))
+    Notification:notify(T(_("Word spacing: scaling set to %1, reduction to %2."), values[1], values[2]))
     return true
 end
 
@@ -276,7 +276,7 @@ function ReaderFont:onSetWordExpansion(value)
     self.word_expansion = value
     self.ui.document:setWordExpansion(value)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notification(T(_("Word expansion set to %1."), value))
+    Notification:notify(T(_("Word expansion set to %1."), value))
     return true
 end
 
@@ -285,7 +285,7 @@ function ReaderFont:onSetFontGamma(gamma)
     self.ui.document:setGammaIndex(self.gamma_index)
     local gamma_level = self.ui.document:getGammaLevel()
     self.ui:handleEvent(Event:new("RedrawCurrentView"))
-    Notification:notification(T(_("Font gamma set to %1."), gamma_level))
+    Notification:notify(T(_("Font gamma set to %1."), gamma_level))
     return true
 end
 
@@ -356,9 +356,7 @@ end
 
 function ReaderFont:onIncreaseFontSize(ges)
     local delta_int = self:gesToFontSize(ges)
-    local info = Notification:new{text = _("Increasing font size…")}
-    UIManager:show(info)
-    UIManager:forceRePaint()
+    Notification:notify(_("Increasing font size…"))
     self:onChangeSize("increase", delta_int)
     UIManager:close(info)
     return true
@@ -366,9 +364,7 @@ end
 
 function ReaderFont:onDecreaseFontSize(ges)
     local delta_int = self:gesToFontSize(ges)
-    local info = Notification:new{text = _("Decreasing font size…")}
-    UIManager:show(info)
-    UIManager:forceRePaint()
+    Notification:notify(_("Decreasing font size…"))
     self:onChangeSize("decrease", delta_int)
     UIManager:close(info)
     return true

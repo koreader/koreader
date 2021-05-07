@@ -616,7 +616,7 @@ arguments are:
     3) optionally a `gestures`object
 --]]--
 function Dispatcher:execute(ui, settings, gesture)
-    Notification:setNotificationSource(1)
+    Notification:setNotificationSource(Notification.SOURCE_DISPATCHER)
     for k, v in pairs(settings) do
         if settingsList[k] ~= nil and (settingsList[k].conditions == nil or settingsList[k].conditions == true) then
             if settingsList[k].category == "none" then
@@ -652,7 +652,7 @@ function Dispatcher:execute(ui, settings, gesture)
             end
         end
     end
-    Notification:setNotificationSource(0)
+    Notification:setNotificationSource(Notification.SOURCE_NONE)
 end
 
 return Dispatcher
