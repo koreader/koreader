@@ -196,7 +196,7 @@ end
     UpdatePos event is used to tell ReaderRolling to update pos.
 --]]
 function ReaderFont:onChangeSize(direction, font_delta)
-    local delta = direction == "decrease" and -0.5 or 0.5
+    local delta = direction == "decrease" and -1 or 1
     if font_delta then
         self.font_size = self.font_size + font_delta * delta
     else
@@ -206,114 +206,86 @@ function ReaderFont:onChangeSize(direction, font_delta)
     return true
 end
 
-function ReaderFont:onSetFontSize(new_size, callback, no_notification)
+function ReaderFont:onChangeSizeFine(direction)
+    self:onChangeSize(direction, 0.5)
+end
+
+function ReaderFont:onSetFontSize(new_size)
     if new_size > 255 then new_size = 255 end
     if new_size < 12 then new_size = 12 end
 
     self.font_size = new_size
     self.ui.document:setFontSize(Screen:scaleBySize(new_size))
     self.ui:handleEvent(Event:new("UpdatePos"))
-    if no_notification == nil or not no_notification then
-        UIManager:show(Notification:new{
-            text = T( _("Font size set to %1."), self.font_size),
-        })
-    end
+    Notification:notification(T(_("Font size set to %1."), self.font_size))
     return true
 end
 
-function ReaderFont:onSetLineSpace(space, callback, no_notification)
+function ReaderFont:onSetLineSpace(space)
     self.line_space_percent = math.min(200, math.max(50, space))
     self.ui.document:setInterlineSpacePercent(self.line_space_percent)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    if no_notification == nil or not no_notification then
-        UIManager:show(Notification:new{
-            text = T( _("Line spacing set to %1%."), self.line_space_percent),
-        })
-    end
+    Notification:notification(T(_("Line spacing set to %1%."), self.line_space_percent))
     return true
 end
 
-function ReaderFont:onSetFontBaseWeight(weight, callback, no_notification)
+function ReaderFont:onSetFontBaseWeight(weight)
     self.font_base_weight = weight
     self.ui.document:setFontBaseWeight(weight)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    if no_notification == nil or not no_notification then
-        UIManager:show(Notification:new{
-            text = T( _("Font weight set to %1."), weight),
-        })
-    end
+    Notification:notification(T(_("Font weight set to %1."), weight))
     return true
 end
 
-function ReaderFont:onSetFontHinting(mode, callback, no_notification)
+function ReaderFont:onSetFontHinting(mode)
     self.font_hinting = mode
     self.ui.document:setFontHinting(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    if no_notification == nil or not no_notification then
-        local hint_text = {
-            _("off"),
-            _("native"),
-            _("auto"),
-        }
-        UIManager:show(Notification:new{
-            text = T( _("Font hinting set to %1."), hint_text[mode + 1]),
-        })
-    end
+    local hint_text = {
+        _("off"),
+        _("native"),
+        _("auto"),
+    }
+    Notification:notification(T(_("Font hinting set to %1."), hint_text[mode + 1]))
     return true
 end
 
-function ReaderFont:onSetFontKerning(mode, callback, no_notification)
+function ReaderFont:onSetFontKerning(mode)
     self.font_kerning = mode
     self.ui.document:setFontKerning(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    if no_notification == nil or not no_notification then
-        local kerning_text = {
-            _("off"),
-            _("fast"),
-            _("good"),
-            _("best"),
-        }
-        UIManager:show(Notification:new{
-            text = T( _("Font kerning set to %1."), kerning_text[mode + 1]),
-        })
-    end
+    local kerning_text = {
+        _("off"),
+        _("fast"),
+        _("good"),
+        _("best"),
+    }
+    Notification:notification(T(_("Font kerning set to %1."), kerning_text[mode + 1]))
     return true
 end
 
-function ReaderFont:onSetWordSpacing(values, callback, no_notification)
+function ReaderFont:onSetWordSpacing(values)
     self.word_spacing = values
     self.ui.document:setWordSpacing(values)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    if no_notification == nil or not no_notification then
-        UIManager:show(Notification:new{
-            text = T( _("Word spacing: scaling set to %1, reduction to %2."), values[1], values[2]),
-        })
-    end
+    Notification:notification(T(_("Word spacing: scaling set to %1, reduction to %2."), values[1], values[2]))
     return true
 end
 
-function ReaderFont:onSetWordExpansion(value, callback, no_notification)
+function ReaderFont:onSetWordExpansion(value)
     self.word_expansion = value
     self.ui.document:setWordExpansion(value)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    if no_notification == nil or not no_notification then
-        UIManager:show(Notification:new{
-            text = T( _("Word expansion set to %1."), value),
-        })
-    end
+    Notification:notification(T(_("Word expansion set to %1."), value))
     return true
 end
 
-function ReaderFont:onSetFontGamma(gamma, callback, no_notification)
+function ReaderFont:onSetFontGamma(gamma)
     self.gamma_index = gamma
     self.ui.document:setGammaIndex(self.gamma_index)
     local gamma_level = self.ui.document:getGammaLevel()
     self.ui:handleEvent(Event:new("RedrawCurrentView"))
-    if no_notification == nil or not no_notification then
-        UIManager:show(Notification:new{
-            text = T( _("Font gamma set to %1."), gamma_level),
-        })
-    end
+    Notification:notification(T(_("Font gamma set to %1."), gamma_level))
     return true
 end
 
@@ -342,7 +314,7 @@ end
 function ReaderFont:makeDefault(face, touchmenu_instance)
     if face then
         UIManager:show(MultiConfirmBox:new{
-            text = T( _("Would you like %1 to be used as the default font (★), or the fallback font (�)?\n\nCharacters not found in the active font are shown in the fallback font instead."), face),
+            text = T(_("Would you like %1 to be used as the default font (★), or the fallback font (�)?\n\nCharacters not found in the active font are shown in the fallback font instead."), face),
             choice1_text = _("Default"),
             choice1_callback = function()
                 G_reader_settings:saveSetting("cre_font", face)

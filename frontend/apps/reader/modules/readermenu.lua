@@ -228,19 +228,72 @@ function ReaderMenu:setUpdateItemTable()
     }
 
     self.menu_items.notifications = {
-        text = _("Verbose notifications"),
-        help_text = _("You can turn verbose popup notifications on or off"),
+        text = _("Notification level"),
+        help_text = _("You can tune the number of popup Notifications"),
         checked_func = function()
-            return not G_reader_settings:readSetting("copt_no_notification")
+            local value = G_reader_settings:readSetting("verbosity_popups")
+            if not value then
+                return false
+            else
+                return  value ~= 100
+            end
         end,
-        callback = function()
-            local value = G_reader_settings:readSetting("copt_no_notification") or false
-            G_reader_settings:saveSetting("copt_no_notification", not value)
-
-            UIManager:show(InfoMessage:new{
-                text = _("This will take effect on next restart.")
-        })
-        end
+        sub_item_table = {
+            {
+            text = _("None"),
+            checked_func = function()
+                return G_reader_settings:readSetting("verbosity_popups") == 100
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("verbosity_popups", 100)
+            end,
+            },
+            {
+            text = _("Little"),
+            checked_func = function()
+                return G_reader_settings:readSetting("verbosity_popups") == 40
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("verbosity_popups", 40)
+            end,
+            },
+            {
+            text = _("Some"),
+            checked_func = function()
+                return G_reader_settings:readSetting("verbosity_popups") == 30
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("verbosity_popups", 30)
+            end,
+            },
+            {
+            text = _("More"),
+            checked_func = function()
+                return G_reader_settings:readSetting("verbosity_popups") == 20
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("verbosity_popups", 20)
+            end,
+            },
+            {
+            text = _("Much"),
+            checked_func = function()
+                return G_reader_settings:readSetting("verbosity_popups") == 10
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("verbosity_popups", 10)
+            end,
+            },
+            {
+            text = _("All"),
+            checked_func = function()
+                return G_reader_settings:readSetting("verbosity_popups") == 0
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("verbosity_popups", 0)
+            end,
+            },
+        },
     }
     -- main menu tab
     -- insert common info
