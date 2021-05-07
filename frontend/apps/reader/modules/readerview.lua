@@ -851,6 +851,8 @@ end
 
 function ReaderView:onFontSizeUpdate(font_size)
     self.ui:handleEvent(Event:new("ReZoom", font_size))
+    Notification:notification(T( _("Font zoom set to %1."), font_size))
+
 end
 
 function ReaderView:onDefectSizeUpdate()
@@ -865,16 +867,12 @@ function ReaderView:onMarginUpdate()
     self.ui:handleEvent(Event:new("ReZoom"))
 end
 
-function ReaderView:onSetViewMode(new_mode, callback, no_notification)
+function ReaderView:onSetViewMode(new_mode)
     if new_mode ~= self.view_mode then
         self.view_mode = new_mode
         self.ui.document:setViewMode(new_mode)
         self.ui:handleEvent(Event:new("ChangeViewMode"))
-        if no_notification == nil or not no_notification then
-            UIManager:show(Notification:new{
-                text = T( _("View mode set to %1."), new_mode),
-            })
-        end
+        Notification:notification(T( _("View mode set to %1."), new_mode))
     end
 end
 
