@@ -5,6 +5,7 @@ local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local FixedTextWidget = require("ui/widget/fixedtextwidget")
 local FocusManager = require("ui/widget/focusmanager")
@@ -864,6 +865,7 @@ function ConfigDialog:init()
     if Device:hasDPad() then
         self.key_events.Select = { {"Press"}, doc = "select current menu item" }
     end
+
 end
 
 function ConfigDialog:updateConfigPanel(index)
@@ -1096,11 +1098,9 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
                     arg = arg + 1
                 end
             end
-            Notification:setNotificationSource(666)
             self:onConfigEvent(event, arg, when_applied_callback)
         end
         if events then
-            Notification:setNotificationSource(666)
             self:onConfigEvents(events, direction)
         end
         -- Even if each toggle refreshes itself when toggled, we still

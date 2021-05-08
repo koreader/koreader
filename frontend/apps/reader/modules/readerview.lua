@@ -755,7 +755,7 @@ In combination with zoom to fit page, page height, content height, content or co
     end
     self:recalculate()
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
-    Notification:notify(T(_("View Mode set to %1."), (page_scroll == true and _("continuous") or _("page")) ))
+    Notification:notify(T(_("View Mode set to %1."), Dispatcher:getOptionText("InitScrollPagesStates", toggle and 2 or 1)))
 end
 
 function ReaderView:onReadSettings(config)
@@ -848,12 +848,12 @@ function ReaderView:onGammaUpdate(gamma)
     if self.page_scroll then
         self.ui:handleEvent(Event:new("UpdateScrollPageGamma", gamma))
     end
+    Notification:notify(T(_("Font gamma set to  %1."), gamma))
 end
 
 function ReaderView:onFontSizeUpdate(font_size)
     self.ui:handleEvent(Event:new("ReZoom", font_size))
     Notification:notify(T(_("Font zoom set to %1."), font_size))
-
 end
 
 function ReaderView:onDefectSizeUpdate()
@@ -882,6 +882,7 @@ end
 --another source (eg. coptions.lua) triggering a redraw is needed.
 function ReaderView:onPageGapUpdate(page_gap)
     self.page_gap.height = page_gap
+    Notification:notify(T(_("Page gap set to %1."), page_gap))
     return true
 end
 
