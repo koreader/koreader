@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
+local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -137,22 +138,19 @@ end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
     self:toggleEmbeddedStyleSheet(toggle)
-    local parameter = toggle and _("on") or _("off")
-    Notification:notify(T( _("Embedded styles are %1."), parameter))
+    Notification:notify(T( _("Embedded styles are %1."), Dispatcher:getOptionText("ToggleEmbeddedStyleSheet", toggle and 2 or 1)))
     return true
 end
 
 function ReaderTypeset:onToggleEmbeddedFonts(toggle)
     self:toggleEmbeddedFonts(toggle)
-    local parameter = toggle and _("on") or _("off")
-    Notification:notify(T( _("Embedded fonts are %1."), parameter))
+    Notification:notify(T( _("Embedded fonts are %1."), Dispatcher:getOptionText("ToggleEmbeddedFonts", toggle and 2 or 1)))
     return true
 end
 
 function ReaderTypeset:onToggleImageScaling(toggle)
     self:toggleImageScaling(toggle)
-    local parameter = toggle and _("best") or _("fast")
-    Notification:notify(T( _("Image saling is set to %1."), parameter))
+    Notification:notify(T( _("Image saling is set to %1."), Dispatcher:getOptionText("ToggleImageScaling", toggle and 2 or 1)))
     return true
 end
 
@@ -163,13 +161,7 @@ end
 
 function ReaderTypeset:onSetBlockRenderingMode(mode)
     self:setBlockRenderingMode(mode)
-    local rendering_text = {
-        _("legacy"),
-        _("flat"),
-        _("book"),
-        _("web"),
-    }
-    Notification:notify(T( _("Render mode set to %1."), rendering_text[mode + 1]))
+    Notification:notify(T( _("Render mode set to %1."), Dispatcher:getOptionText("SetBlockRenderingMode", mode+1)))
     return true
 end
 
