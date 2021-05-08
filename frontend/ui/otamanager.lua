@@ -6,7 +6,6 @@ local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
-local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
@@ -48,21 +47,6 @@ local ota_channels = {
     stable = _("Stable"),
     nightly = _("Development"),
 }
-
-local function showRestartMessage()
-    UIManager:show(ConfirmBox:new{
-        text = _("KOReader will be updated on next restart.\nWould you like to restart now?"),
-        ok_text = _("Restart"),
-        ok_callback = function()
-            local save_quit = function()
-                Device:saveSettings()
-                UIManager:quit()
-                UIManager._exit_code = 85
-            end
-            UIManager:broadcastEvent(Event:new("Exit", save_quit))
-        end,
-    })
-end
 
 -- Try to detect WARIO+ Kindle boards (i.MX6 & i.MX7)
 function OTAManager:_isKindleWarioOrMore()
@@ -247,6 +231,8 @@ function OTAManager:fetchAndProcessUpdate()
             update_ok_text = _("Downgrade")
         end
 
+        local wait_for_download = _("Downloading may take several minutes…")
+
         if OTAManager:getOTAType() == "link" then
             UIManager:show(ConfirmBox:new{
                 text = update_message,
@@ -254,13 +240,18 @@ function OTAManager:fetchAndProcessUpdate()
                 ok_callback = function()
                     local isAndroid, android = pcall(require, "android")
                     if isAndroid then
+                        local ffi = require("ffi")
+                        local C = ffi.C
                         -- try to download the package
                         local ok = android.download(link, ota_package)
-                        if ok == 1 then
-                            android.notification(T(_("The file %1 already exists."), ota_package))
-                        elseif ok == 0 then
-                            android.notification(T(_("Downloading %1"), ota_package))
-                        else
+                        if ok == C.ADOWNLOAD_EXISTS then
+                            Device:install()
+                        elseif ok == C.ADOWNLOAD_OK then
+                            UIManager:show(InfoMessage:new{
+                                text = wait_for_download,
+                                timeout = 3,
+                            })
+                        elseif ok == C.ADOWNLOAD_FAILED then
                             UIManager:show(ConfirmBox:new{
                                 text = _("Your device seems to be unable to download packages.\nRetry using the browser?"),
                                 ok_text = _("Retry"),
@@ -278,12 +269,12 @@ function OTAManager:fetchAndProcessUpdate()
                 ok_text = update_ok_text,
                 ok_callback = function()
                     UIManager:show(InfoMessage:new{
-                        text = _("Downloading may take several minutes…"),
+                        text = wait_for_download,
                         timeout = 3,
                     })
                     UIManager:scheduleIn(1, function()
                         if OTAManager:zsync() == 0 then
-                            showRestartMessage()
+                            Device:install()
                             -- Make it clear that zsync is done
                             if self.can_pretty_print then
                                 os.execute("./fbink -q -y -7 -pm ' '  ' '")
@@ -309,7 +300,7 @@ function OTAManager:fetchAndProcessUpdate()
                                     -- And then relaunch zsync in full download mode...
                                     UIManager:scheduleIn(1, function()
                                         if OTAManager:zsync(true) == 0 then
-                                            showRestartMessage()
+                                            Device:install()
                                             -- Make it clear that zsync is done
                                             if self.can_pretty_print then
                                                 os.execute("./fbink -q -y -7 -pm ' '  ' '")

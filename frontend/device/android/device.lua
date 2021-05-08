@@ -13,16 +13,13 @@ local T = FFIUtil.template
 local function yes() return true end
 local function no() return false end
 
-local function canUpdateApk()
-    -- disable updates on fdroid builds, since they manage their own repo.
-    return (android.prop.flavor ~= "fdroid")
-end
-
 local function getCodename()
     local api = android.app.activity.sdkVersion
     local codename = ""
 
-    if api > 29 then
+    if api > 30 then
+        codename = "S"
+    elseif api == 30 then
         codename = "R"
     elseif api == 29 then
         codename = "Q"
@@ -87,7 +84,7 @@ local Device = Generic:new{
     display_dpi = android.lib.AConfiguration_getDensity(android.app.config),
     isHapticFeedbackEnabled = yes,
     hasClipboard = yes,
-    hasOTAUpdates = canUpdateApk,
+    hasOTAUpdates = android.ota.isEnabled,
     hasFastWifiStatusQuery = yes,
     hasSystemFonts = yes,
     canOpenLink = yes,
@@ -176,32 +173,37 @@ function Device:init()
                     external.when_back_callback()
                     external.when_back_callback = nil
                 end
-                local new_file = android.getIntent()
-                if new_file ~= nil and lfs.attributes(new_file, "mode") == "file" then
-                    -- we cannot blit to a window here since we have no focus yet.
-                    local InfoMessage = require("ui/widget/infomessage")
-                    local BD = require("ui/bidi")
-                    UIManager:scheduleIn(0.1, function()
-                        UIManager:show(InfoMessage:new{
-                            text = T(_("Opening file '%1'."), BD.filepath(new_file)),
-                            timeout = 0.0,
-                        })
-                    end)
-                    UIManager:scheduleIn(0.2, function()
-                        require("apps/reader/readerui"):doShowReader(new_file)
-                    end)
+
+                if android.ota.isPending then
+                    UIManager:scheduleIn(0.1, self.install)
                 else
-                    -- check if we're resuming from importing content.
-                    local content_path = android.getLastImportedPath()
-                    if content_path ~= nil then
-                        local FileManager = require("apps/filemanager/filemanager")
-                        UIManager:scheduleIn(0.5, function()
-                            if FileManager.instance then
-                                FileManager.instance:onRefresh()
-                            else
-                                FileManager:showFiles(content_path)
-                            end
+                    local new_file = android.getIntent()
+                    if new_file ~= nil and lfs.attributes(new_file, "mode") == "file" then
+                        -- we cannot blit to a window here since we have no focus yet.
+                        local InfoMessage = require("ui/widget/infomessage")
+                        local BD = require("ui/bidi")
+                        UIManager:scheduleIn(0.1, function()
+                            UIManager:show(InfoMessage:new{
+                                text = T(_("Opening file '%1'."), BD.filepath(new_file)),
+                                timeout = 0.0,
+                            })
                         end)
+                        UIManager:scheduleIn(0.2, function()
+                            require("apps/reader/readerui"):doShowReader(new_file)
+                        end)
+                    else
+                        -- check if we're resuming from importing content.
+                        local content_path = android.getLastImportedPath()
+                        if content_path ~= nil then
+                            local FileManager = require("apps/filemanager/filemanager")
+                            UIManager:scheduleIn(0.5, function()
+                                if FileManager.instance then
+                                    FileManager.instance:onRefresh()
+                                else
+                                    FileManager:showFiles(content_path)
+                                end
+                            end)
+                        end
                     end
                 end
             elseif ev.code == C.APP_CMD_STOP then
@@ -213,6 +215,12 @@ function Device:init()
             elseif ev.code == C.AEVENT_POWER_DISCONNECTED then
                 local Event = require("ui/event")
                 UIManager:broadcastEvent(Event:new("NotCharging"))
+            elseif ev.code == C.AEVENT_DOWNLOAD_COMPLETE then
+                if android.isResumed() then
+                    self:install()
+                else
+                    android.ota.isPending = true
+                end
             end
         end,
         hasClipboardText = function()
@@ -449,6 +457,19 @@ end
 
 function Device:untar(archive, extract_to)
     return android.untar(archive, extract_to)
+end
+
+function Device:install()
+    local UIManager = require("ui/uimanager")
+    local ConfirmBox = require("ui/widget/confirmbox")
+    UIManager:show(ConfirmBox:new{
+        text = _("Update is ready, Install it now?"),
+        ok_text = _("Install"),
+        ok_callback = function()
+            android.ota.install()
+            android.ota.isPending = false
+        end,
+    })
 end
 
 -- todo: Wouldn't we like an android.deviceIdentifier() method, so we can use better default paths?
