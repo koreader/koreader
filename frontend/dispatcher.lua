@@ -288,6 +288,9 @@ local dispatcher_menu_order = {
     "nightmode_images",
 }
 
+-- table key=event, value=toggles
+local option_text_table = {}
+
 --[[--
     add settings from CreOptions / KoptOptions
 --]]--
@@ -338,6 +341,12 @@ function Dispatcher:init()
     for i=1,#CreOptions do
         parseoptions(CreOptions, i)
     end
+
+    option_text_table = {}
+    for i,val in pairs(settingsList) do
+        option_text_table[tostring(val.event)] = val.toggle
+    end
+
     UIManager:broadcastEvent(Event:new("DispatcherRegisterActions"))
     Dispatcher.initialized = true
 end
@@ -384,7 +393,9 @@ function Dispatcher:getNameFromItem(item, location, settings)
 end
 
 function Dispatcher:addItem(caller, menu, location, settings, section)
+    option_text_table = {}
     for _, k in ipairs(dispatcher_menu_order) do
+        option_text_table[tostring(settingsList[k].event)] = settingsList[k].toggle
         if settingsList[k][section] == true and
             (settingsList[k].condition == nil or settingsList[k].condition)
         then
@@ -546,18 +557,14 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
             end
         end
     end
+
+
 end
 
---[[--
-Add a submenu to edit which items are dispatched
-arguments are:
-    1) the caller so dispatcher can set the updated flag
-    2) the table representing the submenu (can be empty)
-    3) the object (table) in which the settings table is found
-    4) the name of the settings table
-example usage:
-    Dispatcher.addSubMenu(self, sub_items, self.data, "profile1")
---]]--
+function Dispatcher:getOptionText(event, val)
+    return option_text_table[event][val]
+end
+
 function Dispatcher:addSubMenu(caller, menu, location, settings)
     Dispatcher:init()
     table.insert(menu, {

@@ -2,6 +2,7 @@ local BD = require("ui/bidi")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
+local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local Font = require("ui/font")
 local FontList = require("fontlist")
@@ -241,12 +242,7 @@ function ReaderFont:onSetFontHinting(mode)
     self.font_hinting = mode
     self.ui.document:setFontHinting(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    local hint_text = {
-        _("off"),
-        _("native"),
-        _("auto"),
-    }
-    Notification:notify(T(_("Font hinting set to %1."), hint_text[mode + 1]))
+    Notification:notify(T(_("Font hinting set to %1."), Dispatcher:getOptionText("SetFontHinting", mode + 1)))
     return true
 end
 
@@ -254,13 +250,7 @@ function ReaderFont:onSetFontKerning(mode)
     self.font_kerning = mode
     self.ui.document:setFontKerning(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    local kerning_text = {
-        _("off"),
-        _("fast"),
-        _("good"),
-        _("best"),
-    }
-    Notification:notify(T(_("Font kerning set to %1."), kerning_text[mode + 1]))
+    Notification:notify(T(_("Font kerning set to %1."), Dispatcher:getOptionText("SetFontKerning", mode + 1)))
     return true
 end
 
