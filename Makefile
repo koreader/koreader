@@ -45,6 +45,7 @@ PLATFORM_DIR=platform
 COMMON_DIR=$(PLATFORM_DIR)/common
 ANDROID_DIR=$(PLATFORM_DIR)/android
 ANDROID_LAUNCHER_DIR:=$(ANDROID_DIR)/luajit-launcher
+ANDROID_ASSETS:=$(ANDROID_LAUNCHER_DIR)/assets/module
 APPIMAGE_DIR=$(PLATFORM_DIR)/appimage
 CERVANTES_DIR=$(PLATFORM_DIR)/cervantes
 DEBIAN_DIR=$(PLATFORM_DIR)/debian
@@ -350,18 +351,22 @@ endif
 		mv *.AppImage ../../koreader-$(DIST)-$(MACHINE)-$(VERSION).AppImage
 
 androidupdate: all
-	mkdir -p $(ANDROID_LAUNCHER_DIR)/assets/module
-	-rm $(ANDROID_LAUNCHER_DIR)/assets/module/koreader-*
 	# in runtime luajit-launcher's libluajit.so will be loaded
 	-rm $(INSTALL_DIR)/koreader/libs/libluajit.so
 
+        # fresh APK assets
+	rm -rfv $(ANDROID_ASSETS)
+	mkdir -p $(ANDROID_ASSETS)
+
+	# APK version
+	echo $(VERSION) > $(ANDROID_ASSETS)/version.txt
+
 	# shared libraries are stored as raw assets
-	rm -rf $(ANDROID_LAUNCHER_DIR)assets/libs
 	cp -pR $(INSTALL_DIR)/koreader/libs $(ANDROID_LAUNCHER_DIR)/assets
 
 	# assets are compressed manually and stored inside the APK.
 	cd $(INSTALL_DIR)/koreader && 7z a -l -m0=lzma2 -mx=9 \
-		../../$(ANDROID_LAUNCHER_DIR)/assets/module/koreader-$(VERSION).7z * \
+		../../$(ANDROID_ASSETS)/koreader.7z * \
 		-xr!*cache$ \
 		-xr!*clipboard$ \
 		-xr!*data/dict$ \
