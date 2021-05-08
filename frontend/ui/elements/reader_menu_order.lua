@@ -125,6 +125,8 @@ local order = {
         "----------------------------",
         "screen_timeout",
         "fullscreen",
+        "----------------------------",
+        "screen_notification",
     },
     taps_and_gestures = {
         "gesture_manager",
@@ -164,7 +166,6 @@ local order = {
         "terminal",
         "----------------------------",
         "plugin_management",
-        "notifications",
     },
     search = {
         "dictionary_lookup",

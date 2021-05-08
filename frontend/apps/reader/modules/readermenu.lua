@@ -4,7 +4,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local Notification = require("ui/widget/notification")
 local Screensaver = require("ui/screensaver")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
@@ -13,10 +12,6 @@ local util  = require("util")
 local Screen = Device.screen
 local _ = require("gettext")
 local T = require("ffi/util").template
-
-local bor = bit.bor
-local band = bit.band
-local bxor = bit.bxor
 
 local ReaderMenu = InputContainer:new{
     tab_item_table = nil,
@@ -231,81 +226,6 @@ function ReaderMenu:setUpdateItemTable()
         sub_item_table = PluginLoader:genPluginManagerSubItem()
     }
 
-    self.menu_items.notifications = {
-        text = _("Notification level"),
-        help_text = _("You can tune the number of popup Notifications"),
-        checked_func = function()
-            local value = G_reader_settings:readSetting("verbosity_popups")
-            if not value then
-                return false
-            else
-                return  value ~= 100
-            end
-        end,
-        sub_item_table = {
-            {
-            text = _("Bottom menu icons"),
-            checked_func = function()
-                return band(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_BOTTOM_MENU_ICON) ~= 0
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("verbosity_popups",
-                    bxor(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_BOTTOM_MENU_ICON))
-            end,
-            },
-            {
-            text = _("Bottom menu toggles"),
-            checked_func = function()
-                return band(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_BOTTOM_MENU_TOGGLE) ~= 0
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("verbosity_popups",
-                    bxor(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_BOTTOM_MENU_TOGGLE))
-            end,
-            },
-            {
-            text = _("Bottom menu fine tuning"),
-            checked_func = function()
-                return band(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_BOTTOM_MENU_FINE) ~= 0
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("verbosity_popups",
-                    bxor(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_BOTTOM_MENU_FINE))
-            end,
-            },
-            {
-            text = _("Bottom menu three dots"),
-            checked_func = function()
-                return band(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_BOTTOM_MENU_MORE) ~= 0
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("verbosity_popups",
-                    bxor(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_BOTTOM_MENU_MORE))
-            end,
-            },
-            {
-            text = _("Dispatcher"),
-            checked_func = function()
-                return band(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_DISPATCHER) ~= 0
-
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("verbosity_popups",
-                    bxor(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_DISPATCHER))
-            end,
-            },
-            {
-            text = _("Gestures"),
-            checked_func = function()
-                return band(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_GESTURE) ~= 0
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("verbosity_popups",
-                    bxor(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_GESTURE))
-            end,
-            },
-        },
-    }
     -- main menu tab
     -- insert common info
     for id, common_setting in pairs(dofile("frontend/ui/elements/common_info_menu_table.lua")) do
