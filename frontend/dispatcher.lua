@@ -338,7 +338,6 @@ function Dispatcher:init()
     for i=1,#CreOptions do
         parseoptions(CreOptions, i)
     end
-
     UIManager:broadcastEvent(Event:new("DispatcherRegisterActions"))
     Dispatcher.initialized = true
 end
@@ -550,15 +549,15 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
 end
 
 --[[--
--Add a submenu to edit which items are dispatched
--arguments are:
--    1) the caller so dispatcher can set the updated flag
--    2) the table representing the submenu (can be empty)
--    3) the object (table) in which the settings table is found
--    4) the name of the settings table
--example usage:
--    Dispatcher.addSubMenu(self, sub_items, self.data, "profile1")
----]]--
+Add a submenu to edit which items are dispatched
+arguments are:
+    1) the caller so dispatcher can set the updated flag
+    2) the table representing the submenu (can be empty)
+    3) the object (table) in which the settings table is found
+    4) the name of the settings table
+example usage:
+    Dispatcher.addSubMenu(self, sub_items, self.data, "profile1")
+--]]--
 function Dispatcher:addSubMenu(caller, menu, location, settings)
     Dispatcher:init()
     table.insert(menu, {
