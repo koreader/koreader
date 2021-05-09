@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20210503
+local CURRENT_MIGRATION_DATE = 20210508
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -209,9 +209,10 @@ if last_migration_date < 20210414 then
     end
 end
 
--- DocCache, migration to Persist, https://github.com/koreader/koreader/pull/7624
-if last_migration_date < 20210503 then
-    logger.info("Performing one-time migration for 20210503")
+-- 20210503: DocCache, migration to Persist, https://github.com/koreader/koreader/pull/7624
+-- 20210508: DocCache, KOPTInterface hash fix, https://github.com/koreader/koreader/pull/7634
+if last_migration_date < 20210508 then
+    logger.info("Performing one-time migration for 20210503 & 20210508")
 
     local DocCache = require("document/doccache")
     DocCache:clearDiskCache()
