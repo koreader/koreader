@@ -107,6 +107,10 @@ local Device = {
     -- (c.f., https://github.com/koreader/koreader/pull/5211#issuecomment-521304139)
     hasFastWifiStatusQuery = no,
 
+
+    -- For devices that have non-blocking OTA updates, this function will return if the download is currently running.
+    hasOTARunning = no,
+
     -- set to yes on devices with system fonts
     hasSystemFonts = no,
 
