@@ -12,7 +12,7 @@ return {
         if not value then
             return false
         else
-            return  value ~= 100
+            return  value ~= 0
         end
     end,
     sub_item_table = {
@@ -60,7 +60,6 @@ return {
         text = _("Dispatcher"),
         checked_func = function()
             return band(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_DISPATCHER) ~= 0
-
         end,
         callback = function()
             G_reader_settings:saveSetting("verbosity_popups",
@@ -77,5 +76,6 @@ return {
                 bxor(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_GESTURE))
         end,
         },
+
     },
 }
