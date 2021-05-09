@@ -274,7 +274,7 @@ function ReaderFont:onSetWordExpansion(value)
     self.word_expansion = value
     self.ui.document:setWordExpansion(value)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Word expansion set to %1."), value))
+    Notification:notify(T(_("Word expansion set to %1."), OptionsCatalog:getOptionText("SetWordExpansion",value)))
     return true
 end
 
@@ -283,7 +283,7 @@ function ReaderFont:onSetFontGamma(gamma)
     self.ui.document:setGammaIndex(self.gamma_index)
     local gamma_level = self.ui.document:getGammaLevel()
     self.ui:handleEvent(Event:new("RedrawCurrentView"))
-    Notification:notify(T(_("Font gamma set to %1."), gamma_level))
+    Notification:notify(T(_("Font gamma set to %1."), OptionsCatalog:getOptionText("SetFontGamma",gamma_level)))
     return true
 end
 
