@@ -342,7 +342,6 @@ local function exitReader()
 
     -- Save current rotation (or the original rotation if ScreenSaver temporarily modified it) to remember it for next startup
     G_reader_settings:saveSetting("closed_rotation_mode", Device.orig_rotation_mode or Device.screen:getRotationMode())
-
     G_reader_settings:close()
 
     -- Close lipc handles
