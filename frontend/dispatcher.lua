@@ -37,6 +37,7 @@ local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
+local logger = require("logger")
 
 local Dispatcher = {
     initialized = false,
@@ -343,7 +344,7 @@ function Dispatcher:init()
     end
 
     option_text_table = {}
-    for i,val in pairs(settingsList) do
+    for _, val in pairs(settingsList) do
         option_text_table[tostring(val.event)] = val.toggle
     end
 
@@ -370,6 +371,9 @@ Adds settings at runtime.
 function Dispatcher:registerAction(name, value)
     if settingsList[name] == nil then
         settingsList[name] = value
+        if value.event and value.toggle then
+            option_text_table[value.event] = value.toggle
+        end
         table.insert(dispatcher_menu_order, name)
     end
     return true
@@ -393,9 +397,7 @@ function Dispatcher:getNameFromItem(item, location, settings)
 end
 
 function Dispatcher:addItem(caller, menu, location, settings, section)
-    option_text_table = {}
     for _, k in ipairs(dispatcher_menu_order) do
-        option_text_table[tostring(settingsList[k].event)] = settingsList[k].toggle
         if settingsList[k][section] == true and
             (settingsList[k].condition == nil or settingsList[k].condition)
         then
@@ -560,7 +562,19 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
 end
 
 function Dispatcher:getOptionText(event, val)
-    return option_text_table[event][val]
+    if not event or not val then
+        logger.err("[Dispatcher:getOptionText] Either event or val not set. This should not happen!")
+        return ""
+    end
+    if not option_text_table[event] then
+        logger.err("[Dispatcher:getOptionText] Event:" .. event .. " not found in option_text_table")
+        return ""
+    end
+    local text = option_text_table[event][val]
+    if not text then
+        logger.err("[Dispatcher:getOptionText] Option #" .. val .. " for event:" .. event .." not set in option_text_table")
+    end
+    return text
 end
 
 --[[--
