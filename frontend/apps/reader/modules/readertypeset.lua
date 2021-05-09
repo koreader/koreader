@@ -183,7 +183,7 @@ local OBSOLETED_CSS = {
 
 function ReaderTypeset:onSetRenderDPI(dpi)
     self:setRenderDPI(dpi)
-    Notification:notify(T( _("Zoom set to %1 dpi."), dpi))
+    Notification:notify(T( _("Zoom set to %1."), OptionsCatalog:getOptionText("SetRenderDPI", dpi)))
     return true
 end
 
