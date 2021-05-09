@@ -35,9 +35,7 @@ function OptionsCatalog:getOptionText(event, val)
     end
 
     local text
-    if type(val) == "boolean" then
-        text = self.option_text_table[event][val and 2 or 1]
-    elseif type(val) == "number" then
+    if type(val) == "number" then
         text = self.option_text_table[event][val + 1] -- options count from zero
     end
 
@@ -50,10 +48,11 @@ function OptionsCatalog:getOptionText(event, val)
         end
     end
 
-    if not text then
-        logger.err("[Notification:getOptionText] Option #" .. val .. " for event:" .. event .." not set in option_text_table")
+    if text then
+        return text
+    else
+        return val
     end
-    return text
 end
 
 return OptionsCatalog
