@@ -37,7 +37,6 @@ local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
-local logger = require("logger")
 
 local Dispatcher = {
     initialized = false,
@@ -289,9 +288,6 @@ local dispatcher_menu_order = {
     "nightmode_images",
 }
 
--- table key=event, value=toggles
-local option_text_table = {}
-
 --[[--
     add settings from CreOptions / KoptOptions
 --]]--
@@ -343,11 +339,6 @@ function Dispatcher:init()
         parseoptions(CreOptions, i)
     end
 
-    option_text_table = {}
-    for _, val in pairs(settingsList) do
-        option_text_table[tostring(val.event)] = val.toggle
-    end
-
     UIManager:broadcastEvent(Event:new("DispatcherRegisterActions"))
     Dispatcher.initialized = true
 end
@@ -371,9 +362,6 @@ Adds settings at runtime.
 function Dispatcher:registerAction(name, value)
     if settingsList[name] == nil then
         settingsList[name] = value
-        if value.event and value.toggle then
-            option_text_table[value.event] = value.toggle
-        end
         table.insert(dispatcher_menu_order, name)
     end
     return true
@@ -561,22 +549,6 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
     end
 end
 
-function Dispatcher:getOptionText(event, val)
-    if not event or not val then
-        logger.err("[Dispatcher:getOptionText] Either event or val not set. This should not happen!")
-        return ""
-    end
-    if not option_text_table[event] then
-        logger.err("[Dispatcher:getOptionText] Event:" .. event .. " not found in option_text_table")
-        return ""
-    end
-    local text = option_text_table[event][val]
-    if not text then
-        logger.err("[Dispatcher:getOptionText] Option #" .. val .. " for event:" .. event .." not set in option_text_table")
-    end
-    return text
-end
-
 --[[--
 -Add a submenu to edit which items are dispatched
 -arguments are:
@@ -681,7 +653,6 @@ function Dispatcher:execute(ui, settings, gesture)
             end
         end
     end
-    Notification:setNotificationSource(Notification.SOURCE_NONE)
 end
 
 return Dispatcher
