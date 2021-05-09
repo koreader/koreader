@@ -150,12 +150,18 @@ function KoptInterface:createContext(doc, pageno, bbox)
     return kc
 end
 
-function KoptInterface:getContextHash(doc, pageno, bbox)
+function KoptInterface:getContextHash(doc, pageno, bbox, hash_list)
     local canvas_size = CanvasContext:getSize()
-    local canvas_size_hash = canvas_size.w.."|"..canvas_size.h
-    local bbox_hash = bbox.x0.."|"..bbox.y0.."|"..bbox.x1.."|"..bbox.y1
-    return doc.file.."|"..doc.mod_time.."|"..pageno.."|"
-            ..doc.configurable:hash("|").."|"..bbox_hash.."|"..canvas_size_hash
+    table.insert(hash_list, doc.file)
+    table.insert(hash_list, doc.mod_time)
+    table.insert(hash_list, pageno)
+    doc.configurable:hash(hash_list)
+    table.insert(hash_list, bbox.x0)
+    table.insert(hash_list, bbox.y0)
+    table.insert(hash_list, bbox.x1)
+    table.insert(hash_list, bbox.y1)
+    table.insert(hash_list, canvas_size.w)
+    table.insert(hash_list, canvas_size.h)
 end
 
 function KoptInterface:getPageBBox(doc, pageno)
@@ -182,8 +188,9 @@ function KoptInterface:getAutoBBox(doc, pageno)
         x1 = native_size.w,
         y1 = native_size.h,
     }
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local hash = "autobbox|"..context_hash
+    local hash_list = { "autobbox" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
         local page = doc._document:openPage(pageno)
@@ -211,8 +218,9 @@ Detect bbox within user restricted bbox.
 function KoptInterface:getSemiAutoBBox(doc, pageno)
     -- use manual bbox
     local bbox = Document.getPageBBox(doc, pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local hash = "semiautobbox|"..context_hash
+    local hash_list = { "semiautobbox" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
         local page = doc._document:openPage(pageno)
@@ -247,9 +255,10 @@ immediately, or wait for the background thread with reflowed context.
 --]]
 function KoptInterface:getCachedContext(doc, pageno)
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local kctx_hash = "kctx|"..context_hash
-    local cached = DocCache:check(kctx_hash, ContextCacheItem)
+    local hash_list = { "kctx" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
+    local cached = DocCache:check(hash, ContextCacheItem)
     if not cached then
         -- If kctx is not cached, create one and get reflowed bmp in foreground.
         local kc = self:createContext(doc, pageno, bbox)
@@ -265,7 +274,7 @@ function KoptInterface:getCachedContext(doc, pageno)
         local fullwidth, fullheight = kc:getPageDim()
         logger.dbg("reflowed page", pageno, "fullwidth:", fullwidth, "fullheight:", fullheight)
         self.last_context_size = fullwidth * fullheight + 3072 -- estimation
-        DocCache:insert(kctx_hash, ContextCacheItem:new{
+        DocCache:insert(hash, ContextCacheItem:new{
             persistent = true,
             size = self.last_context_size,
             kctx = kc
@@ -331,10 +340,11 @@ Inherited from common document interface.
 function KoptInterface:renderReflowedPage(doc, pageno, rect, zoom, rotation, render_mode)
     doc.render_mode = render_mode
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local renderpg_hash = "renderpg|"..context_hash
+    local hash_list = { "renderpg" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
 
-    local cached = DocCache:check(renderpg_hash)
+    local cached = DocCache:check(hash)
     if not cached then
         -- do the real reflowing if kctx has not been cached yet
         local kc = self:getCachedContext(doc, pageno)
@@ -350,7 +360,7 @@ function KoptInterface:renderReflowedPage(doc, pageno, rect, zoom, rotation, ren
         }
         tile.bb = kc:dstToBlitBuffer()
         tile.size = tonumber(tile.bb.stride) * tile.bb.h + 512 -- estimation
-        DocCache:insert(renderpg_hash, tile)
+        DocCache:insert(hash, tile)
         return tile
     else
         return cached
@@ -365,10 +375,11 @@ Inherited from common document interface.
 function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, render_mode)
     doc.render_mode = render_mode
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local renderpg_hash = "renderoptpg|"..context_hash..zoom
+    local hash_list = { "renderoptpg" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
 
-    local cached = DocCache:check(renderpg_hash, TileCacheItem)
+    local cached = DocCache:check(hash, TileCacheItem)
     if not cached then
         local page_size = Document.getNativePageDimensions(doc, pageno)
         local full_page_bbox = {
@@ -397,7 +408,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
         tile.bb = kc:dstToBlitBuffer()
         tile.size = tonumber(tile.bb.stride) * tile.bb.h + 512 -- estimation
         kc:free()
-        DocCache:insert(renderpg_hash, tile)
+        DocCache:insert(hash, tile)
         return tile
     else
         return cached
@@ -425,9 +436,10 @@ Inherited from common document interface.
 --]]
 function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, render_mode)
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local kctx_hash = "kctx|"..context_hash
-    local cached = DocCache:check(kctx_hash)
+    local hash_list = { "kctx" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
+    local cached = DocCache:check(hash)
     if not cached then
         local kc = self:createContext(doc, pageno, bbox)
         local page = doc._document:openPage(pageno)
@@ -436,7 +448,7 @@ function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, rend
         kc:setPreCache()
         page:reflow(kc, 0)
         page:close()
-        DocCache:insert(kctx_hash, ContextCacheItem:new{
+        DocCache:insert(hash, ContextCacheItem:new{
             size = self.last_context_size or self.default_context_size,
             kctx = kc,
         })
@@ -492,11 +504,12 @@ Get text boxes in reflowed page via rectmaps in koptcontext.
 --]]
 function KoptInterface:getReflowedTextBoxes(doc, pageno)
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local hash = "rfpgboxes|"..context_hash
+    local hash_list = { "rfpgboxes" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
-        local kctx_hash = "kctx|"..context_hash
+        local kctx_hash = hash:gsub("^rfpgboxes|", "kctx|")
         cached = DocCache:check(kctx_hash)
         if cached then
             local kc = self:waitForContext(cached.kctx)
@@ -516,11 +529,12 @@ Get text boxes in native page via rectmaps in koptcontext.
 --]]
 function KoptInterface:getNativeTextBoxes(doc, pageno)
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local hash = "nativepgboxes|"..context_hash
+    local hash_list = { "nativepgboxes" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
-        local kctx_hash = "kctx|"..context_hash
+        local kctx_hash = hash:gsub("^nativepgboxes|", "kctx|")
         cached = DocCache:check(kctx_hash)
         if cached then
             local kc = self:waitForContext(cached.kctx)
@@ -542,11 +556,12 @@ Done by OCR pre-processing in Tesseract and Leptonica.
 --]]
 function KoptInterface:getReflowedTextBoxesFromScratch(doc, pageno)
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local hash = "scratchrfpgboxes|"..context_hash
+    local hash_list = { "scratchrfpgboxes" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
-        local kctx_hash = "kctx|"..context_hash
+        local kctx_hash = hash:gsub("^scratchrfpgboxes|", "kctx|")
         cached = DocCache:check(kctx_hash)
         if cached then
             local reflowed_kc = self:waitForContext(cached.kctx)
@@ -615,8 +630,9 @@ Get page regions in native page via optical method.
 function KoptInterface:getPageBlock(doc, pageno, x, y)
     local kctx
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local hash = "pageblocks|"..context_hash
+    local hash_list = { "pageblocks" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
         local page_size = Document.getNativePageDimensions(doc, pageno)
@@ -660,11 +676,16 @@ Get word from OCR in reflew page.
 function KoptInterface:getReflewOCRWord(doc, pageno, rect)
     self.ocr_lang = doc.configurable.doc_language
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local hash = "rfocrword|"..context_hash..rect.x..rect.y..rect.w..rect.h
+    local hash_list = { "rfocrword" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    table.insert(hash_list, rect.x)
+    table.insert(hash_list, rect.y)
+    table.insert(hash_list, rect.w)
+    table.insert(hash_list, rect.h)
+    local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
-        local kctx_hash = "kctx|"..context_hash
+        local kctx_hash = hash:gsub("^rfocrword|", "kctx|")
         cached = DocCache:check(kctx_hash)
         if cached then
             local kc = self:waitForContext(cached.kctx)
