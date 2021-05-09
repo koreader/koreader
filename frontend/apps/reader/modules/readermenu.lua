@@ -225,7 +225,6 @@ function ReaderMenu:setUpdateItemTable()
         text = _("Plugin management"),
         sub_item_table = PluginLoader:genPluginManagerSubItem()
     }
-
     -- main menu tab
     -- insert common info
     for id, common_setting in pairs(dofile("frontend/ui/elements/common_info_menu_table.lua")) do

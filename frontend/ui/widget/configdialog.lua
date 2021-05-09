@@ -5,7 +5,6 @@ local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
-local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local FixedTextWidget = require("ui/widget/fixedtextwidget")
 local FocusManager = require("ui/widget/focusmanager")
@@ -33,10 +32,6 @@ local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
-
-local bor = bit.bor
-local band = bit.band
-local bxor = bit.bxor
 
 local OptionTextItem = InputContainer:new{}
 
@@ -944,7 +939,6 @@ function ConfigDialog:onShowConfigPanel(index)
 end
 
 function ConfigDialog:onConfigChoice(option_name, option_value)
-    -- ToDO notification for activityIndicator check
     self.configurable[option_name] = option_value
     self.ui:handleEvent(Event:new("StartActivityIndicator"))
     return true
