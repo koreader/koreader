@@ -6,6 +6,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local Math = require("optmath")
 local Notification = require("ui/widget/notification")
+local OptionsCatalog = require("ui/data/optionscatalog")
 local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local Screen = require("device").screen
@@ -137,19 +138,19 @@ end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
     self:toggleEmbeddedStyleSheet(toggle)
-    Notification:notify(T( _("Embedded styles are %1."), Notification:getOptionText("ToggleEmbeddedStyleSheet", toggle and 2 or 1)))
+    Notification:notify(T( _("Embedded styles are %1."), OptionsCatalog:getOptionText("ToggleEmbeddedStyleSheet", toggle and 2 or 1)))
     return true
 end
 
 function ReaderTypeset:onToggleEmbeddedFonts(toggle)
     self:toggleEmbeddedFonts(toggle)
-    Notification:notify(T( _("Embedded fonts are %1."), Notification:getOptionText("ToggleEmbeddedFonts", toggle and 2 or 1)))
+    Notification:notify(T( _("Embedded fonts are %1."), OptionsCatalog:getOptionText("ToggleEmbeddedFonts", toggle and 2 or 1)))
     return true
 end
 
 function ReaderTypeset:onToggleImageScaling(toggle)
     self:toggleImageScaling(toggle)
-    Notification:notify(T( _("Image saling is set to %1."), Notification:getOptionText("ToggleImageScaling", toggle and 2 or 1)))
+    Notification:notify(T( _("Image saling is set to %1."), OptionsCatalog:getOptionText("ToggleImageScaling", toggle and 2 or 1)))
     return true
 end
 
@@ -160,7 +161,7 @@ end
 
 function ReaderTypeset:onSetBlockRenderingMode(mode)
     self:setBlockRenderingMode(mode)
-    Notification:notify(T( _("Render mode set to %1."), Notification:getOptionText("SetBlockRenderingMode", mode+1)))
+    Notification:notify(T( _("Render mode set to %1."), OptionsCatalog:getOptionText("SetBlockRenderingMode", mode+1)))
     return true
 end
 
