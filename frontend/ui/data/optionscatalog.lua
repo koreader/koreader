@@ -1,7 +1,7 @@
 local CreOptions = require("ui/data/creoptions")
 local logger = require("logger")
 
-OptionsCatalog = {}
+local OptionsCatalog = {}
 
 function OptionsCatalog:generateOptionText()
     self.option_text_table = {}

@@ -19,9 +19,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local Input = Device.input
 local Screen = Device.screen
 
-local bor = bit.bor
 local band = bit.band
-local bxor = bit.bxor
 
 local Notification = InputContainer:new{
     face = Font:getFace("x_smallinfofont"),
