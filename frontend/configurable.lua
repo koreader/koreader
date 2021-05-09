@@ -18,15 +18,13 @@ function Configurable:reset()
     end
 end
 
-function Configurable:hash(sep)
-    local hash = ""
+function Configurable:hash(list)
     for key, value in ffiUtil.orderedPairs(self) do
         local value_type = type(value)
         if value_type == "number" or value_type == "string" then
-            hash = hash..sep..value
+            table.insert(list, value)
         end
     end
-    return hash
 end
 
 function Configurable:loadDefaults(config_options)
