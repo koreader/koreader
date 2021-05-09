@@ -865,7 +865,6 @@ function ConfigDialog:init()
     if Device:hasDPad() then
         self.key_events.Select = { {"Press"}, doc = "select current menu item" }
     end
-
 end
 
 function ConfigDialog:updateConfigPanel(index)
