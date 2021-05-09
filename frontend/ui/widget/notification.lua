@@ -107,8 +107,6 @@ function Notification:init()
 end
 
 function Notification:setNotificationSource(source)
-    print("xxxxxxxxxxxxxxxxx")
-    print("xxxxxxxxxxxxxxxxx setNotification source =" .. (source or "not set"))
     self.source = source
 end
 
