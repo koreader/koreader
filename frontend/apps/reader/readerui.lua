@@ -409,14 +409,6 @@ function ReaderUI:init()
         })
     end
 
-    -- Initialize Dispatcher so options text are available to event
-    -- handlers that may want to get it to build notification text.
-    -- Should be done explicitly, as the initialisation is just done
-    -- in gestures and profile plugins or with opening the menu.
-    local Dispatcher = require("dispatcher")
-    Dispatcher:init()
-
-
     -- Allow others to change settings based on external factors
     -- Must be called after plugins are loaded & before setting are read.
     self:handleEvent(Event:new("DocSettingsLoad", self.doc_settings, self.document))
