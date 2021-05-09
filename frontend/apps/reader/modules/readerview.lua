@@ -10,6 +10,7 @@ local Event = require("ui/event")
 local IconWidget = require("ui/widget/iconwidget")
 local InfoMessage = require("ui/widget/infomessage")
 local Notification = require("ui/widget/notification")
+local OptionsCatalog = require("ui/data/optionscatalog")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ReaderDogear = require("apps/reader/modules/readerdogear")
 local ReaderFlipping = require("apps/reader/modules/readerflipping")
@@ -872,7 +873,7 @@ function ReaderView:onSetViewMode(new_mode)
         self.view_mode = new_mode
         self.ui.document:setViewMode(new_mode)
         self.ui:handleEvent(Event:new("ChangeViewMode"))
-        Notification:notify(T( _("View mode set to %1."), new_mode))
+        Notification:notify(T( _("View mode set to %1."), OptionsCatalog:getOptionText("SetViewMode", new_mode)))
     end
 end
 
