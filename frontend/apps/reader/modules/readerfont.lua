@@ -10,6 +10,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
+local OptionsCatalog = require("ui/data/optionscatalog")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
@@ -241,7 +242,7 @@ function ReaderFont:onSetFontHinting(mode)
     self.font_hinting = mode
     self.ui.document:setFontHinting(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Font hinting set to %1."), Notification:getOptionText("SetFontHinting", mode + 1)))
+    Notification:notify(T(_("Font hinting set to %1."), OptionsCatalog:getOptionText("SetFontHinting", mode + 1)))
     return true
 end
 
@@ -249,7 +250,7 @@ function ReaderFont:onSetFontKerning(mode)
     self.font_kerning = mode
     self.ui.document:setFontKerning(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Font kerning set to %1."), Notification:getOptionText("SetFontKerning", mode + 1)))
+    Notification:notify(T(_("Font kerning set to %1."), OptionsCatalog:getOptionText("SetFontKerning", mode + 1)))
     return true
 end
 

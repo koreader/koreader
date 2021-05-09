@@ -755,7 +755,6 @@ In combination with zoom to fit page, page height, content height, content or co
     end
     self:recalculate()
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
-    Notification:notify(T(_("View Mode set to %1."), Notification:getOptionText("InitScrollPagesStates", toggle and 2 or 1)))
 end
 
 function ReaderView:onReadSettings(config)
