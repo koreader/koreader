@@ -234,7 +234,7 @@ function ReaderFont:onSetFontBaseWeight(weight)
     self.font_base_weight = weight
     self.ui.document:setFontBaseWeight(weight)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Font weight set to %1."), weight))
+    Notification:notify(T(_("Font weight set to %1."), OptionsCatalog:getOptionText("SetFontBaseWeight", weight)))
     return true
 end
 
