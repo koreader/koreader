@@ -38,11 +38,11 @@ function ReaderFont:init()
             IncreaseSize = {
                 { "Shift", Input.group.PgFwd },
                 doc = "increase font size",
-                event = "ChangeSize", args = {"increase", 0.5} },
+                event = "ChangeSize", args = 0.5 },
             DecreaseSize = {
                 { "Shift", Input.group.PgBack },
                 doc = "decrease font size",
-                event = "ChangeSize", args = {"decrease", 0.5} },
+                event = "ChangeSize", args = -0.5 },
             IncreaseLineSpace = {
                 { "Alt", Input.group.PgFwd },
                 doc = "increase line space",
@@ -205,20 +205,8 @@ end
 --[[
     UpdatePos event is used to tell ReaderRolling to update pos.
 --]]
-function ReaderFont:onChangeSize(direction, font_delta)
-    local delta
-    if type(direction) == "table" then
-        font_delta = direction[2]
-        delta = direction[1] == "decrease" and -1 or 1
-    else
-        delta = "decrease" and -1 or 1
-    end
-
-    if font_delta then
-        self.font_size = self.font_size + font_delta * delta
-    else
-        self.font_size = self.font_size + delta
-    end
+function ReaderFont:onChangeSize(delta)
+    self.font_size = self.font_size + delta
     self.ui:handleEvent(Event:new("SetFontSize", self.font_size))
     return true
 end
@@ -358,15 +346,15 @@ end
 
 function ReaderFont:onIncreaseFontSize(ges)
     local delta_int = self:gesToFontSize(ges)
-    Notification:notify(_("Increasing font size…"), false)
-    self:onChangeSize("increase", delta_int)
+    Notification:notify(_("Increasing font size…"), true)
+    self:onChangeSize(delta_int)
     return true
 end
 
 function ReaderFont:onDecreaseFontSize(ges)
     local delta_int = self:gesToFontSize(ges)
-    Notification:notify(_("Decreasing font size…"), false)
-    self:onChangeSize("decrease", delta_int)
+    Notification:notify(_("Decreasing font size…"), true)
+    self:onChangeSize(-delta_int)
     return true
 end
 

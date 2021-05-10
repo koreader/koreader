@@ -40,7 +40,7 @@ local Notification = InputContainer:new{
     text = "Null Message",
     margin = Size.margin.default,
     padding = Size.padding.default,
-    timeout = 6, -- default to 2 seconds
+    timeout = 2, -- default to 2 seconds
     toast = true, -- closed on any event, and let the event propagate to next top widget
 
     _nums_shown = {}, -- array of stacked notifications
