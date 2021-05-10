@@ -90,6 +90,8 @@ function OptionTextItem:onTapSelect()
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
                     self.events, self.current_item, self.hide_on_apply)
+
+    Notification:notify(self.notification_func and self:notification_func())
     UIManager:setDirty(self.config, function()
         return "fast", self[1].dimen
     end)
@@ -163,6 +165,8 @@ function OptionIconItem:onTapSelect()
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
                     self.events, self.current_item, self.hide_on_apply)
+
+    Notification:notify(self.notification_func and self:notification_func())
     UIManager:setDirty(self.config, function()
         return "fast", self[1].dimen
     end)
@@ -559,6 +563,7 @@ function ConfigOption:init()
                     event = self.options[c].event,
                     events = self.options[c].events,
                     hide_on_apply = self.options[c].hide_on_apply,
+                    notification_func = self.options[c].notification_func,
                     config = self.config,
                     enabled = enabled,
                     row_count = row_count,
@@ -570,6 +575,8 @@ function ConfigOption:init()
                             Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, arg, name_text, self.options[c].more_options_param)
+
+                            Notification:notify(self.notification_func and self:notification_func())
                         end
                     end
                 }
@@ -609,6 +616,8 @@ function ConfigOption:init()
                             self.config:onConfigChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].hide_on_apply)
                         end
+
+                        Notification:notify(self.notification_func and self:notification_func())
                         UIManager:setDirty(self.config, function()
                             return "fast", switch.dimen
                         end)
@@ -1214,7 +1223,10 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             local dummy_callback = when_applied_callback and function() end
                             args = args or {}
                             Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
+
                             self:onConfigEvent(event, value_tables, dummy_callback)
+
+                            Notification:notify(self.notification_func and self:notification_func())
                             self:update()
                         end
                     end,
@@ -1316,6 +1328,8 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             else
                                 self:onConfigEvent(event, spin.value, dummy_callback)
                             end
+
+                            Notification:notify(self.notification_func and self:notification_func())
                             self:update()
                         end
                     end,

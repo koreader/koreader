@@ -10,7 +10,6 @@ function OptionsCatalog:generateOptionText()
         for j = 1, #CreOptions[i].options do
             local option = CreOptions[i].options[j]
             if option.event then
-                print(option.event)
                 if option.labels then
                     self.option_text_table[option.event] = option.labels
                 elseif option.toggle then
