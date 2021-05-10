@@ -128,7 +128,7 @@ local settingsList = {
 
     -- rolling reader settings
     increase_font = {category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size by %1"), rolling=true},
-    decrease_font = {category="incrementalnumber", event="DecreaseFontSize", min=0.5, max=255, step=0.5, title=_("Decrease font size by %1"), rolling=true},
+    decrease_font = {category="incrementalnumber", event="DecreaseFontSize", min=0.5, max=255, step=0.5, title=_("Decrease font size by %1"), rolling=true, notify_func=function() return "xxxxxxx test" end},
 
     -- paging reader settings
     toggle_page_flipping = {category="none", event="TogglePageFlipping", title=_("Toggle page flipping"), paging=true},
@@ -653,6 +653,7 @@ function Dispatcher:execute(ui, settings, gesture)
                     ui.document.configurable[settingsList[k].configurable.name] = value
                 end
             end
+            if settingsList[k].notify_func then Notification:notify(settingsList[k].notify_func()) end
         end
     end
 end
