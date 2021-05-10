@@ -737,7 +737,7 @@ end
 
 function FileManager:getCurrentDir()
     if FileManager.instance then
-        return self.file_chooser.path
+        return FileManager.instance.file_chooser.path
     end
 end
 
