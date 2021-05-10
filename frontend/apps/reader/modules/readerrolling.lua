@@ -6,6 +6,7 @@ local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
+local OptionsCatalog = require("ui/data/optionscatalog")
 local ProgressWidget = require("ui/widget/progresswidget")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
 local Size = require("ui/size")
@@ -1046,6 +1047,7 @@ function ReaderRolling:onSetVisiblePages(visible_pages)
     if cur_visible_pages ~= prev_visible_pages then
         self.ui:handleEvent(Event:new("UpdatePos"))
     end
+    Notification:notify(T(_("To columns are %1."), OptionsCatalog:getOptionText("SetVisiblePages", visible_pages)))
 end
 
 function ReaderRolling:onSetStatusLine(status_line)

@@ -21,24 +21,41 @@ local Screen = Device.screen
 
 local band = bit.band
 
+local SOURCE_BOTTOM_MENU_ICON = 1
+local SOURCE_BOTTOM_MENU_TOGGLE = 2
+local SOURCE_BOTTOM_MENU_FINE = 4
+local SOURCE_BOTTOM_MENU_MORE = 8
+local SOURCE_DISPATCHER = 16
+local SOURCE_GESTURE = 32
+
+-- these values can be changed here
+local SOURCE_SOME = SOURCE_BOTTOM_MENU_FINE + SOURCE_DISPATCHER + SOURCE_GESTURE
+local SOURCE_DEFAULT = SOURCE_BOTTOM_MENU_MORE
+local SOURCE_ALL = SOURCE_BOTTOM_MENU_ICON + SOURCE_BOTTOM_MENU_TOGGLE + SOURCE_BOTTOM_MENU_FINE +
+        SOURCE_BOTTOM_MENU_MORE + SOURCE_DISPATCHER + SOURCE_GESTURE
+
+
 local Notification = InputContainer:new{
     face = Font:getFace("x_smallinfofont"),
     text = "Null Message",
     margin = Size.margin.default,
     padding = Size.padding.default,
-    timeout = 2, -- default to 2 seconds
+    timeout = 6, -- default to 2 seconds
     toast = true, -- closed on any event, and let the event propagate to next top widget
 
     _nums_shown = {}, -- array of stacked notifications
 
+    SOURCE_BOTTOM_MENU_ICON = SOURCE_BOTTOM_MENU_ICON,
+    SOURCE_BOTTOM_MENU_TOGGLE = SOURCE_BOTTOM_MENU_TOGGLE,
+    SOURCE_BOTTOM_MENU_FINE = SOURCE_BOTTOM_MENU_FINE,
+    SOURCE_BOTTOM_MENU_MORE = SOURCE_BOTTOM_MENU_MORE,
+    SOURCE_DISPATCHER = SOURCE_DISPATCHER,
+    SOURCE_GESTURE = SOURCE_GESTURE,
+
     SOURCE_NONE = 0,
-    SOURCE_BOTTOM_MENU_ICON = 1,
-    SOURCE_BOTTOM_MENU_TOGGLE = 2,
-    SOURCE_BOTTOM_MENU_FINE = 4,
-    SOURCE_BOTTOM_MENU_MORE = 8,
-    SOURCE_DISPATCHER = 16,
-    SOURCE_GESTURE = 32,
-    SOURCE_TEST = 64,
+    SOURCE_SOME = SOURCE_SOME,
+    SOURCE_DEFAULT = SOURCE_DEFAULT,
+    SOURCE_ALL = SOURCE_ALL,
 }
 
 function Notification:init()
@@ -104,16 +121,19 @@ function Notification:init()
     }
 end
 
-function Notification:setNotificationSource(source)
-    self.source = source
+function Notification:setNotifySource(source)
+    self.notify_source = source
 end
 
-function Notification:notify(text)
-    local val = G_reader_settings:readSetting("verbosity_popups")
-    if self.source and band(val, self.source) ~= 0 then
+function Notification:notify(text, refresh_after)
+    local mask = G_reader_settings:readSetting("notification_sources_to_show_mask") or self.SOURCE_DEFAULT
+    if self.notify_source and band(mask, self.notify_source) ~= 0 then
         UIManager:show(Notification:new{
             text = text,
         })
+        if refresh_after then
+            UIManager:forceRePaint()
+        end
         return true
     end
     return false
