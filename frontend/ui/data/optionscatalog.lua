@@ -6,14 +6,15 @@ local OptionsCatalog = {}
 function OptionsCatalog:generateOptionText()
     self.option_text_table = {}
     self.option_args_table = {}
-    for i=1,#CreOptions do
-        for y=1,#CreOptions[i].options do
-            local option = CreOptions[i].options[y]
+    for i = 1, #CreOptions do
+        for j = 1, #CreOptions[i].options do
+            local option = CreOptions[i].options[j]
             if option.event then
-                if option.toggle then
-                    self.option_text_table[option.event] = option.toggle
-                elseif option.labels then
+                print(option.event)
+                if option.labels then
                     self.option_text_table[option.event] = option.labels
+                elseif option.toggle then
+                    self.option_text_table[option.event] = option.toggle
                 end
                 self.option_args_table[option.event] = option.args
             end
