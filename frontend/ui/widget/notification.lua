@@ -128,11 +128,9 @@ end
 function Notification:notify(arg, refresh_after)
     local mask = G_reader_settings:readSetting("notification_sources_to_show_mask") or self.SOURCE_DEFAULT
     if self.notify_source and band(mask, self.notify_source) ~= 0 then
-        if arg then
-            UIManager:show(Notification:new{
-                text = arg,
-            })
-        end
+        UIManager:show(Notification:new{
+            text = arg,
+         })
         if refresh_after then
             UIManager:forceRePaint()
         end
