@@ -760,6 +760,7 @@ function ReaderUI:onCloseWidget()
         logger.warn("ReaderUI instance mismatch! Closed", tostring(self), "while the active one is supposed to be", tostring(ReaderUI.instance))
     end
     ReaderUI.instance = nil
+    self._coroutine = nil
 end
 
 function ReaderUI:dealWithLoadDocumentFailure()
