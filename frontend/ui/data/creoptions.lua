@@ -121,6 +121,9 @@ local CreOptions = {
                     return optionsutil.enableIfEquals(configurable, "view_mode", 0) -- "page" mode
                         -- and Screen:getScreenMode() == "landscape"
                 end,
+                notify_func = function(conf)
+                    return T(_("%1 Columns"), conf.visible_pages == 2 and 1 or 2  )
+                end,
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Render the document on half the screen width and display two pages at once with a single page number. This makes it look like two columns.
 This is disabled in scroll mode. Switching from page mode with two columns to scroll mode will cause the document to be re-rendered.]]),
