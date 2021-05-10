@@ -223,10 +223,13 @@ function ToggleSwitch:onTapSelect(arg, gev)
         else
             Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_TOGGLE)
         end
+        if self.notify_func then
+            Notification:notify(self:notify_func())
+        end
+
+        Notification:setNotifySource(Notification.SOURCE_EVENT)
         self.config:onConfigChoose(self.values, self.name,
             self.event, self.args, self.events, self.position, self.hide_on_apply)
-
-        if self.notify_func then Notification:notify(self:notify_func()) end
 
         UIManager:setDirty(self.config, function()
             return "ui", self.dimen

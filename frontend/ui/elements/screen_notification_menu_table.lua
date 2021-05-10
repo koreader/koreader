@@ -77,6 +77,14 @@ You can decide here what kind of notifications to show or hide.]]),
             toggleSource(Notification.SOURCE_GESTURE)
         end,
         },
-
+        {
+        text = _("Events"),
+        checked_func = function()
+            return isSourceEnabled(Notification.SOURCE_EVENT)
+        end,
+        callback = function()
+            toggleSource(Notification.SOURCE_EVENT)
+        end,
+        },
     },
 }
