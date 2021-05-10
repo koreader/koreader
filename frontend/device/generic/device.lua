@@ -103,6 +103,9 @@ local Device = {
     -- set to yes on devices that support over-the-air incremental updates.
     hasOTAUpdates = no,
 
+    -- For devices that have non-blocking OTA updates, this function will return true if the download is currently running.
+    hasOTARunning = no,
+
     -- set to yes on devices that have a non-blocking isWifiOn implementation
     -- (c.f., https://github.com/koreader/koreader/pull/5211#issuecomment-521304139)
     hasFastWifiStatusQuery = no,

@@ -85,6 +85,7 @@ local Device = Generic:new{
     isHapticFeedbackEnabled = yes,
     hasClipboard = yes,
     hasOTAUpdates = android.ota.isEnabled,
+    hasOTARunning = function() return android.ota.isRunning end,
     hasFastWifiStatusQuery = yes,
     hasSystemFonts = yes,
     canOpenLink = yes,
@@ -216,6 +217,7 @@ function Device:init()
                 local Event = require("ui/event")
                 UIManager:broadcastEvent(Event:new("NotCharging"))
             elseif ev.code == C.AEVENT_DOWNLOAD_COMPLETE then
+                android.ota.isRunning = false
                 if android.isResumed() then
                     self:install()
                 else

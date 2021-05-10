@@ -208,6 +208,13 @@ function OTAManager:checkUpdate()
 end
 
 function OTAManager:fetchAndProcessUpdate()
+    if Device:hasOTARunning() then
+        UIManager:show(InfoMessage:new{
+            text = _("Download already scheduled. You'll be notified when it's ready."),
+        })
+        return
+    end
+
     local ota_version, local_version, link, ota_package = OTAManager:checkUpdate()
 
     if ota_version == 0 then
@@ -247,6 +254,7 @@ function OTAManager:fetchAndProcessUpdate()
                         if ok == C.ADOWNLOAD_EXISTS then
                             Device:install()
                         elseif ok == C.ADOWNLOAD_OK then
+                            android.ota.isRunning = true
                             UIManager:show(InfoMessage:new{
                                 text = wait_for_download,
                                 timeout = 3,
