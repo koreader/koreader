@@ -31,17 +31,18 @@ local ReaderFont = InputContainer:new{
 
 function ReaderFont:init()
     if Device:hasKeyboard() then
+
         -- add shortcut for keyboard
         self.key_events = {
             ShowFontMenu = { {"F"}, doc = "show font menu" },
             IncreaseSize = {
                 { "Shift", Input.group.PgFwd },
                 doc = "increase font size",
-                event = "ChangeSize", args = "increase" },
+                event = "ChangeSize", args = 0.5 },
             DecreaseSize = {
                 { "Shift", Input.group.PgBack },
                 doc = "decrease font size",
-                event = "ChangeSize", args = "decrease" },
+                event = "ChangeSize", args = -0.5 },
         }
     end
     -- Build face_table for menu
@@ -197,7 +198,14 @@ end
     UpdatePos event is used to tell ReaderRolling to update pos.
 --]]
 function ReaderFont:onChangeSize(direction, font_delta)
-    local delta = direction == "decrease" and -1 or 1
+    local delta
+    if type(direction) == "table" then
+        font_delta = direction[2]
+        delta = direction[1] == "decrease" and -1 or 1
+    else
+        delta = "decrease" and -1 or 1
+    end
+
     if font_delta then
         self.font_size = self.font_size + font_delta * delta
     else
@@ -207,10 +215,6 @@ function ReaderFont:onChangeSize(direction, font_delta)
     return true
 end
 
-function ReaderFont:onChangeSizeFine(direction)
-    self:onChangeSize(direction, 0.5)
-end
-
 function ReaderFont:onSetFontSize(new_size)
     if new_size > 255 then new_size = 255 end
     if new_size < 12 then new_size = 12 end
@@ -218,7 +222,7 @@ function ReaderFont:onSetFontSize(new_size)
     self.font_size = new_size
     self.ui.document:setFontSize(Screen:scaleBySize(new_size))
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Font size set to %1."), self.font_size))
+    Notification:notify(T(_("Font size set to %1."), self.font_size), true)
     return true
 end
 
@@ -266,7 +270,7 @@ function ReaderFont:onSetWordExpansion(value)
     self.word_expansion = value
     self.ui.document:setWordExpansion(value)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Word expansion set to %1."), OptionsCatalog:getOptionText("SetWordExpansion",value)))
+    Notification:notify(T(_("Word expansion set to %1."), value))
     return true
 end
 
@@ -275,7 +279,7 @@ function ReaderFont:onSetFontGamma(gamma)
     self.ui.document:setGammaIndex(self.gamma_index)
     local gamma_level = self.ui.document:getGammaLevel()
     self.ui:handleEvent(Event:new("RedrawCurrentView"))
-    Notification:notify(T(_("Font gamma set to %1."), OptionsCatalog:getOptionText("SetFontGamma",gamma_level)))
+    Notification:notify(T(_("Font gamma set to %1."), OptionsCatalog:getOptionText("SetFontGamma", gamma_level)))
     return true
 end
 
@@ -346,14 +350,14 @@ end
 
 function ReaderFont:onIncreaseFontSize(ges)
     local delta_int = self:gesToFontSize(ges)
-    Notification:notify(_("Increasing font size…"))
+    Notification:notify(_("Increasing font size…"), false)
     self:onChangeSize("increase", delta_int)
     return true
 end
 
 function ReaderFont:onDecreaseFontSize(ges)
     local delta_int = self:gesToFontSize(ges)
-    Notification:notify(_("Decreasing font size…"))
+    Notification:notify(_("Decreasing font size…"), false)
     self:onChangeSize("decrease", delta_int)
     return true
 end

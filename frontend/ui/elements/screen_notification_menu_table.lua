@@ -4,76 +4,77 @@ local _ = require("gettext")
 local band = bit.band
 local bxor = bit.bxor
 
+local function isSourceEnabled(source)
+    local mask = G_reader_settings:readSetting("notification_sources_to_show_mask") or Notification.SOURCE_DEFAULT
+    return band(mask, source) ~= 0
+end
+
+local function toggleSource(source)
+    local mask = G_reader_settings:readSetting("notification_sources_to_show_mask") or Notification.SOURCE_DEFAULT
+    G_reader_settings:saveSetting("notification_sources_to_show_mask", bxor(mask, source))
+end
+
 return {
     text = _("Notification level"),
-    help_text = _("You can tune the number of popup Notifications"),
+    help_text = _([[KOReader may show notification popups at top of screen on various occasions.
+You can decide here what kind of notifications to show or hide.]]),
     checked_func = function()
-        local value = G_reader_settings:readSetting("verbosity_popups")
-        if not value then
-            return false
-        else
-            return  value ~= 0
-        end
+        local value = G_reader_settings:readSetting("notification_sources_to_show_mask") or Notification.SOURCE_DEFAULT
+        return  value ~= 0
     end,
     sub_item_table = {
         {
         text = _("Bottom menu icons"),
         checked_func = function()
-            return band(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_BOTTOM_MENU_ICON) ~= 0
+            return isSourceEnabled(Notification.SOURCE_BOTTOM_MENU_ICON)
         end,
         callback = function()
-            G_reader_settings:saveSetting("verbosity_popups",
-                bxor(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_BOTTOM_MENU_ICON))
+            toggleSource(Notification.SOURCE_BOTTOM_MENU_ICON)
         end,
         },
         {
         text = _("Bottom menu toggles"),
         checked_func = function()
-            return band(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_BOTTOM_MENU_TOGGLE) ~= 0
+            return isSourceEnabled(Notification.SOURCE_BOTTOM_MENU_TOGGLE)
         end,
         callback = function()
-            G_reader_settings:saveSetting("verbosity_popups",
-                bxor(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_BOTTOM_MENU_TOGGLE))
+            toggleSource(Notification.SOURCE_BOTTOM_MENU_TOGGLE)
         end,
         },
         {
         text = _("Bottom menu fine tuning"),
         checked_func = function()
-            return band(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_BOTTOM_MENU_FINE) ~= 0
+            return isSourceEnabled(Notification.SOURCE_BOTTOM_MENU_FINE)
         end,
         callback = function()
-            G_reader_settings:saveSetting("verbosity_popups",
-                bxor(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_BOTTOM_MENU_FINE))
+            toggleSource(Notification.SOURCE_BOTTOM_MENU_FINE)
         end,
         },
         {
         text = _("Bottom menu three dots"),
         checked_func = function()
-            return band(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_BOTTOM_MENU_MORE) ~= 0
+            return isSourceEnabled(Notification.SOURCE_BOTTOM_MENU_MORE)
         end,
         callback = function()
-            G_reader_settings:saveSetting("verbosity_popups",
-                bxor(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_BOTTOM_MENU_MORE))
+            toggleSource(Notification.SOURCE_BOTTOM_MENU_MORE)
         end,
         },
         {
         text = _("Dispatcher"),
         checked_func = function()
-            return band(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_DISPATCHER) ~= 0
+            return isSourceEnabled(Notification.SOURCE_DISPATCHER)
         end,
         callback = function()
-            G_reader_settings:saveSetting("verbosity_popups",
-                bxor(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_DISPATCHER))
+            toggleSource(Notification.SOURCE_DISPATCHER)
         end,
         },
         {
         text = _("Gestures"),
         checked_func = function()
-            return band(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_GESTURE) ~= 0
+            return isSourceEnabled(Notification.SOURCE_GESTURE)
         end,
         callback = function()
-            G_reader_settings:saveSetting("verbosity_popups",
-                bxor(G_reader_settings:readSetting("verbosity_popups"), Notification.SOURCE_GESTURE))
+            toggleSource(Notification.SOURCE_GESTURE)
         end,
         },
 
