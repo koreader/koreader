@@ -210,7 +210,7 @@ end
 function OTAManager:fetchAndProcessUpdate()
     if Device:hasOTARunning() then
         UIManager:show(InfoMessage:new{
-            text = _("Download already scheduled. You'll be notified when it is complete"),
+            text = _("Download already scheduled. You'll be notified when it's ready"),
         })
         return
     end
