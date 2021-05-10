@@ -4,7 +4,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local OPDSBrowser = require("opdsbrowser")
-local ReaderUI = require("apps/reader/readerui")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -13,7 +12,6 @@ local T = require("ffi/util").template
 
 local OPDSCatalog = InputContainer:extend{
     title = _("OPDS Catalog"),
-    onExit = function() end,
 }
 
 function OPDSCatalog:init()
@@ -36,6 +34,7 @@ function OPDSCatalog:init()
 
                     self:onClose()
 
+                    local ReaderUI = require("apps/reader/readerui")
                     ReaderUI:showReader(downloaded_file)
                 end
             })
@@ -67,18 +66,12 @@ function OPDSCatalog:showCatalog()
     UIManager:show(OPDSCatalog:new{
         dimen = Screen:getSize(),
         covers_fullscreen = true, -- hint for UIManager:_repaint()
-        onExit = function()
-            --UIManager:quit()
-        end
     })
 end
 
 function OPDSCatalog:onClose()
     logger.dbg("close OPDS catalog")
     UIManager:close(self)
-    if self.onExit then
-        self:onExit()
-    end
     return true
 end
 

@@ -470,7 +470,9 @@ function FileChooser:getNextFile(curr_file)
     return next_file
 end
 
-function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_ui, one_time_providers)
+function FileChooser:showSetProviderButtons(file, filemanager_instance, one_time_providers)
+    local ReaderUI = require("apps/reader/readerui")
+
     local __, filename_pure = util.splitFilePathName(file)
     local filename_suffix = util.getFileNameSuffix(file)
 
@@ -540,7 +542,7 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
                         ok_callback = function()
                             DocumentRegistry:setProvider(file, provider, false)
 
-                            reader_ui:showReader(file, provider)
+                            ReaderUI:showReader(file, provider)
                             UIManager:close(self.set_provider_dialog)
                         end,
                     })
@@ -553,13 +555,13 @@ function FileChooser:showSetProviderButtons(file, filemanager_instance, reader_u
                         ok_callback = function()
                             DocumentRegistry:setProvider(file, provider, true)
 
-                            reader_ui:showReader(file, provider)
+                            ReaderUI:showReader(file, provider)
                             UIManager:close(self.set_provider_dialog)
                         end,
                     })
                 else
                     -- just once
-                    reader_ui:showReader(file, provider)
+                    ReaderUI:showReader(file, provider)
                     UIManager:close(self.set_provider_dialog)
                 end
             end,

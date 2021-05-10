@@ -29,7 +29,6 @@ local PluginLoader = require("pluginloader")
 local ReadCollection = require("readcollection")
 local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
-local ReaderUI = require("apps/reader/readerui")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local Screenshoter = require("ui/widget/screenshoter")
 local Size = require("ui/size")
@@ -50,7 +49,6 @@ local T = BaseUtil.template
 local FileManager = InputContainer:extend{
     title = _("KOReader"),
     root_path = lfs.currentdir(),
-    onExit = function() end,
 
     mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv",
     cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp",
@@ -60,10 +58,10 @@ local FileManager = InputContainer:extend{
 function FileManager:onSetRotationMode(rotation)
     if rotation ~= nil and rotation ~= Screen:getRotationMode() then
         Screen:setRotationMode(rotation)
-        if self.instance then
-            self:reinit(self.instance.path, self.instance.focused_file)
-            UIManager:setDirty(self.instance.banner, function()
-                return "ui", self.instance.banner.dimen
+        if FileManager.instance then
+            self:reinit(self.path, self.focused_file)
+            UIManager:setDirty(self.banner, function()
+                return "ui", self.banner.dimen
             end)
         end
     end
@@ -215,6 +213,7 @@ function FileManager:setupLayout()
     end
 
     function file_chooser:onFileSelect(file)  -- luacheck: ignore
+        local ReaderUI = require("apps/reader/readerui")
         ReaderUI:showReader(file)
         return true
     end
@@ -396,7 +395,7 @@ function FileManager:setupLayout()
                                 end,
                             })
                         end
-                        self:showSetProviderButtons(file, FileManager.instance, ReaderUI, one_time_providers)
+                        self:showSetProviderButtons(file, FileManager.instance, one_time_providers)
                     end,
                 },
                 {
@@ -737,8 +736,8 @@ function FileManager:reinit(path, focused_file)
 end
 
 function FileManager:getCurrentDir()
-    if self.instance then
-        return self.instance.file_chooser.path
+    if FileManager.instance then
+        return FileManager.instance.file_chooser.path
     end
 end
 
@@ -768,10 +767,16 @@ function FileManager:onClose()
     self:handleEvent(Event:new("SaveSettings"))
     G_reader_settings:flush()
     UIManager:close(self)
-    if self.onExit then
-        self:onExit()
-    end
     return true
+end
+
+function FileManager:onCloseWidget()
+    if FileManager.instance == self then
+        logger.dbg("Tearing down FileManager", tostring(self))
+    else
+        logger.warn("FileManager instance mismatch! Closed", tostring(self), "while the active one is supposed to be", tostring(FileManager.instance))
+    end
+    FileManager.instance = nil
 end
 
 function FileManager:onShowingReader()
@@ -834,6 +839,7 @@ function FileManager:openRandomFile(dir)
             text = T(_("Do you want to open %1?"), BD.filename(BaseUtil.basename(random_file))),
             choice1_text = _("Open"),
             choice1_callback = function()
+                local ReaderUI = require("apps/reader/readerui")
                 ReaderUI:showReader(random_file)
             end,
             -- @translators Another file. This is a button on the open random file dialog. It presents a file with the choices Open/Another.
@@ -1145,6 +1151,13 @@ function FileManager:getStartWithMenuTable()
 end
 
 function FileManager:showFiles(path, focused_file)
+    -- Warn about and close any pre-existing FM instances first...
+    if FileManager.instance then
+        logger.warn("FileManager instance mismatch! Tried to spin up a new instance, while we still have an existing one:", tostring(FileManager.instance))
+        -- Close the old one first!
+        FileManager.instance:onClose()
+    end
+
     path = path or G_reader_settings:readSetting("lastdir") or filemanagerutil.getDefaultDir()
     G_reader_settings:saveSetting("lastdir", path)
     self:setRotationMode()
@@ -1153,16 +1166,17 @@ function FileManager:showFiles(path, focused_file)
         covers_fullscreen = true, -- hint for UIManager:_repaint()
         root_path = path,
         focused_file = focused_file,
-        onExit = function()
-            self.instance = nil
-        end
     }
     UIManager:show(file_manager)
 
-    -- NOTE: This is a bit clunky. This ought to be private and accessed via a getCurrentInstance method, àla ReaderUI.
-    --       But, it points to the *current* FM instance, and is nil'ed on exit.
-    --       As such, code outside of FileManager can just check/use FileManager.instance (which they do. extensively).
-    self.instance = file_manager
+    -- NOTE: ReaderUI has a _getRunningInstance method for this, because it used to store the instance reference in a private module variable.
+    if FileManager.instance == nil then
+        logger.dbg("Spinning up new FileManager instance", tostring(file_manager))
+    else
+        -- Should never happen, given what we did above...
+        logger.warn("FileManager instance mismatch! Opened", tostring(file_manager), "while we still have an existing instance:", tostring(FileManager.instance))
+    end
+    FileManager.instance = file_manager
 end
 
 --- A shortcut to execute mv.
