@@ -431,8 +431,8 @@ Note that your selected font size is not affected by this setting.]]),
                     event = "SetFontSize",
                 },
                 values = {},
-                event = "ChangeSizeFine",
-                args = {"decrease", "increase"},
+                event = "ChangeSize",
+                args = { {"decrease", 0.5}, {"increase", 0.5} },
                 alternate = false,
                 name_text_hold_callback = function(configurable, __, prefix)
                     local opt = {
