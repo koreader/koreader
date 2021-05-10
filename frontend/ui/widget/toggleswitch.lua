@@ -226,7 +226,7 @@ function ToggleSwitch:onTapSelect(arg, gev)
         self.config:onConfigChoose(self.values, self.name,
             self.event, self.args, self.events, self.position, self.hide_on_apply)
 
-        Notification:notify(self.notification_func and self:notification_func())
+        if self.notify_func then Notification:notify(self:notify_func()) end
 
         UIManager:setDirty(self.config, function()
             return "ui", self.dimen

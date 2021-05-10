@@ -91,7 +91,7 @@ function OptionTextItem:onTapSelect()
                     self.event, self.args,
                     self.events, self.current_item, self.hide_on_apply)
 
-    Notification:notify(self.notification_func and self:notification_func())
+    if self.notify_func then Notification:notify(self:notify_func()) end
     UIManager:setDirty(self.config, function()
         return "fast", self[1].dimen
     end)
@@ -166,7 +166,7 @@ function OptionIconItem:onTapSelect()
                     self.event, self.args,
                     self.events, self.current_item, self.hide_on_apply)
 
-    Notification:notify(self.notification_func and self:notification_func())
+    if self.notify_func then Notification:notify(self:notify_func()) end
     UIManager:setDirty(self.config, function()
         return "fast", self[1].dimen
     end)
@@ -563,7 +563,7 @@ function ConfigOption:init()
                     event = self.options[c].event,
                     events = self.options[c].events,
                     hide_on_apply = self.options[c].hide_on_apply,
-                    notification_func = self.options[c].notification_func,
+                    notify_func = self.options[c].notify_func,
                     config = self.config,
                     enabled = enabled,
                     row_count = row_count,
@@ -576,7 +576,7 @@ function ConfigOption:init()
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, arg, name_text, self.options[c].more_options_param)
 
-                            Notification:notify(self.notification_func and self:notification_func())
+                            if self.notify_func then Notification:notify(self:notify_func()) end
                         end
                     end
                 }
@@ -617,7 +617,7 @@ function ConfigOption:init()
                                 self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].hide_on_apply)
                         end
 
-                        Notification:notify(self.notification_func and self:notification_func())
+                        if self.notify_func then Notification:notify(self:notify_func()) end
                         UIManager:setDirty(self.config, function()
                             return "fast", switch.dimen
                         end)
@@ -1226,7 +1226,7 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
 
                             self:onConfigEvent(event, value_tables, dummy_callback)
 
-                            Notification:notify(self.notification_func and self:notification_func())
+                            if self.notify_func then Notification:notify(self:notify_func()) end
                             self:update()
                         end
                     end,
@@ -1329,7 +1329,7 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                                 self:onConfigEvent(event, spin.value, dummy_callback)
                             end
 
-                            Notification:notify(self.notification_func and self:notification_func())
+                            if self.notify_func then Notification:notify(self:notify_func()) end
                             self:update()
                         end
                     end,
