@@ -1169,9 +1169,7 @@ function FileManager:showFiles(path, focused_file)
     }
     UIManager:show(file_manager)
 
-    -- NOTE: This is a bit clunky. This ought to be private and accessed via a getCurrentInstance method, àla ReaderUI.
-    --       But, it points to the *current* FM instance, and is nil'ed on exit.
-    --       As such, code outside of FileManager can just check/use FileManager.instance (which they do. extensively).
+    -- NOTE: ReaderUI has a _getRunningInstance method for this, because it used to store the instance reference in a private module variable.
     if FileManager.instance == nil then
         logger.dbg("Spinning up new FileManager instance", tostring(file_manager))
     else

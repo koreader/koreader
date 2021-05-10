@@ -631,6 +631,9 @@ function ReaderUI:doShowReader(file, provider)
     ReaderUI.instance = reader
 end
 
+-- NOTE: The instance reference used to be stored in a private module variable, hence the getter method.
+--       We've since aligned behavior with FileManager, which uses a class member instead,
+--       but kept the function to avoid changing existing code.
 function ReaderUI:_getRunningInstance()
     return ReaderUI.instance
 end
