@@ -84,7 +84,6 @@ function ReaderView:init()
     self.visible_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
     self.page_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
     self.dim_area = Geom:new{x = 0, y = 0, w = 0, h = 0}
-    self.dimen = Geom:new{x = 0, y = 0, w = 0, h = 0}
 
     self:addWidgets()
     self.emitHintPageEvent = function()
