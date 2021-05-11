@@ -75,12 +75,12 @@ local function showExpertMenu(toggle)
                 end,
                 },
                 {
-                text = _("Events"),
+                text = _("Other sources"),
                 checked_func = function()
-                    return isMaskEnabled(Notification.SOURCE_EVENT)
+                    return isMaskEnabled(Notification.SOURCE_OTHER)
                 end,
                 callback = function()
-                    toggleMask(Notification.SOURCE_EVENT)
+                    toggleMask(Notification.SOURCE_OTHER)
                 end,
                 },
             },
