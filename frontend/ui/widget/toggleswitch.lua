@@ -23,8 +23,6 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local bor = bit.bor
-
 local ToggleLabel = TextWidget:new{
     bold = true,
     bgcolor = Blitbuffer.COLOR_WHITE,
