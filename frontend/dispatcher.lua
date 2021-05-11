@@ -38,8 +38,6 @@ local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
 
-local bor = bit.bor
-
 local Dispatcher = {
     initialized = false,
 }
