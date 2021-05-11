@@ -21,12 +21,12 @@ local Screen = Device.screen
 
 local band = bit.band
 
-local SOURCE_BOTTOM_MENU_ICON =   0x0001
-local SOURCE_BOTTOM_MENU_TOGGLE = 0x0002
-local SOURCE_BOTTOM_MENU_FINE =   0x0004
-local SOURCE_BOTTOM_MENU_MORE =   0x0008
-local SOURCE_DISPATCHER =         0x0010
-local SOURCE_EVENT =              0x0020
+local SOURCE_BOTTOM_MENU_ICON =   0x0001 -- icons in bottom menu
+local SOURCE_BOTTOM_MENU_TOGGLE = 0x0002 -- toggles in bottom menu
+local SOURCE_BOTTOM_MENU_FINE =   0x0004 -- toggles with fine-tuning ("increase", "+" etc)
+local SOURCE_BOTTOM_MENU_MORE =   0x0008 -- three dots in bottom menu
+local SOURCE_DISPATCHER =         0x0010 -- dispatcher
+local SOURCE_OTHER =              0x0020 -- all other sources (e.g. keyboard)
 
 local SOURCE_BOTTOM_MENU =        0x000F
 
@@ -34,7 +34,7 @@ local SOURCE_BOTTOM_MENU =        0x000F
 local SOURCE_SOME = SOURCE_BOTTOM_MENU_FINE + SOURCE_DISPATCHER
 local SOURCE_DEFAULT = SOURCE_SOME + SOURCE_BOTTOM_MENU_MORE
 local SOURCE_ALL = SOURCE_BOTTOM_MENU_ICON + SOURCE_BOTTOM_MENU_TOGGLE + SOURCE_BOTTOM_MENU_FINE +
-        SOURCE_BOTTOM_MENU_MORE + SOURCE_DISPATCHER + SOURCE_EVENT
+        SOURCE_BOTTOM_MENU_MORE + SOURCE_DISPATCHER + SOURCE_OTHER
 
 
 local Notification = InputContainer:new{
@@ -52,8 +52,7 @@ local Notification = InputContainer:new{
     SOURCE_BOTTOM_MENU_FINE = SOURCE_BOTTOM_MENU_FINE,
     SOURCE_BOTTOM_MENU_MORE = SOURCE_BOTTOM_MENU_MORE,
     SOURCE_DISPATCHER = SOURCE_DISPATCHER,
-    SOURCE_GESTURE = SOURCE_GESTURE,
-    SOURCE_EVENT = SOURCE_EVENT,
+    SOURCE_OTHER = SOURCE_OTHER,
 
     SOURCE_BOTTOM_MENU = SOURCE_BOTTOM_MENU,
 
@@ -130,10 +129,15 @@ function Notification:setNotifySource(source)
     self.notify_source = source
 end
 
+function Notification:resetNotifySource()
+    self.notify_source = Notification.SOURCE_DEFAULT
+end
+
 function Notification:getNotifySource()
     return self.notify_source
 end
 
+-- show popups if `self.notify_source` is not masked by the setting `notification_sources_to_show_mask`
 function Notification:notify(arg, refresh_after)
     local mask = G_reader_settings:readSetting("notification_sources_to_show_mask") or self.SOURCE_DEFAULT
     if self.notify_source and band(mask, self.notify_source) ~= 0 then

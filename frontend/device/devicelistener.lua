@@ -171,7 +171,7 @@ if Device:hasFrontlight() then
         if powerd.fl_warmth == nil then return false end
 
         if powerd.auto_warmth then
-            Notificaton:notify(_("Warmth is handled automatically."))
+            Notification:notify(_("Warmth is handled automatically."))
             return true
         end
 

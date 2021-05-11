@@ -663,7 +663,7 @@ function Dispatcher:execute(ui, settings, gesture)
             end
         end
     end
-    Notification:setNotifySource(Notification.SOURCE_EVENT)
+    Notification:resetNotifySource()
 
 end
 
