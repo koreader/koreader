@@ -183,7 +183,7 @@ function Device:init()
     end
 
     logger.info("initializing for device", self.model)
-    logger.info("framebuffer resolution:", self.screen:getSize())
+    logger.info("framebuffer resolution:", self.screen:getRawSize())
 
     if not self.input then
         self.input = require("device/input"):new{device = self}
