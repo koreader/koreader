@@ -483,9 +483,6 @@ Note that your selected font size is not affected by this setting.]]),
                 show_true_value_func = function(val)
                     return string.format("%d%%, %d%%", val[1], val[2])
                 end,
-                notify_func = function(text, configurable, show_func)
-                    return T(_("%1 set to: %2"), text, show_func(configurable.word_spacing))
-                end,
             },
             {
                 name = "word_expansion",
