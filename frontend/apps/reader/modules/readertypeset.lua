@@ -150,7 +150,7 @@ end
 
 function ReaderTypeset:onToggleImageScaling(toggle)
     self:toggleImageScaling(toggle)
-    Notification:notify(T( _("Image saling is set to %1."), OptionsCatalog:getOptionText("ToggleImageScaling", toggle)))
+    Notification:notify(T( _("Image scaling set to %1."), OptionsCatalog:getOptionText("ToggleImageScaling", toggle)))
     return true
 end
 

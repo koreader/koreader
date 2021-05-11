@@ -1193,7 +1193,6 @@ function ReaderRolling:onSetVisiblePages(visible_pages)
     if cur_visible_pages ~= prev_visible_pages then
         self.ui:handleEvent(Event:new("UpdatePos"))
     end
-    Notification:notify(T(_("To columns are %1."), OptionsCatalog:getOptionText("SetVisiblePages", visible_pages)))
 end
 
 function ReaderRolling:onSetStatusLine(status_line)

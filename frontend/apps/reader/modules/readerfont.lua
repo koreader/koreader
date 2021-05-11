@@ -218,7 +218,7 @@ function ReaderFont:onSetFontSize(new_size)
     self.font_size = new_size
     self.ui.document:setFontSize(Screen:scaleBySize(new_size))
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Font size set to %1."), self.font_size), true)
+    Notification:notify(T(_("Font size set to %1."), self.font_size))
     return true
 end
 
@@ -258,7 +258,7 @@ function ReaderFont:onSetWordSpacing(values)
     self.word_spacing = values
     self.ui.document:setWordSpacing(values)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Word spacing: scaling set to %1, reduction to %2."), values[1], values[2]))
+    Notification:notify(T(_("Word spacing set to %1%,  %2%."), values[1], values[2]))
     return true
 end
 
@@ -266,7 +266,7 @@ function ReaderFont:onSetWordExpansion(value)
     self.word_expansion = value
     self.ui.document:setWordExpansion(value)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Word expansion set to %1."), value))
+    Notification:notify(T(_("Word expansion set to %1%."), value))
     return true
 end
 
