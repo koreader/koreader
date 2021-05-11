@@ -4,7 +4,6 @@ local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local NetworkMgr = require("ui/network/manager")
-local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
@@ -14,7 +13,10 @@ local NetworkListener = InputContainer:new{}
 
 function NetworkListener:onToggleWifi()
     if not NetworkMgr:isOnline() then
-        Notification:notify(_("Turning on Wi-Fi…"))
+        UIManager:show(InfoMessage:new{
+            text = _("Turning on Wi-Fi…"),
+            timeout = 1,
+        })
 
         -- NB Normal widgets should use NetworkMgr:promptWifiOn()
         -- (or, better yet, the NetworkMgr:beforeWifiAction wrappers: NetworkMgr:runWhenOnline() & co.)
@@ -29,7 +31,10 @@ function NetworkListener:onToggleWifi()
         end
         NetworkMgr:turnOffWifi(complete_callback)
 
-        Notification:notify(_("Wi-Fi off."))
+        UIManager:show(InfoMessage:new{
+            text = _("Wi-Fi off."),
+            timeout = 1,
+        })
     end
 end
 
@@ -40,12 +45,18 @@ function NetworkListener:onInfoWifiOff()
     end
     NetworkMgr:turnOffWifi(complete_callback)
 
-    Notification:notify(_("Wi-Fi off."))
+    UIManager:show(InfoMessage:new{
+        text = _("Wi-Fi off."),
+        timeout = 1,
+    })
 end
 
 function NetworkListener:onInfoWifiOn()
     if not NetworkMgr:isOnline() then
-        Notification:notify(_("Enabling wifi…"))
+        UIManager:show(InfoMessage:new{
+            text = _("Enabling wifi…"),
+            timeout = 1,
+        })
 
         -- NB Normal widgets should use NetworkMgr:promptWifiOn()
         -- (or, better yet, the NetworkMgr:beforeWifiAction wrappers: NetworkMgr:runWhenOnline() & co.)
@@ -63,7 +74,10 @@ function NetworkListener:onInfoWifiOn()
         else
             info_text = _("Already connected.")
         end
-        Notification:notify(info_text)
+        UIManager:show(InfoMessage:new{
+            text = info_text,
+            timeout = 1,
+        })
     end
 end
 
