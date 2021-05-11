@@ -581,7 +581,6 @@ function ConfigOption:init()
                     events = self.options[c].events,
                     hide_on_apply = self.options[c].hide_on_apply,
                     notify_func = self.options[c].notify_func,
-                    show_true_value_func = self.options[c].show_true_value_func,
                     config = self.config,
                     enabled = enabled,
                     row_count = row_count,
