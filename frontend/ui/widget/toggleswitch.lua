@@ -23,6 +23,8 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local _ = require("gettext")
 local Screen = Device.screen
 
+local bor = bit.bor
+
 local ToggleLabel = TextWidget:new{
     bold = true,
     bgcolor = Blitbuffer.COLOR_WHITE,
@@ -219,20 +221,23 @@ function ToggleSwitch:onTapSelect(arg, gev)
     end
     if self.toggle[self.position] ~= "⋮" then
         if #self.values == 0 then -- this is a toggle which is not selectable (eg. increase, decrease)
-            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_FINE)
+            Notification:setNotifySource(bor(Notification.SOURCE_BOTTOM_MENU_FINE, Notification.SOURCE_EVENT))
         else
-            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_TOGGLE)
+            Notification:setNotifySource(bor(Notification.SOURCE_BOTTOM_MENU_TOGGLE, Notification.SOURCE_EVENT))
         end
         if self.notify_func then
-            Notification:notify(self:notify_func())
+            Notification:notify(self.notify_func(self.config.configurable))
         end
 
-        Notification:setNotifySource(Notification.SOURCE_EVENT)
         self.config:onConfigChoose(self.values, self.name,
             self.event, self.args, self.events, self.position, self.hide_on_apply)
 
         UIManager:setDirty(self.config, function()
             return "ui", self.dimen
+        end)
+
+        UIManager:tickAfterNext(function()
+            Notification:setNotifySource(Notification.SOURCE_EVENT) -- only allow events, if they are activated
         end)
     end
     return true

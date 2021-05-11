@@ -33,6 +33,8 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
+local bor = bit.bor
+
 local OptionTextItem = InputContainer:new{}
 
 function OptionTextItem:init()
@@ -87,17 +89,21 @@ function OptionTextItem:onTapSelect()
     end
     self.underline_container.color = Blitbuffer.COLOR_BLACK
 
+    Notification:setNotifySource(bor(Notification.SOURCE_BOTTOM_MENU_ICON, Notification.SOURCE_EVENT))
     if self.notify_func then
-        Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_ICON)
         Notification:notify(self:notify_func())
     end
-    Notification:setNotifySource(Notification.SOURCE_EVENT)
+
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
                     self.events, self.current_item, self.hide_on_apply)
 
     UIManager:setDirty(self.config, function()
         return "fast", self[1].dimen
+    end)
+
+    UIManager:tickAfterNext(function()
+        Notification:setNotifySource(Notification.SOURCE_EVENT) -- only allow events, if they are activated
     end)
     return true
 end
@@ -165,17 +171,21 @@ function OptionIconItem:onTapSelect()
     end
     --self[1][1].invert = true
     self.underline_container.color = Blitbuffer.COLOR_BLACK
+
+    Notification:setNotifySource(bor(Notification.SOURCE_BOTTOM_MENU_ICON, Notification.SOURCE_EVENT))
     if self.notify_func then
-        Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_ICON)
         Notification:notify(self:notify_func())
     end
-    Notification:setNotifySource(Notification.SOURCE_EVENT)
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
                     self.events, self.current_item, self.hide_on_apply)
 
     UIManager:setDirty(self.config, function()
         return "fast", self[1].dimen
+    end)
+
+    UIManager:tickAfterNext(function()
+        Notification:setNotifySource(Notification.SOURCE_EVENT) -- only allow events, if they are activated
     end)
     return true
 end
@@ -579,15 +589,16 @@ function ConfigOption:init()
                             if self.options[c].show_true_value_func and not self.options[c].more_options_param.show_true_value_func then
                                 self.options[c].more_options_param.show_true_value_func = self.options[c].show_true_value_func
                             end
+                            Notification:setNotifySource(bor(Notification.SOURCE_BOTTOM_MENU_MORE, Notification.SOURCE_EVENT))
                             if self.notify_func then
-                                Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
                                 Notification:notify(self:notify_func())
                             end
 
-                            Notification:setNotifySource(Notification.SOURCE_EVENT)
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, arg, name_text, self.options[c].more_options_param)
-
+                            UIManager:tickAfterNext(function()
+                                Notification:setNotifySource(Notification.SOURCE_EVENT) -- only allow events, if they are activated
+                            end)
                         end
                     end
                 }
@@ -615,34 +626,34 @@ function ConfigOption:init()
                     callback = function(arg)
 
                         if arg == "-" or arg == "+" then
+                            Notification:setNotifySource(bor(Notification.SOURCE_BOTTOM_MENU_FINE, Notification.SOURCE_EVENT))
                             if self.notify_func then
-                                Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_FINE)
                                 Notification:notify(self:notify_func())
                             end
-                            Notification:setNotifySource(Notification.SOURCE_EVENT)
                             self.config:onConfigFineTuneChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].hide_on_apply,
                                 self.options[c].fine_tune_param)
                         elseif arg == "⋮" then
+                            Notification:setNotifySource(bor(Notification.SOURCE_BOTTOM_MENU_MORE, Notification.SOURCE_EVENT))
                             if self.notify_func then
-                                Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
                                 Notification:notify(self:notify_func())
                             end
-                            Notification:setNotifySource(Notification.SOURCE_EVENT)
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, arg, name_text, self.options[c].more_options_param)
                         else
+                            Notification:setNotifySource(bor(Notification.SOURCE_BOTTOM_MENU_TOGGLE, Notification.SOURCE_EVENT))
                             if self.notify_func then
-                                Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_TOGGLE)
                                 Notification:notify(self:notify_func())
                             end
-                            Notification:setNotifySource(Notification.SOURCE_EVENT)
                             self.config:onConfigChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].hide_on_apply)
                         end
 
                         UIManager:setDirty(self.config, function()
                             return "fast", switch.dimen
+                        end)
+                        UIManager:tickAfterNext(function()
+                            Notification:setNotifySource(Notification.SOURCE_EVENT) -- only allow events, if they are activated
                         end)
                     end,
                     hold_callback = function(arg)
@@ -1245,14 +1256,14 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             -- it actually do it when provided a callback as argument
                             local dummy_callback = when_applied_callback and function() end
                             args = args or {}
+                            Notification:setNotifySource(bor(Notification.SOURCE_BOTTOM_MENU_MORE, Notification.SOURCE_EVENT))
                             if self.notify_func then
-                                Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
                                 Notification:notify(self:notify_func())
                             end
-                            Notification:setNotifySource(Notification.SOURCE_EVENT)
-
                             self:onConfigEvent(event, value_tables, dummy_callback)
-
+                            UIManager:tickAfterNext(function()
+                                Notification:setNotifySource(Notification.SOURCE_EVENT) -- only allow events, if they are activated
+                            end)
                             self:update()
                         end
                     end,
@@ -1344,11 +1355,10 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             -- it actually do it when provided a callback as argument
                             local dummy_callback = when_applied_callback and function() end
                             args = args or {}
+                            Notification:setNotifySource(bor(Notification.SOURCE_BOTTOM_MENU_MORE, Notification.SOURCE_EVENT))
                             if self.notify_func then
-                                Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
                                 Notification:notify(self:notify_func())
                             end
-                            Notification:setNotifySource(Notification.SOURCE_EVENT)
                             if more_options_param.value_table then
                                 if more_options_param.args_table then
                                     self:onConfigEvent(event, more_options_param.args_table[spin.value_index], dummy_callback)
@@ -1358,7 +1368,9 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             else
                                 self:onConfigEvent(event, spin.value, dummy_callback)
                             end
-
+                            UIManager:tickAfterNext(function()
+                                Notification:setNotifySource(Notification.SOURCE_EVENT) -- only allow events, if they are activated
+                            end)
                             self:update()
                         end
                     end,

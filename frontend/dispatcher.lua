@@ -38,6 +38,8 @@ local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
 
+local bor = bit.bor
+
 local Dispatcher = {
     initialized = false,
 }
@@ -127,8 +129,8 @@ local settingsList = {
     panel_zoom_toggle = {category="none", event="TogglePanelZoomSetting", title=_("Toggle panel zoom"), paging=true, separator=true},
 
     -- rolling reader settings
-    increase_font = {category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size by %1"), rolling=true, notify_func=function() return "xxxxxxx Increase Font" end},
-    decrease_font = {category="incrementalnumber", event="DecreaseFontSize", min=0.5, max=255, step=0.5, title=_("Decrease font size by %1"), rolling=true, notify_func=function() return "xxxxxxx Decrease Font" end},
+    increase_font = {category="incrementalnumber", event="IncreaseFontSize", min=0.5, max=255, step=0.5, title=_("Increase font size by %1"), rolling=true},
+    decrease_font = {category="incrementalnumber", event="DecreaseFontSize", min=0.5, max=255, step=0.5, title=_("Decrease font size by %1"), rolling=true},
 
     -- paging reader settings
     toggle_page_flipping = {category="none", event="TogglePageFlipping", title=_("Toggle page flipping"), paging=true},
@@ -148,7 +150,7 @@ local settingsList = {
     block_rendering_mode = {category="string", rolling=true},
     render_dpi = {category="string", rolling=true},
     line_spacing = {category="absolutenumber", rolling=true, separator=true},
-    font_size = {category="absolutenumber", title=_("Set font size to %1"), rolling=true, step=0.5, notify_func=function() return "XXXX Set font size" end},
+    font_size = {category="absolutenumber", title=_("Set font size to %1"), rolling=true, step=0.5},
     font_base_weight = {category="string", rolling=true},
     font_gamma = {category="string", rolling=true},
     font_hinting = {category="string", rolling=true},
@@ -618,13 +620,10 @@ arguments are:
 function Dispatcher:execute(ui, settings, gesture)
     for k, v in pairs(settings) do
         if settingsList[k] ~= nil and (settingsList[k].conditions == nil or settingsList[k].conditions == true) then
-            Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
+            Notification:setNotifySource(bor(Notification.SOURCE_DISPATCHER, Notification.SOURCE_EVENT))
             if settingsList[k].notify_func then
                 Notification:notify(settingsList[k].notify_func())
-            else
-                Notification:notify(settingsList[k].title)
             end
-            Notification:setNotifySource(Notification.SOURCE_EVENT)
             if settingsList[k].category == "none" then
                 if settingsList[k].arg ~= nil then
                     ui:handleEvent(Event:new(settingsList[k].event, settingsList[k].arg))
@@ -658,6 +657,8 @@ function Dispatcher:execute(ui, settings, gesture)
             end
         end
     end
+    Notification:setNotifySource(Notification.SOURCE_EVENT)
+
 end
 
 return Dispatcher
