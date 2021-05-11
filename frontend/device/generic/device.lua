@@ -5,6 +5,7 @@ This module defines stubs for common methods.
 --]]
 
 local DataStorage = require("datastorage")
+local Geom = require("ui/geometry")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -211,6 +212,14 @@ function Device:init()
         if G_reader_settings:isTrue("input_lock_gsensor") then
             self:lockGSensor(true)
         end
+    end
+
+    -- Screen:getSize is used throughout the code, and usually expects getting a real Geom object...
+    -- But as implementations come from base, they just return a Geom-like table...
+    local orig_getsize = self.screen.getSize
+    self.screen.getSize = function()
+        local rect = orig_getsize(self.screen)
+        return Geom:new{ x = rect.x, y = rect.y, w = rect.w, h = rect.h }
     end
 end
 
