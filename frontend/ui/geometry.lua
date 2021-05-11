@@ -240,7 +240,7 @@ Works for dimensions, too. For points, it is basically an equality check.
 @tparam Geom rect_b
 ]]
 function Geom:contains(rect_b)
-    if not rect_b or rect_b:area() == 0 then return false end
+    if not rect_b then return false end
 
     if self.x <= rect_b.x
     and self.y <= rect_b.y
