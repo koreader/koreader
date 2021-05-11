@@ -66,7 +66,7 @@ local function showExpertMenu(toggle)
                 end,
                 },
                 {
-                text = _("Dispatcher"),
+                text = _("Gestures and profiles"),
                 checked_func = function()
                     return isMaskEnabled(Notification.SOURCE_DISPATCHER)
                 end,
@@ -140,8 +140,8 @@ You can decide here what kind of notifications to show or hide.]]),
         end,
         },
         {
-        text = _("Dispatcher and Gestures"),
-        help_text = _("Show popups on dispatcher gestures."),
+        text = _("Gestures and profiles"),
+        help_text = _("Show popups on gestures and profiles."),
         checked_func = function()
             return band(getMask(), Notification.SOURCE_DISPATCHER) ~= 0 and getMask() ~= Notification.SOURCE_ALL
         end,
