@@ -60,7 +60,7 @@ function DeviceListener:onShowWarmth(value)
     if powerd.fl_warmth ~= nil then
         -- powerd.fl_warmth holds the warmth-value in the internal koreader scale [0,100]
         -- powerd.fl_warmth_max is the maximum value the hardware accepts
-        Notification:notify (T(_("Warmth set to %1."), math.floor(powerd.fl_warmth/100*powerd.fl_warmth_max)))
+        Notification:notify(T(_("Warmth set to %1."), math.floor(powerd.fl_warmth/100*powerd.fl_warmth_max)))
     end
     return true
 end
