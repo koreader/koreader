@@ -33,8 +33,6 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local bor = bit.bor
-
 local OptionTextItem = InputContainer:new{}
 
 function OptionTextItem:init()
