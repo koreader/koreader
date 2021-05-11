@@ -233,19 +233,19 @@ function Geom:setSizeTo(rect_b)
 end
 
 --[[--
-Checks whether rect_b is within current rectangle
+Checks whether geom is within current rectangle
 
 Works for dimensions, too. For points, it is basically an equality check.
 
-@tparam Geom rect_b
+@tparam Geom geom
 ]]
-function Geom:contains(rect_b)
-    if not rect_b then return false end
+function Geom:contains(geom)
+    if not geom then return false end
 
-    if self.x <= rect_b.x
-    and self.y <= rect_b.y
-    and self.x + self.w >= rect_b.x + rect_b.w
-    and self.y + self.h >= rect_b.y + rect_b.h
+    if self.x <= geom.x
+    and self.y <= geom.y
+    and self.x + self.w >= geom.x + geom.w
+    and self.y + self.h >= geom.y + geom.h
     then
         return true
     end
