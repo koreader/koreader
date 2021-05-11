@@ -26,14 +26,15 @@ local SOURCE_BOTTOM_MENU_TOGGLE = 0x0002
 local SOURCE_BOTTOM_MENU_FINE =   0x0004
 local SOURCE_BOTTOM_MENU_MORE =   0x0008
 local SOURCE_DISPATCHER =         0x0010
-local SOURCE_GESTURE =            0x0020
-local SOURCE_EVENT =              0x0040
+local SOURCE_EVENT =              0x0020
+
+local SOURCE_BOTTOM_MENU =        0x000F
 
 -- these values can be changed here
-local SOURCE_SOME = SOURCE_BOTTOM_MENU_FINE + SOURCE_DISPATCHER + SOURCE_GESTURE
-local SOURCE_DEFAULT = SOURCE_BOTTOM_MENU_MORE
+local SOURCE_SOME = SOURCE_BOTTOM_MENU_FINE + SOURCE_DISPATCHER
+local SOURCE_DEFAULT = SOURCE_SOME + SOURCE_BOTTOM_MENU_MORE
 local SOURCE_ALL = SOURCE_BOTTOM_MENU_ICON + SOURCE_BOTTOM_MENU_TOGGLE + SOURCE_BOTTOM_MENU_FINE +
-        SOURCE_BOTTOM_MENU_MORE + SOURCE_DISPATCHER + SOURCE_GESTURE + SOURCE_EVENT
+        SOURCE_BOTTOM_MENU_MORE + SOURCE_DISPATCHER + SOURCE_EVENT
 
 
 local Notification = InputContainer:new{
@@ -53,6 +54,8 @@ local Notification = InputContainer:new{
     SOURCE_DISPATCHER = SOURCE_DISPATCHER,
     SOURCE_GESTURE = SOURCE_GESTURE,
     SOURCE_EVENT = SOURCE_EVENT,
+
+    SOURCE_BOTTOM_MENU = SOURCE_BOTTOM_MENU,
 
     SOURCE_NONE = 0,
     SOURCE_SOME = SOURCE_SOME,
@@ -125,6 +128,10 @@ end
 
 function Notification:setNotifySource(source)
     self.notify_source = source
+end
+
+function Notification:getNotifySource()
+    return self.notify_source
 end
 
 function Notification:notify(arg, refresh_after)
