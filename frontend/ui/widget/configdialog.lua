@@ -880,6 +880,7 @@ function ConfigDialog:update()
         config_dialog = self,
     }
 
+    local old_dimen = self.dialog_frame and self.dialog_frame.dimen and self.dialog_frame.dimen:copy() or Geom:new{}
     self.dialog_frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
         padding_bottom = 0, -- ensured by MenuBar
@@ -888,6 +889,10 @@ function ConfigDialog:update()
             self.config_menubar,
         },
     }
+    -- Ensure we have a sane-ish Geom object *before* paintTo gets called,
+    -- to avoid weirdness in race-y SwipeCloseMenu calls...
+    self.dialog_frame.dimen = old_dimen
+
     -- Reset the focusmanager cursor
     self.selected.y=#self.layout
     self.selected.x=self.panel_index
