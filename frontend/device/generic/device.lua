@@ -214,11 +214,10 @@ function Device:init()
         end
     end
 
-    -- Screen:getSize is used throughout the code, and usually expects getting a real Geom object...
+    -- Screen:getSize is used throughout the code, and that code usually expects getting a real Geom object...
     -- But as implementations come from base, they just return a Geom-like table...
-    local orig_getsize = self.screen.getSize
     self.screen.getSize = function()
-        local rect = orig_getsize(self.screen)
+        local rect = self.screen.getRawSize(self.screen)
         return Geom:new{ x = rect.x, y = rect.y, w = rect.w, h = rect.h }
     end
 end
