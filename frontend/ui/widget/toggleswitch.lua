@@ -226,7 +226,7 @@ function ToggleSwitch:onTapSelect(arg, gev)
             Notification:setNotifySource(bor(Notification.SOURCE_BOTTOM_MENU_TOGGLE, Notification.SOURCE_OTHER))
         end
         if self.notify_func then
-            Notification:notify(self.notify_func(self.config.configurable))
+            Notification:notify(self.notify_func(self.name_text, self.config.configurable, self.show_true_value_func))
         end
 
         self.config:onConfigChoose(self.values, self.name,
