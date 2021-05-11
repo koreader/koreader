@@ -221,9 +221,9 @@ function ToggleSwitch:onTapSelect(arg, gev)
     end
     if self.toggle[self.position] ~= "⋮" then
         if #self.values == 0 then -- this is a toggle which is not selectable (eg. increase, decrease)
-            Notification:setNotifySource(bor(Notification.SOURCE_BOTTOM_MENU_FINE, Notification.SOURCE_OTHER))
+            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_FINE)
         else
-            Notification:setNotifySource(bor(Notification.SOURCE_BOTTOM_MENU_TOGGLE, Notification.SOURCE_OTHER))
+            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_TOGGLE)
         end
         if self.notify_func then
             Notification:notify(self.notify_func(self.name_text, self.config.configurable, self.show_true_value_func))

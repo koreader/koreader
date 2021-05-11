@@ -130,7 +130,7 @@ function Notification:setNotifySource(source)
 end
 
 function Notification:resetNotifySource()
-    self.notify_source = Notification.SOURCE_DEFAULT
+    self.notify_source = Notification.SOURCE_OTHER
 end
 
 function Notification:getNotifySource()
