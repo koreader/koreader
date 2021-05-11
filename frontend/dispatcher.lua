@@ -620,7 +620,7 @@ arguments are:
 function Dispatcher:execute(ui, settings, gesture)
     for k, v in pairs(settings) do
         if settingsList[k] ~= nil and (settingsList[k].conditions == nil or settingsList[k].conditions == true) then
-            Notification:setNotifySource(bor(Notification.SOURCE_DISPATCHER, Notification.SOURCE_EVENT))
+            Notification:setNotifySource(bor(Notification.SOURCE_DISPATCHER, Notification.SOURCE_OTHER))
             if settingsList[k].notify_func then
                 Notification:notify(settingsList[k].notify_func())
             end
@@ -657,7 +657,7 @@ function Dispatcher:execute(ui, settings, gesture)
             end
         end
     end
-    Notification:setNotifySource(Notification.SOURCE_EVENT)
+    Notification:resetNotifySource()
 
 end
 
