@@ -539,6 +539,15 @@ function FileManager:init()
 
     self:initGesListener()
     self:handleEvent(Event:new("SetDimensions", self.dimen))
+
+    -- NOTE: ReaderUI has a _getRunningInstance method for this, because it used to store the instance reference in a private module variable.
+    if FileManager.instance == nil then
+        logger.dbg("Spinning up new FileManager instance", tostring(self))
+    else
+        -- Should never happen, given what we did above...
+        logger.warn("FileManager instance mismatch! Opened", tostring(self), "while we still have an existing instance:", tostring(FileManager.instance))
+    end
+    FileManager.instance = self
 end
 
 function FileChooser:onBack()
@@ -1168,15 +1177,6 @@ function FileManager:showFiles(path, focused_file)
         focused_file = focused_file,
     }
     UIManager:show(file_manager)
-
-    -- NOTE: ReaderUI has a _getRunningInstance method for this, because it used to store the instance reference in a private module variable.
-    if FileManager.instance == nil then
-        logger.dbg("Spinning up new FileManager instance", tostring(file_manager))
-    else
-        -- Should never happen, given what we did above...
-        logger.warn("FileManager instance mismatch! Opened", tostring(file_manager), "while we still have an existing instance:", tostring(FileManager.instance))
-    end
-    FileManager.instance = file_manager
 end
 
 --- A shortcut to execute mv.

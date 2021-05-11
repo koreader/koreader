@@ -439,6 +439,14 @@ function ReaderUI:init()
     -- for _, tzone in ipairs(self._ordered_touch_zones) do
     --     print("  "..tzone.def.id)
     -- end
+
+    if ReaderUI.instance == nil then
+        logger.dbg("Spinning up new ReaderUI instance", tostring(self))
+    else
+        -- Should never happen, given what we did above...
+        logger.warn("ReaderUI instance mismatch! Opened", tostring(self), "while we still have an existing instance:", tostring(ReaderUI.instance))
+    end
+    ReaderUI.instance = self
 end
 
 function ReaderUI:setLastDirForFileBrowser(dir)
@@ -621,14 +629,6 @@ function ReaderUI:doShowReader(file, provider)
     end
 
     UIManager:show(reader, "full")
-
-    if ReaderUI.instance == nil then
-        logger.dbg("Spinning up new ReaderUI instance", tostring(reader))
-    else
-        -- Should never happen, given what we did above...
-        logger.warn("ReaderUI instance mismatch! Opened", tostring(reader), "while we still have an existing instance:", tostring(ReaderUI.instance))
-    end
-    ReaderUI.instance = reader
 end
 
 -- NOTE: The instance reference used to be stored in a private module variable, hence the getter method.
