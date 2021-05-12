@@ -1140,7 +1140,18 @@ function ReaderRolling:showEngineProgress(percent)
         -- Widget size and position: best to anchor it at top left,
         -- so it does not override the footer or a bookmark dogear
         local x = 0
-        local y = Size.margin.small + (self.ui.document.been_rendered and self.ui.document:getHeaderHeight() or 0)
+        local y = Size.margin.small
+        -- On the first rendering the progress indicator should be on top.
+        -- On further renderings the progress indicator should be on top,
+        --    or if the top status bar is enabled, just below that.
+        -- On toggling the top status bar, the location of the progress indicator
+        --    should be on the location it would be expected in respect of the (old) drawn text.
+        if self.ui.document.been_rendered and self.progress_last_top_bar then
+            y = y + (self.progress_last_y_shift or 0)
+        end
+        self.progress_last_y_shift = self.ui.document:getHeaderHeight() or 0
+        self.progress_last_top_bar = self.cre_top_bar_enabled
+
         local w = math.floor(Screen:getWidth() / 3)
         local h = Size.line.progress
         if self.engine_progress_widget then
