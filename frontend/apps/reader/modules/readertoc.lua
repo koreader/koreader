@@ -643,7 +643,7 @@ function ReaderToc:onShowToc()
 
     local items_per_page = G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_default
     local items_font_size = G_reader_settings:readSetting("toc_items_font_size") or Menu.getItemFontSize(items_per_page)
-    local items_with_dotted_lines = G_reader_settings:nilOrTrue("toc_items_with_dotted_lines")
+    local items_with_dots = G_reader_settings:nilOrTrue("toc_items_with_dots")
     -- Estimate expand/collapse icon size
     -- *2/5 to acount for Menu top title and bottom icons, and add some space between consecutive icons
     local icon_size = math.floor(Screen:getHeight() / items_per_page * 2/5)
@@ -703,7 +703,7 @@ function ReaderToc:onShowToc()
         cface = Font:getFace("x_smallinfofont"),
         single_line = true,
         align_baselines = true,
-        with_dotted_lines = items_with_dotted_lines,
+        with_dots = items_with_dots,
         items_per_page = items_per_page,
         items_font_size = items_font_size,
         items_padding = can_collapse and math.floor(Size.padding.fullscreen / 2) or nil, -- c.f., note above. Menu's default is twice that.
@@ -1063,14 +1063,14 @@ Enabling this option will restrict display to the chapter titles of progress bar
             UIManager:show(items_font)
         end,
     }
-    menu_items.toc_items_with_dotted_lines = {
-        text = _("With dotted lines"),
+    menu_items.toc_items_with_dots = {
+        text = _("With dots"),
         keep_menu_open = true,
         checked_func = function()
-            return G_reader_settings:nilOrTrue("toc_items_with_dotted_lines")
+            return G_reader_settings:nilOrTrue("toc_items_with_dots")
         end,
         callback = function()
-            G_reader_settings:flipNilOrTrue("toc_items_with_dotted_lines")
+            G_reader_settings:flipNilOrTrue("toc_items_with_dots")
         end
     }
 end

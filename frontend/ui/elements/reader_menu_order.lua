@@ -33,7 +33,7 @@ local order = {
         "----------------------------",
         "toc_items_per_page",
         "toc_items_font_size",
-        "toc_items_with_dotted_lines",
+        "toc_items_with_dots",
         "----------------------------",
         "bookmarks_items_per_page",
         "bookmarks_items_font_size",

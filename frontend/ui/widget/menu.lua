@@ -151,8 +151,8 @@ local MenuItem = InputContainer:new{
     multilines_show_more_text = false,
     -- Align text & mandatory baselines (only when single_line=true)
     align_baselines = false,
-    -- Show a dotted line (also called "tab leaders") between text and mandatory
-    with_dotted_line = false,
+    -- Show a line of dots (also called tab or dot leaders) between text and mandatory
+    with_dots = false,
 }
 
 function MenuItem:init()
@@ -267,9 +267,9 @@ function MenuItem:init()
         text = self.bidi_wrap_func(text)
     end
 
-    local dotted_line_widget
-    local dotted_line_left_padding = Size.padding.small
-    local dotted_line_right_padding = Size.padding.small
+    local dots_widget
+    local dots_left_padding = Size.padding.small
+    local dots_right_padding = Size.padding.small
     if self.single_line then  -- items only in single line
         -- No font size change: text will be truncated if it overflows
         item_name = TextWidget:new{
@@ -285,15 +285,19 @@ function MenuItem:init()
             local text_max_width_if_ellipsis = available_width + text_mandatory_padding - text_ellipsis_mandatory_padding
             item_name:setMaxWidth(text_max_width_if_ellipsis)
         else
-            if self.with_dotted_line then
-                local dotted_line_width = available_width + text_mandatory_padding - w - dotted_line_left_padding - dotted_line_right_padding
-                if dotted_line_width > 0 then
-                    dotted_line_widget = TextWidget:new{
-                        text = self:getDottedLineText(self.info_face),
-                        face = self.info_face, -- same as mandatory widget, to keep their baseline adjusted
-                        max_width = dotted_line_width,
-                        truncate_with_ellipsis = false,
-                    }
+            if self.with_dots then
+                local dots_width = available_width + text_mandatory_padding - w - dots_left_padding - dots_right_padding
+                if dots_width > 0 then
+                    local dots_text, dots_min_width = self:getDotsText(self.info_face)
+                    -- Don't show any dots if there would be less than 3
+                    if dots_width >= dots_min_width then
+                        dots_widget = TextWidget:new{
+                            text = dots_text,
+                            face = self.info_face, -- same as mandatory widget, to keep their baseline adjusted
+                            max_width = dots_width,
+                            truncate_with_ellipsis = false,
+                        }
+                    end
                 end
             end
         end
@@ -308,8 +312,8 @@ function MenuItem:init()
             -- Make all the TextWidgets be self.dimen.h
             item_name.forced_height = self.dimen.h
             mandatory_widget.forced_height = self.dimen.h
-            if dotted_line_widget then
-                dotted_line_widget.forced_height = self.dimen.h
+            if dots_widget then
+                dots_widget.forced_height = self.dimen.h
             end
             -- And adjust their baselines for proper centering and alignment
             -- (We made sure the font sizes wouldn't exceed self.dimen.h, so we
@@ -326,8 +330,8 @@ function MenuItem:init()
             end
             item_name.forced_baseline = name_baseline
             mandatory_widget.forced_baseline = mdtr_baseline
-            if dotted_line_widget then
-                dotted_line_widget.forced_baseline = mdtr_baseline
+            if dots_widget then
+                dots_widget.forced_baseline = mdtr_baseline
             end
         end
 
@@ -415,10 +419,10 @@ function MenuItem:init()
         }
     }
 
-    if dotted_line_widget then
+    if dots_widget then
         mandatory_widget = HorizontalGroup:new{
-            dotted_line_widget,
-            HorizontalSpan:new{ width = dotted_line_right_padding },
+            dots_widget,
+            HorizontalSpan:new{ width = dots_right_padding },
             mandatory_widget,
         }
     end
@@ -468,12 +472,12 @@ function MenuItem:init()
     }
 end
 
-local _cached_dotted_line
+local _dots_cached_info
 
-function MenuItem:getDottedLineText(face)
+function MenuItem:getDotsText(face)
     local screen_w = Screen:getWidth()
-    if not _cached_dotted_line or _cached_dotted_line.width ~= screen_w
-                    or _cached_dotted_line.face ~= face then
+    if not _dots_cached_info or _dots_cached_info.screen_width ~= screen_w
+                    or _dots_cached_info.face ~= face then
         local unit = "."
         local tmp = TextWidget:new{
             text = unit,
@@ -483,14 +487,16 @@ function MenuItem:getDottedLineText(face)
         tmp:free()
         -- (We assume/expect no kerning will happen between consecutive units)
         local nb_units = math.ceil(screen_w / unit_w)
+        local min_width = unit_w * 3 -- have it not shown if smaller than this
         local text = unit:rep(nb_units)
-        _cached_dotted_line = {
-            width = screen_w,
-            face = face,
+        _dots_cached_info = {
             text = text,
+            min_width = min_width,
+            screen_width = screen_w,
+            face = face,
         }
     end
-    return _cached_dotted_line.text
+    return _dots_cached_info.text, _dots_cached_info.min_width
 
 end
 
@@ -1146,7 +1152,7 @@ function Menu:updateItems(select_number)
                 single_line = self.single_line,
                 multilines_show_more_text = multilines_show_more_text,
                 align_baselines = self.align_baselines,
-                with_dotted_line = self.with_dotted_lines,
+                with_dots = self.with_dots,
                 line_color = self.line_color,
                 items_padding = self.items_padding,
             }
