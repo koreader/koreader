@@ -444,7 +444,7 @@ function ReaderUI:init()
         logger.dbg("Spinning up new ReaderUI instance", tostring(self))
     else
         -- Should never happen, given what we did above...
-        logger.warn("ReaderUI instance mismatch! Opened", tostring(self), "while we still have an existing instance:", tostring(ReaderUI.instance))
+        logger.err("ReaderUI instance mismatch! Opened", tostring(self), "while we still have an existing instance:", tostring(ReaderUI.instance), debug.traceback())
     end
     ReaderUI.instance = self
 end

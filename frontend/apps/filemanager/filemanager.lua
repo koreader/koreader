@@ -545,7 +545,7 @@ function FileManager:init()
         logger.dbg("Spinning up new FileManager instance", tostring(self))
     else
         -- Should never happen, given what we did above...
-        logger.warn("FileManager instance mismatch! Opened", tostring(self), "while we still have an existing instance:", tostring(FileManager.instance))
+        logger.err("FileManager instance mismatch! Opened", tostring(self), "while we still have an existing instance:", tostring(FileManager.instance), debug.traceback())
     end
     FileManager.instance = self
 end
