@@ -151,6 +151,8 @@ local MenuItem = InputContainer:new{
     multilines_show_more_text = false,
     -- Align text & mandatory baselines (only when single_line=true)
     align_baselines = false,
+    -- Show a dotted line (also called "tab leaders") between text and mandatory
+    with_dotted_line = false,
 }
 
 function MenuItem:init()
@@ -265,6 +267,9 @@ function MenuItem:init()
         text = self.bidi_wrap_func(text)
     end
 
+    local dotted_line_widget
+    local dotted_line_left_padding = Size.padding.small
+    local dotted_line_right_padding = Size.padding.small
     if self.single_line then  -- items only in single line
         -- No font size change: text will be truncated if it overflows
         item_name = TextWidget:new{
@@ -279,21 +284,50 @@ function MenuItem:init()
             -- feeling (which might make it no more truncated, but well...)
             local text_max_width_if_ellipsis = available_width + text_mandatory_padding - text_ellipsis_mandatory_padding
             item_name:setMaxWidth(text_max_width_if_ellipsis)
+        else
+            if self.with_dotted_line then
+                local dotted_line_width = available_width + text_mandatory_padding - w - dotted_line_left_padding - dotted_line_right_padding
+                if dotted_line_width > 0 then
+                    dotted_line_widget = TextWidget:new{
+                        text = self:getDottedLineText(self.info_face),
+                        face = self.info_face, -- same as mandatory widget, to keep their baseline adjusted
+                        max_width = dotted_line_width,
+                        truncate_with_ellipsis = false,
+                    }
+                end
+            end
         end
         if self.align_baselines then -- Align baselines of text and mandatory
+            -- The container widgets would additionally center these widgets,
+            -- so make sure they all get a height=self.dimen.h so they don't
+            -- risk being shifted later and becoming misaligned
             local name_baseline = item_name:getBaseline()
-            local mandatory_baseline = mandatory_widget:getBaseline()
-            local baselines_diff = Math.round(name_baseline - mandatory_baseline)
+            local mdtr_baseline = mandatory_widget:getBaseline()
+            local name_height = item_name:getSize().h
+            local mdtr_height = mandatory_widget:getSize().h
+            -- Make all the TextWidgets be self.dimen.h
+            item_name.forced_height = self.dimen.h
+            mandatory_widget.forced_height = self.dimen.h
+            if dotted_line_widget then
+                dotted_line_widget.forced_height = self.dimen.h
+            end
+            -- And adjust their baselines for proper centering and alignment
+            -- (We made sure the font sizes wouldn't exceed self.dimen.h, so we
+            -- get only non-negative pad_top here, and we're moving them down.)
+            local name_missing_pad_top = math.floor( (self.dimen.h - name_height) / 2)
+            local mdtr_missing_pad_top = math.floor( (self.dimen.h - mdtr_height) / 2)
+            name_baseline = name_baseline + name_missing_pad_top
+            mdtr_baseline = mdtr_baseline + mdtr_missing_pad_top
+            local baselines_diff = Math.round(name_baseline - mdtr_baseline)
             if baselines_diff > 0 then
-                mandatory_widget = VerticalGroup:new{
-                    VerticalSpan:new{width = baselines_diff},
-                    mandatory_widget,
-                }
-            elseif baselines_diff < 0 then
-                item_name = VerticalGroup:new{
-                    VerticalSpan:new{width = -baselines_diff},
-                    item_name,
-                }
+                mdtr_baseline = mdtr_baseline + baselines_diff
+            else
+                name_baseline = name_baseline - baselines_diff
+            end
+            item_name.forced_baseline = name_baseline
+            mandatory_widget.forced_baseline = mdtr_baseline
+            if dotted_line_widget then
+                dotted_line_widget.forced_baseline = mdtr_baseline
             end
         end
 
@@ -381,6 +415,13 @@ function MenuItem:init()
         }
     }
 
+    if dotted_line_widget then
+        mandatory_widget = HorizontalGroup:new{
+            dotted_line_widget,
+            HorizontalSpan:new{ width = dotted_line_right_padding },
+            mandatory_widget,
+        }
+    end
     local mandatory_container = RightContainer:new{
         dimen = Geom:new{w = self.content_width, h = self.dimen.h},
         mandatory_widget,
@@ -425,6 +466,32 @@ function MenuItem:init()
         padding = 0,
         hgroup,
     }
+end
+
+local _cached_dotted_line
+
+function MenuItem:getDottedLineText(face)
+    local screen_w = Screen:getWidth()
+    if not _cached_dotted_line or _cached_dotted_line.width ~= screen_w
+                    or _cached_dotted_line.face ~= face then
+        local unit = "."
+        local tmp = TextWidget:new{
+            text = unit,
+            face = face,
+        }
+        local unit_w = tmp:getSize().w
+        tmp:free()
+        -- (We assume/expect no kerning will happen between consecutive units)
+        local nb_units = math.ceil(screen_w / unit_w)
+        local text = unit:rep(nb_units)
+        _cached_dotted_line = {
+            width = screen_w,
+            face = face,
+            text = text,
+        }
+    end
+    return _cached_dotted_line.text
+
 end
 
 function MenuItem:onFocus(initial_focus)
@@ -1079,6 +1146,7 @@ function Menu:updateItems(select_number)
                 single_line = self.single_line,
                 multilines_show_more_text = multilines_show_more_text,
                 align_baselines = self.align_baselines,
+                with_dotted_line = self.with_dotted_lines,
                 line_color = self.line_color,
                 items_padding = self.items_padding,
             }

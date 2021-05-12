@@ -643,7 +643,7 @@ function ReaderToc:onShowToc()
 
     local items_per_page = G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_default
     local items_font_size = G_reader_settings:readSetting("toc_items_font_size") or Menu.getItemFontSize(items_per_page)
-    local items_show_separator = G_reader_settings:isTrue("toc_items_show_separator")
+    local items_with_dotted_lines = G_reader_settings:nilOrTrue("toc_items_with_dotted_lines")
     -- Estimate expand/collapse icon size
     -- *2/5 to acount for Menu top title and bottom icons, and add some space between consecutive icons
     local icon_size = math.floor(Screen:getHeight() / items_per_page * 2/5)
@@ -703,10 +703,11 @@ function ReaderToc:onShowToc()
         cface = Font:getFace("x_smallinfofont"),
         single_line = true,
         align_baselines = true,
+        with_dotted_lines = items_with_dotted_lines,
         items_per_page = items_per_page,
         items_font_size = items_font_size,
         items_padding = can_collapse and math.floor(Size.padding.fullscreen / 2) or nil, -- c.f., note above. Menu's default is twice that.
-        line_color = items_show_separator and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE,
+        line_color = Blitbuffer.COLOR_WHITE,
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",
@@ -1062,14 +1063,14 @@ Enabling this option will restrict display to the chapter titles of progress bar
             UIManager:show(items_font)
         end,
     }
-    menu_items.toc_items_show_separator = {
-        text = _("Add a separator between ToC entries"),
+    menu_items.toc_items_with_dotted_lines = {
+        text = _("With dotted lines"),
         keep_menu_open = true,
         checked_func = function()
-            return G_reader_settings:isTrue("toc_items_show_separator")
+            return G_reader_settings:nilOrTrue("toc_items_with_dotted_lines")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("toc_items_show_separator")
+            G_reader_settings:flipNilOrTrue("toc_items_with_dotted_lines")
         end
     }
 end
