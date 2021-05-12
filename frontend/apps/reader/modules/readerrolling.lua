@@ -1149,7 +1149,7 @@ function ReaderRolling:showEngineProgress(percent)
         if self.ui.document.been_rendered and self.progress_last_top_bar then
             y = y + (self.progress_last_y_shift or 0)
         end
-        self.progress_last_y_shift = self.ui.document:getHeaderHeight() or 0
+        self.progress_last_y_shift = self.ui.document:getHeaderHeight()
         self.progress_last_top_bar = self.cre_top_bar_enabled
 
         local w = math.floor(Screen:getWidth() / 3)
