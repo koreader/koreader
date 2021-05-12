@@ -92,7 +92,7 @@ end
 return {
     text = _("Notification level"),
     help_text = _([[KOReader may show notification popups at top of screen on various occasions.
-You can decide here what kind of notifications to show or hide.]]),
+You can decide here which kind of notifications you want displayed.]]),
     checked_func = function()
         local value = G_reader_settings:readSetting("notification_sources_to_show_mask") or Notification.SOURCE_DEFAULT
         return  value ~= 0
@@ -111,7 +111,7 @@ You can decide here what kind of notifications to show or hide.]]),
         },
         {
         text = _("Only some bottom menu popus"),
-        help_text = _("Just show popups from the bottom menu, which don't have visual feedback."),
+        help_text = _("Only show popups for bottom menu settings with no visual feedback."),
         checked_func = function()
             return band(getMask(), Notification.SOURCE_BOTTOM_MENU) == band(Notification.SOURCE_SOME, Notification.SOURCE_BOTTOM_MENU)
         end,
@@ -156,7 +156,7 @@ You can decide here what kind of notifications to show or hide.]]),
         end,
         separator = true,
         },
-        {
+--[[        {
         text = _("Inflationary"),
         help_text = _("Show really many popups. This would include also keyboard events"),
         checked_func = function()
@@ -169,7 +169,7 @@ You can decide here what kind of notifications to show or hide.]]),
             print(getMask())
         end,
         separator = true,
-        },
+        }, ]]
         showExpertMenu( true ),
     }
 }
