@@ -41,14 +41,6 @@ function ReaderFont:init()
                 { "Shift", Input.group.PgBack },
                 doc = "decrease font size",
                 event = "ChangeSize", args = "decrease" },
-            IncreaseLineSpace = {
-                { "Alt", Input.group.PgFwd },
-                doc = "increase line space",
-                event = "ChangeLineSpace", args = "increase" },
-            DecreaseLineSpace = {
-                { "Alt", Input.group.PgBack },
-                doc = "decrease line space",
-                event = "ChangeLineSpace", args = "decrease" },
         }
     end
     -- Build face_table for menu
