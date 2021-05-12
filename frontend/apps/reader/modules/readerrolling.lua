@@ -1124,6 +1124,7 @@ function ReaderRolling:showEngineProgress(percent)
         -- so allow disabling it.
         return
     end
+
     if percent then
         local now = TimeVal:now()
         if self.engine_progress_update_not_before and now < self.engine_progress_update_not_before then
@@ -1135,10 +1136,11 @@ function ReaderRolling:showEngineProgress(percent)
             self.engine_progress_update_not_before = now + ENGINE_PROGRESS_INITIAL_DELAY
             return
         end
+
         -- Widget size and position: best to anchor it at top left,
         -- so it does not override the footer or a bookmark dogear
         local x = 0
-        local y = Size.margin.small
+        local y = Size.margin.small + (self.ui.document.been_rendered and self.ui.document:getHeaderHeight() or 0)
         local w = math.floor(Screen:getWidth() / 3)
         local h = Size.line.progress
         if self.engine_progress_widget then
