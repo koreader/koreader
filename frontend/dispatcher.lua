@@ -619,9 +619,6 @@ function Dispatcher:execute(ui, settings, gesture)
     for k, v in pairs(settings) do
         if settingsList[k] ~= nil and (settingsList[k].conditions == nil or settingsList[k].conditions == true) then
             Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
-            if settingsList[k].notify_func then
-                Notification:notify(settingsList[k].notify_func())
-            end
             if settingsList[k].category == "none" then
                 if settingsList[k].arg ~= nil then
                     ui:handleEvent(Event:new(settingsList[k].event, settingsList[k].arg))
