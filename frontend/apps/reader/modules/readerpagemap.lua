@@ -212,6 +212,7 @@ function ReaderPageMap:onShowPageList()
     -- We use the per-page and font-size settings set for the ToC
     local items_per_page = G_reader_settings:readSetting("toc_items_per_page") or 14
     local items_font_size = G_reader_settings:readSetting("toc_items_font_size") or Menu.getItemFontSize(items_per_page)
+    local items_with_dots = G_reader_settings:nilOrTrue("toc_items_with_dots")
 
     local pl_menu = Menu:new{
         title = _("Reference page numbers list"),
@@ -225,6 +226,8 @@ function ReaderPageMap:onShowPageList()
         items_font_size = items_font_size,
         line_color = require("ffi/blitbuffer").COLOR_WHITE,
         single_line = true,
+        align_baselines = true,
+        with_dots = items_with_dots,
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",
