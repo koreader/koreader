@@ -63,6 +63,12 @@ function ReaderCoptListener:onReadSettings(config)
     self:rescheduleHeaderRefreshIfNeeded() -- schedule (or not) first refresh
 end
 
+function ReaderCoptListener:onConfigChange(option_name, option_value)
+    self.document.configurable[option_name] = option_value
+    self.ui:handleEvent(Event:new("StartActivityIndicator"))
+    return true
+end
+
 function ReaderCoptListener:onSetFontSize(font_size)
     self.document.configurable.font_size = font_size
 end
