@@ -418,16 +418,16 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                     end,
                     callback = function(touchmenu_instance)
                         local SpinWidget = require("ui/widget/spinwidget")
-                        local requested_precision = settingsList[k].precision
+                        local precision
                         if settingsList[k].step and math.floor(settingsList[k].step) ~= settingsList[k].step then
-                            requested_precision = "%0.1f"
+                            precision = "%0.1f"
                         end
                         local items = SpinWidget:new{
                             width = math.floor(Screen:getWidth() * 0.6),
                             value = location[settings] ~= nil and location[settings][k] or settingsList[k].default or 0,
                             value_min = settingsList[k].min,
                             value_step = settingsList[k].step or 1,
-                            precision = requested_precision,
+                            precision = precision,
                             value_hold_step = 5,
                             value_max = settingsList[k].max,
                             default_value = settingsList[k].default,
@@ -464,9 +464,9 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                     end,
                     callback = function(touchmenu_instance)
                         local _ = require("gettext")
-                        local requested_precision = settingsList[k].precision
+                        local precision
                         if settingsList[k].step and math.floor(settingsList[k].step) ~= settingsList[k].step then
-                            requested_precision = "%0.1f"
+                            precision = "%0.1f"
                         end
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
@@ -474,7 +474,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                             value = location[settings] ~= nil and location[settings][k] or 0,
                             value_min = settingsList[k].min,
                             value_step = settingsList[k].step or 1,
-                            precision = requested_precision,
+                            precision = precision,
                             value_hold_step = 5,
                             value_max = settingsList[k].max,
                             default_value = 0,
