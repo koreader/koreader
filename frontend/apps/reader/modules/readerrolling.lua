@@ -1113,8 +1113,8 @@ function ReaderRolling:handleEngineCallback(ev, ...)
     -- ignore other events
 end
 
-local ENGINE_PROGRESS_INITIAL_DELAY = TimeVal:new{ sec = 2, usec = 0 }
-local ENGINE_PROGRESS_UPDATE_DELAY = TimeVal:new{ sec = 0, usec = 500000 }
+local ENGINE_PROGRESS_INITIAL_DELAY = TimeVal:new{ sec = 0, usec = 0 }
+local ENGINE_PROGRESS_UPDATE_DELAY = TimeVal:new{ sec = 0, usec = 50000 }
 
 function ReaderRolling:showEngineProgress(percent)
     if G_reader_settings and G_reader_settings:isFalse("cre_show_progress") then
@@ -1154,6 +1154,7 @@ function ReaderRolling:showEngineProgress(percent)
         local h = Size.line.progress
         if self.engine_progress_widget then
             self.engine_progress_widget:setPercentage(percent)
+            y = self.engine_progress_widget._engine_progress_widget_orig_y
         else
             self.engine_progress_widget = ProgressWidget:new{
                 width = w,
@@ -1166,7 +1167,9 @@ function ReaderRolling:showEngineProgress(percent)
                 tick_width = Screen:scaleBySize(1),
                 ticks = {1,2},
                 last = 2,
-            }
+                -- Be sure we keep showing it at its start position
+                _engine_progress_widget_orig_y = y,
+        }
         end
         -- Paint directly to the screen and force a regional refresh
         -- as UIManager won't get a change to run until loading/rendering
@@ -1182,6 +1185,10 @@ function ReaderRolling:showEngineProgress(percent)
         -- some progress callback for will generate a full
         -- screen refresh.
      self.progress_last_y_shift = self.ui.document:getHeaderHeight()
+    end
+
+    local st = TimeVal:now() + TimeVal:new{sec=0, usec=100000}
+    while st > TimeVal:now() do
     end
 end
 
