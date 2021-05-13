@@ -1,4 +1,8 @@
--- plugin for saving a cover image to a file and scale it to fit the screen
+--[[--
+@module koplugin.wallabag
+
+Plugin for saving a cover image to a file and scaling it to fit the screen.
+]]
 
 local Device = require("device")
 
