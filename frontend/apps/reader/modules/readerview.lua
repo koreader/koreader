@@ -10,7 +10,6 @@ local Event = require("ui/event")
 local IconWidget = require("ui/widget/iconwidget")
 local InfoMessage = require("ui/widget/infomessage")
 local Notification = require("ui/widget/notification")
-local OptionsCatalog = require("ui/data/optionscatalog")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ReaderDogear = require("apps/reader/modules/readerdogear")
 local ReaderFlipping = require("apps/reader/modules/readerflipping")
@@ -19,6 +18,7 @@ local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
 local logger = require("logger")
+local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
@@ -715,7 +715,7 @@ function ReaderView:onSetRotationMode(rotation)
     self.ui:handleEvent(Event:new("SetDimensions", new_screen_size))
     self.ui:onScreenResize(new_screen_size)
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
-    Notification:notify(T(_("Rotation mode set to %1."), OptionsCatalog:getOptionText("SetRotationMode", rotation)))
+    Notification:notify(T(_("Rotation mode set to %1."), optionsutil:getOptionText("SetRotationMode", rotation)))
     return true
 end
 
@@ -874,7 +874,7 @@ function ReaderView:onSetViewMode(new_mode)
         self.view_mode = new_mode
         self.ui.document:setViewMode(new_mode)
         self.ui:handleEvent(Event:new("ChangeViewMode"))
-        Notification:notify(T( _("View mode set to %1."), OptionsCatalog:getOptionText("SetViewMode", new_mode)))
+        Notification:notify(T( _("View mode set to %1."), optionsutil:getOptionText("SetViewMode", new_mode)))
     end
 end
 
