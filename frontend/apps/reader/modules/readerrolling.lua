@@ -1113,8 +1113,8 @@ function ReaderRolling:handleEngineCallback(ev, ...)
     -- ignore other events
 end
 
-local ENGINE_PROGRESS_INITIAL_DELAY = TimeVal:new{ sec = 0, usec = 0 }
-local ENGINE_PROGRESS_UPDATE_DELAY = TimeVal:new{ sec = 0, usec = 50000 }
+local ENGINE_PROGRESS_INITIAL_DELAY = TimeVal:new{ sec = 2, usec = 0 }
+local ENGINE_PROGRESS_UPDATE_DELAY = TimeVal:new{ sec = 0, usec = 500000 }
 
 function ReaderRolling:showEngineProgress(percent)
     if G_reader_settings and G_reader_settings:isFalse("cre_show_progress") then
@@ -1184,11 +1184,7 @@ function ReaderRolling:showEngineProgress(percent)
         -- No need for any paint/refresh: any action we got
         -- some progress callback for will generate a full
         -- screen refresh.
-     self.progress_last_y_shift = self.ui.document:getHeaderHeight()
-    end
-
-    local st = TimeVal:now() + TimeVal:new{sec=0, usec=100000}
-    while st > TimeVal:now() do
+        self.progress_last_y_shift = self.ui.document:getHeaderHeight()
     end
 end
 

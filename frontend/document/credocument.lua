@@ -310,6 +310,7 @@ function CreDocument:close()
         self.buffer = nil
     end
 
+    self.been_rendered = false
     Document.close(self)
 end
 
