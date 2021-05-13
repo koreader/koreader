@@ -878,6 +878,7 @@ function ReaderRolling:updatePos()
     end
     self:onUpdateTopStatusBarMarkers()
     UIManager:setDirty(self.view.dialog, "partial")
+    self.current_header_height = self.ui.document:getHeaderHeight()
     -- Allow for the new rendering to be shown before possibly showing
     -- the "Styles have changed..." ConfirmBox so the user can decide
     -- if it is really needed
@@ -892,6 +893,7 @@ end
 function ReaderRolling:onChangeViewMode()
     self.rendering_hash = self.ui.document:getDocumentRenderingHash()
     self.ui.document:_readMetadata()
+    self.current_header_height = self.ui.document:getHeaderHeight()
     self.ui:handleEvent(Event:new("UpdateToc"))
     if self.xpointer then
         self:_gotoXPointer(self.xpointer)
@@ -1146,15 +1148,14 @@ function ReaderRolling:showEngineProgress(percent)
         --    or if the top status bar is enabled, just below that.
         -- On toggling the top status bar, the location of the progress indicator
         --    should be on the location it would be expected in respect of the (old) drawn text.
-        if self.ui.document.been_rendered then
-            y = y + (self.progress_last_y_shift or 0)
+        if self.ui.document.been_rendered and self.current_header_height then
+            y = y + self.current_header_height
         end
 
         local w = math.floor(Screen:getWidth() / 3)
         local h = Size.line.progress
         if self.engine_progress_widget then
             self.engine_progress_widget:setPercentage(percent)
-            y = self.engine_progress_widget._engine_progress_widget_orig_y
         else
             self.engine_progress_widget = ProgressWidget:new{
                 width = w,
@@ -1168,7 +1169,6 @@ function ReaderRolling:showEngineProgress(percent)
                 ticks = {1,2},
                 last = 2,
                 -- Be sure we keep showing it at its start position
-                _engine_progress_widget_orig_y = y,
         }
         end
         -- Paint directly to the screen and force a regional refresh
@@ -1184,7 +1184,6 @@ function ReaderRolling:showEngineProgress(percent)
         -- No need for any paint/refresh: any action we got
         -- some progress callback for will generate a full
         -- screen refresh.
-        self.progress_last_y_shift = self.ui.document:getHeaderHeight()
     end
 end
 
