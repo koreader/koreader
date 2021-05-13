@@ -1146,11 +1146,9 @@ function ReaderRolling:showEngineProgress(percent)
         --    or if the top status bar is enabled, just below that.
         -- On toggling the top status bar, the location of the progress indicator
         --    should be on the location it would be expected in respect of the (old) drawn text.
-        if self.ui.document.been_rendered and self.progress_last_top_bar then
+        if self.ui.document.been_rendered then
             y = y + (self.progress_last_y_shift or 0)
         end
-        self.progress_last_y_shift = self.ui.document:getHeaderHeight()
-        self.progress_last_top_bar = self.cre_top_bar_enabled
 
         local w = math.floor(Screen:getWidth() / 3)
         local h = Size.line.progress
@@ -1183,6 +1181,7 @@ function ReaderRolling:showEngineProgress(percent)
         -- No need for any paint/refresh: any action we got
         -- some progress callback for will generate a full
         -- screen refresh.
+     self.progress_last_y_shift = self.ui.document:getHeaderHeight()
     end
 end
 
