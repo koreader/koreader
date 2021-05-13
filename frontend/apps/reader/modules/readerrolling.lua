@@ -255,6 +255,7 @@ end
 -- in scroll mode percent_finished must be save before close document
 -- we cannot do it in onSaveSettings() because getLastPercent() uses self.ui.document
 function ReaderRolling:onCloseDocument()
+    self.current_header_height = nil -- show unload progress bar at top
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
     local cache_file_path = self.ui.document:getCacheFilePath() -- nil if no cache file
     self.ui.doc_settings:saveSetting("cache_file_path", cache_file_path)
@@ -1168,8 +1169,7 @@ function ReaderRolling:showEngineProgress(percent)
                 tick_width = Screen:scaleBySize(1),
                 ticks = {1,2},
                 last = 2,
-                -- Be sure we keep showing it at its start position
-        }
+            }
         end
         -- Paint directly to the screen and force a regional refresh
         -- as UIManager won't get a change to run until loading/rendering
