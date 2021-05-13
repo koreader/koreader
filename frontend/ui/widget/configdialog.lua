@@ -932,8 +932,7 @@ function ConfigDialog:onShowConfigPanel(index)
 end
 
 function ConfigDialog:onConfigChoice(option_name, option_value)
-    self.configurable[option_name] = option_value
-    self.ui:handleEvent(Event:new("StartActivityIndicator"))
+    self.ui:handleEvent(Event:new("ConfigChange", option_name, option_value))
     return true
 end
 
@@ -955,18 +954,9 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
         -- Repainting may be delayed depending on options
         local refresh_dialog_func = function()
             self.skip_paint = nil
-            if self.config_options.needs_redraw_on_change then
-                -- Some Kopt document event handlers just save their setting,
-                -- and need a full repaint for kopt to load these settings,
-                -- notice the change, and redraw the document
-                UIManager:setDirty("all", "partial")
-            else
-                -- CreDocument event handlers do their own refresh:
-                -- we can just redraw our frame
-                UIManager:setDirty(self, function()
-                    return "ui", self.dialog_frame.dimen
-                end)
-            end
+            UIManager:setDirty(self, function()
+                return "ui", self.dialog_frame.dimen
+            end)
         end
         local when_applied_callback = nil
         if type(hide_on_apply) == "number" then -- timeout
@@ -1006,18 +996,9 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
         -- Repainting may be delayed depending on options
         local refresh_dialog_func = function()
             self.skip_paint = nil
-            if self.config_options.needs_redraw_on_change then
-                -- Some Kopt document event handlers just save their setting,
-                -- and need a full repaint for kopt to load these settings,
-                -- notice the change, and redraw the document
-                UIManager:setDirty("all", "partial")
-            else
-                -- CreDocument event handlers do their own refresh:
-                -- we can just redraw our frame
-                UIManager:setDirty(self, function()
-                    return "ui", self.dialog_frame.dimen
-                end)
-            end
+            UIManager:setDirty(self, function()
+                return "ui", self.dialog_frame.dimen
+            end)
         end
         local when_applied_callback = nil
         if type(hide_on_apply) == "number" then -- timeout
@@ -1112,24 +1093,15 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
             if self.skip_paint and not keep_skip_paint then
                 self.skip_paint = nil
             end
-            if self.config_options.needs_redraw_on_change then
-                -- Some Kopt document event handlers just save their setting,
-                -- and need a full repaint for kopt to load these settings,
-                -- notice the change, and redraw the document
-                UIManager:setDirty("all", "partial")
+            if self.skip_paint then
+                -- Redraw anything below the now hidden ConfigDialog
+                UIManager:setDirty("all", function()
+                    return "partial", self.dialog_frame.dimen
+                end)
             else
-                -- CreDocument event handlers do their own refresh:
-                -- we can just redraw our frame
-                if self.skip_paint then
-                    -- Redraw anything below the now hidden ConfigDialog
-                    UIManager:setDirty("all", function()
-                        return "partial", self.dialog_frame.dimen
-                    end)
-                else
-                    UIManager:setDirty(self, function()
-                        return "ui", self.dialog_frame.dimen
-                    end)
-                end
+                UIManager:setDirty(self, function()
+                    return "ui", self.dialog_frame.dimen
+                end)
             end
         end
         local hide_on_picker_show = more_options_param.hide_on_picker_show
