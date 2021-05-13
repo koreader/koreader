@@ -24,7 +24,7 @@ Each setting contains:
 * args: allowed values for string.
 * toggle: display name for args
 * separator: put a separator after in the menu list
-* configurable: can be parsed from cre/kopt and used to set document.configurable. Should not be set manualy
+* configurable: can be parsed from cre/kopt and used to set `document.configurable`. Should not be set manually
 --]]--
 
 local CreOptions = require("ui/data/creoptions")
