@@ -10,12 +10,12 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
-local OptionsCatalog = require("ui/data/optionscatalog")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local C_ = _.pgettext
+local optionsutil = require("ui/data/optionsutil")
 
 local ReaderFont = InputContainer:new{
     font_face = nil,
@@ -234,7 +234,7 @@ function ReaderFont:onSetFontBaseWeight(weight)
     self.font_base_weight = weight
     self.ui.document:setFontBaseWeight(weight)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Font weight set to %1."), OptionsCatalog:getOptionText("SetFontBaseWeight", weight)))
+    Notification:notify(T(_("Font weight set to %1."), optionsutil:getOptionText("SetFontBaseWeight", weight)))
     return true
 end
 
@@ -242,7 +242,7 @@ function ReaderFont:onSetFontHinting(mode)
     self.font_hinting = mode
     self.ui.document:setFontHinting(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Font hinting set to %1."), OptionsCatalog:getOptionText("SetFontHinting", mode)))
+    Notification:notify(T(_("Font hinting set to %1."), optionsutil:getOptionText("SetFontHinting", mode)))
     return true
 end
 
@@ -250,7 +250,7 @@ function ReaderFont:onSetFontKerning(mode)
     self.font_kerning = mode
     self.ui.document:setFontKerning(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Font kerning set to %1."), OptionsCatalog:getOptionText("SetFontKerning", mode)))
+    Notification:notify(T(_("Font kerning set to %1."), optionsutil:getOptionText("SetFontKerning", mode)))
     return true
 end
 
@@ -275,7 +275,7 @@ function ReaderFont:onSetFontGamma(gamma)
     self.ui.document:setGammaIndex(self.gamma_index)
     local gamma_level = self.ui.document:getGammaLevel()
     self.ui:handleEvent(Event:new("RedrawCurrentView"))
-    Notification:notify(T(_("Font gamma set to %1."), OptionsCatalog:getOptionText("SetFontGamma", gamma_level)))
+    Notification:notify(T(_("Font gamma set to %1."), optionsutil:getOptionText("SetFontGamma", gamma_level)))
     return true
 end
 
