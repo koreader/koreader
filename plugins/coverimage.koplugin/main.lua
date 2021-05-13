@@ -1,5 +1,5 @@
 --[[--
-@module koplugin.wallabag
+@module koplugin.coverimage
 
 Plugin for saving a cover image to a file and scaling it to fit the screen.
 ]]
