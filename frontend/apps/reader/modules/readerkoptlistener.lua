@@ -1,6 +1,7 @@
 local EventListener = require("ui/widget/eventlistener")
 local Event = require("ui/event")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
+local UIManager = require("ui/uimanager")
 local util = require("util")
 
 local ReaderKoptListener = EventListener:new{}
@@ -70,6 +71,13 @@ function ReaderKoptListener:onDocLangUpdate(lang)
     else
         self.document.configurable.word_spacing = DKOPTREADER_CONFIG_WORD_SPACINGS[3]
     end
+end
+
+function ReaderKoptListener:onConfigChange(option_name, option_value)
+    self.document.configurable[option_name] = option_value
+    self.ui:handleEvent(Event:new("StartActivityIndicator"))
+    UIManager:setDirty("all", "partial")
+    return true
 end
 
 return ReaderKoptListener

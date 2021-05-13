@@ -22,7 +22,6 @@ end
 
 local KoptOptions = {
     prefix = "kopt",
-    needs_redraw_on_change = true,
     {
         icon = "appbar.rotation",
         options = {
