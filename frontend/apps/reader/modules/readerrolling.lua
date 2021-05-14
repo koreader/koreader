@@ -531,13 +531,13 @@ function ReaderRolling:onScrollSettingsUpdated(scroll_method, inertial_scroll_en
                 if not self.ui.document then
                     return false
                 end
-                self.view.currently_scrolling = true
+                UIManager.currently_scrolling = true
                 local prev_pos = self.current_pos
                 self:_gotoPos(prev_pos + distance)
                 return self.current_pos ~= prev_pos
             end,
             function() -- scroll_done_callback
-                self.view.currently_scrolling = false
+                UIManager.currently_scrolling = false
                 if self.ui.document then
                     self.xpointer = self.ui.document:getXPointer()
                 end
@@ -559,7 +559,7 @@ function ReaderRolling:onSwipe(_, ges)
         return true
     else
         self._pan_started = false
-        self.view.currently_scrolling = false
+        UIManager.currently_scrolling = false
     end
     local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
     if direction == "west" then
@@ -653,7 +653,7 @@ function ReaderRolling:onPan(_, ges)
                 self._pan_to_scroll_later = 0
                 if dist ~= 0 then
                     self._pan_has_scrolled = true
-                    self.view.currently_scrolling = true
+                    UIManager.currently_scrolling = true
                     self:_gotoPos(self.current_pos + dist)
                         -- (We'll update self.xpointer only when done moving, at
                         -- release/swipe time as it might be expensive)
@@ -671,7 +671,7 @@ function ReaderRolling:onPanRelease(_, ges)
         self:_gotoPos(self.current_pos + self._pan_to_scroll_later)
     end
     self._pan_started = false
-    self.view.currently_scrolling = false
+    UIManager.currently_scrolling = false
     if self._pan_has_scrolled then
         self._pan_has_scrolled = false
         self.xpointer = self.ui.document:getXPointer()
@@ -691,7 +691,7 @@ function ReaderRolling:onHandledAsSwipe()
         self:_gotoPos(self._pan_pos_at_pan_start)
         self._pan_started = false
         self._pan_has_scrolled = false
-        self.view.currently_scrolling = false
+        UIManager.currently_scrolling = false
         -- No specific refresh: the swipe/multiswipe might show other stuff,
         -- and we'd want to avoid a flashing refresh
     end

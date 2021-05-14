@@ -428,13 +428,13 @@ function ReaderPaging:onScrollSettingsUpdated(scroll_method, inertial_scroll_ena
                 if not self.ui.document then
                     return false
                 end
-                self.view.currently_scrolling = true
+                UIManager.currently_scrolling = true
                 local top_page, top_position = self:getTopPage(), self:getTopPosition()
                 self:onPanningRel(distance)
                 return not (top_page == self:getTopPage() and top_position == self:getTopPosition())
             end,
             function() -- scroll_done_callback
-                self.view.currently_scrolling = false
+                UIManager.currently_scrolling = false
                 UIManager:setDirty(self.view.dialog, "partial")
             end
         )
@@ -453,7 +453,7 @@ function ReaderPaging:onSwipe(_, ges)
         return true
     else
         self._pan_started = false
-        self.view.currently_scrolling = false
+        UIManager.currently_scrolling = false
         self._pan_page_states_to_restore = nil
     end
     local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
@@ -568,7 +568,7 @@ function ReaderPaging:onPan(_, ges)
                 self._pan_to_scroll_later = 0
                 if dist ~= 0 then
                     self._pan_has_scrolled = true
-                    self.view.currently_scrolling = true
+                    UIManager.currently_scrolling = true
                     self:onPanningRel(dist)
                 end
             else
@@ -592,7 +592,7 @@ function ReaderPaging:onPanRelease(_, ges)
         end
         self._pan_started = false
         self._pan_page_states_to_restore = nil
-        self.view.currently_scrolling = false
+        UIManager.currently_scrolling = false
         if self._pan_has_scrolled then
             self._pan_has_scrolled = false
             -- Don't do any inertial scrolling if pan events come from
@@ -617,7 +617,7 @@ function ReaderPaging:onHandledAsSwipe()
         self._pan_page_states_to_restore = nil
         self._pan_started = false
         self._pan_has_scrolled = false
-        self.view.currently_scrolling = false
+        UIManager.currently_scrolling = false
     end
     return true
 end
@@ -943,7 +943,7 @@ function ReaderPaging:onScrollPanRel(diff)
     -- update current pageno to the very last part in current view
     self:_gotoPage(self.view.page_states[#self.view.page_states].page,
                    "scrolling")
-    UIManager:setDirty(self.view.dialog, self.view.currently_scrolling and "fast" or "partial")
+    UIManager:setDirty(self.view.dialog, "partial")
     return true
 end
 

@@ -22,6 +22,7 @@ local UIManager = {
     FULL_REFRESH_COUNT =
         G_reader_settings:isTrue("night_mode") and G_reader_settings:readSetting("night_full_refresh_count") or G_reader_settings:readSetting("full_refresh_count") or DEFAULT_FULL_REFRESH_COUNT,
     refresh_count = 0,
+    currently_scrolling = false,
 
     -- How long to wait between ZMQ wakeups: 50ms.
     ZMQ_TIMEOUT = 50 * 1000,
@@ -1292,6 +1293,10 @@ function UIManager:_refresh(mode, region, dither)
             -- (which is the vast majority of them), in which case we drop it to avoid enqueuing a useless full-screen refresh.
             return
         end
+    end
+    -- Downgrade all refreshes to "fast" when ReaderPaging or ReaderScrolling have set this flag
+    if self.currently_scrolling then
+        mode = "fast"
     end
     if not region and mode == "full" then
         self.refresh_count = 0 -- reset counter on explicit full refresh
