@@ -612,7 +612,7 @@ function ReaderPaging:onHandledAsSwipe()
         if self._pan_has_scrolled then
             self.view.page_states = self._pan_page_states_to_restore
             self:_gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
-            UIManager:setDirty(self.view.dialog, "fast")
+            UIManager:setDirty(self.view.dialog, "ui")
         end
         self._pan_page_states_to_restore = nil
         self._pan_started = false
