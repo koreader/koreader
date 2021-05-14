@@ -368,7 +368,7 @@ function Device:install()
             local save_quit = function()
                 self:saveSettings()
                 UIManager:quit()
-                UIManager.exit_code = 85
+                UIManager._exit_code = 85
             end
             UIManager:broadcastEvent(Event:new("Exit", save_quit))
         end,
