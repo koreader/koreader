@@ -725,22 +725,14 @@ function InputDialog:_addScrollButtons(nav_bar)
             })
         end
         -- Add a button to go to the line by its number in the file
-        if self.fullscreen and self.view_pos_callback then
+        if self.fullscreen then
             table.insert(row, {
                 text = "Go",
                 callback = function()
-                    -- calculate current line number
-                    local curr_line_num = 1
-                    for i = 1, #self._input_widget.charlist do
-                        if self._input_widget.charlist[i] == "\n" then
-                            if i >= self._input_widget.charpos then break end
-                            curr_line_num = curr_line_num + 1
-                        end
-                    end
-                    local last_line_num = select(2, string.gsub(self:getInputText(), "\n", "")) + 1
+                    local cur_line_num, last_line_num = self._input_widget:getLineNums()
                     input_dialog = InputDialog:new{
                         title = _("Enter line number"),
-                        input_hint = T("%1 (1 - %2)", curr_line_num, last_line_num),
+                        input_hint = T("%1 (1 - %2)", cur_line_num, last_line_num),
                         input_type = "number",
                         buttons = {
                             {
@@ -759,26 +751,9 @@ function InputDialog:_addScrollButtons(nav_bar)
                                     callback = function()
                                         local new_line_num = tonumber(input_dialog:getInputText())
                                         if new_line_num and new_line_num >= 1 and new_line_num <= last_line_num then
-                                            -- calculate charpos for the beginning of the target line
-                                            local new_char_pos = 1
-                                            if new_line_num > 1 then
-                                                local j = 1
-                                                for i = 1, #self._input_widget.charlist do
-                                                    if self._input_widget.charlist[i] == "\n" then
-                                                        j = j + 1
-                                                        if j == new_line_num then
-                                                            new_char_pos = i + 1
-                                                            break
-                                                        end
-                                                    end
-                                                end
-                                            end
-                                            -- reinit with the target line on the top, cursor at the beginning
                                             UIManager:close(input_dialog)
                                             self._input_widget:onCloseKeyboard()
-                                            self.input = self:getInputText()
-                                            self.view_pos_callback(#self._input_widget.charlist, new_char_pos)
-                                            self:init()
+                                            self._input_widget:moveCursorToCharPos(self._input_widget:getLineCharPos(new_line_num))
                                             if not self.keyboard_hidden then
                                                 self:refreshButtons()
                                                 self:onShowKeyboard ()
