@@ -36,7 +36,6 @@ local function probeDevice()
     if cervantes_test_stat then
         return require("device/cervantes/device")
     end
-    
     if util.isSDL() then
         return require("device/sdl/device")
     end
