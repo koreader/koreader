@@ -1439,13 +1439,13 @@ function ConfigDialog:onTapCloseMenu(arg, ges_ev)
 end
 
 function ConfigDialog:onSwipeCloseMenu(arg, ges_ev)
-    local range = {
+    local range = Geom:new{
         x = DTAP_ZONE_CONFIG.x * Screen:getWidth(),
         y = DTAP_ZONE_CONFIG.y * Screen:getHeight(),
         w = DTAP_ZONE_CONFIG.w * Screen:getWidth(),
         h = DTAP_ZONE_CONFIG.h * Screen:getHeight(),
     }
-    local range_ext = {
+    local range_ext = Geom:new{
         x = DTAP_ZONE_CONFIG_EXT.x * Screen:getWidth(),
         y = DTAP_ZONE_CONFIG_EXT.y * Screen:getHeight(),
         w = DTAP_ZONE_CONFIG_EXT.w * Screen:getWidth(),
