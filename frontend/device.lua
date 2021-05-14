@@ -2,10 +2,6 @@ local isAndroid, _ = pcall(require, "android")
 local util = require("ffi/util")
 
 local function probeDevice()
-    if util.isSDL() then
-        return require("device/sdl/device")
-    end
-
     if isAndroid then
         return require("device/android/device")
     end
@@ -39,6 +35,10 @@ local function probeDevice()
     local cervantes_test_stat = lfs.attributes("/usr/bin/ntxinfo")
     if cervantes_test_stat then
         return require("device/cervantes/device")
+    end
+    
+    if util.isSDL() then
+        return require("device/sdl/device")
     end
 
     -- add new ports here:
