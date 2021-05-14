@@ -5,18 +5,25 @@ local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
+local T = require("ffi/util").template
 local Screen = Device.screen
 
 -- This module exposes Scrolling settings, and additionnally
 -- handles inertial scrolling on non-eInk devices.
 
-local ReaderScrolling = InputContainer:new{
-    -- Available scrolling methods
-    SCROLL_METHOD_CLASSIC = "classic",
-    SCROLL_METHOD_TURBO = "turbo",
-    SCROLL_METHOD_ON_RELEASE = "on_release",
+local SCROLL_METHOD_CLASSIC = "classic"
+local SCROLL_METHOD_TURBO = "turbo"
+local SCROLL_METHOD_ON_RELEASE = "on_release"
+local SCROLL_ACTIVATION_DELAY_DEFAULT = 0 -- in ms
 
-    scroll_method = "classic",
+local ReaderScrolling = InputContainer:new{
+    -- Available scrolling methods (make them available to other reader modules)
+    SCROLL_METHOD_CLASSIC = SCROLL_METHOD_CLASSIC,
+    SCROLL_METHOD_TURBO = SCROLL_METHOD_TURBO,
+    SCROLL_METHOD_ON_RELEASE = SCROLL_METHOD_ON_RELEASE,
+
+    scroll_method = SCROLL_METHOD_CLASSIC,
+    scroll_activation_delay = SCROLL_ACTIVATION_DELAY_DEFAULT,
     inertial_scroll = false,
 
     _inertial_scroll_supported = false,
@@ -47,7 +54,8 @@ function ReaderScrolling:init()
     end
 
     -- The different scrolling methods are handled directly by readerpaging/readerrolling
-    self.scroll_method = G_reader_settings:readSetting("scroll_method") or self.SCROLL_METHOD_CLASSIC
+    self.scroll_method = G_reader_settings:readSetting("scroll_method")
+    self.scroll_activation_delay = G_reader_settings:readSetting("scroll_activation_delay")
 
     -- Keep inertial scrolling available on the emulator (which advertizes itself as eInk)
     if not Device:hasEinkScreen() or Device:isEmulator() then
@@ -124,10 +132,42 @@ This is interesting on eInk if you only pan to better adjust page vertical posit
                 end,
                 separator = true,
             },
+            {
+                text_func = function()
+                    return T(_("Activation delay: %1 ms"), self.scroll_activation_delay)
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local widget = SpinWidget:new{
+                        title_text = _("Scroll activation delay"),
+                        info_text = T(_([[
+To avoid scrolling happening when swipes or multiswipes are intended, a delay before it starts can be set.
+
+The delay value is in milliseconds and can range from 0 to 2000 (2 seconds).
+Default value: %1]]), SCROLL_ACTIVATION_DELAY_DEFAULT),
+                        width = math.floor(Screen:getWidth() * 0.75),
+                        value = self.scroll_activation_delay,
+                        value_min = 0,
+                        value_max = 2000,
+                        value_step = 100,
+                        value_hold_step = 500,
+                        ok_text = _("Set delay"),
+                        default_value = SCROLL_ACTIVATION_DELAY_DEFAULT,
+                        callback = function(spin)
+                            self.scroll_activation_delay = spin.value
+                            self:applyScrollSettings()
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end
+                    }
+                    UIManager:show(widget)
+                end,
+            },
         }
     }
     if self._inertial_scroll_supported then
-        table.insert(menu_items.scrolling.sub_item_table, {
+        -- Add it before "Activation delay" to keep checkboxes together
+        table.insert(menu_items.scrolling.sub_item_table, 4, {
             text = _("Allow inertial scrolling"),
             enabled_func = function()
                 return self.scroll_method == self.SCROLL_METHOD_CLASSIC
@@ -150,13 +190,15 @@ end
 function ReaderScrolling:applyScrollSettings()
     G_reader_settings:saveSetting("scroll_method", self.scroll_method)
     G_reader_settings:saveSetting("inertial_scroll", self.inertial_scroll)
+    G_reader_settings:saveSetting("scroll_activation_delay", self.scroll_activation_delay)
     if self.scroll_method == self.SCROLL_METHOD_CLASSIC then
         self._inertial_scroll_enabled = self.inertial_scroll
     else
         self._inertial_scroll_enabled = false
     end
     self:setupTouchZones()
-    self.ui:handleEvent(Event:new("ScrollSettingsUpdated", self.scroll_method, self._inertial_scroll_enabled))
+    self.ui:handleEvent(Event:new("ScrollSettingsUpdated", self.scroll_method,
+                            self._inertial_scroll_enabled, self.scroll_activation_delay))
 end
 
 function ReaderScrolling:setupTouchZones()
@@ -174,9 +216,11 @@ function ReaderScrolling:setupTouchZones()
                 -- A touch might set the start of the first pan event,
                 -- that we need to compute its duration
                 self._last_manual_scroll_timev = ges.time
-                -- If we are scrolling, a touch cancels it. We want its release
-                -- (which will trigger a tap) to not change pages.
-                self._ignore_next_tap = self._inertial_scroll_action
+                -- If we are scrolling, a touch cancels it.
+                -- We want its release (which will trigger a tap) to not change pages.
+                -- This also allows a pan following this touch to skip any scroll
+                -- activation delay
+                self._cancelled_by_touch = self._inertial_scroll_action
                                             and self._inertial_scroll_action(false)
                                              or false
             end,
@@ -199,9 +243,9 @@ function ReaderScrolling:setupTouchZones()
                 "tap_link",
             },
             handler = function()
-                if self._ignore_next_tap then
-                    -- Ignore tap if requested
-                    self._ignore_next_tap = false
+                -- Ignore tap if cancelled by its initial touch
+                if self._cancelled_by_touch then
+                    self._cancelled_by_touch = false
                     return true
                 end
                 -- Otherwise, let it be handled by other tap handlers
@@ -236,6 +280,10 @@ function ReaderScrolling:cancelInertialScroll()
         return
     end
     return self._inertial_scroll_action(false)
+end
+
+function ReaderScrolling:cancelledByTouch()
+    return self._cancelled_by_touch
 end
 
 function ReaderScrolling:accountManualScroll(dy, timev)
