@@ -14,6 +14,7 @@ Each setting contains:
     * absolutenumber: event that sets a number
     * incrementalnumber: event that increments a number & accepts a gesture object
     * string: event with a list of arguments to chose from
+    * configurable: like string but instead of an event it updates the configurable (used by kopt)
 * event: what to call.
 * title: for use in ui.
 * section: under which menu to display (currently: device, filemanager, rolling, paging)
@@ -28,6 +29,7 @@ Each setting contains:
 --]]--
 
 local CreOptions = require("ui/data/creoptions")
+local KoptOptions = require("ui/data/koptoptions")
 local Device = require("device")
 local Event = require("ui/event")
 local Notification = require("ui/widget/notification")
@@ -158,6 +160,37 @@ local settingsList = {
     embedded_fonts = {category="string", rolling=true},
     smooth_scaling = {category="string", rolling=true},
     nightmode_images = {category="string", rolling=true},
+
+    -- parsed from KoptOptions
+    kopt_trim_page = {category="string", paging=true},
+    kopt_page_margin = {category="string", paging=true},
+    kopt_zoom_overlap_h = {category="string", paging=true},
+    kopt_zoom_overlap_v = {category="string", paging=true},
+    kopt_zoom_mode_type = {category="string", paging=true},
+    kopt_zoom_range_number = {category="string", paging=true},
+    kopt_zoom_factor = {category="string", paging=true},
+    kopt_zoom_mode_genus = {category="string", paging=true},
+    kopt_zoom_direction = {category="string", paging=true},
+    kopt_page_scroll = {category="string", paging=true},
+    kopt_page_gap_height = {category="string", paging=true},
+    kopt_full_screen = {category="string", paging=true},
+    kopt_line_spacing = {category="configurable", paging=true},
+    kopt_justification = {category="configurable", paging=true},
+    kopt_font_size = {category="string", paging=true, title=_("Font Size")},
+    kopt_font_fine_tune = {category="string", paging=true},
+    kopt_word_spacing = {category="configurable", paging=true},
+    kopt_text_wrap = {category="string", paging=true},
+    kopt_contrast = {category="string", paging=true},
+    kopt_page_opt = {category="configurable", paging=true},
+    kopt_hw_dithering = {category="configurable", paging=true, condition=Device:hasEinkScreen() and Device:canHWDither()},
+    kopt_quality = {category="configurable", paging=true},
+    kopt_doc_language = {category="string", paging=true},
+    kopt_forced_ocr = {category="configurable", paging=true},
+    kopt_writing_direction = {category="configurable", paging=true},
+    kopt_defect_size = {category="string", paging=true, condition=false},
+    kopt_auto_straighten = {category="configurable", paging=true, condition=false},
+    kopt_detect_indent = {category="configurable", paging=true, condition=false},
+    kopt_max_columns = {category="configurable", paging=true},
 }
 
 -- array for item order in menu
@@ -286,6 +319,41 @@ local dispatcher_menu_order = {
     "embedded_fonts",
     "smooth_scaling",
     "nightmode_images",
+
+    "kopt_trim_page",
+    "kopt_page_margin",
+
+    "kopt_zoom_overlap_h",
+    "kopt_zoom_overlap_v",
+    "kopt_zoom_mode_type",
+    --"kopt_zoom_range_number", -- can't figure out how this name text func works
+    "kopt_zoom_factor",
+    "kopt_zoom_mode_genus",
+    "kopt_zoom_direction",
+
+    "kopt_page_scroll",
+    "kopt_page_gap_height",
+    "kopt_full_screen",
+    "kopt_line_spacing",
+    "kopt_justification",
+
+    "kopt_font_size",
+    "kopt_font_fine_tune",
+    "kopt_word_spacing",
+    "kopt_text_wrap",
+
+    "kopt_contrast",
+    "kopt_page_opt",
+    "kopt_hw_dithering",
+    "kopt_quality",
+
+    "kopt_doc_language",
+    "kopt_forced_ocr",
+    "kopt_writing_direction",
+    "kopt_defect_size",
+    "kopt_auto_straighten",
+    "kopt_detect_indent",
+    "kopt_max_columns",
 }
 
 --[[--
@@ -293,43 +361,46 @@ local dispatcher_menu_order = {
 --]]--
 function Dispatcher:init()
     if Dispatcher.initialized then return end
-    local parseoptions = function(base, i)
-        for y=1,#base[i].options do
+    local parseoptions = function(base, i, prefix)
+        for y=1, #base[i].options do
             local option = base[i].options[y]
-            if settingsList[option.name] ~= nil then
+            local name = prefix and prefix .. option.name or option.name
+            if settingsList[name] ~= nil then
                 if option.name ~= nil and option.values ~= nil then
-                    settingsList[option.name].configurable = {name = option.name, values = option.values}
+                    settingsList[name].configurable = {name = option.name, values = option.values}
                 end
-                if settingsList[option.name].event == nil then
-                    settingsList[option.name].event = option.event
+                if settingsList[name].event == nil then
+                    settingsList[name].event = option.event
                 end
-                if settingsList[option.name].title == nil then
-                    settingsList[option.name].title = option.name_text
+                if settingsList[name].title == nil then
+                    settingsList[name].title = option.name_text
                 end
-                if settingsList[option.name].category == "string" then
-                    if settingsList[option.name].toggle == nil then
-                        settingsList[option.name].toggle = option.toggle or option.labels
-                        if settingsList[option.name].toggle == nil then
-                        settingsList[option.name].toggle = {}
+                if settingsList[name].category == "string" or settingsList[name].category == "configurable" then
+                    if settingsList[name].toggle == nil then
+                        settingsList[name].toggle = option.toggle or option.labels
+                        if settingsList[name].toggle == nil then
+                            settingsList[name].toggle = {}
                             for z=1,#option.values do
                                 if type(option.values[z]) == "table" then
-                                    settingsList[option.name].toggle[z] = option.values[z][1]
+                                    settingsList[name].toggle[z] = option.values[z][1]
+                                else
+                                    settingsList[name].toggle[z] = option.values[z]
                                 end
                             end
                         end
                     end
-                    if settingsList[option.name].args == nil then
-                        settingsList[option.name].args = option.args or option.values
+                    if settingsList[name].args == nil then
+                        settingsList[name].args = option.args or option.values
                     end
-                elseif settingsList[option.name].category == "absolutenumber" then
-                    if settingsList[option.name].min == nil then
-                        settingsList[option.name].min = option.args[1]
+                elseif settingsList[name].category == "absolutenumber" then
+                    if settingsList[name].min == nil then
+                        settingsList[name].min = option.args[1]
                     end
-                    if settingsList[option.name].max == nil then
-                        settingsList[option.name].max = option.args[#option.args]
+                    if settingsList[name].max == nil then
+                        settingsList[name].max = option.args[#option.args]
                     end
-                    if settingsList[option.name].default == nil then
-                        settingsList[option.name].default = option.default_value
+                    if settingsList[name].default == nil then
+                        settingsList[name].default = option.default_value
                     end
                 end
             end
@@ -337,6 +408,9 @@ function Dispatcher:init()
     end
     for i=1,#CreOptions do
         parseoptions(CreOptions, i)
+    end
+    for i=1,#KoptOptions do
+        parseoptions(KoptOptions, i, "kopt_")
     end
     UIManager:broadcastEvent(Event:new("DispatcherRegisterActions"))
     Dispatcher.initialized = true
@@ -504,7 +578,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                     end,
                     separator = settingsList[k].separator,
                 })
-            elseif settingsList[k].category == "string" then
+            elseif settingsList[k].category == "string" or settingsList[k].category == "configurable" then
                 local sub_item_table = {}
                 for i=1,#settingsList[k].args do
                     table.insert(sub_item_table, {

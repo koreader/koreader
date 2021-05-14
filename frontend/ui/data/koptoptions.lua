@@ -512,7 +512,7 @@ This can also be used to remove some gray background or to convert a grayscale o
         icon = "appbar.settings",
         options = {
             {
-                name="doc_language",
+                name = "doc_language",
                 name_text = _("Document Language"),
                 toggle = DKOPTREADER_CONFIG_DOC_LANGS_TEXT,
                 values = DKOPTREADER_CONFIG_DOC_LANGS_CODE,
