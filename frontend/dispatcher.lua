@@ -646,7 +646,7 @@ function Dispatcher:execute(ui, settings, gesture)
                         if v == r then value = settingsList[k].configurable.values[i] break end
                     end
                 end
-                self.ui:handleEvent(Event:new("ConfigChange", settingsList[k].configurable.name, value))
+                ui:handleEvent(Event:new("ConfigChange", settingsList[k].configurable.name, value))
             end
         end
     end
