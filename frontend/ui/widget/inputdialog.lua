@@ -115,6 +115,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local InputDialog = InputContainer:new{
@@ -775,7 +776,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                                             -- reinit with the target line on the top, cursor at the beginning
                                             UIManager:close(input_dialog)
                                             self._input_widget:onCloseKeyboard()
-                                            self.input=self:getInputText()
+                                            self.input = self:getInputText()
                                             self.view_pos_callback(#self._input_widget.charlist, new_char_pos)
                                             self:init()
                                             if not self.keyboard_hidden then
