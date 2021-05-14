@@ -501,6 +501,38 @@ function InputText:getKeyboardDimen()
     return self.keyboard.dimen
 end
 
+-- calculate current and last (original) line numbers
+function InputText:getLineNums()
+    local cur_line_num, last_line_num = 1, 1
+    for i = 1, #self.charlist do
+        if self.text_widget.charlist[i] == "\n" then
+            if i < self.charpos then
+                cur_line_num = cur_line_num + 1
+            end
+            last_line_num = last_line_num + 1
+        end
+    end
+    return cur_line_num, last_line_num
+end
+
+-- calculate charpos for the beginning of (original) line
+function InputText:getLineCharPos(line_num)
+    local char_pos = 1
+    if line_num > 1 then
+        local j = 1
+        for i = 1, #self.charlist do
+            if self.charlist[i] == "\n" then
+                j = j + 1
+                if j == line_num then
+                    char_pos = i + 1
+                    break
+                end
+            end
+        end
+    end
+    return char_pos
+end
+
 function InputText:addChars(chars)
     if not chars then
         -- VirtualKeyboard:addChar(key) gave us 'nil' once (?!)
@@ -576,6 +608,11 @@ end
 
 function InputText:goToEnd()
     self.text_widget:moveCursorToCharPos(0)
+end
+
+function InputText:moveCursorToCharPos(char_pos)
+    self.text_widget:moveCursorToCharPos(char_pos)
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
 function InputText:upLine()
