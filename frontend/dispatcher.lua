@@ -172,7 +172,7 @@ local settingsList = {
     page_scroll = {category="string", paging=true},
     page_gap_height = {category="string", paging=true},
     full_screen = {category="string", paging=true},
-    line_spacing = {category="string", paging=true},
+    --line_spacing = {category="string", paging=true},
     justification = {category="string", paging=true},
     --font_size = {category="string", paging=true},
     font_fine_tune = {category="string", paging=true},
