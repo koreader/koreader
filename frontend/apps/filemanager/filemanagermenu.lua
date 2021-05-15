@@ -549,6 +549,26 @@ To:
             end,
         })
     end
+    --- @note: Intended to debug/investigate B288 quirks on PocketBook devices
+    if Device:hasEinkScreen() and Device:isPocketBook() then
+        table.insert(self.menu_items.developer_options.sub_item_table, {
+            -- @translators B288 is the codename of the CPU/chipset (SoC stands for 'System on Chip').
+            text = _("Ignore feature bans on B288 SoCs"),
+            enabled_func = function()
+                return Device:isB288SoC()
+            end,
+            checked_func = function()
+                return G_reader_settings:isTrue("pb_ignore_b288_quirks")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("pb_ignore_b288_quirks")
+                local InfoMessage = require("ui/widget/infomessage")
+                UIManager:show(InfoMessage:new{
+                    text = _("This will take effect on next restart."),
+                })
+            end,
+        })
+    end
     if Device:isAndroid() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
             text = _("Start E-ink test"),
