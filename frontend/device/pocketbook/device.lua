@@ -54,7 +54,11 @@ local PocketBook = Generic:new{
         keymap = { [scan] = event },
     }]]
     -- Runtime state: whether raw input is actually used
+    --- @fixme: Never actually set anywhere?
     is_using_raw_input = nil,
+
+    -- Will be set appropriately at init
+    isB288SoC = no,
 
     -- Private per-model kludges
     _fb_init = function() end,
@@ -108,11 +112,16 @@ function PocketBook:init()
             fb.forced_rotation = self.usingForcedRotation()
             -- Tweak combination of alwaysPortrait/hwRot/hwInvert flags depending on probed HW and wf settings.
             if fb:isB288() then
-                logger.dbg("mxcfb: Disabling hwinvert on B288 chipset")
-                self.canHWInvert = no
-                -- GL16 glitches with hwrot. And apparently with more stuff on newer FW (#7663)
-                logger.dbg("mxcfb: Disabling hwrot on B288 chipset")
-                fb.forced_rotation = nil
+                self.isB288SoC = yes
+
+                -- Allow bypassing the bans for debugging purposes...
+                if G_reader_settings:nilOrFalse("pb_ignore_b288_quirks") then
+                    logger.dbg("mxcfb: Disabling hwinvert on B288 chipset")
+                    self.canHWInvert = no
+                    -- GL16 glitches with hwrot. And apparently with more stuff on newer FW (#7663)
+                    logger.dbg("mxcfb: Disabling hwrot on B288 chipset")
+                    fb.forced_rotation = nil
+                end
             end
             -- If hwrot is still on, nuke swrot
             if fb.forced_rotation then
