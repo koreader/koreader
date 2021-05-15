@@ -461,6 +461,28 @@ function Device:untar(archive, extract_to)
     return android.untar(archive, extract_to)
 end
 
+function Device:download(link, name, ok_text)
+    local UIManager = require("ui/uimanager")
+    local ConfirmBox = require("ui/widget/confirmbox")
+    local InfoMessage = require("ui/widget/infomessage")
+    local ok = android.download(link, name)
+    if ok == C.ADOWNLOAD_EXISTS then
+        self:install()
+    elseif ok == C.ADOWNLOAD_OK then
+        android.ota.isRunning = true
+        UIManager:show(InfoMessage:new{
+            text = ok_text,
+            timeout = 3,
+        })
+    elseif ok == C.ADOWNLOAD_FAILED then
+        UIManager:show(ConfirmBox:new{
+            text = _("Your device seems to be unable to download packages.\nRetry using the browser?"),
+            ok_text = _("Retry"),
+            ok_callback = function() self:openLink(link) end,
+        })
+    end
+end
+
 function Device:install()
     local UIManager = require("ui/uimanager")
     local ConfirmBox = require("ui/widget/confirmbox")
