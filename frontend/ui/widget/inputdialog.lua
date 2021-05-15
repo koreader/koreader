@@ -727,9 +727,10 @@ function InputDialog:_addScrollButtons(nav_bar)
         -- Add a button to go to the line by its number in the file
         if self.fullscreen then
             table.insert(row, {
-                text = "Go",
+                text = _("Go"),
                 callback = function()
                     local cur_line_num, last_line_num = self._input_widget:getLineNums()
+                    local input_dialog
                     input_dialog = InputDialog:new{
                         title = _("Enter line number"),
                         input_hint = T("%1 (1 - %2)", cur_line_num, last_line_num),
@@ -741,9 +742,6 @@ function InputDialog:_addScrollButtons(nav_bar)
                                     text = _("Cancel"),
                                     callback = function()
                                         UIManager:close(input_dialog)
-                                        if not self.keyboard_hidden then
-                                            self:onShowKeyboard()
-                                        end
                                     end,
                                 },
                                 {
@@ -753,12 +751,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                                         local new_line_num = tonumber(input_dialog:getInputText())
                                         if new_line_num and new_line_num >= 1 and new_line_num <= last_line_num then
                                             UIManager:close(input_dialog)
-                                            self._input_widget:onCloseKeyboard()
                                             self._input_widget:moveCursorToCharPos(self._input_widget:getLineCharPos(new_line_num))
-                                            if not self.keyboard_hidden then
-                                                self:refreshButtons()
-                                                self:onShowKeyboard ()
-                                            end
                                         end
                                     end,
                                 },
