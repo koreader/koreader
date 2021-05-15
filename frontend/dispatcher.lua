@@ -617,36 +617,39 @@ arguments are:
 function Dispatcher:execute(ui, settings, gesture)
     for k, v in pairs(settings) do
         if settingsList[k] ~= nil and (settingsList[k].conditions == nil or settingsList[k].conditions == true) then
-            if settingsList[k].category == "none" then
-                if settingsList[k].arg ~= nil then
-                    ui:handleEvent(Event:new(settingsList[k].event, settingsList[k].arg))
-                else
-                    ui:handleEvent(Event:new(settingsList[k].event))
-                end
-            end
-            if settingsList[k].category == "absolutenumber"
-                or settingsList[k].category == "string"
-            then
-                ui:handleEvent(Event:new(settingsList[k].event, v))
-            end
-            -- the event can accept a gesture object or an argument
-            if settingsList[k].category == "arg" then
-                local arg = gesture or settingsList[k].arg
-                ui:handleEvent(Event:new(settingsList[k].event, arg))
-            end
-            -- the event can accept a gesture object or a number
-            if settingsList[k].category == "incrementalnumber" then
-                local arg = v ~= 0 and v or gesture or 0
-                ui:handleEvent(Event:new(settingsList[k].event, arg))
-            end
-            if ui.document and settingsList[k].configurable then
-                local value = v
-                if type(v) ~= "number" then
-                    for i, r in ipairs(settingsList[k].args) do
-                        if v == r then value = settingsList[k].configurable.values[i] break end
+            if (not settingsList[k].padding and not settingsList[k].rolling) or
+                (ui.document and (settingsList[k].padding or settingsList[k].rolling)) then
+                if settingsList[k].category == "none" then
+                    if settingsList[k].arg ~= nil then
+                        ui:handleEvent(Event:new(settingsList[k].event, settingsList[k].arg))
+                    else
+                        ui:handleEvent(Event:new(settingsList[k].event))
                     end
                 end
-                ui.document.configurable[settingsList[k].configurable.name] = value
+                if settingsList[k].category == "absolutenumber"
+                    or settingsList[k].category == "string"
+                then
+                    ui:handleEvent(Event:new(settingsList[k].event, v))
+                end
+                -- the event can accept a gesture object or an argument
+                if settingsList[k].category == "arg" then
+                    local arg = gesture or settingsList[k].arg
+                    ui:handleEvent(Event:new(settingsList[k].event, arg))
+                end
+                -- the event can accept a gesture object or a number
+                if settingsList[k].category == "incrementalnumber" then
+                    local arg = v ~= 0 and v or gesture or 0
+                    ui:handleEvent(Event:new(settingsList[k].event, arg))
+                end
+                if ui.document and settingsList[k].configurable then
+                    local value = v
+                    if type(v) ~= "number" then
+                        for i, r in ipairs(settingsList[k].args) do
+                            if v == r then value = settingsList[k].configurable.values[i] break end
+                        end
+                    end
+                    ui.document.configurable[settingsList[k].configurable.name] = value
+                end
             end
         end
     end
