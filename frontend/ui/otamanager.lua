@@ -245,27 +245,8 @@ function OTAManager:fetchAndProcessUpdate()
                 text = update_message,
                 ok_text = update_ok_text,
                 ok_callback = function()
-                    local isAndroid, android = pcall(require, "android")
-                    if isAndroid then
-                        local ffi = require("ffi")
-                        local C = ffi.C
-                        -- try to download the package
-                        local ok = android.download(link, ota_package)
-                        if ok == C.ADOWNLOAD_EXISTS then
-                            Device:install()
-                        elseif ok == C.ADOWNLOAD_OK then
-                            android.ota.isRunning = true
-                            UIManager:show(InfoMessage:new{
-                                text = wait_for_download,
-                                timeout = 3,
-                            })
-                        elseif ok == C.ADOWNLOAD_FAILED then
-                            UIManager:show(ConfirmBox:new{
-                                text = _("Your device seems to be unable to download packages.\nRetry using the browser?"),
-                                ok_text = _("Retry"),
-                                ok_callback = function() Device:openLink(link) end,
-                            })
-                        end
+                    if Device:isAndroid() then
+                        Device:download(link, ota_package, wait_for_download)
                     elseif Device:isSDL() then
                         Device:openLink(link)
                     end
