@@ -734,6 +734,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                         title = _("Enter line number"),
                         input_hint = T("%1 (1 - %2)", cur_line_num, last_line_num),
                         input_type = "number",
+                        stop_events_propagation = true, -- avoid interactions with upper InputDialog
                         buttons = {
                             {
                                 {
