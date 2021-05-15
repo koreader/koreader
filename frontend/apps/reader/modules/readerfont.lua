@@ -210,12 +210,14 @@ function ReaderFont:onSetFontSize(new_size)
     if new_size > 255 then new_size = 255 end
     if new_size < 12 then new_size = 12 end
 
-    self.font_size = new_size
-    self.ui.document:setFontSize(Screen:scaleBySize(new_size))
-    self.ui:handleEvent(Event:new("UpdatePos"))
-    UIManager:show(Notification:new{
-        text = T( _("Font size set to %1."), self.font_size),
-    })
+    if self.ui.document then
+        self.font_size = new_size
+        self.ui.document:setFontSize(Screen:scaleBySize(new_size))
+        self.ui:handleEvent(Event:new("UpdatePos"))
+        UIManager:show(Notification:new{
+            text = T( _("Font size set to %1."), self.font_size),
+        })
+    end
     return true
 end
 
