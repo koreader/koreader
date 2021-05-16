@@ -232,6 +232,20 @@ function OTAManager:fetchAndProcessUpdate()
                                  BD.ltr(ota_version))
         local update_ok_text = _("Update")
         if ota_version < local_version then
+            -- Android cannot downgrade APKs. The user needs to uninstall current app first.
+            -- Instead of doing the auto-update when ready we just download the APK using the browser.
+            if Device:isAndroid() then
+                UIManager:show(ConfirmBox:new{
+                    text = T(_("The currently installed version is newer than the available version.\nYou'll need to uninstall the app before installing a previous version.\nDownload anyway?\n\nInstalled version: %1\nAvailable version: %2"),
+                        BD.ltr(local_version),
+                        BD.ltr(ota_version)),
+                    ok_text = _("Download"),
+                    ok_callback = function()
+                        Device:openLink(link)
+                    end,
+                })
+                return
+            end
             update_message =  T(_("The currently installed version is newer than the available version.\nWould you still like to continue and downgrade?\nInstalled version: %1\nAvailable version: %2"),
                                 BD.ltr(local_version),
                                 BD.ltr(ota_version))
