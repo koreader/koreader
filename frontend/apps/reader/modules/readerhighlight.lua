@@ -981,7 +981,7 @@ Copy the language data files for Tesseract 3.04 (e.g., eng.traineddata for Engli
 
 function ReaderHighlight:lookup(selected_word, selected_link)
     -- if we extracted text directly
-    if selected_word.word then
+    if selected_word.word and self.hold_pos then
         local word_box = self.view:pageToScreenTransform(self.hold_pos.page, selected_word.sbox)
         self.ui:handleEvent(Event:new("LookupWord", selected_word.word, false, word_box, self, selected_link))
     -- or we will do OCR
@@ -1135,7 +1135,7 @@ function ReaderHighlight:translate(selected_text)
     if selected_text.text ~= "" then
         self:onTranslateText(selected_text.text)
     -- or we will do OCR
-    else
+    elseif self.hold_pos then
         local text = self.ui.document:getOCRText(self.hold_pos.page, selected_text)
         logger.dbg("OCRed text:", text)
         if text and text ~= "" then
@@ -1336,9 +1336,8 @@ end
 function ReaderHighlight:saveHighlight()
     self.ui:handleEvent(Event:new("AddHighlight"))
     logger.dbg("save highlight")
-    local page = self.hold_pos.page
-    if self.hold_pos and self.selected_text and self.selected_text.pos0
-        and self.selected_text.pos1 then
+    if self.hold_pos and self.selected_text and self.selected_text.pos0 and self.selected_text.pos1 then
+        local page = self.hold_pos.page
         if not self.view.highlight.saved[page] then
             self.view.highlight.saved[page] = {}
         end
