@@ -266,6 +266,9 @@ function InputContainer:onGesture(ev)
             end
         end
     end
+    if self.stop_events_propagation then
+        return true
+    end
 end
 
 function InputContainer:onInput(input, ignore_first_hold_release)

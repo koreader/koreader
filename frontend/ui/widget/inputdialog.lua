@@ -115,6 +115,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local InputDialog = InputContainer:new{
@@ -720,6 +721,46 @@ function InputDialog:_addScrollButtons(nav_bar)
                     if not self.keyboard_hidden then
                         self:onShowKeyboard()
                     end
+                end,
+            })
+        end
+        -- Add a button to go to the line by its number in the file
+        if self.fullscreen then
+            table.insert(row, {
+                text = _("Go"),
+                callback = function()
+                    local cur_line_num, last_line_num = self._input_widget:getLineNums()
+                    local input_dialog
+                    input_dialog = InputDialog:new{
+                        title = _("Enter line number"),
+                        -- @translators %1 is the current line number, %2 is the last line number
+                        input_hint = T(_("%1 (1 - %2)"), cur_line_num, last_line_num),
+                        input_type = "number",
+                        stop_events_propagation = true, -- avoid interactions with upper InputDialog
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    callback = function()
+                                        UIManager:close(input_dialog)
+                                    end,
+                                },
+                                {
+                                    text = _("Go to line"),
+                                    is_enter_default = true,
+                                    callback = function()
+                                        local new_line_num = tonumber(input_dialog:getInputText())
+                                        if new_line_num and new_line_num >= 1 and new_line_num <= last_line_num then
+                                            UIManager:close(input_dialog)
+                                            self._input_widget:moveCursorToCharPos(self._input_widget:getLineCharPos(new_line_num))
+                                        end
+                                    end,
+                                },
+                            },
+                        },
+                    }
+                    UIManager:show(input_dialog)
+                    input_dialog:onShowKeyboard()
                 end,
             })
         end
