@@ -1262,6 +1262,7 @@ function ReaderHighlight:onUnhighlight(bookmark_item)
         sel_pos0 = bookmark_item.pos0
         datetime = bookmark_item.datetime
     else -- called from DictQuickLookup Unhighlight button
+        --- @fixme: is this self.hold_pos access safe?
         page = self.hold_pos.page
         sel_text = cleanupSelectedText(self.selected_text.text)
         sel_pos0 = self.selected_text.pos0
