@@ -1,3 +1,9 @@
+local Device = require("device")
+
+if not Device:isTouchDevice() then
+    return { disabled = true }
+end
+
 local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
