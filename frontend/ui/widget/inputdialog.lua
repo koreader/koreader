@@ -749,7 +749,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                                         if self.search_value ~= "" then
                                             UIManager:close(input_dialog)
                                             local msg
-                                            local char_pos = self._input_widget:searchStr(self.search_value, 1)
+                                            local char_pos = self._input_widget:searchString(self.search_value, 1)
                                             if char_pos > 0 then
                                                 self._input_widget:moveCursorToCharPos(char_pos)
                                                 msg = T(_("Found in line %1"), self._input_widget:getLineNums())
@@ -770,7 +770,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                                         if self.search_value ~= "" then
                                             UIManager:close(input_dialog)
                                             local msg
-                                            local char_pos = self._input_widget:searchStr(self.search_value)
+                                            local char_pos = self._input_widget:searchString(self.search_value)
                                             if char_pos > 0 then
                                                 self._input_widget:moveCursorToCharPos(char_pos)
                                                 msg = T(_("Found in line %1"), self._input_widget:getLineNums())
