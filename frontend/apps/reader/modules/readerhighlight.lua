@@ -169,6 +169,20 @@ function ReaderHighlight:init()
         }
     end)
 
+    -- User hyphenation dict
+    self:addToHighlightDialog("11_user_dict", function(_self)
+        return {
+            text= _("Hyphenation"),
+            show_in_highlight_dialog_func = function()
+                return _self.ui.userhyph:_checked() and not _self.selected_text.text:find("[ ,;-%.\n]")
+            end,
+            callback = function()
+                _self.ui.userhyph:modifyUserEntry(_self.selected_text.text)
+                _self:onClose()
+            end,
+        }
+    end)
+
     self.ui:registerPostInitCallback(function()
         self.ui.menu:registerToMainMenu(self)
     end)
