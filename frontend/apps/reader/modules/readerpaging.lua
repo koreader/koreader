@@ -11,6 +11,7 @@ local UIManager = require("ui/uimanager")
 local bit = require("bit")
 local logger = require("logger")
 local _ = require("gettext")
+local Input = Device.input
 local Screen = Device.screen
 
 
@@ -371,10 +372,12 @@ function ReaderPaging:enterFlippingMode()
     logger.dbg("store zoom mode", self.orig_zoom_mode)
     self.view.document.configurable.text_wrap = 0
     self.view.page_scroll = self.flipping_scroll_mode
+    Input.disable_double_tap = false
     self.ui:handleEvent(Event:new("EnterFlippingMode", self.flipping_zoom_mode))
 end
 
 function ReaderPaging:exitFlippingMode()
+    Input.disable_double_tap = true
     self.view.document.configurable.text_wrap = self.orig_reflow_mode
     self.view.page_scroll = self.orig_scroll_mode
     self.flipping_zoom_mode = self.view.zoom_mode
