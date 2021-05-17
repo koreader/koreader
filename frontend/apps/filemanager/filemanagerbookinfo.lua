@@ -126,7 +126,7 @@ function BookInfo:show(file, book_props)
                 book_props = document:getProps()
                 book_props.pages = pages
             end
-            DocumentRegistry:closeDocument(file)
+            document:close()
         end
     end
 
@@ -219,7 +219,7 @@ function BookInfo:show(file, book_props)
                     fullscreen = true,
                 }
             end
-            DocumentRegistry:closeDocument(file)
+            document:close()
         end
         if not widget then
             widget = InfoMessage:new{

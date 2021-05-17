@@ -191,6 +191,7 @@ function DocumentRegistry:mimeToExt(mimetype)
     return self.mimetype_ext[mimetype]
 end
 
+--- Returns a new Document instance on success
 function DocumentRegistry:openDocument(file, provider)
     -- force a GC, so that any previous document used memory can be reused
     -- immediately by this new document without having to wait for the
@@ -219,6 +220,8 @@ function DocumentRegistry:openDocument(file, provider)
     end
 end
 
+--- Does *NOT* finalize a Document instance, call its :close() instead if that's what you're looking for!
+--- (i.e., nothing but Document:close should call this!)
 function DocumentRegistry:closeDocument(file)
     if self.registry[file] then
         self.registry[file].refs = self.registry[file].refs - 1

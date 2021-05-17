@@ -91,6 +91,7 @@ function Document:unlock(password)
 end
 
 -- this might be overridden by a document implementation
+-- (in which case, do make sure it calls this one, too, to avoid refcounting mismatches in DocumentRegistry!)
 function Document:close()
     local DocumentRegistry = require("document/documentregistry")
     if self.is_open then

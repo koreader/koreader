@@ -335,7 +335,7 @@ function CoverMenu:updateItems(select_number)
                                     })
                                 end
                                 UIManager:close(self.file_dialog)
-                                DocumentRegistry:closeDocument(file)
+                                document:close()
                             end
                         end,
                     },
@@ -468,7 +468,7 @@ function CoverMenu:onHistoryMenuHold(item)
                         })
                     end
                     UIManager:close(self.histfile_dialog)
-                    DocumentRegistry:closeDocument(file)
+                    document:close()
                 end
             end,
         },
@@ -590,7 +590,7 @@ function CoverMenu:onCollectionsMenuHold(item)
                         })
                     end
                     UIManager:close(self.collfile_dialog)
-                    DocumentRegistry:closeDocument(file)
+                    document:close()
                 end
             end,
         },
