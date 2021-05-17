@@ -215,9 +215,6 @@ function ReaderHighlight:setupTouchZones()
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
-            overrides = {
-                "readerfooter_hold",
-            },
             handler = function(ges) return self:onHold(nil, ges) end
         },
         {
