@@ -536,7 +536,7 @@ end
 -- search for a string
 -- if start_pos not set, starts a search from the next to cursor position
 -- returns first found position or 0 if not found
-function InputText:searchStr(str, start_pos)
+function InputText:searchString(str, start_pos)
     local str_len = string.len(str)
     local char_pos, found = 0, 0
     start_pos = start_pos and (start_pos - 1) or self.charpos
