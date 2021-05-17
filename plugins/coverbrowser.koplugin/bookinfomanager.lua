@@ -544,7 +544,7 @@ function BookInfoManager:extractBookInfo(filepath, cover_specs)
                 end
             end
         end
-        DocumentRegistry:closeDocument(filepath)
+        document:close()
     else
         loaded = false
     end
