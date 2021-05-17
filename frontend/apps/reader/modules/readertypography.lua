@@ -138,6 +138,7 @@ Features available per language are marked with:
 
 Note that when a language does not come with its own hyphenation dictionary, the English (US) one will be used.
 When the book's language tag is not among our presets, no specific features will be enabled, but it might be enough to get language specific glyph variants (when supported by the fonts).]])
+
     table.insert(self.menu_table, {
         text = _("About typography rules"),
         callback = function()
@@ -237,6 +238,7 @@ When the book's language tag is not among our presets, no specific features will
                 })
                 self.text_lang_tag = lang_tag
                 self.ui.document:setTextMainLang(lang_tag)
+                self.ui:handleEvent(Event:new("ChangedLanguage"))
                 self.ui:handleEvent(Event:new("UpdatePos"))
             end,
             hold_callback = function(touchmenu_instance)
@@ -429,6 +431,7 @@ These settings will apply to all books with any hyphenation dictionary.
         end,
         separator = true,
     })
+    table.insert(hyphenation_submenu, self.ui.userhyph:menuEntry())
     table.insert(hyphenation_submenu, {
         text_func = function()
             -- Show the current language default hyph dict (ie: English_US for zh)
@@ -760,6 +763,7 @@ function ReaderTypography:onReadSettings(config)
         logger.dbg("Typography lang: no lang set, using", self.text_lang_tag)
     end
     self.ui.document:setTextMainLang(self.text_lang_tag)
+    self.ui:handleEvent(Event:new("ChangedLanguage"))
 end
 
 function ReaderTypography:onPreRenderDocument(config)
@@ -780,6 +784,7 @@ function ReaderTypography:onPreRenderDocument(config)
             self.text_lang_tag = self.book_lang_tag
             self.ui.doc_settings:saveSetting("text_lang", self.text_lang_tag)
             self.ui.document:setTextMainLang(self.text_lang_tag)
+            self.ui:handleEvent(Event:new("ChangedLanguage"))
             self.ui:handleEvent(Event:new("UpdatePos"))
         end,
         enabled_func = function()

@@ -48,6 +48,7 @@ local ReaderStyleTweak = require("apps/reader/modules/readerstyletweak")
 local ReaderToc = require("apps/reader/modules/readertoc")
 local ReaderTypeset = require("apps/reader/modules/readertypeset")
 local ReaderTypography = require("apps/reader/modules/readertypography")
+local ReaderUserHyph = require("apps/reader/modules/readeruserhyph")
 local ReaderView = require("apps/reader/modules/readerview")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
@@ -292,6 +293,7 @@ function ReaderUI:init()
             start_tv = TimeVal:now()
             self.document:render()
             logger.dbg(string.format("  rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
+            logger.err(string.format("xxxxxxxxx  rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
 
             -- Uncomment to output the built DOM (for debugging)
             -- logger.dbg(self.document:getHTMLFromXPointer(".0", 0x6830))
@@ -310,6 +312,12 @@ function ReaderUI:init()
         })
         -- font menu
         self:registerModule("font", ReaderFont:new{
+            dialog = self.dialog,
+            view = self.view,
+            ui = self
+        })
+        -- user hyphenation (must be registered before typography)
+        self:registerModule("userhyph", ReaderUserHyph:new{
             dialog = self.dialog,
             view = self.view,
             ui = self
