@@ -718,10 +718,11 @@ function ReaderFooter:setupTouchZones()
             id = "readerfooter_hold",
             ges = "hold",
             screen_zone = footer_screen_zone,
-            handler = function() return self:onHoldFooter() end,
-            -- (Low priority: word lookup and text selection
-            -- have priority - SkimTo widget can be more easily
-            -- brought up via some other gestures)
+            handler = function(ges) return self:onHoldFooter(ges) end,
+            overrides = {
+                "readerhighlight_hold",
+            },
+            -- (High priority: it's a fallthrough if we held outside the footer)
         },
     })
 end
@@ -2163,17 +2164,22 @@ function ReaderFooter:onTapFooter(ges)
     return true
 end
 
-function ReaderFooter:onHoldFooter()
-    -- We're lower priority than readerhighlight_hold, which means it's already been tripped by the time we got here.
-    -- If it actually had something to do, ReaderHighlight would have stopped propagating the event,
-    -- so we can safely clear ReaderHighlight state here, otherwise it'll get confused on the next tap...
-    -- (c.f., #7464)
-    self.ui.highlight:clear()
-    if self.mode == self.mode_list.off then return end
-    if self.settings.skim_widget_on_hold then
-        self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
-        return true
+function ReaderFooter:onHoldFooter(ges)
+    -- We're higher priority than readerhighlight_hold, so, make sure we fall through properly...
+    if not self.settings.skim_widget_on_hold then
+        return
     end
+    if not self.view.footer_visible then
+        return
+    end
+    if not self.footer_content.dimen or not self.footer_content.dimen:contains(ges.pos) then
+        -- We held outside the footer: meep!
+        return
+    end
+
+    -- We're good, make sure we stop the event from going to readerhighlight_hold
+    self.ui:handleEvent(Event:new("ShowSkimtoDialog"))
+    return true
 end
 
 function ReaderFooter:refreshFooter(refresh, signal)
