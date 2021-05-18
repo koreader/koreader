@@ -118,7 +118,7 @@ local function expandSpecial(message, fallback)
 
     local ReaderUI = require("apps/reader/readerui")
     local ui = ReaderUI:_getRunningInstance()
-    if ui then
+    if ui and ui.document then
         -- If we have a ReaderUI instance, use it.
         local doc = ui.document
         currentpage = ui.view.state.page or currentpage
@@ -303,7 +303,7 @@ end
 function Screensaver:isExcluded()
     local ReaderUI = require("apps/reader/readerui")
     local ui = ReaderUI:_getRunningInstance()
-    if ui then
+    if ui and ui.doc_settings then
         local doc_settings = ui.doc_settings
         return doc_settings:isTrue("exclude_screensaver")
     else
@@ -415,7 +415,7 @@ function Screensaver:setup(event, fallback_message)
         local excluded
         if DocSettings:hasSidecarFile(self.lastfile) then
             local doc_settings
-            if ui then
+            if ui and ui.doc_settings then
                 doc_settings = ui.doc_settings
             else
                 doc_settings = DocSettings:open(self.lastfile)
@@ -427,7 +427,7 @@ function Screensaver:setup(event, fallback_message)
         end
         if not excluded then
             if self.lastfile and lfs.attributes(self.lastfile, "mode") == "file" then
-                if ui then
+                if ui and ui.document then
                     local doc = ui.document
                     self.image = doc:getCoverPageImage()
                 else
