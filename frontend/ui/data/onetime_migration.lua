@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20210508
+local CURRENT_MIGRATION_DATE = 20210518
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -216,6 +216,22 @@ if last_migration_date < 20210508 then
 
     local DocCache = require("document/doccache")
     DocCache:clearDiskCache()
+end
+
+-- 20210518, ReaderFooter, https://github.com/koreader/koreader/pull/7702
+if last_migration_date < 20210518 then
+    logger.info("Performing one-time migration for 20210518")
+
+    local ReaderFooter = require("apps/reader/modules/readerfooter")
+    local settings = G_reader_settings:readSetting("footer", ReaderFooter.default_settings)
+
+    -- Make sure we have a full set, some of these were historically kept as magic nils...
+    for k, v in pairs(ReaderFooter.default_settings) do
+        if settings[k] == nil then
+            settings[k] = v
+        end
+    end
+    G_reader_settings:saveSetting("footer", settings)
 end
 
 -- We're done, store the current migration date
