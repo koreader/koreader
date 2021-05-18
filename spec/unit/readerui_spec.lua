@@ -30,7 +30,11 @@ describe("Readerui module", function()
     it("should show reader", function()
         UIManager:quit()
         UIManager:show(readerui)
-        UIManager:scheduleIn(1, function() UIManager:close(readerui) end)
+        UIManager:scheduleIn(1, function()
+            UIManager:close(readerui)
+            -- We haven't torn it down yet
+            ReaderUI.instance = readerui
+        end)
         UIManager:run()
     end)
     it("should close document", function()
@@ -38,10 +42,13 @@ describe("Readerui module", function()
         assert(readerui.document == nil)
         readerui:onClose()
     end)
-    it("should not reset running_instance by mistake", function()
-        ReaderUI:doShowReader(sample_epub)
+    it("should not reset ReaderUI.instance by mistake", function()
+        ReaderUI:doShowReader(sample_epub) -- spins up a new, sane instance
         local new_readerui = ReaderUI:_getRunningInstance()
         assert.is.truthy(new_readerui.document)
+        -- This *will* trip:
+        -- * A pair of ReaderUI instance mimsatch warnings (on open/close) because it bypasses the safety of doShowReader!
+        -- * A refcount warning from DocumentRegistry, because bypassinf the safeties means that two different instances opened the same Document.
         ReaderUI:new{
             dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_epub)

@@ -544,7 +544,7 @@ function FileManager:init()
     if FileManager.instance == nil then
         logger.dbg("Spinning up new FileManager instance", tostring(self))
     else
-        -- Should never happen, given what we did above...
+        -- Should never happen, given what we did in showFiles...
         logger.err("FileManager instance mismatch! Opened", tostring(self), "while we still have an existing instance:", tostring(FileManager.instance), debug.traceback())
     end
     FileManager.instance = self
@@ -1159,6 +1159,7 @@ function FileManager:getStartWithMenuTable()
     }
 end
 
+--- @note: This is the *only* safe way to instantiate a new FileManager instance!
 function FileManager:showFiles(path, focused_file)
     -- Warn about and close any pre-existing FM instances first...
     if FileManager.instance then
