@@ -229,7 +229,7 @@ end
 
 function CoverImage:getCacheFiles(cache_path, cache_prefix)
     local cache_count = 0
-    local cache_size_KB = 0
+    local cache_size = 0
     local files = {}
     for entry in lfs.dir(self.cover_image_cache_path) do
         if entry ~= "." and entry ~= ".." then
@@ -237,17 +237,18 @@ function CoverImage:getCacheFiles(cache_path, cache_prefix)
             if entry:sub(1, self.cover_image_cache_prefix:len()) == cache_prefix
                 and lfs.attributes(file, "mode") == "file" then
                 cache_count = cache_count + 1
+                local blocksize = lfs.attributes(file).blksize or 4096
                 files[cache_count] = {
                     name = file,
-                    size = math.floor((lfs.attributes(file).size + 999) / 1000), -- round up to KB
+                    size = math.floor(((lfs.attributes(file).size) + blocksize - 1)/ blocksize) * blocksize,
                     mod = lfs.attributes(file).modification,
                 }
-                cache_size_KB = cache_size_KB + files[cache_count].size -- size in KB
+                cache_size = cache_size + files[cache_count].size
             end
         end
     end
-    logger.dbg("CoverImage: start - cache size: ".. cache_size_KB .. " KB, cached files: " .. cache_count)
-    return cache_count, cache_size_KB, files
+    logger.dbg("CoverImage: start - cache size: ".. cache_size .. " Bytes, cached files: " .. cache_count)
+    return cache_count, cache_size, files
 end
 
 function CoverImage:cleanCache()
@@ -256,20 +257,20 @@ function CoverImage:cleanCache()
         return
     end
 
-    local cache_count, cache_size_KB, files = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
+    local cache_count, cache_size, files = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
 
     -- delete the oldest files first
     table.sort(files, function(a, b) return a.mod < b.mod end)
     local index = 1
     while (cache_count > self.cover_image_cache_maxfiles and self.cover_image_cache_maxfiles ~= 0)
-        or (cache_size_KB > self.cover_image_cache_maxsize * 1000 and self.cover_image_cache_maxsize ~= 0)
+        or (cache_size > self.cover_image_cache_maxsize * 1000 * 1000 and self.cover_image_cache_maxsize ~= 0)
         and index <= #files do
         os.remove(files[index].name)
         cache_count = cache_count - 1
-        cache_size_KB = cache_size_KB - files[index].size
+        cache_size = cache_size - files[index].size
         index = index + 1
     end
-    logger.dbg("CoverImage: clean - cache size: ".. cache_size_KB .. " KB, cached files: " .. cache_count)
+    logger.dbg("CoverImage: clean - cache size: ".. cache_size .. " Bytes, cached files: " .. cache_count)
 end
 
 function CoverImage:isCacheEnabled(path)
@@ -497,9 +498,9 @@ function CoverImage:menuEntryCache()
             {
                 text = _("Clear cached covers"),
                 help_text_func = function()
-                    local cache_count, cache_size_KB
+                    local cache_count, cache_size
                         = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
-                    return T(_("The cache contains %1 files and uses %2."), cache_count, util.getFriendlySize(cache_size_KB * 1000))
+                    return T(_("The cache contains %1 files and uses %2."), cache_count, util.getFriendlySize(cache_size))
                 end,
                 callback = function()
                     UIManager:show(ConfirmBox:new{
