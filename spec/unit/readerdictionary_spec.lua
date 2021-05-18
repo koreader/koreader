@@ -32,6 +32,8 @@ describe("Readerdictionary module", function()
         UIManager:scheduleIn(1, function()
             UIManager:close(dictionary.dict_window)
             UIManager:close(readerui)
+            -- We haven't torn it down yet
+            ReaderUI.instance = readerui
         end)
         UIManager:run()
         Screen:shot(name)

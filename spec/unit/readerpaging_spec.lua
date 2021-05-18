@@ -28,7 +28,11 @@ describe("Readerpaging module", function()
         it("should emit EndOfBook event at the end", function()
             UIManager:quit()
             UIManager:show(readerui)
-            UIManager:nextTick(function() UIManager:close(readerui) end)
+            UIManager:nextTick(function()
+                UIManager:close(readerui)
+                -- We haven't torn it down yet
+                ReaderUI.instance = readerui
+            end)
             UIManager:run()
             readerui:handleEvent(Event:new("SetScrollMode", false))
             readerui.zooming:setZoomMode("pageheight")
@@ -65,7 +69,11 @@ describe("Readerpaging module", function()
         it("should emit EndOfBook event at the end", function()
             UIManager:quit()
             UIManager:show(readerui)
-            UIManager:nextTick(function() UIManager:close(readerui) end)
+            UIManager:nextTick(function()
+                UIManager:close(readerui)
+                -- We haven't torn it down yet
+                ReaderUI.instance = readerui
+            end)
             UIManager:run()
             paging.page_positions = {}
             readerui:handleEvent(Event:new("SetScrollMode", true))
@@ -84,6 +92,7 @@ describe("Readerpaging module", function()
 
         it("should scroll backward on the first page without crash", function()
             local sample_djvu = "spec/front/unit/data/djvu3spec.djvu"
+            -- Unsafe second // ReaderUI instance!
             local tmp_readerui = ReaderUI:new{
                 dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_djvu),
@@ -91,10 +100,13 @@ describe("Readerpaging module", function()
             tmp_readerui.paging:onScrollPanRel(-100)
             tmp_readerui:closeDocument()
             tmp_readerui:onClose()
+            -- Restore the ref to the original ReaderUI instance
+            ReaderUI.instance = readerui
         end)
 
         it("should scroll forward on the last page without crash", function()
             local sample_djvu = "spec/front/unit/data/djvu3spec.djvu"
+            -- Unsafe second // ReaderUI instance!
             local tmp_readerui = ReaderUI:new{
                 dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_djvu),
@@ -106,6 +118,8 @@ describe("Readerpaging module", function()
             paging:onScrollPanRel(120)
             tmp_readerui:closeDocument()
             tmp_readerui:onClose()
+            -- Restore the ref to the original ReaderUI instance
+            ReaderUI.instance = readerui
         end)
     end)
 end)

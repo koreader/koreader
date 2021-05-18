@@ -443,7 +443,7 @@ function ReaderUI:init()
     if ReaderUI.instance == nil then
         logger.dbg("Spinning up new ReaderUI instance", tostring(self))
     else
-        -- Should never happen, given what we did above...
+        -- Should never happen, given what we did in (do)showReader...
         logger.err("ReaderUI instance mismatch! Opened", tostring(self), "while we still have an existing instance:", tostring(ReaderUI.instance), debug.traceback())
     end
     ReaderUI.instance = self
@@ -504,6 +504,8 @@ function ReaderUI:onSetupShowReader()
 end
 
 --- @note: Will sanely close existing FileManager/ReaderUI instance for you!
+---        This is the *only* safe way to instantiate a new ReaderUI instance!
+---        (i.e., don't look at the testsuite, which resorts to all kinds of nasty hacks).
 function ReaderUI:showReader(file, provider)
     logger.dbg("show reader ui")
 

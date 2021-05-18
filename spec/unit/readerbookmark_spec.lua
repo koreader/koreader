@@ -24,14 +24,17 @@ describe("ReaderBookmark module", function()
         UIManager:nextTick(function()
             UIManager:close(readerui.highlight.highlight_dialog)
             UIManager:close(readerui)
+            -- We haven't torn it down yet
+            ReaderUI.instance = readerui
         end)
         UIManager:run()
     end
     local function toggler_dogear(readerui)
         readerui.bookmark:onToggleBookmark()
-        --- @todo Replace scheduleIn with nextTick
-        UIManager:scheduleIn(1, function()
+        UIManager:nextTick(function()
             UIManager:close(readerui)
+            -- We haven't torn it down yet
+            ReaderUI.instance = readerui
         end)
         UIManager:run()
     end
@@ -39,6 +42,8 @@ describe("ReaderBookmark module", function()
         UIManager:nextTick(function()
             UIManager:close(readerui.bookmark.bookmark_menu)
             UIManager:close(readerui)
+            -- We haven't torn it down yet
+            ReaderUI.instance = readerui
         end)
         UIManager:run()
     end

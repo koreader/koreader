@@ -18,7 +18,7 @@ describe("FileManager module", function()
             root_path = "../../test",
         }
         UIManager:show(filemanager)
-        UIManager:scheduleIn(1, function() UIManager:close(filemanager) end)
+        UIManager:scheduleIn(1, function() filemanager:onClose() end)
         UIManager:run()
     end)
     it("should show error on non-existent file", function()
@@ -34,6 +34,7 @@ describe("FileManager module", function()
         assert.is_nil(lfs.attributes(tmp_fn))
         filemanager:deleteFile(tmp_fn)
         UIManager.show = old_show
+        filemanager:onClose()
     end)
     it("should not delete settings for non-document file", function()
         local filemanager = FileManager:new{
@@ -62,6 +63,7 @@ describe("FileManager module", function()
         end
         filemanager:deleteFile(tmp_fn)
         UIManager.show = old_show
+        filemanager:onClose()
 
         -- make sure history file exists
         assert.is_nil(lfs.attributes(tmp_fn))
@@ -97,6 +99,7 @@ describe("FileManager module", function()
         end
         filemanager:deleteFile(tmp_fn)
         UIManager.show = old_show
+        filemanager:onClose()
 
         assert.is_nil(lfs.attributes(tmp_fn))
         assert.is_nil(lfs.attributes(tmp_sidecar))
