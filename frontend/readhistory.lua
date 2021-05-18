@@ -30,7 +30,7 @@ local function buildEntry(input_time, input_file)
         -- mandatory = file_exists and util.getFriendlySize(lfs.attributes(input_file, "size") or 0),
         mandatory_func = function() -- Show the last read time (rather than file size)
             local readerui_instance = require("apps/reader/readerui"):_getRunningInstance()
-            local currently_opened_file = readerui_instance and readerui_instance.document.file
+            local currently_opened_file = readerui_instance and readerui_instance.document and readerui_instance.document.file
             local last_read_ts
             if file_path == currently_opened_file then
                 -- Don't use the sidecar file date which is updated regularly while

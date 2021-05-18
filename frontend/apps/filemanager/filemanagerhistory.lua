@@ -44,7 +44,7 @@ end
 
 function FileManagerHistory:onMenuHold(item)
     local readerui_instance = require("apps/reader/readerui"):_getRunningInstance()
-    local currently_opened_file = readerui_instance and readerui_instance.document.file
+    local currently_opened_file = readerui_instance and readerui_instance.document and readerui_instance.document.file
     self.histfile_dialog = nil
     local buttons = {
         {
