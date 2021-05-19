@@ -379,6 +379,10 @@ function ReaderHighlight:clear(clear_id)
         end
     end
     self.clear_id = nil -- invalidate id
+    if not self.ui.document then
+        -- might happen if scheduled and run after document is closed
+        return
+    end
     if self.ui.document.info.has_pages then
         self.view.highlight.temp = {}
     else
