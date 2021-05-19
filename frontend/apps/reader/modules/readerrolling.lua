@@ -255,6 +255,7 @@ end
 -- in scroll mode percent_finished must be save before close document
 -- we cannot do it in onSaveSettings() because getLastPercent() uses self.ui.document
 function ReaderRolling:onCloseDocument()
+    self.current_header_height = nil -- show unload progress bar at top
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
     local cache_file_path = self.ui.document:getCacheFilePath() -- nil if no cache file
     self.ui.doc_settings:saveSetting("cache_file_path", cache_file_path)
@@ -878,6 +879,7 @@ function ReaderRolling:updatePos()
     end
     self:onUpdateTopStatusBarMarkers()
     UIManager:setDirty(self.view.dialog, "partial")
+    self.current_header_height = self.ui.document:getHeaderHeight()
     -- Allow for the new rendering to be shown before possibly showing
     -- the "Styles have changed..." ConfirmBox so the user can decide
     -- if it is really needed
@@ -892,6 +894,7 @@ end
 function ReaderRolling:onChangeViewMode()
     self.rendering_hash = self.ui.document:getDocumentRenderingHash()
     self.ui.document:_readMetadata()
+    self.current_header_height = self.ui.document:getHeaderHeight()
     self.ui:handleEvent(Event:new("UpdateToc"))
     if self.xpointer then
         self:_gotoXPointer(self.xpointer)
@@ -1124,6 +1127,7 @@ function ReaderRolling:showEngineProgress(percent)
         -- so allow disabling it.
         return
     end
+
     if percent then
         local now = TimeVal:now()
         if self.engine_progress_update_not_before and now < self.engine_progress_update_not_before then
@@ -1135,10 +1139,20 @@ function ReaderRolling:showEngineProgress(percent)
             self.engine_progress_update_not_before = now + ENGINE_PROGRESS_INITIAL_DELAY
             return
         end
+
         -- Widget size and position: best to anchor it at top left,
         -- so it does not override the footer or a bookmark dogear
         local x = 0
         local y = Size.margin.small
+        -- On the first rendering the progress indicator should be on top.
+        -- On further renderings the progress indicator should be on top,
+        --    or if the top status bar is enabled, just below that.
+        -- On toggling the top status bar, the location of the progress indicator
+        --    should be on the location it would be expected in respect of the (old) drawn text.
+        if self.ui.document.been_rendered and self.current_header_height then
+            y = y + self.current_header_height
+        end
+
         local w = math.floor(Screen:getWidth() / 3)
         local h = Size.line.progress
         if self.engine_progress_widget then
