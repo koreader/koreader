@@ -58,7 +58,7 @@ common_info.report_bug = {
         local log_path = string.format("%s/%s", DataStorage:getDataDir(), "crash.log")
         local common_msg = T(_("Please report bugs to \nhttps://github.com/koreader/koreader/issues\n\nVersion:\n%1\n\nDetected device:\n%2"),
             Version:getCurrentRevision(), Device:info())
-        local log_msg = T(_("Attach %1 on your bug report"), log_path)
+        local log_msg = T(_("Attach %1 to your bug report."), log_path)
 
         if Device:isAndroid() then
             local android = require("android")
