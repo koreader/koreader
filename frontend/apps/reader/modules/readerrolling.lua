@@ -911,7 +911,8 @@ function ReaderRolling:onRedrawCurrentView()
     if self.view.view_mode == "page" then
         self.ui:handleEvent(Event:new("PageUpdate", self.current_page))
     else
-        self.ui:handleEvent(Event:new("PosUpdate", self.current_pos, self.ui.document:getCurrentPage()))
+        self.current_page = self.ui.document:getCurrentPage()
+        self.ui:handleEvent(Event:new("PosUpdate", self.current_pos, self.current_page))
     end
     return true
 end
@@ -979,7 +980,8 @@ function ReaderRolling:_gotoPos(new_pos, do_dim_area)
     -- The current page we get in scroll mode may be a bit innacurate,
     -- but we give it anyway to onPosUpdate so footer and statistics can
     -- keep up with page.
-    self.ui:handleEvent(Event:new("PosUpdate", new_pos, self.ui.document:getCurrentPage()))
+    self.current_page = self.ui.document:getCurrentPage()
+    self.ui:handleEvent(Event:new("PosUpdate", new_pos, self.current_page))
 end
 
 function ReaderRolling:_gotoPercent(new_percent)
@@ -1010,7 +1012,8 @@ function ReaderRolling:_gotoPage(new_page, free_first_page, internal)
     if self.view.view_mode == "page" then
         self.ui:handleEvent(Event:new("PageUpdate", self.ui.document:getCurrentPage()))
     else
-        self.ui:handleEvent(Event:new("PosUpdate", self.ui.document:getCurrentPos(), self.ui.document:getCurrentPage()))
+        self.current_page = self.ui.document:getCurrentPage()
+        self.ui:handleEvent(Event:new("PosUpdate", self.ui.document:getCurrentPos(), self.current_page))
     end
 end
 
