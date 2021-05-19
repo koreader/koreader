@@ -437,6 +437,7 @@ function ReaderMenu:onSwipeShowMenu(ges)
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
         self.ui:handleEvent(Event:new("ShowMenu", self:_getTabIndexFromLocation(ges)))
+        self.ui:handleEvent(Event:new("HandledAsSwipe")) -- cancel any pan scroll made
         return true
     end
 end

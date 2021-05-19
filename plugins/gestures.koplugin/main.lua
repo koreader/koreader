@@ -1103,7 +1103,8 @@ function Gestures:gestureAction(action, ges)
         or (ges.ges == "hold" and self.ignore_hold_corners) then
         return
     else
-         Dispatcher:execute(self.ui, action_list, ges)
+        self.ui:handleEvent(Event:new("HandledAsSwipe"))
+        Dispatcher:execute(self.ui, action_list, ges)
     end
     return true
 end
