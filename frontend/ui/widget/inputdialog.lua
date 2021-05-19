@@ -775,7 +775,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                                                 self._input_widget:moveCursorToCharPos(char_pos)
                                                 msg = T(_("Found in line %1"), self._input_widget:getLineNums())
                                             else
-                                                msg = _("Not found")
+                                                msg = _("Not found.")
                                             end
                                             UIManager:show(Notification:new{
                                                 text = msg,
