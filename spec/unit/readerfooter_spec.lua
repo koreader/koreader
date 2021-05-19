@@ -55,16 +55,6 @@ describe("Readerfooter module", function()
             end
             error('Menu item not found: "Status bar"!')
         end
-
-        --[[
-        function resetSettings()
-            local settings = G_reader_settings:readSetting("footer", {})
-            for k, v in pairs(ReaderFooter.default_settings) do
-                settings[k] = v
-            end
-            return settings
-        end
-        --]]
     end)
 
     teardown(function()
@@ -75,21 +65,14 @@ describe("Readerfooter module", function()
     end)
 
     before_each(function()
-        local settings = G_reader_settings:readSetting("footer", ReaderFooter.default_settings)
-        -- NOTE: This is screwing with a few of the later tests,
-        --       where we basically do a weird dance of "reset to defaults" -> "disable all this"
-        settings.disabled = false
-        settings.all_at_once = true
-        settings.toc_markers = true
+        local settings = {}
+        for k, v in pairs(ReaderFooter.default_settings) do
+            settings[k] = v
+        end
+        -- Enforce Battery, the real default is dynamic (Device:hasBattery())
         settings.battery = true
-        settings.time = true
-        settings.page_progress = true
-        settings.pages_left = true
-        settings.percentage = true
-        settings.book_time_to_read = true
-        settings.chapter_time_to_read = true
-
         G_reader_settings:saveSetting("footer", settings)
+
         -- NOTE: Forcefully disable the statistics plugin, as lj-sqlite3 is horribly broken under Busted,
         --       causing it to erratically fail to load, affecting the results of this test...
         G_reader_settings:saveSetting("plugins_disabled", {
@@ -100,6 +83,10 @@ describe("Readerfooter module", function()
 
     it("should setup footer as visible in all_at_once mode", function()
         G_reader_settings:saveSetting("reader_footer_mode", 1)
+        local settings = G_reader_settings:readSetting("footer")
+        settings.all_at_once = true
+        G_reader_settings:saveSetting("footer", settings)
+
         local sample_pdf = "spec/front/unit/data/2col.pdf"
         purgeDir(DocSettings:getSidecarDir(sample_pdf))
         os.remove(DocSettings:getHistoryPath(sample_pdf))
@@ -115,19 +102,9 @@ describe("Readerfooter module", function()
     end)
 
     it("should setup footer as visible not in all_at_once", function()
-        local settings = G_reader_settings:readSetting("footer")
-        settings.disabled = false
-        settings.all_at_once = false
-        settings.toc_markers = true
-        settings.battery = true
-        settings.time = true
-        settings.page_progress = true
-        settings.pages_left = true
-        settings.percentage = true
-        settings.book_time_to_read = true
-        settings.chapter_time_to_read = true
-        G_reader_settings:saveSetting("footer", settings)
         G_reader_settings:saveSetting("reader_footer_mode", 1)
+        -- default settings
+
         local sample_pdf = "spec/front/unit/data/2col.pdf"
         purgeDir(DocSettings:getSidecarDir(sample_pdf))
         os.remove(DocSettings:getHistoryPath(sample_pdf))
@@ -145,6 +122,8 @@ describe("Readerfooter module", function()
 
     it("should setup footer as invisible in full screen mode", function()
         G_reader_settings:saveSetting("reader_footer_mode", 1)
+        -- default settings
+
         local sample_pdf = "spec/front/unit/data/2col.pdf"
         purgeDir(DocSettings:getSidecarDir(sample_pdf))
         os.remove(DocSettings:getHistoryPath(sample_pdf))
@@ -164,18 +143,20 @@ describe("Readerfooter module", function()
 
     it("should setup footer as visible in mini progress bar mode", function()
         G_reader_settings:saveSetting("reader_footer_mode", 1)
+        -- default settings
+
         local sample_pdf = "spec/front/unit/data/2col.pdf"
         purgeDir(DocSettings:getSidecarDir(sample_pdf))
         os.remove(DocSettings:getHistoryPath(sample_pdf))
         local cfg = DocSettings:open(sample_pdf)
-        cfg:saveSetting("kopt_full_screen", 0)
+        cfg:delSetting("kopt_full_screen")
         cfg:flush()
 
         local readerui = ReaderUI:new{
             dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_pdf),
         }
-        assert.is.same(false, readerui.view.footer_visible)
+        assert.is.same(true, readerui.view.footer_visible)
         G_reader_settings:delSetting("reader_footer_mode")
         readerui:closeDocument()
         readerui:onClose()
@@ -183,6 +164,8 @@ describe("Readerfooter module", function()
 
     it("should setup footer as invisible", function()
         G_reader_settings:saveSetting("reader_footer_mode", 1)
+        -- default settings
+
         local sample_epub = "spec/front/unit/data/juliet.epub"
         purgeDir(DocSettings:getSidecarDir(sample_epub))
         os.remove(DocSettings:getHistoryPath(sample_epub))
@@ -201,6 +184,10 @@ describe("Readerfooter module", function()
     end)
 
     it("should setup footer for epub without error", function()
+        local settings = G_reader_settings:readSetting("footer")
+        settings.all_at_once = true
+        G_reader_settings:saveSetting("footer", settings)
+
         local sample_epub = "spec/front/unit/data/juliet.epub"
         purgeDir(DocSettings:getSidecarDir(sample_epub))
         os.remove(DocSettings:getHistoryPath(sample_epub))
@@ -222,6 +209,10 @@ describe("Readerfooter module", function()
     end)
 
     it("should setup footer for pdf without error", function()
+        local settings = G_reader_settings:readSetting("footer")
+        settings.all_at_once = true
+        G_reader_settings:saveSetting("footer", settings)
+
         local sample_pdf = "spec/front/unit/data/2col.pdf"
         purgeDir(DocSettings:getSidecarDir(sample_pdf))
         os.remove(DocSettings:getHistoryPath(sample_pdf))
@@ -240,6 +231,10 @@ describe("Readerfooter module", function()
     end)
 
     it("should switch between different modes", function()
+        local settings = G_reader_settings:readSetting("footer")
+        settings.all_at_once = true
+        G_reader_settings:saveSetting("footer", settings)
+
         local sample_pdf = "spec/front/unit/data/2col.pdf"
         purgeDir(DocSettings:getSidecarDir(sample_pdf))
         os.remove(DocSettings:getHistoryPath(sample_pdf))
@@ -297,13 +292,14 @@ describe("Readerfooter module", function()
     end)
 
     it("should rotate through different modes", function()
+        -- default settings (we'll poke at footer.settings directly post-instantiation)
+
         local sample_pdf = "spec/front/unit/data/2col.pdf"
         local readerui = ReaderUI:new{
             dimen = Screen:getSize(),
             document = DocumentRegistry:openDocument(sample_pdf),
         }
         local footer = readerui.view.footer
-        footer.settings.all_at_once = false
         footer.mode = 0
         footer:onTapFooter()
         assert.is.same(1, footer.mode)
@@ -324,6 +320,7 @@ describe("Readerfooter module", function()
         assert.is.same(0, footer.mode)
 
         footer.settings.all_at_once = true
+        footer:updateFooterTextGenerator()
         footer.mode = 5
         footer:onTapFooter()
         assert.is.same(0, footer.mode)
@@ -339,6 +336,10 @@ describe("Readerfooter module", function()
     end)
 
     it("should pick up screen resize in resetLayout", function()
+        local settings = G_reader_settings:readSetting("footer")
+        settings.all_at_once = true
+        G_reader_settings:saveSetting("footer", settings)
+
         local sample_pdf = "spec/front/unit/data/2col.pdf"
         purgeDir(DocSettings:getSidecarDir(sample_pdf))
         os.remove(DocSettings:getHistoryPath(sample_pdf))
@@ -375,6 +376,10 @@ describe("Readerfooter module", function()
     end)
 
     it("should update width on PosUpdate event", function()
+        local settings = G_reader_settings:readSetting("footer")
+        settings.all_at_once = true
+        G_reader_settings:saveSetting("footer", settings)
+
         local sample_epub = "spec/front/unit/data/juliet.epub"
         purgeDir(DocSettings:getSidecarDir(sample_epub))
         os.remove(DocSettings:getHistoryPath(sample_epub))
@@ -400,13 +405,11 @@ describe("Readerfooter module", function()
     end)
 
     it("should support chapter markers", function()
+        -- default settings (we'll poke at footer.settings directly post-instantiation)
+
         local sample_epub = "spec/front/unit/data/juliet.epub"
         purgeDir(DocSettings:getSidecarDir(sample_epub))
         os.remove(DocSettings:getHistoryPath(sample_epub))
-
-        local settings = G_reader_settings:readSetting("footer")
-        settings.toc_markers = true
-        G_reader_settings:saveSetting("footer", settings)
 
         local readerui = ReaderUI:new{
             dimen = Screen:getSize(),
@@ -437,7 +440,6 @@ describe("Readerfooter module", function()
         local settings = G_reader_settings:readSetting("footer")
         settings.auto_refresh_time = true
         settings.all_at_once = true
-        settings.time = true
         G_reader_settings:saveSetting("footer", settings)
 
         local readerui = ReaderUI:new{
@@ -477,7 +479,6 @@ describe("Readerfooter module", function()
         settings.disabled = true
         settings.auto_refresh_time = true
         settings.all_at_once = true
-        settings.time = true
         G_reader_settings:saveSetting("footer", settings)
 
         local readerui = ReaderUI:new{
@@ -508,7 +509,6 @@ describe("Readerfooter module", function()
         settings.disabled = false
         settings.auto_refresh_time = true
         settings.all_at_once = true
-        settings.time = true
         G_reader_settings:saveSetting("footer", settings)
 
         local readerui = ReaderUI:new{
@@ -563,12 +563,7 @@ describe("Readerfooter module", function()
         assert.are.same({}, UIManager._task_queue)
 
         G_reader_settings:saveSetting("reader_footer_mode", 1)
-        local settings = G_reader_settings:readSetting("footer")
-        settings.disabled = false
-        settings.all_at_once = false
-        settings.page_progress = true
-        settings.time = true
-        G_reader_settings:saveSetting("footer", settings)
+        -- default settings
 
         local readerui = ReaderUI:new{
             dimen = Screen:getSize(),
@@ -610,8 +605,6 @@ describe("Readerfooter module", function()
 
         local settings = G_reader_settings:readSetting("footer")
         settings.all_at_once = true
-        settings.page_progress = true
-        settings.pages_left = true
         settings.battery = false
         settings.time = false
         settings.percentage = false
@@ -651,8 +644,6 @@ describe("Readerfooter module", function()
         G_reader_settings:saveSetting("reader_footer_mode", 0)
         local settings = G_reader_settings:readSetting("footer")
         settings.all_at_once = true
-        settings.page_progress = true
-        settings.pages_left = true
         G_reader_settings:saveSetting("footer", settings)
 
         local readerui = ReaderUI:new{
@@ -676,9 +667,7 @@ describe("Readerfooter module", function()
 
         assert.are.same({}, UIManager._task_queue)
 
-        G_reader_settings:saveSetting("footer", ReaderFooter.default_settings)
         local settings = G_reader_settings:readSetting("footer")
-        settings.all_at_once = false
         settings.battery = false
         settings.time = false
         settings.page_progress = false
@@ -726,9 +715,7 @@ describe("Readerfooter module", function()
         UIManager:quit()
 
         G_reader_settings:saveSetting("reader_footer_mode", 2)
-        local settings = G_reader_settings:readSetting("footer")
-        settings.time = true
-        G_reader_settings:saveSetting("footer", settings)
+        -- default settings
 
         local readerui = ReaderUI:new{
             dimen = Screen:getSize(),
@@ -750,9 +737,7 @@ describe("Readerfooter module", function()
         UIManager:quit()
 
         G_reader_settings:saveSetting("reader_footer_mode", 1)
-        G_reader_settings:saveSetting("footer", ReaderFooter.default_settings)
         local settings = G_reader_settings:readSetting("footer")
-        settings.all_at_once = false
         settings.battery = false
         settings.time = false
         settings.page_progress = false
@@ -782,9 +767,7 @@ describe("Readerfooter module", function()
         UIManager:quit()
 
         G_reader_settings:saveSetting("reader_footer_mode", 1)
-        G_reader_settings:saveSetting("footer", ReaderFooter.default_settings)
         local settings = G_reader_settings:readSetting("footer")
-        settings.all_at_once = false
         settings.battery = false
         settings.time = false
         settings.page_progress = false
