@@ -936,6 +936,8 @@ function ReaderPaging:onGotoPageRel(diff)
     new_va[x] = old_va[x] + x_pan_off
     new_va[y] = old_va[y]
 
+    local prev_page = self.current_page
+
     -- Handle cases when the view area gets out of page boundaries
     if not self.page_area:contains(new_va) then
         if not at_end(x) then
@@ -950,6 +952,12 @@ function ReaderPaging:onGotoPageRel(diff)
                 end
             end
         end
+    end
+
+    if self.current_page == prev_page then
+        -- Page number haven't changed when panning inside a page,
+        -- but time may: keep the footer updated
+        self.view.footer:onUpdateFooter(self.view.footer_visible)
     end
 
     -- signal panning update
@@ -992,7 +1000,7 @@ function ReaderPaging:_gotoPage(number, orig_mode)
     if number == self.current_page or not number then
         -- update footer even if we stay on the same page (like when
         -- viewing the bottom part of a page from a top part view)
-        self.view.footer:onUpdateFooter()
+        self.view.footer:onUpdateFooter(self.view.footer_visible)
         return true
     end
     if number > self.number_of_pages then
