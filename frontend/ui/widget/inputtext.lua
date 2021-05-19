@@ -533,7 +533,7 @@ function InputText:getLineCharPos(line_num)
     return char_pos
 end
 
--- search for a string
+--- Search for a string.
 -- if start_pos not set, starts a search from the next to cursor position
 -- returns first found position or 0 if not found
 function InputText:searchString(str, start_pos)
