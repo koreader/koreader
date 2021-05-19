@@ -116,6 +116,7 @@ function ReaderRolling:init()
             {"0"}, doc = "go to end", event = "GotoPercent", args = 100,
         }
     end
+    self.pan_interval = TimeVal:new{ usec = 1000000 / self.pan_rate }
 
     table.insert(self.ui.postInitCallback, function()
         self.rendering_hash = self.ui.document:getDocumentRenderingHash()
@@ -377,11 +378,18 @@ function ReaderRolling:setupTouchZones()
         {
             id = "rolling_pan",
             ges = "pan",
-            rate = self.pan_rate,
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
             handler = function(ges) return self:onPan(nil, ges) end,
+        },
+        {
+            id = "rolling_pan_release",
+            ges = "pan_release",
+            screen_zone = {
+                ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
+            },
+            handler = function(ges) return self:onPanRelease(nil, ges) end,
         },
     })
 end
@@ -515,7 +523,45 @@ function ReaderRolling:getLastPercent()
     end
 end
 
+function ReaderRolling:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay)
+    self.scroll_method = scroll_method
+    self.scroll_activation_delay = TimeVal:new{ usec = scroll_activation_delay * 1000 }
+    if inertial_scroll_enabled then
+        self.ui.scrolling:setInertialScrollCallbacks(
+            function(distance) -- do_scroll_callback
+                if not self.ui.document then
+                    return false
+                end
+                UIManager.currently_scrolling = true
+                local prev_pos = self.current_pos
+                self:_gotoPos(prev_pos + distance)
+                return self.current_pos ~= prev_pos
+            end,
+            function() -- scroll_done_callback
+                UIManager.currently_scrolling = false
+                if self.ui.document then
+                    self.xpointer = self.ui.document:getXPointer()
+                end
+                UIManager:setDirty(self.view.dialog, "partial")
+            end
+        )
+    else
+        self.ui.scrolling:setInertialScrollCallbacks(nil, nil)
+    end
+end
+
 function ReaderRolling:onSwipe(_, ges)
+    if self._pan_has_scrolled then
+        -- We did some panning but released after a short amount of time,
+        -- so this gesture ended up being a Swipe - and this swipe was
+        -- not handled by the other modules (so, not opening the menus).
+        -- Do as :onPanRelese() and ignore this swipe.
+        self:onPanRelease() -- no arg, so we know there we come from here
+        return true
+    else
+        self._pan_started = false
+        UIManager.currently_scrolling = false
+    end
     local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
     if direction == "west" then
         if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
@@ -539,19 +585,116 @@ function ReaderRolling:onSwipe(_, ges)
 end
 
 function ReaderRolling:onPan(_, ges)
-    if self.view.view_mode == "scroll" then
-        local distance_type = "distance"
-        if self.ui.gesture and self.ui.gesture.multiswipes_enabled then
-            distance_type = "distance_delayed"
+    if ges.direction == "north" or ges.direction == "south" then
+        if ges.mousewheel_direction and self.view.view_mode == "page" then
+            -- Mouse wheel generates a Pan event: in page mode, move one
+            -- page per event. Scroll mode is handled in the 'else' branch
+            -- and use the wheeled distance.
+            UIManager:broadcastEvent(Event:new("GotoViewRel", -1 * ges.mousewheel_direction))
+        elseif self.view.view_mode == "scroll" then
+            if not self._pan_started then
+                self._pan_started = true
+                -- Re-init state variables
+                self._pan_has_scrolled = false
+                self._pan_prev_relative_y = 0
+                self._pan_to_scroll_later = 0
+                self._pan_real_last_time = TimeVal.zero
+                if ges.mousewheel_direction then
+                    self._pan_activation_time = false
+                else
+                    self._pan_activation_time = ges.time + self.scroll_activation_delay
+                end
+                -- We will restore the previous position if this pan
+                -- ends up being a swipe or a multiswipe
+                self._pan_pos_at_pan_start = self.current_pos
+            end
+            local scroll_now = false
+            if self._pan_activation_time and ges.time >= self._pan_activation_time then
+                self._pan_activation_time = false -- We can go on, no need to check again
+            end
+            if not self._pan_activation_time and ges.time - self._pan_real_last_time >= self.pan_interval then
+                scroll_now = true
+                self._pan_real_last_time = ges.time
+            end
+            local scroll_dist = 0
+            if self.scroll_method == self.ui.scrolling.SCROLL_METHOD_CLASSIC then
+                -- Scroll by the distance the finger moved since last pan event,
+                -- having the document follows the finger
+                scroll_dist = self._pan_prev_relative_y - ges.relative.y
+                self._pan_prev_relative_y = ges.relative.y
+                if not self._pan_has_scrolled then
+                    -- Avoid checking this for each pan, no need once we have scrolled
+                    if self.ui.scrolling:cancelInertialScroll() or self.ui.scrolling:cancelledByTouch() then
+                        -- If this pan or its initial touch did cancel some inertial scrolling,
+                        -- ignore activation delay to allow continuous scrolling
+                        self._pan_activation_time = false
+                        scroll_now = true
+                        self._pan_real_last_time = ges.time
+                    end
+                end
+                self.ui.scrolling:accountManualScroll(scroll_dist, ges.time)
+            elseif self.scroll_method == self.ui.scrolling.SCROLL_METHOD_TURBO then
+                -- Legacy scrolling "buggy" behaviour, that can actually be nice
+                -- Scroll by the distance from the initial finger position, this distance
+                -- controlling the speed of the scrolling)
+                if scroll_now then
+                    scroll_dist = -ges.relative.y
+                end
+                -- We don't accumulate in _pan_to_scroll_later
+            elseif self.scroll_method == self.ui.scrolling.SCROLL_METHOD_ON_RELEASE then
+                self._pan_to_scroll_later = -ges.relative.y
+                if scroll_now then
+                    self._pan_has_scrolled = true -- so we really apply it later
+                end
+                scroll_dist = 0
+                scroll_now = false
+            end
+            if scroll_now then
+                local dist = self._pan_to_scroll_later + scroll_dist
+                self._pan_to_scroll_later = 0
+                if dist ~= 0 then
+                    self._pan_has_scrolled = true
+                    UIManager.currently_scrolling = true
+                    self:_gotoPos(self.current_pos + dist)
+                        -- (We'll update self.xpointer only when done moving, at
+                        -- release/swipe time as it might be expensive)
+                end
+            else
+                self._pan_to_scroll_later = self._pan_to_scroll_later + scroll_dist
+            end
         end
-        if ges.direction == "north" then
-            self:_gotoPos(self.current_pos + ges[distance_type])
-        elseif ges.direction == "south" then
-            self:_gotoPos(self.current_pos - ges[distance_type])
+    end
+    return true
+end
+
+function ReaderRolling:onPanRelease(_, ges)
+    if self._pan_has_scrolled and self._pan_to_scroll_later ~= 0 then
+        self:_gotoPos(self.current_pos + self._pan_to_scroll_later)
+    end
+    self._pan_started = false
+    UIManager.currently_scrolling = false
+    if self._pan_has_scrolled then
+        self._pan_has_scrolled = false
+        self.xpointer = self.ui.document:getXPointer()
+        -- Don't do any inertial scrolling if pan events come from
+        -- a mousewheel (which may have itself some inertia)
+        if (ges and ges.from_mousewheel) or not self.ui.scrolling:startInertialScroll() then
+            UIManager:setDirty(self.view.dialog, "partial")
         end
-    --this is only use when mouse wheel is used
-    elseif ges.mousewheel_direction and self.view.view_mode == "page" then
-        UIManager:broadcastEvent(Event:new("GotoViewRel", -1 * ges.mousewheel_direction))
+    end
+end
+
+function ReaderRolling:onHandledAsSwipe()
+    if self._pan_started then
+        -- Restore original position as this pan we've started handling
+        -- has ended up being a multiswipe or handled as a swipe to open
+        -- top or bottom menus
+        self:_gotoPos(self._pan_pos_at_pan_start)
+        self._pan_started = false
+        self._pan_has_scrolled = false
+        UIManager.currently_scrolling = false
+        -- No specific refresh: the swipe/multiswipe might show other stuff,
+        -- and we'd want to avoid a flashing refresh
     end
     return true
 end
