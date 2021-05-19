@@ -613,35 +613,6 @@ Default value: %1]]), GestureDetector.HOLD_INTERVAL/1000),
                 end,
             },
             {
-                text = _("Pan delay interval"),
-                keep_menu_open = true,
-                callback = function()
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local GestureDetector = require("device/gesturedetector")
-                    local items = SpinWidget:new{
-                        title_text = _("Pan delay interval"),
-                        info_text = T(_([[
-This is used where necessary to reduce potential activation of panning when swiping is intended (e.g., for the menu or for multiswipe).
-
-The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).
-Default value: %1]]), GestureDetector.PAN_DELAYED_INTERVAL/1000),
-                        width = math.floor(Screen:getWidth() * 0.75),
-                        value = GestureDetector:getInterval("ges_pan_delayed_interval")/1000,
-                        value_min = 100,
-                        value_max = 2000,
-                        value_step = 100,
-                        value_hold_step = 500,
-                        ok_text = _("Set interval"),
-                        default_value = GestureDetector.PAN_DELAYED_INTERVAL/1000,
-                        callback = function(spin)
-                            G_reader_settings:saveSetting("ges_pan_delayed_interval", spin.value*1000)
-                            GestureDetector:setNewInterval("ges_pan_delayed_interval", spin.value*1000)
-                        end
-                    }
-                    UIManager:show(items)
-                end,
-            },
-            {
                 text = _("Swipe interval"),
                 keep_menu_open = true,
                 callback = function()

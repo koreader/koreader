@@ -57,7 +57,6 @@ local TAP_INTERVAL = 0 * 1000
 local DOUBLE_TAP_INTERVAL = 300 * 1000
 local TWO_FINGER_TAP_DURATION = 300 * 1000
 local HOLD_INTERVAL = 500 * 1000
-local PAN_DELAYED_INTERVAL = 500 * 1000
 local SWIPE_INTERVAL = 900 * 1000
 -- current values
 local ges_tap_interval = G_reader_settings:readSetting("ges_tap_interval") or TAP_INTERVAL
@@ -68,8 +67,6 @@ local ges_two_finger_tap_duration = G_reader_settings:readSetting("ges_two_finge
 ges_two_finger_tap_duration = TimeVal:new{ usec = ges_two_finger_tap_duration }
 local ges_hold_interval = G_reader_settings:readSetting("ges_hold_interval") or HOLD_INTERVAL
 ges_hold_interval = TimeVal:new{ usec = ges_hold_interval }
-local ges_pan_delayed_interval = G_reader_settings:readSetting("ges_pan_delayed_interval") or PAN_DELAYED_INTERVAL
-ges_pan_delayed_interval = TimeVal:new{ usec = ges_pan_delayed_interval }
 local ges_swipe_interval = G_reader_settings:readSetting("ges_swipe_interval") or SWIPE_INTERVAL
 ges_swipe_interval = TimeVal:new{ usec = ges_swipe_interval }
 
@@ -81,7 +78,6 @@ local GestureDetector = {
     DOUBLE_TAP_INTERVAL = DOUBLE_TAP_INTERVAL,
     TWO_FINGER_TAP_DURATION = TWO_FINGER_TAP_DURATION,
     HOLD_INTERVAL = HOLD_INTERVAL,
-    PAN_DELAYED_INTERVAL = PAN_DELAYED_INTERVAL,
     SWIPE_INTERVAL = SWIPE_INTERVAL,
     -- pinch/spread direction table
     DIRECTION_TABLE = {
@@ -320,8 +316,6 @@ function GestureDetector:setNewInterval(type, interval)
         ges_two_finger_tap_duration = TimeVal:new{ usec = interval }
     elseif type == "ges_hold_interval" then
         ges_hold_interval = TimeVal:new{ usec = interval }
-    elseif type == "ges_pan_delayed_interval" then
-        ges_pan_delayed_interval = TimeVal:new{ usec = interval }
     elseif type == "ges_swipe_interval" then
         ges_swipe_interval = TimeVal:new{ usec = interval }
     end
@@ -336,8 +330,6 @@ function GestureDetector:getInterval(type)
         return ges_two_finger_tap_duration:tousecs()
     elseif type == "ges_hold_interval" then
         return ges_hold_interval:tousecs()
-    elseif type == "ges_pan_delayed_interval" then
-        return ges_pan_delayed_interval:tousecs()
     elseif type == "ges_swipe_interval" then
         return ges_swipe_interval:tousecs()
     end
@@ -688,11 +680,6 @@ function GestureDetector:handlePan(tev)
         return self:handleTwoFingerPan(tev)
     else
         local pan_direction, pan_distance = self:getPath(slot)
-        local tv_diff = self.last_tevs[slot].timev - self.first_tevs[slot].timev
-        if not tv_diff:isPositive() then
-            tv_diff = TimeVal.huge
-        end
-
         local pan_ev = {
             ges = "pan",
             relative = {
@@ -700,29 +687,15 @@ function GestureDetector:handlePan(tev)
                 x = 0,
                 y = 0,
             },
-            relative_delayed = {
-                -- default to pan 0
-                x = 0,
-                y = 0,
-            },
             pos = nil,
             direction = pan_direction,
             distance = pan_distance,
-            distance_delayed = 0,
             time = tev.timev,
         }
 
         -- regular pan
         pan_ev.relative.x = tev.x - self.first_tevs[slot].x
         pan_ev.relative.y = tev.y - self.first_tevs[slot].y
-
-        -- delayed pan, used where necessary to reduce potential activation of panning
-        -- when swiping is intended (e.g., for the menu or for multiswipe)
-        if not (tv_diff < ges_pan_delayed_interval) then
-            pan_ev.relative_delayed.x = tev.x - self.first_tevs[slot].x
-            pan_ev.relative_delayed.y = tev.y - self.first_tevs[slot].y
-            pan_ev.distance_delayed = pan_distance
-        end
 
         pan_ev.pos = Geom:new{
             x = self.last_tevs[slot].x,
@@ -972,7 +945,6 @@ function GestureDetector:adjustGesCoordinate(ges)
             end
             if ges.relative then
                 ges.relative.x, ges.relative.y = -ges.relative.y, ges.relative.x
-                ges.relative_delayed.x, ges.relative_delayed.y = -ges.relative_delayed.y, ges.relative_delayed.x
             end
         elseif ges.ges == "pinch" or ges.ges == "spread"
             or ges.ges == "inward_pan"
@@ -999,7 +971,6 @@ function GestureDetector:adjustGesCoordinate(ges)
             end
             if ges.relative then
                 ges.relative.x, ges.relative.y = ges.relative.y, -ges.relative.x
-                ges.relative_delayed.x, ges.relative_delayed.y = ges.relative_delayed.y, -ges.relative_delayed.x
             end
         elseif ges.ges == "pinch" or ges.ges == "spread"
             or ges.ges == "inward_pan"
@@ -1026,7 +997,6 @@ function GestureDetector:adjustGesCoordinate(ges)
             end
             if ges.relative then
                 ges.relative.x, ges.relative.y = -ges.relative.x, -ges.relative.y
-                ges.relative_delayed.x, ges.relative_delayed.y = -ges.relative_delayed.x, -ges.relative_delayed.y
             end
         elseif ges.ges == "pinch" or ges.ges == "spread"
                 or ges.ges == "inward_pan"
