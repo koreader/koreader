@@ -196,12 +196,7 @@ function Device:init()
                 local fake_ges = {
                     ges = "pan",
                     distance = 200,
-                    distance_delayed = 200,
                     relative = {
-                        x = 50*scrolled_x,
-                        y = 100*scrolled_y,
-                    },
-                    relative_delayed = {
                         x = 50*scrolled_x,
                         y = 100*scrolled_y,
                     },
@@ -212,9 +207,7 @@ function Device:init()
                 local fake_ges_release = {
                     ges = "pan_release",
                     distance = fake_ges.distance,
-                    distance_delayed = fake_ges.distance_delayed,
                     relative = fake_ges.relative,
-                    relative_delayed = fake_ges.relative_delayed,
                     pos = pos,
                     time = ev.time,
                     from_mousewheel = true,
