@@ -24,7 +24,7 @@ normally be found in the KOReader directory:
 * `applications/koreader/` directory for Pocketbook
 
 
-Android logs are kept on memory. Please go to Help->Bug Report to dump these logs to a file
+Android logs are kept in memory. Please go to Help → Bug Report to save these logs to a file.
 
 Please try to include the relevant sections in your issue description.
 You can upload the whole `crash.log` file on GitHub by dragging and
