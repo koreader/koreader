@@ -724,8 +724,73 @@ function InputDialog:_addScrollButtons(nav_bar)
                 end,
             })
         end
-        -- Add a button to go to the line by its number in the file
         if self.fullscreen then
+            -- Add a button to search for a string in the edited text
+            table.insert(row, {
+                text = _("Find"),
+                callback = function()
+                    local input_dialog
+                    input_dialog = InputDialog:new{
+                        title = _("Enter text to search for"),
+                        stop_events_propagation = true, -- avoid interactions with upper InputDialog
+                        input = self.search_value,
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    callback = function()
+                                        UIManager:close(input_dialog)
+                                    end,
+                                },
+                                {
+                                    text = _("Find first"),
+                                    callback = function()
+                                        self.search_value = input_dialog:getInputText()
+                                        if self.search_value ~= "" then
+                                            UIManager:close(input_dialog)
+                                            local msg
+                                            local char_pos = self._input_widget:searchString(self.search_value, 1)
+                                            if char_pos > 0 then
+                                                self._input_widget:moveCursorToCharPos(char_pos)
+                                                msg = T(_("Found in line %1"), self._input_widget:getLineNums())
+                                            else
+                                                msg = _("Not found")
+                                            end
+                                            UIManager:show(Notification:new{
+                                                text = msg,
+                                            })
+                                        end
+                                    end,
+                                },
+                                {
+                                    text = _("Find next"),
+                                    is_enter_default = true,
+                                    callback = function()
+                                        self.search_value = input_dialog:getInputText()
+                                        if self.search_value ~= "" then
+                                            UIManager:close(input_dialog)
+                                            local msg
+                                            local char_pos = self._input_widget:searchString(self.search_value)
+                                            if char_pos > 0 then
+                                                self._input_widget:moveCursorToCharPos(char_pos)
+                                                msg = T(_("Found in line %1."), self._input_widget:getLineNums())
+                                            else
+                                                msg = _("Not found.")
+                                            end
+                                            UIManager:show(Notification:new{
+                                                text = msg,
+                                            })
+                                        end
+                                    end,
+                                },
+                            },
+                        },
+                    }
+                    UIManager:show(input_dialog)
+                    input_dialog:onShowKeyboard()
+                end,
+            })
+            -- Add a button to go to the line by its number in the file
             table.insert(row, {
                 text = _("Go"),
                 callback = function()
