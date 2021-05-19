@@ -524,6 +524,7 @@ function ReaderRolling:onSwipe(_, ges)
             else
                 self:onGotoViewRel(1)
             end
+            return true
         end
     elseif direction == "east" then
         if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
@@ -532,12 +533,8 @@ function ReaderRolling:onSwipe(_, ges)
             else
                 self:onGotoViewRel(-1)
             end
+            return true
         end
-    else
-        -- update footer (time & battery)
-        self.view.footer:onUpdateFooter()
-        -- trigger full refresh
-        UIManager:setDirty(nil, "full")
     end
 end
 
