@@ -800,6 +800,7 @@ function Gestures:setupGesture(ges)
         ratio_w = DTAP_ZONE_BOTTOM_RIGHT.w,
         ratio_h = DTAP_ZONE_BOTTOM_RIGHT.h,
     }
+    -- NOTE: The defaults are effectively mapped to DTAP_ZONE_BACKWARD & DTAP_ZONE_FORWARD
     local zone_left = {
         ratio_x = DDOUBLE_TAP_ZONE_PREV_CHAPTER.x,
         ratio_y = DDOUBLE_TAP_ZONE_PREV_CHAPTER.y,
