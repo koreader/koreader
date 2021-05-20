@@ -31,7 +31,6 @@ local ReaderFont = InputContainer:new{
 
 function ReaderFont:init()
     if Device:hasKeyboard() then
-
         -- add shortcut for keyboard
         self.key_events = {
             ShowFontMenu = { {"F"}, doc = "show font menu" },
