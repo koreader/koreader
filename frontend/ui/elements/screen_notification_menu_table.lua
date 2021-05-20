@@ -3,21 +3,6 @@ local _ = require("gettext")
 
 local band = bit.band
 local bor = bit.bor
-local bxor = bit.bxor
-
---[[
-local function isMaskEnabled(source)
-    local mask = G_reader_settings:readSetting("notification_sources_to_show_mask") or Notification.SOURCE_DEFAULT
-    return band(mask, source) ~= 0
-end
-]]
-
---[[
-local function toggleMask(source)
-    local mask = G_reader_settings:readSetting("notification_sources_to_show_mask") or Notification.SOURCE_DEFAULT
-    G_reader_settings:saveSetting("notification_sources_to_show_mask", bxor(mask, source))
-end
-]]
 
 local function setMask(source)
     G_reader_settings:saveSetting("notification_sources_to_show_mask", source)
