@@ -23,81 +23,6 @@ local function getMask()
     return G_reader_settings:readSetting("notification_sources_to_show_mask") or Notification.SOURCE_DEFAULT
 end
 
-local function showExpertMenu(toggle)
-    if toggle and toggle==true then
-        return {
-            text = _("Expert notification settings"),
-            help_text =_("Here you can set the sources of popup notifications on a fine grain scale."),
-            sub_item_table = {
-                {
-                text = _("Bottom menu icons"),
-                checked_func = function()
-                    return isMaskEnabled(Notification.SOURCE_BOTTOM_MENU_ICON)
-                end,
-                callback = function()
-                    toggleMask(Notification.SOURCE_BOTTOM_MENU_ICON)
-                end,
-                },
-                {
-                text = _("Bottom menu toggles"),
-                checked_func = function()
-                    return isMaskEnabled(Notification.SOURCE_BOTTOM_MENU_TOGGLE)
-                end,
-                callback = function()
-                    toggleMask(Notification.SOURCE_BOTTOM_MENU_TOGGLE)
-                end,
-                },
-                {
-                text = _("Bottom menu fine tuning"),
-                checked_func = function()
-                    return isMaskEnabled(Notification.SOURCE_BOTTOM_MENU_FINE)
-                end,
-                callback = function()
-                    toggleMask(Notification.SOURCE_BOTTOM_MENU_FINE)
-                end,
-                },
-                {
-                text = _("Bottom menu three dots"),
-                checked_func = function()
-                    return isMaskEnabled(Notification.SOURCE_BOTTOM_MENU_MORE)
-                end,
-                callback = function()
-                    toggleMask(Notification.SOURCE_BOTTOM_MENU_MORE)
-                end,
-                },
-                {
-                text = _("Bottom menu progress slider"),
-                checked_func = function()
-                    return isMaskEnabled(Notification.SOURCE_BOTTOM_MENU_PROGRESS)
-                end,
-                callback = function()
-                    toggleMask(Notification.SOURCE_BOTTOM_MENU_PROGRESS)
-                end,
-                },
-                {
-                text = _("Gestures and profiles"),
-                checked_func = function()
-                    return isMaskEnabled(Notification.SOURCE_DISPATCHER)
-                end,
-                callback = function()
-                    toggleMask(Notification.SOURCE_DISPATCHER)
-                end,
-                },
-                {
-                text = _("Other sources"),
-                checked_func = function()
-                    return isMaskEnabled(Notification.SOURCE_OTHER)
-                end,
-                callback = function()
-                    toggleMask(Notification.SOURCE_OTHER)
-                end,
-                },
-            },
-        }
-    end
-    return ""
-end
-
 return {
     text = _("Notifications"),
     help_text = _([[Notification popups may be shown at the top of screen on various occasions.
@@ -165,20 +90,5 @@ This allows selecting which to show or hide.]]),
         end,
         separator = true,
         },
---[[        {
-        text = _("Inflationary"),
-        help_text = _("Show really many popups. This would include also keyboard events"),
-        checked_func = function()
-            return getMask() == Notification.SOURCE_ALL
-        end,
-        callback = function()
-            print(getMask())
-            print(Notification.SOURCE_ALL)
-            setMask(Notification.SOURCE_ALL)
-            print(getMask())
-        end,
-        separator = true,
-        }, ]]
-        showExpertMenu( true ),
     }
 }
