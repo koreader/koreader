@@ -122,7 +122,7 @@ local monthTranslation = {
 }
 
 function ReaderStatistics:isDocless()
-    return self.ui == nil or self.ui.document == nil
+    return self.ui == nil or self.ui.document == nil or self.ui.document.is_pic == true
 end
 
 -- NOTE: This is used in a migration script by ui/data/onetime_migration,
@@ -139,9 +139,10 @@ ReaderStatistics.default_settings = {
 }
 
 function ReaderStatistics:init()
-    if not self:isDocless() and self.ui.document.is_pic then
+    if self:isDocless() then
         return
     end
+
     self.start_current_period = os.time()
     self:resetVolatileStats()
 

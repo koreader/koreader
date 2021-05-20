@@ -92,21 +92,29 @@ end
 
 -- this might be overridden by a document implementation
 -- (in which case, do make sure it calls this one, too, to avoid refcounting mismatches in DocumentRegistry!)
+-- Returns true if the Document instance needs to be destroyed (no more live refs),
+-- false if not (i.e., we've just decreased the refcount, so, leave internal engine data alone).
+-- nil if all hell broke loose.
 function Document:close()
     local DocumentRegistry = require("document/documentregistry")
     if self.is_open then
-        if DocumentRegistry:closeDocument(self.file) == 0 then
+        local refcount = DocumentRegistry:closeDocument(self.file)
+        if refcount == 0 then
             self.is_open = false
             self._document:close()
             self._document = nil
 
             -- NOTE: DocumentRegistry:openDocument will force a GC sweep the next time we open a Document.
             --       MµPDF will also do a bit of spring cleaning of its internal cache when opening a *different* document.
+            return true
         else
-            logger.warn("Tried to close a document with *multiple* remaining hot references")
+            -- This can happen in perfectly sane contexts (i.e., Reader -> History -> View fullsize cover on the *same* book).
+            logger.dbg("Document: Decreased refcount to", refcount, "for", self.file)
+            return false
         end
     else
-        logger.warn("Tried to close an already closed document")
+        logger.warn("Tried to close an already closed document:", self.file)
+        return nil
     end
 end
 
