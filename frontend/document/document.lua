@@ -108,7 +108,7 @@ function Document:close()
             --       MµPDF will also do a bit of spring cleaning of its internal cache when opening a *different* document.
             return true
         else
-            -- This can happen in perfectly sane contexts (i.e., Reader -> History > View fullsize cover on the *same* book).
+            -- This can happen in perfectly sane contexts (i.e., Reader -> History -> View fullsize cover on the *same* book).
             logger.dbg("Document: Decreased refcount to", refcount, "for", self.file)
             return false
         end
