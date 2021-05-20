@@ -261,10 +261,14 @@ function PdfDocument:writeDocument()
 end
 
 function PdfDocument:close()
-    -- NOTE: We have to do that regardless of Document:close's refcount status, because it requires self._document,
-    --       which Document:close will destroy if no refs are left.
-    if self.is_edited then
-        self:writeDocument()
+    -- NOTE: We can't just rely on Document:close's return code for that, as we need self._document
+    --       in :writeDocument, and it would have been destroyed.
+    local DocumentRegistry = require("document/documentregistry")
+    if DocumentRegistry:DocumentRegistry:getReferenceCount(self.file) == 1 then
+        -- We're the final reference to this Document instance.
+        if self.is_edited then
+            self:writeDocument()
+        end
     end
 
     Document.close(self)

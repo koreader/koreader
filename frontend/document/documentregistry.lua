@@ -245,6 +245,15 @@ function DocumentRegistry:closeDocument(file)
     end
 end
 
+--- Queries the current refcount for a given file
+function DocumentRegistry:getReferenceCount(file)
+    if self.registry[file] then
+        return self.registry[file].refs
+    else
+        return nil
+    end
+end
+
 -- load implementations:
 require("document/credocument"):register(DocumentRegistry)
 require("document/pdfdocument"):register(DocumentRegistry)
