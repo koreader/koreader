@@ -79,9 +79,7 @@ function ReaderMenu:init()
 end
 
 function ReaderMenu:getPreviousFile()
-    if not self.ui.document then
-        return require("readhistory"):getPreviousFile(self.ui.document.file)
-    end
+    return require("readhistory"):getPreviousFile(self.ui.document.file)
 end
 
 function ReaderMenu:onReaderReady()
