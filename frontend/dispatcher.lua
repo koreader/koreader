@@ -627,36 +627,35 @@ function Dispatcher:execute(ui, settings, gesture)
                     else
                         ui:handleEvent(Event:new(settingsList[k].event))
                     end
-                    if settingsList[k].category == "absolutenumber"
-                        or settingsList[k].category == "string"
-                    then
-                        ui:handleEvent(Event:new(settingsList[k].event, v))
-                    end
-                    -- the event can accept a gesture object or an argument
-                    if settingsList[k].category == "arg" then
-                        local arg = gesture or settingsList[k].arg
-                        ui:handleEvent(Event:new(settingsList[k].event, arg))
-                    end
-                    -- the event can accept a gesture object or a number
-                    if settingsList[k].category == "incrementalnumber" then
-                        local arg = v ~= 0 and v or gesture or 0
-                        ui:handleEvent(Event:new(settingsList[k].event, arg))
-                    end
-                    if ui.document and settingsList[k].configurable then
-                        local value = v
-                        if type(v) ~= "number" then
-                            for i, r in ipairs(settingsList[k].args) do
-                                if v == r then value = settingsList[k].configurable.values[i] break end
-                            end
+                end
+                if settingsList[k].category == "absolutenumber"
+                    or settingsList[k].category == "string"
+                then
+                    ui:handleEvent(Event:new(settingsList[k].event, v))
+                end
+                -- the event can accept a gesture object or an argument
+                if settingsList[k].category == "arg" then
+                    local arg = gesture or settingsList[k].arg
+                    ui:handleEvent(Event:new(settingsList[k].event, arg))
+                end
+                -- the event can accept a gesture object or a number
+                if settingsList[k].category == "incrementalnumber" then
+                    local arg = v ~= 0 and v or gesture or 0
+                    ui:handleEvent(Event:new(settingsList[k].event, arg))
+                end
+                if ui.document and settingsList[k].configurable then
+                    local value = v
+                    if type(v) ~= "number" then
+                        for i, r in ipairs(settingsList[k].args) do
+                            if v == r then value = settingsList[k].configurable.values[i] break end
                         end
-                        ui.document.configurable[settingsList[k].configurable.name] = value
                     end
+                    ui.document.configurable[settingsList[k].configurable.name] = value
                 end
             end
         end
     end
     Notification:resetNotifySource()
-
 end
 
 return Dispatcher
