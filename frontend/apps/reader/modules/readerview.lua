@@ -9,6 +9,7 @@ local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local IconWidget = require("ui/widget/iconwidget")
 local InfoMessage = require("ui/widget/infomessage")
+local Notification = require("ui/widget/notification")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ReaderDogear = require("apps/reader/modules/readerdogear")
 local ReaderFlipping = require("apps/reader/modules/readerflipping")
@@ -17,6 +18,7 @@ local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
 local logger = require("logger")
+local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
@@ -713,6 +715,7 @@ function ReaderView:onSetRotationMode(rotation)
     self.ui:handleEvent(Event:new("SetDimensions", new_screen_size))
     self.ui:onScreenResize(new_screen_size)
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
+    Notification:notify(T(_("Rotation mode set to %1."), optionsutil:getOptionText("SetRotationMode", rotation)))
     return true
 end
 
@@ -846,10 +849,12 @@ function ReaderView:onGammaUpdate(gamma)
     if self.page_scroll then
         self.ui:handleEvent(Event:new("UpdateScrollPageGamma", gamma))
     end
+    Notification:notify(T(_("Font gamma set to  %1."), gamma))
 end
 
 function ReaderView:onFontSizeUpdate(font_size)
     self.ui:handleEvent(Event:new("ReZoom", font_size))
+    Notification:notify(T(_("Font zoom set to %1."), font_size))
 end
 
 function ReaderView:onDefectSizeUpdate()
@@ -869,6 +874,7 @@ function ReaderView:onSetViewMode(new_mode)
         self.view_mode = new_mode
         self.ui.document:setViewMode(new_mode)
         self.ui:handleEvent(Event:new("ChangeViewMode"))
+        Notification:notify(T( _("View mode set to %1."), optionsutil:getOptionText("SetViewMode", new_mode)))
     end
 end
 
@@ -877,6 +883,7 @@ end
 --another source (eg. coptions.lua) triggering a redraw is needed.
 function ReaderView:onPageGapUpdate(page_gap)
     self.page_gap.height = page_gap
+    Notification:notify(T(_("Page gap set to %1."), page_gap))
     return true
 end
 

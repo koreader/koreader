@@ -432,7 +432,7 @@ Note that your selected font size is not affected by this setting.]]),
                 },
                 values = {},
                 event = "ChangeSize",
-                args = {"decrease", "increase"},
+                args = { -0.5, 0.5 },
                 alternate = false,
                 name_text_hold_callback = function(configurable, __, prefix)
                     local opt = {

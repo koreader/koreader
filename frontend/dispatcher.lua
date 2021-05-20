@@ -30,6 +30,7 @@ Each setting contains:
 local CreOptions = require("ui/data/creoptions")
 local Device = require("device")
 local Event = require("ui/event")
+local Notification = require("ui/widget/notification")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
@@ -619,6 +620,7 @@ function Dispatcher:execute(ui, settings, gesture)
         if settingsList[k] ~= nil and (settingsList[k].conditions == nil or settingsList[k].conditions == true) then
             -- Be sure we don't send a document setting event if there's not yet or no longer a document
             if ui.document or (not settingsList[k].paging and not settingsList[k].rolling) then
+                Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
                 if settingsList[k].category == "none" then
                     if settingsList[k].arg ~= nil then
                         ui:handleEvent(Event:new(settingsList[k].event, settingsList[k].arg))
@@ -653,6 +655,7 @@ function Dispatcher:execute(ui, settings, gesture)
             end
         end
     end
+    Notification:resetNotifySource()
 end
 
 return Dispatcher

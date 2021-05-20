@@ -15,6 +15,7 @@ local UIManager = require("ui/uimanager")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local C_ = _.pgettext
+local optionsutil = require("ui/data/optionsutil")
 
 local ReaderFont = InputContainer:new{
     font_face = nil,
@@ -36,11 +37,11 @@ function ReaderFont:init()
             IncreaseSize = {
                 { "Shift", Input.group.PgFwd },
                 doc = "increase font size",
-                event = "ChangeSize", args = "increase" },
+                event = "ChangeSize", args = 0.5 },
             DecreaseSize = {
                 { "Shift", Input.group.PgBack },
                 doc = "decrease font size",
-                event = "ChangeSize", args = "decrease" },
+                event = "ChangeSize", args = -0.5 },
         }
     end
     -- Build face_table for menu
@@ -195,13 +196,8 @@ end
 --[[
     UpdatePos event is used to tell ReaderRolling to update pos.
 --]]
-function ReaderFont:onChangeSize(direction, font_delta)
-    local delta = direction == "decrease" and -1 or 1
-    if font_delta then
-        self.font_size = self.font_size + font_delta * delta
-    else
-        self.font_size = self.font_size + delta
-    end
+function ReaderFont:onChangeSize(delta)
+    self.font_size = self.font_size + delta
     self.ui:handleEvent(Event:new("SetFontSize", self.font_size))
     return true
 end
@@ -213,19 +209,15 @@ function ReaderFont:onSetFontSize(new_size)
     self.font_size = new_size
     self.ui.document:setFontSize(Screen:scaleBySize(new_size))
     self.ui:handleEvent(Event:new("UpdatePos"))
-    UIManager:show(Notification:new{
-        text = T( _("Font size set to %1."), self.font_size),
-    })
+    Notification:notify(T(_("Font size set to %1."), self.font_size))
     return true
 end
 
 function ReaderFont:onSetLineSpace(space)
     self.line_space_percent = math.min(200, math.max(50, space))
-    UIManager:show(Notification:new{
-        text = T( _("Line spacing set to %1%."), self.line_space_percent),
-    })
     self.ui.document:setInterlineSpacePercent(self.line_space_percent)
     self.ui:handleEvent(Event:new("UpdatePos"))
+    Notification:notify(T(_("Line spacing set to %1%."), self.line_space_percent))
     return true
 end
 
@@ -233,6 +225,7 @@ function ReaderFont:onSetFontBaseWeight(weight)
     self.font_base_weight = weight
     self.ui.document:setFontBaseWeight(weight)
     self.ui:handleEvent(Event:new("UpdatePos"))
+    Notification:notify(T(_("Font weight set to %1."), optionsutil:getOptionText("SetFontBaseWeight", weight)))
     return true
 end
 
@@ -240,6 +233,7 @@ function ReaderFont:onSetFontHinting(mode)
     self.font_hinting = mode
     self.ui.document:setFontHinting(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
+    Notification:notify(T(_("Font hinting set to %1."), optionsutil:getOptionText("SetFontHinting", mode)))
     return true
 end
 
@@ -247,6 +241,7 @@ function ReaderFont:onSetFontKerning(mode)
     self.font_kerning = mode
     self.ui.document:setFontKerning(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
+    Notification:notify(T(_("Font kerning set to %1."), optionsutil:getOptionText("SetFontKerning", mode)))
     return true
 end
 
@@ -254,6 +249,7 @@ function ReaderFont:onSetWordSpacing(values)
     self.word_spacing = values
     self.ui.document:setWordSpacing(values)
     self.ui:handleEvent(Event:new("UpdatePos"))
+    Notification:notify(T(_("Word spacing set to %1%,  %2%."), values[1], values[2]))
     return true
 end
 
@@ -261,6 +257,7 @@ function ReaderFont:onSetWordExpansion(value)
     self.word_expansion = value
     self.ui.document:setWordExpansion(value)
     self.ui:handleEvent(Event:new("UpdatePos"))
+    Notification:notify(T(_("Word expansion set to %1%."), value))
     return true
 end
 
@@ -268,10 +265,8 @@ function ReaderFont:onSetFontGamma(gamma)
     self.gamma_index = gamma
     self.ui.document:setGammaIndex(self.gamma_index)
     local gamma_level = self.ui.document:getGammaLevel()
-    UIManager:show(Notification:new{
-        text = T( _("Font gamma set to %1."), gamma_level),
-    })
     self.ui:handleEvent(Event:new("RedrawCurrentView"))
+    Notification:notify(T(_("Font gamma set to %1."), optionsutil:getOptionText("SetFontGamma", gamma_level)))
     return true
 end
 
@@ -300,7 +295,7 @@ end
 function ReaderFont:makeDefault(face, touchmenu_instance)
     if face then
         UIManager:show(MultiConfirmBox:new{
-            text = T( _("Would you like %1 to be used as the default font (★), or the fallback font (�)?\n\nCharacters not found in the active font are shown in the fallback font instead."), face),
+            text = T(_("Would you like %1 to be used as the default font (★), or the fallback font (�)?\n\nCharacters not found in the active font are shown in the fallback font instead."), face),
             choice1_text = _("Default"),
             choice1_callback = function()
                 G_reader_settings:saveSetting("cre_font", face)
@@ -342,21 +337,15 @@ end
 
 function ReaderFont:onIncreaseFontSize(ges)
     local delta_int = self:gesToFontSize(ges)
-    local info = Notification:new{text = _("Increasing font size…")}
-    UIManager:show(info)
-    UIManager:forceRePaint()
-    self:onChangeSize("increase", delta_int)
-    UIManager:close(info)
+    Notification:notify(_("Increasing font size…"), true)
+    self:onChangeSize(delta_int)
     return true
 end
 
 function ReaderFont:onDecreaseFontSize(ges)
     local delta_int = self:gesToFontSize(ges)
-    local info = Notification:new{text = _("Decreasing font size…")}
-    UIManager:show(info)
-    UIManager:forceRePaint()
-    self:onChangeSize("decrease", delta_int)
-    UIManager:close(info)
+    Notification:notify(_("Decreasing font size…"), true)
+    self:onChangeSize(-delta_int)
     return true
 end
 
