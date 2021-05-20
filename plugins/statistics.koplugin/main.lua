@@ -139,9 +139,10 @@ ReaderStatistics.default_settings = {
 }
 
 function ReaderStatistics:init()
-    if not self:isDocless() then
+    if self:isDocless() then
         return
     end
+
     self.start_current_period = os.time()
     self:resetVolatileStats()
 
