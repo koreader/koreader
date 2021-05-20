@@ -193,12 +193,15 @@ end
 
 --- Returns a new Document instance on success
 function DocumentRegistry:openDocument(file, provider)
+    print("DocumentRegistry:openDocument", file, self, DocumentRegistry)
+    print(debug.traceback())
     -- force a GC, so that any previous document used memory can be reused
     -- immediately by this new document without having to wait for the
     -- next regular gc. The second call may help reclaming more memory.
     collectgarbage()
     collectgarbage()
     if not self.registry[file] then
+        print("New instance")
         provider = provider or self:getProvider(file)
 
         if provider ~= nil then
@@ -212,8 +215,11 @@ function DocumentRegistry:openDocument(file, provider)
                 logger.warn("cannot open document", file, doc)
             end
         end
+        logger.dbg(self.registry)
     else
         self.registry[file].refs = self.registry[file].refs + 1
+        logger.dbg("DocumentRegistry: Increased refcount to", self.registry[file].refs, "for", file)
+        logger.dbg(self.registry)
     end
     if self.registry[file] then
         return self.registry[file].doc
@@ -223,7 +229,10 @@ end
 --- Does *NOT* finalize a Document instance, call its :close() instead if that's what you're looking for!
 --- (i.e., nothing but Document:close should call this!)
 function DocumentRegistry:closeDocument(file)
+    print("DocumentRegistry:closeDocument", file, self, DocumentRegistry)
+    print(debug.traceback())
     if self.registry[file] then
+        print("Current refcount", self.registry[file].refs)
         self.registry[file].refs = self.registry[file].refs - 1
         if self.registry[file].refs == 0 then
             self.registry[file] = nil
