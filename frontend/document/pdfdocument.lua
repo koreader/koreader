@@ -261,10 +261,11 @@ function PdfDocument:writeDocument()
 end
 
 function PdfDocument:close()
-    if self.is_edited then
-        self:writeDocument()
+    if Document.close(self) then
+        if self.is_edited then
+            self:writeDocument()
+        end
     end
-    Document.close(self)
 end
 
 function PdfDocument:getProps()
