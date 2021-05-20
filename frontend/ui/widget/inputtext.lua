@@ -147,7 +147,12 @@ if Device:isTouchDevice() or Device:hasDPad() then
             if Device:hasClipboard() then
                 if self.do_select then -- select mode on
                     if self.selection_start_pos then -- select end
-                        Device.input.setClipboardText(table.concat(self.charlist, "", self.selection_start_pos, self.charpos-1))
+                        local selection_end_pos = self.charpos - 1
+                        if self.selection_start_pos > selection_end_pos then
+                            self.selection_start_pos, selection_end_pos = selection_end_pos, self.selection_start_pos
+                        end
+                        local txt = table.concat(self.charlist, "", self.selection_start_pos, selection_end_pos)
+                        Device.input.setClipboardText(txt)
                         UIManager:show(Notification:new{
                             text = _("Text copied to clipboard"),
                         })
@@ -181,16 +186,17 @@ if Device:isTouchDevice() or Device:hasDPad() then
                                 text = _("Line"),
                                 callback = function()
                                     UIManager:close(input_dialog)
-                                    Device.input.setClipboardText(table.concat(self.charlist, "", self:getStringPos({"\n"}, {"\n"})))
+                                    local txt = table.concat(self.charlist, "", self:getStringPos({"\n"}, {"\n"}))
+                                    Device.input.setClipboardText(txt)
                                 end,
                             },
                             {
                                 text = _("Word"),
                                 callback = function()
                                     UIManager:close(input_dialog)
-                                    Device.input.setClipboardText(table.concat(self.charlist, "", self:getStringPos({"\n", " "}, {"\n", " "})))
+                                    local txt = table.concat(self.charlist, "", self:getStringPos({"\n", " "}, {"\n", " "}))
+                                    Device.input.setClipboardText(txt)
                                 end,
-                               
                             },
                         },
                         {
@@ -624,7 +630,7 @@ end
 -- delimited with the delimiters and containing char_pos.
 -- If char_pos not set, current charpos assumed.
 function InputText:getStringPos(left_delimiter, right_delimiter, char_pos)
-    local char_pos = char_pos and char_pos or self.charpos
+    char_pos = char_pos and char_pos or self.charpos
     local start_pos, end_pos = 1, #self.charlist
     local done = false
     if char_pos > 1 then
