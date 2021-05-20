@@ -617,7 +617,7 @@ arguments are:
 function Dispatcher:execute(ui, settings, gesture)
     for k, v in pairs(settings) do
         if settingsList[k] ~= nil and (settingsList[k].conditions == nil or settingsList[k].conditions == true) then
-            if (not settingsList[k].padding and not settingsList[k].rolling) or self.document then
+            if (not settingsList[k].paging and not settingsList[k].rolling) or self.document then
                 if settingsList[k].category == "none" then
                     if settingsList[k].arg ~= nil then
                         ui:handleEvent(Event:new(settingsList[k].event, settingsList[k].arg))
