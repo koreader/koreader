@@ -33,7 +33,7 @@ This allows selecting which to show or hide.]]),
     end,
     sub_item_table = {
         {
-        text = _("No notification"),
+        text = _("No notifications"),
         help_text = _("No notification popups will be shown."),
         checked_func = function()
             return getMask() == Notification.SOURCE_NONE
