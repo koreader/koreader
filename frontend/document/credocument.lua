@@ -307,6 +307,8 @@ end
 function CreDocument:close()
     -- Let Document do the refcount check, and tell us if we actually need to tear down the instance.
     if Document.close(self) then
+        -- Yup, final Document instance, we can safely destroy internal data.
+        -- (Document already took care of our self._document userdata).
         if self.buffer then
             self.buffer:free()
             self.buffer = nil
