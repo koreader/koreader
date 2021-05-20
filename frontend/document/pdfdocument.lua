@@ -261,11 +261,13 @@ function PdfDocument:writeDocument()
 end
 
 function PdfDocument:close()
-    if Document.close(self) then
-        if self.is_edited then
-            self:writeDocument()
-        end
+    -- NOTE: We have to do that regardless of Document:close's refcount status, because it requires self._document,
+    --       which Document:close will destroy if no refs are left.
+    if self.is_edited then
+        self:writeDocument()
     end
+
+    Document.close(self)
 end
 
 function PdfDocument:getProps()
