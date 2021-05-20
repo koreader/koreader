@@ -305,12 +305,20 @@ function CreDocument:_readMetadata()
 end
 
 function CreDocument:close()
-    if self.buffer then
-        self.buffer:free()
-        self.buffer = nil
-    end
+    -- Let Document do the refcount check, and tell us if we actually need to tear down the instance.
+    if Document.close(self) then
+        -- Yup, final Document instance, we can safely destroy internal data.
+        -- (Document already took care of our self._document userdata).
+        if self.buffer then
+            self.buffer:free()
+            self.buffer = nil
+        end
 
-    Document.close(self)
+        -- Only exists if the call cache is enabled
+        if self._callCacheDestroy then
+            self._callCacheDestroy()
+        end
+    end
 end
 
 function CreDocument:updateColorRendering()
@@ -1742,12 +1750,6 @@ function CreDocument:setupCallCache()
     if do_stats then
         self.close = function(_self)
             dumpStats()
-            _self._callCacheDestroy()
-            CreDocument.close(_self)
-        end
-    else
-        self.close = function(_self)
-            _self._callCacheDestroy()
             CreDocument.close(_self)
         end
     end

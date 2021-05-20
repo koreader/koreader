@@ -22,6 +22,7 @@ function PicDocument:init()
         error("Failed to open image:" .. self._document)
     end
 
+    self.is_open = true
     self.info.has_pages = true
     self.info.configurable = false
 
