@@ -1155,7 +1155,7 @@ end
 function ReaderHighlight:onHoldRelease()
     local long_final_hold = false
     if self.hold_last_tv then
-        local hold_duration = UIManager:getTime() - self.hold_last_tv
+        local hold_duration = TimeVal:now() - self.hold_last_tv
         if hold_duration > TimeVal:new{ sec = 3, usec = 0 } then
             -- We stayed 3 seconds before release without updating selection
             long_final_hold = true
