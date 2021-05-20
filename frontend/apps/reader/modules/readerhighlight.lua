@@ -617,15 +617,14 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
     }
 
     if not self.ui.document.info.has_pages then
-        local start_prev = "◁⇱"
-        local start_next = "⇱▷"
-        local end_prev = "◁⇲"
-        local end_next = "⇲▷"
+        local start_prev = "◁▒▒"
+        local start_next = "▷▒▒"
+        local end_prev = "▒▒◁"
+        local end_next = "▒▒▷"
         if BD.mirroredUILayout() then
-            -- Sadly, there's only north west & south east arrow to corner,
-            -- north east and south west do not exist in Unicode.
-            start_prev, start_next = BD.ltr(start_next), BD.ltr(start_prev)
-            end_prev, end_next = BD.ltr(end_next), BD.ltr(end_prev)
+            -- BiDi will mirror the arrows, and this just works
+            start_prev, start_next = start_next, start_prev
+            end_prev, end_next = end_next, end_prev
         end
         table.insert(buttons, {
             {
