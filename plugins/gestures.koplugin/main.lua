@@ -771,6 +771,7 @@ function Gestures:setupGesture(ges)
         ratio_w = DTAP_ZONE_BOTTOM_RIGHT.w,
         ratio_h = DTAP_ZONE_BOTTOM_RIGHT.h,
     }
+    -- NOTE: The defaults are effectively mapped to DTAP_ZONE_BACKWARD & DTAP_ZONE_FORWARD
     local zone_left = {
         ratio_x = DDOUBLE_TAP_ZONE_PREV_CHAPTER.x,
         ratio_y = DDOUBLE_TAP_ZONE_PREV_CHAPTER.y,
@@ -785,6 +786,7 @@ function Gestures:setupGesture(ges)
     }
 
     local overrides_tap_corner
+    local overrides_double_tap_corner
     local overrides_hold_corner
     local overrides_vertical_edge, overrides_horizontal_edge
     local overrides_pan, overrides_pan_release
@@ -807,6 +809,10 @@ function Gestures:setupGesture(ges)
             "readermenu_tap",
             "tap_forward",
             "tap_backward",
+        }
+        overrides_double_tap_corner = {
+            "double_tap_left_side",
+            "double_tap_right_side",
         }
         overrides_hold_corner = {
             -- As hold corners are "ignored" by default, and we have
@@ -875,15 +881,19 @@ function Gestures:setupGesture(ges)
     elseif ges == "double_tap_top_left_corner" then
         ges_type = "double_tap"
         zone = zone_top_left_corner
+        overrides = overrides_double_tap_corner
     elseif ges == "double_tap_top_right_corner" then
         ges_type = "double_tap"
         zone = zone_top_right_corner
+        overrides = overrides_double_tap_corner
     elseif ges == "double_tap_bottom_right_corner" then
         ges_type = "double_tap"
         zone = zone_bottom_right_corner
+        overrides = overrides_double_tap_corner
     elseif ges == "double_tap_bottom_left_corner" then
         ges_type = "double_tap"
         zone = zone_bottom_left_corner
+        overrides = overrides_double_tap_corner
     elseif ges == "hold_top_left_corner" then
         ges_type = "hold"
         zone = zone_top_left_corner
