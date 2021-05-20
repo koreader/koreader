@@ -264,7 +264,7 @@ function PdfDocument:close()
     -- NOTE: We can't just rely on Document:close's return code for that, as we need self._document
     --       in :writeDocument, and it would have been destroyed.
     local DocumentRegistry = require("document/documentregistry")
-    if DocumentRegistry:DocumentRegistry:getReferenceCount(self.file) == 1 then
+    if DocumentRegistry:getReferenceCount(self.file) == 1 then
         -- We're the final reference to this Document instance.
         if self.is_edited then
             self:writeDocument()
