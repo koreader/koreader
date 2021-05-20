@@ -66,6 +66,15 @@ local function showExpertMenu(toggle)
                 end,
                 },
                 {
+                text = _("Bottom menu progress slider"),
+                checked_func = function()
+                    return isMaskEnabled(Notification.SOURCE_BOTTOM_MENU_PROGRESS)
+                end,
+                callback = function()
+                    toggleMask(Notification.SOURCE_BOTTOM_MENU_PROGRESS)
+                end,
+                },
+                {
                 text = _("Gestures and profiles"),
                 checked_func = function()
                     return isMaskEnabled(Notification.SOURCE_DISPATCHER)

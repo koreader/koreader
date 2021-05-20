@@ -621,7 +621,11 @@ function ConfigOption:init()
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, arg, name_text, self.options[c].more_options_param)
                         else
-                            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_TOGGLE)
+                            if self.options[c].buttonprogress then
+                                Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_PROGRESS)
+                            else
+                                Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_TOGGLE)
+                            end
                             self.config:onConfigChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].hide_on_apply)
                         end

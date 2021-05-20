@@ -21,20 +21,23 @@ local Screen = Device.screen
 
 local band = bit.band
 
-local SOURCE_BOTTOM_MENU_ICON =   0x0001 -- icons in bottom menu
-local SOURCE_BOTTOM_MENU_TOGGLE = 0x0002 -- toggles in bottom menu
-local SOURCE_BOTTOM_MENU_FINE =   0x0004 -- toggles with fine-tuning ("increase", "+" etc)
-local SOURCE_BOTTOM_MENU_MORE =   0x0008 -- three dots in bottom menu
-local SOURCE_DISPATCHER =         0x0010 -- dispatcher
-local SOURCE_OTHER =              0x0020 -- all other sources (e.g. keyboard)
+-- The following constants are positions in a bitfield
+local SOURCE_BOTTOM_MENU_ICON =     0x0001 -- icons in bottom menu
+local SOURCE_BOTTOM_MENU_TOGGLE =   0x0002 -- toggles in bottom menu
+local SOURCE_BOTTOM_MENU_FINE =     0x0004 -- toggles with fine-tuning ("increase", "+" etc)
+local SOURCE_BOTTOM_MENU_MORE =     0x0008 -- three dots in bottom menu
+local SOURCE_BOTTOM_MENU_PROGRESS = 0x0010 -- progress indicator on bottom menu
+local SOURCE_DISPATCHER =           0x0020 -- dispatcher
+local SOURCE_OTHER =                0x0040 -- all other sources (e.g. keyboard)
 
-local SOURCE_BOTTOM_MENU =        0x000F
+-- All bottom menu bits
+local SOURCE_BOTTOM_MENU = SOURCE_BOTTOM_MENU_ICON + SOURCE_BOTTOM_MENU_TOGGLE + SOURCE_BOTTOM_MENU_FINE +
+        SOURCE_BOTTOM_MENU_MORE + SOURCE_BOTTOM_MENU_PROGRESS
 
 -- these values can be changed here
 local SOURCE_SOME = SOURCE_BOTTOM_MENU_FINE + SOURCE_DISPATCHER
-local SOURCE_DEFAULT = SOURCE_SOME + SOURCE_BOTTOM_MENU_MORE
-local SOURCE_ALL = SOURCE_BOTTOM_MENU_ICON + SOURCE_BOTTOM_MENU_TOGGLE + SOURCE_BOTTOM_MENU_FINE +
-        SOURCE_BOTTOM_MENU_MORE + SOURCE_DISPATCHER + SOURCE_OTHER
+local SOURCE_DEFAULT = SOURCE_SOME + SOURCE_BOTTOM_MENU_MORE + SOURCE_BOTTOM_MENU_PROGRESS
+local SOURCE_ALL = SOURCE_BOTTOM_MENU + SOURCE_DISPATCHER + SOURCE_OTHER
 
 
 local Notification = InputContainer:new{
@@ -51,6 +54,7 @@ local Notification = InputContainer:new{
     SOURCE_BOTTOM_MENU_TOGGLE = SOURCE_BOTTOM_MENU_TOGGLE,
     SOURCE_BOTTOM_MENU_FINE = SOURCE_BOTTOM_MENU_FINE,
     SOURCE_BOTTOM_MENU_MORE = SOURCE_BOTTOM_MENU_MORE,
+    SOURCE_BOTTOM_MENU_PROGRESS = SOURCE_BOTTOM_MENU_PROGRESS,
     SOURCE_DISPATCHER = SOURCE_DISPATCHER,
     SOURCE_OTHER = SOURCE_OTHER,
 
