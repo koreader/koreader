@@ -502,7 +502,8 @@ function ReaderUI:onShowingReader()
     self.tearing_down = true
     self.dithered = nil
 
-    self:onClose()
+    -- Don't enforce a "full" refresh, leave that decision to the next widget we'll *show*.
+    self:onClose(false)
 end
 
 -- Same as above, except we don't close it yet. Useful for plugins that need to close custom Menus before calling showReader.
