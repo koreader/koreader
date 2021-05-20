@@ -621,12 +621,6 @@ function Dispatcher:execute(ui, settings, gesture)
             -- Be sure we don't send a document setting event if there's not yet or no longer a document
             if ui.document or (not settingsList[k].paging and not settingsList[k].rolling) then
                 Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
-                if settingsList[k].notify_func then
-                    Notification:notify(settingsList[k].notify_func())
-                else
-                    Notification:notify(settingsList[k].title)
-                end
-                Notification:setNotifySource(Notification.SOURCE_EVENT)
                 if settingsList[k].category == "none" then
                     if settingsList[k].arg ~= nil then
                         ui:handleEvent(Event:new(settingsList[k].event, settingsList[k].arg))
