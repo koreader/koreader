@@ -142,12 +142,12 @@ if Device:isTouchDevice() or Device:hasDPad() then
                     if self.selection_start_pos then -- select end
                         local selection_end_pos = self.charpos - 1
                         if self.selection_start_pos > selection_end_pos then
-                            self.selection_start_pos, selection_end_pos = selection_end_pos, self.selection_start_pos
+                            self.selection_start_pos, selection_end_pos = selection_end_pos + 1, self.selection_start_pos - 1
                         end
                         local txt = table.concat(self.charlist, "", self.selection_start_pos, selection_end_pos)
                         Device.input.setClipboardText(txt)
                         UIManager:show(Notification:new{
-                            text = _("Text copied to clipboard"),
+                            text = _("Selection copied to clipboard."),
                         })
                         self.selection_start_pos = nil
                         self.do_select = false
@@ -155,7 +155,7 @@ if Device:isTouchDevice() or Device:hasDPad() then
                     else -- select start
                         self.selection_start_pos = self.charpos
                         UIManager:show(Notification:new{
-                            text = _("Hold the end of selection"),
+                            text = _("Set cursor to end of selection, then hold."),
                         })
                         return true
                     end
@@ -173,6 +173,9 @@ if Device:isTouchDevice() or Device:hasDPad() then
                                 callback = function()
                                     UIManager:close(input_dialog)
                                     Device.input.setClipboardText(table.concat(self.charlist))
+                                    UIManager:show(Notification:new{
+                                        text = _("All text copied to clipboard."),
+                                    })
                                 end,
                             },
                             {
@@ -181,6 +184,9 @@ if Device:isTouchDevice() or Device:hasDPad() then
                                     UIManager:close(input_dialog)
                                     local txt = table.concat(self.charlist, "", self:getStringPos({"\n"}, {"\n"}))
                                     Device.input.setClipboardText(txt)
+                                    UIManager:show(Notification:new{
+                                        text = _("Line copied to clipboard."),
+                                    })
                                 end,
                             },
                             {
@@ -189,6 +195,9 @@ if Device:isTouchDevice() or Device:hasDPad() then
                                     UIManager:close(input_dialog)
                                     local txt = table.concat(self.charlist, "", self:getStringPos({"\n", " "}, {"\n", " "}))
                                     Device.input.setClipboardText(txt)
+                                    UIManager:show(Notification:new{
+                                        text = _("Word copied to clipboard."),
+                                    })
                                 end,
                             },
                         },
@@ -204,7 +213,7 @@ if Device:isTouchDevice() or Device:hasDPad() then
                                 callback = function()
                                     UIManager:close(input_dialog)
                                     UIManager:show(Notification:new{
-                                        text = _("Hold the start of selection"),
+                                        text = _("Set cursor to start of selection, then hold."),
                                     })
                                     self.do_select = true
                                 end,
