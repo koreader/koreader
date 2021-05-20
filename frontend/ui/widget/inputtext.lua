@@ -59,6 +59,8 @@ local InputText = InputContainer:new{
     is_text_editable = true, -- whether text is utf8 reversible and editing won't mess content
     is_text_edited = false, -- whether text has been updated
     for_measurement_only = nil, -- When the widget is a one-off used to compute text height
+    do_select = false, -- to start text selection
+    selection_start_pos = nil, -- selection start position
 }
 
 -- only use PhysicalKeyboard if the device does not have touch screen
@@ -141,8 +143,90 @@ if Device:isTouchDevice() or Device:hasDPad() then
                 self.text_widget:moveCursorToXY(x, y, true) -- restrict_to_view=true
                 self.charpos, self.top_line_num = self.text_widget:getCharPos()
             end
-            if Device:hasClipboard() and Device.input.hasClipboardText() then
-                self:addChars(Device.input.getClipboardText())
+            -- clipboard dialog
+            if Device:hasClipboard() then
+                if self.do_select then -- select mode on
+                    if self.selection_start_pos then -- select end
+                        Device.input.setClipboardText(table.concat(self.charlist, "", self.selection_start_pos, self.charpos-1))
+                        UIManager:show(Notification:new{
+                            text = _("Text copied to clipboard"),
+                        })
+                        self.selection_start_pos = nil
+                        self.do_select = false
+                        return true
+                    else -- select start
+                        self.selection_start_pos = self.charpos
+                        UIManager:show(Notification:new{
+                            text = _("Hold the end of selection"),
+                        })
+                        return true
+                    end
+                end
+                local input_dialog
+                input_dialog = require("ui/widget/inputdialog"):new{
+                    title = _("Clipboard"),
+                    stop_events_propagation = true,
+                    input_hint = _("empty"),
+                    input = Device.input.getClipboardText(),
+                    buttons = {
+                        {
+                            {
+                                text = _("All"),
+                                callback = function()
+                                    UIManager:close(input_dialog)
+                                    Device.input.setClipboardText(table.concat(self.charlist))
+                                end,
+                            },
+                            {
+                                text = _("Line"),
+                                callback = function()
+                                    UIManager:close(input_dialog)
+                                    Device.input.setClipboardText(table.concat(self.charlist, "", self:getStringPos({"\n"}, {"\n"})))
+                                end,
+                            },
+                            {
+                                text = _("Word"),
+                                callback = function()
+                                    UIManager:close(input_dialog)
+                                    Device.input.setClipboardText(table.concat(self.charlist, "", self:getStringPos({"\n", " "}, {"\n", " "})))
+                                end,
+                               
+                            },
+                        },
+                        {
+                            {
+                                text = _("Cancel"),
+                                callback = function()
+                                    UIManager:close(input_dialog)
+                                end,
+                            },
+                            {
+                                text = _("Select"),
+                                callback = function()
+                                    UIManager:close(input_dialog)
+                                    UIManager:show(Notification:new{
+                                        text = _("Hold the start of selection"),
+                                    })
+                                    self.do_select = true
+                                end,
+                            },
+                            {
+                                text = _("Paste"),
+                                is_enter_default = true,
+                                callback = function()
+                                    local paste_value = input_dialog:getInputText()
+                                    if paste_value ~= "" then
+                                        UIManager:close(input_dialog)
+                                        Device.input.setClipboardText(paste_value)
+                                        self:addChars(paste_value)
+                                    end
+                                end,
+                            },
+                        },
+                    },
+                }
+                UIManager:show(input_dialog)
+                input_dialog:onShowKeyboard(true)
             end
             return true
         end
@@ -534,6 +618,41 @@ function InputText:getLineCharPos(line_num)
         end
     end
     return char_pos
+end
+
+-- Get start and end positions of the substring
+-- delimited with the delimiters and containing char_pos.
+-- If char_pos not set, current charpos assumed.
+function InputText:getStringPos(left_delimiter, right_delimiter, char_pos)
+    local char_pos = char_pos and char_pos or self.charpos
+    local start_pos, end_pos = 1, #self.charlist
+    local done = false
+    if char_pos > 1 then
+        for i = char_pos, 2, -1 do
+            for j = 1, #left_delimiter do
+                if self.charlist[i-1] == left_delimiter[j] then
+                    start_pos = i
+                    done = true
+                    break
+                end
+            end
+            if done then break end
+        end
+    end
+    done = false
+    if char_pos < #self.charlist then
+        for i = char_pos, #self.charlist do
+            for j = 1, #right_delimiter do
+                if self.charlist[i] == right_delimiter[j] then
+                    end_pos = i - 1
+                    done = true
+                    break
+                end
+            end
+            if done then break end
+        end
+    end
+    return start_pos, end_pos
 end
 
 --- Search for a string.
