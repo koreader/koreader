@@ -90,17 +90,17 @@ local function showExpertMenu(toggle)
 end
 
 return {
-    text = _("Notification level"),
-    help_text = _([[KOReader may show notification popups at top of screen on various occasions.
-You can decide here which kind of notifications you want displayed.]]),
+    text = _("Notifications"),
+    help_text = _([[Notification popups may be shown at the top of screen on various occasions.
+This allows selecting which to show or hide.]]),
     checked_func = function()
         local value = G_reader_settings:readSetting("notification_sources_to_show_mask") or Notification.SOURCE_DEFAULT
         return  value ~= 0
     end,
     sub_item_table = {
         {
-        text = _("No popups"),
-        help_text = _("No popups are shown at all."),
+        text = _("No notification"),
+        help_text = _("No notification popups will be shown."),
         checked_func = function()
             return getMask() == Notification.SOURCE_NONE
         end,
@@ -110,8 +110,8 @@ You can decide here which kind of notifications you want displayed.]]),
         separator = true,
         },
         {
-        text = _("Only some bottom menu popus"),
-        help_text = _("Only show popups for bottom menu settings with no visual feedback."),
+        text = _("Some notifications from bottom menu"),
+        help_text = _("Show notification popups for bottom menu settings with no visual feedback."),
         checked_func = function()
             return band(getMask(), Notification.SOURCE_BOTTOM_MENU) == band(Notification.SOURCE_SOME, Notification.SOURCE_BOTTOM_MENU)
         end,
@@ -125,8 +125,8 @@ You can decide here which kind of notifications you want displayed.]]),
         end,
         },
         {
-        text = _("A lot of bottom menu popus"),
-        help_text = _("Show popups from the bottom menu, which don't have visual feedback and popups from the three dots menus."),
+        text = _("More notifications from bottom menu"),
+        help_text = _("Show notification popups for more bottom menu settings."),
         checked_func = function()
             return band(getMask(), Notification.SOURCE_BOTTOM_MENU) == band(Notification.SOURCE_DEFAULT, Notification.SOURCE_BOTTOM_MENU)
         end,
@@ -140,8 +140,8 @@ You can decide here which kind of notifications you want displayed.]]),
         end,
         },
         {
-        text = _("Gestures and profiles"),
-        help_text = _("Show popups on gestures and profiles."),
+        text = _("Notifications from gestures and profiles"),
+        help_text = _("Show notification popups for changes from gestures and the profiles plugin."),
         checked_func = function()
             return band(getMask(), Notification.SOURCE_DISPATCHER) ~= 0 and getMask() ~= Notification.SOURCE_ALL
         end,
