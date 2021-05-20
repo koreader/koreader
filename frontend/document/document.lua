@@ -96,8 +96,6 @@ end
 -- false if not (i.e., we've just decreased the refcount, so, leave internal engine data alone).
 -- nil if all hell broke loose.
 function Document:close()
-    print("Document:close")
-    print(debug.traceback())
     local DocumentRegistry = require("document/documentregistry")
     if self.is_open then
         local refcount = DocumentRegistry:closeDocument(self.file)
@@ -111,11 +109,11 @@ function Document:close()
             return true
         else
             -- This can happen in perfectly sane contexts (i.e., Reader -> History > View fullsize cover on the *same* book).
-            logger.dbg("Document: Decreased refcount to", refcount, "for", self.file or nil)
+            logger.dbg("Document: Decreased refcount to", refcount, "for", self.file)
             return false
         end
     else
-        logger.warn("Tried to close an already closed document:", self.file or nil)
+        logger.warn("Tried to close an already closed document:", self.file)
         return nil
     end
 end
