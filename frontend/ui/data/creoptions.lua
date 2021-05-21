@@ -46,7 +46,7 @@ local function prettifyCreWeights(t)
 end
 
 local CreOptions = {
-    prefix = 'copt',
+    prefix = "copt",
     {
         icon = "appbar.rotation",
         options = {

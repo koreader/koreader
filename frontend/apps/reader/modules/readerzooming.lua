@@ -122,6 +122,10 @@ function ReaderZooming:init()
 end
 
 function ReaderZooming:onReadSettings(config)
+    print("ReaderZooming:onReadSettings")
+    -- We may need to poke at the configurable directly, because ReaderConfig is instantiated before us...
+    local configurable = self.document and self.document.configurable
+
     -- If we have a composite zoom_mode stored, use that
     local zoom_mode = config:readSetting("zoom_mode")
                    or G_reader_settings:readSetting("zoom_mode")
@@ -154,10 +158,18 @@ function ReaderZooming:onReadSettings(config)
             end
             local zoom_mode_genus = mode_to_genus[zgenus]
             config:saveSetting("kopt_zoom_mode_genus", zoom_mode_genus)
+            if configurable then
+                -- Configurable keys aren't prefixed, unlike the actual settings...
+                configurable.zoom_mode_genus = zoom_mode_genus
+            end
             local zoom_mode_type = mode_to_type[ztype]
             config:saveSetting("kopt_zoom_mode_type", zoom_mode_type)
+            if configurable then
+                configurable.zoom_mode_type = zoom_mode_type
+            end
 
             print("Imported zoom_mode", zoom_mode, "to genus", zoom_mode_genus, zgenus, "and type", zoom_mode_type, ztype)
+            print(config:readSetting("kopt_zoom_mode_genus"), config:readSetting("kopt_zoom_mode_type"))
         end
     else
         -- Otherwise, build it from the split genus & type settings
@@ -183,6 +195,9 @@ function ReaderZooming:onReadSettings(config)
     -- Import legacy zoom_factor settings
     if config:has("zoom_factor") and config:hasNot("kopt_zoom_factor") then
         config:saveSetting("kopt_zoom_factor", config:readSetting("zoom_factor"))
+        if configurable then
+            configurable.zoom_factor = config:readSetting("zoom_factor")
+        end
         config:delSetting("zoom_factor")
     elseif config:has("zoom_factor") and config:has("kopt_zoom_factor") then
         config:delSetting("zoom_factor")

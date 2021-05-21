@@ -171,6 +171,7 @@ function ReaderConfig:onCloseConfigMenu()
 end
 
 function ReaderConfig:onReadSettings(config)
+    print("ReaderConfig:onReadSettings")
     self.configurable:loadSettings(config, self.options.prefix.."_")
     local config_panel_index = config:readSetting("config_panel_index")
     if config_panel_index then
