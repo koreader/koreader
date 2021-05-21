@@ -182,7 +182,7 @@ if Device:isTouchDevice() or Device:hasDPad() then
                                 text = _("Line"),
                                 callback = function()
                                     UIManager:close(input_dialog)
-                                    local txt = table.concat(self.charlist, "", self:getStringPos({"\n"}, {"\n"}))
+                                    local txt = table.concat(self.charlist, "", self:getStringPos({"\n", "\r"}, {"\n", "\r"}))
                                     Device.input.setClipboardText(txt)
                                     UIManager:show(Notification:new{
                                         text = _("Line copied to clipboard."),
@@ -193,7 +193,7 @@ if Device:isTouchDevice() or Device:hasDPad() then
                                 text = _("Word"),
                                 callback = function()
                                     UIManager:close(input_dialog)
-                                    local txt = table.concat(self.charlist, "", self:getStringPos({"\n", " "}, {"\n", " "}))
+                                    local txt = table.concat(self.charlist, "", self:getStringPos({"\n", "\r", " "}, {"\n", "\r", " "}))
                                     Device.input.setClipboardText(txt)
                                     UIManager:show(Notification:new{
                                         text = _("Word copied to clipboard."),
