@@ -46,9 +46,9 @@ local ReaderZooming = InputContainer:new{
     -- for pan mode: fit to width/zoom_factor,
     -- with overlap of zoom_overlap_h % (horizontally)
     -- and zoom_overlap_v % (vertically).
-    zoom_factor = 1.5,
+    kopt_zoom_factor = 1.5,
     zoom_pan_settings = {
-        "zoom_factor",
+        "kopt_zoom_factor",
         "zoom_overlap_h",
         "zoom_overlap_v",
         "zoom_bottom_to_top",
@@ -325,7 +325,7 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     if zoom_mode == "columns" or zoom_mode == "rows" then
         if btn ~= "columns" and btn ~= "rows" then
             self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
-            settings.zoom_factor = self:setNumberOf(
+            settings.kopt_zoom_factor = self:setNumberOf(
                 zoom_mode,
                 zoom_range_number,
                 zoom_mode == "columns" and settings.zoom_overlap_h or settings.zoom_overlap_v
@@ -334,11 +334,13 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     elseif zoom_mode == "manual" then
         if btn == "manual" then
             config.zoom_factor = self:getNumberOf("columns")
+            settings.kopt_zoom_factor = config.zoom_factor
             print("Manual set zoom_factor to", config.zoom_factor)
+            self.ui:handleEvent(Event:new("SetZoomPan", settings))
         else
             self:setNumberOf("columns", zoom_factor)
+            self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
         end
-        self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
     end
     self.ui:handleEvent(Event:new("SetZoomMode", zoom_mode))
     if btn == "columns" or btn == "rows" then
@@ -503,7 +505,7 @@ function ReaderZooming:getZoom(pageno)
     else
         local zoom_factor = self.ui.doc_settings:readSetting("kopt_zoom_factor")
                          or G_reader_settings:readSetting("kopt_zoom_factor")
-                         or self.zoom_factor
+                         or self.kopt_zoom_factor
         zoom = zoom_w * zoom_factor
     end
     if zoom and zoom > 10 and not DocCache:willAccept(zoom * (self.dimen.w * self.dimen.h + 512)) then
@@ -610,7 +612,7 @@ function ReaderZooming:setNumberOf(what, num, overlap)
     if what == "rows" then
         zoom_factor = zoom_factor * zoom_h / zoom_w
     end
-    self.ui:handleEvent(Event:new("SetZoomPan", {zoom_factor = zoom_factor}))
+    self.ui:handleEvent(Event:new("SetZoomPan", {kopt_zoom_factor = zoom_factor}))
     self.ui:handleEvent(Event:new("RedrawCurrentPage"))
 end
 
@@ -654,7 +656,9 @@ function ReaderZooming:onZoomFactorChange()
 end
 
 function ReaderZooming:onSetZoomPan(settings, no_redraw)
+    print("ReaderZooming:onSetZoomPan", no_redraw)
     for k, v in pairs(settings) do
+        print(k, v)
         self[k] = v
         self.ui.doc_settings:saveSetting(k, v)
     end
