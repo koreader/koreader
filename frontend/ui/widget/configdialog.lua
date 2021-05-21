@@ -978,7 +978,6 @@ function ConfigDialog:onConfigEvents(option_events, arg_index)
 end
 
 function ConfigDialog:onConfigChoose(values, name, event, args, events, position, hide_on_apply)
-    print("ConfigDialog:onConfigChoose")
     UIManager:tickAfterNext(function()
         -- Repainting may be delayed depending on options
         local refresh_dialog_func = function()
@@ -1021,7 +1020,6 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
         -- need to update and repaint the whole config panel, as other
         -- toggles may have their state (enabled/disabled) modified
         -- after this toggle update.
-        print("ConfigDialog:onConfigChoose -> update")
         self:update()
         if not hide_on_apply then -- immediate refresh
             refresh_dialog_func()

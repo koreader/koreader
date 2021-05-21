@@ -193,10 +193,6 @@ end
 
 --- Saves a setting.
 function DocSettings:saveSetting(key, value)
-    print("DocSettings: setting", key, value)
-    if key == "kopt_zoom_mode_type" then
-        print(debug.traceback())
-    end
     self.data[key] = value
     return self
 end

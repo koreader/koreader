@@ -122,7 +122,6 @@ function ReaderZooming:init()
 end
 
 function ReaderZooming:onReadSettings(config)
-    print("ReaderZooming:onReadSettings")
     -- We may need to poke at the configurable directly, because ReaderConfig is instantiated before us...
     local configurable = self.document and self.document.configurable
 
@@ -167,9 +166,6 @@ function ReaderZooming:onReadSettings(config)
             if configurable then
                 configurable.zoom_mode_type = zoom_mode_type
             end
-
-            print("Imported zoom_mode", zoom_mode, "to genus", zoom_mode_genus, zgenus, "and type", zoom_mode_type, ztype)
-            print(config:readSetting("kopt_zoom_mode_genus"), config:readSetting("kopt_zoom_mode_type"))
         end
     else
         -- Otherwise, build it from the split genus & type settings
@@ -350,10 +346,11 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
         if btn == "manual" then
             config.zoom_factor = self:getNumberOf("columns")
             settings.kopt_zoom_factor = config.zoom_factor
-            print("Manual set zoom_factor to", config.zoom_factor)
+            -- We *want* a redraw the first time we swap to manual mode (like any other mode swap)
             self.ui:handleEvent(Event:new("SetZoomPan", settings))
         else
             self:setNumberOf("columns", zoom_factor)
+            -- No redraw here, because setNumberOf already took care of it
             self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
         end
     end
@@ -384,9 +381,6 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
                 ("%.2f"):format(config.zoom_factor)),
             dismiss_callback = when_applied_callback,
         })
-    else
-        -- Refresh ConfigDialog, because we've just poked at its innards...
-        print("ReaderZooming mangled ConfigDialog ;)")
     end
 end
 
@@ -671,9 +665,7 @@ function ReaderZooming:onZoomFactorChange()
 end
 
 function ReaderZooming:onSetZoomPan(settings, no_redraw)
-    print("ReaderZooming:onSetZoomPan", no_redraw)
     for k, v in pairs(settings) do
-        print(k, v)
         self[k] = v
         self.ui.doc_settings:saveSetting(k, v)
     end
