@@ -125,8 +125,35 @@ function ReaderZooming:onReadSettings(config)
     -- If we have a composite zoom_mode stored, use that
     local zoom_mode = config:readSetting("zoom_mode")
                    or G_reader_settings:readSetting("zoom_mode")
-    -- Otherwise, build it from the split genus & type settings
-    if not zoom_mode then
+    if zoom_mode then
+        -- Make sure the split genus & type match, to have an up-to-date ConfigDialog...
+        local mode_to_genus = {}
+        for k, v in pairs(self.zoom_mode_genus_map) do
+            mode_to_genus[v] = k
+        end
+        local mode_to_type = {}
+        for k, v in pairs(self.zoom_mode_type_map) do
+            mode_to_type[v] = k
+        end
+
+        local zgenus, ztype = zoom_mode:match("^(page)(%l*)$")
+        if not zgenus then
+            zgenus, ztype = zoom_mode:match("^(content)(%l*)$")
+        end
+        if not zgenus then
+            zgenus = zoom_mode
+        end
+        if zgenus then
+            if not ztype then
+                ztype = ""
+            end
+            local zoom_mode_genus = mode_to_genus[zgenus]
+            config:saveSetting("kopt_zoom_mode_genus", zoom_mode_genus)
+            local zoom_mode_type = mode_to_type[ztype]
+            config:saveSetting("kopt_zoom_mode_type", zoom_mode_type)
+        end
+    else
+        -- Otherwise, build it from the split genus & type settings
         local zoom_mode_genus = config:readSetting("kopt_zoom_mode_genus")
                              or G_reader_settings:readSetting("kopt_zoom_mode_genus")
         local zoom_mode_type = config:readSetting("kopt_zoom_mode_type")
