@@ -234,7 +234,7 @@ if last_migration_date < 20210518 then
     G_reader_settings:saveSetting("footer", settings)
 end
 
--- 20210521, ReaderZooming, get rid of legacy zoom_factor in favor of kopt_zoom_factor
+-- 20210521, ReaderZooming, zoom_factor -> kopt_zoom_factor, https://github.com/koreader/koreader/pull/7728
 if last_migration_date < 20210521 then
     logger.info("Performing one-time migration for 20210521")
 
