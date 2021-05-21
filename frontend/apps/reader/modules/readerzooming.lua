@@ -193,7 +193,7 @@ function ReaderZooming:onReadSettings(config)
     if config:has("zoom_factor") and config:hasNot("kopt_zoom_factor") then
         config:saveSetting("kopt_zoom_factor", config:readSetting("zoom_factor"))
         if configurable then
-            configurable.zoom_factor = config:readSetting("zoom_factor")
+            configurable.zoom_factor = config:readSetting("kopt_zoom_factor")
         end
         config:delSetting("zoom_factor")
     elseif config:has("zoom_factor") and config:has("kopt_zoom_factor") then
