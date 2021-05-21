@@ -122,7 +122,8 @@ function ReaderZooming:init()
 end
 
 function ReaderZooming:onReadSettings(config)
-    -- We may need to poke at the configurable directly, because ReaderConfig is instantiated before us...
+    -- We may need to poke at the Configurable directly, because ReaderConfig is instantiated before us,
+    -- so simply updating the DocSetting doesn't cut it...
     local configurable = self.document and self.document.configurable
 
     -- If we have a composite zoom_mode stored, use that
