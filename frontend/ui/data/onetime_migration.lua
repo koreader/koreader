@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20210518
+local CURRENT_MIGRATION_DATE = 20210521
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -232,6 +232,19 @@ if last_migration_date < 20210518 then
         end
     end
     G_reader_settings:saveSetting("footer", settings)
+end
+
+-- 20210521, ReaderZooming, get rid of legacy zoom_factor in favor of kopt_zoom_factor
+if last_migration_date < 20210521 then
+    logger.info("Performing one-time migration for 20210521")
+
+    -- ReaderZooming:init has the same logic for individual DocSettings in onReadSettings
+    if G_reader_settings:has("zoom_factor") and G_reader_settings:hasNot("kopt_zoom_factor") then
+        G_reader_settings:saveSetting("kopt_zoom_factor", G_reader_settings:readSetting("zoom_factor"))
+        G_reader_settings:delSetting("zoom_factor")
+    elseif G_reader_settings:has("zoom_factor") and G_reader_settings:has("kopt_zoom_factor") then
+        G_reader_settings:delSetting("zoom_factor")
+    end
 end
 
 -- We're done, store the current migration date

@@ -46,7 +46,7 @@ local ReaderZooming = InputContainer:new{
     -- for pan mode: fit to width/zoom_factor,
     -- with overlap of zoom_overlap_h % (horizontally)
     -- and zoom_overlap_v % (vertically).
-    zoom_factor = 2,
+    zoom_factor = 1.5,
     zoom_pan_settings = {
         "zoom_factor",
         "zoom_overlap_h",
@@ -126,6 +126,11 @@ function ReaderZooming:onReadSettings(config)
     local zoom_mode = config:readSetting("zoom_mode")
                    or G_reader_settings:readSetting("zoom_mode")
     if zoom_mode then
+        -- Validate it first
+        zoom_mode = util.arrayContains(self.available_zoom_modes, zoom_mode)
+                and zoom_mode
+                 or self.DEFAULT_ZOOM_MODE
+
         -- Make sure the split genus & type match, to have an up-to-date ConfigDialog...
         local mode_to_genus = {}
         for k, v in pairs(self.zoom_mode_genus_map) do
@@ -151,6 +156,8 @@ function ReaderZooming:onReadSettings(config)
             config:saveSetting("kopt_zoom_mode_genus", zoom_mode_genus)
             local zoom_mode_type = mode_to_type[ztype]
             config:saveSetting("kopt_zoom_mode_type", zoom_mode_type)
+
+            print("Imported zoom_mode", zoom_mode, "to genus", zoom_mode_genus, zgenus, "and type", zoom_mode_type, ztype)
         end
     else
         -- Otherwise, build it from the split genus & type settings
@@ -166,10 +173,20 @@ function ReaderZooming:onReadSettings(config)
             zoom_mode_type = self.zoom_mode_type_map[zoom_mode_type]
             zoom_mode = zoom_mode_genus .. zoom_mode_type
         end
+
+        -- Validate it
+        zoom_mode = util.arrayContains(self.available_zoom_modes, zoom_mode)
+                and zoom_mode
+                 or self.DEFAULT_ZOOM_MODE
     end
-    zoom_mode = util.arrayContains(self.available_zoom_modes, zoom_mode)
-            and zoom_mode
-             or self.DEFAULT_ZOOM_MODE
+
+    -- Import legacy zoom_factor settings
+    if config:has("zoom_factor") and config:hasNot("kopt_zoom_factor") then
+        config:saveSetting("kopt_zoom_factor", config:readSetting("zoom_factor"))
+        config:delSetting("zoom_factor")
+    elseif config:has("zoom_factor") and config:has("kopt_zoom_factor") then
+        config:delSetting("zoom_factor")
+    end
 
     -- Don't stomp on normal_zoom_mode in ReaderKoptListener if we're reflowed...
     local is_reflowed = config:has("kopt_text_wrap") and config:readSetting("kopt_text_wrap") == 1
@@ -317,6 +334,7 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     elseif zoom_mode == "manual" then
         if btn == "manual" then
             config.zoom_factor = self:getNumberOf("columns")
+            print("Manual set zoom_factor to", config.zoom_factor)
         else
             self:setNumberOf("columns", zoom_factor)
         end
@@ -346,9 +364,12 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
                 settings.zoom_overlap_h,
                 ("%.2f"):format(self:getNumberOf("rows", settings.zoom_overlap_v)),
                 settings.zoom_overlap_v,
-                ("%.2f"):format(self:getNumberOf("columns"))),
+                ("%.2f"):format(config.zoom_factor)),
             dismiss_callback = when_applied_callback,
         })
+    else
+        -- Refresh ConfigDialog, because we've just poked at its innards...
+        print("ReaderZooming mangled ConfigDialog ;)")
     end
 end
 
@@ -480,8 +501,8 @@ function ReaderZooming:getZoom(pageno)
     elseif self.zoom_mode == "free" then
         zoom = self.zoom
     else
-        local zoom_factor = self.ui.doc_settings:readSetting("zoom_factor")
-                         or G_reader_settings:readSetting("zoom_factor")
+        local zoom_factor = self.ui.doc_settings:readSetting("kopt_zoom_factor")
+                         or G_reader_settings:readSetting("kopt_zoom_factor")
                          or self.zoom_factor
         zoom = zoom_w * zoom_factor
     end
