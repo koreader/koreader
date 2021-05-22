@@ -135,8 +135,10 @@ end
 function ReaderZooming:_updateConfigurable(zoom_mode)
     -- We may need to poke at the Configurable directly, because ReaderConfig is instantiated before us,
     -- so simply updating the DocSetting doesn't cut it...
-    -- Conditional because this is an optional engine feature (only if self.document.info.configurable is true).
-    local configurable = self.document and self.document.configurable
+    -- Technically ought to be conditional,
+    -- because this is an optional engine feature (only if self.document.info.configurable is true).
+    -- But the rest of the code (as well as most other modules) assumes this is supported on all paged engines (it is).
+    local configurable = self.document.configurable
 
     -- Quick'n dirty zoom_mode to genus/type conversion...
     local zgenus, ztype = zoom_mode:match("^(page)(%l*)$")
@@ -152,11 +154,9 @@ function ReaderZooming:_updateConfigurable(zoom_mode)
 
     local zoom_mode_genus = self.zoom_mode_to_genus[zgenus]
     local zoom_mode_type = self.zoom_mode_to_type[ztype]
-    if configurable then
-        -- Configurable keys aren't prefixed, unlike the actual settings...
-        configurable.zoom_mode_genus = zoom_mode_genus
-        configurable.zoom_mode_type = zoom_mode_type
-    end
+    -- Configurable keys aren't prefixed, unlike the actual settings...
+    configurable.zoom_mode_genus = zoom_mode_genus
+    configurable.zoom_mode_type = zoom_mode_type
 
     return zoom_mode_genus, zoom_mode_type
 end
@@ -199,10 +199,7 @@ function ReaderZooming:onReadSettings(config)
     -- Import legacy zoom_factor settings
     if config:has("zoom_factor") and config:hasNot("kopt_zoom_factor") then
         config:saveSetting("kopt_zoom_factor", config:readSetting("zoom_factor"))
-        local configurable = self.document and self.document.configurable
-        if configurable then
-            configurable.zoom_factor = config:readSetting("kopt_zoom_factor")
-        end
+        self.document.configurable.zoom_factor = config:readSetting("kopt_zoom_factor")
         config:delSetting("zoom_factor")
     elseif config:has("zoom_factor") and config:has("kopt_zoom_factor") then
         config:delSetting("zoom_factor")
