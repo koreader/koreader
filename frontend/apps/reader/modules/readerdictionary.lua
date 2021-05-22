@@ -155,6 +155,8 @@ function ReaderDictionary:init()
 end
 
 function ReaderDictionary:sortAvailableIfos()
+    print("ReaderDictionary:sortAvailableIfos")
+    logger.dbg(available_ifos)
     table.sort(available_ifos, function(lifo, rifo)
         local lord = self.dicts_order[lifo.file]
         local rord = self.dicts_order[rifo.file]
@@ -171,6 +173,7 @@ end
 
 
 function ReaderDictionary:updateSdcvDictNamesOptions()
+    print("ReaderDictionary:updateSdcvDictNamesOptions()")
     -- We cannot tell sdcv which dictionaries to ignore, but we
     -- can tell it which dictionaries to use, by using multiple
     -- -u <dictname> options.
@@ -184,8 +187,10 @@ function ReaderDictionary:updateSdcvDictNamesOptions()
     -- while keeping it disabled for all others)
     local preferred_names_already_in = {}
     if self.preferred_dictionaries then
+        print("We have preferred dictionaries")
         for _, name in ipairs(self.preferred_dictionaries) do
             table.insert(self.enabled_dict_names, name)
+            print("preferred:", name)
             preferred_names_already_in[name] = true
         end
     end
@@ -193,9 +198,12 @@ function ReaderDictionary:updateSdcvDictNamesOptions()
     local dicts_disabled = G_reader_settings:readSetting("dicts_disabled")
     for _, ifo in pairs(available_ifos) do
         if not dicts_disabled[ifo.file] and not preferred_names_already_in[ifo.name] then
+            print("enabled:", ifo.name)
             table.insert(self.enabled_dict_names, ifo.name)
         end
     end
+
+    logger.dbg("enabled_dict_names:", self.enabled_dict_names)
 end
 
 function ReaderDictionary:addToMainMenu(menu_items)
@@ -846,6 +854,18 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
                 end)
             end
         end)
+        return
+    end
+
+    -- If the user disabled all the dictionaries, go away.
+    if dict_names and #dict_names == 0 then
+        local no_enabled_dicts = InfoMessage:new{
+            text = _("There are no enabled dictionaries."),
+        }
+        UIManager:show(no_enabled_dicts)
+        if self.highlight then
+            self.highlight:clear()
+        end
         return
     end
 
