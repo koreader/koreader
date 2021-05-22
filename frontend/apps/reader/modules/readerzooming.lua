@@ -119,14 +119,49 @@ function ReaderZooming:init()
             },
         }
     end
+
+    -- Build the reverse zoom_mode -> genus/type mappings
+    self.zoom_mode_to_genus = {}
+    for k, v in pairs(self.zoom_mode_genus_map) do
+        self.zoom_mode_to_genus[v] = k
+    end
+    self.zoom_mode_to_type = {}
+    for k, v in pairs(self.zoom_mode_type_map) do
+        self.zoom_mode_to_type[v] = k
+    end
 end
 
-function ReaderZooming:onReadSettings(config)
+-- Update the genus/type Configurables given a specific zoom_mode...
+function ReaderZooming:_updateConfigurable(zoom_mode)
     -- We may need to poke at the Configurable directly, because ReaderConfig is instantiated before us,
     -- so simply updating the DocSetting doesn't cut it...
     -- Conditional because this is an optional engine feature (only if self.document.info.configurable is true).
     local configurable = self.document and self.document.configurable
 
+    -- Quick'n dirty zoom_mode to genus/type conversion...
+    local zgenus, ztype = zoom_mode:match("^(page)(%l*)$")
+    if not zgenus then
+        zgenus, ztype = zoom_mode:match("^(content)(%l*)$")
+    end
+    if not zgenus then
+        zgenus = zoom_mode
+    end
+    if not ztype then
+        ztype = ""
+    end
+
+    local zoom_mode_genus = self.zoom_mode_to_genus[zgenus]
+    local zoom_mode_type = self.zoom_mode_to_type[ztype]
+    if configurable then
+        -- Configurable keys aren't prefixed, unlike the actual settings...
+        configurable.zoom_mode_genus = zoom_mode_genus
+        configurable.zoom_mode_type = zoom_mode_type
+    end
+
+    return zoom_mode_genus, zoom_mode_type
+end
+
+function ReaderZooming:onReadSettings(config)
     -- If we have a composite zoom_mode stored, use that
     local zoom_mode = config:readSetting("zoom_mode")
                    or G_reader_settings:readSetting("zoom_mode")
@@ -137,38 +172,9 @@ function ReaderZooming:onReadSettings(config)
                  or self.DEFAULT_ZOOM_MODE
 
         -- Make sure the split genus & type match, to have an up-to-date ConfigDialog...
-        local mode_to_genus = {}
-        for k, v in pairs(self.zoom_mode_genus_map) do
-            mode_to_genus[v] = k
-        end
-        local mode_to_type = {}
-        for k, v in pairs(self.zoom_mode_type_map) do
-            mode_to_type[v] = k
-        end
-
-        -- Quick'n dirty zoom_mode to genus/type conversion...
-        local zgenus, ztype = zoom_mode:match("^(page)(%l*)$")
-        if not zgenus then
-            zgenus, ztype = zoom_mode:match("^(content)(%l*)$")
-        end
-        if not zgenus then
-            zgenus = zoom_mode
-        end
-        if not ztype then
-            ztype = ""
-        end
-
-        local zoom_mode_genus = mode_to_genus[zgenus]
+        local zoom_mode_genus, zoom_mode_type = self:_updateConfigurable(zoom_mode)
         config:saveSetting("kopt_zoom_mode_genus", zoom_mode_genus)
-        if configurable then
-            -- Configurable keys aren't prefixed, unlike the actual settings...
-            configurable.zoom_mode_genus = zoom_mode_genus
-        end
-        local zoom_mode_type = mode_to_type[ztype]
         config:saveSetting("kopt_zoom_mode_type", zoom_mode_type)
-        if configurable then
-            configurable.zoom_mode_type = zoom_mode_type
-        end
     else
         -- Otherwise, build it from the split genus & type settings
         local zoom_mode_genus = config:readSetting("kopt_zoom_mode_genus")
@@ -193,6 +199,7 @@ function ReaderZooming:onReadSettings(config)
     -- Import legacy zoom_factor settings
     if config:has("zoom_factor") and config:hasNot("kopt_zoom_factor") then
         config:saveSetting("kopt_zoom_factor", config:readSetting("zoom_factor"))
+        local configurable = self.document and self.document.configurable
         if configurable then
             configurable.zoom_factor = config:readSetting("kopt_zoom_factor")
         end
@@ -392,6 +399,7 @@ function ReaderZooming:onSetZoomMode(new_mode)
         logger.info("setting zoom mode to", new_mode)
         self.ui:handleEvent(Event:new("ZoomModeUpdate", new_mode))
         self.zoom_mode = new_mode
+        self:_updateConfigurable(new_mode)
         self:setZoom()
         if new_mode == "manual" then
             self.ui:handleEvent(Event:new("SetScrollMode", false))
