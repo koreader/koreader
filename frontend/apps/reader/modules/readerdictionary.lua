@@ -808,7 +808,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
         -- dummy results
         final_results = {
             {
-                dict = "",
+                dict = _("N/A"),
                 word = word,
                 definition = lookup_cancelled and _("Dictionary lookup interrupted.") or _("No results."),
                 no_result = true,
@@ -859,13 +859,17 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
 
     -- If the user disabled all the dictionaries, go away.
     if dict_names and #dict_names == 0 then
-        local no_enabled_dicts = InfoMessage:new{
-            text = _("There are no enabled dictionaries."),
+        -- Dummy result
+        local nope = {
+            {
+                dict = _("N/A"),
+                word = word,
+                definition = _("There are no enabled dictionaries.\nCheck the 'Dictionary settings' menu."),
+                no_result = true,
+                lookup_cancelled = false,
+            }
         }
-        UIManager:show(no_enabled_dicts)
-        if self.highlight then
-            self.highlight:clear()
-        end
+        self:showDict(word, nope, box, link)
         return
     end
 
