@@ -755,6 +755,18 @@ function InputText:rightChar()
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
 
+function InputText:goToStartOfLine()
+    local new_pos = select(1, self:getStringPos({"\n", "\r"}, {"\n", "\r"}))
+    self.text_widget:moveCursorToCharPos(new_pos)
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+end
+
+function InputText:goToEndOfLine()
+    local new_pos = select(2, self:getStringPos({"\n", "\r"}, {"\n", "\r"})) + 1
+    self.text_widget:moveCursorToCharPos(new_pos)
+    self.charpos, self.top_line_num = self.text_widget:getCharPos()
+end
+
 function InputText:goToHome()
     self.text_widget:moveCursorToCharPos(1)
 end

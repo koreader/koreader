@@ -113,8 +113,16 @@ function VirtualKey:init()
         --self.skiphold = true
     elseif self.label =="←" then
         self.callback = function() self.keyboard:leftChar() end
+        self.hold_callback = function()
+            self.ignore_key_release = true
+            self.keyboard:goToStartOfLine()
+        end
     elseif self.label == "→" then
         self.callback = function() self.keyboard:rightChar() end
+        self.hold_callback = function()
+            self.ignore_key_release = true
+            self.keyboard:goToEndOfLine()
+        end
     elseif self.label == "↑" then
         self.callback = function() self.keyboard:upLine() end
     elseif self.label == "↓" then
@@ -897,6 +905,14 @@ end
 
 function VirtualKeyboard:rightChar()
     self.inputbox:rightChar()
+end
+
+function VirtualKeyboard:goToStartOfLine()
+    self.inputbox:goToStartOfLine()
+end
+
+function VirtualKeyboard:goToEndOfLine()
+    self.inputbox:goToEndOfLine()
 end
 
 function VirtualKeyboard:upLine()
