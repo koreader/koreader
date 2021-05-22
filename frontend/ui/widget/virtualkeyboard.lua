@@ -115,13 +115,13 @@ function VirtualKey:init()
         self.callback = function() self.keyboard:leftChar() end
         self.hold_callback = function()
             self.ignore_key_release = true
-            self.keyboard:startLine()
+            self.keyboard:goToStartOfLine()
         end
     elseif self.label == "→" then
         self.callback = function() self.keyboard:rightChar() end
         self.hold_callback = function()
             self.ignore_key_release = true
-            self.keyboard:endLine()
+            self.keyboard:goToEndOfLine()
         end
     elseif self.label == "↑" then
         self.callback = function() self.keyboard:upLine() end
@@ -907,12 +907,12 @@ function VirtualKeyboard:rightChar()
     self.inputbox:rightChar()
 end
 
-function VirtualKeyboard:startLine()
-    self.inputbox:startLine()
+function VirtualKeyboard:goToStartOfLine()
+    self.inputbox:goToStartOfLine()
 end
 
-function VirtualKeyboard:endLine()
-    self.inputbox:endLine()
+function VirtualKeyboard:goToEndOfLine()
+    self.inputbox:goToEndOfLine()
 end
 
 function VirtualKeyboard:upLine()
