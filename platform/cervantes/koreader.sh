@@ -156,7 +156,7 @@ if [ "${RETURN_VALUE}" -ne 0 ]; then
         ./fbink -q -f -s
         # Cue a lemming's faceplant sound effect!
 
-        read -r -t 15 </dev/input/event1
+        timeout 15 head -c 24 /dev/input/event1 > /dev/null
 fi
 
 if [ "${STANDALONE}" != "true" ]; then
