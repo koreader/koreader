@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 export LC_ALL="en_US.UTF-8"
 
@@ -91,7 +91,10 @@ ENTER_QBOOKAPP=87
 RETURN_VALUE="${RESTART_KOREADER}"
 
 # Loop forever until KOReader requests a normal exit.
-while [ "${RETURN_VALUE}" -ge "${RESTART_KOREADER}" ]; do
+while [ \
+    "${RETURN_VALUE}" -eq "${ENTER_USBMS}" -o \
+    "${RETURN_VALUE}" -eq "${ENTER_QBOOKAPP}" -o \
+    "${RETURN_VALUE}" -eq "${RESTART_KOREADER}" ]; do
 
     # move dictionaries from external storage to koreader private partition.
     find /mnt/public/dict -type f -exec mv -v \{\} /mnt/private/koreader/data/dict \; 2>/dev/null
@@ -126,6 +129,35 @@ while [ "${RETURN_VALUE}" -ge "${RESTART_KOREADER}" ]; do
         done
     fi
 done
+
+if [ "${RETURN_VALUE}" -ne 0 ]; then
+
+        # Show a fancy bomb on screen
+        viewWidth=600
+        viewHeight=800
+        FONTH=16
+        eval "$(./fbink -e | tr ';' '\n' | grep -e viewWidth -e viewHeight -e FONTH | tr '\n' ';')"
+        # Compute margins & sizes relative to the screen's resolution, so we end up with a similar layout, no matter the device.
+        # Height @ ~56.7%, w/ a margin worth 1.5 lines
+        bombHeight=$((viewHeight / 2 + viewHeight / 15))
+        bombMargin=$((FONTH + FONTH / 2))
+        # With a little notice at the top of the screen, on a big gray screen of death ;).
+        ./fbink -q -b -c -m -y 1 "Don't Panic! (Return value: ${RETURN_VALUE})"
+        # Warn that we're waiting on a tap to continue...
+        ./fbink -q -b -O -m -y 2 "Tap the screen to continue."
+        # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
+        # shellcheck disable=SC2039,SC3003
+        ./fbink -q -b -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} -- $'\xf0\x9f\x92\xa3'
+        # And then print the tail end of the log on the bottom of the screen...
+        crashLog="$(tail -n 25 crash.log | sed -e 's/\t/    /g')"
+        # The idea for the margins being to leave enough room for an fbink -Z bar, small horizontal margins, and a font size based on what 6pt looked like @ 265dpi
+        ./fbink -q -b -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight / 2 + FONTH * 2 + FONTH / 2)),left=$((viewWidth / 60)),right=$((viewWidth / 60)),px=$((viewHeight / 64)) -- "${crashLog}"
+        # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
+        ./fbink -q -f -s
+        # Cue a lemming's faceplant sound effect!
+
+        read -r -t 15 </dev/input/event1
+fi
 
 if [ "${STANDALONE}" != "true" ]; then
     ./release-ip.sh
