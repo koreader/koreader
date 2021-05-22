@@ -145,6 +145,7 @@ function ReaderZooming:onReadSettings(config)
             mode_to_type[v] = k
         end
 
+        -- Quick'n dirty zoom_mode to genus/type conversion...
         local zgenus, ztype = zoom_mode:match("^(page)(%l*)$")
         if not zgenus then
             zgenus, ztype = zoom_mode:match("^(content)(%l*)$")
@@ -152,21 +153,20 @@ function ReaderZooming:onReadSettings(config)
         if not zgenus then
             zgenus = zoom_mode
         end
-        if zgenus then
-            if not ztype then
-                ztype = ""
-            end
-            local zoom_mode_genus = mode_to_genus[zgenus]
-            config:saveSetting("kopt_zoom_mode_genus", zoom_mode_genus)
-            if configurable then
-                -- Configurable keys aren't prefixed, unlike the actual settings...
-                configurable.zoom_mode_genus = zoom_mode_genus
-            end
-            local zoom_mode_type = mode_to_type[ztype]
-            config:saveSetting("kopt_zoom_mode_type", zoom_mode_type)
-            if configurable then
-                configurable.zoom_mode_type = zoom_mode_type
-            end
+        if not ztype then
+            ztype = ""
+        end
+
+        local zoom_mode_genus = mode_to_genus[zgenus]
+        config:saveSetting("kopt_zoom_mode_genus", zoom_mode_genus)
+        if configurable then
+            -- Configurable keys aren't prefixed, unlike the actual settings...
+            configurable.zoom_mode_genus = zoom_mode_genus
+        end
+        local zoom_mode_type = mode_to_type[ztype]
+        config:saveSetting("kopt_zoom_mode_type", zoom_mode_type)
+        if configurable then
+            configurable.zoom_mode_type = zoom_mode_type
         end
     else
         -- Otherwise, build it from the split genus & type settings
