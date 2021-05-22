@@ -22,29 +22,21 @@ This allows selecting which to show or hide.]]),
     end,
     sub_item_table = {
         {
-            text = _("No notifications"),
-            help_text = _("No notification popups will be shown."),
-            checked_func = function()
-                return getMask() == Notification.SOURCE_NONE
-            end,
-            callback = function()
-                setMask(Notification.SOURCE_NONE)
-            end,
-            separator = true,
-        },
-        {
             text = _("Some notifications from bottom menu"),
             help_text = _("Show notification popups for bottom menu settings with no visual feedback."),
             checked_func = function()
                 return band(getMask(), Notification.SOURCE_BOTTOM_MENU) == band(Notification.SOURCE_SOME, Notification.SOURCE_BOTTOM_MENU)
             end,
             callback = function()
-                if getMask() == Notification.SOURCE_ALL then
-                    setMask(Notification.SOURCE_NONE)
-                end
-                setMask(bor(
+                if band(getMask(), Notification.SOURCE_BOTTOM_MENU) == band(Notification.SOURCE_SOME, Notification.SOURCE_BOTTOM_MENU) then
+                    setMask(bor(
+                        Notification.SOURCE_NONE,
+                        band(getMask(), Notification.SOURCE_DISPATCHER)))
+                else
+                    setMask(bor(
                         band(Notification.SOURCE_SOME, Notification.SOURCE_BOTTOM_MENU),
                         band(getMask(), Notification.SOURCE_DISPATCHER)))
+                end
             end,
         },
         {
@@ -54,28 +46,33 @@ This allows selecting which to show or hide.]]),
                 return band(getMask(), Notification.SOURCE_BOTTOM_MENU) == band(Notification.SOURCE_DEFAULT, Notification.SOURCE_BOTTOM_MENU)
             end,
             callback = function()
-                if getMask() == Notification.SOURCE_ALL then
-                    setMask(Notification.SOURCE_NONE)
-                end
-                setMask(bor(
+                if band(getMask(), Notification.SOURCE_BOTTOM_MENU) == band(Notification.SOURCE_DEFAULT, Notification.SOURCE_BOTTOM_MENU) then
+                    setMask(bor(
+                        Notification.SOURCE_NONE,
+                        band(getMask(), Notification.SOURCE_DISPATCHER)))
+                else
+                    setMask(bor(
                         band(Notification.SOURCE_DEFAULT, Notification.SOURCE_BOTTOM_MENU),
                         band(getMask(), Notification.SOURCE_DISPATCHER)))
+                end
             end,
         },
         {
             text = _("Notifications from gestures and profiles"),
             help_text = _("Show notification popups for changes from gestures and the profiles plugin."),
             checked_func = function()
-                return band(getMask(), Notification.SOURCE_DISPATCHER) ~= 0 and getMask() ~= Notification.SOURCE_ALL
+                return band(getMask(), Notification.SOURCE_DISPATCHER) == Notification.SOURCE_DISPATCHER
             end,
             callback = function()
-                if getMask() == Notification.SOURCE_ALL then
-                    setMask(Notification.SOURCE_NONE)
-                end
-
-                setMask(bor(
+                if band(getMask(), Notification.SOURCE_DISPATCHER) == Notification.SOURCE_DISPATCHER then
+                    setMask(bor(
+                        Notification.SOURCE_NONE,
+                        band(getMask(), Notification.SOURCE_BOTTOM_MENU)))
+                else
+                    setMask(bor(
                         Notification.SOURCE_DISPATCHER,
                         band(getMask(), Notification.SOURCE_BOTTOM_MENU)))
+                end
             end,
             separator = true,
         },
