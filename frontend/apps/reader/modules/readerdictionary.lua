@@ -856,7 +856,7 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
             {
                 dict = _("N/A"),
                 word = word,
-                definition = _("There are no enabled dictionaries.\nCheck the 'Dictionary settings' menu."),
+                definition = _("There are no enabled dictionaries.\nPlease check the 'Dictionary settings' menu."),
                 no_result = true,
                 lookup_cancelled = false,
             }
