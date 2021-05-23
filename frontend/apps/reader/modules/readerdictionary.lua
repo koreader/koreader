@@ -800,7 +800,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
         -- dummy results
         final_results = {
             {
-                dict = _("N/A"),
+                dict = _("Not available"),
                 word = word,
                 definition = lookup_cancelled and _("Dictionary lookup interrupted.") or _("No results."),
                 no_result = true,
@@ -854,7 +854,7 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
         -- Dummy result
         local nope = {
             {
-                dict = _("N/A"),
+                dict = _("Not available"),
                 word = word,
                 definition = _("There are no enabled dictionaries.\nPlease check the 'Dictionary settings' menu."),
                 no_result = true,
