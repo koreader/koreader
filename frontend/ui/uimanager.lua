@@ -471,7 +471,7 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     widget:handleEvent(Event:new("FlushSettings"))
     -- ...and notify it that it ought to be gone now.
     widget:handleEvent(Event:new("CloseWidget"))
-    -- Make it disabled by default and check if any widget wants it disabled or enabled
+    -- Make sure it's disabled by default and check if there are any widgets that want it disabled or enabled.
     Input.disable_double_tap = true
     local requested_disable_double_tap = nil
     local is_covered = false
