@@ -91,10 +91,9 @@ ENTER_QBOOKAPP=87
 RETURN_VALUE="${RESTART_KOREADER}"
 
 # Loop forever until KOReader requests a normal exit.
-while [ \
-    "${RETURN_VALUE}" -eq "${ENTER_USBMS}" -o \
-    "${RETURN_VALUE}" -eq "${ENTER_QBOOKAPP}" -o \
-    "${RETURN_VALUE}" -eq "${RESTART_KOREADER}" ]; do
+while [ "${RETURN_VALUE}" -eq "${ENTER_USBMS}" ] ||
+    [ "${RETURN_VALUE}" -eq "${ENTER_QBOOKAPP}" ] ||
+    [ "${RETURN_VALUE}" -eq "${RESTART_KOREADER}" ]; do
 
     # move dictionaries from external storage to koreader private partition.
     find /mnt/public/dict -type f -exec mv -v \{\} /mnt/private/koreader/data/dict \; 2>/dev/null
@@ -146,7 +145,6 @@ if [ "${RETURN_VALUE}" -ne 0 ]; then
     # Warn that we're waiting on a tap to continue...
     ./fbink -q -b -O -m -y 2 "Tap the screen to continue."
     # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
-    # shellcheck disable=SC2039,SC3003
     ./fbink -q -b -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} -- $'\xf0\x9f\x92\xa3'
     # And then print the tail end of the log on the bottom of the screen...
     crashLog="$(tail -n 25 crash.log | sed -e 's/\t/    /g')"
@@ -156,7 +154,7 @@ if [ "${RETURN_VALUE}" -ne 0 ]; then
     ./fbink -q -f -s
     # Cue a lemming's faceplant sound effect!
 
-    timeout 15 head -c 24 /dev/input/event1 > /dev/null
+    timeout 15 head -c 24 /dev/input/event1 >/dev/null
 fi
 
 if [ "${STANDALONE}" != "true" ]; then
