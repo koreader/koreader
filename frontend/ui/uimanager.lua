@@ -476,7 +476,7 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     local requested_disable_double_tap = nil
     local is_covered = false
     local start_idx = 1
-    -- Then remove all references to that widget on stack and refresh
+    -- Then remove all references to that widget on stack and refresh.
     for i = #self._window_stack, 1, -1 do
         if self._window_stack[i].widget == widget then
             self._dirty[self._window_stack[i].widget] = nil
