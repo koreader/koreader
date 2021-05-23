@@ -154,7 +154,7 @@ while [ "${RETURN_VALUE}" -ne 0 ]; do
         {
             echo "!!!!"
             echo "Uh oh, something went awry... (Crash n°${CRASH_COUNT}: $(date +'%x @ %X'))"
-            echo "Running FW $(xargs </.version) on Linux $(uname -r) ($(uname -v))"
+            echo "Running on Linux $(uname -r) ($(uname -v))"
         } >>crash.log 2>&1
         if [ ${CRASH_COUNT} -lt 5 ] && [ "${ALWAYS_ABORT}" = "false" ]; then
             echo "Attempting to restart KOReader . . ." >>crash.log 2>&1
