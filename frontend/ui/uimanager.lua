@@ -467,16 +467,16 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     end
     logger.dbg("close widget:", widget.name or widget.id or tostring(widget))
     local dirty = false
-    -- Ensure all the widgets can get onFlushSettings event.
+    -- First notify the closed widget to save its settings...
     widget:handleEvent(Event:new("FlushSettings"))
-    -- first send close event to widget
+    -- ...and notify it that it ought to be gone now.
     widget:handleEvent(Event:new("CloseWidget"))
-    -- make it disabled by default and check if any widget wants it disabled or enabled
+    -- Make it disabled by default and check if any widget wants it disabled or enabled
     Input.disable_double_tap = true
     local requested_disable_double_tap = nil
     local is_covered = false
     local start_idx = 1
-    -- then remove all references to that widget on stack and refresh
+    -- Then remove all references to that widget on stack and refresh
     for i = #self._window_stack, 1, -1 do
         if self._window_stack[i].widget == widget then
             self._dirty[self._window_stack[i].widget] = nil

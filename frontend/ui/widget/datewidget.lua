@@ -210,7 +210,6 @@ function DateWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "ui", self.date_frame.dimen
     end)
-    return true
 end
 
 function DateWidget:onShow()

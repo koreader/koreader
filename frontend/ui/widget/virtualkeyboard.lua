@@ -771,7 +771,6 @@ end
 
 function VirtualKeyboard:onCloseWidget()
     self:_refresh(false)
-    return true
 end
 
 function VirtualKeyboard:initLayer(layer)
