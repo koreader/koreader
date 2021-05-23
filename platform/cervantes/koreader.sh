@@ -211,9 +211,7 @@ while [ "${RETURN_VALUE}" -ne 0 ]; do
             sleep 10
         done
     fi
-
 done
-
 
 if [ "${STANDALONE}" != "true" ]; then
     ./release-ip.sh
