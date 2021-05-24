@@ -127,6 +127,10 @@ function VirtualKey:init()
         self.callback = function() self.keyboard:upLine() end
     elseif self.label == "↓" then
         self.callback = function() self.keyboard:downLine() end
+        self.hold_callback = function()
+            self.ignore_key_release = true
+            self.keyboard:onHideKeyboard()
+        end
     else
         self.callback = function () self.keyboard:addChar(self.key) end
         self.hold_callback = function()
@@ -743,6 +747,10 @@ end
 function VirtualKeyboard:onClose()
     UIManager:close(self)
     return true
+end
+
+function VirtualKeyboard:onHideKeyboard()
+    self.inputbox:onHideKeyboard()
 end
 
 function VirtualKeyboard:onPressKey()
