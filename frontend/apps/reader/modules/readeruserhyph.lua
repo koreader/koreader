@@ -141,6 +141,7 @@ function ReaderUserHyph:checkHyphenation(suggestion, word)
     return false
 end
 
+--[[
 -- this formats a suggestion with upper/lowercase as given in word
 -- Example suggestion=buß-jäger; word=BUẞJäger
 -- return: BUẞ-Jäger
@@ -189,6 +190,7 @@ function ReaderUserHyph:formatHyphenation(suggestion, word)
     end
     return val
 end
+]]
 
 -------------------------------------
 -- dictionary, file functions use:
@@ -307,10 +309,10 @@ function ReaderUserHyph:modifyUserEntry(word)
 
     if self.ui.document and self.ui.document.getHyphenation then
         suggested_hyphenation = self.ui.document:getHyphenation(word)
-        print("xxxxxx getHyphenation: " .. self.ui.document:getHyphenation(word) )
     end
 
-    suggested_hyphenation = self:formatHyphenation(suggested_hyphenation, word)
+--    suggested_hyphenation = self:formatHyphenation(suggested_hyphenation, word)
+    suggested_hyphenation = self.ui.document:formatHyphenation(suggested_hyphenation, word)
 
     local input_dialog
     input_dialog = InputDialog:new{
