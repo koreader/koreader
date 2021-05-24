@@ -17,6 +17,7 @@ local _ = require("gettext")
 local Screen = Device.screen
 
 local Keyboard
+local is_keyboard_hidden = false
 
 local InputText = InputContainer:new{
     text = "",
@@ -121,6 +122,11 @@ if Device:isTouchDevice() or Device:hasDPad() then
         function InputText:onTapTextBox(arg, ges)
             if self.parent.onSwitchFocus then
                 self.parent:onSwitchFocus(self)
+            else
+                if is_keyboard_hidden == true then
+                    self:onShowKeyboard()
+                    is_keyboard_hidden = false
+                end
             end
             if #self.charlist > 0 then -- Avoid cursor moving within a hint.
                 local textwidget_offset = self.margin + self.bordersize + self.padding
@@ -563,10 +569,16 @@ end
 
 function InputText:onShowKeyboard(ignore_first_hold_release)
     Device:startTextInput()
-
     self.keyboard.ignore_first_hold_release = ignore_first_hold_release
     UIManager:show(self.keyboard)
     return true
+end
+
+function InputText:onHideKeyboard()
+    if self.add_nav_bar then return end
+    UIManager:close(self.keyboard)
+    Device:stopTextInput()
+    is_keyboard_hidden = true
 end
 
 function InputText:onCloseKeyboard()
