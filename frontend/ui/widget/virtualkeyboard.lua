@@ -111,7 +111,7 @@ function VirtualKey:init()
             self.keyboard:delToStartOfLine()
         end
         --self.skiphold = true
-    elseif self.label =="←" then
+    elseif self.label == "←" then
         self.callback = function() self.keyboard:leftChar() end
         self.hold_callback = function()
             self.ignore_key_release = true
@@ -324,6 +324,7 @@ function VirtualKey:onHoldSelect()
         -- Don't refresh the key region if we're going to show a popup on top of it ;).
         if self.hold_callback then
             self[1].inner_bordersize = 0
+            self:update_keyboard(false, true)
             self.hold_callback()
         else
             UIManager:tickAfterNext(function() self:invert(false, true) end)
