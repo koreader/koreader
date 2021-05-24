@@ -993,6 +993,13 @@ function CreDocument:getHyphenation(word)
     return word
 end
 
+function CreDocument:formatHyphenation(hyphenation, word)
+    logger.dbg("CreDocument: format hyphenation for ", word)
+    if word then
+        return self._document:formatHyphenation(hyphenation, word)
+    end
+    return word
+end
 
 function CreDocument:setTextHyphenationForceAlgorithmic(toggle)
     logger.dbg("CreDocument: set textlang hyphenation force algorithmic", toggle)
