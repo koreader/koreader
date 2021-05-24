@@ -488,6 +488,7 @@ local PocketBook626 = PocketBook:new{
 local PocketBook627 = PocketBook:new{
     model = "PBLux4",
     display_dpi = 212,
+    isAlwaysPortrait = yes,
 }
 
 -- PocketBook Touch Lux 5 (628)
