@@ -575,7 +575,7 @@ function InputText:onShowKeyboard(ignore_first_hold_release)
 end
 
 function InputText:onHideKeyboard()
-    if self.add_nav_bar then return end
+    if self.has_nav_bar then return end
     UIManager:close(self.keyboard)
     Device:stopTextInput()
     is_keyboard_hidden = true
