@@ -100,6 +100,7 @@ local order = {
         "----------------------------",
         "invert_page_turn_gestures",
         "invert_page_turn_buttons",
+        "opening_page_location_stack",
     },
     network = {
         "network_wifi",

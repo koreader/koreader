@@ -436,6 +436,15 @@ if Device:hasKeys() then
         end,
     }
 end
+common_settings.opening_page_location_stack = {
+        text = _("Add opening page in location history"),
+        checked_func = function()
+            return G_reader_settings:isTrue("opening_page_location_stack")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrFalse("opening_page_location_stack")
+        end,
+}
 
 -- Auto-save settings: default value, info text and warning, and menu items
 if G_reader_settings:hasNot("auto_save_settings_interval_minutes") then
