@@ -874,7 +874,7 @@ function ReaderView:onSetViewMode(new_mode)
         self.view_mode = new_mode
         self.ui.document:setViewMode(new_mode)
         self.ui:handleEvent(Event:new("ChangeViewMode"))
-        Notification:notify(T( _("View mode set to %1."), optionsutil:getOptionText("SetViewMode", new_mode)))
+        Notification:notify(T( _("View mode set to: %1"), optionsutil:getOptionText("SetViewMode", new_mode)))
     end
 end
 

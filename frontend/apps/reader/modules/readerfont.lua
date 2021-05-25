@@ -233,7 +233,7 @@ function ReaderFont:onSetFontHinting(mode)
     self.font_hinting = mode
     self.ui.document:setFontHinting(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Font hinting set to %1."), optionsutil:getOptionText("SetFontHinting", mode)))
+    Notification:notify(T(_("Font hinting set to: %1"), optionsutil:getOptionText("SetFontHinting", mode)))
     return true
 end
 
@@ -241,7 +241,7 @@ function ReaderFont:onSetFontKerning(mode)
     self.font_kerning = mode
     self.ui.document:setFontKerning(mode)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Font kerning set to %1."), optionsutil:getOptionText("SetFontKerning", mode)))
+    Notification:notify(T(_("Font kerning set to: %1"), optionsutil:getOptionText("SetFontKerning", mode)))
     return true
 end
 
@@ -249,7 +249,7 @@ function ReaderFont:onSetWordSpacing(values)
     self.word_spacing = values
     self.ui.document:setWordSpacing(values)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Word spacing set to %1%, %2%."), values[1], values[2]))
+    Notification:notify(T(_("Word spacing set to: %1%, %2%"), values[1], values[2]))
     return true
 end
 
