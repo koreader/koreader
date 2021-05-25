@@ -26,9 +26,9 @@ end
 
 -- Load the user dictionary suitable for the actual language
 -- Unload is done automatically when a new dictionary is loaded.
-function ReaderUserHyph:loadDictionary(name)
+function ReaderUserHyph:loadDictionary(name, reload)
     if G_reader_settings:isTrue("hyph_user_dict") and lfs.attributes(name, "mode") == "file" then
-        self.ui.document:setUserHyphenationDict(name)
+        self.ui.document:setUserHyphenationDict(name, reload)
     else
         self.ui.document:setUserHyphenationDict()
     end
@@ -40,10 +40,11 @@ function ReaderUserHyph:onTypographyLanguageChanged()
 end
 
 -- Reload on "ChangedUserDictionary" event,
--- sloppy load doesn't load dictionary if filesize and filename haven't changed
-function ReaderUserHyph:onChangedUserDictionary(no_sloppy_load)
+-- doesn't load dictionary if filesize and filename haven't changed
+-- if reload==true reload
+function ReaderUserHyph:onChangedUserDictionary(reload)
     local start_tv = TimeVal:now()
-    self:loadDictionary(self:isAvailable() and self:getDictionaryPath() or "", no_sloppy_load and 1 or 0)
+    self:loadDictionary(self:isAvailable() and self:getDictionaryPath() or "", reload and true or false)
     self.ui:handleEvent(Event:new("UpdatePos"))
     logger.err(string.format("xxxxxxxxxx reload user dictionary and rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
     logger.dbg(string.format("reload user dictionary and rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
@@ -131,7 +132,7 @@ function ReaderUserHyph:checkHyphenation(suggestion, word)
     end
 
     suggestion = suggestion:gsub("-","")
-    if self.ui.document:getLower(suggestion) == self.ui.document:getLower(word) then
+    if self.ui.document:getLowercasedWord(suggestion) == self.ui.document:getLowercasedWord(word) then
         return true -- characters match (case insensitive)
     end
     return false
@@ -175,16 +176,16 @@ end
 -- if the word matches the dictionary entry, the hypenation part is formatted and returned
 function ReaderUserHyph:findEntry(word)
     -- scan hyphenation dictionary for selected word
-    local word_lower = self.ui.document:getLower(word)
+    local word_lower = self.ui.document:getLowercasedWord(word)
     self.next_line = self.dict:read()
-    while self.next_line and self.ui.document:getLower(self.next_line:sub(1, self.next_line:find(";") - 1)) < word_lower do
+    while self.next_line and self.ui.document:getLowercasedWord(self.next_line:sub(1, self.next_line:find(";") - 1)) < word_lower do
         self.new_dict:write(self.next_line .. "\n")
         self.next_line = self.dict:read()
     end
 
     local hyphenation
     -- check if a hyphenation is found for word
-    if self.next_line and self.ui.document:getLower(self.next_line:sub(1, self.next_line:find(";") - 1)) == word_lower then
+    if self.next_line and self.ui.document:getLowercasedWord(self.next_line:sub(1, self.next_line:find(";") - 1)) == word_lower then
         hyphenation = string.sub(self.next_line, self.next_line:find(";") + 1) -- hyphenation found
         self.next_line = nil -- Important for not duplicating the entry in the dictionary
     end
@@ -193,7 +194,7 @@ end
 
 -- writes on entry to new dictionary
 function ReaderUserHyph:writeEntry(line)
-    self.new_dict:write(self.ui.document:getLower(line) .. "\n")
+    self.new_dict:write(self.ui.document:getLowercasedWord(line) .. "\n")
 end
 
 -- reads the rest of the old dictionary and writes this to the reset
