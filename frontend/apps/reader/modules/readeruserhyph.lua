@@ -137,57 +137,6 @@ function ReaderUserHyph:checkHyphenation(suggestion, word)
     return false
 end
 
---[[
--- this formats a suggestion with upper/lowercase as given in word
--- Example suggestion=buß-jäger; word=BUẞJäger
--- return: BUẞ-Jäger
--- notice the 'ß' is coded in two bytes, whereas 'ẞ' uses three bytes. (terrible mapping)
-function ReaderUserHyph:formatHyphenation(suggestion, word)
-    if not suggestion then return word end
-
-    local suggestion_lower = self.ui.document:getLower(suggestion)
-    local word_lower = self.ui.document:getLower(word)
-    local val = ""
-    local i, j = 1, 1
-    local word_len = word_lower:len()
-    while i <= word_len do
-        if suggestion:sub(j,j) == "-" then
-            val = val .. "-"
-            j = j + 1
-        end
-        if word_lower:sub(i, i) == suggestion_lower:sub(j, j) then
-            -- e.g.: lowercase ß (Utf8: 0xC3 0x9F), uppercase ẞ (Utf8: 0xE1 0xBA 0x9E)
-            -- so a matching lowercase must be translated to uppercase if necessary
-            if word_lower:sub(i, i) == word:sub(i,i) then -- word[i] is lowercase, then dumb copy
-                val = val .. word:sub(i, i) -- use uppercases from word, as suggestion is always lowercase
-                i = i + 1
-                j = j + 1
-            else  -- case differs in word[i] and word_lower[i]
-                local multibyte = false
-                for low_c, up_c in pairs(Utf8.lc_uc) do
-                    if (word_lower:sub(i):find(low_c) or 0) == 1 then -- Utf8-multibyte at position i
-                        print("multibyte ".. low_c .. " " .. up_c)
-                        val = val .. up_c
-                        local len = low_c:len()
-                        i = i + len -- plus 1, 2 or 3; multibyte count
-                        j = j + len -- plus 1, 2 or 3; multibyte count
-                        multibyte = true
-                        break
-                    end
-                end
-                if not multibyte and i <= word_len then
-                    val = val .. word:sub(i, i) -- should not happen; if so, dumb copy
-                    i = i + 1
-                    j = j + 1
-                end
-            end
-
-        end
-    end
-    return val
-end
-]]
-
 -------------------------------------
 -- dictionary, file functions use:
 --    self.dict_file
@@ -283,8 +232,8 @@ function ReaderUserHyph:modifyUserEntry(word)
         return
     end
 
-    local suggested_hyphenation = self.ui.document:getHyphenation(word)
-    suggested_hyphenation = self.ui.document:formatHyphenation(suggested_hyphenation, word)
+    local suggested_hyphenation = self.ui.document:getHyphenationForWord(word)
+    suggested_hyphenation = self.ui.document:formatHyphenationSuggestion(suggested_hyphenation, word)
 
     local input_dialog
     input_dialog = InputDialog:new{
