@@ -437,7 +437,7 @@ if Device:hasKeys() then
     }
 end
 common_settings.opening_page_location_stack = {
-        text = _("Add opening page in location history"),
+        text = _("Add opening page to location history"),
         checked_func = function()
             return G_reader_settings:isTrue("opening_page_location_stack")
         end,
