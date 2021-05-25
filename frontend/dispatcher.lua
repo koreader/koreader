@@ -390,24 +390,24 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
         then
             if settingsList[k].category == "none" or settingsList[k].category == "arg" then
                 table.insert(menu, {
-                    text = settingsList[k].title,
-                    checked_func = function()
-                    return location[settings] ~= nil and location[settings][k] ~= nil
+                     text = settingsList[k].title,
+                     checked_func = function()
+                     return location[settings] ~= nil and location[settings][k] ~= nil
+                     end,
+                     callback = function(touchmenu_instance)
+                         if location[settings] == nil then
+                             location[settings] = {}
+                         end
+                         if location[settings][k] then
+                             location[settings][k] = nil
+                         else
+                             location[settings][k] = true
+                         end
+                         caller.updated = true
+                         if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
-                    callback = function(touchmenu_instance)
-                        if location[settings] == nil then
-                            location[settings] = {}
-                        end
-                        if location[settings][k] then
-                            location[settings][k] = nil
-                        else
-                            location[settings][k] = true
-                        end
-                        caller.updated = true
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
-                   end,
-                   separator = settingsList[k].separator,
-               })
+                    separator = settingsList[k].separator,
+                })
             elseif settingsList[k].category == "absolutenumber" then
                 table.insert(menu, {
                     text_func = function()
