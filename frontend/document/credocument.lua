@@ -980,31 +980,37 @@ function CreDocument:setTextHyphenationSoftHyphensOnly(toggle)
     self._document:setStringProperty("crengine.textlang.hyphenation.soft.hyphens.only", toggle and 1 or 0)
 end
 
-function CreDocument:setUserHyphenationDict(dict, sloppy_load)
+function CreDocument:setUserHyphenationDict(dict, reload)
+    print("xxxxxxxxxxxxxxxxxx " .. tostring(reload))
     logger.dbg("CreDocument: set textlang hyphenation dict", dict or "none")
-    self._document:setStringProperty("crengine.textlang.hyphenation.user.dict", dict or "", sloppy_load or 1)
+    dict = dict or ""
+    if reload then
+        dict = dict .. "-reload"
+    end
+    print("xxxxxxxxxxxxxxxx dicti " .. dict)
+    self._document:setStringProperty("crengine.textlang.hyphenation.user.dict", dict or "")
 end
 
-function CreDocument:getHyphenation(word)
+function CreDocument:getHyphenationForWord(word)
     logger.dbg("CreDocument: get hyphenation for ", word)
     if word then
-        return self._document:getHyphenation(word)
+        return self._document:getHyphenationForWord(word)
     end
     return word
 end
 
-function CreDocument:getLower(word)
+function CreDocument:getLowercasedWord(word)
     logger.dbg("CreDocument: get lowercase for ", word)
     if word then
-        return self._document:getLower(word)
+        return self._document:getLowercasedWord(word)
     end
     return word
 end
 
-function CreDocument:formatHyphenation(hyphenation, word)
+function CreDocument:formatHyphenationSuggestion(hyphenation, word)
     logger.dbg("CreDocument: format hyphenation for ", word)
     if word then
-        return self._document:formatHyphenation(hyphenation, word)
+        return self._document:formatHyphenationSuggestion(hyphenation, word)
     end
     return word
 end
