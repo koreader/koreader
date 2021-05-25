@@ -129,8 +129,8 @@ function VirtualKey:init()
         self.callback = function() self.keyboard:downLine() end
         self.hold_callback = function()
             self.ignore_key_release = true
+            self:update_keyboard(false, true) -- clear key border
             self.keyboard:onHideKeyboard()
-            self:update_keyboard(false, true)
         end
     else
         self.callback = function () self.keyboard:addChar(self.key) end
