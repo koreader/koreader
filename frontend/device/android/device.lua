@@ -132,8 +132,8 @@ function Device:init()
         device = self,
         event_map = require("device/android/event_map"),
         handleMiscEv = function(this, ev)
-            local UIManager = require("ui/uimanager")
             local Event = require("ui/event")
+            local UIManager = require("ui/uimanager")
             logger.dbg("Android application event", ev.code)
             if ev.code == C.APP_CMD_SAVE_STATE then
                 UIManager:broadcastEvent(Event:new("SaveSettings"))
@@ -457,9 +457,9 @@ function Device:untar(archive, extract_to)
 end
 
 function Device:download(link, name, ok_text)
-    local UIManager = require("ui/uimanager")
     local ConfirmBox = require("ui/widget/confirmbox")
     local InfoMessage = require("ui/widget/infomessage")
+    local UIManager = require("ui/uimanager")
     local ok = android.download(link, name)
     if ok == C.ADOWNLOAD_EXISTS then
         self:install()
@@ -479,9 +479,9 @@ function Device:download(link, name, ok_text)
 end
 
 function Device:install()
-    local UIManager = require("ui/uimanager")
     local ConfirmBox = require("ui/widget/confirmbox")
     local Event = require("ui/event")
+    local UIManager = require("ui/uimanager")
     UIManager:show(ConfirmBox:new{
         text = _("Update is ready. Install it now?"),
         ok_text = _("Install"),
