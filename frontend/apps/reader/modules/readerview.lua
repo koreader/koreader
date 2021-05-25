@@ -715,7 +715,7 @@ function ReaderView:onSetRotationMode(rotation)
     self.ui:handleEvent(Event:new("SetDimensions", new_screen_size))
     self.ui:onScreenResize(new_screen_size)
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
-    Notification:notify(T(_("Rotation mode set to %1."), optionsutil:getOptionText("SetRotationMode", rotation)))
+    Notification:notify(T(_("Rotation mode set to: %1"), optionsutil:getOptionText("SetRotationMode", rotation)))
     return true
 end
 
