@@ -39,10 +39,11 @@ function ReaderUserHyph:onTypographyLanguageChanged()
     self:onChangedUserDictionary()
 end
 
--- Reload on "ChangedUserDictionary" event
-function ReaderUserHyph:onChangedUserDictionary()
+-- Reload on "ChangedUserDictionary" event,
+-- sloppy load doesn't load dictionary if filesize and filename haven't changed
+function ReaderUserHyph:onChangedUserDictionary(no_sloppy_load)
     local start_tv = TimeVal:now()
-    self:loadDictionary(self:isAvailable() and self:getDictionaryPath() or "")
+    self:loadDictionary(self:isAvailable() and self:getDictionaryPath() or "", no_sloppy_load and 1 or 0)
     self.ui:handleEvent(Event:new("UpdatePos"))
     logger.err(string.format("xxxxxxxxxx reload user dictionary and rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
     logger.dbg(string.format("reload user dictionary and rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
@@ -67,7 +68,7 @@ function ReaderUserHyph:getMenuEntry()
         callback = function()
             local hyph_user_dict =  not G_reader_settings:isTrue("hyph_user_dict")
             G_reader_settings:saveSetting("hyph_user_dict", hyph_user_dict)
-            self:onChangedUserDictionary()
+            self:onChangedUserDictionary(true)
         end,
         hold_callback = function()
             local hyph_user_dict = G_reader_settings:isTrue("hyph_user_dict")
@@ -308,7 +309,7 @@ function ReaderUserHyph:modifyUserEntry(word)
                         self:writeRest()
                         self:closeDictionary()
                         UIManager:close(input_dialog)
-                        self:onChangedUserDictionary()
+                        self:onChangedUserDictionary(true)
                     end,
                 },
                 {
@@ -316,7 +317,10 @@ function ReaderUserHyph:modifyUserEntry(word)
                     is_enter_default = true,
                     callback = function()
                         local new_suggestion = input_dialog:getInputText()
-                        new_suggestion = new_suggestion:gsub(" ","-") --replace spaces with hyphens
+                        new_suggestion = new_suggestion:gsub(" ","-") -- replace spaces with hyphens
+                        new_suggestion = new_suggestion:gsub("^-","") -- remove leading hypenations
+                        new_suggestion = new_suggestion:gsub("-$","") -- remove trailing hypenations
+
                         -- don't save if no changes
                         if self:checkHyphenation(new_suggestion, word) then
                             if new_suggestion ~= input_dialog.old_hyph then
@@ -325,7 +329,7 @@ function ReaderUserHyph:modifyUserEntry(word)
                                 self:writeEntry(string.format("%s;%s", word, new_suggestion))
                                 self:writeRest()
                                 self:closeDictionary()
-                                self:onChangedUserDictionary()
+                                self:onChangedUserDictionary(true)
                             end
                             UIManager:close(input_dialog)
                         else
