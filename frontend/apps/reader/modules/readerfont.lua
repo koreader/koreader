@@ -249,7 +249,7 @@ function ReaderFont:onSetWordSpacing(values)
     self.word_spacing = values
     self.ui.document:setWordSpacing(values)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Word spacing set to %1%,  %2%."), values[1], values[2]))
+    Notification:notify(T(_("Word spacing set to %1%, %2%."), values[1], values[2]))
     return true
 end
 
