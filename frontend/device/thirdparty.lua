@@ -33,7 +33,9 @@ function M:new(o)
             end
         end
     end
-    logger.info(o:dump())
+    if o.is_user_list then
+        logger.info(o:dump())
+    end
     return o
 end
 
@@ -54,7 +56,7 @@ function M:checkMethod(role, method)
 end
 
 function M:dump()
-    local str = (self.is_user_list and "user" or "platform") .. " thirdparty apps\n"
+    local str = "user defined thirdparty apps\n"
     for i, role in ipairs(roles) do
         local apps = self[role.."s"]
         for index, _ in ipairs(apps or {}) do
