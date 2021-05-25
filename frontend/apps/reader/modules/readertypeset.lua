@@ -148,7 +148,7 @@ end
 
 function ReaderTypeset:onToggleEmbeddedFonts(toggle)
     self:toggleEmbeddedFonts(toggle)
-    if notification then
+    if toggle then
         Notification:notify(_("Embedded fonts are on."))
     else
         Notification:notify(_("Embedded fonts are off."))
