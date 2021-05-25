@@ -542,6 +542,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                         end
                     end,
                     separator = settingsList[k].separator,
+                    menu_item_id = k,
                 })
             end
         end
