@@ -981,14 +981,13 @@ function CreDocument:setTextHyphenationSoftHyphensOnly(toggle)
 end
 
 function CreDocument:setUserHyphenationDict(dict, reload)
-    print("xxxxxxxxxxxxxxxxxx " .. tostring(reload))
     logger.dbg("CreDocument: set textlang hyphenation dict", dict or "none")
-    dict = dict or ""
-    if reload then
-        dict = dict .. "-reload"
-    end
-    print("xxxxxxxxxxxxxxxx dicti " .. dict)
-    self._document:setStringProperty("crengine.textlang.hyphenation.user.dict", dict or "")
+--    dict = dict or ""
+--    if reload then
+--        dict = dict .. "-reload"
+--    end
+--    self._document:setStringProperty("crengine.textlang.hyphenation.user.dict", dict or "")
+    self._document:setUserHyphenationDict(dict or "", reload or false)
 end
 
 function CreDocument:getHyphenationForWord(word)

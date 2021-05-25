@@ -25,6 +25,7 @@ function ReaderUserHyph:getDictionaryPath()
 end
 
 -- Load the user dictionary suitable for the actual language
+-- if reload==true, force a reload
 -- Unload is done automatically when a new dictionary is loaded.
 function ReaderUserHyph:loadDictionary(name, reload)
     if G_reader_settings:isTrue("hyph_user_dict") and lfs.attributes(name, "mode") == "file" then
