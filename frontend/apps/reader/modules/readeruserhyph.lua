@@ -12,10 +12,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
 
-local ReaderUserHyph = WidgetContainer:new{
-    KEEP_ORIGINAL = 1, -- for dictionary file operations
-    USE_NEW = 2,       --     -"-
-}
+local ReaderUserHyph = WidgetContainer:new{}
 
 -----------------------------------------------
 --
@@ -266,23 +263,11 @@ function ReaderUserHyph:writeRest()
 end
 
 -- closes all open files and invalidates variables
--- mode
---    KEEP_ORIGINAL .. keep the original dict
---    USE_NEW .. use the new dict
-function ReaderUserHyph:closeDictionary(mode)
-    if not mode then
-        logger.err("ReaderUserHyp: BUG ond close Dictionary")
-        return
-    end
-
+function ReaderUserHyph:closeDictionary()
     self.ui.userhyph.dict:close()
     self.ui.userhyph.new_dict:close()
-    if mode == 1 then
-        os.remove(self.ui.userhyph.new_dict_file)
-    elseif mode == 2 then
-        os.remove(self.ui.userhyph.dict_file)
-        os.rename(self.ui.userhyph.new_dict_file, self.ui.userhyph.dict_file)
-    end
+    os.remove(self.ui.userhyph.dict_file)
+    os.rename(self.ui.userhyph.new_dict_file, self.ui.userhyph.dict_file)
 
     self.next_line = nil
     self.dict_file = nil
@@ -321,7 +306,7 @@ function ReaderUserHyph:modifyUserEntry(word)
                         self:openDictionary()
                         self:findEntry(word)
                         self:writeRest()
-                        self:closeDictionary(self.USE_NEW)
+                        self:closeDictionary()
                         UIManager:close(input_dialog)
                         self:onChangedUserDictionary()
                     end,
@@ -339,7 +324,7 @@ function ReaderUserHyph:modifyUserEntry(word)
                                 self:findEntry(word)
                                 self:writeEntry(string.format("%s;%s", word, new_suggestion))
                                 self:writeRest()
-                                self:closeDictionary(self.USE_NEW)
+                                self:closeDictionary()
                                 self:onChangedUserDictionary()
                             end
                             UIManager:close(input_dialog)
