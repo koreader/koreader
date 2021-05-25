@@ -431,7 +431,7 @@ These settings will apply to all books with any hyphenation dictionary.
         end,
         separator = true,
     })
-    table.insert(hyphenation_submenu, self.ui.userhyph:menuEntry())
+    table.insert(hyphenation_submenu, self.ui.userhyph:getMenuEntry())
     table.insert(hyphenation_submenu, {
         text_func = function()
             -- Show the current language default hyph dict (ie: English_US for zh)
