@@ -66,7 +66,7 @@ function ReaderUserHyph:_enabled()
         and not self.ui.typography.hyph_force_algorithmic
 end
 
-function ReaderUserHyph:menuEntry()
+function ReaderUserHyph:getMenuEntry()
     return {
         text = _("User dictionary for exceptions"),
         callback = function()
@@ -228,7 +228,7 @@ function ReaderUserHyph:openDictionary()
         return
     end
     self.new_dict = io.open(self.new_dict_file, "w")
-    if not self.dict then
+    if not self.new_dict then
         logger.err("UserHyph: could not open " .. self.new_dict_file)
         return
     end
@@ -305,14 +305,11 @@ end
 function ReaderUserHyph:modifyUserEntry(word)
     if word:find("[ ,;-%.]") then return end -- no button if more than one word
 
-    self:openDictionary()
-    local suggested_hyphenation = self:findEntry(word)
-
-    if self.ui.document then
-        suggested_hyphenation = self.ui.document:getHyphenation(word)
+    if not self.ui.document then
+        return
     end
 
---    suggested_hyphenation = self:formatHyphenation(suggested_hyphenation, word)
+    local suggested_hyphenation = self.ui.document:getHyphenation(word)
     suggested_hyphenation = self.ui.document:formatHyphenation(suggested_hyphenation, word)
 
     local input_dialog
@@ -327,13 +324,14 @@ function ReaderUserHyph:modifyUserEntry(word)
                 {
                     text = _("Cancel"),
                     callback = function()
-                        self:closeDictionary(self.KEEP_ORIGINAL)
                         UIManager:close(input_dialog)
                     end,
                 },
                 {
                     text = _("Remove"),
                     callback = function()
+                        self:openDictionary()
+                        self:findEntry(word)
                         self:writeRest()
                         self:closeDictionary(self.USE_NEW)
                         UIManager:close(input_dialog)
@@ -349,14 +347,14 @@ function ReaderUserHyph:modifyUserEntry(word)
                         -- don't save if no changes
                         if self:checkHyphenation(new_suggestion, word) then
                             if new_suggestion ~= input_dialog.old_hyph then
+                                self:openDictionary()
+                                self:findEntry(word)
                                 self:writeEntry(string.format("%s;%s", word, new_suggestion))
-                            end
-                            self:writeRest()
-                            self:closeDictionary(self.USE_NEW)
-                            UIManager:close(input_dialog)
-                            if new_suggestion ~= input_dialog.oldval then
+                                self:writeRest()
+                                self:closeDictionary(self.USE_NEW)
                                 self:onChangedUserDictionary()
                             end
+                            UIManager:close(input_dialog)
                         else
                             UIManager:show(InfoMessage:new{
                                 text = T(_("Wrong hyphenation!\nPlease check!"), self.dict_file),
