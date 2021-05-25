@@ -5,8 +5,8 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
-local T = require("ffi/util").template
 local Utf8 = require("utf8")
+local T = require("ffi/util").template
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local TimeVal = require("ui/timeval")
 local lfs = require("libs/libkoreader-lfs")
@@ -25,38 +25,39 @@ local ReaderUserHyph = WidgetContainer:new{
 -- returns path to the user dictionary
 function ReaderUserHyph:getDictionaryPath()
     return FFIUtil.joinPath(DataStorage:getSettingsDir(),
-        self.ui.document:getTextMainLangDefaultHyphDictionary():gsub(".pattern$", "") .. "-user.hyph")
+        "user-" .. self.ui.document:getTextMainLangDefaultHyphDictionary():gsub(".pattern$", "") .. ".hyph")
 end
 
 -- Load the user dictionary suitable for the actual language
 -- Unload is done automatically when a new dictionary is loaded.
 function ReaderUserHyph:loadDictionary()
-    if G_reader_settings:isTrue("hyph_user_dict") then
-        self.ui.document:setUserHyphenationDict(self:getDictionaryPath())
+   local name = self:getDictionaryPath()
+    if G_reader_settings:isTrue("hyph_user_dict") and lfs.attributes(name, "mode") == "file" then
+        self.ui.document:setUserHyphenationDict(name)
     else
         self.ui.document:setUserHyphenationDict()
     end
 end
 
 -- Reload on change of the hyphenation language
-function ReaderUserHyph:onChangedLanguage()
+function ReaderUserHyph:onTypographyLanguageChanged()
     self:onChangedUserDictionary()
 end
 
 -- Reload on "ChangedUserDictionary" event
 function ReaderUserHyph:onChangedUserDictionary()
     local start_tv = TimeVal:now()
-    self.ui.document:setUserHyphenationDict(self:_checked() and self:getDictionaryPath() or "")
+    self.ui.document:setUserHyphenationDict(self:isAvailable() and self:getDictionaryPath() or "")
     self.ui:handleEvent(Event:new("UpdatePos"))
-    logger.err(string.format("xxxxxxxxxx reload directory and rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
-    logger.dbg(string.format("reload directory and rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
+    logger.err(string.format("xxxxxxxxxx reload user dictionary and rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
+    logger.dbg(string.format("reload user dictionary and rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
 end
 
 ---------------------------------------------
 -- Functions to use with the UI
 ---------------------------------------------
 
-function ReaderUserHyph:_checked()
+function ReaderUserHyph:isAvailable()
     return G_reader_settings:isTrue("hyph_user_dict") and self:_enabled()
 end
 
@@ -94,7 +95,7 @@ function ReaderUserHyph:menuEntry()
             })
         end,
         checked_func = function()
-            return self:_checked()
+            return self:isAvailable()
         end,
         enabled_func = function()
             return self:_enabled()
@@ -307,7 +308,7 @@ function ReaderUserHyph:modifyUserEntry(word)
     self:openDictionary()
     local suggested_hyphenation = self:findEntry(word)
 
-    if self.ui.document and self.ui.document.getHyphenation then
+    if self.ui.document then
         suggested_hyphenation = self.ui.document:getHyphenation(word)
     end
 
@@ -317,7 +318,7 @@ function ReaderUserHyph:modifyUserEntry(word)
     local input_dialog
     input_dialog = InputDialog:new{
         title = T(_("Hyphenation entry for: \"%1\""), word),
-        description = _("Add hyphenation positions with hyphens ('-') or dots ('.')."),
+        description = _("Add hyphenation positions with hyphens ('-') or spaces (' ')."),
         input = suggested_hyphenation,
         old_hyph = suggested_hyphenation,
         input_type = "string",
@@ -344,8 +345,8 @@ function ReaderUserHyph:modifyUserEntry(word)
                     is_enter_default = true,
                     callback = function()
                         local new_suggestion = input_dialog:getInputText()
-                        new_suggestion = new_suggestion:gsub("%.","-") --replace dots with hyphens
-                        -- xxx don't save if no changes
+                        new_suggestion = new_suggestion:gsub(" ","-") --replace spaces with hyphens
+                        -- don't save if no changes
                         if self:checkHyphenation(new_suggestion, word) then
                             if new_suggestion ~= input_dialog.old_hyph then
                                 self:writeEntry(string.format("%s;%s", word, new_suggestion))

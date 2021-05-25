@@ -238,7 +238,7 @@ When the book's language tag is not among our presets, no specific features will
                 })
                 self.text_lang_tag = lang_tag
                 self.ui.document:setTextMainLang(lang_tag)
-                self.ui:handleEvent(Event:new("ChangedLanguage"))
+                self.ui:handleEvent(Event:new("TypographyLanguageChanged"))
                 self.ui:handleEvent(Event:new("UpdatePos"))
             end,
             hold_callback = function(touchmenu_instance)
@@ -763,7 +763,7 @@ function ReaderTypography:onReadSettings(config)
         logger.dbg("Typography lang: no lang set, using", self.text_lang_tag)
     end
     self.ui.document:setTextMainLang(self.text_lang_tag)
-    self.ui:handleEvent(Event:new("ChangedLanguage"))
+    self.ui:handleEvent(Event:new("TypographyLanguageChanged"))
 end
 
 function ReaderTypography:onPreRenderDocument(config)
@@ -784,7 +784,7 @@ function ReaderTypography:onPreRenderDocument(config)
             self.text_lang_tag = self.book_lang_tag
             self.ui.doc_settings:saveSetting("text_lang", self.text_lang_tag)
             self.ui.document:setTextMainLang(self.text_lang_tag)
-            self.ui:handleEvent(Event:new("ChangedLanguage"))
+            self.ui:handleEvent(Event:new("TypographyLanguageChanged"))
             self.ui:handleEvent(Event:new("UpdatePos"))
         end,
         enabled_func = function()
