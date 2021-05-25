@@ -138,7 +138,6 @@ Features available per language are marked with:
 
 Note that when a language does not come with its own hyphenation dictionary, the English (US) one will be used.
 When the book's language tag is not among our presets, no specific features will be enabled, but it might be enough to get language specific glyph variants (when supported by the fonts).]])
-
     table.insert(self.menu_table, {
         text = _("About typography rules"),
         callback = function()
