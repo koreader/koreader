@@ -981,7 +981,7 @@ function CreDocument:setTextHyphenationSoftHyphensOnly(toggle)
 end
 
 function CreDocument:setUserHyphenationDict(dict)
-    logger.dbg("CreDocument: set textlang hyphenation user", dict)
+    logger.dbg("CreDocument: set textlang hyphenation dict", dict or "none")
     self._document:setStringProperty("crengine.textlang.hyphenation.user.dict", dict or "")
 end
 
