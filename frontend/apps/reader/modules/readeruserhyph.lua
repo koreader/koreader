@@ -30,8 +30,7 @@ end
 
 -- Load the user dictionary suitable for the actual language
 -- Unload is done automatically when a new dictionary is loaded.
-function ReaderUserHyph:loadDictionary()
-   local name = self:getDictionaryPath()
+function ReaderUserHyph:loadDictionary(name)
     if G_reader_settings:isTrue("hyph_user_dict") and lfs.attributes(name, "mode") == "file" then
         self.ui.document:setUserHyphenationDict(name)
     else
@@ -47,7 +46,7 @@ end
 -- Reload on "ChangedUserDictionary" event
 function ReaderUserHyph:onChangedUserDictionary()
     local start_tv = TimeVal:now()
-    self.ui.document:setUserHyphenationDict(self:isAvailable() and self:getDictionaryPath() or "")
+    self:loadDictionary(self:isAvailable() and self:getDictionaryPath() or "")
     self.ui:handleEvent(Event:new("UpdatePos"))
     logger.err(string.format("xxxxxxxxxx reload user dictionary and rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
     logger.dbg(string.format("reload user dictionary and rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
@@ -73,7 +72,6 @@ function ReaderUserHyph:getMenuEntry()
             local hyph_user_dict =  not G_reader_settings:isTrue("hyph_user_dict")
             G_reader_settings:saveSetting("hyph_user_dict", hyph_user_dict)
             self:onChangedUserDictionary()
---            self.ui.document:setUserHyphenationDict(filename)
         end,
         hold_callback = function()
             local hyph_user_dict = G_reader_settings:isTrue("hyph_user_dict")
@@ -210,15 +208,6 @@ function ReaderUserHyph:openDictionary()
     if lfs.attributes(self.dict_file, "mode") ~= "file" then
         self.dict = io.open(self.dict_file, "w")
         self.dict:close()
-    end
-
-    -- check user dict file
-    if string.sub(lfs.attributes(self.dict_file).permissions, 1, 2) ~= "rw" then
-        UIManager:show(InfoMessage:new{
-            text = T(_("Wrong file permissions for:\n\"%1\""), self.dict_file),
-            show_icon = true,
-        })
-        return
     end
 
     -- open files
