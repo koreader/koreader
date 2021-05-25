@@ -5,7 +5,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
-local Utf8 = require("utf8")
 local T = require("ffi/util").template
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local TimeVal = require("ui/timeval")
@@ -134,7 +133,7 @@ function ReaderUserHyph:checkHyphenation(suggestion, word)
     end
 
     suggestion = suggestion:gsub("-","")
-    if Utf8:lower(suggestion) == Utf8:lower(word) then
+    if self.ui.document:getLower(suggestion) == self.ui.document:getLower(word) then
         return true -- characters match (case insensitive)
     end
     return false
@@ -148,8 +147,8 @@ end
 function ReaderUserHyph:formatHyphenation(suggestion, word)
     if not suggestion then return word end
 
-    local suggestion_lower = Utf8:lower(suggestion)
-    local word_lower = Utf8:lower(word)
+    local suggestion_lower = self.ui.document:getLower(suggestion)
+    local word_lower = self.ui.document:getLower(word)
     local val = ""
     local i, j = 1, 1
     local word_len = word_lower:len()
@@ -229,16 +228,16 @@ end
 -- if the word matches the dictionary entry, the hypenation part is formatted and returned
 function ReaderUserHyph:findEntry(word)
     -- scan hyphenation dictionary for selected word
-    local word_lower = Utf8:lower(word)
+    local word_lower = self.ui.document:getLower(word)
     self.next_line = self.dict:read()
-    while self.next_line and Utf8:lower(self.next_line:sub(1, self.next_line:find(";") - 1)) < word_lower do
+    while self.next_line and self.ui.document:getLower(self.next_line:sub(1, self.next_line:find(";") - 1)) < word_lower do
         self.new_dict:write(self.next_line .. "\n")
         self.next_line = self.dict:read()
     end
 
     local hyphenation
     -- check if a hyphenation is found for word
-    if self.next_line and Utf8:lower(self.next_line:sub(1, self.next_line:find(";") - 1)) == word_lower then
+    if self.next_line and self.ui.document:getLower(self.next_line:sub(1, self.next_line:find(";") - 1)) == word_lower then
         hyphenation = string.sub(self.next_line, self.next_line:find(";") + 1) -- hyphenation found
         self.next_line = nil -- Important for not duplicating the entry in the dictionary
     end
@@ -247,7 +246,7 @@ end
 
 -- writes on entry to new dictionary
 function ReaderUserHyph:writeEntry(line)
-    self.new_dict:write(Utf8:lower(line) .. "\n")
+    self.new_dict:write(self.ui.document:getLower(line) .. "\n")
 end
 
 -- reads the rest of the old dictionary and writes this to the reset

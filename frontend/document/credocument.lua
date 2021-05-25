@@ -993,6 +993,14 @@ function CreDocument:getHyphenation(word)
     return word
 end
 
+function CreDocument:getLower(word)
+    logger.dbg("CreDocument: get lowercase for ", word)
+    if word then
+        return self._document:getLower(word)
+    end
+    return word
+end
+
 function CreDocument:formatHyphenation(hyphenation, word)
     logger.dbg("CreDocument: format hyphenation for ", word)
     if word then
