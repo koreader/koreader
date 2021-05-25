@@ -338,20 +338,20 @@ local dispatcher_menu_order = {
 
     --"font_size",
     --"font_fine_tune",
-    --"word_spacing",
-    --"text_wrap",
+    "word_spacing",
+    "text_wrap",
 
-    --"contrast",
-    --"page_opt",
-    --"hw_dithering",
-    --"quality",
+    "contrast",
+    "page_opt",
+    "hw_dithering",
+    "quality",
 
-    --"doc_language",
-    --"forced_ocr",
-    --"writing_direction",
-    --"defect_size",
-    --"auto_straighten",
-    --"detect_indent",
+    "doc_language",
+    "forced_ocr",
+    "writing_direction",
+    "defect_size",
+    "auto_straighten",
+    "detect_indent",
     --"max_columns",
 }
 
