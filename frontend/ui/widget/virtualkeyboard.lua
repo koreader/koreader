@@ -129,8 +129,10 @@ function VirtualKey:init()
         self.callback = function() self.keyboard:downLine() end
         self.hold_callback = function()
             self.ignore_key_release = true
-            self:update_keyboard(false, true) -- clear key border
-            self.keyboard:onHideKeyboard()
+            if not self.keyboard:onHideKeyboard() then
+                -- Keyboard was *not* actually hidden: refresh the key to clear the highlight
+                self:update_keyboard(false, true)
+            end
         end
     else
         self.callback = function () self.keyboard:addChar(self.key) end
@@ -751,7 +753,7 @@ function VirtualKeyboard:onClose()
 end
 
 function VirtualKeyboard:onHideKeyboard()
-    self.inputbox:onHideKeyboard()
+    return self.inputbox:onHideKeyboard()
 end
 
 function VirtualKeyboard:onPressKey()
