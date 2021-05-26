@@ -192,7 +192,7 @@ function SSH:addToMainMenu(menu_items)
                 enabled_func = function() return not self:isRunning() end,
                 callback = function()
                     self.allow_no_password = not self.allow_no_password
-                    G_reader_settings:saveSetting("SSH_allow_no_password", self.allow_no_password)
+                    G_reader_settings:flipNilOrFalse("SSH_allow_no_password")
                 end,
             },
        }
