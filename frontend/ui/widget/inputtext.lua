@@ -17,7 +17,6 @@ local _ = require("gettext")
 local Screen = Device.screen
 
 local Keyboard
-local is_keyboard_hidden = false
 
 local InputText = InputContainer:new{
     text = "",
@@ -62,6 +61,7 @@ local InputText = InputContainer:new{
     for_measurement_only = nil, -- When the widget is a one-off used to compute text height
     do_select = false, -- to start text selection
     selection_start_pos = nil, -- selection start position
+    is_keyboard_hidden = false, -- to be able to show the keyboard again when it was hidden (by VK itself)
 }
 
 -- only use PhysicalKeyboard if the device does not have touch screen
@@ -123,9 +123,9 @@ if Device:isTouchDevice() or Device:hasDPad() then
             if self.parent.onSwitchFocus then
                 self.parent:onSwitchFocus(self)
             else
-                if is_keyboard_hidden == true then
+                if self.is_keyboard_hidden == true then
                     self:onShowKeyboard()
-                    is_keyboard_hidden = false
+                    self.is_keyboard_hidden = false
                 end
             end
             if #self.charlist > 0 then -- Avoid cursor moving within a hint.
@@ -575,10 +575,13 @@ function InputText:onShowKeyboard(ignore_first_hold_release)
 end
 
 function InputText:onHideKeyboard()
-    if self.has_nav_bar then return end
-    UIManager:close(self.keyboard)
-    Device:stopTextInput()
-    is_keyboard_hidden = true
+    if not self.has_nav_bar then
+        UIManager:close(self.keyboard)
+        Device:stopTextInput()
+        self.is_keyboard_hidden = true
+    end
+
+    return self.is_keyboard_hiddenend
 end
 
 function InputText:onCloseKeyboard()
