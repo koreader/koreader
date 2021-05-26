@@ -28,7 +28,7 @@ local SSH = WidgetContainer:new{
 
 function SSH:init()
     self.SSH_port = G_reader_settings:readSetting("SSH_port") or "2222"
-    self.allow_no_password = false
+    self.allow_no_password = G_reader_settings:isTrue("SSH_allow_no_password")
     self.ui.menu:registerToMainMenu(self)
     self:onDispatcherRegisterActions()
 end
@@ -132,8 +132,8 @@ function SSH:show_port_dialog(touchmenu_instance)
                     text = _("Save"),
                     is_enter_default = true,
                     callback = function()
-                        local value  = tonumber(self.port_dialog:getInputText())
-                        if value then
+                        local value = tonumber(self.port_dialog:getInputText())
+                        if value and value >= 0 then
                             self.SSH_port = value
                             G_reader_settings:saveSetting("SSH_port", self.SSH_port)
                             UIManager:close(self.port_dialog)
@@ -190,7 +190,10 @@ function SSH:addToMainMenu(menu_items)
                 text = _("Login without password (DANGEROUS)"),
                 checked_func = function() return self.allow_no_password end,
                 enabled_func = function() return not self:isRunning() end,
-                callback = function() self.allow_no_password = not self.allow_no_password end,
+                callback = function()
+                    self.allow_no_password = not self.allow_no_password
+                    G_reader_settings:saveSetting("SSH_allow_no_password", self.allow_no_password)
+                end,
             },
        }
     }
