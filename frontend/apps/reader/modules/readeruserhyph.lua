@@ -144,12 +144,11 @@ end
 --    self.dict_file
 --    self.new_dict_file
 --    self.dict
---    self.next_line
 -------------------------------------
 
 -- opens user dictionary
 function ReaderUserHyph:openDictionary()
-    self.dict_file = self.ui.userhyph:getDictionaryPath()
+    self.dict_file = self:getDictionaryPath()
     self.new_dict_file = self.dict_file .. ".new"
 
     -- if no file, crate an empty one
@@ -172,56 +171,68 @@ function ReaderUserHyph:openDictionary()
     return true
 end
 
--- reads the first dictionary entries from the old dictionary
--- and write them to the new dict, as long the entry is alphabetically lower than word
--- if the word matches the dictionary entry, the hypenation part is formatted and returned
+-- Reads the first dictionary entries from the old dictionary
+-- and writes them to the new dict, as long the entry is alphabetically lower than (_case insensitive_) word
+-- the last line is not written, but returned as: word, line
+--
+-- the format is line per line: "word;hyphenation\n"
+-- e.g.: "danger;dan-ger\n"
 function ReaderUserHyph:findEntry(word)
     -- scan hyphenation dictionary for selected word
     local word_lower = self.ui.document:getLowercasedWord(word)
-    self.next_line = self.dict:read()
-    while self.next_line and self.ui.document:getLowercasedWord(self.next_line:sub(1, self.next_line:find(";") - 1)) < word_lower do
-        self.new_dict:write(self.next_line .. "\n")
-        self.next_line = self.dict:read()
+    local line = self.dict:read()
+    while line and self.ui.document:getLowercasedWord(line:sub(1, line:find(";") - 1)) < word_lower do
+        self.new_dict:write(line .. "\n")
+        line = self.dict:read()
     end
 
+    if not line then -- EOF
+        return
+    end
+
+    return self.ui.document:getLowercasedWord(line:sub(1, line:find(";") - 1)), line
+
+    --[[ -- hyphenation from dictionary, not needed
     local hyphenation
     -- check if a hyphenation is found for word
-    if self.next_line and self.ui.document:getLowercasedWord(self.next_line:sub(1, self.next_line:find(";") - 1)) == word_lower then
-        hyphenation = string.sub(self.next_line, self.next_line:find(";") + 1) -- hyphenation found
-        self.next_line = nil -- Important for not duplicating the entry in the dictionary
+    if line and self.ui.document:getLowercasedWord(line:sub(1, line:find(";") - 1)) == word_lower then
+        hyphenation = string.sub(line, line:find(";") + 1) -- hyphenation found
+        line = nil -- Important for not duplicating the entry in the dictionary
     end
     return hyphenation
+    ]]
 end
 
--- writes on entry to new dictionary
+-- writes one entry to file
 function ReaderUserHyph:writeEntry(line)
-    self.new_dict:write(self.ui.document:getLowercasedWord(line) .. "\n")
+    if line then
+        self.new_dict:write(line .. "\n")
+    end
 end
 
 -- reads the rest of the old dictionary and writes this to the reset
--- if self.new_dict~=nil, an additional line can be written
-function ReaderUserHyph:writeRest()
+-- if line~=nil, an additional line can be inserted first
+function ReaderUserHyph:writeRest(line)
     -- write old entry if there was one
-    if self.next_line then
-        self.new_dict:write(self.next_line .. "\n")
+    if line then
+        self.new_dict:write(line .. "\n")
     end
     -- copy rest of file
     repeat
-        self.next_line = self.ui.userhyph.dict:read()
-        if self.next_line then
-            self.new_dict:write(self.ui.userhyph.next_line .. "\n")
+        line = self.dict:read()
+        if line then
+            self.new_dict:write(line .. "\n")
         end
-    until (not self.next_line)
+    until (not line)
 end
 
 -- closes all open files and invalidates variables
 function ReaderUserHyph:closeDictionary()
-    self.ui.userhyph.dict:close()
-    self.ui.userhyph.new_dict:close()
-    os.remove(self.ui.userhyph.dict_file)
-    os.rename(self.ui.userhyph.new_dict_file, self.ui.userhyph.dict_file)
+    self.dict:close()
+    self.new_dict:close()
+    os.remove(self.dict_file)
+    os.rename(self.new_dict_file, self.dict_file)
 
-    self.next_line = nil
     self.dict_file = nil
     self.new_dict_file = nil
     self.dict = nil
@@ -235,7 +246,6 @@ function ReaderUserHyph:modifyUserEntry(word)
     end
 
     local suggested_hyphenation = self.ui.document:getHyphenationForWord(word)
-    suggested_hyphenation = self.ui.document:formatHyphenationSuggestion(suggested_hyphenation, word)
 
     local input_dialog
     input_dialog = InputDialog:new{
@@ -256,8 +266,12 @@ function ReaderUserHyph:modifyUserEntry(word)
                     text = _("Remove"),
                     callback = function()
                         self:openDictionary()
-                        self:findEntry(word)
-                        self:writeRest()
+                        local last_word, last_line = self:findEntry(word)
+                        if self.ui.document:getLowercasedWord(last_word)
+                            == self.ui.document:getLowercasedWord(word) then
+                            last_line = nil
+                        end
+                        self:writeRest(last_line)
                         self:closeDictionary()
                         UIManager:close(input_dialog)
                         self:onChangedUserDictionary(true)
@@ -272,13 +286,19 @@ function ReaderUserHyph:modifyUserEntry(word)
                         new_suggestion = new_suggestion:gsub("^-","") -- remove leading hypenations
                         new_suggestion = new_suggestion:gsub("-$","") -- remove trailing hypenations
 
-                        -- don't save if no changes
                         if self:checkHyphenation(new_suggestion, word) then
-                            if new_suggestion ~= input_dialog.old_hyph then
+                            -- don't save if no changes
+                            if self.ui.document:getLowercasedWord(new_suggestion)
+                                ~= self.ui.document:getLowercasedWord(input_dialog.old_hyph) then
                                 self:openDictionary()
-                                self:findEntry(word)
+                                local last_word, last_line = self:findEntry(word)
                                 self:writeEntry(string.format("%s;%s", word, new_suggestion))
-                                self:writeRest()
+                                if self.ui.document:getLowercasedWord(last_word)
+                                    == self.ui.document:getLowercasedWord(word) then
+                                    last_line = nil
+                                end
+
+                                self:writeRest(last_line)
                                 self:closeDictionary()
                                 self:onChangedUserDictionary(true)
                             end

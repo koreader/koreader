@@ -1006,14 +1006,6 @@ function CreDocument:getLowercasedWord(word)
     return word
 end
 
-function CreDocument:formatHyphenationSuggestion(hyphenation, word)
-    logger.dbg("CreDocument: format hyphenation for ", word)
-    if word then
-        return self._document:formatHyphenationSuggestion(hyphenation, word)
-    end
-    return word
-end
-
 function CreDocument:setTextHyphenationForceAlgorithmic(toggle)
     logger.dbg("CreDocument: set textlang hyphenation force algorithmic", toggle)
     self._document:setStringProperty("crengine.textlang.hyphenation.force.algorithmic", toggle and 1 or 0)
