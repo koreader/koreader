@@ -139,9 +139,9 @@ end
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
     self:toggleEmbeddedStyleSheet(toggle)
     if toggle then
-        Notification:notify(_("Embedded styles are on."))
+        Notification:notify(_("Enabled embedded styles."))
     else
-        Notification:notify(_("Embedded styles are off."))
+        Notification:notify(_("Disabled embedded styles."))
     end
     return true
 end
@@ -149,9 +149,9 @@ end
 function ReaderTypeset:onToggleEmbeddedFonts(toggle)
     self:toggleEmbeddedFonts(toggle)
     if toggle then
-        Notification:notify(_("Embedded fonts are on."))
+        Notification:notify(_("Enabled embedded fonts."))
     else
-        Notification:notify(_("Embedded fonts are off."))
+        Notification:notify(_("Disabled embedded fonts."))
     end
     return true
 end
