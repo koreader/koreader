@@ -87,7 +87,7 @@ function OPDSParser:parse(text)
     -- as the list of crappy replacements above attests to...
     -- There's also a high probability of finding orphaned tags or badly nested ones in there, which will screw everything up.
     -- We do want to keep the data, though, for the "Book info" button, hence the HTML entity trickery.
-    text = text:gsub('<content( type=".-")>', "<content>")
+    text = text:gsub('<content type=".-">', "<content>")
     text = text:gsub("<content>(.-)</content>", function (s)
         return '<content type="text">' .. s:gsub("%p", {["<"] = "&lt;", [">"] = "&gt;", ['"'] = "&quot;", ["'"] = "&apos;"}) .. "</content>"
     end )
