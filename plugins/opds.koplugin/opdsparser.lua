@@ -87,12 +87,11 @@ function OPDSParser:parse(text)
     -- as the list of crappy replacements above attests to...
     -- There's also a high probability of finding orphaned tags or badly nested ones in there, which will screw everything up.
     -- We do want to keep the data, though, for the "Book info" button, hence the HTML entity trick.
-    text = text:gsub('<content type=".-">(.-)</content>', function (s)
-        return "<content>" .. s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;", ['"'] = "&quot;", ["'"] = "&apos;" } ) .. "</content>"
+    local content_type = text:match('<content( type=".-")>') or ""
+    local content_tag = "<content" .. content_type .. ">"
+    text = text:gsub(content_tag .. "(.-)</content>", function (s)
+        return content_tag .. s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;", ['"'] = "&quot;", ["'"] = "&apos;" } ) .. "</content>"
     end )
-    -- Restore the markup for the content tag themselves, because i suck at Lua patterns.
-    --text = text:gsub('&lt;content type=&quot;(.-)&quot;&gt;', '<content type="%1">')
-    --text = text:gsub("&lt;/content&gt;", "</content>")
 
     print("Before luxl:\n", text)
     local xlex = luxl.new(text, #text)
