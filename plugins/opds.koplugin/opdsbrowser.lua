@@ -650,10 +650,10 @@ function OPDSBrowser:showDownloads(item)
         table.insert(buttons, line)
     end
     table.insert(buttons, {})
-    -- Set download folder button.
+    -- Set download folder and book info buttons.
     table.insert(buttons, {
         {
-            text = _("Select another folder"),
+            text = _("Select folder"),
             callback = function()
                 require("ui/downloadmgr"):new{
                     onConfirm = function(path)
@@ -667,7 +667,18 @@ function OPDSBrowser:showDownloads(item)
                     end,
                 }:chooseDir()
             end,
-        }
+        },
+        {
+            text = _("Book info"),
+            enabled = item.content ~= nil,
+            callback = function()
+                local TextViewer = require("ui/widget/textviewer")
+                UIManager:show(TextViewer:new{
+                    title = _("Book description:"),
+                    text = util.htmlToPlainTextIfHtml(item.content),
+                })
+            end,
+        },
     })
 
     self:createNewDownloadDialog(self.getCurrentDownloadDir(), buttons)
