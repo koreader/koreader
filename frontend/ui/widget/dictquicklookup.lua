@@ -542,7 +542,7 @@ function DictQuickLookup:init()
                 },
             })
         end
---        uncomment the next line if you want the hyphenation button in dictquicklookup
+--        comment the next line if you don't want the hyphenation button in dictquicklookup
         self.ui.userhyph:addButton(buttons, 3, self.word, self)
     end
 

@@ -982,16 +982,10 @@ end
 
 function CreDocument:setUserHyphenationDict(dict, reload)
     logger.dbg("CreDocument: set textlang hyphenation dict", dict or "none")
---    dict = dict or ""
---    if reload then
---        dict = dict .. "-reload"
---    end
---    self._document:setStringProperty("crengine.textlang.hyphenation.user.dict", dict or "")
-    self._document:setUserHyphenationDict(dict or "", reload or false)
+    return self._document:setUserHyphenationDict(dict or "", reload or false)
 end
 
 function CreDocument:getHyphenationForWord(word)
-    logger.dbg("CreDocument: get hyphenation for ", word)
     if word then
         return self._document:getHyphenationForWord(word)
     end
@@ -999,7 +993,6 @@ function CreDocument:getHyphenationForWord(word)
 end
 
 function CreDocument:getLowercasedWord(word)
-    logger.dbg("CreDocument: get lowercase for ", word)
     if word then
         return self._document:getLowercasedWord(word)
     end
