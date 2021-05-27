@@ -670,7 +670,7 @@ function OPDSBrowser:showDownloads(item)
         },
         {
             text = _("Book info"),
-            enabled = item.content ~= nil,
+            enabled = item.content ~= nil and type(item.content) == "string",
             callback = function()
                 local TextViewer = require("ui/widget/textviewer")
                 UIManager:show(TextViewer:new{
