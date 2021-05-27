@@ -72,10 +72,6 @@ function OPDSParser:createFlatXTable(xlex, curr_element)
 end
 
 function OPDSParser:parse(text)
-    -- Murder Calibre's whole "content" block, because luxl doesn't really deal well with various XHTML quirks,
-    -- as the list of crappy replacements below attests to...
-    -- There's also a high probability of finding orphaned tags or badly nested ones in there, which will screw everything up.
-    text = text:gsub('<content type="xhtml">.-</content>', '')
     -- luxl doesn't handle XML comments, so strip them
     text = text:gsub("<!%-%-.-%-%->", "")
     -- luxl is also particular about the syntax for self-closing, empty & orphaned tags...
@@ -86,6 +82,19 @@ function OPDSParser:parse(text)
     text = text:gsub("<!%[CDATA%[(.-)%]%]>", function (s)
         return s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;" } )
     end )
+
+    -- Neuter the HTML inside content blocks, because luxl doesn't really deal well with various XHTML quirks,
+    -- as the list of crappy replacements above attests to...
+    -- There's also a high probability of finding orphaned tags or badly nested ones in there, which will screw everything up.
+    -- We do want to keep the data, though, for the "Book info" button, hence the HTML entity trick.
+    text = text:gsub('<content type=".-">.-</content>', function (s)
+        return s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;", ['"'] = "&quot;", ["'"] = "&apos;" } )
+    end )
+    -- Restore the markup for the content tag themselves, because i suck at Lua patterns.
+    text = text:gsub('&lt;content type=&quot;(.-)&quot;&gt;', '<content type="%1">')
+    text = text:gsub("&lt;/content&gt;", "</content>")
+
+    print("Before luxl:\n", text)
     local xlex = luxl.new(text, #text)
     return assert(self:createFlatXTable(xlex))
 end
