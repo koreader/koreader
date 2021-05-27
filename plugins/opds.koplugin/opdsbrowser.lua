@@ -674,7 +674,7 @@ function OPDSBrowser:showDownloads(item)
             callback = function()
                 local TextViewer = require("ui/widget/textviewer")
                 UIManager:show(TextViewer:new{
-                    title = _("Book description:"),
+                    title = item.title,
                     text = util.htmlToPlainTextIfHtml(item.content),
                 })
             end,
