@@ -86,14 +86,13 @@ function OPDSParser:parse(text)
     -- Neuter the HTML inside content blocks, because luxl doesn't really deal well with various XHTML quirks,
     -- as the list of crappy replacements above attests to...
     -- There's also a high probability of finding orphaned tags or badly nested ones in there, which will screw everything up.
-    -- We do want to keep the data, though, for the "Book info" button, hence the HTML entity trick.
+    -- We do want to keep the data, though, for the "Book info" button, hence the HTML entity trickery.
     local content_type = text:match('<content( type=".-")>') or ""
     local content_tag = "<content" .. content_type .. ">"
     text = text:gsub(content_tag .. "(.-)</content>", function (s)
         return content_tag .. s:gsub("%p", {["<"] = "&lt;", [">"] = "&gt;", ['"'] = "&quot;", ["'"] = "&apos;"}) .. "</content>"
     end )
 
-    print("Before luxl:\n", text)
     local xlex = luxl.new(text, #text)
     return assert(self:createFlatXTable(xlex))
 end
