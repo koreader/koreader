@@ -80,7 +80,7 @@ function OPDSParser:parse(text)
     text = text:gsub("<([bh]r)>", "<%1 />")
     -- Some OPDS catalogs wrap text in a CDATA section, remove it as it causes parsing problems
     text = text:gsub("<!%[CDATA%[(.-)%]%]>", function (s)
-        return s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;" } )
+        return s:gsub("%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;"})
     end )
 
     -- Neuter the HTML inside content blocks, because luxl doesn't really deal well with various XHTML quirks,
@@ -90,7 +90,7 @@ function OPDSParser:parse(text)
     local content_type = text:match('<content( type=".-")>') or ""
     local content_tag = "<content" .. content_type .. ">"
     text = text:gsub(content_tag .. "(.-)</content>", function (s)
-        return content_tag .. s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;", ['"'] = "&quot;", ["'"] = "&apos;" } ) .. "</content>"
+        return content_tag .. s:gsub("%p", {["<"] = "&lt;", [">"] = "&gt;", ['"'] = "&quot;", ["'"] = "&apos;"}) .. "</content>"
     end )
 
     print("Before luxl:\n", text)
