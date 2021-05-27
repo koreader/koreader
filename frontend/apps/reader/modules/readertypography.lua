@@ -428,7 +428,6 @@ These settings will apply to all books with any hyphenation dictionary.
         enabled_func = function()
             return self.hyphenation and not self.hyph_soft_hyphens_only
         end,
-        separator = true,
     })
     table.insert(hyphenation_submenu, self.ui.userhyph:getMenuEntry())
     table.insert(hyphenation_submenu, {

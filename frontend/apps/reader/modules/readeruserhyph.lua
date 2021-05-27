@@ -1,3 +1,4 @@
+local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
@@ -5,14 +6,23 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
-local T = require("ffi/util").template
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local TimeVal = require("ui/timeval")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
-local ReaderUserHyph = WidgetContainer:new{}
+local ReaderUserHyph = WidgetContainer:new{
+    -- messages from setUserHyphenationDict
+    USER_DICT_RELOAD = 0,
+    USER_DICT_NOCHANGE = 1,
+    USER_DICT_MALFORMED = 2,
+    USER_DICT_ERROR = 3,
+
+    -- work with malformed dictionary entries, some hyphenations might not work
+    malformed_accepted = false,
+}
 
 -----------------------------------------------
 --
@@ -24,12 +34,39 @@ function ReaderUserHyph:getDictionaryPath()
         "user-" .. self.ui.document:getTextMainLangDefaultHyphDictionary():gsub(".pattern$", "") .. ".hyph")
 end
 
+
+local load_error_text = _([[Error loading user dictionary:
+%1
+
+%2]])
+
 -- Load the user dictionary suitable for the actual language
 -- if reload==true, force a reload
 -- Unload is done automatically when a new dictionary is loaded.
 function ReaderUserHyph:loadDictionary(name, reload)
     if G_reader_settings:isTrue("hyph_user_dict") and lfs.attributes(name, "mode") == "file" then
-        self.ui.document:setUserHyphenationDict(name, reload)
+        local load_message = self.ui.document:setUserHyphenationDict(name, reload)
+        -- this should only happen, if a user edits a dictionary by hand or the user messed
+        -- with the dictionary file by hand. -> Warning and disable.
+        if load_message == self.USER_DICT_ERROR then
+            UIManager:show(InfoMessage:new{
+                text = T(load_error_text, name, _("Dictionary is not sorted alphabetically.\n\nDictionary is disabled now.")),
+            })
+            G_reader_settings:saveSetting("hyph_user_dict", false)
+        elseif load_message == self.USER_DICT_MALFORMED and not self.malformed_accepted then
+            UIManager:show(ConfirmBox:new{
+                text =  T(load_error_text, name, _("At least one dictionary entry is malformed.\n\nDo you want to work with that dictionary.")),
+                ok_text = _("Enable"),
+                ok_callback = function()
+                    self.malformed_accepted = true
+                end,
+                cancel_text = _("Disable"),
+                cancel_callback = function()
+                    G_reader_settings:saveSetting("hyph_user_dict", false)
+                end,
+                })
+            self.malformed_accepted = false
+        end
     else
         self.ui.document:setUserHyphenationDict()
     end
@@ -60,8 +97,7 @@ function ReaderUserHyph:isAvailable()
 end
 
 function ReaderUserHyph:_enabled()
-    return self.ui.typography.hyphenation and not self.ui.typography.hyph_soft_hyphens_only
-        and not self.ui.typography.hyph_force_algorithmic
+    return self.ui.typography.hyphenation
 end
 
 function ReaderUserHyph:getMenuEntry()
@@ -101,10 +137,10 @@ function ReaderUserHyph:getMenuEntry()
     }
 end
 
-
 -- add a button for dictquicklookup
 function ReaderUserHyph:addButton(buttons, pos, word, parentWidget)
     if word:find("[ ,;-%.\n]") then return end
+    if not self:isAvailable() then return end
 
     if G_reader_settings:readSetting("hyph_user_dict") then
         table.insert(buttons, pos, {
@@ -269,9 +305,10 @@ function ReaderUserHyph:modifyUserEntry(word)
                         local last_word, last_line = self:findEntry(word)
                         if self.ui.document:getLowercasedWord(last_word)
                             == self.ui.document:getLowercasedWord(word) then
-                            last_line = nil
+                            self:writeRest()
+                        else
+                            self:writeRest(last_line)
                         end
-                        self:writeRest(last_line)
                         self:closeDictionary()
                         UIManager:close(input_dialog)
                         self:onChangedUserDictionary(true)
@@ -295,10 +332,10 @@ function ReaderUserHyph:modifyUserEntry(word)
                                 self:writeEntry(string.format("%s;%s", word, new_suggestion))
                                 if self.ui.document:getLowercasedWord(last_word)
                                     == self.ui.document:getLowercasedWord(word) then
-                                    last_line = nil
+                                    self:writeRest()
+                                else
+                                    self:writeRest(last_line)
                                 end
-
-                                self:writeRest(last_line)
                                 self:closeDictionary()
                                 self:onChangedUserDictionary(true)
                             end
