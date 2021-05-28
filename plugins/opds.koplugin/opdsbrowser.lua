@@ -536,10 +536,7 @@ function OPDSBrowser:downloadFile(item, filetype, remote_url)
     -- Download to user selected folder or last opened folder.
     local download_dir = self.getCurrentDownloadDir()
 
-    local filename = item.title .. "." .. filetype
-    if item.author then
-        filename = item.author .. " - " .. filename
-    end
+    local filename = item.text .. "." .. filetype
 
     filename = util.getSafeFilename(filename, download_dir)
     local local_path = download_dir .. "/" .. filename
@@ -674,7 +671,7 @@ function OPDSBrowser:showDownloads(item)
             callback = function()
                 local TextViewer = require("ui/widget/textviewer")
                 UIManager:show(TextViewer:new{
-                    title = item.author .. " - " .. item.title,
+                    title = item.text,
                     text = util.htmlToPlainTextIfHtml(item.content),
                 })
             end,
