@@ -7,88 +7,76 @@ local InputDialog = require("ui/widget/inputdialog")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local TimeVal = require("ui/timeval")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
 local ReaderUserHyph = WidgetContainer:new{
-    -- messages from setUserHyphenationDict
+    -- return values from setUserHyphenationDict (crengine's UserHyphDict::init())
     USER_DICT_RELOAD = 0,
     USER_DICT_NOCHANGE = 1,
     USER_DICT_MALFORMED = 2,
-    USER_DICT_ERROR = 3,
+    USER_DICT_ERROR_NOT_SORTED = 3,
 
     -- work with malformed dictionary entries, some hyphenations might not work
     malformed_accepted = false,
 }
 
------------------------------------------------
--- Helper for the UI functions
------------------------------------------------
-
 -- returns path to the user dictionary
 function ReaderUserHyph:getDictionaryPath()
     return FFIUtil.joinPath(DataStorage:getSettingsDir(),
-        "user-" .. self.ui.document:getTextMainLangDefaultHyphDictionary():gsub(".pattern$", "") .. ".hyph")
+        "user-" .. tostring(self.ui.document:getTextMainLangDefaultHyphDictionary():gsub(".pattern$", "")) .. ".hyph")
 end
 
 
-local load_error_text = _([[Error loading user dictionary:
-%1
-
-%2]])
+local load_error_text = _("Error loading user dictionary:\n%1\n%2")
 
 -- Load the user dictionary suitable for the actual language
 -- if reload==true, force a reload
 -- Unload is done automatically when a new dictionary is loaded.
 function ReaderUserHyph:loadDictionary(name, reload)
     if G_reader_settings:isTrue("hyph_user_dict") and lfs.attributes(name, "mode") == "file" then
-        local load_message = self.ui.document:setUserHyphenationDict(name, reload)
+        local ret = self.ui.document:setUserHyphenationDict(name, reload)
         -- this should only happen, if a user edits a dictionary by hand or the user messed
         -- with the dictionary file by hand. -> Warning and disable.
-        if load_message == self.USER_DICT_ERROR then
+        if ret == self.USER_DICT_ERROR then
             UIManager:show(InfoMessage:new{
                 text = T(load_error_text, name, _("Dictionary is not sorted alphabetically.\n\nDictionary is disabled now.")),
             })
             G_reader_settings:saveSetting("hyph_user_dict", false)
-        elseif load_message == self.USER_DICT_MALFORMED and not self.malformed_accepted then
+        elseif ret == self.USER_DICT_MALFORMED and not self.malformed_accepted then
             UIManager:show(ConfirmBox:new{
-                text =  T(load_error_text, name, _("At least one dictionary entry is malformed.\n\nDo you want to work with that dictionary.")),
-                ok_text = _("Enable"),
+                text =  T(load_error_text, name, _("At least one dictionary entry is malformed.\n\nDo you want work with this incomplete dictionary?")),
+                ok_text = _("Keep"),
                 ok_callback = function()
                     self.malformed_accepted = true -- show this message only once per KOReader run
                 end,
-                cancel_text = _("Disable"),
+                cancel_text = _("Discard"),
                 cancel_callback = function()
                     G_reader_settings:saveSetting("hyph_user_dict", false)
                 end,
                 })
         end
     else
-        self.ui.document:setUserHyphenationDict()
+        self.ui.document:setUserHyphenationDict() -- clear crengine user hyph dict
     end
 end
 
 -- Reload on change of the hyphenation language
 function ReaderUserHyph:onTypographyLanguageChanged()
-    self:onChangedUserDictionary()
+    self:updateUserDictionary()
 end
 
 -- Reload on "ChangedUserDictionary" event,
 -- doesn't load dictionary if filesize and filename haven't changed
 -- if reload==true reload
-function ReaderUserHyph:onChangedUserDictionary(reload)
-    local start_tv = TimeVal:now()
+function ReaderUserHyph:updateUserDictionary(reload)
     self:loadDictionary(self:isAvailable() and self:getDictionaryPath() or "", reload and true or false)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    logger.dbg(string.format("reload user dictionary and rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
 end
 
----------------------------------------------
 -- Functions to use with the UI
----------------------------------------------
 
 function ReaderUserHyph:isAvailable()
     return G_reader_settings:isTrue("hyph_user_dict") and self:_enabled()
@@ -101,11 +89,16 @@ end
 -- add Menu entry
 function ReaderUserHyph:getMenuEntry()
     return {
-        text = _("User dictionary for exceptions"),
+        text = _("Additional user dictionary"),
+        help_text = _([[The user dictionary is an overlay to the selected hyphenation method.
+
+You can change the hyphenation by long press (>4s) on a word and select 'Hyphenate' from the popup menu.
+
+If you remove a word from the user dictionary, the selected hyphenation method is applied again.]]),
         callback = function()
             local hyph_user_dict =  not G_reader_settings:isTrue("hyph_user_dict")
             G_reader_settings:saveSetting("hyph_user_dict", hyph_user_dict)
-            self:onChangedUserDictionary(true)
+            self:updateUserDictionary(true)
         end,
         hold_callback = function()
             local hyph_user_dict = G_reader_settings:isTrue("hyph_user_dict")
@@ -157,9 +150,7 @@ function ReaderUserHyph:addButton(buttons, pos, word, parentWidget)
     end
 end
 
--------------------------------------------
--- Helper functions for dictionary entries
--------------------------------------------
+-- Helper functions for dictionary entries-------------------------------------------
 
 -- checks if suggestion is well formated
 function ReaderUserHyph:checkHyphenation(suggestion, word)
@@ -226,16 +217,6 @@ function ReaderUserHyph:findEntry(word)
     end
 
     return self.ui.document:getLowercasedWord(line:sub(1, line:find(";") - 1)), line
-
-    --[[ -- hyphenation from dictionary, not needed
-    local hyphenation
-    -- check if a hyphenation is found for word
-    if line and self.ui.document:getLowercasedWord(line:sub(1, line:find(";") - 1)) == word_lower then
-        hyphenation = string.sub(line, line:find(";") + 1) -- hyphenation found
-        line = nil -- Important for not duplicating the entry in the dictionary
-    end
-    return hyphenation
-    ]]
 end
 
 -- writes one entry to file
@@ -310,7 +291,7 @@ function ReaderUserHyph:modifyUserEntry(word)
                         end
                         self:closeDictionary()
                         UIManager:close(input_dialog)
-                        self:onChangedUserDictionary(true)
+                        self:updateUserDictionary(true)
                     end,
                 },
                 {
@@ -336,7 +317,7 @@ function ReaderUserHyph:modifyUserEntry(word)
                                     self:writeRest(last_line)
                                 end
                                 self:closeDictionary()
-                                self:onChangedUserDictionary(true)
+                                self:updateUserDictionary(true)
                             end
                             UIManager:close(input_dialog)
                         else

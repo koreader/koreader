@@ -172,7 +172,7 @@ function ReaderHighlight:init()
     -- User hyphenation dict
     self:addToHighlightDialog("11_user_dict", function(_self)
         return {
-            text= _("Hyphenation"),
+            text= _("Hyphenate"),
             show_in_highlight_dialog_func = function()
                 return _self.ui.userhyph:isAvailable() and not _self.selected_text.text:find("[ ,;-%.\n]")
             end,
