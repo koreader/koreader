@@ -83,10 +83,10 @@ function OPDSParser:parse(text)
         return s:gsub("%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;"})
     end )
 
-    -- Neuter the HTML inside content blocks, because luxl doesn't really deal well with various XHTML quirks,
-    -- as the list of crappy replacements above attests to...
-    -- There's also a high probability of finding orphaned tags or badly nested ones in there, which will screw everything up.
-    -- We do want to keep the data, though, for the "Book info" button, hence the HTML entity trickery.
+    -- NOTE: OPDS content tags are likely to contain a bunch of HTML or XHTML. We do *NOT* want to let luxl parse that,
+    --       because it doesn't really deal well with various XHTML quirks, as the list of crappy replacements above attests to...
+    --       There's also a high probability of finding orphaned tags or badly nested ones in there, which would screw everything up.
+    --       In any case, we just want to treat the whole thing as a single text node anyway, so, just mangle the markup to force luxl's hand.
     text = text:gsub('<content type=".-">', "<content>")
     text = text:gsub("<content>(.-)</content>", function (s)
         return '<content type="text">' .. s:gsub("%p", {["<"] = "&lt;", [">"] = "&gt;", ['"'] = "&quot;", ["'"] = "&apos;"}) .. "</content>"
