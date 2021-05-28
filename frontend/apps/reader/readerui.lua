@@ -293,7 +293,6 @@ function ReaderUI:init()
             start_tv = TimeVal:now()
             self.document:render()
             logger.dbg(string.format("  rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
-            logger.err(string.format("xxxxxxxxx  rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
 
             -- Uncomment to output the built DOM (for debugging)
             -- logger.dbg(self.document:getHTMLFromXPointer(".0", 0x6830))
