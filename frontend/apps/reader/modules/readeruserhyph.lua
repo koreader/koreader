@@ -25,7 +25,7 @@ local ReaderUserHyph = WidgetContainer:new{
 }
 
 -----------------------------------------------
---
+-- Helper for the UI functions
 -----------------------------------------------
 
 -- returns path to the user dictionary
@@ -58,14 +58,13 @@ function ReaderUserHyph:loadDictionary(name, reload)
                 text =  T(load_error_text, name, _("At least one dictionary entry is malformed.\n\nDo you want to work with that dictionary.")),
                 ok_text = _("Enable"),
                 ok_callback = function()
-                    self.malformed_accepted = true
+                    self.malformed_accepted = true -- show this message only once per KOReader run
                 end,
                 cancel_text = _("Disable"),
                 cancel_callback = function()
                     G_reader_settings:saveSetting("hyph_user_dict", false)
                 end,
                 })
-            self.malformed_accepted = false
         end
     else
         self.ui.document:setUserHyphenationDict()
@@ -84,7 +83,6 @@ function ReaderUserHyph:onChangedUserDictionary(reload)
     local start_tv = TimeVal:now()
     self:loadDictionary(self:isAvailable() and self:getDictionaryPath() or "", reload and true or false)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    logger.err(string.format("xxxxxxxxxx reload user dictionary and rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
     logger.dbg(string.format("reload user dictionary and rendering took %.3f seconds", TimeVal:getDuration(start_tv)))
 end
 
@@ -100,6 +98,7 @@ function ReaderUserHyph:_enabled()
     return self.ui.typography.hyphenation
 end
 
+-- add Menu entry
 function ReaderUserHyph:getMenuEntry()
     return {
         text = _("User dictionary for exceptions"),
