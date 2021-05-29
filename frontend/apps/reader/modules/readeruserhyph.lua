@@ -129,27 +129,6 @@ If you remove a word from the user dictionary, the selected hyphenation method i
     }
 end
 
--- add a button for dictquicklookup
-function ReaderUserHyph:addButton(buttons, pos, word, parentWidget)
-    if word:find("[ ,;-%.\n]") then return end
-    if not self:isAvailable() then return end
-
-    if G_reader_settings:readSetting("hyph_user_dict") then
-        table.insert(buttons, pos, {
-            {
-                id = "add_user_dict_entry",
-                text = T(_("Modify hyphenation of \"%1\"."), word),
-                callback = function()
-                    if parentWidget then
-                        UIManager:close(parentWidget)
-                    end
-                    self:modifyUserEntry(word)
-                end,
-            },
-        })
-    end
-end
-
 -- Helper functions for dictionary entries-------------------------------------------
 
 -- checks if suggestion is well formated
