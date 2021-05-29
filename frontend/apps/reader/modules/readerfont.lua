@@ -209,7 +209,7 @@ function ReaderFont:onSetFontSize(new_size)
     self.font_size = new_size
     self.ui.document:setFontSize(Screen:scaleBySize(new_size))
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Font size set to %1."), self.font_size))
+    Notification:notify(T(_("Font size set to: %1."), self.font_size))
     return true
 end
 
@@ -217,7 +217,7 @@ function ReaderFont:onSetLineSpace(space)
     self.line_space_percent = math.min(200, math.max(50, space))
     self.ui.document:setInterlineSpacePercent(self.line_space_percent)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Line spacing set to %1%."), self.line_space_percent))
+    Notification:notify(T(_("Line spacing set to: %1%."), self.line_space_percent))
     return true
 end
 
@@ -225,7 +225,7 @@ function ReaderFont:onSetFontBaseWeight(weight)
     self.font_base_weight = weight
     self.ui.document:setFontBaseWeight(weight)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Font weight set to %1."), optionsutil:getOptionText("SetFontBaseWeight", weight)))
+    Notification:notify(T(_("Font weight set to: %1."), optionsutil:getOptionText("SetFontBaseWeight", weight)))
     return true
 end
 
@@ -257,7 +257,7 @@ function ReaderFont:onSetWordExpansion(value)
     self.word_expansion = value
     self.ui.document:setWordExpansion(value)
     self.ui:handleEvent(Event:new("UpdatePos"))
-    Notification:notify(T(_("Word expansion set to %1%."), value))
+    Notification:notify(T(_("Word expansion set to: %1%."), value))
     return true
 end
 
@@ -266,7 +266,7 @@ function ReaderFont:onSetFontGamma(gamma)
     self.ui.document:setGammaIndex(self.gamma_index)
     local gamma_level = self.ui.document:getGammaLevel()
     self.ui:handleEvent(Event:new("RedrawCurrentView"))
-    Notification:notify(T(_("Font gamma set to %1."), optionsutil:getOptionText("SetFontGamma", gamma_level)))
+    Notification:notify(T(_("Font gamma set to: %1."), optionsutil:getOptionText("SetFontGamma", gamma_level)))
     return true
 end
 
