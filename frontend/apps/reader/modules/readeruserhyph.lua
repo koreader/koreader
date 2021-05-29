@@ -3,7 +3,6 @@ local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
-local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
@@ -41,7 +40,7 @@ function ReaderUserHyph:loadDictionary(name, reload)
             G_reader_settings:makeFalse("hyph_user_dict")
         elseif ret == self.USER_DICT_MALFORMED then
             UIManager:show(InfoMessage:new{
-                text = T(_("The user dictionary\n%1\nhas corrupted entries, using only valid ones."), name),
+                text = T(_("The user dictionary\n%1\nhas corrupted entries.\n\nOnly valid entries will be used."), name),
             })
             logger.warn("UserHyph: Dictionary " .. name .. " has corrupted entries.")
         end
@@ -77,34 +76,16 @@ end
 function ReaderUserHyph:getMenuEntry()
     return {
         text = _("Additional user dictionary"),
-        help_text = _([[The user dictionary is an overlay to the selected hyphenation method.
+        help_text = _([[The hyphenation of single words can be changed with the user dictionary.
+Words not in that dictionary will be hyphenated by the selected method.
 
-You can change the hyphenation by long press (>3s) on a word and select 'Hyphenate' from the popup menu.
+Hyphenation can be changed by long pressing more than three seconds on a word and selecting 'Hyphenate' in the popup menu.
 
 If you remove a word from the user dictionary, the selected hyphenation method is applied again.]]),
         callback = function()
             local hyph_user_dict =  not G_reader_settings:isTrue("hyph_user_dict")
             G_reader_settings:saveSetting("hyph_user_dict", hyph_user_dict)
             self:loadUserDictionary() -- not needed to force a reload here
-        end,
-        hold_callback = function()
-            local hyph_user_dict = G_reader_settings:isTrue("hyph_user_dict")
-            UIManager:show(MultiConfirmBox:new{
-                text = hyph_user_dict and _("Would you like to enable or disable the user hyphenation dictionary?\n\nThe current default (★) is enabled.")
-                or _("Would you like to enable or disable the user hyphenation dictionary?\n\nThe current default (★) is disabled."),
-                choice1_text_func =  function()
-                    return hyph_user_dict and _("Disable") or _("Disable (★)")
-                end,
-                choice1_callback = function()
-                    G_reader_settings:makeFalse("hyph_user_dict")
-                end,
-                choice2_text_func = function()
-                    return hyph_user_dict and _("Enable (★)") or _("Enable")
-                end,
-                choice2_callback = function()
-                    G_reader_settings:makeTrue("hyph_user_dict")
-                end,
-            })
         end,
         checked_func = function()
             return self:isAvailable()
