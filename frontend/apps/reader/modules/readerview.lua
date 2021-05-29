@@ -849,12 +849,12 @@ function ReaderView:onGammaUpdate(gamma)
     if self.page_scroll then
         self.ui:handleEvent(Event:new("UpdateScrollPageGamma", gamma))
     end
-    Notification:notify(T(_("Font gamma set to  %1."), gamma))
+    Notification:notify(T(_("Font gamma set to: %1."), gamma))
 end
 
 function ReaderView:onFontSizeUpdate(font_size)
     self.ui:handleEvent(Event:new("ReZoom", font_size))
-    Notification:notify(T(_("Font zoom set to %1."), font_size))
+    Notification:notify(T(_("Font zoom set to: %1."), font_size))
 end
 
 function ReaderView:onDefectSizeUpdate()
