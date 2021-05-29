@@ -490,7 +490,7 @@ These settings will apply to all books with any hyphenation dictionary.
         end,
     })
     table.insert(hyphenation_submenu, {
-        text = _("Soft-hyphens only"),
+        text = _("Soft hyphens only"),
         callback = function()
             self.hyph_soft_hyphens_only = not self.hyph_soft_hyphens_only
             self.hyph_force_algorithmic = false
