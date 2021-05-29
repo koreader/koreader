@@ -396,6 +396,7 @@ These settings will apply to all books with any hyphenation dictionary.
             return self.hyphenation
         end,
     })
+    table.insert(hyphenation_submenu, self.ui.userhyph:getMenuEntry())
     table.insert(hyphenation_submenu, {
         text = _("Trust soft hyphens"),
         callback = function()
@@ -428,8 +429,8 @@ These settings will apply to all books with any hyphenation dictionary.
         enabled_func = function()
             return self.hyphenation and not self.hyph_soft_hyphens_only
         end,
+        separator = true,
     })
-    table.insert(hyphenation_submenu, self.ui.userhyph:getMenuEntry())
     table.insert(hyphenation_submenu, {
         text_func = function()
             -- Show the current language default hyph dict (ie: English_US for zh)
