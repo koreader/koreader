@@ -81,7 +81,7 @@ Words not in that dictionary will be hyphenated by the selected method.
 
 Hyphenation can be changed by long pressing more than three seconds on a word and selecting 'Hyphenate' in the popup menu.
 
-If you remove a word from the user dictionary, the selected hyphenation method is applied again.]]),
+If a word is removed from the user dictionary, the selected hyphenation method is applied again.]]),
         callback = function()
             local hyph_user_dict =  not G_reader_settings:isTrue("hyph_user_dict")
             G_reader_settings:saveSetting("hyph_user_dict", hyph_user_dict)
