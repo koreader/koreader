@@ -542,8 +542,6 @@ function DictQuickLookup:init()
                 },
             })
         end
---        comment the next line if you don't want the hyphenation button in dictquicklookup
-        self.ui.userhyph:addButton(buttons, 3, self.word, self)
     end
 
     -- Bottom buttons get a bit less padding so their line separators
@@ -1315,8 +1313,5 @@ function DictQuickLookup:lookupWikipedia(get_fullpage)
     self:resyncWikiLanguages()
     self.ui:handleEvent(Event:new("LookupWikipedia", word, is_sane, self.word_box, get_fullpage))
 end
-
-
-
 
 return DictQuickLookup
