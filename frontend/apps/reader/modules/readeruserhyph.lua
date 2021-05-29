@@ -1,4 +1,3 @@
-local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
@@ -18,9 +17,6 @@ local ReaderUserHyph = WidgetContainer:new{
     USER_DICT_NOCHANGE = 1,
     USER_DICT_MALFORMED = 2,
     USER_DICT_ERROR_NOT_SORTED = 3,
-
-    -- work with malformed dictionary entries, some hyphenations might not work
-    malformed_accepted = false,
 }
 
 -- returns path to the user dictionary
@@ -28,9 +24,6 @@ function ReaderUserHyph:getDictionaryPath()
     return FFIUtil.joinPath(DataStorage:getSettingsDir(),
         "user-" .. tostring(self.ui.document:getTextMainLangDefaultHyphDictionary():gsub(".pattern$", "")) .. ".hyph")
 end
-
-
-local load_error_text = _("Error loading user dictionary:\n%1\n%2")
 
 -- Load the user dictionary suitable for the actual language
 -- if reload==true, force a reload
@@ -40,23 +33,17 @@ function ReaderUserHyph:loadDictionary(name, reload)
         local ret = self.ui.document:setUserHyphenationDict(name, reload)
         -- this should only happen, if a user edits a dictionary by hand or the user messed
         -- with the dictionary file by hand. -> Warning and disable.
-        if ret == self.USER_DICT_ERROR then
+        if ret == self.USER_DICT_ERROR_NOT_SORTED then
             UIManager:show(InfoMessage:new{
-                text = T(load_error_text, name, _("Dictionary is not sorted alphabetically.\n\nDictionary is disabled now.")),
+                text = T(_("The user dictionary\n%1\nis not alphabetically sorted.\n\nIt will not be used."), name),
             })
-            G_reader_settings:saveSetting("hyph_user_dict", false)
-        elseif ret == self.USER_DICT_MALFORMED and not self.malformed_accepted then
-            UIManager:show(ConfirmBox:new{
-                text =  T(load_error_text, name, _("At least one dictionary entry is malformed.\n\nDo you want work with this incomplete dictionary?")),
-                ok_text = _("Keep"),
-                ok_callback = function()
-                    self.malformed_accepted = true -- show this message only once per KOReader run
-                end,
-                cancel_text = _("Discard"),
-                cancel_callback = function()
-                    G_reader_settings:saveSetting("hyph_user_dict", false)
-                end,
-                })
+            logger.warn("UserHyph: Dictionary " .. name .. " is not sorted alphabetically.")
+            G_reader_settings:makeFalse("hyph_user_dict")
+        elseif ret == self.USER_DICT_MALFORMED then
+            UIManager:show(InfoMessage:new{
+                text = T(_("The user dictionary\n%1\nhas corrupted entries, using only valid ones."), name),
+            })
+            logger.warn("UserHyph: Dictionary " .. name .. " has corrupted entries.")
         end
     else
         self.ui.document:setUserHyphenationDict() -- clear crengine user hyph dict
@@ -92,13 +79,13 @@ function ReaderUserHyph:getMenuEntry()
         text = _("Additional user dictionary"),
         help_text = _([[The user dictionary is an overlay to the selected hyphenation method.
 
-You can change the hyphenation by long press (>4s) on a word and select 'Hyphenate' from the popup menu.
+You can change the hyphenation by long press (>3s) on a word and select 'Hyphenate' from the popup menu.
 
 If you remove a word from the user dictionary, the selected hyphenation method is applied again.]]),
         callback = function()
             local hyph_user_dict =  not G_reader_settings:isTrue("hyph_user_dict")
             G_reader_settings:saveSetting("hyph_user_dict", hyph_user_dict)
-            self:loadUserDictionary()
+            self:loadUserDictionary() -- not needed to force a reload here
         end,
         hold_callback = function()
             local hyph_user_dict = G_reader_settings:isTrue("hyph_user_dict")
@@ -144,19 +131,22 @@ function ReaderUserHyph:checkHyphenation(suggestion, word)
     return false
 end
 
-function ReaderUserHyph:updateDictionaryFile(word, hyphenation)
+function ReaderUserHyph:updateDictionary(word, hyphenation)
     local dict_file = self:getDictionaryPath()
     local new_dict_file = dict_file .. ".new"
     local dict
     local new_dict
 
-    -- if no file, crate an empty one
+    -- if no file, create an empty one
     if lfs.attributes(dict_file, "mode") ~= "file" then
         dict = io.open(dict_file, "w")
-        dict:close()
+        if dict then
+            dict:close()
+        else
+            return
+        end
     end
 
-print("xxxxxxxxxx open files" .. tostring(dict_file) .. tostring(new_dict_file ) )
     -- open files
     dict = io.open(dict_file, "r")
     if not dict then
@@ -165,11 +155,10 @@ print("xxxxxxxxxx open files" .. tostring(dict_file) .. tostring(new_dict_file )
     end
     new_dict = io.open(new_dict_file, "w")
     if not new_dict then
+        dict:close()
         logger.err("UserHyph: could not open " .. new_dict_file)
         return
     end
-
-print("xxxxxxxxxx search")
 
     --search entry
     local word_lower = self.ui.document:getLowercasedWord(word)
@@ -179,35 +168,27 @@ print("xxxxxxxxxx search")
         line = dict:read()
     end
 
-print("xxxxxxxxxx found " .. tostring(line))
-
     -- last word = nil if EOF, else last_word=word if found in file, else last_word is word after the new entry
     if line then
         local last_word = self.ui.document:getLowercasedWord(line:sub(1, line:find(";") - 1))
         if self.ui.document:getLowercasedWord(last_word)
             == self.ui.document:getLowercasedWord(word) then
-            line = nil
+            line = nil -- word found
         end
     else
-        line = nil
+        line = nil -- EOF
     end
 
-print("xxxxxxxxxx write entry word" ..word.." hyphenation:" .. tostring(hyphenation))
-    -- write new entry or remove old one
+    -- write new entry
     if hyphenation and hyphenation~="" then
         new_dict:write(string.format("%s;%s\n", word, hyphenation))
     end
 
     -- write old entry if there was one
-    if line  then
-
-print("xxxxxxxxxx write old entry")
-
+    if line then
         new_dict:write(line .. "\n")
-
     end
 
-print("xxxxxxxxxxxx copy restr")
     -- copy rest of file
     repeat
         line = dict:read()
@@ -220,15 +201,14 @@ print("xxxxxxxxxxxx copy restr")
     new_dict:close()
     os.remove(dict_file)
     os.rename(new_dict_file, dict_file)
-end
 
+    self:loadUserDictionary(true) -- dictionary has changed, force a reload here
+end
 
 function ReaderUserHyph:modifyUserEntry(word)
     if word:find("[ ,;-%.]") then return end -- no button if more than one word
 
-    if not self.ui.document then
-        return
-    end
+    if not self.ui.document then return end
 
     local suggested_hyphenation = self.ui.document:getHyphenationForWord(word)
 
@@ -251,8 +231,7 @@ function ReaderUserHyph:modifyUserEntry(word)
                     text = _("Remove"),
                     callback = function()
                         UIManager:close(input_dialog)
-                        self:updateDictionaryFile(word)
-                        self:loadUserDictionary(true)
+                        self:updateDictionary(word)
                     end,
                 },
                 {
@@ -268,14 +247,12 @@ function ReaderUserHyph:modifyUserEntry(word)
                             -- don't save if no changes
                             if self.ui.document:getLowercasedWord(new_suggestion)
                                 ~= self.ui.document:getLowercasedWord(input_dialog.old_hyph) then
-                                self:updateDictionaryFile(word, new_suggestion)
-                                self:loadUserDictionary(true)
+                                self:updateDictionary(word, new_suggestion)
                             end
                             UIManager:close(input_dialog)
                         else
                             UIManager:show(InfoMessage:new{
                                 text = T(_("Wrong hyphenation!\nPlease check!"), self.dict_file),
-                                show_icon = true,
                             })
                         end
                     end,
