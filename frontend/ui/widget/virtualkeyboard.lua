@@ -111,7 +111,7 @@ function VirtualKey:init()
             self.keyboard:delToStartOfLine()
         end
         --self.skiphold = true
-    elseif self.label =="←" then
+    elseif self.label == "←" then
         self.callback = function() self.keyboard:leftChar() end
         self.hold_callback = function()
             self.ignore_key_release = true
@@ -127,6 +127,13 @@ function VirtualKey:init()
         self.callback = function() self.keyboard:upLine() end
     elseif self.label == "↓" then
         self.callback = function() self.keyboard:downLine() end
+        self.hold_callback = function()
+            self.ignore_key_release = true
+            if not self.keyboard:onHideKeyboard() then
+                -- Keyboard was *not* actually hidden: refresh the key to clear the highlight
+                self:update_keyboard(false, true)
+            end
+        end
     else
         self.callback = function () self.keyboard:addChar(self.key) end
         self.hold_callback = function()
@@ -760,6 +767,10 @@ end
 function VirtualKeyboard:onClose()
     UIManager:close(self)
     return true
+end
+
+function VirtualKeyboard:onHideKeyboard()
+    return self.inputbox:onHideKeyboard()
 end
 
 function VirtualKeyboard:onPressKey()
