@@ -295,6 +295,7 @@ function DoubleSpinWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "ui", self.widget_frame.dimen
     end)
+    return true
 end
 
 function DoubleSpinWidget:onShow()
