@@ -76,7 +76,7 @@ end
 function ReaderUserHyph:getMenuEntry()
     return {
         text = _("Additional user dictionary"),
-        help_text = _([[The hyphenation of single words can be changed with the user dictionary.
+        help_text = _([[The hyphenation rules for individual words can be changed with the user dictionary.
 Words not in that dictionary will be hyphenated by the selected method.
 
 Hyphenation can be changed by long pressing more than three seconds on a word and selecting 'Hyphenate' in the popup menu.
