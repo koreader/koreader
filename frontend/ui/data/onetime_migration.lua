@@ -253,7 +253,7 @@ if last_migration_date < 20210531 then
 
     if G_reader_settings:has("zoom_mode") then
         local ReaderZooming = require("apps/reader/modules/readerzooming")
-        -- NOTE: For simplicity's sake, this will overwrite potentially existing mode/genus globals,
+        -- NOTE: For simplicity's sake, this will overwrite potentially existing genus/type globals,
         --       as they were ignored in this specific case anyway...
         local zoom_mode_genus, zoom_mode_type = ReaderZooming:mode_to_combo(G_reader_settings:readSetting("zoom_mode"))
         G_reader_settings:saveSetting("kopt_zoom_mode_genus", zoom_mode_genus)
