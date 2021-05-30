@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20210521
+local CURRENT_MIGRATION_DATE = 20210531
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -244,6 +244,21 @@ if last_migration_date < 20210521 then
         G_reader_settings:delSetting("zoom_factor")
     elseif G_reader_settings:has("zoom_factor") and G_reader_settings:has("kopt_zoom_factor") then
         G_reader_settings:delSetting("zoom_factor")
+    end
+end
+
+-- 20210531, ReaderZooming, deprecate zoom_mode in global settings
+if last_migration_date < 20210531 then
+    logger.info("Performing one-time migration for 20210531")
+
+    if G_reader_settings:has("zoom_mode") then
+        local ReaderZooming = require("apps/reader/modules/readerzooming")
+        -- NOTE: For simplicity's sake, this will overwrite potentially existing mode/genus globals,
+        --       as they were ignored in this specific case anyway...
+        local zoom_mode_genus, zoom_mode_type = ReaderZooming:mode_to_combo(G_reader_settings:readSetting("zoom_mode"))
+        G_reader_settings:saveSetting("kopt_zoom_mode_genus", zoom_mode_genus)
+        G_reader_settings:saveSetting("kopt_zoom_mode_type", zoom_mode_type)
+        G_reader_settings:delSetting("zoom_mode")
     end
 end
 

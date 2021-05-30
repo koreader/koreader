@@ -28,17 +28,29 @@ local ReaderZooming = InputContainer:new{
         "rows",
         "manual",
     },
-    zoom_mode_genus_map = {
+    zoom_genus_to_mode = {
         [4] = "page",
         [3] = "content",
         [2] = "columns",
         [1] = "rows",
         [0] = "manual",
     },
-    zoom_mode_type_map = {
+    zoom_mode_to_genus = {
+        page    = 4,
+        content = 3,
+        columns = 2,
+        rows    = 1,
+        manual  = 0,
+    },
+    zoom_type_to_mode = {
         [2] = "",
         [1] = "width",
         [0] = "height",
+    },
+    zoom_mode_to_type = {
+        [""]   = 2,
+        width  = 1,
+        height = 0,
     },
     -- default to nil so we can trigger ZoomModeUpdate events on start up
     zoom_mode = nil,
@@ -119,26 +131,13 @@ function ReaderZooming:init()
             },
         }
     end
-
-    -- Build the reverse zoom_mode -> genus/type mappings
-    self.zoom_mode_to_genus = {}
-    for k, v in pairs(self.zoom_mode_genus_map) do
-        self.zoom_mode_to_genus[v] = k
-    end
-    self.zoom_mode_to_type = {}
-    for k, v in pairs(self.zoom_mode_type_map) do
-        self.zoom_mode_to_type[v] = k
-    end
 end
 
--- Update the genus/type Configurables given a specific zoom_mode...
-function ReaderZooming:_updateConfigurable(zoom_mode)
-    -- We may need to poke at the Configurable directly, because ReaderConfig is instantiated before us,
-    -- so simply updating the DocSetting doesn't cut it...
-    -- Technically ought to be conditional,
-    -- because this is an optional engine feature (only if self.document.info.configurable is true).
-    -- But the rest of the code (as well as most other modules) assumes this is supported on all paged engines (it is).
-    local configurable = self.document.configurable
+-- Conversions between genus/type combos and zoom_mode...
+function ReaderZooming:mode_to_combo(zoom_mode)
+    if not zoom_mode then
+        zoom_mode = self.DEFAULT_ZOOM_MODE
+    end
 
     -- Quick'n dirty zoom_mode to genus/type conversion...
     local zgenus, ztype = zoom_mode:match("^(page)(%l*)$")
@@ -154,6 +153,43 @@ function ReaderZooming:_updateConfigurable(zoom_mode)
 
     local zoom_mode_genus = self.zoom_mode_to_genus[zgenus]
     local zoom_mode_type = self.zoom_mode_to_type[ztype]
+
+    return zoom_mode_genus, zoom_mode_type
+end
+
+function ReaderZooming:combo_to_mode(zoom_mode_genus, zoom_mode_type)
+    local default_genus, default_type = self:mode_to_combo(self.DEFAULT_ZOOM_MODE)
+    if not zoom_mode_genus then
+        zoom_mode_genus = default_genus
+    end
+    if not zoom_mode_type then
+        zoom_mode_type = default_type
+    end
+
+    local zoom_genus = self.zoom_genus_to_mode[zoom_mode_genus]
+    local zoom_type = self.zoom_type_to_mode[zoom_mode_type]
+
+    local zoom_mode
+    if zoom_genus == "page" or zoom_genus == "content" then
+        zoom_mode = zoom_genus .. zoom_type
+    else
+        zoom_mode = zoom_genus
+    end
+
+    return zoom_mode
+end
+
+-- Update the genus/type Configurables given a specific zoom_mode...
+function ReaderZooming:_updateConfigurable(zoom_mode)
+    -- We may need to poke at the Configurable directly, because ReaderConfig is instantiated before us,
+    -- so simply updating the DocSetting doesn't cut it...
+    -- Technically ought to be conditional,
+    -- because this is an optional engine feature (only if self.document.info.configurable is true).
+    -- But the rest of the code (as well as most other modules) assumes this is supported on all paged engines (it is).
+    local configurable = self.document.configurable
+
+    local zoom_mode_genus, zoom_mode_type = self:mode_to_combo(zoom_mode)
+
     -- Configurable keys aren't prefixed, unlike the actual settings...
     configurable.zoom_mode_genus = zoom_mode_genus
     configurable.zoom_mode_type = zoom_mode_type
@@ -164,7 +200,6 @@ end
 function ReaderZooming:onReadSettings(config)
     -- If we have a composite zoom_mode stored, use that
     local zoom_mode = config:readSetting("zoom_mode")
-                   or G_reader_settings:readSetting("zoom_mode")
     if zoom_mode then
         -- Validate it first
         zoom_mode = util.arrayContains(self.available_zoom_modes, zoom_mode)
@@ -185,8 +220,8 @@ function ReaderZooming:onReadSettings(config)
             -- Handle defaults
             zoom_mode_genus = zoom_mode_genus or 4 -- "page"
             zoom_mode_type = zoom_mode_type or 1 -- "width"
-            zoom_mode_genus = self.zoom_mode_genus_map[zoom_mode_genus]
-            zoom_mode_type = self.zoom_mode_type_map[zoom_mode_type]
+            zoom_mode_genus = self.zoom_genus_to_mode[zoom_mode_genus]
+            zoom_mode_type = self.zoom_type_to_mode[zoom_mode_type]
             zoom_mode = zoom_mode_genus .. zoom_mode_type
         end
 
@@ -306,8 +341,8 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     })[config.zoom_direction]
     local zoom_range_number = config.zoom_range_number
     local zoom_factor = config.zoom_factor
-    local zoom_mode_genus = self.zoom_mode_genus_map[config.zoom_mode_genus]
-    local zoom_mode_type = self.zoom_mode_type_map[config.zoom_mode_type]
+    local zoom_mode_genus = self.zoom_genus_to_mode[config.zoom_mode_genus]
+    local zoom_mode_type = self.zoom_type_to_mode[config.zoom_mode_type]
     settings.zoom_overlap_h = config.zoom_overlap_h
     settings.zoom_overlap_v = config.zoom_overlap_v
     if btn == "set_zoom_overlap_h" then
@@ -320,7 +355,7 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
 
     local zoom_mode
     if zoom_mode_genus == "page" or zoom_mode_genus == "content" then
-        zoom_mode = zoom_mode_genus..zoom_mode_type
+        zoom_mode = zoom_mode_genus .. zoom_mode_type
     else
         zoom_mode = zoom_mode_genus
         self.ui:handleEvent(Event:new("SetScrollMode", false))
@@ -683,19 +718,6 @@ end
 
 function ReaderZooming:onBBoxUpdate()
     self:onDefineZoom()
-end
-
-function ReaderZooming:makeDefault(zoom_mode, touchmenu_instance)
-    UIManager:show(ConfirmBox:new{
-        text = T(
-            _("Set default zoom mode to %1?"),
-            zoom_mode
-        ),
-        ok_callback = function()
-            G_reader_settings:saveSetting("zoom_mode", zoom_mode)
-            if touchmenu_instance then touchmenu_instance:updateItems() end
-        end,
-    })
 end
 
 return ReaderZooming
