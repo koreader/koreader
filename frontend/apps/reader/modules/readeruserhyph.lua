@@ -34,7 +34,7 @@ function ReaderUserHyph:loadDictionary(name, reload)
         -- with the dictionary file by hand. -> Warning and disable.
         if ret == self.USER_DICT_ERROR_NOT_SORTED then
             UIManager:show(InfoMessage:new{
-                text = T(_("The user dictionary\n%1\nis not alphabetically sorted.\n\nIt will not be used."), name),
+                text = T(_("The user dictionary\n%1\nis not alphabetically sorted.\n\nIt has been disabled."), name),
             })
             logger.warn("UserHyph: Dictionary " .. name .. " is not sorted alphabetically.")
             G_reader_settings:makeFalse("hyph_user_dict")
@@ -75,13 +75,8 @@ end
 -- add Menu entry
 function ReaderUserHyph:getMenuEntry()
     return {
-        text = _("Additional user dictionary"),
-        help_text = _([[The hyphenation rules for individual words can be changed with the user dictionary.
-Words not in that dictionary will be hyphenated by the selected method.
-
-Hyphenation can be changed by long pressing more than three seconds on a word and selecting 'Hyphenate' in the popup menu.
-
-If a word is removed from the user dictionary, the selected hyphenation method is applied again.]]),
+        text = _("Custom hyphenation rules"),
+        help_text = _("The hyphenation of a word can be changed from its default by long pressing for 3 seconds and selecting 'Hyphenate'."),
         callback = function()
             local hyph_user_dict =  not G_reader_settings:isTrue("hyph_user_dict")
             G_reader_settings:saveSetting("hyph_user_dict", hyph_user_dict)
@@ -124,6 +119,7 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
         if dict then
             dict:close()
         else
+            logger.err("UserHyph: could not open " .. dict_file)
             return
         end
     end
@@ -152,8 +148,7 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
     -- last word = nil if EOF, else last_word=word if found in file, else last_word is word after the new entry
     if line then
         local last_word = self.ui.document:getLowercasedWord(line:sub(1, line:find(";") - 1))
-        if self.ui.document:getLowercasedWord(last_word)
-            == self.ui.document:getLowercasedWord(word) then
+        if last_word == self.ui.document:getLowercasedWord(word) then
             line = nil -- word found
         end
     else
@@ -161,7 +156,7 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
     end
 
     -- write new entry
-    if hyphenation and hyphenation~="" then
+    if hyphenation and hyphenation ~= "" then
         new_dict:write(string.format("%s;%s\n", word, hyphenation))
     end
 
@@ -198,7 +193,7 @@ function ReaderUserHyph:modifyUserEntry(word)
         title = T(_("Hyphenation entry for: \"%1\""), word),
         description = _("Add hyphenation positions with hyphens ('-') or spaces (' ')."),
         input = suggested_hyphenation,
-        old_hyph = suggested_hyphenation,
+        old_hyph_lowercase = self.ui.document:getLowercasedWord(suggested_hyphenation),
         input_type = "string",
         buttons = {
             {
@@ -226,14 +221,13 @@ function ReaderUserHyph:modifyUserEntry(word)
 
                         if self:checkHyphenation(new_suggestion, word) then
                             -- don't save if no changes
-                            if self.ui.document:getLowercasedWord(new_suggestion)
-                                ~= self.ui.document:getLowercasedWord(input_dialog.old_hyph) then
+                            if self.ui.document:getLowercasedWord(new_suggestion) ~= input_dialog.old_hyph_lowercase then
                                 self:updateDictionary(word, new_suggestion)
                             end
                             UIManager:close(input_dialog)
                         else
                             UIManager:show(InfoMessage:new{
-                                text = T(_("Wrong hyphenation!\nPlease check!"), self.dict_file),
+                                text = T(_("Invalid hyphenation!"), self.dict_file),
                             })
                         end
                     end,
