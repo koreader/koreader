@@ -75,6 +75,11 @@ function ReaderHighlight:init()
                 enabled = Device:hasClipboard(),
                 callback = function()
                     Device.input.setClipboardText(cleanupSelectedText(_self.selected_text.text))
+                    _self:onClose()
+                    self:clear()
+                    UIManager:show(Notification:new{ 
+                        text = _("Selection copied to clipboard."), 
+                    }) 
                 end,
             }
         end,
