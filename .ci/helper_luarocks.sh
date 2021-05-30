@@ -15,7 +15,7 @@ travis_retry luarocks --local install ansicolors
 git clone https://github.com/Olivine-Labs/busted.git
 pushd busted && {
     travis_retry luarocks --local make ./busted-scm-2.rockspec
-}
+} && popd || exit
 
 travis_retry luarocks --local install luacheck
 travis_retry luarocks --local install lanes # for parallel luacheck
