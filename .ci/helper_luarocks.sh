@@ -11,7 +11,7 @@ echo "wrap_bin_scripts = false" >>"${HOME}/.luarocks/config.lua"
 travis_retry luarocks --local install luafilesystem
 # for verbose_print module
 travis_retry luarocks --local install ansicolors
-travis_retry luarocks --local install busted sc-1
+travis_retry luarocks --local install busted scm-1
 
 travis_retry luarocks --local install luacheck
 travis_retry luarocks --local install lanes # for parallel luacheck
