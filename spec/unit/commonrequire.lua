@@ -1,12 +1,3 @@
--- Check if we're running a busted version recent enough that we don't need to deal with the LuaJIT hacks...
--- That currently means > 2.0.0 (i.e., scm-2, which isn't on LuaRocks...).
-local busted_ok = false
-for name, _ in pairs(package.loaded) do
-    if name == "busted.luajit" then
-        busted_ok = true
-        break
-    end
-end
 
 
 require "defaults"
