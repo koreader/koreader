@@ -8,6 +8,38 @@ for name, _ in pairs(package.loaded) do
     end
 end
 
+
+-- Cf. https://github.com/ligurio/lua-quickcheck/commit/da261c54a2423279ccbc3d4a8fd5c6098431eabe
+
+-- busted helper file to prevent crashes on LuaJIT ffi module being
+-- garbage collected due to Busted cleaning up the test enviornment
+--
+-- usage:
+--   busted --helper=spec/helper.lua
+
+-- only apply when we're running LuaJIT
+local isJit = (tostring(assert):match('builtin') ~= nil)
+
+if isJit then
+  -- pre-load the ffi module, such that it becomes part of the environment
+  -- and Busted will not try to GC and reload it. The ffi is not suited
+  -- for that and will occasionally segfault if done so.
+  local ffi = require "ffi"
+
+  -- Now patch ffi.cdef to only be called once with each definition, as it
+  -- will error on re-registering.
+  local old_cdef = ffi.cdef
+  local exists = {}
+  ffi.cdef = function(def)
+    if exists[def] then return end
+    exists[def] = true
+    return old_cdef(def)
+  end
+end
+
+
+
+
 -- Don't try to overwrite metatables so we can use --auto-insulate-tests
 -- Shamelessly copied from https://github.com/Olivine-Labs/busted/commit/2dfff99bda01fd3da56fd23415aba5a2a4cc0ffd
 if not busted_ok then
