@@ -670,7 +670,7 @@ function OPDSBrowser:showDownloads(item)
             end,
         },
         {
-            text = _("Book info"),
+            text = _("Book information"),
             enabled = type(item.content) == "string",
             callback = function()
                 local TextViewer = require("ui/widget/textviewer")
