@@ -217,12 +217,7 @@ function ReaderZooming:onReadSettings(config)
         local zoom_mode_type = config:readSetting("kopt_zoom_mode_type")
                             or G_reader_settings:readSetting("kopt_zoom_mode_type")
         if zoom_mode_genus or zoom_mode_type then
-            -- Handle defaults
-            zoom_mode_genus = zoom_mode_genus or 4 -- "page"
-            zoom_mode_type = zoom_mode_type or 1 -- "width"
-            zoom_mode_genus = self.zoom_genus_to_mode[zoom_mode_genus]
-            zoom_mode_type = self.zoom_type_to_mode[zoom_mode_type]
-            zoom_mode = zoom_mode_genus .. zoom_mode_type
+            zoom_mode = self:combo_to_mode(zoom_mode_genus, zoom_mode_type)
         end
 
         -- Validate it
