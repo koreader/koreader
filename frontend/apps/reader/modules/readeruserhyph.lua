@@ -176,7 +176,7 @@ function ReaderUserHyph:modifyUserEntry(word)
 
     local input_dialog
     input_dialog = InputDialog:new{
-        title = T(_("Hyphenation entry for: \"%1\""), word),
+        title = T(_("Hyphenate: %1"), word),
         description = _("Add hyphenation positions with hyphens ('-') or spaces (' ')."),
         input = suggested_hyphenation,
         old_hyph_lowercase = self.ui.document:getLowercasedWord(suggested_hyphenation),
