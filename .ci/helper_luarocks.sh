@@ -11,8 +11,11 @@ echo "wrap_bin_scripts = false" >>"${HOME}/.luarocks/config.lua"
 travis_retry luarocks --local install luafilesystem
 # for verbose_print module
 travis_retry luarocks --local install ansicolors
-wget https://raw.githubusercontent.com/Olivine-Labs/busted/2e4799e06b865c352baa7f7721e32aedaafd19d6/busted-scm-2.rockspec
-travis_retry luarocks --local make ./busted-scm-2.rockspec
+
+git clone https://github.com/Olivine-Labs/busted.git
+pushd busted && {
+    travis_retry luarocks --local make ./busted-scm-2.rockspec
+}
 
 travis_retry luarocks --local install luacheck
 travis_retry luarocks --local install lanes # for parallel luacheck
