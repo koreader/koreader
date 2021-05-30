@@ -197,7 +197,7 @@ function ReaderUserHyph:modifyUserEntry(word)
                     end,
                 },
                 {
-                    text = _("Store"),
+                    text = _("Save"),
                     is_enter_default = true,
                     callback = function()
                         local new_suggestion = input_dialog:getInputText()
