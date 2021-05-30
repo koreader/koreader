@@ -49,7 +49,7 @@ else
 fi
 
 #install our own updated shellcheck
-SHELLCHECK_VERSION="v0.7.1"
+SHELLCHECK_VERSION="v0.7.2"
 SHELLCHECK_URL="https://github.com/koalaman/shellcheck/releases/download/${SHELLCHECK_VERSION?}/shellcheck-${SHELLCHECK_VERSION?}.linux.x86_64.tar.xz"
 if ! command -v shellcheck; then
     curl -sSL "${SHELLCHECK_URL}" | tar --exclude 'SHA256SUMS' --strip-components=1 -C "${HOME}/bin" -xJf -
@@ -60,8 +60,9 @@ else
 fi
 
 # install shfmt
-SHFMT_URL="https://github.com/mvdan/sh/releases/download/v3.2.0/shfmt_v3.2.0_linux_amd64"
-if [ "$(shfmt --version)" != "v3.2.0" ]; then
+SHFMT_VERSION="v3.3.0"
+SHFMT_URL="https://github.com/mvdan/sh/releases/download/${SHFMT_VERSION}/shfmt_${SHFMT_VERSION}_linux_amd64"
+if [ "$(shfmt --version)" != ${SHFMT_VERSION} ]; then
     curl -sSL "${SHFMT_URL}" -o "${HOME}/bin/shfmt"
     chmod +x "${HOME}/bin/shfmt"
 else
