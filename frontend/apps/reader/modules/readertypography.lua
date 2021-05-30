@@ -813,6 +813,7 @@ function ReaderTypography:onPreRenderDocument(config)
         end
         self.text_lang_tag = self.book_lang_tag
         self.ui.document:setTextMainLang(self.text_lang_tag)
+        self.ui:handleEvent(Event:new("TypographyLanguageChanged"))
     end
 end
 

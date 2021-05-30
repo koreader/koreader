@@ -113,46 +113,33 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
     local dict
     local new_dict
 
-    -- if no file, create an empty one
-    if lfs.attributes(dict_file, "mode") ~= "file" then
-        dict = io.open(dict_file, "w")
-        if dict then
-            dict:close()
-        else
-            logger.err("UserHyph: could not open " .. dict_file)
-            return
-        end
-    end
-
-    -- open files
-    dict = io.open(dict_file, "r")
-    if not dict then
-        logger.err("UserHyph: could not open " .. dict_file)
-        return
-    end
     new_dict = io.open(new_dict_file, "w")
     if not new_dict then
-        dict:close()
         logger.err("UserHyph: could not open " .. new_dict_file)
         return
     end
 
-    --search entry
     local word_lower = self.ui.document:getLowercasedWord(word)
-    local line = dict:read()
-    while line and self.ui.document:getLowercasedWord(line:sub(1, line:find(";") - 1)) < word_lower do
-        new_dict:write(line .. "\n")
-        line = dict:read()
-    end
+    local line
 
-    -- last word = nil if EOF, else last_word=word if found in file, else last_word is word after the new entry
-    if line then
-        local last_word = self.ui.document:getLowercasedWord(line:sub(1, line:find(";") - 1))
-        if last_word == self.ui.document:getLowercasedWord(word) then
-            line = nil -- word found
+    dict = io.open(dict_file, "r")
+    if dict then
+        line = dict:read()
+        --search entry
+        while line and self.ui.document:getLowercasedWord(line:sub(1, line:find(";") - 1)) < word_lower do
+            new_dict:write(line .. "\n")
+            line = dict:read()
         end
-    else
-        line = nil -- EOF
+
+        -- last word = nil if EOF, else last_word=word if found in file, else last_word is word after the new entry
+        if line then
+            local last_word = self.ui.document:getLowercasedWord(line:sub(1, line:find(";") - 1))
+            if last_word == self.ui.document:getLowercasedWord(word) then
+                line = nil -- word found
+            end
+        else
+            line = nil -- EOF
+        end
     end
 
     -- write new entry
@@ -165,17 +152,18 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
         new_dict:write(line .. "\n")
     end
 
-    -- copy rest of file
-    repeat
-        line = dict:read()
-        if line then
-            new_dict:write(line .. "\n")
-        end
-    until (not line)
+    if dict then
+        repeat
+            line = dict:read()
+            if line then
+                new_dict:write(line .. "\n")
+            end
+        until (not line)
+        dict:close()
+        os.remove(dict_file)
+    end
 
-    dict:close()
     new_dict:close()
-    os.remove(dict_file)
     os.rename(new_dict_file, dict_file)
 
     self:loadUserDictionary(true) -- dictionary has changed, force a reload here
