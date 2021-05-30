@@ -147,8 +147,8 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
 
     -- last word = nil if EOF, else last_word=word if found in file, else last_word is word after the new entry
     if line then
-        local last_word = self.ui.document:getLowercasedWord(line:sub(1, line:find(";") - 1))
-        if last_word == self.ui.document:getLowercasedWord(word) then
+        local last_word_lowercase = self.ui.document:getLowercasedWord(line:sub(1, line:find(";") - 1))
+        if last_word_lowercase == self.ui.document:getLowercasedWord(word) then
             line = nil -- word found
         end
     else
