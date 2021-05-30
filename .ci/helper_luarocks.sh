@@ -20,3 +20,4 @@ travis_retry luarocks --local install lanes # for parallel luacheck
 # used only on master branch but added to cache for better speed
 travis_retry luarocks --local install ldoc
 travis_retry luarocks --local install luacov
+
