@@ -110,10 +110,8 @@ end
 function ReaderUserHyph:updateDictionary(word, hyphenation)
     local dict_file = self:getDictionaryPath()
     local new_dict_file = dict_file .. ".new"
-    local dict
-    local new_dict
 
-    new_dict = io.open(new_dict_file, "w")
+    local new_dict = io.open(new_dict_file, "w")
     if not new_dict then
         logger.err("UserHyph: could not open " .. new_dict_file)
         return
@@ -122,7 +120,7 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
     local word_lower = self.ui.document:getLowercasedWord(word)
     local line
 
-    dict = io.open(dict_file, "r")
+    local dict = io.open(dict_file, "r")
     if dict then
         line = dict:read()
         --search entry
