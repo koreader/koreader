@@ -1,4 +1,3 @@
-local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DocCache = require("document/doccache")
 local Event = require("ui/event")
