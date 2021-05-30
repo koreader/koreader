@@ -247,7 +247,7 @@ if last_migration_date < 20210521 then
     end
 end
 
--- 20210531, ReaderZooming, deprecate zoom_mode in global settings
+-- 20210531, ReaderZooming, deprecate zoom_mode in global settings, https://github.com/koreader/koreader/pull/7780
 if last_migration_date < 20210531 then
     logger.info("Performing one-time migration for 20210531")
 
