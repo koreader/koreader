@@ -60,6 +60,7 @@ local order = {
         "android_back_button",
         "----------------------------",
         "invert_page_turn_buttons",
+        "opening_page_location_stack",
     },
     network = {
         "network_wifi",
