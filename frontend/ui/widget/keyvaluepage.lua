@@ -316,6 +316,7 @@ function KeyValueItem:onHold()
     local textviewer = TextViewer:new{
         title = self.key,
         text = self.value,
+        text_face = Font:getFace("x_smallinfofont", self.font_size),
         lang = self.value_lang,
         width = self.textviewer_width,
         height = self.textviewer_height,
