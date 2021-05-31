@@ -34,6 +34,7 @@ local logger = require("logger")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
+local T = FFIUtil.template
 
 local ItemShortCutIcon = WidgetContainer:new{
     dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
@@ -817,7 +818,8 @@ function Menu:init()
         title_goto = _("Enter page number or letter")
         type_goto = "string"
         hint_func = function()
-            return string.format("(1 - %s) or (a - z)", self.page_num)
+            -- @translators First group is a page number range, second group the standard range for alphabetic searches
+            return T(_("(1 - %1) or (a - z)"), self.page_num)
         end
         table.insert(buttons[1], {
             text = _("Go to letter"),
