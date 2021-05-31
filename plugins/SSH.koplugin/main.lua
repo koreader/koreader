@@ -78,7 +78,7 @@ function SSH:start()
     else
         local info = InfoMessage:new{
                 icon = "notice-warning",
-                text = _("Failed to start SSH server"),
+                text = _("Failed to start SSH server."),
         }
         UIManager:show(info)
     end
