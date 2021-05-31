@@ -174,10 +174,7 @@ function ReaderHighlight:init()
         return {
             text= _("Hyphenate"),
             show_in_highlight_dialog_func = function()
-                if not _self.ui.document or not _self.ui.document.provider or not _self.ui.document_provider ~= "crengine" then
-                    return false
-                end
-                return _self.ui.userhyph:isAvailable() and not _self.selected_text.text:find("[ ,;-%.\n]")
+                return _self.ui.userHyph and _self.ui.userhyph:isAvailable() and not _self.selected_text.text:find("[ ,;-%.\n]")
             end,
             callback = function()
                 _self.ui.userhyph:modifyUserEntry(_self.selected_text.text)
