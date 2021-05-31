@@ -138,27 +138,19 @@ end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
     self:toggleEmbeddedStyleSheet(toggle)
-    if toggle then
-        Notification:notify(_("Enabled embedded styles."))
-    else
-        Notification:notify(_("Disabled embedded styles."))
-    end
+    Notification:notify(T( _("Embedded styles are %1."), optionsutil:getOptionText("ToggleEmbeddedStyleSheet", toggle)))
     return true
 end
 
 function ReaderTypeset:onToggleEmbeddedFonts(toggle)
     self:toggleEmbeddedFonts(toggle)
-    if toggle then
-        Notification:notify(_("Enabled embedded fonts."))
-    else
-        Notification:notify(_("Disabled embedded fonts."))
-    end
+    Notification:notify(T( _("Embedded fonts are %1."), optionsutil:getOptionText("ToggleEmbeddedFonts", toggle)))
     return true
 end
 
 function ReaderTypeset:onToggleImageScaling(toggle)
     self:toggleImageScaling(toggle)
-    Notification:notify(T( _("Image scaling set to: %1"), optionsutil:getOptionText("ToggleImageScaling", toggle)))
+    Notification:notify(T( _("Image scaling set to %1."), optionsutil:getOptionText("ToggleImageScaling", toggle)))
     return true
 end
 
@@ -169,7 +161,7 @@ end
 
 function ReaderTypeset:onSetBlockRenderingMode(mode)
     self:setBlockRenderingMode(mode)
-    Notification:notify(T( _("Render mode set to: %1"), optionsutil:getOptionText("SetBlockRenderingMode", mode)))
+    Notification:notify(T( _("Render mode set to %1."), optionsutil:getOptionText("SetBlockRenderingMode", mode)))
     return true
 end
 
@@ -191,7 +183,7 @@ local OBSOLETED_CSS = {
 
 function ReaderTypeset:onSetRenderDPI(dpi)
     self:setRenderDPI(dpi)
-    Notification:notify(T( _("Zoom set to: %1"), optionsutil:getOptionText("SetRenderDPI", dpi)))
+    Notification:notify(T( _("Zoom set to %1."), optionsutil:getOptionText("SetRenderDPI", dpi)))
     return true
 end
 

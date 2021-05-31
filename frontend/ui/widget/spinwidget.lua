@@ -248,6 +248,7 @@ function SpinWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "ui", self.spin_frame.dimen
     end)
+    return true
 end
 
 function SpinWidget:onShow()

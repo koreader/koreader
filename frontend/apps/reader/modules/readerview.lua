@@ -715,7 +715,7 @@ function ReaderView:onSetRotationMode(rotation)
     self.ui:handleEvent(Event:new("SetDimensions", new_screen_size))
     self.ui:onScreenResize(new_screen_size)
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
-    Notification:notify(T(_("Rotation mode set to: %1"), optionsutil:getOptionText("SetRotationMode", rotation)))
+    Notification:notify(T(_("Rotation mode set to %1."), optionsutil:getOptionText("SetRotationMode", rotation)))
     return true
 end
 
@@ -849,12 +849,12 @@ function ReaderView:onGammaUpdate(gamma)
     if self.page_scroll then
         self.ui:handleEvent(Event:new("UpdateScrollPageGamma", gamma))
     end
-    Notification:notify(T(_("Font gamma set to: %1."), gamma))
+    Notification:notify(T(_("Font gamma set to  %1."), gamma))
 end
 
 function ReaderView:onFontSizeUpdate(font_size)
     self.ui:handleEvent(Event:new("ReZoom", font_size))
-    Notification:notify(T(_("Font zoom set to: %1."), font_size))
+    Notification:notify(T(_("Font zoom set to %1."), font_size))
 end
 
 function ReaderView:onDefectSizeUpdate()
@@ -874,7 +874,7 @@ function ReaderView:onSetViewMode(new_mode)
         self.view_mode = new_mode
         self.ui.document:setViewMode(new_mode)
         self.ui:handleEvent(Event:new("ChangeViewMode"))
-        Notification:notify(T( _("View mode set to: %1"), optionsutil:getOptionText("SetViewMode", new_mode)))
+        Notification:notify(T( _("View mode set to %1."), optionsutil:getOptionText("SetViewMode", new_mode)))
     end
 end
 

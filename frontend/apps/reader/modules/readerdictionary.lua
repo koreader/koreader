@@ -800,7 +800,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
         -- dummy results
         final_results = {
             {
-                dict = _("Not available"),
+                dict = "",
                 word = word,
                 definition = lookup_cancelled and _("Dictionary lookup interrupted.") or _("No results."),
                 no_result = true,
@@ -846,22 +846,6 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
                 end)
             end
         end)
-        return
-    end
-
-    -- If the user disabled all the dictionaries, go away.
-    if dict_names and #dict_names == 0 then
-        -- Dummy result
-        local nope = {
-            {
-                dict = _("Not available"),
-                word = word,
-                definition = _("There are no enabled dictionaries.\nPlease check the 'Dictionary settings' menu."),
-                no_result = true,
-                lookup_cancelled = false,
-            }
-        }
-        self:showDict(word, nope, box, link)
         return
     end
 
