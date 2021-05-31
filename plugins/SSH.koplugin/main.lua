@@ -181,7 +181,7 @@ function SSH:addToMainMenu(menu_items)
                 callback = function()
                     local info = InfoMessage:new{
                         timeout = 60,
-                        text = T(_("Put your public SSH keys in\n %1"), BD.filepath(path.."/settings/SSH/authorized_keys")),
+                        text = T(_("Put your public SSH keys in\n%1"), BD.filepath(path.."/settings/SSH/authorized_keys")),
                     }
                     UIManager:show(info)
                 end,
