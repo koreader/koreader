@@ -182,7 +182,6 @@ function Notification:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "ui", self.frame.dimen
     end)
-    return true
 end
 
 function Notification:onShow()

@@ -850,7 +850,6 @@ function ImageViewer:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "flashui", self.main_frame.dimen
     end)
-    return true
 end
 
 return ImageViewer

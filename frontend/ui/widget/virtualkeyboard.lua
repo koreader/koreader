@@ -111,7 +111,7 @@ function VirtualKey:init()
             self.keyboard:delToStartOfLine()
         end
         --self.skiphold = true
-    elseif self.label =="←" then
+    elseif self.label == "←" then
         self.callback = function() self.keyboard:leftChar() end
         self.hold_callback = function()
             self.ignore_key_release = true
@@ -127,6 +127,13 @@ function VirtualKey:init()
         self.callback = function() self.keyboard:upLine() end
     elseif self.label == "↓" then
         self.callback = function() self.keyboard:downLine() end
+        self.hold_callback = function()
+            self.ignore_key_release = true
+            if not self.keyboard:onHideKeyboard() then
+                -- Keyboard was *not* actually hidden: refresh the key to clear the highlight
+                self:update_keyboard(false, true)
+            end
+        end
     else
         self.callback = function () self.keyboard:addChar(self.key) end
         self.hold_callback = function()
@@ -520,6 +527,17 @@ function VirtualKeyPopup:init()
                 virtual_key.hold_callback = nil
                 -- close popup on hold release
                 virtual_key.onHoldReleaseKey = function()
+                    -- NOTE: Check our *parent* key!
+                    if parent_key.ignore_key_release then
+                        parent_key.ignore_key_release = nil
+                        return true
+                    end
+                    Device:performHapticFeedback("LONG_PRESS")
+                    if virtual_key.keyboard.ignore_first_hold_release then
+                        virtual_key.keyboard.ignore_first_hold_release = false
+                        return true
+                    end
+
                     virtual_key:onTapSelect(true)
                     UIManager:close(self)
                     return true
@@ -630,13 +648,19 @@ function VirtualKeyPopup:init()
     }
     if position_container.dimen.x < 0 then
         position_container.dimen.x = 0
+        -- We effectively move the popup, which means the key underneath our finger may no longer *exactly* be parent_key.
+        -- Make sure we won't close the popup right away, as that would risk being a *different* key, in order to make that less confusing.
+        parent_key.ignore_key_release = true
     elseif position_container.dimen.x + keyboard_frame.dimen.w > Screen:getWidth() then
         position_container.dimen.x = Screen:getWidth() - keyboard_frame.dimen.w
+        parent_key.ignore_key_release = true
     end
     if position_container.dimen.y < 0 then
         position_container.dimen.y = 0
+        parent_key.ignore_key_release = true
     elseif position_container.dimen.y + keyboard_frame.dimen.h > Screen:getHeight() then
         position_container.dimen.y = Screen:getHeight() - keyboard_frame.dimen.h
+        parent_key.ignore_key_release = true
     end
 
     self[1] = position_container
@@ -745,6 +769,10 @@ function VirtualKeyboard:onClose()
     return true
 end
 
+function VirtualKeyboard:onHideKeyboard()
+    return self.inputbox:onHideKeyboard()
+end
+
 function VirtualKeyboard:onPressKey()
     self:getFocusItem():handleEvent(Event:new("TapSelect"))
     return true
@@ -771,7 +799,6 @@ end
 
 function VirtualKeyboard:onCloseWidget()
     self:_refresh(false)
-    return true
 end
 
 function VirtualKeyboard:initLayer(layer)
