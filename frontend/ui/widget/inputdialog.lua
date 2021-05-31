@@ -391,6 +391,7 @@ function InputDialog:init()
         scroll_callback = self._buttons_scroll_callback, -- nil if no Nav or Scroll buttons
         scroll = true,
         scroll_by_pan = self.scroll_by_pan,
+        has_nav_bar = self.add_nav_bar,
         cursor_at_end = self.cursor_at_end,
         readonly = self.readonly,
         parent = self,

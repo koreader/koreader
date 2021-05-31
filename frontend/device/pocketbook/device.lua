@@ -488,6 +488,7 @@ local PocketBook626 = PocketBook:new{
 local PocketBook627 = PocketBook:new{
     model = "PBLux4",
     display_dpi = 212,
+    isAlwaysPortrait = yes,
 }
 
 -- PocketBook Touch Lux 5 (628)
@@ -576,6 +577,16 @@ local PocketBook740_2 = PocketBook:new{
     }
 }
 
+-- PocketBook InkPad Color (741)
+local PocketBook741 = PocketBook:new{
+    model = "PBInkPadColor",
+    display_dpi = 300,
+    hasColorScreen = yes,
+    canUseCBB = no, -- 24bpp
+    isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
+}
+
 -- PocketBook Color Lux (801)
 local PocketBookColorLux = PocketBook:new{
     model = "PBColorLux",
@@ -662,6 +673,8 @@ elseif codename == "PB740" then
     return PocketBook740
 elseif codename == "PB740-2" then
     return PocketBook740_2
+elseif codename == "PB741" then
+    return PocketBook741
 elseif codename == "PocketBook 840" then
     return PocketBook840
 elseif codename == "PB1040" then

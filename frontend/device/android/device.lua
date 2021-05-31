@@ -132,10 +132,11 @@ function Device:init()
         device = self,
         event_map = require("device/android/event_map"),
         handleMiscEv = function(this, ev)
+            local Event = require("ui/event")
             local UIManager = require("ui/uimanager")
             logger.dbg("Android application event", ev.code)
             if ev.code == C.APP_CMD_SAVE_STATE then
-                return "SaveState"
+                UIManager:broadcastEvent(Event:new("SaveSettings"))
             elseif ev.code == C.APP_CMD_DESTROY then
                 UIManager:quit()
             elseif ev.code == C.APP_CMD_GAINED_FOCUS
@@ -152,7 +153,6 @@ function Device:init()
                     this.device.screen:resize()
                     local new_size = this.device.screen:getSize()
                     logger.info("Resizing screen to", new_size)
-                    local Event = require("ui/event")
                     local FileManager = require("apps/filemanager/filemanager")
                     UIManager:broadcastEvent(Event:new("SetDimensions", new_size))
                     UIManager:broadcastEvent(Event:new("ScreenResize", new_size))
@@ -166,10 +166,8 @@ function Device:init()
                     end
                 end
                 -- to-do: keyboard connected, disconnected
-            elseif ev.code == C.APP_CMD_START then
-                local Event = require("ui/event")
-                UIManager:broadcastEvent(Event:new("Resume"))
             elseif ev.code == C.APP_CMD_RESUME then
+                UIManager:broadcastEvent(Event:new("Resume"))
                 if external.when_back_callback then
                     external.when_back_callback()
                     external.when_back_callback = nil
@@ -207,14 +205,11 @@ function Device:init()
                         end
                     end
                 end
-            elseif ev.code == C.APP_CMD_STOP then
-                local Event = require("ui/event")
+            elseif ev.code == C.APP_CMD_PAUSE then
                 UIManager:broadcastEvent(Event:new("Suspend"))
             elseif ev.code == C.AEVENT_POWER_CONNECTED then
-                local Event = require("ui/event")
                 UIManager:broadcastEvent(Event:new("Charging"))
             elseif ev.code == C.AEVENT_POWER_DISCONNECTED then
-                local Event = require("ui/event")
                 UIManager:broadcastEvent(Event:new("NotCharging"))
             elseif ev.code == C.AEVENT_DOWNLOAD_COMPLETE then
                 android.ota.isRunning = false
@@ -462,9 +457,9 @@ function Device:untar(archive, extract_to)
 end
 
 function Device:download(link, name, ok_text)
-    local UIManager = require("ui/uimanager")
     local ConfirmBox = require("ui/widget/confirmbox")
     local InfoMessage = require("ui/widget/infomessage")
+    local UIManager = require("ui/uimanager")
     local ok = android.download(link, name)
     if ok == C.ADOWNLOAD_EXISTS then
         self:install()
@@ -484,12 +479,14 @@ function Device:download(link, name, ok_text)
 end
 
 function Device:install()
-    local UIManager = require("ui/uimanager")
     local ConfirmBox = require("ui/widget/confirmbox")
+    local Event = require("ui/event")
+    local UIManager = require("ui/uimanager")
     UIManager:show(ConfirmBox:new{
         text = _("Update is ready. Install it now?"),
         ok_text = _("Install"),
         ok_callback = function()
+            UIManager:broadcastEvent(Event:new("SaveSettings"))
             android.ota.install()
             android.ota.isPending = false
         end,

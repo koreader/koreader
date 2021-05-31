@@ -48,7 +48,6 @@ local ReaderStyleTweak = require("apps/reader/modules/readerstyletweak")
 local ReaderToc = require("apps/reader/modules/readertoc")
 local ReaderTypeset = require("apps/reader/modules/readertypeset")
 local ReaderTypography = require("apps/reader/modules/readertypography")
-local ReaderUserHyph = require("apps/reader/modules/readeruserhyph")
 local ReaderView = require("apps/reader/modules/readerview")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
@@ -311,12 +310,6 @@ function ReaderUI:init()
         })
         -- font menu
         self:registerModule("font", ReaderFont:new{
-            dialog = self.dialog,
-            view = self.view,
-            ui = self
-        })
-        -- user hyphenation (must be registered before typography)
-        self:registerModule("userhyph", ReaderUserHyph:new{
             dialog = self.dialog,
             view = self.view,
             ui = self
