@@ -1,6 +1,7 @@
 local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
 local Device =  require("device")
+local Dispatcher = require("dispatcher")
 local InfoMessage = require("ui/widget/infomessage")  -- luacheck:ignore
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
@@ -27,8 +28,9 @@ local SSH = WidgetContainer:new{
 
 function SSH:init()
     self.SSH_port = G_reader_settings:readSetting("SSH_port") or "2222"
-    self.allow_no_password = false
+    self.allow_no_password = G_reader_settings:isTrue("SSH_allow_no_password")
     self.ui.menu:registerToMainMenu(self)
+    self:onDispatcherRegisterActions()
 end
 
 function SSH:start()
@@ -68,15 +70,15 @@ function SSH:start()
         local info = InfoMessage:new{
                 timeout = 10,
                 -- @translators: %1 is the SSH port, %2 is the network info.
-                text = T(_("SSH port: %1\n%2"),
+                text = T(_("SSH server started.\n\nSSH port: %1\n%2"),
                     self.SSH_port,
                     Device.retrieveNetworkInfo and Device:retrieveNetworkInfo() or _("Could not retrieve network info.")),
         }
         UIManager:show(info)
     else
         local info = InfoMessage:new{
-                timeout = 5,
-                text = _("Error"),
+                icon = "notice-warning",
+                text = _("Failed to start SSH server."),
         }
         UIManager:show(info)
     end
@@ -88,6 +90,10 @@ end
 
 function SSH:stop()
     os.execute("cat /tmp/dropbear_koreader.pid | xargs kill")
+    UIManager:show(InfoMessage:new {
+        text = T(_("SSH server stopped.")),
+        timeout = 2,
+    })
 
     -- Plug the hole in the Kindle's firewall
     if Device:isKindle() then
@@ -100,7 +106,15 @@ function SSH:stop()
     end
 end
 
-function SSH:show_port_dialog()
+function SSH:onToggleSSHServer()
+    if self:isRunning() then
+        self:stop()
+    else
+        self:start()
+    end
+end
+
+function SSH:show_port_dialog(touchmenu_instance)
     self.port_dialog = InputDialog:new{
         title = _("Choose SSH port"),
         input = self.SSH_port,
@@ -118,13 +132,14 @@ function SSH:show_port_dialog()
                     text = _("Save"),
                     is_enter_default = true,
                     callback = function()
-                        local value  = tonumber(self.port_dialog:getInputText())
-                        if value then
+                        local value = tonumber(self.port_dialog:getInputText())
+                        if value and value >= 0 then
                             self.SSH_port = value
                             G_reader_settings:saveSetting("SSH_port", self.SSH_port)
                             UIManager:close(self.port_dialog)
+                            touchmenu_instance:updateItems()
                         end
-                    end
+                    end,
                 },
             },
         },
@@ -138,54 +153,54 @@ function SSH:addToMainMenu(menu_items)
         text = _("SSH server"),
         sub_item_table = {
             {
-                text = _("Start SSH server"),
+                text = _("SSH server"),
                 keep_menu_open = true,
+                checked_func = function() return self:isRunning() end,
                 callback = function(touchmenu_instance)
-                    self:start()
+                    self:onToggleSSHServer()
                     -- sleeping might not be needed, but it gives the feeling
                     -- something has been done and feedback is accurate
                     ffiutil.sleep(1)
                     touchmenu_instance:updateItems()
                 end,
-                enabled_func = function() return not self:isRunning() end,
             },
             {
-                text = _("Stop SSH server"),
-                keep_menu_open = true,
-                callback = function(touchmenu_instance)
-                    self:stop()
-                    -- sleeping might not be needed, but it gives the feeling
-                    -- something has been done and feedback is accurate
-                    ffiutil.sleep(1)
-                    touchmenu_instance:updateItems()
+                text_func = function()
+                    return T(_("SSH port (%1)"), self.SSH_port)
                 end,
-                enabled_func = function() return self:isRunning() end,
-            },
-            {
-                text = _("Change SSH port"),
                 keep_menu_open = true,
                 enabled_func = function() return not self:isRunning() end,
-                callback = function() return self:show_port_dialog() end,
+                callback = function(touchmenu_instance)
+                    self:show_port_dialog(touchmenu_instance)
+                end,
+            },
+            {
+                text = _("SSH public key"),
+                keep_menu_open = true,
+                enabled_func = function() return not self:isRunning() end,
+                callback = function()
+                    local info = InfoMessage:new{
+                        timeout = 60,
+                        text = T(_("Put your public SSH keys in\n%1"), BD.filepath(path.."/settings/SSH/authorized_keys")),
+                    }
+                    UIManager:show(info)
+                end,
             },
             {
                 text = _("Login without password (DANGEROUS)"),
                 checked_func = function() return self.allow_no_password end,
                 enabled_func = function() return not self:isRunning() end,
-                callback = function() self.allow_no_password = not self.allow_no_password end,
-            },
-            {
-                text = _("SSH public key"),
-                keep_menu_open = true,
                 callback = function()
-                    local info = InfoMessage:new{
-                        timeout = 60,
-                        text = T(_("Put your public SSH keys in %1"), BD.filepath(path.."/settings/SSH/authorized_keys")),
-                    }
-                    UIManager:show(info)
+                    self.allow_no_password = not self.allow_no_password
+                    G_reader_settings:flipNilOrFalse("SSH_allow_no_password")
                 end,
             },
        }
     }
+end
+
+function SSH:onDispatcherRegisterActions()
+    Dispatcher:registerAction("toggle_ssh_server", { category = "none", event = "ToggleSSHServer", title = _("Toggle SSH server"), device = true})
 end
 
 return SSH
