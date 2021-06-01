@@ -269,7 +269,7 @@ function BookInfo:onShowBookDescription()
         description = util.htmlToPlainTextIfHtml(description)
         local TextViewer = require("ui/widget/textviewer")
         UIManager:show(TextViewer:new{
-            title = _("Book description:"),
+            title = _("Description:"),
             text = description,
         })
     else
