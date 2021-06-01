@@ -17,11 +17,10 @@ end
 function ReaderKoptListener:onReadSettings(config)
     -- normal zoom mode is zoom mode used in non-reflow mode.
     local normal_zoom_mode = config:readSetting("normal_zoom_mode")
-                          or G_reader_settings:readSetting("zoom_mode")
-                          or "page"
+                          or ReaderZooming:combo_to_mode(G_reader_settings:readSetting("kopt_zoom_mode_genus"), G_reader_settings:readSetting("kopt_zoom_mode_type"))
     normal_zoom_mode = util.arrayContains(ReaderZooming.available_zoom_modes, normal_zoom_mode)
                    and normal_zoom_mode
-                    or "page"
+                    or ReaderZooming.DEFAULT_ZOOM_MODE
     self.normal_zoom_mode = normal_zoom_mode
     self:setZoomMode(normal_zoom_mode)
     self.document.configurable.contrast = config:readSetting("kopt_contrast")
