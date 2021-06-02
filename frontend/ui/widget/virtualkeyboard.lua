@@ -720,7 +720,7 @@ function VirtualKeyboard:init()
         self.uwrap_func()
         self.uwrap_func = nil
     end
-    local lang = self:getKeyboardLayout()
+    local lang = self.lang or self:getKeyboardLayout()
     local keyboard_layout = self.lang_to_keyboard_layout[lang] or self.lang_to_keyboard_layout["en"]
     local keyboard = require("ui/data/keyboardlayouts/" .. keyboard_layout)
     self.KEYS = keyboard.keys

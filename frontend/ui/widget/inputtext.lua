@@ -514,6 +514,7 @@ function InputText:initKeyboard()
     self.keyboard = Keyboard:new{
         keyboard_layer = keyboard_layer,
         inputbox = self,
+        lang = self.lang,
         width = Screen:getWidth(),
     }
 end
