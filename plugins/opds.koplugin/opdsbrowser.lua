@@ -4,6 +4,7 @@ local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Cache = require("cache")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DocumentRegistry = require("document/documentregistry")
+local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
@@ -677,6 +678,7 @@ function OPDSBrowser:showDownloads(item)
                 UIManager:show(TextViewer:new{
                     title = item.text,
                     text = util.htmlToPlainTextIfHtml(item.content),
+                    text_face = Font:getFace("x_smallinfofont", G_reader_settings:readSetting("items_font_size")),
                 })
             end,
         },
