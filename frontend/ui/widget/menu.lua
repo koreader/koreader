@@ -1110,7 +1110,7 @@ function Menu:updateItems(select_number)
 
     local font_size = self.items_font_size or G_reader_settings:readSetting("items_font_size")
                                      or Menu.getItemFontSize(self.perpage)
-    local infont_size = self.items_mandatory_font_size or Menu.getItemMandatoryFontSize(self.perpage)
+    local infont_size = self.items_mandatory_font_size or (font_size - 4)
     local multilines_show_more_text = self.multilines_show_more_text
     if multilines_show_more_text == nil then
         multilines_show_more_text = G_reader_settings:isTrue("items_multilines_show_more_text")
