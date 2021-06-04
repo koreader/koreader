@@ -760,6 +760,7 @@ function ReaderToc:onShowToc()
             alignment = "center",
             show_icon = false,
             text = trimmed_text,
+            face = Font:getFace("infofont", self.items_font_size),
         }
         UIManager:show(infomessage)
         return true
