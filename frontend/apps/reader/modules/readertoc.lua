@@ -520,6 +520,38 @@ function ReaderToc:isChapterEnd(cur_pageno)
     return _end
 end
 
+function ReaderToc:getChapterPageCount(pageno)
+    if self.ui.document:hasHiddenFlows() then
+        -- Count pages until new chapter, starting by going backwards to the beginning of the current chapter if necessary
+        local page_count = 1
+        if not self:isChapterStart(pageno) then
+            local test_page = self.ui.document:getPrevPage(pageno)
+            while test_page > 0 do
+                page_count = page_count + 1
+                if self:isChapterStart(test_page) then
+                    break
+                end
+                test_page = self.ui.document:getPrevPage(test_page)
+            end
+        end
+
+        -- Then forward
+        local test_page = self.ui.document:getNextPage(pageno)
+        while test_page > 0 do
+            page_count = page_count + 1
+            if self:isChapterStart(test_page) then
+                return page_count - 1
+            end
+            test_page = self.ui.document:getNextPage(test_page)
+        end
+    else
+        local next_chapter = self:getNextChapter(pageno) or self.ui.document:getPageCount() + 1
+        local previous_chapter = self:isChapterStart(pageno) and pageno or self:getPreviousChapter(pageno) or 1
+        local page_count = next_chapter - previous_chapter
+        return page_count
+    end
+end
+
 function ReaderToc:getChapterPagesLeft(pageno)
     if self.ui.document:hasHiddenFlows() then
         -- Count pages until new chapter

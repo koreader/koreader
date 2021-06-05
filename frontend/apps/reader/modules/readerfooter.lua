@@ -42,6 +42,7 @@ local MODE = {
     book_title = 12,
     book_chapter = 13,
     bookmark_count = 14,
+    chapter_progress = 15,
 }
 
 local symbol_prefix = {
@@ -261,8 +262,19 @@ local footerTextGeneratorMap = {
     pages_left = function(footer)
         local symbol_type = footer.settings.item_prefix
         local prefix = symbol_prefix[symbol_type].pages_left
-        local left = footer.ui.toc:getChapterPagesLeft(footer.pageno)
-        return prefix .. " " .. (left or footer.ui.document:getTotalPagesLeft(footer.pageno))
+        local left = footer.ui.toc:getChapterPagesLeft(footer.pageno) or footer.ui.document:getTotalPagesLeft(footer.pageno)
+        return prefix .. " " .. left
+    end,
+    chapter_progress = function(footer)
+        local current = footer.ui.toc:getChapterPagesDone(footer.pageno)
+        -- We want a page number, not a page read count
+        if current then
+            current = current + 1
+        else
+            current = footer.pageno
+        end
+        local total = footer.ui.toc:getChapterPageCount(footer.pageno) or footer.pages
+        return current .. " ⁄⁄ " .. total
     end,
     percentage = function(footer)
         local symbol_type = footer.settings.item_prefix
@@ -284,14 +296,14 @@ local footerTextGeneratorMap = {
         local symbol_type = footer.settings.item_prefix
         local prefix = symbol_prefix[symbol_type].book_time_to_read
         local left = footer.ui.document:getTotalPagesLeft(footer.pageno)
-        return footer:getDataFromStatistics(prefix and (prefix.." ") or "", left)
+        return footer:getDataFromStatistics(prefix and (prefix .. " ") or "", left)
     end,
     chapter_time_to_read = function(footer)
         local symbol_type = footer.settings.item_prefix
         local prefix = symbol_prefix[symbol_type].chapter_time_to_read
-        local left = footer.ui.toc:getChapterPagesLeft(footer.pageno)
+        local left = footer.ui.toc:getChapterPagesLeft(footer.pageno) or footer.ui.document:getTotalPagesLeft(footer.pageno)
         return footer:getDataFromStatistics(
-            prefix .. " ", (left or footer.ui.document:getTotalPagesLeft(footer.pageno)))
+            prefix .. " ", left)
     end,
     mem_usage = function(footer)
         local symbol_type = footer.settings.item_prefix
@@ -412,6 +424,7 @@ ReaderFooter.default_settings = {
     book_title = false,
     book_chapter = false,
     bookmark_count = false,
+    chapter_progress = false,
     item_prefix = "icons",
     toc_markers_width = 2, -- unscaled_size_check: ignore
     text_font_size = 14, -- unscaled_size_check: ignore
@@ -834,6 +847,7 @@ function ReaderFooter:textOptionTitles(option)
         pages_left_book = T(_("Pages left in book (%1)"), symbol_prefix[symbol].pages_left_book),
         time = symbol_prefix[symbol].time
             and T(_("Current time (%1)"), symbol_prefix[symbol].time) or _("Current time"),
+        chapter_progress = T(_("Current page in chapter (%1)"), " ⁄⁄ "),
         pages_left = T(_("Pages left in chapter (%1)"), symbol_prefix[symbol].pages_left),
         battery = T(_("Battery status (%1)"), symbol_prefix[symbol].battery),
         percentage = symbol_prefix[symbol].percentage
@@ -1740,6 +1754,7 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(sub_items, getMinibarOption("page_progress"))
     table.insert(sub_items, getMinibarOption("pages_left_book"))
     table.insert(sub_items, getMinibarOption("time"))
+    table.insert(sub_items, getMinibarOption("chapter_progress"))
     table.insert(sub_items, getMinibarOption("pages_left"))
     if Device:hasBattery() then
         table.insert(sub_items, getMinibarOption("battery"))
