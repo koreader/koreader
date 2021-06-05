@@ -47,6 +47,7 @@ local MODE = {
 local symbol_prefix = {
     letters = {
         time = nil,
+        pages_left_book = "->",
         pages_left = "=>",
         -- @translators This is the footer letter prefix for battery % remaining.
         battery = C_("FooterLetterPrefix", "B:"),
@@ -67,6 +68,7 @@ local symbol_prefix = {
     },
     icons = {
         time = "⌚",
+        pages_left_book = BD.mirroredUILayout() and "↢" or "↣",
         pages_left = BD.mirroredUILayout() and "⇐" or "⇒",
         battery = "",
         bookmark_count = "☆",
@@ -80,13 +82,14 @@ local symbol_prefix = {
     },
     compact_items = {
         time = nil,
-        pages_left = "›",
+        pages_left_book = BD.mirroredUILayout() and "<" or ">",
+        pages_left = BD.mirroredUILayout() and "‹" or "›",
         battery = "",
         -- @translators This is the footer compact item prefix for the number of bookmarks (bookmark count).
         bookmark_count = C_("FooterCompactItemsPrefix", "BM"),
         percentage = nil,
         book_time_to_read = nil,
-        chapter_time_to_read = "»",
+        chapter_time_to_read = BD.mirroredUILayout() and "«" or "»",
         frontlight = "*",
         -- @translators This is the footer compact item prefix for memory usage.
         mem_usage = C_("FooterCompactItemsPrefix", "M"),
@@ -227,10 +230,13 @@ local footerTextGeneratorMap = {
         end
     end,
     pages_left_book = function(footer)
+        local symbol_type = footer.settings.item_prefix
+        local prefix = symbol_prefix[symbol_type].pages_left_book
         if footer.pageno then
             if footer.ui.pagemap and footer.ui.pagemap:wantsPageLabels() then
                 -- (Page labels might not be numbers)
-                return ("%s / %s"):format(footer.ui.pagemap:getCurrentPageLabel(true),
+                return ("%s %s / %s"):format(prefix,
+                                          footer.ui.pagemap:getCurrentPageLabel(true),
                                           footer.ui.pagemap:getLastPageLabel(true))
             end
             if footer.ui.document:hasHiddenFlows() then
@@ -240,16 +246,16 @@ local footerTextGeneratorMap = {
                 local pages = footer.ui.document:getTotalPagesInFlow(flow)
                 local remaining = pages - page;
                 if flow == 0 then
-                    return ("-%d // %d"):format(remaining, pages)
+                    return ("%s %d // %d"):format(prefix, remaining, pages)
                 else
-                    return ("[-%d / %d]%d"):format(remaining, pages, flow)
+                    return ("%s [%d / %d]%d"):format(prefix, remaining, pages, flow)
                 end
             else
                 local remaining = footer.pages - footer.pageno
-                return ("-%d / %d"):format(remaining, footer.pages)
+                return ("%s %d / %d"):format(prefix, remaining, footer.pages)
             end
         elseif footer.position then
-            return ("-%d / %d"):format(footer.doc_height - footer.position, footer.doc_height)
+            return ("%s %d / %d"):format(prefix, footer.doc_height - footer.position, footer.doc_height)
         end
     end,
     pages_left = function(footer)
@@ -825,7 +831,7 @@ function ReaderFooter:textOptionTitles(option)
         reclaim_height = _("Reclaim bar height from bottom margin"),
         bookmark_count = T(_("Bookmark count (%1)"), symbol_prefix[symbol].bookmark_count),
         page_progress = T(_("Current page (%1)"), "/"),
-        pages_left_book = T(_("Pages left in book (%1)"), "-"),
+        pages_left_book = T(_("Pages left in book (%1)"), symbol_prefix[symbol].pages_left_book),
         time = symbol_prefix[symbol].time
             and T(_("Current time (%1)"), symbol_prefix[symbol].time) or _("Current time"),
         pages_left = T(_("Pages left in chapter (%1)"), symbol_prefix[symbol].pages_left),
