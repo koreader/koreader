@@ -62,7 +62,7 @@ common_info.report_bug = {
 
         if Device:isAndroid() then
             local android = require("android")
-            android.dumpLogs(log_path)
+            android.dumpLogs()
         end
 
         local msg

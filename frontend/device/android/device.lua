@@ -91,7 +91,7 @@ local Device = Generic:new{
     canOpenLink = yes,
     openLink = function(self, link)
         if not link or type(link) ~= "string" then return end
-        return android.openLink(link) == 0
+        return android.openLink(link)
     end,
     canImportFiles = function() return android.app.activity.sdkVersion >= 19 end,
     hasExternalSD = function() return android.getExternalSdPath() end,
