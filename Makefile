@@ -372,6 +372,7 @@ androidupdate: all
 	cp -pR $(INSTALL_DIR)/koreader/libs $(ANDROID_LAUNCHER_DIR)/assets
 
 	# binaries are stored as shared libraries to prevent W^X exception on Android 10+
+	# https://developer.android.com/about/versions/10/behavior-changes-10#execute-permission
 	cp -pR $(INSTALL_DIR)/koreader/sdcv $(ANDROID_LIBS_ABI)/libsdcv.so
 	echo "sdcv libsdcv.so" > $(ANDROID_ASSETS)/map.txt
 
