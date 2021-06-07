@@ -1128,10 +1128,18 @@ TARGET:
 
     case "${1}" in
         android)
-            if [ -n "${KODEBUG}" ]; then
-                adb logcat 'KOReader:* ActivityManager:* AndroidRuntime:* DEBUG:* *:F dlopen:* LuaJIT:*'
+            if command -v pidcat >/dev/null; then
+                if [ -n "${KODEBUG}" ]; then
+                    pidcat "org.koreader.launcher"
+                else
+                    pidcat org.koreader.launcher --min-level=I
+                fi
             else
-                adb logcat 'KOReader:I ActivityManager:* AndroidRuntime:* DEBUG:* *:F'
+                if [ -n "${KODEBUG}" ]; then
+                    adb logcat 'KOReader:V ApkUpdater:V Assets:V Device:V dlopen:V EPD:V EventReceiver:V Lights:V LuaJIT:V MainActivity:V NativeGlue:V NativeThread:V Timeout:V ActivityManager:V AndroidRuntime:V DEBUG:* *:F'
+                else
+                    adb logcat 'KOReader:I MainActivity:V NativeGlue:V NativeThread:V ActivityManager:W AndroidRuntime:E DEBUG:* *:F'
+                fi
             fi
             ;;
         *)
