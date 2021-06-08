@@ -200,6 +200,7 @@ function ReaderPaging:onReadSettings(config)
     end
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
+    self.is_reflowed = config:has("kopt_text_wrap") and config:readSetting("kopt_text_wrap") == 1
     if config:has("inverse_reading_order") then
         self.inverse_reading_order = config:isTrue("inverse_reading_order")
     else
@@ -257,7 +258,8 @@ function ReaderPaging:addToMainMenu(menu_items)
     menu_items.page_overlap = {
         text = _("Page overlap"),
         enabled_func = function()
-            return not self.view.page_scroll and self.zoom_mode ~= "page"
+            return not self.view.page_scroll
+                    and (self.zoom_mode ~= "page" or (self.zoom_mode == "page" and self.is_reflowed))
                     and not self.zoom_mode:find("height")
         end,
         sub_item_table = page_overlap_menu,
