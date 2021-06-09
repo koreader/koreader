@@ -23,7 +23,12 @@ function OPDS:showCatalog()
     local OPDSCatalog = require("opdscatalog")
     local filemanagerRefresh = function() self.ui:onRefresh() end
     function OPDSCatalog:onClose()
-        filemanagerRefresh()
+        local FileManager = require("apps/filemanager/filemanager")
+        if FileManager.instance then
+            filemanagerRefresh()
+        else
+            FileManager:showFiles(G_reader_settings:readSetting("download_dir"))
+        end
         UIManager:close(self)
     end
     OPDSCatalog:showCatalog()
