@@ -699,7 +699,8 @@ function util.findFiles(dir, cb)
         if not ok then return end
         for f in iter, dir_obj do
             local path = current.."/"..f
-            local attr = lfs.attributes(path)
+            -- lfs can return nil here, as it will follow symlinks!
+            local attr = lfs.attributes(path) or {}
             if attr.mode == "directory" then
                 if f ~= "." and f ~= ".." then
                     scan(path)
