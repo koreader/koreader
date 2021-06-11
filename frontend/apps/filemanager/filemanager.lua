@@ -1061,9 +1061,9 @@ function FileManager:renameFile(file)
 
         local mode_dest = lfs.attributes(dest, "mode")
         local mode_file = lfs.attributes(file, "mode")
-        if mode_dest then
-            local text
+        if mode_dest and (mode_dest == "file" or mode_file == "file") then
             if mode_dest ~= mode_file then
+                local text
                 if mode_file == "file" then
                     text = T(_("Folder already exists:\n%1\nFile cannot be renamed."), BD.directory(basename))
                 else
@@ -1074,13 +1074,8 @@ function FileManager:renameFile(file)
                     icon = "notice-warning",
                 })
             else
-                if mode_file == "file" then
-                    text = T(_("File already exists:\n%1\nOverwrite file?"), BD.filename(basename))
-                else
-                    text = T(_("Folder already exists:\n%1\nOverwrite folder?"), BD.directory(basename))
-                end
                 UIManager:show(ConfirmBox:new {
-                    text = text,
+                    text = T(_("File already exists:\n%1\nOverwrite file?"), BD.filename(basename)),
                     ok_text = _("Overwrite"),
                     ok_callback = function()
                         doRenameFile()
