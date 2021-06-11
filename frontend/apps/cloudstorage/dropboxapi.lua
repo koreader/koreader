@@ -84,7 +84,7 @@ end
 function DropBoxApi:downloadFile(path, token, local_path)
     local data1 = "{\"path\": \"" .. path .. "\"}"
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local code_return = socket.skip(1, http.request{
+    local code, _, status = socket.skip(1, http.request{
         url     = API_DOWNLOAD_FILE,
         method  = "GET",
         headers = {
@@ -94,7 +94,10 @@ function DropBoxApi:downloadFile(path, token, local_path)
         sink    = ltn12.sink.file(io.open(local_path, "w")),
     })
     socketutil:reset_timeout()
-    return code_return
+    if code ~= 200 then
+        logger.warn("DropBoxApi: Download failure:", status or code or "network unreachable")
+    end
+    return code
 end
 
 -- folder_mode - set to true when we want to see only folder.
