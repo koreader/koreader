@@ -1159,6 +1159,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text = _("Maximum width of items"),
+                menu_item_id = 11, -- from submenu go up to the 2nd upper menu page
                 sub_item_table = {
                     {
                         text_func = function()
@@ -1216,6 +1217,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text = _("Alignment"),
+                menu_item_id = 11,
                 separator = true,
                 enabled_func = function()
                     return self.settings.disable_progress_bar or self.settings.progress_bar_position ~= "alongside"
@@ -1255,6 +1257,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text = _("Prefix"),
+                menu_item_id = 11,
                 sub_item_table = {
                     {
                         text_func = function()
@@ -1308,6 +1311,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text = _("Item separator"),
+                menu_item_id = 11,
                 sub_item_table = {
                     {
                         text = _("Vertical line (|)"),
@@ -1343,6 +1347,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text = _("Progress percentage format"),
+                menu_item_id = 11,
                 sub_item_table = {
                     {
                         text_func = function()
@@ -1384,6 +1389,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text = _("Duration format"),
+                menu_item_id = 11,
                 sub_item_table = {
                     {
                         text_func = function()
