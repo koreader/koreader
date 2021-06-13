@@ -558,7 +558,7 @@ function KOSync:getFileNameDigest()
     local file = self.ui.document.file
     if not file then return end
 
-    local filePath, fileName = util.splitFilePathName(file)
+    local filePath, fileName = util.splitFilePathName(file) -- luacheck: no unused
     if not fileName then return end
 
     return md5(fileName)
