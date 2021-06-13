@@ -320,7 +320,7 @@ If set to 0, updating progress based on page turns will be disabled.]]),
                         end,
                     },
                     {
-                        text = _("File-name. Files with the same file name will sync progress."),
+                        text = _("Filename. Files with the same name will sync progress."),
                         checked_func = function()
                             return self.kosync_checksum_method == CHECKSUM_METHOD.FILENAME
                         end,
