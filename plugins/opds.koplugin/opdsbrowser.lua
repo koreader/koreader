@@ -886,13 +886,13 @@ end
 
 function OPDSBrowser:onHoldReturn()
     if #self.paths > 1 then
-        for i = #self.paths, 2, -1 do
-            table.remove(self.paths)
-        end
         local path = self.paths[1]
         if path then
             self.catalog_title = path.title
             self:updateCatalog(path.url, path.username, path.password)
+            for i = #self.paths, 2, -1 do
+                table.remove(self.paths)
+            end
         end
     end
     return true
