@@ -183,7 +183,7 @@ if [ "${VIA_NICKEL}" = "true" ]; then
     #       as we want to be able to use our own per-if processes w/ custom args later on.
     #       A SIGTERM does not break anything, it'll just prevent automatic lease renewal until the time
     #       KOReader actually sets the if up itself (i.e., it'll do)...
-    killall -q -TERM nickel hindenburg sickel fickel adobehost dhcpcd-dbus dhcpcd fmon
+    killall -q -TERM nickel hindenburg sickel fickel adobehost foxitpdf iink dhcpcd-dbus dhcpcd fmon
 
     # Wait for Nickel to die... (oh, procps with killall -w, how I miss you...)
     kill_timeout=0
