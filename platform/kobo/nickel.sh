@@ -5,6 +5,8 @@ PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/lib:"
 # Meaning we've already got most of the necessary env from nickel itself via both our launcher (fmon/KFMon) and our own startup script.
 # NOTE: LD_LIBRARY_PATH is the only late export from rcS we don't siphon in koreader.sh, for obvious reasons ;).
 export LD_LIBRARY_PATH="/usr/local/Kobo"
+# Ditto, 4.28+
+export QT_GSTREAMER_PLAYBIN_AUDIOSINK=alsasink
 
 # Reset PWD, and clear up our own custom stuff from the env while we're there, otherwise, USBMS may become very wonky on newer FW...
 # shellcheck disable=SC2164
@@ -54,7 +56,7 @@ if grep -q "sdio_wifi_pwr" "/proc/modules"; then
         rm -f "/tmp/resolv.ko"
     fi
     wpa_cli terminate
-    [ "${WIFI_MODULE}" != "8189fs" ] && [ "${WIFI_MODULE}" != "8192es" ] && wlarm_le -i "${INTERFACE}" down
+    [ "${WIFI_MODULE}" != "8189fs" ] && [ "${WIFI_MODULE}" != "8192es" ] && [ "${WIFI_MODULE}" != "8821cs" ] && wlarm_le -i "${INTERFACE}" down
     ifconfig "${INTERFACE}" down
     # NOTE: Kobo's busybox build is weird. rmmod appears to be modprobe in disguise, defaulting to the -r flag...
     #       But since there's currently no modules.dep file being shipped, nor do they include the depmod applet,

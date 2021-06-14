@@ -33,7 +33,7 @@ grep -q "${WIFI_MODULE}" "/proc/modules" || insmod "/drivers/${PLATFORM}/wifi/${
 sleep 1
 
 ifconfig "${INTERFACE}" up
-[ "${WIFI_MODULE}" != "8189fs" ] && [ "${WIFI_MODULE}" != "8192es" ] && wlarm_le -i "${INTERFACE}" up
+[ "${WIFI_MODULE}" != "8189fs" ] && [ "${WIFI_MODULE}" != "8192es" ] && [ "${WIFI_MODULE}" != "8821cs" ] && wlarm_le -i "${INTERFACE}" up
 
 pkill -0 wpa_supplicant ||
     env -u LD_LIBRARY_PATH \
