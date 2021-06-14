@@ -139,7 +139,8 @@ ReaderStatistics.default_settings = {
 }
 
 function ReaderStatistics:init()
-    if self:isDocless() then
+    -- Disable in PIC documents (but not the FM, as we want to be registered to the FM's menu).
+    if self.ui and self.ui.document and self.ui.document.is_pic then
         return
     end
 
