@@ -35,7 +35,7 @@ fi
 
 wpa_cli terminate
 
-[ "${WIFI_MODULE}" != "8189fs" ] && [ "${WIFI_MODULE}" != "8192es" ] && wlarm_le -i "${INTERFACE}" down
+[ "${WIFI_MODULE}" != "8189fs" ] && [ "${WIFI_MODULE}" != "8192es" ] && [ "${WIFI_MODULE}" != "8821cs" ] && wlarm_le -i "${INTERFACE}" down
 ifconfig "${INTERFACE}" down
 
 # Some sleep in between may avoid system getting hung
