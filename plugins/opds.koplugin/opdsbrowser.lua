@@ -884,6 +884,20 @@ function OPDSBrowser:onReturn()
     return true
 end
 
+function OPDSBrowser:onHoldReturn()
+    if #self.paths > 1 then
+        for i = #self.paths, 2, -1 do
+            table.remove(self.paths)
+        end
+        local path = self.paths[1]
+        if path then
+            self.catalog_title = path.title
+            self:updateCatalog(path.url, path.username, path.password)
+        end
+    end
+    return true
+end
+
 function OPDSBrowser:onNext()
     -- self.page_num comes from menu.lua
     local page_num = self.page_num
@@ -898,7 +912,6 @@ function OPDSBrowser:onNext()
             break
         end
     end
-
     return true
 end
 
