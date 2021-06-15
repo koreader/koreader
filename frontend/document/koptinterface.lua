@@ -516,6 +516,9 @@ function KoptInterface:getReflowedTextBoxes(doc, pageno)
             --kc:setDebug()
             local fullwidth, fullheight = kc:getPageDim()
             local boxes, nr_word = kc:getReflowedWordBoxes("dst", 0, 0, fullwidth, fullheight)
+            if not boxes then
+                return nil
+            end
             DocCache:insert(hash, CacheItem:new{ rfpgboxes = boxes, size = 192 * nr_word }) -- estimation
             return boxes
         end
@@ -541,6 +544,9 @@ function KoptInterface:getNativeTextBoxes(doc, pageno)
             --kc:setDebug()
             local fullwidth, fullheight = kc:getPageDim()
             local boxes, nr_word = kc:getNativeWordBoxes("dst", 0, 0, fullwidth, fullheight)
+            if not boxes then
+                return nil
+            end
             DocCache:insert(hash, CacheItem:new{ nativepgboxes = boxes, size = 192 * nr_word }) -- estimation
             return boxes
         end
@@ -569,8 +575,11 @@ function KoptInterface:getReflowedTextBoxesFromScratch(doc, pageno)
             local kc = self:createContext(doc, pageno)
             kc:copyDestBMP(reflowed_kc)
             local boxes, nr_word = kc:getNativeWordBoxes("dst", 0, 0, fullwidth, fullheight)
-            DocCache:insert(hash, CacheItem:new{ scratchrfpgboxes = boxes, size = 192 * nr_word }) -- estimation
             kc:free()
+            if not boxes then
+                return nil
+            end
+            DocCache:insert(hash, CacheItem:new{ scratchrfpgboxes = boxes, size = 192 * nr_word }) -- estimation
             return boxes
         end
     else
