@@ -855,7 +855,8 @@ function util.getSafeFilename(str, path, limit, limit_ext)
     limit = limit or 240
     limit_ext = limit_ext or 10
 
-    if path then
+    -- Always assume the worst on Android (#7837)
+    if path and not BaseUtil.isAndroid() then
         local file_system = util.getFilesystemType(path)
         if file_system ~= "vfat" and file_system ~= "fuse.fsp" then
             replaceFunc = replaceSlashChar
