@@ -77,7 +77,7 @@ local order = {
     device = {
         "keyboard_layout",
         "time",
-        "battery",
+        "device_status_alarm",
         "charging_led", -- if Device:canToggleChargingLED()
         "autostandby",
         "autosuspend",
