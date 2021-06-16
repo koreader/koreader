@@ -64,6 +64,9 @@ PILLOW_SOFT_DISABLED="no"
 USED_WMCTRL="no"
 PASSCODE_DISABLED="no"
 
+# List of services we stop in order to reclaim a tiny sliver of RAM...
+TOGGLED_SERVICES="stored kb webreader kfxreader kfxview todo tmd rcm archive scanner otav3 otaupd"
+
 REEXEC_FLAGS=""
 # Keep track of if we were started through KUAL
 if [ "${1}" = "--kual" ]; then
@@ -282,6 +285,11 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
                 usleep 2500000
             fi
         fi
+
+        # Murder a few services to reclaim some RAM...
+        for job in ${TOGGLED_SERVICES}; do
+            stop "${job}"
+        done
     fi
 fi
 
@@ -392,6 +400,9 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
         done
         logmsg "Title bar geometry restored to '$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')' (ought to be: '${TITLEBAR_GEOMETRY}') [after ${WMCTRL_COUNT} attempts]"
     fi
+    for job in ${TOGGLED_SERVICES}; do
+        start "${job}"
+    done
 fi
 
 if [ "${INIT_TYPE}" = "upstart" ] || [ "$(uname -r)" = "2.6.31-rt11-lab126" ]; then
