@@ -5,12 +5,16 @@
 local Cache = require("cache")
 local CanvasContext = require("document/canvascontext")
 local DataStorage = require("datastorage")
+local logger = require("logger")
 
 local function calcCacheMemSize()
     local min = DGLOBAL_CACHE_SIZE_MINIMUM
     local max = DGLOBAL_CACHE_SIZE_MAXIMUM
     local calc = Cache:_calcFreeMem() * (DGLOBAL_CACHE_FREE_PROPORTION or 0)
-    return math.min(max, math.max(min, calc))
+    local size = math.min(max, math.max(min, calc))
+
+    logger.dbg(string.format("Allocating a %dMB budget for the global document cache", size / 1024 / 1024))
+    return size
 end
 
 local DocCache = Cache:new{
