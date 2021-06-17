@@ -402,7 +402,8 @@ function DictQuickLookup:init()
                                                             self.ui:onClose()
                                                         end
 
-                                                        self.ui:showReader(epub_path)
+                                                        local ReaderUI = require("apps/reader/readerui")
+                                                        ReaderUI:showReader(epub_path)
                                                     end)
                                                 end,
                                             })
