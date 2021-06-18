@@ -157,6 +157,9 @@ function TouchMenuItem:onTapSelect(arg, ges)
     end
     if enabled == false then return end
 
+    -- If the menu hasn't actually been drawn yet, don't do anything (as it's confusing, and the coordinates may be wrong).
+    if not self.item_frame.dimen then return end
+
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuSelect(self.item)
     else
@@ -199,6 +202,8 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         enabled = self.item.enabled_func()
     end
     if enabled == false then return end
+
+    if not self.item_frame.dimen then return end
 
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuHold(self.item, self.text_truncated)
