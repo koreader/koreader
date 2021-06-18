@@ -72,9 +72,9 @@ local ReaderStatistics = Widget:extend{
     page_stat = {}, -- Dictionary, indexed by page (hash), contains a list (array) of { timestamp, duration } tuples.
     data = {
         title = "",
-        authors = "",
-        language = "",
-        series = "",
+        authors = "N/A",
+        language = "N/A",
+        series = "N/A",
         performance_in_pages = {},
         total_time_in_sec = 0,
         highlights = 0,
@@ -193,8 +193,17 @@ function ReaderStatistics:initData()
         self.data.title = self.document.file:match("^.+/(.+)$")
     end
     self.data.authors = book_properties.authors
+    if self.data.authors == nil or self.data.authors == "" then
+        self.data.authors = "N/A"
+    end
     self.data.language = book_properties.language
+    if self.data.language == nil or self.data.language == "" then
+        self.data.language = "N/A"
+    end
     self.data.series = book_properties.series
+    if self.data.series == nil or self.data.series == "" then
+        self.data.series = "N/A"
+    end
 
     self.data.pages = self.view.document:getPageCount()
     if not self.data.md5 then
