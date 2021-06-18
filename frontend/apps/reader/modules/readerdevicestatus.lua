@@ -58,6 +58,7 @@ function ReaderDeviceStatus:init()
                             UIManager:show(InfoMessage:new{
                                 text = _("High memory usage!\n\nKOReader is restarting..."),
                                 icon = "notice-warning",
+                                timeout = 2,
                             })
                             self.ui:handleEvent(Event:new("Restart"))
                         else
@@ -69,6 +70,7 @@ function ReaderDeviceStatus:init()
                                     UIManager:show(InfoMessage:new{
                                         text = _("High memory usage!\n\nKOReader is restarting..."),
                                         icon = "notice-warning",
+                                        timeout = 2,
                                     })
                                     self.ui:handleEvent(Event:new("Restart"))
                                 end,
@@ -133,7 +135,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                         value_max = 60,
                         default_value = 10,
                         value_hold_step = 5,
-                        title_text =  _("Battery check interval"),
+                        title_text = _("Battery check interval"),
                         callback = function(spin)
                             self.battery_interval = spin.value
                             G_reader_settings:saveSetting("device_status_battery_interval", self.battery_interval)
@@ -161,7 +163,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                         value_max = 99,
                         default_value = 20,
                         value_hold_step = 5,
-                        title_text =  _("Battery alarm threshold"),
+                        title_text = _("Battery alarm threshold"),
                         callback = function(spin)
                             self.battery_threshold = spin.value
                             G_reader_settings:saveSetting("device_status_battery_threshold", self.battery_threshold)
@@ -206,7 +208,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                         value_max = 60,
                         default_value = 5,
                         value_hold_step = 5,
-                        title_text =  _("Memory check interval"),
+                        title_text = _("Memory check interval"),
                         callback = function(spin)
                             self.memory_interval = spin.value
                             G_reader_settings:saveSetting("device_status_memory_interval", self.memory_interval)
@@ -234,7 +236,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                         default_value = 100,
                         value_step = 5,
                         value_hold_step = 10,
-                        title_text =  _("Memory alarm threshold"),
+                        title_text = _("Memory alarm threshold"),
                         callback = function(spin)
                             self.memory_threshold = spin.value
                             G_reader_settings:saveSetting("device_status_memory_threshold", self.memory_threshold)
