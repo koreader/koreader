@@ -56,9 +56,10 @@ function ReaderDeviceStatus:init()
                             UIManager:show(InfoMessage:new{
                                 text = _("High memory usage!\n\nKOReader is restarting..."),
                                 icon = "notice-warning",
-                                timeout = 2,
                             })
-                            self.ui:handleEvent(Event:new("Restart"))
+                            UIManager:nextTick(function()
+                                self.ui:handleEvent(Event:new("Restart"))
+                            end)
                         else
                             UIManager:show(ConfirmBox:new {
                                 text = T(_("High memory usage: %1 MB\n\nRestart KOReader?"), rss),
@@ -68,9 +69,10 @@ function ReaderDeviceStatus:init()
                                     UIManager:show(InfoMessage:new{
                                         text = _("High memory usage!\n\nKOReader is restarting..."),
                                         icon = "notice-warning",
-                                        timeout = 2,
                                     })
-                                    self.ui:handleEvent(Event:new("Restart"))
+                                    UIManager:nextTick(function()
+                                        self.ui:handleEvent(Event:new("Restart"))
+                                    end)
                                 end,
                             })
                         end
