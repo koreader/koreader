@@ -537,6 +537,9 @@ function MenuItem:getGesPosition(ges)
 end
 
 function MenuItem:onTapSelect(arg, ges)
+    -- Abort if the menu hasn't been painted yet.
+    if not self[1].dimen then return end
+
     local pos = self:getGesPosition(ges)
     if G_reader_settings:isFalse("flash_ui") then
         logger.dbg("creating coroutine for menu select")
@@ -576,6 +579,8 @@ function MenuItem:onTapSelect(arg, ges)
 end
 
 function MenuItem:onHoldSelect(arg, ges)
+    if not self[1].dimen then return end
+
     local pos = self:getGesPosition(ges)
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuHold(self.table, pos)
