@@ -362,6 +362,11 @@ fi
 
 # Display chrome bar if need be (upstart & framework up only)
 if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
+    # Resume the services we murdered
+    for job in ${TOGGLED_SERVICES}; do
+        start "${job}"
+    done
+
     # Depending on the FW version, we may have handled things in a few different manners...
     if [ "${AWESOME_STOPPED}" = "yes" ]; then
         logmsg "Resuming awesome . . ."
@@ -400,9 +405,6 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
         done
         logmsg "Title bar geometry restored to '$(${KOREADER_DIR}/wmctrl -l -G | grep ":titleBar_ID:" | awk '{print $2,$3,$4,$5,$6}' OFS=',')' (ought to be: '${TITLEBAR_GEOMETRY}') [after ${WMCTRL_COUNT} attempts]"
     fi
-    for job in ${TOGGLED_SERVICES}; do
-        start "${job}"
-    done
 fi
 
 if [ "${INIT_TYPE}" = "upstart" ] || [ "$(uname -r)" = "2.6.31-rt11-lab126" ]; then
