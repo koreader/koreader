@@ -167,7 +167,9 @@ function Device:init()
                 end
                 -- to-do: keyboard connected, disconnected
             elseif ev.code == C.APP_CMD_RESUME then
-                UIManager:broadcastEvent(Event:new("Resume"))
+                if not android.prop.brokenLifecycle then
+                    UIManager:broadcastEvent(Event:new("Resume"))
+                end
                 if external.when_back_callback then
                     external.when_back_callback()
                     external.when_back_callback = nil
@@ -206,7 +208,9 @@ function Device:init()
                     end
                 end
             elseif ev.code == C.APP_CMD_PAUSE then
-                UIManager:broadcastEvent(Event:new("Suspend"))
+                if not android.prop.brokenLifecycle then
+                    UIManager:broadcastEvent(Event:new("Suspend"))
+                end
             elseif ev.code == C.AEVENT_POWER_CONNECTED then
                 UIManager:broadcastEvent(Event:new("Charging"))
             elseif ev.code == C.AEVENT_POWER_DISCONNECTED then
