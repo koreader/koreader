@@ -9,6 +9,7 @@ This module translates text using Google Translate.
 --  https://github.com/ssut/py-googletrans/blob/master/googletrans/client.py
 --  https://stackoverflow.com/questions/26714426/what-is-the-meaning-of-google-translate-query-params
 
+local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
@@ -413,6 +414,10 @@ Show translated text in TextViewer, with alternate translations
 @string source_lang[opt="auto"] (`"en"`, `"fr"`, `…`) or `"auto"` to auto-detect source language
 --]]
 function Translator:showTranslation(text, target_lang, source_lang)
+    if Device:hasClipboard() then
+        Device.input.setClipboardText(text)
+    end
+
     local NetworkMgr = require("ui/network/manager")
     if NetworkMgr:willRerunWhenOnline(function() self:showTranslation(text, target_lang, source_lang) end) then
         return
