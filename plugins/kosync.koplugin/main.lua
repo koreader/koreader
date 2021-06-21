@@ -12,9 +12,9 @@ local Screen = Device.screen
 local logger = require("logger")
 local md5 = require("ffi/sha2").md5
 local random = require("random")
+local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
-local util = require("util")
 
 if G_reader_settings:hasNot("device_id") then
     G_reader_settings:saveSetting("device_id", random.uuid())
