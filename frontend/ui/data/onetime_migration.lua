@@ -218,6 +218,7 @@ if last_migration_date < 20210508 then
     DocCache:clearDiskCache()
 end
 
+-- 20210518, ReaderFooter, https://github.com/koreader/koreader/pull/7702
 -- 20210622, ReaderFooter, https://github.com/koreader/koreader/pull/7876
 if last_migration_date < 20210622 then
     logger.info("Performing one-time migration for 20210622")
