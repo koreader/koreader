@@ -149,6 +149,9 @@ local footerTextGeneratorMap = {
         local prefix = symbol_prefix[symbol_type].battery
         local powerd = Device:getPowerDevice()
         local batt_lvl = powerd:getCapacity()
+        if footer.settings.all_at_once and batt_lvl > footer.settings.battery_hide_threshold then
+            return ""
+        end
         -- If we're using icons, use fancy variable icons
         if symbol_type == "icons" or symbol_type == "compact_items" then
             if powerd:isCharging() then
@@ -415,6 +418,7 @@ ReaderFooter.default_settings = {
     time = true,
     pages_left = true,
     battery = Device:hasBattery(),
+    battery_hide_threshold = 100,
     percentage = true,
     book_time_to_read = true,
     chapter_time_to_read = true,
@@ -872,6 +876,7 @@ function ReaderFooter:addToMainMenu(menu_items)
     }
 
     -- menu item to fake footer tapping when touch area is disabled
+    local settings_submenu_num = 1
     if Geom:new{
            x = DTAP_ZONE_MINIBAR.x,
            y = DTAP_ZONE_MINIBAR.y,
@@ -885,6 +890,7 @@ function ReaderFooter:addToMainMenu(menu_items)
             end,
             callback = function() self:onTapFooter(true) end,
         })
+        settings_submenu_num = 2
     end
 
     local getMinibarOption = function(option, callback)
@@ -968,6 +974,7 @@ function ReaderFooter:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text = _("Sort items"),
+                separator = true,
                 callback = function()
                     local item_table = {}
                     for i=1, #self.mode_index do
@@ -1047,7 +1054,6 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text = _("Font"),
-                separator = true,
                 sub_item_table = {
                     {
                         text_func = function()
@@ -1423,6 +1429,36 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
         }
     })
+    if Device:hasBattery() then
+        table.insert(sub_items[settings_submenu_num].sub_item_table, 4, {
+            text_func = function()
+                return T(_("Hide battery status if level higher than (%1%)"), self.settings.battery_hide_threshold)
+            end,
+            enabled_func = function()
+                return self.settings.all_at_once == true
+            end,
+            separator = true,
+            callback = function(touchmenu_instance)
+                local SpinWidget = require("ui/widget/spinwidget")
+                local battery_threshold = SpinWidget:new{
+                    width = math.floor(Screen:getWidth() * 0.6),
+                    value = self.settings.battery_hide_threshold,
+                    value_min = 0,
+                    value_max = 100,
+                    default_value = 100,
+                    value_hold_step = 10,
+                    title_text =  _("Hide battery threshold"),
+                    callback = function(spin)
+                        self.settings.battery_hide_threshold = spin.value
+                        self:refreshFooter(true, true)
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                }
+                UIManager:show(battery_threshold)
+            end,
+            keep_menu_open = true,
+        })
+    end
     table.insert(sub_items, {
         text = _("Progress bar"),
         separator = true,
