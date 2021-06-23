@@ -581,7 +581,7 @@ function InputText:onHideKeyboard()
         self.is_keyboard_hidden = true
     end
 
-    return self.is_keyboard_hiddenend
+    return self.is_keyboard_hidden
 end
 
 function InputText:onCloseKeyboard()
