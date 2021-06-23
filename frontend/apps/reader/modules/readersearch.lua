@@ -28,12 +28,14 @@ function ReaderSearch:addToMainMenu(menu_items)
             self:onShowFulltextSearchInput()
         end,
     }
-    menu_items.regex_search = {
-        text = _("Regular expression search"),
-        callback = function()
-            self:onShowRegexSearchInput()
-        end,
-    }
+    if self.ui.document.provider == "crengine" then
+        menu_items.regex_search = {
+            text = _("Regular expression search"),
+            callback = function()
+                self:onShowRegexSearchInput()
+            end,
+        }
+    end
 end
 
 function ReaderSearch:onShowFulltextSearchInput()
@@ -128,7 +130,7 @@ end
 function ReaderSearch:onShowSearchDialog(text, direction, regex)
     local neglect_current_location = false
     local current_page
-    local do_search = function(search_func, _text, param, regex)
+    local do_search = function(search_func, _text, param)
         return function()
             local no_results = true -- for notification
             local res = search_func(self, _text, param, regex)
