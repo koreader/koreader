@@ -183,6 +183,7 @@ local order = {
         "----------------------------",
         "find_book_in_calibre_catalog",
         "fulltext_search",
+        "regex_search",
     },
     filemanager = {},
     main = {

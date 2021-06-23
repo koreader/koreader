@@ -28,6 +28,12 @@ function ReaderSearch:addToMainMenu(menu_items)
             self:onShowFulltextSearchInput()
         end,
     }
+    menu_items.regex_search = {
+        text = _("Regular expression search"),
+        callback = function()
+            self:onShowRegexSearchInput()
+        end,
+    }
 end
 
 function ReaderSearch:onShowFulltextSearchInput()
@@ -39,6 +45,7 @@ function ReaderSearch:onShowFulltextSearchInput()
 
     self.input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
+        input = self.last_fulltext,
         buttons = {
             {
                 {
@@ -51,6 +58,7 @@ function ReaderSearch:onShowFulltextSearchInput()
                     text = backward_text,
                     callback = function()
                         if self.input_dialog:getInputText() == "" then return end
+                        self.last_fulltext = self.input_dialog:getInputText()
                         UIManager:close(self.input_dialog)
                         self:onShowSearchDialog(self.input_dialog:getInputText(), 1)
                     end,
@@ -60,6 +68,7 @@ function ReaderSearch:onShowFulltextSearchInput()
                     is_enter_default = true,
                     callback = function()
                         if self.input_dialog:getInputText() == "" then return end
+                        self.last_fulltext = self.input_dialog:getInputText()
                         UIManager:close(self.input_dialog)
                         self:onShowSearchDialog(self.input_dialog:getInputText(), 0)
                     end,
@@ -71,13 +80,58 @@ function ReaderSearch:onShowFulltextSearchInput()
     self.input_dialog:onShowKeyboard()
 end
 
-function ReaderSearch:onShowSearchDialog(text, direction)
+function ReaderSearch:onShowRegexSearchInput()
+    local backward_text = "◁"
+    local forward_text = "▷"
+    if BD.mirroredUILayout() then
+        backward_text, forward_text = forward_text, backward_text
+    end
+
+    self.input_dialog = InputDialog:new{
+        title = _("Enter regular expression to search for"),
+        description = _("Don't forget: If your search includes punctuation marks, escape them with '\\'."),
+        input = self.last_regex,
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(self.input_dialog)
+                    end,
+                },
+                {
+                    text = backward_text,
+                    callback = function()
+                        if self.input_dialog:getInputText() == "" then return end
+                        self.last_regex = self.input_dialog:getInputText()
+                        UIManager:close(self.input_dialog)
+                        self:onShowSearchDialog(self.input_dialog:getInputText(), 1, 1)
+                    end,
+                },
+                {
+                    text = forward_text,
+                    is_enter_default = true,
+                    callback = function()
+                        if self.input_dialog:getInputText() == "" then return end
+                        self.last_regex = self.input_dialog:getInputText()
+                        UIManager:close(self.input_dialog)
+                        self:onShowSearchDialog(self.input_dialog:getInputText(), 0, 1)
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(self.input_dialog)
+    self.input_dialog:onShowKeyboard()
+end
+
+function ReaderSearch:onShowSearchDialog(text, direction, regex)
     local neglect_current_location = false
     local current_page
-    local do_search = function(search_func, _text, param)
+    local do_search = function(search_func, _text, param, regex)
         return function()
             local no_results = true -- for notification
-            local res = search_func(self, _text, param)
+            local res = search_func(self, _text, param, regex)
             if res then
                 if self.ui.document.info.has_pages then
                     no_results = false
@@ -180,22 +234,22 @@ function ReaderSearch:onShowSearchDialog(text, direction)
                 {
                     text = from_start_text,
                     vsync = true,
-                    callback = do_search(self.searchFromStart, text),
+                    callback = do_search(self.searchFromStart, text, regex),
                 },
                 {
                     text = backward_text,
                     vsync = true,
-                    callback = do_search(self.searchNext, text, 1),
+                    callback = do_search(self.searchNext, text, 1, regex),
                 },
                 {
                     text = forward_text,
                     vsync = true,
-                    callback = do_search(self.searchNext, text, 0),
+                    callback = do_search(self.searchNext, text, 0, regex),
                 },
                 {
                     text = from_end_text,
                     vsync = true,
-                    callback = do_search(self.searchFromEnd, text),
+                    callback = do_search(self.searchFromEnd, text, regex),
                 },
             }
         },
@@ -205,44 +259,44 @@ function ReaderSearch:onShowSearchDialog(text, direction)
             UIManager:setDirty(self.dialog, "ui")
         end,
     }
-    do_search(self.searchFromCurrent, text, direction)()
+    do_search(self.searchFromCurrent, text, direction, regex)()
     UIManager:show(self.search_dialog)
     --- @todo regional
     UIManager:setDirty(self.dialog, "partial")
     return true
 end
 
-function ReaderSearch:search(pattern, origin)
+function ReaderSearch:search(pattern, origin, regex)
     logger.dbg("search pattern", pattern)
     local direction = self.direction
     local case = self.case_insensitive
     local page = self.view.state.page
-    return self.ui.document:findText(pattern, origin, direction, case, page)
+    return self.ui.document:findText(pattern, origin, direction, case, page, regex)
 end
 
-function ReaderSearch:searchFromStart(pattern)
+function ReaderSearch:searchFromStart(pattern, regex)
     self.direction = 0
     self._expect_back_results = true
-    return self:search(pattern, -1)
+    return self:search(pattern, -1, regex)
 end
 
-function ReaderSearch:searchFromEnd(pattern)
+function ReaderSearch:searchFromEnd(pattern, regex)
     self.direction = 1
     self._expect_back_results = false
-    return self:search(pattern, -1)
+    return self:search(pattern, -1, regex)
 end
 
-function ReaderSearch:searchFromCurrent(pattern, direction)
+function ReaderSearch:searchFromCurrent(pattern, direction, regex)
     self.direction = direction
     self._expect_back_results = direction == 1
-    return self:search(pattern, 0)
+    return self:search(pattern, 0, regex)
 end
 
 -- ignore current page and search next occurrence
-function ReaderSearch:searchNext(pattern, direction)
+function ReaderSearch:searchNext(pattern, direction, regex)
     self.direction = direction
     self._expect_back_results = direction == 1
-    return self:search(pattern, 1)
+    return self:search(pattern, 1, regex)
 end
 
 return ReaderSearch
