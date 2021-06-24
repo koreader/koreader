@@ -28,14 +28,6 @@ function ReaderSearch:addToMainMenu(menu_items)
             self:onShowFulltextSearchInput()
         end,
     }
-    if self.ui.document.provider == "crengine" then
-        menu_items.regex_search = {
-            text = _("Regular expression search"),
-            callback = function()
-                self:onShowRegexSearchInput()
-            end,
-        }
-    end
 end
 
 function ReaderSearch:onShowFulltextSearchInput()
@@ -48,6 +40,8 @@ function ReaderSearch:onShowFulltextSearchInput()
     self.input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
         input = self.last_fulltext,
+        check_button_text = self.ui.document.provider == "crengine" and _("Use regular expression"),
+        check_button_checked = self.use_regex,
         buttons = {
             {
                 {
@@ -61,8 +55,9 @@ function ReaderSearch:onShowFulltextSearchInput()
                     callback = function()
                         if self.input_dialog:getInputText() == "" then return end
                         self.last_fulltext = self.input_dialog:getInputText()
+                        self.use_regex = self.input_dialog.check_button and self.input_dialog.check_button.checked
                         UIManager:close(self.input_dialog)
-                        self:onShowSearchDialog(self.input_dialog:getInputText(), 1)
+                        self:onShowSearchDialog(self.input_dialog:getInputText(), 1, self.use_regex)
                     end,
                 },
                 {
@@ -71,53 +66,9 @@ function ReaderSearch:onShowFulltextSearchInput()
                     callback = function()
                         if self.input_dialog:getInputText() == "" then return end
                         self.last_fulltext = self.input_dialog:getInputText()
+                        self.use_regex = self.input_dialog.check_button and self.input_dialog.check_button.checked
                         UIManager:close(self.input_dialog)
-                        self:onShowSearchDialog(self.input_dialog:getInputText(), 0)
-                    end,
-                },
-            },
-        },
-    }
-    UIManager:show(self.input_dialog)
-    self.input_dialog:onShowKeyboard()
-end
-
-function ReaderSearch:onShowRegexSearchInput()
-    local backward_text = "◁"
-    local forward_text = "▷"
-    if BD.mirroredUILayout() then
-        backward_text, forward_text = forward_text, backward_text
-    end
-
-    self.input_dialog = InputDialog:new{
-        title = _("Enter regular expression to search for"),
-        description = _("Don't forget: If your search includes punctuation marks, escape them with '\\'."),
-        input = self.last_regex,
-        buttons = {
-            {
-                {
-                    text = _("Cancel"),
-                    callback = function()
-                        UIManager:close(self.input_dialog)
-                    end,
-                },
-                {
-                    text = backward_text,
-                    callback = function()
-                        if self.input_dialog:getInputText() == "" then return end
-                        self.last_regex = self.input_dialog:getInputText()
-                        UIManager:close(self.input_dialog)
-                        self:onShowSearchDialog(self.input_dialog:getInputText(), 1, 1)
-                    end,
-                },
-                {
-                    text = forward_text,
-                    is_enter_default = true,
-                    callback = function()
-                        if self.input_dialog:getInputText() == "" then return end
-                        self.last_regex = self.input_dialog:getInputText()
-                        UIManager:close(self.input_dialog)
-                        self:onShowSearchDialog(self.input_dialog:getInputText(), 0, 1)
+                        self:onShowSearchDialog(self.input_dialog:getInputText(), 0, self.use_regex)
                     end,
                 },
             },
