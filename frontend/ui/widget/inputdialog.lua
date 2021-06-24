@@ -96,6 +96,7 @@ longer than three words it should just read "OK".
 
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
+local CheckButton = require("ui/widget/checkbutton")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Font = require("ui/font")
@@ -417,30 +418,79 @@ function InputDialog:init()
         end
     end
 
-    -- Final widget
-    self.dialog_frame = FrameContainer:new{
-        radius = self.fullscreen and 0 or Size.radius.window,
-        padding = 0,
-        margin = 0,
-        bordersize = self.border_size,
-        background = Blitbuffer.COLOR_WHITE,
-        VerticalGroup:new{
-            align = "left",
-            self.title_widget,
-            self.title_bar,
-            self.description_widget,
-            vspan_before_input_text,
-            CenterContainer:new{
-                dimen = Geom:new{
-                    w = self.width,
-                    h = self._input_widget:getSize().h,
-                },
-                self._input_widget,
-            },
-            vspan_after_input_text,
-            buttons_container,
+    -- checkbox
+    if self.check_button_text then
+        self.check_button = self.check_button or CheckButton:new{
+            text = self.check_button_text,
+            face = Font:getFace("smallinfofont"),
+            checked = self.check_button_checked,
+            callback = function()
+                if not self.check_button.checked then
+                    self.check_button:check()
+                else
+                    self.check_button:unCheck()
+                end
+                self:onShow()
+            end,
+            padding = self.padding,
+            margin = self.margin,
+            bordersize = self.bordersize,
         }
-    }
+    end
+
+    -- Final widget
+    if not self.check_button then -- without checkbutton
+        self.dialog_frame = FrameContainer:new{
+            radius = self.fullscreen and 0 or Size.radius.window,
+            padding = 0,
+            margin = 0,
+            bordersize = self.border_size,
+            background = Blitbuffer.COLOR_WHITE,
+            VerticalGroup:new{
+                align = "center",
+                self.title_widget,
+                self.title_bar,
+                self.description_widget,
+                vspan_before_input_text,
+                CenterContainer:new{
+                    dimen = Geom:new{
+                        w = self.width,
+                        h = self._input_widget:getSize().h,
+                    },
+                    self._input_widget,
+                },
+                vspan_after_input_text,
+                buttons_container,
+            }
+        }
+    else -- with checkbutton
+        self.dialog_frame = FrameContainer:new{
+            radius = self.fullscreen and 0 or Size.radius.window,
+            padding = 0,
+            margin = 0,
+            bordersize = self.border_size,
+            background = Blitbuffer.COLOR_WHITE,
+            VerticalGroup:new{
+                align = "center",
+                self.title_widget,
+                self.title_bar,
+                self.description_widget,
+                vspan_before_input_text,
+                CenterContainer:new{
+                    dimen = Geom:new{
+                        w = self.width,
+                        h = self._input_widget:getSize().h,
+                    },
+                    self._input_widget,
+                },
+                vspan_before_input_text,
+                self.check_button,
+                vspan_after_input_text,
+                buttons_container,
+            }
+        }
+    end
+
     local frame = self.dialog_frame
     if self.is_movable then
         self.movable = MovableContainer:new{ -- (UIManager expects this as 'self.movable')
