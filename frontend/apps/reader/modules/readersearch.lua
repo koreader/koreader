@@ -39,8 +39,8 @@ function ReaderSearch:onShowFulltextSearchInput()
 
     self.input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
-        input = self.last_fulltext,
-        check_button_text = self.ui.document.provider == "crengine" and _("Use regular expression"),
+        input = self.last_search_text,
+        check_button_text = self.ui.rolling and _("Use regular expression"),
         check_button_checked = self.use_regex,
         buttons = {
             {
@@ -54,7 +54,7 @@ function ReaderSearch:onShowFulltextSearchInput()
                     text = backward_text,
                     callback = function()
                         if self.input_dialog:getInputText() == "" then return end
-                        self.last_fulltext = self.input_dialog:getInputText()
+                        self.last_search_text = self.input_dialog:getInputText()
                         self.use_regex = self.input_dialog.check_button and self.input_dialog.check_button.checked
                         UIManager:close(self.input_dialog)
                         self:onShowSearchDialog(self.input_dialog:getInputText(), 1, self.use_regex)
@@ -65,7 +65,7 @@ function ReaderSearch:onShowFulltextSearchInput()
                     is_enter_default = true,
                     callback = function()
                         if self.input_dialog:getInputText() == "" then return end
-                        self.last_fulltext = self.input_dialog:getInputText()
+                        self.last_search_text = self.input_dialog:getInputText()
                         self.use_regex = self.input_dialog.check_button and self.input_dialog.check_button.checked
                         UIManager:close(self.input_dialog)
                         self:onShowSearchDialog(self.input_dialog:getInputText(), 0, self.use_regex)
