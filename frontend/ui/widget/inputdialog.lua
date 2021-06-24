@@ -439,56 +439,35 @@ function InputDialog:init()
     end
 
     -- Final widget
-    if not self.check_button then -- without checkbutton
-        self.dialog_frame = FrameContainer:new{
-            radius = self.fullscreen and 0 or Size.radius.window,
-            padding = 0,
-            margin = 0,
-            bordersize = self.border_size,
-            background = Blitbuffer.COLOR_WHITE,
-            VerticalGroup:new{
-                align = "center",
-                self.title_widget,
-                self.title_bar,
-                self.description_widget,
-                vspan_before_input_text,
-                CenterContainer:new{
-                    dimen = Geom:new{
-                        w = self.width,
-                        h = self._input_widget:getSize().h,
-                    },
-                    self._input_widget,
+    self.dialog_frame = FrameContainer:new{
+        radius = self.fullscreen and 0 or Size.radius.window,
+        padding = 0,
+        margin = 0,
+        bordersize = self.border_size,
+        background = Blitbuffer.COLOR_WHITE,
+        VerticalGroup:new{
+            align = "center",
+            self.title_widget,
+            self.title_bar,
+            self.description_widget,
+            vspan_before_input_text,
+            CenterContainer:new{
+                dimen = Geom:new{
+                    w = self.width,
+                    h = self._input_widget:getSize().h,
                 },
-                vspan_after_input_text,
-                buttons_container,
-            }
+                self._input_widget,
+            },
+            vspan_after_input_text,
+            buttons_container
         }
-    else -- with checkbutton
-        self.dialog_frame = FrameContainer:new{
-            radius = self.fullscreen and 0 or Size.radius.window,
-            padding = 0,
-            margin = 0,
-            bordersize = self.border_size,
-            background = Blitbuffer.COLOR_WHITE,
-            VerticalGroup:new{
-                align = "center",
-                self.title_widget,
-                self.title_bar,
-                self.description_widget,
-                vspan_before_input_text,
-                CenterContainer:new{
-                    dimen = Geom:new{
-                        w = self.width,
-                        h = self._input_widget:getSize().h,
-                    },
-                    self._input_widget,
-                },
-                vspan_before_input_text,
-                self.check_button,
-                vspan_after_input_text,
-                buttons_container,
-            }
-        }
+    }
+
+    -- insert check button before the regular buttons
+    if self.check_button then
+        local nr_elements = #self.dialog_frame[1]
+        table.insert(self.dialog_frame[1], nr_elements-1, vspan_before_input_text)
+        table.insert(self.dialog_frame[1], nr_elements-1, self.check_button)
     end
 
     local frame = self.dialog_frame
