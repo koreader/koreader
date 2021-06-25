@@ -446,7 +446,7 @@ function InputDialog:init()
         bordersize = self.border_size,
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
-            align = "center",
+            align = "left",
             self.title_widget,
             self.title_bar,
             self.description_widget,
@@ -465,9 +465,14 @@ function InputDialog:init()
 
     -- insert check button before the regular buttons
     if self.check_button then
-        local nr_elements = #self.dialog_frame[1]
-        table.insert(self.dialog_frame[1], nr_elements-1, vspan_before_input_text)
-        table.insert(self.dialog_frame[1], nr_elements-1, self.check_button)
+        local nb_elements = #self.dialog_frame[1]
+        table.insert(self.dialog_frame[1], nb_elements-1, CenterContainer:new{
+                dimen = Geom:new{
+                    w = self.width,
+                    h = self._input_widget:getSize().h,
+                },
+                self.check_button,
+            })
     end
 
     local frame = self.dialog_frame
