@@ -1242,6 +1242,12 @@ function CreDocument:setBackgroundImage(img_path) -- use nil to unset
     self._document:setBackgroundImage(img_path)
 end
 
+function CreDocument:checkRegex(pattern)
+    logger.dbg("CreDocument: check regex ", pattern)
+    print("xxxxxxxxx " .. tostring(pattern))
+    return self._document:checkRegex(pattern)
+end
+
 function CreDocument:findText(pattern, origin, reverse, caseInsensitive, page, regex)
     logger.dbg("CreDocument: find text", pattern, origin, reverse, caseInsensitive, regex)
     return self._document:findText(

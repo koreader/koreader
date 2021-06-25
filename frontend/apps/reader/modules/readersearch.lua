@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
+local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Notification = require("ui/widget/notification")
@@ -56,8 +57,12 @@ function ReaderSearch:onShowFulltextSearchInput()
                         if self.input_dialog:getInputText() == "" then return end
                         self.last_search_text = self.input_dialog:getInputText()
                         self.use_regex = self.input_dialog.check_button and self.input_dialog.check_button.checked
-                        UIManager:close(self.input_dialog)
-                        self:onShowSearchDialog(self.input_dialog:getInputText(), 1, self.use_regex)
+                        if self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText()) ~= 0 then
+                            UIManager:show(InfoMessage:new{ text = _("Error in regular expression!") })
+                        else
+                            UIManager:close(self.input_dialog)
+                            self:onShowSearchDialog(self.input_dialog:getInputText(), 1, self.use_regex)
+                        end
                     end,
                 },
                 {
@@ -67,8 +72,12 @@ function ReaderSearch:onShowFulltextSearchInput()
                         if self.input_dialog:getInputText() == "" then return end
                         self.last_search_text = self.input_dialog:getInputText()
                         self.use_regex = self.input_dialog.check_button and self.input_dialog.check_button.checked
-                        UIManager:close(self.input_dialog)
-                        self:onShowSearchDialog(self.input_dialog:getInputText(), 0, self.use_regex)
+                        if self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText()) ~= 0 then
+                            UIManager:show(InfoMessage:new{ text = _("Error in regular expression!") })
+                        else
+                            UIManager:close(self.input_dialog)
+                            self:onShowSearchDialog(self.input_dialog:getInputText(), 0, self.use_regex)
+                        end
                     end,
                 },
             },
