@@ -1,10 +1,15 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
+local CheckButton = require("ui/widget/checkbutton")
+local Font = require("ui/font")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
 local logger = require("logger")
 local _ = require("gettext")
 
@@ -41,8 +46,8 @@ function ReaderSearch:onShowFulltextSearchInput()
     self.input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
         input = self.last_search_text,
-        check_button_text = self.ui.rolling and _("Use regular expression"),
-        check_button_checked = self.use_regex,
+        use_regex_checked = self.use_regex,
+        case_insensitive_checked = self.case_insensitive,
         buttons = {
             {
                 {
@@ -56,12 +61,13 @@ function ReaderSearch:onShowFulltextSearchInput()
                     callback = function()
                         if self.input_dialog:getInputText() == "" then return end
                         self.last_search_text = self.input_dialog:getInputText()
-                        self.use_regex = self.input_dialog.check_button and self.input_dialog.check_button.checked
+                        self.use_regex = self.check_button_regex.checked
+                        self.case_insensitive = self.check_button_case.checked
                         if self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText()) ~= 0 then
                             UIManager:show(InfoMessage:new{ text = _("Error in regular expression!") })
                         else
                             UIManager:close(self.input_dialog)
-                            self:onShowSearchDialog(self.input_dialog:getInputText(), 1, self.use_regex)
+                            self:onShowSearchDialog(self.input_dialog:getInputText(), 1, self.use_regex, self.case_insensitive)
                         end
                     end,
                 },
@@ -71,29 +77,82 @@ function ReaderSearch:onShowFulltextSearchInput()
                     callback = function()
                         if self.input_dialog:getInputText() == "" then return end
                         self.last_search_text = self.input_dialog:getInputText()
-                        self.use_regex = self.input_dialog.check_button and self.input_dialog.check_button.checked
+                        self.use_regex = self.check_button_regex.checked
+                        self.case_insensitive = self.check_button_case.checked
                         if self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText()) ~= 0 then
                             UIManager:show(InfoMessage:new{ text = _("Error in regular expression!") })
                         else
                             UIManager:close(self.input_dialog)
-                            self:onShowSearchDialog(self.input_dialog:getInputText(), 0, self.use_regex)
+                            self:onShowSearchDialog(self.input_dialog:getInputText(), 0, self.use_regex, self.case_insensitive)
                         end
                     end,
                 },
             },
         },
     }
+
+   -- checkboxes
+    self.check_button_regex = self.check_button or CheckButton:new{
+        text = _("Regular expression"),
+        face = Font:getFace("smallinfofont"),
+        checked = self.use_regex,
+        callback = function()
+            if not self.check_button_regex.checked then
+                self.check_button_regex:check()
+            else
+                self.check_button_regex:unCheck()
+            end
+            self.input_dialog:onShow()
+        end,
+        padding = self.input_dialog.padding,
+        margin = self.input_dialog.margin,
+        bordersize = self.input_dialog.bordersize,
+    }
+    self.check_button_case = self.check_button or CheckButton:new{
+        text = _("Case insensitive"),
+        face = Font:getFace("smallinfofont"),
+        checked = self.case_insensitive,
+        callback = function()
+            if not self.check_button_case.checked then
+                self.check_button_case:check()
+            else
+                self.check_button_case:unCheck()
+            end
+            self.input_dialog:onShow()
+        end,
+        padding = self.input_dialog.padding,
+        margin = self.input_dialog.margin,
+        bordersize = self.input_dialog.bordersize,
+    }
+
+    local checkbox_shift = math.floor((self.input_dialog.width - self.input_dialog._input_widget.width) / 2 + 0.5)
+    local check_buttons = HorizontalGroup:new{
+        HorizontalSpan:new{width = checkbox_shift},
+        HorizontalGroup:new{
+            VerticalGroup:new{
+                align = "left",
+                self.check_button_regex,
+                self.check_button_case,
+            },
+        },
+    }
+
+    -- insert check buttons before the regular buttons
+    local nb_elements = #self.input_dialog.dialog_frame[1]
+    table.insert(self.input_dialog.dialog_frame[1], nb_elements-1, check_buttons)
+
     UIManager:show(self.input_dialog)
     self.input_dialog:onShowKeyboard()
 end
 
-function ReaderSearch:onShowSearchDialog(text, direction, regex)
+function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitive)
     local neglect_current_location = false
     local current_page
+
     local do_search = function(search_func, _text, param)
         return function()
             local no_results = true -- for notification
-            local res = search_func(self, _text, param, regex)
+            local res = search_func(self, _text, param, regex, case_insensitive)
             if res then
                 if self.ui.document.info.has_pages then
                     no_results = false
@@ -196,22 +255,22 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex)
                 {
                     text = from_start_text,
                     vsync = true,
-                    callback = do_search(self.searchFromStart, text, regex),
+                    callback = do_search(self.searchFromStart, text, regex, case_insensitive),
                 },
                 {
                     text = backward_text,
                     vsync = true,
-                    callback = do_search(self.searchNext, text, 1, regex),
+                    callback = do_search(self.searchNext, text, 1, regex, case_insensitive),
                 },
                 {
                     text = forward_text,
                     vsync = true,
-                    callback = do_search(self.searchNext, text, 0, regex),
+                    callback = do_search(self.searchNext, text, 0, regex, case_insensitive),
                 },
                 {
                     text = from_end_text,
                     vsync = true,
-                    callback = do_search(self.searchFromEnd, text, regex),
+                    callback = do_search(self.searchFromEnd, text, regex, case_insensitive),
                 },
             }
         },
@@ -228,37 +287,41 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex)
     return true
 end
 
-function ReaderSearch:search(pattern, origin, regex)
+-- if regex==true use regular expression in pattern
+-- if case == true or nil the search is case insensitive
+function ReaderSearch:search(pattern, origin, regex, case_insensitive)
     logger.dbg("search pattern", pattern)
     local direction = self.direction
-    local case = self.case_insensitive
     local page = self.view.state.page
-    return self.ui.document:findText(pattern, origin, direction, case, page, regex)
+    if case_insensitive == nil then
+        case_insensitive = true
+    end
+    return self.ui.document:findText(pattern, origin, direction, case_insensitive, page, regex)
 end
 
-function ReaderSearch:searchFromStart(pattern, regex)
+function ReaderSearch:searchFromStart(pattern, regex, case_insensitive)
     self.direction = 0
     self._expect_back_results = true
-    return self:search(pattern, -1, regex)
+    return self:search(pattern, -1, regex, case_insensitive)
 end
 
-function ReaderSearch:searchFromEnd(pattern, regex)
+function ReaderSearch:searchFromEnd(pattern, regex, case_insensitive)
     self.direction = 1
     self._expect_back_results = false
-    return self:search(pattern, -1, regex)
+    return self:search(pattern, -1, regex, case_insensitive)
 end
 
-function ReaderSearch:searchFromCurrent(pattern, direction, regex)
+function ReaderSearch:searchFromCurrent(pattern, direction, regex, case_insensitive)
     self.direction = direction
     self._expect_back_results = direction == 1
-    return self:search(pattern, 0, regex)
+    return self:search(pattern, 0, regex, case_insensitive)
 end
 
 -- ignore current page and search next occurrence
-function ReaderSearch:searchNext(pattern, direction, regex)
+function ReaderSearch:searchNext(pattern, direction, regex, case_insensitive)
     self.direction = direction
     self._expect_back_results = direction == 1
-    return self:search(pattern, 1, regex)
+    return self:search(pattern, 1, regex, case_insensitive)
 end
 
 return ReaderSearch

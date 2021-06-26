@@ -418,26 +418,6 @@ function InputDialog:init()
         end
     end
 
-    -- checkbox
-    if self.check_button_text then
-        self.check_button = self.check_button or CheckButton:new{
-            text = self.check_button_text,
-            face = Font:getFace("smallinfofont"),
-            checked = self.check_button_checked,
-            callback = function()
-                if not self.check_button.checked then
-                    self.check_button:check()
-                else
-                    self.check_button:unCheck()
-                end
-                self:onShow()
-            end,
-            padding = self.padding,
-            margin = self.margin,
-            bordersize = self.bordersize,
-        }
-    end
-
     -- Final widget
     self.dialog_frame = FrameContainer:new{
         radius = self.fullscreen and 0 or Size.radius.window,
@@ -462,18 +442,6 @@ function InputDialog:init()
             buttons_container
         }
     }
-
-    -- insert check button before the regular buttons
-    if self.check_button then
-        local nb_elements = #self.dialog_frame[1]
-        table.insert(self.dialog_frame[1], nb_elements-1, CenterContainer:new{
-                dimen = Geom:new{
-                    w = self.width,
-                    h = self._input_widget:getSize().h,
-                },
-                self.check_button,
-            })
-    end
 
     local frame = self.dialog_frame
     if self.is_movable then
