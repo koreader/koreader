@@ -1244,7 +1244,6 @@ end
 
 function CreDocument:checkRegex(pattern)
     logger.dbg("CreDocument: check regex ", pattern)
-    print("xxxxxxxxx " .. tostring(pattern))
     return self._document:checkRegex(pattern)
 end
 
