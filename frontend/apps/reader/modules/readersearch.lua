@@ -11,11 +11,13 @@ local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local logger = require("logger")
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local ReaderSearch = InputContainer:new{
     direction = 0, -- 0 for search forward, 1 for search backward
     case_insensitive = true, -- default to case insensitive
+    max_hits = 2000, -- maximum hits for search
 
     -- internal: whether we expect results on previous pages
     -- (can be different from self.direction, if, from a page in the
@@ -287,8 +289,8 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
     return true
 end
 
--- if regex==true use regular expression in pattern
--- if case == true or nil the search is case insensitive
+-- if regex == true, use regular expression in pattern
+-- if case == true or nil, the search is case insensitive
 function ReaderSearch:search(pattern, origin, regex, case_insensitive)
     logger.dbg("search pattern", pattern)
     local direction = self.direction
@@ -296,7 +298,13 @@ function ReaderSearch:search(pattern, origin, regex, case_insensitive)
     if case_insensitive == nil then
         case_insensitive = true
     end
-    return self.ui.document:findText(pattern, origin, direction, case_insensitive, page, regex)
+    local retval, words_found = self.ui.document:findText(pattern, origin, direction, case_insensitive, page, regex, 2000)
+    if words_found and words_found > self.max_hits then
+        UIManager:show(Notification:new{
+            text =(T(_("Maximum hits reached: %1"), self.max_hits)),
+         })
+    end
+    return retval
 end
 
 function ReaderSearch:searchFromStart(pattern, regex, case_insensitive)
