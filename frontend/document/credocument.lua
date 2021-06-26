@@ -1247,10 +1247,10 @@ function CreDocument:checkRegex(pattern)
     return self._document:checkRegex(pattern)
 end
 
-function CreDocument:findText(pattern, origin, reverse, caseInsensitive, page, regex)
-    logger.dbg("CreDocument: find text", pattern, origin, reverse, caseInsensitive, regex)
+function CreDocument:findText(pattern, origin, reverse, caseInsensitive, page, regex, max_hits)
+    logger.dbg("CreDocument: find text", pattern, origin, reverse, caseInsensitive, regex, max_hits)
     return self._document:findText(
-        pattern, origin, reverse, caseInsensitive and 1 or 0, regex and 1 or 0)
+        pattern, origin, reverse, caseInsensitive and 1 or 0, regex and 1 or 0, max_hits or 200)
 end
 
 function CreDocument:enableInternalHistory(toggle)
