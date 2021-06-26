@@ -49,7 +49,7 @@ function ReaderSearch:onShowFulltextSearchInput()
         title = _("Enter text to search for"),
         input = self.last_search_text,
         use_regex_checked = self.use_regex,
-        case_insensitive_checked = self.case_insensitive,
+        case_insensitive_checked = not self.case_insensitive,
         buttons = {
             {
                 {
@@ -64,7 +64,7 @@ function ReaderSearch:onShowFulltextSearchInput()
                         if self.input_dialog:getInputText() == "" then return end
                         self.last_search_text = self.input_dialog:getInputText()
                         self.use_regex = self.check_button_regex.checked
-                        self.case_insensitive = self.check_button_case.checked
+                        self.case_insensitive = not self.check_button_case.checked
                         if self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText()) ~= 0 then
                             UIManager:show(InfoMessage:new{ text = _("Error in regular expression!") })
                         else
@@ -80,7 +80,7 @@ function ReaderSearch:onShowFulltextSearchInput()
                         if self.input_dialog:getInputText() == "" then return end
                         self.last_search_text = self.input_dialog:getInputText()
                         self.use_regex = self.check_button_regex.checked
-                        self.case_insensitive = self.check_button_case.checked
+                        self.case_insensitive = not self.check_button_case.checked
                         if self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText()) ~= 0 then
                             UIManager:show(InfoMessage:new{ text = _("Error in regular expression!") })
                         else
@@ -94,7 +94,7 @@ function ReaderSearch:onShowFulltextSearchInput()
     }
 
    -- checkboxes
-    self.check_button_regex = self.check_button or CheckButton:new{
+    self.check_button_regex = self.check_button_regex or CheckButton:new{
         text = _("Regular expression"),
         face = Font:getFace("smallinfofont"),
         checked = self.use_regex,
@@ -110,10 +110,10 @@ function ReaderSearch:onShowFulltextSearchInput()
         margin = self.input_dialog.margin,
         bordersize = self.input_dialog.bordersize,
     }
-    self.check_button_case = self.check_button or CheckButton:new{
-        text = _("Case insensitive"),
+    self.check_button_case = self.check_button_case or CheckButton:new{
+        text = _("Case sensitive"),
         face = Font:getFace("smallinfofont"),
-        checked = self.case_insensitive,
+        checked = not self.case_insensitive,
         callback = function()
             if not self.check_button_case.checked then
                 self.check_button_case:check()
@@ -130,12 +130,10 @@ function ReaderSearch:onShowFulltextSearchInput()
     local checkbox_shift = math.floor((self.input_dialog.width - self.input_dialog._input_widget.width) / 2 + 0.5)
     local check_buttons = HorizontalGroup:new{
         HorizontalSpan:new{width = checkbox_shift},
-        HorizontalGroup:new{
-            VerticalGroup:new{
-                align = "left",
-                self.check_button_regex,
-                self.check_button_case,
-            },
+        VerticalGroup:new{
+            align = "left",
+            self.check_button_case,
+            self.check_button_regex,
         },
     }
 
