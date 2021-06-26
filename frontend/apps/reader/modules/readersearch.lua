@@ -11,13 +11,21 @@ local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local logger = require("logger")
-local T = require("ffi/util").template
 local _ = require("gettext")
 
 local ReaderSearch = InputContainer:new{
     direction = 0, -- 0 for search forward, 1 for search backward
     case_insensitive = true, -- default to case insensitive
-    max_hits = 2000, -- maximum hits for search
+
+    -- For a regex like [a-z\. ] many many hits are found, maybe the number of chars on a few pages.
+    -- We don't try to catch them all as this is a reader and not a computer science playground. ;)
+    -- So if some regex gets more than max_hits a notification will be shown.
+    -- Increasing max_hits will slow down search for nasty regex. There is no slowdown for friendly
+    -- regexs like `Max|Moritz` for `One|Two|Three`
+    -- The speed of the search depends on the regexs. Complex ones might need some time, easy ones
+    -- go with the speed of light.
+    -- Setting max_hits higher, does not mean to require more memory. More hits means smaller single hits.
+    max_hits = 2048, -- maximum hits for search; 2^11 a good number
 
     -- internal: whether we expect results on previous pages
     -- (can be different from self.direction, if, from a page in the
@@ -296,10 +304,10 @@ function ReaderSearch:search(pattern, origin, regex, case_insensitive)
     if case_insensitive == nil then
         case_insensitive = true
     end
-    local retval, words_found = self.ui.document:findText(pattern, origin, direction, case_insensitive, page, regex, 2000)
+    local retval, words_found = self.ui.document:findText(pattern, origin, direction, case_insensitive, page, regex, self.max_hits)
     if words_found and words_found > self.max_hits then
         UIManager:show(Notification:new{
-            text =(T(_("Maximum hits reached: %1"), self.max_hits)),
+            text =_("To many hits"),
          })
     end
     return retval
