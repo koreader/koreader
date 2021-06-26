@@ -25,7 +25,7 @@ local ReaderSearch = InputContainer:new{
     -- The speed of the search depends on the regexs. Complex ones might need some time, easy ones
     -- go with the speed of light.
     -- Setting max_hits higher, does not mean to require more memory. More hits means smaller single hits.
-    max_hits = 2048, -- maximum hits for search; 2^11 a good number
+    max_hits = 2048, -- maximum hits for search; timinges tested on a Tolino
 
     -- internal: whether we expect results on previous pages
     -- (can be different from self.direction, if, from a page in the
