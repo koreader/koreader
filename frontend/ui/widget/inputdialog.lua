@@ -96,7 +96,6 @@ longer than three words it should just read "OK".
 
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
-local CheckButton = require("ui/widget/checkbutton")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Font = require("ui/font")
@@ -439,10 +438,9 @@ function InputDialog:init()
                 self._input_widget,
             },
             vspan_after_input_text,
-            buttons_container
+            buttons_container,
         }
     }
-
     local frame = self.dialog_frame
     if self.is_movable then
         self.movable = MovableContainer:new{ -- (UIManager expects this as 'self.movable')
