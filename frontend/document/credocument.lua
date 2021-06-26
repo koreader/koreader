@@ -1247,6 +1247,12 @@ function CreDocument:checkRegex(pattern)
     return self._document:checkRegex(pattern)
 end
 
+function CreDocument:getAndClearRegexSearchError()
+    retval = self._document:getAndClearRegexSearchError()
+    logger.dbg("CreDocument: getAndClearRegexSearchError", retval)
+    return retval
+end
+
 function CreDocument:findText(pattern, origin, reverse, caseInsensitive, page, regex, max_hits)
     logger.dbg("CreDocument: find text", pattern, origin, reverse, caseInsensitive, regex, max_hits)
     return self._document:findText(
