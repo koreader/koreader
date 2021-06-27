@@ -106,13 +106,13 @@ function ReaderSearch:onShowFulltextSearchInput()
         text = _("Regular expression"),
         face = Font:getFace("smallinfofont"),
         checked = self.use_regex,
+        parent = self.input_dialog,
         callback = function()
             if not self.check_button_regex.checked then
                 self.check_button_regex:check()
             else
                 self.check_button_regex:unCheck()
             end
-            self.input_dialog:onShow()
         end,
         padding = self.input_dialog.padding,
         margin = self.input_dialog.margin,
@@ -122,13 +122,13 @@ function ReaderSearch:onShowFulltextSearchInput()
         text = _("Case sensitive"),
         face = Font:getFace("smallinfofont"),
         checked = not self.case_insensitive,
+        parent = self.input_dialog,
         callback = function()
             if not self.check_button_case.checked then
                 self.check_button_case:check()
             else
                 self.check_button_case:unCheck()
             end
-            self.input_dialog:onShow()
         end,
         padding = self.input_dialog.padding,
         margin = self.input_dialog.margin,
