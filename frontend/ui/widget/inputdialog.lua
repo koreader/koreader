@@ -159,11 +159,8 @@ local InputDialog = InputContainer:new{
     view_pos_callback = nil, -- Called with no arg to get initial top_line_num/charpos,
                              -- called with (top_line_num, charpos) to give back position on close.
 
-    -- movable = true, -- set to false if movable gestures conflicts with subwidgets gestures
-    -- for now, too much conflicts between InputText and MovableContainer, and
-    -- there's the keyboard to exclude from move area (the InputDialog could
-    -- be moved under the keyboard, and the user would be locked)
-    movable = false,
+    -- Set to false if movable gestures conflicts with subwidgets gestures
+    is_movable = true,
 
     width = nil,
 
@@ -203,7 +200,7 @@ local InputDialog = InputContainer:new{
 
 function InputDialog:init()
     if self.fullscreen then
-        self.movable = false
+        self.is_movable = false
         self.border_size = 0
         self.width = Screen:getWidth() - 2*self.border_size
         self.covers_fullscreen = true -- hint for UIManager:_repaint()
@@ -441,10 +438,11 @@ function InputDialog:init()
         }
     }
     local frame = self.dialog_frame
-    if self.movable then
-        frame = MovableContainer:new{
+    if self.is_movable then
+        self.movable = MovableContainer:new{ -- (UIManager expects this as 'self.movable')
             self.dialog_frame,
         }
+        frame = self.movable
     end
     local keyboard_height = self.keyboard_hidden and 0
                                 or self._input_widget:getKeyboardDimen().h
@@ -455,6 +453,21 @@ function InputDialog:init()
         },
         frame
     }
+    if Device:isTouchDevice() then -- is used to hide the keyboard with a tap outside of inputbox
+        local GestureRange = require("ui/gesturerange")
+        self.ges_events = {
+            Tap = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = self[1].dimen, -- screen above the keyboard
+                },
+            },
+        }
+    end
+end
+
+function InputDialog:onTap()
+    self._input_widget:onHideKeyboard()
 end
 
 function InputDialog:getInputText()
