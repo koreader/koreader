@@ -61,7 +61,7 @@ local InputText = InputContainer:new{
     for_measurement_only = nil, -- When the widget is a one-off used to compute text height
     do_select = false, -- to start text selection
     selection_start_pos = nil, -- selection start position
-    is_keyboard_hidden = false, -- to be able to show the keyboard again when it was hidden (by VK itself)
+    is_keyboard_hidden = false, -- to be able to show the keyboard again when it was hidden
 }
 
 -- only use PhysicalKeyboard if the device does not have touch screen
@@ -172,7 +172,7 @@ if Device:isTouchDevice() or Device:hasDPad() then
                     title = (clipboard_value == nil or clipboard_value == "") and _("Clipboard (empty)") or _("Clipboard"),
                     text = clipboard_value,
                     width = math.floor(Screen:getWidth() * 0.8),
-                    height = math.floor(Screen:getHeight() * 0.39),
+                    height = math.floor(Screen:getHeight() * 0.4),
                     justified = false,
                     stop_events_propagation = true,
                     buttons_table = {
@@ -574,11 +574,10 @@ function InputText:onShowKeyboard(ignore_first_hold_release)
 end
 
 function InputText:onHideKeyboard()
-    if not self.has_nav_bar then
-        UIManager:close(self.keyboard)
-        Device:stopTextInput()
-        self.is_keyboard_hidden = true
-    end
+    if self.is_fullscreen or self.has_nav_bar then return end
+    UIManager:close(self.keyboard)
+    Device:stopTextInput()
+    self.is_keyboard_hidden = true
 end
 
 function InputText:onCloseKeyboard()
