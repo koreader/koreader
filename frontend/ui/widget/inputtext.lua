@@ -573,16 +573,10 @@ function InputText:onShowKeyboard(ignore_first_hold_release)
     return true
 end
 
-function InputText:onHideKeyboard()
-    if self.is_fullscreen or self.has_nav_bar then return end
-    UIManager:close(self.keyboard)
-    Device:stopTextInput()
-    self.is_keyboard_hidden = true
-end
-
 function InputText:onCloseKeyboard()
     UIManager:close(self.keyboard)
     Device:stopTextInput()
+    self.is_keyboard_hidden = true
 end
 
 function InputText:onCloseWidget()
