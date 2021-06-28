@@ -159,6 +159,11 @@ function ReaderStatistics:init()
             return self.avg_time
         end
     end
+    Screensaver.getAvgTimePerPage = function()
+        if self.settings.is_enabled then
+            return self.avg_time
+        end
+    end
     Screensaver.getReaderProgress = function()
         self:insertDB(self.id_curr_book)
         local current_duration, current_pages = self:getCurrentBookStats()
