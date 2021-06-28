@@ -389,8 +389,6 @@ function InputDialog:init()
         scroll_callback = self._buttons_scroll_callback, -- nil if no Nav or Scroll buttons
         scroll = true,
         scroll_by_pan = self.scroll_by_pan,
-        is_fullscreen = self.fullscreen,
-        has_nav_bar = self.add_nav_bar,
         cursor_at_end = self.cursor_at_end,
         readonly = self.readonly,
         parent = self,
@@ -468,7 +466,10 @@ function InputDialog:init()
 end
 
 function InputDialog:onTap()
-    self._input_widget:onHideKeyboard()
+    if self.fullscreen or self.add_nav_bar then
+        return
+    end
+    self._input_widget:onCloseKeyboard()
 end
 
 function InputDialog:getInputText()
