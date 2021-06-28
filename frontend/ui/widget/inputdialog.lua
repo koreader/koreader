@@ -101,6 +101,7 @@ local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputText = require("ui/widget/inputtext")
@@ -388,6 +389,7 @@ function InputDialog:init()
         scroll_callback = self._buttons_scroll_callback, -- nil if no Nav or Scroll buttons
         scroll = true,
         scroll_by_pan = self.scroll_by_pan,
+        is_fullscreen = self.fullscreen,
         has_nav_bar = self.add_nav_bar,
         cursor_at_end = self.cursor_at_end,
         readonly = self.readonly,
@@ -454,7 +456,6 @@ function InputDialog:init()
         frame
     }
     if Device:isTouchDevice() then -- is used to hide the keyboard with a tap outside of inputbox
-        local GestureRange = require("ui/gesturerange")
         self.ges_events = {
             Tap = {
                 GestureRange:new{
