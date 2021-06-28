@@ -1,5 +1,6 @@
 local Screensaver = require("ui/screensaver")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local function hasLastFile()
     if G_reader_settings:hasNot("lastfile") then
@@ -235,6 +236,39 @@ return {
                             },
                         },
                     },
+                    {
+                        text = _("Duration format"),
+                        sub_item_table = {
+                            {
+                                text_func = function()
+                                    local util = require("util")
+                                    -- sample text to show 1h23m
+                                    local return_text = util.secondsToHClock(4980, true)
+                                    return T(_("Modern (%1)"), return_text)
+                                end,
+                                checked_func = function()
+                                    return G_reader_settings:readSetting("screensaver_duration_format") == "modern"
+                                end,
+                                callback = function()
+                                    G_reader_settings:saveSetting("screensaver_duration_format", "modern")
+                                end,
+                            },
+                            {
+                                text_func = function()
+                                    local util = require("util")
+                                    -- sample text to show 1:23
+                                    local return_text = util.secondsToClock(4980, true)
+                                    return T(_("Classic (%1)"), return_text)
+                                end,
+                                checked_func = function()
+                                    return G_reader_settings:readSetting("screensaver_duration_format") == "classic"
+                                end,
+                                callback = function()
+                                    G_reader_settings:saveSetting("screensaver_duration_format", "classic")
+                                end,
+                            },
+                        }
+                    }
                 },
             },
             {
