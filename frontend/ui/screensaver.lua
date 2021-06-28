@@ -104,7 +104,9 @@ function Screensaver:_calcAverageTimeForPages(pages)
     local sec = _("N/A")
     -- This is implemented by the Statistics plugin
     local average_time_per_page = self:getAvgTimePerPage()
-    if average_time_per_page and pages then
+
+    -- Compare average_time_per_page against itself to make sure it's not nan
+    if average_time_per_page and average_time_per_page == average_time_per_page and pages then
         local util = require("util")
         if G_reader_settings:readSetting("screensaver_duration_format") == "modern" then
             sec = util.secondsToHClock(pages * average_time_per_page, true)
@@ -112,6 +114,7 @@ function Screensaver:_calcAverageTimeForPages(pages)
             sec = util.secondsToClock(pages * average_time_per_page, true)
         end
     end
+    
     return sec
 end
 
