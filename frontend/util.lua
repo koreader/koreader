@@ -220,6 +220,21 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
     end
 end
 
+--- Converts seconds to a clock type (classic or modern), based on the given format preference
+--- "Classic" format calls secondsToClock, and "Modern" format calls secondsToHClock
+---- @string Either "modern" for 1h30' or "classic" for 1:30
+---- @bool withoutSeconds if true 1h30' or 1:30, if false 1h30'10'' or 1:30:10
+---- @bool hmsFormat, modern format only, if true format 1h30m10s
+---- @treturn string clock string in the specific format of 1h30', 1h30'10'' or 1:30'
+function util.secondsToClockDuration(format, seconds, withoutSeconds, hmsFormat)
+    if format == "modern" then
+        return util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
+    else
+        -- Assume "classic" to give safe default
+        return util.secondsToClock(seconds, withoutSeconds)
+    end
+end
+
 if jit.os == "Windows" then
     --- Converts timestamp to an hour string
     ---- @int seconds number of seconds
