@@ -217,6 +217,9 @@ function InputDialog:init()
     if self.readonly then -- hide keyboard if we can't edit
         self.keyboard_hidden = true
     end
+    if self.fullscreen or self.add_nav_bar then
+        self.deny_keyboard_hiding = true
+    end
 
     -- Title & description
     self.title_widget = FrameContainer:new{
@@ -467,7 +470,7 @@ function InputDialog:init()
 end
 
 function InputDialog:onTap()
-    if self.deny_keyboard_hiding or self.fullscreen or self.add_nav_bar then
+    if self.deny_keyboard_hiding then
         return
     end
     self._input_widget:onCloseKeyboard()
