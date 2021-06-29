@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20210622
+local CURRENT_MIGRATION_DATE = 20210629
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -260,6 +260,18 @@ if last_migration_date < 20210531 then
         G_reader_settings:saveSetting("kopt_zoom_mode_genus", zoom_mode_genus)
         G_reader_settings:saveSetting("kopt_zoom_mode_type", zoom_mode_type)
         G_reader_settings:delSetting("zoom_mode")
+    end
+end
+
+-- 202100629, Moves Duration Format to Date Time settings for other plugins to use, https://github.com/koreader/koreader/pull/7897
+if last_migration_date < 202100629 then
+    logger.info("Performing one-time migration for 202100629")
+
+    local footer = G_reader_settings:child("footer")
+    if footer and footer:has("duration_format") then
+        local user_format = footer:readSetting("duration_format")
+        G_reader_settings:saveSetting("duration_format", user_format)
+        footer:delSetting("duration_format")
     end
 end
 

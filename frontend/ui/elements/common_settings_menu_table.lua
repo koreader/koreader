@@ -83,6 +83,42 @@ common_settings.time = {
             G_reader_settings:flipNilOrFalse("twelve_hour_clock")
             UIManager:broadcastEvent(Event:new("TimeFormatChanged"))
         end,
+        },
+        {
+            text_func = function ()
+                local duration_format = G_reader_settings:readSetting("duration_format", "classic")
+                return T(_("Duration Format (%1)"), duration_format)
+            end,
+            sub_item_table = {
+                {
+                    text_func = function()
+                        local util = require('util');
+                        -- sample text shows 1:23:45
+                        local duration_format_str = util.secondsToClockDuration("classic", 5025, false);
+                        return T(_("Classic (%1)"), duration_format_str)
+                    end,
+                    checked_func = function()
+                        return G_reader_settings:readSetting("duration_format") == "classic"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("duration_format", "classic")
+                    end,
+                },
+                {
+                    text_func = function()
+                        local util = require('util');
+                        -- sample text shows 1h23m45s
+                        local duration_format_str = util.secondsToClockDuration("modern", 5025, false);
+                        return T(_("Modern (%1)"), duration_format_str)
+                    end,
+                    checked_func = function()
+                        return G_reader_settings:readSetting("duration_format") == "modern"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("duration_format", "modern")
+                    end,
+                },
+            }
         }
     }
 }

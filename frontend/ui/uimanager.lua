@@ -377,10 +377,12 @@ function UIManager:init()
     elseif Device:isSDL() then
         self.event_handlers["Suspend"] = function()
             self:_beforeSuspend()
+            Device:onPowerEvent("Suspend")
             Device:simulateSuspend()
         end
         self.event_handlers["Resume"] = function()
             Device:simulateResume()
+            Device:onPowerEvent("Resume")
             self:_afterResume()
         end
     end

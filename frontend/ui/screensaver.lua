@@ -49,9 +49,6 @@ end
 if G_reader_settings:hasNot("screensaver_hide_fallback_msg") then
     G_reader_settings:makeFalse("screensaver_hide_fallback_msg")
 end
-if G_reader_settings:hasNot("screensaver_duration_format") then
-    G_reader_settings:saveSetting("screensaver_duration_format", "modern")
-end
 
 local Screensaver = {
     screensaver_provider = {
@@ -96,25 +93,21 @@ function Screensaver:_getRandomImage(dir)
     return dir .. pics[math.random(i)]
 end
 
+-- This is implemented by the Statistics plugin
 function Screensaver:getAvgTimePerPage()
     return
 end
 
 function Screensaver:_calcAverageTimeForPages(pages)
     local sec = _("N/A")
-    -- This is implemented by the Statistics plugin
     local average_time_per_page = self:getAvgTimePerPage()
 
     -- Compare average_time_per_page against itself to make sure it's not nan
     if average_time_per_page and average_time_per_page == average_time_per_page and pages then
         local util = require("util")
-        if G_reader_settings:readSetting("screensaver_duration_format") == "modern" then
-            sec = util.secondsToHClock(pages * average_time_per_page, true)
-        else -- G_reader_settings:readSetting("screensaver_duration_format") == "classic"
-            sec = util.secondsToClock(pages * average_time_per_page, true)
-        end
+        local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
+        sec = util.secondsToClockDuration(user_duration_format, pages * average_time_per_page, true)
     end
-    
     return sec
 end
 
@@ -176,14 +169,17 @@ function Screensaver:expandSpecial(message, fallback)
         -- Unable to set time_left_chapter and time_left_document without ReaderUI, so leave N/A
     end
 
-    ret = string.gsub(ret, "%%c", currentpage)
-    ret = string.gsub(ret, "%%t", totalpages)
-    ret = string.gsub(ret, "%%p", percent)
-    ret = string.gsub(ret, "%%T", title)
-    ret = string.gsub(ret, "%%A", authors)
-    ret = string.gsub(ret, "%%S", series)
-    ret = string.gsub(ret, "%%h", time_left_chapter)
-    ret = string.gsub(ret, "%%H", time_left_document)
+    local replace = {
+        ["%c"] = currentpage,
+        ["%t"] = totalpages,
+        ["%p"] = percent,
+        ["%T"] = title,
+        ["%A"] = authors,
+        ["%S"] = series,
+        ["%h"] = time_left_chapter,
+        ["%H"] = time_left_document,
+    }
+    ret = ret:gsub("(%%%a)", replace)
 
     return ret
 end

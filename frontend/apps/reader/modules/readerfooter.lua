@@ -451,7 +451,6 @@ ReaderFooter.default_settings = {
     lock_tap = false,
     items_separator = "bar",
     progress_pct_format = "0",
-    duration_format = "modern",
     progress_margin = false,
 }
 
@@ -1388,45 +1387,6 @@ function ReaderFooter:addToMainMenu(menu_items)
                     },
                 },
             },
-            {
-                text = _("Duration format"),
-                sub_item_table = {
-                    {
-                        text_func = function()
-                            local current_duration_format = self.settings.duration_format
-                            local return_text
-                            self.settings.duration_format = "modern"
-                            return_text = footerTextGeneratorMap.book_time_to_read(self)
-                            self.settings.duration_format = current_duration_format
-                            return T(_("Modern (%1)"), return_text)
-                        end,
-                        checked_func = function()
-                            return self.settings.duration_format == "modern"
-                        end,
-                        callback = function()
-                            self.settings.duration_format = "modern"
-                            self:refreshFooter(true)
-                        end,
-                    },
-                    {
-                        text_func = function()
-                            local current_duration_format = self.settings.duration_format
-                            local return_text
-                            self.settings.duration_format = "classic"
-                            return_text = footerTextGeneratorMap.book_time_to_read(self)
-                            self.settings.duration_format = current_duration_format
-                            return T(_("Classic (%1)"), return_text)
-                        end,
-                        checked_func = function()
-                            return self.settings.duration_format == "classic"
-                        end,
-                        callback = function()
-                            self.settings.duration_format = "classic"
-                            self:refreshFooter(true)
-                        end,
-                    },
-                }
-            },
         }
     })
     if Device:hasBattery() then
@@ -1896,20 +1856,17 @@ function ReaderFooter:setTocMarkers(reset)
     return true
 end
 
+-- This is implemented by the Statistics plugin
 function ReaderFooter:getAvgTimePerPage()
     return
 end
 
 function ReaderFooter:getDataFromStatistics(title, pages)
     local sec = _("N/A")
-    -- This is implemented by the Statistics plugin
     local average_time_per_page = self:getAvgTimePerPage()
+    local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
     if average_time_per_page then
-        if self.settings.duration_format == "classic" then
-            sec = util.secondsToClock(pages * average_time_per_page, true)
-        else
-            sec = util.secondsToHClock(pages * average_time_per_page, true)
-        end
+        sec = util.secondsToClockDuration(user_duration_format, pages * average_time_per_page, true)
     end
     return title .. sec
 end

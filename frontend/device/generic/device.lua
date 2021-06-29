@@ -410,7 +410,7 @@ function Device:reboot() end
 -- Hardware specific method to initialize network manager module
 function Device:initNetworkManager() end
 
-function Device:supportsScreensaver() return false end
+function Device:supportsScreensaver() return true end
 
 -- Device specific method to set datetime
 function Device:setDateTime(year, month, day, hour, min, sec) end
