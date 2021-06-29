@@ -127,6 +127,7 @@ local InputDialog = InputContainer:new{
     description = nil,
     buttons = nil,
     input_type = nil,
+    deny_keyboard_hiding = false, -- don't hide keyboard on tap outside
     enter_callback = nil,
     readonly = false, -- don't allow editing, will not show keyboard
     allow_newline = false, -- allow entering new lines (this disables any enter_callback)
@@ -215,6 +216,9 @@ function InputDialog:init()
     end
     if self.readonly then -- hide keyboard if we can't edit
         self.keyboard_hidden = true
+    end
+    if self.fullscreen or self.add_nav_bar then
+        self.deny_keyboard_hiding = true
     end
 
     -- Title & description
@@ -466,7 +470,7 @@ function InputDialog:init()
 end
 
 function InputDialog:onTap()
-    if self.fullscreen or self.add_nav_bar then
+    if self.deny_keyboard_hiding then
         return
     end
     self._input_widget:onCloseKeyboard()
@@ -749,6 +753,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                     input_dialog = InputDialog:new{
                         title = _("Enter text to search for"),
                         stop_events_propagation = true, -- avoid interactions with upper InputDialog
+                        deny_keyboard_hiding = true,
                         input = self.search_value,
                         buttons = {
                             {
@@ -818,6 +823,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                         input_hint = T(_("%1 (1 - %2)"), cur_line_num, last_line_num),
                         input_type = "number",
                         stop_events_propagation = true, -- avoid interactions with upper InputDialog
+                        deny_keyboard_hiding = true,
                         buttons = {
                             {
                                 {
