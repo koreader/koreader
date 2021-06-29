@@ -1986,7 +1986,7 @@ function ReaderStatistics:resetBook()
     else
         nr_books = 0
     end
-    
+
     local user_duration_format = G_reader_settings:readSetting("duration_format")
     local total_time_book
     local kv_reset_book
