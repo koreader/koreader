@@ -675,8 +675,12 @@ function Menu:_recalculateDimen()
         top_height = self.menu_title_group:getSize().h + self.header_padding
     end
     height_dim = self.inner_dimen.h - bottom_height - top_height
-    self.item_dimen.h = math.floor(height_dim / self.perpage)
-    self.span_width = math.floor((height_dim - (self.perpage * (self.item_dimen.h ))) / 2 - 1)
+    local item_height = math.floor(height_dim / self.perpage)
+    self.span_width = math.floor((height_dim - (self.perpage * item_height)) / 2 - 1)
+    self.item_dimen = Geom:new{
+        w = self.inner_dimen.w,
+        h = item_height,
+    }
     self.page_num = math.ceil(#self.item_table / self.perpage)
     -- fix current page if out of range
     if self.page_num > 0 and self.page > self.page_num then self.page = self.page_num end
@@ -695,11 +699,6 @@ function Menu:init()
     self.inner_dimen = Geom:new{
         w = self.dimen.w - 2 * self.border_size,
         h = self.dimen.h - 2 * self.border_size,
-    }
-
-    self.item_dimen = Geom:new{
-        w = self.inner_dimen.w,
-        h = Screen:scaleBySize(46),
     }
 
     self.page = 1
