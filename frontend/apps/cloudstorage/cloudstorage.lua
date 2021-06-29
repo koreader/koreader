@@ -712,4 +712,17 @@ function CloudStorage:onReturn()
     return true
 end
 
+function CloudStorage:onHoldReturn()
+    if #self.paths > 1 then
+        local path = self.paths[1]
+        if path then
+            for i = #self.paths, 2, -1 do
+                table.remove(self.paths)
+            end
+            self:openCloudServer(path.url)
+        end
+    end
+    return true
+end
+
 return CloudStorage

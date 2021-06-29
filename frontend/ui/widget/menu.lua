@@ -884,6 +884,9 @@ function Menu:init()
         callback = function()
             if self.onReturn then self:onReturn() end
         end,
+        hold_callback = function()
+            if self.onHoldReturn then self:onHoldReturn() end
+        end,
         bordersize = 0,
         show_parent = self.show_parent,
         readonly = self.return_arrow_propagation,
