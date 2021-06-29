@@ -52,7 +52,6 @@ function ReaderSearch:onShowFulltextSearchInput()
     if BD.mirroredUILayout() then
         backward_text, forward_text = forward_text, backward_text
     end
-
     self.input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
         input = self.last_search_text,
@@ -102,7 +101,7 @@ function ReaderSearch:onShowFulltextSearchInput()
     }
 
    -- checkboxes
-    self.check_button_regex = self.check_button_regex or CheckButton:new{
+    self.check_button_regex = CheckButton:new{
         text = _("Regular expression"),
         face = Font:getFace("smallinfofont"),
         checked = self.use_regex,
@@ -118,7 +117,7 @@ function ReaderSearch:onShowFulltextSearchInput()
         margin = self.input_dialog.margin,
         bordersize = self.input_dialog.bordersize,
     }
-    self.check_button_case = self.check_button_case or CheckButton:new{
+    self.check_button_case = CheckButton:new{
         text = _("Case sensitive"),
         face = Font:getFace("smallinfofont"),
         checked = not self.case_insensitive,
@@ -256,6 +255,37 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
         -- Keep the LTR order of |< and >|:
         from_start_text, from_end_text = BD.ltr(from_end_text), BD.ltr(from_start_text)
     end
+    self.wait_button = ButtonDialog:new{
+        buttons = {{{ text = "⌛" }}},
+    }
+    local function do_search_edge(func, text, regex, case_insensitive)
+        if regex then
+            return function()
+                self.wait_button.alpha = 0.75
+                UIManager:show(self.wait_button)
+                UIManager:tickAfterNext(function()
+                    do_search(func, text, regex, case_insensitive)()
+                    UIManager:close(self.wait_button)
+                end)
+            end
+        else
+            return do_search(func, text, regex, case_insensitive)
+        end
+    end
+    local function do_search_mid(func, text, param, regex, case_insensitive)
+        if regex then
+            return function()
+                self.wait_button.alpha = 0.75
+                UIManager:show(self.wait_button)
+                UIManager:tickAfterNext(function()
+                    do_search(func, text, param, regex, case_insensitive)()
+                    UIManager:close(self.wait_button)
+                end)
+            end
+        else
+            return do_search(func, text, param, regex, case_insensitive)
+        end
+    end
     self.search_dialog = ButtonDialog:new{
         -- alpha = 0.7,
         buttons = {
@@ -263,22 +293,22 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                 {
                     text = from_start_text,
                     vsync = true,
-                    callback = do_search(self.searchFromStart, text, regex, case_insensitive),
+                    callback = do_search_edge(self.searchFromStart, text, regex, case_insensitive),
                 },
                 {
                     text = backward_text,
                     vsync = true,
-                    callback = do_search(self.searchNext, text, 1, regex, case_insensitive),
+                    callback = do_search_mid(self.searchNext, text, 1, regex, case_insensitive),
                 },
                 {
                     text = forward_text,
                     vsync = true,
-                    callback = do_search(self.searchNext, text, 0, regex, case_insensitive),
+                    callback = do_search_mid(self.searchNext, text, 0, regex, case_insensitive),
                 },
                 {
                     text = from_end_text,
                     vsync = true,
-                    callback = do_search(self.searchFromEnd, text, regex, case_insensitive),
+                    callback = do_search_edge(self.searchFromEnd, text, regex, case_insensitive),
                 },
             }
         },
@@ -288,10 +318,23 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
             UIManager:setDirty(self.dialog, "ui")
         end,
     }
-    do_search(self.searchFromCurrent, text, direction, regex)()
-    UIManager:show(self.search_dialog)
-    --- @todo regional
-    UIManager:setDirty(self.dialog, "partial")
+    if regex then
+        self.wait_button.alpha = nil
+        UIManager:show(self.wait_button)
+        UIManager:tickAfterNext(function()
+            do_search(self.searchFromCurrent, text, direction, regex, case_insensitive)()
+            UIManager:close(self.wait_button)
+            UIManager:show(self.search_dialog)
+            --- @todo regional
+            UIManager:setDirty(self.dialog, "partial")
+        end)
+    else
+        do_search(self.searchFromCurrent, text, direction, regex, case_insensitive)()
+        UIManager:show(self.search_dialog)
+        --- @todo regional
+        UIManager:setDirty(self.dialog, "partial")
+    end
+
     return true
 end
 
