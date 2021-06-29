@@ -321,7 +321,6 @@ function FileManager:setupLayout()
                                     callback = function()
                                         if fileManager.rename_dialog:getInputText() ~= "" then
                                             renameFile(file)
-                                            self:refreshPath()
                                             UIManager:close(fileManager.rename_dialog)
                                         end
                                     end,
@@ -1016,45 +1015,84 @@ function FileManager:deleteFile(file)
 end
 
 function FileManager:renameFile(file)
-    if BaseUtil.basename(file) ~= self.rename_dialog:getInputText() then
-        local dest = BaseUtil.joinPath(BaseUtil.dirname(file), self.rename_dialog:getInputText())
-        if self:moveFile(file, dest) then
-            require("readhistory"):updateItemByPath(file, dest) -- (will update "lastfile" if needed)
-            ReadCollection:updateItemByPath(file, dest)
-            if lfs.attributes(dest, "mode") == "file" then
-                local doc = require("docsettings")
-                local move_history = true
-                if lfs.attributes(doc:getHistoryPath(file), "mode") == "file" and
-                   not self:moveFile(doc:getHistoryPath(file), doc:getHistoryPath(dest)) then
-                   move_history = false
-                end
-                if lfs.attributes(doc:getSidecarDir(file), "mode") == "directory" and
-                   not self:moveFile(doc:getSidecarDir(file), doc:getSidecarDir(dest)) then
-                   move_history = false
-                end
-                if move_history then
-                    UIManager:show(InfoMessage:new{
-                        text = T(_("Renamed file:\n%1\nto:\n%2"), BD.filepath(file), BD.filepath(dest)),
-                        timeout = 2,
-                    })
+    local basename = self.rename_dialog:getInputText()
+    if BaseUtil.basename(file) ~= basename then
+        local dest = BaseUtil.joinPath(BaseUtil.dirname(file), basename)
+        local function doRenameFile()
+            if self:moveFile(file, dest) then
+                require("readhistory"):updateItemByPath(file, dest) -- (will update "lastfile" if needed)
+                ReadCollection:updateItemByPath(file, dest)
+                if lfs.attributes(dest, "mode") == "file" then
+                    local doc = require("docsettings")
+                    local move_history = true
+                    if lfs.attributes(doc:getHistoryPath(file), "mode") == "file" and
+                       not self:moveFile(doc:getHistoryPath(file), doc:getHistoryPath(dest)) then
+                       move_history = false
+                    end
+                    if lfs.attributes(doc:getSidecarDir(file), "mode") == "directory" and
+                       not self:moveFile(doc:getSidecarDir(file), doc:getSidecarDir(dest)) then
+                       move_history = false
+                    end
+                    if move_history then
+                        UIManager:show(InfoMessage:new{
+                            text = T(_("Renamed file:\n%1\nto:\n%2"), BD.filepath(file), BD.filepath(dest)),
+                            timeout = 2,
+                        })
+                    else
+                        UIManager:show(InfoMessage:new{
+                            text = T(_("Renamed file:\n%1\nto:\n%2\n\nFailed to move history data.\nThe reading history may be lost."),
+                                BD.filepath(file), BD.filepath(dest)),
+                            icon = "notice-warning",
+                        })
+                    end
                 else
                     UIManager:show(InfoMessage:new{
-                        text = T(_("Renamed file:\n%1\nto:\n%2\n\nFailed to move history data.\nThe reading history may be lost."),
-                            BD.filepath(file), BD.filepath(dest)),
-                        icon = "notice-warning",
+                        text = T(_("Renamed folder:\n%1\nto:\n%2"), BD.filepath(file), BD.filepath(dest)),
+                        timeout = 2,
                     })
                 end
             else
                 UIManager:show(InfoMessage:new{
-                    text = T(_("Renamed folder:\n%1\nto:\n%2"), BD.filepath(file), BD.filepath(dest)),
-                    timeout = 2,
+                    text = T(_("Failed to rename:\n%1\nto:\n%2"), BD.filepath(file), BD.filepath(dest)),
+                    icon = "notice-warning",
+                })
+            end
+        end
+
+        local mode_dest = lfs.attributes(dest, "mode")
+        local mode_file = lfs.attributes(file, "mode")
+        if mode_dest then
+            local text, ok_text
+            if mode_dest ~= mode_file then
+                if mode_file == "file" then
+                    text = T(_("Folder already exists:\n%1\nFile cannot be renamed."), BD.directory(basename))
+                else
+                    text = T(_("File already exists:\n%1\nFolder cannot be renamed."), BD.filename(basename))
+                end
+                UIManager:show(InfoMessage:new {
+                    text = text,
+                    icon = "notice-warning",
+                })
+            else
+                if mode_file == "file" then
+                    text = T(_("File already exists:\n%1\nOverwrite file?"), BD.filename(basename))
+                    ok_text = _("Overwrite")
+                else
+                    text = T(_("Folder already exists:\n%1\nMove the folder inside it?"), BD.directory(basename))
+                    ok_text = _("Move")
+                end
+                UIManager:show(ConfirmBox:new {
+                    text = text,
+                    ok_text = ok_text,
+                    ok_callback = function()
+                        doRenameFile()
+                        self:onRefresh()
+                    end,
                 })
             end
         else
-            UIManager:show(InfoMessage:new{
-                text = T(_("Failed to rename:\n%1\nto:\n%2"), BD.filepath(file), BD.filepath(dest)),
-                icon = "notice-warning",
-            })
+            doRenameFile()
+            self:onRefresh()
         end
     end
 end
