@@ -195,7 +195,7 @@ function ReaderUI:init()
         ui = self
     }, true)
     -- device status controller
-    self:registerModule("battery", ReaderDeviceStatus:new{
+    self:registerModule("devicestatus", ReaderDeviceStatus:new{
         ui = self,
     })
     -- configurable controller
