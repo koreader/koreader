@@ -258,21 +258,7 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
     self.wait_button = ButtonDialog:new{
         buttons = {{{ text = "⌛" }}},
     }
-    local function do_search_edge(func, text, regex, case_insensitive)
-        if regex then
-            return function()
-                self.wait_button.alpha = 0.75
-                UIManager:show(self.wait_button)
-                UIManager:tickAfterNext(function()
-                    do_search(func, text, regex, case_insensitive)()
-                    UIManager:close(self.wait_button)
-                end)
-            end
-        else
-            return do_search(func, text, regex, case_insensitive)
-        end
-    end
-    local function do_search_mid(func, text, param, regex, case_insensitive)
+    local function search(func, text, param, regex, case_insensitive)
         if regex then
             return function()
                 self.wait_button.alpha = 0.75
@@ -293,22 +279,22 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                 {
                     text = from_start_text,
                     vsync = true,
-                    callback = do_search_edge(self.searchFromStart, text, regex, case_insensitive),
+                    callback = search(self.searchFromStart, text, nil, regex, case_insensitive),
                 },
                 {
                     text = backward_text,
                     vsync = true,
-                    callback = do_search_mid(self.searchNext, text, 1, regex, case_insensitive),
+                    callback = search(self.searchNext, text, 1, regex, case_insensitive),
                 },
                 {
                     text = forward_text,
                     vsync = true,
-                    callback = do_search_mid(self.searchNext, text, 0, regex, case_insensitive),
+                    callback = search(self.searchNext, text, 0, regex, case_insensitive),
                 },
                 {
                     text = from_end_text,
                     vsync = true,
-                    callback = do_search_edge(self.searchFromEnd, text, regex, case_insensitive),
+                    callback = search(self.searchFromEnd, text, nil, regex, case_insensitive),
                 },
             }
         },
