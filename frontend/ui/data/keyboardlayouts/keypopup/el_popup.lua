@@ -61,7 +61,7 @@ return {
         west = "Ἑ",
         south = "€",
         southeast = "Ἔ",
-        southwest = "Ἕ",        
+        southwest = "Ἕ",
     },
     _e_el = {
         "ε",
@@ -72,7 +72,7 @@ return {
         west = "ἑ",
         south = "€",
         southeast = "ἔ",
-        southwest = "ἕ",        
+        southwest = "ἕ",
     },
     _F_el = {
         "Φ",
@@ -328,7 +328,7 @@ return {
         north = "Y",
         west = "Ὑ",
         south = "Ϋ",
-        southwest = "Ὕ",
+        southeast = "Ὕ",
         southwest = "Ὗ",
     },
     _y_el = {
