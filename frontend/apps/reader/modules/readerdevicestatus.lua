@@ -268,7 +268,9 @@ function ReaderDeviceStatus:startBatteryChecker()
 end
 
 function ReaderDeviceStatus:stopBatteryChecker()
-    UIManager:unschedule(self.checkLowBatteryLevel)
+    if self.checkLowBatteryLevel then
+        UIManager:unschedule(self.checkLowBatteryLevel)
+    end
 end
 
 function ReaderDeviceStatus:startMemoryChecker()
@@ -278,7 +280,9 @@ function ReaderDeviceStatus:startMemoryChecker()
 end
 
 function ReaderDeviceStatus:stopMemoryChecker()
-    UIManager:unschedule(self.checkHighMemoryUsage)
+    if self.checkHighMemoryUsage then
+        UIManager:unschedule(self.checkHighMemoryUsage)
+    end
 end
 
 function ReaderDeviceStatus:onResume()
