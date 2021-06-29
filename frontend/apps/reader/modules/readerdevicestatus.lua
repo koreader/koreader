@@ -98,7 +98,7 @@ end
 
 function ReaderDeviceStatus:addToMainMenu(menu_items)
     menu_items.device_status_alarm = {
-        text = _("Devise status alarm"),
+        text = _("Device status alerts"),
         sub_item_table = {},
     }
     if self.has_battery then
