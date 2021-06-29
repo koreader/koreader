@@ -1809,6 +1809,11 @@ function ReaderFooter:addToMainMenu(menu_items)
     table.insert(sub_items, getMinibarOption("book_title"))
     table.insert(sub_items, getMinibarOption("book_chapter"))
 
+    -- Settings menu: keep the same parent page for going up from submenu
+    for i = 1, #sub_items[settings_submenu_num].sub_item_table do
+        sub_items[settings_submenu_num].sub_item_table[i].menu_item_id = i
+    end
+
     -- If using crengine, add Alt status bar items at top
     if self.ui.crelistener then
         table.insert(sub_items, 1, self.ui.crelistener:getAltStatusBarMenu())
