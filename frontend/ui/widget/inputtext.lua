@@ -61,7 +61,7 @@ local InputText = InputContainer:new{
     for_measurement_only = nil, -- When the widget is a one-off used to compute text height
     do_select = false, -- to start text selection
     selection_start_pos = nil, -- selection start position
-    is_keyboard_hidden = false, -- to be able to show the keyboard again when it was hidden (by VK itself)
+    is_keyboard_hidden = false, -- to be able to show the keyboard again when it was hidden
 }
 
 -- only use PhysicalKeyboard if the device does not have touch screen
@@ -73,19 +73,19 @@ if Device:isTouchDevice() or Device:hasDPad() then
                 TapTextBox = {
                     GestureRange:new{
                         ges = "tap",
-                        range = self.dimen
+                        range = function() return self.dimen end
                     }
                 },
                 HoldTextBox = {
                     GestureRange:new{
                         ges = "hold",
-                        range = self.dimen
+                        range = function() return self.dimen end
                     }
                 },
                 SwipeTextBox = {
                     GestureRange:new{
                         ges = "swipe",
-                        range = self.dimen
+                        range = function() return self.dimen end
                     }
                 },
                 -- These are just to stop propagation of the event to
@@ -166,18 +166,21 @@ if Device:isTouchDevice() or Device:hasDPad() then
                         return true
                     end
                 end
-                local input_dialog
-                input_dialog = require("ui/widget/inputdialog"):new{
-                    title = _("Clipboard"),
+                local clipboard_value = Device.input.getClipboardText()
+                local clipboard_dialog
+                clipboard_dialog = require("ui/widget/textviewer"):new{
+                    title = (clipboard_value == nil or clipboard_value == "") and _("Clipboard (empty)") or _("Clipboard"),
+                    text = clipboard_value,
+                    width = math.floor(Screen:getWidth() * 0.8),
+                    height = math.floor(Screen:getHeight() * 0.4),
+                    justified = false,
                     stop_events_propagation = true,
-                    input_hint = _("empty"),
-                    input = Device.input.getClipboardText(),
-                    buttons = {
+                    buttons_table = {
                         {
                             {
-                                text = _("All"),
+                                text = _("Copy all"),
                                 callback = function()
-                                    UIManager:close(input_dialog)
+                                    UIManager:close(clipboard_dialog)
                                     Device.input.setClipboardText(table.concat(self.charlist))
                                     UIManager:show(Notification:new{
                                         text = _("All text copied to clipboard."),
@@ -185,9 +188,9 @@ if Device:isTouchDevice() or Device:hasDPad() then
                                 end,
                             },
                             {
-                                text = _("Line"),
+                                text = _("Copy line"),
                                 callback = function()
-                                    UIManager:close(input_dialog)
+                                    UIManager:close(clipboard_dialog)
                                     local txt = table.concat(self.charlist, "", self:getStringPos({"\n", "\r"}, {"\n", "\r"}))
                                     Device.input.setClipboardText(txt)
                                     UIManager:show(Notification:new{
@@ -196,9 +199,9 @@ if Device:isTouchDevice() or Device:hasDPad() then
                                 end,
                             },
                             {
-                                text = _("Word"),
+                                text = _("Copy word"),
                                 callback = function()
-                                    UIManager:close(input_dialog)
+                                    UIManager:close(clipboard_dialog)
                                     local txt = table.concat(self.charlist, "", self:getStringPos({"\n", "\r", " "}, {"\n", "\r", " "}))
                                     Device.input.setClipboardText(txt)
                                     UIManager:show(Notification:new{
@@ -211,13 +214,13 @@ if Device:isTouchDevice() or Device:hasDPad() then
                             {
                                 text = _("Cancel"),
                                 callback = function()
-                                    UIManager:close(input_dialog)
+                                    UIManager:close(clipboard_dialog)
                                 end,
                             },
                             {
                                 text = _("Select"),
                                 callback = function()
-                                    UIManager:close(input_dialog)
+                                    UIManager:close(clipboard_dialog)
                                     UIManager:show(Notification:new{
                                         text = _("Set cursor to start of selection, then hold."),
                                     })
@@ -226,21 +229,17 @@ if Device:isTouchDevice() or Device:hasDPad() then
                             },
                             {
                                 text = _("Paste"),
-                                is_enter_default = true,
                                 callback = function()
-                                    local paste_value = input_dialog:getInputText()
-                                    if paste_value ~= "" then
-                                        UIManager:close(input_dialog)
-                                        Device.input.setClipboardText(paste_value)
-                                        self:addChars(paste_value)
+                                    if clipboard_value ~= nil and clipboard_value ~= "" then
+                                        UIManager:close(clipboard_dialog)
+                                        self:addChars(clipboard_value)
                                     end
                                 end,
                             },
                         },
                     },
                 }
-                UIManager:show(input_dialog)
-                input_dialog:onShowKeyboard(true)
+                UIManager:show(clipboard_dialog)
             end
             return true
         end
@@ -574,19 +573,10 @@ function InputText:onShowKeyboard(ignore_first_hold_release)
     return true
 end
 
-function InputText:onHideKeyboard()
-    if not self.has_nav_bar then
-        UIManager:close(self.keyboard)
-        Device:stopTextInput()
-        self.is_keyboard_hidden = true
-    end
-
-    return self.is_keyboard_hidden
-end
-
 function InputText:onCloseKeyboard()
     UIManager:close(self.keyboard)
     Device:stopTextInput()
+    self.is_keyboard_hidden = true
 end
 
 function InputText:onCloseWidget()
