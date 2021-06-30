@@ -328,8 +328,8 @@ return {
         north = "Y",
         west = "Ὑ",
         south = "Ϋ",
-        southeast = "Ὕ",
-        southwest = "Ὗ",
+        southeast = "Ὗ",
+        southwest = "Ὕ",
     },
     _y_el = {
         "υ",
