@@ -342,13 +342,13 @@ function ReaderSearch:search(pattern, origin, regex, case_insensitive)
     return retval
 end
 
-function ReaderSearch:searchFromStart(pattern, regex, case_insensitive)
+function ReaderSearch:searchFromStart(pattern, _, regex, case_insensitive)
     self.direction = 0
     self._expect_back_results = true
     return self:search(pattern, -1, regex, case_insensitive)
 end
 
-function ReaderSearch:searchFromEnd(pattern, regex, case_insensitive)
+function ReaderSearch:searchFromEnd(pattern, _, regex, case_insensitive)
     self.direction = 1
     self._expect_back_results = false
     return self:search(pattern, -1, regex, case_insensitive)
