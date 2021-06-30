@@ -54,7 +54,7 @@ function ReaderDeviceStatus:init()
                         if UIManager:getTopWidget() == "ReaderUI"
                            and G_reader_settings:isTrue("device_status_memory_auto_restart") then
                             UIManager:show(InfoMessage:new{
-                                text = _("High memory usage!\n\nKOReader is restarting..."),
+                                text = _("High memory usage!\n\nKOReader is restarting…"),
                                 icon = "notice-warning",
                             })
                             UIManager:nextTick(function()
@@ -67,7 +67,7 @@ function ReaderDeviceStatus:init()
                                 dismissable = false,
                                 ok_callback = function()
                                     UIManager:show(InfoMessage:new{
-                                        text = _("High memory usage!\n\nKOReader is restarting..."),
+                                        text = _("High memory usage!\n\nKOReader is restarting…"),
                                         icon = "notice-warning",
                                     })
                                     UIManager:nextTick(function()
