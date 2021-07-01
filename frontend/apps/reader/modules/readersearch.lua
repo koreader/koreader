@@ -37,11 +37,25 @@ function ReaderSearch:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
+local help_text = [[Here you can search for plaintext or a regular expression (ECMAScript syntax).
+
+Examples:
+If you search for all occurences of 'Mister Moore', 'Sir Moore' or 'Alfons Moore' but not for 'Lady Moore'.
+Enter 'Mister Moore|Sir Moore|Alfons Moore' and check 'Regular expression'.
+
+If you search 'run' and 'ran' you can enter 'r[ua]n'.
+
+If you want to search all numbers enter '[0-9]+'.
+]]
+
 function ReaderSearch:addToMainMenu(menu_items)
     menu_items.fulltext_search = {
         text = _("Fulltext search"),
         callback = function()
             self:onShowFulltextSearchInput()
+        end,
+        hold_callback = function()
+            UIManager:show(InfoMessage:new{text=help_text})
         end,
     }
 end
