@@ -37,11 +37,11 @@ function ReaderSearch:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-local help_text = [[Here you can search for plaintext or a regular expression (ECMAScript syntax).
+local help_text = [[Here you can search text or a regular expression (ECMAScript syntax).
 
-Examples:
+Examples for regular expressions:
 If you search for all occurences of 'Mister Moore', 'Sir Moore' or 'Alfons Moore' but not for 'Lady Moore'.
-Enter 'Mister Moore|Sir Moore|Alfons Moore' and check 'Regular expression'.
+Enter 'Mister Moore|Sir Moore|Alfons Moore'.
 
 If you search 'run' and 'ran' you can enter 'r[ua]n'.
 
@@ -170,6 +170,12 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
     local neglect_current_location = false
     local current_page
 
+    local function isSlowRegex(text)
+        if text:find("%[") or text:find("%*") or text:find("%?") or text:find("%.") then
+            return true
+        end
+        return false
+    end
     local do_search = function(search_func, _text, param)
         return function()
             local no_results = true -- for notification
@@ -273,7 +279,7 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
         buttons = {{{ text = "⌛" }}},
     }
     local function search(func, text, param, regex, case_insensitive)
-        if regex then
+        if regex and isSlowRegex(text) then
             return function()
                 self.wait_button.alpha = 0.75
                 UIManager:show(self.wait_button)
@@ -318,7 +324,7 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
             UIManager:setDirty(self.dialog, "ui")
         end,
     }
-    if regex then
+    if regex and isSlowRegex(text) then
         self.wait_button.alpha = nil
         UIManager:show(self.wait_button)
         UIManager:tickAfterNext(function()
