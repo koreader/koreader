@@ -55,7 +55,7 @@ function ReaderSearch:addToMainMenu(menu_items)
             self:onShowFulltextSearchInput()
         end,
         hold_callback = function()
-            UIManager:show(InfoMessage:new{text=help_text})
+            UIManager:show(InfoMessage:new{ text=help_text })
         end,
     }
 end
@@ -87,7 +87,7 @@ function ReaderSearch:onShowFulltextSearchInput()
                         self.use_regex = self.check_button_regex.checked
                         self.case_insensitive = not self.check_button_case.checked
                         if self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText()) ~= 0 then
-                            UIManager:show(InfoMessage:new{ text = _("Error in regular expression!") })
+                            UIManager:show(InfoMessage:new{ text = _("Invalid regular expression!") })
                         else
                             UIManager:close(self.input_dialog)
                             self:onShowSearchDialog(self.input_dialog:getInputText(), 1, self.use_regex, self.case_insensitive)
@@ -103,7 +103,7 @@ function ReaderSearch:onShowFulltextSearchInput()
                         self.use_regex = self.check_button_regex.checked
                         self.case_insensitive = not self.check_button_case.checked
                         if self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText()) ~= 0 then
-                            UIManager:show(InfoMessage:new{ text = _("Error in regular expression!") })
+                            UIManager:show(InfoMessage:new{ text = _("Invalid regular expression!") })
                         else
                             UIManager:close(self.input_dialog)
                             self:onShowSearchDialog(self.input_dialog:getInputText(), 0, self.use_regex, self.case_insensitive)
@@ -117,7 +117,6 @@ function ReaderSearch:onShowFulltextSearchInput()
    -- checkboxes
     self.check_button_regex = CheckButton:new{
         text = _("Regular expression"),
-        face = Font:getFace("smallinfofont"),
         checked = self.use_regex,
         parent = self.input_dialog,
         callback = function()
@@ -127,13 +126,9 @@ function ReaderSearch:onShowFulltextSearchInput()
                 self.check_button_regex:unCheck()
             end
         end,
-        padding = self.input_dialog.padding,
-        margin = self.input_dialog.margin,
-        bordersize = self.input_dialog.bordersize,
     }
     self.check_button_case = CheckButton:new{
         text = _("Case sensitive"),
-        face = Font:getFace("smallinfofont"),
         checked = not self.case_insensitive,
         parent = self.input_dialog,
         callback = function()
@@ -143,9 +138,6 @@ function ReaderSearch:onShowFulltextSearchInput()
                 self.check_button_case:unCheck()
             end
         end,
-        padding = self.input_dialog.padding,
-        margin = self.input_dialog.margin,
-        bordersize = self.input_dialog.bordersize,
     }
 
     local checkbox_shift = math.floor((self.input_dialog.width - self.input_dialog._input_widget.width) / 2 + 0.5)
@@ -356,7 +348,7 @@ function ReaderSearch:search(pattern, origin, regex, case_insensitive)
     local retval, words_found = self.ui.document:findText(pattern, origin, direction, case_insensitive, page, regex, self.max_hits)
     if words_found and words_found > self.max_hits then
         UIManager:show(Notification:new{
-            text =_("To many hits"),
+            text =_("Too many hits"),
          })
     end
     return retval
