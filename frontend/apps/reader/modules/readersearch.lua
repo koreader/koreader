@@ -37,16 +37,14 @@ function ReaderSearch:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-local help_text = [[Here you can search text or a regular expression (ECMAScript syntax).
+local help_text = [[Regular expressions allow you to search for a matching pattern in a text. The simplest pattern is a simple sequence of characters, such as `James Bond`. There are many different varieties of regular expressions, but we support the ECMAScript syntax. The basics will be explained below.
 
-Examples for regular expressions:
-If you search for all occurences of 'Mister Moore', 'Sir Moore' or 'Alfons Moore' but not for 'Lady Moore'.
+If you want to search for all occurrences of 'Mister Moore', 'Sir Moore' or 'Alfons Moore' but not for 'Lady Moore'.
 Enter 'Mister Moore|Sir Moore|Alfons Moore'.
 
-If you search 'run' and 'ran' you can enter 'r[ua]n'.
+To search for 'run' and 'ran' you can enter 'r[ua]n'.
 
-If you want to search all numbers enter '[0-9]+'.
-]]
+To search for all numbers enter '[0-9]+'.]]
 
 function ReaderSearch:addToMainMenu(menu_items)
     menu_items.fulltext_search = {
@@ -87,7 +85,7 @@ function ReaderSearch:onShowFulltextSearchInput()
                         self.use_regex = self.check_button_regex.checked
                         self.case_insensitive = not self.check_button_case.checked
                         if self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText()) ~= 0 then
-                            UIManager:show(InfoMessage:new{ text = _("Invalid regular expression!") })
+                            UIManager:show(InfoMessage:new{ text = _("Invalid regular expression") })
                         else
                             UIManager:close(self.input_dialog)
                             self:onShowSearchDialog(self.input_dialog:getInputText(), 1, self.use_regex, self.case_insensitive)
@@ -103,7 +101,7 @@ function ReaderSearch:onShowFulltextSearchInput()
                         self.use_regex = self.check_button_regex.checked
                         self.case_insensitive = not self.check_button_case.checked
                         if self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText()) ~= 0 then
-                            UIManager:show(InfoMessage:new{ text = _("Invalid regular expression!") })
+                            UIManager:show(InfoMessage:new{ text = _("Invalid regular expression") })
                         else
                             UIManager:close(self.input_dialog)
                             self:onShowSearchDialog(self.input_dialog:getInputText(), 0, self.use_regex, self.case_insensitive)
