@@ -11,6 +11,7 @@ local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
@@ -683,8 +684,18 @@ function ReaderPaging:onPanningRel(diff)
     return true
 end
 
+-- Used by ReaderBack & ReaderLink.
 function ReaderPaging:getBookLocation()
-    return self.view:getViewContext()
+    local ctx = self.view:getViewContext()
+    if ctx then
+        -- We need a copy, as we're getting references to
+        -- objects ReaderPaging/ReaderView may still modify
+        local current_location = {}
+        for i=1, #ctx do
+            current_location[i] = util.tableDeepCopy(ctx[i])
+        end
+        return current_location
+    end
 end
 
 function ReaderPaging:onRestoreBookLocation(saved_location)
