@@ -41,18 +41,34 @@ local help_text = [[Regular expressions allow you to search for a matching patte
 If you want to search for all occurrences of 'Mister Moore', 'Sir Moore' or 'Alfons Moore' but not for 'Lady Moore'.
 Enter 'Mister Moore|Sir Moore|Alfons Moore'.
 
-To search for 'run' and 'ran' you can enter 'r[ua]n'.
+If your search contains a special character from ^$.*+?()[]{}|\/ you have to put a \ before that character.
 
-To search for all numbers enter '[0-9]+'.]]
+Examples:
+Words containing 'uß' -> '[^ ]+uß[^ ]+'
+Any single character '.' -> 'r.nge'
+Any characters '.*' -> 'J.*s'
+Numbers -> '[0-9]+'
+Charakter range -> '[a-zäöüß]'
+Not a space -> '[^ ]'
+A word -> '[^ ]*[^ ]'
+Last word in a sentence -> '[^ ]*\.'
+]]
+
+local SRELL_ERROR_CODES = {}
+SRELL_ERROR_CODES[102] = _("Wrong escape '\'")
+SRELL_ERROR_CODES[103] = _("Back reference does not exist")
+SRELL_ERROR_CODES[104] = _("Mismatching brackets '[]'")
+SRELL_ERROR_CODES[105] = _("Mismatched parens '()'")
+SRELL_ERROR_CODES[106] = _("Mismatched brace '{}'")
+SRELL_ERROR_CODES[107] = _("Invalid Range in '{}'")
+SRELL_ERROR_CODES[108] = _("Invalid character range")
+SRELL_ERROR_CODES[110] = _("No preceding expression in repetition")
 
 function ReaderSearch:addToMainMenu(menu_items)
     menu_items.fulltext_search = {
         text = _("Fulltext search"),
         callback = function()
             self:onShowFulltextSearchInput()
-        end,
-        hold_callback = function()
-            UIManager:show(InfoMessage:new{ text=help_text })
         end,
     }
 end
@@ -85,8 +101,14 @@ function ReaderSearch:onShowFulltextSearchInput()
                         self.case_insensitive = not self.check_button_case.checked
                         local regex_error = self.ui.document:checkRegex(self.input_dialog:getInputText())
                         if self.use_regex and regex_error ~= 0 then
-                            UIManager:show(InfoMessage:new{ text = _("Invalid regular expression.") })
-                            logger.dbg("ReaderSearch: regex error", tostring(regex_error))
+                            logger.dbg("ReaderSearch: regex error", regex_error, SRELL_ERROR_CODES[regex_error])
+                            local error_message = _("Invalid regular expression")
+                            if SRELL_ERROR_CODES[regex_error] then
+                                error_message = error_message .. ":\n" .. SRELL_ERROR_CODES[regex_error]
+                            else
+                                error_message = error_message .. "."
+                            end
+                            UIManager:show(InfoMessage:new{ text = error_message })
                         else
                             UIManager:close(self.input_dialog)
                             self:onShowSearchDialog(self.input_dialog:getInputText(), 1, self.use_regex, self.case_insensitive)
@@ -103,8 +125,14 @@ function ReaderSearch:onShowFulltextSearchInput()
                         self.case_insensitive = not self.check_button_case.checked
                         local regex_error = self.ui.document:checkRegex(self.input_dialog:getInputText())
                         if self.use_regex and regex_error ~= 0 then
-                            UIManager:show(InfoMessage:new{ text = _("Invalid regular expression.") })
-                            logger.dbg("ReaderSearch: regex error", tostring(regex_error))
+                            logger.dbg("ReaderSearch: regex error", regex_error, SRELL_ERROR_CODES[regex_error])
+                            local error_message = _("Invalid regular expression")
+                            if SRELL_ERROR_CODES[regex_error] then
+                                error_message = error_message .. ":\n" .. SRELL_ERROR_CODES[regex_error]
+                            else
+                                error_message = error_message .. "."
+                            end
+                            UIManager:show(InfoMessage:new{ text = error_message })
                         else
                             UIManager:close(self.input_dialog)
                             self:onShowSearchDialog(self.input_dialog:getInputText(), 0, self.use_regex, self.case_insensitive)
@@ -117,7 +145,7 @@ function ReaderSearch:onShowFulltextSearchInput()
 
    -- checkboxes
     self.check_button_regex = CheckButton:new{
-        text = _("Regular expression"),
+        text = _("Regular expression (hold for help)"),
         checked = self.use_regex,
         parent = self.input_dialog,
         callback = function()
@@ -126,6 +154,9 @@ function ReaderSearch:onShowFulltextSearchInput()
             else
                 self.check_button_regex:unCheck()
             end
+        end,
+        hold_callback = function()
+            UIManager:show(InfoMessage:new{ text=help_text })
         end,
     }
     self.check_button_case = CheckButton:new{
