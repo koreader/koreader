@@ -1,7 +1,6 @@
 local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
-local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local InfoMessage = require("ui/widget/infomessage")
@@ -84,8 +83,10 @@ function ReaderSearch:onShowFulltextSearchInput()
                         self.last_search_text = self.input_dialog:getInputText()
                         self.use_regex = self.check_button_regex.checked
                         self.case_insensitive = not self.check_button_case.checked
-                        if self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText()) ~= 0 then
-                            UIManager:show(InfoMessage:new{ text = _("Invalid regular expression") })
+                        local regex_error = self.ui.document:checkRegex(self.input_dialog:getInputText())
+                        if self.use_regex and regex_error ~= 0 then
+                            UIManager:show(InfoMessage:new{ text = _("Invalid regular expression.") })
+                            logger.dbg("ReaderSearch: regex error", tostring(regex_error))
                         else
                             UIManager:close(self.input_dialog)
                             self:onShowSearchDialog(self.input_dialog:getInputText(), 1, self.use_regex, self.case_insensitive)
@@ -100,8 +101,10 @@ function ReaderSearch:onShowFulltextSearchInput()
                         self.last_search_text = self.input_dialog:getInputText()
                         self.use_regex = self.check_button_regex.checked
                         self.case_insensitive = not self.check_button_case.checked
-                        if self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText()) ~= 0 then
-                            UIManager:show(InfoMessage:new{ text = _("Invalid regular expression") })
+                        local regex_error = self.ui.document:checkRegex(self.input_dialog:getInputText())
+                        if self.use_regex and regex_error ~= 0 then
+                            UIManager:show(InfoMessage:new{ text = _("Invalid regular expression.") })
+                            logger.dbg("ReaderSearch: regex error", tostring(regex_error))
                         else
                             UIManager:close(self.input_dialog)
                             self:onShowSearchDialog(self.input_dialog:getInputText(), 0, self.use_regex, self.case_insensitive)
@@ -160,8 +163,8 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
     local neglect_current_location = false
     local current_page
 
-    local function isSlowRegex(text)
-        if text:find("%[") or text:find("%*") or text:find("%?") or text:find("%.") then
+    local function isSlowRegex(pattern)
+        if pattern:find("%[") or pattern:find("%*") or pattern:find("%?") or pattern:find("%.") then
             return true
         end
         return false
@@ -268,18 +271,18 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
     self.wait_button = ButtonDialog:new{
         buttons = {{{ text = "⌛" }}},
     }
-    local function search(func, text, param, regex, case_insensitive)
-        if regex and isSlowRegex(text) then
+    local function search(func, pattern, param)
+        if regex and isSlowRegex(pattern) then
             return function()
                 self.wait_button.alpha = 0.75
                 UIManager:show(self.wait_button)
                 UIManager:tickAfterNext(function()
-                    do_search(func, text, param, regex, case_insensitive)()
+                    do_search(func, pattern, param, regex, case_insensitive)()
                     UIManager:close(self.wait_button)
                 end)
             end
         else
-            return do_search(func, text, param, regex, case_insensitive)
+            return do_search(func, pattern, param, regex, case_insensitive)
         end
     end
     self.search_dialog = ButtonDialog:new{
@@ -289,22 +292,22 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                 {
                     text = from_start_text,
                     vsync = true,
-                    callback = search(self.searchFromStart, text, nil, regex, case_insensitive),
+                    callback = search(self.searchFromStart, text, nil),
                 },
                 {
                     text = backward_text,
                     vsync = true,
-                    callback = search(self.searchNext, text, 1, regex, case_insensitive),
+                    callback = search(self.searchNext, text, 1),
                 },
                 {
                     text = forward_text,
                     vsync = true,
-                    callback = search(self.searchNext, text, 0, regex, case_insensitive),
+                    callback = search(self.searchNext, text, 0),
                 },
                 {
                     text = from_end_text,
                     vsync = true,
-                    callback = search(self.searchFromEnd, text, nil, regex, case_insensitive),
+                    callback = search(self.searchFromEnd, text, nil),
                 },
             }
         },
