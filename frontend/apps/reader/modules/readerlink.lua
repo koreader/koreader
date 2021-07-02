@@ -502,7 +502,16 @@ end
 --- Remember current location so we can go back to it
 function ReaderLink:addCurrentLocationToStack()
     if self.ui.document.info.has_pages then
-        table.insert(self.location_stack, self.ui.paging:getBookLocation())
+        local current_location = self.ui.paging:getBookLocation()
+        if current_location then
+            -- We need a copy, as we're getting references to
+            -- objects ReaderPaging/ReaderView may still modify
+            local res = {}
+            for i=1, #current_location do
+                res[i] = util.tableDeepCopy(current_location[i])
+            end
+        table.insert(self.location_stack, res)
+        end
     else
         table.insert(self.location_stack, {
             xpointer = self.ui.rolling:getBookLocation(),
