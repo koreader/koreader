@@ -32,16 +32,7 @@ end
 
 function ReaderBack:_getCurrentLocation()
     if self.ui.document.info.has_pages then
-        local current_location = self.ui.paging:getBookLocation()
-        if current_location then
-            -- We need a copy, as we're getting references to
-            -- objects ReaderPaging/ReaderView may still modify
-            local res = {}
-            for i=1, #current_location do
-                res[i] = util.tableDeepCopy(current_location[i])
-            end
-            return res
-        end
+        return self.ui.paging:getBookLocation()
     else
         return {
             xpointer = self.ui.rolling:getBookLocation(),
