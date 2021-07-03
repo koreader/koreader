@@ -692,14 +692,14 @@ function Screensaver:close()
         UIManager:scheduleIn(screensaver_delay_number, function()
             logger.dbg("close screensaver")
             if self.screensaver_widget then
-                UIManager:close(self.screensaver_widget, "full")
+                UIManager:close(self.screensaver_widget)
                 self.screensaver_widget = nil
             end
         end)
     elseif screensaver_delay == "disable" then
         logger.dbg("close screensaver")
         if self.screensaver_widget then
-            UIManager:close(self.screensaver_widget, "full")
+            UIManager:close(self.screensaver_widget)
             self.screensaver_widget = nil
         end
     else

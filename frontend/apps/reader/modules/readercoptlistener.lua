@@ -52,11 +52,14 @@ function ReaderCoptListener:onReadSettings(config)
 
     -- Have this ready in case auto-refresh is enabled, now or later
     self.headerRefresh = function()
-        -- Only draw it if something has changed
-        local new_battery_level = Device:getPowerDevice():getCapacity()
-        if self.clock == 1 or (self.battery == 1 and new_battery_level ~= self.old_battery_level) then
-            self.old_battery_level = new_battery_level
-            self:updateHeader()
+        -- Only draw it if the header is shown...
+        if self.document.configurable.status_line == 0 and self.view.view_mode == "page" then
+            -- ...and something has changed
+            local new_battery_level = Device:getPowerDevice():getCapacity()
+            if self.clock == 1 or (self.battery == 1 and new_battery_level ~= self.old_battery_level) then
+                self.old_battery_level = new_battery_level
+                self:updateHeader()
+            end
         end
         self:rescheduleHeaderRefreshIfNeeded() -- schedule (or not) next refresh
     end
@@ -86,6 +89,7 @@ function ReaderCoptListener:onTimeFormatChanged()
 end
 
 function ReaderCoptListener:updateHeader()
+    logger.dbg("ReaderCoptListener:updateHeader")
     -- Have crengine display accurate time and battery on its next drawing
     self.ui.rolling:updateBatteryState()
     self.ui.document:resetBufferCache() -- be sure next repaint is a redrawing
