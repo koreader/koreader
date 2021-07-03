@@ -89,7 +89,6 @@ function ReaderCoptListener:onTimeFormatChanged()
 end
 
 function ReaderCoptListener:updateHeader()
-    logger.dbg("ReaderCoptListener:updateHeader")
     -- Have crengine display accurate time and battery on its next drawing
     self.ui.rolling:updateBatteryState()
     self.ui.document:resetBufferCache() -- be sure next repaint is a redrawing

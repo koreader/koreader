@@ -2207,7 +2207,6 @@ function ReaderFooter:refreshFooter(refresh, signal)
 end
 
 function ReaderFooter:onResume()
-    logger.dbg("ReaderFooter:onResume", self.view.footer_visible)
     -- Don't repaint the footer until OutOfScreenSaver if screensaver_delay is enabled...
     local screensaver_delay = G_reader_settings:readSetting("screensaver_delay")
     if screensaver_delay and screensaver_delay ~= "disable" then
@@ -2215,19 +2214,16 @@ function ReaderFooter:onResume()
         return
     end
 
-    logger.dbg("ReaderFooter:onResume will update footer")
     -- Force a footer repaint on resume if it was visible
     self:onUpdateFooter(self.view.footer_visible)
     self:rescheduleFooterAutoRefreshIfNeeded()
 end
 
 function ReaderFooter:onOutOfScreenSaver()
-    logger.dbg("ReaderFooter:onOutOfScreenSaver", self._delayed_screensaver)
     if not self._delayed_screensaver then
         return
     end
 
-    logger.dbg("ReaderFooter:onOutOfScreenSaver will update footer")
     self._delayed_screensaver = nil
     -- Force a footer repaint on resume if it was visible
     self:onUpdateFooter(self.view.footer_visible)
