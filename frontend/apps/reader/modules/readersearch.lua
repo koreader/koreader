@@ -44,14 +44,16 @@ Enter 'Mister Moore|Sir Moore|Alfons Moore'.
 If your search contains a special character from ^$.*+?()[]{}|\/ you have to put a \ before that character.
 
 Examples:
-Words containing 'uß' -> '[^ ]+uß[^ ]+'
+Words containing 'os' -> '[^ ]+os[^ ]+'
 Any single character '.' -> 'r.nge'
 Any characters '.*' -> 'J.*s'
 Numbers -> '[0-9]+'
-Charakter range -> '[a-zäöüß]'
+Character range -> '[a-f]'
 Not a space -> '[^ ]'
 A word -> '[^ ]*[^ ]'
 Last word in a sentence -> '[^ ]*\.'
+
+Complex expressions may leed to a very long search time, then not all matches will be shown.
 ]]
 
 local SRELL_ERROR_CODES = {}
@@ -63,6 +65,7 @@ SRELL_ERROR_CODES[106] = _("Mismatched brace '{}'")
 SRELL_ERROR_CODES[107] = _("Invalid Range in '{}'")
 SRELL_ERROR_CODES[108] = _("Invalid character range")
 SRELL_ERROR_CODES[110] = _("No preceding expression in repetition")
+SRELL_ERROR_CODES[111] = _("Expression too complex")
 
 function ReaderSearch:addToMainMenu(menu_items)
     menu_items.fulltext_search = {
