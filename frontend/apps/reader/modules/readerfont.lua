@@ -266,7 +266,7 @@ function ReaderFont:onSetFontGamma(gamma)
     self.ui.document:setGammaIndex(self.gamma_index)
     local gamma_level = self.ui.document:getGammaLevel()
     self.ui:handleEvent(Event:new("RedrawCurrentView"))
-    Notification:notify(T(_("Font gamma set to: %1."), optionsutil:getOptionText("SetFontGamma", gamma_level)))
+    Notification:notify(T(_("Font gamma set to: %1."), gamma_level))
     return true
 end
 
