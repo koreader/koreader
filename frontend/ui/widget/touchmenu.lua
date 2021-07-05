@@ -931,7 +931,10 @@ function TouchMenu:onMenuHold(item, text_truncated)
             UIManager:show(InfoMessage:new{ text = help_text, })
         end
     elseif text_truncated then
-        UIManager:show(InfoMessage:new{ text = getMenuText(item), })
+        UIManager:show(InfoMessage:new{
+            text = getMenuText(item),
+            show_icon = false,
+        })
     end
     return true
 end
