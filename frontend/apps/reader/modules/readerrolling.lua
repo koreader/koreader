@@ -1010,6 +1010,7 @@ function ReaderRolling:updatePos()
         logger.dbg("rendering hash changed:", self.rendering_hash, ">", new_rendering_hash)
         self.rendering_hash = new_rendering_hash
         -- A few things like page numbers may have changed
+        self.ui.document:resetCallCache() -- be really sure this cache is reset
         self.ui.document:_readMetadata() -- get updated document height and nb of pages
         if self.hide_nonlinear_flows then
             self.ui.document:cacheFlows()
