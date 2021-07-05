@@ -276,7 +276,7 @@ local footerTextGeneratorMap = {
         else
             current = footer.pageno
         end
-        local total = footer.ui.toc:getChapterPageCount(footer.pageno, footer.pages) or footer.pages
+        local total = footer.ui.toc:getChapterPageCount(footer.pageno) or footer.pages
         return current .. " ⁄⁄ " .. total
     end,
     percentage = function(footer)
