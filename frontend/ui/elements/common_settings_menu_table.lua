@@ -87,7 +87,7 @@ common_settings.time = {
         {
             text_func = function ()
                 local duration_format = G_reader_settings:readSetting("duration_format", "classic")
-                return T(_("Duration Format (%1)"), duration_format)
+                return T(_("Duration format (%1)"), duration_format)
             end,
             sub_item_table = {
                 {
