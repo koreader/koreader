@@ -540,8 +540,8 @@ function Screensaver:show()
         widget = ImageWidget:new{
             image = self.image,
             image_disposable = true,
-            height = Screen:getHeight(),
             width = Screen:getWidth(),
+            height = Screen:getHeight(),
             scale_factor = G_reader_settings:isFalse("screensaver_stretch_images") and 0 or nil,
         }
     elseif self.screensaver_type == "bookstatus" then
@@ -562,8 +562,8 @@ function Screensaver:show()
             file = self.image_file,
             file_do_cache = false,
             alpha = true,
-            height = Screen:getHeight(),
             width = Screen:getWidth(),
+            height = Screen:getHeight(),
             scale_factor = G_reader_settings:isFalse("screensaver_stretch_images") and 0 or nil,
         }
     elseif self.screensaver_type == "readingprogress" then
@@ -649,11 +649,10 @@ function Screensaver:show()
         if message_widget then
             if widget then  -- We have a Screensaver widget
                 -- Show message_widget on top of previously created widget
-                local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
                 widget = OverlapGroup:new{
                     dimen = {
-                        h = screen_w,
-                        w = screen_h,
+                        w = Screen:getWidth(),
+                        h = Screen:getHeight(),
                     },
                     widget,
                     message_widget,
