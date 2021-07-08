@@ -148,7 +148,19 @@ function ReaderSearch:onShowFulltextSearchInput()
         },
     }
 
-   -- checkboxes
+    -- checkboxes
+    self.check_button_case = CheckButton:new{
+        text = _("Case sensitive"),
+        checked = not self.case_insensitive,
+        parent = self.input_dialog,
+        callback = function()
+            if not self.check_button_case.checked then
+                self.check_button_case:check()
+            else
+                self.check_button_case:unCheck()
+            end
+        end,
+    }
     self.check_button_regex = CheckButton:new{
         text = _("Regular expression (hold for help)"),
         checked = self.use_regex,
@@ -162,18 +174,6 @@ function ReaderSearch:onShowFulltextSearchInput()
         end,
         hold_callback = function()
             UIManager:show(InfoMessage:new{ text = help_text })
-        end,
-    }
-    self.check_button_case = CheckButton:new{
-        text = _("Case sensitive"),
-        checked = not self.case_insensitive,
-        parent = self.input_dialog,
-        callback = function()
-            if not self.check_button_case.checked then
-                self.check_button_case:check()
-            else
-                self.check_button_case:unCheck()
-            end
         end,
     }
 
@@ -395,7 +395,7 @@ function ReaderSearch:search(pattern, origin, regex, case_insensitive)
         end
         UIManager:show(Notification:new{
             text = error_message,
-            timeout = 4,
+            timeout = false,
         })
     elseif words_found and words_found > self.max_hits then
         UIManager:show(Notification:new{
