@@ -177,7 +177,7 @@ function ReaderSearch:onShowFulltextSearchInput()
         end,
     }
 
-    if self.ui.document.provider == "crengine" then
+    if not self.ui.document.info.has_pages then
         local checkbox_shift = math.floor((self.input_dialog.width - self.input_dialog._input_widget.width) / 2 + 0.5)
         local check_buttons = HorizontalGroup:new{
             HorizontalSpan:new{width = checkbox_shift},
