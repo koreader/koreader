@@ -1248,7 +1248,7 @@ function CreDocument:checkRegex(pattern)
 end
 
 function CreDocument:getAndClearRegexSearchError()
-    retval = self._document:getAndClearRegexSearchError()
+    local retval = self._document:getAndClearRegexSearchError()
     logger.dbg("CreDocument: getAndClearRegexSearchError", retval)
     return retval
 end
