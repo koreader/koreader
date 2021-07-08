@@ -1242,10 +1242,21 @@ function CreDocument:setBackgroundImage(img_path) -- use nil to unset
     self._document:setBackgroundImage(img_path)
 end
 
-function CreDocument:findText(pattern, origin, reverse, caseInsensitive)
-    logger.dbg("CreDocument: find text", pattern, origin, reverse, caseInsensitive)
+function CreDocument:checkRegex(pattern)
+    logger.dbg("CreDocument: check regex ", pattern)
+    return self._document:checkRegex(pattern)
+end
+
+function CreDocument:getAndClearRegexSearchError()
+    retval = self._document:getAndClearRegexSearchError()
+    logger.dbg("CreDocument: getAndClearRegexSearchError", retval)
+    return retval
+end
+
+function CreDocument:findText(pattern, origin, reverse, caseInsensitive, page, regex, max_hits)
+    logger.dbg("CreDocument: find text", pattern, origin, reverse, caseInsensitive, regex, max_hits)
     return self._document:findText(
-        pattern, origin, reverse, caseInsensitive and 1 or 0)
+        pattern, origin, reverse, caseInsensitive and 1 or 0, regex and 1 or 0, max_hits or 200)
 end
 
 function CreDocument:enableInternalHistory(toggle)
