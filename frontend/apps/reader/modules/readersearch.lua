@@ -104,7 +104,7 @@ function ReaderSearch:onShowFulltextSearchInput()
                         self.last_search_text = self.input_dialog:getInputText()
                         self.use_regex = self.check_button_regex.checked
                         self.case_insensitive = not self.check_button_case.checked
-                        local regex_error = self.ui.document:checkRegex(self.input_dialog:getInputText())
+                        local regex_error = self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText())
                         if self.use_regex and regex_error ~= 0 then
                             logger.dbg("ReaderSearch: regex error", regex_error, SRELL_ERROR_CODES[regex_error])
                             local error_message = _("Invalid regular expression")
@@ -128,7 +128,7 @@ function ReaderSearch:onShowFulltextSearchInput()
                         self.last_search_text = self.input_dialog:getInputText()
                         self.use_regex = self.check_button_regex.checked
                         self.case_insensitive = not self.check_button_case.checked
-                        local regex_error = self.ui.document:checkRegex(self.input_dialog:getInputText())
+                        local regex_error = self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText())
                         if self.use_regex and regex_error ~= 0 then
                             logger.dbg("ReaderSearch: regex error", regex_error, SRELL_ERROR_CODES[regex_error])
                             local error_message = _("Invalid regular expression")
@@ -183,7 +183,7 @@ function ReaderSearch:onShowFulltextSearchInput()
         VerticalGroup:new{
             align = "left",
             self.check_button_case,
-            self.check_button_regex,
+            not self.ui.document.info.has_pages and self.check_button_regex or nil,
         },
     }
 
@@ -385,8 +385,8 @@ function ReaderSearch:search(pattern, origin, regex, case_insensitive)
     Device:setIgnoreInput(true)
     local retval, words_found = self.ui.document:findText(pattern, origin, direction, case_insensitive, page, regex, self.max_hits)
     Device:setIgnoreInput(false)
-    local regex_retval = self.ui.document:getAndClearRegexSearchError();
-    if regex_retval ~= 0 then
+    local regex_retval = regex and self.ui.document:getAndClearRegexSearchError();
+    if regex and regex_retval ~= 0 then
         local error_message
         if SRELL_ERROR_CODES[regex_retval] then
             error_message = SRELL_ERROR_CODES[regex_retval]
