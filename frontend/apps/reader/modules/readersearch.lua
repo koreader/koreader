@@ -177,9 +177,18 @@ function ReaderSearch:onShowFulltextSearchInput()
         end,
     }
 
-    if not self.ui.document.info.has_pages then
-        local checkbox_shift = math.floor((self.input_dialog.width - self.input_dialog._input_widget.width) / 2 + 0.5)
-        local check_buttons = HorizontalGroup:new{
+    local checkbox_shift = math.floor((self.input_dialog.width - self.input_dialog._input_widget.width) / 2 + 0.5)
+    local check_buttons
+    if self.ui.document.info.has_pages then
+        check_buttons = HorizontalGroup:new{
+            HorizontalSpan:new{width = checkbox_shift},
+            VerticalGroup:new{
+                align = "left",
+                self.check_button_case,
+            },
+        }
+    else
+        check_buttons = HorizontalGroup:new{
             HorizontalSpan:new{width = checkbox_shift},
             VerticalGroup:new{
                 align = "left",
@@ -187,11 +196,11 @@ function ReaderSearch:onShowFulltextSearchInput()
                 self.check_button_regex,
             },
         }
-
-        -- insert check buttons before the regular buttons
-        local nb_elements = #self.input_dialog.dialog_frame[1]
-        table.insert(self.input_dialog.dialog_frame[1], nb_elements-1, check_buttons)
     end
+
+    -- insert check buttons before the regular buttons
+    local nb_elements = #self.input_dialog.dialog_frame[1]
+    table.insert(self.input_dialog.dialog_frame[1], nb_elements-1, check_buttons)
 
     UIManager:show(self.input_dialog)
     self.input_dialog:onShowKeyboard()
