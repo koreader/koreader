@@ -91,6 +91,14 @@ function CheckButton:initCheckButton(checked)
                     range = self.dimen,
                 },
                 doc = "Hold Button",
+            },
+            -- Safe-guard for when used inside a MovableContainer
+            HoldReleaseCheckButton = {
+                GestureRange:new{
+                    ges = "hold_release",
+                    range = self.dimen,
+                },
+                doc = "Hold Release Button",
             }
         }
     end
@@ -138,6 +146,9 @@ function CheckButton:onTapCheckButton()
 end
 
 function CheckButton:onHoldCheckButton()
+    -- Make sure to also handle its hold_release below,
+    -- so it's not propagated up to a MovableContainer
+    self._hold_handled = true
     if self.enabled and self.hold_callback then
         self.hold_callback()
     elseif self.hold_input then
@@ -146,6 +157,14 @@ function CheckButton:onHoldCheckButton()
         self:onInput(self.hold_input_func())
     end
     return true
+end
+
+function CheckButton:onHoldReleaseCheckButton()
+    if self._hold_handled then
+        self._hold_handled = nil
+        return true
+    end
+    return false
 end
 
 function CheckButton:check()
