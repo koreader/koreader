@@ -571,8 +571,8 @@ function util.splitToChars(text)
 end
 
 function util.lowercaseString(str)
-    require("libs/libkoreader-cre")
     if str then
+        require("libs/libkoreader-cre")
         return cre.lowercaseString(str)
     end
     return str
