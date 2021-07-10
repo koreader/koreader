@@ -1,12 +1,16 @@
+local CheckButton = require("ui/widget/checkbutton")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local DocumentRegistry = require("document/documentregistry")
 local Font = require("ui/font")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
 local lfs = require("libs/libkoreader-lfs")
 local BaseUtil = require("ffi/util")
 local util = require("util")
@@ -74,8 +78,14 @@ function FileSearcher:setSearchResults()
         self.results = self.files
     else
         for __,f in pairs(self.files) do
-            if string.find(string.lower(f.name), string.lower(keywords)) and string.sub(f.name,-4) ~= ".sdr" then
-                table.insert(self.results, f)
+            if self.case_sensitive then
+                if string.find(f.name, keywords) and string.sub(f.name,-4) ~= ".sdr" then
+                    table.insert(self.results, f)
+                end
+            else
+                if string.find(util.getLowercasedWord(f.name), util.getLowercasedWord(keywords)) and string.sub(f.name,-4) ~= ".sdr" then
+                    table.insert(self.results, f)
+                end
             end
         end
     end
@@ -138,6 +148,35 @@ function FileSearcher:onShowFileSearch()
             },
         },
     }
+    -- checkbox
+    self.check_button_case = CheckButton:new{
+        text = _("Case sensitive"),
+        checked = self.case_sensitive,
+        parent = self.search_dialog,
+        callback = function()
+            if not self.check_button_case.checked then
+                self.check_button_case:check()
+                self.case_sensitive = true
+            else
+                self.check_button_case:unCheck()
+                self.case_sensitive = false
+            end
+        end,
+    }
+
+    local checkbox_shift = math.floor((self.search_dialog.width - self.search_dialog._input_widget.width) / 2 + 0.5)
+    local check_button = HorizontalGroup:new{
+        HorizontalSpan:new{width = checkbox_shift},
+        VerticalGroup:new{
+            align = "left",
+            self.check_button_case,
+        },
+    }
+
+    -- insert check buttons before the regular buttons
+    local nb_elements = #self.search_dialog.dialog_frame[1]
+    table.insert(self.search_dialog.dialog_frame[1], nb_elements-1, check_button)
+
     UIManager:show(self.search_dialog)
     self.search_dialog:onShowKeyboard()
 end
