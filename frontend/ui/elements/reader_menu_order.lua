@@ -179,8 +179,6 @@ local order = {
         "----------------------------",
         "translation_settings",
         "----------------------------",
-        "goodreads",
-        "----------------------------",
         "find_book_in_calibre_catalog",
         "fulltext_search",
     },
