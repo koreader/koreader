@@ -83,8 +83,8 @@ function FileSearcher:setSearchResults()
                     table.insert(self.results, f)
                 end
             else
-                require("libs/libkoreader-cre")
-                if string.find(cre.lowercaseString(f.name), cre.lowercaseString(keywords)) and string.sub(f.name,-4) ~= ".sdr" then
+                local Utf8Proc = require("ffi/utf8proc")
+                if string.find(Utf8Proc.lowercase(f.name), Utf8Proc.lowercase(keywords)) and string.sub(f.name,-4) ~= ".sdr" then
                     table.insert(self.results, f)
                 end
             end
