@@ -58,7 +58,7 @@ Complex expressions may lead to an extremely long search time, in which case not
 ]]
 
 local SRELL_ERROR_CODES = {}
-SRELL_ERROR_CODES[102] = _("Wrong escape '\'")
+SRELL_ERROR_CODES[102] = _("Wrong escape '\\'")
 SRELL_ERROR_CODES[103] = _("Back reference does not exist.")
 SRELL_ERROR_CODES[104] = _("Mismatching brackets '[]'")
 SRELL_ERROR_CODES[105] = _("Mismatched parens '()'")
