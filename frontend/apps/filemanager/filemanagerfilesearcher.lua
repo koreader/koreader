@@ -83,7 +83,7 @@ function FileSearcher:setSearchResults()
                     table.insert(self.results, f)
                 end
             else
-                if string.find(util.getLowercasedWord(f.name), util.getLowercasedWord(keywords)) and string.sub(f.name,-4) ~= ".sdr" then
+                if string.find(util.lowercaseString(f.name), util.lowercaseString(keywords)) and string.sub(f.name,-4) ~= ".sdr" then
                     table.insert(self.results, f)
                 end
             end
