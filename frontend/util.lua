@@ -570,12 +570,12 @@ function util.splitToChars(text)
     return tab
 end
 
-function util.getLowercasedWord(word)
+function util.lowercaseString(str)
     require("libs/libkoreader-cre")
-    if word then
-        return cre.getLowercasedWord(word)
+    if str then
+        return cre.lowercaseString(str)
     end
-    return word
+    return str
 end
 
 --- Tests whether c is a CJK character
