@@ -7,6 +7,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -101,7 +102,7 @@ function ReaderUserHyph:checkHyphenation(suggestion, word)
     end
 
     suggestion = suggestion:gsub("-","")
-    if self.ui.document:getLowercasedWord(suggestion) == self.ui.document:getLowercasedWord(word) then
+    if util.getLowercasedWord(suggestion) == util.getLowercasedWord(word) then
         return true -- characters match (case insensitive)
     end
     return false
@@ -117,22 +118,22 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
         return
     end
 
-    local word_lower = self.ui.document:getLowercasedWord(word)
+    local word_lower = util.getLowercasedWord(word)
     local line
 
     local dict = io.open(dict_file, "r")
     if dict then
         line = dict:read()
         --search entry
-        while line and self.ui.document:getLowercasedWord(line:sub(1, line:find(";") - 1)) < word_lower do
+        while line and util.getLowercasedWord(line:sub(1, line:find(";") - 1)) < word_lower do
             new_dict:write(line .. "\n")
             line = dict:read()
         end
 
         -- last word = nil if EOF, else last_word=word if found in file, else last_word is word after the new entry
         if line then
-            local last_word = self.ui.document:getLowercasedWord(line:sub(1, line:find(";") - 1))
-            if last_word == self.ui.document:getLowercasedWord(word) then
+            local last_word = util.getLowercasedWord(line:sub(1, line:find(";") - 1))
+            if last_word == util.getLowercasedWord(word) then
                 line = nil -- word found
             end
         else
@@ -179,7 +180,7 @@ function ReaderUserHyph:modifyUserEntry(word)
         title = T(_("Hyphenate: %1"), word),
         description = _("Add hyphenation positions with hyphens ('-') or spaces (' ')."),
         input = suggested_hyphenation,
-        old_hyph_lowercase = self.ui.document:getLowercasedWord(suggested_hyphenation),
+        old_hyph_lowercase = util.getLowercasedWord(suggested_hyphenation),
         input_type = "string",
         buttons = {
             {
@@ -207,7 +208,7 @@ function ReaderUserHyph:modifyUserEntry(word)
 
                         if self:checkHyphenation(new_suggestion, word) then
                             -- don't save if no changes
-                            if self.ui.document:getLowercasedWord(new_suggestion) ~= input_dialog.old_hyph_lowercase then
+                            if util.getLowercasedWord(new_suggestion) ~= input_dialog.old_hyph_lowercase then
                                 self:updateDictionary(word, new_suggestion)
                             end
                             UIManager:close(input_dialog)

@@ -994,7 +994,7 @@ end
 
 function CreDocument:getLowercasedWord(word)
     if word then
-        return self._document:getLowercasedWord(word)
+        return cre.getLowercasedWord(word)
     end
     return word
 end
