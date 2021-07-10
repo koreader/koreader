@@ -7,7 +7,6 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
-local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -30,7 +29,7 @@ end
 -- Unload is done automatically when a new dictionary is loaded.
 function ReaderUserHyph:loadDictionary(name, reload)
     if G_reader_settings:isTrue("hyph_user_dict") and lfs.attributes(name, "mode") == "file" then
-        local ret = self.ui.document:setUserHyphenationDict(name, reload)
+        local ret = cre.setUserHyphenationDict(name, reload)
         -- this should only happen, if a user edits a dictionary by hand or the user messed
         -- with the dictionary file by hand. -> Warning and disable.
         if ret == self.USER_DICT_ERROR_NOT_SORTED then
@@ -46,7 +45,7 @@ function ReaderUserHyph:loadDictionary(name, reload)
             logger.warn("UserHyph: Dictionary " .. name .. " has corrupted entries.")
         end
     else
-        self.ui.document:setUserHyphenationDict() -- clear crengine user hyph dict
+        cre.setUserHyphenationDict("", true) -- clear crengine user hyph dict
     end
 end
 
@@ -173,7 +172,7 @@ function ReaderUserHyph:modifyUserEntry(word)
 
     if not self.ui.document then return end
 
-    local suggested_hyphenation = self.ui.document:getHyphenationForWord(word)
+    local suggested_hyphenation = cre.getHyphenationForWord(word)
 
     local input_dialog
     input_dialog = InputDialog:new{
