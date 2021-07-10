@@ -4,6 +4,7 @@ local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local UIManager = require("ui/uimanager")
+local Utf8Proc = require("ffi/utf8proc")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
@@ -29,6 +30,7 @@ end
 -- Unload is done automatically when a new dictionary is loaded.
 function ReaderUserHyph:loadDictionary(name, reload)
     if G_reader_settings:isTrue("hyph_user_dict") and lfs.attributes(name, "mode") == "file" then
+         logger.dbg("set user hyphenation dict", name, reload)
         local ret = cre.setUserHyphenationDict(name, reload)
         -- this should only happen, if a user edits a dictionary by hand or the user messed
         -- with the dictionary file by hand. -> Warning and disable.
@@ -45,6 +47,7 @@ function ReaderUserHyph:loadDictionary(name, reload)
             logger.warn("UserHyph: Dictionary " .. name .. " has corrupted entries.")
         end
     else
+        logger.dbg("reset user hyphenation dict")
         cre.setUserHyphenationDict("", true) -- clear crengine user hyph dict
     end
 end
@@ -101,7 +104,7 @@ function ReaderUserHyph:checkHyphenation(suggestion, word)
     end
 
     suggestion = suggestion:gsub("-","")
-    if cre.lowercaseString(suggestion) == cre.lowercaseString(word) then
+    if Utf8Proc.lowercase(suggestion) == Utf8Proc.lowercase(word) then
         return true -- characters match (case insensitive)
     end
     return false
@@ -117,22 +120,22 @@ function ReaderUserHyph:updateDictionary(word, hyphenation)
         return
     end
 
-    local word_lower = cre.lowercaseString(word)
+    local word_lower = Utf8Proc.lowercase(word)
     local line
 
     local dict = io.open(dict_file, "r")
     if dict then
         line = dict:read()
         --search entry
-        while line and cre.lowercaseString(line:sub(1, line:find(";") - 1)) < word_lower do
+        while line and Utf8Proc.lowercase(line:sub(1, line:find(";") - 1)) < word_lower do
             new_dict:write(line .. "\n")
             line = dict:read()
         end
 
         -- last word = nil if EOF, else last_word=word if found in file, else last_word is word after the new entry
         if line then
-            local last_word = cre.lowercaseString(line:sub(1, line:find(";") - 1))
-            if last_word == cre.lowercaseString(word) then
+            local last_word = Utf8Proc.lowercase(line:sub(1, line:find(";") - 1))
+            if last_word == Utf8Proc.lowercase(word) then
                 line = nil -- word found
             end
         else
@@ -179,7 +182,7 @@ function ReaderUserHyph:modifyUserEntry(word)
         title = T(_("Hyphenate: %1"), word),
         description = _("Add hyphenation positions with hyphens ('-') or spaces (' ')."),
         input = suggested_hyphenation,
-        old_hyph_lowercase = cre.lowercaseString(suggested_hyphenation),
+        old_hyph_lowercase = Utf8Proc.lowercase(suggested_hyphenation),
         input_type = "string",
         buttons = {
             {
@@ -207,7 +210,7 @@ function ReaderUserHyph:modifyUserEntry(word)
 
                         if self:checkHyphenation(new_suggestion, word) then
                             -- don't save if no changes
-                            if cre.lowercaseString(new_suggestion) ~= input_dialog.old_hyph_lowercase then
+                            if Utf8Proc.lowercase(new_suggestion) ~= input_dialog.old_hyph_lowercase then
                                 self:updateDictionary(word, new_suggestion)
                             end
                             UIManager:close(input_dialog)
