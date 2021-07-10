@@ -10,6 +10,7 @@ local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
+local Utf8Proc = require("ffi/utf8proc")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local lfs = require("libs/libkoreader-lfs")
 local BaseUtil = require("ffi/util")
@@ -77,14 +78,16 @@ function FileSearcher:setSearchResults()
     if keywords == "*" then -- one * to show all files
         self.results = self.files
     else
+        if not self.case_sensitive then
+            keywords = Utf8Proc.lowercase(keywords)
+        end
         for __,f in pairs(self.files) do
             if self.case_sensitive then
                 if string.find(f.name, keywords) and string.sub(f.name,-4) ~= ".sdr" then
                     table.insert(self.results, f)
                 end
             else
-                local Utf8Proc = require("ffi/utf8proc")
-                if string.find(Utf8Proc.lowercase(f.name), Utf8Proc.lowercase(keywords)) and string.sub(f.name,-4) ~= ".sdr" then
+                if string.find(Utf8Proc.lowercase(f.name), keywords) and string.sub(f.name,-4) ~= ".sdr" then
                     table.insert(self.results, f)
                 end
             end
