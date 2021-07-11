@@ -81,6 +81,14 @@ function FileSearcher:setSearchResults()
         if not self.case_sensitive then
             keywords = Utf8Proc.lowercase(keywords)
         end
+        if self.use_glob then
+            -- replace '.' with '%.'
+            keywords = keywords:gsub("%.","%%%.")
+            -- replace '*' with '.*'
+            keywords = keywords:gsub("%*","%.%*")
+            -- replace '?' with '.'
+            keywords = keywords:gsub("%?","%.")
+        end
         for __,f in pairs(self.files) do
             if self.case_sensitive then
                 if string.find(f.name, keywords) and string.sub(f.name,-4) ~= ".sdr" then
@@ -167,19 +175,34 @@ function FileSearcher:onShowFileSearch()
             end
         end,
     }
+    self.check_button_glob = CheckButton:new{
+        text = _("Use standard filename wildcards"),
+        checked = self.use_glob,
+        parent = self.search_dialog,
+        callback = function()
+            if not self.check_button_glob.checked then
+                self.check_button_glob:check()
+                self.use_glob = true
+            else
+                self.check_button_glob:unCheck()
+                self.use_glob = false
+            end
+        end,
+    }
 
     local checkbox_shift = math.floor((self.search_dialog.width - self.search_dialog._input_widget.width) / 2 + 0.5)
-    local check_button = HorizontalGroup:new{
+    local check_buttons = HorizontalGroup:new{
         HorizontalSpan:new{width = checkbox_shift},
         VerticalGroup:new{
             align = "left",
             self.check_button_case,
+            self.check_button_glob,
         },
     }
 
     -- insert check buttons before the regular buttons
     local nb_elements = #self.search_dialog.dialog_frame[1]
-    table.insert(self.search_dialog.dialog_frame[1], nb_elements-1, check_button)
+    table.insert(self.search_dialog.dialog_frame[1], nb_elements-1, check_buttons)
 
     UIManager:show(self.search_dialog)
     self.search_dialog:onShowKeyboard()
