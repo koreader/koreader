@@ -144,7 +144,7 @@ function VirtualKey:init()
             }
         end
         self.swipe_callback = function(ges)
-            local key_string = self.key_chars[1] -- ges.direction]
+            local key_string = self.key_chars[1]
             local key_function = self.key_chars[ges.direction.."_func"]
 
             if not key_function and key_string then
