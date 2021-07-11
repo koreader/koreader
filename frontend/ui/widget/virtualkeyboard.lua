@@ -41,8 +41,8 @@ local VirtualKey = InputContainer:new{
 
     width = nil,
     height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
-    bordersize = Size.border.thin,
-    focused_bordersize = Size.border.default * 5,
+    bordersize = 0, -- Size.border.thin,
+    focused_bordersize = Size.border.default * 2,
     radius = 0,
     face = Font:getFace("infont"),
 }
@@ -127,6 +127,13 @@ function VirtualKey:init()
         self.callback = function() self.keyboard:upLine() end
     elseif self.label == "↓" then
         self.callback = function() self.keyboard:downLine() end
+        self.hold_callback = function()
+            self.ignore_key_release = true
+            if not self.keyboard:onHideKeyboard() then
+                -- Keyboard was *not* actually hidden: refresh the key to clear the highlight
+                self:update_keyboard(false, true)
+            end
+        end
     else
         self.callback = function () self.keyboard:addChar(self.key) end
         self.hold_callback = function()
@@ -137,7 +144,7 @@ function VirtualKey:init()
             }
         end
         self.swipe_callback = function(ges)
-            local key_string = self.key_chars[ges.direction]
+            local key_string = self.key_chars[1] -- ges.direction]
             local key_function = self.key_chars[ges.direction.."_func"]
 
             if not key_function and key_string then
@@ -172,7 +179,7 @@ function VirtualKey:init()
     self[1] = FrameContainer:new{
         margin = 0,
         bordersize = self.bordersize,
-        background = Blitbuffer.COLOR_WHITE,
+        background = G_reader_settings:readSetting("night_mode") and Blitbuffer.COLOR_LIGHT_GRAY or Blitbuffer.COLOR_WHITE,
         radius = 0,
         padding = 0,
         allow_mirroring = false,
@@ -224,8 +231,10 @@ function VirtualKey:init()
         }
     end
     if (self.keyboard.shiftmode_keys[self.label] ~= nil  and self.keyboard.shiftmode) or
+    (self.keyboard.symbolmode_keys[self.label] ~= nil and self.keyboard.symbolmode) or
     (self.keyboard.umlautmode_keys[self.label] ~= nil and self.keyboard.umlautmode) then
-        self[1].background = Blitbuffer.COLOR_LIGHT_GRAY
+        self[1].background = G_reader_settings:readSetting("night_mode") and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_LIGHT_GRAY
+        self[1].bordersize = 0
     end
     self.flash_keyboard = G_reader_settings:nilOrTrue("flash_keyboard")
 end
@@ -250,9 +259,15 @@ function VirtualKey:genkeyboardLayoutKeyChars()
         end,
     }
     local index = 1
+    local sub = {
+        en = "regular",
+        en_touch = "touch",
+        en_full = "full",
+        en_old = "old",
+    }
     for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
         if v == true then
-            key_chars[positions[index]] = string.sub(k, 1, 2)
+            key_chars[positions[index]] = string.sub(sub[k] or k, 1, 3)
             key_chars[positions[index] .. "_func"] = function()
                 UIManager:tickAfterNext(function() UIManager:close(self.popup) end)
                 self.keyboard:setKeyboardLayout(k)
@@ -538,7 +553,8 @@ function VirtualKeyPopup:init()
                 virtual_key.onPanReleaseKey = virtual_key.onHoldReleaseKey
 
                 if v == key_char_orig then
-                    virtual_key[1].background = Blitbuffer.COLOR_LIGHT_GRAY
+                    virtual_key[1].background = G_reader_settings:readSetting("night_mode") and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_LIGHT_GRAY
+                    virtual_key[1].bordersize = 0
 
                     -- restore ability to hold/pan release on central key after opening popup
                     virtual_key._keyOrigHoldPanHandler = function()
@@ -586,7 +602,7 @@ function VirtualKeyPopup:init()
     local keyboard_frame = FrameContainer:new{
         margin = 0,
         bordersize = Size.border.default,
-        background = Blitbuffer.COLOR_WHITE,
+        background = G_reader_settings:readSetting("night_mode") and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_LIGHT_GRAY,
         radius = 0,
         padding = parent_key.keyboard.padding,
         allow_mirroring = false,
@@ -684,8 +700,8 @@ local VirtualKeyboard = FocusManager:new{
     width = Screen:scaleBySize(600),
     height = nil,
     bordersize = Size.border.default,
-    padding = Size.padding.small,
-    key_padding = Size.padding.default,
+    padding = 0, -- Size.border.default,
+    key_padding = Size.border.default,
 
     lang_to_keyboard_layout = {
         ar_AA = "ar_AA_keyboard",
@@ -693,6 +709,9 @@ local VirtualKeyboard = FocusManager:new{
         de = "de_keyboard",
         el = "el_keyboard",
         en = "en_keyboard",
+        en_full = "en_full_keyboard",
+        en_touch = "en_touch_keyboard",
+        en_old = "en_old_keyboard",
         es = "es_keyboard",
         fa = "fa_keyboard",
         fr = "fr_keyboard",
@@ -760,6 +779,10 @@ end
 function VirtualKeyboard:onClose()
     UIManager:close(self)
     return true
+end
+
+function VirtualKeyboard:onHideKeyboard()
+    return self.inputbox:onHideKeyboard()
 end
 
 function VirtualKeyboard:onPressKey()
@@ -869,7 +892,7 @@ function VirtualKeyboard:addKeys()
     local keyboard_frame = FrameContainer:new{
         margin = 0,
         bordersize = Size.border.default,
-        background = Blitbuffer.COLOR_WHITE,
+        background = G_reader_settings:readSetting("night_mode") and Blitbuffer.COLOR_WHITE or Blitbuffer.COLOR_LIGHT_GRAY,
         radius = 0,
         padding = self.padding,
         allow_mirroring = false,
@@ -897,7 +920,7 @@ function VirtualKeyboard:setLayer(key)
         self.umlautmode = not self.umlautmode
     end
     self:initLayer()
-    self:_refresh(true)
+    self:_refresh(false)
 end
 
 function VirtualKeyboard:addChar(key)
