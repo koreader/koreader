@@ -122,6 +122,16 @@ function FileSearcher:close()
     end
 end
 
+local help_text = [[If enabled and the search pattern contains '*' or '?' these will be used as wildcards.
+
+'c*.jpg' will find all files starting with 'c' and end with '.jpg' (e.g. 'cover.jpg').
+
+
+If disabled the search pattern will be interpreted as a lua expression.
+
+'c*.jpg' will find all files starting with zero or more 'c' and end with '.jpg' (e.g. 'cccc.jpg').
+]]
+
 function FileSearcher:onShowFileSearch()
     self.search_dialog = InputDialog:new{
         title = _("Enter filename to search for"),
@@ -161,7 +171,7 @@ function FileSearcher:onShowFileSearch()
             },
         },
     }
-    -- checkbox
+    -- checkboxes
     self.check_button_case = CheckButton:new{
         text = _("Case sensitive"),
         checked = self.case_sensitive,
@@ -191,6 +201,10 @@ function FileSearcher:onShowFileSearch()
                 self.use_glob = false
             end
         end,
+        hold_callback = function()
+            UIManager:show(InfoMessage:new{ text = help_text })
+        end,
+
     }
 
     local checkbox_shift = math.floor((self.search_dialog.width - self.search_dialog._input_widget.width) / 2 + 0.5)
