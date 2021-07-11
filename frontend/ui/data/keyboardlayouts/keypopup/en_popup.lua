@@ -456,7 +456,7 @@ return {
         south = "ʎ", -- palatal lateral approximant IPA (looks like mirror lambda, but actually upside down y)
         southeast = "ʏ", -- near-close, near-front rounded vowel IPA
         southwest = "Υ", -- uppercase upsilon
-		"¥",
+        "¥",
     },
     _y_ = {
         "y",
@@ -468,7 +468,7 @@ return {
         south = "ʎ", -- palatal lateral approximant IPA (looks like mirror lambda, but actually upside down y)
         southeast = "ʏ", -- near-close, near-front rounded vowel IPA
         southwest = "υ", -- lowercase upsilon
-		"¥",
+        "¥",
     },
     _Z_ = {
         "Z",
