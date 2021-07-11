@@ -774,10 +774,6 @@ function VirtualKeyboard:onClose()
     return true
 end
 
-function VirtualKeyboard:onHideKeyboard()
-    return self.inputbox:onHideKeyboard()
-end
-
 function VirtualKeyboard:onPressKey()
     self:getFocusItem():handleEvent(Event:new("TapSelect"))
     return true
