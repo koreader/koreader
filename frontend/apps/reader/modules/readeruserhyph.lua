@@ -30,7 +30,7 @@ end
 -- Unload is done automatically when a new dictionary is loaded.
 function ReaderUserHyph:loadDictionary(name, reload)
     if G_reader_settings:isTrue("hyph_user_dict") and lfs.attributes(name, "mode") == "file" then
-         logger.dbg("set user hyphenation dict", name, reload)
+        logger.dbg("set user hyphenation dict", name, reload)
         local ret = cre.setUserHyphenationDict(name, reload)
         -- this should only happen, if a user edits a dictionary by hand or the user messed
         -- with the dictionary file by hand. -> Warning and disable.
