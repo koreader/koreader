@@ -20,6 +20,7 @@ local Screen = require("device").screen
 
 local FileSearcher = InputContainer:new{
     search_dialog = nil,
+    use_glob = G_reader_settings:isTrue("filesearch_glob"),
 
     --filesearcher
     -- state buffer
@@ -182,9 +183,11 @@ function FileSearcher:onShowFileSearch()
         callback = function()
             if not self.check_button_glob.checked then
                 self.check_button_glob:check()
+                G_reader_settings:makeTrue("filesearch_glob")
                 self.use_glob = true
             else
                 self.check_button_glob:unCheck()
+                G_reader_settings:makeFalse("filesearch_glob")
                 self.use_glob = false
             end
         end,
