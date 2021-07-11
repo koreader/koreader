@@ -204,7 +204,6 @@ function FileSearcher:onShowFileSearch()
         hold_callback = function()
             UIManager:show(InfoMessage:new{ text = help_text })
         end,
-
     }
 
     local checkbox_shift = math.floor((self.search_dialog.width - self.search_dialog._input_widget.width) / 2 + 0.5)
