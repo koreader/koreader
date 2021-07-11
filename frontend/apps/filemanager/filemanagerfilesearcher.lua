@@ -20,7 +20,6 @@ local Screen = require("device").screen
 
 local FileSearcher = InputContainer:new{
     search_dialog = nil,
-    use_glob = G_reader_settings:isTrue("filesearch_glob"),
 
     --filesearcher
     -- state buffer
@@ -82,14 +81,12 @@ function FileSearcher:setSearchResults()
         if not self.case_sensitive then
             keywords = Utf8Proc.lowercase(keywords)
         end
-        if self.use_glob then
-            -- replace '.' with '%.'
-            keywords = keywords:gsub("%.","%%%.")
-            -- replace '*' with '.*'
-            keywords = keywords:gsub("%*","%.%*")
-            -- replace '?' with '.'
-            keywords = keywords:gsub("%?","%.")
-        end
+        -- replace '.' with '%.'
+        keywords = keywords:gsub("%.","%%%.")
+        -- replace '*' with '.*'
+        keywords = keywords:gsub("%*","%.%*")
+        -- replace '?' with '.'
+        keywords = keywords:gsub("%?","%.")
         for __,f in pairs(self.files) do
             if self.case_sensitive then
                 if string.find(f.name, keywords) and string.sub(f.name,-4) ~= ".sdr" then
@@ -121,16 +118,6 @@ function FileSearcher:close()
         )
     end
 end
-
-local help_text = [[If enabled and the search pattern contains '*' or '?' these will be used as wildcards.
-
-'c*.jpg' will find all files starting with 'c' and end with '.jpg' (e.g. 'cover.jpg').
-
-
-If disabled the search pattern will be interpreted as a lua expression.
-
-'c*.jpg' will find all files starting with zero or more 'c' and end with '.jpg' (e.g. 'cccc.jpg').
-]]
 
 function FileSearcher:onShowFileSearch()
     self.search_dialog = InputDialog:new{
@@ -171,7 +158,7 @@ function FileSearcher:onShowFileSearch()
             },
         },
     }
-    -- checkboxes
+    -- checkbox
     self.check_button_case = CheckButton:new{
         text = _("Case sensitive"),
         checked = self.case_sensitive,
@@ -186,25 +173,6 @@ function FileSearcher:onShowFileSearch()
             end
         end,
     }
-    self.check_button_glob = CheckButton:new{
-        text = _("Use standard filename wildcards"),
-        checked = self.use_glob,
-        parent = self.search_dialog,
-        callback = function()
-            if not self.check_button_glob.checked then
-                self.check_button_glob:check()
-                G_reader_settings:makeTrue("filesearch_glob")
-                self.use_glob = true
-            else
-                self.check_button_glob:unCheck()
-                G_reader_settings:makeFalse("filesearch_glob")
-                self.use_glob = false
-            end
-        end,
-        hold_callback = function()
-            UIManager:show(InfoMessage:new{ text = help_text })
-        end,
-    }
 
     local checkbox_shift = math.floor((self.search_dialog.width - self.search_dialog._input_widget.width) / 2 + 0.5)
     local check_buttons = HorizontalGroup:new{
@@ -212,7 +180,6 @@ function FileSearcher:onShowFileSearch()
         VerticalGroup:new{
             align = "left",
             self.check_button_case,
-            self.check_button_glob,
         },
     }
 

@@ -662,8 +662,8 @@ To:
         text = _("File search"),
         help_text = _([[Search a book by filename in the current or home folder and its subfolders.
 
-A search for '*' will show all files.
-Search string supports Lua patterns.
+Wildcards for one '?' or more '*' letters can be used.
+A search for '*' will show all files, 'book*' will show just files beginning with 'book' whereas '*.epub' will show all files ending in '.epub'.
 
 Tap a book in the search results to open it.]]),
         callback = function()
