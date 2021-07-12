@@ -668,16 +668,23 @@ function InputText:getStringPos(left_delimiter, right_delimiter, char_pos)
     return start_pos, end_pos
 end
 
---- Search for a string.
+-- Search for a string.
 -- if start_pos not set, starts a search from the next to cursor position
 -- returns first found position or 0 if not found
-function InputText:searchString(str, start_pos)
+function InputText:searchString(str, case_sensitive, start_pos)
     local str_len = string.len(str)
     local char_pos, found = 0, 0
+    local char_txt, char_str
     start_pos = start_pos and (start_pos - 1) or self.charpos
     for i = start_pos, #self.charlist - str_len do
         for j = 1, str_len do
-            if string.lower(self.charlist[i + j]) ~= string.lower(string.sub(str, j, j)) then
+            char_txt = self.charlist[i + j]
+            char_str = string.sub(str, j, j)
+            if not case_sensitive then
+                char_txt = string.lower(char_txt)
+                char_str = string.lower(char_str)
+            end
+            if char_txt ~= char_str then
                 found = 0
                 break
             end
