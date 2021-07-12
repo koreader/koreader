@@ -701,15 +701,12 @@ function ReaderZooming:onZoomFactorChange()
 end
 
 function ReaderZooming:onSetZoomPan(settings, no_redraw)
-    print("ReaderZooming:onSetZoomPan")
     for k, v in pairs(settings) do
-        print("Setting", k, "to", v)
         self[k] = v
         self.ui.doc_settings:saveSetting(k, v)
         -- Configurable keys aren't prefixed...
         local configurable_key = k:gsub("^kopt_", "")
         if self.ui.document.configurable[configurable_key] then
-            print("Setting configurable", configurable_key, "to", v)
             self.ui.document.configurable[configurable_key] = v
         end
     end
