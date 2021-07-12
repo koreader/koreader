@@ -15,11 +15,6 @@ local _ = require("gettext")
 
 local ReaderSearch = InputContainer:new{
     direction = 0, -- 0 for search forward, 1 for search backward
-    -- default to case insensitive, no regex, don't save settings, empty search string
-    case_insensitive = G_reader_settings:readSetting("fulltext_search_case_insensitive") or true,
-    use_regex = G_reader_settings:readSetting("fulltext_search_use_regex") or false,
-    save_settings = G_reader_settings:readSetting("fulltext_search_save_settings") or false,
-    last_search_text = G_reader_settings:readSetting("fulltext_search_last_search_text") or "",
 
     -- For a regex like [a-z\. ] many many hits are found, maybe the number of chars on a few pages.
     -- We don't try to catch them all as this is a reader and not a computer science playground. ;)
@@ -86,17 +81,53 @@ function ReaderSearch:updateSettings(save)
     self.save_settings = save
     G_reader_settings:saveSetting("fulltext_search_save_settings", save)
     if save then
-        G_reader_settings:saveSetting("fulltext_search_use_regex", self.use_regex)
         G_reader_settings:saveSetting("fulltext_search_case_insensitive", self.case_insensitive)
+        G_reader_settings:saveSetting("fulltext_search_use_regex", self.use_regex)
         G_reader_settings:saveSetting("fulltext_search_last_search_text", self.input_dialog:getInputText())
     else
-        G_reader_settings:saveSetting("fulltext_search_use_regex")
         G_reader_settings:saveSetting("fulltext_search_case_insensitive")
+        G_reader_settings:saveSetting("fulltext_search_use_regex")
         G_reader_settings:saveSetting("fulltext_search_last_search_text")
     end
 end
 
+function ReaderSearch:searchCallback(dir)
+    if self.input_dialog:getInputText() == "" then return end
+    self.last_search_text = self.input_dialog:getInputText()
+    self.use_regex = self.check_button_regex.checked
+    self.case_insensitive = not self.check_button_case.checked
+    local regex_error = not self.ui.document.info.has_pages and self.use_regex
+        and self.ui.document:checkRegex(self.input_dialog:getInputText())
+    if not self.ui.document.info.has_pages and self.use_regex and regex_error ~= 0 then
+        logger.dbg("ReaderSearch: regex error", regex_error, SRELL_ERROR_CODES[regex_error])
+        local error_message = _("Invalid regular expression")
+        if SRELL_ERROR_CODES[regex_error] then
+            error_message = error_message .. ":\n" .. SRELL_ERROR_CODES[regex_error]
+        else
+            error_message = error_message .. "."
+        end
+        UIManager:show(InfoMessage:new{ text = error_message })
+    else
+        self:updateSettings(self.check_button_save_settings.checked)
+        UIManager:close(self.input_dialog)
+        self:onShowSearchDialog(self.input_dialog:getInputText(), dir, self.use_regex, self.case_insensitive)
+    end
+end
+
 function ReaderSearch:onShowFulltextSearchInput()
+    -- default to case insensitive, no regex, don't save settings, empty search string
+    self.save_settings = G_reader_settings:readSetting("fulltext_search_save_settings") or false
+    if self.case_insensitive == nil then
+        self.case_insensitive = not G_reader_settings:has("fulltext_search_case_insensitive")
+            or G_reader_settings:readSetting("fulltext_search_case_insensitive")
+    end
+    if self.use_regex == nil then
+        self.use_regex = G_reader_settings:readSetting("fulltext_search_use_regex") or false
+    end
+    if self.last_search_text == nil then
+        self.last_search_text = G_reader_settings:readSetting("fulltext_search_last_search_text") or ""
+    end
+
     local backward_text = "◁"
     local forward_text = "▷"
     if BD.mirroredUILayout() then
@@ -105,8 +136,6 @@ function ReaderSearch:onShowFulltextSearchInput()
     self.input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
         input = self.last_search_text,
---        use_regex_checked = self.use_regex,
---        case_insensitive_checked = not self.case_insensitive,
         buttons = {
             {
                 {
@@ -118,52 +147,14 @@ function ReaderSearch:onShowFulltextSearchInput()
                 {
                     text = backward_text,
                     callback = function()
-                        if self.input_dialog:getInputText() == "" then return end
-                        self.last_search_text = self.input_dialog:getInputText()
-                        self.use_regex = self.check_button_regex.checked
-                        self.case_insensitive = not self.check_button_case.checked
-                        local regex_error = not self.ui.document.info.has_pages and self.use_regex
-                            and self.ui.document:checkRegex(self.input_dialog:getInputText())
-                        if not self.ui.document.info.has_pages and self.use_regex and regex_error ~= 0 then
-                            logger.dbg("ReaderSearch: regex error", regex_error, SRELL_ERROR_CODES[regex_error])
-                            local error_message = _("Invalid regular expression")
-                            if SRELL_ERROR_CODES[regex_error] then
-                                error_message = error_message .. ":\n" .. SRELL_ERROR_CODES[regex_error]
-                            else
-                                error_message = error_message .. "."
-                            end
-                            UIManager:show(InfoMessage:new{ text = error_message })
-                        else
-                            self:updateSettings(self.check_button_save_settings.checked)
-                            UIManager:close(self.input_dialog)
-                            self:onShowSearchDialog(self.input_dialog:getInputText(), 1, self.use_regex, self.case_insensitive)
-                        end
-                    end,
+                        self:searchCallback(1)
+                    end
                 },
                 {
                     text = forward_text,
                     is_enter_default = true,
                     callback = function()
-                        if self.input_dialog:getInputText() == "" then return end
-                        self.last_search_text = self.input_dialog:getInputText()
-                        self.use_regex = self.check_button_regex.checked
-                        self.case_insensitive = not self.check_button_case.checked
-                        local regex_error = not self.ui.document.info.has_pages and self.use_regex
-                            and self.ui.document:checkRegex(self.input_dialog:getInputText())
-                        if not self.ui.document.info.has_pages and self.use_regex and regex_error ~= 0 then
-                            logger.dbg("ReaderSearch: regex error", regex_error, SRELL_ERROR_CODES[regex_error])
-                            local error_message = _("Invalid regular expression")
-                            if SRELL_ERROR_CODES[regex_error] then
-                                error_message = error_message .. ":\n" .. SRELL_ERROR_CODES[regex_error]
-                            else
-                                error_message = error_message .. "."
-                            end
-                            UIManager:show(InfoMessage:new{ text = error_message })
-                        else
-                            self:updateSettings(self.check_button_save_settings.checked)
-                            UIManager:close(self.input_dialog)
-                            self:onShowSearchDialog(self.input_dialog:getInputText(), 0, self.use_regex, self.case_insensitive)
-                        end
+                        self:searchCallback(0)
                     end,
                 },
             },
