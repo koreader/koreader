@@ -105,8 +105,8 @@ function ReaderSearch:onShowFulltextSearchInput()
     self.input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
         input = self.last_search_text,
-        use_regex_checked = self.use_regex,
-        case_insensitive_checked = not self.case_insensitive,
+--        use_regex_checked = self.use_regex,
+--        case_insensitive_checked = not self.case_insensitive,
         buttons = {
             {
                 {
