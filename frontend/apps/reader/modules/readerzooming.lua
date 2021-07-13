@@ -659,6 +659,7 @@ function ReaderZooming:setNumberOf(what, num, overlap)
         zoom_factor = zoom_factor * zoom_h / zoom_w
     end
     self.ui:handleEvent(Event:new("SetZoomPan", {kopt_zoom_factor = zoom_factor}))
+    return zoom_factor
 end
 
 function ReaderZooming:_zoomFactorChange(title_text, direction, precision)
