@@ -41,8 +41,8 @@ local VirtualKey = InputContainer:new{
 
     width = nil,
     height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
-    bordersize = Size.border.thin,
-    focused_bordersize = Size.border.default * 5,
+    bordersize = 0,
+    focused_bordersize = Size.border.default,
     radius = 0,
     face = Font:getFace("infont"),
 }
@@ -137,7 +137,7 @@ function VirtualKey:init()
             }
         end
         self.swipe_callback = function(ges)
-            local key_string = self.key_chars[ges.direction]
+            local key_string = self.key_chars[ges.direction] or self.key
             local key_function = self.key_chars[ges.direction.."_func"]
 
             if not key_function and key_string then
@@ -224,7 +224,7 @@ function VirtualKey:init()
         }
     end
     if (self.keyboard.shiftmode_keys[self.label] ~= nil  and self.keyboard.shiftmode) or
-    (self.keyboard.umlautmode_keys[self.label] ~= nil and self.keyboard.umlautmode) then
+    (self.keyboard.symbolmode_keys[self.label] ~= nil and self.keyboard.symbolmode) then
         self[1].background = Blitbuffer.COLOR_LIGHT_GRAY
     end
     self.flash_keyboard = G_reader_settings:nilOrTrue("flash_keyboard")
@@ -586,7 +586,7 @@ function VirtualKeyPopup:init()
     local keyboard_frame = FrameContainer:new{
         margin = 0,
         bordersize = Size.border.default,
-        background = Blitbuffer.COLOR_WHITE,
+        background = Blitbuffer.COLOR_LIGHT_GRAY,
         radius = 0,
         padding = parent_key.keyboard.padding,
         allow_mirroring = false,
@@ -684,8 +684,8 @@ local VirtualKeyboard = FocusManager:new{
     width = Screen:scaleBySize(600),
     height = nil,
     bordersize = Size.border.default,
-    padding = Size.padding.small,
-    key_padding = Size.padding.default,
+    padding = 0,
+    key_padding = Size.padding.small,
 
     lang_to_keyboard_layout = {
         ar_AA = "ar_AA_keyboard",
@@ -693,6 +693,10 @@ local VirtualKeyboard = FocusManager:new{
         de = "de_keyboard",
         el = "el_keyboard",
         en = "en_keyboard",
+        en_reg = "en_reg_keyboard",
+        en_full = "en_full_keyboard",
+        en_touch = "en_touch_keyboard",
+        en_old = "en_old_keyboard",
         es = "es_keyboard",
         fa = "fa_keyboard",
         fr = "fr_keyboard",
@@ -869,7 +873,7 @@ function VirtualKeyboard:addKeys()
     local keyboard_frame = FrameContainer:new{
         margin = 0,
         bordersize = Size.border.default,
-        background = Blitbuffer.COLOR_WHITE,
+        background = Blitbuffer.COLOR_LIGHT_GRAY,
         radius = 0,
         padding = self.padding,
         allow_mirroring = false,
@@ -897,7 +901,7 @@ function VirtualKeyboard:setLayer(key)
         self.umlautmode = not self.umlautmode
     end
     self:initLayer()
-    self:_refresh(true)
+    self:_refresh(key ~= "Shift")
 end
 
 function VirtualKeyboard:addChar(key)
