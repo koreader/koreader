@@ -791,7 +791,7 @@ function InputText:upLine()
 end
 
 function InputText:downLine()
-    if #self.charlist = 0 then return end -- Avoid cursor moving within a hint.
+    if #self.charlist == 0 then return end -- Avoid cursor moving within a hint.
     self.text_widget:moveCursorDown()
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end
