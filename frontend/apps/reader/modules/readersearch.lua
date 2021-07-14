@@ -8,6 +8,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Notification = require("ui/widget/notification")
+local T = require("ffi/util").template
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local logger = require("logger")
@@ -87,11 +88,11 @@ function ReaderSearch:searchCallback(reverse)
     local regex_error = self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText())
     if self.use_regex and regex_error ~= 0 then
         logger.dbg("ReaderSearch: regex error", regex_error, SRELL_ERROR_CODES[regex_error])
-        local error_message = _("Invalid regular expression")
+        local error_message
         if SRELL_ERROR_CODES[regex_error] then
-            error_message = error_message .. ":\n" .. SRELL_ERROR_CODES[regex_error]
+            error_message = T(_("Invalid regular expression:\n%1"), SRELL_ERROR_CODES[regex_error])
         else
-            error_message = error_message .. "."
+            error_message = _("Invalid regular expression.")
         end
         UIManager:show(InfoMessage:new{ text = error_message })
     else
