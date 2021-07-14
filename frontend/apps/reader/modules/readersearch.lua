@@ -8,11 +8,11 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Notification = require("ui/widget/notification")
-local T = require("ffi/util").template
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local logger = require("logger")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local ReaderSearch = InputContainer:new{
     direction = 0, -- 0 for search forward, 1 for search backward
