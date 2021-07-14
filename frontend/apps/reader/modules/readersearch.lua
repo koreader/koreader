@@ -84,9 +84,8 @@ function ReaderSearch:searchCallback(reverse)
     self.last_search_text = self.input_dialog:getInputText()
     self.use_regex = self.check_button_regex.checked
     self.case_insensitive = not self.check_button_case.checked
-    local regex_error = not self.ui.document.info.has_pages and self.use_regex
-        and self.ui.document:checkRegex(self.input_dialog:getInputText())
-    if not self.ui.document.info.has_pages and self.use_regex and regex_error ~= 0 then
+    local regex_error = self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText())
+    if self.use_regex and regex_error ~= 0 then
         logger.dbg("ReaderSearch: regex error", regex_error, SRELL_ERROR_CODES[regex_error])
         local error_message = _("Invalid regular expression")
         if SRELL_ERROR_CODES[regex_error] then
