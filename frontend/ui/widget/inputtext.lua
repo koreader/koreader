@@ -11,6 +11,7 @@ local ScrollTextWidget = require("ui/widget/scrolltextwidget")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
+local Utf8Proc = require("ffi/utf8proc")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local util = require("util")
 local _ = require("gettext")
@@ -671,13 +672,20 @@ end
 --- Search for a string.
 -- if start_pos not set, starts a search from the next to cursor position
 -- returns first found position or 0 if not found
-function InputText:searchString(str, start_pos)
+function InputText:searchString(str, case_sensitive, start_pos)
     local str_len = string.len(str)
     local char_pos, found = 0, 0
     start_pos = start_pos and (start_pos - 1) or self.charpos
+    if not case_sensitive then
+        str = Utf8Proc.lowercase(str)
+    end
     for i = start_pos, #self.charlist - str_len do
         for j = 1, str_len do
-            if string.lower(self.charlist[i + j]) ~= string.lower(string.sub(str, j, j)) then
+            local char_txt = self.charlist[i + j]
+            if not case_sensitive then
+                char_txt = Utf8Proc.lowercase(char_txt)
+            end
+            if char_txt ~= string.sub(str, j, j) then
                 found = 0
                 break
             end
@@ -791,6 +799,7 @@ function InputText:upLine()
 end
 
 function InputText:downLine()
+    if #self.charlist == 0 then return end -- Avoid cursor moving within a hint.
     self.text_widget:moveCursorDown()
     self.charpos, self.top_line_num = self.text_widget:getCharPos()
 end

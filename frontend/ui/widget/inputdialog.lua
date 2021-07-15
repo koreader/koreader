@@ -97,11 +97,14 @@ longer than three words it should just read "OK".
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputText = require("ui/widget/inputtext")
@@ -770,7 +773,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                                         if self.search_value ~= "" then
                                             UIManager:close(input_dialog)
                                             local msg
-                                            local char_pos = self._input_widget:searchString(self.search_value, 1)
+                                            local char_pos = self._input_widget:searchString(self.search_value, self.case_sensitive, 1)
                                             if char_pos > 0 then
                                                 self._input_widget:moveCursorToCharPos(char_pos)
                                                 msg = T(_("Found in line %1."), self._input_widget:getLineNums())
@@ -791,7 +794,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                                         if self.search_value ~= "" then
                                             UIManager:close(input_dialog)
                                             local msg
-                                            local char_pos = self._input_widget:searchString(self.search_value)
+                                            local char_pos = self._input_widget:searchString(self.search_value, self.case_sensitive)
                                             if char_pos > 0 then
                                                 self._input_widget:moveCursorToCharPos(char_pos)
                                                 msg = T(_("Found in line %1."), self._input_widget:getLineNums())
@@ -807,6 +810,36 @@ function InputDialog:_addScrollButtons(nav_bar)
                             },
                         },
                     }
+
+                    -- checkbox
+                    self.check_button_case = CheckButton:new{
+                        text = _("Case sensitive"),
+                        checked = self.case_sensitive,
+                        parent = input_dialog,
+                        callback = function()
+                            if not self.check_button_case.checked then
+                                self.check_button_case:check()
+                                self.case_sensitive = true
+                            else
+                                self.check_button_case:unCheck()
+                                self.case_sensitive = false
+                            end
+                        end,
+                    }
+
+                    local checkbox_shift = math.floor((input_dialog.width - input_dialog._input_widget.width) / 2 + 0.5)
+                    local check_buttons = HorizontalGroup:new{
+                        HorizontalSpan:new{width = checkbox_shift},
+                        VerticalGroup:new{
+                            align = "left",
+                            self.check_button_case,
+                        },
+                    }
+
+                    -- insert check buttons before the regular buttons
+                    local nb_elements = #input_dialog.dialog_frame[1]
+                    table.insert(input_dialog.dialog_frame[1], nb_elements-1, check_buttons)
+
                     UIManager:show(input_dialog)
                     input_dialog:onShowKeyboard()
                 end,
