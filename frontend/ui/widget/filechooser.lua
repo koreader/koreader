@@ -166,27 +166,21 @@ function FileChooser:init()
     Menu.init(self) -- call parent's init()
 end
 
-function FileChooser:genItemTableFromPath(path)
-    local dirs = {}
-    local files = {}
-    local up_folder_arrow = BD.mirroredUILayout() and BD.ltr("../ ⬆") or "⬆ ../"
-
-    self.list(path, dirs, files)
-
+function FileChooser:getSortingFunction(collate, reverse_collate)
     local sorting
-    if self.collate == "strcoll" then
+    if collate == "strcoll" then
         sorting = function(a, b)
             return ffiUtil.strcoll(a.name, b.name)
         end
-    elseif self.collate == "access" then
+    elseif collate == "access" then
         sorting = function(a, b)
             return a.attr.access > b.attr.access
         end
-    elseif self.collate == "modification" then
+    elseif collate == "modification" then
         sorting = function(a, b)
             return a.attr.modification > b.attr.modification
         end
-    elseif self.collate == "change" then
+    elseif collate == "change" then
         sorting = function(a, b)
             if DocSettings:hasSidecarFile(a.fullpath) and not DocSettings:hasSidecarFile(b.fullpath) then
                 return false
@@ -196,11 +190,11 @@ function FileChooser:genItemTableFromPath(path)
             end
             return a.attr.change > b.attr.change
         end
-    elseif self.collate == "size" then
+    elseif collate == "size" then
         sorting = function(a, b)
             return a.attr.size < b.attr.size
         end
-    elseif self.collate == "type" then
+    elseif collate == "type" then
         sorting = function(a, b)
             if a.suffix == nil and b.suffix == nil then
                 return ffiUtil.strcoll(a.name, b.name)
@@ -208,17 +202,17 @@ function FileChooser:genItemTableFromPath(path)
                 return ffiUtil.strcoll(a.suffix, b.suffix)
             end
         end
-    elseif self.collate == "percent_unopened_first" or self.collate == "percent_unopened_last" then
+    elseif collate == "percent_unopened_first" or collate == "percent_unopened_last" then
         sorting = function(a, b)
             if DocSettings:hasSidecarFile(a.fullpath) and not DocSettings:hasSidecarFile(b.fullpath) then
-                if self.collate == "percent_unopened_first" then
+                if collate == "percent_unopened_first" then
                     return false
                 else
                     return true
                 end
             end
             if not DocSettings:hasSidecarFile(a.fullpath) and DocSettings:hasSidecarFile(b.fullpath) then
-                if self.collate == "percent_unopened_first" then
+                if collate == "percent_unopened_first" then
                     return true
                 else
                     return false
@@ -233,7 +227,7 @@ function FileChooser:genItemTableFromPath(path)
 
             return a.percent_finished < b.percent_finished
         end
-    elseif self.collate == "numeric" then
+    elseif collate == "numeric" then
         -- adapted from: http://notebook.kulchenko.com/algorithms/alphanumeric-natural-sorting-for-humans-in-lua
         local function addLeadingZeroes(d)
             local dec, n = string.match(d, "(%.?)0*(.+)")
@@ -249,10 +243,22 @@ function FileChooser:genItemTableFromPath(path)
         end
     end
 
-    if self.reverse_collate then
+    if reverse_collate then
         local sorting_unreversed = sorting
         sorting = function(a, b) return sorting_unreversed(b, a) end
     end
+
+    return sorting
+end
+
+function FileChooser:genItemTableFromPath(path)
+    local dirs = {}
+    local files = {}
+    local up_folder_arrow = BD.mirroredUILayout() and BD.ltr("../ ⬆") or "⬆ ../"
+
+    self.list(path, dirs, files)
+
+    local sorting = self:getSortingFunction(self.collate, self.reverse_collate)
 
     if self.collate ~= "strcoll_mixed" then
         table.sort(dirs, sorting)

@@ -1,6 +1,7 @@
 local CheckButton = require("ui/widget/checkbutton")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local DocumentRegistry = require("document/documentregistry")
+local FileChooser = require("ui/widget/filechooser")
 local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
@@ -207,7 +208,12 @@ function FileSearcher:showSearchResults()
     self.search_menu.close_callback = function()
         UIManager:close(menu_container)
     end
-    table.sort(self.results, function(v1,v2) return v1.text < v2.text end)
+
+    local collate = G_reader_settings:readSetting("collate") or "strcoll"
+    local reverse_collate = G_reader_settings:isTrue("reverse_collate")
+    local sorting = FileChooser:getSortingFunction(collate, reverse_collate)
+
+    table.sort(self.results, sorting)
     self.search_menu:switchItemTable(_("Search results"), self.results)
     UIManager:show(menu_container)
 end
