@@ -264,7 +264,7 @@ function Device:init()
                 self.window.left = ev.value.data1
                 self.window.top = ev.value.data2
             elseif ev.code == SDL_TEXTINPUT then
-                UIManager:broadcastEvent(Event:new("TextInput", ev.value))
+                UIManager:sendEvent(Event:new("TextInput", ev.value))
             end
         end,
         hasClipboardText = function()
