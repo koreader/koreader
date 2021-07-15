@@ -673,19 +673,19 @@ end
 -- if start_pos not set, starts a search from the next to cursor position
 -- returns first found position or 0 if not found
 function InputText:searchString(str, case_sensitive, start_pos)
-    local str_len = string.len(str)
+    local str_charlist = util.splitToChars(str)
+    local str_len = #str_charlist
     local char_pos, found = 0, 0
     start_pos = start_pos and (start_pos - 1) or self.charpos
-    if not case_sensitive then
-        str = Utf8Proc.lowercase(str)
-    end
     for i = start_pos, #self.charlist - str_len do
         for j = 1, str_len do
             local char_txt = self.charlist[i + j]
+            local char_str = str_charlist[j]
             if not case_sensitive then
                 char_txt = Utf8Proc.lowercase(char_txt)
+                char_str = Utf8Proc.lowercase(char_str)
             end
-            if char_txt ~= string.sub(str, j, j) then
+            if char_txt ~= char_str then
                 found = 0
                 break
             end
