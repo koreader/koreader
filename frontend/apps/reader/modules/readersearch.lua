@@ -12,6 +12,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local logger = require("logger")
 local _ = require("gettext")
+local T = require("ffi/util").template
 
 local ReaderSearch = InputContainer:new{
     direction = 0, -- 0 for search forward, 1 for search backward
@@ -78,6 +79,28 @@ function ReaderSearch:addToMainMenu(menu_items)
     }
 end
 
+-- if reverse ~= 0 search backwards
+function ReaderSearch:searchCallback(reverse)
+    if self.input_dialog:getInputText() == "" then return end
+    self.last_search_text = self.input_dialog:getInputText()
+    self.use_regex = self.check_button_regex.checked
+    self.case_insensitive = not self.check_button_case.checked
+    local regex_error = self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText())
+    if self.use_regex and regex_error ~= 0 then
+        logger.dbg("ReaderSearch: regex error", regex_error, SRELL_ERROR_CODES[regex_error])
+        local error_message
+        if SRELL_ERROR_CODES[regex_error] then
+            error_message = T(_("Invalid regular expression:\n%1"), SRELL_ERROR_CODES[regex_error])
+        else
+            error_message = _("Invalid regular expression.")
+        end
+        UIManager:show(InfoMessage:new{ text = error_message })
+    else
+        UIManager:close(self.input_dialog)
+        self:onShowSearchDialog(self.input_dialog:getInputText(), reverse, self.use_regex, self.case_insensitive)
+    end
+end
+
 function ReaderSearch:onShowFulltextSearchInput()
     local backward_text = "◁"
     local forward_text = "▷"
@@ -87,8 +110,6 @@ function ReaderSearch:onShowFulltextSearchInput()
     self.input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
         input = self.last_search_text,
-        use_regex_checked = self.use_regex,
-        case_insensitive_checked = not self.case_insensitive,
         buttons = {
             {
                 {
@@ -100,48 +121,14 @@ function ReaderSearch:onShowFulltextSearchInput()
                 {
                     text = backward_text,
                     callback = function()
-                        if self.input_dialog:getInputText() == "" then return end
-                        self.last_search_text = self.input_dialog:getInputText()
-                        self.use_regex = self.check_button_regex.checked
-                        self.case_insensitive = not self.check_button_case.checked
-                        local regex_error = self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText())
-                        if self.use_regex and regex_error ~= 0 then
-                            logger.dbg("ReaderSearch: regex error", regex_error, SRELL_ERROR_CODES[regex_error])
-                            local error_message = _("Invalid regular expression")
-                            if SRELL_ERROR_CODES[regex_error] then
-                                error_message = error_message .. ":\n" .. SRELL_ERROR_CODES[regex_error]
-                            else
-                                error_message = error_message .. "."
-                            end
-                            UIManager:show(InfoMessage:new{ text = error_message })
-                        else
-                            UIManager:close(self.input_dialog)
-                            self:onShowSearchDialog(self.input_dialog:getInputText(), 1, self.use_regex, self.case_insensitive)
-                        end
+                        self:searchCallback(1)
                     end,
                 },
                 {
                     text = forward_text,
                     is_enter_default = true,
                     callback = function()
-                        if self.input_dialog:getInputText() == "" then return end
-                        self.last_search_text = self.input_dialog:getInputText()
-                        self.use_regex = self.check_button_regex.checked
-                        self.case_insensitive = not self.check_button_case.checked
-                        local regex_error = self.use_regex and self.ui.document:checkRegex(self.input_dialog:getInputText())
-                        if self.use_regex and regex_error ~= 0 then
-                            logger.dbg("ReaderSearch: regex error", regex_error, SRELL_ERROR_CODES[regex_error])
-                            local error_message = _("Invalid regular expression")
-                            if SRELL_ERROR_CODES[regex_error] then
-                                error_message = error_message .. ":\n" .. SRELL_ERROR_CODES[regex_error]
-                            else
-                                error_message = error_message .. "."
-                            end
-                            UIManager:show(InfoMessage:new{ text = error_message })
-                        else
-                            UIManager:close(self.input_dialog)
-                            self:onShowSearchDialog(self.input_dialog:getInputText(), 0, self.use_regex, self.case_insensitive)
-                        end
+                        self:searchCallback(0)
                     end,
                 },
             },
@@ -311,6 +298,7 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
         if regex and isSlowRegex(pattern) then
             return function()
                 self.wait_button.alpha = 0.75
+                self.wait_button.movable:setMovedOffset(self.search_dialog.movable:getMovedOffset())
                 UIManager:show(self.wait_button)
                 UIManager:tickAfterNext(function()
                     do_search(func, pattern, param, regex, case_insensitive)()
@@ -355,6 +343,7 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
     }
     if regex and isSlowRegex(text) then
         self.wait_button.alpha = nil
+        -- initial position: center of the screen
         UIManager:show(self.wait_button)
         UIManager:tickAfterNext(function()
             do_search(self.searchFromCurrent, text, direction, regex, case_insensitive)()
