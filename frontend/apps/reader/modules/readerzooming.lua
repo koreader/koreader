@@ -371,11 +371,12 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     if zoom_mode == "columns" or zoom_mode == "rows" then
         if btn ~= "columns" and btn ~= "rows" then
             self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
-            settings.kopt_zoom_factor = self:setNumberOf(
+            config.zoom_factor = self:setNumberOf(
                 zoom_mode,
                 zoom_range_number,
                 zoom_mode == "columns" and settings.zoom_overlap_h or settings.zoom_overlap_v
             )
+            settings.kopt_zoom_factor = config.zoom_factor
         end
     elseif zoom_mode == "manual" then
         if btn == "manual" then
@@ -658,7 +659,7 @@ function ReaderZooming:setNumberOf(what, num, overlap)
         zoom_factor = zoom_factor * zoom_h / zoom_w
     end
     self.ui:handleEvent(Event:new("SetZoomPan", {kopt_zoom_factor = zoom_factor}))
-    self.ui:handleEvent(Event:new("RedrawCurrentPage"))
+    return zoom_factor
 end
 
 function ReaderZooming:_zoomFactorChange(title_text, direction, precision)
@@ -704,6 +705,11 @@ function ReaderZooming:onSetZoomPan(settings, no_redraw)
     for k, v in pairs(settings) do
         self[k] = v
         self.ui.doc_settings:saveSetting(k, v)
+        -- Configurable keys aren't prefixed...
+        local configurable_key = k:gsub("^kopt_", "")
+        if self.ui.document.configurable[configurable_key] then
+            self.ui.document.configurable[configurable_key] = v
+        end
     end
     if not no_redraw then
         self.ui:handleEvent(Event:new("RedrawCurrentPage"))
