@@ -264,8 +264,8 @@ if last_migration_date < 20210531 then
 end
 
 -- 202100629, Moves Duration Format to Date Time settings for other plugins to use, https://github.com/koreader/koreader/pull/7897
-if last_migration_date < 202100629 then
-    logger.info("Performing one-time migration for 202100629")
+if last_migration_date < 20210629 then
+    logger.info("Performing one-time migration for 20210629")
 
     local footer = G_reader_settings:child("footer")
     if footer and footer:has("duration_format") then
