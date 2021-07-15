@@ -1711,13 +1711,11 @@ function TextBoxWidget:moveCursorRight()
 end
 
 function TextBoxWidget:moveCursorUp()
-    if self.vertical_string_list and #self.vertical_string_list < 2 then return end
     local x, y = self:_getXYForCharPos()
     self:moveCursorToXY(x, y - self.line_height_px)
 end
 
 function TextBoxWidget:moveCursorDown()
-    if self.vertical_string_list and #self.vertical_string_list < 2 then return end
     local x, y = self:_getXYForCharPos()
     self:moveCursorToXY(x, y + self.line_height_px)
 end
