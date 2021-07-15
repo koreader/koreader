@@ -682,7 +682,7 @@ function InputText:searchString(str, case_sensitive, start_pos)
             local char_txt = self.charlist[i + j]
             local char_str = str_charlist[j]
             if not case_sensitive then
-                char_txt = Utf8Proc.lowercase(char_txt)
+                char_txt = Utf8Proc.lowercase(util.fixUtf8(char_txt,"?"))
                 char_str = Utf8Proc.lowercase(char_str)
             end
             if char_txt ~= char_str then
