@@ -675,14 +675,13 @@ end
 function InputText:searchString(str, case_sensitive, start_pos)
     local str_len = string.len(str)
     local char_pos, found = 0, 0
-    local char_txt
     start_pos = start_pos and (start_pos - 1) or self.charpos
     if not case_sensitive then
         str = Utf8Proc.lowercase(str)
     end
     for i = start_pos, #self.charlist - str_len do
         for j = 1, str_len do
-            char_txt = self.charlist[i + j]
+            local char_txt = self.charlist[i + j]
             if not case_sensitive then
                 char_txt = Utf8Proc.lowercase(char_txt)
             end
