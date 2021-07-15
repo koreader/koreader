@@ -227,7 +227,7 @@ function FileChooser:getSortingFunction(collate, reverse_collate)
 
             return a.percent_finished < b.percent_finished
         end
-    elseif collate == "numeric" then
+    elseif collate == "natural" then
         -- adapted from: http://notebook.kulchenko.com/algorithms/alphanumeric-natural-sorting-for-humans-in-lua
         local function addLeadingZeroes(d)
             local dec, n = string.match(d, "(%.?)0*(.+)")

@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20210629
+local CURRENT_MIGRATION_DATE = 20210715
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -272,6 +272,17 @@ if last_migration_date < 20210629 then
         local user_format = footer:readSetting("duration_format")
         G_reader_settings:saveSetting("duration_format", user_format)
         footer:delSetting("duration_format")
+    end
+end
+
+-- 20210715, Rename `numeric` to `natural`, https://github.com/koreader/koreader/pull/7978
+if last_migration_date < 20210715 then
+    logger.info("Performing one-time migration for 20210715")
+    if G_reader_settings:has("collate") then
+        local collate = G_reader_settings:readSetting("collate")
+        if collate == "numeric" then
+            G_reader_settings:saveSetting("collate", "natural")
+        end
     end
 end
 
