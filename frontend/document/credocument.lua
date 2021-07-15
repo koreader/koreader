@@ -980,25 +980,6 @@ function CreDocument:setTextHyphenationSoftHyphensOnly(toggle)
     self._document:setStringProperty("crengine.textlang.hyphenation.soft.hyphens.only", toggle and 1 or 0)
 end
 
-function CreDocument:setUserHyphenationDict(dict, reload)
-    logger.dbg("CreDocument: set textlang hyphenation dict", dict or "none")
-    return self._document:setUserHyphenationDict(dict or "", reload or false)
-end
-
-function CreDocument:getHyphenationForWord(word)
-    if word then
-        return self._document:getHyphenationForWord(word)
-    end
-    return word
-end
-
-function CreDocument:getLowercasedWord(word)
-    if word then
-        return self._document:getLowercasedWord(word)
-    end
-    return word
-end
-
 function CreDocument:setTextHyphenationForceAlgorithmic(toggle)
     logger.dbg("CreDocument: set textlang hyphenation force algorithmic", toggle)
     self._document:setStringProperty("crengine.textlang.hyphenation.force.algorithmic", toggle and 1 or 0)
