@@ -80,7 +80,7 @@ function FileSearcher:setSearchResults()
         self.results = self.files
     else
         if not self.case_sensitive then
-            keywords = Utf8Proc.lowercase(keywords)
+            keywords = Utf8Proc.lowercase(util.fixUtf8(keywords, "?"))
         end
         -- replace '.' with '%.'
         keywords = keywords:gsub("%.","%%%.")
@@ -94,7 +94,7 @@ function FileSearcher:setSearchResults()
                     table.insert(self.results, f)
                 end
             else
-                if string.find(Utf8Proc.lowercase(f.name), keywords) and string.sub(f.name,-4) ~= ".sdr" then
+                if string.find(Utf8Proc.lowercase(util.fixUtf8(f.name, "?")), keywords) and string.sub(f.name,-4) ~= ".sdr" then
                     table.insert(self.results, f)
                 end
             end
