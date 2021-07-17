@@ -393,18 +393,18 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         bombHeight=$((viewHeight / 2 + viewHeight / 15))
         bombMargin=$((FONTH + FONTH / 2))
         # With a little notice at the top of the screen, on a big gray screen of death ;).
-        ./fbink -q ${FBINK_BATCH_FLAG} -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})"
+        ./fbink -q ${FBINK_BATCH_FLAG} -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})" -W GL16
         if [ ${CRASH_COUNT} -eq 1 ]; then
             # Warn that we're waiting on a tap to continue...
-            ./fbink -q ${FBINK_BATCH_FLAG} -O -m -y 2 "Tap the screen to continue."
+            ./fbink -q ${FBINK_BATCH_FLAG} -O -m -y 2 "Tap the screen to continue." -W DU
         fi
         # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
         # shellcheck disable=SC2039,SC3003
-        ./fbink -q ${FBINK_BATCH_FLAG} -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} -- $'\xf0\x9f\x92\xa3'
+        ./fbink -q ${FBINK_BATCH_FLAG} -O -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} -W GL16 -- $'\xf0\x9f\x92\xa3'
         # And then print the tail end of the log on the bottom of the screen...
         crashLog="$(tail -n 25 crash.log | sed -e 's/\t/    /g')"
         # The idea for the margins being to leave enough room for an fbink -Z bar, small horizontal margins, and a font size based on what 6pt looked like @ 265dpi
-        ./fbink -q ${FBINK_BATCH_FLAG} -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight / 2 + FONTH * 2 + FONTH / 2)),left=$((viewWidth / 60)),right=$((viewWidth / 60)),px=$((viewHeight / 64)) -- "${crashLog}"
+        ./fbink -q ${FBINK_BATCH_FLAG} -O -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight / 2 + FONTH * 2 + FONTH / 2)),left=$((viewWidth / 60)),right=$((viewWidth / 60)),px=$((viewHeight / 64)) -W GL16 -- "${crashLog}"
         if [ "${PLATFORM}" != "b300-ntx" ]; then
             # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
             ./fbink -q -f -s
