@@ -241,6 +241,12 @@ if [ -z "${INTERFACE}" ]; then
     export INTERFACE
 fi
 
+# We'll enforce UR in ko_do_fbdepth, so make sure further FBInk usage (USBMS, OTA)
+# will also enforce UR... (Only actually meaningful on sunxi).
+export FBINK_NO_GYRO=1
+
+# TODO: Make sure we only have only one or two cores online on europa.
+
 # We'll want to ensure Portrait rotation to allow us to use faster blitting codepaths @ 8bpp,
 # so remember the current one before fbdepth does its thing.
 IFS= read -r ORIG_FB_ROTA <"/sys/class/graphics/fb0/rotate"
@@ -269,6 +275,7 @@ esac
 
 # The actual swap is done in a function, because we can disable it in the Developer settings, and we want to honor it on restart.
 ko_do_fbdepth() {
+    # TODO: Handle europa.
     # Check if the swap has been disabled...
     if grep -q '\["dev_startup_no_fbdepth"\] = true' 'settings.reader.lua' 2>/dev/null; then
         # Swap back to the original bitdepth (in case this was a restart)
