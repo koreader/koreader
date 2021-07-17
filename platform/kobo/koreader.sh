@@ -275,7 +275,15 @@ esac
 
 # The actual swap is done in a function, because we can disable it in the Developer settings, and we want to honor it on restart.
 ko_do_fbdepth() {
-    # TODO: Handle europa.
+    # On sunxi, the fb state is meaningless, and the minimal disp fb doesn't actually support 8bpp anyway,
+    # so just make sure we're set @ UR.
+    if [ "${PLATFORM}" = "b300-ntx" ]; then
+        echo "Making sure that rotation is set to Portrait" >>crash.log 2>&1
+        ./fbdepth -d 32 -R UR >>crash.log 2>&1
+
+        return
+    fi
+
     # Check if the swap has been disabled...
     if grep -q '\["dev_startup_no_fbdepth"\] = true' 'settings.reader.lua' 2>/dev/null; then
         # Swap back to the original bitdepth (in case this was a restart)
@@ -287,14 +295,14 @@ ko_do_fbdepth() {
                 ./fbdepth -d "${ORIG_FB_BPP}" -r "${ORIG_FB_ROTA}" >>crash.log 2>&1
             else
                 echo "Making sure we're using the original fb bitdepth @ ${ORIG_FB_BPP}bpp, and that rotation is set to Portrait" >>crash.log 2>&1
-                ./fbdepth -d "${ORIG_FB_BPP}" -r -1 >>crash.log 2>&1
+                ./fbdepth -d "${ORIG_FB_BPP}" -R UR >>crash.log 2>&1
             fi
         fi
     else
         # Swap to 8bpp if things looke sane
         if [ -n "${ORIG_FB_BPP}" ]; then
             echo "Switching fb bitdepth to 8bpp & rotation to Portrait" >>crash.log 2>&1
-            ./fbdepth -d 8 -r -1 >>crash.log 2>&1
+            ./fbdepth -d 8 -R UR >>crash.log 2>&1
         fi
     fi
 }
