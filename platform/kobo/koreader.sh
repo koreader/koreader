@@ -245,7 +245,14 @@ fi
 # will also enforce UR... (Only actually meaningful on sunxi).
 export FBINK_NO_GYRO=1
 
-# TODO: Make sure we only have only one or two cores online on europa.
+# Make sure we only have only two cores online on the Elipsa.
+# NOTE: That's a bit optimistic, we might actually need to tone that down to one,
+#       and just online the second one on demand (e.g., PDF).
+if [ "${PRODUCT}" = "europa" ]; then
+    echo "1" >"/sys/devices/system/cpu/cpu1/online"
+    echo "0" >"/sys/devices/system/cpu/cpu2/online"
+    echo "0" >"/sys/devices/system/cpu/cpu3/online"
+fi
 
 # We'll want to ensure Portrait rotation to allow us to use faster blitting codepaths @ 8bpp,
 # so remember the current one before fbdepth does its thing.
