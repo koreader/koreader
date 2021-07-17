@@ -46,7 +46,11 @@ function FileSearcher:readDir()
                 local fullpath = d.."/"..f
                 local attributes = lfs.attributes(fullpath) or {}
                 -- Don't traverse hidden folders if we're not showing them
-                if attributes.mode == "directory" and f ~= "." and f ~= ".." and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, ".")) then
+                if attributes.mode == "directory" and f ~= "." and f ~= ".."
+                    and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, "."))
+                    and FileChooser:show_dir(f)
+                    and FileChooser:show_file(f)
+                then
                     table.insert(new_dirs, fullpath)
                     table.insert(self.files, {
                         name = f,
@@ -57,7 +61,11 @@ function FileSearcher:readDir()
                         end,
                     })
                 -- Always ignore macOS resource forks, too.
-                elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") and (show_unsupported or DocumentRegistry:hasProvider(fullpath)) then
+                elseif attributes.mode == "file" and not util.stringStartsWith(f, "._")
+                    and (show_unsupported or DocumentRegistry:hasProvider(fullpath))
+                    and FileChooser:show_dir(f)
+                    and FileChooser:show_file(f)
+                then
                     table.insert(self.files, {
                         name = f,
                         text = f,
@@ -90,11 +98,11 @@ function FileSearcher:setSearchResults()
         keywords = keywords:gsub("%?","%.")
         for __,f in pairs(self.files) do
             if self.case_sensitive then
-                if string.find(f.name, keywords) and string.sub(f.name,-4) ~= ".sdr" then
+                if string.find(f.name, keywords) then
                     table.insert(self.results, f)
                 end
             else
-                if string.find(Utf8Proc.lowercase(util.fixUtf8(f.name, "?")), keywords) and string.sub(f.name,-4) ~= ".sdr" then
+                if string.find(Utf8Proc.lowercase(util.fixUtf8(f.name, "?")), keywords) then
                     table.insert(self.results, f)
                 end
             end
@@ -129,7 +137,6 @@ function FileSearcher:onShowFileSearch()
             {
                 {
                     text = _("Cancel"),
-                    enabled = true,
                     callback = function()
                         self.search_dialog:onClose()
                         UIManager:close(self.search_dialog)
@@ -147,7 +154,6 @@ function FileSearcher:onShowFileSearch()
                 },
                 {
                     text = _("Current folder"),
-                    enabled = true,
                     is_enter_default = true,
                     callback = function()
                         self.search_value = self.search_dialog:getInputText()
