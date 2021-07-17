@@ -35,7 +35,7 @@ fi
 
 wpa_cli terminate
 
-[ "${WIFI_MODULE}" == "dhd" ] && wlarm_le -i "${INTERFACE}" down
+[ "${WIFI_MODULE}" = "dhd" ] && wlarm_le -i "${INTERFACE}" down
 ifconfig "${INTERFACE}" down
 
 # Some sleep in between may avoid system getting hung

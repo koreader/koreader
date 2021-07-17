@@ -57,7 +57,7 @@ if grep -q "sdio_wifi_pwr" "/proc/modules"; then
         rm -f "/tmp/resolv.ko"
     fi
     wpa_cli terminate
-    [ "${WIFI_MODULE}" == "dhd" ] && wlarm_le -i "${INTERFACE}" down
+    [ "${WIFI_MODULE}" = "dhd" ] && wlarm_le -i "${INTERFACE}" down
     ifconfig "${INTERFACE}" down
     # NOTE: Kobo's busybox build is weird. rmmod appears to be modprobe in disguise, defaulting to the -r flag...
     #       But since there's currently no modules.dep file being shipped, nor do they include the depmod applet,
