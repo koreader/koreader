@@ -302,12 +302,12 @@ local KoboLuna = Kobo:new{
 local KoboEuropa = Kobo:new{
     model = "Kobo_europa",
     isSunxi = yes,
-    canToggleChargingLED = no, -- FIXME
+    canToggleChargingLED = yes,
     hasFrontlight = yes,
     display_dpi = 227,
     g2d_rota = 270, -- i.e., native layout is CCW
     battery_sysfs = "/sys/class/power_supply/battery",
-    ntx_dev = "/dev/input/event0", -- FIXME
+    ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
     touch_dev = "/dev/input/by-path/platform-0-0010-event",
 }
 
@@ -839,6 +839,14 @@ function Kobo:toggleChargingLED(toggle)
     if toggle == true then
         -- NOTE: Technically, Nickel forces a toggle off before that, too.
         --       But since we do that on startup, it shouldn't be necessary here...
+        if self:isSunxi() then
+            f:write("ch 3")
+            f:flush()
+            f:write("cur 1")
+            f:flush()
+            f:write("dc 63")
+            f:flush()
+        end
         f:write("ch 4")
         f:flush()
         f:write("cur 1")
