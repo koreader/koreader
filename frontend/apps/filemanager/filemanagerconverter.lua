@@ -38,11 +38,12 @@ local FileConverter = {
 ---- @string markdown the markdown fragment
 ---- @string title an optional title for the HTML document
 ---- @treturn string an HTML document
-function FileConverter:mdToHtml(markdown, title)
+function FileConverter:mdToHtml(markdown, title, stylesheet)
     local MD = require("apps/filemanager/lib/md")
+    stylesheet = stylesheet and string.format("<style>\n%s\n</style>\n", stylesheet) or ""
     local md_options = {
         prependHead = "<!DOCTYPE html>\n<html>\n<head>\n",
-        insertHead = string.format("<title>%s</title>\n</head>\n<body>\n", title),
+        insertHead = string.format("<title>%s</title>\n%s</head>\n<body>\n", title, stylesheet),
         appendTail = "\n</body>\n</html>",
     }
     local html, err = MD(markdown, md_options)
