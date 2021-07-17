@@ -53,6 +53,16 @@ local Kobo = Generic:new{
     isMk7 = no,
     -- MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls are generally reliable
     hasReliableMxcWaitFor = yes,
+    -- Sunxi devices require a completely different fb backend...
+    isSunxi = no,
+    -- On sunxi, G2D rotaation angle when the device is UR
+    g2d_rota = nil,
+    -- Standard sysfs path to the battery directory
+    battery_sysfs = "/sys/class/power_supply/mc13892_bat",
+    -- Stable path to the NTX input device
+    ntx_dev = "/dev/input/event0",
+    -- Stable path to the Touch input device
+    touch_dev = "/dev/input/event1",
 }
 
 --- @todo hasKeys for some devices?
@@ -288,6 +298,19 @@ local KoboLuna = Kobo:new{
     display_dpi = 212,
 }
 
+-- Kobo Elipsa
+local KoboEuropa = Kobo:new{
+    model = "Kobo_europa",
+    isSunxi = yes,
+    canToggleChargingLED = no, -- FIXME
+    hasFrontlight = yes,
+    display_dpi = 227,
+    g2d_rota = 270, -- i.e., native layout is CCW
+    battery_sysfs = "/sys/class/power_supply/battery",
+    ntx_dev = "/dev/input/event0", -- FIXME
+    touch_dev = "/dev/input/by-path/platform-0-0010-event",
+}
+
 function Kobo:init()
     -- Check if we need to disable MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls...
     local mxcfb_bypass_wait_for
@@ -297,16 +320,26 @@ function Kobo:init()
         mxcfb_bypass_wait_for = not self:hasReliableMxcWaitFor()
     end
 
-    self.screen = require("ffi/framebuffer_mxcfb"):new{
-        device = self,
-        debug = logger.dbg,
-        is_always_portrait = self.isAlwaysPortrait(),
-        mxcfb_bypass_wait_for = mxcfb_bypass_wait_for,
-    }
-    if self.screen.fb_bpp == 32 then
-        -- Ensure we decode images properly, as our framebuffer is BGRA...
-        logger.info("Enabling Kobo @ 32bpp BGR tweaks")
-        self.hasBGRFrameBuffer = yes
+    if self:isSunxi() then
+        self.screen = require("ffi/framebuffer_sunxi"):new{
+            device = self,
+            debug = logger.dbg,
+            is_always_portrait = self.isAlwaysPortrait(),
+            mxcfb_bypass_wait_for = mxcfb_bypass_wait_for,
+            rota = self.g2d_rota,
+        }
+    else
+        self.screen = require("ffi/framebuffer_mxcfb"):new{
+            device = self,
+            debug = logger.dbg,
+            is_always_portrait = self.isAlwaysPortrait(),
+            mxcfb_bypass_wait_for = mxcfb_bypass_wait_for,
+        }
+        if self.screen.fb_bpp == 32 then
+            -- Ensure we decode images properly, as our framebuffer is BGRA...
+            logger.info("Enabling Kobo @ 32bpp BGR tweaks")
+            self.hasBGRFrameBuffer = yes
+        end
     end
 
     -- Automagically set this so we never have to remember to do it manually ;p
@@ -318,7 +351,10 @@ function Kobo:init()
         self.canHWDither = yes
     end
 
-    self.powerd = require("device/kobo/powerd"):new{device = self}
+    self.powerd = require("device/kobo/powerd"):new{
+        device = self,
+        battery_sysfs = self.battery_sysfs,
+    }
     -- NOTE: For the Forma, with the buttons on the right, 193 is Top, 194 Bottom.
     self.input = require("device/input"):new{
         device = self,
@@ -350,8 +386,8 @@ function Kobo:init()
     Generic.init(self)
 
     -- When present, event2 is the raw accelerometer data (3-Axis Orientation/Motion Detection)
-    self.input.open("/dev/input/event0") -- Various HW Buttons, Switches & Synthetic NTX events
-    self.input.open("/dev/input/event1")
+    self.input.open(self.ntx_dev) -- Various HW Buttons, Switches & Synthetic NTX events
+    self.input.open(self.touch_dev)
     -- fake_events is only used for usb plug event so far
     -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status (... but only when Nickel is running ;p)
     self.input.open("fake_events")
@@ -791,7 +827,7 @@ function Kobo:toggleChargingLED(toggle)
     --       we've seen *extremely* weird behavior in the past when playing with it on older devices (c.f., #5479).
     --       In fact, Nickel itself doesn't provide this feature on said older devices
     --       (when it does, it's an option in the Energy saving settings),
-    --       which is why we also limit ourselves to "true" Mk. 7 devices.
+    --       which is why we also limit ourselves to "true" on devices where this was tested.
     local f = io.open("/sys/devices/platform/ntx_led/lit", "w")
     if not f then
         logger.err("cannot open /sys/devices/platform/ntx_led/lit for writing!")
@@ -881,6 +917,8 @@ elseif codename == "storm" then
     return KoboStorm
 elseif codename == "luna" then
     return KoboLuna
+elseif codename == "europa" then
+    return KoboEuropa
 else
     error("unrecognized Kobo model "..codename)
 end
