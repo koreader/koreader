@@ -308,6 +308,7 @@ local KoboEuropa = Kobo:new{
     g2d_rota = 270, -- i.e., native layout is CCW
     battery_sysfs = "/sys/class/power_supply/battery",
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
+    -- TODO: Discard hovering pen input events
     touch_dev = "/dev/input/by-path/platform-0-0010-event",
 }
 
