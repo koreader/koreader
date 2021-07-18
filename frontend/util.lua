@@ -166,7 +166,7 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
             end
         else
             if hmsFormat then
-                return T(_("%1m%2s"), "0", string.format("%02.f", seconds))
+                return T(_("%1m%2s"), "0", string.format("%02.f", math.floor(seconds)))
             else
                 return "0'" .. string.format("%02.f", seconds) .. "''"
             end
