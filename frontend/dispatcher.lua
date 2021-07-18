@@ -28,6 +28,7 @@ Each setting contains:
 --]]--
 
 local CreOptions = require("ui/data/creoptions")
+local KoptOptions = require("ui/data/koptoptions")
 local Device = require("device")
 local Event = require("ui/event")
 local Notification = require("ui/widget/notification")
@@ -103,7 +104,7 @@ local settingsList = {
     last_page = {category="none", event="GoToEnd", title=_("Last page"), rolling=true, paging=true},
     prev_bookmark = {category="none", event="GotoPreviousBookmarkFromPage", title=_("Previous bookmark"), rolling=true, paging=true},
     next_bookmark = {category="none", event="GotoNextBookmarkFromPage", title=_("Next bookmark"), rolling=true, paging=true},
-    go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), rolling=true, paging=true},
+    go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), filemanager=true, rolling=true, paging=true},
     skim = {category="none", event="ShowSkimtoDialog", title=_("Skim document"), rolling=true, paging=true},
     back = {category="none", event="Back", title=_("Back"), rolling=true, paging=true},
     previous_location = {category="none", event="GoBackLink", arg=true, title=_("Back to previous location"), rolling=true, paging=true},
@@ -158,6 +159,37 @@ local settingsList = {
     embedded_fonts = {category="string", rolling=true},
     smooth_scaling = {category="string", rolling=true},
     nightmode_images = {category="string", rolling=true},
+
+    -- parsed from KoptOptions
+    trim_page = {category="string", paging=true},
+    page_margin = {category="string", paging=true},
+    zoom_overlap_h = {category="string", paging=true},
+    zoom_overlap_v = {category="string", paging=true},
+    zoom_mode_type = {category="string", paging=true},
+    zoom_range_number = {category="string", paging=true},
+    zoom_factor = {category="string", paging=true},
+    zoom_mode_genus = {category="string", paging=true},
+    zoom_direction = {category="string", paging=true},
+    page_scroll = {category="string", paging=true},
+    page_gap_height = {category="string", paging=true},
+    full_screen = {category="string", paging=true},
+    --line_spacing = {category="string", paging=true},
+    justification = {category="string", paging=true},
+    --font_size = {category="string", paging=true},
+    font_fine_tune = {category="string", paging=true},
+    word_spacing = {category="string", paging=true},
+    text_wrap = {category="string", paging=true},
+    contrast = {category="string", paging=true},
+    page_opt = {category="string", paging=true},
+    hw_dithering = {category="string", paging=true},
+    quality = {category="string", paging=true},
+    doc_language = {category="string", paging=true},
+    forced_ocr = {category="string", paging=true},
+    writing_direction = {category="string", paging=true},
+    defect_size = {category="string", paging=true},
+    auto_straighten = {category="string", paging=true},
+    detect_indent = {category="string", paging=true},
+    max_columns = {category="string", paging=true},
 }
 
 -- array for item order in menu
@@ -286,6 +318,41 @@ local dispatcher_menu_order = {
     "embedded_fonts",
     "smooth_scaling",
     "nightmode_images",
+
+    "trim_page",
+    "page_margin",
+
+    "zoom_overlap_h",
+    "zoom_overlap_v",
+    "zoom_mode_type",
+    --"zoom_range_number",
+    "zoom_factor",
+    "zoom_mode_genus",
+    "zoom_direction",
+
+    "page_scroll",
+    "page_gap_height",
+    "full_screen",
+    --"line_spacing",
+    "justification",
+
+    --"font_size",
+    --"font_fine_tune",
+    "word_spacing",
+    "text_wrap",
+
+    "contrast",
+    "page_opt",
+    "hw_dithering",
+    "quality",
+
+    "doc_language",
+    "forced_ocr",
+    "writing_direction",
+    "defect_size",
+    "auto_straighten",
+    "detect_indent",
+    --"max_columns",
 }
 
 --[[--
@@ -337,6 +404,9 @@ function Dispatcher:init()
     end
     for i=1,#CreOptions do
         parseoptions(CreOptions, i)
+    end
+    for i=1,#KoptOptions do
+        parseoptions(KoptOptions, i)
     end
     UIManager:broadcastEvent(Event:new("DispatcherRegisterActions"))
     Dispatcher.initialized = true
@@ -619,40 +689,37 @@ arguments are:
 function Dispatcher:execute(ui, settings, gesture)
     for k, v in pairs(settings) do
         if settingsList[k] ~= nil and (settingsList[k].conditions == nil or settingsList[k].conditions == true) then
-            -- Be sure we don't send a document setting event if there's not yet or no longer a document
-            if ui.document or (not settingsList[k].paging and not settingsList[k].rolling) then
-                Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
-                if settingsList[k].category == "none" then
-                    if settingsList[k].arg ~= nil then
-                        ui:handleEvent(Event:new(settingsList[k].event, settingsList[k].arg))
-                    else
-                        ui:handleEvent(Event:new(settingsList[k].event))
+            Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
+            if settingsList[k].category == "none" then
+                if settingsList[k].arg ~= nil then
+                    UIManager:nextTick( function() ui:handleEvent(Event:new(settingsList[k].event, settingsList[k].arg))end)
+                else
+                    UIManager:nextTick( function() ui:handleEvent(Event:new(settingsList[k].event))end)
+                end
+            end
+            if settingsList[k].category == "absolutenumber"
+                or settingsList[k].category == "string"
+            then
+                UIManager:nextTick( function() ui:handleEvent(Event:new(settingsList[k].event, v))end)
+            end
+            -- the event can accept a gesture object or an argument
+            if settingsList[k].category == "arg" then
+                local arg = gesture or settingsList[k].arg
+                UIManager:nextTick( function() ui:handleEvent(Event:new(settingsList[k].event, arg))end)
+            end
+            -- the event can accept a gesture object or a number
+            if settingsList[k].category == "incrementalnumber" then
+                local arg = v ~= 0 and v or gesture or 0
+                UIManager:nextTick( function() ui:handleEvent(Event:new(settingsList[k].event, arg))end)
+            end
+            if ui.document and settingsList[k].configurable then
+                local value = v
+                if type(v) ~= "number" then
+                    for i, r in ipairs(settingsList[k].args) do
+                        if v == r then value = settingsList[k].configurable.values[i] break end
                     end
                 end
-                if settingsList[k].category == "absolutenumber"
-                    or settingsList[k].category == "string"
-                then
-                    ui:handleEvent(Event:new(settingsList[k].event, v))
-                end
-                -- the event can accept a gesture object or an argument
-                if settingsList[k].category == "arg" then
-                    local arg = gesture or settingsList[k].arg
-                    ui:handleEvent(Event:new(settingsList[k].event, arg))
-                end
-                -- the event can accept a gesture object or a number
-                if settingsList[k].category == "incrementalnumber" then
-                    local arg = v ~= 0 and v or gesture or 0
-                    ui:handleEvent(Event:new(settingsList[k].event, arg))
-                end
-                if ui.document and settingsList[k].configurable then
-                    local value = v
-                    if type(v) ~= "number" then
-                        for i, r in ipairs(settingsList[k].args) do
-                            if v == r then value = settingsList[k].configurable.values[i] break end
-                        end
-                    end
-                    ui:handleEvent(Event:new("ConfigChange", settingsList[k].configurable.name, value))
-                end
+                UIManager:nextTick( function() ui:handleEvent(Event:new("ConfigChange", settingsList[k].configurable.name, value))end)
             end
         end
     end
