@@ -372,6 +372,18 @@ function Document:postRenderPage()
     return nil
 end
 
+function Document:getTileCacheValidity()
+    return self.tile_cache_validity_ts
+end
+
+function Document:setTileCacheValidity(ts)
+    self.tile_cache_validity_ts = ts
+end
+
+function Document:resetTileCacheValidity()
+    self.tile_cache_validity_ts = os.time()
+end
+
 function Document:getFullPageHash(pageno, zoom, rotation, gamma, render_mode, color)
     return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
                     ..zoom.."|"..rotation.."|"..gamma.."|"..render_mode..(color and "|color" or "")
@@ -386,7 +398,16 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
         hash_excerpt = hash.."|"..tostring(rect)
         tile = DocCache:check(hash_excerpt)
     end
-    if tile then return tile end
+    if tile then
+        if self.tile_cache_validity_ts then
+            if tile.created_ts and tile.created_ts >= self.tile_cache_validity_ts then
+                return tile
+            end
+            logger.dbg("discarding stale cached tile")
+        else
+            return tile
+        end
+    end
 
     self:preRenderPage()
 
@@ -411,6 +432,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     -- prepare cache item with contained blitbuffer
     tile = TileCacheItem:new{
         persistent = true,
+        created_ts = os.time(),
         excerpt = size,
         pageno = pageno,
         bb = Blitbuffer.new(size.w, size.h, self.render_color and self.color_bb_type or nil)

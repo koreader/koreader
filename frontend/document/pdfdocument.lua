@@ -208,6 +208,20 @@ local function _quadpointsFromPboxes(pboxes)
     return quadpoints, n
 end
 
+local function _quadpointsToPboxes(quadpoints, n)
+    -- reverse of previous function
+    local pboxes = {}
+    for i=1, n do
+        table.insert(pboxes, {
+            x = quadpoints[8*i-4],
+            y = quadpoints[8*i-3],
+            w = quadpoints[8*i-6] - quadpoints[8*i-4],
+            h = quadpoints[8*i-5] - quadpoints[8*i-3],
+        })
+    end
+    return pboxes
+end
+
 function PdfDocument:saveHighlight(pageno, item)
     local can_write = self:_checkIfWritable()
     if can_write ~= true then return can_write end
@@ -223,8 +237,12 @@ function PdfDocument:saveHighlight(pageno, item)
     elseif item.drawer == "strikeout" then
         annot_type = C.PDF_ANNOT_STRIKEOUT
     end
-    page:addMarkupAnnotation(quadpoints, n, annot_type)
+    page:addMarkupAnnotation(quadpoints, n, annot_type) -- may update/adjust quadpoints
+    -- Update pboxes with the possibly adjusted coordinates (this will have it updated
+    -- in self.view.highlight.saved[page])
+    item.pboxes = _quadpointsToPboxes(quadpoints, n)
     page:close()
+    self:resetTileCacheValidity()
 end
 
 function PdfDocument:deleteHighlight(pageno, item)
@@ -237,6 +255,7 @@ function PdfDocument:deleteHighlight(pageno, item)
     local annot = page:getMarkupAnnotation(quadpoints, n)
     if annot ~= nil then
         page:deleteMarkupAnnotation(annot)
+        self:resetTileCacheValidity()
     end
     page:close()
 end
@@ -251,6 +270,7 @@ function PdfDocument:updateHighlightContents(pageno, item, contents)
     local annot = page:getMarkupAnnotation(quadpoints, n)
     if annot ~= nil then
         page:updateMarkupAnnotation(annot, contents)
+        self:resetTileCacheValidity()
     end
     page:close()
 end

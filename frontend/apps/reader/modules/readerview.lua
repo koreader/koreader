@@ -760,6 +760,7 @@ In combination with zoom to fit page, page height, content height, content or co
 end
 
 function ReaderView:onReadSettings(config)
+    self.document:setTileCacheValidity(config:readSetting("tile_cache_validity_ts"))
     self.render_mode = config:readSetting("render_mode") or 0
     local rotation_mode = nil
     local locked = G_reader_settings:isTrue("lock_rotation")
@@ -888,6 +889,7 @@ function ReaderView:onPageGapUpdate(page_gap)
 end
 
 function ReaderView:onSaveSettings()
+    self.ui.doc_settings:saveSetting("tile_cache_validity_ts", self.document:getTileCacheValidity())
     self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
     -- Don't etch the current rotation in stone when sticky rotation is enabled
     local locked = G_reader_settings:isTrue("lock_rotation")
