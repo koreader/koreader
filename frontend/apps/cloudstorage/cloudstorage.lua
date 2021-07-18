@@ -435,7 +435,7 @@ function CloudStorage:synchronizeCloud(item)
     local Trapper = require("ui/trapper")
     Trapper:wrap(function()
         Trapper:setPausedText("Download paused.\nDo you want to continue or abort downloading files?")
-        local ok, downloaded_files, failed_files = pcall(self.downloadListFiles, self, item)
+        local ok, downloaded_files, failed_files = pcall(DropBox.synchronize, self, item)
         if ok and downloaded_files then
             if not failed_files then failed_files = 0 end
             local text
