@@ -121,11 +121,7 @@ function CalibreMetadata:loadBookList()
         return {}
     end
     local books, err
-    if attr.size > MAX_JSON_FILESIZE then
-        books, err = parser.parseFile(self.metadata)
-    else
-        books, err = rapidjson.load(self.metadata)
-    end
+    books, err = rapidjson.load(self.metadata)
     if not books then
         logger.warn(string.format("Unable to load library from json file %s: \n%s",
             self.metadata, err))
