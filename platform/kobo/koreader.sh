@@ -399,10 +399,9 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         bombHeight=$((viewHeight / 2 + viewHeight / 15))
         bombMargin=$((FONTH + FONTH / 2))
         # Start with a big gray screen of death, and our friendly old school crash icon ;)
-        ./fbink -q ${FBINK_BATCH_FLAG} -c -B GRAY9 -W GL16
         # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
         # shellcheck disable=SC2039,SC3003
-        ./fbink -q ${FBINK_BATCH_FLAG} ${FBINK_BGLESS_FLAG} -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} -W GL16 -- $'\xf0\x9f\x92\xa3'
+        ./fbink -q ${FBINK_BATCH_FLAG} -c -B GRAY9 -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} -W GL16 -- $'\xf0\x9f\x92\xa3'
         # With a little notice at the top of the screen, on a big gray screen of death ;).
         ./fbink -q ${FBINK_BATCH_FLAG} ${FBINK_BGLESS_FLAG} -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})" -W GL16
         if [ ${CRASH_COUNT} -eq 1 ]; then
