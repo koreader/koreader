@@ -250,9 +250,12 @@ if [ "${PLATFORM}" = "b300-ntx" ]; then
     FBINK_BATCH_FLAG=""
     # Same idea for backgroundless...
     FBINK_BGLESS_FLAG="-B GRAY9"
+    # It also means we need explicit background padding in the OT codepath...
+    FBINK_OT_PADDING=",padding=BOTH"
 else
     FBINK_BATCH_FLAG="-b"
     FBINK_BGLESS_FLAG="-O"
+    FBINK_OT_PADDING=""
 fi
 
 # Make sure we only have only two cores online on the Elipsa.
@@ -407,7 +410,7 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         # And then print the tail end of the log on the bottom of the screen...
         crashLog="$(tail -n 25 crash.log | sed -e 's/\t/    /g')"
         # The idea for the margins being to leave enough room for an fbink -Z bar, small horizontal margins, and a font size based on what 6pt looked like @ 265dpi
-        ./fbink -q ${FBINK_BATCH_FLAG} ${FBINK_BGLESS_FLAG} -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight / 2 + FONTH * 2 + FONTH / 2)),left=$((viewWidth / 60)),right=$((viewWidth / 60)),px=$((viewHeight / 64)) -W GL16 -- "${crashLog}"
+        ./fbink -q ${FBINK_BATCH_FLAG} ${FBINK_BGLESS_FLAG} -t regular=./fonts/droid/DroidSansMono.ttf,top=$((viewHeight / 2 + FONTH * 2 + FONTH / 2)),left=$((viewWidth / 60)),right=$((viewWidth / 60)),px=$((viewHeight / 64))${FBINK_OT_PADDING} -W GL16 -- "${crashLog}"
         if [ "${PLATFORM}" != "b300-ntx" ]; then
             # So far, we hadn't triggered an actual screen refresh, do that now, to make sure everything is bundled in a single flashing refresh.
             ./fbink -q -f -s
