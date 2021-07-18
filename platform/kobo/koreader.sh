@@ -398,15 +398,17 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         # Height @ ~56.7%, w/ a margin worth 1.5 lines
         bombHeight=$((viewHeight / 2 + viewHeight / 15))
         bombMargin=$((FONTH + FONTH / 2))
-        # With a little notice at the top of the screen, on a big gray screen of death ;).
-        ./fbink -q ${FBINK_BATCH_FLAG} -c -B GRAY9 -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})" -W GL16
-        if [ ${CRASH_COUNT} -eq 1 ]; then
-            # Warn that we're waiting on a tap to continue...
-            ./fbink -q ${FBINK_BATCH_FLAG} ${FBINK_BGLESS_FLAG} -m -y 2 "Tap the screen to continue." -W DU
-        fi
+        # Start with a big gray screen of death, and our friendly old school crash icon ;)
+        ./fbink -q ${FBINK_BATCH_FLAG} -c -B GRAY9 -W GL16
         # U+1F4A3, the hard way, because we can't use \u or \U escape sequences...
         # shellcheck disable=SC2039,SC3003
         ./fbink -q ${FBINK_BATCH_FLAG} ${FBINK_BGLESS_FLAG} -m -t regular=./fonts/freefont/FreeSerif.ttf,px=${bombHeight},top=${bombMargin} -W GL16 -- $'\xf0\x9f\x92\xa3'
+        # With a little notice at the top of the screen, on a big gray screen of death ;).
+        ./fbink -q ${FBINK_BATCH_FLAG} ${FBINK_BGLESS_FLAG} -m -y 1 "Don't Panic! (Crash n°${CRASH_COUNT} -> ${RETURN_VALUE})" -W GL16
+        if [ ${CRASH_COUNT} -eq 1 ]; then
+            # Warn that we're waiting on a tap to continue...
+            ./fbink -q ${FBINK_BATCH_FLAG} ${FBINK_BGLESS_FLAG} -m -y 2 "Tap the screen to continue." -W GL16
+        fi
         # And then print the tail end of the log on the bottom of the screen...
         crashLog="$(tail -n 25 crash.log | sed -e 's/\t/    /g')"
         # The idea for the margins being to leave enough room for an fbink -Z bar, small horizontal margins, and a font size based on what 6pt looked like @ 265dpi
