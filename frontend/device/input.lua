@@ -590,6 +590,9 @@ function Input:handleTouchEv(ev)
             self:setCurrentMtSlot("x", ev.value)
         elseif ev.code == C.ABS_MT_POSITION_Y then
             self:setCurrentMtSlot("y", ev.value)
+        elseif ev.code == C.ABS_MT_PRESSURE and ev.value == 0 then
+            -- Drop hovering pen events
+            self:setCurrentMtSlot("id", -1)
 
         -- code to emulate mt protocol on kobos
         -- we "confirm" abs_x, abs_y only when pressure ~= 0
