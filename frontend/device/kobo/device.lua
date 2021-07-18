@@ -316,7 +316,6 @@ local KoboEuropa = Kobo:new{
     boot_rota = C.FB_ROTATE_CCW,
     battery_sysfs = "/sys/class/power_supply/battery",
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
-    -- TODO: Discard hovering pen input events
     touch_dev = "/dev/input/by-path/platform-0-0010-event",
 }
 
