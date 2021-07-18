@@ -3,23 +3,71 @@ return {
         ",",
         north = ";",
         northeast = "(",
-        northwest = "\\",
-        east = "?",
-        west = "¿",
-        "{",
-        "}",
-        "[",
+        northwest = "¿",
+        east = "„",
+        west = "?",
     },
     prd = {
         ".",
         north = ":",
         northeast = ")",
-        northwest = "/",
+        northwest = "¡",
         east = "…",
         west = "!",
-        "]",
-        "-",
-        "_",
+    },
+    apo = {
+        "'",
+        north = '"',
+        east = "’",
+        west = "‘",
+        northeast = "›",
+        northwest = "‹",
+    },
+    quo = {
+        '"',
+        north = "'",
+        east = "”",
+        west = "“",
+        northeast = "»",
+        northwest = "«",
+    },
+    smc = {
+        ";",
+        east = { label = "!…", key = "!important;" },
+        northeast = "}",
+        northwest = "{",
+        west = "-",
+        north = ":",
+        south = "*",
+        southwest = "0",
+        southeast = ">",
+    },
+    sla = {
+        "/",
+        north = "?",
+        west ="\\",
+        northwest = "|",
+    },
+    cri = {
+        "▞",
+        northeast = "▝",
+        northwest = "▘",
+        southeast = "▗",
+        southwest = "▖",
+    },
+    cro = {
+        "▚",
+        northeast = "▜",
+        northwest = "▛",
+        southeast = "▟",
+        southwest = "▙",
+    },
+    sud = {
+        "＼",
+        north = "▀",
+        south = "▄",
+        east = "▐",
+        west = "▌",
     },
     _at = {
         "@",
@@ -29,13 +77,10 @@ return {
     },
     _eq = {
         "=",
-        north = "≠",
-        northeast = "»",
-        northwest = "«",
-        east = ">",
-        west = "<",
-        south = "≈",
-        southeast = "≥",
+        north = "_",
+        northwest = "-",
+        west = "≈",
+        south = "≥",
         southwest = "≤",
     },
     _A_ = {
@@ -53,7 +98,7 @@ return {
     },
     _a_ = {
         "a",
-        north = "ä",
+        north = "A",
         northeast = "á",
         northwest = "à",
         east = "â",
@@ -63,18 +108,18 @@ return {
         southwest = "å",
         "ā",
         "ǎ",
+        "ä",
     },
     _B_ = {
         "B",
-        north = "Β",
-        northeast = "β",
-        northwest = "♭",
+        east = "β",
+        west = "♭",
     },
     _b_ = {
         "b",
-        north = "Β",
-        northeast = "β",
-        northwest = "♭",
+        north = "B",
+        east = "β",
+        west = "♭",
     },
     _C_ = {
         "C",
@@ -89,7 +134,7 @@ return {
     },
     _c_ = {
         "c",
-        north = "ċ",
+        north = "C",
         northeast = "ć",
         northwest = "🄯", -- copyleft symbol
         east = "ĉ",
@@ -97,6 +142,7 @@ return {
         south = "ç",
         southeast = "©", -- copyright symbol
         southwest = "¢", -- cent sign
+        "ċ",
     },
     _D_ = {
         "D",
@@ -107,10 +153,11 @@ return {
     },
     _d_ = {
         "d",
-        north = "đ",
+        north = "D",
         northeast = "ð",
         northwest = "ď",
         east = "δ",
+        west = "đ",
     },
     _E_ = {
         "E",
@@ -128,13 +175,13 @@ return {
     },
     _e_ = {
         "e",
-        north = "ë",
+        north = "E",
         northeast = "é",
         northwest = "è",
         east = "ê",
         west = "ẽ",
         south = "ę",
-        southeast = "€",
+        southeast = "ë",
         southwest = "ė",
         "ē",
         "ě",
@@ -147,6 +194,7 @@ return {
     },
     _f_ = {
         "f",
+        north = "F",
         east = "ƒ", -- Guilder/Florin
         west = "φ", -- lowercase phi
     },
@@ -157,6 +205,7 @@ return {
     },
     _g_ = {
         "g",
+        north = "G",
         east = "ɣ", -- voiced velar fricative IPA
         west = "γ", -- lowercase gamma
     },
@@ -167,6 +216,7 @@ return {
     },
     _h_ = {
         "h",
+        north = "H",
         east = "ɥ", -- labialized palatal approximant (like a combination between /w/ and /y/)
         west = "η", -- lowercase eta
     },
@@ -178,19 +228,20 @@ return {
         east = "Î",
         west = "Ĩ",
         south = "Į",
-        "Ī",
-        "ɪ", -- small capital letter i, near-close front unrounded vowel IPA
+        southeast = "ɪ",
+        southwest = "Ī",
     },
     _i_ = {
         "i",
-        north = "ï",
+        north = "I",
         northeast = "í",
         northwest = "ì",
         east = "î",
         west = "ĩ",
         south = "į",
-        "ī",
-        "ɪ", -- small capital letter i, near-close front unrounded vowel IPA
+        southeast = "ɪ",
+        southwest = "ī",
+        "ï",
     },
     _J_ = {
         "J",
@@ -198,54 +249,43 @@ return {
     },
     _j_ = {
         "j",
+        north = "J",
         east = "ʝ", -- voiced palatal fricative
     },
     _K_ = {
         "K",
-        north = '"',
-        south = "Ķ",
-        east = "–", -- hyphen minus
-        southeast = "—", -- em dash
-        southwest = "–", -- en dash
+        west = "Ķ",
         "Κ", -- kappa uppercase
         "κ", -- kappa lowercase
     },
     _k_ = {
         "k",
-        north = '"',
-        south = "ķ",
-        east = "–", -- hyphen minus
-        southeast = "—", -- em dash
-        southwest = "–", -- en dash
-        "Κ", -- kappa uppercase
-        "κ", -- kappa lowercase
+        north = "K",
+        west = "ķ",
+        northwest = "Κ", -- kappa uppercase
+        east = "κ", -- kappa lowercase
     },
     _L_ = {
         "L",
-        north = "'",
         northeast = "Ĺ",
         northwest = "Ľ",
-        east = "+",
         west = "Ł",
         south = "Ļ",
-        southeast = "£",
         southwest = "ꝉ", -- abbreviation for vel (Latin or)
-        "Λ",
-        "λ",
-        "ɫ", -- dark l, velarized alveolar lateral approximant IPA
+        east = "Λ",
+        southeast = "λ",
+        north = "ɫ", -- dark l, velarized alveolar lateral approximant IPA
     },
     _l_ = {
         "l",
-        north = "'",
+        north = "L",
         northeast = "ĺ",
         northwest = "ľ",
-        east = "+",
         west = "ł",
         south = "ļ",
-        southeast = "£",
         southwest = "ꝉ", -- abbreviation for vel (Latin or)
-        "Λ",
-        "λ",
+        east = "Λ",
+        southeast = "λ",
         "ɫ", -- dark l, velarized alveolar lateral approximant IPA
     },
     _M_ = {
@@ -255,6 +295,7 @@ return {
     },
     _m_ = {
         "m",
+        north = "M",
         east = "ɱ", -- labiodental nasal IPA
         west = "μ", -- lowercase mu
     },
@@ -271,11 +312,12 @@ return {
     },
     _n_ = {
         "n",
-        north = "ñ",
+        north = "N",
+        west = "ñ",
         northeast = "ń",
         northwest = "ǹ",
         east = "ɲ", -- palatal nasal IPA
-        west = "ν", -- lowercase nu
+        "ν", -- lowercase nu
         southeast = "ŋ", -- letter eng (ligature of N and G), velar nasal IPA
         south = "ņ",
         southwest = "ň", -- Czech
@@ -296,7 +338,7 @@ return {
     },
     _o_ = {
         "o",
-        north = "ö",
+        north = "O",
         northeast = "ó",
         northwest = "ò",
         east = "ô",
@@ -307,26 +349,27 @@ return {
         "ō",
         "ɔ", -- open o, open-mid back rounded vowel IPA
         "ɒ", -- turned alpha, open back rounded vowel IPA
+        "ö",
     },
     _P_ = {
         "P",
         west = "Π", -- uppercase pi
+        northwest = "℗",
     },
     _p_ = {
         "p",
+        north = "P",
         west = "π", -- lowercase pi
+        northwest = "℗",
     },
     _Q_ = {
         "Q",
-        north = "[",
-        northeast = "{",
         --- @todo Render q̃ correctly on key (not a problem in textbox?)
         --east = {"q̃"}, -- Old/Middle French abbreviation of que
     },
     _q_ = {
         "q",
-        north = "[",
-        northeast = "{",
+        north = "Q",
         --- @todo Render q̃ correctly on key (not a problem in textbox?)
         --east = {"q̃"}, -- Old/Middle French abbreviation of que
     },
@@ -342,10 +385,11 @@ return {
         southwest = "ɹ", -- alveolar approximant IPA
         "ʀ", -- uvular trill IPA
         "ʁ", -- voiced uvular fricative IPA
+        "®",
     },
     _r_ = {
         "r",
-        north = "ρ", -- lowercase rho
+        north = "R",
         northeast = "ŕ",
         northwest = "Ρ ", -- uppercase rho
         east = "ɾ", -- alveolar flap or tap IPA
@@ -353,8 +397,9 @@ return {
         south = "ŗ", -- r cedilla (Latvian)
         southeast = "ɻ", -- retroflex approximant IPA
         southwest = "ɹ", -- alveolar approximant IPA
+        "ρ",
         "ʀ", -- uvular trill IPA
-        "ʁ", -- voiced uvular fricative IPA
+        "®",
     },
     _S_ = {
         "S",
@@ -364,24 +409,24 @@ return {
         east = "Ŝ",
         west = "Š",
         south = "Ş",
-        southeast = "$",
         southwest = "Ṣ",
         "ſ", -- long s
         "Σ", -- uppercase sigma
+        southeast = "℠",
     },
     _s_ = {
         "s",
-        north = "ß", -- lowercase eszett
+        north = "S",
         northeast = "ś",
         northwest = "ʃ", -- esh, voiceless palato-alveolar fricative IPA
         east = "ŝ",
         west = "š",
         south = "ş",
-        southeast = "$",
+        southeast = "℠",
         southwest = "ṣ",
-        "ſ", -- long s
-        "σ", -- lowercase sigma
-        "ς", -- lowercase word-end sigma
+        "ß",
+        "σ",
+        "ς",
     },
     _T_ = {
         "T",
@@ -395,19 +440,21 @@ return {
         southwest = "Ṭ",
         "Τ",
         "τ",
+        "™",
     },
     _t_ = {
         "t",
-        north = "θ",
+        north = "T",
         northeast = "þ",
         northwest = "ț",
-        east = "Ʈ",
+        east = "θ",
         west = "ť",
         south = "ţ",
         southeast = "ʈ",
         southwest = "ṭ",
         "Τ",
         "τ",
+        "™",
     },
     _U_ = {
         "U",
@@ -423,7 +470,8 @@ return {
     },
     _u_ = {
         "u",
-        north = "ü",
+        north = "U",
+        southeast = "ü",
         northeast = "ú",
         northwest = "ù",
         east = "û",
@@ -442,23 +490,21 @@ return {
     },
     _v_ = {
         "v",
-        north = "ʌ", -- open-mid back unrounded vowel IPA
+        north = "V",
+        northeast = "ʌ", -- open-mid back unrounded vowel IPA
         northwest = "ʋ", -- v with hook, labiodental approximant IPA
         east = "ꜹ",
         west = "ṽ",
     },
     _W_ = {
         "W",
-        north = "]",
-        northeast = "}",
-        northwest = "ʍ", -- inverted w, voiceless labial-velar approximant IPA
+        west = "ʍ", -- inverted w, voiceless labial-velar approximant IPA
         east = "Ƿ", -- wynn, Old English for /w/
     },
     _w_ = {
         "w",
-        north = "]",
-        northeast = "}",
-        northwest = "ʍ", -- inverted w, voiceless labial-velar approximant IPA
+        north = "W",
+        west = "ʍ", -- inverted w, voiceless labial-velar approximant IPA
         east = "ƿ", -- wynn, Old English for /w/
     },
     _X_ = {
@@ -468,6 +514,7 @@ return {
     },
     _x_ = {
         "x",
+        north = "X",
         east = "χ", -- lowercase chi
         west = "ξ", -- lowercase xi
     },
@@ -481,10 +528,11 @@ return {
         south = "ʎ", -- palatal lateral approximant IPA (looks like mirror lambda, but actually upside down y)
         southeast = "ʏ", -- near-close, near-front rounded vowel IPA
         southwest = "Υ", -- uppercase upsilon
+        "¥",
     },
     _y_ = {
         "y",
-        north = "ŷ",
+        north = "Y",
         northeast = "ý",
         northwest = "ỳ",
         east = "ÿ",
@@ -492,10 +540,12 @@ return {
         south = "ʎ", -- palatal lateral approximant IPA (looks like mirror lambda, but actually upside down y)
         southeast = "ʏ", -- near-close, near-front rounded vowel IPA
         southwest = "υ", -- lowercase upsilon
+        "ŷ",
+        "¥",
     },
     _Z_ = {
         "Z",
-        northeast = "Ź",
+        east = "Ź",
         northwest = "Ζ", -- zeta uppercase
         west = "Ž",
         south = "ʐ", -- voiced retroflex sibilant fricative IPA
@@ -504,11 +554,22 @@ return {
     },
     _z_ = {
         "z",
-        northeast = "ź",
+        north = "Z",
+        east = "ź",
         northwest = "ζ", -- zeta lowercase
         west = "ž",
         south = "ʐ", -- voiced retroflex sibilant fricative IPA
         southeast = "ʒ", -- ezh, voiced palato-alveolar fricative IPA
         southwest = "ż",
     },
+    _1_ = { "1", north = "!", },
+    _2_ = { "2", north = "@", },
+    _3_ = { "3", north = "#", },
+    _4_ = { "4", north = "$", },
+    _5_ = { "5", north = "%", },
+    _6_ = { "6", north = "^", },
+    _7_ = { "7", north = "&", },
+    _8_ = { "8", north = "*", },
+    _9_ = { "9", north = "(", },
+    _0_ = { "0", north = ")", },
 }
