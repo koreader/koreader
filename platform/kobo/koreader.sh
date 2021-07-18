@@ -241,10 +241,10 @@ if [ -z "${INTERFACE}" ]; then
     export INTERFACE
 fi
 
-# We'll enforce UR in ko_do_fbdepth, so make sure further FBInk usage (USBMS, OTA)
+# We'll enforce UR in ko_do_fbdepth, so make sure further FBInk usage (USBMS)
 # will also enforce UR... (Only actually meaningful on sunxi).
 if [ "${PLATFORM}" = "b300-ntx" ]; then
-    export FBINK_NO_GYRO=1
+    export FBINK_FORCE_ROTA=0
     # And we also cannot use batched updates for the crash screens, as buffers are private,
     # so each invocation essentially draws in a different buffer...
     FBINK_BATCH_FLAG=""
