@@ -1102,7 +1102,7 @@ function Input:waitEvent(now, deadline)
         -- We're guaranteed that ev is an array of event tables. Might be an array of *one* event, but an array nonetheless ;).
         for __, event in ipairs(ev) do
             if DEBUG.is_on then
-                -- NOTE: This is rather spammy of computationally intensive,
+                -- NOTE: This is rather spammy and computationally intensive,
                 --       and we can't conditionally prevent evalutation of function arguments,
                 --       so, just hide the whole thing behind a branch ;).
                 DEBUG:logEv(event)
