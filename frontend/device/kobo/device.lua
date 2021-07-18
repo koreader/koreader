@@ -5,6 +5,11 @@ local logger = require("logger")
 local util = require("ffi/util")
 local _ = require("gettext")
 
+-- We're going to need a few <linux/fb.h> constants...
+local ffi = require("ffi")
+local C = ffi.C
+require("ffi/linux_fb_h")
+
 local function yes() return true end
 local function no() return false end
 
@@ -55,8 +60,8 @@ local Kobo = Generic:new{
     hasReliableMxcWaitFor = yes,
     -- Sunxi devices require a completely different fb backend...
     isSunxi = no,
-    -- On sunxi, G2D rotaation angle when the device is UR
-    g2d_rota = nil,
+    -- On sunxi, "native" panel layout used to compute the G2D rotation handle (e.g., deviceQuirks.nxtBootRota in FBInk).
+    boot_rota = nil,
     -- Standard sysfs path to the battery directory
     battery_sysfs = "/sys/class/power_supply/mc13892_bat",
     -- Stable path to the NTX input device
@@ -308,7 +313,7 @@ local KoboEuropa = Kobo:new{
     canToggleGSensor = yes,
     misc_ntx_gsensor_protocol = true,
     display_dpi = 227,
-    g2d_rota = 270, -- i.e., native layout is CCW
+    boot_rota = C.FB_ROTATE_CCW,
     battery_sysfs = "/sys/class/power_supply/battery",
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
     -- TODO: Discard hovering pen input events
@@ -330,7 +335,7 @@ function Kobo:init()
             debug = logger.dbg,
             is_always_portrait = self.isAlwaysPortrait(),
             mxcfb_bypass_wait_for = mxcfb_bypass_wait_for,
-            rota = self.g2d_rota,
+            boot_rota = self.boot_rota,
         }
 
         -- Sunxi means no HW inversion :(
