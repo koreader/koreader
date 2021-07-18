@@ -17,6 +17,7 @@ function TileCacheItem:totable()
         size = self.size,
         pageno = self.pageno,
         excerpt = self.excerpt,
+        created_ts = self.created_ts,
         persistent = self.persistent,
         bb = {
             w = self.bb.w,
@@ -51,6 +52,7 @@ function TileCacheItem:fromtable(t)
     self.size = t.size
     self.pageno = t.pageno
     self.excerpt = t.excerpt
+    self.created_ts = t.created_ts
     self.persistent = t.persistent
     self.bb = Blitbuffer.fromstring(t.bb.w, t.bb.h, t.bb.fmt, t.bb.data, t.bb.stride)
 end
