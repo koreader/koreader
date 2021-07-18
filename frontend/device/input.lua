@@ -88,6 +88,7 @@ local linux_evdev_key_code_map = {
     [C.BTN_TOOL_RUBBER] = "BTN_TOOL_RUBBER",
     [C.BTN_TOUCH] = "BTN_TOUCH",
     [C.BTN_STYLUS] = "BTN_STYLUS",
+    [C.BTN_STYLUS2] = "BTN_STYLUS2",
 }
 
 local linux_evdev_abs_code_map = {
