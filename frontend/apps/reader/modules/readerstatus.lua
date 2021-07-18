@@ -41,6 +41,10 @@ function ReaderStatus:addToMainMenu(menu_items)
 end
 
 function ReaderStatus:onEndOfBook()
+    if self.document.provider == "bigepub" then
+        self.ui:switchDocument(self.document:nextItem(), "bigepub")
+        return true
+    end
     Device:performHapticFeedback("CONTEXT_CLICK")
     local settings = G_reader_settings:readSetting("end_document_action")
     local choose_action
