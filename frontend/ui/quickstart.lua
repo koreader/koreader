@@ -10,7 +10,7 @@ local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 
 local QuickStart = {
-    quickstart_force_show_version = 201511982,
+    quickstart_force_show_version = 2021070000,
 }
 
 local language = G_reader_settings:readSetting("language") or "en"
@@ -20,29 +20,50 @@ local rev = Version:getCurrentRevision()
 local stylesheet = [[
 div.logo { float: right; }
 div.logo > img { height: 4em; }
-h1 { page-break-before: avoid; }
-h2 { background-color: black; color: white; text-align: center; }
-blockquote { text-align: center; }  /* Markdown lines starting with '>' */
-div.img-block { text-align: center; margin: 0.5em; page-break-before: avoid; page-break-after: avoid; }
-div.img-block > img { max-height: 50vh; max-width: 80vw; }
-p img, blockquote img { height: 1.5em; vertical-align: bottom; page-break-before: avoid; }
-li { margin: 0.2em; page-break-inside: avoid; }
+h1 { page-break-before: avoid; margin-bottom: 1em; }
+h2 { background-color: black; color: white; text-align: center; page-break-after: avoid; }
 
-div.table { display: table; zborder: 1px solid gray; border-collapse: collapse; page-break-inside: avoid; width: 100%; }
+hr { margin: 1em 20%; }
+div.generated { font-size: x-small; }
+
+li { margin: 0.5em 0; page-break-inside: avoid; }
+blockquote { text-align: center; page-break-before: avoid; page-break-inside: avoid; } /* Markdown lines starting with '>' */
+
+/* Inline image (icons) */
+p img, blockquote img { height: 1.5em; vertical-align: bottom; }
+
+/* Standalone image (UI screenshots) */
+div.img-block { text-align: center; margin: 0.5em; }
+div.img-block > img { max-height: 60vh; max-width: 80vw; }
+div.break-before-avoid { page-break-before: avoid; }
+div.break-after-avoid { page-break-after: avoid; }
+
+div.table { display: table; page-break-inside: avoid; width: 100%; }
 div.table > div { display: table-row; }
-div.table > div > * { display: table-cell; zborder: 1px solid gray; text-indent: 0; padding: 0.3em; }
+div.table > div > * { display: table-cell; text-indent: 0; padding: 0.3em; }
 div.table > div > *:nth-child(2) { text-align: left; hyphens: none; background-color: #eeeeee; }
 div.table > div > *:nth-child(3) { white-space: nowrap; }
-
 ]]
 
 local quickstart_guide = T(_([[
 <div class="logo">![KOReader](../resources/koreader.svg)</div>
+
 # QUICKSTART GUIDE
 
-You can access the complete user manual from our GitHub page.
+* [USER INTERFACE](#ui)
+* [USER INTERFACE TIPS](#uitips)
+* [ACCESSING FILES](#afiles)
+* [TRANSFERRING FILES](#tfiles)
+* [FRONTLIGHT/BACKLIGHT](#flight)
+* [WHILE READING](#reading)
+* [INSTALLING DICTIONARIES](#dicts)
+* [MORE INFO](#more)
 
-## USER INTERFACE
+---
+
+You can access the complete user manual from [our GitHub page](https://github.com/koreader/koreader).
+
+## USER INTERFACE <a id="ui"></a>
 
 <div class="img-block">![Touch zones](../resources/quickstart/touchzones.png)</div>
 
@@ -50,7 +71,7 @@ You can access the complete user manual from our GitHub page.
 
 - **STATUS BAR** zone can be used to cycle between STATUS BAR items if one item is visible. This will also hide and show the STATUS BAR if you tap enough times.
 
-## USER INTERFACE TIPS
+## USER INTERFACE TIPS <a id="uitips"></a>
 
 - You can change interface language via:
 
@@ -58,8 +79,8 @@ You can access the complete user manual from our GitHub page.
 
 - If you tap and hold an option or menu item (font weight, line spacing etc.), you can set its value as **DEFAULT**.  The new value will only be applied to documents opened from now on. Previously opened documents will keep their settings. You can identify default values as a STAR in menu or as a black border around indicators as seen below:
 
-<div class="img-block">![Default setting 1](../resources/quickstart/defaultsetting1.png)</div>
-<div class="img-block">![Default setting 2](../resources/quickstart/defaultsetting2.png)</div>
+<div class="img-block break-before-avoid">![Default setting 1](../resources/quickstart/defaultsetting1.png)</div>
+<div class="img-block break-before-avoid">![Default setting 2](../resources/quickstart/defaultsetting2.png)</div>
 
 - You can see explanations for all items on the **BOTTOM MENU** by tapping and holding the option’s name. This is also available for most of the **TOP MENU** menu items.
 
@@ -67,7 +88,7 @@ You can access the complete user manual from our GitHub page.
 
 - **SCREENSHOTS** can be taken by touching opposing corners of the screen diagonally at the same time or by making a long diagonal swipe
 
-<div class="img-block">![Number picker](../resources/quickstart/numberpicker.png)</div>
+<div class="img-block break-after-avoid">![Number picker](../resources/quickstart/numberpicker.png)</div>
 
 - In dialogs containing adjustment arrow buttons like the one above, you can tap and hold on arrow buttons to increase / decrease the value in bigger increments
 
@@ -83,7 +104,7 @@ You can access the complete user manual from our GitHub page.
 
 > **TOP MENU ➔ ![Navigation](../resources/icons/mdlight/appbar.navigation.svg) ➔ Skim document**
 
-## ACCESSING FILES
+## ACCESSING FILES <a id="afiles"></a>
 
 The following methods are available for accessing your books and articles:
 
@@ -95,9 +116,9 @@ You can assign gestures for each of these dialogs.
 
 You can also set KOReader to open with any of these dialogs on startup via:
 
-> **TOP MENU (in File Browser) ➔ ![Filebrowser](../resources/icons/mdlight/appbar.filebrowser.svg) > Start with**
+> **TOP MENU (in File Browser) ➔ ![Filebrowser](../resources/icons/mdlight/appbar.filebrowser.svg) ➔ Start with**
 
-## TRANSFERRING FILES
+## TRANSFERRING FILES <a id="tfiles"></a>
 
 In addition to transferring files the same way you would with the built-in reader application, other options are available depending on your device:
 
@@ -108,13 +129,13 @@ In addition to transferring files the same way you would with the built-in reade
 5. News downloader
 6. Wallabag
 
-## FRONTLIGHT/BACKLIGHT
+## FRONTLIGHT/BACKLIGHT <a id="flight"></a>
 
 You can control your screen light via this menu. If you have warm lighting (normal white LEDs+orange ones) you can control them separately from this dialog:
 
 > **TOP MENU ➔ ![Settings](../resources/icons/mdlight/appbar.settings.svg) ➔ Frontlight**
 
-## WHILE READING
+## WHILE READING <a id="reading"></a>
 
 <div class="table"><div>
 
@@ -144,11 +165,11 @@ Invert the colors (white text on black)
 
 Change many formatting options
 
-**TOP MENU ➔ ![Typesettings](../resources/icons/mdlight/appbar.typeset.svg) ➔ Style Tweaks**
+**TOP MENU ➔ ![Typesettings](../resources/icons/mdlight/appbar.typeset.svg) ➔ Style tweaks**
 
 </div></div>
 
-## INSTALLING DICTIONARIES
+## INSTALLING DICTIONARIES <a id="dicts"></a>
 
 KOReader supports dictionary lookup in EPUB and even in scanned PDF/DJVU documents. To see the dictionary definition or translation, tap and hold a word.
 
@@ -156,18 +177,18 @@ To use the dictionary lookup function, first you need to install one or more dic
 
 **TOP MENU ➔ ![Search](../resources/icons/mdlight/appbar.search.svg) ➔ Dictionary Settings > Download dictionaries**
 
-## MORE INFO
+## MORE INFO <a id="more"></a>
 
 You can find more information on our GitHub page
 
-**https://github.com/koreader/koreader**
+[https://github.com/koreader/koreader](https://github.com/koreader/koreader)
 
 You can find other KOReader users on MobileRead forums
 
-**https://www.mobileread.com/forums/forumdisplay.php?f=276**
+[https://www.mobileread.com/forums/forumdisplay.php?f=276](https://www.mobileread.com/forums/forumdisplay.php?f=276)
 
--------------
-Generated by KOReader %1.
+---
+<div class="generated">Generated by KOReader %1.</div>
 ]]),
     rev)
 
