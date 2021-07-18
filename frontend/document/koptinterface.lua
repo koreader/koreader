@@ -875,6 +875,7 @@ Get text and text boxes between `pos0` and `pos1`.
 --]]
 function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
     if not pos0 or not pos1 or #boxes == 0 then return {} end
+    local isCJKChar = require("util").isCJKChar
     local line_text = ""
     local line_boxes = {}
     local i_start, j_start = getWordBoxIndices(boxes, pos0)
@@ -888,18 +889,62 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
         -- insert line words
         local j0 = i > i_start and 1 or j_start
         local j1 = i < i_stop and #boxes[i] or j_stop
+        local line_first_word_seen = false
+        local prev_word
+        local prev_word_end_x
         for j = j0, j1 do
             local word = boxes[i][j].word
             if word then
-                -- if last character of this word is an ascii char then append a space
-                local space = (word:match("[%z\194-\244][\128-\191]*$") or j == j1)
-                               and "" or " "
-                line_text = line_text..word..space
+                if not line_first_word_seen then
+                    line_first_word_seen = true
+                    if #line_text > 0 then
+                        if line_text:sub(-1) == "-" then
+                            -- Previous line ended with a minus.
+                            -- Assume it's some hyphenation and discard it.
+                            line_text = line_text:sub(1, -2)
+                        elseif line_text:sub(-2, -1) == "\xC2\xAD" then
+                            -- Previous line ended with a hyphen.
+                            -- Assume it's some hyphenation and discard it.
+                            line_text = line_text:sub(1, -3)
+                        else
+                            -- No hyphenation, add a space (might be not welcome
+                            -- with CJK text, but well...)
+                            line_text = line_text .. " "
+                        end
+                    end
+                end
+                local box = boxes[i][j]
+                if prev_word then
+                    -- A box should have been made for each word, so assume
+                    -- we want a space between them, with some exceptions
+                    local add_space = true
+                    local box_height = box.y1 - box.y0
+                    local dist_from_prev_word = box.x0 - prev_word_end_x
+                    if prev_word:sub(-1, -1) == " " or word:sub(1, 1) == " " then
+                        -- Already a space between these words
+                        add_space = false
+                    elseif dist_from_prev_word < box_height * 0.03 then
+                        -- If the space between previous word box and this word box
+                        -- is smaller than 5% of box height, assume these boxes
+                        -- should be stuck
+                        add_space = false
+                    elseif dist_from_prev_word < box_height * 0.8 then
+                        if isCJKChar(prev_word:sub(-3, -1)) and isCJKChar(word:sub(1, 3)) then
+                            -- Two CJK chars whose spacing is not large enough
+                            -- (we checked the 3 UTF8 bytes that CJK chars must be,
+                            -- no need to split into unicode codepoints)
+                            add_space = false
+                        end
+                    end
+                    if add_space then
+                        word = " " .. word
+                    end
+                end
+                line_text = line_text .. word
+                prev_word = word
+                prev_word_end_x = box.x1
             end
         end
-        -- append a space at the end of the line unless its a hyphenated word
-        line_text = line_text .. " "
-        line_text = line_text:gsub("- $", "")
         -- insert line box
         local lb = boxes[i]
         if i > i_start and i < i_stop then
