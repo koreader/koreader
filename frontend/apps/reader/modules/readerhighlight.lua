@@ -1287,16 +1287,20 @@ function ReaderHighlight:onUnhighlight(bookmark_item)
         sel_pos0 = self.selected_text.pos0
     end
     if self.ui.document.info.has_pages then -- We can safely use page
+        -- As we may have changed spaces and hyphens handling in the extracted
+        -- text over the years, check text identities with them removed
+        local sel_text_cleaned = sel_text:gsub("[ -]", ""):gsub("\xC2\xAD", "")
         for index = 1, #self.view.highlight.saved[page] do
             local highlight = self.view.highlight.saved[page][index]
             -- pos0 are tables and can't be compared directly, except when from
             -- DictQuickLookup where these are the same object.
             -- If bookmark_item provided, just check datetime
-            if highlight.text == sel_text and (
-                    (datetime == nil and highlight.pos0 == sel_pos0) or
-                    (datetime ~= nil and highlight.datetime == datetime)) then
-                idx = index
-                break
+            if ( (datetime == nil and highlight.pos0 == sel_pos0) or
+                 (datetime ~= nil and highlight.datetime == datetime) ) then
+                if highlight.text:gsub("[ -]", ""):gsub("\xC2\xAD", "") == sel_text_cleaned then
+                    idx = index
+                    break
+                end
             end
         end
     else -- page is a xpointer
