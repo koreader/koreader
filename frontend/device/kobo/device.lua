@@ -304,6 +304,9 @@ local KoboEuropa = Kobo:new{
     isSunxi = yes,
     canToggleChargingLED = yes,
     hasFrontlight = yes,
+    hasGSensor = yes,
+    canToggleGSensor = yes,
+    misc_ntx_gsensor_protocol = true,
     display_dpi = 227,
     g2d_rota = 270, -- i.e., native layout is CCW
     battery_sysfs = "/sys/class/power_supply/battery",
@@ -369,6 +372,8 @@ function Kobo:init()
             [116] = "Power",
             [193] = "RPgBack",
             [194] = "RPgFwd",
+            [331] = "Eraser",
+            [332] = "Highlighter",
         },
         event_map_adapter = {
             SleepCover = function(ev)
