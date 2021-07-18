@@ -371,6 +371,7 @@ function Kobo:init()
     self.input = require("device/input"):new{
         device = self,
         event_map = {
+            [35] = "SleepCover",  -- KEY_H, Elipsa
             [59] = "SleepCover",
             [90] = "LightButton",
             [102] = "Home",
