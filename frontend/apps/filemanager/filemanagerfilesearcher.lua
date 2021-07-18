@@ -1,6 +1,7 @@
 local CheckButton = require("ui/widget/checkbutton")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local DocumentRegistry = require("document/documentregistry")
+local FileChooser = require("ui/widget/filechooser")
 local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
@@ -45,7 +46,10 @@ function FileSearcher:readDir()
                 local fullpath = d.."/"..f
                 local attributes = lfs.attributes(fullpath) or {}
                 -- Don't traverse hidden folders if we're not showing them
-                if attributes.mode == "directory" and f ~= "." and f ~= ".." and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, ".")) then
+                if attributes.mode == "directory" and f ~= "." and f ~= ".."
+                    and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, "."))
+                    and FileChooser:show_dir(f)
+                then
                     table.insert(new_dirs, fullpath)
                     table.insert(self.files, {
                         name = f,
@@ -56,7 +60,10 @@ function FileSearcher:readDir()
                         end,
                     })
                 -- Always ignore macOS resource forks, too.
-                elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") and (show_unsupported or DocumentRegistry:hasProvider(fullpath)) then
+                elseif attributes.mode == "file" and not util.stringStartsWith(f, "._")
+                    and (show_unsupported or DocumentRegistry:hasProvider(fullpath))
+                    and FileChooser:show_file(f)
+                then
                     table.insert(self.files, {
                         name = f,
                         text = f,
@@ -79,7 +86,7 @@ function FileSearcher:setSearchResults()
         self.results = self.files
     else
         if not self.case_sensitive then
-            keywords = Utf8Proc.lowercase(keywords)
+            keywords = Utf8Proc.lowercase(util.fixUtf8(keywords, "?"))
         end
         -- replace '.' with '%.'
         keywords = keywords:gsub("%.","%%%.")
@@ -89,11 +96,11 @@ function FileSearcher:setSearchResults()
         keywords = keywords:gsub("%?","%.")
         for __,f in pairs(self.files) do
             if self.case_sensitive then
-                if string.find(f.name, keywords) and string.sub(f.name,-4) ~= ".sdr" then
+                if string.find(f.name, keywords) then
                     table.insert(self.results, f)
                 end
             else
-                if string.find(Utf8Proc.lowercase(f.name), keywords) and string.sub(f.name,-4) ~= ".sdr" then
+                if string.find(Utf8Proc.lowercase(util.fixUtf8(f.name, "?")), keywords) then
                     table.insert(self.results, f)
                 end
             end
@@ -128,7 +135,6 @@ function FileSearcher:onShowFileSearch()
             {
                 {
                     text = _("Cancel"),
-                    enabled = true,
                     callback = function()
                         self.search_dialog:onClose()
                         UIManager:close(self.search_dialog)
@@ -146,7 +152,6 @@ function FileSearcher:onShowFileSearch()
                 },
                 {
                     text = _("Current folder"),
-                    enabled = true,
                     is_enter_default = true,
                     callback = function()
                         self.search_value = self.search_dialog:getInputText()
@@ -207,7 +212,12 @@ function FileSearcher:showSearchResults()
     self.search_menu.close_callback = function()
         UIManager:close(menu_container)
     end
-    table.sort(self.results, function(v1,v2) return v1.text < v2.text end)
+
+    local collate = G_reader_settings:readSetting("collate") or "strcoll"
+    local reverse_collate = G_reader_settings:isTrue("reverse_collate")
+    local sorting = FileChooser:getSortingFunction(collate, reverse_collate)
+
+    table.sort(self.results, sorting)
     self.search_menu:switchItemTable(_("Search results"), self.results)
     UIManager:show(menu_container)
 end

@@ -1101,7 +1101,7 @@ function FileManager:getSortingMenuTable()
     local fm = self
     local collates = {
         strcoll = {_("filename"), _("Sort by filename")},
-        numeric = {_("numeric"), _("Sort by filename (natural sorting)")},
+        natural = {_("natural"), _("Sort by filename (natural sorting)")},
         strcoll_mixed = {_("name mixed"), _("Sort by name – mixed files and folders")},
         access = {_("date read"), _("Sort by last read date")},
         change = {_("date added"), _("Sort by date added")},
@@ -1137,7 +1137,7 @@ function FileManager:getSortingMenuTable()
         end,
         sub_item_table = {
             set_collate_table("strcoll"),
-            set_collate_table("numeric"),
+            set_collate_table("natural"),
             set_collate_table("strcoll_mixed"),
             set_collate_table("access"),
             set_collate_table("change"),

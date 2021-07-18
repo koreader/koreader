@@ -74,22 +74,22 @@ local FileChooser = Menu:extend{
 -- from readable /storage/emulated/0/ - so we know it contains "0/")
 local unreadable_dir_content = {}
 
+function FileChooser:show_dir(dirname)
+    for _, pattern in ipairs(self.exclude_dirs) do
+        if dirname:match(pattern) then return false end
+    end
+    return true
+end
+
+function FileChooser:show_file(filename)
+    for _, pattern in ipairs(self.exclude_files) do
+        if filename:match(pattern) then return false end
+    end
+    return true
+end
+
 function FileChooser:init()
     self.width = Screen:getWidth()
-    -- Standard dir exclusion list
-    self.show_dir = function(dirname)
-        for _, pattern in ipairs(self.exclude_dirs) do
-            if dirname:match(pattern) then return false end
-        end
-        return true
-    end
-    -- Standard file exclusion list
-    self.show_file = function(filename)
-        for _, pattern in ipairs(self.exclude_files) do
-            if filename:match(pattern) then return false end
-        end
-        return true
-    end
     self.list = function(path, dirs, files, count_only)
         -- lfs.dir directory without permission will give error
         local ok, iter, dir_obj = pcall(lfs.dir, path)
@@ -99,8 +99,8 @@ function FileChooser:init()
                 if count_only then
                     if ((not self.show_hidden and not util.stringStartsWith(f, "."))
                          or (self.show_hidden and f ~= "." and f ~= ".." and not util.stringStartsWith(f, "._")))
-                         and self.show_dir(f)
-                         and self.show_file(f)
+                         and self:show_dir(f)
+                         and self:show_file(f)
                     then
                         table.insert(dirs, true)
                     end
@@ -109,7 +109,7 @@ function FileChooser:init()
                     local attributes = lfs.attributes(filename)
                     if attributes ~= nil then
                         if attributes.mode == "directory" and f ~= "." and f ~= ".." then
-                            if self.show_dir(f) then
+                            if self:show_dir(f) then
                                 table.insert(dirs, {name = f,
                                                     suffix = getFileNameSuffix(f),
                                                     fullpath = filename,
@@ -117,7 +117,7 @@ function FileChooser:init()
                             end
                         -- Always ignore macOS resource forks.
                         elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") then
-                            if self.show_file(f) then
+                            if self:show_file(f) then
                                 if self.file_filter == nil or self.file_filter(filename) or self.show_unsupported then
                                     local percent_finished = 0
                                     if self.collate == "percent_unopened_first" or self.collate == "percent_unopened_last" then
@@ -166,27 +166,21 @@ function FileChooser:init()
     Menu.init(self) -- call parent's init()
 end
 
-function FileChooser:genItemTableFromPath(path)
-    local dirs = {}
-    local files = {}
-    local up_folder_arrow = BD.mirroredUILayout() and BD.ltr("../ ⬆") or "⬆ ../"
-
-    self.list(path, dirs, files)
-
+function FileChooser:getSortingFunction(collate, reverse_collate)
     local sorting
-    if self.collate == "strcoll" then
+    if collate == "strcoll" then
         sorting = function(a, b)
             return ffiUtil.strcoll(a.name, b.name)
         end
-    elseif self.collate == "access" then
+    elseif collate == "access" then
         sorting = function(a, b)
             return a.attr.access > b.attr.access
         end
-    elseif self.collate == "modification" then
+    elseif collate == "modification" then
         sorting = function(a, b)
             return a.attr.modification > b.attr.modification
         end
-    elseif self.collate == "change" then
+    elseif collate == "change" then
         sorting = function(a, b)
             if DocSettings:hasSidecarFile(a.fullpath) and not DocSettings:hasSidecarFile(b.fullpath) then
                 return false
@@ -196,11 +190,11 @@ function FileChooser:genItemTableFromPath(path)
             end
             return a.attr.change > b.attr.change
         end
-    elseif self.collate == "size" then
+    elseif collate == "size" then
         sorting = function(a, b)
             return a.attr.size < b.attr.size
         end
-    elseif self.collate == "type" then
+    elseif collate == "type" then
         sorting = function(a, b)
             if a.suffix == nil and b.suffix == nil then
                 return ffiUtil.strcoll(a.name, b.name)
@@ -208,17 +202,17 @@ function FileChooser:genItemTableFromPath(path)
                 return ffiUtil.strcoll(a.suffix, b.suffix)
             end
         end
-    elseif self.collate == "percent_unopened_first" or self.collate == "percent_unopened_last" then
+    elseif collate == "percent_unopened_first" or collate == "percent_unopened_last" then
         sorting = function(a, b)
             if DocSettings:hasSidecarFile(a.fullpath) and not DocSettings:hasSidecarFile(b.fullpath) then
-                if self.collate == "percent_unopened_first" then
+                if collate == "percent_unopened_first" then
                     return false
                 else
                     return true
                 end
             end
             if not DocSettings:hasSidecarFile(a.fullpath) and DocSettings:hasSidecarFile(b.fullpath) then
-                if self.collate == "percent_unopened_first" then
+                if collate == "percent_unopened_first" then
                     return true
                 else
                     return false
@@ -233,7 +227,7 @@ function FileChooser:genItemTableFromPath(path)
 
             return a.percent_finished < b.percent_finished
         end
-    elseif self.collate == "numeric" then
+    elseif collate == "natural" then
         -- adapted from: http://notebook.kulchenko.com/algorithms/alphanumeric-natural-sorting-for-humans-in-lua
         local function addLeadingZeroes(d)
             local dec, n = string.match(d, "(%.?)0*(.+)")
@@ -249,10 +243,22 @@ function FileChooser:genItemTableFromPath(path)
         end
     end
 
-    if self.reverse_collate then
+    if reverse_collate then
         local sorting_unreversed = sorting
         sorting = function(a, b) return sorting_unreversed(b, a) end
     end
+
+    return sorting
+end
+
+function FileChooser:genItemTableFromPath(path)
+    local dirs = {}
+    local files = {}
+    local up_folder_arrow = BD.mirroredUILayout() and BD.ltr("../ ⬆") or "⬆ ../"
+
+    self.list(path, dirs, files)
+
+    local sorting = self:getSortingFunction(self.collate, self.reverse_collate)
 
     if self.collate ~= "strcoll_mixed" then
         table.sort(dirs, sorting)

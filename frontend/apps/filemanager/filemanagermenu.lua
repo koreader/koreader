@@ -665,6 +665,8 @@ To:
 Wildcards for one '?' or more '*' characters can be used.
 A search for '*' will show all files.
 
+The sorting order is the same as in filemanager.
+
 Tap a book in the search results to open it.]]),
         callback = function()
             self.ui:handleEvent(Event:new("ShowFileSearch"))
