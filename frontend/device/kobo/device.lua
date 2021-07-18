@@ -329,6 +329,9 @@ function Kobo:init()
             mxcfb_bypass_wait_for = mxcfb_bypass_wait_for,
             rota = self.g2d_rota,
         }
+
+        -- Sunxi means no HW inversion :(
+        self.canHWInvert = no
     else
         self.screen = require("ffi/framebuffer_mxcfb"):new{
             device = self,
