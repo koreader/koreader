@@ -25,8 +25,7 @@ unset FBINK_FORCE_ROTA
 ) &
 
 # Make sure we kill the Wi-Fi first, because nickel apparently doesn't like it if it's up... (cf. #1520)
-# NOTE: That check is possibly wrong on PLATFORM == freescale (because I don't know if the sdio_wifi_pwr module exists there), but we don't terribly care about that.
-if grep -q "sdio_wifi_pwr" "/proc/modules"; then
+if grep -q "${WIFI_MODULE}" "/proc/modules"; then
     killall -q -TERM restore-wifi-async.sh enable-wifi.sh obtain-ip.sh
     cp -a "/etc/resolv.conf" "/tmp/resolv.ko"
     old_hash="$(md5sum "/etc/resolv.conf" | cut -f1 -d' ')"
@@ -66,14 +65,16 @@ if grep -q "sdio_wifi_pwr" "/proc/modules"; then
     usleep 250000
     rmmod "${WIFI_MODULE}"
 
-    if [ -n "${CPUFREQ_DVFS}" ]; then
-        echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
-        # Leave Nickel in its usual state, don't try to use conservative
-        echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-        cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+    if grep -q "sdio_wifi_pwr" "/proc/modules"; then
+        if [ -n "${CPUFREQ_DVFS}" ]; then
+            echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+            # Leave Nickel in its usual state, don't try to use conservative
+            echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+            cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+        fi
+        usleep 250000
+        rmmod sdio_wifi_pwr
     fi
-    usleep 250000
-    rmmod sdio_wifi_pwr
 fi
 
 unset CPUFREQ_DVFS CPUFREQ_CONSERVATIVE
