@@ -28,7 +28,14 @@ fi
 # Moar sleep!
 usleep 250000
 # NOTE: Used to be exported in WIFI_MODULE_PATH before FW 4.23
-grep -q "${WIFI_MODULE}" "/proc/modules" || insmod "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko"
+if ! grep -q "${WIFI_MODULE}" "/proc/modules"; then
+    if [ -e "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko" ]; then
+        insmod "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko"
+    elif [ -e "/drivers/${PLATFORM}/${WIFI_MODULE}.ko" ]; then
+        # NOTE: Modules are unsorted on Mk. 8
+        insmod "/drivers/${PLATFORM}/${WIFI_MODULE}.ko"
+    fi
+fi
 # Race-y as hell, don't try to optimize this!
 sleep 1
 
