@@ -842,6 +842,7 @@ function Kobo:toggleChargingLED(toggle)
     --       In fact, Nickel itself doesn't provide this feature on said older devices
     --       (when it does, it's an option in the Energy saving settings),
     --       which is why we also limit ourselves to "true" on devices where this was tested.
+    -- c.f., drivers/misc/ntx_misc_light.c
     local f = io.open("/sys/devices/platform/ntx_led/lit", "w")
     if not f then
         logger.err("cannot open /sys/devices/platform/ntx_led/lit for writing!")
@@ -850,6 +851,7 @@ function Kobo:toggleChargingLED(toggle)
 
     -- c.f., strace -fittvyy -e trace=ioctl,file,signal,ipc,desc -s 256 -o /tmp/nickel.log -p $(pidof -s nickel) &
     -- This was observed on a Forma, so I'm mildly hopeful that it's safe on other Mk. 7 devices ;).
+    -- NOTE: ch stands for channel, cur for current, dc for duty cycle. c.f., the driver source.
     if toggle == true then
         -- NOTE: Technically, Nickel forces a toggle off before that, too.
         --       But since we do that on startup, it shouldn't be necessary here...
