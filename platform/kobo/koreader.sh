@@ -252,10 +252,14 @@ if [ "${PLATFORM}" = "b300-ntx" ]; then
     FBINK_BGLESS_FLAG="-B GRAY9"
     # It also means we need explicit background padding in the OT codepath...
     FBINK_OT_PADDING=",padding=BOTH"
+
+    # Make sure we poke the right input device
+    KOBO_TS_INPUT="/dev/input/by-path/platform-0-0010-event"
 else
     FBINK_BATCH_FLAG="-b"
     FBINK_BGLESS_FLAG="-O"
     FBINK_OT_PADDING=""
+    KOBO_TS_INPUT="/dev/input/event1"
 fi
 
 # Make sure we only have only two cores online on the Elipsa.
@@ -433,13 +437,8 @@ while [ ${RETURN_VALUE} -ne 0 ]; do
         if [ ${CRASH_COUNT} -eq 1 ]; then
             # NOTE: We don't actually care about what read read, we're just using it as a fancy sleep ;).
             #       i.e., we pause either until the 15s timeout, or until the user touches the screen.
-            if [ "${PLATFORM}" = "b300-ntx" ]; then
-                # shellcheck disable=SC2039,SC3045
-                read -r -t 15 </dev/input/by-path/platform-0-0010-event
-            else
-                # shellcheck disable=SC2039,SC3045
-                read -r -t 15 </dev/input/event1
-            fi
+            # shellcheck disable=SC2039,SC3045
+            read -r -t 15 <"${KOBO_TS_INPUT}"
         fi
         # Cycle the last crash timestamp
         CRASH_PREV_TS=${CRASH_TS}
