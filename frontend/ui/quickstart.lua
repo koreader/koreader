@@ -20,8 +20,8 @@ local rev = Version:getCurrentRevision()
 local stylesheet = [[
 div.logo { float: right; }
 div.logo > img { height: 4em; }
-h1 { page-break-before: avoid; margin-bottom: 1em; }
-h2 { background-color: black; color: white; text-align: center; page-break-after: avoid; }
+h1 { page-break-before: avoid; margin-bottom: 1em; text-transform: uppercase; }
+h2 { background-color: black; color: white; text-align: center; page-break-after: avoid; text-transform: uppercase; }
 
 hr { margin: 1em 20%; }
 div.generated { font-size: x-small; }
@@ -48,30 +48,30 @@ div.table > div > *:nth-child(3) { white-space: nowrap; }
 local quickstart_guide = T(_([[
 <div class="logo">![KOReader](../resources/koreader.svg)</div>
 
-# QUICKSTART GUIDE
+# Quickstart guide
 
-* [USER INTERFACE](#ui)
-* [USER INTERFACE TIPS](#uitips)
-* [ACCESSING FILES](#afiles)
-* [TRANSFERRING FILES](#tfiles)
-* [FRONTLIGHT/BACKLIGHT](#flight)
-* [WHILE READING](#reading)
-* [INSTALLING DICTIONARIES](#dicts)
-* [MORE INFO](#more)
+* [User interface](#ui)
+* [User interface tips](#uitips)
+* [Accessing files](#afiles)
+* [Transferring files](#tfiles)
+* [Frontlight/backlight](#flight)
+* [While reading](#reading)
+* [Installing dictionaries](#dicts)
+* [More info](#more)
 
 ---
-
 You can access the complete user manual from [our GitHub page](https://github.com/koreader/koreader).
-
-## USER INTERFACE <a id="ui"></a>
+]])
+..
+_([[## User interface <a id="ui"></a>
 
 <div class="img-block">![Touch zones](../resources/quickstart/touchzones.png)</div>
 
 - To show the **TOP MENU** or **BOTTOM MENU** you can click the indicated zones. You can click or swipe down the upper zone to show the **TOP MENU**.
-
 - The **STATUS BAR** zone can be used to cycle between STATUS BAR items if one item is visible. This will also hide and show the STATUS BAR if you tap enough times.
-
-## USER INTERFACE TIPS <a id="uitips"></a>
+]])
+..
+_([[## User interface tips <a id="uitips"></a>
 
 - You can change the interface language using:
 
@@ -83,42 +83,37 @@ You can access the complete user manual from [our GitHub page](https://github.co
 <div class="img-block break-before-avoid">![Default setting 2](../resources/quickstart/defaultsetting2.png)</div>
 
 - You can see explanations for all items on the **BOTTOM MENU** by tapping and holding the name of the option. This is also available for most of the **TOP MENU** menu items.
-
 - You can **CLOSE** full screen dialogs (History, Table of Contents, Bookmarks, Reading Statistics etc.) by swiping down
-
 - **SCREENSHOTS** can be taken by touching opposing corners of the screen diagonally at the same time or by making a long diagonal swipe
 
 <div class="img-block break-after-avoid">![Number picker](../resources/quickstart/numberpicker.png)</div>
 
 - In dialogs containing adjustment arrow buttons like the one above, you can tap and hold on arrow buttons to increase / decrease the value in bigger increments
-
 - You can **CLOSE** this type of dialog (non-full screen) by tapping outside of the window. You can **MOVE** this type of dialog by holding the window title and dragging
-
 - You can make this type of dialog **SEMI-TRANSPARENT** (to see the text under it while adjusting a value) by tapping and holding the window title
-
 - Tapping and holding a word brings up a dialog which allows you to search for the selection to find more occurrences in the document or to look it up on Wikipedia
-
 - You can highlight sections by tapping and holding a word and dragging your finger
-
 - You can move through your document via the **SKIM DOCUMENT** dialog:
 
 > **TOP MENU ➔ ![Navigation](../resources/icons/mdlight/appbar.navigation.svg) ➔ Skim document**
-
-## ACCESSING FILES <a id="afiles"></a>
+]])
+..
+_([[## Accessing files <a id="afiles"></a>
 
 The following methods are available for accessing your books and articles:
 
-- File Browser
-- Favorites
-- History
+* File Browser
+* Favorites
+* History
 
 You can assign gestures for quick access to each of these dialogs.
 
 You can also set KOReader to open with any of these dialogs on startup via:
 
 > **TOP MENU (in File Browser) ➔ ![Filebrowser](../resources/icons/mdlight/appbar.filebrowser.svg) ➔ Start with**
-
-## TRANSFERRING FILES <a id="tfiles"></a>
+]])
+..
+_([[## Transferring files <a id="tfiles"></a>
 
 In addition to transferring files the same way you would with the built-in reader application, other options are available depending on your device:
 
@@ -128,14 +123,16 @@ In addition to transferring files the same way you would with the built-in reade
 4. Calibre transfer
 5. News downloader
 6. Wallabag
-
-## FRONTLIGHT/BACKLIGHT <a id="flight"></a>
+]])
+..
+_([[## Frontlight/backlight <a id="flight"></a>
 
 You can control your screen light via this menu. If you have warm lighting (normal white LEDs+orange ones) you can control them separately from this dialog:
 
 > **TOP MENU ➔ ![Settings](../resources/icons/mdlight/appbar.settings.svg) ➔ Frontlight**
-
-## WHILE READING <a id="reading"></a>
+]])
+..
+_([[## While reading <a id="reading"></a>
 
 <div class="table"><div>
 
@@ -168,16 +165,18 @@ Change many formatting options
 **TOP MENU ➔ ![Typesettings](../resources/icons/mdlight/appbar.typeset.svg) ➔ Style tweaks**
 
 </div></div>
-
-## INSTALLING DICTIONARIES <a id="dicts"></a>
+]])
+..
+_([[## Installing dictionaries <a id="dicts"></a>
 
 KOReader supports dictionary lookup in EPUB and even in scanned PDF/DJVU documents. To see the dictionary definition or translation, tap and hold a word.
 
 To use the dictionary lookup function, first you need to install one or more dictionaries in the StarDict format. KOReader has an inbuilt dictionary installation system:
 
 **TOP MENU ➔ ![Search](../resources/icons/mdlight/appbar.search.svg) ➔ Dictionary Settings > Download dictionaries**
-
-## MORE INFO <a id="more"></a>
+]])
+..
+_([[## More info <a id="more"></a>
 
 You can find more information on our GitHub page
 
