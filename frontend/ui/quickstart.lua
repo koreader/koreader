@@ -69,20 +69,20 @@ You can access the complete user manual from [our GitHub page](https://github.co
 
 - To show the **TOP MENU** or **BOTTOM MENU** you can click the indicated zones. You can click or swipe down the upper zone to show the **TOP MENU**.
 
-- **STATUS BAR** zone can be used to cycle between STATUS BAR items if one item is visible. This will also hide and show the STATUS BAR if you tap enough times.
+- The **STATUS BAR** zone can be used to cycle between STATUS BAR items if one item is visible. This will also hide and show the STATUS BAR if you tap enough times.
 
 ## USER INTERFACE TIPS <a id="uitips"></a>
 
-- You can change interface language via:
+- You can change the interface language using:
 
 > **TOP MENU ➔ ![Settings](../resources/icons/mdlight/appbar.settings.svg) ➔ Language**
 
-- If you tap and hold an option or menu item (font weight, line spacing etc.), you can set its value as **DEFAULT**.  The new value will only be applied to documents opened from now on. Previously opened documents will keep their settings. You can identify default values as a STAR in menu or as a black border around indicators as seen below:
+- If you tap and hold on an option or menu item (font weight, line spacing etc.), you can set its value as **DEFAULT**.  The new value will only be applied to documents opened from now on. Previously opened documents will keep their settings. You can identify default values as a STAR in menu or as a black border around indicators as seen below:
 
 <div class="img-block break-before-avoid">![Default setting 1](../resources/quickstart/defaultsetting1.png)</div>
 <div class="img-block break-before-avoid">![Default setting 2](../resources/quickstart/defaultsetting2.png)</div>
 
-- You can see explanations for all items on the **BOTTOM MENU** by tapping and holding the option’s name. This is also available for most of the **TOP MENU** menu items.
+- You can see explanations for all items on the **BOTTOM MENU** by tapping and holding the name of the option. This is also available for most of the **TOP MENU** menu items.
 
 - You can **CLOSE** full screen dialogs (History, Table of Contents, Bookmarks, Reading Statistics etc.) by swiping down
 
@@ -96,11 +96,11 @@ You can access the complete user manual from [our GitHub page](https://github.co
 
 - You can make this type of dialog **SEMI-TRANSPARENT** (to see the text under it while adjusting a value) by tapping and holding the window title
 
-- Tapping and holding a word brings up a dialog where you can also search the selection in the document for more occurrences or look it up on Wikipedia
+- Tapping and holding a word brings up a dialog which allows you to search for the selection to find more occurrences in the document or to look it up on Wikipedia
 
 - You can highlight sections by tapping and holding a word and dragging your finger
 
-- You can move through your document via **SKIM DOCUMENT** dialog:
+- You can move through your document via the **SKIM DOCUMENT** dialog:
 
 > **TOP MENU ➔ ![Navigation](../resources/icons/mdlight/appbar.navigation.svg) ➔ Skim document**
 
@@ -112,7 +112,7 @@ The following methods are available for accessing your books and articles:
 - Favorites
 - History
 
-You can assign gestures for each of these dialogs.
+You can assign gestures for quick access to each of these dialogs.
 
 You can also set KOReader to open with any of these dialogs on startup via:
 
