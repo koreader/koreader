@@ -889,6 +889,12 @@ function ReaderView:onPageGapUpdate(page_gap)
 end
 
 function ReaderView:onSaveSettings()
+    if self.document:isEdited() and G_reader_settings:readSetting("save_document") ~= "always" then
+        -- Either "disable" (and the current tiles will be wrong) or "prompt" (but the
+        -- prompt will happen later, too late to catch "Don't save"), so force cached
+        -- tiles to be ignored on next opening.
+        self.document:resetTileCacheValidity()
+    end
     self.ui.doc_settings:saveSetting("tile_cache_validity_ts", self.document:getTileCacheValidity())
     self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
     -- Don't etch the current rotation in stone when sticky rotation is enabled
