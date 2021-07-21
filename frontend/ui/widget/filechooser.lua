@@ -272,16 +272,13 @@ function FileChooser:genItemTableFromPath(path)
 
     local item_table = {}
     for i, dir in ipairs(dirs) do
+        -- count sume of directories and files inside dir
+        local sub_dirs = {}
+        local dir_files = {}
         local subdir_path = self.path.."/"..dir.name
-        local istr = ""
-        if G_reader_settings:hasNot("hide_folders_count") then
-            -- count sume of directories and files inside dir
-            local sub_dirs = {}
-            local dir_files = {}
-            self.list(subdir_path, sub_dirs, dir_files, true)
-            local num_items = #sub_dirs + #dir_files
-            istr = ffiUtil.template(N_("1 item", "%1 items", num_items), num_items)
-        end
+        self.list(subdir_path, sub_dirs, dir_files, true)
+        local num_items = #sub_dirs + #dir_files
+        local istr = ffiUtil.template(N_("1 item", "%1 items", num_items), num_items)
         local text
         local bidi_wrap_func
         if dir.name == ".." then
