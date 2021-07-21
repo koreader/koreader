@@ -150,17 +150,7 @@ function FileManagerMenu:setUpdateItemTable()
                 text = _("Show unsupported files"),
                 checked_func = function() return self.ui.file_chooser.show_unsupported end,
                 callback = function() self.ui:toggleUnsupportedFiles() end,
-            },
-            {
-                text = _("Hide folders count"),
-                checked_func = function()
-                    return G_reader_settings:isTrue("hide_folders_count")
-                end,
-                callback = function()
-                    G_reader_settings:flipNilOrFalse("hide_folders_count")
-                    self.ui:onRefresh()
-                end,
-            separator = true,
+                separator = true,
             },
             {
                 text = _("Classic mode settings"),
@@ -281,7 +271,7 @@ function FileManagerMenu:setUpdateItemTable()
                         end,
                     },
                     {
-                        text = _("Auto-remove deleted items from history"),
+                        text = _("Auto-remove deleted or purged items from history"),
                         checked_func = function()
                             return G_reader_settings:isTrue("autoremove_deleted_items_from_history")
                         end,
@@ -362,7 +352,7 @@ To:
                         end,
                         callback = function()
                             G_reader_settings:flipNilOrFalse("lock_home_folder")
-                            UIManager:broadcastEvent(Event:new("Refresh"))
+                            self.ui:onRefresh()
                         end,
                     },
                 },
