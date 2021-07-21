@@ -1085,7 +1085,7 @@ function Gestures:gestureAction(action, ges)
         return
     else
         self.ui:handleEvent(Event:new("HandledAsSwipe"))
-        Dispatcher:execute(self.ui, action_list, ges)
+        Dispatcher:execute(action_list, ges)
     end
     return true
 end
