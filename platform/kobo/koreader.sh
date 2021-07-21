@@ -262,9 +262,9 @@ else
     KOBO_TS_INPUT="/dev/input/event1"
 fi
 
-# Make sure we only have only two cores online on the Elipsa.
+# Make sure we only keep two cores online on the Elipsa.
 # NOTE: That's a bit optimistic, we might actually need to tone that down to one,
-#       and just online the second one on demand (e.g., PDF).
+#       and just toggle the second one on demand (e.g., PDF).
 if [ "${PRODUCT}" = "europa" ]; then
     echo "1" >"/sys/devices/system/cpu/cpu1/online"
     echo "0" >"/sys/devices/system/cpu/cpu2/online"
