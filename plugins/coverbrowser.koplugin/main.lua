@@ -233,7 +233,7 @@ function CoverBrowser:addToMainMenu(menu_items)
 
     -- add Mosaic / Detailed list mode settings to File browser Settings submenu
     -- next to Classic mode settings
-    table.insert (menu_items.filebrowser_settings.sub_item_table, 5, {
+    table.insert (menu_items.filebrowser_settings.sub_item_table, 4, {
         text = _("Mosaic / Detailed list modes settings"),
         separator = true,
         sub_item_table = {
