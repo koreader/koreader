@@ -103,7 +103,7 @@ local settingsList = {
     last_page = {category="none", event="GoToEnd", title=_("Last page"), rolling=true, paging=true},
     prev_bookmark = {category="none", event="GotoPreviousBookmarkFromPage", title=_("Previous bookmark"), rolling=true, paging=true},
     next_bookmark = {category="none", event="GotoNextBookmarkFromPage", title=_("Next bookmark"), rolling=true, paging=true},
-    go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), rolling=true, paging=true},
+    go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), filemanager=true, rolling=true, paging=true},
     skim = {category="none", event="ShowSkimtoDialog", title=_("Skim document"), rolling=true, paging=true},
     back = {category="none", event="Back", title=_("Back"), rolling=true, paging=true},
     previous_location = {category="none", event="GoBackLink", arg=true, title=_("Back to previous location"), rolling=true, paging=true},
