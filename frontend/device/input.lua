@@ -129,6 +129,8 @@ local Input = {
     event_map = {},
     -- adapters are post processing functions that transform a given event to another event
     event_map_adapter = {},
+    -- EV_ABS event to honor for pressure event (if any)
+    pressure_event = nil,
 
     group = {
         Cursor = { "Up", "Down", "Left", "Right" },
@@ -215,10 +217,7 @@ end
 
 function Input:init()
     -- Handle default finger slot
-    if self.device.main_finger_slot then
-        self.main_finger_slot = self.device.main_finger_slot
-        self.cur_slot = self.device.main_finger_slot
-    end
+    self.cur_slot = self.main_finger_slot
     self.ev_slots = {
         [self.main_finger_slot] = {
             slot = self.main_finger_slot,
@@ -590,7 +589,7 @@ function Input:handleTouchEv(ev)
             self:setCurrentMtSlot("x", ev.value)
         elseif ev.code == C.ABS_MT_POSITION_Y then
             self:setCurrentMtSlot("y", ev.value)
-        elseif ev.code == C.ABS_MT_PRESSURE and ev.value == 0 then
+        elseif self.pressure_event and ev.code == self.pressure_event and ev.value == 0 then
             -- Drop hovering pen events
             self:setCurrentMtSlot("id", -1)
 
