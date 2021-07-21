@@ -264,18 +264,24 @@ function FileChooser:genItemTableFromPath(path)
         table.sort(dirs, sorting)
         table.sort(files, sorting)
     end
-    if path ~= "/" then table.insert(dirs, 1, {name = ".."}) end
+    if path ~= "/" and not (G_reader_settings:isTrue("lock_home_folder") and
+                            path == G_reader_settings:readSetting("home_dir")) then
+        table.insert(dirs, 1, {name = ".."})
+    end
     if self.show_current_dir_for_hold then table.insert(dirs, 1, {name = "."}) end
 
     local item_table = {}
     for i, dir in ipairs(dirs) do
-        -- count sume of directories and files inside dir
-        local sub_dirs = {}
-        local dir_files = {}
         local subdir_path = self.path.."/"..dir.name
-        self.list(subdir_path, sub_dirs, dir_files, true)
-        local num_items = #sub_dirs + #dir_files
-        local istr = ffiUtil.template(N_("1 item", "%1 items", num_items), num_items)
+        local istr = ""
+        if G_reader_settings:hasNot("hide_folders_count") then
+            -- count sume of directories and files inside dir
+            local sub_dirs = {}
+            local dir_files = {}
+            self.list(subdir_path, sub_dirs, dir_files, true)
+            local num_items = #sub_dirs + #dir_files
+            istr = ffiUtil.template(N_("1 item", "%1 items", num_items), num_items)
+        end
         local text
         local bidi_wrap_func
         if dir.name == ".." then
@@ -394,7 +400,10 @@ function FileChooser:changeToPath(path, focused_path)
 end
 
 function FileChooser:onFolderUp()
-    self:changeToPath(string.format("%s/..", self.path), self.path)
+    if not (G_reader_settings:isTrue("lock_home_folder") and
+            self.path == G_reader_settings:readSetting("home_dir")) then
+        self:changeToPath(string.format("%s/..", self.path), self.path)
+    end
 end
 
 function FileChooser:changePageToPath(path)
