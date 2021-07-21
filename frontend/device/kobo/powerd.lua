@@ -5,9 +5,6 @@ local SysfsLight = require ("device/sysfs_light")
 local ffiUtil = require("ffi/util")
 local RTC = require("ffi/rtc")
 
-local batt_state_folder =
-        "/sys/devices/platform/pmic_battery.1/power_supply/mc13892_bat/"
-
 -- Here, we only deal with the real hw intensity.
 -- Dealing with toggling and remembering/restoring
 -- previous intensity when toggling/untoggling is done
@@ -17,8 +14,7 @@ local KoboPowerD = BasePowerD:new{
     fl_min = 0, fl_max = 100,
     fl = nil,
 
-    batt_capacity_file = batt_state_folder .. "capacity",
-    is_charging_file = batt_state_folder .. "status",
+    battery_sysfs = nil,
     fl_warmth_min = 0, fl_warmth_max = 100,
     fl_warmth = nil,
     auto_warmth = false,
@@ -108,6 +104,10 @@ function KoboPowerD:_syncKoboLightOnStart()
 end
 
 function KoboPowerD:init()
+    -- Setup the sysfs paths
+    self.batt_capacity_file = self.battery_sysfs .. "/capacity"
+    self.is_charging_file = self.battery_sysfs .. "/status"
+
     -- Default values in case self:_syncKoboLightOnStart() does not find
     -- any previously saved setting (and for unit tests where it will
     -- not be called)

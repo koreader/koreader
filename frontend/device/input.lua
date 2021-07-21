@@ -88,6 +88,7 @@ local linux_evdev_key_code_map = {
     [C.BTN_TOOL_RUBBER] = "BTN_TOOL_RUBBER",
     [C.BTN_TOUCH] = "BTN_TOUCH",
     [C.BTN_STYLUS] = "BTN_STYLUS",
+    [C.BTN_STYLUS2] = "BTN_STYLUS2",
 }
 
 local linux_evdev_abs_code_map = {
@@ -589,6 +590,9 @@ function Input:handleTouchEv(ev)
             self:setCurrentMtSlot("x", ev.value)
         elseif ev.code == C.ABS_MT_POSITION_Y then
             self:setCurrentMtSlot("y", ev.value)
+        elseif ev.code == C.ABS_MT_PRESSURE and ev.value == 0 then
+            -- Drop hovering pen events
+            self:setCurrentMtSlot("id", -1)
 
         -- code to emulate mt protocol on kobos
         -- we "confirm" abs_x, abs_y only when pressure ~= 0
@@ -1101,30 +1105,33 @@ function Input:waitEvent(now, deadline)
         -- We're guaranteed that ev is an array of event tables. Might be an array of *one* event, but an array nonetheless ;).
         for __, event in ipairs(ev) do
             if DEBUG.is_on then
+                -- NOTE: This is rather spammy and computationally intensive,
+                --       and we can't conditionally prevent evalutation of function arguments,
+                --       so, just hide the whole thing behind a branch ;).
                 DEBUG:logEv(event)
                 if event.type == C.EV_KEY then
                     logger.dbg(string.format(
-                        "key event => code: %d (%s), value: %s, time: %d.%d",
+                        "key event => code: %d (%s), value: %s, time: %d.%06d",
                         event.code, self.event_map[event.code] or linux_evdev_key_code_map[event.code], event.value,
                         event.time.sec, event.time.usec))
                 elseif event.type == C.EV_SYN then
                     logger.dbg(string.format(
-                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
+                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%06d",
                         event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_syn_code_map[event.code], event.value,
                         event.time.sec, event.time.usec))
                 elseif event.type == C.EV_ABS then
                     logger.dbg(string.format(
-                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
+                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%06d",
                         event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_abs_code_map[event.code], event.value,
                         event.time.sec, event.time.usec))
                 elseif event.type == C.EV_MSC then
                     logger.dbg(string.format(
-                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%d",
+                        "input event => type: %d (%s), code: %d (%s), value: %s, time: %d.%06d",
                         event.type, linux_evdev_type_map[event.type], event.code, linux_evdev_msc_code_map[event.code], event.value,
                         event.time.sec, event.time.usec))
                 else
                     logger.dbg(string.format(
-                        "input event => type: %d (%s), code: %d, value: %s, time: %d.%d",
+                        "input event => type: %d (%s), code: %d, value: %s, time: %d.%06d",
                         event.type, linux_evdev_type_map[event.type], event.code, event.value,
                         event.time.sec, event.time.usec))
                 end
