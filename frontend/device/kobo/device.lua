@@ -5,10 +5,11 @@ local logger = require("logger")
 local util = require("ffi/util")
 local _ = require("gettext")
 
--- We're going to need a few <linux/fb.h> constants...
+-- We're going to need a few <linux/fb.h> & <linux/input.h> constants...
 local ffi = require("ffi")
 local C = ffi.C
 require("ffi/linux_fb_h")
+require("ffi/linux_input_h")
 
 local function yes() return true end
 local function no() return false end
@@ -68,6 +69,8 @@ local Kobo = Generic:new{
     ntx_dev = "/dev/input/event0",
     -- Stable path to the Touch input device
     touch_dev = "/dev/input/event1",
+    -- Event code to use to detect contact pressure
+    pressure_event = nil,
 }
 
 --- @todo hasKeys for some devices?
@@ -311,6 +314,7 @@ local KoboEuropa = Kobo:new{
     hasFrontlight = yes,
     hasGSensor = yes,
     canToggleGSensor = yes,
+    pressure_event = C.ABS_MT_PRESSURE,
     misc_ntx_gsensor_protocol = true,
     display_dpi = 227,
     boot_rota = C.FB_ROTATE_CCW,
@@ -393,7 +397,9 @@ function Kobo:init()
                     return "Light"
                 end
             end,
-        }
+        },
+        main_finger_slot = self.main_finger_slot or 0,
+        pressure_event = self.pressure_event,
     }
     self.wakeup_mgr = WakeupMgr:new()
 
