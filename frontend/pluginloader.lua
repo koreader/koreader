@@ -9,6 +9,7 @@ local OBSOLETE_PLUGINS = {
     calibrecompanion = true,
     storagestat = true,
     kobolight = true,
+    zsync = true,
 }
 -- Deprecated plugins are still available, but show a hint about deprecation.
 local function getMenuTable(plugin)
