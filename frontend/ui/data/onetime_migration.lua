@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20210715
+local CURRENT_MIGRATION_DATE = 20210720
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -284,6 +284,16 @@ if last_migration_date < 20210715 then
             G_reader_settings:saveSetting("collate", "natural")
         end
     end
+end
+
+-- 20210720, Reset all user's duration time to classic, 
+if last_migration_date < 20210720 then
+    logger.info("Performing one-time migration for 20210720")
+    -- With PR 7897 and migration date 20210629, we migrated everyone's duration format to the combined setting. 
+    -- However, the footer previously defaulted to "modern", so users who were used to seeing "classic" in the UI 
+    -- started seeing the modern format unexpectedly. Therefore, reset everyone back to classic so users go back
+    -- to a safe default. Users who use "modern" will need to reselect it in Time and Date settings after this migration.
+    G_reader_settings:saveSetting("duration_format", "classic")
 end
 
 -- We're done, store the current migration date
