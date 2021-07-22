@@ -286,7 +286,7 @@ if last_migration_date < 20210715 then
     end
 end
 
--- 20210720, Reset all user's duration time to classic, 
+-- 20210720, Reset all user's duration time to classic, https://github.com/koreader/koreader/pull/8008
 if last_migration_date < 20210720 then
     logger.info("Performing one-time migration for 20210720")
     -- With PR 7897 and migration date 20210629, we migrated everyone's duration format to the combined setting. 
