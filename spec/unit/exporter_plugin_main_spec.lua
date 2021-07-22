@@ -1,4 +1,4 @@
-describe("Evernote plugin module", function()
+describe("Exporter plugin module", function()
     local readerui, match
     local sample_clippings, sample_epub
     local DocumentRegistry, Screen
@@ -80,7 +80,7 @@ describe("Evernote plugin module", function()
         local old_io = _G.io
         _G.io = mock({
            open = function(file, mode)
-            if file == readerui.evernote.text_clipping_file then
+            if file == readerui.exporter.text_clipping_file then
                 return file_mock
             else
                 return old_io.open(file, mode)
@@ -88,7 +88,7 @@ describe("Evernote plugin module", function()
         end
         })
 
-        readerui.evernote:exportBooknotesToTXT("Title1", sample_clippings.Title1)
+        readerui.exporter:exportBooknotesToTXT("Title1", sample_clippings.Title1)
         assert.spy(io.open).was.called()
         assert.spy(file_mock.write).was.called_with(match.is_ref(file_mock), "Some important stuff 1")
         _G.io = old_io
@@ -96,11 +96,11 @@ describe("Evernote plugin module", function()
     end)
 
     it("should not export booknotes with exported_stamp", function()
-        readerui.evernote.html_export = true
-        stub(readerui.evernote, "exportBooknotesToHTML")
-        readerui.evernote:exportClippings(sample_clippings)
-        assert.stub(readerui.evernote.exportBooknotesToHTML).was_called_with(match.is_truthy(), "Title2", match.is_truthy())
-        assert.stub(readerui.evernote.exportBooknotesToHTML).was_not_called_with(match.is_truthy(), "Title1", match.is_truthy())
+        readerui.exporter.html_export = true
+        stub(readerui.exporter, "exportBooknotesToHTML")
+        readerui.exporter:exportClippings(sample_clippings)
+        assert.stub(readerui.exporter.exportBooknotesToHTML).was_called_with(match.is_truthy(), "Title2", match.is_truthy())
+        assert.stub(readerui.exporter.exportBooknotesToHTML).was_not_called_with(match.is_truthy(), "Title1", match.is_truthy())
     end)
 
 
