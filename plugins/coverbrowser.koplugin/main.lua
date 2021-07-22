@@ -235,12 +235,12 @@ function CoverBrowser:addToMainMenu(menu_items)
     -- next to Classic mode settings
     if menu_items.filebrowser_settings == nil then return end
     table.insert (menu_items.filebrowser_settings.sub_item_table, 4, {
-        text = _("Mosaic / Detailed list modes settings"),
+        text = _("Mosaic and detailed list settings"),
         separator = true,
         sub_item_table = {
             {
                 text = _("Items per page"),
-                help_text = _([[This sets the number of files and folders per page in non-'classic' display modes.]]),
+                help_text = _([[This sets the number of files and folders per page in display modes other than classic.]]),
                 -- Best to not "keep_menu_open = true", to see how this apply on the full view
                 callback = function()
                     local SpinWidget = require("ui/widget/spinwidget")
@@ -450,7 +450,6 @@ function CoverBrowser:addToMainMenu(menu_items)
             },
         },
     })
-
 end
 
 function CoverBrowser:refreshFileManagerInstance(cleanup, post_init)
