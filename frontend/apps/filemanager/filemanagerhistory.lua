@@ -104,11 +104,11 @@ function FileManagerHistory:onMenuHold(item)
         {},
         {
             {
-                text = _("Clean history of deleted items"),
+                text = _("Clear history of deleted files"),
                 callback = function()
                     UIManager:show(ConfirmBox:new{
-                        text = _("Clean history of deleted items?"),
-                        ok_text = _("Clean"),
+                        text = _("Clear history of deleted files?"),
+                        ok_text = _("Clear"),
                         ok_callback = function()
                             require("readhistory"):clearMissing()
                             self._manager:updateItemTable()
