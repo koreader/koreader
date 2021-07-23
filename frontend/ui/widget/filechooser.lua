@@ -264,7 +264,10 @@ function FileChooser:genItemTableFromPath(path)
         table.sort(dirs, sorting)
         table.sort(files, sorting)
     end
-    if path ~= "/" then table.insert(dirs, 1, {name = ".."}) end
+    if path ~= "/" and not (G_reader_settings:isTrue("lock_home_folder") and
+                            path == G_reader_settings:readSetting("home_dir")) then
+        table.insert(dirs, 1, {name = ".."})
+    end
     if self.show_current_dir_for_hold then table.insert(dirs, 1, {name = "."}) end
 
     local item_table = {}
@@ -394,7 +397,10 @@ function FileChooser:changeToPath(path, focused_path)
 end
 
 function FileChooser:onFolderUp()
-    self:changeToPath(string.format("%s/..", self.path), self.path)
+    if not (G_reader_settings:isTrue("lock_home_folder") and
+            self.path == G_reader_settings:readSetting("home_dir")) then
+        self:changeToPath(string.format("%s/..", self.path), self.path)
+    end
 end
 
 function FileChooser:changePageToPath(path)
