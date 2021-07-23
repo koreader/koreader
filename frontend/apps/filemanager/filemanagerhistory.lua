@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
+local ConfirmBox = require("ui/widget/confirmbox")
 local DocSettings = require("docsettings")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -52,7 +53,6 @@ function FileManagerHistory:onMenuHold(item)
                 text = _("Purge .sdr"),
                 enabled = item.file ~= currently_opened_file and DocSettings:hasSidecarFile(util.realpath(item.file)),
                 callback = function()
-                    local ConfirmBox = require("ui/widget/confirmbox")
                     UIManager:show(ConfirmBox:new{
                         text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), BD.filename(item.text)),
                         ok_text = _("Purge"),
@@ -79,7 +79,6 @@ function FileManagerHistory:onMenuHold(item)
                 text = _("Delete"),
                 enabled = (item.file ~= currently_opened_file and lfs.attributes(item.file, "mode")) and true or false,
                 callback = function()
-                    local ConfirmBox = require("ui/widget/confirmbox")
                     UIManager:show(ConfirmBox:new{
                         text = _("Are you sure that you want to delete this file?\n") .. BD.filepath(item.file) .. ("\n") .. _("If you delete a file, it is permanently lost."),
                         ok_text = _("Delete"),
@@ -105,11 +104,17 @@ function FileManagerHistory:onMenuHold(item)
         {},
         {
             {
-                text = _("Clear history of deleted files"),
+                text = _("Clean history of deleted items"),
                 callback = function()
-                    require("readhistory"):clearMissing()
-                    self._manager:updateItemTable()
-                    UIManager:close(self.histfile_dialog)
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Clean history of deleted items?"),
+                        ok_text = _("Clean"),
+                        ok_callback = function()
+                            require("readhistory"):clearMissing()
+                            self._manager:updateItemTable()
+                            UIManager:close(self.histfile_dialog)
+                        end,
+                    })
                 end,
              },
         },
