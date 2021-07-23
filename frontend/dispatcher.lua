@@ -103,7 +103,7 @@ local settingsList = {
     last_page = {category="none", event="GoToEnd", title=_("Last page"), rolling=true, paging=true},
     prev_bookmark = {category="none", event="GotoPreviousBookmarkFromPage", title=_("Previous bookmark"), rolling=true, paging=true},
     next_bookmark = {category="none", event="GotoNextBookmarkFromPage", title=_("Next bookmark"), rolling=true, paging=true},
-    go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), rolling=true, paging=true},
+    go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), filemanager=true, rolling=true, paging=true},
     skim = {category="none", event="ShowSkimtoDialog", title=_("Skim document"), rolling=true, paging=true},
     back = {category="none", event="Back", title=_("Back"), rolling=true, paging=true},
     previous_location = {category="none", event="GoBackLink", arg=true, title=_("Back to previous location"), rolling=true, paging=true},
@@ -616,47 +616,45 @@ arguments are:
     2) the settings table
     3) optionally a `gestures`object
 --]]--
-function Dispatcher:execute(ui, settings, gesture)
+function Dispatcher:execute(settings, gesture)
     for k, v in pairs(settings) do
         if settingsList[k] ~= nil and (settingsList[k].conditions == nil or settingsList[k].conditions == true) then
             -- Be sure we don't send a document setting event if there's not yet or no longer a document
-            if ui.document or (not settingsList[k].paging and not settingsList[k].rolling) then
-                Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
-                if settingsList[k].category == "none" then
-                    if settingsList[k].arg ~= nil then
-                        ui:handleEvent(Event:new(settingsList[k].event, settingsList[k].arg))
-                    else
-                        ui:handleEvent(Event:new(settingsList[k].event))
-                    end
-                end
-                if settingsList[k].category == "absolutenumber"
-                    or settingsList[k].category == "string"
-                then
-                    ui:handleEvent(Event:new(settingsList[k].event, v))
-                end
-                -- the event can accept a gesture object or an argument
-                if settingsList[k].category == "arg" then
-                    local arg = gesture or settingsList[k].arg
-                    ui:handleEvent(Event:new(settingsList[k].event, arg))
-                end
-                -- the event can accept a gesture object or a number
-                if settingsList[k].category == "incrementalnumber" then
-                    local arg = v ~= 0 and v or gesture or 0
-                    ui:handleEvent(Event:new(settingsList[k].event, arg))
-                end
-                if ui.document and settingsList[k].configurable then
-                    local value = v
-                    if type(v) ~= "number" then
-                        for i, r in ipairs(settingsList[k].args) do
-                            if v == r then value = settingsList[k].configurable.values[i] break end
-                        end
-                    end
-                    ui:handleEvent(Event:new("ConfigChange", settingsList[k].configurable.name, value))
+            Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
+            if settingsList[k].category == "none" then
+                if settingsList[k].arg ~= nil then
+                    UIManager:sendEvent(Event:new(settingsList[k].event, settingsList[k].arg))
+                else
+                    UIManager:sendEvent(Event:new(settingsList[k].event))
                 end
             end
+            if settingsList[k].category == "absolutenumber"
+                or settingsList[k].category == "string"
+            then
+                UIManager:sendEvent(Event:new(settingsList[k].event, v))
+            end
+            -- the event can accept a gesture object or an argument
+            if settingsList[k].category == "arg" then
+                local arg = gesture or settingsList[k].arg
+                UIManager:sendEvent(Event:new(settingsList[k].event, arg))
+            end
+            -- the event can accept a gesture object or a number
+            if settingsList[k].category == "incrementalnumber" then
+                local arg = v ~= 0 and v or gesture or 0
+                UIManager:sendEvent(Event:new(settingsList[k].event, arg))
+            end
+            if settingsList[k].configurable then
+                local value = v
+                if type(v) ~= "number" then
+                    for i, r in ipairs(settingsList[k].args) do
+                        if v == r then value = settingsList[k].configurable.values[i] break end
+                    end
+                end
+                UIManager:sendEvent(Event:new("ConfigChange", settingsList[k].configurable.name, value))
+            end
         end
+        Notification:resetNotifySource()
     end
-    Notification:resetNotifySource()
 end
 
 return Dispatcher
