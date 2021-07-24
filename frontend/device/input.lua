@@ -1164,7 +1164,7 @@ function Input:waitEvent(now, deadline)
                 end
             elseif event.type == C.EV_ABS or event.type == C.EV_SYN then
                 local handled_ev = self:handleTouchEv(event)
-                -- We don't gnerate an Event for *every* input event, so, make sure we don't push nil values to the array
+                -- We don't generate an Event for *every* input event, so, make sure we don't push nil values to the array
                 if handled_ev then
                     table.insert(handled, handled_ev)
                 end
