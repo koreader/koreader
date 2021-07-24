@@ -83,6 +83,7 @@ local linux_evdev_syn_code_map = {
 }
 
 local linux_evdev_key_code_map = {
+    [C.KEY_BATTERY] = "KEY_BATTERY",
     [C.BTN_TOOL_PEN] = "BTN_TOOL_PEN",
     [C.BTN_TOOL_FINGER] = "BTN_TOOL_FINGER",
     [C.BTN_TOOL_RUBBER] = "BTN_TOOL_RUBBER",
