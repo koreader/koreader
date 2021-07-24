@@ -586,13 +586,19 @@ function Input:handleTouchEv(ev)
                 self:addSlotIfChanged(ev.value)
             end
             self:setCurrentMtSlot("id", ev.value)
+        elseif ev.code == C.ABS_MT_TOOL_TYPE then
+            -- NOTE: On the Elipsa: Finger == 0; Pen == 1
+            self:setCurrentMtSlot("tool", ev.value)
         elseif ev.code == C.ABS_MT_POSITION_X then
             self:setCurrentMtSlot("x", ev.value)
         elseif ev.code == C.ABS_MT_POSITION_Y then
             self:setCurrentMtSlot("y", ev.value)
         elseif self.pressure_event and ev.code == self.pressure_event and ev.value == 0 then
-            -- Drop hovering pen events
-            self:setCurrentMtSlot("id", -1)
+            -- Drop hovering *pen* events
+            local tool = self:getCurrentMtSlotData("tool")
+            if tool and tool == 1 then
+                self:setCurrentMtSlot("id", -1)
+            end
 
         -- code to emulate mt protocol on kobos
         -- we "confirm" abs_x, abs_y only when pressure ~= 0
@@ -904,6 +910,15 @@ end
 
 function Input:getCurrentMtSlot()
     return self:getMtSlot(self.cur_slot)
+end
+
+function Input:getCurrentMtSlotData(key)
+    local slot = self:getCurrentMtSlot()
+    if slot then
+        return slot[key]
+    end
+
+    return nil
 end
 
 function Input:addSlotIfChanged(value)
