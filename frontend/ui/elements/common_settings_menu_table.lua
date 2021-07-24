@@ -460,18 +460,6 @@ common_settings.back_in_reader = {
         },
     },
 }
-if Device:hasKeys() then
-    common_settings.invert_page_turn_buttons = {
-        text = _("Invert page turn buttons"),
-        checked_func = function()
-            return G_reader_settings:isTrue("input_invert_page_turn_keys")
-        end,
-        callback = function()
-            G_reader_settings:flipNilOrFalse("input_invert_page_turn_keys")
-            Device:invertButtons()
-        end,
-    }
-end
 common_settings.opening_page_location_stack = {
         text = _("Add opening page to location history"),
         checked_func = function()
