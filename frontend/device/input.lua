@@ -439,20 +439,22 @@ function Input:handleKeyBoardEv(ev)
     if self.snow_protocol then
         if ev.code == C.BTN_TOUCH and ev.value == 0 then
             -- Loss of contact for *all* slots
-            if #self.MTSlots ~= 0 then
-                -- Unlikely, since we clear this on SYN_REPORT, and this is usually in its own event stream,
-                -- meaning we've *just* dropped it...
-                for _, MTSlot in pairs(self.MTSlots) do
-                    logger.dbg("UP for MTSlot", MTSlot.slot)
-                    self:setMtSlot(MTSlot.slot, "id", -1)
-                end
-            else
+            if #self.MTSlots == 0 then
+                -- Likely, since this is usually in its own event stream,
+                -- meaning self.MTSlots has *just* been cleared...
+                -- So, poke at the actual data, and re-populate a minimal self.MTSlots ;).
                 for _, slot in pairs(self.ev_slots) do
                     if slot.id ~= -1 then
                         table.insert(self.MTSlots, slot)
                         slot.id = -1
                         logger.dbg("UP for Slot", slot.slot)
                     end
+                end
+            else
+                -- Unlikely, given what we mentioned above...
+                for _, MTSlot in pairs(self.MTSlots) do
+                    logger.dbg("UP for MTSlot", MTSlot.slot)
+                    self:setMtSlot(MTSlot.slot, "id", -1)
                 end
             end
 
