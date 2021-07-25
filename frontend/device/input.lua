@@ -443,7 +443,8 @@ function Input:handleKeyBoardEv(ev)
             if #self.MTSlots == 0 then
                 -- Likely, since this is usually in its own event stream,
                 -- meaning self.MTSlots has *just* been cleared...
-                -- So, poke at the actual data, and re-populate a minimal self.MTSlots ;).
+                -- So, poke at the actual data to find the slots that are currently active (i.e., in the down state),
+                -- and re-populate a minimal self.MTSlots array that simply switches them to the up state ;).
                 for _, slot in pairs(self.ev_slots) do
                     if slot.id ~= -1 then
                         table.insert(self.MTSlots, slot)
