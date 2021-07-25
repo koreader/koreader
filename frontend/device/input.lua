@@ -448,7 +448,6 @@ function Input:handleKeyBoardEv(ev)
                     if slot.id ~= -1 then
                         table.insert(self.MTSlots, slot)
                         slot.id = -1
-                        logger.dbg("UP for Slot", slot.slot)
                     end
                 end
             else
@@ -456,7 +455,6 @@ function Input:handleKeyBoardEv(ev)
                 -- Note that, funnily enough, its EV_KEY:BTN_TOUCH:1 counterpart
                 -- *can* be in the same initial event stream as the EV_ABS batch...
                 for _, MTSlot in pairs(self.MTSlots) do
-                    logger.dbg("UP for MTSlot", MTSlot.slot)
                     self:setMtSlot(MTSlot.slot, "id", -1)
                 end
             end
