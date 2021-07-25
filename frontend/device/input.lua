@@ -442,7 +442,7 @@ function Input:handleKeyBoardEv(ev)
             -- only once the final contact point has been lifted.
             if #self.MTSlots == 0 then
                 -- Likely, since this is usually in its own event stream,
-                -- meaning self.MTSlots has *just* been cleared...
+                -- meaning self.MTSlots has *just* been cleared by our last EV_SYN:SYN_REPORT handler...
                 -- So, poke at the actual data to find the slots that are currently active (i.e., in the down state),
                 -- and re-populate a minimal self.MTSlots array that simply switches them to the up state ;).
                 for _, slot in pairs(self.ev_slots) do
