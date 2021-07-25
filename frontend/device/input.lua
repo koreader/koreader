@@ -455,7 +455,7 @@ function Input:handleKeyBoardEv(ev)
                 -- Unlikely, given what we mentioned above...
                 -- Note that, funnily enough, its EV_KEY:BTN_TOUCH:1 counterpart
                 -- *can* be in the same initial event stream as the EV_ABS batch...
-                for _, MTSlot in pairs(self.MTSlots) do
+                for _, MTSlot in ipairs(self.MTSlots) do
                     self:setMtSlot(MTSlot.slot, "id", -1)
                 end
             end
@@ -650,7 +650,7 @@ function Input:handleTouchEv(ev)
         if ev.code == C.SYN_REPORT then
             -- Promote our event's time table to a real TimeVal
             setmetatable(ev.time, TimeVal)
-            for _, MTSlot in pairs(self.MTSlots) do
+            for _, MTSlot in ipairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", ev.time)
             end
             -- feed ev in all slots to state machine
@@ -713,7 +713,7 @@ function Input:handleTouchEvPhoenix(ev)
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
             setmetatable(ev.time, TimeVal)
-            for _, MTSlot in pairs(self.MTSlots) do
+            for _, MTSlot in ipairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", ev.time)
             end
             -- feed ev in all slots to state machine
@@ -749,7 +749,7 @@ function Input:handleTouchEvLegacy(ev)
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
             setmetatable(ev.time, TimeVal)
-            for _, MTSlot in pairs(self.MTSlots) do
+            for _, MTSlot in ipairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", ev.time)
             end
 
