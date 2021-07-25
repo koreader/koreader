@@ -438,7 +438,8 @@ function Input:handleKeyBoardEv(ev)
     -- Detect loss of contact for the "snow" protocol...
     if self.snow_protocol then
         if ev.code == C.BTN_TOUCH and ev.value == 0 then
-            -- Loss of contact for *all* slots
+            -- Kernel sends it after loss of contact for *all* slots,
+            -- only once the final contact point has been lifted.
             if #self.MTSlots == 0 then
                 -- Likely, since this is usually in its own event stream,
                 -- meaning self.MTSlots has *just* been cleared...
@@ -611,7 +612,7 @@ function Input:handleTouchEv(ev)
         elseif ev.code == C.ABS_MT_TRACKING_ID then
             if self.snow_protocol then
                 -- We'll never get an ABS_MT_SLOT event,
-                -- instead we have slot-like ABS_MT_TRACKING_ID...
+                -- instead we have a slot-like ABS_MT_TRACKING_ID value...
                 self:addSlotIfChanged(ev.value)
             end
             self:setCurrentMtSlot("id", ev.value)
