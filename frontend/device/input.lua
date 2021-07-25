@@ -445,14 +445,12 @@ function Input:handleKeyBoardEv(ev)
                 for _, MTSlot in pairs(self.MTSlots) do
                     logger.dbg("UP for MTSlot", MTSlot.slot)
                     self:setMtSlot(MTSlot.slot, "id", -1)
-                    self:setMtSlot(MTSlot.slot, "active", false)
                 end
             else
                 for _, slot in pairs(self.ev_slots) do
-                    if slot.active then
+                    if slot.id ~= -1 then
                         table.insert(self.MTSlots, slot)
                         slot.id = -1
-                        slot.active = false
                         logger.dbg("UP for Slot", slot.slot)
                     end
                 end
@@ -613,9 +611,6 @@ function Input:handleTouchEv(ev)
                 -- We'll never get an ABS_MT_SLOT event,
                 -- instead we have slot-like ABS_MT_TRACKING_ID...
                 self:addSlotIfChanged(ev.value)
-                -- We need to remember the active slots across different SYN_REPORTs,
-                -- so we can't rely on self.MTSlots...
-                self:setCurrentMtSlot("active", true)
             end
             self:setCurrentMtSlot("id", ev.value)
         elseif ev.code == C.ABS_MT_TOOL_TYPE then
