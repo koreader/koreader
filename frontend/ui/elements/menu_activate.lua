@@ -6,7 +6,7 @@ return {
     text = _("Activate menu"),
     sub_item_table = {
         {
-            text = _("Tap"),
+            text = _("With a tap"),
             checked_func = function()
                 return G_reader_settings:readSetting("activate_menu") ~= "swipe"
             end,
@@ -22,7 +22,7 @@ return {
             end,
         },
         {
-            text = _("Swipe"),
+            text = _("With a swipe"),
             checked_func = function()
                 return G_reader_settings:readSetting("activate_menu") ~= "tap"
             end,
