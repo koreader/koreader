@@ -93,7 +93,6 @@ local order = {
         "gesture_intervals",
         "----------------------------",
         "menu_activate",
-        "page_turns",
         "ignore_hold_corners",
         "screen_disable_double_tab",
     },

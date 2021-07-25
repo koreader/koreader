@@ -4,7 +4,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
 local ProgressWidget = require("ui/widget/progresswidget")
 local ReaderPanning = require("apps/reader/modules/readerpanning")
@@ -399,35 +398,6 @@ function ReaderRolling:getLastProgress()
 end
 
 function ReaderRolling:addToMainMenu(menu_items)
-    --- @fixme Repeated code with ReaderPaging read from left to right.
-    menu_items.invert_page_turn_gestures = {
-        text = _("Invert page turn taps and swipes"),
-        checked_func = function() return self.inverse_reading_order end,
-        callback = function()
-            self.ui:handleEvent(Event:new("ToggleReadingOrder"))
-        end,
-        hold_callback = function(touchmenu_instance)
-            local inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
-            UIManager:show(MultiConfirmBox:new{
-                text = inverse_reading_order and _("The default (★) for newly opened books is right-to-left (RTL) page turning.\n\nWould you like to change it?")
-                or _("The default (★) for newly opened books is left-to-right (LTR) page turning.\n\nWould you like to change it?"),
-                choice1_text_func = function()
-                    return inverse_reading_order and _("LTR") or _("LTR (★)")
-                end,
-                choice1_callback = function()
-                     G_reader_settings:makeFalse("inverse_reading_order")
-                     if touchmenu_instance then touchmenu_instance:updateItems() end
-                end,
-                choice2_text_func = function()
-                    return inverse_reading_order and _("RTL (★)") or _("RTL")
-                end,
-                choice2_callback = function()
-                    G_reader_settings:makeTrue("inverse_reading_order")
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                end,
-            })
-        end,
-    }
     --- @fixme repeated code with page overlap menu for readerpaging
     -- needs to keep only one copy of the logic as for the DRY principle.
     -- The difference between the two menus is only the enabled func.

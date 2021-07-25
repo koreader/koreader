@@ -236,7 +236,6 @@ common_settings.screen_dpi = require("ui/elements/screen_dpi_menu_table")
 common_settings.screen_eink_opt = require("ui/elements/screen_eink_opt_menu_table")
 common_settings.screen_notification = require("ui/elements/screen_notification_menu_table")
 common_settings.menu_activate = require("ui/elements/menu_activate")
-common_settings.page_turns = require("ui/elements/page_turns")
 common_settings.screen_disable_double_tab = require("ui/elements/screen_disable_double_tap_table")
 common_settings.ignore_hold_corners = {
     text = _("Ignore hold on corners"),
@@ -460,18 +459,6 @@ common_settings.back_in_reader = {
         },
     },
 }
-if Device:hasKeys() then
-    common_settings.invert_page_turn_buttons = {
-        text = _("Invert page turn buttons"),
-        checked_func = function()
-            return G_reader_settings:isTrue("input_invert_page_turn_keys")
-        end,
-        callback = function()
-            G_reader_settings:flipNilOrFalse("input_invert_page_turn_keys")
-            Device:invertButtons()
-        end,
-    }
-end
 common_settings.opening_page_location_stack = {
         text = _("Add opening page to location history"),
         checked_func = function()

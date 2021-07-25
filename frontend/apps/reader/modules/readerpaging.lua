@@ -4,7 +4,6 @@ local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
-local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
 local TimeVal = require("ui/timeval")
@@ -264,34 +263,6 @@ function ReaderPaging:addToMainMenu(menu_items)
                     and not self.zoom_mode:find("height")
         end,
         sub_item_table = page_overlap_menu,
-    }
-    menu_items.invert_page_turn_gestures = {
-        text = _("Invert page turn taps and swipes"),
-        checked_func = function() return self.inverse_reading_order end,
-        callback = function()
-            self.ui:handleEvent(Event:new("ToggleReadingOrder"))
-        end,
-        hold_callback = function(touchmenu_instance)
-            local inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
-            UIManager:show(MultiConfirmBox:new{
-                text = inverse_reading_order and _("The default (★) for newly opened books is right-to-left (RTL) page turning.\n\nWould you like to change it?")
-                or _("The default (★) for newly opened books is left-to-right (LTR) page turning.\n\nWould you like to change it?"),
-                choice1_text_func = function()
-                    return inverse_reading_order and _("LTR") or _("LTR (★)")
-                end,
-                choice1_callback = function()
-                     G_reader_settings:makeFalse("inverse_reading_order")
-                     if touchmenu_instance then touchmenu_instance:updateItems() end
-                end,
-                choice2_text_func = function()
-                    return inverse_reading_order and _("RTL (★)") or _("RTL")
-                end,
-                choice2_callback = function()
-                    G_reader_settings:makeTrue("inverse_reading_order")
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                end,
-            })
-        end,
     }
 end
 
