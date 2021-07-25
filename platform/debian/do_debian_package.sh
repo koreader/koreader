@@ -79,7 +79,6 @@ if command_exists "${COMMAND}"; then
     find "${BASE_DIR}" -type d -print0 | xargs -0 chmod 755
     find "${BASE_DIR}" -executable -type f -print0 | xargs -0 chmod 755
     find "${BASE_DIR}" -type f -name "*.cff" -print0 | xargs -0 chmod 644
-    find "${BASE_DIR}" -type f -name "*.crt" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "*.html" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "*.lua" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "*manifest" -print0 | xargs -0 chmod 644
