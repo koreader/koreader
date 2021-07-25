@@ -435,6 +435,29 @@ function Input:resetState()
 end
 
 function Input:handleKeyBoardEv(ev)
+    -- Detect loss of contact for the "snow" protocol...
+    if self.snow_protocol then
+        if ev.code == C.BTN_TOUCH and ev.value == 0 then
+            -- Loss of contact for *all* slots
+            if #self.MTSlots ~= 0 then
+                -- Unlikely, since we clear this on SYN_REPORT, and this is usually in its own event stream,
+                -- meaning we've *just* dropped it...
+                for _, MTSlot in pairs(self.MTSlots) do
+                    logger.dbg("UP for MTSlot", MTSlot.slot)
+                    self:setMtSlot(MTSlot.slot, "id", -1)
+                end
+            else
+                for _, slot in pairs(self.ev_slots) do
+                    table.insert(self.MTSlots, slot)
+                    slot.id = -1
+                    logger.dbg("UP for Slot", slot.slot)
+                end
+            end
+
+            return
+        end
+    end
+
     local keycode = self.event_map[ev.code]
     if not keycode then
         -- do not handle keypress for keys we don't know
@@ -583,6 +606,8 @@ function Input:handleTouchEv(ev)
             self:addSlotIfChanged(ev.value)
         elseif ev.code == C.ABS_MT_TRACKING_ID then
             if self.snow_protocol then
+                -- We'll never get an ABS_MT_SLOT event,
+                -- instead we have slot-like ABS_MT_TRACKING_ID...
                 self:addSlotIfChanged(ev.value)
             end
             self:setCurrentMtSlot("id", ev.value)
@@ -621,32 +646,10 @@ function Input:handleTouchEv(ev)
             setmetatable(ev.time, TimeVal)
             for _, MTSlot in pairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", ev.time)
-                if self.snow_protocol then
-                    -- if a slot appears in the current touch event, set "used"
-                    self:setMtSlot(MTSlot.slot, "used", true)
-                end
-            end
-            if self.snow_protocol then
-                -- reset every slot that doesn't appear in the current touch event
-                -- (because on the H2O2, this is the only way we detect finger-up)
-                self.MTSlots = {}
-                for _, slot in pairs(self.ev_slots) do
-                    table.insert(self.MTSlots, slot)
-                    if not slot.used then
-                        slot.id = -1
-                        slot.timev = ev.time
-                    end
-                end
             end
             -- feed ev in all slots to state machine
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
             self.MTSlots = {}
-            if self.snow_protocol then
-                -- go through all the ev_slots and clear used
-                for _, slot in pairs(self.ev_slots) do
-                    slot.used = nil
-                end
-            end
             if touch_ges then
                 self:gestureAdjustHook(touch_ges)
                 return Event:new("Gesture",
