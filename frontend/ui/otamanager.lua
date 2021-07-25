@@ -461,7 +461,7 @@ function OTAManager:getOTAMenuTable()
         end,
         sub_item_table = {
             {
-                text = _("Check for update"),
+                text = _("Check for updates"),
                 callback = function()
                     local connect_callback = function()
                         OTAManager:fetchAndProcessUpdate()
