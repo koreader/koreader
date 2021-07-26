@@ -16,6 +16,7 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local util  = require("util")
 local _ = require("gettext")
+local N_ = _.ngettext
 local Screen = Device.screen
 local T = require("ffi/util").template
 
@@ -972,7 +973,7 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
         end
         return {
             text_func = function()
-                return T(_("%1 entries at ToC depth %2"), #ticks[level], level)
+                return T(N_("1 entry at ToC depth %2", "%1 entries at ToC depth %2", #ticks[level]), #ticks[level], level)
             end,
             checked_func = function()
                 return not self.toc_ticks_ignored_levels[level]
@@ -994,7 +995,7 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
                     nb_ticks = nb_ticks + #ticks[level]
                 end
             end
-            return T(_("Progress bars: %1 ticks"), nb_ticks)
+            return T(N_("Progress bars: 1 tick", "Progress bars: %1 ticks", nb_ticks), nb_ticks)
         end,
         help_text = _([[The progress bars in the footer and the skim dialog can become cramped when the table of contents is complex. This allows you to restrict the number of tick marks.]]),
         enabled_func = function()
