@@ -158,7 +158,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
         table.insert(menu_items.device_status_alarm.sub_item_table,
             {
                 text_func = function()
-                    return T(_("Thresholds (%1% - %2%)"), self.battery_threshold, self.battery_threshold_high)
+                    return T(_("Thresholds (%1% – %2%)"), self.battery_threshold, self.battery_threshold_high)
                 end,
                 enabled_func = function()
                     return G_reader_settings:isTrue("device_status_battery_alarm")
