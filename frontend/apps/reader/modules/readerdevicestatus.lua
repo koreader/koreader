@@ -19,30 +19,32 @@ function ReaderDeviceStatus:init()
         self.battery_threshold = G_reader_settings:readSetting("device_status_battery_threshold") or 20
         self.battery_threshold_high = G_reader_settings:readSetting("device_status_battery_threshold_high") or 100
         self.checkLowBatteryLevel = function()
-            if powerd:getDismissBatteryStatus() == true then return end -- alerts dismissed
             local battery_capacity = powerd:getCapacity()
-            if powerd:isCharging() and battery_capacity > self.battery_threshold_high then
-                powerd:setDismissBatteryStatus(true)
-                UIManager:show(ConfirmBox:new {
-                    text = T(_("High battery level: %1%\n\nDismiss high battery alert?"), battery_capacity),
-                    ok_text = _("Dismiss"),
-                    dismissable = false,
-                    cancel_callback = function()
-                        powerd:setDismissBatteryStatus(false)
-                    end,
-                })
-            elseif not powerd:isCharging() and battery_capacity <= self.battery_threshold then
-                powerd:setDismissBatteryStatus(true)
-                UIManager:show(ConfirmBox:new {
-                    text = T(_("Low battery level: %1%\n\nDismiss low battery alert?"), battery_capacity),
-                    ok_text = _("Dismiss"),
-                    dismissable = false,
-                    cancel_callback = function()
-                        powerd:setDismissBatteryStatus(false)
-                    end,
-                })
+            if powerd:getDismissBatteryStatus() == true then  -- alerts dismissed
+                if (powerd:isCharging() and battery_capacity <= self.battery_threshold_high) or
+                   (not powerd:isCharging() and battery_capacity > self.battery_threshold) then
+                    powerd:setDismissBatteryStatus(false)
+                end
             else
-                powerd:setDismissBatteryStatus(false)
+                if powerd:isCharging() and battery_capacity > self.battery_threshold_high then
+                    UIManager:show(ConfirmBox:new {
+                        text = T(_("High battery level: %1%\n\nDismiss high battery alert?"), battery_capacity),
+                        ok_text = _("Dismiss"),
+                        dismissable = false,
+                        ok_callback = function()
+                            powerd:setDismissBatteryStatus(true)
+                        end,
+                    })
+                elseif not powerd:isCharging() and battery_capacity <= self.battery_threshold then
+                    UIManager:show(ConfirmBox:new {
+                        text = T(_("Low battery level: %1%\n\nDismiss low battery alert?"), battery_capacity),
+                        ok_text = _("Dismiss"),
+                        dismissable = false,
+                        cancel_callback = function()
+                            powerd:setDismissBatteryStatus(true)
+                        end,
+                    })
+                end
             end
             UIManager:scheduleIn(self.battery_interval * 60, self.checkLowBatteryLevel)
         end
