@@ -14,25 +14,34 @@ local ReaderDeviceStatus = InputContainer:new{
 }
 
 function ReaderDeviceStatus:init()
-    self.has_battery = powerd:getCapacity() > 0 or powerd:isCharging()
-    if self.has_battery then
+    if Device:hasBattery() then
         self.battery_interval = G_reader_settings:readSetting("device_status_battery_interval") or 10
         self.battery_threshold = G_reader_settings:readSetting("device_status_battery_threshold") or 20
+        self.battery_threshold_high = G_reader_settings:readSetting("device_status_battery_threshold_high") or 100
         self.checkLowBatteryLevel = function()
+            if powerd:getDismissBatteryStatus() == true then return end -- alerts dismissed
             local battery_capacity = powerd:getCapacity()
-            if powerd:isCharging() then
-                powerd:setDismissBatteryStatus(false)
-            elseif powerd:getDismissBatteryStatus() ~= true and battery_capacity <= self.battery_threshold then
+            if powerd:isCharging() and battery_capacity > self.battery_threshold_high then
                 powerd:setDismissBatteryStatus(true)
                 UIManager:show(ConfirmBox:new {
-                    text = T(_("Low battery level: %1%\n\nDismiss low battery alarm?"), battery_capacity),
+                    text = T(_("High battery level: %1%\n\nDismiss high battery alert?"), battery_capacity),
                     ok_text = _("Dismiss"),
                     dismissable = false,
                     cancel_callback = function()
                         powerd:setDismissBatteryStatus(false)
                     end,
                 })
-            elseif powerd:getDismissBatteryStatus() and battery_capacity > self.battery_threshold then
+            elseif not powerd:isCharging() and battery_capacity <= self.battery_threshold then
+                powerd:setDismissBatteryStatus(true)
+                UIManager:show(ConfirmBox:new {
+                    text = T(_("Low battery level: %1%\n\nDismiss low battery alert?"), battery_capacity),
+                    ok_text = _("Dismiss"),
+                    dismissable = false,
+                    cancel_callback = function()
+                        powerd:setDismissBatteryStatus(false)
+                    end,
+                })
+            else
                 powerd:setDismissBatteryStatus(false)
             end
             UIManager:scheduleIn(self.battery_interval * 60, self.checkLowBatteryLevel)
@@ -101,10 +110,10 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
         text = _("Device status alerts"),
         sub_item_table = {},
     }
-    if self.has_battery then
+    if Device:hasBattery() then
         table.insert(menu_items.device_status_alarm.sub_item_table,
             {
-                text = _("Low battery level"),
+                text = _("Low or high battery level"),
                 checked_func = function()
                     return G_reader_settings:isTrue("device_status_battery_alarm")
                 end,
@@ -149,28 +158,44 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
         table.insert(menu_items.device_status_alarm.sub_item_table,
             {
                 text_func = function()
-                    return T(_("Threshold (%1%)"), self.battery_threshold)
+                    return T(_("Thresholds (%1% - %2%)"), self.battery_threshold, self.battery_threshold_high)
                 end,
                 enabled_func = function()
                     return G_reader_settings:isTrue("device_status_battery_alarm")
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
-                    UIManager:show(SpinWidget:new{
-                        width = math.floor(Screen:getWidth() * 0.6),
-                        value = self.battery_threshold,
-                        value_min = 1,
-                        value_max = 99,
-                        default_value = 20,
-                        value_hold_step = 5,
-                        title_text = _("Battery alarm threshold"),
-                        callback = function(spin)
-                            self.battery_threshold = spin.value
+                    local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
+                    local thresholds_widget = DoubleSpinWidget:new{
+                        title_text = _("Battery level alert thresholds"),
+                        info_text = _([[
+Low level threshold is checked when the device is not charging.
+High level threshold is checked when the device is charging.]]),
+                        width = math.floor(Screen:getWidth() * 0.8),
+                        left_text = _("Low"),
+                        left_value = self.battery_threshold,
+                        left_min = 1,
+                        left_max = self.battery_threshold_high,
+                        left_default = 20,
+                        left_hold_step = 5,
+                        right_text = _("High"),
+                        right_value = self.battery_threshold_high,
+                        right_min = self.battery_threshold,
+                        right_max = 100,
+                        right_default = 100,
+                        right_hold_step = 5,
+                        default_values = true,
+                        callback = function(left_value, right_value)
+                            if not left_value then return end -- "Use defaults" pressed
+                            self.battery_threshold = left_value
+                            self.battery_threshold_high = right_value
                             G_reader_settings:saveSetting("device_status_battery_threshold", self.battery_threshold)
+                            G_reader_settings:saveSetting("device_status_battery_threshold_high", self.battery_threshold_high)
                             touchmenu_instance:updateItems()
                             powerd:setDismissBatteryStatus(false)
                         end,
-                    })
+                    }
+                    UIManager:show(thresholds_widget)
                 end,
                 separator = true,
             })
@@ -236,7 +261,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                         default_value = 100,
                         value_step = 5,
                         value_hold_step = 10,
-                        title_text = _("Memory alarm threshold"),
+                        title_text = _("Memory alert threshold"),
                         callback = function(spin)
                             self.memory_threshold = spin.value
                             G_reader_settings:saveSetting("device_status_memory_threshold", self.memory_threshold)
