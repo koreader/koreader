@@ -19,28 +19,29 @@ function ReaderDeviceStatus:init()
         self.battery_threshold = G_reader_settings:readSetting("device_status_battery_threshold") or 20
         self.battery_threshold_high = G_reader_settings:readSetting("device_status_battery_threshold_high") or 100
         self.checkLowBatteryLevel = function()
+            local is_charging = powerd:isCharging()
             local battery_capacity = powerd:getCapacity()
             if powerd:getDismissBatteryStatus() == true then  -- alerts dismissed
-                if (powerd:isCharging() and battery_capacity <= self.battery_threshold_high) or
-                   (not powerd:isCharging() and battery_capacity > self.battery_threshold) then
+                if (is_charging and battery_capacity <= self.battery_threshold_high) or
+                   (not is_charging and battery_capacity > self.battery_threshold) then
                     powerd:setDismissBatteryStatus(false)
                 end
             else
-                if powerd:isCharging() and battery_capacity > self.battery_threshold_high then
+                if is_charging and battery_capacity > self.battery_threshold_high then
                     UIManager:show(ConfirmBox:new {
-                        text = T(_("High battery level: %1%\n\nDismiss high battery alert?"), battery_capacity),
+                        text = T(_("High battery level: %1%\n\nDismiss battery level alert?"), battery_capacity),
                         ok_text = _("Dismiss"),
                         dismissable = false,
                         ok_callback = function()
                             powerd:setDismissBatteryStatus(true)
                         end,
                     })
-                elseif not powerd:isCharging() and battery_capacity <= self.battery_threshold then
+                elseif not is_charging and battery_capacity <= self.battery_threshold then
                     UIManager:show(ConfirmBox:new {
-                        text = T(_("Low battery level: %1%\n\nDismiss low battery alert?"), battery_capacity),
+                        text = T(_("Low battery level: %1%\n\nDismiss battery level alert?"), battery_capacity),
                         ok_text = _("Dismiss"),
                         dismissable = false,
-                        cancel_callback = function()
+                        ok_callback = function()
                             powerd:setDismissBatteryStatus(true)
                         end,
                     })
@@ -115,7 +116,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
     if Device:hasBattery() then
         table.insert(menu_items.device_status_alarm.sub_item_table,
             {
-                text = _("Low or high battery level"),
+                text = _("Battery level"),
                 checked_func = function()
                     return G_reader_settings:isTrue("device_status_battery_alarm")
                 end,
