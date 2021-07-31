@@ -45,6 +45,7 @@
     return esc
   end
 }#
+<!DOCTYPE html>
 <div style="width:90%; max-width:600px; margin:0px auto; padding:5px; font-size:12pt; font-family:Georgia">
   <h2 style="font-size:18pt; text-align:right;">#{= htmlescape(booknotes.title) }#</h2>
   <h5 style="font-size:12pt; text-align:right; color:gray;">#{= htmlescape(booknotes.author) }#</h5>
