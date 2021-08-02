@@ -223,7 +223,7 @@ function ReaderStatus:deleteFile(file, text_end_book)
             if FileManager.instance then
                 FileManager.instance.file_chooser:refreshPath()
             else
-                local path, filename = util.splitFilePathName(file)
+                local path = util.splitFilePathName(file)
                 FileManager:showFiles(path)
             end
         end,
