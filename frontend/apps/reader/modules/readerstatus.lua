@@ -6,6 +6,7 @@ local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
+local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -222,7 +223,8 @@ function ReaderStatus:deleteFile(file, text_end_book)
             if FileManager.instance then
                 FileManager.instance.file_chooser:refreshPath()
             else
-                FileManager:showFiles()
+                local path, filename = util.splitFilePathName(file)
+                FileManager:showFiles(path)
             end
         end,
     })
