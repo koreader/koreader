@@ -643,7 +643,7 @@ function GestureDetector:handleSwipe(tev)
     if #self.multiswipe_directions > 1 then
         ges = "multiswipe"
         multiswipe_directions = ""
-        for k, v in pairs(self.multiswipe_directions) do
+        for k, v in ipairs(self.multiswipe_directions) do
             local sep = ""
             if k > 1 then
                 sep = " "

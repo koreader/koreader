@@ -83,6 +83,7 @@ local linux_evdev_syn_code_map = {
 }
 
 local linux_evdev_key_code_map = {
+    [C.KEY_BATTERY] = "KEY_BATTERY",
     [C.BTN_TOOL_PEN] = "BTN_TOOL_PEN",
     [C.BTN_TOOL_FINGER] = "BTN_TOOL_FINGER",
     [C.BTN_TOOL_RUBBER] = "BTN_TOOL_RUBBER",
@@ -434,6 +435,35 @@ function Input:resetState()
 end
 
 function Input:handleKeyBoardEv(ev)
+    -- Detect loss of contact for the "snow" protocol...
+    if self.snow_protocol then
+        if ev.code == C.BTN_TOUCH and ev.value == 0 then
+            -- Kernel sends it after loss of contact for *all* slots,
+            -- only once the final contact point has been lifted.
+            if #self.MTSlots == 0 then
+                -- Likely, since this is usually in its own event stream,
+                -- meaning self.MTSlots has *just* been cleared by our last EV_SYN:SYN_REPORT handler...
+                -- So, poke at the actual data to find the slots that are currently active (i.e., in the down state),
+                -- and re-populate a minimal self.MTSlots array that simply switches them to the up state ;).
+                for _, slot in pairs(self.ev_slots) do
+                    if slot.id ~= -1 then
+                        table.insert(self.MTSlots, slot)
+                        slot.id = -1
+                    end
+                end
+            else
+                -- Unlikely, given what we mentioned above...
+                -- Note that, funnily enough, its EV_KEY:BTN_TOUCH:1 counterpart
+                -- *can* be in the same initial event stream as the EV_ABS batch...
+                for _, MTSlot in ipairs(self.MTSlots) do
+                    self:setMtSlot(MTSlot.slot, "id", -1)
+                end
+            end
+
+            return
+        end
+    end
+
     local keycode = self.event_map[ev.code]
     if not keycode then
         -- do not handle keypress for keys we don't know
@@ -582,16 +612,24 @@ function Input:handleTouchEv(ev)
             self:addSlotIfChanged(ev.value)
         elseif ev.code == C.ABS_MT_TRACKING_ID then
             if self.snow_protocol then
+                -- We'll never get an ABS_MT_SLOT event,
+                -- instead we have a slot-like ABS_MT_TRACKING_ID value...
                 self:addSlotIfChanged(ev.value)
             end
             self:setCurrentMtSlot("id", ev.value)
+        elseif ev.code == C.ABS_MT_TOOL_TYPE then
+            -- NOTE: On the Elipsa: Finger == 0; Pen == 1
+            self:setCurrentMtSlot("tool", ev.value)
         elseif ev.code == C.ABS_MT_POSITION_X then
             self:setCurrentMtSlot("x", ev.value)
         elseif ev.code == C.ABS_MT_POSITION_Y then
             self:setCurrentMtSlot("y", ev.value)
         elseif self.pressure_event and ev.code == self.pressure_event and ev.value == 0 then
-            -- Drop hovering pen events
-            self:setCurrentMtSlot("id", -1)
+            -- Drop hovering *pen* events
+            local tool = self:getCurrentMtSlotData("tool")
+            if tool and tool == 1 then
+                self:setCurrentMtSlot("id", -1)
+            end
 
         -- code to emulate mt protocol on kobos
         -- we "confirm" abs_x, abs_y only when pressure ~= 0
@@ -612,34 +650,12 @@ function Input:handleTouchEv(ev)
         if ev.code == C.SYN_REPORT then
             -- Promote our event's time table to a real TimeVal
             setmetatable(ev.time, TimeVal)
-            for _, MTSlot in pairs(self.MTSlots) do
+            for _, MTSlot in ipairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", ev.time)
-                if self.snow_protocol then
-                    -- if a slot appears in the current touch event, set "used"
-                    self:setMtSlot(MTSlot.slot, "used", true)
-                end
-            end
-            if self.snow_protocol then
-                -- reset every slot that doesn't appear in the current touch event
-                -- (because on the H2O2, this is the only way we detect finger-up)
-                self.MTSlots = {}
-                for _, slot in pairs(self.ev_slots) do
-                    table.insert(self.MTSlots, slot)
-                    if not slot.used then
-                        slot.id = -1
-                        slot.timev = ev.time
-                    end
-                end
             end
             -- feed ev in all slots to state machine
             local touch_ges = self.gesture_detector:feedEvent(self.MTSlots)
             self.MTSlots = {}
-            if self.snow_protocol then
-                -- go through all the ev_slots and clear used
-                for _, slot in pairs(self.ev_slots) do
-                    slot.used = nil
-                end
-            end
             if touch_ges then
                 self:gestureAdjustHook(touch_ges)
                 return Event:new("Gesture",
@@ -697,7 +713,7 @@ function Input:handleTouchEvPhoenix(ev)
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
             setmetatable(ev.time, TimeVal)
-            for _, MTSlot in pairs(self.MTSlots) do
+            for _, MTSlot in ipairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", ev.time)
             end
             -- feed ev in all slots to state machine
@@ -733,7 +749,7 @@ function Input:handleTouchEvLegacy(ev)
     elseif ev.type == C.EV_SYN then
         if ev.code == C.SYN_REPORT then
             setmetatable(ev.time, TimeVal)
-            for _, MTSlot in pairs(self.MTSlots) do
+            for _, MTSlot in ipairs(self.MTSlots) do
                 self:setMtSlot(MTSlot.slot, "timev", ev.time)
             end
 
@@ -905,11 +921,20 @@ function Input:getCurrentMtSlot()
     return self:getMtSlot(self.cur_slot)
 end
 
+function Input:getCurrentMtSlotData(key)
+    local slot = self:getCurrentMtSlot()
+    if slot then
+        return slot[key]
+    end
+
+    return nil
+end
+
 function Input:addSlotIfChanged(value)
     if self.cur_slot ~= value then
         table.insert(self.MTSlots, self:getMtSlot(value))
+        self.cur_slot = value
     end
-    self.cur_slot = value
 end
 
 function Input:confirmAbsxy()
@@ -1148,7 +1173,7 @@ function Input:waitEvent(now, deadline)
                 end
             elseif event.type == C.EV_ABS or event.type == C.EV_SYN then
                 local handled_ev = self:handleTouchEv(event)
-                -- We don't gnerate an Event for *every* input event, so, make sure we don't push nil values to the array
+                -- We don't generate an Event for *every* input event, so, make sure we don't push nil values to the array
                 if handled_ev then
                     table.insert(handled, handled_ev)
                 end
