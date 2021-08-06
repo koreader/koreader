@@ -10,7 +10,6 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local T = FFIUtil.template
 
-local autostart_profile = "00_Autostart" -- gets stored as first element
 local autostart_done = false
 
 local Profiles = WidgetContainer:new{
@@ -76,12 +75,7 @@ function Profiles:getSubMenuItems()
                             text = _("Save"),
                             callback = function()
                                 local name = name_input:getInputText()
-                                if name == autostart_profile then
-                                    UIManager:show(InfoMessage:new{
-                                        text =  T(_("Reserved name cannot be used: %1"), autostart_profile),
-                                    })
-                                    return
-                                elseif not self:newProfile(name) then
+                                if not self:newProfile(name) then
                                     UIManager:show(InfoMessage:new{
                                         text =  T(_("There is already a profile called: %1"), name),
                                     })
@@ -102,50 +96,48 @@ function Profiles:getSubMenuItems()
         }
     }
     for k,v in FFIUtil.orderedPairs(self.data) do
-        if k ~= autostart_profile then
-            local sub_items = {
-                {
-                    text = _("Delete profile"),
-                    keep_menu_open = false,
-                    separator = true,
-                    callback = function()
-                        UIManager:show(ConfirmBox:new{
-                            text = _("Do you want to delete this profile?"),
-                            ok_text = _("Yes"),
-                            cancel_text = _("No"),
-                            ok_callback = function()
-                                self:deleteProfile(k)
-                            end,
-                        })
-                    end,
-                },
-                {
-                    text = _("Autostart"),
-                    help_text = _("Execute this profile when KOReader is started with 'file browser' or 'last file'."),
-                    keep_menu_open = true,
-                    checked_func = function()
-                        return self:isAutostartProfile(k)
-                    end,
-                    separator = true,
-                    callback = function()
-                        if self:isAutostartProfile(k) then
-                            self:deleteAutostartProfile(k)
-                        else
-                            self:setAutostartProfile(k)
-                        end
-                    end,
-                }
-            }
-            Dispatcher:addSubMenu(self, sub_items, self.data, k)
-            table.insert(sub_item_table, {
-                text = k,
-                hold_keep_menu_open = false,
-                sub_item_table = sub_items,
-                hold_callback = function()
-                    Dispatcher:execute(self.data[k])
+        local sub_items = {
+            {
+                text = _("Delete profile"),
+                keep_menu_open = false,
+                separator = true,
+                callback = function()
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Do you want to delete this profile?"),
+                        ok_text = _("Yes"),
+                        cancel_text = _("No"),
+                        ok_callback = function()
+                            self:deleteProfile(k)
+                        end,
+                    })
                 end,
-            })
-        end
+            },
+            {
+                text = _("Autostart"),
+                help_text = _("Execute this profile when KOReader is started with 'file browser' or 'last file'."),
+                keep_menu_open = true,
+                checked_func = function()
+                    return self:isAutostartProfile(k)
+                end,
+                separator = true,
+                callback = function()
+                    if self:isAutostartProfile(k) then
+                        self:deleteAutostartProfile(k)
+                    else
+                        self:setAutostartProfile(k)
+                    end
+                end,
+            }
+        }
+        Dispatcher:addSubMenu(self, sub_items, self.data, k)
+        table.insert(sub_item_table, {
+            text = k,
+            hold_keep_menu_open = false,
+            sub_item_table = sub_items,
+            hold_callback = function()
+                Dispatcher:execute(self.data[k])
+            end,
+        })
     end
     return sub_item_table
 end
@@ -167,37 +159,33 @@ function Profiles:deleteProfile(name)
 end
 
 function Profiles:isAutostartProfile(name)
-    return self.data[autostart_profile] and self.data[autostart_profile][name] == true
+    return G_reader_settings:has("autostart_profiles") and G_reader_settings:readSetting("autostart_profiles")[name] == true
 end
 
 function Profiles:setAutostartProfile(name)
-    if not self.data[autostart_profile] then
-        self.data[autostart_profile] = {}
-    end
-    self.data[autostart_profile][name] = true
-    self.updated = true
+    local autostart_table = G_reader_settings:has("autostart_profiles") and G_reader_settings:readSetting("autostart_profiles") or {}
+    autostart_table[name] = true
+    G_reader_settings:saveSetting("autostart_profiles", autostart_table)
 end
 
 function Profiles:deleteAutostartProfile(name)
-    if self.data[autostart_profile][name] then
-        self.data[autostart_profile][name] = nil
-        self.updated = true
-    end
+    local autostart_table = G_reader_settings:has("autostart_profiles") and G_reader_settings:readSetting("autostart_profiles") or {}
+    autostart_table[name] = nil
+    G_reader_settings:saveSetting("autostart_profiles", autostart_table)
 end
 
 function Profiles:executeAutostart()
     if not autostart_done then
         self:loadProfiles()
-        if self.data[autostart_profile] then
-            for autostart_profile_name, v in pairs(self.data[autostart_profile]) do
-                if v and self.data[autostart_profile_name] then
-                    UIManager:nextTick(function()
-                        Dispatcher:execute(self.data[autostart_profile_name])
-                    end)
-                else
-                    self.data[autostart_profile] = nil -- remove deleted profile form autostart_profile
-                    self.updated = true
-                end
+        local autostart_table = G_reader_settings:has("autostart_profiles") and G_reader_settings:readSetting("autostart_profiles") or {}
+        for autostart_profile_name, profile_enabled in pairs(autostart_table) do
+            if self.data[autostart_profile_name] and profile_enabled then
+                UIManager:nextTick(function()
+                    Dispatcher:execute(self.data[autostart_profile_name])
+                end)
+            else
+                autostart_table[autostart_profile_name] = nil -- remove deleted profile form autostart_profile
+                G_reader_settings:saveSetting("autostart_profiles", autostart_table)
             end
         end
         autostart_done = true
