@@ -48,6 +48,7 @@ local ConfirmBox = InputContainer:new{
     ok_callback = function() end,
     cancel_callback = function() end,
     other_buttons = nil,
+    keep_open = false,
     margin = Size.margin.default,
     padding = Size.padding.default,
     dismissable = true, -- set to false if any button callback is required
@@ -99,6 +100,7 @@ function ConfirmBox:init()
         text = self.ok_text,
         callback = function()
             self.ok_callback()
+            if self.keep_open then return end
             UIManager:close(self)
         end,
     },}
@@ -118,6 +120,7 @@ function ConfirmBox:init()
                         if button.callback ~= nil then
                             button.callback()
                         end
+                        if self.keep_open then return end
                         UIManager:close(self)
                     end,
                 })
