@@ -78,7 +78,7 @@ function Profiles:getSubMenuItems()
                                 local name = name_input:getInputText()
                                 if name == autostart_profile then
                                     UIManager:show(InfoMessage:new{
-                                        text =  T(_("Reserved name can not be used: %1"), autostart_profile),
+                                        text =  T(_("Reserved name cannot be used: %1"), autostart_profile),
                                     })
                                     return
                                 elseif not self:newProfile(name) then
