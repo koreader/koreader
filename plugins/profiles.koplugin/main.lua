@@ -127,7 +127,7 @@ function Profiles:getSubMenuItems()
                         self:setAutostartProfile(k)
                     end
                 end,
-            }
+            },
         }
         Dispatcher:addSubMenu(self, sub_items, self.data, k)
         table.insert(sub_item_table, {
