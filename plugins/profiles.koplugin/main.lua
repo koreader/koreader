@@ -115,7 +115,6 @@ function Profiles:getSubMenuItems()
             {
                 text = _("Autostart"),
                 help_text = _("Execute this profile when KOReader is started with 'file browser' or 'last file'."),
-                keep_menu_open = true,
                 checked_func = function()
                     return self:isAutostartProfile(k)
                 end,
