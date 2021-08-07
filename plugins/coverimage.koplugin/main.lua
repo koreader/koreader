@@ -74,6 +74,7 @@ function CoverImage:init()
     self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or Device:getDefaultCoverPath()
     self.cover_image_format = G_reader_settings:readSetting("cover_image_format") or "auto"
     self.cover_image_quality = G_reader_settings:readSetting("cover_image_quality") or 75
+    self.cover_image_grayscale = G_reader_settings:readSetting("cover_image_grayscale") or false
     self.cover_image_stretch_limit = G_reader_settings:readSetting("cover_image_stretch_limit") or 8
     self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "black"
     self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or default_fallback_path
@@ -121,7 +122,7 @@ function CoverImage:createCoverImage(doc_settings)
 
             if self.cover_image_background == "none" or scale_factor == 1 then
                 local act_format = self.cover_image_format == "auto" and getExtension(self.cover_image_path) or self.cover_image_format
-                if not cover_image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality) then
+                if not cover_image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality, self.cover_image_grayscale) then
                     UIManager:show(InfoMessage:new{
                         text = _("Error writing file") .. "\n" .. self.cover_image_path,
                         show_icon = true,
@@ -166,7 +167,7 @@ function CoverImage:createCoverImage(doc_settings)
             cover_image:free()
 
             local act_format = self.cover_image_format == "auto" and getExtension(self.cover_image_path) or self.cover_image_format
-            if not image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality) then
+            if not image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality, self.cover_image_grayscale) then
                 UIManager:show(InfoMessage:new{
                     text = _("Error writing file") .. "\n" .. self.cover_image_path,
                     show_icon = true,
@@ -210,7 +211,7 @@ function CoverImage:getCacheFile()
     local dummy, document_name = util.splitFilePathName(self.ui.document.file)
     -- use document_name here. Title may contain characters not allowed on every filesystem (esp. vfat on /sdcard)
     local key = document_name .. "_" .. self.cover_image_quality .. "_" .. self.cover_image_stretch_limit .. "_"
-        .. self.cover_image_background .. "_" .. self.cover_image_format
+        .. self.cover_image_background .. "_" .. self.cover_image_format .. "_" .. tostring(self.cover_image_grayscale)
 
     return self.cover_image_cache_path .. self.cover_image_cache_prefix .. md5(key) .. "." .. getExtension(self.cover_image_path)
 end
@@ -567,17 +568,20 @@ function CoverImage:menuEntrySetPath(key, title, help, info, default, folder_onl
     }
 end
 
-function CoverImage:menuEntryFormat(title, format)
+function CoverImage:menuEntryFormat(title, format, grayscale)
     return {
         text = title,
         checked_func = function()
-            return self.cover_image_format == format
+            return self.cover_image_format == format and self.cover_image_grayscale == grayscale
         end,
         callback = function()
             local old_cover_image_format = self.cover_image_format
+            local old_cover_image_grayscale = self.cover_image_grayscale
             self.cover_image_format = format
             G_reader_settings:saveSetting("cover_image_format", format)
-            if self:coverEnabled() and old_cover_image_format ~= format then
+            self.cover_image_grayscale = grayscale
+            G_reader_settings:saveSetting("cover_image_grayscale", grayscale)
+            if self:coverEnabled() and (old_cover_image_format ~= format or old_cover_image_grayscale ~= grayscale) then
                 self:createCoverImage(self.ui.doc_settings)
             end
         end,
@@ -661,7 +665,8 @@ function CoverImage:menuEntrySBF()
             },
             self:menuEntryFormat(_("JPG file format"), "jpg"),
             self:menuEntryFormat(_("PNG file format"), "png"),
-            self:menuEntryFormat(_("BMP file format"), "bmp"),
+            self:menuEntryFormat(_("BMP file format (color)"), "bmp"),
+            self:menuEntryFormat(_("BMP file format (grayscale)"), "bmp", true),
         },
     }
 end
