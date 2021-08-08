@@ -27,10 +27,12 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
+local Utf8Proc = require("ffi/utf8proc")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
@@ -796,14 +798,14 @@ function Menu:init()
     self.page_info_last_chev:hide()
 
     local title_goto, type_goto, hint_func
+    local cancel_button = {
+        text = _("Cancel"),
+        callback = function()
+            self.page_info_text:closeInputDialog()
+        end,
+    }
     local buttons = {
         {
-            {
-                text = _("Cancel"),
-                callback = function()
-                    self.page_info_text:closeInputDialog()
-                end,
-            },
             {
                 text = _("Go to page"),
                 is_enter_default = true,
@@ -829,11 +831,11 @@ function Menu:init()
             text = _("Go to letter"),
             is_enter_default = true,
             callback = function()
+                local search_string = self.page_info_text.input_dialog:getInputText()
+                if search_string == "" then return end
+                search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
                 for k, v in ipairs(self.item_table) do
-                    --- @todo Support utf8 lowercase.
-                    local filename = FFIUtil.basename(v.path):lower()
-                    local search_string = self.page_info_text.input_dialog:getInputText():lower()
-                    if search_string == "" then return end
+                    local filename = Utf8Proc.lowercase(util.fixUtf8(FFIUtil.basename(v.path), "?"))
                     local i, _ = filename:find(search_string)
                     if i == 1 and not v.is_go_up then
                         self:onGotoPage(math.ceil(k / self.perpage))
@@ -843,12 +845,15 @@ function Menu:init()
                 self.page_info_text:closeInputDialog()
             end,
         })
+        table.insert(buttons, {})
+        table.insert(buttons[2], cancel_button)
     else
         title_goto = _("Enter page number")
         type_goto = "number"
         hint_func = function()
             return string.format("(1 - %s)", self.page_num)
         end
+        table.insert(buttons[1], 1, cancel_button)
     end
 
     self.page_info_text = self.page_info_text or Button:new{
