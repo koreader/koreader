@@ -845,8 +845,7 @@ function Menu:init()
                 self.page_info_text:closeInputDialog()
             end,
         })
-        table.insert(buttons, {})
-        table.insert(buttons[2], cancel_button)
+        table.insert(buttons, {cancel_button})
     else
         title_goto = _("Enter page number")
         type_goto = "number"
