@@ -10,6 +10,7 @@ local CloseButton = require("ui/widget/closebutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
+local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local Font = require("ui/font")
@@ -620,7 +621,7 @@ end
 -- Panning events
 function ImageViewer:onSwipe(_, ges)
     -- Panning with swipe is less accurate, as we don't get both coordinates,
-    -- only start point + direction (with only 45° granularity)
+    -- only start point + direction (with only 45Â° granularity)
     local direction = ges.direction
     local distance = ges.distance
     local sq_distance = math.sqrt(distance*distance/2)
@@ -758,12 +759,6 @@ function ImageViewer:onSaveImageView()
     -- Similar behaviour as in Screenshoter:onScreenshot()
     -- We save the currently displayed blitbuffer (panned or zoomed)
     -- after getting fullscreen and removing UI elements if needed.
-    local screenshots_dir = G_reader_settings:readSetting("screenshot_dir")
-    if not screenshots_dir then
-        screenshots_dir = DataStorage:getDataDir() .. "/screenshots/"
-    end
-    self.screenshot_fn_fmt = screenshots_dir .. "ImageViewer_%Y-%m-%d_%H%M%S.png"
-    local screenshot_name = os.date(self.screenshot_fn_fmt)
     local restore_settings_func
     if self.with_title_bar or self.buttons_visible or not self.fullscreen then
         local with_title_bar = self.with_title_bar
@@ -781,25 +776,10 @@ function ImageViewer:onSaveImageView()
         self:update()
         UIManager:forceRePaint()
     end
-    Screen:shot(screenshot_name)
-    local widget = ConfirmBox:new{
-        text = T( _("Saved screenshot to %1.\nWould you like to set it as screensaver?"), BD.filepath(screenshot_name)),
-        ok_text = _("Yes"),
-        ok_callback = function()
-            G_reader_settings:saveSetting("screensaver_type", "image_file")
-            G_reader_settings:saveSetting("screensaver_image", screenshot_name)
-            if restore_settings_func then
-                restore_settings_func()
-            end
-        end,
-        cancel_text = _("No"),
-        cancel_callback = function()
-            if restore_settings_func then
-                restore_settings_func()
-            end
-        end
-    }
-    UIManager:show(widget)
+    UIManager:sendEvent(Event:new("Screenshot"))
+    if restore_settings_func then
+        restore_settings_func()
+    end
     return true
 end
 
