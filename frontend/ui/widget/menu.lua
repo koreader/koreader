@@ -827,9 +827,8 @@ function Menu:init()
             -- @translators First group is a page number range, second group the standard range for alphabetic searches
             return T(_("(1 - %1) or (a - z)"), self.page_num)
         end
-        table.insert(buttons[1], {
+        table.insert(buttons[1], 1, {
             text = _("Go to letter"),
-            is_enter_default = true,
             callback = function()
                 local search_string = self.page_info_text.input_dialog:getInputText()
                 if search_string == "" then return end
