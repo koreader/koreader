@@ -44,6 +44,7 @@ function Screenshoter:onScreenshot(filename)
     confirm_box = ConfirmBox:new{
         text = T( _("Screenshot saved to:\n%1"), BD.filepath(screenshot_name)),
         keep_open = true,
+        dismissable = false,
         cancel_text = _("Delete"),
         cancel_callback = function()
             local ok, err = os.remove(screenshot_name)
