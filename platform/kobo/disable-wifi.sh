@@ -58,3 +58,9 @@ if grep -q "sdio_wifi_pwr" "/proc/modules"; then
     usleep 250000
     rmmod sdio_wifi_pwr
 fi
+
+# Poke the kernel via ioctl on platforms without the dedicated power module...
+if [ ! -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
+    usleep 250000
+    ./luajit frontend/device/kobo/ntx_io.lua 208 0
+fi

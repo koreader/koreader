@@ -13,7 +13,7 @@ export QT_GSTREAMER_PLAYBIN_AUDIOSINK=alsasink
 cd /
 unset OLDPWD
 unset LC_ALL TESSDATA_PREFIX STARDICT_DATA_DIR EXT_FONT_DIR
-unset KOREADER_DIR KO_DONT_GRAB_INPUT
+unset KO_DONT_GRAB_INPUT
 unset FBINK_FORCE_ROTA
 
 # Ensures fmon will restart. Note that we don't have to worry about reaping this, nickel kills on-animator.sh on start.
@@ -75,8 +75,15 @@ if grep -q "${WIFI_MODULE}" "/proc/modules"; then
         usleep 250000
         rmmod sdio_wifi_pwr
     fi
+
+    # Poke the kernel via ioctl on platforms without the dedicated power module...
+    if [ ! -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
+        usleep 250000
+        "${KOREADER_DIR}"/luajit "${KOREADER_DIR}"/frontend/device/kobo/ntx_io.lua 208 0
+    fi
 fi
 
+unset KOREADER_DIR
 unset CPUFREQ_DVFS CPUFREQ_CONSERVATIVE
 
 # Recreate Nickel's FIFO ourselves, like rcS does, because udev *will* write to it!

@@ -23,6 +23,10 @@ if ! grep -q "sdio_wifi_pwr" "/proc/modules"; then
         fi
 
         insmod "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko"
+    else
+        # Poke the kernel via ioctl on platforms without the dedicated power module...
+        # 208 is CM_WIFI_CTRL
+        ./luajit frontend/device/kobo/ntx_io.lua 208 1
     fi
 fi
 # Moar sleep!
