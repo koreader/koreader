@@ -7,6 +7,7 @@ PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/lib:"
 export LD_LIBRARY_PATH="/usr/local/Kobo"
 # Ditto, 4.28+
 export QT_GSTREAMER_PLAYBIN_AUDIOSINK=alsasink
+export QT_GSTREAMER_PLAYBIN_AUDIOSINK_DEVICE_PARAMETER=bluealsa:DEV=00:00:00:00:00:00
 
 # Reset PWD, and clear up our own custom stuff from the env while we're there, otherwise, USBMS may become very wonky on newer FW...
 # shellcheck disable=SC2164
