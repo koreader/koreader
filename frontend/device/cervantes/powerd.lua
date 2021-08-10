@@ -146,6 +146,12 @@ function CervantesPowerD:setWarmth(warmth)
     end
     self.fl_warmth = warmth or self.fl_warmth
     self.fl:setWarmth(self.fl_warmth)
+    self:stateChanged()
+end
+
+function CervantesPowerD:getWarmth()
+    if self.fl == nil then return end
+    return self.fl_warmth
 end
 
 function CervantesPowerD:calculateAutoWarmth()
