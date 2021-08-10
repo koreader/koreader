@@ -441,7 +441,7 @@ function KeyValuePage:init()
                     self:goToPage(page)
                 end
             end,
-            ok_text = "Go to page",
+            ok_text = _("Go to page"),
         },
         call_hold_input_on_tap = true,
         bordersize = 0,
