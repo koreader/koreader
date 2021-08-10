@@ -37,12 +37,13 @@ local MODE = {
     book_time_to_read = 7,
     chapter_time_to_read = 8,
     frontlight = 9,
-    mem_usage = 10,
-    wifi_status = 11,
-    book_title = 12,
-    book_chapter = 13,
-    bookmark_count = 14,
-    chapter_progress = 15,
+    frontlight_warmth = 10,
+    mem_usage = 11,
+    wifi_status = 12,
+    book_title = 13,
+    book_chapter = 14,
+    bookmark_count = 15,
+    chapter_progress = 16,
 }
 
 local symbol_prefix = {
@@ -62,6 +63,8 @@ local symbol_prefix = {
         chapter_time_to_read = C_("FooterLetterPrefix", "TC:"),
         -- @translators This is the footer letter prefix for frontlight level.
         frontlight = C_("FooterLetterPrefix", "L:"),
+        -- @translators This is the footer letter prefix for frontlight warmth (redshift).
+        frontlight = C_("FooterLetterPrefix", "R:"),
         -- @translators This is the footer letter prefix for memory usage.
         mem_usage = C_("FooterLetterPrefix", "M:"),
         -- @translators This is the footer letter prefix for Wi-Fi status.
@@ -77,6 +80,7 @@ local symbol_prefix = {
         book_time_to_read = "⏳",
         chapter_time_to_read = BD.mirroredUILayout() and "⥖" or "⤻",
         frontlight = "☼",
+        frontlight_warmth = "💡",
         mem_usage = "",
         wifi_status = "",
         wifi_status_off = "",
@@ -135,6 +139,27 @@ local footerTextGeneratorMap = {
                 return (prefix .. " %d%%"):format(powerd:frontlightIntensity())
             else
                 return (prefix .. " %d"):format(powerd:frontlightIntensity())
+            end
+        else
+            if footer.settings.all_at_once and footer.settings.hide_empty_generators then
+                return ""
+            else
+                return T(_("%1 Off"), prefix)
+            end
+        end
+    end,
+    frontlight_warmth = function(footer)
+        local symbol_type = footer.settings.item_prefix
+        local prefix = symbol_prefix[symbol_type].frontlight_warmth
+        local powerd = Device:getPowerDevice()
+        if powerd:isFrontlightOn() then
+            if Device:isCervantes() or Device:isKobo() then
+                return (prefix .. " %d%%"):format(powerd:frontlightIntensity())
+            else
+                local warmth = math.floor(powerd:getWarmth()/100*powerd.fl_warmth_max)
+                if warmth and Device:hasNaturalLight() then
+                    return (prefix .. " %d"):format(warmth)
+                end
             end
         else
             if footer.settings.all_at_once and footer.settings.hide_empty_generators then
@@ -869,6 +894,7 @@ function ReaderFooter:textOptionTitles(option)
             and T(_("Book time to read (%1)"),symbol_prefix[symbol].book_time_to_read) or _("Book time to read"),
         chapter_time_to_read = T(_("Chapter time to read (%1)"), symbol_prefix[symbol].chapter_time_to_read),
         frontlight = T(_("Frontlight level (%1)"), symbol_prefix[symbol].frontlight),
+        frontlight_warmth = T(_("Frontlight warmth (%1)"), symbol_prefix[symbol].frontlight_warmth),
         mem_usage = T(_("KOReader memory usage (%1)"), symbol_prefix[symbol].mem_usage),
         wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
         book_title = _("Book title"),
@@ -1787,6 +1813,9 @@ With this enabled, the current page is included, so the count goes from n to 1 i
     table.insert(sub_items, getMinibarOption("chapter_time_to_read"))
     if Device:hasFrontlight() then
         table.insert(sub_items, getMinibarOption("frontlight"))
+    end
+    if Device:hasNaturalLight() then
+        table.insert(sub_items, getMinibarOption("frontlight_warmth"))
     end
     table.insert(sub_items, getMinibarOption("mem_usage"))
     if Device:hasFastWifiStatusQuery() then

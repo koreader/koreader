@@ -24,6 +24,12 @@ end
 function SDLPowerD:setWarmth(level)
     require("logger").info("set warmth to", level)
     self.fl_warmth = level or self.fl_warmth
+    self:stateChanged()
+end
+
+function SDLPowerD:getWarmth()
+    if self_hw_intensity == 0 then return end
+    return self.fl_warmth
 end
 
 function SDLPowerD:getCapacityHW()

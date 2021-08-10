@@ -64,6 +64,13 @@ function PocketBookPowerD:setWarmth(level)
     if self.fl_warmth then
         self.fl_warmth = level or self.fl_warmth
         inkview.SetFrontlightColor(self.fl_warmth)
+        self:stateChanged()
+    end
+end
+
+function PocketBookPowerD:getWarmth()
+    if self.fl_warmth then
+        return self.fl_warmth
     end
 end
 
