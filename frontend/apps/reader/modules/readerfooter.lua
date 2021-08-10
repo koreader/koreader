@@ -37,13 +37,13 @@ local MODE = {
     book_time_to_read = 7,
     chapter_time_to_read = 8,
     frontlight = 9,
-    frontlight_warmth = 10,
-    mem_usage = 11,
-    wifi_status = 12,
-    book_title = 13,
-    book_chapter = 14,
-    bookmark_count = 15,
-    chapter_progress = 16,
+    mem_usage = 10,
+    wifi_status = 11,
+    book_title = 12,
+    book_chapter = 13,
+    bookmark_count = 14,
+    chapter_progress = 15,
+    frontlight_warmth = 16,
 }
 
 local symbol_prefix = {
@@ -155,7 +155,7 @@ local footerTextGeneratorMap = {
         if powerd:isFrontlightOn() then
             if Device:isCervantes() or Device:isKobo() then
                 return (prefix .. " %d"):format(powerd:getWarmth())
-            else
+            elseif powerd:getWarmth() then
                 local warmth = math.floor(powerd:getWarmth()/100*powerd.fl_warmth_max)
                 if warmth and Device:hasNaturalLight() then
                     return (prefix .. " %d"):format(warmth)

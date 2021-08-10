@@ -266,7 +266,7 @@ end
 
 function KoboPowerD:getWarmth()
     if self.fl == nil then return end
-    if self.device:hasNaturalLightMixer() or self:isFrontlightOnHW() then
+    if self.device:hasNaturalLight() then
         return self.fl_warmth
     end
 end
