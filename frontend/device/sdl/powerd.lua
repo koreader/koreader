@@ -28,7 +28,7 @@ function SDLPowerD:setWarmth(level)
 end
 
 function SDLPowerD:getWarmth()
-    if self_hw_intensity == 0 then return end
+    if self.hw_intensity == 0 then return end
     return self.fl_warmth
 end
 

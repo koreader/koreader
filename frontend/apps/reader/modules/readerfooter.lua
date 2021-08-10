@@ -64,7 +64,7 @@ local symbol_prefix = {
         -- @translators This is the footer letter prefix for frontlight level.
         frontlight = C_("FooterLetterPrefix", "L:"),
         -- @translators This is the footer letter prefix for frontlight warmth (redshift).
-        frontlight = C_("FooterLetterPrefix", "R:"),
+        frontlight_warmth = C_("FooterLetterPrefix", "R:"),
         -- @translators This is the footer letter prefix for memory usage.
         mem_usage = C_("FooterLetterPrefix", "M:"),
         -- @translators This is the footer letter prefix for Wi-Fi status.
@@ -154,7 +154,7 @@ local footerTextGeneratorMap = {
         local powerd = Device:getPowerDevice()
         if powerd:isFrontlightOn() then
             if Device:isCervantes() or Device:isKobo() then
-                return (prefix .. " %d%%"):format(powerd:frontlightIntensity())
+                return (prefix .. " %d"):format(powerd:getWarmth())
             else
                 local warmth = math.floor(powerd:getWarmth()/100*powerd.fl_warmth_max)
                 if warmth and Device:hasNaturalLight() then
