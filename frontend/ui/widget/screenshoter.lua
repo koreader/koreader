@@ -55,7 +55,7 @@ function Screenshoter:onScreenshot(filename)
             {
                 text = _("Delete"),
                 callback = function()
-                    local ok, err = os.remove(screenshot_name)
+                    local __ = os.remove(screenshot_name)
                     UIManager:close(confirm_box)
                 end,
             },
