@@ -546,6 +546,7 @@ function CoverImage:menuEntrySetPath(key, title, help, info, default, folder_onl
                 ok_callback = function()
                     self:choosePathFile(touchmenu_instance, key, folder_only, new_file, migrate)
                 end,
+                other_buttons_above = false,
                 other_buttons = {{
                 {
                     text = _("Default"),
