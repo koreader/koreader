@@ -41,6 +41,7 @@ local Screen = Device.screen
 
 local ConfirmBox = InputContainer:new{
     modal = true,
+    keep_dialog_open = false,
     text = _("no text"),
     face = Font:getFace("infofont"),
     ok_text = _("OK"),
@@ -48,6 +49,7 @@ local ConfirmBox = InputContainer:new{
     ok_callback = function() end,
     cancel_callback = function() end,
     other_buttons = nil,
+    other_buttons_above = true, -- set to false to place other buttons below Cancel-OK row
     margin = Size.margin.default,
     padding = Size.padding.default,
     dismissable = true, -- set to false if any button callback is required
@@ -99,6 +101,7 @@ function ConfirmBox:init()
         text = self.ok_text,
         callback = function()
             self.ok_callback()
+            if self.keep_dialog_open then return end
             UIManager:close(self)
         end,
     },}
@@ -106,18 +109,18 @@ function ConfirmBox:init()
 
     if self.other_buttons ~= nil then
         -- additional rows
-        for __, buttons_row in ipairs(self.other_buttons) do
+        local rownum = self.other_buttons_above and 0 or 1
+        for i, buttons_row in ipairs(self.other_buttons) do
             local row = {}
-            table.insert(buttons, row)
+            table.insert(buttons, rownum + i, row)
             for ___, button in ipairs(buttons_row) do
-                assert(type(button.text) == "string")
-                assert(button.callback == nil or type(button.callback) == "function")
                 table.insert(row, {
                     text = button.text,
                     callback = function()
                         if button.callback ~= nil then
                             button.callback()
                         end
+                        if self.keep_dialog_open then return end
                         UIManager:close(self)
                     end,
                 })
