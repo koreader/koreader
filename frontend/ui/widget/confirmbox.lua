@@ -49,7 +49,7 @@ local ConfirmBox = InputContainer:new{
     ok_callback = function() end,
     cancel_callback = function() end,
     other_buttons = nil,
-    other_buttons_above = false, -- set to true to place other buttons above Cancel-OK row
+    other_buttons_first = false, -- set to true to place other buttons above Cancel-OK row
     margin = Size.margin.default,
     padding = Size.padding.default,
     dismissable = true, -- set to false if any button callback is required
@@ -109,7 +109,7 @@ function ConfirmBox:init()
 
     if self.other_buttons ~= nil then
         -- additional rows
-        local rownum = self.other_buttons_above and 0 or 1
+        local rownum = self.other_buttons_first and 0 or 1
         for i, buttons_row in ipairs(self.other_buttons) do
             local row = {}
             table.insert(buttons, rownum + i, row)
