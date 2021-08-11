@@ -51,7 +51,7 @@ function Screenshoter:onScreenshot(filename)
             G_reader_settings:saveSetting("screensaver_image", screenshot_name)
             UIManager:close(confirm_box)
         end,
-        other_buttons_above = true,
+        other_buttons_first = true,
         other_buttons = {{
             {
                 text = _("Delete"),
