@@ -43,40 +43,39 @@ function Screenshoter:onScreenshot(filename)
     local confirm_box
     confirm_box = ConfirmBox:new{
         text = T( _("Screenshot saved to:\n%1"), BD.filepath(screenshot_name)),
-        keep_open = true,
-        dismissable = false,
-        cancel_text = _("Delete"),
-        cancel_callback = function()
-            local ok, err = os.remove(screenshot_name)
-        end,
-        ok_text = _("View"),
+        keep_dialog_open = true,
+        cancel_text = _("Close"),
+        ok_text = _("Set as screensaver"),
         ok_callback = function()
-            local image_viewer = require("ui/widget/imageviewer"):new{
-                file = screenshot_name,
-                modal = true,
-                with_title_bar = false,
-                buttons_visible = true,
-            }
-            UIManager:show(image_viewer)
+            G_reader_settings:saveSetting("screensaver_type", "image_file")
+            G_reader_settings:saveSetting("screensaver_image", screenshot_name)
+            UIManager:close(confirm_box)
         end,
         other_buttons = {{
             {
-                text = _("Close"),
+                text = _("Delete"),
                 callback = function()
+                    local ok, err = os.remove(screenshot_name)
                     UIManager:close(confirm_box)
                 end,
             },
             {
-                text = _("Set as screensaver"),
+                text = _("View"),
                 callback = function()
-                    G_reader_settings:saveSetting("screensaver_type", "image_file")
-                    G_reader_settings:saveSetting("screensaver_image", screenshot_name)
-                    UIManager:close(confirm_box)
+                    local image_viewer = require("ui/widget/imageviewer"):new{
+                        file = screenshot_name,
+                        modal = true,
+                        with_title_bar = false,
+                        buttons_visible = true,
+                    }
+                    UIManager:show(image_viewer)
                 end,
             },
         }},
     }
-    UIManager:show(confirm_box)
+    UIManager:nextTick(function()
+        UIManager:show(confirm_box)
+    end)
     -- trigger full refresh
     UIManager:setDirty(nil, "full")
     return true
