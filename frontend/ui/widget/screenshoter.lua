@@ -35,7 +35,7 @@ function Screenshoter:init()
     }
 end
 
-function Screenshoter:onScreenshot(filename)
+function Screenshoter:onScreenshot(filename, when_done_func)
     local screenshots_dir = G_reader_settings:readSetting("screenshot_dir") or DataStorage:getDataDir() .. "/screenshots/"
     self.screenshot_fn_fmt = screenshots_dir .. self.prefix .. "_%Y-%m-%d_%H%M%S.png"
     local screenshot_name = filename or os.date(self.screenshot_fn_fmt)
@@ -45,19 +45,23 @@ function Screenshoter:onScreenshot(filename)
         text = T( _("Screenshot saved to:\n%1"), BD.filepath(screenshot_name)),
         keep_dialog_open = true,
         cancel_text = _("Close"),
+        cancel_callback = function()
+            if when_done_func then when_done_func() end
+        end,
         ok_text = _("Set as screensaver"),
         ok_callback = function()
             G_reader_settings:saveSetting("screensaver_type", "image_file")
             G_reader_settings:saveSetting("screensaver_image", screenshot_name)
             UIManager:close(confirm_box)
+            if when_done_func then when_done_func() end
         end,
-        other_buttons_first = true,
         other_buttons = {{
             {
                 text = _("Delete"),
                 callback = function()
                     local __ = os.remove(screenshot_name)
                     UIManager:close(confirm_box)
+                    if when_done_func then when_done_func() end
                 end,
             },
             {
@@ -74,9 +78,7 @@ function Screenshoter:onScreenshot(filename)
             },
         }},
     }
-    UIManager:nextTick(function()
-        UIManager:show(confirm_box)
-    end)
+    UIManager:show(confirm_box)
     -- trigger full refresh
     UIManager:setDirty(nil, "full")
     return true
