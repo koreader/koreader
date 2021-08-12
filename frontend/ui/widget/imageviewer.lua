@@ -756,7 +756,6 @@ function ImageViewer:onTapDiagonal()
 end
 
 function ImageViewer:onSaveImageView()
-    -- Similar behaviour as in Screenshoter:onScreenshot()
     -- We save the currently displayed blitbuffer (panned or zoomed)
     -- after getting fullscreen and removing UI elements if needed.
     local restore_settings_func
@@ -776,10 +775,9 @@ function ImageViewer:onSaveImageView()
         self:update()
         UIManager:forceRePaint()
     end
-    UIManager:sendEvent(Event:new("Screenshot"))
-    if restore_settings_func then
-        restore_settings_func()
-    end
+    local screenshots_dir = G_reader_settings:readSetting("screenshot_dir") or DataStorage:getDataDir() .. "/screenshots/"
+    local screenshot_name = os.date(screenshots_dir .. "ImageViewer" .. "_%Y-%m-%d_%H%M%S.png")
+    UIManager:sendEvent(Event:new("Screenshot", screenshot_name, restore_settings_func))
     return true
 end
 
