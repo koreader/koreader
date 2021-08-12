@@ -136,7 +136,7 @@ function Device:init()
             local UIManager = require("ui/uimanager")
             logger.dbg("Android application event", ev.code)
             if ev.code == C.APP_CMD_SAVE_STATE then
-                UIManager:broadcastEvent(Event:new("SaveSettings"))
+                UIManager:broadcastEvent(Event:new("FlushSettings"))
             elseif ev.code == C.APP_CMD_DESTROY then
                 UIManager:quit()
             elseif ev.code == C.APP_CMD_GAINED_FOCUS
@@ -490,9 +490,11 @@ function Device:install()
         text = _("Update is ready. Install it now?"),
         ok_text = _("Install"),
         ok_callback = function()
-            UIManager:broadcastEvent(Event:new("SaveSettings"))
-            android.ota.install()
-            android.ota.isPending = false
+            UIManager:broadcastEvent(Event:new("FlushSettings"))
+            UIManager:tickAfterNext(function()
+                android.ota.install()
+                android.ota.isPending = false
+            end)
         end,
     })
 end
