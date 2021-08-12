@@ -152,6 +152,7 @@ function ReaderSearch:onShowFulltextSearchInput()
         text = _("Regular expression (hold for help)"),
         checked = self.use_regex,
         parent = self.input_dialog,
+        max_width = self.input_dialog._input_widget.width,
         callback = function()
             if not self.check_button_regex.checked then
                 self.check_button_regex:check()
