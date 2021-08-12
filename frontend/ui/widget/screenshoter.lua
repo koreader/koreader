@@ -55,6 +55,7 @@ function Screenshoter:onScreenshot(filename, when_done_func)
             UIManager:close(confirm_box)
             if when_done_func then when_done_func() end
         end,
+        other_buttons_first = true,
         other_buttons = {{
             {
                 text = _("Delete"),
