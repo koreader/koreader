@@ -62,6 +62,7 @@ function CheckButton:initCheckButton(checked)
         max_width = self.max_width,
         fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
     }
+    self.text_truncated = self._textwidget:isTruncated()
     self._horizontalgroup = HorizontalGroup:new{
         self._checkmark,
         self._textwidget,
@@ -160,6 +161,11 @@ function CheckButton:onHoldCheckButton()
         elseif type(self.hold_input_func) == "function" then
             self:onInput(self.hold_input_func(), true)
             self._hold_handled = true
+        elseif self.text_truncated then
+            UIManager:show(require("ui/widget/infomessage"):new{
+                text = self.text,
+                show_icon = false,
+            })
         end
     end
     return true
