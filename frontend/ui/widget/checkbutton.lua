@@ -61,7 +61,7 @@ function CheckButton:initCheckButton(checked)
     self._textwidget = TextBoxWidget:new{
         text = self.text,
         face = self.face,
-        width = self.max_width,
+        width = self.max_width - self._checkmark.dimen.w,
         fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
     }
     self._verticalgroup = VerticalGroup:new{
