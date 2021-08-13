@@ -88,7 +88,7 @@ end
 function Screenshoter:chooseFolder()
     local screenshot_dir = G_reader_settings:readSetting("screenshot_dir") or DataStorage:getDataDir() .. "/screenshots/"
     local confirm_box = ConfirmBox:new{
-        text = T(_("Screenshot folder is set to:\n%1\n\nDo you want to choose new folder for screenshots?"), screenshot_dir),
+        text = T(_("Screenshot folder is set to:\n%1\n\nChoose a new folder for screenshots?"), screenshot_dir),
         ok_text = _("Choose folder"),
         ok_callback = function()
             local path_chooser = require("ui/widget/pathchooser"):new{
