@@ -38,7 +38,7 @@ local CheckButton = InputContainer:new{
     overlap_align = "right",
     text = nil,
     toggle_text = nil,
-    max_width = nil,
+    max_width = nil, -- required to set in the caller
     window = nil,
 
     padding = Screen:scaleBySize(5),
