@@ -22,8 +22,10 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local TextWidget = require("ui/widget/textwidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
 
 local CheckButton = InputContainer:new{
@@ -56,16 +58,23 @@ function CheckButton:initCheckButton(checked)
         parent = self.parent or self,
         show_parent = self.show_parent or self,
     }
-    self._textwidget = TextWidget:new{
+    self._textwidget = TextBoxWidget:new{
         text = self.text,
         face = self.face,
-        max_width = self.max_width,
+        width = self.max_width,
         fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
     }
-    self.text_truncated = self._textwidget:isTruncated()
-    self._horizontalgroup = HorizontalGroup:new{
-        self._checkmark,
+    self._verticalgroup = VerticalGroup:new{
+        align = "left",
+        VerticalSpan:new{
+            width = self.face.size * 0.18,
+        },
         self._textwidget,
+    }
+    self._horizontalgroup = HorizontalGroup:new{
+        align = "top",
+        self._checkmark,
+        self._verticalgroup,
     }
     self._frame = FrameContainer:new{
         bordersize = 0,
@@ -161,11 +170,6 @@ function CheckButton:onHoldCheckButton()
         elseif type(self.hold_input_func) == "function" then
             self:onInput(self.hold_input_func(), true)
             self._hold_handled = true
-        elseif self.text_truncated then
-            UIManager:show(require("ui/widget/infomessage"):new{
-                text = self.text,
-                show_icon = false,
-            })
         end
     end
     return true
