@@ -22,8 +22,10 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local TextWidget = require("ui/widget/textwidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
 
 local CheckButton = InputContainer:new{
@@ -36,7 +38,7 @@ local CheckButton = InputContainer:new{
     overlap_align = "right",
     text = nil,
     toggle_text = nil,
-    max_width = nil,
+    max_width = nil, -- must be set by the caller
     window = nil,
 
     padding = Screen:scaleBySize(5),
@@ -56,15 +58,23 @@ function CheckButton:initCheckButton(checked)
         parent = self.parent or self,
         show_parent = self.show_parent or self,
     }
-    self._textwidget = TextWidget:new{
+    self._textwidget = TextBoxWidget:new{
         text = self.text,
         face = self.face,
-        max_width = self.max_width,
+        width = self.max_width - self._checkmark.dimen.w,
         fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
     }
-    self._horizontalgroup = HorizontalGroup:new{
-        self._checkmark,
+    self._verticalgroup = VerticalGroup:new{
+        align = "left",
+        VerticalSpan:new{
+            width = self.face.size * 0.18,
+        },
         self._textwidget,
+    }
+    self._horizontalgroup = HorizontalGroup:new{
+        align = "top",
+        self._checkmark,
+        self._verticalgroup,
     }
     self._frame = FrameContainer:new{
         bordersize = 0,
