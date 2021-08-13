@@ -476,7 +476,9 @@ function InputDialog:onTap()
     if self.deny_keyboard_hiding then
         return
     end
-    self._input_widget:onCloseKeyboard()
+    if self._input_widget.onCloseKeyboard then
+        self._input_widget:onCloseKeyboard()
+    end
 end
 
 function InputDialog:getInputText()
