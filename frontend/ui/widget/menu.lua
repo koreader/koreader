@@ -832,10 +832,8 @@ function Menu:init()
             {
                 text = _("File search"),
                 callback = function()
-                    local search_string = self.page_info_text.input_dialog:getInputText()
-                    if search_string == "" then return end
                     self.page_info_text:closeInputDialog()
-                    UIManager:sendEvent(Event:new("ShowFileSearch", search_string))
+                    UIManager:sendEvent(Event:new("ShowFileSearch", self.page_info_text.input_dialog:getInputText()))
                 end,
             },
             {
