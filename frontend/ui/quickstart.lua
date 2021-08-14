@@ -46,7 +46,7 @@ div.table > div > *:nth-child(3) { white-space: nowrap; }
 ]]
 
 local quickstart_guide = T(_([[
-<div class="logo">![KOReader](../resources/koreader.svg)</div>
+<div class="logo">![KOReader](resources/koreader.svg)</div>
 
 # Quickstart guide
 
@@ -65,7 +65,7 @@ You can access the complete user manual from [our GitHub page](https://github.co
 ..
 _([[## User interface <a id="ui"></a>
 
-<div class="img-block">![Touch zones](../resources/quickstart/touchzones.png)</div>
+<div class="img-block">![Touch zones](resources/quickstart/touchzones.png)</div>
 
 - To show the **TOP MENU** or **BOTTOM MENU** you can click the indicated zones. You can click or swipe down the upper zone to show the **TOP MENU**.
 - The **STATUS BAR** zone can be used to cycle between STATUS BAR items if one item is visible. This will also hide and show the STATUS BAR if you tap enough times.
@@ -75,18 +75,18 @@ _([[## User interface tips <a id="uitips"></a>
 
 - You can change the interface language using:
 
-> **TOP MENU ➔ ![Settings](../resources/icons/mdlight/appbar.settings.svg) ➔ Language**
+> **TOP MENU ➔ ![Settings](resources/icons/mdlight/appbar.settings.svg) ➔ Language**
 
 - If you tap and hold on an option or menu item (font weight, line spacing etc.), you can set its value as **DEFAULT**.  The new value will only be applied to documents opened from now on. Previously opened documents will keep their settings. You can identify default values as a STAR in menu or as a black border around indicators as seen below:
 
-<div class="img-block break-before-avoid">![Default setting 1](../resources/quickstart/defaultsetting1.png)</div>
-<div class="img-block break-before-avoid">![Default setting 2](../resources/quickstart/defaultsetting2.png)</div>
+<div class="img-block break-before-avoid">![Default setting 1](resources/quickstart/defaultsetting1.png)</div>
+<div class="img-block break-before-avoid">![Default setting 2](resources/quickstart/defaultsetting2.png)</div>
 
 - You can see explanations for all items on the **BOTTOM MENU** by tapping and holding the name of the option. This is also available for most of the **TOP MENU** menu items.
 - You can **CLOSE** full screen dialogs (History, Table of Contents, Bookmarks, Reading Statistics etc.) by swiping down
 - **SCREENSHOTS** can be taken by touching opposing corners of the screen diagonally at the same time or by making a long diagonal swipe
 
-<div class="img-block break-after-avoid">![Number picker](../resources/quickstart/numberpicker.png)</div>
+<div class="img-block break-after-avoid">![Number picker](resources/quickstart/numberpicker.png)</div>
 
 - In dialogs containing adjustment arrow buttons like the one above, you can tap and hold on arrow buttons to increase / decrease the value in bigger increments
 - You can **CLOSE** this type of dialog (non-full screen) by tapping outside of the window. You can **MOVE** this type of dialog by holding the window title and dragging
@@ -95,7 +95,7 @@ _([[## User interface tips <a id="uitips"></a>
 - You can highlight sections by tapping and holding a word and dragging your finger
 - You can move through your document via the **SKIM DOCUMENT** dialog:
 
-> **TOP MENU ➔ ![Navigation](../resources/icons/mdlight/appbar.navigation.svg) ➔ Skim document**
+> **TOP MENU ➔ ![Navigation](resources/icons/mdlight/appbar.navigation.svg) ➔ Skim document**
 ]])
 ..
 _([[## Accessing files <a id="afiles"></a>
@@ -110,7 +110,7 @@ You can assign gestures for quick access to each of these dialogs.
 
 You can also set KOReader to open with any of these dialogs on startup via:
 
-> **TOP MENU (in File Browser) ➔ ![Filebrowser](../resources/icons/mdlight/appbar.filebrowser.svg) ➔ Start with**
+> **TOP MENU (in File Browser) ➔ ![Filebrowser](resources/icons/mdlight/appbar.filebrowser.svg) ➔ Start with**
 ]])
 ..
 _([[## Transferring files <a id="tfiles"></a>
@@ -129,7 +129,7 @@ _([[## Frontlight/backlight <a id="flight"></a>
 
 You can control your screen light via this menu. If you have warm lighting (normal white LEDs+orange ones) you can control them separately from this dialog:
 
-> **TOP MENU ➔ ![Settings](../resources/icons/mdlight/appbar.settings.svg) ➔ Frontlight**
+> **TOP MENU ➔ ![Settings](resources/icons/mdlight/appbar.settings.svg) ➔ Frontlight**
 ]])
 ..
 _([[## While reading <a id="reading"></a>
@@ -138,31 +138,31 @@ _([[## While reading <a id="reading"></a>
 
 You can change the font
 
-**TOP MENU ➔ ![Typesettings](../resources/icons/mdlight/appbar.typeset.svg) ➔ Font**
+**TOP MENU ➔ ![Typesettings](resources/icons/mdlight/appbar.typeset.svg) ➔ Font**
 
 </div><div>
 
 Make font bigger
 
-**BOTTOM MENU ➔ ![Textsize](../resources/icons/mdlight/appbar.textsize.svg)**
+**BOTTOM MENU ➔ ![Textsize](resources/icons/mdlight/appbar.textsize.svg)**
 
 </div><div>
 
 Make font bolder
 
-**BOTTOM MENU ➔ ![Contrast](../resources/icons/mdlight/appbar.contrast.svg)**
+**BOTTOM MENU ➔ ![Contrast](resources/icons/mdlight/appbar.contrast.svg)**
 
 </div><div>
 
 Invert the colors (white text on black)
 
-**TOP MENU ➔ ![Settings](../resources/icons/mdlight/appbar.settings.svg) ➔ Night mode**
+**TOP MENU ➔ ![Settings](resources/icons/mdlight/appbar.settings.svg) ➔ Night mode**
 
 </div><div>
 
 Change many formatting options
 
-**TOP MENU ➔ ![Typesettings](../resources/icons/mdlight/appbar.typeset.svg) ➔ Style tweaks**
+**TOP MENU ➔ ![Typesettings](resources/icons/mdlight/appbar.typeset.svg) ➔ Style tweaks**
 
 </div></div>
 ]])
@@ -173,7 +173,7 @@ KOReader supports dictionary lookup in EPUB and even in scanned PDF/DJVU documen
 
 To use the dictionary lookup function, first you need to install one or more dictionaries in the StarDict format. KOReader has an inbuilt dictionary installation system:
 
-**TOP MENU ➔ ![Search](../resources/icons/mdlight/appbar.search.svg) ➔ Dictionary Settings > Download dictionaries**
+**TOP MENU ➔ ![Search](resources/icons/mdlight/appbar.search.svg) ➔ Dictionary Settings > Download dictionaries**
 ]])
 ..
 _([[## More info <a id="more"></a>
@@ -228,6 +228,36 @@ function QuickStart:getQuickStart()
 
         local quickstart_html = FileConverter:mdToHtml(quickstart_guide, _("KOReader Quickstart Guide"), stylesheet)
         if quickstart_html then
+            -- Fix links to images, which are in KOReader install directory, which may not
+            -- be alongside help/ on some platforms like Android.
+            -- crengine won't accept full paths, so we need to make these relative
+            local src = FFIUtil.realpath(quickstart_dir) .. "/"
+            local dst = lfs.currentdir() .. "/"
+            -- Find the common leading directories
+            local idx = 0
+            while true do
+                local tst = src:find("/", idx + 1, true)
+                if tst and src:sub(1,tst) == dst:sub(1,tst) then
+                    idx = tst
+                else
+                    break
+                end
+            end
+            -- Trim off the common directories from the front
+            src = src:sub(idx + 1)
+            dst = dst:sub(idx + 1)
+            -- Back up from dst to get to this common parent
+            local relpath = ""
+            idx = src:find("/")
+            while idx do
+                relpath = relpath .. "../"
+                idx = src:find("/", idx + 1)
+            end
+            -- Add the path down to dst from here
+            relpath = relpath .. dst
+            relpath = relpath:gsub("//", "/") -- make it prettier
+            quickstart_html = quickstart_html:gsub([[src="resources/]], [[src="]]..relpath..[[resources/]])
+            -- Write the fixed HTML content
             FileConverter:writeStringToFile(quickstart_html, quickstart_filename)
         end
     end
