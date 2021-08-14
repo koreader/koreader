@@ -25,6 +25,7 @@ local GestureRange = require("ui/gesturerange")
 local IconWidget = require("ui/widget/iconwidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Size = require("ui/size")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
@@ -52,6 +53,7 @@ local Button = InputContainer:new{
     padding_v = nil,
     width = nil,
     max_width = nil,
+    avoid_text_truncation = true,
     text_font_face = "cfont",
     text_font_size = 20,
     text_font_bold = true,
@@ -77,13 +79,51 @@ function Button:init()
     end
 
     if self.text then
+        local max_width = self.max_width and self.max_width - 2*self.padding_h - 2*self.margin - 2*self.bordersize or nil
         self.label_widget = TextWidget:new{
             text = self.text,
-            max_width = self.max_width and self.max_width - 2*self.padding_h - 2*self.margin - 2*self.bordersize or nil,
+            max_width = max_width,
             fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
             bold = self.text_font_bold,
             face = Font:getFace(self.text_font_face, self.text_font_size)
         }
+        self.did_truncation_tweaks = false
+        if self.avoid_text_truncation and self.label_widget:isTruncated() then
+            self.did_truncation_tweaks = true
+            local max_height = self.label_widget:getSize().h
+            local font_size_2_lines = TextBoxWidget:getFontSizeToFitHeight(max_height, 2, 0)
+            while self.label_widget:isTruncated() do
+                local new_size = self.label_widget.face.orig_size - 1
+                if new_size < font_size_2_lines then
+                    -- Switch to a 2-lines TextBoxWidget
+                    self.label_widget:free()
+                    self.label_widget = TextBoxWidget:new{
+                        text = self.text,
+                        line_height = 0,
+                        alignment = "center",
+                        width = max_width,
+                        height = max_height,
+                        height_adjust = true,
+                        height_overflow_show_ellipsis = true,
+                        fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
+                        bold = self.text_font_bold,
+                        face = Font:getFace(self.text_font_face, font_size_2_lines)
+                    }
+                    break
+                end
+                if new_size < 8 then -- don't go too small
+                    break
+                end
+                self.label_widget:free()
+                self.label_widget = TextWidget:new{
+                    text = self.text,
+                    max_width = max_width,
+                    fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
+                    bold = self.text_font_bold,
+                    face = Font:getFace(self.text_font_face, new_size)
+                }
+            end
+        end
     else
         self.label_widget = IconWidget:new{
             icon = self.icon,
@@ -150,7 +190,7 @@ end
 function Button:setText(text, width)
     if text ~= self.text then
         -- Don't trash the frame if we're already a text button, and we're keeping the geometry intact
-        if self.text and width and width == self.width then
+        if self.text and width and width == self.width and not self.did_truncation_tweaks then
             self.text = text
             self.label_widget:setText(text)
         else
