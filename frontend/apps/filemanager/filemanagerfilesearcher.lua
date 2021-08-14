@@ -126,10 +126,10 @@ function FileSearcher:close()
     end
 end
 
-function FileSearcher:onShowFileSearch()
+function FileSearcher:onShowFileSearch(str)
     self.search_dialog = InputDialog:new{
         title = _("Enter filename to search for"),
-        input = self.search_value,
+        input = str or self.search_value,
         width = math.floor(Screen:getWidth() * 0.9),
         buttons = {
             {
