@@ -7,8 +7,6 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 
 local ReaderGoto = InputContainer:new{
-    goto_menu_title = _("Go to page"),
-    skim_menu_title = _("Skim document"),
 }
 
 function ReaderGoto:init()
@@ -16,15 +14,14 @@ function ReaderGoto:init()
 end
 
 function ReaderGoto:addToMainMenu(menu_items)
-    -- insert goto command to main reader menu
     menu_items.go_to = {
-        text = self.goto_menu_title,
+        text = _("Go to page"),
         callback = function()
             self:onShowGotoDialog()
         end,
     }
     menu_items.skim_to = {
-        text = self.skim_menu_title,
+        text = _("Skim document"),
         callback = function()
             self:onShowSkimtoDialog()
         end,
@@ -59,14 +56,21 @@ x for an absolute page number
             {
                 {
                     text = _("Cancel"),
-                    enabled = true,
                     callback = function()
                         self:close()
                     end,
                 },
                 {
-                    text = _("Skim"),
-                    enabled = true,
+                    text = _("Go to page"),
+                    is_enter_default = true,
+                    callback = function()
+                        self:gotoPage()
+                    end,
+                }
+            },
+            {
+                {
+                    text = _("Skim document"),
                     callback = function()
                         self:close()
                         self.skimto = SkimToWidget:new{
@@ -81,12 +85,6 @@ x for an absolute page number
 
                     end,
                 },
-                {
-                    text = _("Go to page"),
-                    enabled = true,
-                    is_enter_default = true,
-                    callback = function() self:gotoPage() end,
-                }
             },
         },
         input_type = "number",

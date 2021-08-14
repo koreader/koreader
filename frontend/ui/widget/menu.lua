@@ -8,6 +8,7 @@ local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
+local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
@@ -27,10 +28,12 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
+local Utf8Proc = require("ffi/utf8proc")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
@@ -806,7 +809,7 @@ function Menu:init()
             },
             {
                 text = _("Go to page"),
-                is_enter_default = true,
+                is_enter_default = not self.goto_letter,
                 callback = function()
                     local page = tonumber(self.page_info_text.input_dialog:getInputText())
                     if page and page >= 1 and page <= self.page_num then
@@ -819,29 +822,38 @@ function Menu:init()
     }
 
     if self.goto_letter then
-        title_goto = _("Enter page number or letter")
+        title_goto = _("Enter letter or page number")
         type_goto = "string"
         hint_func = function()
-            -- @translators First group is a page number range, second group the standard range for alphabetic searches
-            return T(_("(1 - %1) or (a - z)"), self.page_num)
+            -- @translators First group is the standard range for alphabetic searches, second group is a page number range
+            return T(_("(a - z) or (1 - %1)"), self.page_num)
         end
-        table.insert(buttons[1], {
-            text = _("Go to letter"),
-            is_enter_default = true,
-            callback = function()
-                for k, v in ipairs(self.item_table) do
-                    --- @todo Support utf8 lowercase.
-                    local filename = FFIUtil.basename(v.path):lower()
-                    local search_string = self.page_info_text.input_dialog:getInputText():lower()
+        table.insert(buttons, 1, {
+            {
+                text = _("File search"),
+                callback = function()
+                    self.page_info_text:closeInputDialog()
+                    UIManager:sendEvent(Event:new("ShowFileSearch", self.page_info_text.input_dialog:getInputText()))
+                end,
+            },
+            {
+                text = _("Go to letter"),
+                is_enter_default = true,
+                callback = function()
+                    local search_string = self.page_info_text.input_dialog:getInputText()
                     if search_string == "" then return end
-                    local i, _ = filename:find(search_string)
-                    if i == 1 and not v.is_go_up then
-                        self:onGotoPage(math.ceil(k / self.perpage))
-                        break
+                    search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
+                    for k, v in ipairs(self.item_table) do
+                        local filename = Utf8Proc.lowercase(util.fixUtf8(FFIUtil.basename(v.path), "?"))
+                        local i, _ = filename:find(search_string)
+                        if i == 1 and not v.is_go_up then
+                            self:onGotoPage(math.ceil(k / self.perpage))
+                            break
+                        end
                     end
-                end
-                self.page_info_text:closeInputDialog()
-            end,
+                    self.page_info_text:closeInputDialog()
+                end,
+            },
         })
     else
         title_goto = _("Enter page number")
