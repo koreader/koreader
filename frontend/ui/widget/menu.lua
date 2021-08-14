@@ -8,6 +8,7 @@ local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
+local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
@@ -798,17 +799,17 @@ function Menu:init()
     self.page_info_last_chev:hide()
 
     local title_goto, type_goto, hint_func
-    local cancel_button = {
-        text = _("Cancel"),
-        callback = function()
-            self.page_info_text:closeInputDialog()
-        end,
-    }
     local buttons = {
         {
             {
+                text = _("Cancel"),
+                callback = function()
+                    self.page_info_text:closeInputDialog()
+                end,
+            },
+            {
                 text = _("Go to page"),
-                is_enter_default = true,
+                is_enter_default = not self.goto_letter,
                 callback = function()
                     local page = tonumber(self.page_info_text.input_dialog:getInputText())
                     if page and page >= 1 and page <= self.page_num then
@@ -821,37 +822,47 @@ function Menu:init()
     }
 
     if self.goto_letter then
-        title_goto = _("Enter page number or letter")
+        title_goto = _("Enter letter or page number")
         type_goto = "string"
         hint_func = function()
-            -- @translators First group is a page number range, second group the standard range for alphabetic searches
-            return T(_("(1 - %1) or (a - z)"), self.page_num)
+            -- @translators First group is the standard range for alphabetic searches, second group is a page number range
+            return T(_("(a - z) or (1 - %1)"), self.page_num)
         end
-        table.insert(buttons[1], 1, {
-            text = _("Go to letter"),
-            callback = function()
-                local search_string = self.page_info_text.input_dialog:getInputText()
-                if search_string == "" then return end
-                search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
-                for k, v in ipairs(self.item_table) do
-                    local filename = Utf8Proc.lowercase(util.fixUtf8(FFIUtil.basename(v.path), "?"))
-                    local i, _ = filename:find(search_string)
-                    if i == 1 and not v.is_go_up then
-                        self:onGotoPage(math.ceil(k / self.perpage))
-                        break
+        table.insert(buttons, 1, {
+            {
+                text = _("File search"),
+                callback = function()
+                    local search_string = self.page_info_text.input_dialog:getInputText()
+                    if search_string == "" then return end
+                    self.page_info_text:closeInputDialog()
+                    UIManager:sendEvent(Event:new("ShowFileSearch", search_string))
+                end,
+            },
+            {
+                text = _("Go to letter"),
+                is_enter_default = true,
+                callback = function()
+                    local search_string = self.page_info_text.input_dialog:getInputText()
+                    if search_string == "" then return end
+                    search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
+                    for k, v in ipairs(self.item_table) do
+                        local filename = Utf8Proc.lowercase(util.fixUtf8(FFIUtil.basename(v.path), "?"))
+                        local i, _ = filename:find(search_string)
+                        if i == 1 and not v.is_go_up then
+                            self:onGotoPage(math.ceil(k / self.perpage))
+                            break
+                        end
                     end
-                end
-                self.page_info_text:closeInputDialog()
-            end,
+                    self.page_info_text:closeInputDialog()
+                end,
+            },
         })
-        table.insert(buttons, {cancel_button})
     else
         title_goto = _("Enter page number")
         type_goto = "number"
         hint_func = function()
             return string.format("(1 - %s)", self.page_num)
         end
-        table.insert(buttons[1], 1, cancel_button)
     end
 
     self.page_info_text = self.page_info_text or Button:new{
