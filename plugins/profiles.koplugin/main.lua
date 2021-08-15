@@ -23,9 +23,6 @@ local Profiles = WidgetContainer:new{
 function Profiles:init()
     Dispatcher:init()
     self.ui.menu:registerToMainMenu(self)
---[[    table.insert(self.ui.postReaderCallback, function()
-            self:executeAutostart()
-    end)]]
     self:executeAutostart()
 end
 
