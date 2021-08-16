@@ -87,7 +87,7 @@ function DoubleSpinWidget:update()
         value_step = self.left_step,
         value_hold_step = self.left_hold_step,
         precision = self.precision,
-        wrap = false,
+        wrap = self.left_wrap or false,
     }
     local right_widget = NumberPickerWidget:new{
         show_parent = self,
@@ -97,7 +97,7 @@ function DoubleSpinWidget:update()
         value_step = self.right_step,
         value_hold_step = self.right_hold_step,
         precision = self.precision,
-        wrap = false,
+        wrap = self.right_wrap or false,
     }
     local left_vertical_group = VerticalGroup:new{
         align = "center",

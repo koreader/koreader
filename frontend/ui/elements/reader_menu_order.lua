@@ -115,6 +115,7 @@ local order = {
     screen = {
         "screensaver",
         "coverimage",
+        "dusk2dawn", -- if Device:hasNaturalLight()
         "----------------------------",
         "screen_rotation",
         "----------------------------",
