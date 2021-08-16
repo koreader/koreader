@@ -264,7 +264,7 @@ function PocketBook:notifyBookState(title, document)
         fo:write(fn)
         fo:close()
     end
-    inkview.SetSubtaskInfo(inkview.GetCurrentTask(), 0, title and (title .. " - koreader") or "koreader", fn)
+    inkview.SetSubtaskInfo(inkview.GetCurrentTask(), 0, title and (title .. " - koreader") or "koreader", fn or "[nil]")
 end
 
 function PocketBook:setDateTime(year, month, day, hour, min, sec)
