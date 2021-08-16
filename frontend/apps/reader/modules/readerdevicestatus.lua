@@ -29,22 +29,14 @@ function ReaderDeviceStatus:init()
                     powerd:setDismissBatteryStatus(false)
                 end
             else
-                if self.battery_confirm_box then
-                    UIManager:close(self.battery_confirm_box)
-                end
-                if is_charging and battery_capacity > self.battery_threshold_high then
+                if (is_charging and battery_capacity > self.battery_threshold_high) or
+                   (not is_charging and battery_capacity <= self.battery_threshold) then
+                    if self.battery_confirm_box then
+                        UIManager:close(self.battery_confirm_box)
+                    end
+                    local txt = is_charging and _("High battery level") or _("Low battery level")
                     self.battery_confirm_box = ConfirmBox:new {
-                        text = T(_("High battery level: %1%\n\nDismiss battery level alert?"), battery_capacity),
-                        ok_text = _("Dismiss"),
-                        dismissable = false,
-                        ok_callback = function()
-                            powerd:setDismissBatteryStatus(true)
-                        end,
-                    }
-                    UIManager:show(self.battery_confirm_box)
-                elseif not is_charging and battery_capacity <= self.battery_threshold then
-                    self.battery_confirm_box = ConfirmBox:new {
-                        text = T(_("Low battery level: %1%\n\nDismiss battery level alert?"), battery_capacity),
+                        text = T(_(txt .. ": %1%\n\nDismiss battery level alert?"), battery_capacity),
                         ok_text = _("Dismiss"),
                         dismissable = false,
                         ok_callback = function()
