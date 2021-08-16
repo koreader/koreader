@@ -11,6 +11,8 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 
 local ReaderDeviceStatus = InputContainer:new{
+battery_confirm_box = nil,
+memory_confirm_box = nil,
 }
 
 function ReaderDeviceStatus:init()
@@ -27,24 +29,29 @@ function ReaderDeviceStatus:init()
                     powerd:setDismissBatteryStatus(false)
                 end
             else
+                if self.battery_confirm_box then
+                    UIManager:close(self.battery_confirm_box)
+                end
                 if is_charging and battery_capacity > self.battery_threshold_high then
-                    UIManager:show(ConfirmBox:new {
+                    self.battery_confirm_box = ConfirmBox:new {
                         text = T(_("High battery level: %1%\n\nDismiss battery level alert?"), battery_capacity),
                         ok_text = _("Dismiss"),
                         dismissable = false,
                         ok_callback = function()
                             powerd:setDismissBatteryStatus(true)
                         end,
-                    })
+                    }
+                    UIManager:show(self.battery_confirm_box)
                 elseif not is_charging and battery_capacity <= self.battery_threshold then
-                    UIManager:show(ConfirmBox:new {
+                    self.battery_confirm_box = ConfirmBox:new {
                         text = T(_("Low battery level: %1%\n\nDismiss battery level alert?"), battery_capacity),
                         ok_text = _("Dismiss"),
                         dismissable = false,
                         ok_callback = function()
                             powerd:setDismissBatteryStatus(true)
                         end,
-                    })
+                    }
+                    UIManager:show(self.battery_confirm_box)
                 end
             end
             UIManager:scheduleIn(self.battery_interval * 60, self.checkLowBatteryLevel)
@@ -62,6 +69,9 @@ function ReaderDeviceStatus:init()
                 statm:close()
                 rss = math.floor(rss * 4096 / 1024 / 1024)
                 if rss >= self.memory_threshold then
+                    if self.memory_confirm_box then
+                        UIManager:close(self.memory_confirm_box)
+                    end
                     if Device:canRestart() then
                         if UIManager:getTopWidget() == "ReaderUI"
                            and G_reader_settings:isTrue("device_status_memory_auto_restart") then
@@ -73,7 +83,7 @@ function ReaderDeviceStatus:init()
                                 self.ui:handleEvent(Event:new("Restart"))
                             end)
                         else
-                            UIManager:show(ConfirmBox:new {
+                            self.memory_confirm_box = ConfirmBox:new {
                                 text = T(_("High memory usage: %1 MB\n\nRestart KOReader?"), rss),
                                 ok_text = _("Restart"),
                                 dismissable = false,
@@ -86,17 +96,19 @@ function ReaderDeviceStatus:init()
                                         self.ui:handleEvent(Event:new("Restart"))
                                     end)
                                 end,
-                            })
+                            }
+                            UIManager:show(self.memory_confirm_box)
                         end
                     else
-                        UIManager:show(ConfirmBox:new {
+                        self.memory_confirm_box = ConfirmBox:new {
                             text = T(_("High memory usage: %1 MB\n\nExit KOReader?"), rss),
                             ok_text = _("Exit"),
                             dismissable = false,
                             ok_callback = function()
                                 self.ui:handleEvent(Event:new("Exit"))
                             end,
-                        })
+                        }
+                        UIManager:show(self.memory_confirm_box)
                     end
                 end
             end
