@@ -55,6 +55,7 @@ function CheckButton:initCheckButton(checked)
     self._checkmark = CheckMark:new{
         checked = self.checked,
         enabled = self.enabled,
+        face = self.face,
         parent = self.parent or self,
         show_parent = self.show_parent or self,
     }
