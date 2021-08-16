@@ -1050,6 +1050,10 @@ function TextBoxWidget:getLineHeight()
     return self.line_height_px
 end
 
+function TextBoxWidget:getBaseline()
+    return self.line_glyph_baseline
+end
+
 function TextBoxWidget:getVisibleHeightRatios()
     local low = (self.virtual_line_num - 1) / #self.vertical_string_list
     local high = (self.virtual_line_num - 1 + self.lines_per_page) / #self.vertical_string_list
