@@ -65,7 +65,7 @@ function CheckButton:initCheckButton(checked)
         width = self.max_width - self._checkmark.dimen.w,
         fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
     }
-    local textbox_shift = self._checkmark.baseline - self._textwidget:getBaseline()
+    local textbox_shift = math.max(0, self._checkmark.baseline - self._textwidget:getBaseline())
     self._verticalgroup = VerticalGroup:new{
         align = "left",
         VerticalSpan:new{
