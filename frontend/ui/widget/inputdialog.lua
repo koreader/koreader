@@ -97,10 +97,14 @@ longer than three words it should just read "OK".
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
+local GestureRange = require("ui/gesturerange")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputText = require("ui/widget/inputtext")
@@ -115,6 +119,7 @@ local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local InputDialog = InputContainer:new{
@@ -125,6 +130,7 @@ local InputDialog = InputContainer:new{
     description = nil,
     buttons = nil,
     input_type = nil,
+    deny_keyboard_hiding = false, -- don't hide keyboard on tap outside
     enter_callback = nil,
     readonly = false, -- don't allow editing, will not show keyboard
     allow_newline = false, -- allow entering new lines (this disables any enter_callback)
@@ -158,11 +164,8 @@ local InputDialog = InputContainer:new{
     view_pos_callback = nil, -- Called with no arg to get initial top_line_num/charpos,
                              -- called with (top_line_num, charpos) to give back position on close.
 
-    -- movable = true, -- set to false if movable gestures conflicts with subwidgets gestures
-    -- for now, too much conflicts between InputText and MovableContainer, and
-    -- there's the keyboard to exclude from move area (the InputDialog could
-    -- be moved under the keyboard, and the user would be locked)
-    movable = false,
+    -- Set to false if movable gestures conflicts with subwidgets gestures
+    is_movable = true,
 
     width = nil,
 
@@ -202,7 +205,7 @@ local InputDialog = InputContainer:new{
 
 function InputDialog:init()
     if self.fullscreen then
-        self.movable = false
+        self.is_movable = false
         self.border_size = 0
         self.width = Screen:getWidth() - 2*self.border_size
         self.covers_fullscreen = true -- hint for UIManager:_repaint()
@@ -216,6 +219,9 @@ function InputDialog:init()
     end
     if self.readonly then -- hide keyboard if we can't edit
         self.keyboard_hidden = true
+    end
+    if self.fullscreen or self.add_nav_bar then
+        self.deny_keyboard_hiding = true
     end
 
     -- Title & description
@@ -439,10 +445,11 @@ function InputDialog:init()
         }
     }
     local frame = self.dialog_frame
-    if self.movable then
-        frame = MovableContainer:new{
+    if self.is_movable then
+        self.movable = MovableContainer:new{ -- (UIManager expects this as 'self.movable')
             self.dialog_frame,
         }
+        frame = self.movable
     end
     local keyboard_height = self.keyboard_hidden and 0
                                 or self._input_widget:getKeyboardDimen().h
@@ -453,6 +460,25 @@ function InputDialog:init()
         },
         frame
     }
+    if Device:isTouchDevice() then -- is used to hide the keyboard with a tap outside of inputbox
+        self.ges_events = {
+            Tap = {
+                GestureRange:new{
+                    ges = "tap",
+                    range = self[1].dimen, -- screen above the keyboard
+                },
+            },
+        }
+    end
+end
+
+function InputDialog:onTap()
+    if self.deny_keyboard_hiding then
+        return
+    end
+    if self._input_widget.onCloseKeyboard then
+        self._input_widget:onCloseKeyboard()
+    end
 end
 
 function InputDialog:getInputText()
@@ -720,6 +746,144 @@ function InputDialog:_addScrollButtons(nav_bar)
                     if not self.keyboard_hidden then
                         self:onShowKeyboard()
                     end
+                end,
+            })
+        end
+        if self.fullscreen then
+            -- Add a button to search for a string in the edited text
+            table.insert(row, {
+                text = _("Find"),
+                callback = function()
+                    local input_dialog
+                    input_dialog = InputDialog:new{
+                        title = _("Enter text to search for"),
+                        stop_events_propagation = true, -- avoid interactions with upper InputDialog
+                        deny_keyboard_hiding = true,
+                        input = self.search_value,
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    callback = function()
+                                        UIManager:close(input_dialog)
+                                    end,
+                                },
+                                {
+                                    text = _("Find first"),
+                                    callback = function()
+                                        self.search_value = input_dialog:getInputText()
+                                        if self.search_value ~= "" then
+                                            UIManager:close(input_dialog)
+                                            local msg
+                                            local char_pos = self._input_widget:searchString(self.search_value, self.case_sensitive, 1)
+                                            if char_pos > 0 then
+                                                self._input_widget:moveCursorToCharPos(char_pos)
+                                                msg = T(_("Found in line %1."), self._input_widget:getLineNums())
+                                            else
+                                                msg = _("Not found.")
+                                            end
+                                            UIManager:show(Notification:new{
+                                                text = msg,
+                                            })
+                                        end
+                                    end,
+                                },
+                                {
+                                    text = _("Find next"),
+                                    is_enter_default = true,
+                                    callback = function()
+                                        self.search_value = input_dialog:getInputText()
+                                        if self.search_value ~= "" then
+                                            UIManager:close(input_dialog)
+                                            local msg
+                                            local char_pos = self._input_widget:searchString(self.search_value, self.case_sensitive)
+                                            if char_pos > 0 then
+                                                self._input_widget:moveCursorToCharPos(char_pos)
+                                                msg = T(_("Found in line %1."), self._input_widget:getLineNums())
+                                            else
+                                                msg = _("Not found.")
+                                            end
+                                            UIManager:show(Notification:new{
+                                                text = msg,
+                                            })
+                                        end
+                                    end,
+                                },
+                            },
+                        },
+                    }
+
+                    -- checkbox
+                    self.check_button_case = CheckButton:new{
+                        text = _("Case sensitive"),
+                        checked = self.case_sensitive,
+                        parent = input_dialog,
+                        max_width = input_dialog._input_widget.width,
+                        callback = function()
+                            if not self.check_button_case.checked then
+                                self.check_button_case:check()
+                                self.case_sensitive = true
+                            else
+                                self.check_button_case:unCheck()
+                                self.case_sensitive = false
+                            end
+                        end,
+                    }
+
+                    local checkbox_shift = math.floor((input_dialog.width - input_dialog._input_widget.width) / 2 + 0.5)
+                    local check_buttons = HorizontalGroup:new{
+                        HorizontalSpan:new{width = checkbox_shift},
+                        VerticalGroup:new{
+                            align = "left",
+                            self.check_button_case,
+                        },
+                    }
+
+                    -- insert check buttons before the regular buttons
+                    local nb_elements = #input_dialog.dialog_frame[1]
+                    table.insert(input_dialog.dialog_frame[1], nb_elements-1, check_buttons)
+
+                    UIManager:show(input_dialog)
+                    input_dialog:onShowKeyboard()
+                end,
+            })
+            -- Add a button to go to the line by its number in the file
+            table.insert(row, {
+                text = _("Go"),
+                callback = function()
+                    local cur_line_num, last_line_num = self._input_widget:getLineNums()
+                    local input_dialog
+                    input_dialog = InputDialog:new{
+                        title = _("Enter line number"),
+                        -- @translators %1 is the current line number, %2 is the last line number
+                        input_hint = T(_("%1 (1 - %2)"), cur_line_num, last_line_num),
+                        input_type = "number",
+                        stop_events_propagation = true, -- avoid interactions with upper InputDialog
+                        deny_keyboard_hiding = true,
+                        buttons = {
+                            {
+                                {
+                                    text = _("Cancel"),
+                                    callback = function()
+                                        UIManager:close(input_dialog)
+                                    end,
+                                },
+                                {
+                                    text = _("Go to line"),
+                                    is_enter_default = true,
+                                    callback = function()
+                                        local new_line_num = tonumber(input_dialog:getInputText())
+                                        if new_line_num and new_line_num >= 1 and new_line_num <= last_line_num then
+                                            UIManager:close(input_dialog)
+                                            self._input_widget:moveCursorToCharPos(self._input_widget:getLineCharPos(new_line_num))
+                                        end
+                                    end,
+                                },
+                            },
+                        },
+                    }
+                    UIManager:show(input_dialog)
+                    input_dialog:onShowKeyboard()
                 end,
             })
         end

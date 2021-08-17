@@ -75,6 +75,11 @@ function ReaderHighlight:init()
                 enabled = Device:hasClipboard(),
                 callback = function()
                     Device.input.setClipboardText(cleanupSelectedText(_self.selected_text.text))
+                    _self:onClose()
+                    self:clear()
+                    UIManager:show(Notification:new{
+                        text = _("Selection copied to clipboard."),
+                    })
                 end,
             }
         end,
@@ -169,6 +174,20 @@ function ReaderHighlight:init()
         }
     end)
 
+    -- User hyphenation dict
+    self:addToHighlightDialog("11_user_dict", function(_self)
+        return {
+            text= _("Hyphenate"),
+            show_in_highlight_dialog_func = function()
+                return _self.ui.userhyph and _self.ui.userhyph:isAvailable() and not _self.selected_text.text:find("[ ,;-%.\n]")
+            end,
+            callback = function()
+                _self.ui.userhyph:modifyUserEntry(_self.selected_text.text)
+                _self:onClose()
+            end,
+        }
+    end)
+
     self.ui:registerPostInitCallback(function()
         self.ui.menu:registerToMainMenu(self)
     end)
@@ -214,9 +233,6 @@ function ReaderHighlight:setupTouchZones()
             ges = "hold",
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
-            },
-            overrides = {
-                "readerfooter_hold",
             },
             handler = function(ges) return self:onHold(nil, ges) end
         },
@@ -382,6 +398,10 @@ function ReaderHighlight:clear(clear_id)
         end
     end
     self.clear_id = nil -- invalidate id
+    if not self.ui.document then
+        -- might happen if scheduled and run after document is closed
+        return
+    end
     if self.ui.document.info.has_pages then
         self.view.highlight.temp = {}
     else
@@ -616,15 +636,14 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
     }
 
     if not self.ui.document.info.has_pages then
-        local start_prev = "◁⇱"
-        local start_next = "⇱▷"
-        local end_prev = "◁⇲"
-        local end_next = "⇲▷"
+        local start_prev = "◁▒▒"
+        local start_next = "▷▒▒"
+        local end_prev = "▒▒◁"
+        local end_next = "▒▒▷"
         if BD.mirroredUILayout() then
-            -- Sadly, there's only north west & south east arrow to corner,
-            -- north east and south west do not exist in Unicode.
-            start_prev, start_next = BD.ltr(start_next), BD.ltr(start_prev)
-            end_prev, end_next = BD.ltr(end_next), BD.ltr(end_prev)
+            -- BiDi will mirror the arrows, and this just works
+            start_prev, start_next = start_next, start_prev
+            end_prev, end_next = end_next, end_prev
         end
         table.insert(buttons, {
             {
@@ -981,7 +1000,7 @@ Copy the language data files for Tesseract 3.04 (e.g., eng.traineddata for Engli
 
 function ReaderHighlight:lookup(selected_word, selected_link)
     -- if we extracted text directly
-    if selected_word.word then
+    if selected_word.word and self.hold_pos then
         local word_box = self.view:pageToScreenTransform(self.hold_pos.page, selected_word.sbox)
         self.ui:handleEvent(Event:new("LookupWord", selected_word.word, false, word_box, self, selected_link))
     -- or we will do OCR
@@ -1135,7 +1154,7 @@ function ReaderHighlight:translate(selected_text)
     if selected_text.text ~= "" then
         self:onTranslateText(selected_text.text)
     -- or we will do OCR
-    else
+    elseif self.hold_pos then
         local text = self.ui.document:getOCRText(self.hold_pos.page, selected_text)
         logger.dbg("OCRed text:", text)
         if text and text ~= "" then
@@ -1155,7 +1174,7 @@ end
 function ReaderHighlight:onHoldRelease()
     local long_final_hold = false
     if self.hold_last_tv then
-        local hold_duration = UIManager:getTime() - self.hold_last_tv
+        local hold_duration = TimeVal:now() - self.hold_last_tv
         if hold_duration > TimeVal:new{ sec = 3, usec = 0 } then
             -- We stayed 3 seconds before release without updating selection
             long_final_hold = true
@@ -1262,21 +1281,26 @@ function ReaderHighlight:onUnhighlight(bookmark_item)
         sel_pos0 = bookmark_item.pos0
         datetime = bookmark_item.datetime
     else -- called from DictQuickLookup Unhighlight button
+        --- @fixme: is this self.hold_pos access safe?
         page = self.hold_pos.page
         sel_text = cleanupSelectedText(self.selected_text.text)
         sel_pos0 = self.selected_text.pos0
     end
     if self.ui.document.info.has_pages then -- We can safely use page
+        -- As we may have changed spaces and hyphens handling in the extracted
+        -- text over the years, check text identities with them removed
+        local sel_text_cleaned = sel_text:gsub("[ -]", ""):gsub("\xC2\xAD", "")
         for index = 1, #self.view.highlight.saved[page] do
             local highlight = self.view.highlight.saved[page][index]
             -- pos0 are tables and can't be compared directly, except when from
             -- DictQuickLookup where these are the same object.
             -- If bookmark_item provided, just check datetime
-            if highlight.text == sel_text and (
-                    (datetime == nil and highlight.pos0 == sel_pos0) or
-                    (datetime ~= nil and highlight.datetime == datetime)) then
-                idx = index
-                break
+            if ( (datetime == nil and highlight.pos0 == sel_pos0) or
+                 (datetime ~= nil and highlight.datetime == datetime) ) then
+                if highlight.text:gsub("[ -]", ""):gsub("\xC2\xAD", "") == sel_text_cleaned then
+                    idx = index
+                    break
+                end
             end
         end
     else -- page is a xpointer
@@ -1336,9 +1360,8 @@ end
 function ReaderHighlight:saveHighlight()
     self.ui:handleEvent(Event:new("AddHighlight"))
     logger.dbg("save highlight")
-    local page = self.hold_pos.page
-    if self.hold_pos and self.selected_text and self.selected_text.pos0
-        and self.selected_text.pos1 then
+    if self.hold_pos and self.selected_text and self.selected_text.pos0 and self.selected_text.pos1 then
+        local page = self.hold_pos.page
         if not self.view.highlight.saved[page] then
             self.view.highlight.saved[page] = {}
         end

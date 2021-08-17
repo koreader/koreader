@@ -157,6 +157,9 @@ function TouchMenuItem:onTapSelect(arg, ges)
     end
     if enabled == false then return end
 
+    -- If the menu hasn't actually been drawn yet, don't do anything (as it's confusing, and the coordinates may be wrong).
+    if not self.item_frame.dimen then return end
+
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuSelect(self.item)
     else
@@ -199,6 +202,8 @@ function TouchMenuItem:onHoldSelect(arg, ges)
         enabled = self.item.enabled_func()
     end
     if enabled == false then return end
+
+    if not self.item_frame.dimen then return end
 
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuHold(self.item, self.text_truncated)
@@ -420,6 +425,7 @@ local TouchMenu = FocusManager:new{
     tab_item_table = nil, -- mandatory
     -- for returning in multi-level menus
     item_table_stack = nil,
+    parent_id = nil,
     item_table = nil,
     item_height = Size.item.height_large,
     bordersize = Size.border.window,
@@ -757,6 +763,7 @@ function TouchMenu:switchMenuTab(tab_num)
     self.page = 1
     -- clear item table stack
     self.item_table_stack = {}
+    self.parent_id = nil
     self.cur_tab = tab_num
     self.item_table = self.tab_item_table[tab_num]
     self:updateItems()
@@ -766,6 +773,16 @@ function TouchMenu:backToUpperMenu()
     if #self.item_table_stack ~= 0 then
         self.item_table = table.remove(self.item_table_stack)
         self.page = 1
+        if self.parent_id then
+            self:_recalculatePageLayout() -- we need an accurate self.perpage
+            for i = 1, #self.item_table do
+                if self.item_table[i].menu_item_id == self.parent_id then
+                    self.page = math.floor( (i - 1) / self.perpage ) + 1
+                    break
+                end
+            end
+            self.parent_id = nil
+        end
         self:updateItems()
     else
         self:closeMenu()
@@ -857,6 +874,7 @@ function TouchMenu:onMenuSelect(item)
             end
         else
             table.insert(self.item_table_stack, self.item_table)
+            self.parent_id = item.menu_item_id
             self.item_table = sub_item_table
             self.page = 1
             if self.item_table.open_on_menu_item_id_func then
@@ -913,7 +931,10 @@ function TouchMenu:onMenuHold(item, text_truncated)
             UIManager:show(InfoMessage:new{ text = help_text, })
         end
     elseif text_truncated then
-        UIManager:show(InfoMessage:new{ text = getMenuText(item), })
+        UIManager:show(InfoMessage:new{
+            text = getMenuText(item),
+            show_icon = false,
+        })
     end
     return true
 end

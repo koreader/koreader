@@ -83,6 +83,42 @@ common_settings.time = {
             G_reader_settings:flipNilOrFalse("twelve_hour_clock")
             UIManager:broadcastEvent(Event:new("TimeFormatChanged"))
         end,
+        },
+        {
+            text_func = function ()
+                local duration_format = G_reader_settings:readSetting("duration_format", "classic")
+                return T(_("Duration format (%1)"), duration_format)
+            end,
+            sub_item_table = {
+                {
+                    text_func = function()
+                        local util = require('util');
+                        -- sample text shows 1:23:45
+                        local duration_format_str = util.secondsToClockDuration("classic", 5025, false);
+                        return T(_("Classic (%1)"), duration_format_str)
+                    end,
+                    checked_func = function()
+                        return G_reader_settings:readSetting("duration_format") == "classic"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("duration_format", "classic")
+                    end,
+                },
+                {
+                    text_func = function()
+                        local util = require('util');
+                        -- sample text shows 1h23m45s
+                        local duration_format_str = util.secondsToClockDuration("modern", 5025, false);
+                        return T(_("Modern (%1)"), duration_format_str)
+                    end,
+                    checked_func = function()
+                        return G_reader_settings:readSetting("duration_format") == "modern"
+                    end,
+                    callback = function()
+                        G_reader_settings:saveSetting("duration_format", "modern")
+                    end,
+                },
+            }
         }
     }
 }
@@ -198,8 +234,8 @@ common_settings.screen = {
 common_settings.screen_rotation = require("ui/elements/screen_rotation_menu_table")
 common_settings.screen_dpi = require("ui/elements/screen_dpi_menu_table")
 common_settings.screen_eink_opt = require("ui/elements/screen_eink_opt_menu_table")
+common_settings.screen_notification = require("ui/elements/screen_notification_menu_table")
 common_settings.menu_activate = require("ui/elements/menu_activate")
-common_settings.page_turns = require("ui/elements/page_turns")
 common_settings.screen_disable_double_tab = require("ui/elements/screen_disable_double_tap_table")
 common_settings.ignore_hold_corners = {
     text = _("Ignore hold on corners"),
@@ -423,18 +459,15 @@ common_settings.back_in_reader = {
         },
     },
 }
-if Device:hasKeys() then
-    common_settings.invert_page_turn_buttons = {
-        text = _("Invert page turn buttons"),
+common_settings.opening_page_location_stack = {
+        text = _("Add opening page to location history"),
         checked_func = function()
-            return G_reader_settings:isTrue("input_invert_page_turn_keys")
+            return G_reader_settings:isTrue("opening_page_location_stack")
         end,
         callback = function()
-            G_reader_settings:flipNilOrFalse("input_invert_page_turn_keys")
-            Device:invertButtons()
+            G_reader_settings:flipNilOrFalse("opening_page_location_stack")
         end,
-    }
-end
+}
 
 -- Auto-save settings: default value, info text and warning, and menu items
 if G_reader_settings:hasNot("auto_save_settings_interval_minutes") then

@@ -2,9 +2,9 @@ local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local Cache = require("cache")
-local CacheItem = require("cacheitem")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DocumentRegistry = require("document/documentregistry")
+local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local Menu = require("ui/widget/menu")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
@@ -24,15 +24,10 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
-local CatalogCacheItem = CacheItem:new{
-    size = 1024,  -- fixed size for catalog items
-}
-
 -- cache catalog parsed from feed xml
 local CatalogCache = Cache:new{
-    -- Make it 20 slots
-    size = 20 * CatalogCacheItem.size,
-    avg_itemsize = CatalogCacheItem.size,
+    -- Make it 20 slots, with no storage space constraints
+    slots = 20,
 }
 
 local OPDSBrowser = Menu:extend{
@@ -328,23 +323,21 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
 end
 
 function OPDSBrowser:parseFeed(item_url, username, password)
-    local feed
     local feed_last_modified = self:fetchFeed(item_url, username, password, "HEAD")
     local hash = "opds|catalog|" .. item_url
     if feed_last_modified then
         hash = hash .. "|" .. feed_last_modified
     end
 
-    local cache = CatalogCache:check(hash)
-    if cache then
+    local feed = CatalogCache:check(hash)
+    if feed then
         logger.dbg("Cache hit for", hash)
-        feed = cache.feed
     else
         logger.dbg("Cache miss for", hash)
         feed = self:fetchFeed(item_url, username, password)
         if feed then
             logger.dbg("Caching", hash)
-            CatalogCache:insert(hash, CatalogCacheItem:new{ feed = feed })
+            CatalogCache:insert(hash, feed)
         end
     end
     if feed then
@@ -620,6 +613,7 @@ end
 function OPDSBrowser:createNewDownloadDialog(path, buttons)
     self.download_dialog = ButtonDialogTitle:new{
         title = T(_("Download folder:\n%1\n\nDownload file type:"), BD.dirpath(path)),
+        use_info_style = true,
         buttons = buttons
     }
 end
@@ -658,10 +652,10 @@ function OPDSBrowser:showDownloads(item)
         table.insert(buttons, line)
     end
     table.insert(buttons, {})
-    -- Set download folder button.
+    -- Set download folder and book info buttons.
     table.insert(buttons, {
         {
-            text = _("Select another folder"),
+            text = _("Select folder"),
             callback = function()
                 require("ui/downloadmgr"):new{
                     onConfirm = function(path)
@@ -675,7 +669,19 @@ function OPDSBrowser:showDownloads(item)
                     end,
                 }:chooseDir()
             end,
-        }
+        },
+        {
+            text = _("Book information"),
+            enabled = type(item.content) == "string",
+            callback = function()
+                local TextViewer = require("ui/widget/textviewer")
+                UIManager:show(TextViewer:new{
+                    title = item.text,
+                    text = util.htmlToPlainTextIfHtml(item.content),
+                    text_face = Font:getFace("x_smallinfofont", G_reader_settings:readSetting("items_font_size")),
+                })
+            end,
+        },
     })
 
     self:createNewDownloadDialog(self.getCurrentDownloadDir(), buttons)
@@ -878,6 +884,20 @@ function OPDSBrowser:onReturn()
     return true
 end
 
+function OPDSBrowser:onHoldReturn()
+    if #self.paths > 1 then
+        local path = self.paths[1]
+        if path then
+            for i = #self.paths, 2, -1 do
+                table.remove(self.paths)
+            end
+            self.catalog_title = path.title
+            self:updateCatalog(path.url, path.username, path.password)
+        end
+    end
+    return true
+end
+
 function OPDSBrowser:onNext()
     -- self.page_num comes from menu.lua
     local page_num = self.page_num
@@ -892,7 +912,6 @@ function OPDSBrowser:onNext()
             break
         end
     end
-
     return true
 end
 

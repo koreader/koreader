@@ -5,6 +5,12 @@ local logger = require("logger")
 local util = require("ffi/util")
 local _ = require("gettext")
 
+-- We're going to need a few <linux/fb.h> & <linux/input.h> constants...
+local ffi = require("ffi")
+local C = ffi.C
+require("ffi/linux_fb_h")
+require("ffi/linux_input_h")
+
 local function yes() return true end
 local function no() return false end
 
@@ -53,6 +59,18 @@ local Kobo = Generic:new{
     isMk7 = no,
     -- MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls are generally reliable
     hasReliableMxcWaitFor = yes,
+    -- Sunxi devices require a completely different fb backend...
+    isSunxi = no,
+    -- On sunxi, "native" panel layout used to compute the G2D rotation handle (e.g., deviceQuirks.nxtBootRota in FBInk).
+    boot_rota = nil,
+    -- Standard sysfs path to the battery directory
+    battery_sysfs = "/sys/class/power_supply/mc13892_bat",
+    -- Stable path to the NTX input device
+    ntx_dev = "/dev/input/event0",
+    -- Stable path to the Touch input device
+    touch_dev = "/dev/input/event1",
+    -- Event code to use to detect contact pressure
+    pressure_event = nil,
 }
 
 --- @todo hasKeys for some devices?
@@ -288,6 +306,23 @@ local KoboLuna = Kobo:new{
     display_dpi = 212,
 }
 
+-- Kobo Elipsa
+local KoboEuropa = Kobo:new{
+    model = "Kobo_europa",
+    isSunxi = yes,
+    canToggleChargingLED = yes,
+    hasFrontlight = yes,
+    hasGSensor = yes,
+    canToggleGSensor = yes,
+    pressure_event = C.ABS_MT_PRESSURE,
+    misc_ntx_gsensor_protocol = true,
+    display_dpi = 227,
+    boot_rota = C.FB_ROTATE_CCW,
+    battery_sysfs = "/sys/class/power_supply/battery",
+    ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
+    touch_dev = "/dev/input/by-path/platform-0-0010-event",
+}
+
 function Kobo:init()
     -- Check if we need to disable MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls...
     local mxcfb_bypass_wait_for
@@ -297,16 +332,29 @@ function Kobo:init()
         mxcfb_bypass_wait_for = not self:hasReliableMxcWaitFor()
     end
 
-    self.screen = require("ffi/framebuffer_mxcfb"):new{
-        device = self,
-        debug = logger.dbg,
-        is_always_portrait = self.isAlwaysPortrait(),
-        mxcfb_bypass_wait_for = mxcfb_bypass_wait_for,
-    }
-    if self.screen.fb_bpp == 32 then
-        -- Ensure we decode images properly, as our framebuffer is BGRA...
-        logger.info("Enabling Kobo @ 32bpp BGR tweaks")
-        self.hasBGRFrameBuffer = yes
+    if self:isSunxi() then
+        self.screen = require("ffi/framebuffer_sunxi"):new{
+            device = self,
+            debug = logger.dbg,
+            is_always_portrait = self.isAlwaysPortrait(),
+            mxcfb_bypass_wait_for = mxcfb_bypass_wait_for,
+            boot_rota = self.boot_rota,
+        }
+
+        -- Sunxi means no HW inversion :(
+        self.canHWInvert = no
+    else
+        self.screen = require("ffi/framebuffer_mxcfb"):new{
+            device = self,
+            debug = logger.dbg,
+            is_always_portrait = self.isAlwaysPortrait(),
+            mxcfb_bypass_wait_for = mxcfb_bypass_wait_for,
+        }
+        if self.screen.fb_bpp == 32 then
+            -- Ensure we decode images properly, as our framebuffer is BGRA...
+            logger.info("Enabling Kobo @ 32bpp BGR tweaks")
+            self.hasBGRFrameBuffer = yes
+        end
     end
 
     -- Automagically set this so we never have to remember to do it manually ;p
@@ -318,17 +366,23 @@ function Kobo:init()
         self.canHWDither = yes
     end
 
-    self.powerd = require("device/kobo/powerd"):new{device = self}
+    self.powerd = require("device/kobo/powerd"):new{
+        device = self,
+        battery_sysfs = self.battery_sysfs,
+    }
     -- NOTE: For the Forma, with the buttons on the right, 193 is Top, 194 Bottom.
     self.input = require("device/input"):new{
         device = self,
         event_map = {
+            [35] = "SleepCover",  -- KEY_H, Elipsa
             [59] = "SleepCover",
             [90] = "LightButton",
             [102] = "Home",
             [116] = "Power",
             [193] = "RPgBack",
             [194] = "RPgFwd",
+            [331] = "Eraser",
+            [332] = "Highlighter",
         },
         event_map_adapter = {
             SleepCover = function(ev)
@@ -343,15 +397,17 @@ function Kobo:init()
                     return "Light"
                 end
             end,
-        }
+        },
+        main_finger_slot = self.main_finger_slot or 0,
+        pressure_event = self.pressure_event,
     }
     self.wakeup_mgr = WakeupMgr:new()
 
     Generic.init(self)
 
     -- When present, event2 is the raw accelerometer data (3-Axis Orientation/Motion Detection)
-    self.input.open("/dev/input/event0") -- Various HW Buttons, Switches & Synthetic NTX events
-    self.input.open("/dev/input/event1")
+    self.input.open(self.ntx_dev) -- Various HW Buttons, Switches & Synthetic NTX events
+    self.input.open(self.touch_dev)
     -- fake_events is only used for usb plug event so far
     -- NOTE: usb hotplug event is also available in /tmp/nickel-hardware-status (... but only when Nickel is running ;p)
     self.input.open("fake_events")
@@ -791,7 +847,8 @@ function Kobo:toggleChargingLED(toggle)
     --       we've seen *extremely* weird behavior in the past when playing with it on older devices (c.f., #5479).
     --       In fact, Nickel itself doesn't provide this feature on said older devices
     --       (when it does, it's an option in the Energy saving settings),
-    --       which is why we also limit ourselves to "true" Mk. 7 devices.
+    --       which is why we also limit ourselves to "true" on devices where this was tested.
+    -- c.f., drivers/misc/ntx_misc_light.c
     local f = io.open("/sys/devices/platform/ntx_led/lit", "w")
     if not f then
         logger.err("cannot open /sys/devices/platform/ntx_led/lit for writing!")
@@ -800,9 +857,18 @@ function Kobo:toggleChargingLED(toggle)
 
     -- c.f., strace -fittvyy -e trace=ioctl,file,signal,ipc,desc -s 256 -o /tmp/nickel.log -p $(pidof -s nickel) &
     -- This was observed on a Forma, so I'm mildly hopeful that it's safe on other Mk. 7 devices ;).
+    -- NOTE: ch stands for channel, cur for current, dc for duty cycle. c.f., the driver source.
     if toggle == true then
         -- NOTE: Technically, Nickel forces a toggle off before that, too.
         --       But since we do that on startup, it shouldn't be necessary here...
+        if self:isSunxi() then
+            f:write("ch 3")
+            f:flush()
+            f:write("cur 1")
+            f:flush()
+            f:write("dc 63")
+            f:flush()
+        end
         f:write("ch 4")
         f:flush()
         f:write("cur 1")
@@ -881,6 +947,8 @@ elseif codename == "storm" then
     return KoboStorm
 elseif codename == "luna" then
     return KoboLuna
+elseif codename == "europa" then
+    return KoboEuropa
 else
     error("unrecognized Kobo model "..codename)
 end

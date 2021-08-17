@@ -287,14 +287,18 @@ function ReaderDictionary:addToMainMenu(menu_items)
             },
             {
                 text = _("Clean dictionary lookup history"),
+                enabled_func = function()
+                    return lookup_history:has("lookup_history")
+                end,
                 keep_menu_open = true,
-                callback = function()
+                callback = function(touchmenu_instance)
                     UIManager:show(ConfirmBox:new{
                         text = _("Clean dictionary lookup history?"),
                         ok_text = _("Clean"),
                         ok_callback = function()
                             -- empty data table to replace current one
                             lookup_history:reset{}
+                            touchmenu_instance:updateItems()
                         end,
                     })
                 end,
@@ -796,7 +800,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
         -- dummy results
         final_results = {
             {
-                dict = "",
+                dict = _("Not available"),
                 word = word,
                 definition = lookup_cancelled and _("Dictionary lookup interrupted.") or _("No results."),
                 no_result = true,
@@ -842,6 +846,22 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
                 end)
             end
         end)
+        return
+    end
+
+    -- If the user disabled all the dictionaries, go away.
+    if dict_names and #dict_names == 0 then
+        -- Dummy result
+        local nope = {
+            {
+                dict = _("Not available"),
+                word = word,
+                definition = _("There are no enabled dictionaries.\nPlease check the 'Dictionary settings' menu."),
+                no_result = true,
+                lookup_cancelled = false,
+            }
+        }
+        self:showDict(word, nope, box, link)
         return
     end
 

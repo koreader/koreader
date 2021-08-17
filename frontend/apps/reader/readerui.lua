@@ -33,6 +33,7 @@ local ReaderFont = require("apps/reader/modules/readerfont")
 local ReaderGoto = require("apps/reader/modules/readergoto")
 local ReaderHinting = require("apps/reader/modules/readerhinting")
 local ReaderHighlight = require("apps/reader/modules/readerhighlight")
+local ReaderScrolling = require("apps/reader/modules/readerscrolling")
 local ReaderKoptListener = require("apps/reader/modules/readerkoptlistener")
 local ReaderLink = require("apps/reader/modules/readerlink")
 local ReaderMenu = require("apps/reader/modules/readermenu")
@@ -47,6 +48,7 @@ local ReaderStyleTweak = require("apps/reader/modules/readerstyletweak")
 local ReaderToc = require("apps/reader/modules/readertoc")
 local ReaderTypeset = require("apps/reader/modules/readertypeset")
 local ReaderTypography = require("apps/reader/modules/readertypography")
+local ReaderUserHyph = require("apps/reader/modules/readeruserhyph")
 local ReaderView = require("apps/reader/modules/readerview")
 local ReaderWikipedia = require("apps/reader/modules/readerwikipedia")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
@@ -193,7 +195,7 @@ function ReaderUI:init()
         ui = self
     }, true)
     -- device status controller
-    self:registerModule("battery", ReaderDeviceStatus:new{
+    self:registerModule("devicestatus", ReaderDeviceStatus:new{
         ui = self,
     })
     -- configurable controller
@@ -313,6 +315,12 @@ function ReaderUI:init()
             view = self.view,
             ui = self
         })
+        -- user hyphenation (must be registered before typography)
+        self:registerModule("userhyph", ReaderUserHyph:new{
+            dialog = self.dialog,
+            view = self.view,
+            ui = self
+        })
         -- typography menu (replaces previous hyphenation menu / ReaderHyphenation)
         self:registerModule("typography", ReaderTypography:new{
             dialog = self.dialog,
@@ -334,6 +342,13 @@ function ReaderUI:init()
         })
     end
     self.disable_double_tap = G_reader_settings:nilOrTrue("disable_double_tap")
+    -- scrolling (scroll settings + inertial scrolling)
+    self:registerModule("scrolling", ReaderScrolling:new{
+        pan_rate = pan_rate,
+        dialog = self.dialog,
+        ui = self,
+        view = self.view,
+    })
     -- back location stack
     self:registerModule("back", ReaderBack:new{
         ui = self,
@@ -439,6 +454,14 @@ function ReaderUI:init()
     -- for _, tzone in ipairs(self._ordered_touch_zones) do
     --     print("  "..tzone.def.id)
     -- end
+
+    if ReaderUI.instance == nil then
+        logger.dbg("Spinning up new ReaderUI instance", tostring(self))
+    else
+        -- Should never happen, given what we did in (do)showReader...
+        logger.err("ReaderUI instance mismatch! Opened", tostring(self), "while we still have an existing instance:", tostring(ReaderUI.instance), debug.traceback())
+    end
+    ReaderUI.instance = self
 end
 
 function ReaderUI:setLastDirForFileBrowser(dir)
@@ -486,7 +509,8 @@ function ReaderUI:onShowingReader()
     self.tearing_down = true
     self.dithered = nil
 
-    self:onClose()
+    -- Don't enforce a "full" refresh, leave that decision to the next widget we'll *show*.
+    self:onClose(false)
 end
 
 -- Same as above, except we don't close it yet. Useful for plugins that need to close custom Menus before calling showReader.
@@ -496,6 +520,8 @@ function ReaderUI:onSetupShowReader()
 end
 
 --- @note: Will sanely close existing FileManager/ReaderUI instance for you!
+---        This is the *only* safe way to instantiate a new ReaderUI instance!
+---        (i.e., don't look at the testsuite, which resorts to all kinds of nasty hacks).
 function ReaderUI:showReader(file, provider)
     logger.dbg("show reader ui")
 
@@ -567,12 +593,12 @@ function ReaderUI:showReaderCoroutine(file, provider)
     end)
 end
 
-local _running_instance = nil
 function ReaderUI:doShowReader(file, provider)
     logger.info("opening file", file)
-    -- Keep only one instance running
-    if _running_instance then
-        _running_instance:onClose()
+    -- Only keep a single instance running
+    if ReaderUI.instance then
+        logger.warn("ReaderUI instance mismatch! Tried to spin up a new instance, while we still have an existing one:", tostring(ReaderUI.instance))
+        ReaderUI.instance:onClose()
     end
     local document = DocumentRegistry:openDocument(file, provider)
     if not document then
@@ -620,12 +646,14 @@ function ReaderUI:doShowReader(file, provider)
         FileManager.instance:onClose()
     end
 
-    UIManager:show(reader)
-    _running_instance = reader
+    UIManager:show(reader, "full")
 end
 
+-- NOTE: The instance reference used to be stored in a private module variable, hence the getter method.
+--       We've since aligned behavior with FileManager, which uses a class member instead,
+--       but kept the function to avoid changing existing code.
 function ReaderUI:_getRunningInstance()
-    return _running_instance
+    return ReaderUI.instance
 end
 
 function ReaderUI:unlockDocumentWithPassword(document, try_again)
@@ -741,9 +769,16 @@ function ReaderUI:onClose(full_refresh)
         self:notifyCloseDocument()
     end
     UIManager:close(self.dialog, full_refresh and "full")
-    if _running_instance == self then
-        _running_instance = nil
+end
+
+function ReaderUI:onCloseWidget()
+    if ReaderUI.instance == self then
+        logger.dbg("Tearing down ReaderUI", tostring(self))
+    else
+        logger.warn("ReaderUI instance mismatch! Closed", tostring(self), "while the active one is supposed to be", tostring(ReaderUI.instance))
     end
+    ReaderUI.instance = nil
+    self._coroutine = nil
 end
 
 function ReaderUI:dealWithLoadDocumentFailure()

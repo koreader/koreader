@@ -591,7 +591,7 @@ width: 100% !important;
             {
                 title = _("About alternative ToC"),
                 info_text = _([[
-An alternative table of contents can be built from the "Table of contents" settings menu.
+An alternative table of contents can be built via a dedicated option in the "Settings" menu below the "Table of contents" menu entry.
 
 The ToC will be built from document headings <H1> to <H6>. Some of these can be ignored with the tweaks available here.
 If the document contains no headings, or all are ignored, the alternative ToC will be built from document fragments and will point to the start of each individual HTML file in the EPUB.

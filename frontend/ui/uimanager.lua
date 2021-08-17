@@ -22,6 +22,7 @@ local UIManager = {
     FULL_REFRESH_COUNT =
         G_reader_settings:isTrue("night_mode") and G_reader_settings:readSetting("night_full_refresh_count") or G_reader_settings:readSetting("full_refresh_count") or DEFAULT_FULL_REFRESH_COUNT,
     refresh_count = 0,
+    currently_scrolling = false,
 
     -- How long to wait between ZMQ wakeups: 50ms.
     ZMQ_TIMEOUT = 50 * 1000,
@@ -466,16 +467,16 @@ function UIManager:close(widget, refreshtype, refreshregion, refreshdither)
     end
     logger.dbg("close widget:", widget.name or widget.id or tostring(widget))
     local dirty = false
-    -- Ensure all the widgets can get onFlushSettings event.
+    -- First notify the closed widget to save its settings...
     widget:handleEvent(Event:new("FlushSettings"))
-    -- first send close event to widget
+    -- ...and notify it that it ought to be gone now.
     widget:handleEvent(Event:new("CloseWidget"))
-    -- make it disabled by default and check if any widget wants it disabled or enabled
+    -- Make sure it's disabled by default and check if there are any widgets that want it disabled or enabled.
     Input.disable_double_tap = true
     local requested_disable_double_tap = nil
     local is_covered = false
     local start_idx = 1
-    -- then remove all references to that widget on stack and refresh
+    -- Then remove all references to that widget on stack and refresh.
     for i = #self._window_stack, 1, -1 do
         if self._window_stack[i].widget == widget then
             self._dirty[self._window_stack[i].widget] = nil
@@ -1292,6 +1293,10 @@ function UIManager:_refresh(mode, region, dither)
             -- (which is the vast majority of them), in which case we drop it to avoid enqueuing a useless full-screen refresh.
             return
         end
+    end
+    -- Downgrade all refreshes to "fast" when ReaderPaging or ReaderScrolling have set this flag
+    if self.currently_scrolling then
+        mode = "fast"
     end
     if not region and mode == "full" then
         self.refresh_count = 0 -- reset counter on explicit full refresh

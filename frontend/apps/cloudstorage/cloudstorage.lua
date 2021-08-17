@@ -11,6 +11,7 @@ local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local WebDav = require("apps/cloudstorage/webdav")
 local lfs = require("libs/libkoreader-lfs")
+local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local Screen = require("device").screen
@@ -147,28 +148,29 @@ function CloudStorage:selectCloudType()
 end
 
 function CloudStorage:openCloudServer(url)
-    local tbl
+    local tbl, e
     local NetworkMgr = require("ui/network/manager")
     if self.type == "dropbox" then
         if NetworkMgr:willRerunWhenOnline(function() self:openCloudServer(url) end) then
             return
         end
-        tbl = DropBox:run(url, self.password, self.choose_folder_mode)
+        tbl, e = DropBox:run(url, self.password, self.choose_folder_mode)
     elseif self.type == "ftp" then
         if NetworkMgr:willRerunWhenConnected(function() self:openCloudServer(url) end) then
             return
         end
-        tbl = Ftp:run(self.address, self.username, self.password, url)
+        tbl, e = Ftp:run(self.address, self.username, self.password, url)
     elseif self.type == "webdav" then
         if NetworkMgr:willRerunWhenConnected(function() self:openCloudServer(url) end) then
             return
         end
-        tbl = WebDav:run(self.address, self.username, self.password, url)
+        tbl, e = WebDav:run(self.address, self.username, self.password, url)
     end
     if tbl and #tbl > 0 then
         self:switchItemTable(url, tbl)
         return true
     elseif not tbl then
+        logger.err("CloudStorage:", e)
         UIManager:show(InfoMessage:new{
             text = _("Cannot fetch list of folder contents\nPlease check your configuration or network connection."),
             timeout = 3,
@@ -705,6 +707,19 @@ function CloudStorage:onReturn()
         else
             -- return to root path
             self:init()
+        end
+    end
+    return true
+end
+
+function CloudStorage:onHoldReturn()
+    if #self.paths > 1 then
+        local path = self.paths[1]
+        if path then
+            for i = #self.paths, 2, -1 do
+                table.remove(self.paths)
+            end
+            self:openCloudServer(path.url)
         end
     end
     return true

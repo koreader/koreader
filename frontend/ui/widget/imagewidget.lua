@@ -22,7 +22,6 @@ Show image from memory example:
 
 local Blitbuffer = require("ffi/blitbuffer")
 local Cache = require("cache")
-local CacheItem = require("cacheitem")
 local Geom = require("ui/geometry")
 local RenderImage = require("ui/renderimage")
 local Screen = require("device").screen
@@ -45,14 +44,9 @@ local ImageCache = Cache:new{
     -- hence the leeway.
     size = 8 * 1024 * 1024,
     avg_itemsize = 64 * 1024,
+    -- Rely on our FFI finalizer to free the BBs on GC
+    enable_eviction_cb = false,
 }
-
-local ImageCacheItem = CacheItem:new{}
-
-function ImageCacheItem:onFree()
-    logger.dbg("ImageCacheItem: free blitbuffer", self.bb)
-    self.bb:free()
-end
 
 local ImageWidget = Widget:new{
     -- Can be provided with a path to a file
@@ -150,12 +144,12 @@ function ImageWidget:_loadfile()
             hash = hash .. "|d"
             self.already_scaled_for_dpi = true -- so we don't do it again in _render()
         end
-        local cache = ImageCache:check(hash)
-        if cache then
+        local cached = ImageCache:check(hash)
+        if cached then
             -- hit cache
-            self._bb = cache.bb
+            self._bb = cached.bb
             self._bb_disposable = false -- don't touch or free a cached _bb
-            self._is_straight_alpha = cache.is_straight_alpha
+            self._is_straight_alpha = cached.is_straight_alpha
         else
             if itype == "svg" then
                 local zoom
@@ -222,12 +216,11 @@ function ImageWidget:_loadfile()
                 self._bb_disposable = false -- don't touch or free a cached _bb
                 -- cache this image
                 logger.dbg("cache", hash)
-                cache = ImageCacheItem:new{
+                cached = {
                     bb = self._bb,
                     is_straight_alpha = self._is_straight_alpha,
                 }
-                cache.size = tonumber(cache.bb.stride) * cache.bb.h
-                ImageCache:insert(hash, cache)
+                ImageCache:insert(hash, cached, tonumber(cached.bb.stride) * cached.bb.h)
             end
         end
     else

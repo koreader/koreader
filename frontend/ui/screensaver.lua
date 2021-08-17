@@ -93,7 +93,25 @@ function Screensaver:_getRandomImage(dir)
     return dir .. pics[math.random(i)]
 end
 
-local function expandSpecial(message, fallback)
+-- This is implemented by the Statistics plugin
+function Screensaver:getAvgTimePerPage()
+    return
+end
+
+function Screensaver:_calcAverageTimeForPages(pages)
+    local sec = _("N/A")
+    local average_time_per_page = self:getAvgTimePerPage()
+
+    -- Compare average_time_per_page against itself to make sure it's not nan
+    if average_time_per_page and average_time_per_page == average_time_per_page and pages then
+        local util = require("util")
+        local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
+        sec = util.secondsToClockDuration(user_duration_format, pages * average_time_per_page, true)
+    end
+    return sec
+end
+
+function Screensaver:expandSpecial(message, fallback)
     -- Expand special character sequences in given message.
     -- %p percentage read
     -- %c current page
@@ -101,6 +119,8 @@ local function expandSpecial(message, fallback)
     -- %T document title
     -- %A document authors
     -- %S document series
+    -- %h time left in chapter
+    -- %H time left in document
 
     if G_reader_settings:hasNot("lastfile") then
         return fallback
@@ -115,10 +135,12 @@ local function expandSpecial(message, fallback)
     local title = _("N/A")
     local authors = _("N/A")
     local series = _("N/A")
+    local time_left_chapter = _("N/A")
+    local time_left_document = _("N/A")
 
     local ReaderUI = require("apps/reader/readerui")
     local ui = ReaderUI:_getRunningInstance()
-    if ui then
+    if ui and ui.document then
         -- If we have a ReaderUI instance, use it.
         local doc = ui.document
         currentpage = ui.view.state.page or currentpage
@@ -130,6 +152,8 @@ local function expandSpecial(message, fallback)
             authors = props.authors and props.authors ~= "" and props.authors or authors
             series = props.series and props.series ~= "" and props.series or series
         end
+        time_left_chapter = self:_calcAverageTimeForPages(ui.toc:getChapterPagesLeft(currentpage) or doc:getTotalPagesLeft(currentpage))
+        time_left_document = self:_calcAverageTimeForPages(doc:getTotalPagesLeft(currentpage))
     elseif DocSettings:hasSidecarFile(lastfile) then
         -- If there's no ReaderUI instance, but the file has sidecar data, use that
         local docinfo = DocSettings:open(lastfile)
@@ -142,14 +166,20 @@ local function expandSpecial(message, fallback)
             authors = docinfo.data.doc_props.authors and docinfo.data.doc_props.authors ~= "" and docinfo.data.doc_props.authors or authors
             series = docinfo.data.doc_props.series and docinfo.data.doc_props.series ~= "" and docinfo.data.doc_props.series or series
         end
+        -- Unable to set time_left_chapter and time_left_document without ReaderUI, so leave N/A
     end
 
-    ret = string.gsub(ret, "%%c", currentpage)
-    ret = string.gsub(ret, "%%t", totalpages)
-    ret = string.gsub(ret, "%%p", percent)
-    ret = string.gsub(ret, "%%T", title)
-    ret = string.gsub(ret, "%%A", authors)
-    ret = string.gsub(ret, "%%S", series)
+    local replace = {
+        ["%c"] = currentpage,
+        ["%t"] = totalpages,
+        ["%p"] = percent,
+        ["%T"] = title,
+        ["%A"] = authors,
+        ["%S"] = series,
+        ["%h"] = time_left_chapter,
+        ["%H"] = time_left_document,
+    }
+    ret = ret:gsub("(%%%a)", replace)
 
     return ret
 end
@@ -303,7 +333,7 @@ end
 function Screensaver:isExcluded()
     local ReaderUI = require("apps/reader/readerui")
     local ui = ReaderUI:_getRunningInstance()
-    if ui then
+    if ui and ui.doc_settings then
         local doc_settings = ui.doc_settings
         return doc_settings:isTrue("exclude_screensaver")
     else
@@ -328,7 +358,7 @@ function Screensaver:setMessage()
                              or self.default_screensaver_message
     self.input_dialog = InputDialog:new{
         title = "Screensaver message",
-        description = _("Enter the message to be displayed by the screensaver. The following escape sequences can be used:\n  %p percentage read\n  %c current page number\n  %t total number of pages\n  %T title\n  %A authors\n  %S series"),
+        description = _("Enter the message to be displayed by the screensaver. The following escape sequences can be used:\n  %p percentage read\n  %c current page number\n  %t total number of pages\n  %T title\n  %A authors\n  %S series\n  %h time left in chapter\n  %H time left in document"),
         input = screensaver_message,
         buttons = {
             {
@@ -415,7 +445,7 @@ function Screensaver:setup(event, fallback_message)
         local excluded
         if DocSettings:hasSidecarFile(self.lastfile) then
             local doc_settings
-            if ui then
+            if ui and ui.doc_settings then
                 doc_settings = ui.doc_settings
             else
                 doc_settings = DocSettings:open(self.lastfile)
@@ -427,7 +457,7 @@ function Screensaver:setup(event, fallback_message)
         end
         if not excluded then
             if self.lastfile and lfs.attributes(self.lastfile, "mode") == "file" then
-                if ui then
+                if ui and ui.document then
                     local doc = ui.document
                     self.image = doc:getCoverPageImage()
                 else
@@ -510,8 +540,8 @@ function Screensaver:show()
         widget = ImageWidget:new{
             image = self.image,
             image_disposable = true,
-            height = Screen:getHeight(),
             width = Screen:getWidth(),
+            height = Screen:getHeight(),
             scale_factor = G_reader_settings:isFalse("screensaver_stretch_images") and 0 or nil,
         }
     elseif self.screensaver_type == "bookstatus" then
@@ -532,8 +562,8 @@ function Screensaver:show()
             file = self.image_file,
             file_do_cache = false,
             alpha = true,
-            height = Screen:getHeight(),
             width = Screen:getWidth(),
+            height = Screen:getHeight(),
             scale_factor = G_reader_settings:isFalse("screensaver_stretch_images") and 0 or nil,
         }
     elseif self.screensaver_type == "readingprogress" then
@@ -567,7 +597,7 @@ function Screensaver:show()
         end
         -- NOTE: Only attempt to expand if there are special characters in the message.
         if screensaver_message:find("%%") then
-            screensaver_message = expandSpecial(screensaver_message, self.fallback_message or self.default_screensaver_message)
+            screensaver_message = self:expandSpecial(screensaver_message, self.fallback_message or self.default_screensaver_message)
         end
 
         local message_pos
@@ -619,11 +649,10 @@ function Screensaver:show()
         if message_widget then
             if widget then  -- We have a Screensaver widget
                 -- Show message_widget on top of previously created widget
-                local screen_w, screen_h = Screen:getWidth(), Screen:getHeight()
                 widget = OverlapGroup:new{
                     dimen = {
-                        h = screen_w,
-                        w = screen_h,
+                        w = Screen:getWidth(),
+                        h = Screen:getHeight(),
                     },
                     widget,
                     message_widget,
@@ -662,14 +691,14 @@ function Screensaver:close()
         UIManager:scheduleIn(screensaver_delay_number, function()
             logger.dbg("close screensaver")
             if self.screensaver_widget then
-                UIManager:close(self.screensaver_widget, "full")
+                UIManager:close(self.screensaver_widget)
                 self.screensaver_widget = nil
             end
         end)
     elseif screensaver_delay == "disable" then
         logger.dbg("close screensaver")
         if self.screensaver_widget then
-            UIManager:close(self.screensaver_widget, "full")
+            UIManager:close(self.screensaver_widget)
             self.screensaver_widget = nil
         end
     else

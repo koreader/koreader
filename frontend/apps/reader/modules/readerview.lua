@@ -9,6 +9,7 @@ local Geom = require("ui/geometry")
 local Event = require("ui/event")
 local IconWidget = require("ui/widget/iconwidget")
 local InfoMessage = require("ui/widget/infomessage")
+local Notification = require("ui/widget/notification")
 local OverlapGroup = require("ui/widget/overlapgroup")
 local ReaderDogear = require("apps/reader/modules/readerdogear")
 local ReaderFlipping = require("apps/reader/modules/readerflipping")
@@ -17,6 +18,7 @@ local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
 local logger = require("logger")
+local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
@@ -73,6 +75,9 @@ local ReaderView = OverlapGroup:extend{
     flipping_visible = false,
     -- to ensure periodic flush of settings
     settings_last_save_tv = nil,
+    -- might be directly updated by readerpaging/readerrolling when
+    -- they handle some panning/scrolling, to request "fast" refreshes
+    currently_scrolling = false,
 }
 
 function ReaderView:init()
@@ -614,7 +619,7 @@ function ReaderView:recalculate()
     end
     -- Flag a repaint so self:paintTo will be called
     -- NOTE: This is also unfortunately called during panning, essentially making sure we'll never be using "fast" for pans ;).
-    UIManager:setDirty(self.dialog, "partial")
+    UIManager:setDirty(self.dialog, self.currently_scrolling and "fast" or "partial")
 end
 
 function ReaderView:PanningUpdate(dx, dy)
@@ -710,6 +715,7 @@ function ReaderView:onSetRotationMode(rotation)
     self.ui:handleEvent(Event:new("SetDimensions", new_screen_size))
     self.ui:onScreenResize(new_screen_size)
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
+    Notification:notify(T(_("Rotation mode set to: %1"), optionsutil:getOptionText("SetRotationMode", rotation)))
     return true
 end
 
@@ -754,6 +760,7 @@ In combination with zoom to fit page, page height, content height, content or co
 end
 
 function ReaderView:onReadSettings(config)
+    self.document:setTileCacheValidity(config:readSetting("tile_cache_validity_ts"))
     self.render_mode = config:readSetting("render_mode") or 0
     local rotation_mode = nil
     local locked = G_reader_settings:isTrue("lock_rotation")
@@ -843,10 +850,12 @@ function ReaderView:onGammaUpdate(gamma)
     if self.page_scroll then
         self.ui:handleEvent(Event:new("UpdateScrollPageGamma", gamma))
     end
+    Notification:notify(T(_("Font gamma set to: %1."), gamma))
 end
 
 function ReaderView:onFontSizeUpdate(font_size)
     self.ui:handleEvent(Event:new("ReZoom", font_size))
+    Notification:notify(T(_("Font zoom set to: %1."), font_size))
 end
 
 function ReaderView:onDefectSizeUpdate()
@@ -866,6 +875,7 @@ function ReaderView:onSetViewMode(new_mode)
         self.view_mode = new_mode
         self.ui.document:setViewMode(new_mode)
         self.ui:handleEvent(Event:new("ChangeViewMode"))
+        Notification:notify(T( _("View mode set to: %1"), optionsutil:getOptionText("SetViewMode", new_mode)))
     end
 end
 
@@ -874,10 +884,18 @@ end
 --another source (eg. coptions.lua) triggering a redraw is needed.
 function ReaderView:onPageGapUpdate(page_gap)
     self.page_gap.height = page_gap
+    Notification:notify(T(_("Page gap set to %1."), page_gap))
     return true
 end
 
 function ReaderView:onSaveSettings()
+    if self.document:isEdited() and G_reader_settings:readSetting("save_document") ~= "always" then
+        -- Either "disable" (and the current tiles will be wrong) or "prompt" (but the
+        -- prompt will happen later, too late to catch "Don't save"), so force cached
+        -- tiles to be ignored on next opening.
+        self.document:resetTileCacheValidity()
+    end
+    self.ui.doc_settings:saveSetting("tile_cache_validity_ts", self.document:getTileCacheValidity())
     self.ui.doc_settings:saveSetting("render_mode", self.render_mode)
     -- Don't etch the current rotation in stone when sticky rotation is enabled
     local locked = G_reader_settings:isTrue("lock_rotation")

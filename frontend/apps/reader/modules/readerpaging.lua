@@ -4,13 +4,15 @@ local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
-local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
+local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local bit = require("bit")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
+local Input = Device.input
 local Screen = Device.screen
 
 
@@ -31,7 +33,6 @@ local ReaderPaging = InputContainer:new{
     pan_rate = 30,  -- default 30 ops, will be adjusted in readerui
     current_page = 0,
     number_of_pages = 0,
-    last_pan_relative_y = 0,
     visible_area = nil,
     page_area = nil,
     show_overlap_enable = nil,
@@ -40,7 +41,7 @@ local ReaderPaging = InputContainer:new{
     inverse_reading_order = nil,
     page_flipping_mode = false,
     bookmark_flipping_mode = false,
-    flip_steps = {0,1,2,5,10,20,50,100}
+    flip_steps = {0,1,2,5,10,20,50,100},
 }
 
 function ReaderPaging:init()
@@ -100,6 +101,7 @@ function ReaderPaging:init()
             {"0"}, doc = "go to end", event = "GotoPercent", args = 100,
         }
     end
+    self.pan_interval = TimeVal:new{ usec = 1000000 / self.pan_rate }
     self.number_of_pages = self.ui.document.info.number_of_pages
     self.ui.menu:registerToMainMenu(self)
 end
@@ -172,7 +174,6 @@ function ReaderPaging:setupTouchZones()
         {
             id = "paging_pan",
             ges = "pan",
-            rate = self.pan_rate,
             screen_zone = {
                 ratio_x = 0, ratio_y = 0, ratio_w = 1, ratio_h = 1,
             },
@@ -199,6 +200,7 @@ function ReaderPaging:onReadSettings(config)
     end
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
+    self.is_reflowed = config:has("kopt_text_wrap") and config:readSetting("kopt_text_wrap") == 1
     if config:has("inverse_reading_order") then
         self.inverse_reading_order = config:isTrue("inverse_reading_order")
     else
@@ -256,38 +258,11 @@ function ReaderPaging:addToMainMenu(menu_items)
     menu_items.page_overlap = {
         text = _("Page overlap"),
         enabled_func = function()
-            return not self.view.page_scroll and self.zoom_mode ~= "page"
+            return not self.view.page_scroll
+                    and (self.zoom_mode ~= "page" or (self.zoom_mode == "page" and self.is_reflowed))
                     and not self.zoom_mode:find("height")
         end,
         sub_item_table = page_overlap_menu,
-    }
-    menu_items.invert_page_turn_gestures = {
-        text = _("Invert page turn taps and swipes"),
-        checked_func = function() return self.inverse_reading_order end,
-        callback = function()
-            self.ui:handleEvent(Event:new("ToggleReadingOrder"))
-        end,
-        hold_callback = function(touchmenu_instance)
-            local inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
-            UIManager:show(MultiConfirmBox:new{
-                text = inverse_reading_order and _("The default (★) for newly opened books is right-to-left (RTL) page turning.\n\nWould you like to change it?")
-                or _("The default (★) for newly opened books is left-to-right (LTR) page turning.\n\nWould you like to change it?"),
-                choice1_text_func = function()
-                    return inverse_reading_order and _("LTR") or _("LTR (★)")
-                end,
-                choice1_callback = function()
-                     G_reader_settings:makeFalse("inverse_reading_order")
-                     if touchmenu_instance then touchmenu_instance:updateItems() end
-                end,
-                choice2_text_func = function()
-                    return inverse_reading_order and _("RTL (★)") or _("RTL")
-                end,
-                choice2_callback = function()
-                    G_reader_settings:makeTrue("inverse_reading_order")
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                end,
-            })
-        end,
     }
 end
 
@@ -371,10 +346,12 @@ function ReaderPaging:enterFlippingMode()
     logger.dbg("store zoom mode", self.orig_zoom_mode)
     self.view.document.configurable.text_wrap = 0
     self.view.page_scroll = self.flipping_scroll_mode
+    Input.disable_double_tap = false
     self.ui:handleEvent(Event:new("EnterFlippingMode", self.flipping_zoom_mode))
 end
 
 function ReaderPaging:exitFlippingMode()
+    Input.disable_double_tap = true
     self.view.document.configurable.text_wrap = self.orig_reflow_mode
     self.view.page_scroll = self.orig_scroll_mode
     self.flipping_zoom_mode = self.view.zoom_mode
@@ -419,12 +396,50 @@ function ReaderPaging:bookmarkFlipping(flipping_page, flipping_ges)
     UIManager:setDirty(self.view.dialog, "partial")
 end
 
+function ReaderPaging:onScrollSettingsUpdated(scroll_method, inertial_scroll_enabled, scroll_activation_delay)
+    self.scroll_method = scroll_method
+    self.scroll_activation_delay = TimeVal:new{ usec = scroll_activation_delay * 1000 }
+    if inertial_scroll_enabled then
+        self.ui.scrolling:setInertialScrollCallbacks(
+            function(distance) -- do_scroll_callback
+                if not self.ui.document then
+                    return false
+                end
+                UIManager.currently_scrolling = true
+                local top_page, top_position = self:getTopPage(), self:getTopPosition()
+                self:onPanningRel(distance)
+                return not (top_page == self:getTopPage() and top_position == self:getTopPosition())
+            end,
+            function() -- scroll_done_callback
+                UIManager.currently_scrolling = false
+                UIManager:setDirty(self.view.dialog, "partial")
+            end
+        )
+    else
+        self.ui.scrolling:setInertialScrollCallbacks(nil, nil)
+    end
+end
+
 function ReaderPaging:onSwipe(_, ges)
+    if self._pan_has_scrolled then
+        -- We did some panning but released after a short amount of time,
+        -- so this gesture ended up being a Swipe - and this swipe was
+        -- not handled by the other modules (so, not opening the menus).
+        -- Do as :onPanRelese() and ignore this swipe.
+        self:onPanRelease() -- no arg, so we know there we come from here
+        return true
+    else
+        self._pan_started = false
+        UIManager.currently_scrolling = false
+        self._pan_page_states_to_restore = nil
+    end
     local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
     if self.bookmark_flipping_mode then
         self:bookmarkFlipping(self.current_page, ges)
+        return true
     elseif self.page_flipping_mode and self.original_page then
         self:_gotoPage(self.original_page)
+        return true
     elseif direction == "west" then
         if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
             if self.inverse_reading_order then
@@ -432,6 +447,7 @@ function ReaderPaging:onSwipe(_, ges)
             else
                 self:onGotoViewRel(1)
             end
+            return true
         end
     elseif direction == "east" then
         if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
@@ -440,12 +456,8 @@ function ReaderPaging:onSwipe(_, ges)
             else
                 self:onGotoViewRel(-1)
             end
+            return true
         end
-    else
-        -- update footer (time & battery)
-        self.view.footer:onUpdateFooter()
-        -- trigger full refresh
-        UIManager:setDirty(nil, "full")
     end
 end
 
@@ -459,16 +471,86 @@ function ReaderPaging:onPan(_, ges)
             self.view:PanningStart(-ges.relative.x, -ges.relative.y)
         end
     elseif ges.direction == "north" or ges.direction == "south" then
-        local relative_type = "relative"
-        if self.ui.gesture and self.ui.gesture.multiswipes_enabled then
-            relative_type = "relative_delayed"
-        end
-        -- this is only used when mouse wheel is used
         if ges.mousewheel_direction and not self.view.page_scroll then
+            -- Mouse wheel generates a Pan event: in page mode, move one
+            -- page per event. Scroll mode is handled in the 'else' branch
+            -- and use the wheeled distance.
             self:onGotoViewRel(-1 * ges.mousewheel_direction)
-        else
-            self:onPanningRel(self.last_pan_relative_y - ges[relative_type].y)
-            self.last_pan_relative_y = ges[relative_type].y
+        elseif self.view.page_scroll then
+            if not self._pan_started then
+                self._pan_started = true
+                -- Re-init state variables
+                self._pan_has_scrolled = false
+                self._pan_prev_relative_y = 0
+                self._pan_to_scroll_later = 0
+                self._pan_real_last_time = TimeVal.zero
+                if ges.mousewheel_direction then
+                    self._pan_activation_time = false
+                else
+                    self._pan_activation_time = ges.time + self.scroll_activation_delay
+                end
+                -- We will restore the previous position if this pan
+                -- ends up being a swipe or a multiswipe
+                -- Somehow, accumulating the distances scrolled in a self._pan_dist_to_restore
+                -- so we can scroll these back may not always put us back to the original
+                -- position (possibly because of these page_states?). It's safer
+                -- to remember the original page_states and restore that. We can keep
+                -- a reference to the original table as onPanningRel() will have this
+                -- table replaced.
+                self._pan_page_states_to_restore = self.view.page_states
+            end
+            local scroll_now = false
+            if self._pan_activation_time and ges.time >= self._pan_activation_time then
+                self._pan_activation_time = false -- We can go on, no need to check again
+            end
+            if not self._pan_activation_time and ges.time - self._pan_real_last_time >= self.pan_interval then
+                scroll_now = true
+                self._pan_real_last_time = ges.time
+            end
+            local scroll_dist = 0
+            if self.scroll_method == self.ui.scrolling.SCROLL_METHOD_CLASSIC then
+                -- Scroll by the distance the finger moved since last pan event,
+                -- having the document follows the finger
+                scroll_dist = self._pan_prev_relative_y - ges.relative.y
+                self._pan_prev_relative_y = ges.relative.y
+                if not self._pan_has_scrolled then
+                    -- Avoid checking this for each pan, no need once we have scrolled
+                    if self.ui.scrolling:cancelInertialScroll() or self.ui.scrolling:cancelledByTouch() then
+                        -- If this pan or its initial touch did cancel some inertial scrolling,
+                        -- ignore activation delay to allow continuous scrolling
+                        self._pan_activation_time = false
+                        scroll_now = true
+                        self._pan_real_last_time = ges.time
+                    end
+                end
+                self.ui.scrolling:accountManualScroll(scroll_dist, ges.time)
+            elseif self.scroll_method == self.ui.scrolling.SCROLL_METHOD_TURBO then
+                -- Legacy scrolling "buggy" behaviour, that can actually be nice
+                -- Scroll by the distance from the initial finger position, this distance
+                -- controlling the speed of the scrolling)
+                if scroll_now then
+                    scroll_dist = -ges.relative.y
+                end
+                -- We don't accumulate in _pan_to_scroll_later
+            elseif self.scroll_method == self.ui.scrolling.SCROLL_METHOD_ON_RELEASE then
+                self._pan_to_scroll_later = -ges.relative.y
+                if scroll_now then
+                    self._pan_has_scrolled = true -- so we really apply it later
+                end
+                scroll_dist = 0
+                scroll_now = false
+            end
+            if scroll_now then
+                local dist = self._pan_to_scroll_later + scroll_dist
+                self._pan_to_scroll_later = 0
+                if dist ~= 0 then
+                    self._pan_has_scrolled = true
+                    UIManager.currently_scrolling = true
+                    self:onPanningRel(dist)
+                end
+            else
+                self._pan_to_scroll_later = self._pan_to_scroll_later + scroll_dist
+            end
         end
     end
     return true
@@ -482,12 +564,40 @@ function ReaderPaging:onPanRelease(_, ges)
             self.view:PanningStop()
         end
     else
-        self.last_pan_relative_y = 0
-        -- trigger full refresh to clear ghosting generated by previous fast refresh
-        UIManager:setDirty(nil, "full")
+        if self._pan_has_scrolled and self._pan_to_scroll_later ~= 0 then
+            self:onPanningRel(self._pan_to_scroll_later)
+        end
+        self._pan_started = false
+        self._pan_page_states_to_restore = nil
+        UIManager.currently_scrolling = false
+        if self._pan_has_scrolled then
+            self._pan_has_scrolled = false
+            -- Don't do any inertial scrolling if pan events come from
+            -- a mousewheel (which may have itself some inertia)
+            if (ges and ges.from_mousewheel) or not self.ui.scrolling:startInertialScroll() then
+                UIManager:setDirty(self.view.dialog, "partial")
+            end
+        end
     end
 end
 
+function ReaderPaging:onHandledAsSwipe()
+    if self._pan_started then
+        -- Restore original position as this pan we've started handling
+        -- has ended up being a multiswipe or handled as a swipe to open
+        -- top or bottom menus
+        if self._pan_has_scrolled then
+            self.view.page_states = self._pan_page_states_to_restore
+            self:_gotoPage(self.view.page_states[#self.view.page_states].page, "scrolling")
+            UIManager:setDirty(self.view.dialog, "ui")
+        end
+        self._pan_page_states_to_restore = nil
+        self._pan_started = false
+        self._pan_has_scrolled = false
+        UIManager.currently_scrolling = false
+    end
+    return true
+end
 function ReaderPaging:onZoomModeUpdate(new_mode)
     -- we need to remember zoom mode to handle page turn event
     self.zoom_mode = new_mode
@@ -545,8 +655,18 @@ function ReaderPaging:onPanningRel(diff)
     return true
 end
 
+-- Used by ReaderBack & ReaderLink.
 function ReaderPaging:getBookLocation()
-    return self.view:getViewContext()
+    local ctx = self.view:getViewContext()
+    if ctx then
+        -- We need a copy, as we're getting references to
+        -- objects ReaderPaging/ReaderView may still modify
+        local current_location = {}
+        for i=1, #ctx do
+            current_location[i] = util.tableDeepCopy(ctx[i])
+        end
+        return current_location
+    end
 end
 
 function ReaderPaging:onRestoreBookLocation(saved_location)
@@ -934,6 +1054,8 @@ function ReaderPaging:onGotoPageRel(diff)
     new_va[x] = old_va[x] + x_pan_off
     new_va[y] = old_va[y]
 
+    local prev_page = self.current_page
+
     -- Handle cases when the view area gets out of page boundaries
     if not self.page_area:contains(new_va) then
         if not at_end(x) then
@@ -948,6 +1070,12 @@ function ReaderPaging:onGotoPageRel(diff)
                 end
             end
         end
+    end
+
+    if self.current_page == prev_page then
+        -- Page number haven't changed when panning inside a page,
+        -- but time may: keep the footer updated
+        self.view.footer:onUpdateFooter(self.view.footer_visible)
     end
 
     -- signal panning update
@@ -990,7 +1118,7 @@ function ReaderPaging:_gotoPage(number, orig_mode)
     if number == self.current_page or not number then
         -- update footer even if we stay on the same page (like when
         -- viewing the bottom part of a page from a top part view)
-        self.view.footer:onUpdateFooter()
+        self.view.footer:onUpdateFooter(self.view.footer_visible)
         return true
     end
     if number > self.number_of_pages then

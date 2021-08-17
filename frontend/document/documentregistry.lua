@@ -191,6 +191,7 @@ function DocumentRegistry:mimeToExt(mimetype)
     return self.mimetype_ext[mimetype]
 end
 
+--- Returns a new Document instance on success
 function DocumentRegistry:openDocument(file, provider)
     -- force a GC, so that any previous document used memory can be reused
     -- immediately by this new document without having to wait for the
@@ -213,12 +214,15 @@ function DocumentRegistry:openDocument(file, provider)
         end
     else
         self.registry[file].refs = self.registry[file].refs + 1
+        logger.dbg("DocumentRegistry: Increased refcount to", self.registry[file].refs, "for", file)
     end
     if self.registry[file] then
         return self.registry[file].doc
     end
 end
 
+--- Does *NOT* finalize a Document instance, call its :close() instead if that's what you're looking for!
+--- (i.e., nothing but Document:close should call this!)
 function DocumentRegistry:closeDocument(file)
     if self.registry[file] then
         self.registry[file].refs = self.registry[file].refs - 1
@@ -229,7 +233,16 @@ function DocumentRegistry:closeDocument(file)
             return self.registry[file].refs
         end
     else
-        error("Try to close unregistered file.")
+        error("Tried to close an unregistered file.")
+    end
+end
+
+--- Queries the current refcount for a given file
+function DocumentRegistry:getReferenceCount(file)
+    if self.registry[file] then
+        return self.registry[file].refs
+    else
+        return nil
     end
 end
 

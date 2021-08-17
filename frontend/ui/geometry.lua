@@ -142,8 +142,10 @@ Works for rectangles, dimensions and points
 @treturn Geom
 ]]
 function Geom:combine(rect_b)
+    -- We'll want to return a *new* object, so, start with a copy of self
     local combined = self:copy()
     if not rect_b or rect_b:area() == 0 then return combined end
+
     if combined.x > rect_b.x then
         combined.x = rect_b.x
     end
@@ -171,8 +173,9 @@ Returns a new rectangle for the part that we and a given rectangle share
 ]]--
 --- @todo what happens if there is no rectangle shared? currently behaviour is undefined.
 function Geom:intersect(rect_b)
-    -- make a copy of self
     local intersected = self:copy()
+    if not rect_b or rect_b:area() == 0 then return intersected end
+
     if self.x < rect_b.x then
         intersected.x = rect_b.x
     end
@@ -198,6 +201,8 @@ Returns true if self does not share any area with rect_b
 @tparam Geom rect_b
 ]]
 function Geom:notIntersectWith(rect_b)
+    if not rect_b or rect_b:area() == 0 then return true end
+
     if (self.x >= (rect_b.x + rect_b.w))
     or (self.y >= (rect_b.y + rect_b.h))
     or (rect_b.x >= (self.x + self.w))
@@ -228,17 +233,19 @@ function Geom:setSizeTo(rect_b)
 end
 
 --[[--
-Checks whether rect_b is within current rectangle
+Checks whether geom is within current rectangle
 
 Works for dimensions, too. For points, it is basically an equality check.
 
-@tparam Geom rect_b
+@tparam Geom geom
 ]]
-function Geom:contains(rect_b)
-    if self.x <= rect_b.x
-    and self.y <= rect_b.y
-    and self.x + self.w >= rect_b.x + rect_b.w
-    and self.y + self.h >= rect_b.y + rect_b.h
+function Geom:contains(geom)
+    if not geom then return false end
+
+    if self.x <= geom.x
+    and self.y <= geom.y
+    and self.x + self.w >= geom.x + geom.w
+    and self.y + self.h >= geom.y + geom.h
     then
         return true
     end

@@ -54,7 +54,11 @@ local PocketBook = Generic:new{
         keymap = { [scan] = event },
     }]]
     -- Runtime state: whether raw input is actually used
+    --- @fixme: Never actually set anywhere?
     is_using_raw_input = nil,
+
+    -- Will be set appropriately at init
+    isB288SoC = no,
 
     -- Private per-model kludges
     _fb_init = function() end,
@@ -108,11 +112,14 @@ function PocketBook:init()
             fb.forced_rotation = self.usingForcedRotation()
             -- Tweak combination of alwaysPortrait/hwRot/hwInvert flags depending on probed HW and wf settings.
             if fb:isB288() then
-                logger.dbg("mxcfb: Disabling hwinvert on B288 chipset")
-                self.canHWInvert = no
-                -- GL16 glitches with hwrot
-                if fb.wf_level == 3 then
-                    logger.dbg("mxcfb: Disabling hwrot on fast waveforms (B288 glitch)")
+                self.isB288SoC = yes
+
+                -- Allow bypassing the bans for debugging purposes...
+                if G_reader_settings:nilOrFalse("pb_ignore_b288_quirks") then
+                    logger.dbg("mxcfb: Disabling hwinvert on B288 chipset")
+                    self.canHWInvert = no
+                    -- GL16 glitches with hwrot. And apparently with more stuff on newer FW (#7663)
+                    logger.dbg("mxcfb: Disabling hwrot on B288 chipset")
                     fb.forced_rotation = nil
                 end
             end
@@ -481,6 +488,7 @@ local PocketBook626 = PocketBook:new{
 local PocketBook627 = PocketBook:new{
     model = "PBLux4",
     display_dpi = 212,
+    isAlwaysPortrait = yes,
 }
 
 -- PocketBook Touch Lux 5 (628)
@@ -569,6 +577,16 @@ local PocketBook740_2 = PocketBook:new{
     }
 }
 
+-- PocketBook InkPad Color (741)
+local PocketBook741 = PocketBook:new{
+    model = "PBInkPadColor",
+    display_dpi = 300,
+    hasColorScreen = yes,
+    canUseCBB = no, -- 24bpp
+    isAlwaysPortrait = yes,
+    usingForcedRotation = landscape_ccw,
+}
+
 -- PocketBook Color Lux (801)
 local PocketBookColorLux = PocketBook:new{
     model = "PBColorLux",
@@ -655,6 +673,8 @@ elseif codename == "PB740" then
     return PocketBook740
 elseif codename == "PB740-2" then
     return PocketBook740_2
+elseif codename == "PB741" then
+    return PocketBook741
 elseif codename == "PocketBook 840" then
     return PocketBook840
 elseif codename == "PB1040" then

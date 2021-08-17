@@ -21,8 +21,7 @@ local tableOfNumbersToTableOfStrings = function(numbers)
 end
 
 local KoptOptions = {
-    prefix = 'kopt',
-    needs_redraw_on_change = true,
+    prefix = "kopt",
     {
         icon = "appbar.rotation",
         options = {

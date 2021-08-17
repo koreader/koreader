@@ -75,7 +75,7 @@ function DictQuickLookup:canSearch()
         end
     else
         -- This is to prevent an ineffective button when we're launched from the Reader's menu.
-        if self.ui.highlight.selected_text then
+        if self.highlight then
             return true
         end
     end
@@ -402,7 +402,8 @@ function DictQuickLookup:init()
                                                             self.ui:onClose()
                                                         end
 
-                                                        self.ui:showReader(epub_path)
+                                                        local ReaderUI = require("apps/reader/readerui")
+                                                        ReaderUI:showReader(epub_path)
                                                     end)
                                                 end,
                                             })
@@ -909,7 +910,6 @@ function DictQuickLookup:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "flashui", nil
     end)
-    return true
 end
 
 function DictQuickLookup:onShow()

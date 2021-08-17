@@ -118,6 +118,20 @@ function TextBoxWidget:init()
     end
 
     self.line_height_px = Math.round( (1 + self.line_height) * self.face.size )
+    -- Get accurate initial baseline and possible height overflow (so our bb
+    -- is tall enough to draw glyphs with descender larger than line height)
+    local face_height, face_ascender = self.face.ftface:getHeightAndAscender()
+    local line_heights_diff = math.floor(self.line_height_px - face_height)
+    if line_heights_diff >= 0 then
+        -- Glyphs will fit in our line_height_px: adjust baseline.
+        self.line_glyph_baseline = math.floor(face_ascender + line_heights_diff/2)
+        self.line_glyph_extra_height = 0
+    else
+        -- Glyphs may be taller than our line_height_px
+        self.line_glyph_baseline = math.floor(face_ascender)
+        self.line_glyph_extra_height = -line_heights_diff
+    end
+
     self.cursor_line = LineWidget:new{
         dimen = Geom:new{
             w = Size.line.medium,
@@ -753,13 +767,13 @@ end
 
 ---- Lays out text.
 function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
-    local font_height = self.face.size
     if start_row_idx < 1 then start_row_idx = 1 end
     if end_row_idx > #self.vertical_string_list then end_row_idx = #self.vertical_string_list end
     local row_count = end_row_idx == 0 and 1 or end_row_idx - start_row_idx + 1
     -- We need a bb with the full height (even if we display only a few lines, we
     -- may have to draw an image bigger than these lines)
     local h = self.height or self.line_height_px * row_count
+    h = h + self.line_glyph_extra_height
     if self._bb then self._bb:free() end
     local bbtype = nil
     if self.line_num_to_image and self.line_num_to_image[start_row_idx] then
@@ -767,8 +781,8 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     end
     self._bb = Blitbuffer.new(self.width, h, bbtype)
     self._bb:fill(Blitbuffer.COLOR_WHITE)
-    local y = font_height
 
+    local y = self.line_glyph_baseline
     if self.use_xtext then
         for i = start_row_idx, end_row_idx do
             local line = self.vertical_string_list[i]
@@ -1056,9 +1070,12 @@ function TextBoxWidget:getFontSizeToFitHeight(height_px, nb_lines, line_height_e
     end
     -- We do the revert of what's done in :init():
     --   self.line_height_px = Math.round( (1 + self.line_height) * self.face.size )
-    local font_size = height_px / nb_lines / (1 + line_height_em)
-    font_size = font_size * 1000000 / Screen:scaleBySize(1000000) -- invert scaleBySize
-    return math.floor(font_size)
+    local face_size = height_px / nb_lines / (1 + line_height_em)
+    local font_size = math.floor(face_size * 1000000 / Screen:scaleBySize(1000000)) -- invert scaleBySize
+    if Screen:scaleBySize(font_size) > face_size then -- be really sure we won't get it larger
+        font_size = font_size - 1
+    end
+    return font_size
 end
 
 function TextBoxWidget:getCharPos()
@@ -1067,11 +1084,7 @@ function TextBoxWidget:getCharPos()
 end
 
 function TextBoxWidget:getSize()
-    if self.width and self.height then
-        return Geom:new{ w = self.width, h = self.height}
-    else
-        return Geom:new{ w = self.width, h = self._bb:getHeight()}
-    end
+    return Geom:new{ w = self.width, h = self._bb:getHeight()}
 end
 
 function TextBoxWidget:paintTo(bb, x, y)
@@ -1711,13 +1724,11 @@ function TextBoxWidget:moveCursorRight()
 end
 
 function TextBoxWidget:moveCursorUp()
-    if self.vertical_string_list and #self.vertical_string_list < 2 then return end
     local x, y = self:_getXYForCharPos()
     self:moveCursorToXY(x, y - self.line_height_px)
 end
 
 function TextBoxWidget:moveCursorDown()
-    if self.vertical_string_list and #self.vertical_string_list < 2 then return end
     local x, y = self:_getXYForCharPos()
     self:moveCursorToXY(x, y + self.line_height_px)
 end

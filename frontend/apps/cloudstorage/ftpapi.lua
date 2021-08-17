@@ -39,8 +39,10 @@ function FtpApi:listFolder(address_path, folder_path)
     local file_name
     local tbl = {}
     local sink = ltn12.sink.table(tbl)
-    local ls_ftp = self:ftpGet(address_path, "nlst", sink)
-    if ls_ftp == nil then return false end
+    local ls_ftp, e = self:ftpGet(address_path, "nlst", sink)
+    if ls_ftp == nil then
+        return false, e
+    end
     if folder_path == "/" then
         folder_path = ""
     end

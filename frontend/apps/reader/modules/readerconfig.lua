@@ -130,6 +130,7 @@ function ReaderConfig:onShowConfigMenu()
     -- show last used panel when opening config dialog
     self.config_dialog:onShowConfigPanel(self.last_panel_index)
     UIManager:show(self.config_dialog)
+    self.ui:handleEvent(Event:new("HandledAsSwipe")) -- cancel any pan scroll made
 
     return true
 end

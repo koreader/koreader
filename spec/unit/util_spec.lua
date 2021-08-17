@@ -482,6 +482,41 @@ describe("util module", function()
         end)
     end)
 
+    describe("secondsToClockDuration()", function()
+        it("should change type based on format", function()
+            assert.is_equal("10h01m30s",
+                            util.secondsToClockDuration("modern", 36090, false, true))
+            assert.is_equal("10:01:30",
+                            util.secondsToClockDuration("classic", 36090, false))
+            assert.is_equal("10:01:30",
+                            util.secondsToClockDuration("unknown", 36090, false))
+            assert.is_equal("10:01:30",
+                            util.secondsToClockDuration(nil, 36090, false))
+        end)
+        it("should pass along withoutSeconds", function()
+            assert.is_equal("10h01m30s",
+                            util.secondsToClockDuration("modern", 36090, false, true))
+            assert.is_equal("10h02",
+                            util.secondsToClockDuration("modern", 36090, true, true))
+            assert.is_equal("10:01:30",
+                            util.secondsToClockDuration("classic", 36090, false))
+            assert.is_equal("10:02",
+                            util.secondsToClockDuration("classic", 36090, true))
+        end)
+        it("should pass along hmsFormat for modern format", function()
+            assert.is_equal("10h01'30''",
+                            util.secondsToClockDuration("modern", 36090))
+            assert.is_equal("10h01m30s",
+                            util.secondsToClockDuration("modern", 36090, false, true))
+            assert.is_equal("10h02",
+                            util.secondsToClockDuration("modern", 36090, true, false))
+            assert.is_equal("10:01:30",
+                            util.secondsToClockDuration("classic", 36090, false, true))
+            assert.is_equal("10:01:30",
+                            util.secondsToClockDuration("classic", 36090, false, false))
+        end)
+    end) -- end my changes
+
     describe("urlEncode() and urlDecode", function()
         it("should encode string", function()
             assert.is_equal("Secret_Password123", util.urlEncode("Secret_Password123"))

@@ -8,6 +8,7 @@ local BottomContainer = require("ui/widget/container/bottomcontainer")
 local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
+local Event = require("ui/event")
 local FFIUtil = require("ffi/util")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
@@ -27,13 +28,16 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local UnderlineContainer = require("ui/widget/container/underlinecontainer")
+local Utf8Proc = require("ffi/utf8proc")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local Input = Device.input
 local Screen = Device.screen
+local T = FFIUtil.template
 
 local ItemShortCutIcon = WidgetContainer:new{
     dimen = Geom:new{ w = Screen:scaleBySize(22), h = Screen:scaleBySize(22) },
@@ -151,6 +155,8 @@ local MenuItem = InputContainer:new{
     multilines_show_more_text = false,
     -- Align text & mandatory baselines (only when single_line=true)
     align_baselines = false,
+    -- Show a line of dots (also called tab or dot leaders) between text and mandatory
+    with_dots = false,
 }
 
 function MenuItem:init()
@@ -265,6 +271,9 @@ function MenuItem:init()
         text = self.bidi_wrap_func(text)
     end
 
+    local dots_widget
+    local dots_left_padding = Size.padding.small
+    local dots_right_padding = Size.padding.small
     if self.single_line then  -- items only in single line
         -- No font size change: text will be truncated if it overflows
         item_name = TextWidget:new{
@@ -279,21 +288,54 @@ function MenuItem:init()
             -- feeling (which might make it no more truncated, but well...)
             local text_max_width_if_ellipsis = available_width + text_mandatory_padding - text_ellipsis_mandatory_padding
             item_name:setMaxWidth(text_max_width_if_ellipsis)
+        else
+            if self.with_dots then
+                local dots_width = available_width + text_mandatory_padding - w - dots_left_padding - dots_right_padding
+                if dots_width > 0 then
+                    local dots_text, dots_min_width = self:getDotsText(self.info_face)
+                    -- Don't show any dots if there would be less than 3
+                    if dots_width >= dots_min_width then
+                        dots_widget = TextWidget:new{
+                            text = dots_text,
+                            face = self.info_face, -- same as mandatory widget, to keep their baseline adjusted
+                            max_width = dots_width,
+                            truncate_with_ellipsis = false,
+                        }
+                    end
+                end
+            end
         end
         if self.align_baselines then -- Align baselines of text and mandatory
+            -- The container widgets would additionally center these widgets,
+            -- so make sure they all get a height=self.dimen.h so they don't
+            -- risk being shifted later and becoming misaligned
             local name_baseline = item_name:getBaseline()
-            local mandatory_baseline = mandatory_widget:getBaseline()
-            local baselines_diff = Math.round(name_baseline - mandatory_baseline)
+            local mdtr_baseline = mandatory_widget:getBaseline()
+            local name_height = item_name:getSize().h
+            local mdtr_height = mandatory_widget:getSize().h
+            -- Make all the TextWidgets be self.dimen.h
+            item_name.forced_height = self.dimen.h
+            mandatory_widget.forced_height = self.dimen.h
+            if dots_widget then
+                dots_widget.forced_height = self.dimen.h
+            end
+            -- And adjust their baselines for proper centering and alignment
+            -- (We made sure the font sizes wouldn't exceed self.dimen.h, so we
+            -- get only non-negative pad_top here, and we're moving them down.)
+            local name_missing_pad_top = math.floor( (self.dimen.h - name_height) / 2)
+            local mdtr_missing_pad_top = math.floor( (self.dimen.h - mdtr_height) / 2)
+            name_baseline = name_baseline + name_missing_pad_top
+            mdtr_baseline = mdtr_baseline + mdtr_missing_pad_top
+            local baselines_diff = Math.round(name_baseline - mdtr_baseline)
             if baselines_diff > 0 then
-                mandatory_widget = VerticalGroup:new{
-                    VerticalSpan:new{width = baselines_diff},
-                    mandatory_widget,
-                }
-            elseif baselines_diff < 0 then
-                item_name = VerticalGroup:new{
-                    VerticalSpan:new{width = -baselines_diff},
-                    item_name,
-                }
+                mdtr_baseline = mdtr_baseline + baselines_diff
+            else
+                name_baseline = name_baseline - baselines_diff
+            end
+            item_name.forced_baseline = name_baseline
+            mandatory_widget.forced_baseline = mdtr_baseline
+            if dots_widget then
+                dots_widget.forced_baseline = mdtr_baseline
             end
         end
 
@@ -381,6 +423,13 @@ function MenuItem:init()
         }
     }
 
+    if dots_widget then
+        mandatory_widget = HorizontalGroup:new{
+            dots_widget,
+            HorizontalSpan:new{ width = dots_right_padding },
+            mandatory_widget,
+        }
+    end
     local mandatory_container = RightContainer:new{
         dimen = Geom:new{w = self.content_width, h = self.dimen.h},
         mandatory_widget,
@@ -427,6 +476,34 @@ function MenuItem:init()
     }
 end
 
+local _dots_cached_info
+
+function MenuItem:getDotsText(face)
+    local screen_w = Screen:getWidth()
+    if not _dots_cached_info or _dots_cached_info.screen_width ~= screen_w
+                    or _dots_cached_info.face ~= face then
+        local unit = "."
+        local tmp = TextWidget:new{
+            text = unit,
+            face = face,
+        }
+        local unit_w = tmp:getSize().w
+        tmp:free()
+        -- (We assume/expect no kerning will happen between consecutive units)
+        local nb_units = math.ceil(screen_w / unit_w)
+        local min_width = unit_w * 3 -- have it not shown if smaller than this
+        local text = unit:rep(nb_units)
+        _dots_cached_info = {
+            text = text,
+            min_width = min_width,
+            screen_width = screen_w,
+            face = face,
+        }
+    end
+    return _dots_cached_info.text, _dots_cached_info.min_width
+
+end
+
 function MenuItem:onFocus(initial_focus)
     if Device:isTouchDevice() then
         -- Devices which are Keys capable will get this onFocus called by
@@ -463,6 +540,9 @@ function MenuItem:getGesPosition(ges)
 end
 
 function MenuItem:onTapSelect(arg, ges)
+    -- Abort if the menu hasn't been painted yet.
+    if not self[1].dimen then return end
+
     local pos = self:getGesPosition(ges)
     if G_reader_settings:isFalse("flash_ui") then
         logger.dbg("creating coroutine for menu select")
@@ -502,6 +582,8 @@ function MenuItem:onTapSelect(arg, ges)
 end
 
 function MenuItem:onHoldSelect(arg, ges)
+    if not self[1].dimen then return end
+
     local pos = self:getGesPosition(ges)
     if G_reader_settings:isFalse("flash_ui") then
         self.menu:onMenuHold(self.table, pos)
@@ -596,8 +678,12 @@ function Menu:_recalculateDimen()
         top_height = self.menu_title_group:getSize().h + self.header_padding
     end
     height_dim = self.inner_dimen.h - bottom_height - top_height
-    self.item_dimen.h = math.floor(height_dim / self.perpage)
-    self.span_width = math.floor((height_dim - (self.perpage * (self.item_dimen.h ))) / 2 - 1)
+    local item_height = math.floor(height_dim / self.perpage)
+    self.span_width = math.floor((height_dim - (self.perpage * item_height)) / 2 - 1)
+    self.item_dimen = Geom:new{
+        w = self.inner_dimen.w,
+        h = item_height,
+    }
     self.page_num = math.ceil(#self.item_table / self.perpage)
     -- fix current page if out of range
     if self.page_num > 0 and self.page > self.page_num then self.page = self.page_num end
@@ -616,11 +702,6 @@ function Menu:init()
     self.inner_dimen = Geom:new{
         w = self.dimen.w - 2 * self.border_size,
         h = self.dimen.h - 2 * self.border_size,
-    }
-
-    self.item_dimen = Geom:new{
-        w = self.inner_dimen.w,
-        h = Screen:scaleBySize(46),
     }
 
     self.page = 1
@@ -728,7 +809,7 @@ function Menu:init()
             },
             {
                 text = _("Go to page"),
-                is_enter_default = true,
+                is_enter_default = not self.goto_letter,
                 callback = function()
                     local page = tonumber(self.page_info_text.input_dialog:getInputText())
                     if page and page >= 1 and page <= self.page_num then
@@ -741,28 +822,38 @@ function Menu:init()
     }
 
     if self.goto_letter then
-        title_goto = _("Enter page number or letter")
+        title_goto = _("Enter letter or page number")
         type_goto = "string"
         hint_func = function()
-            return string.format("(1 - %s) or (a - z)", self.page_num)
+            -- @translators First group is the standard range for alphabetic searches, second group is a page number range
+            return T(_("(a - z) or (1 - %1)"), self.page_num)
         end
-        table.insert(buttons[1], {
-            text = _("Go to letter"),
-            is_enter_default = true,
-            callback = function()
-                for k, v in ipairs(self.item_table) do
-                    --- @todo Support utf8 lowercase.
-                    local filename = FFIUtil.basename(v.path):lower()
-                    local search_string = self.page_info_text.input_dialog:getInputText():lower()
+        table.insert(buttons, 1, {
+            {
+                text = _("File search"),
+                callback = function()
+                    self.page_info_text:closeInputDialog()
+                    UIManager:sendEvent(Event:new("ShowFileSearch", self.page_info_text.input_dialog:getInputText()))
+                end,
+            },
+            {
+                text = _("Go to letter"),
+                is_enter_default = true,
+                callback = function()
+                    local search_string = self.page_info_text.input_dialog:getInputText()
                     if search_string == "" then return end
-                    local i, _ = filename:find(search_string)
-                    if i == 1 and not v.is_go_up then
-                        self:onGotoPage(math.ceil(k / self.perpage))
-                        break
+                    search_string = Utf8Proc.lowercase(util.fixUtf8(search_string, "?"))
+                    for k, v in ipairs(self.item_table) do
+                        local filename = Utf8Proc.lowercase(util.fixUtf8(FFIUtil.basename(v.path), "?"))
+                        local i, _ = filename:find(search_string)
+                        if i == 1 and not v.is_go_up then
+                            self:onGotoPage(math.ceil(k / self.perpage))
+                            break
+                        end
                     end
-                end
-                self.page_info_text:closeInputDialog()
-            end,
+                    self.page_info_text:closeInputDialog()
+                end,
+            },
         })
     else
         title_goto = _("Enter page number")
@@ -803,6 +894,9 @@ function Menu:init()
         icon = "back.top",
         callback = function()
             if self.onReturn then self:onReturn() end
+        end,
+        hold_callback = function()
+            if self.onHoldReturn then self:onHoldReturn() end
         end,
         bordersize = 0,
         show_parent = self.show_parent,
@@ -1035,7 +1129,7 @@ function Menu:updateItems(select_number)
 
     local font_size = self.items_font_size or G_reader_settings:readSetting("items_font_size")
                                      or Menu.getItemFontSize(self.perpage)
-    local infont_size = self.items_mandatory_font_size or Menu.getItemMandatoryFontSize(self.perpage)
+    local infont_size = self.items_mandatory_font_size or (font_size - 4)
     local multilines_show_more_text = self.multilines_show_more_text
     if multilines_show_more_text == nil then
         multilines_show_more_text = G_reader_settings:isTrue("items_multilines_show_more_text")
@@ -1079,6 +1173,7 @@ function Menu:updateItems(select_number)
                 single_line = self.single_line,
                 multilines_show_more_text = multilines_show_more_text,
                 align_baselines = self.align_baselines,
+                with_dots = self.with_dots,
                 line_color = self.line_color,
                 items_padding = self.items_padding,
             }

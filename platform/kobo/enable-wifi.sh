@@ -23,17 +23,48 @@ if ! grep -q "sdio_wifi_pwr" "/proc/modules"; then
         fi
 
         insmod "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko"
+    else
+        # Poke the kernel via ioctl on platforms without the dedicated power module...
+        # 208 is CM_WIFI_CTRL
+        ./luajit frontend/device/kobo/ntx_io.lua 208 1
     fi
 fi
 # Moar sleep!
 usleep 250000
 # NOTE: Used to be exported in WIFI_MODULE_PATH before FW 4.23
-grep -q "${WIFI_MODULE}" "/proc/modules" || insmod "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko"
+if ! grep -q "${WIFI_MODULE}" "/proc/modules"; then
+    # Set the Wi-Fi regulatory domain properly if necessary...
+    WIFI_COUNTRY_CODE_PARM=""
+    if grep -q "^WifiRegulatoryDomain=" "/mnt/onboard/.kobo/Kobo/Kobo eReader.conf"; then
+        WIFI_COUNTRY_CODE="$(grep "^WifiRegulatoryDomain=" "/mnt/onboard/.kobo/Kobo/Kobo eReader.conf" | cut -d '=' -f2)"
+
+        case "${WIFI_MODULE}" in
+            "8821cs")
+                WIFI_COUNTRY_CODE_PARM="rtw_country_code=${WIFI_COUNTRY_CODE}"
+                ;;
+        esac
+    fi
+
+    if [ -e "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko" ]; then
+        if [ -n "${WIFI_COUNTRY_CODE_PARM}" ]; then
+            insmod "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko" "${WIFI_COUNTRY_CODE_PARM}"
+        else
+            insmod "/drivers/${PLATFORM}/wifi/${WIFI_MODULE}.ko"
+        fi
+    elif [ -e "/drivers/${PLATFORM}/${WIFI_MODULE}.ko" ]; then
+        # NOTE: Modules are unsorted on Mk. 8
+        if [ -n "${WIFI_COUNTRY_CODE_PARM}" ]; then
+            insmod "/drivers/${PLATFORM}/${WIFI_MODULE}.ko" "${WIFI_COUNTRY_CODE_PARM}"
+        else
+            insmod "/drivers/${PLATFORM}/${WIFI_MODULE}.ko"
+        fi
+    fi
+fi
 # Race-y as hell, don't try to optimize this!
 sleep 1
 
 ifconfig "${INTERFACE}" up
-[ "${WIFI_MODULE}" != "8189fs" ] && [ "${WIFI_MODULE}" != "8192es" ] && wlarm_le -i "${INTERFACE}" up
+[ "${WIFI_MODULE}" = "dhd" ] && wlarm_le -i "${INTERFACE}" up
 
 pkill -0 wpa_supplicant ||
     env -u LD_LIBRARY_PATH \

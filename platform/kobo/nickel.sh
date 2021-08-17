@@ -5,13 +5,17 @@ PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/lib:"
 # Meaning we've already got most of the necessary env from nickel itself via both our launcher (fmon/KFMon) and our own startup script.
 # NOTE: LD_LIBRARY_PATH is the only late export from rcS we don't siphon in koreader.sh, for obvious reasons ;).
 export LD_LIBRARY_PATH="/usr/local/Kobo"
+# Ditto, 4.28+
+export QT_GSTREAMER_PLAYBIN_AUDIOSINK=alsasink
+export QT_GSTREAMER_PLAYBIN_AUDIOSINK_DEVICE_PARAMETER=bluealsa:DEV=00:00:00:00:00:00
 
 # Reset PWD, and clear up our own custom stuff from the env while we're there, otherwise, USBMS may become very wonky on newer FW...
 # shellcheck disable=SC2164
 cd /
 unset OLDPWD
 unset LC_ALL TESSDATA_PREFIX STARDICT_DATA_DIR EXT_FONT_DIR
-unset KOREADER_DIR KO_DONT_GRAB_INPUT
+unset KO_DONT_GRAB_INPUT
+unset FBINK_FORCE_ROTA
 
 # Ensures fmon will restart. Note that we don't have to worry about reaping this, nickel kills on-animator.sh on start.
 (
@@ -22,8 +26,7 @@ unset KOREADER_DIR KO_DONT_GRAB_INPUT
 ) &
 
 # Make sure we kill the Wi-Fi first, because nickel apparently doesn't like it if it's up... (cf. #1520)
-# NOTE: That check is possibly wrong on PLATFORM == freescale (because I don't know if the sdio_wifi_pwr module exists there), but we don't terribly care about that.
-if grep -q "sdio_wifi_pwr" "/proc/modules"; then
+if grep -q "${WIFI_MODULE}" "/proc/modules"; then
     killall -q -TERM restore-wifi-async.sh enable-wifi.sh obtain-ip.sh
     cp -a "/etc/resolv.conf" "/tmp/resolv.ko"
     old_hash="$(md5sum "/etc/resolv.conf" | cut -f1 -d' ')"
@@ -54,7 +57,7 @@ if grep -q "sdio_wifi_pwr" "/proc/modules"; then
         rm -f "/tmp/resolv.ko"
     fi
     wpa_cli terminate
-    [ "${WIFI_MODULE}" != "8189fs" ] && [ "${WIFI_MODULE}" != "8192es" ] && wlarm_le -i "${INTERFACE}" down
+    [ "${WIFI_MODULE}" = "dhd" ] && wlarm_le -i "${INTERFACE}" down
     ifconfig "${INTERFACE}" down
     # NOTE: Kobo's busybox build is weird. rmmod appears to be modprobe in disguise, defaulting to the -r flag...
     #       But since there's currently no modules.dep file being shipped, nor do they include the depmod applet,
@@ -63,16 +66,25 @@ if grep -q "sdio_wifi_pwr" "/proc/modules"; then
     usleep 250000
     rmmod "${WIFI_MODULE}"
 
-    if [ -n "${CPUFREQ_DVFS}" ]; then
-        echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
-        # Leave Nickel in its usual state, don't try to use conservative
-        echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-        cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+    if grep -q "sdio_wifi_pwr" "/proc/modules"; then
+        if [ -n "${CPUFREQ_DVFS}" ]; then
+            echo "0" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
+            # Leave Nickel in its usual state, don't try to use conservative
+            echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+            cat "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"
+        fi
+        usleep 250000
+        rmmod sdio_wifi_pwr
     fi
-    usleep 250000
-    rmmod sdio_wifi_pwr
+
+    # Poke the kernel via ioctl on platforms without the dedicated power module...
+    if [ ! -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
+        usleep 250000
+        "${KOREADER_DIR}"/luajit "${KOREADER_DIR}"/frontend/device/kobo/ntx_io.lua 208 0
+    fi
 fi
 
+unset KOREADER_DIR
 unset CPUFREQ_DVFS CPUFREQ_CONSERVATIVE
 
 # Recreate Nickel's FIFO ourselves, like rcS does, because udev *will* write to it!

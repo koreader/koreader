@@ -91,21 +91,30 @@ function Document:unlock(password)
 end
 
 -- this might be overridden by a document implementation
+-- (in which case, do make sure it calls this one, too, to avoid refcounting mismatches in DocumentRegistry!)
+-- Returns true if the Document instance needs to be destroyed (no more live refs),
+-- false if not (i.e., we've just decreased the refcount, so, leave internal engine data alone).
+-- nil if all hell broke loose.
 function Document:close()
     local DocumentRegistry = require("document/documentregistry")
     if self.is_open then
-        if DocumentRegistry:closeDocument(self.file) == 0 then
+        local refcount = DocumentRegistry:closeDocument(self.file)
+        if refcount == 0 then
             self.is_open = false
             self._document:close()
             self._document = nil
 
             -- NOTE: DocumentRegistry:openDocument will force a GC sweep the next time we open a Document.
             --       MµPDF will also do a bit of spring cleaning of its internal cache when opening a *different* document.
+            return true
         else
-            logger.warn("Tried to close a document with *multiple* remaining hot references")
+            -- This can happen in perfectly sane contexts (i.e., Reader -> History -> View fullsize cover on the *same* book).
+            logger.dbg("Document: Decreased refcount to", refcount, "for", self.file)
+            return false
         end
     else
-        logger.warn("Tried to close an already closed document")
+        logger.warn("Tried to close an already closed document:", self.file)
+        return nil
     end
 end
 
@@ -363,6 +372,18 @@ function Document:postRenderPage()
     return nil
 end
 
+function Document:getTileCacheValidity()
+    return self.tile_cache_validity_ts
+end
+
+function Document:setTileCacheValidity(ts)
+    self.tile_cache_validity_ts = ts
+end
+
+function Document:resetTileCacheValidity()
+    self.tile_cache_validity_ts = os.time()
+end
+
 function Document:getFullPageHash(pageno, zoom, rotation, gamma, render_mode, color)
     return "renderpg|"..self.file.."|"..self.mod_time.."|"..pageno.."|"
                     ..zoom.."|"..rotation.."|"..gamma.."|"..render_mode..(color and "|color" or "")
@@ -377,7 +398,16 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
         hash_excerpt = hash.."|"..tostring(rect)
         tile = DocCache:check(hash_excerpt)
     end
-    if tile then return tile end
+    if tile then
+        if self.tile_cache_validity_ts then
+            if tile.created_ts and tile.created_ts >= self.tile_cache_validity_ts then
+                return tile
+            end
+            logger.dbg("discarding stale cached tile")
+        else
+            return tile
+        end
+    end
 
     self:preRenderPage()
 
@@ -402,6 +432,7 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     -- prepare cache item with contained blitbuffer
     tile = TileCacheItem:new{
         persistent = true,
+        created_ts = os.time(),
         excerpt = size,
         pageno = pageno,
         bb = Blitbuffer.new(size.w, size.h, self.render_color and self.color_bb_type or nil)

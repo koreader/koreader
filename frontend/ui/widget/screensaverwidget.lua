@@ -53,8 +53,7 @@ function ScreenSaverWidget:update()
     self.dithered = true
     self[1] = self.main_frame
     UIManager:setDirty(self, function()
-        local update_region = self.main_frame.dimen
-        return "full", update_region
+        return "full", self.main_frame.dimen
     end)
 end
 
@@ -73,9 +72,7 @@ function ScreenSaverWidget:onTap(_, ges)
 end
 
 function ScreenSaverWidget:onClose()
-    UIManager:close(self, "full")
-    -- Will come after the Resume event (how much later depends on screensaver_delay).
-    UIManager:broadcastEvent(Event:new("OutOfScreenSaver"))
+    UIManager:close(self)
     return true
 end
 
@@ -88,7 +85,10 @@ function ScreenSaverWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "full", self.main_frame.dimen
     end)
-    return true
+
+    -- Will come after the Resume event, iff screensaver_delay is set.
+    -- Comes *before* it otherwise.
+    UIManager:broadcastEvent(Event:new("OutOfScreenSaver"))
 end
 
 return ScreenSaverWidget

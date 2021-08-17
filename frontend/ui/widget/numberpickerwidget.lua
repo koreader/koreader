@@ -124,6 +124,9 @@ function NumberPickerWidget:init()
     local callback_input = nil
     if self.value_table == nil then
         callback_input = function()
+            if self.date_month and self.date_year then
+                self.value_max = self:getDaysInMonth(self.date_month:getValue(), self.date_year:getValue())
+            end
             input_dialog = InputDialog:new{
                 title = _("Enter number"),
                 input_hint = T("%1 (%2 - %3)", self.formatted_value, self.value_min, self.value_max),

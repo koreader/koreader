@@ -55,7 +55,7 @@ local Device = Generic:new{
     model = "SDL",
     isSDL = yes,
     home_dir = os.getenv("XDG_DOCUMENTS_DIR") or os.getenv("HOME"),
-    hasBattery = SDL.getPowerInfo(),
+    hasBattery = SDL.getPowerInfo,
     hasKeyboard = yes,
     hasKeys = yes,
     hasDPad = yes,
@@ -196,12 +196,7 @@ function Device:init()
                 local fake_ges = {
                     ges = "pan",
                     distance = 200,
-                    distance_delayed = 200,
                     relative = {
-                        x = 50*scrolled_x,
-                        y = 100*scrolled_y,
-                    },
-                    relative_delayed = {
                         x = 50*scrolled_x,
                         y = 100*scrolled_y,
                     },
@@ -212,11 +207,10 @@ function Device:init()
                 local fake_ges_release = {
                     ges = "pan_release",
                     distance = fake_ges.distance,
-                    distance_delayed = fake_ges.distance_delayed,
                     relative = fake_ges.relative,
-                    relative_delayed = fake_ges.relative_delayed,
                     pos = pos,
                     time = ev.time,
+                    from_mousewheel = true,
                 }
                 local fake_pan_ev = Event:new("Pan", nil, fake_ges)
                 local fake_release_ev = Event:new("Gesture", fake_ges_release)
@@ -270,7 +264,7 @@ function Device:init()
                 self.window.left = ev.value.data1
                 self.window.top = ev.value.data2
             elseif ev.code == SDL_TEXTINPUT then
-                UIManager:broadcastEvent(Event:new("TextInput", ev.value))
+                UIManager:sendEvent(Event:new("TextInput", ev.value))
             end
         end,
         hasClipboardText = function()

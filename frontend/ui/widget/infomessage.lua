@@ -206,16 +206,15 @@ function InfoMessage:onCloseWidget()
     end
     if self.invisible then
         -- Still invisible, no setDirty needed
-        return true
+        return
     end
     if self.no_refresh_on_close then
-        return true
+        return
     end
 
     UIManager:setDirty(nil, function()
         return "ui", self[1][1].dimen
     end)
-    return true
 end
 
 function InfoMessage:onShow()

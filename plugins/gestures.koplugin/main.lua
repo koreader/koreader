@@ -613,35 +613,6 @@ Default value: %1]]), GestureDetector.HOLD_INTERVAL/1000),
                 end,
             },
             {
-                text = _("Pan delay interval"),
-                keep_menu_open = true,
-                callback = function()
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local GestureDetector = require("device/gesturedetector")
-                    local items = SpinWidget:new{
-                        title_text = _("Pan delay interval"),
-                        info_text = T(_([[
-This is used where necessary to reduce potential activation of panning when swiping is intended (e.g., for the menu or for multiswipe).
-
-The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).
-Default value: %1]]), GestureDetector.PAN_DELAYED_INTERVAL/1000),
-                        width = math.floor(Screen:getWidth() * 0.75),
-                        value = GestureDetector:getInterval("ges_pan_delayed_interval")/1000,
-                        value_min = 100,
-                        value_max = 2000,
-                        value_step = 100,
-                        value_hold_step = 500,
-                        ok_text = _("Set interval"),
-                        default_value = GestureDetector.PAN_DELAYED_INTERVAL/1000,
-                        callback = function(spin)
-                            G_reader_settings:saveSetting("ges_pan_delayed_interval", spin.value*1000)
-                            GestureDetector:setNewInterval("ges_pan_delayed_interval", spin.value*1000)
-                        end
-                    }
-                    UIManager:show(items)
-                end,
-            },
-            {
                 text = _("Swipe interval"),
                 keep_menu_open = true,
                 callback = function()
@@ -800,6 +771,7 @@ function Gestures:setupGesture(ges)
         ratio_w = DTAP_ZONE_BOTTOM_RIGHT.w,
         ratio_h = DTAP_ZONE_BOTTOM_RIGHT.h,
     }
+    -- NOTE: The defaults are effectively mapped to DTAP_ZONE_BACKWARD & DTAP_ZONE_FORWARD
     local zone_left = {
         ratio_x = DDOUBLE_TAP_ZONE_PREV_CHAPTER.x,
         ratio_y = DDOUBLE_TAP_ZONE_PREV_CHAPTER.y,
@@ -814,6 +786,7 @@ function Gestures:setupGesture(ges)
     }
 
     local overrides_tap_corner
+    local overrides_double_tap_corner
     local overrides_hold_corner
     local overrides_vertical_edge, overrides_horizontal_edge
     local overrides_pan, overrides_pan_release
@@ -836,6 +809,10 @@ function Gestures:setupGesture(ges)
             "readermenu_tap",
             "tap_forward",
             "tap_backward",
+        }
+        overrides_double_tap_corner = {
+            "double_tap_left_side",
+            "double_tap_right_side",
         }
         overrides_hold_corner = {
             -- As hold corners are "ignored" by default, and we have
@@ -904,15 +881,19 @@ function Gestures:setupGesture(ges)
     elseif ges == "double_tap_top_left_corner" then
         ges_type = "double_tap"
         zone = zone_top_left_corner
+        overrides = overrides_double_tap_corner
     elseif ges == "double_tap_top_right_corner" then
         ges_type = "double_tap"
         zone = zone_top_right_corner
+        overrides = overrides_double_tap_corner
     elseif ges == "double_tap_bottom_right_corner" then
         ges_type = "double_tap"
         zone = zone_bottom_right_corner
+        overrides = overrides_double_tap_corner
     elseif ges == "double_tap_bottom_left_corner" then
         ges_type = "double_tap"
         zone = zone_bottom_left_corner
+        overrides = overrides_double_tap_corner
     elseif ges == "hold_top_left_corner" then
         ges_type = "hold"
         zone = zone_top_left_corner
@@ -1103,7 +1084,8 @@ function Gestures:gestureAction(action, ges)
         or (ges.ges == "hold" and self.ignore_hold_corners) then
         return
     else
-         Dispatcher:execute(self.ui, action_list, ges)
+        self.ui:handleEvent(Event:new("HandledAsSwipe"))
+        Dispatcher:execute(action_list, ges)
     end
     return true
 end

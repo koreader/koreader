@@ -1,4 +1,3 @@
-local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local DocCache = require("document/doccache")
 local Event = require("ui/event")
@@ -28,17 +27,29 @@ local ReaderZooming = InputContainer:new{
         "rows",
         "manual",
     },
-    zoom_mode_genus_map = {
+    zoom_genus_to_mode = {
         [4] = "page",
         [3] = "content",
         [2] = "columns",
         [1] = "rows",
         [0] = "manual",
     },
-    zoom_mode_type_map = {
+    zoom_mode_to_genus = {
+        page    = 4,
+        content = 3,
+        columns = 2,
+        rows    = 1,
+        manual  = 0,
+    },
+    zoom_type_to_mode = {
         [2] = "",
         [1] = "width",
         [0] = "height",
+    },
+    zoom_mode_to_type = {
+        [""]   = 2,
+        width  = 1,
+        height = 0,
     },
     -- default to nil so we can trigger ZoomModeUpdate events on start up
     zoom_mode = nil,
@@ -46,9 +57,9 @@ local ReaderZooming = InputContainer:new{
     -- for pan mode: fit to width/zoom_factor,
     -- with overlap of zoom_overlap_h % (horizontally)
     -- and zoom_overlap_v % (vertically).
-    zoom_factor = 2,
+    kopt_zoom_factor = 1.5,
     zoom_pan_settings = {
-        "zoom_factor",
+        "kopt_zoom_factor",
         "zoom_overlap_h",
         "zoom_overlap_v",
         "zoom_bottom_to_top",
@@ -121,28 +132,107 @@ function ReaderZooming:init()
     end
 end
 
+-- Conversions between genus/type combos and zoom_mode...
+function ReaderZooming:mode_to_combo(zoom_mode)
+    if not zoom_mode then
+        zoom_mode = self.DEFAULT_ZOOM_MODE
+    end
+
+    -- Quick'n dirty zoom_mode to genus/type conversion...
+    local zgenus, ztype = zoom_mode:match("^(page)(%l*)$")
+    if not zgenus then
+        zgenus, ztype = zoom_mode:match("^(content)(%l*)$")
+    end
+    if not zgenus then
+        zgenus = zoom_mode
+    end
+    if not ztype then
+        ztype = ""
+    end
+
+    local zoom_mode_genus = self.zoom_mode_to_genus[zgenus]
+    local zoom_mode_type = self.zoom_mode_to_type[ztype]
+
+    return zoom_mode_genus, zoom_mode_type
+end
+
+function ReaderZooming:combo_to_mode(zoom_mode_genus, zoom_mode_type)
+    local default_genus, default_type = self:mode_to_combo(self.DEFAULT_ZOOM_MODE)
+    if not zoom_mode_genus then
+        zoom_mode_genus = default_genus
+    end
+    if not zoom_mode_type then
+        zoom_mode_type = default_type
+    end
+
+    local zoom_genus = self.zoom_genus_to_mode[zoom_mode_genus]
+    local zoom_type = self.zoom_type_to_mode[zoom_mode_type]
+
+    local zoom_mode
+    if zoom_genus == "page" or zoom_genus == "content" then
+        zoom_mode = zoom_genus .. zoom_type
+    else
+        zoom_mode = zoom_genus
+    end
+
+    return zoom_mode
+end
+
+-- Update the genus/type Configurables given a specific zoom_mode...
+function ReaderZooming:_updateConfigurable(zoom_mode)
+    -- We may need to poke at the Configurable directly, because ReaderConfig is instantiated before us,
+    -- so simply updating the DocSetting doesn't cut it...
+    -- Technically ought to be conditional,
+    -- because this is an optional engine feature (only if self.document.info.configurable is true).
+    -- But the rest of the code (as well as most other modules) assumes this is supported on all paged engines (it is).
+    local configurable = self.document.configurable
+
+    local zoom_mode_genus, zoom_mode_type = self:mode_to_combo(zoom_mode)
+
+    -- Configurable keys aren't prefixed, unlike the actual settings...
+    configurable.zoom_mode_genus = zoom_mode_genus
+    configurable.zoom_mode_type = zoom_mode_type
+
+    return zoom_mode_genus, zoom_mode_type
+end
+
 function ReaderZooming:onReadSettings(config)
     -- If we have a composite zoom_mode stored, use that
     local zoom_mode = config:readSetting("zoom_mode")
-                   or G_reader_settings:readSetting("zoom_mode")
-    -- Otherwise, build it from the split genus & type settings
-    if not zoom_mode then
+    if zoom_mode then
+        -- Validate it first
+        zoom_mode = util.arrayContains(self.available_zoom_modes, zoom_mode)
+                and zoom_mode
+                 or self.DEFAULT_ZOOM_MODE
+
+        -- Make sure the split genus & type match, to have an up-to-date ConfigDialog...
+        local zoom_mode_genus, zoom_mode_type = self:_updateConfigurable(zoom_mode)
+        config:saveSetting("kopt_zoom_mode_genus", zoom_mode_genus)
+        config:saveSetting("kopt_zoom_mode_type", zoom_mode_type)
+    else
+        -- Otherwise, build it from the split genus & type settings
         local zoom_mode_genus = config:readSetting("kopt_zoom_mode_genus")
                              or G_reader_settings:readSetting("kopt_zoom_mode_genus")
         local zoom_mode_type = config:readSetting("kopt_zoom_mode_type")
                             or G_reader_settings:readSetting("kopt_zoom_mode_type")
         if zoom_mode_genus or zoom_mode_type then
-            -- Handle defaults
-            zoom_mode_genus = zoom_mode_genus or 4 -- "page"
-            zoom_mode_type = zoom_mode_type or 1 -- "width"
-            zoom_mode_genus = self.zoom_mode_genus_map[zoom_mode_genus]
-            zoom_mode_type = self.zoom_mode_type_map[zoom_mode_type]
-            zoom_mode = zoom_mode_genus .. zoom_mode_type
+            zoom_mode = self:combo_to_mode(zoom_mode_genus, zoom_mode_type)
         end
+
+        -- Validate it
+        zoom_mode = util.arrayContains(self.available_zoom_modes, zoom_mode)
+                and zoom_mode
+                 or self.DEFAULT_ZOOM_MODE
     end
-    zoom_mode = util.arrayContains(self.available_zoom_modes, zoom_mode)
-            and zoom_mode
-             or self.DEFAULT_ZOOM_MODE
+
+    -- Import legacy zoom_factor settings
+    if config:has("zoom_factor") and config:hasNot("kopt_zoom_factor") then
+        config:saveSetting("kopt_zoom_factor", config:readSetting("zoom_factor"))
+        self.document.configurable.zoom_factor = config:readSetting("kopt_zoom_factor")
+        config:delSetting("zoom_factor")
+    elseif config:has("zoom_factor") and config:has("kopt_zoom_factor") then
+        config:delSetting("zoom_factor")
+    end
 
     -- Don't stomp on normal_zoom_mode in ReaderKoptListener if we're reflowed...
     local is_reflowed = config:has("kopt_text_wrap") and config:readSetting("kopt_text_wrap") == 1
@@ -245,8 +335,8 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     })[config.zoom_direction]
     local zoom_range_number = config.zoom_range_number
     local zoom_factor = config.zoom_factor
-    local zoom_mode_genus = self.zoom_mode_genus_map[config.zoom_mode_genus]
-    local zoom_mode_type = self.zoom_mode_type_map[config.zoom_mode_type]
+    local zoom_mode_genus = self.zoom_genus_to_mode[config.zoom_mode_genus]
+    local zoom_mode_type = self.zoom_type_to_mode[config.zoom_mode_type]
     settings.zoom_overlap_h = config.zoom_overlap_h
     settings.zoom_overlap_v = config.zoom_overlap_v
     if btn == "set_zoom_overlap_h" then
@@ -259,7 +349,7 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
 
     local zoom_mode
     if zoom_mode_genus == "page" or zoom_mode_genus == "content" then
-        zoom_mode = zoom_mode_genus..zoom_mode_type
+        zoom_mode = zoom_mode_genus .. zoom_mode_type
     else
         zoom_mode = zoom_mode_genus
         self.ui:handleEvent(Event:new("SetScrollMode", false))
@@ -281,19 +371,24 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
     if zoom_mode == "columns" or zoom_mode == "rows" then
         if btn ~= "columns" and btn ~= "rows" then
             self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
-            settings.zoom_factor = self:setNumberOf(
+            config.zoom_factor = self:setNumberOf(
                 zoom_mode,
                 zoom_range_number,
                 zoom_mode == "columns" and settings.zoom_overlap_h or settings.zoom_overlap_v
             )
+            settings.kopt_zoom_factor = config.zoom_factor
         end
     elseif zoom_mode == "manual" then
         if btn == "manual" then
             config.zoom_factor = self:getNumberOf("columns")
+            settings.kopt_zoom_factor = config.zoom_factor
+            -- We *want* a redraw the first time we swap to manual mode (like any other mode swap)
+            self.ui:handleEvent(Event:new("SetZoomPan", settings))
         else
             self:setNumberOf("columns", zoom_factor)
+            -- No redraw here, because setNumberOf already took care of it
+            self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
         end
-        self.ui:handleEvent(Event:new("SetZoomPan", settings, true))
     end
     self.ui:handleEvent(Event:new("SetZoomMode", zoom_mode))
     if btn == "columns" or btn == "rows" then
@@ -319,7 +414,7 @@ function ReaderZooming:onDefineZoom(btn, when_applied_callback)
                 settings.zoom_overlap_h,
                 ("%.2f"):format(self:getNumberOf("rows", settings.zoom_overlap_v)),
                 settings.zoom_overlap_v,
-                ("%.2f"):format(self:getNumberOf("columns"))),
+                ("%.2f"):format(config.zoom_factor)),
             dismiss_callback = when_applied_callback,
         })
     end
@@ -331,6 +426,7 @@ function ReaderZooming:onSetZoomMode(new_mode)
         logger.info("setting zoom mode to", new_mode)
         self.ui:handleEvent(Event:new("ZoomModeUpdate", new_mode))
         self.zoom_mode = new_mode
+        self:_updateConfigurable(new_mode)
         self:setZoom()
         if new_mode == "manual" then
             self.ui:handleEvent(Event:new("SetScrollMode", false))
@@ -453,9 +549,9 @@ function ReaderZooming:getZoom(pageno)
     elseif self.zoom_mode == "free" then
         zoom = self.zoom
     else
-        local zoom_factor = self.ui.doc_settings:readSetting("zoom_factor")
-                         or G_reader_settings:readSetting("zoom_factor")
-                         or self.zoom_factor
+        local zoom_factor = self.ui.doc_settings:readSetting("kopt_zoom_factor")
+                         or G_reader_settings:readSetting("kopt_zoom_factor")
+                         or self.kopt_zoom_factor
         zoom = zoom_w * zoom_factor
     end
     if zoom and zoom > 10 and not DocCache:willAccept(zoom * (self.dimen.w * self.dimen.h + 512)) then
@@ -562,8 +658,8 @@ function ReaderZooming:setNumberOf(what, num, overlap)
     if what == "rows" then
         zoom_factor = zoom_factor * zoom_h / zoom_w
     end
-    self.ui:handleEvent(Event:new("SetZoomPan", {zoom_factor = zoom_factor}))
-    self.ui:handleEvent(Event:new("RedrawCurrentPage"))
+    self.ui:handleEvent(Event:new("SetZoomPan", {kopt_zoom_factor = zoom_factor}))
+    return zoom_factor
 end
 
 function ReaderZooming:_zoomFactorChange(title_text, direction, precision)
@@ -609,6 +705,11 @@ function ReaderZooming:onSetZoomPan(settings, no_redraw)
     for k, v in pairs(settings) do
         self[k] = v
         self.ui.doc_settings:saveSetting(k, v)
+        -- Configurable keys aren't prefixed...
+        local configurable_key = k:gsub("^kopt_", "")
+        if self.ui.document.configurable[configurable_key] then
+            self.ui.document.configurable[configurable_key] = v
+        end
     end
     if not no_redraw then
         self.ui:handleEvent(Event:new("RedrawCurrentPage"))
@@ -617,19 +718,6 @@ end
 
 function ReaderZooming:onBBoxUpdate()
     self:onDefineZoom()
-end
-
-function ReaderZooming:makeDefault(zoom_mode, touchmenu_instance)
-    UIManager:show(ConfirmBox:new{
-        text = T(
-            _("Set default zoom mode to %1?"),
-            zoom_mode
-        ),
-        ok_callback = function()
-            G_reader_settings:saveSetting("zoom_mode", zoom_mode)
-            if touchmenu_instance then touchmenu_instance:updateItems() end
-        end,
-    })
 end
 
 return ReaderZooming

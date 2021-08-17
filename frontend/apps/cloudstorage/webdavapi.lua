@@ -158,7 +158,7 @@ end
 
 function WebDavApi:downloadFile(file_url, user, pass, local_path)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
-    local code_return = socket.skip(1, http.request{
+    local code, _, status = socket.skip(1, http.request{
         url      = file_url,
         method   = "GET",
         sink     = ltn12.sink.file(io.open(local_path, "w")),
@@ -166,7 +166,10 @@ function WebDavApi:downloadFile(file_url, user, pass, local_path)
         password = pass,
     })
     socketutil:reset_timeout()
-    return code_return
+    if code ~= 200 then
+        logger.warn("WebDavApi: Download failure:", status or code or "network unreachable")
+    end
+    return code
 end
 
 return WebDavApi

@@ -156,10 +156,6 @@ function ReaderCropping:setCropZoomMode(confirmed)
         self:setZoomMode(zoom_mode_type
                     and "content"..zoom_mode_type
                     or self.orig_zoom_mode)
-        -- Update the configurable, too
-        self.document.configurable.zoom_mode_genus = zoom_mode_type
-                                                 and 3 -- "content"
-                                                  or 4 -- "page"
         self.ui:handleEvent(Event:new("InitScrollPageStates"))
     else
         self:setZoomMode(self.orig_zoom_mode)

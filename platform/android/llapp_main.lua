@@ -38,7 +38,7 @@ local function runUserScripts(dir, migration, parent)
     end
 end
 
-if android.prop.flavor ~= "fdroid" then
+if android.prop.runtimeChanges then
     -- run scripts once after an update of koreader,
     -- it can also trigger a recursive migration of user data
     local run_once_scripts = path .. "/koreader/scripts.afterupdate"
@@ -63,11 +63,6 @@ if android.prop.flavor ~= "fdroid" then
     -- run koreader patch before koreader startup
     pcall(dofile, path.."/koreader/patch.lua")
 end
-
--- Set proper permission for binaries.
---- @todo Take care of this on extraction instead.
--- Cf. <https://github.com/koreader/koreader/issues/5347#issuecomment-529476693>.
-android.execute("chmod", "755", "./sdcv")
 
 -- set TESSDATA_PREFIX env var
 C.setenv("TESSDATA_PREFIX", path.."/koreader/data", 1)

@@ -17,7 +17,7 @@
    stroke-linejoin="round"
    xml:space="preserve"
    id="svg84"
-   sodipodi:docname="direction.RLBT.svg"
+   sodipodi:docname="direction.LRBT.svg"
    inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
    inkscape:export-xdpi="96"
    inkscape:export-ydpi="96"><defs
@@ -80,7 +80,7 @@
    inkscape:transform-center-y="17.638865"
    style="stroke-width:158.75"><g
      id="g30314"
-     transform="matrix(0,-1,-1,0,3900.3344,3900.3343)"><path
+     transform="rotate(-90,2087.9383,1812.396)"><path
        style="fill:none;stroke:#000000;stroke-width:158.75;stroke-linecap:butt;stroke-linejoin:bevel;stroke-opacity:1"
        d="m 976.68856,939.271 2e-4,2063.7498"
        id="path899"

@@ -565,8 +565,10 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     request.method = method
     if filepath ~= "" then
         request.sink = ltn12.sink.file(io.open(filepath, "w"))
+        socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
     else
         request.sink = ltn12.sink.table(sink)
+        socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
     end
     request.headers = headers
     if body ~= "" then
@@ -575,7 +577,6 @@ function Wallabag:callAPI(method, apiurl, headers, body, filepath, quiet)
     logger.dbg("Wallabag: URL     ", request.url)
     logger.dbg("Wallabag: method  ", method)
 
-    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
     local code, resp_headers = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
     -- raise error message when network is unavailable

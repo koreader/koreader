@@ -19,6 +19,8 @@ describe("Readerhighlight module", function()
         UIManager:scheduleIn(1, function()
             UIManager:close(readerui.dictionary.dict_window)
             UIManager:close(readerui)
+            -- We haven't torn it down yet
+            ReaderUI.instance = readerui
             UIManager:quit()
         end)
         UIManager:run()
@@ -43,6 +45,8 @@ describe("Readerhighlight module", function()
         UIManager:scheduleIn(1, function()
             UIManager:close(readerui.highlight.highlight_dialog)
             UIManager:close(readerui)
+            -- We haven't torn it down yet
+            ReaderUI.instance = readerui
             UIManager:quit()
         end)
         UIManager:run()
@@ -59,6 +63,8 @@ describe("Readerhighlight module", function()
         UIManager:nextTick(function()
             UIManager:close(readerui.highlight.edit_highlight_dialog)
             UIManager:close(readerui)
+            -- We haven't torn it down yet
+            ReaderUI.instance = readerui
             UIManager:quit()
         end)
         UIManager:run()
@@ -183,6 +189,8 @@ describe("Readerhighlight module", function()
                 readerui.highlight:clear()
                 readerui.document.configurable.text_wrap = 0
                 UIManager:close(readerui)  -- close to flush settings
+                -- We haven't torn it down yet
+                ReaderUI.instance = readerui
             end)
             it("should highlight single word", function()
                 highlight_single_word(readerui, Geom:new{ x = 260, y = 70 })
@@ -273,6 +281,8 @@ describe("Readerhighlight module", function()
                 readerui.highlight:clear()
                 readerui.document.configurable.text_wrap = 0
                 UIManager:close(readerui)  -- close to flush settings
+                -- We haven't torn it down yet
+                ReaderUI.instance = readerui
             end)
             it("should highlight single word", function()
                 highlight_single_word(readerui, Geom:new{ x = 260, y = 70 })

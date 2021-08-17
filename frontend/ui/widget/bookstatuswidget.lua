@@ -144,7 +144,8 @@ end
 
 function BookStatusWidget:getStatHours()
     if stats_book.time then
-        return util.secondsToClock(stats_book.time, false)
+        local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
+        return util.secondsToClockDuration(user_duration_format, stats_book.time, false)
     else
         return _("N/A")
     end

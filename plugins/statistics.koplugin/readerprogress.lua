@@ -200,6 +200,7 @@ function ReaderProgress:genWeekStats(stats_day)
     local select_day_time
     local diff_time
     local now_time = os.time()
+    local user_duration_format = G_reader_settings:readSetting("duration_format")
     local height = Screen:scaleBySize(60)
     local statistics_container = CenterContainer:new{
         dimen = Geom:new{ w = self.screen_width , h = height },
@@ -247,7 +248,7 @@ function ReaderProgress:genWeekStats(stats_day)
                 dimen = Geom:new{ w = self.screen_width , h = height / 3 },
                 TextWidget:new{
                     padding = Size.padding.small,
-                    text = date_format_show .. " - " .. util.secondsToClock(select_day_time, true),
+                    text = date_format_show .. " - " .. util.secondsToClockDuration(user_duration_format, select_day_time, true),
                     face = Font:getFace("smallffont"),
                 },
             },
@@ -286,6 +287,7 @@ function ReaderProgress:genSummaryDay(width)
     local statistics_group = VerticalGroup:new{ align = "left" }
     local tile_width = width / 4
     local tile_height = height / 3
+    local user_duration_format = G_reader_settings:readSetting("duration_format")
 
     local titles_group = HorizontalGroup:new{
         align = "center",
@@ -340,7 +342,7 @@ function ReaderProgress:genSummaryDay(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = util.secondsToClock(self.current_duration, true),
+                text = util.secondsToClockDuration(user_duration_format, self.current_duration, true),
                 face = self.medium_font_face,
             },
         },
@@ -354,7 +356,7 @@ function ReaderProgress:genSummaryDay(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = util.secondsToClock(self.today_duration, true),
+                text = util.secondsToClockDuration(user_duration_format, self.today_duration, true),
                 face = self.medium_font_face,
             },
         },
@@ -380,6 +382,7 @@ function ReaderProgress:genSummaryWeek(width)
     local statistics_group = VerticalGroup:new{ align = "left" }
     local tile_width = width / 4
     local tile_height = height / 3
+    local user_duration_format = G_reader_settings:readSetting("duration_format")
     local total_group = HorizontalGroup:new{
         align = "center",
         CenterContainer:new{
@@ -466,7 +469,7 @@ function ReaderProgress:genSummaryWeek(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = util.secondsToClock(math.floor(total_time), true),
+                text = util.secondsToClockDuration(user_duration_format, math.floor(total_time), true),
                 face = self.medium_font_face,
             },
         },
@@ -480,7 +483,7 @@ function ReaderProgress:genSummaryWeek(width)
         CenterContainer:new{
             dimen = Geom:new{ w = tile_width, h = tile_height },
             TextWidget:new{
-                text = util.secondsToClock(math.floor(total_time) / 7, true),
+                text = util.secondsToClockDuration(user_duration_format, math.floor(total_time) / 7, true),
                 face = self.medium_font_face,
             }
         }

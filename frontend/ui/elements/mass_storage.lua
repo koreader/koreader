@@ -1,4 +1,5 @@
 local Device = require("device")
+local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 
@@ -60,15 +61,17 @@ function MassStorage:start(never_ask)
             ok_callback = function()
                 -- save settings before activating USBMS:
                 UIManager:flushSettings()
-                UIManager:quit()
                 UIManager._exit_code = 86
+                UIManager:broadcastEvent(Event:new("Close"))
+                UIManager:quit()
             end,
         })
     else
         -- save settings before activating USBMS:
         UIManager:flushSettings()
-        UIManager:quit()
         UIManager._exit_code = 86
+        UIManager:broadcastEvent(Event:new("Close"))
+        UIManager:quit()
     end
 end
 

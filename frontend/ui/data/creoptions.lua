@@ -46,7 +46,7 @@ local function prettifyCreWeights(t)
 end
 
 local CreOptions = {
-    prefix = 'copt',
+    prefix = "copt",
     {
         icon = "appbar.rotation",
         options = {
@@ -404,7 +404,7 @@ Note that your selected font size is not affected by this setting.]]),
         options = {
             {
                 name = "font_size",
-                alt_name_text = _("Font size"),
+                alt_name_text = _("Font Size"),
                 item_text = tableOfNumbersToTableOfStrings(DCREREADER_CONFIG_FONT_SIZES),
                 item_align_center = 1.0,
                 spacing = 15,
@@ -432,7 +432,7 @@ Note that your selected font size is not affected by this setting.]]),
                 },
                 values = {},
                 event = "ChangeSize",
-                args = {"decrease", "increase"},
+                args = { -0.5, 0.5 },
                 alternate = false,
                 name_text_hold_callback = function(configurable, __, prefix)
                     local opt = {

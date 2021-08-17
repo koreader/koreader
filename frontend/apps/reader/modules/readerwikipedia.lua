@@ -299,14 +299,18 @@ Where do you want them saved?]])
             },
             {
                 text = _("Clean Wikipedia history"),
+                enabled_func = function()
+                    return wikipedia_history:has("wikipedia_history")
+                end,
                 keep_menu_open = true,
-                callback = function()
+                callback = function(touchmenu_instance)
                     UIManager:show(ConfirmBox:new{
                         text = _("Clean Wikipedia history?"),
                         ok_text = _("Clean"),
                         ok_callback = function()
                             -- empty data table to replace current one
                             wikipedia_history:reset{}
+                            touchmenu_instance:updateItems()
                         end,
                     })
                 end,

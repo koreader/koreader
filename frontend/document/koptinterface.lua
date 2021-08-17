@@ -150,12 +150,18 @@ function KoptInterface:createContext(doc, pageno, bbox)
     return kc
 end
 
-function KoptInterface:getContextHash(doc, pageno, bbox)
+function KoptInterface:getContextHash(doc, pageno, bbox, hash_list)
     local canvas_size = CanvasContext:getSize()
-    local canvas_size_hash = canvas_size.w.."|"..canvas_size.h
-    local bbox_hash = bbox.x0.."|"..bbox.y0.."|"..bbox.x1.."|"..bbox.y1
-    return doc.file.."|"..doc.mod_time.."|"..pageno.."|"
-            ..doc.configurable:hash("|").."|"..bbox_hash.."|"..canvas_size_hash
+    table.insert(hash_list, doc.file)
+    table.insert(hash_list, doc.mod_time)
+    table.insert(hash_list, pageno)
+    doc.configurable:hash(hash_list)
+    table.insert(hash_list, bbox.x0)
+    table.insert(hash_list, bbox.y0)
+    table.insert(hash_list, bbox.x1)
+    table.insert(hash_list, bbox.y1)
+    table.insert(hash_list, canvas_size.w)
+    table.insert(hash_list, canvas_size.h)
 end
 
 function KoptInterface:getPageBBox(doc, pageno)
@@ -182,8 +188,9 @@ function KoptInterface:getAutoBBox(doc, pageno)
         x1 = native_size.w,
         y1 = native_size.h,
     }
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local hash = "autobbox|"..context_hash
+    local hash_list = { "autobbox" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
         local page = doc._document:openPage(pageno)
@@ -211,8 +218,9 @@ Detect bbox within user restricted bbox.
 function KoptInterface:getSemiAutoBBox(doc, pageno)
     -- use manual bbox
     local bbox = Document.getPageBBox(doc, pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local hash = "semiautobbox|"..context_hash
+    local hash_list = { "semiautobbox" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
         local page = doc._document:openPage(pageno)
@@ -247,9 +255,10 @@ immediately, or wait for the background thread with reflowed context.
 --]]
 function KoptInterface:getCachedContext(doc, pageno)
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local kctx_hash = "kctx|"..context_hash
-    local cached = DocCache:check(kctx_hash, ContextCacheItem)
+    local hash_list = { "kctx" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
+    local cached = DocCache:check(hash, ContextCacheItem)
     if not cached then
         -- If kctx is not cached, create one and get reflowed bmp in foreground.
         local kc = self:createContext(doc, pageno, bbox)
@@ -265,7 +274,7 @@ function KoptInterface:getCachedContext(doc, pageno)
         local fullwidth, fullheight = kc:getPageDim()
         logger.dbg("reflowed page", pageno, "fullwidth:", fullwidth, "fullheight:", fullheight)
         self.last_context_size = fullwidth * fullheight + 3072 -- estimation
-        DocCache:insert(kctx_hash, ContextCacheItem:new{
+        DocCache:insert(hash, ContextCacheItem:new{
             persistent = true,
             size = self.last_context_size,
             kctx = kc
@@ -331,10 +340,11 @@ Inherited from common document interface.
 function KoptInterface:renderReflowedPage(doc, pageno, rect, zoom, rotation, render_mode)
     doc.render_mode = render_mode
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local renderpg_hash = "renderpg|"..context_hash
+    local hash_list = { "renderpg" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
 
-    local cached = DocCache:check(renderpg_hash)
+    local cached = DocCache:check(hash)
     if not cached then
         -- do the real reflowing if kctx has not been cached yet
         local kc = self:getCachedContext(doc, pageno)
@@ -350,7 +360,7 @@ function KoptInterface:renderReflowedPage(doc, pageno, rect, zoom, rotation, ren
         }
         tile.bb = kc:dstToBlitBuffer()
         tile.size = tonumber(tile.bb.stride) * tile.bb.h + 512 -- estimation
-        DocCache:insert(renderpg_hash, tile)
+        DocCache:insert(hash, tile)
         return tile
     else
         return cached
@@ -365,10 +375,11 @@ Inherited from common document interface.
 function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, render_mode)
     doc.render_mode = render_mode
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local renderpg_hash = "renderoptpg|"..context_hash..zoom
+    local hash_list = { "renderoptpg" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
 
-    local cached = DocCache:check(renderpg_hash, TileCacheItem)
+    local cached = DocCache:check(hash, TileCacheItem)
     if not cached then
         local page_size = Document.getNativePageDimensions(doc, pageno)
         local full_page_bbox = {
@@ -397,7 +408,7 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
         tile.bb = kc:dstToBlitBuffer()
         tile.size = tonumber(tile.bb.stride) * tile.bb.h + 512 -- estimation
         kc:free()
-        DocCache:insert(renderpg_hash, tile)
+        DocCache:insert(hash, tile)
         return tile
     else
         return cached
@@ -425,9 +436,10 @@ Inherited from common document interface.
 --]]
 function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, render_mode)
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local kctx_hash = "kctx|"..context_hash
-    local cached = DocCache:check(kctx_hash)
+    local hash_list = { "kctx" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
+    local cached = DocCache:check(hash)
     if not cached then
         local kc = self:createContext(doc, pageno, bbox)
         local page = doc._document:openPage(pageno)
@@ -436,7 +448,7 @@ function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, rend
         kc:setPreCache()
         page:reflow(kc, 0)
         page:close()
-        DocCache:insert(kctx_hash, ContextCacheItem:new{
+        DocCache:insert(hash, ContextCacheItem:new{
             size = self.last_context_size or self.default_context_size,
             kctx = kc,
         })
@@ -492,17 +504,21 @@ Get text boxes in reflowed page via rectmaps in koptcontext.
 --]]
 function KoptInterface:getReflowedTextBoxes(doc, pageno)
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local hash = "rfpgboxes|"..context_hash
+    local hash_list = { "rfpgboxes" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
-        local kctx_hash = "kctx|"..context_hash
+        local kctx_hash = hash:gsub("^rfpgboxes|", "kctx|")
         cached = DocCache:check(kctx_hash)
         if cached then
             local kc = self:waitForContext(cached.kctx)
             --kc:setDebug()
             local fullwidth, fullheight = kc:getPageDim()
             local boxes, nr_word = kc:getReflowedWordBoxes("dst", 0, 0, fullwidth, fullheight)
+            if not boxes then
+                return nil
+            end
             DocCache:insert(hash, CacheItem:new{ rfpgboxes = boxes, size = 192 * nr_word }) -- estimation
             return boxes
         end
@@ -516,17 +532,21 @@ Get text boxes in native page via rectmaps in koptcontext.
 --]]
 function KoptInterface:getNativeTextBoxes(doc, pageno)
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local hash = "nativepgboxes|"..context_hash
+    local hash_list = { "nativepgboxes" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
-        local kctx_hash = "kctx|"..context_hash
+        local kctx_hash = hash:gsub("^nativepgboxes|", "kctx|")
         cached = DocCache:check(kctx_hash)
         if cached then
             local kc = self:waitForContext(cached.kctx)
             --kc:setDebug()
             local fullwidth, fullheight = kc:getPageDim()
             local boxes, nr_word = kc:getNativeWordBoxes("dst", 0, 0, fullwidth, fullheight)
+            if not boxes then
+                return nil
+            end
             DocCache:insert(hash, CacheItem:new{ nativepgboxes = boxes, size = 192 * nr_word }) -- estimation
             return boxes
         end
@@ -542,11 +562,12 @@ Done by OCR pre-processing in Tesseract and Leptonica.
 --]]
 function KoptInterface:getReflowedTextBoxesFromScratch(doc, pageno)
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local hash = "scratchrfpgboxes|"..context_hash
+    local hash_list = { "scratchrfpgboxes" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
-        local kctx_hash = "kctx|"..context_hash
+        local kctx_hash = hash:gsub("^scratchrfpgboxes|", "kctx|")
         cached = DocCache:check(kctx_hash)
         if cached then
             local reflowed_kc = self:waitForContext(cached.kctx)
@@ -554,8 +575,11 @@ function KoptInterface:getReflowedTextBoxesFromScratch(doc, pageno)
             local kc = self:createContext(doc, pageno)
             kc:copyDestBMP(reflowed_kc)
             local boxes, nr_word = kc:getNativeWordBoxes("dst", 0, 0, fullwidth, fullheight)
-            DocCache:insert(hash, CacheItem:new{ scratchrfpgboxes = boxes, size = 192 * nr_word }) -- estimation
             kc:free()
+            if not boxes then
+                return nil
+            end
+            DocCache:insert(hash, CacheItem:new{ scratchrfpgboxes = boxes, size = 192 * nr_word }) -- estimation
             return boxes
         end
     else
@@ -615,8 +639,9 @@ Get page regions in native page via optical method.
 function KoptInterface:getPageBlock(doc, pageno, x, y)
     local kctx
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local hash = "pageblocks|"..context_hash
+    local hash_list = { "pageblocks" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
         local page_size = Document.getNativePageDimensions(doc, pageno)
@@ -660,11 +685,16 @@ Get word from OCR in reflew page.
 function KoptInterface:getReflewOCRWord(doc, pageno, rect)
     self.ocr_lang = doc.configurable.doc_language
     local bbox = doc:getPageBBox(pageno)
-    local context_hash = self:getContextHash(doc, pageno, bbox)
-    local hash = "rfocrword|"..context_hash..rect.x..rect.y..rect.w..rect.h
+    local hash_list = { "rfocrword" }
+    self:getContextHash(doc, pageno, bbox, hash_list)
+    table.insert(hash_list, rect.x)
+    table.insert(hash_list, rect.y)
+    table.insert(hash_list, rect.w)
+    table.insert(hash_list, rect.h)
+    local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
-        local kctx_hash = "kctx|"..context_hash
+        local kctx_hash = hash:gsub("^rfocrword|", "kctx|")
         cached = DocCache:check(kctx_hash)
         if cached then
             local kc = self:waitForContext(cached.kctx)
@@ -845,6 +875,7 @@ Get text and text boxes between `pos0` and `pos1`.
 --]]
 function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
     if not pos0 or not pos1 or #boxes == 0 then return {} end
+    local isCJKChar = require("util").isCJKChar
     local line_text = ""
     local line_boxes = {}
     local i_start, j_start = getWordBoxIndices(boxes, pos0)
@@ -858,18 +889,62 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
         -- insert line words
         local j0 = i > i_start and 1 or j_start
         local j1 = i < i_stop and #boxes[i] or j_stop
+        local line_first_word_seen = false
+        local prev_word
+        local prev_word_end_x
         for j = j0, j1 do
             local word = boxes[i][j].word
             if word then
-                -- if last character of this word is an ascii char then append a space
-                local space = (word:match("[%z\194-\244][\128-\191]*$") or j == j1)
-                               and "" or " "
-                line_text = line_text..word..space
+                if not line_first_word_seen then
+                    line_first_word_seen = true
+                    if #line_text > 0 then
+                        if line_text:sub(-1) == "-" then
+                            -- Previous line ended with a minus.
+                            -- Assume it's some hyphenation and discard it.
+                            line_text = line_text:sub(1, -2)
+                        elseif line_text:sub(-2, -1) == "\xC2\xAD" then
+                            -- Previous line ended with a hyphen.
+                            -- Assume it's some hyphenation and discard it.
+                            line_text = line_text:sub(1, -3)
+                        else
+                            -- No hyphenation, add a space (might be not welcome
+                            -- with CJK text, but well...)
+                            line_text = line_text .. " "
+                        end
+                    end
+                end
+                local box = boxes[i][j]
+                if prev_word then
+                    -- A box should have been made for each word, so assume
+                    -- we want a space between them, with some exceptions
+                    local add_space = true
+                    local box_height = box.y1 - box.y0
+                    local dist_from_prev_word = box.x0 - prev_word_end_x
+                    if prev_word:sub(-1, -1) == " " or word:sub(1, 1) == " " then
+                        -- Already a space between these words
+                        add_space = false
+                    elseif dist_from_prev_word < box_height * 0.03 then
+                        -- If the space between previous word box and this word box
+                        -- is smaller than 5% of box height, assume these boxes
+                        -- should be stuck
+                        add_space = false
+                    elseif dist_from_prev_word < box_height * 0.8 then
+                        if isCJKChar(prev_word:sub(-3, -1)) and isCJKChar(word:sub(1, 3)) then
+                            -- Two CJK chars whose spacing is not large enough
+                            -- (we checked the 3 UTF8 bytes that CJK chars must be,
+                            -- no need to split into unicode codepoints)
+                            add_space = false
+                        end
+                    end
+                    if add_space then
+                        word = " " .. word
+                    end
+                end
+                line_text = line_text .. word
+                prev_word = word
+                prev_word_end_x = box.x1
             end
         end
-        -- append a space at the end of the line unless its a hyphenated word
-        line_text = line_text .. " "
-        line_text = line_text:gsub("- $", "")
         -- insert line box
         local lb = boxes[i]
         if i > i_start and i < i_stop then

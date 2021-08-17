@@ -237,6 +237,7 @@ When the book's language tag is not among our presets, no specific features will
                 })
                 self.text_lang_tag = lang_tag
                 self.ui.document:setTextMainLang(lang_tag)
+                self.ui:handleEvent(Event:new("TypographyLanguageChanged"))
                 self.ui:handleEvent(Event:new("UpdatePos"))
             end,
             hold_callback = function(touchmenu_instance)
@@ -427,8 +428,8 @@ These settings will apply to all books with any hyphenation dictionary.
         enabled_func = function()
             return self.hyphenation and not self.hyph_soft_hyphens_only
         end,
-        separator = true,
     })
+    table.insert(hyphenation_submenu, self.ui.userhyph:getMenuEntry())
     table.insert(hyphenation_submenu, {
         text_func = function()
             -- Show the current language default hyph dict (ie: English_US for zh)
@@ -488,7 +489,7 @@ These settings will apply to all books with any hyphenation dictionary.
         end,
     })
     table.insert(hyphenation_submenu, {
-        text = _("Soft-hyphens only"),
+        text = _("Soft hyphens only"),
         callback = function()
             self.hyph_soft_hyphens_only = not self.hyph_soft_hyphens_only
             self.hyph_force_algorithmic = false
@@ -760,6 +761,7 @@ function ReaderTypography:onReadSettings(config)
         logger.dbg("Typography lang: no lang set, using", self.text_lang_tag)
     end
     self.ui.document:setTextMainLang(self.text_lang_tag)
+    self.ui:handleEvent(Event:new("TypographyLanguageChanged"))
 end
 
 function ReaderTypography:onPreRenderDocument(config)
@@ -780,6 +782,7 @@ function ReaderTypography:onPreRenderDocument(config)
             self.text_lang_tag = self.book_lang_tag
             self.ui.doc_settings:saveSetting("text_lang", self.text_lang_tag)
             self.ui.document:setTextMainLang(self.text_lang_tag)
+            self.ui:handleEvent(Event:new("TypographyLanguageChanged"))
             self.ui:handleEvent(Event:new("UpdatePos"))
         end,
         enabled_func = function()
@@ -809,6 +812,7 @@ function ReaderTypography:onPreRenderDocument(config)
         end
         self.text_lang_tag = self.book_lang_tag
         self.ui.document:setTextMainLang(self.text_lang_tag)
+        self.ui:handleEvent(Event:new("TypographyLanguageChanged"))
     end
 end
 

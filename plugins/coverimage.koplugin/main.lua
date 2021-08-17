@@ -1,4 +1,8 @@
--- plugin for saving a cover image to a file and scale it to fit the screen
+--[[--
+@module koplugin.coverimage
+
+Plugin for saving a cover image to a file and scaling it to fit the screen.
+]]
 
 local Device = require("device")
 
@@ -70,6 +74,7 @@ function CoverImage:init()
     self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or Device:getDefaultCoverPath()
     self.cover_image_format = G_reader_settings:readSetting("cover_image_format") or "auto"
     self.cover_image_quality = G_reader_settings:readSetting("cover_image_quality") or 75
+    self.cover_image_grayscale = G_reader_settings:readSetting("cover_image_grayscale") or false
     self.cover_image_stretch_limit = G_reader_settings:readSetting("cover_image_stretch_limit") or 8
     self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "black"
     self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or default_fallback_path
@@ -117,7 +122,7 @@ function CoverImage:createCoverImage(doc_settings)
 
             if self.cover_image_background == "none" or scale_factor == 1 then
                 local act_format = self.cover_image_format == "auto" and getExtension(self.cover_image_path) or self.cover_image_format
-                if not cover_image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality) then
+                if not cover_image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality, self.cover_image_grayscale) then
                     UIManager:show(InfoMessage:new{
                         text = _("Error writing file") .. "\n" .. self.cover_image_path,
                         show_icon = true,
@@ -162,7 +167,7 @@ function CoverImage:createCoverImage(doc_settings)
             cover_image:free()
 
             local act_format = self.cover_image_format == "auto" and getExtension(self.cover_image_path) or self.cover_image_format
-            if not image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality) then
+            if not image:writeToFile(self.cover_image_path, act_format, self.cover_image_quality, self.cover_image_grayscale) then
                 UIManager:show(InfoMessage:new{
                     text = _("Error writing file") .. "\n" .. self.cover_image_path,
                     show_icon = true,
@@ -206,7 +211,7 @@ function CoverImage:getCacheFile()
     local dummy, document_name = util.splitFilePathName(self.ui.document.file)
     -- use document_name here. Title may contain characters not allowed on every filesystem (esp. vfat on /sdcard)
     local key = document_name .. "_" .. self.cover_image_quality .. "_" .. self.cover_image_stretch_limit .. "_"
-        .. self.cover_image_background .. "_" .. self.cover_image_format
+        .. self.cover_image_background .. "_" .. self.cover_image_format .. "_" .. tostring(self.cover_image_grayscale)
 
     return self.cover_image_cache_path .. self.cover_image_cache_prefix .. md5(key) .. "." .. getExtension(self.cover_image_path)
 end
@@ -225,7 +230,7 @@ end
 
 function CoverImage:getCacheFiles(cache_path, cache_prefix)
     local cache_count = 0
-    local cache_size_KB = 0
+    local cache_size = 0
     local files = {}
     for entry in lfs.dir(self.cover_image_cache_path) do
         if entry ~= "." and entry ~= ".." then
@@ -233,17 +238,18 @@ function CoverImage:getCacheFiles(cache_path, cache_prefix)
             if entry:sub(1, self.cover_image_cache_prefix:len()) == cache_prefix
                 and lfs.attributes(file, "mode") == "file" then
                 cache_count = cache_count + 1
+                local blocksize = lfs.attributes(file).blksize or 4096
                 files[cache_count] = {
                     name = file,
-                    size = math.floor((lfs.attributes(file).size + 999) / 1000), -- round up to KB
+                    size = math.floor(((lfs.attributes(file).size) + blocksize - 1)/ blocksize) * blocksize,
                     mod = lfs.attributes(file).modification,
                 }
-                cache_size_KB = cache_size_KB + files[cache_count].size -- size in KB
+                cache_size = cache_size + files[cache_count].size
             end
         end
     end
-    logger.dbg("CoverImage: start - cache size: ".. cache_size_KB .. " KB, cached files: " .. cache_count)
-    return cache_count, cache_size_KB, files
+    logger.dbg("CoverImage: start - cache size: ".. cache_size .. " Bytes, cached files: " .. cache_count)
+    return cache_count, cache_size, files
 end
 
 function CoverImage:cleanCache()
@@ -252,20 +258,20 @@ function CoverImage:cleanCache()
         return
     end
 
-    local cache_count, cache_size_KB, files = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
+    local cache_count, cache_size, files = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
 
     -- delete the oldest files first
     table.sort(files, function(a, b) return a.mod < b.mod end)
     local index = 1
     while (cache_count > self.cover_image_cache_maxfiles and self.cover_image_cache_maxfiles ~= 0)
-        or (cache_size_KB > self.cover_image_cache_maxsize * 1000 and self.cover_image_cache_maxsize ~= 0)
+        or (cache_size > self.cover_image_cache_maxsize * 1000 * 1000 and self.cover_image_cache_maxsize ~= 0)
         and index <= #files do
         os.remove(files[index].name)
         cache_count = cache_count - 1
-        cache_size_KB = cache_size_KB - files[index].size
+        cache_size = cache_size - files[index].size
         index = index + 1
     end
-    logger.dbg("CoverImage: clean - cache size: ".. cache_size_KB .. " KB, cached files: " .. cache_count)
+    logger.dbg("CoverImage: clean - cache size: ".. cache_size .. " Bytes, cached files: " .. cache_count)
 end
 
 function CoverImage:isCacheEnabled(path)
@@ -493,9 +499,9 @@ function CoverImage:menuEntryCache()
             {
                 text = _("Clear cached covers"),
                 help_text_func = function()
-                    local cache_count, cache_size_KB
+                    local cache_count, cache_size
                         = self:getCacheFiles(self.cover_image_cache_path, self.cover_image_cache_prefix)
-                    return T(_("The cache contains %1 files and uses %2."), cache_count, util.getFriendlySize(cache_size_KB * 1000))
+                    return T(_("The cache contains %1 files and uses %2."), cache_count, util.getFriendlySize(cache_size))
                 end,
                 callback = function()
                     UIManager:show(ConfirmBox:new{
@@ -562,17 +568,20 @@ function CoverImage:menuEntrySetPath(key, title, help, info, default, folder_onl
     }
 end
 
-function CoverImage:menuEntryFormat(title, format)
+function CoverImage:menuEntryFormat(title, format, grayscale)
     return {
         text = title,
         checked_func = function()
-            return self.cover_image_format == format
+            return self.cover_image_format == format and self.cover_image_grayscale == grayscale
         end,
         callback = function()
             local old_cover_image_format = self.cover_image_format
+            local old_cover_image_grayscale = self.cover_image_grayscale
             self.cover_image_format = format
             G_reader_settings:saveSetting("cover_image_format", format)
-            if self:coverEnabled() and old_cover_image_format ~= format then
+            self.cover_image_grayscale = grayscale
+            G_reader_settings:saveSetting("cover_image_grayscale", grayscale)
+            if self:coverEnabled() and (old_cover_image_format ~= format or old_cover_image_grayscale ~= grayscale) then
                 self:createCoverImage(self.ui.doc_settings)
             end
         end,
@@ -656,7 +665,8 @@ function CoverImage:menuEntrySBF()
             },
             self:menuEntryFormat(_("JPG file format"), "jpg"),
             self:menuEntryFormat(_("PNG file format"), "png"),
-            self:menuEntryFormat(_("BMP file format"), "bmp"),
+            self:menuEntryFormat(_("BMP file format (color)"), "bmp"),
+            self:menuEntryFormat(_("BMP file format (grayscale)"), "bmp", true),
         },
     }
 end

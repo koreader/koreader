@@ -64,6 +64,9 @@ PILLOW_SOFT_DISABLED="no"
 USED_WMCTRL="no"
 PASSCODE_DISABLED="no"
 
+# List of services we stop in order to reclaim a tiny sliver of RAM...
+TOGGLED_SERVICES="stored kb webreader kfxreader kfxview todo tmd rcm archive scanner otav3 otaupd"
+
 REEXEC_FLAGS=""
 # Keep track of if we were started through KUAL
 if [ "${1}" = "--kual" ]; then
@@ -282,6 +285,11 @@ if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
                 usleep 2500000
             fi
         fi
+
+        # Murder a few services to reclaim some RAM...
+        for job in ${TOGGLED_SERVICES}; do
+            stop "${job}"
+        done
     fi
 fi
 
@@ -354,6 +362,11 @@ fi
 
 # Display chrome bar if need be (upstart & framework up only)
 if [ "${STOP_FRAMEWORK}" = "no" ] && [ "${INIT_TYPE}" = "upstart" ]; then
+    # Resume the services we murdered
+    for job in ${TOGGLED_SERVICES}; do
+        start "${job}"
+    done
+
     # Depending on the FW version, we may have handled things in a few different manners...
     if [ "${AWESOME_STOPPED}" = "yes" ]; then
         logmsg "Resuming awesome . . ."

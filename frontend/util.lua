@@ -166,7 +166,7 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
             end
         else
             if hmsFormat then
-                return T(_("%1m%2s"), "0", string.format("%02.f", seconds))
+                return T(_("%1m%2s"), "0", string.format("%02.f", math.floor(seconds)))
             else
                 return "0'" .. string.format("%02.f", seconds) .. "''"
             end
@@ -217,6 +217,21 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
                 return T(_("%1h%2'%3''"), hours, mins, secs)
             end
         end
+    end
+end
+
+--- Converts seconds to a clock type (classic or modern), based on the given format preference
+--- "Classic" format calls secondsToClock, and "Modern" format calls secondsToHClock
+---- @string Either "modern" for 1h30' or "classic" for 1:30
+---- @bool withoutSeconds if true 1h30' or 1:30, if false 1h30'10'' or 1:30:10
+---- @bool hmsFormat, modern format only, if true format 1h30m10s
+---- @treturn string clock string in the specific format of 1h30', 1h30'10'' or 1:30'
+function util.secondsToClockDuration(format, seconds, withoutSeconds, hmsFormat)
+    if format == "modern" then
+        return util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
+    else
+        -- Assume "classic" to give safe default
+        return util.secondsToClock(seconds, withoutSeconds)
     end
 end
 
@@ -699,7 +714,8 @@ function util.findFiles(dir, cb)
         if not ok then return end
         for f in iter, dir_obj do
             local path = current.."/"..f
-            local attr = lfs.attributes(path)
+            -- lfs can return nil here, as it will follow symlinks!
+            local attr = lfs.attributes(path) or {}
             if attr.mode == "directory" then
                 if f ~= "." and f ~= ".." then
                     scan(path)
@@ -854,7 +870,8 @@ function util.getSafeFilename(str, path, limit, limit_ext)
     limit = limit or 240
     limit_ext = limit_ext or 10
 
-    if path then
+    -- Always assume the worst on Android (#7837)
+    if path and not BaseUtil.isAndroid() then
         local file_system = util.getFilesystemType(path)
         if file_system ~= "vfat" and file_system ~= "fuse.fsp" then
             replaceFunc = replaceSlashChar

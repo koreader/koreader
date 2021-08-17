@@ -18,6 +18,7 @@ local IconButton = require("ui/widget/iconbutton")
 local IconWidget = require("ui/widget/iconwidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local Notification = require("ui/widget/notification")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
@@ -85,11 +86,18 @@ function OptionTextItem:onTapSelect()
         item.underline_container.color = Blitbuffer.COLOR_WHITE
     end
     self.underline_container.color = Blitbuffer.COLOR_BLACK
+
+    Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_ICON)
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
                     self.events, self.current_item, self.hide_on_apply)
+
     UIManager:setDirty(self.config, function()
         return "fast", self[1].dimen
+    end)
+
+    UIManager:tickAfterNext(function()
+        Notification:resetNotifySource()
     end)
     return true
 end
@@ -157,11 +165,18 @@ function OptionIconItem:onTapSelect()
     end
     --self[1][1].invert = true
     self.underline_container.color = Blitbuffer.COLOR_BLACK
+
+    Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_ICON)
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
                     self.events, self.current_item, self.hide_on_apply)
+
     UIManager:setDirty(self.config, function()
         return "fast", self[1].dimen
+    end)
+
+    UIManager:tickAfterNext(function()
+        Notification:resetNotifySource()
     end)
     return true
 end
@@ -564,8 +579,12 @@ function ConfigOption:init()
                             if self.options[c].show_true_value_func and not self.options[c].more_options_param.show_true_value_func then
                                 self.options[c].more_options_param.show_true_value_func = self.options[c].show_true_value_func
                             end
+                            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, arg, name_text, self.options[c].more_options_param)
+                            UIManager:tickAfterNext(function()
+                                Notification:resetNotifySource()
+                            end)
                         end
                     end
                 }
@@ -591,19 +610,27 @@ function ConfigOption:init()
                     num_buttons = #self.options[c].values,
                     position = self.options[c].default_pos,
                     callback = function(arg)
+
                         if arg == "-" or arg == "+" then
+                            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_FINE)
                             self.config:onConfigFineTuneChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].hide_on_apply,
                                 self.options[c].fine_tune_param)
                         elseif arg == "⋮" then
+                            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
                             self.config:onConfigMoreChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, arg, name_text, self.options[c].more_options_param)
                         else
+                                Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_PROGRESS)
                             self.config:onConfigChoose(self.options[c].values, self.options[c].name,
                                 self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].hide_on_apply)
                         end
+
                         UIManager:setDirty(self.config, function()
                             return "fast", switch.dimen
+                        end)
+                        UIManager:tickAfterNext(function()
+                            Notification:resetNotifySource()
                         end)
                     end,
                     hold_callback = function(arg)
@@ -880,6 +907,7 @@ function ConfigDialog:update()
         config_dialog = self,
     }
 
+    local old_dimen = self.dialog_frame and self.dialog_frame.dimen and self.dialog_frame.dimen:copy() or Geom:new{}
     self.dialog_frame = FrameContainer:new{
         background = Blitbuffer.COLOR_WHITE,
         padding_bottom = 0, -- ensured by MenuBar
@@ -888,6 +916,10 @@ function ConfigDialog:update()
             self.config_menubar,
         },
     }
+    -- Ensure we have a sane-ish Geom object *before* paintTo gets called,
+    -- to avoid weirdness in race-y SwipeCloseMenu calls...
+    self.dialog_frame.dimen = old_dimen
+
     -- Reset the focusmanager cursor
     self.selected.y=#self.layout
     self.selected.x=self.panel_index
@@ -927,8 +959,7 @@ function ConfigDialog:onShowConfigPanel(index)
 end
 
 function ConfigDialog:onConfigChoice(option_name, option_value)
-    self.configurable[option_name] = option_value
-    self.ui:handleEvent(Event:new("StartActivityIndicator"))
+    self.ui:handleEvent(Event:new("ConfigChange", option_name, option_value))
     return true
 end
 
@@ -950,18 +981,9 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
         -- Repainting may be delayed depending on options
         local refresh_dialog_func = function()
             self.skip_paint = nil
-            if self.config_options.needs_redraw_on_change then
-                -- Some Kopt document event handlers just save their setting,
-                -- and need a full repaint for kopt to load these settings,
-                -- notice the change, and redraw the document
-                UIManager:setDirty("all", "partial")
-            else
-                -- CreDocument event handlers do their own refresh:
-                -- we can just redraw our frame
-                UIManager:setDirty(self, function()
-                    return "ui", self.dialog_frame.dimen
-                end)
-            end
+            UIManager:setDirty(self, function()
+                return "ui", self.dialog_frame.dimen
+            end)
         end
         local when_applied_callback = nil
         if type(hide_on_apply) == "number" then -- timeout
@@ -1001,18 +1023,9 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
         -- Repainting may be delayed depending on options
         local refresh_dialog_func = function()
             self.skip_paint = nil
-            if self.config_options.needs_redraw_on_change then
-                -- Some Kopt document event handlers just save their setting,
-                -- and need a full repaint for kopt to load these settings,
-                -- notice the change, and redraw the document
-                UIManager:setDirty("all", "partial")
-            else
-                -- CreDocument event handlers do their own refresh:
-                -- we can just redraw our frame
-                UIManager:setDirty(self, function()
-                    return "ui", self.dialog_frame.dimen
-                end)
-            end
+            UIManager:setDirty(self, function()
+                return "ui", self.dialog_frame.dimen
+            end)
         end
         local when_applied_callback = nil
         if type(hide_on_apply) == "number" then -- timeout
@@ -1107,24 +1120,15 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
             if self.skip_paint and not keep_skip_paint then
                 self.skip_paint = nil
             end
-            if self.config_options.needs_redraw_on_change then
-                -- Some Kopt document event handlers just save their setting,
-                -- and need a full repaint for kopt to load these settings,
-                -- notice the change, and redraw the document
-                UIManager:setDirty("all", "partial")
+            if self.skip_paint then
+                -- Redraw anything below the now hidden ConfigDialog
+                UIManager:setDirty("all", function()
+                    return "partial", self.dialog_frame.dimen
+                end)
             else
-                -- CreDocument event handlers do their own refresh:
-                -- we can just redraw our frame
-                if self.skip_paint then
-                    -- Redraw anything below the now hidden ConfigDialog
-                    UIManager:setDirty("all", function()
-                        return "partial", self.dialog_frame.dimen
-                    end)
-                else
-                    UIManager:setDirty(self, function()
-                        return "ui", self.dialog_frame.dimen
-                    end)
-                end
+                UIManager:setDirty(self, function()
+                    return "ui", self.dialog_frame.dimen
+                end)
             end
         end
         local hide_on_picker_show = more_options_param.hide_on_picker_show
@@ -1201,7 +1205,11 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             -- it actually do it when provided a callback as argument
                             local dummy_callback = when_applied_callback and function() end
                             args = args or {}
+                            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
                             self:onConfigEvent(event, value_tables, dummy_callback)
+                            UIManager:tickAfterNext(function()
+                                Notification:resetNotifySource()
+                            end)
                             self:update()
                         end
                     end,
@@ -1293,6 +1301,7 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             -- it actually do it when provided a callback as argument
                             local dummy_callback = when_applied_callback and function() end
                             args = args or {}
+                            Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
                             if more_options_param.value_table then
                                 if more_options_param.args_table then
                                     self:onConfigEvent(event, more_options_param.args_table[spin.value_index], dummy_callback)
@@ -1302,6 +1311,9 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             else
                                 self:onConfigEvent(event, spin.value, dummy_callback)
                             end
+                            UIManager:tickAfterNext(function()
+                                Notification:resetNotifySource()
+                            end)
                             self:update()
                         end
                     end,
@@ -1434,13 +1446,13 @@ function ConfigDialog:onTapCloseMenu(arg, ges_ev)
 end
 
 function ConfigDialog:onSwipeCloseMenu(arg, ges_ev)
-    local range = {
+    local range = Geom:new{
         x = DTAP_ZONE_CONFIG.x * Screen:getWidth(),
         y = DTAP_ZONE_CONFIG.y * Screen:getHeight(),
         w = DTAP_ZONE_CONFIG.w * Screen:getWidth(),
         h = DTAP_ZONE_CONFIG.h * Screen:getHeight(),
     }
-    local range_ext = {
+    local range_ext = Geom:new{
         x = DTAP_ZONE_CONFIG_EXT.x * Screen:getWidth(),
         y = DTAP_ZONE_CONFIG_EXT.y * Screen:getHeight(),
         w = DTAP_ZONE_CONFIG_EXT.w * Screen:getWidth(),

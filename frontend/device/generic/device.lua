@@ -5,6 +5,7 @@ This module defines stubs for common methods.
 --]]
 
 local DataStorage = require("datastorage")
+local Geom = require("ui/geometry")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -103,6 +104,9 @@ local Device = {
     -- set to yes on devices that support over-the-air incremental updates.
     hasOTAUpdates = no,
 
+    -- For devices that have non-blocking OTA updates, this function will return true if the download is currently running.
+    hasOTARunning = no,
+
     -- set to yes on devices that have a non-blocking isWifiOn implementation
     -- (c.f., https://github.com/koreader/koreader/pull/5211#issuecomment-521304139)
     hasFastWifiStatusQuery = no,
@@ -179,7 +183,7 @@ function Device:init()
     end
 
     logger.info("initializing for device", self.model)
-    logger.info("framebuffer resolution:", self.screen:getSize())
+    logger.info("framebuffer resolution:", self.screen:getRawSize())
 
     if not self.input then
         self.input = require("device/input"):new{device = self}
@@ -208,6 +212,13 @@ function Device:init()
         if G_reader_settings:isTrue("input_lock_gsensor") then
             self:lockGSensor(true)
         end
+    end
+
+    -- Screen:getSize is used throughout the code, and that code usually expects getting a real Geom object...
+    -- But as implementations come from base, they just return a Geom-like table...
+    self.screen.getSize = function()
+        local rect = self.screen.getRawSize(self.screen)
+        return Geom:new{ x = rect.x, y = rect.y, w = rect.w, h = rect.h }
     end
 end
 
@@ -270,6 +281,8 @@ function Device:onPowerEvent(ev)
         self.powerd:beforeSuspend()
         local UIManager = require("ui/uimanager")
         logger.dbg("Suspending...")
+        -- Add the current state of the SleepCover flag...
+        logger.dbg("Sleep cover is", self.is_cover_closed and "closed" or "open")
         -- Let Screensaver set its widget up, so we get accurate info down the line in case fallbacks kick in...
         Screensaver:setup()
         -- Mostly always suspend in Portrait/Inverted Portrait mode...
@@ -325,7 +338,11 @@ function Device:onPowerEvent(ev)
                     network_manager:turnOffWifi()
                 end
             end
-            UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
+            -- Only actually schedule suspension if we're still supposed to go to sleep,
+            -- because the Wi-Fi stuff above may have blocked for a significant amount of time...
+            if self.screen_saver_mode then
+                UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
+            end
         end)
     end
 end
@@ -339,6 +356,25 @@ end
 function Device:info()
     return self.model
 end
+
+function Device:install()
+    local Event = require("ui/event")
+    local UIManager = require("ui/uimanager")
+    local ConfirmBox = require("ui/widget/confirmbox")
+    UIManager:show(ConfirmBox:new{
+        text = _("Update is ready. Install it now?"),
+        ok_text = _("Install"),
+        ok_callback = function()
+            local save_quit = function()
+                self:saveSettings()
+                UIManager:quit()
+                UIManager._exit_code = 85
+            end
+            UIManager:broadcastEvent(Event:new("Exit", save_quit))
+        end,
+    })
+end
+
 
 -- Hardware specific method to track opened/closed books (nil on book close)
 function Device:notifyBookState(title, document) end

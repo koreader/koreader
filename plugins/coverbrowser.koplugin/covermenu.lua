@@ -335,17 +335,17 @@ function CoverMenu:updateItems(select_number)
                                     })
                                 end
                                 UIManager:close(self.file_dialog)
-                                DocumentRegistry:closeDocument(file)
+                                document:close()
                             end
                         end,
                     },
                     { -- Allow user to directly view description in TextViewer
-                        text = bookinfo.description and _("View book description") or _("No book description"),
+                        text = _("Book description"),
                         enabled = bookinfo.description and true or false,
                         callback = function()
                             local description = util.htmlToPlainTextIfHtml(bookinfo.description)
                             local textviewer = TextViewer:new{
-                                title = bookinfo.title,
+                                title = _("Description:"),
                                 text = description,
                             }
                             UIManager:close(self.file_dialog)
@@ -468,17 +468,17 @@ function CoverMenu:onHistoryMenuHold(item)
                         })
                     end
                     UIManager:close(self.histfile_dialog)
-                    DocumentRegistry:closeDocument(file)
+                    document:close()
                 end
             end,
         },
         { -- Allow user to directly view description in TextViewer
-            text = bookinfo.description and _("View book description") or _("No book description"),
+            text = _("Book description"),
             enabled = bookinfo.description and true or false,
             callback = function()
                 local description = util.htmlToPlainTextIfHtml(bookinfo.description)
                 local textviewer = TextViewer:new{
-                    title = bookinfo.title,
+                    title = _("Description:"),
                     text = description,
                 }
                 UIManager:close(self.histfile_dialog)
@@ -590,17 +590,17 @@ function CoverMenu:onCollectionsMenuHold(item)
                         })
                     end
                     UIManager:close(self.collfile_dialog)
-                    DocumentRegistry:closeDocument(file)
+                    document:close()
                 end
             end,
         },
         { -- Allow user to directly view description in TextViewer
-            text = bookinfo.description and _("View book description") or _("No book description"),
+            text = _("Book description"),
             enabled = bookinfo.description and true or false,
             callback = function()
                 local description = util.htmlToPlainTextIfHtml(bookinfo.description)
                 local textviewer = TextViewer:new{
-                    title = bookinfo.title,
+                    title = _("Description:"),
                     text = description,
                 }
                 UIManager:close(self.collfile_dialog)

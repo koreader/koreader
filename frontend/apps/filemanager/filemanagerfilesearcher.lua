@@ -1,12 +1,18 @@
+local CheckButton = require("ui/widget/checkbutton")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local DocumentRegistry = require("document/documentregistry")
+local FileChooser = require("ui/widget/filechooser")
 local Font = require("ui/font")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
+local Utf8Proc = require("ffi/utf8proc")
+local VerticalGroup = require("ui/widget/verticalgroup")
 local lfs = require("libs/libkoreader-lfs")
 local BaseUtil = require("ffi/util")
 local util = require("util")
@@ -40,7 +46,10 @@ function FileSearcher:readDir()
                 local fullpath = d.."/"..f
                 local attributes = lfs.attributes(fullpath) or {}
                 -- Don't traverse hidden folders if we're not showing them
-                if attributes.mode == "directory" and f ~= "." and f ~= ".." and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, ".")) then
+                if attributes.mode == "directory" and f ~= "." and f ~= ".."
+                    and (G_reader_settings:isTrue("show_hidden") or not util.stringStartsWith(f, "."))
+                    and FileChooser:show_dir(f)
+                then
                     table.insert(new_dirs, fullpath)
                     table.insert(self.files, {
                         name = f,
@@ -51,7 +60,10 @@ function FileSearcher:readDir()
                         end,
                     })
                 -- Always ignore macOS resource forks, too.
-                elseif attributes.mode == "file" and not util.stringStartsWith(f, "._") and (show_unsupported or DocumentRegistry:hasProvider(fullpath)) then
+                elseif attributes.mode == "file" and not util.stringStartsWith(f, "._")
+                    and (show_unsupported or DocumentRegistry:hasProvider(fullpath))
+                    and FileChooser:show_file(f)
+                then
                     table.insert(self.files, {
                         name = f,
                         text = f,
@@ -73,9 +85,24 @@ function FileSearcher:setSearchResults()
     if keywords == "*" then -- one * to show all files
         self.results = self.files
     else
+        if not self.case_sensitive then
+            keywords = Utf8Proc.lowercase(util.fixUtf8(keywords, "?"))
+        end
+        -- replace '.' with '%.'
+        keywords = keywords:gsub("%.","%%%.")
+        -- replace '*' with '.*'
+        keywords = keywords:gsub("%*","%.%*")
+        -- replace '?' with '.'
+        keywords = keywords:gsub("%?","%.")
         for __,f in pairs(self.files) do
-            if string.find(string.lower(f.name), string.lower(keywords)) and string.sub(f.name,-4) ~= ".sdr" then
-                table.insert(self.results, f)
+            if self.case_sensitive then
+                if string.find(f.name, keywords) then
+                    table.insert(self.results, f)
+                end
+            else
+                if string.find(Utf8Proc.lowercase(util.fixUtf8(f.name, "?")), keywords) then
+                    table.insert(self.results, f)
+                end
             end
         end
     end
@@ -99,16 +126,15 @@ function FileSearcher:close()
     end
 end
 
-function FileSearcher:onShowFileSearch()
+function FileSearcher:onShowFileSearch(search_string)
     self.search_dialog = InputDialog:new{
         title = _("Enter filename to search for"),
-        input = self.search_value,
+        input = search_string or self.search_value,
         width = math.floor(Screen:getWidth() * 0.9),
         buttons = {
             {
                 {
                     text = _("Cancel"),
-                    enabled = true,
                     callback = function()
                         self.search_dialog:onClose()
                         UIManager:close(self.search_dialog)
@@ -126,7 +152,6 @@ function FileSearcher:onShowFileSearch()
                 },
                 {
                     text = _("Current folder"),
-                    enabled = true,
                     is_enter_default = true,
                     callback = function()
                         self.search_value = self.search_dialog:getInputText()
@@ -138,6 +163,36 @@ function FileSearcher:onShowFileSearch()
             },
         },
     }
+    -- checkbox
+    self.check_button_case = CheckButton:new{
+        text = _("Case sensitive"),
+        checked = self.case_sensitive,
+        parent = self.search_dialog,
+        max_width = self.search_dialog._input_widget.width,
+        callback = function()
+            if not self.check_button_case.checked then
+                self.check_button_case:check()
+                self.case_sensitive = true
+            else
+                self.check_button_case:unCheck()
+                self.case_sensitive = false
+            end
+        end,
+    }
+
+    local checkbox_shift = math.floor((self.search_dialog.width - self.search_dialog._input_widget.width) / 2 + 0.5)
+    local check_buttons = HorizontalGroup:new{
+        HorizontalSpan:new{width = checkbox_shift},
+        VerticalGroup:new{
+            align = "left",
+            self.check_button_case,
+        },
+    }
+
+    -- insert check buttons before the regular buttons
+    local nb_elements = #self.search_dialog.dialog_frame[1]
+    table.insert(self.search_dialog.dialog_frame[1], nb_elements-1, check_buttons)
+
     UIManager:show(self.search_dialog)
     self.search_dialog:onShowKeyboard()
 end
@@ -158,7 +213,12 @@ function FileSearcher:showSearchResults()
     self.search_menu.close_callback = function()
         UIManager:close(menu_container)
     end
-    table.sort(self.results, function(v1,v2) return v1.text < v2.text end)
+
+    local collate = G_reader_settings:readSetting("collate") or "strcoll"
+    local reverse_collate = G_reader_settings:isTrue("reverse_collate")
+    local sorting = FileChooser:getSortingFunction(collate, reverse_collate)
+
+    table.sort(self.results, sorting)
     self.search_menu:switchItemTable(_("Search results"), self.results)
     UIManager:show(menu_container)
 end

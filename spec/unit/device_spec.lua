@@ -9,7 +9,7 @@ describe("device module", function()
         mock_fb = {
             new = function()
                 return {
-                    getSize = function() return {w = 600, h = 800} end,
+                    getRawSize = function() return {w = 600, h = 800} end,
                     getWidth = function() return 600 end,
                     getDPI = function() return 72 end,
                     setViewport = function() end,

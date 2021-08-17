@@ -399,6 +399,7 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
     local checkbutton_auto_nl = CheckButton:new({
             text = _("Auto"),
             checked = self.powerd.auto_warmth,
+            max_width = math.floor(self.screen_width * 0.3),
             callback = function()
                 if self.powerd.auto_warmth then
                     self.powerd.auto_warmth = false
@@ -583,7 +584,6 @@ function FrontLightWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "flashui", self.light_frame.dimen
     end)
-    return true
 end
 
 function FrontLightWidget:onShow()

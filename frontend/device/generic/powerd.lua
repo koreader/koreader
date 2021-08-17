@@ -27,8 +27,8 @@ end
 function BasePowerD:init() end
 function BasePowerD:setIntensityHW(intensity) end
 function BasePowerD:getCapacityHW() return 0 end
-function BasePowerD:getDissmisBatteryStatus() return self.battery_warning end
-function BasePowerD:setDissmisBatteryStatus(status) self.battery_warning = status end
+function BasePowerD:getDismissBatteryStatus() return self.battery_warning end
+function BasePowerD:setDismissBatteryStatus(status) self.battery_warning = status end
 function BasePowerD:isChargingHW() return false end
 function BasePowerD:frontlightIntensityHW() return 0 end
 function BasePowerD:isFrontlightOnHW() return self.fl_intensity > self.fl_min end

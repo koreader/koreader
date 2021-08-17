@@ -72,20 +72,26 @@ function OPDSParser:createFlatXTable(xlex, curr_element)
 end
 
 function OPDSParser:parse(text)
-    -- Murder Calibre's whole "content" block, because luxl doesn't really deal well with various XHTML quirks,
-    -- as the list of crappy replacements below attests to...
-    -- There's also a high probability of finding orphaned tags or badly nested ones in there, which will screw everything up.
-    text = text:gsub('<content type="xhtml">.-</content>', '')
     -- luxl doesn't handle XML comments, so strip them
     text = text:gsub("<!%-%-.-%-%->", "")
     -- luxl is also particular about the syntax for self-closing, empty & orphaned tags...
-    text = text:gsub("<(%l+)/>", "<%1 />")
+    text = text:gsub("<([%l:]+)/>", "<%1 />")
     -- We also need to handle the slash-less variants for br & hr...
     text = text:gsub("<([bh]r)>", "<%1 />")
     -- Some OPDS catalogs wrap text in a CDATA section, remove it as it causes parsing problems
     text = text:gsub("<!%[CDATA%[(.-)%]%]>", function (s)
-        return s:gsub( "%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;" } )
+        return s:gsub("%p", {["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;"})
     end )
+
+    -- NOTE: OPDS content tags are likely to contain a bunch of HTML or XHTML. We do *NOT* want to let luxl parse that,
+    --       because it doesn't really deal well with various XHTML quirks, as the list of crappy replacements above attests to...
+    --       There's also a high probability of finding orphaned tags or badly nested ones in there, which would screw everything up.
+    --       In any case, we just want to treat the whole thing as a single text node anyway, so, just mangle the markup to force luxl's hand.
+    text = text:gsub('<content type=".-">', "<content>")
+    text = text:gsub("<content>(.-)</content>", function (s)
+        return '<content type="text">' .. s:gsub("%p", {["<"] = "&lt;", [">"] = "&gt;", ['"'] = "&quot;", ["'"] = "&apos;"}) .. "</content>"
+    end )
+
     local xlex = luxl.new(text, #text)
     return assert(self:createFlatXTable(xlex))
 end

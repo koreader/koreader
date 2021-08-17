@@ -195,7 +195,6 @@ function TimeWidget:onCloseWidget()
     UIManager:setDirty(nil, function()
         return "ui", self.time_frame.dimen
     end)
-    return true
 end
 
 function TimeWidget:onShow()

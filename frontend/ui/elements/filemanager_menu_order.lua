@@ -38,7 +38,7 @@ local order = {
     device = {
         "keyboard_layout",
         "time",
-        "battery",
+        "device_status_alarm",
         "charging_led", -- if Device:canToggleChargingLED()
         "autostandby",
         "autosuspend",
@@ -60,6 +60,7 @@ local order = {
         "android_back_button",
         "----------------------------",
         "invert_page_turn_buttons",
+        "opening_page_location_stack",
     },
     network = {
         "network_wifi",
@@ -84,13 +85,14 @@ local order = {
         "----------------------------",
         "screen_timeout",
         "fullscreen",
+        "----------------------------",
+        "screen_notification",
     },
     taps_and_gestures = {
         "gesture_manager",
         "gesture_intervals",
         "----------------------------",
         "menu_activate",
-        "page_turns",
         "ignore_hold_corners",
         "screen_disable_double_tab",
     },
@@ -134,7 +136,6 @@ local order = {
         "find_book_in_calibre_catalog",
         "find_file",
         "----------------------------",
-        "goodreads",
         "opds",
     },
     main = {

@@ -6,6 +6,7 @@ local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
+local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -144,8 +145,11 @@ function ReaderStatus:onEndOfBook()
             }
             UIManager:show(info)
             UIManager:forceRePaint()
-            self:openNextFile(self.document.file)
             UIManager:close(info)
+            -- Delay until the next tick, as this will destroy the Document instance, but we may not be the final Event caught by said Document...
+            UIManager:nextTick(function()
+                self:openNextFile(self.document.file)
+            end)
         else
             UIManager:show(InfoMessage:new{
                 text = _("Could not open next file. Sort by last read date does not support this feature."),
@@ -154,7 +158,10 @@ function ReaderStatus:onEndOfBook()
     elseif settings == "goto_beginning" then
         self.ui:handleEvent(Event:new("GoToBeginning"))
     elseif settings == "file_browser" then
-        self:openFileBrowser()
+        -- Ditto
+        UIManager:nextTick(function()
+            self:openFileBrowser()
+        end)
     elseif settings == "mark_read" then
         self:onMarkBook(true)
         UIManager:show(InfoMessage:new{
@@ -162,10 +169,16 @@ function ReaderStatus:onEndOfBook()
             timeout = 3
         })
     elseif settings == "book_status_file_browser" then
-        local before_show_callback = function() self:openFileBrowser() end
-        self:onShowBookStatus(before_show_callback)
+        -- Ditto
+        UIManager:nextTick(function()
+            local before_show_callback = function() self:openFileBrowser() end
+            self:onShowBookStatus(before_show_callback)
+        end)
     elseif settings == "delete_file" then
-        self:deleteFile(self.document.file, true)
+        -- Ditto
+        UIManager:nextTick(function()
+            self:deleteFile(self.document.file, true)
+        end)
     end
 end
 
@@ -175,7 +188,6 @@ function ReaderStatus:openFileBrowser()
     if not FileManager.instance then
         self.ui:showFileManager()
     end
-    self.document = nil
 end
 
 function ReaderStatus:openNextFile(next_file)
@@ -211,7 +223,8 @@ function ReaderStatus:deleteFile(file, text_end_book)
             if FileManager.instance then
                 FileManager.instance.file_chooser:refreshPath()
             else
-                FileManager:showFiles()
+                local path = util.splitFilePathName(file)
+                FileManager:showFiles(path)
             end
         end,
     })

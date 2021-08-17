@@ -72,9 +72,9 @@ local ReaderStatistics = Widget:extend{
     page_stat = {}, -- Dictionary, indexed by page (hash), contains a list (array) of { timestamp, duration } tuples.
     data = {
         title = "",
-        authors = "",
-        language = "",
-        series = "",
+        authors = "N/A",
+        language = "N/A",
+        series = "N/A",
         performance_in_pages = {},
         total_time_in_sec = 0,
         highlights = 0,
@@ -122,7 +122,7 @@ local monthTranslation = {
 }
 
 function ReaderStatistics:isDocless()
-    return self.ui == nil or self.ui.document == nil
+    return self.ui == nil or self.ui.document == nil or self.ui.document.is_pic == true
 end
 
 -- NOTE: This is used in a migration script by ui/data/onetime_migration,
@@ -139,9 +139,11 @@ ReaderStatistics.default_settings = {
 }
 
 function ReaderStatistics:init()
-    if not self:isDocless() and self.ui.document.is_pic then
+    -- Disable in PIC documents (but not the FM, as we want to be registered to the FM's menu).
+    if self.ui and self.ui.document and self.ui.document.is_pic then
         return
     end
+
     self.start_current_period = os.time()
     self:resetVolatileStats()
 
@@ -153,6 +155,11 @@ function ReaderStatistics:init()
         return self:getStatsBookStatus(self.id_curr_book, self.settings.is_enabled)
     end
     ReaderFooter.getAvgTimePerPage = function()
+        if self.settings.is_enabled then
+            return self.avg_time
+        end
+    end
+    Screensaver.getAvgTimePerPage = function()
         if self.settings.is_enabled then
             return self.avg_time
         end
@@ -191,8 +198,17 @@ function ReaderStatistics:initData()
         self.data.title = self.document.file:match("^.+/(.+)$")
     end
     self.data.authors = book_properties.authors
+    if self.data.authors == nil or self.data.authors == "" then
+        self.data.authors = "N/A"
+    end
     self.data.language = book_properties.language
+    if self.data.language == nil or self.data.language == "" then
+        self.data.language = "N/A"
+    end
     self.data.series = book_properties.series
+    if self.data.series == nil or self.data.series == "" then
+        self.data.series = "N/A"
+    end
 
     self.data.pages = self.view.document:getPageCount()
     if not self.data.md5 then
@@ -1294,30 +1310,31 @@ function ReaderStatistics:getCurrentStat(id_book)
     local estimate_days_to_read = math.ceil(time_to_read/(book_read_time/tonumber(total_days)))
     local estimate_end_of_read_date = os.date("%Y-%m-%d", tonumber(now_ts + estimate_days_to_read * 86400))
     local estimates_valid = time_to_read > 0 -- above values could be 'nan' and 'nil'
+    local user_duration_format = G_reader_settings:readSetting("duration_format", "classic")
     return {
         -- Global statistics (may consider other books than current book)
         -- since last resume
-        { _("Time spent reading this session"), util.secondsToClock(current_duration, false) },
+        { _("Time spent reading this session"), util.secondsToClockDuration(user_duration_format, current_duration, false) },
         { _("Pages read this session"), tonumber(current_pages) },
         -- today
-        { _("Time spent reading today"), util.secondsToClock(today_duration, false) },
+        { _("Time spent reading today"), util.secondsToClockDuration(user_duration_format, today_duration, false) },
         { _("Pages read today"), tonumber(today_pages), separator = true },
         -- Current book statistics
         -- Includes re-reads
-        { _("Total time spent on this book"), util.secondsToClock(total_time_book, false) },
+        { _("Total time spent on this book"), util.secondsToClockDuration(user_duration_format, total_time_book, false) },
         -- Capped to self.settings.max_sec per distinct page
-        { _("Time spent reading this book"), util.secondsToClock(book_read_time, false) },
+        { _("Time spent reading this book"), util.secondsToClockDuration(user_duration_format, book_read_time, false) },
         -- per days
         { _("Reading started"), os.date("%Y-%m-%d (%H:%M)", tonumber(first_open))},
         { _("Days reading this book"), tonumber(total_days) },
-        { _("Average time per day"), util.secondsToClock(book_read_time/tonumber(total_days), false) },
+        { _("Average time per day"), util.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false) },
         -- per page (% read)
-        { _("Average time per page"), util.secondsToClock(self.avg_time, false) },
+        { _("Average time per page"), util.secondsToClockDuration(user_duration_format, self.avg_time, false) },
         { _("Pages read"), string.format("%d (%d%%)", total_read_pages, Math.round(100*total_read_pages/self.data.pages)) },
         -- current page (% completed)
         { _("Current page/Total pages"), string.format("%d/%d (%d%%)", self.curr_page, self.data.pages, Math.round(100*self.curr_page/self.data.pages)) },
         -- estimation, from current page to end of book
-        { _("Estimated time to read"), estimates_valid and util.secondsToClock(time_to_read, false) or _("N/A") },
+        { _("Estimated time to read"), estimates_valid and util.secondsToClockDuration(user_duration_format, time_to_read, false) or _("N/A") },
         { _("Estimated reading finished"), estimates_valid and
             T(N_("%1 (1 day)", "%1 (%2 days)", estimate_days_to_read), estimate_end_of_read_date, estimate_days_to_read)
             or _("N/A") },
@@ -1410,16 +1427,17 @@ function ReaderStatistics:getBookStat(id_book)
         pages = 1
     end
     local avg_time_per_page = book_read_time / book_read_pages
+    local user_duration_format = G_reader_settings:readSetting("duration_format")
     return {
         { _("Title"), title},
         { _("Authors"), authors},
         { _("Reading started"), os.date("%Y-%m-%d (%H:%M)", tonumber(first_open))},
         { _("Last read"), os.date("%Y-%m-%d (%H:%M)", tonumber(last_open))},
         { _("Days reading this book"), tonumber(total_days) },
-        { _("Total time spent on this book"), util.secondsToClock(total_time_book, false) },
-        { _("Time spent reading this book"), util.secondsToClock(book_read_time, false) },
-        { _("Average time per day"), util.secondsToClock(book_read_time/tonumber(total_days), false) },
-        { _("Average time per page"), util.secondsToClock(avg_time_per_page, false) },
+        { _("Total time spent on this book"), util.secondsToClockDuration(user_duration_format, total_time_book, false) },
+        { _("Time spent reading this book"), util.secondsToClockDuration(user_duration_format, book_read_time, false) },
+        { _("Average time per day"), util.secondsToClockDuration(user_duration_format, book_read_time/tonumber(total_days), false) },
+        { _("Average time per page"), util.secondsToClockDuration(user_duration_format, avg_time_per_page, false) },
         { _("Pages read"), string.format("%d (%d%%)", total_read_pages, Math.round(100*total_read_pages/pages)) },
         { _("Last read page/Total pages"), string.format("%d/%d (%d%%)", last_page, pages, Math.round(100*last_page/pages)) },
         { _("Highlights"), highlights, separator = true },
@@ -1585,6 +1603,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
     local now_stamp = os.time()
     local one_day = 86400 -- one day in seconds
     local period_begin = 0
+    local user_duration_format = G_reader_settings:readSetting("duration_format")
     if sdays > 0 then
         period_begin = now_stamp - ((sdays-1) * one_day) - from_begin_day
     end
@@ -1636,7 +1655,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
             local stop_month = os.time{year=year_end, month=month_end, day=1, hour=0, min=0 }
             table.insert(results, {
                 date_text,
-                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false)),
+                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false)),
                 callback = function()
                     self:callbackMonthly(start_month, stop_month, date_text, book_mode)
                 end,
@@ -1650,7 +1669,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
             begin_week = begin_week - weekday * 86400
             table.insert(results, {
                 date_text,
-                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false)),
+                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false)),
                 callback = function()
                     self:callbackWeekly(begin_week, begin_week + 7 * 86400, date_text, book_mode)
                 end,
@@ -1661,7 +1680,7 @@ function ReaderStatistics:getDatesFromAll(sdays, ptype, book_mode)
                 - 60 * tonumber(string.sub(time_book,3,4)) - tonumber(string.sub(time_book,5,6))
             table.insert(results, {
                 date_text,
-                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false)),
+                T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false)),
                 callback = function()
                     self:callbackDaily(begin_day, begin_day + 86400, date_text)
                 end,
@@ -1696,12 +1715,13 @@ function ReaderStatistics:getDaysFromPeriod(period_begin, period_end)
     if result_book == nil then
         return {}
     end
+    local user_duration_format = G_reader_settings:readSetting("duration_format")
     for i=1, #result_book.dates do
         local time_begin = os.time{year=string.sub(result_book[1][i],1,4), month=string.sub(result_book[1][i],6,7),
             day=string.sub(result_book[1][i],9,10), hour=0, min=0, sec=0 }
         table.insert(results, {
             result_book[1][i],
-            T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false)),
+            T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false)),
             callback = function()
                 local kv = self.kv
                 UIManager:close(kv)
@@ -1740,10 +1760,11 @@ function ReaderStatistics:getBooksFromPeriod(period_begin, period_end, callback_
     if result_book == nil then
         return {}
     end
+    local user_duration_format = G_reader_settings:readSetting("duration_format")
     for i=1, #result_book.title do
         table.insert(results, {
             result_book[1][i],
-            T(_("%1 (%2)"), util.secondsToClock(tonumber(result_book[2][i]), false), tonumber(result_book[3][i])),
+            T(_("%1 (%2)"), util.secondsToClockDuration(user_duration_format, tonumber(result_book[2][i]), false), tonumber(result_book[3][i])),
             callback = function()
                 local kv = self.kv
                 UIManager:close(self.kv)
@@ -1836,10 +1857,11 @@ function ReaderStatistics:getDatesForBook(id_book)
     if result_book == nil then
         return {}
     end
+    local user_duration_format = G_reader_settings:readSetting("duration_format")
     for i=1, #result_book.dates do
         table.insert(results, {
             result_book[1][i],
-            T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClock(tonumber(result_book[3][i]), false))
+            T(_("Pages: (%1) Time: %2"), tonumber(result_book[2][i]), util.secondsToClockDuration(user_duration_format, tonumber(result_book[3][i]), false))
         })
     end
     return results
@@ -1869,7 +1891,7 @@ function ReaderStatistics:getTotalStats()
     else
         nr_books = 0
     end
-
+    local user_duration_format = G_reader_settings:readSetting("duration_format")
     for i=1, nr_books do
         local id_book = tonumber(id_book_tbl[1][i])
         sql_stmt = [[
@@ -1889,7 +1911,7 @@ function ReaderStatistics:getTotalStats()
         end
         table.insert(total_stats, {
             book_title,
-            util.secondsToClock(total_time_book, false),
+            util.secondsToClockDuration(user_duration_format, total_time_book, false),
             callback = function()
                 local kv = self.kv
                 UIManager:close(self.kv)
@@ -1909,7 +1931,7 @@ function ReaderStatistics:getTotalStats()
     end
     conn:close()
 
-    return T(_("Total time spent reading: %1"), util.secondsToClock(total_books_time, false)), total_stats
+    return T(_("Total time spent reading: %1"), util.secondsToClockDuration(user_duration_format, total_books_time, false)), total_stats
 end
 
 function ReaderStatistics:genResetBookSubItemTable()
@@ -1965,6 +1987,7 @@ function ReaderStatistics:resetBook()
         nr_books = 0
     end
 
+    local user_duration_format = G_reader_settings:readSetting("duration_format")
     local total_time_book
     local kv_reset_book
     for i=1, nr_books do
@@ -1988,7 +2011,7 @@ function ReaderStatistics:resetBook()
         if id_book ~= self.id_curr_book then
             table.insert(total_stats, {
                 book_title,
-                util.secondsToClock(total_time_book, false),
+                util.secondsToClockDuration(user_duration_format, total_time_book, false),
                 id_book,
                 callback = function()
                     UIManager:show(ConfirmBox:new{

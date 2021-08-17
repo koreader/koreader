@@ -5,7 +5,9 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
 local Math = require("optmath")
+local Notification = require("ui/widget/notification")
 local lfs = require("libs/libkoreader-lfs")
+local optionsutil = require("ui/data/optionsutil")
 local _ = require("gettext")
 local Screen = require("device").screen
 local T = require("ffi/util").template
@@ -136,16 +138,27 @@ end
 
 function ReaderTypeset:onToggleEmbeddedStyleSheet(toggle)
     self:toggleEmbeddedStyleSheet(toggle)
+    if toggle then
+        Notification:notify(_("Enabled embedded styles."))
+    else
+        Notification:notify(_("Disabled embedded styles."))
+    end
     return true
 end
 
 function ReaderTypeset:onToggleEmbeddedFonts(toggle)
     self:toggleEmbeddedFonts(toggle)
+    if toggle then
+        Notification:notify(_("Enabled embedded fonts."))
+    else
+        Notification:notify(_("Disabled embedded fonts."))
+    end
     return true
 end
 
 function ReaderTypeset:onToggleImageScaling(toggle)
     self:toggleImageScaling(toggle)
+    Notification:notify(T( _("Image scaling set to: %1"), optionsutil:getOptionText("ToggleImageScaling", toggle)))
     return true
 end
 
@@ -156,6 +169,7 @@ end
 
 function ReaderTypeset:onSetBlockRenderingMode(mode)
     self:setBlockRenderingMode(mode)
+    Notification:notify(T( _("Render mode set to: %1"), optionsutil:getOptionText("SetBlockRenderingMode", mode)))
     return true
 end
 
@@ -177,6 +191,7 @@ local OBSOLETED_CSS = {
 
 function ReaderTypeset:onSetRenderDPI(dpi)
     self:setRenderDPI(dpi)
+    Notification:notify(T( _("Zoom set to: %1"), optionsutil:getOptionText("SetRenderDPI", dpi)))
     return true
 end
 

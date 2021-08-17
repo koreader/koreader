@@ -1,7 +1,5 @@
 #!/bin/bash
 # Script to generate debian packages for KOReader
-# shellcheck disable=SC2164
-
 if [ -z "${1}" ]; then
     echo "${0}: can't find KOReader build, please specify a path"
     exit 1
@@ -81,7 +79,6 @@ if command_exists "${COMMAND}"; then
     find "${BASE_DIR}" -type d -print0 | xargs -0 chmod 755
     find "${BASE_DIR}" -executable -type f -print0 | xargs -0 chmod 755
     find "${BASE_DIR}" -type f -name "*.cff" -print0 | xargs -0 chmod 644
-    find "${BASE_DIR}" -type f -name "*.crt" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "*.html" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "*.lua" -print0 | xargs -0 chmod 644
     find "${BASE_DIR}" -type f -name "*manifest" -print0 | xargs -0 chmod 644
@@ -120,5 +117,3 @@ else
     echo "${COMMAND} not found, unable to build Debian package"
     exit 1
 fi
-
-exit 0

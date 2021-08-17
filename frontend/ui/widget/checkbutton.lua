@@ -22,8 +22,10 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local GestureRange = require("ui/gesturerange")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local TextWidget = require("ui/widget/textwidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local Screen = Device.screen
 
 local CheckButton = InputContainer:new{
@@ -31,12 +33,12 @@ local CheckButton = InputContainer:new{
     hold_callback = nil,
     checked = false,
     enabled = true,
-    face = Font:getFace("cfont"),
+    face = Font:getFace("smallinfofont"),
     background = Blitbuffer.COLOR_WHITE,
     overlap_align = "right",
     text = nil,
     toggle_text = nil,
-    max_width = nil,
+    max_width = nil, -- must be set by the caller
     window = nil,
 
     padding = Screen:scaleBySize(5),
@@ -56,15 +58,23 @@ function CheckButton:initCheckButton(checked)
         parent = self.parent or self,
         show_parent = self.show_parent or self,
     }
-    self._textwidget = TextWidget:new{
+    self._textwidget = TextBoxWidget:new{
         text = self.text,
         face = self.face,
-        max_width = self.max_width,
+        width = self.max_width - self._checkmark.dimen.w,
         fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
     }
-    self._horizontalgroup = HorizontalGroup:new{
-        self._checkmark,
+    self._verticalgroup = VerticalGroup:new{
+        align = "left",
+        VerticalSpan:new{
+            width = self.face.size * 0.18,
+        },
         self._textwidget,
+    }
+    self._horizontalgroup = HorizontalGroup:new{
+        align = "top",
+        self._checkmark,
+        self._verticalgroup,
     }
     self._frame = FrameContainer:new{
         bordersize = 0,
@@ -91,6 +101,14 @@ function CheckButton:initCheckButton(checked)
                     range = self.dimen,
                 },
                 doc = "Hold Button",
+            },
+            -- Safe-guard for when used inside a MovableContainer
+            HoldReleaseCheckButton = {
+                GestureRange:new{
+                    ges = "hold_release",
+                    range = self.dimen,
+                },
+                doc = "Hold Release Button",
             }
         }
     end
@@ -138,14 +156,31 @@ function CheckButton:onTapCheckButton()
 end
 
 function CheckButton:onHoldCheckButton()
-    if self.enabled and self.hold_callback then
-        self.hold_callback()
-    elseif self.hold_input then
-        self:onInput(self.hold_input)
-    elseif type(self.hold_input_func) == "function" then
-        self:onInput(self.hold_input_func())
+    -- If we're going to process this hold, we must make
+    -- sure to also handle its hold_release below, so it's
+    -- not propagated up to a MovableContainer
+    self._hold_handled = nil
+    if self.enabled then
+        if self.hold_callback then
+            self.hold_callback()
+            self._hold_handled = true
+        elseif self.hold_input then
+            self:onInput(self.hold_input, true)
+            self._hold_handled = true
+        elseif type(self.hold_input_func) == "function" then
+            self:onInput(self.hold_input_func(), true)
+            self._hold_handled = true
+        end
     end
     return true
+end
+
+function CheckButton:onHoldReleaseCheckButton()
+    if self._hold_handled then
+        self._hold_handled = nil
+        return true
+    end
+    return false
 end
 
 function CheckButton:check()

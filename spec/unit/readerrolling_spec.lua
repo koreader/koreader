@@ -80,6 +80,7 @@ describe("Readerrolling module", function()
 
         it("should emit EndOfBook event at the end sample txt", function()
             local sample_txt = "spec/front/unit/data/sample.txt"
+            -- Unsafe second // ReaderUI instance!
             local txt_readerui = ReaderUI:new{
                 dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_txt),
@@ -108,6 +109,8 @@ describe("Readerrolling module", function()
             readerui.onEndOfBook = nil
             txt_readerui:closeDocument()
             txt_readerui:onClose()
+            -- Restore the ref to the original ReaderUI instance
+            ReaderUI.instance = readerui
         end)
     end)
 
@@ -207,14 +210,14 @@ describe("Readerrolling module", function()
             end
             local test_book = "spec/front/unit/data/sample.txt"
             require("docsettings"):open(test_book):purge()
+            readerui:closeDocument()
+            readerui:onClose()
             local tmp_readerui = ReaderUI:new{
                 document = DocumentRegistry:openDocument(test_book),
             }
             ReaderView.onPageUpdate = saved_handler
             tmp_readerui:closeDocument()
             tmp_readerui:onClose()
-            readerui:closeDocument()
-            readerui:onClose()
         end)
     end)
 end)
