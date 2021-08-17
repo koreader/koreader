@@ -41,8 +41,8 @@ local VirtualKey = InputContainer:new{
 
     width = nil,
     height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
-    bordersize = Size.border.thin,
-    focused_bordersize = Size.border.default * 5,
+    bordersize = 0,
+    focused_bordersize = Size.border.default,
     radius = 0,
     face = Font:getFace("infont"),
 }
@@ -111,10 +111,18 @@ function VirtualKey:init()
             self.keyboard:delToStartOfLine()
         end
         --self.skiphold = true
-    elseif self.label =="←" then
+    elseif self.label == "←" then
         self.callback = function() self.keyboard:leftChar() end
+        self.hold_callback = function()
+            self.ignore_key_release = true
+            self.keyboard:goToStartOfLine()
+        end
     elseif self.label == "→" then
         self.callback = function() self.keyboard:rightChar() end
+        self.hold_callback = function()
+            self.ignore_key_release = true
+            self.keyboard:goToEndOfLine()
+        end
     elseif self.label == "↑" then
         self.callback = function() self.keyboard:upLine() end
     elseif self.label == "↓" then
@@ -129,7 +137,7 @@ function VirtualKey:init()
             }
         end
         self.swipe_callback = function(ges)
-            local key_string = self.key_chars[ges.direction]
+            local key_string = self.key_chars[ges.direction] or self.key
             local key_function = self.key_chars[ges.direction.."_func"]
 
             if not key_function and key_string then
@@ -159,6 +167,46 @@ function VirtualKey:init()
             text = self.label,
             face = self.face,
             bold = self.bold or false,
+        }
+    -- make long labeled keys to have a smaller font (c.f. https://github.com/koreader/koreader/pull/7972#issuecomment-884822411)
+        local max_width = self.width - 2*self.bordersize - 2*Size.padding.small
+        while label_widget:getWidth() > max_width do
+            local new_size = label_widget.face.orig_size - 1
+            label_widget:free()
+            if new_size < 8 then break end -- don't go too small
+            label_widget = TextWidget:new{
+                text = self.label,
+                face = Font:getFace(self.face.orig_font, new_size),
+                bold = self.bold or false,
+            }
+        end
+    end
+    --if not self.alt_label then self.alt_label = "z" end -- for testing
+    if self.alt_label then
+        local OverlapGroup = require("ui/widget/overlapgroup")
+        local alt_label_widget = TextWidget:new{
+            text = self.alt_label,
+            face = Font:getFace("infont", 18),
+            fgcolor = Blitbuffer.COLOR_DARK_GRAY,
+            padding = 0, -- no additional padding to font line height
+        }
+        local key_inner_dimen = Geom:new{
+            w = self.width - 2*self.bordersize - 2*Size.padding.default,
+            h = self.height - 2*self.bordersize - 2*Size.padding.small, -- already some padding via line height
+        }
+        label_widget = OverlapGroup:new{
+            CenterContainer:new{
+                dimen = key_inner_dimen,
+                label_widget,
+            },
+            WidgetContainer:new{
+                overlap_align = "right",
+                dimen = Geom:new{
+                    w = alt_label_widget:getSize().w,
+                    h = key_inner_dimen.h,
+                },
+                alt_label_widget,
+            },
         }
     end
     self[1] = FrameContainer:new{
@@ -216,7 +264,7 @@ function VirtualKey:init()
         }
     end
     if (self.keyboard.shiftmode_keys[self.label] ~= nil  and self.keyboard.shiftmode) or
-    (self.keyboard.umlautmode_keys[self.label] ~= nil and self.keyboard.umlautmode) then
+    (self.keyboard.symbolmode_keys[self.label] ~= nil and self.keyboard.symbolmode) then
         self[1].background = Blitbuffer.COLOR_LIGHT_GRAY
     end
     self.flash_keyboard = G_reader_settings:nilOrTrue("flash_keyboard")
@@ -235,6 +283,7 @@ function VirtualKey:genkeyboardLayoutKeyChars()
         },
         east = { label = "🌐", },
         east_func = function ()
+            UIManager:close(self.popup)
             self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
                 parent = self,
             }
@@ -512,6 +561,17 @@ function VirtualKeyPopup:init()
                 virtual_key.hold_callback = nil
                 -- close popup on hold release
                 virtual_key.onHoldReleaseKey = function()
+                    -- NOTE: Check our *parent* key!
+                    if parent_key.ignore_key_release then
+                        parent_key.ignore_key_release = nil
+                        return true
+                    end
+                    Device:performHapticFeedback("LONG_PRESS")
+                    if virtual_key.keyboard.ignore_first_hold_release then
+                        virtual_key.keyboard.ignore_first_hold_release = false
+                        return true
+                    end
+
                     virtual_key:onTapSelect(true)
                     UIManager:close(self)
                     return true
@@ -567,14 +627,14 @@ function VirtualKeyPopup:init()
     local keyboard_frame = FrameContainer:new{
         margin = 0,
         bordersize = Size.border.default,
-        background = Blitbuffer.COLOR_WHITE,
+        background = Blitbuffer.COLOR_LIGHT_GRAY,
         radius = 0,
         padding = parent_key.keyboard.padding,
         allow_mirroring = false,
         CenterContainer:new{
             dimen = Geom:new{
-                w = parent_key.width*num_columns + 2*Size.border.default + (num_columns)*parent_key.keyboard.key_padding,
-                h = parent_key.height*num_rows + 2*Size.border.default + num_rows*parent_key.keyboard.key_padding,
+                w = parent_key.width*num_columns + 2*Size.border.default + (num_columns+1)*parent_key.keyboard.key_padding,
+                h = parent_key.height*num_rows + 2*Size.border.default + (num_rows+1)*parent_key.keyboard.key_padding,
             },
             vertical_group,
         }
@@ -598,17 +658,17 @@ function VirtualKeyPopup:init()
         self.key_events.Close = { {"Back"}, doc = "close keyboard" }
     end
 
-    local offset_x = 2*parent_key.keyboard.padding + 2*parent_key.keyboard.bordersize
+    local offset_x = 2*keyboard_frame.bordersize + keyboard_frame.padding + parent_key.keyboard.key_padding
     if columns[1] then
-        offset_x = offset_x + parent_key.width + parent_key.keyboard.padding + 2*parent_key.keyboard.bordersize
+        offset_x = offset_x + parent_key.width + parent_key.keyboard.key_padding
     end
 
-    local offset_y = parent_key.keyboard.padding + parent_key.keyboard.padding + 2*parent_key.keyboard.bordersize
+    local offset_y = 2*keyboard_frame.bordersize + keyboard_frame.padding + parent_key.keyboard.key_padding
     if rows.extra_key_chars then
-        offset_y = offset_y + parent_key.height + parent_key.keyboard.padding + 2*parent_key.keyboard.bordersize
+        offset_y = offset_y + parent_key.height + parent_key.keyboard.key_padding
     end
     if rows.top_key_chars then
-        offset_y = offset_y + parent_key.height + parent_key.keyboard.padding + 2*parent_key.keyboard.bordersize
+        offset_y = offset_y + parent_key.height + parent_key.keyboard.key_padding
     end
 
     local position_container = WidgetContainer:new{
@@ -622,13 +682,19 @@ function VirtualKeyPopup:init()
     }
     if position_container.dimen.x < 0 then
         position_container.dimen.x = 0
+        -- We effectively move the popup, which means the key underneath our finger may no longer *exactly* be parent_key.
+        -- Make sure we won't close the popup right away, as that would risk being a *different* key, in order to make that less confusing.
+        parent_key.ignore_key_release = true
     elseif position_container.dimen.x + keyboard_frame.dimen.w > Screen:getWidth() then
         position_container.dimen.x = Screen:getWidth() - keyboard_frame.dimen.w
+        parent_key.ignore_key_release = true
     end
     if position_container.dimen.y < 0 then
         position_container.dimen.y = 0
+        parent_key.ignore_key_release = true
     elseif position_container.dimen.y + keyboard_frame.dimen.h > Screen:getHeight() then
         position_container.dimen.y = Screen:getHeight() - keyboard_frame.dimen.h
+        parent_key.ignore_key_release = true
     end
 
     self[1] = position_container
@@ -659,8 +725,8 @@ local VirtualKeyboard = FocusManager:new{
     width = Screen:scaleBySize(600),
     height = nil,
     bordersize = Size.border.default,
-    padding = Size.padding.small,
-    key_padding = Size.padding.default,
+    padding = 0,
+    key_padding = Size.padding.small,
 
     lang_to_keyboard_layout = {
         ar_AA = "ar_AA_keyboard",
@@ -763,7 +829,6 @@ end
 
 function VirtualKeyboard:onCloseWidget()
     self:_refresh(false)
-    return true
 end
 
 function VirtualKeyboard:initLayer(layer)
@@ -804,14 +869,18 @@ function VirtualKeyboard:addKeys()
             local key
             local key_chars = self.KEYS[i][j][self.keyboard_layer]
             local label
+            local alt_label
+            local width_factor
             if type(key_chars) == "table" then
                 key = key_chars[1]
                 label = key_chars.label
+                alt_label = key_chars.alt_label
+                width_factor = key_chars.width
             else
                 key = key_chars
                 key_chars = nil
             end
-            local width_factor = self.KEYS[i][j].width or 1.0
+            width_factor = width_factor or self.KEYS[i][j].width or self.KEYS[i].width or 1.0
             local key_width = math.floor((base_key_width + self.key_padding) * width_factor)
                             - self.key_padding
             local key_height = base_key_height
@@ -821,6 +890,7 @@ function VirtualKeyboard:addKeys()
                 key_chars = key_chars,
                 icon = self.KEYS[i][j].icon,
                 label = label,
+                alt_label = alt_label,
                 bold = self.KEYS[i][j].bold,
                 keyboard = self,
                 width = key_width,
@@ -845,7 +915,7 @@ function VirtualKeyboard:addKeys()
     local keyboard_frame = FrameContainer:new{
         margin = 0,
         bordersize = Size.border.default,
-        background = Blitbuffer.COLOR_WHITE,
+        background = Blitbuffer.COLOR_LIGHT_GRAY,
         radius = 0,
         padding = self.padding,
         allow_mirroring = false,
@@ -873,7 +943,7 @@ function VirtualKeyboard:setLayer(key)
         self.umlautmode = not self.umlautmode
     end
     self:initLayer()
-    self:_refresh(true)
+    self:_refresh(false)
 end
 
 function VirtualKeyboard:addChar(key)
@@ -897,6 +967,14 @@ end
 
 function VirtualKeyboard:rightChar()
     self.inputbox:rightChar()
+end
+
+function VirtualKeyboard:goToStartOfLine()
+    self.inputbox:goToStartOfLine()
+end
+
+function VirtualKeyboard:goToEndOfLine()
+    self.inputbox:goToEndOfLine()
 end
 
 function VirtualKeyboard:upLine()
