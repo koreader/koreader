@@ -220,7 +220,7 @@ function Translator:genSettingsMenu()
         sub_item_table = {
             {
                 text = _("Auto-detect source language"),
-                help_text = _("Auto-detect language is best suited for foreign phrases or texts on books in your native language."),
+                help_text = _("This setting is best suited for foreign sentences or text fragments found in books written in your native language."),
                 enabled_func = function()
                     return not (G_reader_settings:isTrue("translator_from_doc_lang") and self:getDocumentLanguage() ~= nil)
                 end,
@@ -236,7 +236,7 @@ function Translator:genSettingsMenu()
                     local lang = G_reader_settings:readSetting("translator_from_language")
                     return T(_("Translate from: %1"), self:getLanguageName(lang, ""))
                 end,
-                help_text = _("Selecting a specific source language will have it used with all text on all your books."),
+                help_text = _("If a specific source language is manually selected, it will be used everywhere, in all your books."),
                 enabled_func = function()
                     return not G_reader_settings:nilOrTrue("translator_from_auto_detect")
                         and not (G_reader_settings:isTrue("translator_from_doc_lang") and self:getDocumentLanguage() ~= nil)
@@ -250,9 +250,9 @@ function Translator:genSettingsMenu()
                     return T(_("Translate from book language: %1"), name or _("N/A"))
                 end,
                 help_text = _([[
-With books that specify their main language in their metadata (most EPUBs), enabling this option will have this language used as the source language (otherwise, auto-detect or the specified languages will be used).
+With books that specify their main language in their metadata (most EPUBs), enabling this option will make this language the source language (otherwise, auto-detection or the specified languages will be used).
 This is interesting:
-- For books in your non-native language, where consistent translation is needed and foreign words are exceptional on the text.
+- For books in a foreign language, where consistent translation is needed and words in other languages are rare.
 - For books in your native language, to get definitions for words from the translation service.]]),
                 enabled_func = function()
                     return self:getDocumentLanguage() ~= nil
