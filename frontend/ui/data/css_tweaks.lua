@@ -729,9 +729,11 @@ This only works with footnotes that have specific attributes set by the publishe
                 -- Restrict this to non-FB2 documents, as FB2 can have <a type="note">
                 css = [[
 *[type~="note"],
+*[type~="endnote"],
 *[type~="footnote"],
 *[type~="rearnote"],
 *[role~="doc-note"],
+*[role~="doc-endnote"],
 *[role~="doc-footnote"],
 *[role~="doc-rearnote"]
 {
@@ -751,9 +753,11 @@ This only works with footnotes that have specific attributes set by the publishe
                 -- and we don't want to have them smaller
                 css = [[
 *[type~="note"],
+*[type~="endnote"],
 *[type~="footnote"],
 *[type~="rearnote"],
 *[role~="doc-note"],
+*[role~="doc-endnote"],
 *[role~="doc-footnote"],
 *[role~="doc-rearnote"]
 {
