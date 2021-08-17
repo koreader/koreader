@@ -54,6 +54,7 @@ local TextViewer = InputContainer:new{
 
     title_face = Font:getFace("x_smalltfont"),
     text_face = Font:getFace("x_smallinfofont"),
+    fgcolor = Blitbuffer.COLOR_BLACK,
     title_padding = Size.padding.default,
     title_margin = Size.margin.title,
     text_padding = Size.padding.large,
@@ -167,6 +168,7 @@ function TextViewer:init()
     self.scroll_text_w = ScrollTextWidget:new{
         text = self.text,
         face = self.text_face,
+        fgcolor = self.fgcolor,
         width = self.width - 2*self.text_padding - 2*self.text_margin,
         height = textw_height - 2*self.text_padding -2*self.text_margin,
         dialog = self,

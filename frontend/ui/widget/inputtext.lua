@@ -83,6 +83,12 @@ if Device:isTouchDevice() or Device:hasDPad() then
                         range = function() return self.dimen end
                     }
                 },
+                HoldReleaseTextBox = {
+                    GestureRange:new{
+                        ges = "hold_release",
+                        range = function() return self.dimen end
+                    }
+                },
                 SwipeTextBox = {
                     GestureRange:new{
                         ges = "swipe",
@@ -94,9 +100,6 @@ if Device:isTouchDevice() or Device:hasDPad() then
                 -- Commented for now, as this needs work
                 -- HoldPanTextBox = {
                 --     GestureRange:new{ ges = "hold_pan", range = self.dimen }
-                -- },
-                -- HoldReleaseTextBox = {
-                --     GestureRange:new{ ges = "hold_release", range = self.dimen }
                 -- },
                 -- PanTextBox = {
                 --     GestureRange:new{ ges = "pan", range = self.dimen }
@@ -144,6 +147,7 @@ if Device:isTouchDevice() or Device:hasDPad() then
                 self.parent:onSwitchFocus(self)
             end
             -- clipboard dialog
+            self._hold_handled = nil
             if Device:hasClipboard() then
                 if self.do_select then -- select mode on
                     if self.selection_start_pos then -- select end
@@ -168,10 +172,12 @@ if Device:isTouchDevice() or Device:hasDPad() then
                     end
                 end
                 local clipboard_value = Device.input.getClipboardText()
+                local is_clipboard_empty = clipboard_value == nil or clipboard_value == ""
                 local clipboard_dialog
                 clipboard_dialog = require("ui/widget/textviewer"):new{
-                    title = (clipboard_value == nil or clipboard_value == "") and _("Clipboard (empty)") or _("Clipboard"),
-                    text = clipboard_value,
+                    title = _("Clipboard"),
+                    text = is_clipboard_empty and _("(empty)") or clipboard_value,
+                    fgcolor = is_clipboard_empty and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK,
                     width = math.floor(Screen:getWidth() * 0.8),
                     height = math.floor(Screen:getHeight() * 0.4),
                     justified = false,
@@ -231,7 +237,7 @@ if Device:isTouchDevice() or Device:hasDPad() then
                             {
                                 text = _("Paste"),
                                 callback = function()
-                                    if clipboard_value ~= nil and clipboard_value ~= "" then
+                                    if not is_clipboard_empty then
                                         UIManager:close(clipboard_dialog)
                                         self:addChars(clipboard_value)
                                     end
@@ -242,7 +248,16 @@ if Device:isTouchDevice() or Device:hasDPad() then
                 }
                 UIManager:show(clipboard_dialog)
             end
+            self._hold_handled = true
             return true
+        end
+
+        function InputText:onHoldReleaseTextBox(arg, ges)
+            if self._hold_handled then
+                self._hold_handled = nil
+                return true
+            end
+            return false
         end
 
         function InputText:onSwipeTextBox(arg, ges)
