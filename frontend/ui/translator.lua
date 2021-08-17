@@ -220,6 +220,7 @@ function Translator:genSettingsMenu()
         sub_item_table = {
             {
                 text = _("Auto-detect source language"),
+                help_text = _("Auto-detect language is best suited for foreign phrases or texts on books in your native language."),
                 enabled_func = function()
                     return not (G_reader_settings:isTrue("translator_from_doc_lang") and self:getDocumentLanguage() ~= nil)
                 end,
@@ -235,6 +236,7 @@ function Translator:genSettingsMenu()
                     local lang = G_reader_settings:readSetting("translator_from_language")
                     return T(_("Translate from: %1"), self:getLanguageName(lang, ""))
                 end,
+                help_text = _("Selecting a specific source language will have it used with all text on all your books."),
                 enabled_func = function()
                     return not G_reader_settings:nilOrTrue("translator_from_auto_detect")
                         and not (G_reader_settings:isTrue("translator_from_doc_lang") and self:getDocumentLanguage() ~= nil)
@@ -247,6 +249,11 @@ function Translator:genSettingsMenu()
                     local __, name = self:getDocumentLanguage()
                     return T(_("Translate from book language: %1"), name or _("N/A"))
                 end,
+                help_text = _([[
+With books that specify their main language in their metadata (most EPUBs), enabling this option will have this language used as the source language (otherwise, auto-detect or the specified languages will be used).
+This is interesting:
+- For books in your non-native language, where consistent translation is needed and foreign words are exceptional on the text.
+- For books in your native language, to get definitions for words from the translation service.]]),
                 enabled_func = function()
                     return self:getDocumentLanguage() ~= nil
                 end,
