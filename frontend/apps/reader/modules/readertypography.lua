@@ -113,6 +113,8 @@ for __, v in ipairs(LANGUAGES) do
         ReaderTypography.HYPH_DICT_NAME_TO_LANG_NAME_TAG[hyph_filename] = { lang_name, lang_tag }
     end
 end
+-- Make lang aliases available to other modules (can be used by Translator)
+ReaderTypography.LANG_ALIAS_TO_LANG_TAG = LANG_ALIAS_TO_LANG_TAG
 
 function ReaderTypography:init()
     self.menu_table = {}
