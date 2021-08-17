@@ -109,7 +109,11 @@ function Button:init()
                         bold = self.text_font_bold,
                         face = Font:getFace(self.text_font_face, font_size_2_lines)
                     }
-                    break
+                    if not self.label_widget.has_split_inside_word then
+                        break
+                    end
+                    -- No good wrap opportunity (split inside a word): ignore this TextBoxWidget
+                    -- and go on with a TextWidget with the smaller font size
                 end
                 if new_size < 8 then -- don't go too small
                     break
