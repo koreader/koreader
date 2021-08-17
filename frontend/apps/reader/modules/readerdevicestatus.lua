@@ -36,7 +36,7 @@ function ReaderDeviceStatus:init()
                     end
                     self.battery_confirm_box = ConfirmBox:new {
                         text = is_charging and T(_("High battery level: %1%\n\nDismiss battery level alert?"), battery_capacity)
-                                            or T(_("Low battery level: %1%\n\nDismiss battery level alert?"), battery_capacity)
+                                            or T(_("Low battery level: %1%\n\nDismiss battery level alert?"), battery_capacity),
                         ok_text = _("Dismiss"),
                         dismissable = false,
                         ok_callback = function()
