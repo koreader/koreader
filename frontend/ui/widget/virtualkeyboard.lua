@@ -281,7 +281,7 @@ function VirtualKey:genkeyboardLayoutKeyChars()
     local key_chars = {
         { label = "🌐",
         },
-        east = { label = "🌐", },
+        east = { label = "⋮", },
         east_func = function ()
             UIManager:close(self.popup)
             self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
