@@ -41,10 +41,11 @@ function OpenWithDialog:init()
     }
 
     self.face = Font:getFace("cfont", 22)
+    self.element_width = math.floor(self.width * 0.9)
 
     self.radio_button_table = RadioButtonTable:new{
         radio_buttons = self.radio_buttons,
-        width = math.floor(self.width * 0.9),
+        width = self.element_width,
         focused = true,
         scroll = false,
         parent = self,
@@ -70,9 +71,7 @@ function OpenWithDialog:init()
             end
         end,
 
-        width = math.floor(self.width * 0.9),
-        max_width = math.floor(self.width * 0.9 - 2 * Size.border.window),
-        height = self.height,
+        max_width = self.element_width,
         face = self.face,
 
         parent = self,
@@ -80,7 +79,7 @@ function OpenWithDialog:init()
     self._always_file_toggle = LeftContainer:new{
         bordersize = 0,
         dimen = Geom:new{
-            w = math.floor(self.width * 0.9),
+            w = self.element_width,
             h = self._check_file_button:getSize().h,
         },
         self._check_file_button,
@@ -96,9 +95,7 @@ function OpenWithDialog:init()
             end
         end,
 
-        width = math.floor(self.width * 0.9),
-        max_width = math.floor(self.width * 0.9 - 2 * Size.border.window),
-        height = self.height,
+        max_width = self.element_width,
         face = self.face,
 
         parent = self,
@@ -106,7 +103,7 @@ function OpenWithDialog:init()
     self._always_global_toggle = LeftContainer:new{
         bordersize = 0,
         dimen = Geom:new{
-            w = math.floor(self.width * 0.9),
+            w = self.element_width,
             h = self._check_global_button:getSize().h,
         },
         self._check_global_button,
@@ -140,7 +137,7 @@ function OpenWithDialog:init()
                 LineWidget:new{
                     background = Blitbuffer.COLOR_DARK_GRAY,
                     dimen = Geom:new{
-                        w = math.floor(self.width * 0.9),
+                        w = self.element_width,
                         h = Size.line.medium,
                     }
                 },

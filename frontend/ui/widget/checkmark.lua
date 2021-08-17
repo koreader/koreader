@@ -28,6 +28,7 @@ local CheckMark = InputContainer:new{
     face = Font:getFace("smallinfofont"),
     width = 0,
     height = 0,
+    baseline = 0,
     _mirroredUI = BD.mirroredUILayout(),
 }
 
@@ -41,6 +42,7 @@ function CheckMark:init()
         face = self.face,
         para_direction_rtl = para_direction_rtl,
     }
+    self.baseline = checked_widget:getBaseline()
     local unchecked_widget = TextWidget:new{
         text = "▢ ",
         face = self.face,
