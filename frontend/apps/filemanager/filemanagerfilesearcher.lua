@@ -1,3 +1,4 @@
+local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local CheckButton = require("ui/widget/checkbutton")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local DocumentRegistry = require("document/documentregistry")
@@ -52,6 +53,7 @@ function FileSearcher:readDir()
                 then
                     table.insert(new_dirs, fullpath)
                     table.insert(self.files, {
+                        dir = d,
                         name = f,
                         text = f.."/",
                         attr = attributes,
@@ -65,6 +67,7 @@ function FileSearcher:readDir()
                     and FileChooser:show_file(f)
                 then
                     table.insert(self.files, {
+                        dir = d,
                         name = f,
                         text = f,
                         attr = attributes,
@@ -136,7 +139,6 @@ function FileSearcher:onShowFileSearch(search_string)
                 {
                     text = _("Cancel"),
                     callback = function()
-                        self.search_dialog:onClose()
                         UIManager:close(self.search_dialog)
                     end,
                 },
@@ -170,13 +172,12 @@ function FileSearcher:onShowFileSearch(search_string)
         parent = self.search_dialog,
         max_width = self.search_dialog._input_widget.width,
         callback = function()
-            if not self.check_button_case.checked then
-                self.check_button_case:check()
-                self.case_sensitive = true
-            else
+            if self.check_button_case.checked then
                 self.check_button_case:unCheck()
-                self.case_sensitive = false
+            else
+                self.check_button_case:check()
             end
+            self.case_sensitive = self.check_button_case.checked
         end,
     }
 
@@ -221,6 +222,53 @@ function FileSearcher:showSearchResults()
     table.sort(self.results, sorting)
     self.search_menu:switchItemTable(_("Search results"), self.results)
     UIManager:show(menu_container)
+end
+
+function FileSearcher:onMenuHold(item)
+    local FileManager = require("apps/filemanager/filemanager")
+    local ReaderUI = require("apps/reader/readerui")
+    local fullpath = item.dir .. "/" .. item.name
+    local is_file = item.attr.mode == "file"
+    local buttons = {
+        {
+            {
+                text = _("Cancel"),
+                callback = function()
+                    UIManager:close(self.results_dialog)
+                end,
+            },
+            {
+                text = _("Go to"),
+                callback = function()
+                    UIManager:close(self.results_dialog)
+                    self.close_callback()
+                    if is_file then
+                        FileManager:showFiles(item.dir, fullpath)
+                    else
+                        FileManager:showFiles(fullpath)
+                    end
+                end,
+            },
+        },
+    }
+    if is_file then
+        table.insert(buttons[1], {
+            text = _("Open"),
+            callback = function()
+                UIManager:close(self.results_dialog)
+                self.close_callback()
+                ReaderUI:showReader(fullpath)
+            end,
+        })
+    end
+
+    self.results_dialog = ButtonDialogTitle:new{
+        title = is_file and fullpath or fullpath .. "/",
+        use_info_style = true,
+        buttons = buttons,
+    }
+    UIManager:show(self.results_dialog)
+    return true
 end
 
 return FileSearcher
