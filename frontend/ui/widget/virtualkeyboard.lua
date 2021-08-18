@@ -168,7 +168,7 @@ function VirtualKey:init()
             face = self.face,
             bold = self.bold or false,
         }
-    -- make long labeled keys to have a smaller font (c.f. https://github.com/koreader/koreader/pull/7972#issuecomment-884822411)
+    -- Make long labels fit by decreasing font size
         local max_width = self.width - 2*self.bordersize - 2*Size.padding.small
         while label_widget:getWidth() > max_width do
             local new_size = label_widget.face.orig_size - 1
@@ -181,7 +181,7 @@ function VirtualKey:init()
             }
         end
     end
-    --if not self.alt_label then self.alt_label = "z" end -- for testing
+
     if self.alt_label then
         local OverlapGroup = require("ui/widget/overlapgroup")
         local alt_label_widget = TextWidget:new{
