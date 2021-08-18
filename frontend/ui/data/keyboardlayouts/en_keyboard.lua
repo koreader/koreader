@@ -174,8 +174,7 @@ return {
         },
         -- Fourth row
         { --   R    r    S    s
-            { label = "",
-              width = 1.5, },           -- Shift
+            { label = "", width = 1.5, }, -- Shift
             { _Z_, _z_, prm, "{", },
             { _X_, _x_, "°", "}", },
             { _C_, _c_, "«", "[", },
@@ -183,25 +182,17 @@ return {
             { _B_, _b_, _0s, _0n, },
             { _N_, _n_, "↑", "↑", },
             { _M_, _m_, "↓", "↓", },
-            { label = "",
-              width = 1.5, },           -- Backspace
+            { label = "", width = 1.5, }, -- Backspace
         },
         -- Fifth row
         { --   R    r    S    s
-            { label = "⌥",
-              width = 1.5,
-              bold = true,
-              alt_label = "SYM"},
-            { label = "🌐", },
-            { cop, pco, cop, pco, },    -- period/colon with RegEx popup block
-            { label = "_",              -- Spacebar
-              " ", " ", " ", " ",
-              width = 3.0, },
-            { label = "←", },           -- Arrow left
-            { label = "→", },           -- Arrow right
-            { label = "⮠",              -- Enter
-             "\n","\n","\n","\n",
-              width = 1.5, },           -- Enter
+            { label = "⌥", width = 1.5, bold = true, alt_label = "SYM"}, -- SYM key
+            { label = "🌐", }, -- Globe key
+            { cop, pco, cop, pco, }, -- period/colon with RegEx popup block
+            { label = "_", " ", " ", " ", " ", width = 3.0, }, -- Spacebar
+            { label = "←", }, -- Arrow left
+            { label = "→", }, -- Arrow right
+            { label = "⮠", "\n","\n","\n","\n", width = 1.5, }, -- Enter
         },
     },
 }
