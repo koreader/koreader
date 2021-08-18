@@ -238,7 +238,7 @@ function FileSearcher:onMenuHold(item)
                 end,
             },
             {
-                text = _("Go to"),
+                text = _("Show folder"),
                 callback = function()
                     UIManager:close(self.results_dialog)
                     self.close_callback()
