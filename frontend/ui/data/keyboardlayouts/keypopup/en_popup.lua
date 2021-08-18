@@ -1,5 +1,4 @@
 return {
-    zro = {"", width = 0}, -- zero-wdith key "placeholder" which does not affect other key centering. Can be used to make layers with different number of keys.
     com = {
         ",",
         north = ";",
