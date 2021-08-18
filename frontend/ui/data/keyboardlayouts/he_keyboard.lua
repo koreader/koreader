@@ -1,5 +1,10 @@
 local en_popup = require("ui/data/keyboardlayouts/keypopup/en_popup")
 local he_popup = require("ui/data/keyboardlayouts/keypopup/he_popup")
+local pco = en_popup.pco
+local cop = en_popup.cop
+local cse = en_popup.cse
+local sec = en_popup.sec
+local quo = en_popup.quo
 local com = en_popup.com -- comma (,)
 local prd = en_popup.prd -- period (.)
 local _at = en_popup._at
@@ -32,7 +37,7 @@ return {
     min_layer = 1,
     max_layer = 4,
     shiftmode_keys = {[""] = true},
-    symbolmode_keys = {["Sym"] = true, ["אבג"] = true},
+    symbolmode_keys = { ["⌥"] = true },
     utf8mode_keys = {["🌐"] = true},
     keys = {
         -- first row
@@ -59,6 +64,7 @@ return {
             { "ֶ ",    "ח",       "{",    "[", },
             { "ַ ",   lamed,      "}",    "]", },
             { "ָ ",    "ך",       "_",    "-", },
+            { sec, cse, sec, cse, }, -- comma/semicolon with CSS popup block
         },
         -- third row
         {  --  1           2       3       4
@@ -79,11 +85,11 @@ return {
         },
         -- fourth row
         {
-            { "Sym",  "Sym",    "אבג",  "אבג",
-              width = 1.5},
+            { label = "⌥", width = 1.5, bold = true, alt_label = "SYM"}, -- SYM key
             { label = "🌐", },
+            { cop, pco, cop, pco, }, -- period/colon with RegEx popup block
             { " ",        " ",    " ",    " ",
-              width = 3.0},
+              width = 3.0, label = "_"},
             { com,    taf,      "“",    "←", },
             { prd,    "ץ",      "”",    "→", },
             { label = "⮠",
