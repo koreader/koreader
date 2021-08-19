@@ -134,7 +134,7 @@ function FileManager:setupLayout()
     self.path_text = TextWidget:new{
         face = Font:getFace("xx_smallinfofont"),
         text = BD.directory(filemanagerutil.abbreviate(self.root_path)),
-        max_width = Screen:getWidth() - 2*Size.padding.small,
+        max_width = Screen:getWidth() - 2*Size.padding.large,
         truncate_left = true,
     }
 
