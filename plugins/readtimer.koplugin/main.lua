@@ -198,20 +198,16 @@ function ReadTimer:onResume()
             -- (This would be much simpler if we didn't have legacy constraints preventing us from using BOOTTIME...).
             local sleep_duration = os.difftime(os.time(), self.sleepy_time)
             local expiry = os.difftime(remainder, sleep_duration)
-            logger.dbg("ReadTimer: Slept for ", sleep_duration, " seconds")
-            logger.dbg("ReadTimer: With ", remainder, " seconds left in the timer")
+            logger.dbg("ReadTimer: Slept for", sleep_duration, "seconds")
+            logger.dbg("ReadTimer: With", remainder, "seconds left in the timer")
 
             self:unschedule()
             if expiry > 0 then
-                logger.dbg("ReadTimer: Rescheduling in ", expiry)
+                logger.dbg("ReadTimer: Rescheduling in", expiry, "seconds")
                 UIManager:scheduleIn(expiry, self.alarm_callback)
             end
         end
 
-    end
-    if self:remainingMinutes() == 0 then
-        self:alarm_callback()
-        self:unschedule()
     end
 end
 
