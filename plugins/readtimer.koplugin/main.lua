@@ -82,7 +82,6 @@ function ReadTimer:addToMainMenu(menu_items)
                     local now_t = os.date("*t")
                     local curr_hour = now_t.hour
                     local curr_min = now_t.min
-                    local curr_sec_from_midnight = curr_hour*3600 + curr_min*60
                     local time_widget = TimeWidget:new{
                         hour = curr_hour,
                         min = curr_min,
@@ -91,26 +90,23 @@ function ReadTimer:addToMainMenu(menu_items)
                         callback = function(time)
                             touchmenu_instance:closeMenu()
                             self:unschedule()
-                            local timer_sec_from_mignight = time.hour*3600 + time.min*60
-                            local seconds
-                            if timer_sec_from_mignight > curr_sec_from_midnight then
-                                seconds = timer_sec_from_mignight - curr_sec_from_midnight
-                            else
-                                seconds = 24*3600 - (curr_sec_from_midnight - timer_sec_from_mignight)
-                            end
-                            if seconds > 0 and seconds < 18*3600 then
+                            local then_t = now_t
+                            then_t.hour = time.hour
+                            then_t.min = time.min
+                            local seconds = os.difftime(os.time(then_t), os.time())
+                            if seconds > 0 then
                                 self.time = os.time() + seconds
                                 UIManager:scheduleIn(seconds, self.alarm_callback)
                                 local user_duration_format = G_reader_settings:readSetting("duration_format")
                                 UIManager:show(InfoMessage:new{
                                     text = T(_("Timer set to: %1:%2.\n\nThat's %3 from now."),
                                         string.format("%02d", time.hour), string.format("%02d", time.min),
-                                        util.secondsToClockDuration(user_duration_format, seconds, true)),
+                                        util.secondsToClockDuration(user_duration_format, seconds, false)),
                                     timeout = 5,
                                 })
-                            elseif seconds <= 0 or seconds >= 18*3600 then
+                            else
                                 UIManager:show(InfoMessage:new{
-                                    text = _("Timer could not be set. The selected time is in the past or too far in the future."),
+                                    text = _("Timer could not be set. The selected time is in the past."),
                                     timeout = 5,
                                 })
                             end
