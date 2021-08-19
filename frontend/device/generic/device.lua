@@ -341,7 +341,7 @@ function Device:onPowerEvent(ev)
             -- Only actually schedule suspension if we're still supposed to go to sleep,
             -- because the Wi-Fi stuff above may have blocked for a significant amount of time...
             if self.screen_saver_mode then
-                UIManager:scheduleIn(self.suspend_wait_timeout, self.suspend)
+                self:rescheduleSuspend()
             end
         end)
     end
