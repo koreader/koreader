@@ -60,6 +60,11 @@ function ReadTimer:unschedule()
     end
 end
 
+function ReadTimer:rescheduleIn(seconds)
+    self.time = os.time() + seconds
+    UIManager:scheduleIn(seconds, self.alarm_callback)
+end
+
 function ReadTimer:addToMainMenu(menu_items)
     menu_items.read_timer = {
         text_func = function()
@@ -96,8 +101,7 @@ function ReadTimer:addToMainMenu(menu_items)
                             then_t.sec = 0
                             local seconds = os.difftime(os.time(then_t), os.time())
                             if seconds > 0 then
-                                self.time = os.time() + seconds
-                                UIManager:scheduleIn(seconds, self.alarm_callback)
+                                self:rescheduleIn(seconds)
                                 local user_duration_format = G_reader_settings:readSetting("duration_format")
                                 UIManager:show(InfoMessage:new{
                                     text = T(_("Timer set to: %1:%2.\n\nThat's %3 from now."),
@@ -140,8 +144,7 @@ function ReadTimer:addToMainMenu(menu_items)
                             self:unschedule()
                             local seconds = time.hour * 3600 + time.min * 60
                             if seconds > 0 then
-                                self.time = os.time() + seconds
-                                UIManager:scheduleIn(seconds, self.alarm_callback)
+                                self:rescheduleIn(seconds)
                                 local user_duration_format = G_reader_settings:readSetting("duration_format")
                                 UIManager:show(InfoMessage:new{
                                     text = T(_("Timer set for %1."),
@@ -201,7 +204,7 @@ function ReadTimer:onResume()
             self:unschedule()
             if expiry > 0 then
                 logger.dbg("ReadTimer: Rescheduling in", expiry, "seconds")
-                UIManager:scheduleIn(expiry, self.alarm_callback)
+                self:rescheduleIn(expiry)
             end
         end
 
