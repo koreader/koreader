@@ -116,17 +116,19 @@ function util.secondsToClock(seconds, withoutSeconds)
         end
     else
         local round = withoutSeconds and require("optmath").round or math.floor
-        local hours = string.format("%02.f", math.floor(seconds / 3600))
-        local mins = string.format("%02.f", round(seconds / 60 - (hours * 60)))
-        if mins == "60" then
-            mins = string.format("%02.f", 0)
-            hours = string.format("%02.f", hours + 1)
-        end
+        local hours = string.format("%02d", math.floor(seconds / 3600))
+        local mins = string.format("%02d", round(seconds % 3600 / 60))
         if withoutSeconds then
+            if mins == "60" then
+                -- Can only happen because of rounding, which only happens if withoutSeconds...
+                mins = string.format("%02d", 0)
+                hours = string.format("%02d", hours + 1)
+            end
             return hours .. ":" .. mins
+        else
+            local secs = string.format("%02d", math.floor(seconds % 60))
+            return hours .. ":" .. mins .. ":" .. secs
         end
-        local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60))
-        return hours .. ":" .. mins .. ":" .. secs
     end
 end
 
@@ -166,22 +168,23 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
             end
         else
             if hmsFormat then
-                return T(_("%1m%2s"), "0", string.format("%02.f", math.floor(seconds)))
+                return T(_("%1m%2s"), "0", string.format("%02d", math.floor(seconds)))
             else
-                return "0'" .. string.format("%02.f", seconds) .. "''"
+                return "0'" .. string.format("%02d", seconds) .. "''"
             end
         end
     else
         local round = withoutSeconds and require("optmath").round or math.floor
-        local hours = string.format("%.f", math.floor(seconds / 3600))
-        local mins = string.format("%02.f", round(seconds / 60 - (hours * 60)))
-        if mins == "60" then
-            mins = string.format("%02.f", 0)
-            hours = string.format("%.f", hours + 1)
-        end
+        local hours = string.format("%d", math.floor(seconds / 3600))
+        local mins = string.format("%02d", round(seconds % 3600 / 60))
         if withoutSeconds then
+            if mins == "60" then
+                mins = string.format("%02d", 0)
+                hours = string.format("%d", hours + 1)
+            end
             if hours == "0" then
-                mins = string.format("%.f", round(seconds / 60))
+                -- We can pptimize out the % 3600 since the branch ensures we're < than 3600
+                mins = string.format("%d", round(seconds / 60))
                 if hmsFormat then
                     return T(_("%1m"), mins)
                 else
@@ -190,31 +193,32 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
             end
             -- @translators This is the 'h' for hour, like in 1h30. This is a duration.
             return T(_("%1h%2"), hours, mins)
-        end
-        local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60))
-        if hours == "0" then
-            mins = string.format("%.f", round(seconds / 60))
-            if hmsFormat then
-                -- @translators This is the 'm' for minute and the 's' for second, like in 1m30s. This is a duration.
-                return T(_("%1m%2s"), mins, secs)
-            else
-                return mins .. "'" .. secs .. "''"
-            end
-        end
-        if hmsFormat then
-            if secs == "00" then
-                -- @translators This is the 'h' for hour and the 'm' for minute, like in 1h30m. This is a duration.
-                return T(_("%1h%2m"), hours, mins)
-            else
-                -- @translators This is the 'h' for hour, the 'm' for minute and the 's' for second, like in 1h30m30s. This is a duration.
-                return T(_("%1h%2m%3s"), hours, mins, secs)
-            end
-
         else
-            if secs == "00" then
-                return T(_("%1h%2'"), hours, mins)
+            local secs = string.format("%02d", math.floor(seconds % 60))
+            if hours == "0" then
+                mins = string.format("%d", round(seconds / 60))
+                if hmsFormat then
+                    -- @translators This is the 'm' for minute and the 's' for second, like in 1m30s. This is a duration.
+                    return T(_("%1m%2s"), mins, secs)
+                else
+                    return mins .. "'" .. secs .. "''"
+                end
+            end
+            if hmsFormat then
+                if secs == "00" then
+                    -- @translators This is the 'h' for hour and the 'm' for minute, like in 1h30m. This is a duration.
+                    return T(_("%1h%2m"), hours, mins)
+                else
+                    -- @translators This is the 'h' for hour, the 'm' for minute and the 's' for second, like in 1h30m30s. This is a duration.
+                    return T(_("%1h%2m%3s"), hours, mins, secs)
+                end
+
             else
-                return T(_("%1h%2'%3''"), hours, mins, secs)
+                if secs == "00" then
+                    return T(_("%1h%2'"), hours, mins)
+                else
+                    return T(_("%1h%2'%3''"), hours, mins, secs)
+                end
             end
         end
     end

@@ -2,6 +2,8 @@ local InfoMessage = require("ui/widget/infomessage")
 local TimeWidget = require("ui/widget/timewidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
 local T = require("ffi/util").template
@@ -9,6 +11,7 @@ local T = require("ffi/util").template
 local ReadTimer = WidgetContainer:new{
     name = "readtimer",
     time = 0,  -- The expected time of alarm if enabled, or 0.
+    sleepy_time = 0, -- timestamp of the last suspend
 }
 
 function ReadTimer:init()
@@ -28,9 +31,9 @@ function ReadTimer:scheduled()
     return self.time ~= 0
 end
 
-function ReadTimer:remainingMinutes()
+function ReadTimer:remaining()
     if self:scheduled() then
-        local td = os.difftime(self.time, os.time()) / 60
+        local td = os.difftime(self.time, os.time())
         if td > 0 then
             return td
         else
@@ -43,10 +46,11 @@ end
 
 function ReadTimer:remainingTime()
     if self:scheduled() then
-        local remain_time = self:remainingMinutes()
-        local remain_hours = math.floor(remain_time / 60)
-        local remain_minutes = math.floor(remain_time - 60 * remain_hours)
-        return remain_hours, remain_minutes
+        local remainder = self:remaining()
+        local hours = math.floor(remainder / 3600)
+        local minutes = math.floor(remain_time % 3600 / 60)
+        local seconds = math.floor(remain_time % 60)
+        return hours, minutes, seconds
     end
 end
 
@@ -62,7 +66,7 @@ function ReadTimer:addToMainMenu(menu_items)
         text_func = function()
             if self:scheduled() then
                 return T(_("Read timer (%1m)"),
-                    string.format("%.2f", self:remainingMinutes()))
+                    string.format("%.2f", self:remaining()))
             else
                 return _("Read timer")
             end
@@ -193,9 +197,40 @@ function ReadTimer:addToMainMenu(menu_items)
     }
 end
 
+function ReadTimer:onSuspend()
+    if self:scheduled() then
+        logger.dbg("ReadTimer: onSuspend with an active timer")
+        sleep.sleepy_time = os.time()
+    end
+end
+
 -- The UI ticks on a monotonic time domain, while this plugin deals with real time.
--- Make sure we fire the alarm right away if it expired during suspend...
 function ReadTimer:onResume()
+    if self:scheduled() then
+        logger.dbg("ReadTimer: onResume with an active timer")
+        local remaining = self:remainingMinutes()
+
+        if remaining == 0 then
+            -- Make sure we fire the alarm right away if it expired during suspend...
+            self:alarm_callback()
+            self:unschedule()
+        else
+            -- ...and that we re-compute the timer's duration against the REAL time if it's still ticking,
+            -- because the timer was effectively frozen during suspend, so it didn't take the time spent
+            -- sleeping into account...
+            -- (This would be much simpler if we didn't have legacy constraints preventing us from using BOOTTIME...).
+            locla now = os.time()
+            local timer_duration = os.difftime(self.time, now)
+            local sleep_duration = os.difftime(now, self.sleepy_time)
+            local expiry = os.difftime(timer_duration, sleep_duration)
+
+            self:unschedule()
+            if expiry > 0 then
+                UIManager:scheduleIn(expiry, self.alarm_callback)
+            end
+        end
+
+    end
     if self:remainingMinutes() == 0 then
         self:alarm_callback()
         self:unschedule()
