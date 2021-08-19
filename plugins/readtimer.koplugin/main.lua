@@ -13,7 +13,9 @@ local ReadTimer = WidgetContainer:new{
 
 function ReadTimer:init()
     self.alarm_callback = function()
-        if self.time == 0 then return end -- How could this happen?
+        -- Don't do anything if we were unscheduled
+        if self.time == 0 then return end
+
         self.time = 0
         UIManager:show(InfoMessage:new{
             text = T(_("Read timer alarm\nTime's up. It's %1 now."), os.date("%c")),
@@ -28,7 +30,12 @@ end
 
 function ReadTimer:remainingMinutes()
     if self:scheduled() then
-        return os.difftime(self.time, os.time()) / 60
+        local td = os.difftime(self.time, os.time()) / 60
+        if td > 0 then
+            return td
+        else
+            return 0
+        end
     else
         return math.huge
     end
@@ -36,7 +43,7 @@ end
 
 function ReadTimer:remainingTime()
     if self:scheduled() then
-        local remain_time = os.difftime(self.time, os.time()) / 60
+        local remain_time = self:remainingMinutes()
         local remain_hours = math.floor(remain_time / 60)
         local remain_minutes = math.floor(remain_time - 60 * remain_hours)
         return remain_hours, remain_minutes
@@ -109,10 +116,9 @@ function ReadTimer:addToMainMenu(menu_items)
                                         hr_str, min_str),
                                     timeout = 5,
                                 })
-                            --current time or time > 18h
-                            elseif seconds == 0 or seconds >= 18*3600 then
+                            elseif seconds <= 0 or seconds >= 18*3600 then
                                 UIManager:show(InfoMessage:new{
-                                    text = _("Timer could not be set. You have selected current time or time in past"),
+                                    text = _("Timer could not be set. The selected time is in the past or too far in the future."),
                                     timeout = 5,
                                 })
                             end
@@ -185,6 +191,15 @@ function ReadTimer:addToMainMenu(menu_items)
             },
         },
     }
+end
+
+-- The UI ticks on a monotonic time domain, while this plugin deals with real time.
+-- Make sure we fire the alarm right away if it expired during suspend...
+function ReadTimer:onResume()
+    if self:remainingMinutes() == 0 then
+        self:alarm_callback()
+        self:unschedule()
+    end
 end
 
 return ReadTimer
