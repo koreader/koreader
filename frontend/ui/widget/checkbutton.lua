@@ -55,6 +55,7 @@ function CheckButton:initCheckButton(checked)
     self._checkmark = CheckMark:new{
         checked = self.checked,
         enabled = self.enabled,
+        face = self.face,
         parent = self.parent or self,
         show_parent = self.show_parent or self,
     }
@@ -64,10 +65,11 @@ function CheckButton:initCheckButton(checked)
         width = self.max_width - self._checkmark.dimen.w,
         fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
     }
+    local textbox_shift = math.max(0, self._checkmark.baseline - self._textwidget:getBaseline())
     self._verticalgroup = VerticalGroup:new{
         align = "left",
         VerticalSpan:new{
-            width = self.face.size * 0.18,
+            width = textbox_shift,
         },
         self._textwidget,
     }
@@ -121,10 +123,7 @@ function CheckButton:onTapCheckButton()
         else
             -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
 
-            -- Unlike RadioButton, the frame's width stops at the text width, but we want our highlight to span the full width...
-            -- (That's when we have one, some callers don't pass a width, so, handle that, too).
             local highlight_dimen = self.dimen
-            highlight_dimen.w = self.width and self.width or self.dimen.w
 
             -- Highlight
             --

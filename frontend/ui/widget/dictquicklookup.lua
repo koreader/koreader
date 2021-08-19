@@ -751,7 +751,18 @@ function DictQuickLookup:getHtmlDictionaryCss()
         blockquote, dd {
             margin: 0 1em;
         }
+
+        ol, ul, menu {
+            margin: 0; padding: 0 1.7em;
+        }
     ]]
+    -- For reference, MuPDF declarations with absolute units:
+    --  "blockquote{margin:1em 40px}"
+    --  "dd{margin:0 0 0 40px}"
+    --  "ol,ul,menu {margin:1em 0;padding:0 0 0 30pt}"
+    --  "hr{border-width:1px;}"
+    --  "td,th{padding:1px}"
+    --
     -- MuPDF doesn't currently scale CSS pixels, so we have to use a font-size based measurement.
     -- Unfortunately MuPDF doesn't properly support `rem` either, which it bases on a hard-coded
     -- value of `16px`, so we have to go with `em` (or `%`).
@@ -761,6 +772,11 @@ function DictQuickLookup:getHtmlDictionaryCss()
     -- We also keep left and right margin the same so it'll display as expected in RTL.
     -- Because MuPDF doesn't currently support `margin-start`, this results in a slightly
     -- unconventional but hopefully barely noticeable right margin for <dd>.
+    --
+    -- For <ul> and <ol>, bullets and numbers are displayed in the margin/padding, so
+    -- we need a bit more for them to not get truncated (1.7em allows for 2 digits list
+    -- item numbers). Unfortunately, because we want this also for RTL, this space is
+    -- wasted on the other side...
 
     if self.css then
         return css .. self.css

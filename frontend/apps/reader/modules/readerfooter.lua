@@ -248,7 +248,10 @@ local footerTextGeneratorMap = {
                 local flow = footer.ui.document:getPageFlow(footer.pageno)
                 local page = footer.ui.document:getPageNumberInFlow(footer.pageno)
                 local pages = footer.ui.document:getTotalPagesInFlow(flow)
-                local remaining = pages - page;
+                local remaining = pages - page
+                if footer.settings.pages_left_includes_current_page then
+                    remaining = remaining + 1
+                end
                 if flow == 0 then
                     return ("%s %d // %d"):format(prefix, remaining, pages)
                 else
@@ -256,6 +259,9 @@ local footerTextGeneratorMap = {
                 end
             else
                 local remaining = footer.pages - footer.pageno
+                if footer.settings.pages_left_includes_current_page then
+                    remaining = remaining + 1
+                end
                 return ("%s %d / %d"):format(prefix, remaining, footer.pages)
             end
         elseif footer.position then
@@ -266,6 +272,9 @@ local footerTextGeneratorMap = {
         local symbol_type = footer.settings.item_prefix
         local prefix = symbol_prefix[symbol_type].pages_left
         local left = footer.ui.toc:getChapterPagesLeft(footer.pageno) or footer.ui.document:getTotalPagesLeft(footer.pageno)
+        if footer.settings.pages_left_includes_current_page then
+            left = left + 1
+        end
         return prefix .. " " .. left
     end,
     chapter_progress = function(footer)
@@ -452,6 +461,7 @@ ReaderFooter.default_settings = {
     items_separator = "bar",
     progress_pct_format = "0",
     progress_margin = false,
+    pages_left_includes_current_page = false,
 }
 
 function ReaderFooter:init()
@@ -1386,6 +1396,22 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                     },
                 },
+            },
+            {
+                text = _("Include current page in pages left"),
+                help_text = _([[
+Normally, the current page is not counted as remaining, so "pages left" (in a book or chapter with n pages) will run from n-1 to 0 on the last page.
+With this enabled, the current page is included, so the count goes from n to 1 instead.]]),
+                enabled_func = function()
+                    return self.settings.pages_left or self.settings.pages_left_book
+                end,
+                checked_func = function()
+                    return self.settings.pages_left_includes_current_page == true
+                end,
+                callback = function()
+                    self.settings.pages_left_includes_current_page = not self.settings.pages_left_includes_current_page
+                    self:refreshFooter(true)
+                end,
             },
         }
     })

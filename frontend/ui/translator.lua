@@ -183,13 +183,13 @@ end
 
 function Translator:getLanguageName(lang, default_string)
     if SUPPORTED_LANGUAGES[lang] then
-        return SUPPORTED_LANGUAGES[lang]
+        return SUPPORTED_LANGUAGES[lang], true
     elseif ALT_LANGUAGE_CODES[lang] then
-        return SUPPORTED_LANGUAGES[ALT_LANGUAGE_CODES[lang]]
+        return SUPPORTED_LANGUAGES[ALT_LANGUAGE_CODES[lang]], true
     elseif lang then
-        return lang:upper()
+        return lang:upper(), false
     end
-    return default_string
+    return default_string, false
 end
 
 -- Will be called by ReaderHighlight to make it available in Reader menu
@@ -220,6 +220,10 @@ function Translator:genSettingsMenu()
         sub_item_table = {
             {
                 text = _("Auto-detect source language"),
+                help_text = _("This setting is best suited for foreign text found in books written in your native language."),
+                enabled_func = function()
+                    return not (G_reader_settings:isTrue("translator_from_doc_lang") and self:getDocumentLanguage() ~= nil)
+                end,
                 checked_func = function()
                     return G_reader_settings:nilOrTrue("translator_from_auto_detect")
                 end,
@@ -232,11 +236,33 @@ function Translator:genSettingsMenu()
                     local lang = G_reader_settings:readSetting("translator_from_language")
                     return T(_("Translate from: %1"), self:getLanguageName(lang, ""))
                 end,
+                help_text = _("If a specific source language is manually selected, it will be used everywhere, in all your books."),
                 enabled_func = function()
                     return not G_reader_settings:nilOrTrue("translator_from_auto_detect")
+                        and not (G_reader_settings:isTrue("translator_from_doc_lang") and self:getDocumentLanguage() ~= nil)
                 end,
                 sub_item_table = genLanguagesItems("translator_from_language"),
                 keep_menu_open = true,
+            },
+            {
+                text_func = function()
+                    local __, name = self:getDocumentLanguage()
+                    return T(_("Translate from book language: %1"), name or _("N/A"))
+                end,
+                help_text = _([[
+With books that specify their main language in their metadata (most EPUBs and FB2s), enabling this option will make this language the source language. Otherwise, auto-detection or the selected language will be used.
+This is useful:
+- For books in a foreign language, where consistent translation is needed and words in other languages are rare.
+- For books in familiar languages, to get definitions for words from the translation service.]]),
+                enabled_func = function()
+                    return self:getDocumentLanguage() ~= nil
+                end,
+                checked_func = function()
+                    return G_reader_settings:isTrue("translator_from_doc_lang")
+                end,
+                callback = function()
+                    G_reader_settings:flipTrue("translator_from_doc_lang")
+                end,
                 separator = true,
             },
             {
@@ -251,7 +277,45 @@ function Translator:genSettingsMenu()
     }
 end
 
+function Translator:getDocumentLanguage()
+    local ReaderUI = require("apps/reader/readerui")
+    local ui = ReaderUI:_getRunningInstance()
+    if not ui or not ui.document then
+        return
+    end
+    local props = ui.document:getProps()
+    if not props or not props.language or props.language == "" then
+        return
+    end
+    local lang = props.language
+    lang = lang:match("(.*)-") or lang
+    lang = lang:lower()
+    local name, supported = self:getLanguageName(lang, "")
+    if supported then
+        return lang, name
+    end
+    -- ReaderTypography has a map of lang aliases (that we may meet
+    -- in book metadata) to their normalized lang tag: use it
+    local ReaderTypography = require("apps/reader/modules/readertypography")
+    lang = ReaderTypography.LANG_ALIAS_TO_LANG_TAG[lang]
+    if not lang then
+        return
+    end
+    name, supported = self:getLanguageName(lang, "")
+    if supported then
+        return lang, name
+    end
+end
+
 function Translator:getSourceLanguage()
+    if G_reader_settings:isTrue("translator_from_doc_lang") then
+        local lang = self:getDocumentLanguage()
+        if lang then
+            return lang
+        end
+        -- No document or metadata lang tag not supported:
+        -- fallback to other settings
+    end
     if G_reader_settings:isFalse("translator_from_auto_detect") and
             G_reader_settings:has("translator_from_language") then
         return G_reader_settings:readSetting("translator_from_language")

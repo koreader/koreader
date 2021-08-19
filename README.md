@@ -28,6 +28,8 @@
 
 * **extensible**: via plugins
 
+* **fast**: on some older devices, it has been measured to have less than half the page-turn delay as the built in reading software.
+
 * **and much more**: look up words with StarDict dictionaries / Wikipedia, add your own online OPDS catalogs and RSS feeds, share ebooks with other KOReader devices wirelessly, online over-the-air software updates, an FTP client, an SSH server, …
 
 Please check the [wiki][link-wiki] to discover more features and to help us document them.
