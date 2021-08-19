@@ -5,7 +5,6 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
-local N_ = _.ngettext
 local T = require("ffi/util").template
 
 local ReadTimer = WidgetContainer:new{
@@ -48,8 +47,8 @@ function ReadTimer:remainingTime()
     if self:scheduled() then
         local remainder = self:remaining()
         local hours = math.floor(remainder / 3600)
-        local minutes = math.floor(remain_time % 3600 / 60)
-        local seconds = math.floor(remain_time % 60)
+        local minutes = math.floor(remainder % 3600 / 60)
+        local seconds = math.floor(remainder % 60)
         return hours, minutes, seconds
     end
 end
@@ -65,8 +64,9 @@ function ReadTimer:addToMainMenu(menu_items)
     menu_items.read_timer = {
         text_func = function()
             if self:scheduled() then
-                return T(_("Read timer (%1m)"),
-                    string.format("%.2f", self:remaining()))
+                local user_duration_format = G_reader_settings:readSetting("duration_format")
+                return T(_("Read timer (%1)"),
+                    util.secondsToClockDuration(user_duration_format, self:remaining(), false))
             else
                 return _("Read timer")
             end
@@ -101,23 +101,11 @@ function ReadTimer:addToMainMenu(menu_items)
                             if seconds > 0 and seconds < 18*3600 then
                                 self.time = os.time() + seconds
                                 UIManager:scheduleIn(seconds, self.alarm_callback)
-                                local hr_str = ""
-                                local min_str = ""
-                                local hr = math.floor(seconds/3600)
-                                if hr > 0 then
-                                    hr_str = T(N_("1 hour", "%1 hours", hr), hr)
-                                end
-                                local min = math.floor((seconds%3600)/60)
-                                if min > 0 then
-                                    min_str = T(N_("1 minute", "%1 minutes", min), min)
-                                    if hr_str ~= "" then
-                                        hr_str = hr_str .. " "
-                                    end
-                                end
+                                local user_duration_format = G_reader_settings:readSetting("duration_format")
                                 UIManager:show(InfoMessage:new{
-                                    text = T(_("Timer set to: %1:%2.\n\nThat's %3%4 from now."),
+                                    text = T(_("Timer set to: %1:%2.\n\nThat's %3 from now."),
                                         string.format("%02d", time.hour), string.format("%02d", time.min),
-                                        hr_str, min_str),
+                                        util.secondsToClockDuration(user_duration_format, seconds, true)),
                                     timeout = 5,
                                 })
                             elseif seconds <= 0 or seconds >= 18*3600 then
@@ -157,24 +145,13 @@ function ReadTimer:addToMainMenu(menu_items)
                             if seconds > 0 then
                                 self.time = os.time() + seconds
                                 UIManager:scheduleIn(seconds, self.alarm_callback)
-                                local hr_str = ""
-                                local min_str = ""
-                                local hr = time.hour
-                                if hr > 0 then
-                                    hr_str = T(N_("1 hour", "%1 hours", hr), hr)
-                                end
-                                local min = time.min
-                                if min > 0 then
-                                    min_str = T(N_("1 minute", "%1 minutes", min), min)
-                                    if hr_str ~= "" then
-                                        hr_str = hr_str .. " "
-                                    end
-                                end
+                                local user_duration_format = G_reader_settings:readSetting("duration_format")
                                 UIManager:show(InfoMessage:new{
-                                    text = T(_("Timer set for %1%2."), hr_str, min_str),
+                                    text = T(_("Timer set for %1."),
+                                             util.secondsToClockDuration(user_duration_format, seconds, true)),
                                     timeout = 5,
                                 })
-                                remain_time = {hr, min}
+                                remain_time = {time.hour, time.min}
                                 G_reader_settings:saveSetting("reader_timer_remain_time", remain_time)
                             end
                         end
@@ -200,7 +177,7 @@ end
 function ReadTimer:onSuspend()
     if self:scheduled() then
         logger.dbg("ReadTimer: onSuspend with an active timer")
-        sleep.sleepy_time = os.time()
+        self.sleepy_time = os.time()
     end
 end
 
@@ -208,9 +185,9 @@ end
 function ReadTimer:onResume()
     if self:scheduled() then
         logger.dbg("ReadTimer: onResume with an active timer")
-        local remaining = self:remainingMinutes()
+        local remainder = self:remaining()
 
-        if remaining == 0 then
+        if remainder == 0 then
             -- Make sure we fire the alarm right away if it expired during suspend...
             self:alarm_callback()
             self:unschedule()
@@ -219,13 +196,14 @@ function ReadTimer:onResume()
             -- because the timer was effectively frozen during suspend, so it didn't take the time spent
             -- sleeping into account...
             -- (This would be much simpler if we didn't have legacy constraints preventing us from using BOOTTIME...).
-            locla now = os.time()
-            local timer_duration = os.difftime(self.time, now)
-            local sleep_duration = os.difftime(now, self.sleepy_time)
-            local expiry = os.difftime(timer_duration, sleep_duration)
+            local sleep_duration = os.difftime(os.time(), self.sleepy_time)
+            local expiry = os.difftime(remainder, sleep_duration)
+            logger.dbg("ReadTimer: Slept for ", sleep_duration, " seconds")
+            logger.dbg("ReadTimer: With ", remainder, " seconds left in the timer")
 
             self:unschedule()
             if expiry > 0 then
+                logger.dbg("ReadTimer: Rescheduling in ", expiry)
                 UIManager:scheduleIn(expiry, self.alarm_callback)
             end
         end
