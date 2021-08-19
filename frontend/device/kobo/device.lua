@@ -641,6 +641,8 @@ end
 function Kobo:getUnexpectedWakeup() return unexpected_wakeup_count end
 
 function Kobo:suspend()
+    print("Kobo:suspend() is", Kobo.suspend)
+    print(debug.traceback())
     logger.info("Kobo suspend: going to sleep . . .")
     local UIManager = require("ui/uimanager")
     UIManager:unschedule(check_unexpected_wakeup)

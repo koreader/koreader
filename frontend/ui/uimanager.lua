@@ -575,6 +575,8 @@ Schedules a task to be run a certain amount of seconds from now.
 @see unschedule
 ]]
 function UIManager:scheduleIn(seconds, action, ...)
+    print("UIManager:scheduleIn", seconds, action)
+    print(debug.traceback())
     -- We might run significantly late inside an UI frame, so we can't use the cached value here.
     -- It would also cause some bad interactions with the way nextTick & co behave.
     local when = TimeVal:now() + TimeVal:fromnumber(seconds)
@@ -1178,16 +1180,16 @@ function UIManager:_checkTasks()
     -- task.action may schedule other events
     self._task_queue_dirty = false
     while true do
-        local nu_task = #self._task_queue
-        if nu_task == 0 then
-            -- all tasks checked
+        if #self._task_queue == 0 then
+            -- Nothing to do!
             break
         end
-        local task = self._task_queue[1]
-        local task_tv = task.time or TimeVal.zero
+        local next_task = self._task_queue[1]
+        local task_tv = next_task.time or TimeVal.zero
+        print("UIManager:_checkTasks: now is", self._now:tonumber(), "next @", next_task.time:tonumber(), next_task.action)
         if task_tv <= self._now then
             -- remove from table
-            table.remove(self._task_queue, 1)
+            local task = table.remove(self._task_queue, 1)
             -- task is pending to be executed right now. do it.
             -- NOTE: be careful that task.action() might modify
             -- _task_queue here. So need to avoid race condition
@@ -1195,7 +1197,7 @@ function UIManager:_checkTasks()
         else
             -- queue is sorted in ascendant order, safe to assume all items
             -- are future tasks for now
-            wait_until = task.time
+            wait_until = next_task.time
             break
         end
     end
