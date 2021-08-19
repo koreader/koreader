@@ -575,8 +575,6 @@ Schedules a task to be run a certain amount of seconds from now.
 @see unschedule
 ]]
 function UIManager:scheduleIn(seconds, action, ...)
-    print("UIManager:scheduleIn", seconds, action)
-    print(debug.traceback())
     -- We might run significantly late inside an UI frame, so we can't use the cached value here.
     -- It would also cause some bad interactions with the way nextTick & co behave.
     local when = TimeVal:now() + TimeVal:fromnumber(seconds)
@@ -1186,7 +1184,6 @@ function UIManager:_checkTasks()
         end
         local next_task = self._task_queue[1]
         local task_tv = next_task.time or TimeVal.zero
-        print("UIManager:_checkTasks: now is", self._now:tonumber(), "next @", next_task.time:tonumber(), next_task.action)
         if task_tv <= self._now then
             -- remove from table
             local task = table.remove(self._task_queue, 1)
