@@ -93,6 +93,7 @@ function ReadTimer:addToMainMenu(menu_items)
                             local then_t = now_t
                             then_t.hour = time.hour
                             then_t.min = time.min
+                            then_t.sec = 0
                             local seconds = os.difftime(os.time(then_t), os.time())
                             if seconds > 0 then
                                 self.time = os.time() + seconds
