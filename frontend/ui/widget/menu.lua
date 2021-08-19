@@ -729,7 +729,7 @@ function Menu:init()
         self.path_text = TextWidget:new{
             face = Font:getFace("xx_smallinfofont"),
             text = BD.directory(self.path),
-            max_width = self.inner_dimen.w - 2*Size.padding.small,
+            max_width = self.inner_dimen.w - 2*Size.padding.large,
             truncate_left = true,
         }
         path_text_container = CenterContainer:new{
