@@ -31,7 +31,13 @@ local FileChooser = Menu:extend{
         "%.sdr$",
         -- Kobo
         "^%.adobe%-digital%-editions$",
-        "^%.kobo$",
+        "^certificates$",
+        "^custom%-dict$",
+        "^dict$",
+        "^iink$",
+        "^kepub$",
+        "^markups$",
+        "^webstorage$",
         "^%.kobo%-images$",
         -- macOS
         "^%.fseventsd$",
@@ -50,6 +56,10 @@ local FileChooser = Menu:extend{
         "^%.reading%-states$",
     },
     exclude_files = {
+        -- Kobo
+        "^BookReader%.sqlite",
+        "^KoboReader%.sqlite",
+        "^device%.salt%.conf$",
         -- macOS
         "^%.DS_Store$",
         -- *nix
