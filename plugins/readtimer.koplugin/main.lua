@@ -10,7 +10,6 @@ local T = require("ffi/util").template
 local ReadTimer = WidgetContainer:new{
     name = "readtimer",
     time = 0,  -- The expected time of alarm if enabled, or 0.
-    sleepy_time = 0, -- timestamp of the last suspend
 }
 
 function ReadTimer:init()
@@ -176,13 +175,6 @@ function ReadTimer:addToMainMenu(menu_items)
     }
 end
 
-function ReadTimer:onSuspend()
-    if self:scheduled() then
-        logger.dbg("ReadTimer: onSuspend with an active timer")
-        self.sleepy_time = os.time()
-    end
-end
-
 -- The UI ticks on a monotonic time domain, while this plugin deals with real time.
 function ReadTimer:onResume()
     if self:scheduled() then
@@ -194,20 +186,10 @@ function ReadTimer:onResume()
             self:alarm_callback()
             self:unschedule()
         else
-            -- ...and that we re-compute the timer's duration against the REAL time if it's still ticking,
-            -- because the timer was effectively frozen during suspend, so it didn't take the time spent
-            -- sleeping into account...
-            -- (This would be much simpler if we didn't have legacy constraints preventing us from using BOOTTIME...).
-            local sleep_duration = os.difftime(os.time(), self.sleepy_time)
-            local expiry = os.difftime(remainder, sleep_duration)
-            logger.dbg("ReadTimer: Slept for", sleep_duration, "seconds")
-            logger.dbg("ReadTimer: With", remainder, "seconds left in the timer")
-
+            -- ...and that we re-schedule the timer against the REAL time if it's still ticking.
+            logger.dbg("ReadTimer: Rescheduling in", remainder, "seconds")
             self:unschedule()
-            if expiry > 0 then
-                logger.dbg("ReadTimer: Rescheduling in", expiry, "seconds")
-                self:rescheduleIn(expiry)
-            end
+            self:rescheduleIn(remainder)
         end
 
     end
