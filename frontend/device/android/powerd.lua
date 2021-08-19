@@ -48,7 +48,8 @@ end
 
 function AndroidPowerD:setWarmth(warmth)
     self.fl_warmth = warmth
-    android.setScreenWarmth(warmth / self.warm_diff)
+    local new_warmth = math.floor(warmth * self.fl_warmth_max / 100)
+    android.setScreenWarmth(new_warmth)
 end
 
 function AndroidPowerD:getWarmth()
