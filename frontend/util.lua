@@ -183,7 +183,7 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
                 hours = string.format("%d", hours + 1)
             end
             if hours == "0" then
-                -- We can pptimize out the % 3600 since the branch ensures we're < than 3600
+                -- We can optimize out the % 3600 since the branch ensures we're < than 3600
                 mins = string.format("%d", round(seconds / 60))
                 if hmsFormat then
                     return T(_("%1m"), mins)
