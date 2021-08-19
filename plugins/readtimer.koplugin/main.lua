@@ -193,10 +193,13 @@ function ReadTimer:addToMainMenu(menu_items)
     }
 end
 
--- UI ticks on a monotonic time domain, while this plugin deals with real time.
--- Silently kill the timer when suspending instead of having it resume ticking unexpectedly on resume...
-function ReadTimer:onSuspend()
-    self:unschedule()
+-- The UI ticks on a monotonic time domain, while this plugin deals with real time.
+-- Make sure we fire the alarm right away if it expired during suspend...
+function ReadTimer:onResume()
+    if self:remainingMinutes() == 0 then
+        self:alarm_callback()
+        self:unschedule()
+    end
 end
 
 return ReadTimer
