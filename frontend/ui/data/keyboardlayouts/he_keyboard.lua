@@ -4,7 +4,6 @@ local pco = en_popup.pco
 local cop = en_popup.cop
 local cse = en_popup.cse
 local sec = en_popup.sec
-local quo = en_popup.quo
 local com = en_popup.com -- comma (,)
 local prd = en_popup.prd -- period (.)
 local _at = en_popup._at
