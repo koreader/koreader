@@ -402,10 +402,6 @@ function InputText:initTextBox(text, char_added)
                 end
                 self:setText(self:getText(), true)
             end,
-
-            padding = self.padding,
-            margin = self.margin,
-            bordersize = self.bordersize,
         }
         self._password_toggle = FrameContainer:new{
             bordersize = 0,
