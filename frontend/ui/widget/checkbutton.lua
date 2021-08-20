@@ -48,6 +48,8 @@ function CheckButton:initCheckButton(checked)
         checked = self.checked,
         enabled = self.enabled,
         face = self.face,
+        parent = self.parent or self,
+        show_parent = self.show_parent or self,
     }
     self._textwidget = TextBoxWidget:new{
         text = self.text,
