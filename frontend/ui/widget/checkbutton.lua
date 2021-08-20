@@ -35,15 +35,8 @@ local CheckButton = InputContainer:new{
     enabled = true,
     face = Font:getFace("smallinfofont"),
     background = Blitbuffer.COLOR_WHITE,
-    overlap_align = "right",
     text = nil,
-    toggle_text = nil,
     max_width = nil, -- must be set by the caller
-    window = nil,
-
-    padding = Screen:scaleBySize(5),
-    margin = Screen:scaleBySize(5),
-    bordersize = Screen:scaleBySize(3),
 }
 
 function CheckButton:init()
@@ -56,8 +49,6 @@ function CheckButton:initCheckButton(checked)
         checked = self.checked,
         enabled = self.enabled,
         face = self.face,
-        parent = self.parent or self,
-        show_parent = self.show_parent or self,
     }
     self._textwidget = TextBoxWidget:new{
         text = self.text,
