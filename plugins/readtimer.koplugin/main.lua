@@ -175,7 +175,7 @@ function ReadTimer:addToMainMenu(menu_items)
     }
 end
 
--- The UI ticks on a monotonic time domain, while this plugin deals with REAL wall clock time.
+-- The UI ticks on a MONOTONIC time domain, while this plugin deals with REAL wall clock time.
 function ReadTimer:onResume()
     if self:scheduled() then
         logger.dbg("ReadTimer: onResume with an active timer")
