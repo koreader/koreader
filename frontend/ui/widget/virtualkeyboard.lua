@@ -48,9 +48,9 @@ local VirtualKey = InputContainer:new{
 }
 
 function VirtualKey:init()
-    local label_font_size = G_reader_settings:readSetting("keyboard_font_size") or 22
+    local label_font_size = G_reader_settings:readSetting("keyboard_key_font_size") or 22
     self.face = Font:getFace("infont", label_font_size)
-    self.bold = G_reader_settings:isTrue("keyboard_label_bold")
+    self.bold = G_reader_settings:isTrue("keyboard_key_bold")
     if self.keyboard.symbolmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayer("Sym") end
         self.skiptap = true
@@ -631,7 +631,7 @@ function VirtualKeyPopup:init()
     local keyboard_frame = FrameContainer:new{
         margin = 0,
         bordersize = Size.border.default,
-        background = G_reader_settings:nilOrTrue("keyboard_label_border") and Blitbuffer.COLOR_LIGHT_GRAY or Blitbuffer.COLOR_WHITE,
+        background = G_reader_settings:nilOrTrue("keyboard_key_border") and Blitbuffer.COLOR_LIGHT_GRAY or Blitbuffer.COLOR_WHITE,
         radius = 0,
         padding = parent_key.keyboard.padding,
         allow_mirroring = false,
@@ -919,7 +919,7 @@ function VirtualKeyboard:addKeys()
     local keyboard_frame = FrameContainer:new{
         margin = 0,
         bordersize = Size.border.default,
-        background = G_reader_settings:nilOrTrue("keyboard_label_border") and Blitbuffer.COLOR_LIGHT_GRAY or Blitbuffer.COLOR_WHITE,
+        background = G_reader_settings:nilOrTrue("keyboard_key_border") and Blitbuffer.COLOR_LIGHT_GRAY or Blitbuffer.COLOR_WHITE,
         radius = 0,
         padding = self.padding,
         allow_mirroring = false,
