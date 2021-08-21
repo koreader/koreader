@@ -433,7 +433,7 @@ function ListMenuItem:update()
                         pages_str = T(_("%1, %2 to read"), pages_str, Math.round(pages-percent_finished*pages), pages)
                     end
                 else
-                    pages_str = string.format("%d %%", math.floor(100*percent_finished))
+                    pages_str = string.format("%d %%", 100*percent_finished)
                 end
             else
                 if pages then
