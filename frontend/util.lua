@@ -98,6 +98,11 @@ function util.gsplit(str, pattern, capture, capture_empty_entity)
     end)
 end
 
+-- Stupid helper for the duration stuff
+local function passthrough(n)
+    return n
+end
+
 --[[--
 Converts seconds to a clock string.
 
@@ -115,8 +120,8 @@ function util.secondsToClock(seconds, withoutSeconds)
             return "00:00:00"
         end
     else
-        local round = withoutSeconds and require("optmath").round or math.floor
-        local hours = string.format("%02d", math.floor(seconds / 3600))
+        local round = withoutSeconds and require("optmath").round or passthrough
+        local hours = string.format("%02d", seconds / 3600)
         local mins = string.format("%02d", round(seconds % 3600 / 60))
         if withoutSeconds then
             if mins == "60" then
@@ -126,7 +131,7 @@ function util.secondsToClock(seconds, withoutSeconds)
             end
             return hours .. ":" .. mins
         else
-            local secs = string.format("%02d", math.floor(seconds % 60))
+            local secs = string.format("%02d", seconds % 60)
             return hours .. ":" .. mins .. ":" .. secs
         end
     end
@@ -168,14 +173,14 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
             end
         else
             if hmsFormat then
-                return T(_("%1m%2s"), "0", string.format("%02d", math.floor(seconds)))
+                return T(_("%1m%2s"), "0", string.format("%02d", seconds))
             else
                 return "0'" .. string.format("%02d", seconds) .. "''"
             end
         end
     else
-        local round = withoutSeconds and require("optmath").round or math.floor
-        local hours = string.format("%d", math.floor(seconds / 3600))
+        local round = withoutSeconds and require("optmath").round or passthrough
+        local hours = string.format("%d", seconds / 3600)
         local mins = string.format("%02d", round(seconds % 3600 / 60))
         if withoutSeconds then
             if mins == "60" then
@@ -194,7 +199,7 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
             -- @translators This is the 'h' for hour, like in 1h30. This is a duration.
             return T(_("%1h%2"), hours, mins)
         else
-            local secs = string.format("%02d", math.floor(seconds % 60))
+            local secs = string.format("%02d", seconds % 60)
             if hours == "0" then
                 mins = string.format("%d", round(seconds / 60))
                 if hmsFormat then
