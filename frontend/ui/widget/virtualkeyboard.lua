@@ -48,6 +48,9 @@ local VirtualKey = InputContainer:new{
 }
 
 function VirtualKey:init()
+    local label_font_size = G_reader_settings:readSetting("keyboard_label_font_size") or 22
+    self.face = Font:getFace("infont", label_font_size)
+    self.bold = G_reader_settings:isTrue("keyboard_label_bold")
     if self.keyboard.symbolmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayer("Sym") end
         self.skiptap = true
@@ -168,7 +171,7 @@ function VirtualKey:init()
             face = self.face,
             bold = self.bold or false,
         }
-    -- Make long labels fit by decreasing font size
+        -- Make long labels fit by decreasing font size
         local max_width = self.width - 2*self.bordersize - 2*Size.padding.small
         while label_widget:getWidth() > max_width do
             local new_size = label_widget.face.orig_size - 1
@@ -186,7 +189,8 @@ function VirtualKey:init()
         local OverlapGroup = require("ui/widget/overlapgroup")
         local alt_label_widget = TextWidget:new{
             text = self.alt_label,
-            face = Font:getFace("infont", 18),
+            face = Font:getFace(self.face.orig_font, label_font_size - 4),
+            bold = self.bold or false,
             fgcolor = Blitbuffer.COLOR_DARK_GRAY,
             padding = 0, -- no additional padding to font line height
         }
@@ -627,7 +631,7 @@ function VirtualKeyPopup:init()
     local keyboard_frame = FrameContainer:new{
         margin = 0,
         bordersize = Size.border.default,
-        background = Blitbuffer.COLOR_LIGHT_GRAY,
+        background = G_reader_settings:nilOrTrue("keyboard_label_border") and Blitbuffer.COLOR_LIGHT_GRAY or Blitbuffer.COLOR_WHITE,
         radius = 0,
         padding = parent_key.keyboard.padding,
         allow_mirroring = false,
@@ -915,7 +919,7 @@ function VirtualKeyboard:addKeys()
     local keyboard_frame = FrameContainer:new{
         margin = 0,
         bordersize = Size.border.default,
-        background = Blitbuffer.COLOR_LIGHT_GRAY,
+        background = G_reader_settings:nilOrTrue("keyboard_label_border") and Blitbuffer.COLOR_LIGHT_GRAY or Blitbuffer.COLOR_WHITE,
         radius = 0,
         padding = self.padding,
         allow_mirroring = false,
