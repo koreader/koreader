@@ -440,7 +440,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
         item.acquisitions = {}
         if entry.link then
             for _, link in ipairs(entry.link) do
-                if link.type:find(self.catalog_type)
+                if link.type and link.type:find(self.catalog_type)
                         and (not link.rel
                              or link.rel == "subsection"
                              or link.rel == "http://opds-spec.org/subsection"
