@@ -48,7 +48,7 @@ local VirtualKey = InputContainer:new{
 }
 
 function VirtualKey:init()
-    local label_font_size = G_reader_settings:readSetting("keyboard_label_font_size") or 22
+    local label_font_size = G_reader_settings:readSetting("keyboard_font_size") or 22
     self.face = Font:getFace("infont", label_font_size)
     self.bold = G_reader_settings:isTrue("keyboard_label_bold")
     if self.keyboard.symbolmode_keys[self.label] ~= nil then
