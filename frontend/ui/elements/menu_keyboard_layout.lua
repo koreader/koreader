@@ -21,7 +21,7 @@ local sub_item_table = {
         callback = function()
             input_dialog = require("ui/widget/inputdialog"):new{
                 title = _("Keyboard font size"),
-                input = tostring(G_reader_settings:readSetting("keyboard_font_size") or 22),
+                input = tostring(G_reader_settings:readSetting("keyboard_key_font_size") or 22),
                 input_hint = "(16 - 30)",
                 buttons = {
                     {
@@ -37,9 +37,9 @@ local sub_item_table = {
                             callback = function()
                                 local font_size = tonumber(input_dialog:getInputText())
                                 if font_size and font_size >= 16 and font_size <= 30 then
-                                    G_reader_settings:saveSetting("keyboard_font_size", font_size)
-                                    G_reader_settings:saveSetting("keyboard_label_bold", check_button_bold.checked)
-                                    G_reader_settings:saveSetting("keyboard_label_border", check_button_border.checked)
+                                    G_reader_settings:saveSetting("keyboard_key_font_size", font_size)
+                                    G_reader_settings:saveSetting("keyboard_key_bold", check_button_bold.checked)
+                                    G_reader_settings:saveSetting("keyboard_key_border", check_button_border.checked)
                                     input_dialog._input_widget:onCloseKeyboard()
                                     input_dialog._input_widget:initKeyboard()
                                     input_dialog:onShowKeyboard()
@@ -53,7 +53,7 @@ local sub_item_table = {
             -- checkboxes
             check_button_bold = CheckButton:new{
                 text = _("in bold"),
-                checked = G_reader_settings:isTrue("keyboard_label_bold"),
+                checked = G_reader_settings:isTrue("keyboard_key_bold"),
                 parent = input_dialog,
                 max_width = input_dialog._input_widget.width,
                 callback = function()
@@ -66,7 +66,7 @@ local sub_item_table = {
             }
             check_button_border = CheckButton:new{
                 text = _("with border"),
-                checked = G_reader_settings:nilOrTrue("keyboard_label_border"),
+                checked = G_reader_settings:nilOrTrue("keyboard_key_border"),
                 parent = input_dialog,
                 max_width = input_dialog._input_widget.width,
                 callback = function()
