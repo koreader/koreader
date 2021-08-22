@@ -32,7 +32,7 @@ function DropBox:getRemoteFilesMap(url, password, tree_path)
         else
             tree[treePath.."/"..file.text] = file
         end
-	end
+        end
     return tree
 end
 
