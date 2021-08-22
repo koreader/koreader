@@ -631,6 +631,9 @@ function OPDSBrowser:showDownloads(item)
             local acquisition = acquisitions[index]
             if acquisition then
                 local filetype = util.getFileNameSuffix(acquisition.href)
+                if not DocumentRegistry:hasProvider("dummy."..filetype) then
+                    filetype = nil
+                end
                 if not filetype and DocumentRegistry:hasProvider(nil, acquisition.type) then
                     filetype = DocumentRegistry:mimeToExt(acquisition.type)
                 end
