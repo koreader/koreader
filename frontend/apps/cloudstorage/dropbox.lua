@@ -47,14 +47,14 @@ function DropBox:synchronize(item)
     end
     local function stringSplit(s, sep)
 	--implem: https://stackoverflow.com/questions/1426954/split-string-in-lua
-        if sep == nil then
-                sep = "%s"
-        end
-        local t={}
-        for str in string.gmatch(s, "([^"..sep.."]+)") do
-                table.insert(t, str)
-        end
-        return t
+    if sep == nil then
+        sep = "%s"
+    end
+    local t = {}
+    for str in string.gmatch(s, "([^"..sep.."]+)") do
+        table.insert(t, str)
+    end
+    return t
 end
     
     -- local utility functions
