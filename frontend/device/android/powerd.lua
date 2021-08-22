@@ -69,6 +69,7 @@ function AndroidPowerD:turnOffFrontlightHW()
         return
     end
     android.setScreenBrightness(self.fl_min)
+    android.setScreenWarmth(self.fl_warmth_min)
     self.is_fl_on = false
     broadcastLightChanges()
 end
@@ -81,6 +82,7 @@ function AndroidPowerD:turnOnFrontlightHW()
     android.enableFrontlightSwitch()
 
     android.setScreenBrightness(math.floor(self.fl_intensity * self.bright_diff / self.fl_max))
+    android.setScreenWarmth(math.floor(self.fl_warmth * self.fl_warmth_max / 100))
 
     self.is_fl_on = true
     broadcastLightChanges()
