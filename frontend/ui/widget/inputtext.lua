@@ -391,6 +391,7 @@ function InputText:initTextBox(text, char_added)
     if self.is_password_type and self.show_password_toggle then
         self._check_button = self._check_button or CheckButton:new{
             text = _("Show password"),
+            parent = self,
             max_width = self.width,
             callback = function()
                 if self.text_type == "text" then
@@ -402,10 +403,6 @@ function InputText:initTextBox(text, char_added)
                 end
                 self:setText(self:getText(), true)
             end,
-
-            padding = self.padding,
-            margin = self.margin,
-            bordersize = self.bordersize,
         }
         self._password_toggle = FrameContainer:new{
             bordersize = 0,

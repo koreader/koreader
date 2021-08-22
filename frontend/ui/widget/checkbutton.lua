@@ -26,7 +26,6 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local Screen = Device.screen
 
 local CheckButton = InputContainer:new{
     callback = nil,
@@ -35,15 +34,8 @@ local CheckButton = InputContainer:new{
     enabled = true,
     face = Font:getFace("smallinfofont"),
     background = Blitbuffer.COLOR_WHITE,
-    overlap_align = "right",
     text = nil,
-    toggle_text = nil,
     max_width = nil, -- must be set by the caller
-    window = nil,
-
-    padding = Screen:scaleBySize(5),
-    margin = Screen:scaleBySize(5),
-    bordersize = Screen:scaleBySize(3),
 }
 
 function CheckButton:init()
