@@ -86,7 +86,7 @@ function VirtualKey:init()
             end
         end
         self.hold_callback = function()
-            if util.tableSize(self.key_chars) > 3 then
+            if util.tableSize(self.key_chars) > 5 then
                 self.popup = VirtualKeyPopup:new{
                     parent_key = self,
                 }
