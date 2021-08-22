@@ -40,7 +40,7 @@ function DropBox:synchronize(item)
     local function tableSlice(t, l,r)
         if not r then r = #t end
         local nt = {}
-        for i=l,r do
+        for i = l, r do
             table.insert(nt,t[i])
         end
         return nt
