@@ -24,7 +24,7 @@ function DropBox:getRemoteFilesMap(url, password, tree_path)
     local files = DropBox:showFilesAndFolders(url,password)
     for i,file in ipairs(files) do
         if file.type == "folder" then
-            UI:info(_("Retrieving folder ".. treePath.."/"..file.text .."…"))
+            UI:info(T(_("Retrieving folder %1/%2…"), tree_path, file.text))
             local subtree = DropBox:getRemoteFilesMap(file.url,password,treePath.."/"..file.text)
             for k,subf in pairs(subtree) do
                 tree[k]=subf
