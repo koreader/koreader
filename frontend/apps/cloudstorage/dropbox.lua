@@ -18,7 +18,7 @@ function DropBox:showFilesAndFolders(url, password)
     return DropBoxApi:showFilesAndFoldersV2(url, password)
 end
 
-function DropBox:getRemoteFilesMap(url,password,treePath)
+function DropBox:getRemoteFilesMap(url, password, tree_path)
     local tree = {}
     local UI = require("ui/trapper")
     local files = DropBox:showFilesAndFolders(url,password)
