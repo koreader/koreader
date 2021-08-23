@@ -116,6 +116,9 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
             end
             local is_current_dir = self:isCurrentDirectory( item_fullpath, address, path )
             local item_name = util.urlDecode( FFIUtil.basename( item_fullpath ) )
+            local is_not_collection = item:find("<[^:]*:resourcetype/>") or
+                item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
+
             local item_path = path .. "/" .. item_name
             if item:find("<[^:]*:collection/>") then
                 item_name = item_name .. "/"
@@ -126,7 +129,7 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
                         type = "folder",
                     })
                 end
-            elseif item:find("<[^:]*:resourcetype/>") and (DocumentRegistry:hasProvider(item_name)
+            elseif is_not_collection and (DocumentRegistry:hasProvider(item_name)
                 or G_reader_settings:isTrue("show_unsupported")) then
                 table.insert(webdav_file, {
                     text = item_name,
