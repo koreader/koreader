@@ -630,13 +630,16 @@ function OPDSBrowser:showDownloads(item)
             local index = (i-1)*downloadsperline + j
             local acquisition = acquisitions[index]
             if acquisition then
-                local filetype
-                if DocumentRegistry:hasProvider(nil, acquisition.type) then
-                    filetype = DocumentRegistry:mimeToExt(acquisition.type)
-                elseif DocumentRegistry:hasProvider(acquisition.href) then
-                    filetype = string.lower(util.getFileNameSuffix(acquisition.href))
+                local filetype = util.getFileNameSuffix(acquisition.href)
+                if not DocumentRegistry:hasProvider("dummy."..filetype) then
+                    filetype = nil
                 end
+                if not filetype and DocumentRegistry:hasProvider(nil, acquisition.type) then
+                    filetype = DocumentRegistry:mimeToExt(acquisition.type)
+                end
+
                 if filetype then
+                    filetype = string.lower(filetype)
                     -- append DOWNWARDS BLACK ARROW ⬇ U+2B07 to format
                     button.text = string.upper(filetype) .. "\xE2\xAC\x87"
                     button.callback = function()
