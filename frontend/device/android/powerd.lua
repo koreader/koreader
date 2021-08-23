@@ -21,7 +21,7 @@ function AndroidPowerD:frontlightIntensityHW()
 end
 
 function AndroidPowerD:setIntensityHW(intensity)
-    -- if frontlight switch was toggled off, turn it on
+    -- If the frontlight switch was off, turn it on.
     android.enableFrontlightSwitch()
 
     self.fl_intensity = intensity
