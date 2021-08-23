@@ -71,7 +71,7 @@ function AndroidPowerD:turnOffFrontlightHW()
     end
     android.setScreenBrightness(self.fl_min)
 
-    if device_model == "kon_tiki2" then
+    if device_model == "kon_tiki2" then -- for Onyx Boox Kon-Tiki 2 only
         android.setScreenWarmth(self.fl_warmth_min)
     end
 
@@ -88,7 +88,7 @@ function AndroidPowerD:turnOnFrontlightHW()
 
     android.setScreenBrightness(math.floor(self.fl_intensity * self.bright_diff / self.fl_max))
 
-    if device_model == "kon_tiki2" then
+    if device_model == "kon_tiki2" then -- for Onyx Boox Kon-Tiki 2 only
         android.setScreenWarmth(math.floor(self.fl_warmth * self.fl_warmth_max / 100))
     end
 
