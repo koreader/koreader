@@ -1,5 +1,6 @@
 local BasePowerD = require("device/generic/powerd")
 local _, android = pcall(require, "android")
+local device_model = android.prop.product
 
 local AndroidPowerD = BasePowerD:new{
     fl_min = 0,
@@ -69,7 +70,11 @@ function AndroidPowerD:turnOffFrontlightHW()
         return
     end
     android.setScreenBrightness(self.fl_min)
-    android.setScreenWarmth(self.fl_warmth_min)
+
+    if device_model == "kon_tiki2" then
+        android.setScreenWarmth(self.fl_warmth_min)
+    end
+
     self.is_fl_on = false
     broadcastLightChanges()
 end
@@ -82,7 +87,10 @@ function AndroidPowerD:turnOnFrontlightHW()
     android.enableFrontlightSwitch()
 
     android.setScreenBrightness(math.floor(self.fl_intensity * self.bright_diff / self.fl_max))
-    android.setScreenWarmth(math.floor(self.fl_warmth * self.fl_warmth_max / 100))
+
+    if device_model == "kon_tiki2" then
+        android.setScreenWarmth(math.floor(self.fl_warmth * self.fl_warmth_max / 100))
+    end
 
     self.is_fl_on = true
     broadcastLightChanges()
