@@ -65,7 +65,7 @@ USED_WMCTRL="no"
 PASSCODE_DISABLED="no"
 
 # List of services we stop in order to reclaim a tiny sliver of RAM...
-TOGGLED_SERVICES="stored kb webreader kfxreader kfxview todo tmd rcm archive scanner otav3 otaupd"
+TOGGLED_SERVICES="stored webreader kfxreader kfxview todo tmd rcm archive scanner otav3 otaupd"
 
 REEXEC_FLAGS=""
 # Keep track of if we were started through KUAL
