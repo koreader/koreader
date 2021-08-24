@@ -344,7 +344,7 @@ end
 
 function CloudStorage:onMenuHold(item)
     if item.type == "folder_long_press" then
-        local title = T(_("Select this folder?\n\n%1"), BD.dirpath(item.url))
+        local title = T(_("Choose this folder?\n\n%1"), BD.dirpath(item.url))
         local onConfirm = self.onConfirm
         local button_dialog
         button_dialog = ButtonDialogTitle:new{
@@ -358,7 +358,7 @@ function CloudStorage:onMenuHold(item)
                         end,
                     },
                     {
-                        text = _("Select"),
+                        text = _("Choose"),
                         callback = function()
                             if onConfirm then
                                 onConfirm(item.url)

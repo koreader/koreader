@@ -658,7 +658,7 @@ function OPDSBrowser:showDownloads(item)
     -- Set download folder and book info buttons.
     table.insert(buttons, {
         {
-            text = _("Select folder"),
+            text = _("Choose folder"),
             callback = function()
                 require("ui/downloadmgr"):new{
                     onConfirm = function(path)

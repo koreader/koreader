@@ -436,14 +436,14 @@ If fallback is disabled, the screensaver image will stay in place after closing 
 
 local set_image_text = _([[
 You can either choose an existing file:
-- Select a file
+- Choose a file
 
 or specify a new file:
-- First select a folder
+- First choose a folder
 - Then add the name of the new file
 
 or delete the path:
-- First select a folder
+- First choose a folder
 - Clear the name of the file]])
 
 -- menu entry: Cache settings
@@ -495,7 +495,7 @@ function CoverImage:menuEntryCache()
                 end,
             },
             self:menuEntrySetPath("cover_image_cache_path", _("Cover cache folder"), _("Current cache path:\n%1"),
-                ("Select a cache folder. The contents of the old folder will be migrated."), default_cache_path, true, false, self.migrateCache),
+                ("Choose a cache folder. The contents of the old folder will be migrated."), default_cache_path, true, false, self.migrateCache),
             {
                 text = _("Clear cached covers"),
                 help_text_func = function()
@@ -738,7 +738,7 @@ function CoverImage:addToMainMenu(menu_items)
             },
             -- menu entry: set fallback image
             self:menuEntrySetPath("cover_image_fallback_path", _("Set fallback path"),
-                _("The fallback image used on document close is:\n%1"), _("You can select a fallback image."), default_fallback_path, false, false),
+                _("The fallback image used on document close is:\n%1"), _("You can choose a fallback image."), default_fallback_path, false, false),
             -- menu entry: fallback
             {
                 text = _("Turn on fallback image"),

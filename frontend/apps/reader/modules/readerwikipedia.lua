@@ -192,7 +192,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                                 },
                                 {
                                     {
-                                    text = _("Select another folder"),
+                                    text = _("Choose other folder"),
                                     callback = function()
                                         UIManager:close(dialog)
                                         -- Use currently read book's directory as starting point,
@@ -250,7 +250,7 @@ function ReaderWikipedia:addToMainMenu(menu_items)
                             local text = _([[
 Wikipedia articles can be saved as an EPUB for more comfortable reading.
 
-You can select an existing folder, or use a default folder named "Wikipedia" in your reader's home folder.
+You can choose an existing folder, or use a default folder named "Wikipedia" in your reader's home folder.
 
 Where do you want them saved?]])
                             UIManager:show(ConfirmBox:new{
@@ -265,7 +265,7 @@ Where do you want them saved?]])
                                         text = T(_("Wikipedia 'Save as EPUB' folder set to:\n%1"), BD.dirpath(wikipedia_dir)),
                                     })
                                 end,
-                                cancel_text = _("Select folder"),
+                                cancel_text = _("Choose folder"),
                                 cancel_callback = function()
                                     choose_directory()
                                 end,
