@@ -409,15 +409,13 @@ return {
     },
     _Q_ = {
         "Q",
-        north = "q"
-        --- @todo Render q̃ correctly on key (not a problem in textbox?)
-        --east = {"q̃"}, -- Old/Middle French abbreviation of que
+        north = "q",
+        south = "Q̃",
     },
     _q_ = {
         "q",
         north = "Q",
-        --- @todo Render q̃ correctly on key (not a problem in textbox?)
-        --east = {"q̃"}, -- Old/Middle French abbreviation of que
+        south = "q̃",
     },
     _R_ = {
         "R",
