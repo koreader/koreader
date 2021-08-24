@@ -73,9 +73,9 @@ end
 function Weather:addToMainMenu(menu_items)
     menu_items.weather = {
         text = _("Weather"),
-	sub_item_table_func= function()
-	   return self:getSubMenuItems()
-	end,
+        sub_item_table_func= function()
+           return self:getSubMenuItems()
+        end,
     }
 end
 --
@@ -89,197 +89,197 @@ function Weather:getSubMenuItems()
    local sub_item_table
    sub_item_table = {
       {
-	 text = _("Settings"),
-	 sub_item_table = {
-	    {
-	       text_func = function()
-		  return T(_("Postal Code (%1)"), self.postal_code)
-	       end,
-	       keep_menu_open = true,
-	       callback = function(touchmenu_instance)
-  		  local postal_code = self.postal_code
-		  local input
-		  input = InputDialog:new{
-		     title = _("Postal Code"),
-		     input = postal_code,
-		     input_hint = _("Format: " .. self.default_postal_code),
-		     input_type = "string",
-		     description = _(""),
-		     buttons = {
-			{
-			   {
-			      text = _("Cancel"),
-			      callback = function()
-				 UIManager:close(input)
-			      end,
-			   },
-			   {
-			      text = _("Save"),
-			      is_enter_default = true,
-			      callback = function()
-				 self.postal_code = input:getInputValue()
-				 UIManager:close(input)
-				 touchmenu_instance:updateItems()
-			      end,
-			   },
-			}
-		     },
-		  }
-		  UIManager:show(input)
-		  input:onShowKeyboard()
+         text = _("Settings"),
+         sub_item_table = {
+            {
+               text_func = function()
+                  return T(_("Postal Code (%1)"), self.postal_code)
+               end,
+               keep_menu_open = true,
+               callback = function(touchmenu_instance)
+                  local postal_code = self.postal_code
+                  local input
+                  input = InputDialog:new{
+                     title = _("Postal Code"),
+                     input = postal_code,
+                     input_hint = _("Format: " .. self.default_postal_code),
+                     input_type = "string",
+                     description = _(""),
+                     buttons = {
+                        {
+                           {
+                              text = _("Cancel"),
+                              callback = function()
+                                 UIManager:close(input)
+                              end,
+                           },
+                           {
+                              text = _("Save"),
+                              is_enter_default = true,
+                              callback = function()
+                                 self.postal_code = input:getInputValue()
+                                 UIManager:close(input)
+                                 touchmenu_instance:updateItems()
+                              end,
+                           },
+                        }
+                     },
+                  }
+                  UIManager:show(input)
+                  input:onShowKeyboard()
 
-	       end,
-	    },
-	    {
-	       text_func = function()
-		  return T(_("Auth Token (%1)"), self.api_key)
-	       end,
-	       keep_menu_open = true,
-	       callback = function(touchmenu_instance)
-  		  local api_key = self.api_key
-		  local input
-		  input = InputDialog:new{
-		     title = _("Auth token"),
-		     input = api_key,
-		     input_type = "string",
-		     description = _("An auth token can be obtained from WeatherAPI.com. Simply signup for an account and request a token."),
-		     buttons = {
-			{
-			   {
-			      text = _("Cancel"),
-			      callback = function()
-				 UIManager:close(input)
-			      end,
-			   },
-			   {
-			      text = _("Save"),
-			      is_enter_default = true,
-			      callback = function()
-				 self.api_key = input:getInputValue()
-				 UIManager:close(input)
-				 touchmenu_instance:updateItems()
-			      end,
-			   },
-			}
-		     },
-		  }
-		  UIManager:show(input)
-		  input:onShowKeyboard()		 
-	       end,
-	    },
-	    {
-	       -- There is a bug here. After the callback fires, and the user leaves
-	       -- the sub_item_table, the parent menu doesn't reflect the updated setting
-	       -- Try it... you'll see :(
-	       text = T(_("Temperature Scale (%1)"), self.temp_scale),
-	       sub_item_table = {
-		  {
-		     text = _("Celsius"),
-		     checked_func = function()
-			if(string.find(self.temp_scale,"C")) then
-			   return true
-			else
-			   return false
-			end
-		     end,
-		     keep_menu_open = true,
-		     callback = function()
-			self.temp_scale = "C"
-		     end,
-		  },
-		  {
-		     text = _("Fahrenheit"),
-		     checked_func = function()
-			if(string.find(self.temp_scale,"F")) then
-			   return true
-			else
-			   return false
-			end
-		     end,
-		     keep_menu_open = true,
-		     callback = function(touchmenu_instance)
-			self.temp_scale = "F"
-		     end,
-		  }
-	       }
-	    },
-	    {
-	       text = T(_("Clock style (%1)"), self.clock_style),
-	       sub_item_table = {
-		  {
-		     text = _("12 hour clock"),
-		     checked_func = function()
-			if(string.find(self.clock_style,"12")) then
-			   return true
-			else
-			   return false
-			end
-		     end,
-		     keep_menu_open = true,
-		     callback = function()
-			self.clock_style = "12"
-		     end,
-		  },
-		  {
-		     text = _("24 hour clock"),
-		     checked_func = function()
-			if(string.find(self.clock_style,"24")) then
-			   return true
-			else
-			   return false
-			end
-		     end,
-		     keep_menu_open = true,
-		     callback = function(touchmenu_instance)
-			self.clock_style = "24"
-		     end,
-		  }
-	       }
-	    }
-	 },
+               end,
+            },
+            {
+               text_func = function()
+                  return T(_("Auth Token (%1)"), self.api_key)
+               end,
+               keep_menu_open = true,
+               callback = function(touchmenu_instance)
+                  local api_key = self.api_key
+                  local input
+                  input = InputDialog:new{
+                     title = _("Auth token"),
+                     input = api_key,
+                     input_type = "string",
+                     description = _("An auth token can be obtained from WeatherAPI.com. Simply signup for an account and request a token."),
+                     buttons = {
+                        {
+                           {
+                              text = _("Cancel"),
+                              callback = function()
+                                 UIManager:close(input)
+                              end,
+                           },
+                           {
+                              text = _("Save"),
+                              is_enter_default = true,
+                              callback = function()
+                                 self.api_key = input:getInputValue()
+                                 UIManager:close(input)
+                                 touchmenu_instance:updateItems()
+                              end,
+                           },
+                        }
+                     },
+                  }
+                  UIManager:show(input)
+                  input:onShowKeyboard()                 
+               end,
+            },
+            {
+               -- There is a bug here. After the callback fires, and the user leaves
+               -- the sub_item_table, the parent menu doesn't reflect the updated setting
+               -- Try it... you'll see :(
+               text = T(_("Temperature Scale (%1)"), self.temp_scale),
+               sub_item_table = {
+                  {
+                     text = _("Celsius"),
+                     checked_func = function()
+                        if(string.find(self.temp_scale,"C")) then
+                           return true
+                        else
+                           return false
+                        end
+                     end,
+                     keep_menu_open = true,
+                     callback = function()
+                        self.temp_scale = "C"
+                     end,
+                  },
+                  {
+                     text = _("Fahrenheit"),
+                     checked_func = function()
+                        if(string.find(self.temp_scale,"F")) then
+                           return true
+                        else
+                           return false
+                        end
+                     end,
+                     keep_menu_open = true,
+                     callback = function(touchmenu_instance)
+                        self.temp_scale = "F"
+                     end,
+                  }
+               }
+            },
+            {
+               text = T(_("Clock style (%1)"), self.clock_style),
+               sub_item_table = {
+                  {
+                     text = _("12 hour clock"),
+                     checked_func = function()
+                        if(string.find(self.clock_style,"12")) then
+                           return true
+                        else
+                           return false
+                        end
+                     end,
+                     keep_menu_open = true,
+                     callback = function()
+                        self.clock_style = "12"
+                     end,
+                  },
+                  {
+                     text = _("24 hour clock"),
+                     checked_func = function()
+                        if(string.find(self.clock_style,"24")) then
+                           return true
+                        else
+                           return false
+                        end
+                     end,
+                     keep_menu_open = true,
+                     callback = function(touchmenu_instance)
+                        self.clock_style = "24"
+                     end,
+                  }
+               }
+            }
+         },
       },      
 --[[      {
-	 text = _("Today's forecast"),
-	 keep_menu_open = true,
-	 callback = function()
-	    NetworkMgr:turnOnWifiAndWaitForConnection(function()
-		  -- Init the weather API
-		  local api = WeatherApi:new{
-		     api_key = self.api_key
-		  }  
-		  -- Fetch the forecast
-		  local result = api:getForecast(1, self.postal_code)
-		  if result == false then return false end
-		  self:forecastForDay(result)
-	    end)
-	 end,
+         text = _("Today's forecast"),
+         keep_menu_open = true,
+         callback = function()
+            NetworkMgr:turnOnWifiAndWaitForConnection(function()
+                  -- Init the weather API
+                  local api = WeatherApi:new{
+                     api_key = self.api_key
+                  }  
+                  -- Fetch the forecast
+                  local result = api:getForecast(1, self.postal_code)
+                  if result == false then return false end
+                  self:forecastForDay(result)
+            end)
+         end,
    },]]--
       {
-	 text = _("View weather forecast"),
-	 keep_menu_open = true,
-	 callback = function()
-	    NetworkMgr:turnOnWifiAndWaitForConnection(function()
-		  -- Init the weather API
-		  local api = WeatherApi:new{
-		     api_key = self.api_key
-		  }
-		  -- Fetch the forecast
-		  local result = api:getForecast(3, self.postal_code)
-		  if result == false then return false end
-		  if result.error ~= nil then
-		     local Screen = require("device").screen
-		     local sample
-		     sample = InfoMessage:new{
-			text = _("Error: " ..result.error.message),
-			height = Screen:scaleBySize(400),
-			show_icon = true
-		     }
-		     UIManager:show(sample)
-		  else
-		     self:weeklyForecast(result)
-		  end
-	    end)
-	 end,
+         text = _("View weather forecast"),
+         keep_menu_open = true,
+         callback = function()
+            NetworkMgr:turnOnWifiAndWaitForConnection(function()
+                  -- Init the weather API
+                  local api = WeatherApi:new{
+                     api_key = self.api_key
+                  }
+                  -- Fetch the forecast
+                  local result = api:getForecast(3, self.postal_code)
+                  if result == false then return false end
+                  if result.error ~= nil then
+                     local Screen = require("device").screen
+                     local sample
+                     sample = InfoMessage:new{
+                        text = _("Error: " ..result.error.message),
+                        height = Screen:scaleBySize(400),
+                        show_icon = true
+                     }
+                     UIManager:show(sample)
+                  else
+                     self:weeklyForecast(result)
+                  end
+            end)
+         end,
       },
       
    }
@@ -295,7 +295,7 @@ function Weather:weeklyForecast(data)
    local vc_weekly = self.composer:weeklyView(
       data,
       function(day_data)
-	 self:forecastForDay(day_data)
+         self:forecastForDay(day_data)
       end
    )
    
@@ -330,8 +330,8 @@ function Weather:forecastForDay(data)
       local vc_forecast = self.composer:singleForecast(data)
 
       if (data.current ~= nil) then
-	 local vc_current = self.composer:currentForecast(data.current)
-	 view_content = self.composer:flattenArray(view_content, vc_current)
+         local vc_current = self.composer:currentForecast(data.current)
+         view_content = self.composer:flattenArray(view_content, vc_current)
       end
       view_content = self.composer:flattenArray(view_content, vc_forecast)
    else
@@ -347,10 +347,10 @@ function Weather:forecastForDay(data)
    table.insert(
       view_content,
       {
-	 _("Hourly forecast"), "Click to view",
-	 callback = function()
-	    self:hourlyForecast(data.hour)	   
-	 end
+         _("Hourly forecast"), "Click to view",
+         callback = function()
+            self:hourlyForecast(data.hour)         
+         end
       }
    ) 
    -- Create the KV page 
@@ -372,7 +372,7 @@ function Weather:hourlyForecast(data)
    local hourly_kv_pairs = self.composer:hourlyView(
       data,
       function(hour_data)
-	 self:forecastForHour(hour_data)
+         self:forecastForHour(hour_data)
       end
    )
    
@@ -381,8 +381,8 @@ function Weather:hourlyForecast(data)
       value_overflow_align = "right",
       kv_pairs = hourly_kv_pairs,
       callback_return = function()
-	 UIManager:show(kv)
-	 self.kv = kv
+         UIManager:show(kv)
+         self.kv = kv
       end
    }
 
@@ -401,22 +401,22 @@ function Weather:forecastForHour(data)
    local hour
 
    if(string.find(self.clock_style,"12")) then
-	 if(date.hour <= 12) then
-	    hour = date.hour .. ":00 AM"
-	 else
-	    hour = (date.hour - 12) .. ":00 PM"
-	 end
+         if(date.hour <= 12) then
+            hour = date.hour .. ":00 AM"
+         else
+            hour = (date.hour - 12) .. ":00 PM"
+         end
    else
       hour = date.hour
-   end	
+   end  
    
    self.kv = KeyValuePage:new{
       title = T(_("Forecast for %1"), hour),
       value_overflow_align = "right",
       kv_pairs = forecast_kv_pairs,
       callback_return = function()
-	 UIManager:show(kv)
-	 self.kv = kv
+         UIManager:show(kv)
+         self.kv = kv
       end
    }
    

@@ -39,10 +39,10 @@ function Composer:currentForecast(data)
    
    view_content = {
       {
-	 "Currently feels like ", feelslike
+         "Currently feels like ", feelslike
       },
       {
-	 "Current condition", condition
+         "Current condition", condition
       },
       "---"
    }
@@ -80,36 +80,36 @@ function Composer:singleForecast(data)
    -- Set and order the data
    view_content =
       {
-	 {
-	    "High of", max_temp
-	 },
-	 {
-	    "Low of", min_temp
-	 },
-	 {
-	    "Average temp.", avg_temp
-	 },
-	 {
-	    "Condition", condition
-	 },
-	 "---",
-	 {
-	    "Moonrise", moon_rise
-	 },
-	 {
-	    "Moonset", moon_set
-	 },
-	 {
-	    "Moon phase", moon_phase
-	 },
-	 "---",
-	 {
-	    "Sunrise", sunrise
-	 },
-	 {
-	    "Sunset", sunset
-	 },
-	 "---"
+         {
+            "High of", max_temp
+         },
+         {
+            "Low of", min_temp
+         },
+         {
+            "Average temp.", avg_temp
+         },
+         {
+            "Condition", condition
+         },
+         "---",
+         {
+            "Moonrise", moon_rise
+         },
+         {
+            "Moonset", moon_set
+         },
+         {
+            "Moon phase", moon_phase
+         },
+         "---",
+         {
+            "Sunrise", sunrise
+         },
+         {
+            "Sunset", sunset
+         },
+         "---"
       }      
    
    return view_content
@@ -130,39 +130,39 @@ function Composer:hourlyView(data, callback)
       local time
 
       if(string.find(self.temp_scale, "C")) then
-	 cell = hourly_forecast[i+1].feelslike_c .. "°C, "
+         cell = hourly_forecast[i+1].feelslike_c .. "°C, "
       else
-	 cell = hourly_forecast[i+1].feelslike_f .. "°F, "
+         cell = hourly_forecast[i+1].feelslike_f .. "°F, "
       end
 
       if(string.find(self.clock_style, "12")) then
-	 local meridiem
-	 local hour = i	 
-	 if(hour <= 12) then
-	    meridiem = "AM"
-	 else
-	    meridiem = "PM"
-	    hour = hour - 12
-	 end
-	 time = hour .. ":00 " .. meridiem
+         local meridiem
+         local hour = i  
+         if(hour <= 12) then
+            meridiem = "AM"
+         else
+            meridiem = "PM"
+            hour = hour - 12
+         end
+         time = hour .. ":00 " .. meridiem
       else
-	 time = i .. ":00"
+         time = i .. ":00"
       end         
 
       table.insert(
-	 view_content,
-	 {
-	    _(time),
-	    cell .. hourly_forecast[i+1].condition.text,
-	    callback = function()
-	       callback(hourly_forecast[i+1])
-	    end
-	 }
+         view_content,
+         {
+            _(time),
+            cell .. hourly_forecast[i+1].condition.text,
+            callback = function()
+               callback(hourly_forecast[i+1])
+            end
+         }
       )
       
       table.insert(
-	 view_content,
-	 "---"
+         view_content,
+         "---"
       )
    end
    
@@ -205,39 +205,39 @@ function Composer:forecastForHour(data)
    
    view_content =
       {
-	 {
-	    "Time", time
-	 },
-	 {
-	    "Temperature", temp
-	 },
-	 {
-	    "Feels like", feelslike
-	 },
-	 {
-	    "Condition", condition
-	 },
-	 "---",
-	 {
-	    "Precipitation", precip
-	 },
-	 {
-	    "Wind", wind
-	 },
-	 {
-	    "Dewpoint", dewpoint
-	 },
-	 "---",
-	 {
-	    "Heat Index", heatindex
-	 },
-	 {
-	    "Wind chill", windchill
-	 },
-	 "---",
-	 {
-	    "UV", uv
-	 }
+         {
+            "Time", time
+         },
+         {
+            "Temperature", temp
+         },
+         {
+            "Feels like", feelslike
+         },
+         {
+            "Condition", condition
+         },
+         "---",
+         {
+            "Precipitation", precip
+         },
+         {
+            "Wind", wind
+         },
+         {
+            "Dewpoint", dewpoint
+         },
+         "---",
+         {
+            "Heat Index", heatindex
+         },
+         {
+            "Wind chill", windchill
+         },
+         "---",
+         {
+            "UV", uv
+         }
       }
    
    return view_content
@@ -263,29 +263,29 @@ function Composer:weeklyView(data, callback)
       -- Add some extra nibbles to the variable that is
       -- passed back to the callback
       if index == 0 then
-	 r.current = data.current
-      end	       
+         r.current = data.current
+      end              
       
       local content = {
-	 {
-	    date, condition
-	 },
-	 {
-	    "", avg_temp_c
-	 },
-	 {
-	    "", "High: " .. max_c .. ", Low: " .. min_c
-	 },
-	 {
-	    "",
-	    "Click for full forecast",
-	    callback = function()
-	       -- Prepare callback for hour view
-	       r.location = data.location
-	       callback(r)
-	    end
-	 },
-	 "---"
+         {
+            date, condition
+         },
+         {
+            "", avg_temp_c
+         },
+         {
+            "", "High: " .. max_c .. ", Low: " .. min_c
+         },
+         {
+            "",
+            "Click for full forecast",
+            callback = function()
+               -- Prepare callback for hour view
+               r.location = data.location
+               callback(r)
+            end
+         },
+         "---"
       }
       
       view_content = Composer:flattenArray(view_content, content)
@@ -303,27 +303,27 @@ end
 function Composer:flattenArray(base_array, source_array)
    for key, value in pairs(source_array) do
       if value[2] == nil then
-	 -- If the value is empty, then it's probably supposed to be a line
-	 table.insert(
-	    base_array,
-	    "---"
-	 )
+         -- If the value is empty, then it's probably supposed to be a line
+         table.insert(
+            base_array,
+            "---"
+         )
       else
-	 if value["callback"] then
-	    table.insert(
-	       base_array,
-	       {
-		  value[1], value[2], callback = value["callback"]
-	       }
-	    )
-	 else
-	    table.insert(
-	       base_array,
-	       {
-		  value[1], value[2]
-	       }
-	    )
-	 end
+         if value["callback"] then
+            table.insert(
+               base_array,
+               {
+                  value[1], value[2], callback = value["callback"]
+               }
+            )
+         else
+            table.insert(
+               base_array,
+               {
+                  value[1], value[2]
+               }
+            )
+         end
       end
    end
    return base_array
