@@ -30,11 +30,11 @@ local PathChooser = FileChooser:extend{
 function PathChooser:init()
     if self.title == true then -- default title depending on options
         if self.select_directory and not self.select_file then
-            self.title = _("Long-press to select folder")
+            self.title = _("Long-press to choose a folder")
         elseif not self.select_directory and self.select_file then
-            self.title = _("Long-press to select file")
+            self.title = _("Long-press to choose a file")
         else
-            self.title = _("Long-press to select")
+            self.title = _("Long-press to choose")
         end
     end
     self.show_hidden = G_reader_settings:isTrue("show_hidden")
@@ -42,7 +42,7 @@ function PathChooser:init()
         self.file_filter = function() return false end -- filter out regular files
     end
     if self.select_directory then
-        -- Let FileChooser display "Long press to select current folder"
+        -- Let FileChooser display "Long-press to choose current folder"
         self.show_current_dir_for_hold = true
     end
     FileChooser.init(self)
@@ -104,15 +104,15 @@ function PathChooser:onMenuHold(item)
         if self.detailed_file_info then
             local filesize = util.getFormattedSize(attr.size)
             local lastmod = os.date("%Y-%m-%d %H:%M", attr.modification)
-            title = T(_("Select this file?\n\n%1\n\nFile size: %2 bytes\nLast modified: %3"),
+            title = T(_("Choose this file?\n\n%1\n\nFile size: %2 bytes\nLast modified: %3"),
                         BD.filepath(path), filesize, lastmod)
         else
-            title = T(_("Select this file?\n\n%1"), BD.filepath(path))
+            title = T(_("Choose this file?\n\n%1"), BD.filepath(path))
         end
     elseif attr.mode == "directory" then
-        title = T(_("Select this folder?\n\n%1"), BD.dirpath(path))
+        title = T(_("Choose this folder?\n\n%1"), BD.dirpath(path))
     else -- just in case we get something else
-        title = T(_("Select this path?\n\n%1"), BD.path(path))
+        title = T(_("Choose this path?\n\n%1"), BD.path(path))
     end
     local onConfirm = self.onConfirm
     self.button_dialog = ButtonDialogTitle:new{
@@ -126,7 +126,7 @@ function PathChooser:onMenuHold(item)
                     end,
                 },
                 {
-                    text = _("Select"),
+                    text = _("Choose"),
                     callback = function()
                         if onConfirm then
                             onConfirm(path)
