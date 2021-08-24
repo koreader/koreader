@@ -139,7 +139,7 @@ function DropBoxApi:listFolder(path, token, folder_mode)
     -- Add special folder.
     if folder_mode then
         table.insert(dropbox_list, 1, {
-            text = _("Long-press to select current folder"),
+            text = _("Long-press to choose current folder"),
             url = path,
             type = "folder_long_press",
         })
