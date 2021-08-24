@@ -41,13 +41,16 @@ local VirtualKey = InputContainer:new{
 
     width = nil,
     height = math.max(Screen:getWidth(), Screen:getHeight())*0.33,
-    bordersize = Size.border.thin,
-    focused_bordersize = Size.border.default * 5,
+    bordersize = 0,
+    focused_bordersize = Size.border.default,
     radius = 0,
     face = Font:getFace("infont"),
 }
 
 function VirtualKey:init()
+    local label_font_size = G_reader_settings:readSetting("keyboard_key_font_size") or 22
+    self.face = Font:getFace("infont", label_font_size)
+    self.bold = G_reader_settings:isTrue("keyboard_key_bold")
     if self.keyboard.symbolmode_keys[self.label] ~= nil then
         self.callback = function () self.keyboard:setLayer("Sym") end
         self.skiptap = true
@@ -83,7 +86,7 @@ function VirtualKey:init()
             end
         end
         self.hold_callback = function()
-            if util.tableSize(self.key_chars) > 3 then
+            if util.tableSize(self.key_chars) > 5 then
                 self.popup = VirtualKeyPopup:new{
                     parent_key = self,
                 }
@@ -137,7 +140,7 @@ function VirtualKey:init()
             }
         end
         self.swipe_callback = function(ges)
-            local key_string = self.key_chars[ges.direction]
+            local key_string = self.key_chars[ges.direction] or self.key
             local key_function = self.key_chars[ges.direction.."_func"]
 
             if not key_function and key_string then
@@ -167,6 +170,47 @@ function VirtualKey:init()
             text = self.label,
             face = self.face,
             bold = self.bold or false,
+        }
+        -- Make long labels fit by decreasing font size
+        local max_width = self.width - 2*self.bordersize - 2*Size.padding.small
+        while label_widget:getWidth() > max_width do
+            local new_size = label_widget.face.orig_size - 1
+            label_widget:free()
+            if new_size < 8 then break end -- don't go too small
+            label_widget = TextWidget:new{
+                text = self.label,
+                face = Font:getFace(self.face.orig_font, new_size),
+                bold = self.bold or false,
+            }
+        end
+    end
+
+    if self.alt_label then
+        local OverlapGroup = require("ui/widget/overlapgroup")
+        local alt_label_widget = TextWidget:new{
+            text = self.alt_label,
+            face = Font:getFace(self.face.orig_font, label_font_size - 4),
+            bold = self.bold or false,
+            fgcolor = Blitbuffer.COLOR_DARK_GRAY,
+            padding = 0, -- no additional padding to font line height
+        }
+        local key_inner_dimen = Geom:new{
+            w = self.width - 2*self.bordersize - 2*Size.padding.default,
+            h = self.height - 2*self.bordersize - 2*Size.padding.small, -- already some padding via line height
+        }
+        label_widget = OverlapGroup:new{
+            CenterContainer:new{
+                dimen = key_inner_dimen,
+                label_widget,
+            },
+            WidgetContainer:new{
+                overlap_align = "right",
+                dimen = Geom:new{
+                    w = alt_label_widget:getSize().w,
+                    h = key_inner_dimen.h,
+                },
+                alt_label_widget,
+            },
         }
     end
     self[1] = FrameContainer:new{
@@ -224,7 +268,7 @@ function VirtualKey:init()
         }
     end
     if (self.keyboard.shiftmode_keys[self.label] ~= nil  and self.keyboard.shiftmode) or
-    (self.keyboard.umlautmode_keys[self.label] ~= nil and self.keyboard.umlautmode) then
+    (self.keyboard.symbolmode_keys[self.label] ~= nil and self.keyboard.symbolmode) then
         self[1].background = Blitbuffer.COLOR_LIGHT_GRAY
     end
     self.flash_keyboard = G_reader_settings:nilOrTrue("flash_keyboard")
@@ -241,8 +285,9 @@ function VirtualKey:genkeyboardLayoutKeyChars()
     local key_chars = {
         { label = "🌐",
         },
-        east = { label = "🌐", },
+        east = { label = "⋮", },
         east_func = function ()
+            UIManager:close(self.popup)
             self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
                 parent = self,
             }
@@ -586,14 +631,14 @@ function VirtualKeyPopup:init()
     local keyboard_frame = FrameContainer:new{
         margin = 0,
         bordersize = Size.border.default,
-        background = Blitbuffer.COLOR_WHITE,
+        background = G_reader_settings:nilOrTrue("keyboard_key_border") and Blitbuffer.COLOR_LIGHT_GRAY or Blitbuffer.COLOR_WHITE,
         radius = 0,
         padding = parent_key.keyboard.padding,
         allow_mirroring = false,
         CenterContainer:new{
             dimen = Geom:new{
-                w = parent_key.width*num_columns + 2*Size.border.default + (num_columns)*parent_key.keyboard.key_padding,
-                h = parent_key.height*num_rows + 2*Size.border.default + num_rows*parent_key.keyboard.key_padding,
+                w = parent_key.width*num_columns + 2*Size.border.default + (num_columns+1)*parent_key.keyboard.key_padding,
+                h = parent_key.height*num_rows + 2*Size.border.default + (num_rows+1)*parent_key.keyboard.key_padding,
             },
             vertical_group,
         }
@@ -617,17 +662,17 @@ function VirtualKeyPopup:init()
         self.key_events.Close = { {"Back"}, doc = "close keyboard" }
     end
 
-    local offset_x = 2*parent_key.keyboard.padding + 2*parent_key.keyboard.bordersize
+    local offset_x = 2*keyboard_frame.bordersize + keyboard_frame.padding + parent_key.keyboard.key_padding
     if columns[1] then
-        offset_x = offset_x + parent_key.width + parent_key.keyboard.padding + 2*parent_key.keyboard.bordersize
+        offset_x = offset_x + parent_key.width + parent_key.keyboard.key_padding
     end
 
-    local offset_y = parent_key.keyboard.padding + parent_key.keyboard.padding + 2*parent_key.keyboard.bordersize
+    local offset_y = 2*keyboard_frame.bordersize + keyboard_frame.padding + parent_key.keyboard.key_padding
     if rows.extra_key_chars then
-        offset_y = offset_y + parent_key.height + parent_key.keyboard.padding + 2*parent_key.keyboard.bordersize
+        offset_y = offset_y + parent_key.height + parent_key.keyboard.key_padding
     end
     if rows.top_key_chars then
-        offset_y = offset_y + parent_key.height + parent_key.keyboard.padding + 2*parent_key.keyboard.bordersize
+        offset_y = offset_y + parent_key.height + parent_key.keyboard.key_padding
     end
 
     local position_container = WidgetContainer:new{
@@ -684,8 +729,8 @@ local VirtualKeyboard = FocusManager:new{
     width = Screen:scaleBySize(600),
     height = nil,
     bordersize = Size.border.default,
-    padding = Size.padding.small,
-    key_padding = Size.padding.default,
+    padding = 0,
+    key_padding = Size.padding.small,
 
     lang_to_keyboard_layout = {
         ar_AA = "ar_AA_keyboard",
@@ -828,14 +873,18 @@ function VirtualKeyboard:addKeys()
             local key
             local key_chars = self.KEYS[i][j][self.keyboard_layer]
             local label
+            local alt_label
+            local width_factor
             if type(key_chars) == "table" then
                 key = key_chars[1]
                 label = key_chars.label
+                alt_label = key_chars.alt_label
+                width_factor = key_chars.width
             else
                 key = key_chars
                 key_chars = nil
             end
-            local width_factor = self.KEYS[i][j].width or 1.0
+            width_factor = width_factor or self.KEYS[i][j].width or self.KEYS[i].width or 1.0
             local key_width = math.floor((base_key_width + self.key_padding) * width_factor)
                             - self.key_padding
             local key_height = base_key_height
@@ -845,6 +894,7 @@ function VirtualKeyboard:addKeys()
                 key_chars = key_chars,
                 icon = self.KEYS[i][j].icon,
                 label = label,
+                alt_label = alt_label,
                 bold = self.KEYS[i][j].bold,
                 keyboard = self,
                 width = key_width,
@@ -869,7 +919,7 @@ function VirtualKeyboard:addKeys()
     local keyboard_frame = FrameContainer:new{
         margin = 0,
         bordersize = Size.border.default,
-        background = Blitbuffer.COLOR_WHITE,
+        background = G_reader_settings:nilOrTrue("keyboard_key_border") and Blitbuffer.COLOR_LIGHT_GRAY or Blitbuffer.COLOR_WHITE,
         radius = 0,
         padding = self.padding,
         allow_mirroring = false,
@@ -897,7 +947,7 @@ function VirtualKeyboard:setLayer(key)
         self.umlautmode = not self.umlautmode
     end
     self:initLayer()
-    self:_refresh(true)
+    self:_refresh(false)
 end
 
 function VirtualKeyboard:addChar(key)
