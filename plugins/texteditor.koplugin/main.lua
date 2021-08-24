@@ -331,7 +331,7 @@ function TextEditor:newFile()
     UIManager:show(ConfirmBox:new{
         text = _([[To start editing a new file, you will have to:
 
-- First select a folder
+- First choose a folder
 - Then enter a name for the new file
 - And start editing it
 
