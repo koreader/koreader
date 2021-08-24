@@ -55,7 +55,7 @@ function MassStorage:start(never_ask)
 
     if not never_ask and self:requireConfirmation() then
         local ConfirmBox = require("ui/widget/confirmbox")
-        UIManager:show(ConfirmBox:new{
+        self.usbms_widget = ConfirmBox:new{
             text = _("Share storage via USB?"),
             ok_text = _("Share"),
             ok_callback = function()
@@ -65,7 +65,12 @@ function MassStorage:start(never_ask)
                 UIManager:broadcastEvent(Event:new("Close"))
                 UIManager:quit()
             end,
-        })
+            cancel_callback = function()
+                self:dismiss()
+            end,
+        }
+
+        UIManager:show(self.usbms_widget)
     else
         -- save settings before activating USBMS:
         UIManager:flushSettings()
@@ -73,6 +78,16 @@ function MassStorage:start(never_ask)
         UIManager:broadcastEvent(Event:new("Close"))
         UIManager:quit()
     end
+end
+
+-- Dismiss the ConfirmBox
+function MassStorage:dismiss()
+    if not self.usbms_widget then
+        return
+    end
+
+    UIManager:close(self.usbms_widget)
+    self.usbms_widget = nil
 end
 
 return MassStorage

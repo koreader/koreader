@@ -212,6 +212,10 @@ function UIManager:init()
             self:_afterNotCharging()
             if Device.screen_saver_mode then
                 self:suspend()
+            else
+                -- Potentially dismiss the USBMS ConfirmBox
+                local MassStorage = require("ui/elements/mass_storage")
+                MassStorage:dismiss()
             end
         end
         self.event_handlers["__default__"] = function(input_event)
@@ -366,6 +370,10 @@ function UIManager:init()
             self:_afterNotCharging()
             if Device.screen_saver_mode then
                 self:suspend()
+            else
+                -- Potentially dismiss the USBMS ConfirmBox
+                local MassStorage = require("ui/elements/mass_storage")
+                MassStorage:dismiss()
             end
         end
         self.event_handlers["__default__"] = function(input_event)
