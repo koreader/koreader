@@ -157,8 +157,7 @@ end
 function Dusk2Dawn:scheduleWarmthChanges(now)
     for i = 1, #self.sched_funcs do -- loop not essential, as unschedule unschedules all functions at once
         if not UIManager:unschedule(self.sched_funcs[i][1]) then
-            require("logger").err("xxx", i)
-            --break
+            break
         end
     end
 
