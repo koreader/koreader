@@ -123,16 +123,38 @@ function SunTime:daysSince2000()
     return self.days_since_2000
 end
 
+-- more accurate parameters of earth orbit from_
+-- Title: Numerical expressions for precession formulae and mean elements for the Moon and the planets
+-- Authors: Simon, J. L., Bretagnon, P., Chapront, J., Chapront-Touze, M., Francou, G., & Laskar, J., ,
+-- Journal: Astronomy and Astrophysics (ISSN 0004-6361), vol. 282, no. 2, p. 663-683
+-- Bibliographic Code: 1994A&A...282..663S
 function SunTime:initVars()
     self:daysSince2000()
     local T = self.days_since_2000/36525
+    local T2 = T * T
+    local T3 = T2 * T
+    local T4 = T3 * T
+    local T5 = T4 * T
+    local T6 = T5 * T
 --    self.num_ex = 0.016709 - 0.000042 * T
-    self.num_ex = 0.0167086342 - 0.000042 * T
-    self.epsilon = (23 + 26/60 + 21/3600 - 46.82/3600 * T) * toRad
-    self.epsilon = (23 + 26/60 + 21.45/3600 - 46.82/3600 * T) * toRad
-    local L = (280.4656 + 36000.7690 * T ) --°
+--    self.num_ex = 0.0167086342 - 0.000042 * T
+    self.num_ex = 0.0167086342      - 00.004203654 * T
+                - 000.00126734 * T2 + 0000.0001444 * T3
+                - 00000.000002 * T4 + 000000.00003 * T5
+--  self.epsilon = (23 + 26/60 + 21/3600 - 46.82/3600 * T) * toRad
+    local epsilon = 23 + 26/60 + 21.412/3600 - 46.80927/3600 * T
+        - 0.000152/3600 * T2   + 0.00019989/3600 * T3
+        - 0.00000051/3600 * T4 - 0.00000025/3600 * T5 --°
+    self.epsilon = epsilon * toRad
+--    local L = (280.4656 + 36000.7690 * T ) --°
+    local L = 280.46645683 + 1295774228.3429/3600 * T - 204.411/3600 * T2 - 5.23/3600 * T3 --°
     self.L = (L - math.floor(L/360)*360) * toRad
-    local M = L - (282.9400 + 1.7192 * T) --°
+--    local M = L - (282.9400 + 1.7192 * T) --°
+    local M = L - (282.93734808      + 1.7194598028 * T
+                  + 004.5688325 * T2 - 0000.017680 * T3
+                  - 00000.33583 * T5 + 000000.0828 * T5
+                  + 0000000.056 * T6) --°
+
     self.M = (M - math.floor(M/360)*360) * toRad
 end
 --------------------------
@@ -192,11 +214,9 @@ end
 function SunTime:formatTime(time)
     if time then
         local h = math.floor(time)
-        local m = math.floor(self:frac(time) * 60)
-        local s = math.floor(self:frac(time * 60) * 60)
+        local m = math.floor(self:frac(time) * 60 + 0.5)
         return string.format("%02d", h) .. ":"
-            .. string.format("%02d", m) .. ":"
-            .. string.format("%02d", s)
+            .. string.format("%02d", m)
     else
         return "--:--"
     end
