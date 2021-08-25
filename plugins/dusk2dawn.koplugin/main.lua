@@ -10,6 +10,7 @@ if not Device:hasNaturalLight() then
     return { disabled = true }
 end
 
+local ConfirmBox = require("ui/widget/confirmbox")
 local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
@@ -104,18 +105,20 @@ function Dusk2Dawn:scheduleMidnightUpdate()
         local time2 = times[index2]
         if not time2 then return end-- to near to the pole
         local warmth_diff = self.warmth[index2] - self.warmth[index1]
-        local time_diff = SunTime:getTimeInSec(time2) - time
-        local delta_t = time_diff / math.abs(warmth_diff)
-        local delta_w =  warmth_diff > 0 and 1 or -1
-        for i = 1, math.abs(warmth_diff)-1 do
-            local next_warmth = self.warmth[index1] + delta_w * i
-            -- only apply warmth for steps the hardware has (e.g. Tolino has 0-10 hw steps which map to
-            -- warmth 0, 10, 20, 30 ... 100)
-            if SunTime:frac(next_warmth / 100 * Device.powerd.fl_warmth_max) == 0 then
-                self.sched_times[self.sched_index] = time + delta_t * i
-                self.sched_funcs[self.sched_index] = {self.setWarmth, self,
-                    math.floor(self.warmth[index1] + delta_w * i)}
-                self.sched_index = self.sched_index + 1
+        if warmth_diff ~= 0 then
+            local time_diff = SunTime:getTimeInSec(time2) - time
+            local delta_t = time_diff / math.abs(warmth_diff) -- can be inf, no problem
+            local delta_w =  warmth_diff > 0 and 1 or -1
+            for i = 1, math.abs(warmth_diff)-1 do
+                local next_warmth = self.warmth[index1] + delta_w * i
+                -- only apply warmth for steps the hardware has (e.g. Tolino has 0-10 hw steps
+                -- which map to warmth 0, 10, 20, 30 ... 100)
+                if SunTime:frac(next_warmth / 100 * Device.powerd.fl_warmth_max) == 0 then
+                    self.sched_times[self.sched_index] = time + delta_t * i
+                    self.sched_funcs[self.sched_index] = {self.setWarmth, self,
+                        math.floor(self.warmth[index1] + delta_w * i)}
+                    self.sched_index = self.sched_index + 1
+                end
             end
         end
     end
@@ -281,13 +284,49 @@ function Dusk2Dawn:getScheduleMenu()
                     right_hold_step = 5,
                     right_wrap = true,
                     callback = function(left, right)
-                        self.scheduler_times[num] = left + right / 60
-                        if num == 1 then
-                            self.scheduler_times[11] = self.scheduler_times[1]
+                        local new_time = left + right / 60
+                        local function store_times()
+                            self.scheduler_times[num] = new_time
+                            if num == 1 then
+                                self.scheduler_times[11] = self.scheduler_times[1]
+                            end
+                            G_reader_settings:saveSetting("dusk2dawn_scheduler_times",
+                                self.scheduler_times)
+                            self:scheduleMidnightUpdate()
+                            touchmenu_instance:updateItems()
                         end
-                        G_reader_settings:saveSetting("dusk2dawn_scheduler_times", self.scheduler_times)
-                        self:scheduleMidnightUpdate()
-                        touchmenu_instance:updateItems()
+
+                        if num > 1 and new_time < self.scheduler_times[num - 1] then
+                            UIManager:show(ConfirmBox:new{
+                                text =  _("This time conflicts with the previous time.\nShall the previous time be adjusted?"),
+                                ok_callback = function()
+                                    for i = num-1, 1, -1 do
+                                        if new_time < self.scheduler_times[i] then
+                                            self.scheduler_times[i] = new_time
+                                        else
+                                            break
+                                        end
+                                    end
+                                    store_times()
+                                end,
+                            })
+                        elseif num < 10 and new_time > self.scheduler_times[num + 1] then
+                            UIManager:show(ConfirmBox:new{
+                                text =  _("This time conflicts with the subsequent time.\nShall the subsequent time be adjusted?"),
+                                ok_callback = function()
+                                    for i = num + 1, 10  do
+                                        if new_time > self.scheduler_times[i] then
+                                            self.scheduler_times[i] = new_time
+                                        else
+                                            break
+                                        end
+                                    end
+                                    store_times()
+                                end,
+                            })
+                        else
+                            store_times()
+                        end
                     end,
                 })
             end,
