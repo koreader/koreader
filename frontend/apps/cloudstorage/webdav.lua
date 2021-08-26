@@ -126,6 +126,14 @@ The start folder is appended to the server path.]])
                     text = text_button_ok,
                     callback = function()
                         local fields = MultiInputDialog:getFields()
+
+                        -- make sure the URL is a valid path
+                        if fields[5] ~= "" then
+                            if string.sub(fields[5], 1, 1) ~= '/' then
+                                fields[5] = '/' .. fields[5]
+                            end
+                        end
+
                         if fields[1] ~= "" and fields[2] ~= "" then
                             if item then
                                 -- edit
