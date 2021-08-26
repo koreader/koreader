@@ -141,13 +141,13 @@ function SunTime:initVars()
     self.num_ex = 0.0167086342      - 00.004203654 * T
                 - 000.00126734 * T2 + 0000.0001444 * T3
                 - 00000.000002 * T4 + 000000.00003 * T5
---  self.epsilon = (23 + 26/60 + 21/3600 - 46.82/3600 * T) * toRad
+--    self.epsilon = (23 + 26/60 + 21/3600 - 46.82/3600 * T) * toRad
     local epsilon = 23 + 26/60 + 21.412/3600 - 46.80927/3600 * T
         - 0.000152/3600 * T2   + 0.00019989/3600 * T3
         - 0.00000051/3600 * T4 - 0.00000025/3600 * T5 --°
     self.epsilon = epsilon * toRad
 --    local L = (280.4656 + 36000.7690 * T ) --°
-    local L = 280.46645683 + 1295774228.3429/3600 * T - 204.411/3600 * T2 - 5.23/3600 * T3 --°
+    local L = 280.46645683 + 12959774228.3429/3600 * T - 204.411/3600 * T2 - 5.23/3600 * T3 --°
     self.L = (L - math.floor(L/360)*360) * toRad
 --    local M = L - (282.9400 + 1.7192 * T) --°
     local M = L - (282.93734808      + 1.7194598028 * T
@@ -208,18 +208,7 @@ function SunTime:calculateTimes()
     self.times[8]  = self.set_civil
     self.times[9]  = self.set_nautic
     self.times[10] = self.set_astronomic
-    self.times[11] = self.midnight
-end
-
-function SunTime:formatTime(time)
-    if time then
-        local h = math.floor(time)
-        local m = math.floor(self:frac(time) * 60 + 0.5)
-        return string.format("%02d", h) .. ":"
-            .. string.format("%02d", m)
-    else
-        return "--:--"
-    end
+    self.times[11] = self.midnight + 24
 end
 
 -- get time in seconds (either actual time in hours or date struct)

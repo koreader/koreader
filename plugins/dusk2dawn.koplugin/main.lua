@@ -21,11 +21,14 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local T = FFIUtil.template
+local util = require("util")
 
 local activate_sun = 1
 local activate_schedule = 2
 local activate_closer_noon = 3
 local activate_closer_midnight =4
+
+local midnight_index = 11
 
 local Dusk2Dawn = WidgetContainer:new{
     name = "dusk2dawn",
@@ -73,8 +76,10 @@ function Dusk2Dawn:onResume()
 end
 
 -- wrapper for unscheduling, so that only our setWarmth gets unscheduled
-function Dusk2Dawn:setWarmth(val)
-    Device.powerd:setWarmth(val)
+function Dusk2Dawn.setWarmth(val)
+    if val then
+        Device.powerd:setWarmth(val)
+    end
 end
 
 function Dusk2Dawn:scheduleMidnightUpdate()
@@ -88,7 +93,6 @@ function Dusk2Dawn:scheduleMidnightUpdate()
     SunTime:setDate() -- today
     SunTime:calculateTimes()
 
-    self.sched_index = 0
     self.sched_funcs = {}
     self.sched_times = {}
 
@@ -97,13 +101,11 @@ function Dusk2Dawn:scheduleMidnightUpdate()
         if not time1 then return end -- to near to the pole; sun does not set/rise
 
         local time = SunTime:getTimeInSec(time1)
-        self.sched_times[self.sched_index] = time
-        self.sched_funcs[self.sched_index] = {Dusk2Dawn.setWarmth, Dusk2Dawn,
-            self.warmth[index1]}
-        self.sched_index = self.sched_index + 1
+        table.insert(self.sched_times, time)
+        table.insert(self.sched_funcs, {Dusk2Dawn.setWarmth, self.warmth[index1]})
 
         local time2 = times[index2]
-        if not time2 then return end-- to near to the pole
+        if not time2 then return end -- to near to the pole
         local warmth_diff = self.warmth[index2] - self.warmth[index1]
         if warmth_diff ~= 0 then
             local time_diff = SunTime:getTimeInSec(time2) - time
@@ -114,10 +116,9 @@ function Dusk2Dawn:scheduleMidnightUpdate()
                 -- only apply warmth for steps the hardware has (e.g. Tolino has 0-10 hw steps
                 -- which map to warmth 0, 10, 20, 30 ... 100)
                 if SunTime:frac(next_warmth / 100 * Device.powerd.fl_warmth_max) == 0 then
-                    self.sched_times[self.sched_index] = time + delta_t * i
-                    self.sched_funcs[self.sched_index] = {self.setWarmth, self,
-                        math.floor(self.warmth[index1] + delta_w * i)}
-                    self.sched_index = self.sched_index + 1
+                    table.insert(self.sched_times, time + delta_t * i)
+                    table.insert(self.sched_funcs, {self.setWarmth,
+                        math.floor(self.warmth[index1] + delta_w * i)})
                 end
             end
         end
@@ -130,14 +131,20 @@ function Dusk2Dawn:scheduleMidnightUpdate()
     else
         self.current_times = {unpack(SunTime.times)}
         if self.activate == activate_closer_noon then
-            for i = 1, #self.current_times do
-                if math.abs(self.current_times[i] - 12) > math.abs(self.scheduler_times[i]-12) then
+            for i = 1, midnight_index do
+                if not self.current_times[i] then
+                    self.current_times[i] = self.scheduler_times[i]
+                elseif self.scheduler_times[i] and
+                    math.abs(self.current_times[i] - 12) > math.abs(self.scheduler_times[i] - 12) then
                     self.current_times[i] = self.scheduler_times[i]
                 end
             end
         else -- activate_closer_midnight
-            for i = 1, #self.current_times do
-                if math.abs(self.current_times[i] - 12) < math.abs(self.scheduler_times[i]-12) then
+            for i = 1, midnight_index do
+                if not self.current_times[i] then
+                    self.current_times[i] = self.scheduler_times[i]
+                elseif self.scheduler_times[i] and
+                    math.abs(self.current_times[i] - 12) < math.abs(self.scheduler_times[i] - 12) then
                     self.current_times[i] = self.scheduler_times[i]
                 end
             end
@@ -145,7 +152,7 @@ function Dusk2Dawn:scheduleMidnightUpdate()
     end
 
     -- here are dragons
-    for i = 1, #self.current_times-1 do
+    for i = 1, midnight_index do
        prepareSchedule(self.current_times, i, i+1)
     end
 
@@ -164,17 +171,24 @@ function Dusk2Dawn:scheduleWarmthChanges(now)
         end
     end
 
-    local actual_warmth = self.warmth[1]
+    local actual_warmth
     for i = 1, #self.sched_funcs do
         if self.sched_times[i] > now then
             UIManager:scheduleIn( self.sched_times[i] - now,
-                self.sched_funcs[i][1], self.sched_funcs[i][2], self.sched_funcs[i][3])
+                self.sched_funcs[i][1], self.sched_funcs[i][2])
         else
-            actual_warmth = self.sched_funcs[i][3]
+            actual_warmth = self.sched_funcs[i][2] or actual_warmth
         end
     end
     -- update current warmth directly
-    self:setWarmth(actual_warmth)
+    self.setWarmth(actual_warmth)
+end
+
+function Dusk2Dawn:hoursToClock(hours, withoutSeconds)
+    if hours then
+        hours = hours % 24 * 3600 + 0.01 -- round up, due to reduced precision in settings.reader.lua
+    end
+    return util.secondsToClock(hours, withoutSeconds)
 end
 
 function Dusk2Dawn:addToMainMenu(menu_items)
@@ -261,14 +275,36 @@ function Dusk2Dawn:getScheduleMenu()
     local function getScheduleMenuEntry(text, num)
         return {
             text_func = function()
-                return T(_"%1  (%2)", text, SunTime:formatTime(self.scheduler_times[num]))
+                return T(_"%1  (%2)", text,
+                    self:hoursToClock(self.scheduler_times[num], true))
             end,
             callback = function(touchmenu_instance)
+                local function store_times(new_time)
+                    self.scheduler_times[num] = new_time
+                    if num == 1 then
+                        if self.scheduler_times[1] then
+                            self.scheduler_times[midnight_index]
+                                = self.scheduler_times[1] + 24 -- next day
+                        else
+                            self.scheduler_times[midnight_index] = nil
+                        end
+                    end
+                    G_reader_settings:saveSetting("dusk2dawn_scheduler_times",
+                        self.scheduler_times)
+                    self:scheduleMidnightUpdate()
+                    touchmenu_instance:updateItems()
+                end
+
+                local hh = 12
+                local mm = 0
+                if self.scheduler_times[num] then
+                    hh = math.floor(self.scheduler_times[num])
+                    mm = math.floor(SunTime:frac(self.scheduler_times[num])*60+0.5)
+                end
                 UIManager:show(DoubleSpinWidget:new{
                     title_text = _("Set time"),
-    --                    info_text = _("")
                     left_text = _("HH"),
-                    left_value = math.floor(self.scheduler_times[num]),
+                    left_value = hh,
                     left_default = 0,
                     left_min = 0,
                     left_max = 23,
@@ -276,7 +312,7 @@ function Dusk2Dawn:getScheduleMenu()
                     left_hold_step = 3,
                     left_wrap = true,
                     right_text = _("MM"),
-                    right_value = math.floor(self.scheduler_times[num]/60),
+                    right_value = mm,
                     right_default = 0,
                     right_min = 0,
                     right_max = 59,
@@ -285,48 +321,53 @@ function Dusk2Dawn:getScheduleMenu()
                     right_wrap = true,
                     callback = function(left, right)
                         local new_time = left + right / 60
-                        local function store_times()
-                            self.scheduler_times[num] = new_time
-                            if num == 1 then
-                                self.scheduler_times[11] = self.scheduler_times[1]
+                        local function get_valid_time(n, dir)
+                            for i = n+dir, dir > 0 and midnight_index or 1, dir do
+                                if self.scheduler_times[i] then
+                                    return self.scheduler_times[i]
+                                end
                             end
-                            G_reader_settings:saveSetting("dusk2dawn_scheduler_times",
-                                self.scheduler_times)
-                            self:scheduleMidnightUpdate()
-                            touchmenu_instance:updateItems()
+                            return dir > 0 and 0 or 26
                         end
-
-                        if num > 1 and new_time < self.scheduler_times[num - 1] then
+                        if num > 1 and new_time < get_valid_time(num, -1) then
                             UIManager:show(ConfirmBox:new{
                                 text =  _("This time conflicts with the previous time.\nShall the previous time be adjusted?"),
                                 ok_callback = function()
                                     for i = num-1, 1, -1 do
-                                        if new_time < self.scheduler_times[i] then
-                                            self.scheduler_times[i] = new_time
-                                        else
-                                            break
+                                        if self.scheduler_times[i] then
+                                            if new_time < self.scheduler_times[i] then
+                                                self.scheduler_times[i] = new_time
+                                            else
+                                                break
+                                            end
                                         end
                                     end
-                                    store_times()
+                                    store_times(new_time)
                                 end,
                             })
-                        elseif num < 10 and new_time > self.scheduler_times[num + 1] then
+                        elseif num < 10 and new_time > get_valid_time(num, 1) then
                             UIManager:show(ConfirmBox:new{
                                 text =  _("This time conflicts with the subsequent time.\nShall the subsequent time be adjusted?"),
                                 ok_callback = function()
-                                    for i = num + 1, 10  do
-                                        if new_time > self.scheduler_times[i] then
-                                            self.scheduler_times[i] = new_time
-                                        else
-                                            break
+                                    for i = num + 1, midnight_index - 1  do
+                                        if self.scheduler_times[i] then
+                                            if new_time > self.scheduler_times[i] then
+                                                self.scheduler_times[i] = new_time
+                                            else
+                                                break
+                                            end
                                         end
                                     end
-                                    store_times()
+                                    store_times(new_time)
                                 end,
                             })
                         else
-                            store_times()
+                            store_times(new_time)
                         end
+                    end,
+                    extra_text = _("Invalidate"),
+                    extra_callback = function()
+                        store_times(nil)
                     end,
                 })
             end,
@@ -444,7 +485,7 @@ function Dusk2Dawn:showTimesInfo(title, activator)
     end
 
     local function info_line(t, num)
-        return SunTime:formatTime(t[num]) .. " (💡 " .. self.warmth[num] ..")"
+        return self:hoursToClock(t[num]) .. " (💡 " .. self.warmth[num] ..")"
     end
 
     UIManager:show(InfoMessage:new{
@@ -465,7 +506,7 @@ function Dusk2Dawn:showTimesInfo(title, activator)
             _("\n    Nautical:   ") .. info_line(times, 9) ..
             _("\n    Astronomic: ") .. info_line(times, 10) ..
             _("\n  Dusk") ..
-            _("\nMidnight        ") .. info_line(times, 11) ..
+            _("\nMidnight        ") .. info_line(times, midnight_index) ..
             "\n",
     })
 end

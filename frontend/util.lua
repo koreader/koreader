@@ -113,7 +113,13 @@ Source: <a href="https://gist.github.com/jesseadams/791673">https://gist.github.
 ---- @treturn string clock string in the form of 00:00 or 00:00:00
 function util.secondsToClock(seconds, withoutSeconds)
     seconds = tonumber(seconds)
-    if seconds == 0 or seconds ~= seconds then
+    if not seconds then
+        if withoutSeconds then
+            return "--:--"
+        else
+            return "--:--:--"
+        end
+    elseif seconds == 0 or seconds ~= seconds then
         if withoutSeconds then
             return "00:00"
         else
