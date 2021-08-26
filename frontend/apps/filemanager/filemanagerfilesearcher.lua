@@ -21,15 +21,6 @@ local _ = require("gettext")
 local Screen = require("device").screen
 
 local FileSearcher = InputContainer:new{
-    search_dialog = nil,
-
-    --filesearcher
-    -- state buffer
-    dirs = {},
-    files = {},
-    results = {},
-    items = 0,
-    commands = nil,
 }
 
 function FileSearcher:readDir()
@@ -109,8 +100,6 @@ function FileSearcher:setSearchResults()
             end
         end
     end
-    self.keywords = keywords
-    self.items = #self.results
 end
 
 function FileSearcher:close()
@@ -172,11 +161,7 @@ function FileSearcher:onShowFileSearch(search_string)
         parent = self.search_dialog,
         max_width = self.search_dialog._input_widget.width,
         callback = function()
-            if self.check_button_case.checked then
-                self.check_button_case:unCheck()
-            else
-                self.check_button_case:check()
-            end
+            self.check_button_case:toggleCheck()
             self.case_sensitive = self.check_button_case.checked
         end,
     }
