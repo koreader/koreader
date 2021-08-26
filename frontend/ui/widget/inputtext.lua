@@ -394,13 +394,8 @@ function InputText:initTextBox(text, char_added)
             parent = self,
             max_width = self.width,
             callback = function()
-                if self.text_type == "text" then
-                    self.text_type = "password"
-                    self._check_button:unCheck()
-                else
-                    self.text_type = "text"
-                    self._check_button:check()
-                end
+                self._check_button:toggleCheck()
+                self.text_type = self._check_button.checked and "text" or "password"
                 self:setText(self:getText(), true)
             end,
         }
