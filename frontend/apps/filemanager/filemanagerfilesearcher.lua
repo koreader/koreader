@@ -21,6 +21,9 @@ local _ = require("gettext")
 local Screen = require("device").screen
 
 local FileSearcher = InputContainer:new{
+    dirs = {},
+    files = {},
+    results = {},
 }
 
 function FileSearcher:readDir()
