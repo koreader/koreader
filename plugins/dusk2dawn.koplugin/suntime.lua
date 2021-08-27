@@ -24,7 +24,7 @@ end
 SunTime.astronomic = Rad(90 + 18)
 SunTime.nautic =  Rad(90 + 12)
 SunTime.civil = Rad(90 + 6)
-SunTime.eod = Rad(90 + 50/60) -- end of day
+SunTime.eod = Rad(90 + 48/60) -- end of day
 
 -- simple 'Equation of time' good for dates between 2008-2027
 -- errors for latitude 20° are within 1min
@@ -33,7 +33,6 @@ SunTime.eod = Rad(90 + 50/60) -- end of day
 -- https://www.astronomie.info/zeitgleichung/#Auf-_und_Untergang (German)
 function SunTime:getZglSimple()
     local T = self.date.yday
-    print("-------------- simple")
     return -0.171 * math.sin(0.0337 * T + 0.465)  - 0.1299 * math.sin(0.01787 * T - 0.168)
 end
 
@@ -42,7 +41,6 @@ end
 -- https://de.wikipedia.org/wiki/Zeitgleichung (German) and
 -- more infos on http://www.hlmths.de/Scilab/Zeitgleichung.pdf (German)
 function SunTime:getZglAdvanced()
-    print("-----------...advanced")
     local e = self.num_ex
     local e2 = e*e
     local e3 = e2*e
@@ -53,11 +51,12 @@ function SunTime:getZglAdvanced()
     local tanLamb = math.tan(lamb)
     local cosEps = math.cos(self.epsilon)
 
-    local zgl = math.atan( (tanL - tanLamb*cosEps) / (1 + tanL*tanLamb*cosEps) )
-    return zgl*toDeg/15 --  to hours *4/60
+    local zgl = math.atan( (tanL - tanLamb*cosEps) / (1 + tanL*tanLamb*cosEps) ) --rad
+    return zgl*toDeg/15 --  to hours *4'/60
 end
 
 -- set current date or year/month/day daylightsaving hh/mm/ss
+-- if dst == nil use curent daylight saving of the system
 function SunTime:setDate(year, month, day, dst, hour, min, sec)
     self.oldDate = self.date
 
@@ -79,12 +78,16 @@ function SunTime:setDate(year, month, day, dst, hour, min, sec)
         self.date.hour = hour or 12
         self.date.min = min or 0
         self.date.sec = sec or 0
+        if dst ~= nil then
+            self.date.isdst = dst
+        end
     end
 
     -- use cached results
     if self.olddate and self.oldDate.day == self.date.day and
         self.oldDate.month == self.date.month and
-        self.oldDate.year == self.date.year then
+        self.oldDate.year == self.date.year and
+        self.oldDate.isdst == self.date.isdst then
         return
     end
 
@@ -93,8 +96,8 @@ function SunTime:setDate(year, month, day, dst, hour, min, sec)
     if not self.getZgl then
         self.getZgl = self.getZglAdvanced
     end
+
     self.zgl = self:getZgl()
-    print("Zgl: (min)", self.zgl*60 )
 end
 
 function SunTime:setPosition(name, latitude, longitude, time_zone)
@@ -135,7 +138,6 @@ function SunTime:initVars()
     local T3 = T2 * T
     local T4 = T3 * T
     local T5 = T4 * T
-    local T6 = T5 * T
 --    self.num_ex = 0.016709 - 0.000042 * T
 --    self.num_ex = 0.0167086342 - 0.000042 * T
     self.num_ex = 0.0167086342      - 00.004203654 * T
@@ -146,15 +148,26 @@ function SunTime:initVars()
         - 0.000152/3600 * T2   + 0.00019989/3600 * T3
         - 0.00000051/3600 * T4 - 0.00000025/3600 * T5 --°
     self.epsilon = epsilon * toRad
---    local L = (280.4656 + 36000.7690 * T ) --°
-    local L = 280.46645683 + 12959774228.3429/3600 * T - 204.411/3600 * T2 - 5.23/3600 * T3 --°
-    self.L = (L - math.floor(L/360)*360) * toRad
---    local M = L - (282.9400 + 1.7192 * T) --°
-    local M = L - (282.93734808      + 1.7194598028 * T
-                  + 004.5688325 * T2 - 0000.017680 * T3
-                  - 00000.33583 * T5 + 000000.0828 * T5
-                  + 0000000.056 * T6) --°
 
+    -- shift from time to Equinox as data is given for JD2000.0, but date is in days from 20000101
+    local nT = T * 1.0000388062
+    local nT2 = nT  * nT
+    local nT3 = nT2 * nT
+    local nT4 = nT3 * nT
+    local nT5 = nT4 * nT
+    local nT6 = nT5 * nT
+--    local L = (280.4656 + 36000.7690 * T ) --°
+    local L = 280.46645683 + 1295977422.83429E-1/3600 * nT
+            - 2.04411E-2/3600 * nT2 - 0.00523E-3/3600 * nT3 --°
+    self.L = (L - math.floor(L/360)*360) * toRad
+
+--    local omega (282.9400 + 1.7192 * T) --°
+    local omega = 282.93734808       + 1.7194598028 * nT
+                 + 004.5688325 * nT2 - 0000.017680 * nT3
+                 - 00000.33583 * nT5 + 000000.0828 * nT5
+                 + 0000000.056 * nT6 --°
+
+    local M = L - omega
     self.M = (M - math.floor(M/360)*360) * toRad
 end
 --------------------------
@@ -163,10 +176,11 @@ function SunTime:getTimeDiff(height)
 --    local decl = 0.4095 * math.sin(0.016906 * (self.date.yday - 80.086)) --Deklination nach astronomie.info
 --    local decl = 0.40954 * math.sin(0.0172 * (self.date.yday-79.349740)) --Deklination nach Brodbeck (2001)
 
-    local x = (36000/36525 * (self.date.yday+.5) - 2.72)*toRad
-    local decl = math.asin(0.397748 * math.sin( x + (1.92*math.sin(x) -77.51)*toRad)) --Deklination nach
+    local x = (36000/36525 * (self.date.yday) - 2.72)*toRad
+    local decl = math.asin(0.397748 * math.sin( x + (1.92*math.sin(x) - 77.51)*toRad)) --Deklination nach WMO-No.8
 
     local val = (math.cos(height) - math.sin(self.pos.latitude)*math.sin(decl)) / (math.cos(self.pos.latitude)*math.cos(decl))
+
     if math.abs(val) > 1 then
         return
     end
