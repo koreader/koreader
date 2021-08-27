@@ -142,11 +142,7 @@ function ReaderSearch:onShowFulltextSearchInput()
         parent = self.input_dialog,
         max_width = self.input_dialog._input_widget.width,
         callback = function()
-            if not self.check_button_case.checked then
-                self.check_button_case:check()
-            else
-                self.check_button_case:unCheck()
-            end
+            self.check_button_case:toggleCheck()
         end,
     }
     self.check_button_regex = CheckButton:new{
@@ -155,11 +151,7 @@ function ReaderSearch:onShowFulltextSearchInput()
         parent = self.input_dialog,
         max_width = self.input_dialog._input_widget.width,
         callback = function()
-            if not self.check_button_regex.checked then
-                self.check_button_regex:check()
-            else
-                self.check_button_regex:unCheck()
-            end
+            self.check_button_regex:toggleCheck()
         end,
         hold_callback = function()
             UIManager:show(InfoMessage:new{ text = help_text })

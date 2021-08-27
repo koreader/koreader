@@ -57,11 +57,7 @@ local sub_item_table = {
                 parent = input_dialog,
                 max_width = input_dialog._input_widget.width,
                 callback = function()
-                    if check_button_bold.checked then
-                        check_button_bold:unCheck()
-                    else
-                        check_button_bold:check()
-                    end
+                    check_button_bold:toggleCheck()
                 end,
             }
             check_button_border = CheckButton:new{
@@ -70,11 +66,7 @@ local sub_item_table = {
                 parent = input_dialog,
                 max_width = input_dialog._input_widget.width,
                 callback = function()
-                    if check_button_border.checked then
-                        check_button_border:unCheck()
-                    else
-                        check_button_border:check()
-                    end
+                    check_button_border:toggleCheck()
                 end,
             }
 
