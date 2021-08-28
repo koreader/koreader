@@ -8,6 +8,7 @@
 --]]
 
 local BD = require("ui/bidi")
+local CalibreExtensions = require("extensions")
 local CalibreSearch = require("search")
 local CalibreWireless = require("wireless")
 local Dispatcher = require("dispatcher")
@@ -225,7 +226,8 @@ function Calibre:getWirelessMenuTable()
         local enabled = G_reader_settings:nilOrTrue("calibre_wireless")
         return enabled and not CalibreWireless.calibre_socket
     end
-    return {
+
+    local t = {
         {
             text = _("Enable wireless client"),
             separator = true,
@@ -335,6 +337,19 @@ function Calibre:getWirelessMenuTable()
             },
         },
     }
+
+    if not CalibreExtensions:isCustom() then
+        table.insert(t, 2, {
+            text = _("File formats"),
+            enabled_func = isEnabled,
+            keep_menu_open = true,
+            callback = function()
+                CalibreExtensions:sort()
+            end,
+        })
+    end
+
+    return t
 end
 
 return Calibre
