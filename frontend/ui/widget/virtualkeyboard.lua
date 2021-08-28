@@ -25,6 +25,10 @@ local logger = require("logger")
 local util = require("util")
 local Screen = Device.screen
 
+local keyboard_state = {
+    force_current_layout = false,
+}
+
 local VirtualKeyPopup
 
 local VirtualKey = InputContainer:new{
@@ -98,6 +102,7 @@ function VirtualKey:init()
             else
                 self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
                     parent = self,
+                    keyboard_state = keyboard_state,
                 }
                 UIManager:show(self.keyboard_layout_dialog)
             end
@@ -295,6 +300,7 @@ function VirtualKey:genkeyboardLayoutKeyChars()
             UIManager:close(self.popup)
             self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
                 parent = self,
+                keyboard_state = keyboard_state,
             }
             UIManager:show(self.keyboard_layout_dialog)
         end,
@@ -791,8 +797,7 @@ end
 
 function VirtualKeyboard:getKeyboardLayout()
     local lang
-    if G_reader_settings:nilOrTrue("keyboard_remember_layout") or
-       G_reader_settings:isTrue("keyboard_force_current_layout") then
+    if G_reader_settings:nilOrTrue("keyboard_remember_layout") or keyboard_state.force_current_layout then
         lang = G_reader_settings:readSetting("keyboard_layout")
     else
         lang = G_reader_settings:readSetting("keyboard_layout_default")
@@ -802,9 +807,8 @@ function VirtualKeyboard:getKeyboardLayout()
 end
 
 function VirtualKeyboard:setKeyboardLayout(layout)
-    -- Need to save this flag somewhere for the case of
-    -- 'Keyboard height change' that causes keyboard re-init
-    G_reader_settings:makeTrue("keyboard_force_current_layout")
+    -- Save this flag for the case of 'Keyboard height change' that causes keyboard re-init
+    keyboard_state.force_current_layout = true
     local prev_keyboard_height = self.dimen and self.dimen.h
     G_reader_settings:saveSetting("keyboard_layout", layout)
     self:init()
@@ -817,7 +821,7 @@ function VirtualKeyboard:setKeyboardLayout(layout)
     else
         self:_refresh(true)
     end
-    G_reader_settings:delSetting("keyboard_force_current_layout")
+    keyboard_state.force_current_layout = false
 end
 
 function VirtualKeyboard:onClose()
