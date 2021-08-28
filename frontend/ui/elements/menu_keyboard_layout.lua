@@ -111,11 +111,11 @@ local sub_item_table = {
     },
 }
 
-local layouts_number = 0
+local selected_layouts_count = 0
 local _keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
 for k, __ in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
     if _keyboard_layouts[k] == true then
-        layouts_number = layouts_number + 1
+        selected_layouts_count = selected_layouts_count + 1
     end
     table.insert(sub_item_table[1].sub_item_table, {
         text_func = function()
@@ -133,11 +133,11 @@ for k, __ in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
             local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
             if keyboard_layouts[k] == true then
                 keyboard_layouts[k] = false
-                layouts_number = layouts_number - 1
+                selected_layouts_count = selected_layouts_count - 1
             else
-                if layouts_number < 4 then
+                if selected_layouts_count < 4 then
                     keyboard_layouts[k] = true
-                    layouts_number = layouts_number + 1
+                    selected_layouts_count = selected_layouts_count + 1
                 else -- no more space in the 'globe' popup
                     UIManager:show(require("ui/widget/infomessage"):new{
                         text = _("Up to 4 layouts can be enabled."),
