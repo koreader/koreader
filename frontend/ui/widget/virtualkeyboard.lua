@@ -797,14 +797,12 @@ function VirtualKeyboard:init()
 end
 
 function VirtualKeyboard:getKeyboardLayout()
-    local lang
-    if G_reader_settings:nilOrTrue("keyboard_remember_layout") or keyboard_state.force_current_layout then
-        lang = G_reader_settings:readSetting("keyboard_layout")
-    else
-        lang = G_reader_settings:readSetting("keyboard_layout_default")
+    if G_reader_settings:isFalse("keyboard_remember_layout") and not keyboard_state.force_current_layout then
+        local lang = G_reader_settings:readSetting("keyboard_layout_default")
+            or G_reader_settings:readSetting("keyboard_layout")
         G_reader_settings:saveSetting("keyboard_layout", lang)
     end
-    return lang or G_reader_settings:readSetting("language")
+    return G_reader_settings:readSetting("keyboard_layout") or G_reader_settings:readSetting("language")
 end
 
 function VirtualKeyboard:setKeyboardLayout(layout)
