@@ -65,11 +65,12 @@ function VirtualKey:init()
         self.key_chars = self:genkeyboardLayoutKeyChars()
         self.callback = function ()
             local current = G_reader_settings:readSetting("keyboard_layout")
+            local default = G_reader_settings:readSetting("keyboard_layout_default")
             local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
             local enabled = false
             local next_layout = nil
-            if not keyboard_layouts[current] then
-                next_layout = G_reader_settings:readSetting("keyboard_layout_default")
+            if not keyboard_layouts[current] and current ~= default then
+                next_layout = default
             end
             if not next_layout then
                 for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
