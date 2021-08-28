@@ -311,7 +311,7 @@ function VirtualKey:genkeyboardLayoutKeyChars()
         if v == true then
             key_chars[positions[index]] = string.sub(k, 1, 2)
             key_chars[positions[index] .. "_func"] = function()
-                UIManager:tickAfterNext(function() UIManager:close(self.popup) end)
+                UIManager:close(self.popup)
                 self.keyboard:setKeyboardLayout(k)
             end
             if index >= 4 then break end
@@ -355,12 +355,15 @@ function VirtualKey:onTapSelect(skip_flash)
     -- just in case it's not flipped to false on hold release where it's supposed to
     self.keyboard.ignore_first_hold_release = false
     if self.flash_keyboard and not skip_flash and not self.skiptap then
-        self[1].inner_bordersize = self.focused_bordersize
-        self:update_keyboard(false, true)
+        self:invert(true)
+        UIManager:forceRePaint()
+        UIManager:yieldToEPDC()
+
+        self:invert(false)
         if self.callback then
             self.callback()
         end
-        UIManager:tickAfterNext(function() self:invert(false) end)
+        UIManager:forceRePaint()
     else
         if self.callback then
             self.callback()
@@ -372,15 +375,18 @@ end
 function VirtualKey:onHoldSelect()
     Device:performHapticFeedback("LONG_PRESS")
     if self.flash_keyboard and not self.skiphold then
-        self[1].inner_bordersize = self.focused_bordersize
-        self:update_keyboard(false, true)
-        -- Don't refresh the key region if we're going to show a popup on top of it ;).
+        self:invert(true, true)
+        UIManager:forceRePaint()
+        UIManager:yieldToEPDC()
+
+        -- Don't flash the key region if we're going to show a popup on top of it ;).
         if self.hold_callback then
-            self[1].inner_bordersize = 0
+            self:invert(false)
             self.hold_callback()
         else
-            UIManager:tickAfterNext(function() self:invert(false, true) end)
+            self:invert(false, true)
         end
+        UIManager:forceRePaint()
     else
         if self.hold_callback then
             self.hold_callback()
@@ -392,12 +398,15 @@ end
 function VirtualKey:onSwipeKey(arg, ges)
     Device:performHapticFeedback("KEYBOARD_TAP")
     if self.flash_keyboard and not self.skipswipe then
-        self[1].inner_bordersize = self.focused_bordersize
-        self:update_keyboard(false, true)
+        self:invert(true)
+        UIManager:forceRePaint()
+        UIManager:yieldToEPDC()
+
+        self:invert(false)
         if self.swipe_callback then
             self.swipe_callback(ges)
         end
-        UIManager:tickAfterNext(function() self:invert(false, false) end)
+        UIManager:forceRePaint()
     else
         if self.swipe_callback then
             self.swipe_callback(ges)
