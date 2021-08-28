@@ -108,6 +108,7 @@ function VirtualKey:init()
                 UIManager:show(self.keyboard_layout_dialog)
             end
         end
+        self.hold_cb_is_popup = true
         self.swipe_callback = function(ges)
             local key_function = self.key_chars[ges.direction.."_func"]
             if key_function then
@@ -150,6 +151,7 @@ function VirtualKey:init()
                 parent_key = self,
             }
         end
+        self.hold_cb_is_popup = true
         self.swipe_callback = function(ges)
             local key_string = self.key_chars[ges.direction] or self.key
             local key_function = self.key_chars[ges.direction.."_func"]
@@ -373,19 +375,19 @@ function VirtualKey:onTapSelect(skip_flash)
 end
 
 function VirtualKey:onHoldSelect()
+    print("OnHoldSelect on", self)
     Device:performHapticFeedback("LONG_PRESS")
-    if self.flash_keyboard and not self.skiphold then
-        -- Don't do anything if we're going to show a popup on top of the key ;).
+    -- No visual feedback necessary if we're going to show a popup on top of the key ;).
+    if self.flash_keyboard and not self.skiphold and not self.hold_cb_is_popup then
+        self:invert(true)
+        UIManager:forceRePaint()
+        UIManager:yieldToEPDC()
+
+        self:invert(false, true)
         if self.hold_callback then
             self.hold_callback()
-        else
-            self:invert(true)
-            UIManager:forceRePaint()
-            UIManager:yieldToEPDC()
-
-            self:invert(false, true)
-            UIManager:forceRePaint()
         end
+        UIManager:forceRePaint()
     else
         if self.hold_callback then
             self.hold_callback()
