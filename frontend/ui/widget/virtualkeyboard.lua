@@ -64,18 +64,23 @@ function VirtualKey:init()
             local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
             local enabled = false
             local next_layout = nil
-            for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
-                if enabled and v == true then
-                    next_layout = k
-                    break
-                end
-                if k == current then
-                    enabled = true
-                end
+            if not keyboard_layouts[current] then
+                next_layout = G_reader_settings:readSetting("keyboard_layout_default")
             end
             if not next_layout then
                 for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
                     if enabled and v == true then
+                        next_layout = k
+                        break
+                    end
+                    if k == current then
+                        enabled = true
+                    end
+                end
+            end
+            if not next_layout then
+                for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
+                    if v == true then
                         next_layout = k
                         break
                     end
@@ -86,7 +91,7 @@ function VirtualKey:init()
             end
         end
         self.hold_callback = function()
-            if util.tableSize(self.key_chars) > 5 then
+            if util.tableSize(self.key_chars) > 5 then -- 2 or more layouts enabled
                 self.popup = VirtualKeyPopup:new{
                     parent_key = self,
                 }
@@ -766,7 +771,8 @@ function VirtualKeyboard:init()
     self.symbolmode_keys = keyboard.symbolmode_keys
     self.utf8mode_keys = keyboard.utf8mode_keys
     self.umlautmode_keys = keyboard.umlautmode_keys
-    self.height = Screen:scaleBySize(64 * #self.KEYS)
+    local keys_height = G_reader_settings:isTrue("keyboard_key_compact") and 48 or 64
+    self.height = Screen:scaleBySize(keys_height * #self.KEYS)
     self.min_layer = keyboard.min_layer
     self.max_layer = keyboard.max_layer
     self:initLayer(self.keyboard_layer)
@@ -784,10 +790,21 @@ function VirtualKeyboard:init()
 end
 
 function VirtualKeyboard:getKeyboardLayout()
-    return G_reader_settings:readSetting("keyboard_layout") or G_reader_settings:readSetting("language")
+    local lang
+    if G_reader_settings:nilOrTrue("keyboard_remember_layout") or
+       G_reader_settings:isTrue("keyboard_force_current_layout") then
+        lang = G_reader_settings:readSetting("keyboard_layout")
+    else
+        lang = G_reader_settings:readSetting("keyboard_layout_default")
+        G_reader_settings:saveSetting("keyboard_layout", lang)
+    end
+    return lang or G_reader_settings:readSetting("language")
 end
 
 function VirtualKeyboard:setKeyboardLayout(layout)
+    -- Need to save this flag somewhere for the case of
+    -- 'Keyboard height change' that causes keyboard re-init
+    G_reader_settings:makeTrue("keyboard_force_current_layout")
     local prev_keyboard_height = self.dimen and self.dimen.h
     G_reader_settings:saveSetting("keyboard_layout", layout)
     self:init()
@@ -800,6 +817,7 @@ function VirtualKeyboard:setKeyboardLayout(layout)
     else
         self:_refresh(true)
     end
+    G_reader_settings:delSetting("keyboard_force_current_layout")
 end
 
 function VirtualKeyboard:onClose()
