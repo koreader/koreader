@@ -375,18 +375,17 @@ end
 function VirtualKey:onHoldSelect()
     Device:performHapticFeedback("LONG_PRESS")
     if self.flash_keyboard and not self.skiphold then
-        self:invert(true, true)
-        UIManager:forceRePaint()
-        UIManager:yieldToEPDC()
-
-        -- Don't flash the key region if we're going to show a popup on top of it ;).
+        -- Don't do anything if we're going to show a popup on top of the key ;).
         if self.hold_callback then
-            self:invert(false)
             self.hold_callback()
         else
+            self:invert(true)
+            UIManager:forceRePaint()
+            UIManager:yieldToEPDC()
+
             self:invert(false, true)
+            UIManager:forceRePaint()
         end
-        UIManager:forceRePaint()
     else
         if self.hold_callback then
             self.hold_callback()
