@@ -27,6 +27,7 @@ local KeyboardLayoutDialog = InputContainer:new{
     title = _("Keyboard layout"),
     modal = true,
     stop_events_propagation = true,
+    keyboard_state = nil,
     width = math.floor(Screen:getWidth() * 0.8),
     face = Font:getFace("cfont", 22),
     title_face = Font:getFace("x_smalltfont"),
@@ -60,14 +61,14 @@ function KeyboardLayoutDialog:init()
     local radio_buttons = {}
 
     local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
-    G_reader_settings:makeTrue("keyboard_force_current_layout")
+    self.keyboard_state.force_current_layout = true
     for k, _ in FFIUtil.orderedPairs(self.parent.keyboard.lang_to_keyboard_layout) do
         local text = Language:getLanguageName(k)
         if keyboard_layouts[k] == true then
-            text = "✓ " .. text
+            text = text .. " ✓"
         end
         if k == G_reader_settings:readSetting("keyboard_layout_default") then
-            text = text .. "   ★"
+            text = text .. " ★"
         end
         table.insert(radio_buttons, {
             {
@@ -77,7 +78,7 @@ function KeyboardLayoutDialog:init()
             },
         })
     end
-    G_reader_settings:delSetting("keyboard_force_current_layout")
+    self.keyboard_state.force_current_layout = false
 
     table.insert(buttons, {
         {
