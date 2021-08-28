@@ -383,7 +383,10 @@ function VirtualKey:onHoldSelect()
         UIManager:forceRePaint()
         UIManager:yieldToEPDC()
 
-        self:invert(false, true)
+        -- NOTE: We do *NOT* set 'hold' to true here,
+        --       because some mxcfb drivers apparently like to merge the flash that it would request
+        --       with the following key redraw, leading to an unsightly double flash :/.
+        self:invert(false)
         if self.hold_callback then
             self.hold_callback()
         end
