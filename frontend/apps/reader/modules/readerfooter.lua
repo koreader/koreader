@@ -153,13 +153,9 @@ local footerTextGeneratorMap = {
         local prefix = symbol_prefix[symbol_type].frontlight_warmth
         local powerd = Device:getPowerDevice()
         if powerd:isFrontlightOn() then
-            if Device:isCervantes() or Device:isKobo() then
-                return (prefix .. " %d%%"):format(powerd:getWarmth())
-            elseif powerd:getWarmth() then
-                local warmth = math.floor(powerd:getWarmth())
-                if warmth and Device:hasNaturalLight() then
-                    return (prefix .. " %d%%"):format(warmth)
-                end
+            local warmth = powerd:getWarmth()
+            if warmth then
+                return (prefix .. " %d%%"):format(warmth)
             end
         else
             if footer.settings.all_at_once and footer.settings.hide_empty_generators then
