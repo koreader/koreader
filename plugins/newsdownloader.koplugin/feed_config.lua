@@ -33,7 +33,7 @@ return {--do NOT change this line
 
  -- LIST YOUR FEEDS HERE:
 
- { "http://feeds.reuters.com/Reuters/worldNews?format=xml", limit = 2, download_full_article=true, include_images=true, enable_filter=true},
+ { "https://ourworldindata.org/atom.xml", limit = 2, download_full_article=true, include_images=true, enable_filter=true},
 
  { "https://www.pcworld.com/index.rss", limit = 7 , download_full_article=false},
 
