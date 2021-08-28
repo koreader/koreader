@@ -323,6 +323,7 @@ function VirtualKey:genkeyboardLayoutKeyChars()
     return key_chars
 end
 
+-- NOTE: We currently don't ever set want_flash to trye (c.f., our invert method).
 function VirtualKey:update_keyboard(want_flash, want_fast)
     -- NOTE: We mainly use "fast" when inverted & "ui" when not, with a cherry on top:
     --       we flash the *full* keyboard instead when we release a hold.
@@ -447,6 +448,7 @@ function VirtualKey:onPanReleaseKey()
     return true
 end
 
+-- NOTE: We currently don't ever set hold to true (c.f., our onHoldSelect method)
 function VirtualKey:invert(invert, hold)
     if invert then
         self[1].inner_bordersize = self.focused_bordersize
