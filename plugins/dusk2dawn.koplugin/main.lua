@@ -485,7 +485,7 @@ function Dusk2Dawn:showTimesInfo(title, activator)
     end
 
     local function info_line(t, num)
-        return self:hoursToClock(t[num]) .. " (💡 " .. self.warmth[num] ..")"
+        return self:hoursToClock(t[num]) .. " (💡" .. self.warmth[num] .."%)"
     end
 
     UIManager:show(InfoMessage:new{

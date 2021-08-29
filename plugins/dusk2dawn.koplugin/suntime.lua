@@ -3,13 +3,20 @@
 -- SunTime:setPosition()
 -- SunTime:setSimple() or SunTime:setAdvanced()
 -- SunTime:setDate()
--- SunTime:calculate(height)  height==Rad(0°)-> Midday
+-- SunTime:calculate(height, hour)  height==Rad(0°)-> Midday; hour=6 or 18 for rise or set
 -- SunTime:calculateTimes()
-
 -- use values
 
 local toRad = math.pi/180
 local toDeg = 1/toRad
+
+local floor = math.floor
+local sin = math.sin
+local cos = math.cos
+local tan = math.tan
+local asin = math.asin
+local acos = math.acos
+local atan = math.atan
 
 local function Rad(x)
     return x*toRad
@@ -18,13 +25,14 @@ end
 local SunTime = {}
 
 function SunTime:frac(x)
-    return x - math.floor(x)
+    return x - floor(x)
 end
 
-SunTime.astronomic = Rad(90 + 18)
-SunTime.nautic =  Rad(90 + 12)
-SunTime.civil = Rad(90 + 6)
-SunTime.eod = Rad(90 + 48/60) -- end of day
+SunTime.astronomic = Rad(-18)
+SunTime.nautic =  Rad(-12)
+SunTime.civil = Rad(-6)
+--local refract = 1013*.5^(500/5500)/1013*36 + 31.5/2; -- 500m Meereshöhe + Sonnendurchmesser
+-- SunTime.eod = Rad(-49/60) -- approx. end of day
 
 -- simple 'Equation of time' good for dates between 2008-2027
 -- errors for latitude 20° are within 1min
@@ -33,7 +41,7 @@ SunTime.eod = Rad(90 + 48/60) -- end of day
 -- https://www.astronomie.info/zeitgleichung/#Auf-_und_Untergang (German)
 function SunTime:getZglSimple()
     local T = self.date.yday
-    return -0.171 * math.sin(0.0337 * T + 0.465)  - 0.1299 * math.sin(0.01787 * T - 0.168)
+    return -0.171 * sin(0.0337 * T + 0.465)  - 0.1299 * sin(0.01787 * T - 0.168)
 end
 
 -- more advanced 'Equation of time' goot for dates between 1800-2200
@@ -44,14 +52,23 @@ function SunTime:getZglAdvanced()
     local e = self.num_ex
     local e2 = e*e
     local e3 = e2*e
-    local C = (2*e-e3/4)*math.sin(self.M) + 5/4*e2*math.sin(2*self.M) + 13/12*e3*math.sin(3*self.M) -- rad
+    local e4 = e3*e
+    local e5 = e4*e
+
+    local M = self.M
+    -- https://de.wikibooks.org/wiki/Astronomische_Berechnungen_f%C3%BCr_Amateure/_Himmelsmechanik/_Sonne
+    local C = (2*e - e3/4 + 5/96*e5) * sin(M)
+            + (5/4*e2 + 11/24*e4) * sin(2*M)
+            + (13/12*e3 - 43/64*e5) * sin(3*M)
+            + 103/96*e4 * sin(4*M)
+            + 1097/960*e5 * sin(5*M) -- rad
 
     local lamb = self.L + C
-    local tanL = math.tan(self.L)
-    local tanLamb = math.tan(lamb)
-    local cosEps = math.cos(self.epsilon)
+    local tanL = tan(self.L)
+    local tanLamb = tan(lamb)
+    local cosEps = cos(self.epsilon)
 
-    local zgl = math.atan( (tanL - tanLamb*cosEps) / (1 + tanL*tanLamb*cosEps) ) --rad
+    local zgl = atan( (tanL - tanLamb*cosEps) / (1 + tanL*tanLamb*cosEps) ) --rad
     return zgl*toDeg/15 --  to hours *4'/60
 end
 
@@ -106,7 +123,9 @@ function SunTime:setPosition(name, latitude, longitude, time_zone)
         return
     end
 
-    if self.date then self.date.year = -1 end --invalidate cache
+    if self.date then
+        self.olddate.year = -1
+    end --invalidate cache
     self.name = name
     self.pos = {latitude = latitude, longitude = longitude}
     self.time_zone = time_zone
@@ -121,9 +140,9 @@ end
 
 function SunTime:daysSince2000()
     local delta = self.date.year - 2000
-    local leap = math.floor(delta/4) + 1 -- +1 for 2000, which was a leap year
-    self.days_since_2000 = delta * 365 + leap + self.date.yday + self.date.hour/24 + self.date.min/24/60 -- WMO No.8
-    return self.days_since_2000
+    local leap = floor(delta/4) + 1 -- +1 for 2000, which was a leap year
+    local days_since_2000 = delta * 365 + leap + self.date.yday    -- WMO No.8
+    return days_since_2000
 end
 
 -- more accurate parameters of earth orbit from_
@@ -132,83 +151,104 @@ end
 -- Journal: Astronomy and Astrophysics (ISSN 0004-6361), vol. 282, no. 2, p. 663-683
 -- Bibliographic Code: 1994A&A...282..663S
 function SunTime:initVars()
-    self:daysSince2000()
+    self.days_since_2000 = self:daysSince2000()
     local T = self.days_since_2000/36525
-    local T2 = T * T
-    local T3 = T2 * T
-    local T4 = T3 * T
-    local T5 = T4 * T
 --    self.num_ex = 0.016709 - 0.000042 * T
 --    self.num_ex = 0.0167086342 - 0.000042 * T
-    self.num_ex = 0.0167086342      - 00.004203654 * T
-                - 000.00126734 * T2 + 0000.0001444 * T3
-                - 00000.000002 * T4 + 000000.00003 * T5
+    -- see wikipedia: https://de.wikipedia.org/wiki/Erdbahn-> Meeus
+    self.num_ex = 0.0167086342         + T*(-0.0004203654e-1
+                + T*(-0.0000126734e-2  + T*(0.0000001444e-3
+                + T*(-0.0000000002e-4  + T*0.0000000003e-5))))
+
 --    self.epsilon = (23 + 26/60 + 21/3600 - 46.82/3600 * T) * toRad
-    local epsilon = 23 + 26/60 + 21.412/3600 - 46.80927/3600 * T
-        - 0.000152/3600 * T2   + 0.00019989/3600 * T3
-        - 0.00000051/3600 * T4 - 0.00000025/3600 * T5 --°
+    -- see wikipedia: https://de.wikipedia.org/wiki/Erdbahn-> Meeus
+    local epsilon = 23 + 26/60 + (21.412 + T*(-46.80927
+                + T*(-0.000152   + T*(0.00019989
+                + T*(-0.00000051 - T*0.00000025)))))/3600 --°
     self.epsilon = epsilon * toRad
 
     -- shift from time to Equinox as data is given for JD2000.0, but date is in days from 20000101
     local nT = T * 1.0000388062
-    local nT2 = nT  * nT
-    local nT3 = nT2 * nT
-    local nT4 = nT3 * nT
-    local nT5 = nT4 * nT
-    local nT6 = nT5 * nT
 --    local L = (280.4656 + 36000.7690 * T ) --°
-    local L = 280.46645683 + 1295977422.83429E-1/3600 * nT
-            - 2.04411E-2/3600 * nT2 - 0.00523E-3/3600 * nT3 --°
-    self.L = (L - math.floor(L/360)*360) * toRad
+    -- see Numerical expressions for precession formulae ...
+    local L = 100.46645683 + (nT*(1295977422.83429E-1
+            + nT*(-2.04411E-2 - nT* 0.00523E-3)))/3600--°
+    self.L = (L - floor(L/360)*360) * toRad
 
 --    local omega (282.9400 + 1.7192 * T) --°
-    local omega = 282.93734808       + 1.7194598028 * nT
-                 + 004.5688325 * nT2 - 0000.017680 * nT3
-                 - 00000.33583 * nT5 + 000000.0828 * nT5
-                 + 0000000.056 * nT6 --°
+    -- wikipedia: https://de.wikipedia.org/wiki/Erdbahn-> Meeus
+    local omega = 102.93734808        + nT*(17.194598028e-1
+                + nT*( 0.045688325e-2 + nT*(-0.000017680e-3
+                + nT*(-0.000033583e-4 + nT*( 0.000000828e-5
+                + nT*  0.000000056e-6))))) --°
 
     local M = L - omega
-    self.M = (M - math.floor(M/360)*360) * toRad
+    self.M = (M - floor(M/360)*360) * toRad
+
+    -- https://de.wikipedia.org/wiki/Kepler-Gleichung#Wahre_Anomalie
+    self.E = self.M + self.num_ex * sin(self.M) + self.num_ex^2 / 2 * sin(2*self.M)
+    self.a = 149598022.96E3 -- große Halbaches in m
+    self.r = self.a * (1 - self.num_ex * cos(self.E))
+    self.eod = -atan(6.96342e8/self.r) - Rad(33.3/60)
+--                ^--sun radius                ^- astronomical refraction (400m altitude)
 end
 --------------------------
 
-function SunTime:getTimeDiff(height)
---    local decl = 0.4095 * math.sin(0.016906 * (self.date.yday - 80.086)) --Deklination nach astronomie.info
---    local decl = 0.40954 * math.sin(0.0172 * (self.date.yday-79.349740)) --Deklination nach Brodbeck (2001)
+function SunTime:getTimeDiff(height, hour)
+    -- Deklination nach astronomie.info
+--    local decl = 0.4095 * sin(0.016906 * (self.date.yday - 80.086))
+    --Deklination nach Brodbeck (2001)
+--    local decl = 0.40954 * sin(0.0172 * (self.date.yday-79.349740))
 
-    local x = (36000/36525 * (self.date.yday) - 2.72)*toRad
-    local decl = math.asin(0.397748 * math.sin( x + (1.92*math.sin(x) - 77.51)*toRad)) --Deklination nach WMO-No.8
+    --Deklination nach WMO-No.8
+    local x = (36000/36525 * (self.date.yday+hour/24) - 2.72)*toRad
+    local decl = asin(0.397748 * sin(x + (1.92*sin(x) - 77.51)*toRad))
 
-    local val = (math.cos(height) - math.sin(self.pos.latitude)*math.sin(decl)) / (math.cos(self.pos.latitude)*math.cos(decl))
+    local val = (sin(height) - sin(self.pos.latitude)*sin(decl))
+                / (cos(self.pos.latitude)*cos(decl))
 
     if math.abs(val) > 1 then
         return
     end
-    return 12/math.pi * math.acos(val)
+    return 12/math.pi * acos(val)
 end
 
 -- get time for a certain height
 -- result rise and set times
 --        nil and nil sun does not reach the height
-function SunTime:calculateTime(height)
+function SunTime:calculateTime(height, hour)
+    hour = hour or 12
     local dst = self.date.isdst and 1 or 0
-    local timeDiff = self:getTimeDiff(height)
+    local timeDiff = self:getTimeDiff(height, hour)
     if not timeDiff then
-        return nil, nil
+        return
     end
     local local_correction = self.time_zone - self.pos.longitude*12/math.pi + dst - self.zgl
 
-    local rise = 12 - timeDiff + local_correction
-    local set  = 12 + timeDiff + local_correction
-    return rise, set
+    if hour < 12 then
+        return 12 - timeDiff + local_correction
+    else
+        return 12 + timeDiff + local_correction
+    end
+end
+
+function SunTime:calculateTimeIter(height, hour)
+    local x = self:calculateTime(height, hour)
+    return self:calculateTime(height, x)
 end
 
 function SunTime:calculateTimes()
-    self.rise_astronomic, self.set_astronomic = self:calculateTime(self.astronomic)
-    self.rise_nautic, self.set_nautic         = self:calculateTime(self.nautic)
-    self.rise_civil, self.set_civil           = self:calculateTime(self.civil)
-    self.rise, self.set                       = self:calculateTime(self.eod)
-    self.noon = (self.rise + self.set)/2
+    self.rise = self:calculateTimeIter(self.eod, 6)
+    self.set = self:calculateTimeIter(self.eod, 18)
+
+    self.rise_civil = self:calculateTimeIter(self.civil, 6)
+    self.set_civil = self:calculateTimeIter(self.civil, 18)
+    self.rise_nautic = self:calculateTimeIter(self.nautic, 6)
+    self.set_nautic = self:calculateTimeIter(self.nautic, 18)
+    self.rise_astronomic = self:calculateTimeIter(self.astronomic, 6)
+    self.set_astronomic = self:calculateTimeIter(self.astronomic, 18)
+
+    self.noon = self:calculateTimeIter(0, 12)
     self.midnight = self.noon - 12
 
     self.times = {}
@@ -222,7 +262,7 @@ function SunTime:calculateTimes()
     self.times[8]  = self.set_civil
     self.times[9]  = self.set_nautic
     self.times[10] = self.set_astronomic
-    self.times[11] = self.midnight + 24
+    self.times[11] = self.noon + 12
 end
 
 -- get time in seconds (either actual time in hours or date struct)
