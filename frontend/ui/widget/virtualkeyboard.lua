@@ -26,7 +26,7 @@ local util = require("util")
 local Screen = Device.screen
 
 local keyboard_state = {
-    force_current_layout = false,
+    force_current_layout = false, -- Set to true to get/set current layout (instead of default layout)
 }
 
 local VirtualKeyPopup
@@ -806,7 +806,6 @@ function VirtualKeyboard:getKeyboardLayout()
 end
 
 function VirtualKeyboard:setKeyboardLayout(layout)
-    -- Save this flag for the case of 'Keyboard height change' that causes keyboard re-init
     keyboard_state.force_current_layout = true
     local prev_keyboard_height = self.dimen and self.dimen.h
     G_reader_settings:saveSetting("keyboard_layout", layout)
