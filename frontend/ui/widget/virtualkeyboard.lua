@@ -376,7 +376,6 @@ function VirtualKey:onTapSelect(skip_flash)
 end
 
 function VirtualKey:onHoldSelect()
-    print("OnHoldSelect on", self)
     Device:performHapticFeedback("LONG_PRESS")
     -- No visual feedback necessary if we're going to show a popup on top of the key ;).
     if self.flash_keyboard and not self.skiphold and not self.hold_cb_is_popup then
