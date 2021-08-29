@@ -71,75 +71,6 @@ function NewsDownloader:init()
 end
 
 function NewsDownloader:addToMainMenu(menu_items)
-<<<<<<< HEAD
-   menu_items.news_downloader = {
-      text = _("News (RSS/Atom) downloader"),
-      sub_item_table_func = function()
-	 return self:getSubMenuItems()
-      end,
-   }
-end
-
-function NewsDownloader:getSubMenuItems()
-   self:lazyInitialization()
-   local sub_item_table
-   sub_item_table = {
-      {
-	 text = _("Go to news folder"),
-	 callback = function()
-	    self:openDownloadsFolder()
-	 end,
-      },
-      {
-	 text = _("Download news feeds"),
-	 callback = function()
-	    NetworkMgr:runWhenOnline(function() self:loadConfigAndProcessFeedsWithUI() end)
-	 end,
-      },
-      {
-	 text = _("Remove all downloaded items"),
-	 keep_menu_open = true,
-	 callback = function() self:removeNewsButKeepFeedConfig() end,
-      },
-      {
-	 text = _("Settings"),
-	 sub_item_table = {
-	    {
-	       text = _("Edit feeds configuration file"),
-	       keep_menu_open = true,
-	       callback = function() self:changeFeedConfig() end,
-	    },
-	    {
-	       text = _("Set custom download folder"),
-	       keep_menu_open = true,
-	       callback = function() self:setCustomDownloadDirectory() end,
-	    },
-	    {
-	       text = _("Never download images"),
-	       keep_menu_open = true,
-	       checked_func = function()
-		  return self.settings:isTrue("never_download_images")
-	       end,
-	       callback = function()
-		  self.settings:toggle("never_download_images")
-		  self.settings:flush()
-	       end,
-	    },
-	 },
-      },
-      {
-	 text = _("Help"),
-	 keep_menu_open = true,
-	 callback = function()
-	    UIManager:show(InfoMessage:new{
-			      text = T(_("News downloader retrieves RSS and Atom news entries and stores them to:\n%1\n\nEach entry is a separate html file, that can be browsed by KOReader file manager.\nItems download limit can be configured in Settings."),
-				       BD.dirpath(self.download_dir))
-	    })
-	 end,
-      },
-   }
-   return sub_item_table
-=======
     menu_items.news_downloader = {
         text = _("News (RSS/Atom) downloader"),
         sub_item_table_func = function()
@@ -207,7 +138,6 @@ function NewsDownloader:getSubMenuItems()
         },
     }
     return sub_item_table
->>>>>>> dev
 end
 -- lazyInitialization sets up variables that point to the
 -- downloads folder and the feeds configuration file
