@@ -140,7 +140,7 @@ for k, __ in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
                     selected_layouts_count = selected_layouts_count + 1
                 else -- no more space in the 'globe' popup
                     UIManager:show(require("ui/widget/infomessage"):new{
-                        text = _("Up to 4 layouts can be enabled."),
+                        text = _("Up to four layouts can be enabled."),
                         timeout = 2,
                     })
                     return
