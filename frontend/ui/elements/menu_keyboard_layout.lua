@@ -8,12 +8,22 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VirtualKeyboard = require("ui/widget/virtualkeyboard")
 local _ = require("gettext")
 
-local input_dialog, check_button_bold, check_button_border
+local input_dialog, check_button_bold, check_button_border, check_button_compact
 
 local sub_item_table = {
     {
         text = _("Keyboard layout"),
         sub_item_table = {},
+    },
+    {
+        text = _("Remember last layout"),
+        checked_func = function()
+            return G_reader_settings:nilOrTrue("keyboard_remember_layout")
+        end,
+        callback = function()
+            G_reader_settings:flipNilOrTrue("keyboard_remember_layout")
+        end,
+        separator = true,
     },
     {
         text = _("Keyboard font size"),
@@ -40,6 +50,7 @@ local sub_item_table = {
                                     G_reader_settings:saveSetting("keyboard_key_font_size", font_size)
                                     G_reader_settings:saveSetting("keyboard_key_bold", check_button_bold.checked)
                                     G_reader_settings:saveSetting("keyboard_key_border", check_button_border.checked)
+                                    G_reader_settings:saveSetting("keyboard_key_compact", check_button_compact.checked)
                                     input_dialog._input_widget:onCloseKeyboard()
                                     input_dialog._input_widget:initKeyboard()
                                     input_dialog:onShowKeyboard()
@@ -69,6 +80,15 @@ local sub_item_table = {
                     check_button_border:toggleCheck()
                 end,
             }
+            check_button_compact = CheckButton:new{
+                text = _("compact"),
+                checked = G_reader_settings:isTrue("keyboard_key_compact"),
+                parent = input_dialog,
+                max_width = input_dialog._input_widget.width,
+                callback = function()
+                    check_button_compact:toggleCheck()
+                end,
+            }
 
             local checkbox_shift = math.floor((input_dialog.width - input_dialog._input_widget.width) / 2 + 0.5)
             local check_buttons = HorizontalGroup:new{
@@ -77,6 +97,7 @@ local sub_item_table = {
                     align = "left",
                     check_button_bold,
                     check_button_border,
+                    check_button_compact,
                 },
             }
 
@@ -90,11 +111,16 @@ local sub_item_table = {
     },
 }
 
-for k, _ in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
+local selected_layouts_count = 0
+local _keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
+for k, __ in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
+    if _keyboard_layouts[k] == true then
+        selected_layouts_count = selected_layouts_count + 1
+    end
     table.insert(sub_item_table[1].sub_item_table, {
         text_func = function()
             local text = Language:getLanguageName(k)
-            if VirtualKeyboard:getKeyboardLayout() == k then
+            if G_reader_settings:readSetting("keyboard_layout_default") == k then
                 text = text .. "   ★"
             end
             return text
@@ -105,11 +131,25 @@ for k, _ in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
         end,
         callback = function()
             local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
-            keyboard_layouts[k] = not keyboard_layouts[k]
+            if keyboard_layouts[k] == true then
+                keyboard_layouts[k] = false
+                selected_layouts_count = selected_layouts_count - 1
+            else
+                if selected_layouts_count < 4 then
+                    keyboard_layouts[k] = true
+                    selected_layouts_count = selected_layouts_count + 1
+                else -- no more space in the 'globe' popup
+                    UIManager:show(require("ui/widget/infomessage"):new{
+                        text = _("Up to four layouts can be enabled."),
+                        timeout = 2,
+                    })
+                    return
+                end
+            end
             G_reader_settings:saveSetting("keyboard_layouts", keyboard_layouts)
         end,
         hold_callback = function(touchmenu_instance)
-            G_reader_settings:saveSetting("keyboard_layout", k)
+            G_reader_settings:saveSetting("keyboard_layout_default", k)
             if touchmenu_instance then touchmenu_instance:updateItems() end
         end,
     })

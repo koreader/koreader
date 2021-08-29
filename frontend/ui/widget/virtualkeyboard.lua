@@ -25,6 +25,10 @@ local logger = require("logger")
 local util = require("util")
 local Screen = Device.screen
 
+local keyboard_state = {
+    force_current_layout = false, -- Set to true to get/set current layout (instead of default layout)
+}
+
 local VirtualKeyPopup
 
 local VirtualKey = InputContainer:new{
@@ -61,21 +65,27 @@ function VirtualKey:init()
         self.key_chars = self:genkeyboardLayoutKeyChars()
         self.callback = function ()
             local current = G_reader_settings:readSetting("keyboard_layout")
+            local default = G_reader_settings:readSetting("keyboard_layout_default")
             local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
             local enabled = false
             local next_layout = nil
-            for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
-                if enabled and v == true then
-                    next_layout = k
-                    break
-                end
-                if k == current then
-                    enabled = true
-                end
+            if not keyboard_layouts[current] and current ~= default then
+                next_layout = default
             end
             if not next_layout then
                 for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
                     if enabled and v == true then
+                        next_layout = k
+                        break
+                    end
+                    if k == current then
+                        enabled = true
+                    end
+                end
+            end
+            if not next_layout then
+                for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
+                    if v == true then
                         next_layout = k
                         break
                     end
@@ -86,13 +96,14 @@ function VirtualKey:init()
             end
         end
         self.hold_callback = function()
-            if util.tableSize(self.key_chars) > 5 then
+            if util.tableSize(self.key_chars) > 5 then -- 2 or more layouts enabled
                 self.popup = VirtualKeyPopup:new{
                     parent_key = self,
                 }
             else
                 self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
                     parent = self,
+                    keyboard_state = keyboard_state,
                 }
                 UIManager:show(self.keyboard_layout_dialog)
             end
@@ -290,6 +301,7 @@ function VirtualKey:genkeyboardLayoutKeyChars()
             UIManager:close(self.popup)
             self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
                 parent = self,
+                keyboard_state = keyboard_state,
             }
             UIManager:show(self.keyboard_layout_dialog)
         end,
@@ -766,7 +778,8 @@ function VirtualKeyboard:init()
     self.symbolmode_keys = keyboard.symbolmode_keys
     self.utf8mode_keys = keyboard.utf8mode_keys
     self.umlautmode_keys = keyboard.umlautmode_keys
-    self.height = Screen:scaleBySize(64 * #self.KEYS)
+    local keys_height = G_reader_settings:isTrue("keyboard_key_compact") and 48 or 64
+    self.height = Screen:scaleBySize(keys_height * #self.KEYS)
     self.min_layer = keyboard.min_layer
     self.max_layer = keyboard.max_layer
     self:initLayer(self.keyboard_layer)
@@ -784,10 +797,16 @@ function VirtualKeyboard:init()
 end
 
 function VirtualKeyboard:getKeyboardLayout()
+    if G_reader_settings:isFalse("keyboard_remember_layout") and not keyboard_state.force_current_layout then
+        local lang = G_reader_settings:readSetting("keyboard_layout_default")
+            or G_reader_settings:readSetting("keyboard_layout") or "en"
+        G_reader_settings:saveSetting("keyboard_layout", lang)
+    end
     return G_reader_settings:readSetting("keyboard_layout") or G_reader_settings:readSetting("language")
 end
 
 function VirtualKeyboard:setKeyboardLayout(layout)
+    keyboard_state.force_current_layout = true
     local prev_keyboard_height = self.dimen and self.dimen.h
     G_reader_settings:saveSetting("keyboard_layout", layout)
     self:init()
@@ -800,6 +819,7 @@ function VirtualKeyboard:setKeyboardLayout(layout)
     else
         self:_refresh(true)
     end
+    keyboard_state.force_current_layout = false
 end
 
 function VirtualKeyboard:onClose()
