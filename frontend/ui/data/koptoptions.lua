@@ -447,17 +447,7 @@ The first option ("auto") tries to automatically align reflowed text as it is in
                 toggle = {_("off"), _("on")},
                 values = {0, 1},
                 default_value = DKOPTREADER_CONFIG_TEXT_WRAP,
-                events = {
-                    {
-                        event = "RedrawCurrentPage",
-                    },
-                    {
-                        event = "RestoreZoomMode",
-                    },
-                    {
-                        event = "InitScrollPageStates",
-                    },
-                },
+                event = "ReflowUpdated",
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Reflow mode extracts text and images from the original document, possibly discarding some formatting, and reflows it on the screen for easier reading.
 Some of the other settings are only available when reflow mode is enabled.]]),
