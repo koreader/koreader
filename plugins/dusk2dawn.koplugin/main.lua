@@ -98,7 +98,7 @@ function Dusk2Dawn:scheduleMidnightUpdate()
 
     local function prepareSchedule(times, index1, index2)
         local time1 = times[index1]
-        if not time1 then return end -- to near to the pole; sun does not set/rise
+        if not time1 then return end
 
         local time = SunTime:getTimeInSec(time1)
         table.insert(self.sched_times, time)
@@ -124,6 +124,8 @@ function Dusk2Dawn:scheduleMidnightUpdate()
         end
     end
 
+    print("xxx 1", unpack(SunTime.times))
+    print("xxx 1", unpack(self.scheduler_times))
     if self.activate == activate_sun then
         self.current_times = {unpack(SunTime.times)}
     elseif self.activate == activate_schedule then
@@ -152,8 +154,20 @@ function Dusk2Dawn:scheduleMidnightUpdate()
     end
 
     -- here are dragons
-    for i = 1, midnight_index do
-       prepareSchedule(self.current_times, i, i+1)
+    local i = 1
+    -- find first valid entry
+    while not self.scheduler_times[i] and i <= midnight_index do
+        i = i + 1
+    end
+    local next
+    while i <= midnight_index do
+        next = i + 1
+        -- find next valid entry
+        while not self.scheduler_times[next] and next <= midnight_index do
+            next = next + 1
+        end
+        prepareSchedule(self.current_times, i, next)
+        i = next
     end
 
     local now = SunTime:getTimeInSec()
@@ -277,6 +291,9 @@ function Dusk2Dawn:getScheduleMenu()
             text_func = function()
                 return T(_"%1  (%2)", text,
                     self:hoursToClock(self.scheduler_times[num], true))
+            end,
+            checked_func = function()
+                return self.scheduler_times[num] ~= nil
             end,
             callback = function(touchmenu_instance)
                 local function store_times(new_time)
