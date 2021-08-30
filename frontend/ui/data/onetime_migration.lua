@@ -312,5 +312,12 @@ if last_migration_date < 20210831 then
     G_reader_settings:saveSetting("keyboard_layouts", keyboard_layouts_new)
 end
 
+-- 20210902, Remove unneeded auto_warmth settings after #8154
+if last_migration_date < 20210830 then
+    logger.info("Performing one-time migration for 20210902")
+    G_reader_settings:delSetting("frontlight_auto_warmth")
+    G_reader_settings:delSetting("frontlight_max_warmth_hour")
+end
+
 -- We're done, store the current migration date
 G_reader_settings:saveSetting("last_migration_date", CURRENT_MIGRATION_DATE)
