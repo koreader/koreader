@@ -14,6 +14,7 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
+local InputDialog = require("ui/widget/inputdialog")
 local Font = require("ui/font")
 local SpinWidget = require("ui/widget/spinwidget")
 local SunTime = require("suntime")
@@ -124,8 +125,6 @@ function Dusk2Dawn:scheduleMidnightUpdate()
         end
     end
 
-    print("xxx 1", unpack(SunTime.times))
-    print("xxx 1", unpack(self.scheduler_times))
     if self.activate == activate_sun then
         self.current_times = {unpack(SunTime.times)}
     elseif self.activate == activate_schedule then
@@ -216,6 +215,57 @@ function Dusk2Dawn:addToMainMenu(menu_items)
     }
 end
 
+local about_text = _([[Set the frontlight warmth based on a time schedule or the sun's position.
+
+There are three types of twilight:
+• Civil: You can read a newspaper.
+• Nautical: You can see the first stars.
+• Astronomical: It is really dark.
+
+Certain warmth-values can be set for every kind of twilight and sunrise, noon, sunset and midnight.
+The screen warmth is continuously adjusted to the current time.
+
+To use the sun's position, the geographical location must be entered. The calculations are very precise (deviation less than two minutes).]])
+function Dusk2Dawn:getSubMenuItems()
+    return {
+        {
+            text = _("About dusk till dawn"),
+            callback = function()
+                UIManager:show(InfoMessage:new{
+                    text = about_text,
+                })
+            end,
+            keep_menu_open = true,
+            separator = true,
+        },
+        {
+            text = _("Activate"),
+            checked_func = function()
+                return self.activate ~= 0
+            end,
+            sub_item_table = self:getActivateMenu(),
+        },
+        {
+            text = _("Location"),
+            enabled_func = function() return self.activate ~= activate_schedule end,
+            sub_item_table = self:getLocationMenu(),
+        },
+        {
+            text = _("Schedule"),
+            enabled_func = function() return self.activate ~= activate_sun end,
+            sub_item_table = self:getScheduleMenu(),
+        },
+        {
+            text = _("Warmths"),
+            sub_item_table = self:getWarmthMenu(),
+            separator = true,
+        },
+        self:getTimesMenu(_("Current parameters")),
+        self:getTimesMenu(_("Sun parameters for"), true, activate_sun),
+        self:getTimesMenu(_("Schedule parameters"), false, activate_schedule),
+    }
+end
+
 function Dusk2Dawn:getActivateMenu()
     local function getActivateMenuEntry(text, activator)
         return {
@@ -241,48 +291,83 @@ function Dusk2Dawn:getActivateMenu()
     }
 end
 
-function Dusk2Dawn:getWarmthMenu()
-    local function getWarmthMenuEntry(text, num)
-        return {
-            text_func = function()
-                return T(_"%1 (%2%)", text, self.warmth[num])
-            end,
-            callback = function(touchmenu_instance)
-                UIManager:show(SpinWidget:new{
-                    width = math.floor(Device.screen:getWidth() * 0.6),
-                    title_text = text,
-                    value = self.warmth[num],
-                    value_min = 0,
-                    value_max = 100,
-                    wrap = false,
-                    value_step = math.floor(100 / Device.powerd.fl_warmth_max),
-                    value_hold_step = 10,
-                    ok_text = _("Set"),
-                    callback = function(spin)
-                        self.warmth[num] = spin.value
-                        self.warmth[#self.warmth - num + 1] = spin.value
-                        G_reader_settings:saveSetting("dusk2dawn_warmth", self.warmth)
-                        self:scheduleMidnightUpdate()
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
-                    end
-                })
-            end,
-            keep_menu_open = true,
-        }
-    end
-
-    return {
-        {
-            text = _("Set warmth for:"),
-            enabled_func = function() return false end,
-        },
-        getWarmthMenuEntry(_("High noon"), 6),
-        getWarmthMenuEntry(_("Daytime"), 5),
-        getWarmthMenuEntry(_("Darkest time of civil dawn"), 4),
-        getWarmthMenuEntry(_("Darkest time of nautical dawn"), 3),
-        getWarmthMenuEntry(_("Darkest time of astronomical dawn"), 2),
-        getWarmthMenuEntry(_("Midnight"), 1),
-    }
+function Dusk2Dawn:getLocationMenu()
+    return {{
+        text_func = function()
+            if self.location ~= "" then
+                return T(_("Location (%1)"), self.location)
+            else
+                return _("Location")
+            end
+        end,
+        callback = function(touchmenu_instance)
+            local location_name_dialog
+            location_name_dialog = InputDialog:new{
+                title = _("Location name"),
+                input = self.location,
+                buttons = {
+                    {
+                        {
+                            text = _("Cancel"),
+                            callback = function()
+                                UIManager:close(location_name_dialog)
+                            end,
+                        },
+                        {
+                            text = _("OK"),
+                            callback = function()
+                                self.location = location_name_dialog:getInputText()
+                                G_reader_settings:saveSetting("dusk2dawn_location_name",
+                                    self.location)
+                                UIManager:close(location_name_dialog)
+                                if touchmenu_instance then touchmenu_instance:updateItems() end
+                            end,
+                        },
+                    }}
+                }
+            UIManager:show(location_name_dialog)
+            location_name_dialog:onShowKeyboard()
+        end,
+        keep_menu_open = true,
+    },
+    {
+        text_func = function()
+            return T(_("Coordinates (%1,%2)"), self.latitude, self.longitude)
+        end,
+        callback = function(touchmenu_instance)
+            local location_widget = DoubleSpinWidget:new{
+                title_text = _("Set location"),
+                info_text = _("Enter decimal degrees, northern hemisphere and eastern length are '+'."),
+                left_text = _("Latitude"),
+                left_value = self.latitude,
+                left_default = 0,
+                left_min = -90,
+                left_max = 90,
+                left_step = 0.1,
+                precision = "%0.2f",
+                left_hold_step = 5,
+                right_text = _("Longitude"),
+                right_value = self.longitude,
+                right_default = 0,
+                right_min = -180,
+                right_max = 180,
+                right_step = 0.1,
+                right_hold_step = 5,
+                callback = function(lat, long)
+                    self.latitude = lat
+                    self.longitude = long
+                    self.timezone = self:getTimezoneOffset() -- use timezone of device
+                    G_reader_settings:saveSetting("dusk2dawn_latitude", self.latitude)
+                    G_reader_settings:saveSetting("dusk2dawn_longitude", self.longitude)
+                    G_reader_settings:saveSetting("dusk2dawn_timezone", self.timezone)
+                    self:scheduleMidnightUpdate()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+            }
+            UIManager:show(location_widget)
+        end,
+        keep_menu_open = true,
+    }}
 end
 
 function Dusk2Dawn:getScheduleMenu()
@@ -309,7 +394,7 @@ function Dusk2Dawn:getScheduleMenu()
                     G_reader_settings:saveSetting("dusk2dawn_scheduler_times",
                         self.scheduler_times)
                     self:scheduleMidnightUpdate()
-                    touchmenu_instance:updateItems()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
                 end
 
                 local hh = 12
@@ -406,136 +491,117 @@ function Dusk2Dawn:getScheduleMenu()
     }
 end
 
-local about_text = _([[Set the frontlight warmth based on a time schedule or the sun's position.
-
-There are three types of twilight:
-• Civil: You can read a newspaper.
-• Nautical: You can see the first stars.
-• Astronomical: It is really dark.
-
-Certain warmth-values can be set for every kind of twilight and sunrise, noon, sunset and midnight.
-The screen warmth is continuously adjusted to the current time.
-
-To use the sun's position, the geographical location must be entered. The calculations are very precise (deviation less than two minutes).]])
-function Dusk2Dawn:getSubMenuItems()
-    return {
-        {
-            text = _("About dusk till dawn"),
-            callback = function()
-                UIManager:show(InfoMessage:new{
-                    text = about_text,
+function Dusk2Dawn:getWarmthMenu()
+    local function getWarmthMenuEntry(text, num)
+        return {
+            text_func = function()
+                return T(_("%1 (%2%)"), text, self.warmth[num])
+            end,
+            callback = function(touchmenu_instance)
+                UIManager:show(SpinWidget:new{
+                    width = math.floor(Device.screen:getWidth() * 0.6),
+                    title_text = text,
+                    value = self.warmth[num],
+                    value_min = 0,
+                    value_max = 100,
+                    wrap = false,
+                    value_step = math.floor(100 / Device.powerd.fl_warmth_max),
+                    value_hold_step = 10,
+                    ok_text = _("Set"),
+                    callback = function(spin)
+                        self.warmth[num] = spin.value
+                        self.warmth[#self.warmth - num + 1] = spin.value
+                        G_reader_settings:saveSetting("dusk2dawn_warmth", self.warmth)
+                        self:scheduleMidnightUpdate()
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end
                 })
             end,
             keep_menu_open = true,
-            separator = true,
-        },
+        }
+    end
+
+    return {
         {
-            text = _("Activate"),
-            checked_func = function()
-                return self.activate ~= 0
-            end,
-            sub_item_table = self:getActivateMenu(),
+            text = _("Set warmth for:"),
+            enabled_func = function() return false end,
         },
-        {
-            text = _("Location"),
-            enabled_func = function() return self.activate ~= activate_schedule end,
-            callback = function(touchmenu_instance)
-                local location_widget = DoubleSpinWidget:new{
-                    title_text = _("Set location"),
-                    info_text = _("Enter decimal degrees, northern hemisphere and eastern length are '+'."),
-                    left_text = _("Latitude"),
-                    left_value = self.latitude,
-                    left_default = 0,
-                    left_min = -90,
-                    left_max = 90,
-                    left_step = 0.1,
-                    precision = "%0.2f",
-                    left_hold_step = 5,
-                    right_text = _("Longitude"),
-                    right_value = self.longitude,
-                    right_default = 0,
-                    right_min = -180,
-                    right_max = 180,
-                    right_step = 0.1,
-                    right_hold_step = 5,
-                    callback = function(lat, long)
-                        self.latitude = lat
-                        self.longitude = long
-                        self.timezone = self:getTimezoneOffset() -- use timezone of device
-                        G_reader_settings:saveSetting("dusk2dawn_latitude", self.latitude)
-                        G_reader_settings:saveSetting("dusk2dawn_longitude", self.longitude)
-                        G_reader_settings:saveSetting("dusk2dawn_timezone", self.timezone)
-                        self:scheduleMidnightUpdate()
-                        touchmenu_instance:updateItems()
-                    end,
-                }
-                UIManager:show(location_widget)
-            end,
-            keep_menu_open = true,
-        },
-        {
-            text = _("Schedule"),
-            enabled_func = function() return self.activate ~= activate_sun end,
-            sub_item_table = self:getScheduleMenu(),
-            keep_menu_open = true,
-        },
-        {
-            text = _("Warmths"),
-            sub_item_table = self:getWarmthMenu(),
-            keep_menu_open = true,
-            separator = true,
-        },
-        self:getTimesMenu(_("Current parameters")),
-        self:getTimesMenu(_("Sun parameters"), activate_sun),
-        self:getTimesMenu(_("Schedule parameters"), activate_schedule),
+        getWarmthMenuEntry(_("High noon"), 6),
+        getWarmthMenuEntry(_("Daytime"), 5),
+        getWarmthMenuEntry(_("Darkest time of civil dawn"), 4),
+        getWarmthMenuEntry(_("Darkest time of nautical dawn"), 3),
+        getWarmthMenuEntry(_("Darkest time of astronomical dawn"), 2),
+        getWarmthMenuEntry(_("Midnight"), 1),
     }
 end
 
-function Dusk2Dawn:showTimesInfo(title, activator)
-    local times
-    if not activator then
-        times = self.current_times
-    elseif activator == activate_sun then
-        times = SunTime.times
-    elseif activator == activate_schedule then
-        times = self.scheduler_times
+-- title
+-- location: add a location string
+-- activator: nil               .. current_times,
+--            activate_sun      .. sun times
+--            activate_schedule .. scheduler times
+function Dusk2Dawn:getTimesMenu(title, location, activator)
+    local function showTimesInfo()
+        local times
+        if not activator then
+            times = self.current_times
+        elseif activator == activate_sun then
+            times = SunTime.times
+        elseif activator == activate_schedule then
+            times = self.scheduler_times
+        end
+
+        local function info_line(t, num)
+            return self:hoursToClock(t[num]) .. " (💡" .. self.warmth[num] .."%)"
+        end
+
+        local location_string = ""
+        if location then
+            location_string = " " .. self:getLocationString()
+        end
+
+        UIManager:show(InfoMessage:new{
+            face = Font:getFace("scfont"),
+            text = title .. location_string .. ":\n" ..
+                _("\nMidnight        ") .. info_line(times, 1) ..
+                _("\n  Dawn") ..
+                _("\n    Astronomic: ") .. info_line(times, 2) ..
+                _("\n    Nautical:   ") .. info_line(times, 3) ..
+                _("\n    Civil:      ") .. info_line(times, 4) ..
+                _("\n  Dawn") ..
+                _("\nSunrise:        ") .. info_line(times, 5) ..
+                _("\n\nHigh noon:      ") .. info_line(times, 6) ..
+                _("\n\nSunset:         ") .. info_line(times, 7) ..
+                _("\n  Dusk") ..
+                _("\n    Civil:      ") .. info_line(times, 8) ..
+                _("\n    Nautical:   ") .. info_line(times, 9) ..
+                _("\n    Astronomic: ") .. info_line(times, 10) ..
+                _("\n  Dusk") ..
+                _("\nMidnight        ") .. info_line(times, midnight_index) ..
+                "\n",
+        })
     end
 
-    local function info_line(t, num)
-        return self:hoursToClock(t[num]) .. " (💡" .. self.warmth[num] .."%)"
-    end
-
-    UIManager:show(InfoMessage:new{
-        face = Font:getFace("scfont"),
---        show_icon = false,
-        text = title .. ":\n" ..
-            _("\nMidnight        ") .. info_line(times, 1) ..
-            _("\n  Dawn") ..
-            _("\n    Astronomic: ") .. info_line(times, 2) ..
-            _("\n    Nautical:   ") .. info_line(times, 3) ..
-            _("\n    Civil:      ") .. info_line(times, 4) ..
-            _("\n  Dawn") ..
-            _("\nSunrise:        ") .. info_line(times, 5) ..
-            _("\n\nHigh noon:      ") .. info_line(times, 6) ..
-            _("\n\nSunset:         ") .. info_line(times, 7) ..
-            _("\n  Dusk") ..
-            _("\n    Civil:      ") .. info_line(times, 8) ..
-            _("\n    Nautical:   ") .. info_line(times, 9) ..
-            _("\n    Astronomic: ") .. info_line(times, 10) ..
-            _("\n  Dusk") ..
-            _("\nMidnight        ") .. info_line(times, midnight_index) ..
-            "\n",
-    })
-end
-
-function Dusk2Dawn:getTimesMenu(title, activator)
     return {
-        text = title,
+        text_func = function()
+            if location then
+                return title .. " " .. self:getLocationString()
+            end
+            return title
+        end,
         callback = function()
-            self:showTimesInfo(title, activator)
+            showTimesInfo(title, location, activator)
         end,
         keep_menu_open = true,
     }
+end
+
+function Dusk2Dawn:getLocationString()
+    if self.location ~= "" then
+        return self.location
+    else
+        return "(" .. self.latitude .. "," .. self.longitude .. ")"
+    end
 end
 
 return Dusk2Dawn
