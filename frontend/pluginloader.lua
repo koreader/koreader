@@ -8,6 +8,7 @@ local DEFAULT_PLUGIN_PATH = "plugins"
 local OBSOLETE_PLUGINS = {
     calibrecompanion = true,
     evernote = true,
+    goodreads = true,
     storagestat = true,
     kobolight = true,
     zsync = true,
