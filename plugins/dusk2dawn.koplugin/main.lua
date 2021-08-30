@@ -150,19 +150,21 @@ function Dusk2Dawn:scheduleMidnightUpdate()
                 end
             end
         end
+        -- corner case, if some entries are unused
+        table.sort(self.current_times, function(a,b) return a < b end)
     end
 
     -- here are dragons
     local i = 1
     -- find first valid entry
-    while not self.scheduler_times[i] and i <= midnight_index do
+    while not self.current_times[i] and i <= midnight_index do
         i = i + 1
     end
     local next
     while i <= midnight_index do
         next = i + 1
         -- find next valid entry
-        while not self.scheduler_times[next] and next <= midnight_index do
+        while not self.current_times[next] and next <= midnight_index do
             next = next + 1
         end
         prepareSchedule(self.current_times, i, next)
