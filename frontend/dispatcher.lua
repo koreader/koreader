@@ -362,7 +362,7 @@ local dispatcher_menu_order = {
 function Dispatcher:init()
     if Dispatcher.initialized then return end
     local parseoptions = function(base, i, prefix)
-        for y=1,#base[i].options do
+        for y=1, #base[i].options do
             local option = base[i].options[y]
             local name = prefix and prefix .. option.name or option.name
             if settingsList[name] ~= nil then
@@ -375,12 +375,11 @@ function Dispatcher:init()
                 if settingsList[name].title == nil then
                     settingsList[name].title = option.name_text
                 end
-                if settingsList[name].category == "string"
-                or settingsList[name].category == "configurable" then
+                if settingsList[name].category == "string" or settingsList[name].category == "configurable" then
                     if settingsList[name].toggle == nil then
                         settingsList[name].toggle = option.toggle or option.labels
                         if settingsList[name].toggle == nil then
-                        settingsList[name].toggle = {}
+                            settingsList[name].toggle = {}
                             for z=1,#option.values do
                                 if type(option.values[z]) == "table" then
                                     settingsList[name].toggle[z] = option.values[z][1]
@@ -579,8 +578,7 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                     end,
                     separator = settingsList[k].separator,
                 })
-            elseif settingsList[k].category == "string"
-            or settingsList[k].category == "configurable" then
+            elseif settingsList[k].category == "string" or settingsList[k].category == "configurable" then
                 local sub_item_table = {}
                 for i=1,#settingsList[k].args do
                     table.insert(sub_item_table, {
