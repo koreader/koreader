@@ -123,7 +123,7 @@ function SunTime:setPosition(name, latitude, longitude, time_zone)
         return
     end
 
-    if self.date then
+    if self.olddate then
         self.olddate.year = -1
     end --invalidate cache
     self.name = name
