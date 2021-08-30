@@ -619,8 +619,16 @@ arguments are:
 function Dispatcher:execute(settings, gesture)
     for k, v in pairs(settings) do
         if settingsList[k] ~= nil and (settingsList[k].conditions == nil or settingsList[k].conditions == true) then
-            -- Be sure we don't send a document setting event if there's not yet or no longer a document
             Notification:setNotifySource(Notification.SOURCE_DISPATCHER)
+            if settingsList[k].configurable then
+                local value = v
+                if type(v) ~= "number" then
+                    for i, r in ipairs(settingsList[k].args) do
+                        if v == r then value = settingsList[k].configurable.values[i] break end
+                    end
+                end
+                UIManager:sendEvent(Event:new("ConfigChange", settingsList[k].configurable.name, value))
+            end
             if settingsList[k].category == "none" then
                 if settingsList[k].arg ~= nil then
                     UIManager:sendEvent(Event:new(settingsList[k].event, settingsList[k].arg))
@@ -642,15 +650,6 @@ function Dispatcher:execute(settings, gesture)
             if settingsList[k].category == "incrementalnumber" then
                 local arg = v ~= 0 and v or gesture or 0
                 UIManager:sendEvent(Event:new(settingsList[k].event, arg))
-            end
-            if settingsList[k].configurable then
-                local value = v
-                if type(v) ~= "number" then
-                    for i, r in ipairs(settingsList[k].args) do
-                        if v == r then value = settingsList[k].configurable.values[i] break end
-                    end
-                end
-                UIManager:sendEvent(Event:new("ConfigChange", settingsList[k].configurable.name, value))
             end
         end
         Notification:resetNotifySource()
