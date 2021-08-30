@@ -1,4 +1,5 @@
 local Device = require("device")
+local Dispatcher = require("dispatcher")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -254,7 +255,12 @@ local SystemStatWidget = WidgetContainer:new{
     name = "systemstat",
 }
 
+function SystemStatWidget:onDispatcherRegisterActions()
+    Dispatcher:registerAction("system_statistics", {category="none", event="ShowSysStatistics", title=_("System statistics"), device=true, separator=true})
+end
+
 function SystemStatWidget:init()
+    self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -266,6 +272,10 @@ function SystemStatWidget:addToMainMenu(menu_items)
             SystemStat:showStatistics()
         end,
     }
+end
+
+function SystemStatWidget:onShowSysStatistics()
+    SystemStat:showStatistics()
 end
 
 function SystemStatWidget:onSuspend()
