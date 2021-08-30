@@ -1172,11 +1172,15 @@ function ReaderPaging:onGotoPrevChapter()
     return true
 end
 
-function ReaderPaging:onToggleReflow()
-    self.view.document.configurable.text_wrap = bit.bxor(self.view.document.configurable.text_wrap, 1)
+function ReaderPaging:onReflowUpdated()
     self.ui:handleEvent(Event:new("RedrawCurrentPage"))
     self.ui:handleEvent(Event:new("RestoreZoomMode"))
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
+end
+
+function ReaderPaging:onToggleReflow()
+    self.view.document.configurable.text_wrap = bit.bxor(self.view.document.configurable.text_wrap, 1)
+    self:onReflowUpdated()
 end
 
 -- Duplicated in ReaderRolling
