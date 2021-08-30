@@ -248,8 +248,8 @@ function SunTime:calculateTimes()
     self.rise_astronomic = self:calculateTimeIter(self.astronomic, 6)
     self.set_astronomic = self:calculateTimeIter(self.astronomic, 18)
 
-    self.noon = self:calculateTimeIter(0, 12)
-    self.midnight = self.noon - 12
+    self.noon = (self.rise + self.set) / 2
+    self.midnight = self.noon + 12
 
     self.times = {}
     self.times[1]  = self.midnight
