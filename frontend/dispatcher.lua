@@ -340,7 +340,7 @@ local dispatcher_menu_order = {
     "kopt_font_size",
     "kopt_font_fine_tune",
     "kopt_word_spacing",
-    --"kopt_text_wrap", -- has multiple events
+    "kopt_text_wrap",
 
     "kopt_contrast",
     "kopt_page_opt",
