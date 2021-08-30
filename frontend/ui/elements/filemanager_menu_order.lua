@@ -98,7 +98,7 @@ local order = {
     },
     tools = {
         "calibre",
-        "evernote",
+        "exporter",
         "statistics",
         "move_to_archive",
         "cloud_storage",

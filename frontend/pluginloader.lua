@@ -7,6 +7,7 @@ local DEFAULT_PLUGIN_PATH = "plugins"
 -- plugin names that were removed and are no longer available.
 local OBSOLETE_PLUGINS = {
     calibrecompanion = true,
+    evernote = true,
     storagestat = true,
     kobolight = true,
     zsync = true,

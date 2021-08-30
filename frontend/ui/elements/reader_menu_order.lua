@@ -144,7 +144,7 @@ local order = {
     tools = {
         "read_timer",
         "calibre",
-        "evernote",
+        "exporter",
         "statistics",
         "progress_sync",
         "move_to_archive",
