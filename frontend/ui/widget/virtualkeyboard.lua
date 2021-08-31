@@ -3,7 +3,6 @@ local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Event = require("ui/event")
-local FFIUtil = require("ffi/util")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -67,33 +66,23 @@ function VirtualKey:init()
             local current = G_reader_settings:readSetting("keyboard_layout")
             local default = G_reader_settings:readSetting("keyboard_layout_default")
             local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
-            local enabled = false
             local next_layout = nil
-            if not keyboard_layouts[current] and current ~= default then
-                next_layout = default
-            end
-            if not next_layout then
-                for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
-                    if enabled and v == true then
-                        next_layout = k
-                        break
-                    end
-                    if k == current then
-                        enabled = true
-                    end
+            local layout_index = util.arrayContains(keyboard_layouts, current)
+            if layout_index then
+                if layout_index == #keyboard_layouts then
+                    layout_index = 1
+                else
+                    layout_index = layout_index + 1
+                end
+            else
+                if default then
+                    next_layout = default
+                else
+                    layout_index = 1
                 end
             end
-            if not next_layout then
-                for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
-                    if v == true then
-                        next_layout = k
-                        break
-                    end
-                end
-            end
-            if next_layout then
-                self.keyboard:setKeyboardLayout(next_layout)
-            end
+            next_layout = next_layout or keyboard_layouts[layout_index] or "en"
+            self.keyboard:setKeyboardLayout(next_layout)
         end
         self.hold_callback = function()
             if util.tableSize(self.key_chars) > 5 then -- 2 or more layouts enabled
@@ -308,16 +297,11 @@ function VirtualKey:genkeyboardLayoutKeyChars()
             UIManager:show(self.keyboard_layout_dialog)
         end,
     }
-    local index = 1
-    for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
-        if v == true then
-            key_chars[positions[index]] = string.sub(k, 1, 2)
-            key_chars[positions[index] .. "_func"] = function()
-                UIManager:close(self.popup)
-                self.keyboard:setKeyboardLayout(k)
-            end
-            if index >= 4 then break end
-            index = index + 1
+    for i = 1, #keyboard_layouts do
+        key_chars[positions[i]] = string.sub(keyboard_layouts[i], 1, 2)
+        key_chars[positions[i] .. "_func"] = function()
+            UIManager:close(self.popup)
+            self.keyboard:setKeyboardLayout(keyboard_layouts[i])
         end
     end
     return key_chars
