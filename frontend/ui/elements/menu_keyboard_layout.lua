@@ -6,6 +6,7 @@ local Language = require("ui/language")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VirtualKeyboard = require("ui/widget/virtualkeyboard")
+local util = require("util")
 local _ = require("gettext")
 
 local input_dialog, check_button_bold, check_button_border, check_button_compact
@@ -111,12 +112,7 @@ local sub_item_table = {
     },
 }
 
-local selected_layouts_count = 0
-local _keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
 for k, __ in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
-    if _keyboard_layouts[k] == true then
-        selected_layouts_count = selected_layouts_count + 1
-    end
     table.insert(sub_item_table[1].sub_item_table, {
         text_func = function()
             local text = Language:getLanguageName(k)
@@ -127,17 +123,16 @@ for k, __ in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
         end,
         checked_func = function()
             local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
-            return keyboard_layouts[k] == true
+            return util.arrayContains(keyboard_layouts, k)
         end,
         callback = function()
             local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
-            if keyboard_layouts[k] == true then
-                keyboard_layouts[k] = false
-                selected_layouts_count = selected_layouts_count - 1
+            local layout_index = util.arrayContains(keyboard_layouts, k)
+            if layout_index then
+                table.remove(keyboard_layouts, layout_index)
             else
-                if selected_layouts_count < 4 then
-                    keyboard_layouts[k] = true
-                    selected_layouts_count = selected_layouts_count + 1
+                if #keyboard_layouts < 4 then
+                    table.insert(keyboard_layouts, k)
                 else -- no more space in the 'globe' popup
                     UIManager:show(require("ui/widget/infomessage"):new{
                         text = _("Up to four layouts can be enabled."),
