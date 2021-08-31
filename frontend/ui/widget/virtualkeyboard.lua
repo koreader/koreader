@@ -75,7 +75,7 @@ function VirtualKey:init()
                     layout_index = layout_index + 1
                 end
             else
-                if default then
+                if default and current ~= default then
                     next_layout = default
                 else
                     layout_index = 1
