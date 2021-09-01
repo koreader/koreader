@@ -4,6 +4,7 @@
 --]]
 
 local BD = require("ui/bidi")
+local CalibreExtensions = require("extensions")
 local CalibreMetadata = require("metadata")
 local CalibreSearch = require("search")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -25,7 +26,8 @@ local T = FFIUtil.template
 require("ffi/zeromq_h")
 
 -- supported formats
-local extensions = require("extensions")
+local extensions = CalibreExtensions:get()
+
 local function getExtensionPathLengths()
     local t = {}
     for _, v in ipairs(extensions) do

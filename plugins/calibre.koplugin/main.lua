@@ -8,6 +8,7 @@
 --]]
 
 local BD = require("ui/bidi")
+local CalibreExtensions = require("extensions")
 local CalibreSearch = require("search")
 local CalibreWireless = require("wireless")
 local Dispatcher = require("dispatcher")
@@ -225,7 +226,8 @@ function Calibre:getWirelessMenuTable()
         local enabled = G_reader_settings:nilOrTrue("calibre_wireless")
         return enabled and not CalibreWireless.calibre_socket
     end
-    return {
+
+    local t = {
         {
             text = _("Enable wireless client"),
             separator = true,
@@ -335,6 +337,49 @@ function Calibre:getWirelessMenuTable()
             },
         },
     }
+
+    if not CalibreExtensions:isCustom() then
+        table.insert(t, 2, {
+            text = _("File formats"),
+            enabled_func = isEnabled,
+            sub_item_table_func = function()
+                local submenu = {
+                    {
+                        text = _("About formats"),
+                        keep_menu_open = true,
+                        separator = true,
+                        callback = function()
+                            UIManager:show(InfoMessage:new{
+                                text = string.format("%s: %s \n\n%s",
+                                _("Supported file formats"),
+                                CalibreExtensions:getInfo(),
+                                _("Unsupported formats will be converted by calibre to the first format of the list."))
+                            })
+                        end,
+                    }
+                }
+
+                for i, v in ipairs(CalibreExtensions.outputs) do
+                    table.insert(submenu, {})
+                    submenu[i+1].text = v
+                    submenu[i+1].checked_func = function()
+                        if v == CalibreExtensions.default_output then
+                            return true
+                        end
+                        return false
+                    end
+                    submenu[i+1].callback = function()
+                        if type(v) == "string" and v ~= CalibreExtensions.default_output then
+                            CalibreExtensions.default_output = v
+                            G_reader_settings:saveSetting("calibre_wireless_default_format", CalibreExtensions.default_output)
+                        end
+                    end
+                end
+                return submenu
+            end,
+        })
+    end
+    return t
 end
 
 return Calibre
