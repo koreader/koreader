@@ -319,7 +319,7 @@ function Dusk2Dawn:getLocationMenu()
                             text = _("OK"),
                             callback = function()
                                 self.location = location_name_dialog:getInputText()
-                                G_reader_settings:saveSetting("dusk2dawn_location_name",
+                                G_reader_settings:saveSetting("dusk2dawn_location",
                                     self.location)
                                 UIManager:close(location_name_dialog)
                                 if touchmenu_instance then touchmenu_instance:updateItems() end
