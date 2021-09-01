@@ -60,7 +60,6 @@ local settingsList = {
     wifi_off = {category="none", event="InfoWifiOff", title=_("Turn off Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
     toggle_wifi = {category="none", event="ToggleWifi", title=_("Toggle Wi-Fi"), device=true, condition=Device:hasWifiToggle(), separator=true},
     reading_progress = {category="none", event="ShowReaderProgress", title=_("Reading progress"), device=true},
-    stats_calendar_view = {category="none", event="ShowCalendarView", title=_("Statistics calendar view"), device=true, separator=true},
     history = {category="none", event="ShowHist", title=_("History"), device=true},
     open_previous_document = {category="none", event="OpenLastDoc", title=_("Open previous document"), device=true},
     filemanager = {category="none", event="Home", title=_("File browser"), device=true},
@@ -115,7 +114,6 @@ local settingsList = {
     clear_location_history = {category="none", event="ClearLocationStack", arg=true, title=_("Clear location history"), rolling=true, paging=true, separator=true},
     toc = {category="none", event="ShowToc", title=_("Table of contents"), rolling=true, paging=true},
     bookmarks = {category="none", event="ShowBookmark", title=_("Bookmarks"), rolling=true, paging=true},
-    book_statistics = {category="none", event="ShowBookStats", title=_("Book statistics"), rolling=true, paging=true, separator=true},
     book_status = {category="none", event="ShowBookStatus", title=_("Book status"), rolling=true, paging=true},
     book_info = {category="none", event="ShowBookInfo", title=_("Book information"), rolling=true, paging=true},
     book_description = {category="none", event="ShowBookDescription", title=_("Book description"), rolling=true, paging=true},
@@ -201,7 +199,6 @@ local dispatcher_menu_order = {
     "open_previous_document",
     "favorites",
     "filemanager",
-    "stats_calendar_view",
 
     "dictionary_lookup",
     "wikipedia_lookup",
@@ -277,7 +274,6 @@ local dispatcher_menu_order = {
 
     "toc",
     "bookmarks",
-    "book_statistics",
 
     "book_status",
     "book_info",
