@@ -19,6 +19,7 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
 
@@ -64,7 +65,7 @@ function KeyboardLayoutDialog:init()
     self.keyboard_state.force_current_layout = true
     for k, _ in FFIUtil.orderedPairs(self.parent.keyboard.lang_to_keyboard_layout) do
         local text = Language:getLanguageName(k) .. "  (" .. string.sub(k, 1, 2) .. ")"
-        if keyboard_layouts[k] == true then
+        if util.arrayContains(keyboard_layouts, k) then
             text = text .. "  ✓"
         end
         if k == G_reader_settings:readSetting("keyboard_layout_default") then
