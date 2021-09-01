@@ -1018,7 +1018,7 @@ function ReaderHighlight:lookup(selected_word, selected_link)
     end
 end
 
-function ReaderHighlight:viewSelectionHTML(debug_view)
+function ReaderHighlight:viewSelectionHTML(debug_view, no_css_files_buttons)
     if self.ui.document.info.has_pages then
         return
     end
@@ -1061,8 +1061,14 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
             local TextViewer = require("ui/widget/textviewer")
             local Font = require("ui/font")
             local textviewer
+            local buttons_hold_callback = function()
+                -- Allow hiding css files buttons if there are too many
+                -- and the available height for text is too short
+                UIManager:close(textviewer)
+                self:viewSelectionHTML(debug_view, not no_css_files_buttons)
+            end
             local buttons_table = {}
-            if css_files then
+            if css_files and not no_css_files_buttons then
                 for i=1, #css_files do
                     local button = {
                         text = T(_("View %1"), BD.filepath(css_files[i])),
@@ -1102,6 +1108,7 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
                             }
                             UIManager:show(cssviewer)
                         end,
+                        hold_callback = buttons_hold_callback,
                     }
                     -- One button per row, too make room for the possibly long css filename
                     table.insert(buttons_table, {button})
@@ -1123,14 +1130,16 @@ function ReaderHighlight:viewSelectionHTML(debug_view)
                 text = next_debug_text,
                 callback = function()
                     UIManager:close(textviewer)
-                    self:viewSelectionHTML(next_debug_view)
+                    self:viewSelectionHTML(next_debug_view, no_css_files_buttons)
                 end,
+                hold_callback = buttons_hold_callback,
             }})
             table.insert(buttons_table, {{
                 text = _("Close"),
                 callback = function()
                     UIManager:close(textviewer)
                 end,
+                hold_callback = buttons_hold_callback,
             }})
             textviewer = TextViewer:new{
                 title = _("Selection HTML"),
