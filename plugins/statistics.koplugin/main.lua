@@ -3,6 +3,7 @@ local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
+local Dispatcher = require("dispatcher")
 local DocSettings = require("docsettings")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
@@ -138,6 +139,11 @@ ReaderStatistics.default_settings = {
     calendar_browse_future_months = false,
 }
 
+function ReaderStatistics:onDispatcherRegisterActions()
+    Dispatcher:registerAction("stats_calendar_view", {category="none", event="ShowCalendarView", title=_("Statistics calendar view"), device=true, separator=true})
+    Dispatcher:registerAction("book_statistics", {category="none", event="ShowBookStats", title=_("Book statistics"), rolling=true, paging=true, separator=true})
+end
+
 function ReaderStatistics:init()
     -- Disable in PIC documents (but not the FM, as we want to be registered to the FM's menu).
     if self.ui and self.ui.document and self.ui.document.is_pic then
@@ -150,6 +156,7 @@ function ReaderStatistics:init()
     self.settings = G_reader_settings:readSetting("statistics", self.default_settings)
 
     self.ui.menu:registerToMainMenu(self)
+    self:onDispatcherRegisterActions()
     self:checkInitDatabase()
     BookStatusWidget.getStats = function()
         return self:getStatsBookStatus(self.id_curr_book, self.settings.is_enabled)
