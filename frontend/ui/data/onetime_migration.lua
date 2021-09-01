@@ -309,7 +309,6 @@ if last_migration_date < 20210831 then
             keyboard_layouts_new[selected_layouts_count] = k
         end
     end
-    G_reader_settings:delSetting("keyboard_layouts")
     G_reader_settings:saveSetting("keyboard_layouts", keyboard_layouts_new)
 end
 
