@@ -31,7 +31,7 @@ end
 SunTime.astronomic = Rad(-18)
 SunTime.nautic =  Rad(-12)
 SunTime.civil = Rad(-6)
---local refract = 1013*.5^(500/5500)/1013*36 + 31.5/2; -- 500m Meereshöhe + Sonnendurchmesser
+--local refract = 34*.5^(500/5500) + 31.5/2; -- 500m Meereshöhe + Sonnendurchmesser
 -- SunTime.eod = Rad(-49/60) -- approx. end of day
 
 -- simple 'Equation of time' good for dates between 2008-2027
@@ -185,24 +185,44 @@ function SunTime:initVars()
     local M = L - omega
     self.M = (M - floor(M/360)*360) * toRad
 
+    local A = { 2.18243920 - 33.7570460 * T,
+               -2.77624462 + 1256.66393 * T,
+                7.62068856 + 16799.4182 * T,
+                4.36487839 - 67.140919 * T}
+
+   local B = {92025e-4 + 8.9e-4 * T,
+               5736e-4 - 3.1e-4 * T,
+                977e-4 - 0.5e-4 * T,
+               -895e-4 + 0.5e-4 * T}
+
+    -- Nutation see https://de.wikipedia.org/wiki/Nutation_(Astronomie)
+    self.delta_epsilon = 0
+    for i = 1, #A do
+        self.delta_epsilon = self.delta_epsilon + B[i]*cos(A[i])
+    end
+
+
     -- https://de.wikipedia.org/wiki/Kepler-Gleichung#Wahre_Anomalie
     self.E = self.M + self.num_ex * sin(self.M) + self.num_ex^2 / 2 * sin(2*self.M)
     self.a = 149598022.96E3 -- große Halbaches in m
     self.r = self.a * (1 - self.num_ex * cos(self.E))
-    self.eod = -atan(6.96342e8/self.r) - Rad(33.3/60)
---                ^--sun radius                ^- astronomical refraction (400m altitude)
+--    self.eod = -atan(6.96342e8/self.r) - Rad(33.3/60) -- without nutation
+    self.eod = -atan(6.96342e8/self.r) - Rad(30.75/60) -- with nutation
+--                ^--sun radius                ^- astronomical refraction (500m altitude)
 end
 --------------------------
 
 function SunTime:getTimeDiff(height, hour)
     -- Deklination nach astronomie.info
---    local decl = 0.4095 * sin(0.016906 * (self.date.yday - 80.086))
+    --  local decl = 0.4095 * sin(0.016906 * (self.date.yday - 80.086))
     --Deklination nach Brodbeck (2001)
---    local decl = 0.40954 * sin(0.0172 * (self.date.yday-79.349740))
+    --  local decl = 0.40954 * sin(0.0172 * (self.date.yday - 79.349740))
 
     --Deklination nach WMO-No.8
     local x = (36000/36525 * (self.date.yday+hour/24) - 2.72)*toRad
     local decl = asin(0.397748 * sin(x + (1.92*sin(x) - 77.51)*toRad))
+
+    decl = decl + self.delta_epsilon/3600
 
     local val = (sin(height) - sin(self.pos.latitude)*sin(decl))
                 / (cos(self.pos.latitude)*cos(decl))
