@@ -299,11 +299,14 @@ esac
 
 # The actual swap is done in a function, because we can disable it in the Developer settings, and we want to honor it on restart.
 ko_do_fbdepth() {
-    # On sunxi, the fb state is meaningless, and the minimal disp fb doesn't actually support 8bpp anyway,
-    # so just make sure we're set @ UR.
+    # On sunxi, the fb state is meaningless, and the minimal disp fb doesn't actually support 8bpp anyway...
     if [ "${PLATFORM}" = "b300-ntx" ]; then
+        # NOTE: The fb state is *completely* meaningless on this platform.
+        #       This is effectively a noop, we're just keeping it for logging purposes...
         echo "Making sure that rotation is set to Portrait" >>crash.log 2>&1
-        ./fbdepth -d 32 -R UR >>crash.log 2>&1
+        ./fbdepth -R UR >>crash.log 2>&1
+        # We haven't actually done anything, so don't do anything on exit either ;).
+        unset ORIG_FB_BPP
 
         return
     fi
