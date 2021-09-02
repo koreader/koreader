@@ -102,7 +102,7 @@ This method also takes care of x and y on top of @{Geom:scaleBy}
 ]]
 function Geom:transformByScale(zx, zy)
     self.x = Math.round(self.x * zx)
-    self.y = Math.round(self.y * (zx or zy))
+    self.y = Math.round(self.y * (zy or zx))
     self:scaleBy(zx, zy)
 end
 
