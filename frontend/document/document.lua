@@ -257,6 +257,7 @@ function Document:getPageDimensions(pageno, zoom, rotation)
         -- switch orientation
         native_dimen.w, native_dimen.h = native_dimen.h, native_dimen.w
     end
+    -- Apply the zoom factor, and round to integer in a sensible manner
     native_dimen:transformByScale(zoom)
     return native_dimen
 end
