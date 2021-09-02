@@ -14,7 +14,7 @@ for fd in /proc/"$$"/fd/*; do
 done
 
 # Load wifi modules and enable wifi.
-if ! grep -q "sdio_wifi_pwr" "/proc/modules"; then
+if ! grep -q "^sdio_wifi_pwr" "/proc/modules"; then
     if [ -e "/drivers/${PLATFORM}/wifi/sdio_wifi_pwr.ko" ]; then
         # Handle the shitty DVFS switcheroo...
         if [ -n "${CPUFREQ_DVFS}" ]; then
@@ -32,7 +32,7 @@ fi
 # Moar sleep!
 usleep 250000
 # NOTE: Used to be exported in WIFI_MODULE_PATH before FW 4.23
-if ! grep -q "${WIFI_MODULE}" "/proc/modules"; then
+if ! grep -q "^${WIFI_MODULE}" "/proc/modules"; then
     # Set the Wi-Fi regulatory domain properly if necessary...
     WIFI_COUNTRY_CODE_PARM=""
     if grep -q "^WifiRegulatoryDomain=" "/mnt/onboard/.kobo/Kobo/Kobo eReader.conf"; then

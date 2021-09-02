@@ -58,7 +58,7 @@ if [ "${current_cpufreq_gov}" != "interactive" ]; then
                 #       but the code in the published H2O kernel sources actually does the reverse, and is commented out ;).
                 #       It is now entirely handled by Nickel, right *before* loading/unloading that module.
                 #       (There's also a bug(?) where that behavior is inverted for the *first* Wi-Fi session after a cold boot...)
-                if grep -q "sdio_wifi_pwr" "/proc/modules"; then
+                if grep -q "^sdio_wifi_pwr" "/proc/modules"; then
                     # Wi-Fi is enabled, make sure DVFS is on
                     echo "userspace" >"/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
                     echo "1" >"/sys/devices/platform/mxc_dvfs_core.0/enable"
