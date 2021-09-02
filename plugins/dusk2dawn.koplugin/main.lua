@@ -6,12 +6,9 @@ Plugin for setting screen warmth based on the sun position and/or a time schedul
 
 local Device = require("device")
 
-if not Device:hasNaturalLight() then
-    return { disabled = true }
-end
-
 local ConfirmBox = require("ui/widget/confirmbox")
 local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
+local DeviceListener = require("device/devicelistener")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -30,6 +27,12 @@ local activate_closer_noon = 3
 local activate_closer_midnight =4
 
 local midnight_index = 11
+
+local device_max_warmth = Device:hasNaturalLight() and Device.powerd.fl_warmth_max or 100
+
+local function frac(x)
+    return x - math.floor(x)
+end
 
 local Dusk2Dawn = WidgetContainer:new{
     name = "dusk2dawn",
@@ -78,7 +81,13 @@ end
 
 -- wrapper for unscheduling, so that only our setWarmth gets unscheduled
 function Dusk2Dawn.setWarmth(val)
-    if val then
+    if val and val > 100 then
+        DeviceListener:onSetNightMode(true)
+    else
+        DeviceListener:onSetNightMode(false)
+    end
+    if val and Device:hasNaturalLight() then
+        val = val <= 100 and val or 100
         Device.powerd:setWarmth(val)
     end
 end
@@ -116,7 +125,11 @@ function Dusk2Dawn:scheduleMidnightUpdate()
                 local next_warmth = self.warmth[index1] + delta_w * i
                 -- only apply warmth for steps the hardware has (e.g. Tolino has 0-10 hw steps
                 -- which map to warmth 0, 10, 20, 30 ... 100)
-                if SunTime:frac(next_warmth / 100 * Device.powerd.fl_warmth_max) == 0 then
+                local fit_scale = 1
+                if Device:hasNaturalLight() then
+                    fit_scale = next_warmth / 100 * device_max_warmth
+                end
+                if frac(next_warmth / fit_scale) == 0 then
                     table.insert(self.sched_times, time + delta_t * i)
                     table.insert(self.sched_funcs, {self.setWarmth,
                         math.floor(self.warmth[index1] + delta_w * i)})
@@ -403,7 +416,7 @@ function Dusk2Dawn:getScheduleMenu()
                 local mm = 0
                 if self.scheduler_times[num] then
                     hh = math.floor(self.scheduler_times[num])
-                    mm = math.floor(SunTime:frac(self.scheduler_times[num])*60+0.5)
+                    mm = math.floor(frac(self.scheduler_times[num])*60+0.5)
                 end
                 UIManager:show(DoubleSpinWidget:new{
                     title_text = _("Set time"),
@@ -497,28 +510,77 @@ function Dusk2Dawn:getWarmthMenu()
     local function getWarmthMenuEntry(text, num)
         return {
             text_func = function()
-                return T(_("%1 (%2%)"), text, self.warmth[num])
+                if Device:hasNaturalLight() then
+                    if self.warmth[num] <= 100 then
+                        return T(_("%1 (%2%)"), text, self.warmth[num])
+                    else
+                        return T(_("%1 (100% + ☾)"), text)
+                    end
+                else
+                    if self.warmth[num] <= 100 then
+                        return T(_("%1 (☼)"), text)
+                    else
+                        return T(_("%1 (☾)"), text)
+                    end
+                end
             end,
             callback = function(touchmenu_instance)
-                UIManager:show(SpinWidget:new{
-                    width = math.floor(Device.screen:getWidth() * 0.6),
-                    title_text = text,
-                    value = self.warmth[num],
-                    value_min = 0,
-                    value_max = 100,
-                    wrap = false,
-                    value_step = math.floor(100 / Device.powerd.fl_warmth_max),
-                    value_hold_step = 10,
-                    ok_text = _("Set"),
-                    callback = function(spin)
-                        self.warmth[num] = spin.value
-                        self.warmth[#self.warmth - num + 1] = spin.value
-                        G_reader_settings:saveSetting("dusk2dawn_warmth", self.warmth)
-                        self:scheduleMidnightUpdate()
-                        if touchmenu_instance then touchmenu_instance:updateItems() end
-                    end
-                })
+                if Device:hasNaturalLight() then
+                    UIManager:show(SpinWidget:new{
+                        width = math.floor(Device.screen:getWidth() * 0.6),
+                        title_text = text,
+                        value = self.warmth[num],
+                        value_min = 0,
+                        value_max = 100,
+                        wrap = false,
+                        value_step = math.floor(100 / device_max_warmth),
+                        value_hold_step = 10,
+                        ok_text = _("Set"),
+                        callback = function(spin)
+                            self.warmth[num] = spin.value
+                            self.warmth[#self.warmth - num + 1] = spin.value
+                            G_reader_settings:saveSetting("dusk2dawn_warmth", self.warmth)
+                            self:scheduleMidnightUpdate()
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                        extra_text = _("Use night mode"),
+                        extra_callback = function()
+                            self.warmth[num] = 110
+                            self.warmth[#self.warmth - num + 1] = 110
+                            G_reader_settings:saveSetting("dusk2dawn_warmth", self.warmth)
+                            self:scheduleMidnightUpdate()
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                    })
+                else
+                    UIManager:show(ConfirmBox:new{
+                        text = _("Nightmode"),
+                        ok_text = _("Set"),
+                        ok_callback = function()
+                            self.warmth[num] = 110
+                            self.warmth[#self.warmth - num + 1] = 110
+                            G_reader_settings:saveSetting("dusk2dawn_warmth", self.warmth)
+                            self:scheduleMidnightUpdate()
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                        cancel_text = _("Unset"),
+                        cancel_callback = function()
+                            self.warmth[num] = 0
+                            self.warmth[#self.warmth - num + 1] = 0
+                            G_reader_settings:saveSetting("dusk2dawn_warmth", self.warmth)
+                            self:scheduleMidnightUpdate()
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end,
+                        other_buttons = {{
+                            {
+                                text = _("Cancel"),
+                            }
+                        }},
+
+                    })
+                end
             end,
+
             keep_menu_open = true,
         }
     end
@@ -554,7 +616,19 @@ function Dusk2Dawn:getTimesMenu(title, location, activator)
         end
 
         local function info_line(t, num)
-            return self:hoursToClock(t[num]) .. " (💡" .. self.warmth[num] .."%)"
+            if Device:hasNaturalLight() then
+                if self.warmth[num] <= 100 then
+                    return self:hoursToClock(t[num]) .. "(💡" .. self.warmth[num] .."%)"
+                else
+                    return self:hoursToClock(t[num]) .. "(💡100%+☾)"
+                end
+            else
+                if self.warmth[num] <= 100 then
+                    return self:hoursToClock(t[num]) .. "(☼)"
+                else
+                    return self:hoursToClock(t[num]) .. "(☾)"
+                end
+            end
         end
 
         local location_string = ""
@@ -565,21 +639,21 @@ function Dusk2Dawn:getTimesMenu(title, location, activator)
         UIManager:show(InfoMessage:new{
             face = Font:getFace("scfont"),
             text = title .. location_string .. ":\n" ..
-                _("\nMidnight        ") .. info_line(times, 1) ..
-                _("\n  Dawn") ..
-                _("\n    Astronomic: ") .. info_line(times, 2) ..
-                _("\n    Nautical:   ") .. info_line(times, 3) ..
-                _("\n    Civil:      ") .. info_line(times, 4) ..
-                _("\n  Dawn") ..
-                _("\nSunrise:        ") .. info_line(times, 5) ..
-                _("\n\nHigh noon:      ") .. info_line(times, 6) ..
-                _("\n\nSunset:         ") .. info_line(times, 7) ..
-                _("\n  Dusk") ..
-                _("\n    Civil:      ") .. info_line(times, 8) ..
-                _("\n    Nautical:   ") .. info_line(times, 9) ..
-                _("\n    Astronomic: ") .. info_line(times, 10) ..
-                _("\n  Dusk") ..
-                _("\nMidnight        ") .. info_line(times, midnight_index) ..
+                _("\nMidnight      ") .. info_line(times, 1) ..
+                _("\nDawn") ..
+                _("\n  Astronomic: ") .. info_line(times, 2) ..
+                _("\n  Nautical:   ") .. info_line(times, 3) ..
+                _("\n  Civil:      ") .. info_line(times, 4) ..
+                _("\nDawn") ..
+                _("\nSunrise:      ") .. info_line(times, 5) ..
+                _("\n\nHigh noon:    ") .. info_line(times, 6) ..
+                _("\n\nSunset:       ") .. info_line(times, 7) ..
+                _("\nDusk") ..
+                _("\n  Civil:      ") .. info_line(times, 8) ..
+                _("\n  Nautical:   ") .. info_line(times, 9) ..
+                _("\n  Astronomic: ") .. info_line(times, 10) ..
+                _("\nDusk") ..
+                _("\nMidnight      ") .. info_line(times, midnight_index) ..
                 "\n",
         })
     end
