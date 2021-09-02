@@ -164,18 +164,21 @@ function Dusk2Dawn:scheduleMidnightUpdate()
                 end
             end
         end
-        if self.easy_mode then
-            self.current_times[1] = nil
-            self.current_times[2] = nil
-            self.current_times[3] = nil
-            self.current_times[6] = nil
-            self.current_times[9] = nil
-            self.current_times[10] = nil
-            self.current_times[11] = nil
-        end
         -- corner case, if some entries are unused
         table.sort(self.current_times, function(a,b) return a < b end)
     end
+
+    if self.easy_mode then
+        print("xxx easy copy")
+        self.current_times[1] = nil
+        self.current_times[2] = nil
+        self.current_times[3] = nil
+        self.current_times[6] = nil
+        self.current_times[9] = nil
+        self.current_times[10] = nil
+        self.current_times[11] = nil
+    end
+
 
     -- here are dragons
     local i = 1
@@ -675,6 +678,8 @@ function Dusk2Dawn:getTimesMenu(title, location, activator)
         local function info_line(text, t, num)
             if not t[num] then
                 return ""
+            elseif self.activate == 0 then
+                return text .. "\n"
             elseif Device:hasNaturalLight() then
                 if self.warmth[num] <= 100 then
                     return text .. self:hoursToClock(t[num]) .. "(💡" .. self.warmth[num] .."%)\n"
