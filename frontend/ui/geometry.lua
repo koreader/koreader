@@ -96,7 +96,8 @@ end
 
 --[[--
 This method also takes care of x and y on top of @{Geom:scaleBy},
-c.f., fz_round_rect in MµPDF
+c.f., fz_round_rect in MµPDF,
+      <https://github.com/ArtifexSoftware/mupdf/blob/d00de0e96a4a5ec90ffc30837d40cd624a6a89e0/source/fitz/geometry.c#L400-L416>
 
 @int zx scale for x axis
 @int zy scale for y axis
