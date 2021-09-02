@@ -296,7 +296,6 @@ if last_migration_date < 20210720 then
     G_reader_settings:saveSetting("duration_format", "classic")
 end
 
-<<<<<<< HEAD
 -- 20210831, Clean VirtualKeyboard settings of disabled layouts, https://github.com/koreader/koreader/pull/8159
 if last_migration_date < 20210831 then
     logger.info("Performing one-time migration for 20210831")
@@ -314,7 +313,7 @@ if last_migration_date < 20210831 then
 end
 
 -- 20210902, Remove unneeded auto_warmth settings after #8154
-if last_migration_date < 20210830 then
+if last_migration_date < 20210902 then
     logger.info("Performing one-time migration for 20210902")
     G_reader_settings:delSetting("frontlight_auto_warmth")
     G_reader_settings:delSetting("frontlight_max_warmth_hour")
