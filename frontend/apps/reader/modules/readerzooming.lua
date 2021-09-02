@@ -507,6 +507,7 @@ function ReaderZooming:getZoom(pageno)
     -- check if we're in bbox mode and work on bbox if that's the case
     local zoom
     local page_size = self.ui.document:getNativePageDimensions(pageno)
+    logger.dbg("ReaderZooming:getZoom on", pageno, "page_size:", page_size)
     if not (self.zoom_mode and self.zoom_mode:match("^page") or self.ui.document.configurable.trim_page == 3) then
         local ubbox_dimen = self.ui.document:getUsedBBoxDimensions(pageno, 1)
         -- if bbox is larger than the native page dimension render the full page
@@ -573,12 +574,14 @@ function ReaderZooming:getZoom(pageno)
             if zoom < 0 then return 0 end
         end
     end
+    logger.dbg("ReaderZooming:getZoom returns", zoom, zoom_w, zoom_h)
     return zoom, zoom_w, zoom_h
 end
 
 function ReaderZooming:getRegionalZoomCenter(pageno, pos)
     local p_pos = self.view:getSinglePagePosition(pos)
     local page_size = self.ui.document:getNativePageDimensions(pageno)
+    logger.dbg("ReaderZooming:getRegionalZoomCenter on", pageno, "@", pos, "page_size:", page_size)
     local pos_x = p_pos.x / page_size.w
     local pos_y = p_pos.y / page_size.h
     local block = self.ui.document:getPageBlock(pageno, pos_x, pos_y)
