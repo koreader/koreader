@@ -33,6 +33,14 @@ local NewsDownloader = WidgetContainer:new{
     download_dir = nil,
     file_extension = ".epub",
     config_key_custom_dl_dir = "custom_dl_dir",
+    empty_feed = {
+        [1] = "https://",
+        limit = 5,
+        download_full_article = true,
+        include_images = true,
+        enable_filter = true,
+        filter_element = ""
+    },
     kv = {}
 }
 
@@ -654,16 +662,42 @@ function NewsDownloader:viewFeedList()
         end,
         function(id, edit_key, value)
             self:editFeedAttribute(id, edit_key, value)
+        end,
+        function(id)
+            self:deleteFeed(id)
         end
     )
 
+    -- Add a "Add new feed" button with callback
+    table.insert(
+        view_content,
+        {
+            "Add new feed",
+            "",
+            callback = function()
+                -- Prepare the view with all the callbacks for editing the attributes
+                local feed_item_vc = FeedView:getItem(
+                    #feed_config + 1,
+                    self.empty_feed,
+                    function(id, edit_key, value)
+                        self:editFeedAttribute(id, edit_key, value)
+                    end
+                )
+                self:viewFeedItem(
+                    feed_item_vc
+                )
+            end
+        }
+    )
+
+    -- Show the list of feeds.
     local kv = self.kv
     self.kv = KeyValuePage:new{
         title = _("RSS/Atom Feeds List"),
         value_overflow_align = "right",
         kv_pairs = view_content,
         callback_return = function()
-
+            UIManager:close(self.kv)
         end
     }
     UIManager:show(self.kv)
@@ -688,21 +722,21 @@ function NewsDownloader:editFeedAttribute(id, key, value)
     local kv = self.kv
     UIManager:close(self.kv)
 
-    if key == FeedView.EDIT_URL
-        or key == FeedView.EDIT_LIMIT
-        or key == FeedView.EDIT_FILTER_ELEMENT then
+    if key == FeedView.URL
+        or key == FeedView.LIMIT
+        or key == FeedView.FILTER_ELEMENT then
 
         local title
         local input_type
         local description
 
-        if key == FeedView.EDIT_URL then
+        if key == FeedView.URL then
             title = _("Edit feed URL")
             input_type = "string"
-        elseif key == FeedView.EDIT_LIMIT then
+        elseif key == FeedView.LIMIT then
             title = _("Edit feed limit")
             input_type = "number"
-        elseif key == FeedView.EDIT_FILTER_ELEMENT then
+        elseif key == FeedView.FILTER_ELEMENT then
             title = _("Edit filter element")
             input_type = "string"
         else
@@ -739,11 +773,11 @@ function NewsDownloader:editFeedAttribute(id, key, value)
         return true
     else
         local text
-        if key == FeedView.EDIT_DOWNLOAD_FULL_ARTICLE then
+        if key == FeedView.DOWNLOAD_FULL_ARTICLE then
             text = _("Download full article?")
-        elseif key == FeedView.EDIT_INCLUDE_IMAGES then
+        elseif key == FeedView.INCLUDE_IMAGES then
             text = _("Include images?")
-        elseif key == FeedView.EDIT_ENABLE_FILTER then
+        elseif key == FeedView.ENABLE_FILTER then
             text = _("Enable filter?")
         end
 
@@ -780,8 +814,16 @@ function NewsDownloader:updateFeedConfig(id, key, value)
         return
     end
 
-    local new_config = {}
+    -- Check to see if the id is larger than the number of feeds. If it is,
+    -- then we know this is a new add. Insert the base array.
+    if id > #feed_config then
+        table.insert(
+            feed_config,
+            self.empty_feed
+        )
+    end
 
+    local new_config = {}
     -- In this loop, we cycle through the feed items. A series of
     -- conditionals checks to see if we are at the right id
     -- and key (i.e.: the key that triggered this function.
@@ -789,7 +831,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
     for idx, feed in ipairs(feed_config) do
         -- Check to see if this is the correct feed to update.
         if idx == id then
-            if key == FeedView.EDIT_URL then
+            if key == FeedView.URL then
                 if feed[1] then
                     -- If the value exists, then it's been set. So all we do
                     -- is overwrite the value.
@@ -804,7 +846,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                         }
                     )
                 end
-            elseif key == FeedView.EDIT_LIMIT then
+            elseif key == FeedView.LIMIT then
                 if feed.limit then
                     feed.limit = value
                 else
@@ -816,7 +858,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                         }
                     )
                 end
-            elseif key == FeedView.EDIT_DOWNLOAD_FULL_ARTICLE then
+            elseif key == FeedView.DOWNLOAD_FULL_ARTICLE then
                 if feed.download_full_article then
                     feed.download_full_article = value
                 else
@@ -828,7 +870,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                         }
                     )
                 end
-            elseif key == FeedView.EDIT_INCLUDE_IMAGES then
+            elseif key == FeedView.INCLUDE_IMAGES then
                 if feed.include_images then
                     feed.include_images = value
                 else
@@ -840,7 +882,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                         }
                     )
                 end
-            elseif key == FeedView.EDIT_ENABLE_FILTER then
+            elseif key == FeedView.ENABLE_FILTER then
                 if feed.enable_filter then
                     feed.enable_filter = value
                 else
@@ -852,7 +894,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                         }
                     )
                 end
-            elseif key == FeedView.EDIT_FILTER_ELEMENT then
+            elseif key == FeedView.FILTER_ELEMENT then
                 if feed.filter_element then
                     feed.filter_element = value
                 else
@@ -893,6 +935,39 @@ function NewsDownloader:updateFeedConfig(id, key, value)
         feed_item_vc
     )
 
+end
+
+function NewsDownloader:deleteFeed(id)
+    logger.dbg("Newsdownloader: attempting to delete feed config")
+
+    local ok, feed_config = pcall(dofile, self.feed_config_path)
+    if not ok or not feed_config then
+        UI:info(T(_("Invalid configuration file. Detailed error message:\n%1"), feed_config))
+        return
+    end
+
+    local new_config = {}
+    -- In this loop, we cycle through the feed items. A series of
+    -- conditionals checks to see if we are at the right id
+    -- and key (i.e.: the key that triggered this function.
+    -- If we are at the right spot, we overrite (or create) the value
+    for idx, feed in ipairs(feed_config) do
+        -- Check to see if this is the correct feed to update.
+        if idx ~= id then
+            table.insert(
+                new_config,
+                feed
+            )
+        end
+    end
+
+    -- Save the config
+    logger.dbg("NewsDownloader: config to save", new_config)
+    -- Stub for saving
+    self:saveConfig(new_config)
+    -- Refresh the view
+    UIManager:close(self.kv)
+    self:viewFeedList()
 end
 
 function NewsDownloader:saveConfig(config)
