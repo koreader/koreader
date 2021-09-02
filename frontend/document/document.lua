@@ -251,7 +251,6 @@ end
 
 -- calculates page dimensions
 function Document:getPageDimensions(pageno, zoom, rotation)
-    logger.dbg("Document:getPageDimensions", pageno, zoom, rotation)
     local native_dimen = self:getNativePageDimensions(pageno):copy()
     if rotation == 90 or rotation == 270 then
         -- switch orientation
@@ -290,9 +289,7 @@ end
 This method returns pagesize if bbox is corrupted
 --]]
 function Document:getUsedBBoxDimensions(pageno, zoom, rotation)
-    logger.dbg("Document:getUsedBBoxDimensions", pageno, zoom, rotation)
     local bbox = self:getPageBBox(pageno)
-    logger.dbg("orig bbox:", bbox)
     -- clipping page bbox
     if bbox.x0 < 0 then bbox.x0 = 0 end
     if bbox.y0 < 0 then bbox.y0 = 0 end
@@ -313,7 +310,6 @@ function Document:getUsedBBoxDimensions(pageno, zoom, rotation)
             ubbox_dimen:transformByScale(zoom)
         end
     end
-     logger.dbg("Scaled bbox:", ubbox_dimen)
     return ubbox_dimen
 end
 
@@ -417,7 +413,6 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     self:preRenderPage()
 
     local page_size = self:getPageDimensions(pageno, zoom, rotation)
-    logger.dbg("Document:renderPage, size:", page_size)
     -- this will be the size we actually render
     local size = page_size
     -- we prefer to render the full page, if it fits into cache
