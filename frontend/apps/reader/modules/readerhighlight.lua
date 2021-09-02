@@ -318,7 +318,13 @@ end
 function ReaderHighlight:genHighlightDrawerMenu()
     local get_highlight_style = function(style)
         return {
-            text = highlight_style[style],
+            text_func = function()
+                local text = highlight_style[style]
+                if style == G_reader_settings:readSetting("highlight_drawing_style") then
+                    text = text .. "   ★"
+                end
+                return text
+            end,
             checked_func = function()
                 return self.view.highlight.saved_drawer == style
             end,
@@ -327,7 +333,11 @@ function ReaderHighlight:genHighlightDrawerMenu()
             end,
             callback = function()
                 self.view.highlight.saved_drawer = style
-            end
+            end,
+            hold_callback = function(touchmenu_instance)
+                G_reader_settings:saveSetting("highlight_drawing_style", style)
+                if touchmenu_instance then touchmenu_instance:updateItems() end
+            end,
         }
     end
     return {
@@ -1521,7 +1531,8 @@ function ReaderHighlight:editHighlight(page, i)
 end
 
 function ReaderHighlight:onReadSettings(config)
-    self.view.highlight.saved_drawer = config:readSetting("highlight_drawer") or self.view.highlight.saved_drawer
+    self.view.highlight.saved_drawer = config:readSetting("highlight_drawer")
+        or G_reader_settings:readSetting("highlight_drawing_style") or self.view.highlight.saved_drawer
     if config:has("highlight_disabled") then
         self.view.highlight.disabled = config:isTrue("highlight_disabled")
     else
