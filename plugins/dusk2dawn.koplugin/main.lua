@@ -36,6 +36,7 @@ end
 
 local Dusk2Dawn = WidgetContainer:new{
     name = "dusk2dawn",
+    easy_mode = G_reader_settings:isTrue("dusk2dawn_easy_mode") or false,
     activate = G_reader_settings:readSetting("dusk2dawn_activate") or 0,
     location = G_reader_settings:readSetting("dusk2dawn_location") or "Geysir",
     latitude = G_reader_settings:readSetting("dusk2dawn_latitude") or 64.31, --great Geysir in Iceland
@@ -163,6 +164,15 @@ function Dusk2Dawn:scheduleMidnightUpdate()
                 end
             end
         end
+        if self.easy_mode then
+            self.current_times[1] = nil
+            self.current_times[2] = nil
+            self.current_times[3] = nil
+            self.current_times[6] = nil
+            self.current_times[9] = nil
+            self.current_times[10] = nil
+            self.current_times[11] = nil
+        end
         -- corner case, if some entries are unused
         table.sort(self.current_times, function(a,b) return a < b end)
     end
@@ -230,7 +240,20 @@ function Dusk2Dawn:addToMainMenu(menu_items)
     }
 end
 
-local about_text = _([[Set the frontlight warmth based on a time schedule or the sun's position.
+local function tidy_menu(menu, request)
+    for i = #menu, 1, -1 do
+        if menu[i].mode ~=nil then
+            if menu[i].mode ~= request then
+                table.remove(menu,i)
+            else
+                menu[i].mode = nil
+            end
+        end
+    end
+    return menu
+end
+
+local about_text = _([[Set the frontlight warmth and night mode based on a time schedule or the sun's position.
 
 There are three types of twilight:
 • Civil: You can read a newspaper.
@@ -252,6 +275,28 @@ function Dusk2Dawn:getSubMenuItems()
             end,
             keep_menu_open = true,
             separator = true,
+        },
+        {
+            text = _("Easy mode"),
+            checked_func = function()
+                return self.easy_mode
+            end,
+            text_func1 = function()
+                return self.easy_mode and _("Easy mode") or _("Expert mode")
+            end,
+            callback = function(touchmenu_instance)
+                UIManager:show(ConfirmBox:new{
+                    text = _("Change the granularity of 'from dusk till dawn'?"),
+                    ok_callback = function()
+                        self.easy_mode = not self.easy_mode
+                        G_reader_settings:saveSetting("dusk2dawn_easy_mode", self.easy_mode)
+                        self:scheduleMidnightUpdate()
+                        -- closing menu is necessary for refreshing the menu structure
+                        if touchmenu_instance then touchmenu_instance:closeMenu() end
+                    end,
+                })
+            end,
+            keep_menu_open = true,
         },
         {
             text = _("Activate"),
@@ -386,8 +431,27 @@ function Dusk2Dawn:getLocationMenu()
 end
 
 function Dusk2Dawn:getScheduleMenu()
-    local function getScheduleMenuEntry(text, num)
+    local function store_times(touchmenu_instance, new_time, num)
+        self.scheduler_times[num] = new_time
+        if num == 1 then
+            if self.scheduler_times[1] then
+                self.scheduler_times[midnight_index]
+                    = self.scheduler_times[1] + 24 -- next day
+            else
+                self.scheduler_times[midnight_index] = nil
+            end
+        end
+        G_reader_settings:saveSetting("dusk2dawn_scheduler_times",
+            self.scheduler_times)
+        self:scheduleMidnightUpdate()
+        if touchmenu_instance then touchmenu_instance:updateItems() end
+    end
+    -- mode == nil ... show alway
+    --      == true ... easy mode
+    --      == false ... expert mode
+    local function getScheduleMenuEntry(text, num, mode)
         return {
+            mode = mode,
             text_func = function()
                 return T(_"%1  (%2)", text,
                     self:hoursToClock(self.scheduler_times[num], true))
@@ -396,22 +460,6 @@ function Dusk2Dawn:getScheduleMenu()
                 return self.scheduler_times[num] ~= nil
             end,
             callback = function(touchmenu_instance)
-                local function store_times(new_time)
-                    self.scheduler_times[num] = new_time
-                    if num == 1 then
-                        if self.scheduler_times[1] then
-                            self.scheduler_times[midnight_index]
-                                = self.scheduler_times[1] + 24 -- next day
-                        else
-                            self.scheduler_times[midnight_index] = nil
-                        end
-                    end
-                    G_reader_settings:saveSetting("dusk2dawn_scheduler_times",
-                        self.scheduler_times)
-                    self:scheduleMidnightUpdate()
-                    if touchmenu_instance then touchmenu_instance:updateItems() end
-                end
-
                 local hh = 12
                 local mm = 0
                 if self.scheduler_times[num] then
@@ -459,7 +507,7 @@ function Dusk2Dawn:getScheduleMenu()
                                             end
                                         end
                                     end
-                                    store_times(new_time)
+                                    store_times(touchmenu_instance, new_time, num)
                                 end,
                             })
                         elseif num < 10 and new_time > get_valid_time(num, 1) then
@@ -475,16 +523,16 @@ function Dusk2Dawn:getScheduleMenu()
                                             end
                                         end
                                     end
-                                    store_times(new_time)
+                                    store_times(touchmenu_instance, new_time, num)
                                 end,
                             })
                         else
-                            store_times(new_time)
+                            store_times(touchmenu_instance, new_time, num)
                         end
                     end,
                     extra_text = _("Invalidate"),
                     extra_callback = function()
-                        store_times(nil)
+                        store_times(touchmenu_instance, nil, num)
                     end,
                 })
             end,
@@ -492,23 +540,29 @@ function Dusk2Dawn:getScheduleMenu()
         }
     end
 
-    return {
-        getScheduleMenuEntry(_("Midnight"), 1),
-        getScheduleMenuEntry(_("Astronomical sunrise"), 2),
-        getScheduleMenuEntry(_("Nautical sunrise"), 3),
-        getScheduleMenuEntry(_("Civil sunrise"), 4),
+    local retval = {
+        getScheduleMenuEntry(_("Midnight"), 1, false ),
+        getScheduleMenuEntry(_("Astronomical dawn"), 2, false),
+        getScheduleMenuEntry(_("Nautical dawn"), 3, false),
+        getScheduleMenuEntry(_("Civil dawn"), 4),
         getScheduleMenuEntry(_("Sunrise"), 5),
-        getScheduleMenuEntry(_("High noon"), 6),
+        getScheduleMenuEntry(_("High noon"), 6, false),
         getScheduleMenuEntry(_("Sunset"), 7),
-        getScheduleMenuEntry(_("Civil sunset"), 8),
-        getScheduleMenuEntry(_("Nautical sunset"), 9),
-        getScheduleMenuEntry(_("Astronomical sunset"), 10),
+        getScheduleMenuEntry(_("Civil dusk"), 8),
+        getScheduleMenuEntry(_("Nautical dusk"), 9, false),
+        getScheduleMenuEntry(_("Astronomical dusk"), 10, false),
     }
+
+    return tidy_menu(retval, self.easy_mode)
 end
 
 function Dusk2Dawn:getWarmthMenu()
-    local function getWarmthMenuEntry(text, num)
+    -- mode == nil ... show alway
+    --      == true ... easy mode
+    --      == false ... expert mode
+    local function getWarmthMenuEntry(text, num, mode)
         return {
+            mode = mode,
             text_func = function()
                 if Device:hasNaturalLight() then
                     if self.warmth[num] <= 100 then
@@ -585,18 +639,21 @@ function Dusk2Dawn:getWarmthMenu()
         }
     end
 
-    return {
+    local retval = {
         {
             text = _("Set warmth for:"),
             enabled_func = function() return false end,
         },
-        getWarmthMenuEntry(_("High noon"), 6),
+        getWarmthMenuEntry(_("High noon"), 6, false),
         getWarmthMenuEntry(_("Daytime"), 5),
-        getWarmthMenuEntry(_("Darkest time of civil dawn"), 4),
-        getWarmthMenuEntry(_("Darkest time of nautical dawn"), 3),
-        getWarmthMenuEntry(_("Darkest time of astronomical dawn"), 2),
-        getWarmthMenuEntry(_("Midnight"), 1),
+        getWarmthMenuEntry(_("Darkest time of civil dawn"), 4, false),
+        getWarmthMenuEntry(_("Darkest time of civil twilight"), 4, true),
+        getWarmthMenuEntry(_("Darkest time of nautical dawn"), 3, false),
+        getWarmthMenuEntry(_("Darkest time of astronomical dawn"), 2, false),
+        getWarmthMenuEntry(_("Midnight"), 1, false),
     }
+
+    return tidy_menu(retval, self.easy_mode)
 end
 
 -- title
@@ -615,12 +672,14 @@ function Dusk2Dawn:getTimesMenu(title, location, activator)
             times = self.scheduler_times
         end
 
-        local function info_line(t, num)
-            if Device:hasNaturalLight() then
+        local function info_line(text, t, num)
+            if not t[num] then
+                return ""
+            elseif Device:hasNaturalLight() then
                 if self.warmth[num] <= 100 then
-                    return self:hoursToClock(t[num]) .. "(💡" .. self.warmth[num] .."%)"
+                    return text .. self:hoursToClock(t[num]) .. "(💡" .. self.warmth[num] .."%)\n"
                 else
-                    return self:hoursToClock(t[num]) .. "(💡100%+☾)"
+                    return text .. self:hoursToClock(t[num]) .. "(💡100%+☾)\n"
                 end
             else
                 if self.warmth[num] <= 100 then
@@ -638,23 +697,23 @@ function Dusk2Dawn:getTimesMenu(title, location, activator)
 
         UIManager:show(InfoMessage:new{
             face = Font:getFace("scfont"),
-            text = title .. location_string .. ":\n" ..
-                _("\nMidnight      ") .. info_line(times, 1) ..
-                _("\nDawn") ..
-                _("\n  Astronomic: ") .. info_line(times, 2) ..
-                _("\n  Nautical:   ") .. info_line(times, 3) ..
-                _("\n  Civil:      ") .. info_line(times, 4) ..
-                _("\nDawn") ..
-                _("\nSunrise:      ") .. info_line(times, 5) ..
-                _("\n\nHigh noon:    ") .. info_line(times, 6) ..
-                _("\n\nSunset:       ") .. info_line(times, 7) ..
-                _("\nDusk") ..
-                _("\n  Civil:      ") .. info_line(times, 8) ..
-                _("\n  Nautical:   ") .. info_line(times, 9) ..
-                _("\n  Astronomic: ") .. info_line(times, 10) ..
-                _("\nDusk") ..
-                _("\nMidnight      ") .. info_line(times, midnight_index) ..
-                "\n",
+            text = title .. location_string .. ":\n\n" ..
+                info_line(_("Midnight      "), times, 1) ..
+                _("Dawn\n") ..
+                info_line(_("  Astronomic: "), times, 2) ..
+                info_line(_("  Nautical:   "), times, 3) ..
+                info_line(_("  Civil:      "), times, 4) ..
+                _("Dawn\n") ..
+                info_line(_("Sunrise:      "), times, 5) ..
+                info_line(_("\nHigh noon:    "), times, 6) ..
+
+                info_line(_("\nSunset:       "), times, 7) ..
+                _("Dusk\n") ..
+                info_line(_("  Civil:      "), times, 8) ..
+                info_line(_("  Nautical:   "), times, 9) ..
+                info_line(_("  Astronomic: "), times, 10) ..
+                _("Dusk\n") ..
+                info_line(_("Midnight      "), times, midnight_index)
         })
     end
 
