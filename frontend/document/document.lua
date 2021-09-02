@@ -256,7 +256,8 @@ function Document:getPageDimensions(pageno, zoom, rotation)
         -- switch orientation
         native_dimen.w, native_dimen.h = native_dimen.h, native_dimen.w
     end
-    native_dimen:scaleBy(zoom)
+    -- Apply the zoom factor, and round to integer in a sensible manner
+    native_dimen:transformByScale(zoom)
     return native_dimen
 end
 
@@ -305,6 +306,7 @@ function Document:getUsedBBoxDimensions(pageno, zoom, rotation)
             w = bbox.x1 - bbox.x0,
             h = bbox.y1 - bbox.y0,
         }
+        --- @note: Should we round this regardless of zoom?
         if zoom ~= 1 then
             ubbox_dimen:transformByScale(zoom)
         end

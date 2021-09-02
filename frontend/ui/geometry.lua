@@ -81,7 +81,7 @@ function Geom:offsetTo(x, y)
 end
 
 --[[--
-Scales rectangle (grow to bottom and to the right) or dimension
+Scales rectangle (top-left corner is rounded down, bottom-right corner is rounded up) or dimension
 
 If a single factor is given, it is applied to both width and height
 
@@ -89,20 +89,22 @@ If a single factor is given, it is applied to both width and height
 @int zy scale for y axis
 ]]
 function Geom:scaleBy(zx, zy)
-    self.w = Math.round(self.w * zx)
-    self.h = Math.round(self.h * (zy or zx))
+    self.w = math.ceil(self.w * zx - 0.001)
+    self.h = math.ceil(self.h * (zy or zx) - 0.001)
     return self
 end
 
 --[[--
-This method also takes care of x and y on top of @{Geom:scaleBy}
+This method also takes care of x and y on top of @{Geom:scaleBy},
+c.f., fz_round_rect in MµPDF,
+      <https://github.com/ArtifexSoftware/mupdf/blob/d00de0e96a4a5ec90ffc30837d40cd624a6a89e0/source/fitz/geometry.c#L400-L416>
 
 @int zx scale for x axis
 @int zy scale for y axis
 ]]
 function Geom:transformByScale(zx, zy)
-    self.x = Math.round(self.x * zx)
-    self.y = Math.round(self.y * (zx or zy))
+    self.x = math.floor(self.x * zx + 0.001)
+    self.y = math.floor(self.y * (zy or zx) + 0.001)
     self:scaleBy(zx, zy)
 end
 
