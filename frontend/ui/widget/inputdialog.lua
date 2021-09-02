@@ -479,22 +479,22 @@ function InputDialog:init()
     end
 end
 
-function InputDialog:addWidget(widget, no_backup)
-    if not no_backup then -- backup widget for re-init
+function InputDialog:addWidget(widget, re_init)
+    if not re_init then -- backup widget for re-init
+        widget = CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width,
+                h = widget:getSize().h,
+            },
+            widget,
+        }
         if not self._added_widgets then
             self._added_widgets = {}
         end
         table.insert(self._added_widgets, widget)
     end
-    local centered_widget = CenterContainer:new{
-        dimen = Geom:new{
-            w = self.width,
-            h = widget:getSize().h,
-        },
-        widget,
-    }
     -- insert widget before the bottom buttons and their previous vspan
-    table.insert(self.vgroup, #self.vgroup-1, centered_widget)
+    table.insert(self.vgroup, #self.vgroup-1, widget)
 end
 
 function InputDialog:onTap()
