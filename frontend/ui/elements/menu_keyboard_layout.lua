@@ -1,10 +1,7 @@
 local CheckButton = require("ui/widget/checkbutton")
 local FFIUtil = require("ffi/util")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local HorizontalSpan = require("ui/widget/horizontalspan")
 local Language = require("ui/language")
 local UIManager = require("ui/uimanager")
-local VerticalGroup = require("ui/widget/verticalgroup")
 local VirtualKeyboard = require("ui/widget/virtualkeyboard")
 local util = require("util")
 local _ = require("gettext")
@@ -62,7 +59,6 @@ local sub_item_table = {
                 },
             }
 
-            -- checkboxes
             check_button_bold = CheckButton:new{
                 text = _("in bold"),
                 checked = G_reader_settings:isTrue("keyboard_key_bold"),
@@ -72,6 +68,7 @@ local sub_item_table = {
                     check_button_bold:toggleCheck()
                 end,
             }
+            input_dialog:addWidget(check_button_bold)
             check_button_border = CheckButton:new{
                 text = _("with border"),
                 checked = G_reader_settings:nilOrTrue("keyboard_key_border"),
@@ -81,6 +78,7 @@ local sub_item_table = {
                     check_button_border:toggleCheck()
                 end,
             }
+            input_dialog:addWidget(check_button_border)
             check_button_compact = CheckButton:new{
                 text = _("compact"),
                 checked = G_reader_settings:isTrue("keyboard_key_compact"),
@@ -90,21 +88,7 @@ local sub_item_table = {
                     check_button_compact:toggleCheck()
                 end,
             }
-
-            local checkbox_shift = math.floor((input_dialog.width - input_dialog._input_widget.width) / 2 + 0.5)
-            local check_buttons = HorizontalGroup:new{
-                HorizontalSpan:new{width = checkbox_shift},
-                VerticalGroup:new{
-                    align = "left",
-                    check_button_bold,
-                    check_button_border,
-                    check_button_compact,
-                },
-            }
-
-            -- insert check buttons before the regular buttons
-            local nb_elements = #input_dialog.dialog_frame[1]
-            table.insert(input_dialog.dialog_frame[1], nb_elements-1, check_buttons)
+            input_dialog:addWidget(check_button_compact)
 
             UIManager:show(input_dialog)
             input_dialog:onShowKeyboard()

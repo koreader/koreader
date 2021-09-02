@@ -103,8 +103,6 @@ local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local HorizontalSpan = require("ui/widget/horizontalspan")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputText = require("ui/widget/inputtext")
@@ -420,6 +418,25 @@ function InputDialog:init()
         end
     end
 
+    -- Combine all
+    self.vgroup = VerticalGroup:new{
+        align = "left",
+        self.title_widget,
+        self.title_bar,
+        self.description_widget,
+        vspan_before_input_text,
+        CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width,
+                h = self._input_widget:getSize().h,
+            },
+            self._input_widget,
+        },
+        -- added widgets may be inserted here
+        vspan_after_input_text,
+        buttons_container,
+    }
+
     -- Final widget
     self.dialog_frame = FrameContainer:new{
         radius = self.fullscreen and 0 or Size.radius.window,
@@ -427,22 +444,7 @@ function InputDialog:init()
         margin = 0,
         bordersize = self.border_size,
         background = Blitbuffer.COLOR_WHITE,
-        VerticalGroup:new{
-            align = "left",
-            self.title_widget,
-            self.title_bar,
-            self.description_widget,
-            vspan_before_input_text,
-            CenterContainer:new{
-                dimen = Geom:new{
-                    w = self.width,
-                    h = self._input_widget:getSize().h,
-                },
-                self._input_widget,
-            },
-            vspan_after_input_text,
-            buttons_container,
-        }
+        self.vgroup,
     }
     local frame = self.dialog_frame
     if self.is_movable then
@@ -470,6 +472,29 @@ function InputDialog:init()
             },
         }
     end
+    if self._added_widgets then
+        for _, widget in ipairs(self._added_widgets) do
+            self:addWidget(widget, true)
+        end
+    end
+end
+
+function InputDialog:addWidget(widget, re_init)
+    if not re_init then -- backup widget for re-init
+        widget = CenterContainer:new{
+            dimen = Geom:new{
+                w = self.width,
+                h = widget:getSize().h,
+            },
+            widget,
+        }
+        if not self._added_widgets then
+            self._added_widgets = {}
+        end
+        table.insert(self._added_widgets, widget)
+    end
+    -- insert widget before the bottom buttons and their previous vspan
+    table.insert(self.vgroup, #self.vgroup-1, widget)
 end
 
 function InputDialog:onTap()
@@ -528,10 +553,28 @@ function InputDialog:onShowKeyboard(ignore_first_hold_release)
     end
 end
 
+function InputDialog:toggleKeyboard(force_hide)
+    if force_hide and self.keyboard_hidden then return end
+    self.keyboard_hidden = not self.keyboard_hidden
+    self.input = self:getInputText() -- re-init with up-to-date text
+    self:onClose() -- will close keyboard and save view position
+    self:free()
+    self:init()
+    if not self.keyboard_hidden then
+        self:onShowKeyboard()
+    end
+end
+
 function InputDialog:onKeyboardHeightChanged()
     self.input = self:getInputText() -- re-init with up-to-date text
     self:onClose() -- will close keyboard and save view position
     self._input_widget:onCloseWidget() -- proper cleanup of InputText and its keyboard
+    if self._added_widgets then
+        -- prevent these externally added widgets from being freed as :init() will re-add them
+        for i = 1, #self._added_widgets do
+            table.remove(self.vgroup, #self.vgroup-2)
+        end
+    end
     self:free()
     -- Restore original text_height (or reset it if none to force recomputing it)
     self.text_height = self.orig_text_height or nil
@@ -738,14 +781,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                 text = self.keyboard_hidden and "↑⌨" or "↓⌨",
                 id = "keyboard",
                 callback = function()
-                    self.keyboard_hidden = not self.keyboard_hidden
-                    self.input = self:getInputText() -- re-init with up-to-date text
-                    self:onClose() -- will close keyboard and save view position
-                    self:free()
-                    self:init()
-                    if not self.keyboard_hidden then
-                        self:onShowKeyboard()
-                    end
+                    self:toggleKeyboard()
                 end,
             })
         end
@@ -754,11 +790,12 @@ function InputDialog:_addScrollButtons(nav_bar)
             table.insert(row, {
                 text = _("Find"),
                 callback = function()
+                    local keyboard_hidden_state = not self.keyboard_hidden
+                    self:toggleKeyboard(true) -- hide text editor keyboard
                     local input_dialog
                     input_dialog = InputDialog:new{
                         title = _("Enter text to search for"),
                         stop_events_propagation = true, -- avoid interactions with upper InputDialog
-                        deny_keyboard_hiding = true,
                         input = self.search_value,
                         buttons = {
                             {
@@ -766,6 +803,8 @@ function InputDialog:_addScrollButtons(nav_bar)
                                     text = _("Cancel"),
                                     callback = function()
                                         UIManager:close(input_dialog)
+                                        self.keyboard_hidden = keyboard_hidden_state
+                                        self:toggleKeyboard()
                                     end,
                                 },
                                 {
@@ -774,6 +813,8 @@ function InputDialog:_addScrollButtons(nav_bar)
                                         self.search_value = input_dialog:getInputText()
                                         if self.search_value ~= "" then
                                             UIManager:close(input_dialog)
+                                            self.keyboard_hidden = keyboard_hidden_state
+                                            self:toggleKeyboard()
                                             local msg
                                             local char_pos = self._input_widget:searchString(self.search_value, self.case_sensitive, 1)
                                             if char_pos > 0 then
@@ -795,6 +836,8 @@ function InputDialog:_addScrollButtons(nav_bar)
                                         self.search_value = input_dialog:getInputText()
                                         if self.search_value ~= "" then
                                             UIManager:close(input_dialog)
+                                            self.keyboard_hidden = keyboard_hidden_state
+                                            self:toggleKeyboard()
                                             local msg
                                             local char_pos = self._input_widget:searchString(self.search_value, self.case_sensitive)
                                             if char_pos > 0 then
@@ -813,7 +856,6 @@ function InputDialog:_addScrollButtons(nav_bar)
                         },
                     }
 
-                    -- checkbox
                     self.check_button_case = CheckButton:new{
                         text = _("Case sensitive"),
                         checked = self.case_sensitive,
@@ -824,19 +866,7 @@ function InputDialog:_addScrollButtons(nav_bar)
                             self.case_sensitive = self.check_button_case.checked
                         end,
                     }
-
-                    local checkbox_shift = math.floor((input_dialog.width - input_dialog._input_widget.width) / 2 + 0.5)
-                    local check_buttons = HorizontalGroup:new{
-                        HorizontalSpan:new{width = checkbox_shift},
-                        VerticalGroup:new{
-                            align = "left",
-                            self.check_button_case,
-                        },
-                    }
-
-                    -- insert check buttons before the regular buttons
-                    local nb_elements = #input_dialog.dialog_frame[1]
-                    table.insert(input_dialog.dialog_frame[1], nb_elements-1, check_buttons)
+                    input_dialog:addWidget(self.check_button_case)
 
                     UIManager:show(input_dialog)
                     input_dialog:onShowKeyboard()
@@ -846,6 +876,8 @@ function InputDialog:_addScrollButtons(nav_bar)
             table.insert(row, {
                 text = _("Go"),
                 callback = function()
+                    local keyboard_hidden_state = not self.keyboard_hidden
+                    self:toggleKeyboard(true) -- hide text editor keyboard
                     local cur_line_num, last_line_num = self._input_widget:getLineNums()
                     local input_dialog
                     input_dialog = InputDialog:new{
@@ -854,13 +886,14 @@ function InputDialog:_addScrollButtons(nav_bar)
                         input_hint = T(_("%1 (1 - %2)"), cur_line_num, last_line_num),
                         input_type = "number",
                         stop_events_propagation = true, -- avoid interactions with upper InputDialog
-                        deny_keyboard_hiding = true,
                         buttons = {
                             {
                                 {
                                     text = _("Cancel"),
                                     callback = function()
                                         UIManager:close(input_dialog)
+                                        self.keyboard_hidden = keyboard_hidden_state
+                                        self:toggleKeyboard()
                                     end,
                                 },
                                 {
@@ -870,6 +903,8 @@ function InputDialog:_addScrollButtons(nav_bar)
                                         local new_line_num = tonumber(input_dialog:getInputText())
                                         if new_line_num and new_line_num >= 1 and new_line_num <= last_line_num then
                                             UIManager:close(input_dialog)
+                                            self.keyboard_hidden = keyboard_hidden_state
+                                            self:toggleKeyboard()
                                             self._input_widget:moveCursorToCharPos(self._input_widget:getLineCharPos(new_line_num))
                                         end
                                     end,
