@@ -306,7 +306,7 @@ function Document:getUsedBBoxDimensions(pageno, zoom, rotation)
             w = bbox.x1 - bbox.x0,
             h = bbox.y1 - bbox.y0,
         }
-        --- @note: Should be round regardless of zoom?
+        --- @note: Should we round this regardless of zoom?
         if zoom ~= 1 then
             ubbox_dimen:transformByScale(zoom)
         end
