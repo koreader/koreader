@@ -120,7 +120,7 @@ local order = {
         "----------------------------",
         "screen_dpi",
         "screen_eink_opt",
-        "dusk2dawn", -- if Device:hasNaturalLight()
+        "autowarmth",
         "color_rendering",
         "----------------------------",
         "screen_timeout",

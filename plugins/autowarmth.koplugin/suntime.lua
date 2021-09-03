@@ -272,7 +272,7 @@ function SunTime:calculateTimes()
     self.midnight = self.noon + 12
 
     self.times = {}
-    self.times[1]  = self.midnight
+    self.times[1]  = math.max(self.midnight - 24, 0)
     self.times[2]  = self.rise_astronomic
     self.times[3]  = self.rise_nautic
     self.times[4]  = self.rise_civil
@@ -282,7 +282,7 @@ function SunTime:calculateTimes()
     self.times[8]  = self.set_civil
     self.times[9]  = self.set_nautic
     self.times[10] = self.set_astronomic
-    self.times[11] = self.noon + 12
+    self.times[11] = self.midnight
 end
 
 -- get time in seconds (either actual time in hours or date struct)

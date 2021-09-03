@@ -1,6 +1,6 @@
 local _ = require("gettext")
 return {
-    name = "dusk2dawn",
-    fullname = _("Dusk till dawn"),
+    name = "autowarmth",
+    fullname = _("Auto warmth"),
     description = _([[This plugin allows set the frontlight warmth automagically.]]),
 }
