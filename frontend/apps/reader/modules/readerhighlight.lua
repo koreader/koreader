@@ -1270,7 +1270,7 @@ function ReaderHighlight:onCycleHighlightStyle()
     self.view.highlight.saved_drawer = next_actions[self.view.highlight.saved_drawer]
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
     UIManager:show(Notification:new{
-        text = T(_("Default highlight style changed to '%1'."), self.view.highlight.saved_drawer),
+        text = T(_("Default highlight style changed to '%1'."), highlight_style[self.view.highlight.saved_drawer]),
     })
     return true
 end
