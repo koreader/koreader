@@ -117,13 +117,13 @@ function Dusk2Dawn:scheduleMidnightUpdate()
 
         local time2 = times[index2]
         if not time2 then return end -- to near to the pole
-        local warmth_diff = self.warmth[index2] - self.warmth[index1]
+        local warmth_diff = math.min(self.warmth[index2], 100) - math.min(self.warmth[index1], 100)
         if warmth_diff ~= 0 then
             local time_diff = SunTime:getTimeInSec(time2) - time
             local delta_t = time_diff / math.abs(warmth_diff) -- can be inf, no problem
             local delta_w =  warmth_diff > 0 and 1 or -1
             for i = 1, math.abs(warmth_diff)-1 do
-                local next_warmth = self.warmth[index1] + delta_w * i
+                local next_warmth = math.min(self.warmth[index1], 100) + delta_w * i
                 -- only apply warmth for steps the hardware has (e.g. Tolino has 0-10 hw steps
                 -- which map to warmth 0, 10, 20, 30 ... 100)
                 local fit_scale = 1
@@ -133,7 +133,7 @@ function Dusk2Dawn:scheduleMidnightUpdate()
                 if frac(next_warmth / fit_scale) == 0 then
                     table.insert(self.sched_times, time + delta_t * i)
                     table.insert(self.sched_funcs, {self.setWarmth,
-                        math.floor(self.warmth[index1] + delta_w * i)})
+                        math.floor(math.min(self.warmth[index1], 100) + delta_w * i)})
                 end
             end
         end
@@ -169,7 +169,6 @@ function Dusk2Dawn:scheduleMidnightUpdate()
     end
 
     if self.easy_mode then
-        print("xxx easy copy")
         self.current_times[1] = nil
         self.current_times[2] = nil
         self.current_times[3] = nil
@@ -323,9 +322,9 @@ function Dusk2Dawn:getSubMenuItems()
             sub_item_table = self:getWarmthMenu(),
             separator = true,
         },
-        self:getTimesMenu(_("Active parameters")),
-        self:getTimesMenu(_("Sun Info:"), true, activate_sun),
-        self:getTimesMenu(_("Schedule Info"), false, activate_schedule),
+        self:getTimesMenu(_("Active auto warmth parameters")),
+        self:getTimesMenu(_("Infos about the in Sun"), true, activate_sun),
+        self:getTimesMenu(_("Infos about the Schedule"), false, activate_schedule),
     }
 end
 
@@ -675,22 +674,32 @@ function Dusk2Dawn:getTimesMenu(title, location, activator)
             times = self.scheduler_times
         end
 
+        -- text to show
+        -- t .. times
+        -- num .. index in times
         local function info_line(text, t, num)
-            if not t[num] then
+            local retval = text .. self:hoursToClock(t[num])
+
+            if not t[num] then -- entry deactivated
                 return ""
-            elseif self.activate == 0 then
-                return text .. "\n"
             elseif Device:hasNaturalLight() then
-                if self.warmth[num] <= 100 then
-                    return text .. self:hoursToClock(t[num]) .. "(💡" .. self.warmth[num] .."%)\n"
+                print("xxx", self.easy_mode)
+                if self.easy_mode and self.current_times[num] == t[num] then
+                    if self.warmth[num] <= 100 then
+                        return retval .. "(💡" .. self.warmth[num] .."%)\n"
+                    else
+                        return retval .. "(💡100%+☾)\n"
+                    end
                 else
-                    return text .. self:hoursToClock(t[num]) .. "(💡100%+☾)\n"
+                    return retval .. "\n"
                 end
             else
-                if self.warmth[num] <= 100 then
-                    return self:hoursToClock(t[num]) .. "(☼)"
+                if self.easy_mode then
+                    return retval .. "\n"
+                elseif self.warmth[num] <= 100 then
+                    return retval .. "(☼)"
                 else
-                    return self:hoursToClock(t[num]) .. "(☾)"
+                    return retval .. "(☾)"
                 end
             end
         end
