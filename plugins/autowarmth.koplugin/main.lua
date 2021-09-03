@@ -9,6 +9,7 @@ local Device = require("device")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
 local DeviceListener = require("device/devicelistener")
+local Dispatcher = require("dispatcher")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
@@ -60,10 +61,20 @@ function AutoWarmth:getTimezoneOffset()
 end
 
 function AutoWarmth:init()
+    self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 
     -- schedule recalculation shortly afer midnight
     self:scheduleMidnightUpdate()
+end
+
+function AutoWarmth:onDispatcherRegisterActions()
+    Dispatcher:registerAction("show_ephemeris",
+        {category="none", event="ShowEphemeris", title=_("Show ephemeris"), device=true})
+end
+
+function AutoWarmth:onShowEphemeris()
+    self:showTimesInfo(_("Infos about the sun in"), true, activate_sun, false)
 end
 
 function AutoWarmth:onResume()
@@ -668,79 +679,84 @@ end
 -- activator: nil               .. current_times,
 --            activate_sun      .. sun times
 --            activate_schedule .. scheduler times
-function AutoWarmth:getTimesMenu(title, location, activator)
-    local function showTimesInfo()
-        local times
-        if not activator then
-            times = self.current_times
-        elseif activator == activate_sun then
-            times = SunTime.times
-        elseif activator == activate_schedule then
-            times = self.scheduler_times
-        end
-
-        -- text to show
-        -- t .. times
-        -- num .. index in times
-        -- flag ... if true, only show easy_mode entries
-        local function info_line(text, t, num, flag)
-            local retval = text .. self:hoursToClock(t[num])
-            if flag and self.current_times[num] ~= t[num] then
-                return ""
-            end
-            if not t[num] then -- entry deactivated
-                return ""
-            elseif Device:hasNaturalLight() then
-                if self.current_times[num] == t[num] then
-                    if self.warmth[num] <= 100 then
-                        return retval .. " (💡" .. self.warmth[num] .."%)\n"
-                    else
-                        return retval .. " (💡100% + ☾)\n"
-                    end
-                else
-                    return retval .. "\n"
-                end
-            else
-                if self.current_times[num] == t[num] then
-                    if self.warmth[num] <= 100 then
-                        return retval .. " (☼)\n"
-                    else
-                        return retval .. " (☾)\n"
-                    end
-                else
-                    return retval .. "\n"
-                end
-            end
-        end
-
-        local location_string = ""
-        if location then
-            location_string = " " .. self:getLocationString()
-        end
-
-        UIManager:show(InfoMessage:new{
-            face = Font:getFace("scfont"),
-            width = math.floor(Screen:getWidth() * 0.90),
-                text = title .. location_string .. ":\n\n" ..
-                info_line(_("Midnight        "), times, 1, self.easy_mode) ..
-                _("  Dawn\n") ..
-                info_line(_("    Astronomic: "), times, 2, self.easy_mode) ..
-                info_line(_("    Nautical:   "), times, 3, self.easy_mode) ..
-                info_line(_("    Civil:      "), times, 4) ..
-                _("  Dawn\n") ..
-                info_line(_("Sunrise:        "), times, 5) ..
-                info_line(_("\nHigh noon:      "), times, 6, self.easy_mode) ..
-
-                info_line(_("\nSunset:         "), times, 7) ..
-                _("  Dusk\n") ..
-                info_line(_("    Civil:      "), times, 8) ..
-                info_line(_("    Nautical:   "), times, 9, self.easy_mode) ..
-                info_line(_("    Astronomic: "), times, 10, self.easy_mode) ..
-                _("  Dusk\n") ..
-                info_line(_("Midnight        "), times, midnight_index, self.easy_mode)
-        })
+-- ease: true if easy_mode
+function AutoWarmth:showTimesInfo(title, location, activator, easy)
+    local times
+    if not activator then
+        times = self.current_times
+    elseif activator == activate_sun then
+        times = SunTime.times
+    elseif activator == activate_schedule then
+        times = self.scheduler_times
     end
 
+    -- text to show
+    -- t .. times
+    -- num .. index in times
+    local function info_line(text, t, num)
+        local retval = text .. self:hoursToClock(t[num])
+        if easy and self.current_times[num] ~= t[num] then
+            return ""
+        end
+        if not t[num] then -- entry deactivated
+            return ""
+        elseif Device:hasNaturalLight() then
+            if self.current_times[num] == t[num] then
+                if self.warmth[num] <= 100 then
+                    return retval .. " (💡" .. self.warmth[num] .."%)\n"
+                else
+                    return retval .. " (💡100% + ☾)\n"
+                end
+            else
+                return retval .. "\n"
+            end
+        else
+            if self.current_times[num] == t[num] then
+                if self.warmth[num] <= 100 then
+                    return retval .. " (☼)\n"
+                else
+                    return retval .. " (☾)\n"
+                end
+            else
+                return retval .. "\n"
+            end
+        end
+    end
+
+    local location_string = ""
+    if location then
+        location_string = " " .. self:getLocationString()
+    end
+
+    UIManager:show(InfoMessage:new{
+        face = Font:getFace("scfont"),
+        width = math.floor(Screen:getWidth() * 0.90),
+            text = title .. location_string .. ":\n\n" ..
+            info_line(_("Midnight        "), times, 1, self.easy_mode) ..
+            _("  Dawn\n") ..
+            info_line(_("    Astronomic: "), times, 2, self.easy_mode) ..
+            info_line(_("    Nautical:   "), times, 3, self.easy_mode) ..
+            info_line(_("    Civil:      "), times, 4) ..
+            _("  Dawn\n") ..
+            info_line(_("Sunrise:        "), times, 5) ..
+            info_line(_("\nHigh noon:      "), times, 6, self.easy_mode) ..
+
+            info_line(_("\nSunset:         "), times, 7) ..
+            _("  Dusk\n") ..
+            info_line(_("    Civil:      "), times, 8) ..
+            info_line(_("    Nautical:   "), times, 9, self.easy_mode) ..
+            info_line(_("    Astronomic: "), times, 10, self.easy_mode) ..
+            _("  Dusk\n") ..
+            info_line(_("Midnight        "), times, midnight_index, self.easy_mode)
+    })
+end
+
+-- title
+-- location: add a location string
+-- activator: nil               .. current_times,
+--            activate_sun      .. sun times
+--            activate_schedule .. scheduler times
+function AutoWarmth:getTimesMenu(title, location, activator)
     return {
         text_func = function()
             if location then
@@ -749,7 +765,7 @@ function AutoWarmth:getTimesMenu(title, location, activator)
             return title
         end,
         callback = function()
-            showTimesInfo(title, location, activator)
+            self:showTimesInfo(title, location, activator, self.easy_mode)
         end,
         keep_menu_open = true,
     }
