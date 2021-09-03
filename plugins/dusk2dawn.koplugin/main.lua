@@ -323,9 +323,9 @@ function Dusk2Dawn:getSubMenuItems()
             sub_item_table = self:getWarmthMenu(),
             separator = true,
         },
-        self:getTimesMenu(_("Current parameters")),
-        self:getTimesMenu(_("Sun parameters for"), true, activate_sun),
-        self:getTimesMenu(_("Schedule parameters"), false, activate_schedule),
+        self:getTimesMenu(_("Active parameters")),
+        self:getTimesMenu(_("Sun Info:"), true, activate_sun),
+        self:getTimesMenu(_("Schedule Info"), false, activate_schedule),
     }
 end
 
@@ -358,7 +358,7 @@ function Dusk2Dawn:getLocationMenu()
     return {{
         text_func = function()
             if self.location ~= "" then
-                return T(_("Location (%1)"), self.location)
+                return T(_("Location: %1"), self.location)
             else
                 return _("Location")
             end
@@ -395,7 +395,7 @@ function Dusk2Dawn:getLocationMenu()
     },
     {
         text_func = function()
-            return T(_("Coordinates (%1,%2)"), self.latitude, self.longitude)
+            return T(_("Coordinates: (%1, %2)"), self.latitude, self.longitude)
         end,
         callback = function(touchmenu_instance)
             local location_widget = DoubleSpinWidget:new{
@@ -456,7 +456,7 @@ function Dusk2Dawn:getScheduleMenu()
         return {
             mode = mode,
             text_func = function()
-                return T(_"%1  (%2)", text,
+                return T(_"%1: %2", text,
                     self:hoursToClock(self.scheduler_times[num], true))
             end,
             checked_func = function()
@@ -569,15 +569,15 @@ function Dusk2Dawn:getWarmthMenu()
             text_func = function()
                 if Device:hasNaturalLight() then
                     if self.warmth[num] <= 100 then
-                        return T(_("%1 (%2%)"), text, self.warmth[num])
+                        return T(_("%1: %2%"), text, self.warmth[num])
                     else
-                        return T(_("%1 (100% + ☾)"), text)
+                        return T(_("%1: 100% + ☾"), text)
                     end
                 else
                     if self.warmth[num] <= 100 then
-                        return T(_("%1 (☼)"), text)
+                        return T(_("%1: ☼"), text)
                     else
-                        return T(_("%1 (☾)"), text)
+                        return T(_("%1: ☾"), text)
                     end
                 end
             end,
