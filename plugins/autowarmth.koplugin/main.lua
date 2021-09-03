@@ -1,5 +1,5 @@
 --[[--
-@module koplugin.dusk2dawn
+@module koplugin.autowarmth
 
 Plugin for setting screen warmth based on the sun position and/or a time schedule
 ]]
@@ -19,6 +19,7 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local T = FFIUtil.template
+local Screen = require("device").screen
 local util = require("util")
 
 local activate_sun = 1
@@ -34,17 +35,17 @@ local function frac(x)
     return x - math.floor(x)
 end
 
-local Dusk2Dawn = WidgetContainer:new{
-    name = "dusk2dawn",
-    easy_mode = G_reader_settings:isTrue("dusk2dawn_easy_mode") or false,
-    activate = G_reader_settings:readSetting("dusk2dawn_activate") or 0,
-    location = G_reader_settings:readSetting("dusk2dawn_location") or "Geysir",
-    latitude = G_reader_settings:readSetting("dusk2dawn_latitude") or 64.31, --great Geysir in Iceland
-    longitude = G_reader_settings:readSetting("dusk2dawn_longitude") or -20.30,
-    timezone = G_reader_settings:readSetting("dusk2dawn_timezone") or 0,
-    scheduler_times = G_reader_settings:readSetting("dusk2dawn_scheduler_times") or
+local AutoWarmth = WidgetContainer:new{
+    name = "autowarmth",
+    easy_mode = G_reader_settings:isTrue("autowarmth_easy_mode") or false,
+    activate = G_reader_settings:readSetting("autowarmth_activate") or 0,
+    location = G_reader_settings:readSetting("autowarmth_location") or "Geysir",
+    latitude = G_reader_settings:readSetting("autowarmth_latitude") or 64.31, --great Geysir in Iceland
+    longitude = G_reader_settings:readSetting("autowarmth_longitude") or -20.30,
+    timezone = G_reader_settings:readSetting("autowarmth_timezone") or 0,
+    scheduler_times = G_reader_settings:readSetting("autowarmth_scheduler_times") or
         {0.0, 5.5, 6.0, 6.5, 7.0, 13.0, 21.5, 22.0, 22.5, 23.0, 24.0},
-    warmth =   G_reader_settings:readSetting("dusk2dawn_warmth")
+    warmth =   G_reader_settings:readSetting("autowarmth_warmth")
         or { 90, 90, 80, 60, 20, 20, 20, 60, 80, 90, 90},
     sched_times = {},
     sched_funcs = {}, -- necessary for unschedule, function, warmth
@@ -52,20 +53,20 @@ local Dusk2Dawn = WidgetContainer:new{
 }
 
 -- get timezone offset in hours (including dst)
-function Dusk2Dawn:getTimezoneOffset()
+function AutoWarmth:getTimezoneOffset()
     local utcdate   = os.date("!*t")
     local localdate = os.date("*t")
     return os.difftime(os.time(localdate), os.time(utcdate))/3600
 end
 
-function Dusk2Dawn:init()
+function AutoWarmth:init()
     self.ui.menu:registerToMainMenu(self)
 
     -- schedule recalculation shortly afer midnight
     self:scheduleMidnightUpdate()
 end
 
-function Dusk2Dawn:onResume()
+function AutoWarmth:onResume()
     if self.activate == 0 then return end
 
     local resume_date = os.date("*t")
@@ -81,7 +82,7 @@ function Dusk2Dawn:onResume()
 end
 
 -- wrapper for unscheduling, so that only our setWarmth gets unscheduled
-function Dusk2Dawn.setWarmth(val)
+function AutoWarmth.setWarmth(val)
     if val and val > 100 then
         DeviceListener:onSetNightMode(true)
     else
@@ -93,7 +94,7 @@ function Dusk2Dawn.setWarmth(val)
     end
 end
 
-function Dusk2Dawn:scheduleMidnightUpdate()
+function AutoWarmth:scheduleMidnightUpdate()
     -- first unschedule all old functions
     UIManager:unschedule(self.scheduleMidnightUpdate) -- when called from menu or resume
 
@@ -113,7 +114,7 @@ function Dusk2Dawn:scheduleMidnightUpdate()
 
         local time = SunTime:getTimeInSec(time1)
         table.insert(self.sched_times, time)
-        table.insert(self.sched_funcs, {Dusk2Dawn.setWarmth, self.warmth[index1]})
+        table.insert(self.sched_funcs, {AutoWarmth.setWarmth, self.warmth[index1]})
 
         local time2 = times[index2]
         if not time2 then return end -- to near to the pole
@@ -204,7 +205,7 @@ function Dusk2Dawn:scheduleMidnightUpdate()
     self:scheduleWarmthChanges(now)
 end
 
-function Dusk2Dawn:scheduleWarmthChanges(now)
+function AutoWarmth:scheduleWarmthChanges(now)
     for i = 1, #self.sched_funcs do -- loop not essential, as unschedule unschedules all functions at once
         if not UIManager:unschedule(self.sched_funcs[i][1]) then
             break
@@ -224,17 +225,16 @@ function Dusk2Dawn:scheduleWarmthChanges(now)
     self.setWarmth(actual_warmth)
 end
 
-function Dusk2Dawn:hoursToClock(hours, withoutSeconds)
+function AutoWarmth:hoursToClock(hours, withoutSeconds)
     if hours then
         hours = hours % 24 * 3600 + 0.01 -- round up, due to reduced precision in settings.reader.lua
     end
     return util.secondsToClock(hours, withoutSeconds)
 end
 
-function Dusk2Dawn:addToMainMenu(menu_items)
-    menu_items.dusk2dawn = {
-        text = _("Dusk till dawn"),
-        sorting_hint = "screen",
+function AutoWarmth:addToMainMenu(menu_items)
+    menu_items.autowarmth = {
+        text = _("Auto-warmth"),
         checked_func = function() return self.activate ~= 0 end,
         sub_item_table_func = function()
             return self:getSubMenuItems()
@@ -266,13 +266,14 @@ Certain warmth-values can be set for every kind of twilight and sunrise, noon, s
 The screen warmth is continuously adjusted to the current time.
 
 To use the sun's position, the geographical location must be entered. The calculations are very precise (deviation less than two minutes).]])
-function Dusk2Dawn:getSubMenuItems()
+function AutoWarmth:getSubMenuItems()
     return {
         {
-            text = _("About dusk till dawn"),
+            text = _("About auto-warmth"),
             callback = function()
                 UIManager:show(InfoMessage:new{
                     text = about_text,
+                     width = math.floor(Screen:getWidth() * 0.9),
                 })
             end,
             keep_menu_open = true,
@@ -283,15 +284,19 @@ function Dusk2Dawn:getSubMenuItems()
             checked_func = function()
                 return self.easy_mode
             end,
-            text_func1 = function()
-                return self.easy_mode and _("Easy mode") or _("Expert mode")
-            end,
+            help_text = _("Easy mode disables all entries except: civil dawn, sun rise, sun set and covil dusk."),
             callback = function(touchmenu_instance)
+                local info_text
+                if not self.easy_mode then
+                    info_text = _("Reduce entries in auto-warmth schedule?")
+                else
+                    info_text = _("Expand entries in auto-warmth schedule?")
+                end
                 UIManager:show(ConfirmBox:new{
-                    text = _("Change the granularity of 'from dusk till dawn'?"),
+                    text = info_text,
                     ok_callback = function()
                         self.easy_mode = not self.easy_mode
-                        G_reader_settings:saveSetting("dusk2dawn_easy_mode", self.easy_mode)
+                        G_reader_settings:saveSetting("autowarmth_easy_mode", self.easy_mode)
                         self:scheduleMidnightUpdate()
                         -- closing menu is necessary for refreshing the menu structure
                         if touchmenu_instance then touchmenu_instance:closeMenu() end
@@ -322,13 +327,13 @@ function Dusk2Dawn:getSubMenuItems()
             sub_item_table = self:getWarmthMenu(),
             separator = true,
         },
-        self:getTimesMenu(_("Active auto warmth parameters")),
-        self:getTimesMenu(_("Infos about the in Sun"), true, activate_sun),
-        self:getTimesMenu(_("Infos about the Schedule"), false, activate_schedule),
+        self:getTimesMenu(_("Active auto-warmth parameters")),
+        self:getTimesMenu(_("Infos about the sun in"), true, activate_sun),
+        self:getTimesMenu(_("Infos about the schedule"), false, activate_schedule),
     }
 end
 
-function Dusk2Dawn:getActivateMenu()
+function AutoWarmth:getActivateMenu()
     local function getActivateMenuEntry(text, activator)
         return {
             text = text,
@@ -339,7 +344,7 @@ function Dusk2Dawn:getActivateMenu()
                 else
                     self.activate = 0
                 end
-                G_reader_settings:saveSetting("dusk2dawn_activate", self.activate)
+                G_reader_settings:saveSetting("autowarmth_activate", self.activate)
                 self:scheduleMidnightUpdate()
             end,
         }
@@ -353,7 +358,7 @@ function Dusk2Dawn:getActivateMenu()
     }
 end
 
-function Dusk2Dawn:getLocationMenu()
+function AutoWarmth:getLocationMenu()
     return {{
         text_func = function()
             if self.location ~= "" then
@@ -379,7 +384,7 @@ function Dusk2Dawn:getLocationMenu()
                             text = _("OK"),
                             callback = function()
                                 self.location = location_name_dialog:getInputText()
-                                G_reader_settings:saveSetting("dusk2dawn_location",
+                                G_reader_settings:saveSetting("autowarmth_location",
                                     self.location)
                                 UIManager:close(location_name_dialog)
                                 if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -419,9 +424,9 @@ function Dusk2Dawn:getLocationMenu()
                     self.latitude = lat
                     self.longitude = long
                     self.timezone = self:getTimezoneOffset() -- use timezone of device
-                    G_reader_settings:saveSetting("dusk2dawn_latitude", self.latitude)
-                    G_reader_settings:saveSetting("dusk2dawn_longitude", self.longitude)
-                    G_reader_settings:saveSetting("dusk2dawn_timezone", self.timezone)
+                    G_reader_settings:saveSetting("autowarmth_latitude", self.latitude)
+                    G_reader_settings:saveSetting("autowarmth_longitude", self.longitude)
+                    G_reader_settings:saveSetting("autowarmth_timezone", self.timezone)
                     self:scheduleMidnightUpdate()
                     if touchmenu_instance then touchmenu_instance:updateItems() end
                 end,
@@ -432,7 +437,7 @@ function Dusk2Dawn:getLocationMenu()
     }}
 end
 
-function Dusk2Dawn:getScheduleMenu()
+function AutoWarmth:getScheduleMenu()
     local function store_times(touchmenu_instance, new_time, num)
         self.scheduler_times[num] = new_time
         if num == 1 then
@@ -443,7 +448,7 @@ function Dusk2Dawn:getScheduleMenu()
                 self.scheduler_times[midnight_index] = nil
             end
         end
-        G_reader_settings:saveSetting("dusk2dawn_scheduler_times",
+        G_reader_settings:saveSetting("autowarmth_scheduler_times",
             self.scheduler_times)
         self:scheduleMidnightUpdate()
         if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -558,7 +563,7 @@ function Dusk2Dawn:getScheduleMenu()
     return tidy_menu(retval, self.easy_mode)
 end
 
-function Dusk2Dawn:getWarmthMenu()
+function AutoWarmth:getWarmthMenu()
     -- mode == nil ... show alway
     --      == true ... easy mode
     --      == false ... expert mode
@@ -595,7 +600,7 @@ function Dusk2Dawn:getWarmthMenu()
                         callback = function(spin)
                             self.warmth[num] = spin.value
                             self.warmth[#self.warmth - num + 1] = spin.value
-                            G_reader_settings:saveSetting("dusk2dawn_warmth", self.warmth)
+                            G_reader_settings:saveSetting("autowarmth_warmth", self.warmth)
                             self:scheduleMidnightUpdate()
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
@@ -603,7 +608,7 @@ function Dusk2Dawn:getWarmthMenu()
                         extra_callback = function()
                             self.warmth[num] = 110
                             self.warmth[#self.warmth - num + 1] = 110
-                            G_reader_settings:saveSetting("dusk2dawn_warmth", self.warmth)
+                            G_reader_settings:saveSetting("autowarmth_warmth", self.warmth)
                             self:scheduleMidnightUpdate()
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
@@ -615,7 +620,7 @@ function Dusk2Dawn:getWarmthMenu()
                         ok_callback = function()
                             self.warmth[num] = 110
                             self.warmth[#self.warmth - num + 1] = 110
-                            G_reader_settings:saveSetting("dusk2dawn_warmth", self.warmth)
+                            G_reader_settings:saveSetting("autowarmth_warmth", self.warmth)
                             self:scheduleMidnightUpdate()
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
@@ -623,7 +628,7 @@ function Dusk2Dawn:getWarmthMenu()
                         cancel_callback = function()
                             self.warmth[num] = 0
                             self.warmth[#self.warmth - num + 1] = 0
-                            G_reader_settings:saveSetting("dusk2dawn_warmth", self.warmth)
+                            G_reader_settings:saveSetting("autowarmth_warmth", self.warmth)
                             self:scheduleMidnightUpdate()
                             if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
@@ -663,7 +668,7 @@ end
 -- activator: nil               .. current_times,
 --            activate_sun      .. sun times
 --            activate_schedule .. scheduler times
-function Dusk2Dawn:getTimesMenu(title, location, activator)
+function AutoWarmth:getTimesMenu(title, location, activator)
     local function showTimesInfo()
         local times
         if not activator then
@@ -677,29 +682,33 @@ function Dusk2Dawn:getTimesMenu(title, location, activator)
         -- text to show
         -- t .. times
         -- num .. index in times
-        local function info_line(text, t, num)
+        -- flag ... if true, only show easy_mode entries
+        local function info_line(text, t, num, flag)
             local retval = text .. self:hoursToClock(t[num])
-
+            if flag and self.current_times[num] ~= t[num] then
+                return ""
+            end
             if not t[num] then -- entry deactivated
                 return ""
             elseif Device:hasNaturalLight() then
-                print("xxx", self.easy_mode)
-                if self.easy_mode and self.current_times[num] == t[num] then
+                if self.current_times[num] == t[num] then
                     if self.warmth[num] <= 100 then
-                        return retval .. "(💡" .. self.warmth[num] .."%)\n"
+                        return retval .. " (💡" .. self.warmth[num] .."%)\n"
                     else
-                        return retval .. "(💡100%+☾)\n"
+                        return retval .. " (💡100% + ☾)\n"
                     end
                 else
                     return retval .. "\n"
                 end
             else
-                if self.easy_mode then
-                    return retval .. "\n"
-                elseif self.warmth[num] <= 100 then
-                    return retval .. "(☼)"
+                if self.current_times[num] == t[num] then
+                    if self.warmth[num] <= 100 then
+                        return retval .. " (☼)\n"
+                    else
+                        return retval .. " (☾)\n"
+                    end
                 else
-                    return retval .. "(☾)"
+                    return retval .. "\n"
                 end
             end
         end
@@ -711,23 +720,24 @@ function Dusk2Dawn:getTimesMenu(title, location, activator)
 
         UIManager:show(InfoMessage:new{
             face = Font:getFace("scfont"),
-            text = title .. location_string .. ":\n\n" ..
-                info_line(_("Midnight      "), times, 1) ..
-                _("Dawn\n") ..
-                info_line(_("  Astronomic: "), times, 2) ..
-                info_line(_("  Nautical:   "), times, 3) ..
-                info_line(_("  Civil:      "), times, 4) ..
-                _("Dawn\n") ..
-                info_line(_("Sunrise:      "), times, 5) ..
-                info_line(_("\nHigh noon:    "), times, 6) ..
+            width = math.floor(Screen:getWidth() * 0.90),
+                text = title .. location_string .. ":\n\n" ..
+                info_line(_("Midnight        "), times, 1, self.easy_mode) ..
+                _("  Dawn\n") ..
+                info_line(_("    Astronomic: "), times, 2, self.easy_mode) ..
+                info_line(_("    Nautical:   "), times, 3, self.easy_mode) ..
+                info_line(_("    Civil:      "), times, 4) ..
+                _("  Dawn\n") ..
+                info_line(_("Sunrise:        "), times, 5) ..
+                info_line(_("\nHigh noon:      "), times, 6, self.easy_mode) ..
 
-                info_line(_("\nSunset:       "), times, 7) ..
-                _("Dusk\n") ..
-                info_line(_("  Civil:      "), times, 8) ..
-                info_line(_("  Nautical:   "), times, 9) ..
-                info_line(_("  Astronomic: "), times, 10) ..
-                _("Dusk\n") ..
-                info_line(_("Midnight      "), times, midnight_index)
+                info_line(_("\nSunset:         "), times, 7) ..
+                _("  Dusk\n") ..
+                info_line(_("    Civil:      "), times, 8) ..
+                info_line(_("    Nautical:   "), times, 9, self.easy_mode) ..
+                info_line(_("    Astronomic: "), times, 10, self.easy_mode) ..
+                _("  Dusk\n") ..
+                info_line(_("Midnight        "), times, midnight_index, self.easy_mode)
         })
     end
 
@@ -745,7 +755,7 @@ function Dusk2Dawn:getTimesMenu(title, location, activator)
     }
 end
 
-function Dusk2Dawn:getLocationString()
+function AutoWarmth:getLocationString()
     if self.location ~= "" then
         return self.location
     else
@@ -753,4 +763,4 @@ function Dusk2Dawn:getLocationString()
     end
 end
 
-return Dusk2Dawn
+return AutoWarmth
