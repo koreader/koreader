@@ -3,7 +3,6 @@ ReaderView module handles all the screen painting for document browsing.
 ]]
 
 local Blitbuffer = require("ffi/blitbuffer")
-local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
