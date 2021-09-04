@@ -175,6 +175,9 @@ function ReaderMenu:setUpdateItemTable()
         end
     end
 
+    -- typeset tab
+    self.menu_items.page_overlap = require("ui/elements/page_overlap")
+
     -- settings tab
     -- insert common settings
     for id, common_setting in pairs(dofile("frontend/ui/elements/common_settings_menu_table.lua")) do
