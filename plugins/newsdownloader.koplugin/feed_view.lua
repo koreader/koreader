@@ -146,16 +146,28 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
                 )
             end
         },
-        {
-            "Delete feed",
-            "",
-            callback = function()
-                delete_feed_callback(
-                    id
-                )
-            end
-        }
     }
+
+    -- We don't always display this. For instance: if a feed
+    -- is being created, this button is not necessary.
+    if delete_feed_callback then
+        table.insert(
+            vc,
+            "---"
+        )
+        table.insert(
+            vc,
+            {
+                "Delete feed",
+                "",
+                callback = function()
+                    delete_feed_callback(
+                        id
+                    )
+                end
+            }
+        )
+    end
 
     return vc
 end
