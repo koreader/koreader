@@ -179,7 +179,7 @@ function ReaderView:paintTo(bb, x, y)
     end
 
     -- dim last read area
-    if not self.dim_area:isEmpty() then
+    if not self.dim_area:isEmpty() and self:isOverlapAllowed() then
         if self.page_overlap_style == "dim" then
             bb:dimRect(
                 self.dim_area.x, self.dim_area.y,
@@ -930,43 +930,6 @@ function ReaderView:getRenderModeMenuTable()
     }
 end
 
-local page_overlap_styles = {
-    arrow = _("Arrow"),
-    dim = _("Gray out"),
-}
-
-function ReaderView:genOverlapStyleMenu(overlap_enabled_func)
-    local view = self
-    local get_overlap_style = function(style)
-        return {
-            text = page_overlap_styles[style],
-            enabled_func = overlap_enabled_func,
-            checked_func = function()
-                return view.page_overlap_style == style
-            end,
-            callback = function()
-                view.page_overlap_style = style
-            end,
-            hold_callback = function()
-                UIManager:show(ConfirmBox:new{
-                    text = T(
-                        _("Set default overlap style to %1?"),
-                        style
-                    ),
-                    ok_callback = function()
-                        view.page_overlap_style = style
-                        G_reader_settings:saveSetting("page_overlap_style", style)
-                    end,
-                })
-            end,
-        }
-    end
-    return {
-        get_overlap_style("arrow"),
-        get_overlap_style("dim"),
-    }
-end
-
 function ReaderView:onCloseDocument()
     self.hinting = false
     -- stop any in fly HintPage event
@@ -1001,6 +964,17 @@ function ReaderView:checkAutoSaveSettings()
         UIManager:tickAfterNext(function()
             self.ui:saveSettings()
         end)
+    end
+end
+
+function ReaderView:isOverlapAllowed()
+    if self.ui.document.info.has_pages then
+        return not self.page_scroll
+            and (self.ui.paging.zoom_mode ~= "page"
+                or (self.ui.paging.zoom_mode == "page" and self.ui.paging.is_reflowed))
+            and not self.ui.paging.zoom_mode:find("height")
+    else
+        return self.view_mode ~= "page"
     end
 end
 
