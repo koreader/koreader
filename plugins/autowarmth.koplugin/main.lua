@@ -31,6 +31,7 @@ local activate_closer_midnight =4
 local midnight_index = 11
 
 local device_max_warmth = Device:hasNaturalLight() and Device.powerd.fl_warmth_max or 100
+local device_warmth_fit_scale = device_max_warmth / 100
 
 local function frac(x)
     return x - math.floor(x)
@@ -94,14 +95,16 @@ end
 
 -- wrapper for unscheduling, so that only our setWarmth gets unscheduled
 function AutoWarmth.setWarmth(val)
-    if val and val > 100 then
-        DeviceListener:onSetNightMode(true)
-    else
-        DeviceListener:onSetNightMode(false)
-    end
-    if val and Device:hasNaturalLight() then
-        val = val <= 100 and val or 100
-        Device.powerd:setWarmth(val)
+    if val then
+        if val > 100 then
+            DeviceListener:onSetNightMode(true)
+        else
+            DeviceListener:onSetNightMode(false)
+        end
+        if Device:hasNaturalLight() then
+            val = math.min(val, 100)
+            Device.powerd:setWarmth(val)
+        end
     end
 end
 
@@ -138,11 +141,7 @@ function AutoWarmth:scheduleMidnightUpdate()
                 local next_warmth = math.min(self.warmth[index1], 100) + delta_w * i
                 -- only apply warmth for steps the hardware has (e.g. Tolino has 0-10 hw steps
                 -- which map to warmth 0, 10, 20, 30 ... 100)
-                local fit_scale = 1
-                if Device:hasNaturalLight() then
-                    fit_scale = next_warmth / 100 * device_max_warmth
-                end
-                if frac(next_warmth / fit_scale) == 0 then
+                if frac(next_warmth * device_warmth_fit_scale) == 0 then
                     table.insert(self.sched_times, time + delta_t * i)
                     table.insert(self.sched_funcs, {self.setWarmth,
                         math.floor(math.min(self.warmth[index1], 100) + delta_w * i)})
@@ -162,7 +161,7 @@ function AutoWarmth:scheduleMidnightUpdate()
                 if not self.current_times[i] then
                     self.current_times[i] = self.scheduler_times[i]
                 elseif self.scheduler_times[i] and
-                    math.abs(self.current_times[i] - 12) > math.abs(self.scheduler_times[i] - 12) then
+                    math.abs(self.current_times[i]%24 - 12) > math.abs(self.scheduler_times[i]%24 - 12) then
                     self.current_times[i] = self.scheduler_times[i]
                 end
             end
@@ -171,7 +170,7 @@ function AutoWarmth:scheduleMidnightUpdate()
                 if not self.current_times[i] then
                     self.current_times[i] = self.scheduler_times[i]
                 elseif self.scheduler_times[i] and
-                    math.abs(self.current_times[i] - 12) < math.abs(self.scheduler_times[i] - 12) then
+                    math.abs(self.current_times[i]%24 - 12) < math.abs(self.scheduler_times[i]%24 - 12) then
                     self.current_times[i] = self.scheduler_times[i]
                 end
             end
@@ -189,7 +188,6 @@ function AutoWarmth:scheduleMidnightUpdate()
         self.current_times[10] = nil
         self.current_times[11] = nil
     end
-
 
     -- here are dragons
     local i = 1
@@ -216,7 +214,7 @@ function AutoWarmth:scheduleMidnightUpdate()
     self:scheduleWarmthChanges(now)
 end
 
-function AutoWarmth:scheduleWarmthChanges(now)
+function AutoWarmth:scheduleWarmthChanges(time)
     for i = 1, #self.sched_funcs do -- loop not essential, as unschedule unschedules all functions at once
         if not UIManager:unschedule(self.sched_funcs[i][1]) then
             break
@@ -225,8 +223,8 @@ function AutoWarmth:scheduleWarmthChanges(now)
 
     local actual_warmth
     for i = 1, #self.sched_funcs do
-        if self.sched_times[i] > now then
-            UIManager:scheduleIn( self.sched_times[i] - now,
+        if self.sched_times[i] > time then
+            UIManager:scheduleIn( self.sched_times[i] - time,
                 self.sched_funcs[i][1], self.sched_funcs[i][2])
         else
             actual_warmth = self.sched_funcs[i][2] or actual_warmth
@@ -295,7 +293,7 @@ function AutoWarmth:getSubMenuItems()
             checked_func = function()
                 return self.easy_mode
             end,
-            help_text = _("Easy mode disables all entries except: civil dawn, sun rise, sun set and covil dusk."),
+            help_text = _("Easy mode disables all entries except: civil dawn, sun rise, sun set and civil dusk."),
             callback = function(touchmenu_instance)
                 local info_text
                 if not self.easy_mode then
