@@ -35,7 +35,6 @@ local ReaderPaging = InputContainer:new{
     number_of_pages = 0,
     visible_area = nil,
     page_area = nil,
-    show_overlap_enable = nil,
     overlap = Screen:scaleBySize(DOVERLAPPIXELS),
 
     inverse_reading_order = nil,
@@ -192,8 +191,6 @@ end
 function ReaderPaging:onReadSettings(config)
     self.page_positions = config:readSetting("page_positions") or {}
     self:_gotoPage(config:readSetting("last_page") or 1)
-    self.show_overlap_enable = config:isTrue("show_overlap_enable") or
-        G_reader_settings:isTrue("show_overlap_enable") or DSHOWOVERLAP
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
     self.is_reflowed = config:has("kopt_text_wrap") and config:readSetting("kopt_text_wrap") == 1
@@ -212,7 +209,6 @@ function ReaderPaging:onSaveSettings()
     self.ui.doc_settings:saveSetting("page_positions", self.page_positions)
     self.ui.doc_settings:saveSetting("last_page", self:getTopPage())
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
-    self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
     self.ui.doc_settings:saveSetting("flipping_zoom_mode", self.flipping_zoom_mode)
     self.ui.doc_settings:saveSetting("flipping_scroll_mode", self.flipping_scroll_mode)
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
@@ -1045,7 +1041,7 @@ function ReaderPaging:onGotoPageRel(diff)
     self.view:PanningUpdate(panned_x, panned_y)
 
     -- Update dim area in ReaderView
-    if self.show_overlap_enable then
+    if self.view.page_overlap_enable then
         if self.current_page ~= old_page then
             self.view.dim_area:clear()
         else
