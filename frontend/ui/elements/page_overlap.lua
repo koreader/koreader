@@ -5,14 +5,6 @@ local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
 
-local function isOverlapEnabled()
-    if ReaderUI.instance.document.info.has_pages then
-        return ReaderUI.instance.paging.show_overlap_enable
-    else
-        return ReaderUI.instance.rolling.show_overlap_enable
-    end
-end
-
 local PageOverlap = {
     text = _("Page overlap"),
     sub_item_table = {
@@ -25,19 +17,14 @@ local PageOverlap = {
                 return text
             end,
             checked_func = function()
-                return ReaderUI.instance.view:isOverlapAllowed() and isOverlapEnabled()
+                return ReaderUI.instance.view:isOverlapAllowed() and ReaderUI.instance.view.page_overlap_enable
             end,
             callback = function()
                 if ReaderUI.instance.view:isOverlapAllowed() then
-                    local is_overlap_enabled = isOverlapEnabled()
-                    if ReaderUI.instance.document.info.has_pages then
-                        ReaderUI.instance.paging.show_overlap_enable = not is_overlap_enabled
-                    else
-                        ReaderUI.instance.rolling.show_overlap_enable = not is_overlap_enabled
-                    end
-                    if is_overlap_enabled then
+                    if ReaderUI.instance.view.page_overlap_enable then
                         ReaderUI.instance.view.dim_area:clear()
                     end
+                    ReaderUI.instance.view.page_overlap_enable = not ReaderUI.instance.view.page_overlap_enable
                 else
                     UIManager:show(require("ui/widget/infomessage"):new{
                         text = _("Page overlap cannot be enabled in the current view mode."),
@@ -60,7 +47,7 @@ table.insert(PageOverlap.sub_item_table, {
     end,
     enabled_func = function()
         return not ReaderUI.instance.document.info.has_pages and
-            ReaderUI.instance.view:isOverlapAllowed() and isOverlapEnabled()
+            ReaderUI.instance.view:isOverlapAllowed() and ReaderUI.instance.view.page_overlap_enable
     end,
     callback = function(touchmenu_instance)
         local SpinWidget = require("ui/widget/spinwidget")
@@ -98,7 +85,7 @@ for k, v in pairs(page_overlap_styles) do
             return text
         end,
         enabled_func = function()
-            return ReaderUI.instance.view:isOverlapAllowed() and isOverlapEnabled()
+            return ReaderUI.instance.view:isOverlapAllowed() and ReaderUI.instance.view.page_overlap_enable
         end,
         checked_func = function()
             return ReaderUI.instance.view.page_overlap_style == k
