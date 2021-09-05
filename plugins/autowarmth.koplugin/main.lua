@@ -150,20 +150,12 @@ function AutoWarmth:scheduleMidnightUpdate()
         end
     end
 
-    -- unpack only goes until the first nil value, but we need the whole array
-    local function fullunpack (t, i, max)
-      i = i or 1
-      while t[i] ~= nil or (max and i <= max) do
-        return t[i], fullunpack(t, i + 1, max)
-      end
-    end
-
     if self.activate == activate_sun then
-        self.current_times = {fullunpack(SunTime.times, 1, midnight_index)}
+        self.current_times = {unpack(SunTime.times, 1, midnight_index)}
     elseif self.activate == activate_schedule then
-        self.current_times = {fullunpack(self.scheduler_times, 1, midnight_index)}
+        self.current_times = {unpack(self.scheduler_times, 1, midnight_index)}
     else
-        self.current_times = {fullunpack(SunTime.times, 1, midnight_index)}
+        self.current_times = {unpack(SunTime.times, 1, midnight_index)}
         if self.activate == activate_closer_noon then
             for i = 1, midnight_index do
                 if not self.current_times[i] then
