@@ -241,7 +241,8 @@ end
 
 function AutoWarmth:addToMainMenu(menu_items)
     menu_items.autowarmth = {
-        text = _("Auto warmth and night mode"),
+        text = Device:hasNaturalLight() and _("Auto warmth and night mode")
+            or _("Auto night mode"),
         checked_func = function() return self.activate ~= 0 end,
         sub_item_table_func = function()
             return self:getSubMenuItems()
@@ -262,7 +263,7 @@ local function tidy_menu(menu, request)
     return menu
 end
 
-local about_text = _([[Set the frontlight warmth and night mode based on a time schedule or the sun's position.
+local about_text = _([[Set the frontlight warmth (if available) and night mode based on a time schedule or the sun's position.
 
 There are three types of twilight:
 
@@ -277,7 +278,8 @@ To use the sun's position, a geographical location must be entered. The calculat
 function AutoWarmth:getSubMenuItems()
     return {
         {
-            text = _("About auto warmth and night mode"),
+            text = Device:hasNaturalLight() and _("About auto warmth and night mode")
+                or _("About auto night mode"),
             callback = function()
                 UIManager:show(InfoMessage:new{
                     text = about_text,
@@ -320,7 +322,8 @@ function AutoWarmth:getSubMenuItems()
             sub_item_table = self:getScheduleMenu(),
         },
         {
-            text = _("Warmth and night mode settings"),
+            text = Device:hasNaturalLight() and _("Warmth and night mode settings")
+                or _("Night mode settings"),
             sub_item_table = self:getWarmthMenu(),
             separator = true,
         },
@@ -645,7 +648,8 @@ function AutoWarmth:getWarmthMenu()
 
     local retval = {
         {
-            text = _("Set warmth for:"),
+            text = Device:hasNaturalLight() and _("Set warmth and night mode for:")
+                or _("Set night mode for:"),
             enabled_func = function() return false end,
         },
         getWarmthMenuEntry(_("Solar noon"), 6, false),
