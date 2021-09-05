@@ -39,7 +39,7 @@ end
 
 local AutoWarmth = WidgetContainer:new{
     name = "autowarmth",
-    easy_mode = G_reader_settings:isTrue("autowarmth_easy_mode") or false,
+    easy_mode = G_reader_settings:nilOrTrue("autowarmth_easy_mode"),
     activate = G_reader_settings:readSetting("autowarmth_activate") or 0,
     location = G_reader_settings:readSetting("autowarmth_location") or "Geysir",
     latitude = G_reader_settings:readSetting("autowarmth_latitude") or 64.31, --great Geysir in Iceland
@@ -75,7 +75,7 @@ function AutoWarmth:onDispatcherRegisterActions()
 end
 
 function AutoWarmth:onShowEphemeris()
-    self:showTimesInfo(_("Infos about the sun in"), true, activate_sun, false)
+    self:showTimesInfo(_("Information about the sun in"), true, activate_sun, false)
 end
 
 function AutoWarmth:onResume()
@@ -267,14 +267,15 @@ end
 local about_text = _([[Set the frontlight warmth and night mode based on a time schedule or the sun's position.
 
 There are three types of twilight:
-• Civil: You can read a newspaper.
-• Nautical: You can see the first stars.
-• Astronomical: It is really dark.
 
-Certain warmth-values can be set for every kind of twilight and sunrise, noon, sunset and midnight.
+• Civil: You can read a newspaper
+• Nautical: You can see the first stars
+• Astronomical: It is really dark
+
+Custom warmth values can be set for every kind of twilight and sunrise, noon, sunset and midnight.
 The screen warmth is continuously adjusted to the current time.
 
-To use the sun's position, the geographical location must be entered. The calculations are very precise (deviation less than two minutes).]])
+To use the sun's position, a geographical location must be entered. The calculations are very precise, with a deviation less than minute and a half.]])
 function AutoWarmth:getSubMenuItems()
     return {
         {
@@ -332,13 +333,13 @@ function AutoWarmth:getSubMenuItems()
             sub_item_table = self:getScheduleMenu(),
         },
         {
-            text = _("Warmths"),
+            text = _("Warmths settings"),
             sub_item_table = self:getWarmthMenu(),
             separator = true,
         },
         self:getTimesMenu(_("Active auto-warmth parameters")),
-        self:getTimesMenu(_("Infos about the sun in"), true, activate_sun),
-        self:getTimesMenu(_("Infos about the schedule"), false, activate_schedule),
+        self:getTimesMenu(_("Information about the sun in"), true, activate_sun),
+        self:getTimesMenu(_("Information about the schedule"), false, activate_schedule),
     }
 end
 
@@ -557,12 +558,12 @@ function AutoWarmth:getScheduleMenu()
     end
 
     local retval = {
-        getScheduleMenuEntry(_("Midnight"), 1, false ),
+        getScheduleMenuEntry(_("Solar midnight"), 1, false ),
         getScheduleMenuEntry(_("Astronomical dawn"), 2, false),
         getScheduleMenuEntry(_("Nautical dawn"), 3, false),
         getScheduleMenuEntry(_("Civil dawn"), 4),
         getScheduleMenuEntry(_("Sunrise"), 5),
-        getScheduleMenuEntry(_("High noon"), 6, false),
+        getScheduleMenuEntry(_("Solar noon"), 6, false),
         getScheduleMenuEntry(_("Sunset"), 7),
         getScheduleMenuEntry(_("Civil dusk"), 8),
         getScheduleMenuEntry(_("Nautical dusk"), 9, false),
@@ -660,7 +661,7 @@ function AutoWarmth:getWarmthMenu()
             text = _("Set warmth for:"),
             enabled_func = function() return false end,
         },
-        getWarmthMenuEntry(_("High noon"), 6, false),
+        getWarmthMenuEntry(_("Solar noon"), 6, false),
         getWarmthMenuEntry(_("Daytime"), 5),
         getWarmthMenuEntry(_("Darkest time of civil dawn"), 4, false),
         getWarmthMenuEntry(_("Darkest time of civil twilight"), 4, true),
@@ -730,14 +731,14 @@ function AutoWarmth:showTimesInfo(title, location, activator, easy)
         face = Font:getFace("scfont"),
         width = math.floor(Screen:getWidth() * 0.90),
             text = title .. location_string .. ":\n\n" ..
-            info_line(_("Midnight        "), times, 1, self.easy_mode) ..
+            info_line(_("Solar midnight: "), times, 1, self.easy_mode) ..
             _("  Dawn\n") ..
             info_line(_("    Astronomic: "), times, 2, self.easy_mode) ..
             info_line(_("    Nautical:   "), times, 3, self.easy_mode) ..
             info_line(_("    Civil:      "), times, 4) ..
             _("  Dawn\n") ..
             info_line(_("Sunrise:        "), times, 5) ..
-            info_line(_("\nHigh noon:      "), times, 6, self.easy_mode) ..
+            info_line(_("\nSolar noon:     "), times, 6, self.easy_mode) ..
 
             info_line(_("\nSunset:         "), times, 7) ..
             _("  Dusk\n") ..
@@ -745,7 +746,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, easy)
             info_line(_("    Nautical:   "), times, 9, self.easy_mode) ..
             info_line(_("    Astronomic: "), times, 10, self.easy_mode) ..
             _("  Dusk\n") ..
-            info_line(_("Midnight        "), times, midnight_index, self.easy_mode)
+            info_line(_("Solar midnight: "), times, midnight_index, self.easy_mode)
     })
 end
 
