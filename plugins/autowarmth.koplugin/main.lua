@@ -151,7 +151,7 @@ function AutoWarmth:scheduleMidnightUpdate()
     end
 
     -- unpack only goes until the first nil value, but we need the whole array
-    function fullunpack (t, i, max)
+    local function fullunpack (t, i, max)
       i = i or 1
       while t[i] ~= nil or (max and i <= max) do
         return t[i], fullunpack(t, i + 1, max)
