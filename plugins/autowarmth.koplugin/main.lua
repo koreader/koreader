@@ -503,7 +503,7 @@ function AutoWarmth:getScheduleMenu()
                         end
                         if num > 1 and new_time < get_valid_time(num, -1) then
                             UIManager:show(ConfirmBox:new{
-                                text =  _("This time conflicts with the previous time.\nShall the previous time be adjusted?"),
+                                text =  _("This time is before the previous time.\nAdjust the previous time?"),
                                 ok_callback = function()
                                     for i = num-1, 1, -1 do
                                         if self.scheduler_times[i] then
@@ -519,7 +519,7 @@ function AutoWarmth:getScheduleMenu()
                             })
                         elseif num < 10 and new_time > get_valid_time(num, 1) then
                             UIManager:show(ConfirmBox:new{
-                                text =  _("This time conflicts with the subsequent time.\nShall the subsequent time be adjusted?"),
+                                text =  _("This time is after the subsequent time.\nAdjust the subsequent time?"),
                                 ok_callback = function()
                                     for i = num + 1, midnight_index - 1  do
                                         if self.scheduler_times[i] then
