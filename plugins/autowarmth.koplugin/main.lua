@@ -51,7 +51,6 @@ local AutoWarmth = WidgetContainer:new{
         or { 90, 90, 80, 60, 20, 20, 20, 60, 80, 90, 90},
     sched_times = {},
     sched_funcs = {}, -- necessary for unschedule, function, warmth
-    sched_index = 1,
 }
 
 -- get timezone offset in hours (including dst)
@@ -65,6 +64,7 @@ function AutoWarmth:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 
+    G_reader_settings:saveSetting("autowarmth_easy_mode", self.easy_mode)
     -- schedule recalculation shortly afer midnight
     self:scheduleMidnightUpdate()
 end
