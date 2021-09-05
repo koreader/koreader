@@ -150,12 +150,20 @@ function AutoWarmth:scheduleMidnightUpdate()
         end
     end
 
+    -- unpack only goes until the first nil value, but we need the whole array
+    function fullunpack (t, i, max)
+      i = i or 1
+      while t[i] ~= nil or (max and i <= max) do
+        return t[i], fullunpack(t, i + 1, max)
+      end
+    end
+
     if self.activate == activate_sun then
-        self.current_times = {unpack(SunTime.times)}
+        self.current_times = {fullunpack(SunTime.times, 1, midnight_index)}
     elseif self.activate == activate_schedule then
-        self.current_times = {unpack(self.scheduler_times)}
+        self.current_times = {fullunpack(self.scheduler_times, 1, midnight_index)}
     else
-        self.current_times = {unpack(SunTime.times)}
+        self.current_times = {fullunpack(SunTime.times, 1, midnight_index)}
         if self.activate == activate_closer_noon then
             for i = 1, midnight_index do
                 if not self.current_times[i] then
@@ -175,8 +183,6 @@ function AutoWarmth:scheduleMidnightUpdate()
                 end
             end
         end
-        -- corner case, if some entries are unused
-        table.sort(self.current_times, function(a,b) return a < b end)
     end
 
     if self.easy_mode then
@@ -243,7 +249,7 @@ end
 
 function AutoWarmth:addToMainMenu(menu_items)
     menu_items.autowarmth = {
-        text = _("Auto-warmth"),
+        text = _("Auto warmth and night mode"),
         checked_func = function() return self.activate ~= 0 end,
         sub_item_table_func = function()
             return self:getSubMenuItems()
@@ -279,7 +285,7 @@ To use the sun's position, a geographical location must be entered. The calculat
 function AutoWarmth:getSubMenuItems()
     return {
         {
-            text = _("About auto-warmth"),
+            text = _("About auto warmth and night mode"),
             callback = function()
                 UIManager:show(InfoMessage:new{
                     text = about_text,
@@ -290,28 +296,17 @@ function AutoWarmth:getSubMenuItems()
             separator = true,
         },
         {
-            text = _("Easy mode"),
+            text = _("Expert mode"),
             checked_func = function()
-                return self.easy_mode
+                return not self.easy_mode
             end,
-            help_text = _("Easy mode disables all entries except: civil dawn, sun rise, sun set and civil dusk."),
+            help_text = _("In the expert mode, different types of twilight can be used in addition to civil twilight."),
             callback = function(touchmenu_instance)
-                local info_text
-                if not self.easy_mode then
-                    info_text = _("Reduce entries in auto-warmth schedule?")
-                else
-                    info_text = _("Expand entries in auto-warmth schedule?")
-                end
-                UIManager:show(ConfirmBox:new{
-                    text = info_text,
-                    ok_callback = function()
-                        self.easy_mode = not self.easy_mode
-                        G_reader_settings:saveSetting("autowarmth_easy_mode", self.easy_mode)
-                        self:scheduleMidnightUpdate()
-                        -- closing menu is necessary for refreshing the menu structure
-                        if touchmenu_instance then touchmenu_instance:closeMenu() end
-                    end,
-                })
+                self.easy_mode = not self.easy_mode
+                G_reader_settings:saveSetting("autowarmth_easy_mode", self.easy_mode)
+                self:scheduleMidnightUpdate()
+                touchmenu_instance.item_table = self:getSubMenuItems()
+                touchmenu_instance:updateItems()
             end,
             keep_menu_open = true,
         },
@@ -323,21 +318,21 @@ function AutoWarmth:getSubMenuItems()
             sub_item_table = self:getActivateMenu(),
         },
         {
-            text = _("Location"),
+            text = _("Location settings"),
             enabled_func = function() return self.activate ~= activate_schedule end,
             sub_item_table = self:getLocationMenu(),
         },
         {
-            text = _("Schedule"),
+            text = _("Schedule settings"),
             enabled_func = function() return self.activate ~= activate_sun end,
             sub_item_table = self:getScheduleMenu(),
         },
         {
-            text = _("Warmths settings"),
+            text = _("Warmths and night mode settings"),
             sub_item_table = self:getWarmthMenu(),
             separator = true,
         },
-        self:getTimesMenu(_("Active auto-warmth parameters")),
+        self:getTimesMenu(_("Active parameters")),
         self:getTimesMenu(_("Information about the sun in"), true, activate_sun),
         self:getTimesMenu(_("Information about the schedule"), false, activate_schedule),
     }
@@ -451,9 +446,9 @@ function AutoWarmth:getScheduleMenu()
     local function store_times(touchmenu_instance, new_time, num)
         self.scheduler_times[num] = new_time
         if num == 1 then
-            if self.scheduler_times[1] then
+            if new_time then
                 self.scheduler_times[midnight_index]
-                    = self.scheduler_times[1] + 24 -- next day
+                    = new_time + 24 -- next day
             else
                 self.scheduler_times[midnight_index] = nil
             end
@@ -481,7 +476,7 @@ function AutoWarmth:getScheduleMenu()
                 local mm = 0
                 if self.scheduler_times[num] then
                     hh = math.floor(self.scheduler_times[num])
-                    mm = math.floor(frac(self.scheduler_times[num])*60+0.5)
+                    mm = math.floor(frac(self.scheduler_times[num]) * 60 + 0.5)
                 end
                 UIManager:show(DoubleSpinWidget:new{
                     title_text = _("Set time"),
@@ -678,8 +673,8 @@ end
 -- activator: nil               .. current_times,
 --            activate_sun      .. sun times
 --            activate_schedule .. scheduler times
--- ease: true if easy_mode
-function AutoWarmth:showTimesInfo(title, location, activator, easy)
+-- request_easy: true if easy_mode should be used
+function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
     local times
     if not activator then
         times = self.current_times
@@ -692,13 +687,18 @@ function AutoWarmth:showTimesInfo(title, location, activator, easy)
     -- text to show
     -- t .. times
     -- num .. index in times
-    local function info_line(text, t, num)
+    local function info_line(text, t, num, easy)
         local retval = text .. self:hoursToClock(t[num])
-        if easy and self.current_times[num] ~= t[num] then
-            return ""
+        if easy then
+            if t[num] and self.current_times[num] and self.current_times[num] ~= t[num] then
+                return text .. "\n"
+            else
+                return ""
+            end
         end
+
         if not t[num] then -- entry deactivated
-            return ""
+            return retval .. "\n"
         elseif Device:hasNaturalLight() then
             if self.current_times[num] == t[num] then
                 if self.warmth[num] <= 100 then
@@ -731,22 +731,22 @@ function AutoWarmth:showTimesInfo(title, location, activator, easy)
         face = Font:getFace("scfont"),
         width = math.floor(Screen:getWidth() * 0.90),
             text = title .. location_string .. ":\n\n" ..
-            info_line(_("Solar midnight: "), times, 1, self.easy_mode) ..
+            info_line(_("Solar midnight: "), times, 1, request_easy) ..
             _("  Dawn\n") ..
-            info_line(_("    Astronomic: "), times, 2, self.easy_mode) ..
-            info_line(_("    Nautical:   "), times, 3, self.easy_mode) ..
+            info_line(_("    Astronomic: "), times, 2, request_easy) ..
+            info_line(_("    Nautical:   "), times, 3, request_easy)..
             info_line(_("    Civil:      "), times, 4) ..
             _("  Dawn\n") ..
             info_line(_("Sunrise:        "), times, 5) ..
-            info_line(_("\nSolar noon:     "), times, 6, self.easy_mode) ..
+            info_line(_("\nSolar noon:     "), times, 6, request_easy) ..
 
             info_line(_("\nSunset:         "), times, 7) ..
             _("  Dusk\n") ..
             info_line(_("    Civil:      "), times, 8) ..
-            info_line(_("    Nautical:   "), times, 9, self.easy_mode) ..
-            info_line(_("    Astronomic: "), times, 10, self.easy_mode) ..
+            info_line(_("    Nautical:   "), times, 9, request_easy) ..
+            info_line(_("    Astronomic: "), times, 10, request_easy) ..
             _("  Dusk\n") ..
-            info_line(_("Solar midnight: "), times, midnight_index, self.easy_mode)
+            info_line(_("Solar midnight: "), times, midnight_index, request_easy)
     })
 end
 
