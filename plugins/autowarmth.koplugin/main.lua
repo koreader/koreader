@@ -320,7 +320,7 @@ function AutoWarmth:getSubMenuItems()
             sub_item_table = self:getScheduleMenu(),
         },
         {
-            text = _("Warmths and night mode settings"),
+            text = _("Warmth and night mode settings"),
             sub_item_table = self:getWarmthMenu(),
             separator = true,
         },
