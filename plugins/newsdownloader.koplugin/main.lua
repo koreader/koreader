@@ -150,15 +150,15 @@ function NewsDownloader:getSubMenuItems()
                     callback = function()
                         local Trapper = require("ui/trapper")
                         Trapper:wrap(function()
-                                local should_not_delete = Trapper:confirm(
+                                local should_delete = Trapper:confirm(
                                     _("Are you sure you want to delete all downloaded items?"),
-                                    _("Yes"),
-                                    _("Cancel")
+                                    _("Cancel"),
+                                    _("Yes")
                                 )
-                                if should_not_delete then
+                                if should_delete then
+                                    self:removeNewsButKeepFeedConfig()
                                     Trapper:reset()
                                 else
-                                    self:removeNewsButKeepFeedConfig()
                                     Trapper:reset()
                                 end
                         end)
@@ -224,12 +224,12 @@ function NewsDownloader:loadConfigAndProcessFeeds()
     -- If the file contains no table elements, then the user hasn't set any feeds.
     if #feed_config <= 0 then
         logger.err("NewsDownloader: empty feed list.", self.feed_config_path)
-        local should_close = UI:confirm(
+        local should_edit_feed_list = UI:confirm(
             T(_("Feed list is empty. If you want to download news, you'll have to add a feed first.")),
-            _("Edit feed list"),
-            _("Close")
+            _("Close"),
+            _("Edit feed list")
         )
-        if not should_close then
+        if should_edit_feed_list then
             -- Show the user a blank feed view so they can
             -- add a feed to their list.
             local feed_item_vc = FeedView:getItem(
@@ -311,19 +311,19 @@ review your feed configuration file.]])
     -- Ask the user if they want to go to their downloads folder
     -- or if they'd rather remain at the menu.
     feed_message = feed_message .. _("Go to downloaders folder?")
-    local should_return_to_menu = UI:confirm(
+    local should_go_to_downloads = UI:confirm(
         feed_message,
-        _("Go to downloads"),
-        _("Close")
+        _("Close"),
+        _("Go to downloads")
     )
-    if should_return_to_menu then
-        -- Return to the menu.
-        NetworkMgr:afterWifiAction()
-        return
-    else
+    if should_go_to_downloads then
         -- Go to downloads folder.
         UI:clear()
         self:openDownloadsFolder()
+        NetworkMgr:afterWifiAction()
+        return
+    else
+        -- Return to the menu.
         NetworkMgr:afterWifiAction()
         return
     end
@@ -639,7 +639,7 @@ function NewsDownloader:removeNewsButKeepFeedConfig()
         end
     end
     UIManager:show(InfoMessage:new{
-                       text = _("All news removed.")
+                       text = _("All downloaded news feed items deleted.")
     })
 end
 
