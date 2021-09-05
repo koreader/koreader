@@ -47,7 +47,6 @@ local ReaderRolling = InputContainer:new{
     current_page= nil,
     xpointer = nil,
     panning_steps = ReaderPanning.panning_steps,
-    show_overlap_enable = nil,
     cre_top_bar_enabled = false,
     visible_pages = 1,
     -- With visible_pages=2, in 2-pages mode, ensure the first
@@ -209,8 +208,6 @@ function ReaderRolling:onReadSettings(config)
             end
         end
     end
-    self.show_overlap_enable = config:isTrue("show_overlap_enable") or
-        G_reader_settings:isTrue("show_overlap_enable") or DSHOWOVERLAP
 
     if config:has("inverse_reading_order") then
         self.inverse_reading_order = config:isTrue("inverse_reading_order")
@@ -305,7 +302,6 @@ function ReaderRolling:onSaveSettings()
     if self.ui.document then
         self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
     end
-    self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
     self.ui.doc_settings:saveSetting("visible_pages", self.visible_pages)
     self.ui.doc_settings:saveSetting("hide_nonlinear_flows", self.hide_nonlinear_flows)
@@ -817,7 +813,7 @@ function ReaderRolling:onGotoViewRel(diff)
         local footer_height = ((self.view.footer_visible and not self.view.footer.settings.reclaim_height) and 1 or 0) * self.view.footer:getHeight()
         local page_visible_height = self.ui.dimen.h - footer_height
         local pan_diff = diff * page_visible_height
-        if self.show_overlap_enable then
+        if self.view.page_overlap_enable then
             local overlap_lines = G_reader_settings:readSetting("copt_overlap_lines") or 1
             local overlap_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0) * overlap_lines
             if pan_diff > overlap_h then
@@ -1006,7 +1002,7 @@ function ReaderRolling:_gotoPos(new_pos, do_dim_area)
     local max_pos = self.ui.document.info.doc_height - self.ui.dimen.h + self.view.footer:getHeight()
     if new_pos > max_pos then new_pos = max_pos end
     -- adjust dim_area according to new_pos
-    if self.view.view_mode ~= "page" and self.show_overlap_enable and do_dim_area then
+    if self.view.view_mode ~= "page" and self.view.page_overlap_enable and do_dim_area then
         local footer_height = ((self.view.footer_visible and not self.view.footer.settings.reclaim_height) and 1 or 0) * self.view.footer:getHeight()
         local page_visible_height = self.ui.dimen.h - footer_height
         local panned_step = new_pos - self.current_pos
