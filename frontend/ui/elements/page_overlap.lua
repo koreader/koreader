@@ -20,11 +20,12 @@ local PageOverlap = {
                 return ReaderUI.instance.view:isOverlapAllowed() and ReaderUI.instance.view.page_overlap_enable
             end,
             callback = function()
-                if ReaderUI.instance.view:isOverlapAllowed() then
-                    if ReaderUI.instance.view.page_overlap_enable then
-                        ReaderUI.instance.view.dim_area:clear()
+                local view = ReaderUI.instance.view
+                if view:isOverlapAllowed() then
+                    if view.page_overlap_enable then
+                        view.dim_area:clear()
                     end
-                    ReaderUI.instance.view.page_overlap_enable = not ReaderUI.instance.view.page_overlap_enable
+                    view.page_overlap_enable = not view.page_overlap_enable
                 else
                     UIManager:show(require("ui/widget/infomessage"):new{
                         text = _("Page overlap cannot be enabled in the current view mode."),
