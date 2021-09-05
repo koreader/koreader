@@ -789,6 +789,7 @@ function ReaderView:onReadSettings(config)
     local page_scroll = config:readSetting("kopt_page_scroll") or self.document.configurable.page_scroll
     self.page_scroll = page_scroll == 1 and true or false
     self.highlight.saved = config:readSetting("highlight") or {}
+    self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or DSHOWOVERLAP
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
     self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height")
                                               or G_reader_settings:readSetting("kopt_page_gap_height")
@@ -903,6 +904,7 @@ function ReaderView:onSaveSettings()
     end
     self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
     self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)
+    self.ui.doc_settings:saveSetting("show_overlap_enable", self.page_overlap_enable)
     self.ui.doc_settings:saveSetting("page_overlap_style", self.page_overlap_style)
 end
 
