@@ -359,7 +359,7 @@ function ReaderStyleTweak:init()
     -- enabled tweaks / none (without the need to disable each of
     -- them)
     table.insert(self.tweaks_table, {
-        text = _("Enable style tweaks (hold for info)"),
+        text = _("Enable style tweaks (long-press for help)"),
         checked_func = function() return self.enabled end,
         callback = function()
             self.enabled = not self.enabled
@@ -547,7 +547,7 @@ You can enable individual tweaks on this book with a tap, or view more details a
     local book_tweak_item = {
         text_func = function()
             if self.book_style_tweak then
-                return _("Book-specific tweak (hold to edit)")
+                return _("Book-specific tweak (long-press to edit)")
             else
                 return _("Book-specific tweak")
             end
