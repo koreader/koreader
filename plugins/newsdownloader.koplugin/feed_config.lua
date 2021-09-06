@@ -33,9 +33,8 @@ return {--do NOT change this line
 
  -- LIST YOUR FEEDS HERE:
 
- { "https://ourworldindata.org/atom.xml", limit = 2, download_full_article=true, include_images=true, enable_filter=true},
- { "https://hnrss.org/bestcomments", limit = 10, download_full_article=true, include_images=false},
- { "https://www.pcworld.com/index.rss", limit = 7 , download_full_article=false},
+ { "https://github.com/koreader/koreader/releases.atom", limit = 3, download_full_article=true, include_images=false},
+ { "https://github.com/koreader/koreader/commits/master.atom", limit = 3 , download_full_article=false},
 
 -- { "http://www.football.co.uk/international/rss.xml", limit = 2},
 

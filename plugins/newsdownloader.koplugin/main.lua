@@ -38,7 +38,7 @@ local NewsDownloader = WidgetContainer:new{
         limit = 5,
         download_full_article = true,
         include_images = true,
-        enable_filter = true,
+        enable_filter = false,
         filter_element = ""
     },
     kv = {}
@@ -105,8 +105,8 @@ function NewsDownloader:getSubMenuItems()
         {
             text = _("Sync news feeds"),
             keep_menu_open = true,
-            callback = function()
-                NetworkMgr:runWhenOnline(function() self:loadConfigAndProcessFeedsWithUI() end)
+            callback = function(touchmenu_instance)
+                NetworkMgr:runWhenOnline(function() self:loadConfigAndProcessFeedsWithUI(touchmenu_instance) end)
             end,
         },
         {
@@ -123,11 +123,6 @@ function NewsDownloader:getSubMenuItems()
         {
             text = _("Settings"),
             sub_item_table = {
-                {
-                    text = _("Edit feeds configuration file"),
-                    keep_menu_open = true,
-                    callback = function() self:changeFeedConfig() end,
-                },
                 {
                     text = _("Set custom download folder"),
                     keep_menu_open = true,
@@ -153,7 +148,7 @@ function NewsDownloader:getSubMenuItems()
                                 local should_delete = Trapper:confirm(
                                     _("Are you sure you want to delete all downloaded items?"),
                                     _("Cancel"),
-                                    _("Yes")
+                                    _("Delete")
                                 )
                                 if should_delete then
                                     self:removeNewsButKeepFeedConfig()
@@ -171,7 +166,7 @@ function NewsDownloader:getSubMenuItems()
             keep_menu_open = true,
             callback = function()
                 UIManager:show(InfoMessage:new{
-                                   text = T(_("News downloader retrieves RSS and Atom news entries and stores them to:\n%1\n\nEach entry is a separate html file, that can be browsed by KOReader file manager.\nItems download limit can be configured in Settings."),
+                                   text = T(_("News downloader retrieves RSS and Atom news entries and stores them to:\n%1\n\nEach entry is a separate EPUB file that can be browsed by KOReader.\nFeeds can be configured with download limits and other customization through the Edit Feeds menu item."),
                                             BD.dirpath(self.download_dir))
                 })
             end,
@@ -212,7 +207,7 @@ function NewsDownloader:lazyInitialization()
     end
 end
 
-function NewsDownloader:loadConfigAndProcessFeeds()
+function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
     local UI = require("ui/trapper")
     logger.dbg("force repaint due to upcoming blocking calls")
 
@@ -308,31 +303,38 @@ review your feed configuration file.]])
     end
     -- Clear the info widgets before displaying the next ui widget.
     UI:clear()
-    -- Ask the user if they want to go to their downloads folder
-    -- or if they'd rather remain at the menu.
-    feed_message = feed_message .. _("Go to downloaders folder?")
-    local should_go_to_downloads = UI:confirm(
-        feed_message,
-        _("Close"),
-        _("Go to downloads")
-    )
-    if should_go_to_downloads then
-        -- Go to downloads folder.
-        UI:clear()
-        self:openDownloadsFolder()
-        NetworkMgr:afterWifiAction()
-        return
-    else
-        -- Return to the menu.
-        NetworkMgr:afterWifiAction()
-        return
+    -- Check to see if this method was called from the menu. If it was,
+    -- we will have gotten a touchmenu_instance. This will context gives the user
+    -- two options about what to do next, which are handled by this block.
+    if touchmenu_instance then
+        -- Ask the user if they want to go to their downloads folder
+        -- or if they'd rather remain at the menu.
+        feed_message = feed_message .. _("Go to downloaders folder?")
+        local should_go_to_downloads = UI:confirm(
+            feed_message,
+            _("Close"),
+            _("Go to downloads")
+        )
+        if should_go_to_downloads then
+            -- Go to downloads folder.
+            UI:clear()
+            self:openDownloadsFolder()
+            touchmenu_instance:closeMenu()
+            NetworkMgr:afterWifiAction()
+            return
+        else
+            -- Return to the menu.
+            NetworkMgr:afterWifiAction()
+            return
+        end
     end
+    return
 end
 
-function NewsDownloader:loadConfigAndProcessFeedsWithUI()
+function NewsDownloader:loadConfigAndProcessFeedsWithUI(touchmenu_instance)
     local Trapper = require("ui/trapper")
     Trapper:wrap(function()
-            self:loadConfigAndProcessFeeds()
+            self:loadConfigAndProcessFeeds(touchmenu_instance)
     end)
 end
 
@@ -772,9 +774,11 @@ function NewsDownloader:editFeedAttribute(id, key, value)
             input_type = "string"
         elseif key == FeedView.LIMIT then
             title = _("Edit feed limit")
+            description = _("Set to 0 for no limit to how many items are downloaded")
             input_type = "number"
         elseif key == FeedView.FILTER_ELEMENT then
-            title = _("Edit filter element")
+            title = _("Edit filter element.")
+            description = _("Filter based on the given CSS selector. E.g.: name_of_css.element.class")
             input_type = "string"
         else
             return false
@@ -816,7 +820,7 @@ function NewsDownloader:editFeedAttribute(id, key, value)
         elseif key == FeedView.INCLUDE_IMAGES then
             text = _("Include images?")
         elseif key == FeedView.ENABLE_FILTER then
-            text = _("Enable filter?")
+            text = _("Enable CSS filter?")
         end
 
         local multi_box
@@ -915,7 +919,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                     )
                 end
             elseif key == FeedView.DOWNLOAD_FULL_ARTICLE then
-                if feed.download_full_article then
+                if feed.download_full_article ~= nil then
                     feed.download_full_article = value
                 else
                     table.insert(
@@ -927,7 +931,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                     )
                 end
             elseif key == FeedView.INCLUDE_IMAGES then
-                if feed.include_images then
+                if feed.include_images ~= nil then
                     feed.include_images = value
                 else
                     table.insert(
@@ -939,7 +943,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                     )
                 end
             elseif key == FeedView.ENABLE_FILTER then
-                if feed.enable_filter then
+                if feed.enable_filter ~= nil then
                     feed.enable_filter = value
                 else
                     table.insert(
