@@ -592,7 +592,7 @@ Default value: %1]]), GestureDetector.TWO_FINGER_TAP_DURATION/1000),
                     local items = SpinWidget:new{
                         title_text = _("Long-press interval"),
                         info_text = T(_([[
-If a touch is not released in this interval, it is considered a long-press. On document's text, single word selection is then triggered.
+If a touch is not released in this interval, it is considered a long-press. On document text, single word selection will then be triggered.
 
 The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.HOLD_INTERVAL/1000),
