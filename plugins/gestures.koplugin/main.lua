@@ -584,15 +584,15 @@ Default value: %1]]), GestureDetector.TWO_FINGER_TAP_DURATION/1000),
                 end,
             },
             {
-                text = _("Hold interval"),
+                text = _("Long-press interval"),
                 keep_menu_open = true,
                 callback = function()
                     local SpinWidget = require("ui/widget/spinwidget")
                     local GestureDetector = require("device/gesturedetector")
                     local items = SpinWidget:new{
-                        title_text = _("Hold interval"),
+                        title_text = _("Long-press interval"),
                         info_text = T(_([[
-If a touch is not released in this interval, it is considered a hold (or long-press). On document's text, single word selection is then triggered.
+If a touch is not released in this interval, it is considered a long-press. On document text, single word selection will then be triggered.
 
 The interval value is in milliseconds and can range from 100 (0.1 seconds) to 2000 (2 seconds).
 Default value: %1]]), GestureDetector.HOLD_INTERVAL/1000),
@@ -674,7 +674,7 @@ function Gestures:addToMainMenu(menu_items)
                 sub_item_table = self:genSubItemTable({"tap_top_left_corner", "tap_top_right_corner", "tap_left_bottom_corner", "tap_right_bottom_corner"}),
             },
             {
-                text = _("Hold corner"),
+                text = _("Long-press on corner"),
                 sub_item_table = self:genSubItemTable({"hold_top_left_corner", "hold_top_right_corner", "hold_bottom_left_corner", "hold_bottom_right_corner"}),
             },
             {

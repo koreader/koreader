@@ -9,6 +9,7 @@ local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
+local Screen = Device.screen
 local T = require("ffi/util").template
 
 local ReaderSearch = InputContainer:new{
@@ -106,6 +107,7 @@ function ReaderSearch:onShowFulltextSearchInput()
     end
     self.input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
+        width = math.floor(Screen:getWidth() * 0.9),
         input = self.last_search_text,
         buttons = {
             {
@@ -143,7 +145,7 @@ function ReaderSearch:onShowFulltextSearchInput()
     }
     self.input_dialog:addWidget(self.check_button_case)
     self.check_button_regex = CheckButton:new{
-        text = _("Regular expression (hold for help)"),
+        text = _("Regular expression (long-press for help)"),
         checked = self.use_regex,
         parent = self.input_dialog,
         max_width = self.input_dialog._input_widget.width,
