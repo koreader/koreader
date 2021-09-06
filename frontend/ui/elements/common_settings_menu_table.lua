@@ -238,7 +238,7 @@ common_settings.screen_notification = require("ui/elements/screen_notification_m
 common_settings.menu_activate = require("ui/elements/menu_activate")
 common_settings.screen_disable_double_tab = require("ui/elements/screen_disable_double_tap_table")
 common_settings.ignore_hold_corners = {
-    text = _("Ignore hold on corners"),
+    text = _("Ignore long-press on corners"),
     checked_func = function()
         return G_reader_settings:isTrue("ignore_hold_corners")
     end,
