@@ -44,6 +44,7 @@ local AutoWarmth = WidgetContainer:new{
     location = G_reader_settings:readSetting("autowarmth_location") or "Geysir",
     latitude = G_reader_settings:readSetting("autowarmth_latitude") or 64.31, --great Geysir in Iceland
     longitude = G_reader_settings:readSetting("autowarmth_longitude") or -20.30,
+    altitude = G_reader_settings:readSetting("autowarmth_altitude") or 200,
     timezone = G_reader_settings:readSetting("autowarmth_timezone") or 0,
     scheduler_times = G_reader_settings:readSetting("autowarmth_scheduler_times") or
         {0.0, 5.5, 6.0, 6.5, 7.0, 13.0, 21.5, 22.0, 22.5, 23.0, 24.0},
@@ -114,7 +115,7 @@ function AutoWarmth:scheduleMidnightUpdate()
 
     local toRad = math.pi / 180
     SunTime:setPosition(self.location, self.latitude * toRad, self.longitude * toRad,
-        self.timezone)
+        self.timezone, self.altitude)
     SunTime:setAdvanced()
     SunTime:setDate() -- today
     SunTime:calculateTimes()
@@ -236,7 +237,7 @@ function AutoWarmth:hoursToClock(hours, withoutSeconds)
     if hours then
         hours = hours % 24 * 3600 + 0.01 -- round up, due to reduced precision in settings.reader.lua
     end
-    return util.secondsToClock(hours, withoutSeconds)
+    return util.secondsToClock(hours, self.easy_mode)
 end
 
 function AutoWarmth:addToMainMenu(menu_items)
@@ -432,6 +433,37 @@ function AutoWarmth:getLocationMenu()
                 end,
             }
             UIManager:show(location_widget)
+        end,
+        keep_menu_open = true,
+    },
+    {
+        text_func = function()
+            return T(_("Altitude: %1m"), self.altitude)
+        end,
+        callback = function(touchmenu_instance)
+            UIManager:show(SpinWidget:new{
+                title_text = _("Altitude"),
+                value = self.altitude,
+                value_min = -100,
+                value_max = 15000, -- intercontinental flight
+                wrap = false,
+                value_step = 10,
+                value_hold_step = 100,
+                ok_text = _("Set"),
+                callback = function(spin)
+                    self.altitude = spin.value
+                    G_reader_settings:saveSetting("autowarmth_altitude", self.altitude)
+                    self:scheduleMidnightUpdate()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+                extra_text = _("Default"),
+                extra_callback = function()
+                    self.altitude = 200
+                    G_reader_settings:saveSetting("autowarmth_altitude", self.altitude)
+                    self:scheduleMidnightUpdate()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end,
+            })
         end,
         keep_menu_open = true,
     }}
@@ -724,7 +756,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
 
     UIManager:show(InfoMessage:new{
         face = Font:getFace("scfont"),
-        width = math.floor(Screen:getWidth() * 0.90),
+        width = math.floor(Screen:getWidth() * (self.easy_mode and 0.75 or 0.90)),
             text = title .. location_string .. ":\n\n" ..
             info_line(_("Solar midnight: "), times, 1, request_easy) ..
             _("  Dawn\n") ..
