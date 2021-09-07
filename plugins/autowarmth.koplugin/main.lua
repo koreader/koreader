@@ -588,7 +588,6 @@ function AutoWarmth:getWarmthMenu()
             callback = function(touchmenu_instance)
                 if Device:hasNaturalLight() then
                     UIManager:show(SpinWidget:new{
-                        width = math.floor(Device.screen:getWidth() * 0.6),
                         title_text = text,
                         value = self.warmth[num],
                         value_min = 0,
