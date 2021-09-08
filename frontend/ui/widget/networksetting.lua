@@ -287,7 +287,7 @@ function NetworkItem:onEditNetwork()
     password_input = InputDialog:new{
         title = self.info.ssid,
         input = self.info.password,
-        input_hint = _("password (leave empty if open network)"),
+        input_hint = _("password (leave empty for open networks)"),
         input_type = "text",
         text_type = "password",
         buttons = {
@@ -329,7 +329,7 @@ function NetworkItem:onAddNetwork()
     password_input = InputDialog:new{
         title = self.info.ssid,
         input = "",
-        input_hint = _("password (leave empty if open network)"),
+        input_hint = _("password (leave empty for open networks)"),
         input_type = "text",
         text_type = "password",
         buttons = {

@@ -53,7 +53,7 @@ local function calculatePsk(ssid, pwd)
     local fp = io.popen(("wpa_passphrase %q %q"):format(ssid, pwd))
     local out = fp:read("*a")
     fp:close()
-    return string.match(out, 'psk=([a-f0-9]+)')
+    return string.match(out, "psk=([a-f0-9]+)")
 end
 
 --- Authenticates network.
@@ -69,14 +69,14 @@ function WpaSupplicant:authenticateNetwork(network)
     if err then return false, err end
 
     local re = wcli:setNetwork(nw_id, "ssid", string.format("\"%s\"", network.ssid))
-    if re == 'FAIL' then
+    if re == "FAIL" then
         wcli:removeNetwork(nw_id)
         return false, _("An error occurred while selecting network.")
     end
     -- if password is empty it’s an open AP
     if network.password and (network.password == nil or string.len(network.password) == 0) then -- Open AP
         re = wcli:setNetwork(nw_id, "key_mgmt", "NONE")
-        if re == 'FAIL' then
+        if re == "FAIL" then
             wcli:removeNetwork(nw_id)
             return false, _("An error occurred while setting passwordless mode.")
         end
@@ -87,7 +87,7 @@ function WpaSupplicant:authenticateNetwork(network)
             self:saveNetwork(network)
         end
         re = wcli:setNetwork(nw_id, "psk", network.psk)
-        if re == 'FAIL' then
+        if re == "FAIL" then
             wcli:removeNetwork(nw_id)
             return false, _("An error occurred while setting password.")
         end
@@ -118,7 +118,7 @@ function WpaSupplicant:authenticateNetwork(network)
             elseif ev:isAuthFailed() then
                 failure_cnt = failure_cnt + 1
                 if failure_cnt > 3 then
-                    re, msg = false, _('Failed to authenticate')
+                    re, msg = false, _("Failed to authenticate")
                     break
                 end
             end
@@ -132,7 +132,7 @@ function WpaSupplicant:authenticateNetwork(network)
     UIManager:close(info)
     UIManager:forceRePaint()
     if cnt >= max_retry then
-        re, msg = false, _('Timed out')
+        re, msg = false, _("Timed out")
     end
     return re, msg
 end
