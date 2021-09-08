@@ -307,8 +307,8 @@ h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
                 {
                     title = _("About ruby"),
                     info_text = _([[
-Ruby characters are small glosses on the Asian languages to show the logographs' (Hanzi, Kanji, Hanja, etc) pronunciation.
-These tweaks allow small stylistic changes and larger ones to make ruby easier to read or ignore.]]),
+Ruby characters are small glosses on writing in Asian languages (Hanzi, Kanji, Hanja, etc.) to show the pronunciation of the logographs.
+These tweaks can help make ruby easier to read or ignore.]]),
                     separator = true,
                 },
                 {
@@ -316,7 +316,7 @@ These tweaks allow small stylistic changes and larger ones to make ruby easier t
                     title = _("Nicer ruby font"),
                     description = _([[
 Use a sans serif font to display all ruby text for a more 'book-like' feeling.
-Also force the normal text weight when used with lighter or bolder fonts.]]),
+Also force the regular text weight when used with lighter or bolder fonts.]]),
                     css = [[
 rt, rubyBox[T=rt] {
     font-family: "Noto Sans CJK SC" !important;
