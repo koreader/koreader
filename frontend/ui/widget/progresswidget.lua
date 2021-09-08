@@ -119,11 +119,13 @@ function ProgressWidget:paintTo(bb, x, y)
     if self.ticks and self.last and self.last > 0 then
         local bar_width = (my_size.w-2*self.margin_h)
         local bar_filled = bar_width * self.percentage
+        -- invert chapter marks if ticks take less than 20% of the bar width
+        local bar_not_crowded = self.tick_width * #self.ticks / bar_width < 0.2
         local y_pos = y + self.margin_v + self.bordersize
         local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
         for i, tick in ipairs(self.ticks) do
             local tick_x = bar_width*(tick/self.last)
-            local color = tick_x < bar_filled and self.bgcolor or self.bordercolor
+            local color = (tick_x < bar_filled and bar_not_crowded) and self.bgcolor or self.bordercolor
             if self._mirroredUI then
                 tick_x = bar_width - tick_x
             end
