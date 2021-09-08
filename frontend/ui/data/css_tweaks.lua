@@ -303,12 +303,49 @@ h1, h2, h3, h4, h5, h6 { hyphens: none !important; }
                 separator = true,
             },
             {
-                id = "ruby_inline";
-                title = _("Render <ruby> content inline"),
-                description = _("Disable handling of <ruby> tags and render them inline."),
-                css = [[
-ruby { display: inline !important; }
-                ]],
+                title = _("Ruby"),
+                {
+                    title = _("About ruby"),
+                    info_text = _([[
+Ruby characters are small glosses on writing in Asian languages (Hanzi, Kanji, Hanja, etc.) to show the pronunciation of the logographs.
+These tweaks can help make ruby easier to read or ignore.]]),
+                    separator = true,
+                },
+                {
+                    id = "ruby_font_sans_serif";
+                    title = _("Sans-serif font for ruby"),
+                    description = _([[
+Use a sans serif font to display all ruby text for a more 'book-like' feeling.
+Also force the regular text weight when used with lighter or bolder fonts.]]),
+                    css = [[
+rt, rubyBox[T=rt] {
+    font-family: "Noto Sans CJK SC" !important;
+    font-weight: 400 !important;
+}
+                    ]],
+                },
+                {
+                    id = "ruby_font_size_larger";
+                    title = _("Larger ruby text size"),
+                    description = _("Increase ruby text size."),
+                    css = [[rt, rubyBox[T=rt] { font-size: 50% !important; }]],
+                    separator = true,
+                },
+                {
+                    id = "ruby_most_line_height_larger";
+                    title = _("Larger spacing between ruby lines"),
+                    description = _([[
+Increase line spacing of most text, so that lines keep an even spacing whether or not they include ruby.
+Further small adjustments can be done with 'Line Spacing' in the bottom menu.]]),
+                    css = [[p, li { line-height: 2 !important; }]],
+                    -- no need for priority, this has higher specificity than lineheight_all_inherit below
+                },
+                {
+                    id = "ruby_inline";
+                    title = _("Render ruby content inline"),
+                    description = _("Disable handling of <ruby> tags and render them inline."),
+                    css = [[ruby { display: inline !important; }]],
+                },
             },
             separator = true,
         },
