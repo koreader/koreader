@@ -3,7 +3,6 @@ local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local Screen = Device.screen
 local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local powerd = Device:getPowerDevice()
@@ -17,9 +16,9 @@ memory_confirm_box = nil,
 
 function ReaderDeviceStatus:init()
     if Device:hasBattery() then
-        self.battery_interval = G_reader_settings:readSetting("device_status_battery_interval") or 10
-        self.battery_threshold = G_reader_settings:readSetting("device_status_battery_threshold") or 20
-        self.battery_threshold_high = G_reader_settings:readSetting("device_status_battery_threshold_high") or 100
+        self.battery_interval = G_reader_settings:readSetting("device_status_battery_interval", 10)
+        self.battery_threshold = G_reader_settings:readSetting("device_status_battery_threshold", 20)
+        self.battery_threshold_high = G_reader_settings:readSetting("device_status_battery_threshold_high", 100)
         self.checkLowBatteryLevel = function()
             local is_charging = powerd:isCharging()
             local battery_capacity = powerd:getCapacity()
@@ -52,8 +51,8 @@ function ReaderDeviceStatus:init()
     end
 
     if not Device:isAndroid() then
-        self.memory_interval = G_reader_settings:readSetting("device_status_memory_interval") or 5
-        self.memory_threshold = G_reader_settings:readSetting("device_status_memory_threshold") or 100
+        self.memory_interval = G_reader_settings:readSetting("device_status_memory_interval", 5)
+        self.memory_threshold = G_reader_settings:readSetting("device_status_memory_threshold", 100)
         self.checkHighMemoryUsage = function()
             local statm = io.open("/proc/self/statm", "r")
             if statm then
@@ -137,7 +136,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
         table.insert(menu_items.device_status_alarm.sub_item_table,
             {
                 text_func = function()
-                    return T(_("Check interval (%1 min)"), self.battery_interval)
+                    return T(_("Check interval: %1 min"), self.battery_interval)
                 end,
                 enabled_func = function()
                     return G_reader_settings:isTrue("device_status_battery_alarm")
@@ -145,7 +144,6 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     UIManager:show(SpinWidget:new{
-                        width = math.floor(Screen:getWidth() * 0.6),
                         value = self.battery_interval,
                         value_min = 1,
                         value_max = 60,
@@ -165,7 +163,7 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
         table.insert(menu_items.device_status_alarm.sub_item_table,
             {
                 text_func = function()
-                    return T(_("Thresholds (%1% – %2%)"), self.battery_threshold, self.battery_threshold_high)
+                    return T(_("Thresholds: %1% – %2%"), self.battery_threshold, self.battery_threshold_high)
                 end,
                 enabled_func = function()
                     return G_reader_settings:isTrue("device_status_battery_alarm")
@@ -178,7 +176,6 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                         info_text = _([[
 Low level threshold is checked when the device is not charging.
 High level threshold is checked when the device is charging.]]),
-                        width = math.floor(Screen:getWidth() * 0.8),
                         left_text = _("Low"),
                         left_value = self.battery_threshold,
                         left_min = 1,
@@ -226,7 +223,7 @@ High level threshold is checked when the device is charging.]]),
         table.insert(menu_items.device_status_alarm.sub_item_table,
             {
                 text_func = function()
-                    return T(_("Check interval (%1 min)"), self.memory_interval)
+                    return T(_("Check interval: %1 min"), self.memory_interval)
                 end,
                 enabled_func = function()
                     return G_reader_settings:isTrue("device_status_memory_alarm")
@@ -234,7 +231,6 @@ High level threshold is checked when the device is charging.]]),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     UIManager:show(SpinWidget:new{
-                        width = math.floor(Screen:getWidth() * 0.6),
                         value = self.memory_interval,
                         value_min = 1,
                         value_max = 60,
@@ -245,7 +241,7 @@ High level threshold is checked when the device is charging.]]),
                             self.memory_interval = spin.value
                             G_reader_settings:saveSetting("device_status_memory_interval", self.memory_interval)
                             touchmenu_instance:updateItems()
-                            UIManager:scheduleIn(self.memory_interval*60, self.checkHighMemoryUsage)
+                            UIManager:scheduleIn(self.memory_interval * 60, self.checkHighMemoryUsage)
                         end,
                     })
                 end,
@@ -253,7 +249,7 @@ High level threshold is checked when the device is charging.]]),
         table.insert(menu_items.device_status_alarm.sub_item_table,
             {
                 text_func = function()
-                    return T(_("Threshold (%1 MB)"), self.memory_threshold)
+                    return T(_("Threshold: %1 MB"), self.memory_threshold)
                 end,
                 enabled_func = function()
                     return G_reader_settings:isTrue("device_status_memory_alarm")
@@ -261,7 +257,6 @@ High level threshold is checked when the device is charging.]]),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     UIManager:show(SpinWidget:new{
-                        width = math.floor(Screen:getWidth() * 0.6),
                         value = self.memory_threshold,
                         value_min = 20,
                         value_max = 500,
