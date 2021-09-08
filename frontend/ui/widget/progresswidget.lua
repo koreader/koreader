@@ -118,11 +118,19 @@ function ProgressWidget:paintTo(bb, x, y)
     -- ticks
     if self.ticks and self.last and self.last > 0 then
         local bar_width = (my_size.w-2*self.margin_h)
-        local bar_filled = bar_width * self.percentage
-        -- invert chapter marks if ticks take less than 20% of the bar width
-        local bar_not_crowded = self.tick_width * #self.ticks / bar_width < 0.2
-        local y_pos = y + self.margin_v + self.bordersize
         local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
+        local y_pos = y + self.margin_v + self.bordersize
+        -- invert chapter marks color if ticks take less than 20% of the past bar width
+        local past_page = self.percentage * self.last
+        local past_tick_num = 0
+        for i, tick in ipairs(self.ticks) do
+            if tick > past_page then
+                past_tick_num = i
+                break
+            end
+        end
+        local bar_filled = bar_width * self.percentage
+        local bar_not_crowded = self.tick_width * past_tick_num / bar_filled < 0.2
         for i, tick in ipairs(self.ticks) do
             local tick_x = bar_width*(tick/self.last)
             local color = (tick_x < bar_filled and bar_not_crowded) and self.bgcolor or self.bordercolor
