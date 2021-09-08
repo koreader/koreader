@@ -313,7 +313,7 @@ These tweaks can help make ruby easier to read or ignore.]]),
                 },
                 {
                     id = "ruby_font_sans_serif";
-                    title = _("Nicer ruby font"),
+                    title = _("Sans-serif font for ruby"),
                     description = _([[
 Use a sans serif font to display all ruby text for a more 'book-like' feeling.
 Also force the regular text weight when used with lighter or bolder fonts.]]),
@@ -326,7 +326,7 @@ rt, rubyBox[T=rt] {
                 },
                 {
                     id = "ruby_font_size_larger";
-                    title = _("Bigger ruby text size"),
+                    title = _("Larger ruby text size"),
                     description = _("Increase ruby text size."),
                     css = [[rt, rubyBox[T=rt] { font-size: 50% !important; }]],
                     separator = true,
