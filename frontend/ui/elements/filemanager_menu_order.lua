@@ -115,6 +115,7 @@ local order = {
     more_tools = {
         "auto_frontlight",
         "battery_statistics",
+        "book_shortcuts",
         "synchronize_time",
         "keep_alive",
         "doc_setting_tweak",
