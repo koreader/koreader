@@ -305,13 +305,8 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                 },
                 {
                     icon = "appbar.search",
-                    vsync = true,
                     callback = function()
-                        self.ui.highlight:clear()
-                        UIManager:setDirty(self.dialog, "ui")
-                        UIManager:nextTick(function()
-                            UIManager:close(self.search_dialog)
-                        end)
+                        self.search_dialog:onClose()
                         self.last_search_text = text
                         self:onShowFulltextSearchInput()
                     end,
