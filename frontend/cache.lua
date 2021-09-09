@@ -43,7 +43,7 @@ function Cache:init()
         self.cache = lru.new(self.slots, nil, self.enable_eviction_cb)
     else
         -- Compute the amount of slots in the LRU based on the max size & the average item size
-        self.slots = math.floor(self.size / self.avg_itemsize)
+        self.slots = math.ceil(self.size / self.avg_itemsize)
         self.cache = lru.new(self.slots, self.size, self.enable_eviction_cb)
     end
 
