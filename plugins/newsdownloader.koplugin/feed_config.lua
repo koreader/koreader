@@ -33,9 +33,7 @@ return {--do NOT change this line
 
  -- LIST YOUR FEEDS HERE:
 
- { "https://github.com/koreader/koreader/releases.atom", limit = 3, download_full_article=true, include_images=false},
- { "https://github.com/koreader/koreader/commits/master.atom", limit = 3 , download_full_article=false},
-
--- { "http://www.football.co.uk/international/rss.xml", limit = 2},
+ { "https://github.com/koreader/koreader/releases.atom", limit = 3, download_full_article=true, include_images=false, enable_filter=true, filter_element = "div.release-main-section"},
+ { "https://ourworldindata.org/atom.xml", limit = 5 , download_full_article=true, include_images=true, enable_filter=false, filter_element = ""},
 
 }--do NOT change this line

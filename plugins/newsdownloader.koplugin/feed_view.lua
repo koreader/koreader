@@ -73,7 +73,7 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
     local filter_element = feed.filter_element
         or feed.filter_element == nil
 
-    -- TODO: Strip the http:// or https:// from the URL
+    --- @todo: Strip the http:// or https:// from the URL
     local sPre, sLink, sPost = url:match( "(.+)%s+(https?%S+)%s+(.*)$" )
     local pretty_url = sLink
 
