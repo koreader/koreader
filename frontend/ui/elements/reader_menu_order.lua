@@ -53,7 +53,8 @@ local order = {
         "speed_reading_module_perception_expander",
         "----------------------------",
         "highlight_options",
-        "panel_zoom_options"
+        "panel_zoom_options",
+        "djvu_render_mode",
     },
     setting = {
         -- common settings
@@ -71,7 +72,6 @@ local order = {
         "language",
         "device",
         "----------------------------",
-        "djvu_render_mode",
         "status_bar",
     },
     device = {
@@ -98,8 +98,6 @@ local order = {
         "android_haptic_feedback",
         "android_back_button",
         "----------------------------",
-        "invert_page_turn_gestures",
-        "invert_page_turn_buttons",
         "opening_page_location_stack",
     },
     network = {
@@ -133,13 +131,15 @@ local order = {
         "gesture_manager",
         "gesture_intervals",
         "----------------------------",
+        "ignore_hold_corners",
+        "screen_disable_double_tab",
+        "----------------------------",
         "follow_links",
         "----------------------------",
         "menu_activate",
         "page_turns",
         "scrolling",
-        "ignore_hold_corners",
-        "screen_disable_double_tab",
+        "long_press",
     },
     tools = {
         "read_timer",
