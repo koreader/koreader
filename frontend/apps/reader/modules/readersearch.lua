@@ -304,6 +304,14 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                     callback = search(self.searchNext, text, 1),
                 },
                 {
+                    icon = "appbar.search",
+                    callback = function()
+                        self.search_dialog:onClose()
+                        self.last_search_text = text
+                        self:onShowFulltextSearchInput()
+                    end,
+                },
+                {
                     text = forward_text,
                     vsync = true,
                     callback = search(self.searchNext, text, 0),
