@@ -266,7 +266,7 @@ end
 function NetworkItem:saveAndConnectToNetwork(password_input)
     local new_passwd = password_input:getInputText()
     -- Dont set a empty password if WPA encryption, go through if it’s an open AP
-    if (new_passwd == nil or string.len(new_passwd) == 0) and string.find(self.info.flags, "WPA") then
+    if (new_passwd == nil or #new_passwd == 0) and string.find(self.info.flags, "WPA") then
         UIManager:show(InfoMessage:new{
             text = _("Password cannot be empty."),
         })

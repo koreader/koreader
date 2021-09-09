@@ -59,7 +59,7 @@ end
 --- Authenticates network.
 function WpaSupplicant:authenticateNetwork(network)
     local err, wcli, nw_id
-    
+
     wcli, err = WpaClient.new(self.wpa_supplicant.ctrl_interface)
     if not wcli then
         return false, T(CLIENT_INIT_ERR_MSG, err)
@@ -74,7 +74,7 @@ function WpaSupplicant:authenticateNetwork(network)
         return false, _("An error occurred while selecting network.")
     end
     -- if password is empty it’s an open AP
-    if network.password and (network.password == nil or string.len(network.password) == 0) then -- Open AP
+    if network.password and #network.password == 0 then -- Open AP
         re = wcli:setNetwork(nw_id, "key_mgmt", "NONE")
         if re == "FAIL" then
             wcli:removeNetwork(nw_id)
