@@ -36,6 +36,7 @@ local Notification = require("ui/widget/notification")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
 local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
+local util = require("util")
 local _ = require("gettext")
 local C_ = _.pgettext
 local T = require("ffi/util").template
@@ -440,6 +441,20 @@ function Dispatcher:registerAction(name, value)
     return true
 end
 
+--[[--
+Removes settings at runtime.
+
+@param name the key to use in the table
+--]]--
+function Dispatcher:removeAction(name)
+    local k = util.arrayContains(dispatcher_menu_order, name)
+    if k then
+        table.remove(dispatcher_menu_order, k)
+        settingsList[name] = nil
+    end
+    return true
+end
+
 -- Returns a display name for the item.
 function Dispatcher:getNameFromItem(item, location, settings)
     if settingsList[item] == nil then
@@ -631,7 +646,7 @@ arguments are:
     3) the object (table) in which the settings table is found
     4) the name of the settings table
 example usage:
-    Dispatcher.addSubMenu(self, sub_items, self.data, "profile1")
+    Dispatcher:addSubMenu(self, sub_items, self.data, "profile1")
 --]]--
 function Dispatcher:addSubMenu(caller, menu, location, settings)
     Dispatcher:init()
