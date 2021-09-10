@@ -240,7 +240,7 @@ function Gestures:genSubItem(ges, separator, hold_callback)
     return {
         text_func = function() return self:gestureTitleFunc(ges) end,
         enabled_func = enabled_func,
-        sub_item_table = self:genMenu(ges),
+        sub_item_table_func = function() return self:genMenu(ges) end,
         separator = separator,
         hold_callback = hold_callback,
     }
