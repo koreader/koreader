@@ -286,9 +286,12 @@ function ReaderHighlight:addToMainMenu(menu_items)
         text = _("Long-press on text"),
         sub_item_table = {
             {
-                text = _("Enable on single word selection"),
+                text = _("Dictionary on single word selection"),
                 checked_func = function()
-                    return G_reader_settings:isTrue("highlight_action_on_single_word")
+                    return not self.view.highlight.disabled and G_reader_settings:nilOrFalse("highlight_action_on_single_word")
+                end,
+                enabled_func = function()
+                    return not self.view.highlight.disabled
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrFalse("highlight_action_on_single_word")
