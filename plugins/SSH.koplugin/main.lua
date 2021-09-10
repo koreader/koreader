@@ -200,7 +200,7 @@ function SSH:addToMainMenu(menu_items)
 end
 
 function SSH:onDispatcherRegisterActions()
-    Dispatcher:registerAction("toggle_ssh_server", { category = "none", event = "ToggleSSHServer", title = _("Toggle SSH server"), device = true})
+    Dispatcher:registerAction("toggle_ssh_server", { category = "none", event = "ToggleSSHServer", title = _("Toggle SSH server"), general=true})
 end
 
 return SSH

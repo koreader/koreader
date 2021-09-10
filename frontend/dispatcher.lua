@@ -17,7 +17,7 @@ Each setting contains:
     * configurable: like string but instead of an event it updates the configurable (used by kopt)
 * event: what to call.
 * title: for use in ui.
-* section: under which menu to display (currently: device, filemanager, rolling, paging)
+* section: under which menu to display (currently: general, device, screen, filemanager, reader, rolling, paging)
     and optionally
 * min/max: for number
 * step: for number
@@ -46,49 +46,53 @@ local Dispatcher = {
 
 -- See above for description.
 local settingsList = {
+    -- Screen & Lights
+    show_frontlight_dialog = {category="none", event="ShowFlDialog", title=_("Show frontlight dialog"), screen=true, condition=Device:hasFrontlight()},
+    toggle_frontlight = {category="none", event="ToggleFrontlight", title=_("Toggle frontlight"), screen=true, condition=Device:hasFrontlight()},
+    set_frontlight = {category="absolutenumber", event="SetFlIntensity", min=0, max=Device:getPowerDevice().fl_max, title=_("Set frontlight brightness to %1"), screen=true, condition=Device:hasFrontlight()},
+    increase_frontlight = {category="incrementalnumber", event="IncreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Increase frontlight brightness by %1"), screen=true, condition=Device:hasFrontlight()},
+    decrease_frontlight = {category="incrementalnumber", event="DecreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Decrease frontlight brightness by %1"), screen=true, condition=Device:hasFrontlight()},
+    set_frontlight_warmth = {category="absolutenumber", event="SetFlWarmth", min=0, max=100, title=_("Set frontlight warmth to %1"), screen=true, condition=Device:hasNaturalLight()},
+    increase_frontlight_warmth = {category="incrementalnumber", event="IncreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Increase frontlight warmth by %1"), screen=true, condition=Device:hasNaturalLight()},
+    decrease_frontlight_warmth = {category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Decrease frontlight warmth by %1"), screen=true, condition=Device:hasNaturalLight(), separator=true},
+    full_refresh = {category="none", event="FullRefresh", title=_("Full screen refresh"), screen=true},
+    night_mode = {category="none", event="ToggleNightMode", title=_("Toggle night mode"), screen=true},
+    set_night_mode = {category="string", event="SetNightMode", title=_("Set night mode"), screen=true, args={true, false}, toggle={_("On"), _("Off")}, separator=true},
+    set_refresh_rate = {category="absolutenumber", event="SetBothRefreshRates", min=-1, max=200, title=_("Flash every %1 pages (always)"), screen=true, condition=Device:hasEinkScreen()},
+    set_day_refresh_rate = {category="absolutenumber", event="SetDayRefreshRate", min=-1, max=200, title=_("Flash every %1 pages (not in night mode)"), screen=true, condition=Device:hasEinkScreen()},
+    set_night_refresh_rate = {category="absolutenumber", event="SetNightRefreshRate", min=-1, max=200, title=_("Flash every %1 pages (in night mode)"), screen=true, condition=Device:hasEinkScreen()},
+    set_flash_on_chapter_boundaries = {category="string", event="SetFlashOnChapterBoundaries", title=_("Always flash on chapter boundaries"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("On"), _("Off")}},
+    toggle_flash_on_chapter_boundaries = {category="none", event="ToggleFlashOnChapterBoundaries", title=_("Toggle flashing on chapter boundaries"), screen=true, condition=Device:hasEinkScreen()},
+    set_no_flash_on_second_chapter_page = {category="string", event="SetNoFlashOnSecondChapterPage", title=_("Never flash on chapter's 2nd page"), screen=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("On"), _("Off")}},
+    toggle_no_flash_on_second_chapter_page = {category="none", event="ToggleNoFlashOnSecondChapterPage", title=_("Toggle flashing on chapter's 2nd page"), screen=true, condition=Device:hasEinkScreen(), separator=true},
+
     -- Device settings
-    show_frontlight_dialog = {category="none", event="ShowFlDialog", title=_("Show frontlight dialog"), device=true, condition=Device:hasFrontlight()},
-    toggle_frontlight = {category="none", event="ToggleFrontlight", title=_("Toggle frontlight"), device=true, condition=Device:hasFrontlight()},
-    set_frontlight = {category="absolutenumber", event="SetFlIntensity", min=0, max=Device:getPowerDevice().fl_max, title=_("Set frontlight brightness to %1"), device=true, condition=Device:hasFrontlight()},
-    increase_frontlight = {category="incrementalnumber", event="IncreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Increase frontlight brightness by %1"), device=true, condition=Device:hasFrontlight()},
-    decrease_frontlight = {category="incrementalnumber", event="DecreaseFlIntensity", min=1, max=Device:getPowerDevice().fl_max, title=_("Decrease frontlight brightness by %1"), device=true, condition=Device:hasFrontlight()},
-    set_frontlight_warmth = {category="absolutenumber", event="SetFlWarmth", min=0, max=100, title=_("Set frontlight warmth to %1"), device=true, condition=Device:hasNaturalLight()},
-    increase_frontlight_warmth = {category="incrementalnumber", event="IncreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Increase frontlight warmth by %1"), device=true, condition=Device:hasNaturalLight()},
-    decrease_frontlight_warmth = {category="incrementalnumber", event="DecreaseFlWarmth", min=1, max=Device:getPowerDevice().fl_warmth_max, title=_("Decrease frontlight warmth by %1"), device=true, condition=Device:hasNaturalLight(), separator=true},
     toggle_gsensor = {category="none", event="ToggleGSensor", title=_("Toggle accelerometer"), device=true, condition=Device:canToggleGSensor()},
     wifi_on = {category="none", event="InfoWifiOn", title=_("Turn on Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
     wifi_off = {category="none", event="InfoWifiOff", title=_("Turn off Wi-Fi"), device=true, condition=Device:hasWifiToggle()},
     toggle_wifi = {category="none", event="ToggleWifi", title=_("Toggle Wi-Fi"), device=true, condition=Device:hasWifiToggle(), separator=true},
-    reading_progress = {category="none", event="ShowReaderProgress", title=_("Reading progress"), device=true},
-    history = {category="none", event="ShowHist", title=_("History"), device=true},
-    open_previous_document = {category="none", event="OpenLastDoc", title=_("Open previous document"), device=true},
-    filemanager = {category="none", event="Home", title=_("File browser"), device=true},
-    dictionary_lookup = {category="none", event="ShowDictionaryLookup", title=_("Dictionary lookup"), device=true},
-    wikipedia_lookup = {category="none", event="ShowWikipediaLookup", title=_("Wikipedia lookup"), device=true},
-    fulltext_search = {category="none", event="ShowFulltextSearchInput", title=_("Fulltext search"), device=true},
-    file_search = {category="none", event="ShowFileSearch", title=_("File search"), device=true, separator=true},
-    full_refresh = {category="none", event="FullRefresh", title=_("Full screen refresh"), device=true},
-    night_mode = {category="none", event="ToggleNightMode", title=_("Toggle night mode"), device=true},
-    set_night_mode = {category="string", event="SetNightMode", title=_("Set night mode"), device=true, args={true, false}, toggle={_("On"), _("Off")}},
     suspend = {category="none", event="SuspendEvent", title=_("Suspend"), device=true},
     exit = {category="none", event="Exit", title=_("Exit KOReader"), device=true},
     restart = {category="none", event="Restart", title=_("Restart KOReader"), device=true, condition=Device:canRestart()},
     reboot = {category="none", event="Reboot", title=_("Reboot the device"), device=true, condition=Device:canReboot()},
     poweroff = {category="none", event="PowerOff", title=_("Power off"), device=true, condition=Device:canPowerOff(), separator=true},
-    show_menu = {category="none", event="ShowMenu", title=_("Show menu"), device=true},
     toggle_hold_corners = {category="none", event="IgnoreHoldCorners", title=_("Toggle hold corners"), device=true, separator=true},
     toggle_rotation = {category="none", event="SwapRotation", title=_("Toggle orientation"), device=true},
     invert_rotation = {category="none", event="InvertRotation", title=_("Invert rotation"), device=true},
     iterate_rotation = {category="none", event="IterateRotation", title=_("Rotate by 90° CW"), device=true, separator=true},
-    set_refresh_rate = {category="absolutenumber", event="SetBothRefreshRates", min=-1, max=200, title=_("Flash every %1 pages (always)"), device=true, condition=Device:hasEinkScreen()},
-    set_day_refresh_rate = {category="absolutenumber", event="SetDayRefreshRate", min=-1, max=200, title=_("Flash every %1 pages (not in night mode)"), device=true, condition=Device:hasEinkScreen()},
-    set_night_refresh_rate = {category="absolutenumber", event="SetNightRefreshRate", min=-1, max=200, title=_("Flash every %1 pages (in night mode)"), device=true, condition=Device:hasEinkScreen()},
-    set_flash_on_chapter_boundaries = {category="string", event="SetFlashOnChapterBoundaries", title=_("Always flash on chapter boundaries"), device=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("On"), _("Off")}},
-    toggle_flash_on_chapter_boundaries = {category="none", event="ToggleFlashOnChapterBoundaries", title=_("Toggle flashing on chapter boundaries"), device=true, condition=Device:hasEinkScreen()},
-    set_no_flash_on_second_chapter_page = {category="string", event="SetNoFlashOnSecondChapterPage", title=_("Never flash on chapter's 2nd page"), device=true, condition=Device:hasEinkScreen(), args={true, false}, toggle={_("On"), _("Off")}},
-    toggle_no_flash_on_second_chapter_page = {category="none", event="ToggleNoFlashOnSecondChapterPage", title=_("Toggle flashing on chapter's 2nd page"), device=true, condition=Device:hasEinkScreen(), separator=true},
-    favorites = {category="none", event="ShowColl", arg="favorites", title=_("Favorites"), device=true},
-    screenshot = {category="none", event="Screenshot", title=_("Screenshot"), device=true, separator=true},
+
+    -- General
+    reading_progress = {category="none", event="ShowReaderProgress", title=_("Reading progress"), general=true},
+    history = {category="none", event="ShowHist", title=_("History"), general=true},
+    open_previous_document = {category="none", event="OpenLastDoc", title=_("Open previous document"), general=true},
+    filemanager = {category="none", event="Home", title=_("File browser"), general=true, separator=true},
+    dictionary_lookup = {category="none", event="ShowDictionaryLookup", title=_("Dictionary lookup"), general=true},
+    wikipedia_lookup = {category="none", event="ShowWikipediaLookup", title=_("Wikipedia lookup"), general=true},
+    fulltext_search = {category="none", event="ShowFulltextSearchInput", title=_("Fulltext search"), general=true},
+    file_search = {category="none", event="ShowFileSearch", title=_("File search"), general=true, separator=true},
+    show_menu = {category="none", event="ShowMenu", title=_("Show menu"), general=true},
+    favorites = {category="none", event="ShowColl", arg="favorites", title=_("Favorites"), general=true},
+    screenshot = {category="none", event="Screenshot", title=_("Screenshot"), general=true, separator=true},
 
     -- filemanager settings
     folder_up = {category="none", event="FolderUp", title=_("Folder up"), filemanager=true},
@@ -97,33 +101,33 @@ local settingsList = {
     folder_shortcuts = {category="none", event="ShowFolderShortcutsDialog", title=_("Folder shortcuts"), filemanager=true, separator=true},
 
     -- reader settings
-    toggle_status_bar = {category="none", event="TapFooter", title=_("Toggle status bar"), rolling=true, paging=true, separator=true},
-    prev_chapter = {category="none", event="GotoPrevChapter", title=_("Previous chapter"), rolling=true, paging=true},
-    next_chapter = {category="none", event="GotoNextChapter", title=_("Next chapter"), rolling=true, paging=true},
-    first_page = {category="none", event="GoToBeginning", title=_("First page"), rolling=true, paging=true},
-    last_page = {category="none", event="GoToEnd", title=_("Last page"), rolling=true, paging=true},
-    prev_bookmark = {category="none", event="GotoPreviousBookmarkFromPage", title=_("Previous bookmark"), rolling=true, paging=true},
-    next_bookmark = {category="none", event="GotoNextBookmarkFromPage", title=_("Next bookmark"), rolling=true, paging=true},
-    go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), filemanager=true, rolling=true, paging=true},
-    skim = {category="none", event="ShowSkimtoDialog", title=_("Skim document"), rolling=true, paging=true},
-    back = {category="none", event="Back", title=_("Back"), rolling=true, paging=true},
-    previous_location = {category="none", event="GoBackLink", arg=true, title=_("Back to previous location"), rolling=true, paging=true},
-    latest_bookmark = {category="none", event="GoToLatestBookmark", title=_("Go to latest bookmark"), rolling=true, paging=true},
-    follow_nearest_link = {category="arg", event="GoToPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest link"), rolling=true, paging=true},
-    follow_nearest_internal_link = {category="arg", event="GoToInternalPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest internal link"), rolling=true, paging=true},
-    clear_location_history = {category="none", event="ClearLocationStack", arg=true, title=_("Clear location history"), rolling=true, paging=true, separator=true},
-    toc = {category="none", event="ShowToc", title=_("Table of contents"), rolling=true, paging=true},
-    bookmarks = {category="none", event="ShowBookmark", title=_("Bookmarks"), rolling=true, paging=true},
-    book_status = {category="none", event="ShowBookStatus", title=_("Book status"), rolling=true, paging=true},
-    book_info = {category="none", event="ShowBookInfo", title=_("Book information"), rolling=true, paging=true},
-    book_description = {category="none", event="ShowBookDescription", title=_("Book description"), rolling=true, paging=true},
-    book_cover = {category="none", event="ShowBookCover", title=_("Book cover"), rolling=true, paging=true, separator=true},
-    show_config_menu = {category="none", event="ShowConfigMenu", title=_("Show bottom menu"), rolling=true, paging=true},
-    toggle_bookmark = {category="none", event="ToggleBookmark", title=_("Toggle bookmark"), rolling=true, paging=true},
-    toggle_inverse_reading_order = {category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), rolling=true, paging=true, separator=true},
-    cycle_highlight_action = {category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), rolling=true, paging=true},
-    cycle_highlight_style = {category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), rolling=true, paging=true},
-    page_jmp = {category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Go %1 pages"), rolling=true, paging=true},
+    toggle_status_bar = {category="none", event="TapFooter", title=_("Toggle status bar"), reader=true, separator=true},
+    prev_chapter = {category="none", event="GotoPrevChapter", title=_("Previous chapter"), reader=true},
+    next_chapter = {category="none", event="GotoNextChapter", title=_("Next chapter"), reader=true},
+    first_page = {category="none", event="GoToBeginning", title=_("First page"), reader=true},
+    last_page = {category="none", event="GoToEnd", title=_("Last page"), reader=true},
+    prev_bookmark = {category="none", event="GotoPreviousBookmarkFromPage", title=_("Previous bookmark"), reader=true},
+    next_bookmark = {category="none", event="GotoNextBookmarkFromPage", title=_("Next bookmark"), reader=true},
+    go_to = {category="none", event="ShowGotoDialog", title=_("Go to page"), filemanager=true, reader=true},
+    skim = {category="none", event="ShowSkimtoDialog", title=_("Skim document"), reader=true},
+    back = {category="none", event="Back", title=_("Back"), reader=true},
+    previous_location = {category="none", event="GoBackLink", arg=true, title=_("Back to previous location"), reader=true},
+    latest_bookmark = {category="none", event="GoToLatestBookmark", title=_("Go to latest bookmark"), reader=true},
+    follow_nearest_link = {category="arg", event="GoToPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest link"), reader=true},
+    follow_nearest_internal_link = {category="arg", event="GoToInternalPageLink", arg={pos={x=0,y=0}}, title=_("Follow nearest internal link"), reader=true},
+    clear_location_history = {category="none", event="ClearLocationStack", arg=true, title=_("Clear location history"), reader=true, separator=true},
+    toc = {category="none", event="ShowToc", title=_("Table of contents"), reader=true},
+    bookmarks = {category="none", event="ShowBookmark", title=_("Bookmarks"), reader=true},
+    book_status = {category="none", event="ShowBookStatus", title=_("Book status"), reader=true},
+    book_info = {category="none", event="ShowBookInfo", title=_("Book information"), reader=true},
+    book_description = {category="none", event="ShowBookDescription", title=_("Book description"), reader=true},
+    book_cover = {category="none", event="ShowBookCover", title=_("Book cover"), reader=true, separator=true},
+    show_config_menu = {category="none", event="ShowConfigMenu", title=_("Show bottom menu"), reader=true},
+    toggle_bookmark = {category="none", event="ToggleBookmark", title=_("Toggle bookmark"), reader=true},
+    toggle_inverse_reading_order = {category="none", event="ToggleReadingOrder", title=_("Toggle page turn direction"), reader=true, separator=true},
+    cycle_highlight_action = {category="none", event="CycleHighlightAction", title=_("Cycle highlight action"), reader=true},
+    cycle_highlight_style = {category="none", event="CycleHighlightStyle", title=_("Cycle highlight style"), reader=true},
+    page_jmp = {category="absolutenumber", event="GotoViewRel", min=-100, max=100, title=_("Go %1 pages"), reader=true},
     panel_zoom_toggle = {category="none", event="TogglePanelZoomSetting", title=_("Toggle panel zoom"), paging=true, separator=true},
 
     -- rolling reader settings
@@ -138,7 +142,7 @@ local settingsList = {
 
     -- parsed from CreOptions
     -- the rest of the table elements are built from their counterparts in CreOptions
-    rotation_mode = {category="string", device=true, separator=true},
+    rotation_mode = {category="string", device=true},
     visible_pages = {category="string", rolling=true, separator=true},
     h_page_margins = {category="string", rolling=true},
     sync_t_b_page_margins = {category="string", rolling=true},
@@ -195,8 +199,8 @@ local settingsList = {
 local dispatcher_menu_order = {
     -- device
     "reading_progress",
-    "history",
     "open_previous_document",
+    "history",
     "favorites",
     "filemanager",
 
@@ -205,17 +209,26 @@ local dispatcher_menu_order = {
     "fulltext_search",
     "file_search",
 
-    "full_refresh",
-    "night_mode",
-    "set_night_mode",
+    "show_menu",
+    "screenshot",
+
     "suspend",
     "exit",
     "restart",
     "reboot",
     "poweroff",
 
-    "show_menu",
-    "show_config_menu",
+    "toggle_hold_corners",
+    "toggle_gsensor",
+    "rotation_mode",
+    "toggle_rotation",
+    "invert_rotation",
+    "iterate_rotation",
+
+    "wifi_on",
+    "wifi_off",
+    "toggle_wifi",
+
     "show_frontlight_dialog",
     "toggle_frontlight",
     "set_frontlight",
@@ -225,13 +238,10 @@ local dispatcher_menu_order = {
     "increase_frontlight_warmth",
     "decrease_frontlight_warmth",
 
-    "toggle_hold_corners",
+    "night_mode",
+    "set_night_mode",
 
-    "toggle_gsensor",
-    "toggle_rotation",
-    "invert_rotation",
-    "iterate_rotation",
-
+    "full_refresh",
     "set_refresh_rate",
     "set_day_refresh_rate",
     "set_night_refresh_rate",
@@ -240,13 +250,6 @@ local dispatcher_menu_order = {
     "set_no_flash_on_second_chapter_page",
     "toggle_no_flash_on_second_chapter_page",
 
-    "wifi_on",
-    "wifi_off",
-    "toggle_wifi",
-
-    "rotation_mode",
-    "screenshot",
-
     -- filemanager
     "folder_up",
     "show_plus_menu",
@@ -254,6 +257,7 @@ local dispatcher_menu_order = {
     "folder_shortcuts",
 
     -- reader
+    "show_config_menu",
     "toggle_status_bar",
 
     "prev_chapter",
@@ -417,7 +421,7 @@ Adds settings at runtime.
 
 @usage
     function Hello:onDispatcherRegisterActions()
-        Dispatcher:registerAction("helloworld_action", {category="none", event="HelloWorld", title=_("Hello World"), filemanager=true})
+        Dispatcher:registerAction("helloworld_action", {category="none", event="HelloWorld", title=_("Hello World"), general=true})
     end
 
     function Hello:init()
@@ -644,8 +648,11 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
         end,
     })
     local section_list = {
+        {"general", _("General")},
         {"device", _("Device")},
+        {"screen", _("Screen & Lights")},
         {"filemanager", _("File browser")},
+        {"reader", _("Reader")},
         {"rolling", _("Reflowable documents (epub, fb2, txt…)")},
         {"paging", _("Fixed layout documents (pdf, djvu, pics…)")},
     }
