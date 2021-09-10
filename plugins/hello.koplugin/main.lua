@@ -21,7 +21,7 @@ local Hello = WidgetContainer:new{
 }
 
 function Hello:onDispatcherRegisterActions()
-    Dispatcher:registerAction("helloworld_action", {category="none", event="HelloWorld", title=_("Hello World"), filemanager=true,})
+    Dispatcher:registerAction("helloworld_action", {category="none", event="HelloWorld", title=_("Hello World"), general=true,})
 end
 
 function Hello:init()
