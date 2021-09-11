@@ -1313,7 +1313,7 @@ function ReaderStatistics:getCurrentStat(id_book)
     self.data.pages = self.view.document:getPageCount()
     total_time_book = tonumber(total_time_book)
     total_read_pages = tonumber(total_read_pages)
-    local time_to_read = (self.data.pages - self.view.state.page) * self.avg_time
+    local time_to_read = self.view.state.page and ((self.data.pages - self.view.state.page) * self.avg_time) or 0
     local estimate_days_to_read = math.ceil(time_to_read/(book_read_time/tonumber(total_days)))
     local estimate_end_of_read_date = os.date("%Y-%m-%d", tonumber(now_ts + estimate_days_to_read * 86400))
     local estimates_valid = time_to_read > 0 -- above values could be 'nan' and 'nil'
