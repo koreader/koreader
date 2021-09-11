@@ -36,10 +36,8 @@ local Button = InputContainer:new{
     text = nil, -- mandatory (unless icon is provided)
     text_func = nil,
     icon = nil,
-    icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE * 0.8), -- our icons are square
-    icon_height = Screen:scaleBySize(DGENERIC_ICON_SIZE * 0.8),
-        -- Reduced size of the icons (0.8) nicely match the size of the default font
-        -- of text buttons ("cfont", 20), when mixing both text and icon buttons.
+    icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
+    icon_height = Screen:scaleBySize(DGENERIC_ICON_SIZE),
     icon_rotation_angle = 0,
     preselect = false,
     callback = nil,
