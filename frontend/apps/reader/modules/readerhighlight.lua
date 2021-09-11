@@ -4,7 +4,6 @@ local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local Notification = require("ui/widget/notification")
 local TimeVal = require("ui/timeval")
 local Translator = require("ui/translator")
@@ -260,10 +259,20 @@ function ReaderHighlight:onReaderReady()
     self:setupTouchZones()
 end
 
+local long_press_action = {
+    {_("Ask with popup dialog"), "ask"},
+    {_("Do nothing"), "nothing"},
+    {_("Highlight"), "highlight"},
+    {_("Translate"), "translate"},
+    {_("Wikipedia"), "wikipedia"},
+    {_("Dictionary"), "dictionary"},
+    {_("Fulltext search"), "search"},
+}
+
 function ReaderHighlight:addToMainMenu(menu_items)
     -- insert table to main reader menu
     menu_items.highlight_options = {
-        text = _("Highlighting"),
+        text = _("Highlight style"),
         sub_item_table = self:genHighlightDrawerMenu(),
     }
     if self.document.info.has_pages then
@@ -273,6 +282,36 @@ function ReaderHighlight:addToMainMenu(menu_items)
         }
     end
     menu_items.translation_settings = Translator:genSettingsMenu()
+    menu_items.long_press = {
+        text = _("Long-press on text"),
+        sub_item_table = {
+            {
+                text = _("Dictionary on single word selection"),
+                checked_func = function()
+                    return not self.view.highlight.disabled and G_reader_settings:nilOrFalse("highlight_action_on_single_word")
+                end,
+                enabled_func = function()
+                    return not self.view.highlight.disabled
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("highlight_action_on_single_word")
+                end,
+                separator = true,
+            },
+        },
+    }
+    for _, v in ipairs(long_press_action) do
+        table.insert(menu_items.long_press.sub_item_table, {
+            text = v[1],
+            checked_func = function()
+                return G_reader_settings:readSetting("default_highlight_action", "ask") == v[2]
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("default_highlight_action", v[2])
+                self.view.highlight.disabled = v[2] == "nothing"
+            end,
+        })
+    end
 end
 
 local highlight_style = {
@@ -328,9 +367,6 @@ function ReaderHighlight:genHighlightDrawerMenu()
             checked_func = function()
                 return self.view.highlight.saved_drawer == style
             end,
-            enabled_func = function()
-                return not self.view.highlight.disabled
-            end,
             callback = function()
                 self.view.highlight.saved_drawer = style
             end,
@@ -341,19 +377,6 @@ function ReaderHighlight:genHighlightDrawerMenu()
         }
     end
     return {
-        {
-            text = _("Allow highlighting"),
-            checked_func = function()
-                return not self.view.highlight.disabled
-            end,
-            callback = function()
-                self.view.highlight.disabled = not self.view.highlight.disabled
-            end,
-            hold_callback = function()
-                self:toggleDefault()
-            end,
-            separator = true,
-        },
         get_highlight_style("lighten"),
         get_highlight_style("underscore"),
         get_highlight_style("invert"),
@@ -362,13 +385,12 @@ function ReaderHighlight:genHighlightDrawerMenu()
                 return T(_("Highlight opacity: %1"), G_reader_settings:readSetting("highlight_lighten_factor", 0.2))
             end,
             enabled_func = function()
-                return not self.view.highlight.disabled and self.view.highlight.saved_drawer == "lighten"
+                return self.view.highlight.saved_drawer == "lighten"
             end,
             callback = function()
                 local SpinWidget = require("ui/widget/spinwidget")
                 local curr_val = G_reader_settings:readSetting("highlight_lighten_factor", 0.2)
                 local items = SpinWidget:new{
-                    width = math.floor(Screen:getWidth() * 0.6),
                     value = curr_val,
                     value_min = 0,
                     value_max = 1,
@@ -784,8 +806,6 @@ function ReaderHighlight:onHold(arg, ges)
         end
     end
 
-    -- disable hold gesture if highlighting is disabled
-    if self.view.highlight.disabled then return false end
     self:clear() -- clear previous highlight (delayed clear may not have done it yet)
     self.hold_ges_pos = ges.pos -- remember hold original gesture position
     self.hold_pos = self.view:screenToPageTransform(ges.pos)
@@ -814,6 +834,7 @@ function ReaderHighlight:onHold(arg, ges)
     end
 
     -- otherwise, we must be holding on text
+    if self.view.highlight.disabled then return false end -- Long-press action "Do nothing" checked
     local ok, word = pcall(self.ui.document.getWordFromPosition, self.ui.document, self.hold_pos)
     if ok and word then
         logger.dbg("selected word:", word)
@@ -1209,8 +1230,8 @@ function ReaderHighlight:onHoldRelease()
     end
 
     if self.selected_text then
-        local default_highlight_action = G_reader_settings:readSetting("default_highlight_action")
-        if long_final_hold or not default_highlight_action then
+        local default_highlight_action = G_reader_settings:readSetting("default_highlight_action", "ask")
+        if long_final_hold or default_highlight_action == "ask" then
             -- bypass default action and show popup if long final hold
             self:onShowHighlightMenu()
         elseif default_highlight_action == "highlight" then
@@ -1238,26 +1259,21 @@ function ReaderHighlight:onHoldRelease()
 end
 
 function ReaderHighlight:onCycleHighlightAction()
-    local next_actions = {
-        highlight = "translate",
-        translate = "wikipedia",
-        wikipedia = "dictionary",
-        dictionary = "search",
-        search = nil,
-    }
-    if G_reader_settings:hasNot("default_highlight_action") then
-        G_reader_settings:saveSetting("default_highlight_action", "highlight")
-        UIManager:show(Notification:new{
-            text = _("Default highlight action changed to 'highlight'."),
-        })
-    else
-        local current_action = G_reader_settings:readSetting("default_highlight_action")
-        local next_action = next_actions[current_action]
-        G_reader_settings:saveSetting("default_highlight_action", next_action)
-        UIManager:show(Notification:new{
-            text = T(_("Default highlight action changed to '%1'."), (next_action or "default")),
-        })
+    local current_action = G_reader_settings:readSetting("default_highlight_action", "ask")
+    local next_action_num
+    for i, v in ipairs(long_press_action) do
+        if v[2] == current_action then
+            next_action_num = i + 1
+            break
+        end
     end
+    if next_action_num > #long_press_action then
+        next_action_num = 1
+    end
+    G_reader_settings:saveSetting("default_highlight_action", long_press_action[next_action_num][2])
+    UIManager:show(Notification:new{
+        text = T(_("Default highlight action changed to '%1'."), long_press_action[next_action_num][1]),
+    })
     return true
 end
 
@@ -1533,11 +1549,8 @@ end
 function ReaderHighlight:onReadSettings(config)
     self.view.highlight.saved_drawer = config:readSetting("highlight_drawer")
         or G_reader_settings:readSetting("highlight_drawing_style") or self.view.highlight.saved_drawer
-    if config:has("highlight_disabled") then
-        self.view.highlight.disabled = config:isTrue("highlight_disabled")
-    else
-        self.view.highlight.disabled = G_reader_settings:isTrue("highlight_disabled")
-    end
+    self.view.highlight.disabled = G_reader_settings:has("default_highlight_action")
+        and G_reader_settings:readSetting("default_highlight_action") == "nothing"
 
     -- panel zoom settings isn't supported in EPUB
     if self.document.info.has_pages then
@@ -1563,7 +1576,6 @@ end
 
 function ReaderHighlight:onSaveSettings()
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
-    self.ui.doc_settings:saveSetting("highlight_disabled", self.view.highlight.disabled)
     self.ui.doc_settings:saveSetting("panel_zoom_enabled", self.panel_zoom_enabled)
 end
 
@@ -1572,26 +1584,6 @@ function ReaderHighlight:onClose()
     self.highlight_dialog = nil
     -- clear highlighted text
     self:clear()
-end
-
-function ReaderHighlight:toggleDefault()
-    local highlight_disabled = G_reader_settings:isTrue("highlight_disabled")
-    UIManager:show(MultiConfirmBox:new{
-        text = highlight_disabled and _("Would you like to enable or disable highlighting by default?\n\nThe current default (★) is disabled.")
-        or _("Would you like to enable or disable highlighting by default?\n\nThe current default (★) is enabled."),
-        choice1_text_func =  function()
-            return highlight_disabled and _("Disable (★)") or _("Disable")
-        end,
-        choice1_callback = function()
-            G_reader_settings:makeTrue("highlight_disabled")
-        end,
-        choice2_text_func = function()
-            return highlight_disabled and _("Enable") or _("Enable (★)")
-        end,
-        choice2_callback = function()
-            G_reader_settings:makeFalse("highlight_disabled")
-        end,
-    })
 end
 
 return ReaderHighlight
