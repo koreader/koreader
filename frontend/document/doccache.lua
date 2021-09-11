@@ -13,23 +13,23 @@ local function calcCacheMemSize()
     local calc = Cache:_calcFreeMem() * (DGLOBAL_CACHE_FREE_PROPORTION or 0)
     return math.min(max, math.max(min, calc))
 end
+local cache_size = calcCacheMemSize()
+
 
 local function computeCacheSize()
-    local size = calcCacheMemSize()
-    local mb_size = size / 1024 / 1024
+    local mb_size = cache_size / 1024 / 1024
 
     -- If we end up with a not entirely ridiculous cache size, use that...
     if mb_size >= 8 then
         logger.dbg(string.format("Allocating a %dMB budget for the global document cache", mb_size))
-        return size
+        return cache_size
     else
         return nil
     end
 end
 
 local function computeCacheSlots()
-    local size = calcCacheMemSize()
-    local mb_size = size / 1024 / 1024
+    local mb_size = cache_size / 1024 / 1024
 
     --- ...otherwise, effectively disable the cache by making it single slot...
     if mb_size < 8 then
