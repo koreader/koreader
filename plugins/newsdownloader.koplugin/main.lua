@@ -51,9 +51,9 @@ local FEED_TYPE_ATOM = "atom"
 --local feed_config_file_name = "feed_config.lua"
 --local news_downloader_config_file = "news_downloader_settings.lua
 
--- if a title looks like <title>blabla</title> it'll just be feed.title
--- if a title looks like <title attr="alb">blabla</title> then we get a table
--- where [1] is the title string and the attributes are also available
+-- If a title looks like <title>blabla</title> it'll just be feed.title.
+-- If a title looks like <title attr="alb">blabla</title> then we get a table.
+-- Where [1] is the title string and the attributes are also available.
 local function getFeedTitle(possible_title)
     if type(possible_title) == "string" then
         return util.htmlEntitiesToUtf8(possible_title)
@@ -62,12 +62,12 @@ local function getFeedTitle(possible_title)
     end
 end
 
--- there can be multiple links
--- for now we just assume the first link is probably the right one
---- @todo write unit tests
--- some feeds that can be used for unit test
--- http://fransdejonge.com/feed/ for multiple links
--- https://github.com/koreader/koreader/commits/master.atom for single link with attributes
+-- There can be multiple links
+-- for now we just assume the first link is probably the right one.
+--- @todo Write unit tests.
+-- Some feeds that can be used for unit test.
+-- http://fransdejonge.com/feed/ for multiple links.
+-- https://github.com/koreader/koreader/commits/master.atom for single link with attributes.
 local function getFeedLink(possible_link)
     local E = {}
     if type(possible_link) == "string" then
@@ -175,7 +175,7 @@ function NewsDownloader:getSubMenuItems()
     return sub_item_table
 end
 -- lazyInitialization sets up variables that point to the
--- downloads folder and the feeds configuration file
+-- downloads folder and the feeds configuration file.
 function NewsDownloader:lazyInitialization()
     if not self.initialized then
         logger.dbg("NewsDownloader: obtaining news folder")
@@ -348,7 +348,7 @@ function NewsDownloader:processFeedSource(url, limit, unsupported_feeds_urls, do
         feeds = self:deserializeXMLString(response)
     end
     -- If the response is not available (for a reason that we don't know),
-    -- add the URL to the unsupported feeds list
+    -- add the URL to the unsupported feeds list.
     if not ok or not feeds then
         local error_message
         if not ok then
@@ -564,7 +564,7 @@ function NewsDownloader:processFeed(feed_type, feeds, limit, download_full_artic
 end
 
 local function parseDate(dateTime)
-    -- uses lua-feedparser https://github.com/slact/lua-feedparser
+    -- Uses lua-feedparser https://github.com/slact/lua-feedparser
     -- feedparser is available under the (new) BSD license.
     -- see: koreader/plugins/newsdownloader.koplugin/lib/LICENCE_lua-feedparser
     local date = dateparser.parse(dateTime)
