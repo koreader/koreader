@@ -328,47 +328,40 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
         -- Don't show error messages when we check headers only.
         return
     elseif code == 301 then -- Page has permanently moved
-        UIManager:show(
-            InfoMessage:new{
-                text = T(_("The catalog has been permanently moved. Please update catalog URL to '%1'."),
-                         BD.url(headers['Location'])),
+        UIManager:show(InfoMessage:new{
+            text = T(_("The catalog has been permanently moved. Please update catalog URL to '%1'."),
+                     BD.url(headers['Location'])),
         })
     elseif code == 302
         and item_url:match("^https")
         and headers.location:match("^http[^s]") then -- Page is redirecting
-        UIManager:show(
-            InfoMessage:new{
-                text = T(_("Insecure HTTPS → HTTP downgrade attempted by redirect from:\n\n'%1'\n\nto\n\n'%2'.\n\nPlease inform the server administrator that many clients disallow this because it could be a downgrade attack."),
-                         BD.url(item_url),
-                         BD.url(headers.location)),
-                icon = "notice-warning",
+        UIManager:show(InfoMessage:new{
+            text = T(_("Insecure HTTPS → HTTP downgrade attempted by redirect from:\n\n'%1'\n\nto\n\n'%2'.\n\nPlease inform the server administrator that many clients disallow this because it could be a downgrade attack."),
+                     BD.url(item_url),
+                     BD.url(headers.location)),
+            icon = "notice-warning",
         })
     elseif code == 401 then -- Not authorized
-        UIManager:show(
-            InfoMessage:new{
-                text = T(_("Authentication required for catalog. Please add a username and password.")),
+        UIManager:show(InfoMessage:new{
+            text = T(_("Authentication required for catalog. Please add a username and password.")),
         })
     elseif code == 403 then -- Authorization attemp failed
-        UIManager:show(
-            InfoMessage:new{
-                text = T(_("Failed to authenticate. Please check your username and password.")),
+        UIManager:show(InfoMessage:new{
+            text = T(_("Failed to authenticate. Please check your username and password.")),
         })
     elseif code == 404 then -- Page not found
-        UIManager:show(
-            InfoMessage:new{
-                text = T(_("Catalog not found.")),
+        UIManager:show(InfoMessage:new{
+            text = T(_("Catalog not found.")),
         })
     elseif code == 406 then -- Server cannot fulfil our request
-        UIManager:show(
-            InfoMessage:new{
-                text = T(_("Cannot get catalog. Server refuses to serve uncompressed content.")),
+        UIManager:show(InfoMessage:new{
+            text = T(_("Cannot get catalog. Server refuses to serve uncompressed content.")),
         })
     else
         -- This block handles all other requests and supplies the user with a generic
         -- error message and no more information than the code.
-        UIManager:show(
-            InfoMessage:new{
-                text = T(_("Cannot get catalog. Server response code %1."), code),
+        UIManager:show(InfoMessage:new{
+            text = T(_("Cannot get catalog. Server response code %1."), code),
         })
     end
 end
