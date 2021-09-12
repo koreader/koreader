@@ -31,32 +31,35 @@ local CatalogCache = Cache:new{
 }
 
 local OPDSBrowser = Menu:extend{
-    opds_servers = G_reader_settings:readSetting("opds_servers", {
+    opds_servers = G_reader_settings:readSetting(
+        "opds_servers",
         {
-            title = "Project Gutenberg",
-            url = "https://m.gutenberg.org/ebooks.opds/?format=opds",
-        },
-        {
-            title = "Feedbooks",
-            url = "https://catalog.feedbooks.com/catalog/public_domain.atom",
-        },
-        {
-            title = "ManyBooks",
-            url = "http://manybooks.net/opds/index.php",
-        },
-        {
-            title = "Internet Archive",
-            url = "https://bookserver.archive.org/",
-        },
-        {
-            title = "textos.info (Spanish)",
-            url = "https://www.textos.info/catalogo.atom",
-        },
-        {
-            title = "Gallica (French)",
-            url = "https://gallica.bnf.fr/opds",
-        },
-    }),
+            {
+                title = "Project Gutenberg",
+                url = "https://m.gutenberg.org/ebooks.opds/?format=opds",
+            },
+            {
+                title = "Feedbooks",
+                url = "https://catalog.feedbooks.com/catalog/public_domain.atom",
+            },
+            {
+                title = "ManyBooks",
+                url = "http://manybooks.net/opds/index.php",
+            },
+            {
+                title = "Internet Archive",
+                url = "https://bookserver.archive.org/",
+            },
+            {
+                title = "textos.info (Spanish)",
+                url = "https://www.textos.info/catalogo.atom",
+            },
+            {
+                title = "Gallica (French)",
+                url = "https://gallica.bnf.fr/opds",
+            },
+        }
+    ),
     calibre_name = _("Local calibre library"),
     calibre_opds = G_reader_settings:readSetting("calibre_opds", {}),
 
@@ -240,6 +243,11 @@ function OPDSBrowser:genItemTableFromRoot()
             searchable = server.searchable,
         })
     end
+    -- Below is temp, for testing http://arxiv.maplepop.com/catalog/
+    --    table.insert(item_table, {
+    --                text = "ARXIV",
+    --                 url = "http://arxiv.maplepop.com/catalog/"
+    --})
     -- Handle the Calibre server. If it's not set, then place
     -- an item that would prompt the user to enter their Calibre settings.
     if not self.calibre_opds.host or not self.calibre_opds.port then
@@ -320,6 +328,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
         -- the payload of the request. We'll add that to a table below
         -- and return that as the result of this function.
         local xml = table.concat(sink)
+        logger.dbg("Request returned the following body: ",xml)
         -- Obviously, check to see if the payload exists.
         if xml ~= "" then
             return xml
@@ -506,7 +515,11 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                              or link.rel == "http://opds-spec.org/sort/new") then
                     item.url = build_href(link.href)
                 end
-                if link.rel then
+                logger.dbg("Looking for acquisition link", link.title)
+                -- Some catalogs do not use the rel attribute to denote
+                -- a publication. Arxiv uses title. Specifically, it uses
+                -- a title attribute that contains pdf. (title="pdf")
+                if link.rel or link.title then
                     if link.rel:match(self.acquisition_rel) then
                         table.insert(item.acquisitions, {
                             type = link.type,
@@ -516,6 +529,37 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                         item.thumbnail = build_href(link.href)
                     elseif link.rel == self.image_rel then
                         item.image = build_href(link.href)
+                    end
+                    -- This statement grabs the catalog items that are
+                    -- indicated by title="pdf". Possibly this could be combined
+                    -- with the statement above. But I don't know? Anyways,
+                    -- we want the title to be a pdf, and we don't what the rel
+                    -- to be a subsection. If the link meets these requirements,
+                    -- then it's probably something we might want to read!
+                    -- Oh, another thing. We could instead check the link type to see
+                    -- if it matches "application/pdf". Is this better? IDK.
+                    if link.title == "pdf" and link.rel ~= "subsection" then
+                        -- The other thing about these links, is that their href
+                        -- value may not include the proper file suffix. This causes
+                        -- the acquisition URL to be discounted later on, in one of
+                        -- the downloads functions. So a little bit of logic here
+                        -- checks for the presence of the pdf suffix and adds it
+                        -- if it's missing. Obviously, there are some limitations to this
+                        -- implementation. Like, what is the file is not a proper
+                        -- PDF? Maybe we should check the application type. Maybe.
+                        local href = link.href
+                        local filetype = util.getFileNameSuffix(link.href)
+                        if filetype ~= "pdf" then
+                            href = href .. ".pdf"
+                        end
+                        logger.dbg("Proper href is", href)
+                        table.insert(
+                            item.acquisitions,
+                            {
+                                type = link.title,
+                                href = build_href(href)
+                            }
+                        )
                     end
                 end
             end
@@ -689,6 +733,7 @@ function OPDSBrowser:showDownloads(item)
             local acquisition = acquisitions[index]
             if acquisition then
                 local filetype = util.getFileNameSuffix(acquisition.href)
+                logger.dbg("Filetype for download is", filetype)
                 if not DocumentRegistry:hasProvider("dummy."..filetype) then
                     filetype = nil
                 end
@@ -795,7 +840,12 @@ function OPDSBrowser:browseSearchable(browse_url, username, password)
     self.search_server_dialog:onShowKeyboard()
 end
 
+-- This function is fired when a list item is selected. The function
+-- determines what action to performed based on the item's values.
+-- Possible actions include: adding a catalog, acquiring a publication,
+-- and navigating to another catalog.
 function OPDSBrowser:onMenuSelect(item)
+    logger.dbg("Menu select item", item)
     self.catalog_title = self.catalog_title or _("OPDS Catalog")
     -- add catalog
     if item.callback then
