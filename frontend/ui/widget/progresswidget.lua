@@ -44,7 +44,7 @@ local ProgressWidget = Widget:new{
     bordercolor = Blitbuffer.COLOR_BLACK,
     bgcolor = Blitbuffer.COLOR_WHITE,
     altcolor = Blitbuffer.COLOR_LIGHT_GRAY,
-    rectdim = 2/3,
+    rectdim = 1/2,
     percentage = nil,
     ticks = nil,
     tick_width = Screen:scaleBySize(3),
@@ -120,20 +120,8 @@ function ProgressWidget:paintTo(bb, x, y)
         local bar_width = (my_size.w-2*self.margin_h)
         local y_pos = y + self.margin_v + self.bordersize
         local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
-        -- invert chapter marks color if ticks take less than 30% of the past bar width
-        local past_page = self.percentage * self.last
-        local past_tick_num = 0
-        for i, tick in ipairs(self.ticks) do
-            if tick > past_page then
-                past_tick_num = i
-                break
-            end
-        end
-        local bar_filled = bar_width * self.percentage
-        local bar_not_crowded = self.tick_width * past_tick_num / bar_filled < 0.3
         for i, tick in ipairs(self.ticks) do
             local tick_x = bar_width*(tick/self.last)
-            local color = (tick_x < bar_filled and bar_not_crowded) and self.bgcolor or self.bordercolor
             if self._mirroredUI then
                 tick_x = bar_width - tick_x
             end
@@ -142,7 +130,7 @@ function ProgressWidget:paintTo(bb, x, y)
                 y_pos,
                 self.tick_width,
                 bar_height,
-                color)
+                self.bordercolor)
         end
     end
 end
