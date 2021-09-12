@@ -31,35 +31,32 @@ local CatalogCache = Cache:new{
 }
 
 local OPDSBrowser = Menu:extend{
-    opds_servers = G_reader_settings:readSetting(
-        "opds_servers",
+    opds_servers = G_reader_settings:readSetting("opds_servers", {
         {
-            {
-                title = "Project Gutenberg",
-                url = "https://m.gutenberg.org/ebooks.opds/?format=opds",
-            },
-            {
-                title = "Feedbooks",
-                url = "https://catalog.feedbooks.com/catalog/public_domain.atom",
-            },
-            {
-                title = "ManyBooks",
-                url = "http://manybooks.net/opds/index.php",
-            },
-            {
-                title = "Internet Archive",
-                url = "https://bookserver.archive.org/",
-            },
-            {
-                title = "textos.info (Spanish)",
-                url = "https://www.textos.info/catalogo.atom",
-            },
-            {
-                title = "Gallica (French)",
-                url = "https://gallica.bnf.fr/opds",
-            },
-        }
-    ),
+            title = "Project Gutenberg",
+            url = "https://m.gutenberg.org/ebooks.opds/?format=opds",
+        },
+        {
+            title = "Feedbooks",
+            url = "https://catalog.feedbooks.com/catalog/public_domain.atom",
+        },
+        {
+            title = "ManyBooks",
+            url = "http://manybooks.net/opds/index.php",
+        },
+        {
+            title = "Internet Archive",
+            url = "https://bookserver.archive.org/",
+        },
+        {
+            title = "textos.info (Spanish)",
+            url = "https://www.textos.info/catalogo.atom",
+        },
+        {
+            title = "Gallica (French)",
+            url = "https://gallica.bnf.fr/opds",
+        },
+    }),
     calibre_name = _("Local calibre library"),
     calibre_opds = G_reader_settings:readSetting("calibre_opds", {}),
 
@@ -243,11 +240,6 @@ function OPDSBrowser:genItemTableFromRoot()
             searchable = server.searchable,
         })
     end
-    -- Below is temp, for testing http://arxiv.maplepop.com/catalog/
-    --    table.insert(item_table, {
-    --                text = "ARXIV",
-    --                 url = "http://arxiv.maplepop.com/catalog/"
-    --})
     -- Handle the Calibre server. If it's not set, then place
     -- an item that would prompt the user to enter their Calibre settings.
     if not self.calibre_opds.host or not self.calibre_opds.port then
@@ -328,7 +320,6 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
         -- the payload of the request. We'll add that to a table below
         -- and return that as the result of this function.
         local xml = table.concat(sink)
-        logger.dbg("Request returned the following body: ",xml)
         -- Obviously, check to see if the payload exists.
         if xml ~= "" then
             return xml
@@ -336,8 +327,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
     elseif method == "HEAD" then
         -- Don't show error messages when we check headers only.
         return
-    elseif code == 301 then
-        -- 301 means the page has permanently moved.
+    elseif code == 301 then -- Page has permanently moved
         UIManager:show(
             InfoMessage:new{
                 text = T(_("The catalog has been permanently moved. Please update catalog URL to '%1'."),
@@ -345,8 +335,7 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
         })
     elseif code == 302
         and item_url:match("^https")
-        and headers.location:match("^http[^s]") then
-        -- 302 means the page is redirecting.
+        and headers.location:match("^http[^s]") then -- Page is redirecting
         UIManager:show(
             InfoMessage:new{
                 text = T(_("Insecure HTTPS → HTTP downgrade attempted by redirect from:\n\n'%1'\n\nto\n\n'%2'.\n\nPlease inform the server administrator that many clients disallow this because it could be a downgrade attack."),
@@ -354,27 +343,22 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
                          BD.url(headers.location)),
                 icon = "notice-warning",
         })
-    elseif code == 401 then
-        -- 401 means authorization is required to access the page.
+    elseif code == 401 then -- Not authorized
         UIManager:show(
             InfoMessage:new{
                 text = T(_("Authentication required for catalog. Please add a username and password.")),
         })
-    elseif code == 403 then
-        -- 403 means authorization attempt failed.
+    elseif code == 403 then -- Authorization attemp failed
         UIManager:show(
             InfoMessage:new{
                 text = T(_("Failed to authenticate. Please check your username and password.")),
         })
-    elseif code == 404 then
-        -- 404 means the page was not found.
+    elseif code == 404 then -- Page not found
         UIManager:show(
             InfoMessage:new{
                 text = T(_("Catalog not found.")),
         })
-    elseif code == 406 then
-        -- 406 means the server can not give us the uncompressed content, which we
-        -- kindly asked for. So what's the deal, huh?
+    elseif code == 406 then -- Server cannot fulfil our request
         UIManager:show(
             InfoMessage:new{
                 text = T(_("Cannot get catalog. Server refuses to serve uncompressed content.")),
@@ -515,7 +499,6 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                              or link.rel == "http://opds-spec.org/sort/new") then
                     item.url = build_href(link.href)
                 end
-                logger.dbg("Looking for acquisition link", link.title)
                 -- Some catalogs do not use the rel attribute to denote
                 -- a publication. Arxiv uses title. Specifically, it uses
                 -- a title attribute that contains pdf. (title="pdf")
@@ -531,35 +514,21 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                         item.image = build_href(link.href)
                     end
                     -- This statement grabs the catalog items that are
-                    -- indicated by title="pdf". Possibly this could be combined
-                    -- with the statement above. But I don't know? Anyways,
-                    -- we want the title to be a pdf, and we don't what the rel
-                    -- to be a subsection. If the link meets these requirements,
-                    -- then it's probably something we might want to read!
-                    -- Oh, another thing. We could instead check the link type to see
-                    -- if it matches "application/pdf". Is this better? IDK.
-                    if link.title == "pdf" and link.rel ~= "subsection" then
-                        -- The other thing about these links, is that their href
-                        -- value may not include the proper file suffix. This causes
-                        -- the acquisition URL to be discounted later on, in one of
-                        -- the downloads functions. So a little bit of logic here
-                        -- checks for the presence of the pdf suffix and adds it
-                        -- if it's missing. Obviously, there are some limitations to this
-                        -- implementation. Like, what is the file is not a proper
-                        -- PDF? Maybe we should check the application type. Maybe.
+                    -- indicated by title="pdf" or whose type is
+                    -- "application/pdf"
+                    if link.title == "pdf" or link.type == "application/pdf"
+                        and link.rel ~= "subsection" then
+                        -- Check for the presence of the pdf suffix and add it
+                        -- if it's missing.
                         local href = link.href
                         local filetype = util.getFileNameSuffix(link.href)
                         if filetype ~= "pdf" then
                             href = href .. ".pdf"
                         end
-                        logger.dbg("Proper href is", href)
-                        table.insert(
-                            item.acquisitions,
-                            {
-                                type = link.title,
-                                href = build_href(href)
-                            }
-                        )
+                        table.insert(item.acquisitions, {
+                            type = link.title,
+                            href = build_href(href),
+                        })
                     end
                 end
             end
