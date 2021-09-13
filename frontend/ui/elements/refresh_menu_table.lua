@@ -26,7 +26,6 @@ local function spinWidgetSetRefresh(touchmenu_instance, refresh_rate_num)
     local left, right = custom(refresh_rate_num)
     local DoubleSpinWidget = require("ui/widget/doublespinwidget")
     local items = DoubleSpinWidget:new{
-        width = math.floor(Screen:getWidth() * 0.6),
         info_text = _("For every chapter set -1"),
         left_value = left,
         left_min = -1,
