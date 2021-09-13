@@ -1,7 +1,6 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -10,7 +9,6 @@ local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
-local OverlapGroup = require("ui/widget/overlapgroup")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -28,16 +26,14 @@ local TimeWidget = InputContainer:new{
     hour = 0,
     hour_max = 23,
     min = 0,
-    ok_text = _("OK"),
-    cancel_text = _("Cancel"),
+    ok_text = _("Apply"),
+    cancel_text = _("Close"),
 }
 
 function TimeWidget:init()
-    self.medium_font_face = Font:getFace("ffont")
-    self.light_bar = {}
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
-    self.width = math.floor(self.screen_width * 0.95)
+    self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) * 0.6)
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close time widget" }
@@ -64,7 +60,6 @@ end
 function TimeWidget:update()
     local hour_widget = NumberPickerWidget:new{
         show_parent = self,
-        width = math.floor(self.screen_width * 0.2),
         value = self.hour,
         value_min = 0,
         value_max = self.hour_max,
@@ -73,7 +68,6 @@ function TimeWidget:update()
     }
     local min_widget = NumberPickerWidget:new{
         show_parent = self,
-        width = math.floor(self.screen_width * 0.2),
         value = self.min,
         value_min = 0,
         value_max = 59,
@@ -85,7 +79,7 @@ function TimeWidget:update()
         alignment = "center",
         face = self.title_face,
         bold = true,
-        width = math.floor(self.screen_width * 0.2),
+        width = math.floor(self.screen_width * 0.05),
     }
     local time_group = HorizontalGroup:new{
         align = "center",
@@ -94,7 +88,6 @@ function TimeWidget:update()
         min_widget,
     }
 
-    local closebutton = CloseButton:new{ window = self, padding_top = Size.margin.title, }
     local time_title = FrameContainer:new{
         padding = Size.padding.default,
         margin = Size.margin.title,
@@ -102,8 +95,7 @@ function TimeWidget:update()
         TextWidget:new{
             text = self.title_text,
             face = self.title_face,
-            bold = true,
-            max_width = math.floor(self.screen_width * 0.95) - closebutton:getSize().w,
+            max_width = self.width - 2 * (Size.padding.default + Size.margin.title),
         },
     }
     local time_line = LineWidget:new{
@@ -111,14 +103,6 @@ function TimeWidget:update()
             w = self.width,
             h = Size.line.thick,
         }
-    }
-    local time_bar = OverlapGroup:new{
-        dimen = {
-            w = self.width,
-            h = time_title:getSize().h
-        },
-        time_title,
-        closebutton,
     }
     local buttons = {
         {
@@ -156,11 +140,11 @@ function TimeWidget:update()
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
-            time_bar,
+            time_title,
             time_line,
             CenterContainer:new{
                 dimen = Geom:new{
-                    w = math.floor(self.screen_width * 0.95),
+                    w = self.width,
                     h = math.floor(time_group:getSize().h * 1.2),
                 },
                 time_group
