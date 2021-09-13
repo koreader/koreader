@@ -53,9 +53,7 @@ local NumberPickerWidget = InputContainer:new{
 function NumberPickerWidget:init()
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
-    if self.width == nil then
-        self.width = math.floor(self.screen_width * 0.2)
-    end
+    self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) * 0.2)
     if self.value_table then
         self.value_index = self.value_index or 1
         self.value = self.value_table[self.value_index]
