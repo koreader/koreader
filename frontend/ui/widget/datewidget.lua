@@ -1,7 +1,6 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -10,7 +9,6 @@ local Font = require("ui/font")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
-local OverlapGroup = require("ui/widget/overlapgroup")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -27,17 +25,15 @@ local DateWidget = InputContainer:new{
     height = nil,
     day = 1,
     month = 1,
-    year = 2017,
-    ok_text = _("OK"),
-    cancel_text = _("Cancel"),
+    year = 2021,
+    ok_text = _("Apply"),
+    cancel_text = _("Close"),
 }
 
 function DateWidget:init()
-    self.medium_font_face = Font:getFace("ffont")
-    self.light_bar = {}
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
-    self.width = math.floor(self.screen_width * 0.95)
+    self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) * 0.8)
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close date widget" }
@@ -64,16 +60,14 @@ end
 function DateWidget:update()
     local year_widget = NumberPickerWidget:new{
         show_parent = self,
-        width = math.floor(self.screen_width * 0.2),
         value = self.year,
-        value_min = 2017,
-        value_max = 2037,
+        value_min = 2021,
+        value_max = 2041,
         value_step = 1,
         value_hold_step = 4,
     }
     local month_widget = NumberPickerWidget:new{
         show_parent = self,
-        width = math.floor(self.screen_width * 0.2),
         value = self.month,
         value_min = 1,
         value_max = 12,
@@ -82,7 +76,6 @@ function DateWidget:update()
     }
     local day_widget = NumberPickerWidget:new{
         show_parent = self,
-        width = math.floor(self.screen_width * 0.2),
         value = self.day,
         value_min = 1,
         value_max = 31,
@@ -96,7 +89,7 @@ function DateWidget:update()
         alignment = "center",
         face = self.title_face,
         bold = true,
-        width = math.floor(self.screen_width * 0.1),
+        width = math.floor(self.screen_width * 0.02),
     }
     local date_group = HorizontalGroup:new{
         align = "center",
@@ -114,8 +107,7 @@ function DateWidget:update()
         TextWidget:new{
             text = self.title_text,
             face = self.title_face,
-            bold = true,
-            width = math.floor(self.screen_width * 0.95),
+            max_width = self.width - 2 * (Size.padding.default + Size.margin.title),
         },
     }
     local date_line = LineWidget:new{
@@ -123,14 +115,6 @@ function DateWidget:update()
             w = self.width,
             h = Size.line.thick,
         }
-    }
-    local date_bar = OverlapGroup:new{
-        dimen = {
-            w = self.width,
-            h = date_title:getSize().h
-        },
-        date_title,
-        CloseButton:new{ window = self, padding_top = Size.margin.title, },
     }
     local buttons = {
         {
@@ -170,11 +154,11 @@ function DateWidget:update()
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
-            date_bar,
+            date_title,
             date_line,
             CenterContainer:new{
                 dimen = Geom:new{
-                    w = math.floor(self.screen_width * 0.95),
+                    w = self.width,
                     h = math.floor(date_group:getSize().h * 1.2),
                 },
                 date_group
