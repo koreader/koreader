@@ -1155,7 +1155,6 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                 widget = DoubleSpinWidget:new{
                     title_text =  name_text or _("Set values"),
                     info_text = more_options_param.info_text,
-                    width = math.floor(Screen:getWidth() * 0.6),
                     left_text = more_options_param.left_text,
                     right_text = more_options_param.right_text,
                     left_value = curr_values[1],
