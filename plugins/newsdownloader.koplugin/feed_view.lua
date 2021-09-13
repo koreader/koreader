@@ -15,7 +15,6 @@ function FeedView:getList(feed_config, callback, edit_feed_attribute_callback, d
     -- Loop through the feed.
     for idx, feed in ipairs(feed_config) do
         local feed_item_content = {}
-        local feed_list_content = {}
 
         local vc_feed_item = FeedView:getItem(
             idx,
@@ -73,11 +72,6 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
     local filter_element = feed.filter_element
         or feed.filter_element == nil
 
-    --- @todo: Strip the http:// or https:// from the URL
-    local sPre, sLink, sPost = url:match( "(.+)%s+(https?%S+)%s+(.*)$" )
-    local pretty_url = sLink
-
-    local view_content = {}
     local vc = {
         {
             _("URL"),
