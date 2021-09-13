@@ -80,7 +80,7 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
     local view_content = {}
     local vc = {
         {
-            "URL",
+            _("URL"),
             url,
             callback = function()
                 edit_feed_callback(
@@ -91,7 +91,7 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
             end
         },
         {
-            "Limit",
+            _("Limit"),
             limit,
             callback = function()
                 edit_feed_callback(
@@ -102,7 +102,7 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
             end
         },
         {
-            "Download full article",
+            _("Download full article"),
             download_full_article,
             callback = function()
                 edit_feed_callback(
@@ -113,7 +113,7 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
             end
         },
         {
-            "Include images",
+            _("Include images"),
             include_images,
             callback = function()
                 edit_feed_callback(
@@ -124,7 +124,7 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
             end
         },
         {
-            "Enable filter",
+            _("Enable filter"),
             enable_filter,
             callback = function()
                 edit_feed_callback(
@@ -136,7 +136,7 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
 
         },
         {
-            "Filter element",
+            _("Filter element"),
             filter_element,
             callback = function()
                 edit_feed_callback(
@@ -158,7 +158,7 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
         table.insert(
             vc,
             {
-                "Delete feed",
+                _("Delete feed"),
                 "",
                 callback = function()
                     delete_feed_callback(
