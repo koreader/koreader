@@ -2,7 +2,6 @@ local Device = require("device")
 local Event = require("ui/event")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
-local Screen = Device.screen
 local T = require("ffi/util").template
 
 local function custom(refresh_rate_num)
