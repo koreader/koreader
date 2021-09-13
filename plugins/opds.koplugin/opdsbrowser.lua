@@ -79,6 +79,8 @@ function OPDSBrowser:init()
     Menu.init(self) -- call parent's init()
 end
 
+-- This function is a callback fired from the new
+-- catalog dialog, 'addNewCatalog'.
 function OPDSBrowser:addServerFromInput(fields)
     logger.info("New OPDS catalog input:", fields)
     local new_server = {
@@ -93,6 +95,8 @@ function OPDSBrowser:addServerFromInput(fields)
     self:init()
 end
 
+-- This function is a callback fired from the Calibre input
+-- dialog 'editCalibreServer'.
 function OPDSBrowser:editCalibreFromInput(fields)
     logger.dbg("Edit calibre server input:", fields)
     if fields[1] then
@@ -114,6 +118,8 @@ function OPDSBrowser:editCalibreFromInput(fields)
     self:init()
 end
 
+-- This function shows a dialog with input fields
+-- for entering information for an OPDS catalog.
 function OPDSBrowser:addNewCatalog()
     self.add_server_dialog = MultiInputDialog:new{
         title = _("Add OPDS catalog"),
@@ -162,6 +168,9 @@ function OPDSBrowser:addNewCatalog()
     self.add_server_dialog:onShowKeyboard()
 end
 
+-- This function shows a dialog to the user with input fields
+-- for setting Calibre server information.
+-- (I think that the Calibre stuff could be moved to a separate file.)
 function OPDSBrowser:editCalibreServer()
     self.add_server_dialog = MultiInputDialog:new{
         title = _("Edit local calibre host and port"),
@@ -211,8 +220,14 @@ function OPDSBrowser:editCalibreServer()
     self.add_server_dialog:onShowKeyboard()
 end
 
+-- This function creates the "main menu" for the plugin,
+-- wherein the user is shown the default servers, their
+-- custom servers, and an item to allow them to add more of their
+-- own servers.
 function OPDSBrowser:genItemTableFromRoot()
     local item_table = {}
+    -- Loop through the default servers and add them
+    -- to the item table.
     for _, server in ipairs(self.opds_servers) do
         table.insert(item_table, {
             text = server.title,
@@ -225,7 +240,10 @@ function OPDSBrowser:genItemTableFromRoot()
             searchable = server.searchable,
         })
     end
+    -- Handle the Calibre server. If it's not set, then place
+    -- an item that would prompt the user to enter their Calibre settings.
     if not self.calibre_opds.host or not self.calibre_opds.port then
+        -- Here's where we allow the Calibre server to be set.
         table.insert(item_table, {
             text = self.calibre_name,
             callback = function()
@@ -234,6 +252,8 @@ function OPDSBrowser:genItemTableFromRoot()
             deletable = false,
         })
     else
+        -- Here's where we show the existing Calibre server with
+        -- the login details stored on the device.
         table.insert(item_table, {
             text = self.calibre_name,
             url = string.format("http://%s:%d/opds",
@@ -245,6 +265,8 @@ function OPDSBrowser:genItemTableFromRoot()
             searchable = false,
         })
     end
+    -- Show the user a list item that would let them add more items
+    -- to their OPDS server list.
     table.insert(item_table, {
         text = _("Add new OPDS catalog"),
         callback = function()
@@ -256,11 +278,16 @@ end
 
 function OPDSBrowser:fetchFeed(item_url, username, password, method)
     local sink = {}
-    socketutil:set_timeout(socketutil.LARGE_BLOCK_TIMEOUT, socketutil.LARGE_TOTAL_TIMEOUT)
+    socketutil:set_timeout(
+        socketutil.LARGE_BLOCK_TIMEOUT,
+        socketutil.LARGE_TOTAL_TIMEOUT
+    )
+    -- Prepare the request to send to the server.
     local request = {
         url      = item_url,
         method   = method and method or "GET",
-        -- Explicitly specify that we don't support compressed content. Some servers will still break RFC2616 14.3 and send crap instead.
+        -- Explicitly specify that we don't support compressed content.
+        -- Some servers will still break RFC2616 14.3 and send crap instead.
         headers  = {
             ["Accept-Encoding"] = "identity",
         },
@@ -269,13 +296,19 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
         password = password,
     }
     logger.info("Request:", request)
+    -- Fire off the request and wait to see what we get back.
     local code, headers = socket.skip(1, http.request(request))
     socketutil:reset_timeout()
-    -- raise error message when network is unavailable
+    -- Check the response and raise error message when network is unavailable.
     if headers == nil then
         error(code)
     end
+    -- Below are numerous if cases to handle different response codes.
     if code == 200 then
+        -- 200 means the request succeeded.
+        -- If the method sent was HEAD, then we're probably checking for
+        -- an update and therefore only interested in the last-modified
+        -- time of the resource (who needs a body when you have a head?).
         if method == "HEAD" then
             if headers["last-modified"] then
                 return headers["last-modified"]
@@ -283,39 +316,50 @@ function OPDSBrowser:fetchFeed(item_url, username, password, method)
                 return
             end
         end
+        -- If the method sent was not HEAD, then we are interested in
+        -- the payload of the request. We'll add that to a table below
+        -- and return that as the result of this function.
         local xml = table.concat(sink)
+        -- Obviously, check to see if the payload exists.
         if xml ~= "" then
             return xml
         end
     elseif method == "HEAD" then
         -- Don't show error messages when we check headers only.
         return
-    elseif code == 301 then
+    elseif code == 301 then -- Page has permanently moved
         UIManager:show(InfoMessage:new{
-            text = T(_("The catalog has been permanently moved. Please update catalog URL to '%1'."), BD.url(headers['Location'])),
+            text = T(_("The catalog has been permanently moved. Please update catalog URL to '%1'."),
+                     BD.url(headers['Location'])),
         })
-    elseif code == 302 and item_url:match("^https") and headers.location:match("^http[^s]") then
+    elseif code == 302
+        and item_url:match("^https")
+        and headers.location:match("^http[^s]") then -- Page is redirecting
         UIManager:show(InfoMessage:new{
-            text = T(_("Insecure HTTPS → HTTP downgrade attempted by redirect from:\n\n'%1'\n\nto\n\n'%2'.\n\nPlease inform the server administrator that many clients disallow this because it could be a downgrade attack."), BD.url(item_url), BD.url(headers.location)),
+            text = T(_("Insecure HTTPS → HTTP downgrade attempted by redirect from:\n\n'%1'\n\nto\n\n'%2'.\n\nPlease inform the server administrator that many clients disallow this because it could be a downgrade attack."),
+                     BD.url(item_url),
+                     BD.url(headers.location)),
             icon = "notice-warning",
         })
-    elseif code == 401 then
+    elseif code == 401 then -- Not authorized
         UIManager:show(InfoMessage:new{
             text = T(_("Authentication required for catalog. Please add a username and password.")),
         })
-    elseif code == 403 then
+    elseif code == 403 then -- Authorization attemp failed
         UIManager:show(InfoMessage:new{
             text = T(_("Failed to authenticate. Please check your username and password.")),
         })
-    elseif code == 404 then
+    elseif code == 404 then -- Page not found
         UIManager:show(InfoMessage:new{
             text = T(_("Catalog not found.")),
         })
-    elseif code == 406 then
+    elseif code == 406 then -- Server cannot fulfil our request
         UIManager:show(InfoMessage:new{
             text = T(_("Cannot get catalog. Server refuses to serve uncompressed content.")),
         })
     else
+        -- This block handles all other requests and supplies the user with a generic
+        -- error message and no more information than the code.
         UIManager:show(InfoMessage:new{
             text = T(_("Cannot get catalog. Server response code %1."), code),
         })
@@ -448,7 +492,10 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                              or link.rel == "http://opds-spec.org/sort/new") then
                     item.url = build_href(link.href)
                 end
-                if link.rel then
+                -- Some catalogs do not use the rel attribute to denote
+                -- a publication. Arxiv uses title. Specifically, it uses
+                -- a title attribute that contains pdf. (title="pdf")
+                if link.rel or link.title then
                     if link.rel:match(self.acquisition_rel) then
                         table.insert(item.acquisitions, {
                             type = link.type,
@@ -458,6 +505,23 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                         item.thumbnail = build_href(link.href)
                     elseif link.rel == self.image_rel then
                         item.image = build_href(link.href)
+                    end
+                    -- This statement grabs the catalog items that are
+                    -- indicated by title="pdf" or whose type is
+                    -- "application/pdf"
+                    if link.title == "pdf" or link.type == "application/pdf"
+                        and link.rel ~= "subsection" then
+                        -- Check for the presence of the pdf suffix and add it
+                        -- if it's missing.
+                        local href = link.href
+                        local filetype = util.getFileNameSuffix(link.href)
+                        if filetype ~= "pdf" then
+                            href = href .. ".pdf"
+                        end
+                        table.insert(item.acquisitions, {
+                            type = link.title,
+                            href = build_href(href),
+                        })
                     end
                 end
             end
@@ -631,6 +695,7 @@ function OPDSBrowser:showDownloads(item)
             local acquisition = acquisitions[index]
             if acquisition then
                 local filetype = util.getFileNameSuffix(acquisition.href)
+                logger.dbg("Filetype for download is", filetype)
                 if not DocumentRegistry:hasProvider("dummy."..filetype) then
                     filetype = nil
                 end
@@ -737,7 +802,12 @@ function OPDSBrowser:browseSearchable(browse_url, username, password)
     self.search_server_dialog:onShowKeyboard()
 end
 
+-- This function is fired when a list item is selected. The function
+-- determines what action to performed based on the item's values.
+-- Possible actions include: adding a catalog, acquiring a publication,
+-- and navigating to another catalog.
 function OPDSBrowser:onMenuSelect(item)
+    logger.dbg("Menu select item", item)
     self.catalog_title = self.catalog_title or _("OPDS Catalog")
     -- add catalog
     if item.callback then
