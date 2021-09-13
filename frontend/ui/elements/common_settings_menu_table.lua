@@ -87,7 +87,8 @@ common_settings.time = {
         {
             text_func = function ()
                 local duration_format = G_reader_settings:readSetting("duration_format", "classic")
-                return T(_("Duration format (%1)"), duration_format)
+                local text = duration_format == "classic" and _("Classic") or _("Modern")
+                return T(_("Duration format: %1"), text)
             end,
             sub_item_table = {
                 {
@@ -238,7 +239,7 @@ common_settings.screen_notification = require("ui/elements/screen_notification_m
 common_settings.menu_activate = require("ui/elements/menu_activate")
 common_settings.screen_disable_double_tab = require("ui/elements/screen_disable_double_tap_table")
 common_settings.ignore_hold_corners = {
-    text = _("Ignore hold on corners"),
+    text = _("Ignore long-press on corners"),
     checked_func = function()
         return G_reader_settings:isTrue("ignore_hold_corners")
     end,
@@ -588,7 +589,7 @@ common_settings.document = {
                     separator = true,
                 },
                 {
-                    text = _("Ask with pop-up dialog"),
+                    text = _("Ask with popup dialog"),
                     checked_func = function()
                         local setting = G_reader_settings:readSetting("end_document_action")
                         return setting == "pop-up" or setting == nil
@@ -670,75 +671,6 @@ common_settings.document = {
                     end,
                     callback = function()
                         G_reader_settings:saveSetting("end_document_action", "book_status_file_browser")
-                    end,
-                },
-            }
-        },
-        {
-            text = _("Highlight action"),
-            sub_item_table = {
-                {
-                    text = _("Enable on single word selection"),
-                    checked_func = function()
-                        return G_reader_settings:isTrue("highlight_action_on_single_word")
-                    end,
-                    callback = function()
-                        G_reader_settings:flipNilOrFalse("highlight_action_on_single_word")
-                    end,
-                    separator = true,
-                },
-                {
-                    text = _("Ask with popup dialog"),
-                    checked_func = function()
-                        return G_reader_settings:nilOrFalse("default_highlight_action")
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("default_highlight_action", nil)
-                    end,
-                },
-                {
-                    text = _("Highlight"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("default_highlight_action") == "highlight"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("default_highlight_action", "highlight")
-                    end,
-                },
-                {
-                    text = _("Translate"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("default_highlight_action") == "translate"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("default_highlight_action", "translate")
-                    end,
-                },
-                {
-                    text = _("Wikipedia"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("default_highlight_action") == "wikipedia"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("default_highlight_action", "wikipedia")
-                    end,
-                },
-                {
-                    text = _("Dictionary"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("default_highlight_action") == "dictionary"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("default_highlight_action", "dictionary")
-                    end,
-                },
-                {
-                    text = _("Fulltext search"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("default_highlight_action") == "search"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("default_highlight_action", "search")
                     end,
                 },
             }

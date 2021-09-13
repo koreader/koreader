@@ -19,6 +19,7 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
 
@@ -27,6 +28,7 @@ local KeyboardLayoutDialog = InputContainer:new{
     title = _("Keyboard layout"),
     modal = true,
     stop_events_propagation = true,
+    keyboard_state = nil,
     width = math.floor(Screen:getWidth() * 0.8),
     face = Font:getFace("cfont", 22),
     title_face = Font:getFace("x_smalltfont"),
@@ -58,15 +60,26 @@ function KeyboardLayoutDialog:init()
 
     local buttons = {}
     local radio_buttons = {}
+
+    local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
+    self.keyboard_state.force_current_layout = true
     for k, _ in FFIUtil.orderedPairs(self.parent.keyboard.lang_to_keyboard_layout) do
+        local text = Language:getLanguageName(k) .. "  (" .. string.sub(k, 1, 2) .. ")"
+        if util.arrayContains(keyboard_layouts, k) then
+            text = text .. "  ✓"
+        end
+        if k == G_reader_settings:readSetting("keyboard_layout_default") then
+            text = text .. "  ★"
+        end
         table.insert(radio_buttons, {
             {
-            text = Language:getLanguageName(k),
+            text = text,
             checked = self.parent.keyboard:getKeyboardLayout() == k,
             provider = k,
             },
         })
     end
+    self.keyboard_state.force_current_layout = false
 
     table.insert(buttons, {
         {

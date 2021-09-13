@@ -4,8 +4,6 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local DocumentRegistry = require("document/documentregistry")
 local FileChooser = require("ui/widget/filechooser")
 local Font = require("ui/font")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local HorizontalSpan = require("ui/widget/horizontalspan")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
@@ -13,7 +11,6 @@ local Menu = require("ui/widget/menu")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
-local VerticalGroup = require("ui/widget/verticalgroup")
 local lfs = require("libs/libkoreader-lfs")
 local BaseUtil = require("ffi/util")
 local util = require("util")
@@ -21,15 +18,9 @@ local _ = require("gettext")
 local Screen = require("device").screen
 
 local FileSearcher = InputContainer:new{
-    search_dialog = nil,
-
-    --filesearcher
-    -- state buffer
     dirs = {},
     files = {},
     results = {},
-    items = 0,
-    commands = nil,
 }
 
 function FileSearcher:readDir()
@@ -109,8 +100,6 @@ function FileSearcher:setSearchResults()
             end
         end
     end
-    self.keywords = keywords
-    self.items = #self.results
 end
 
 function FileSearcher:close()
@@ -165,34 +154,18 @@ function FileSearcher:onShowFileSearch(search_string)
             },
         },
     }
-    -- checkbox
+
     self.check_button_case = CheckButton:new{
         text = _("Case sensitive"),
         checked = self.case_sensitive,
         parent = self.search_dialog,
         max_width = self.search_dialog._input_widget.width,
         callback = function()
-            if self.check_button_case.checked then
-                self.check_button_case:unCheck()
-            else
-                self.check_button_case:check()
-            end
+            self.check_button_case:toggleCheck()
             self.case_sensitive = self.check_button_case.checked
         end,
     }
-
-    local checkbox_shift = math.floor((self.search_dialog.width - self.search_dialog._input_widget.width) / 2 + 0.5)
-    local check_buttons = HorizontalGroup:new{
-        HorizontalSpan:new{width = checkbox_shift},
-        VerticalGroup:new{
-            align = "left",
-            self.check_button_case,
-        },
-    }
-
-    -- insert check buttons before the regular buttons
-    local nb_elements = #self.search_dialog.dialog_frame[1]
-    table.insert(self.search_dialog.dialog_frame[1], nb_elements-1, check_buttons)
+    self.search_dialog:addWidget(self.check_button_case)
 
     UIManager:show(self.search_dialog)
     self.search_dialog:onShowKeyboard()

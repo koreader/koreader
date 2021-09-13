@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20210720
+local CURRENT_MIGRATION_DATE = 20210831
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -294,6 +294,22 @@ if last_migration_date < 20210720 then
     -- started seeing the modern format unexpectedly. Therefore, reset everyone back to classic so users go back
     -- to a safe default. Users who use "modern" will need to reselect it in Time and Date settings after this migration.
     G_reader_settings:saveSetting("duration_format", "classic")
+end
+
+-- 20210831, Clean VirtualKeyboard settings of disabled layouts, https://github.com/koreader/koreader/pull/8159
+if last_migration_date < 20210831 then
+    logger.info("Performing one-time migration for 20210831")
+    local FFIUtil = require("ffi/util")
+    local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
+    local keyboard_layouts_new = {}
+    local selected_layouts_count = 0
+    for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
+        if v == true and selected_layouts_count < 4 then
+            selected_layouts_count = selected_layouts_count + 1
+            keyboard_layouts_new[selected_layouts_count] = k
+        end
+    end
+    G_reader_settings:saveSetting("keyboard_layouts", keyboard_layouts_new)
 end
 
 -- We're done, store the current migration date

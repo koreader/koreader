@@ -52,6 +52,9 @@ function ButtonTable:init()
             local button = Button:new{
                 text = btn_entry.text,
                 text_func = btn_entry.text_func,
+                icon = btn_entry.icon,
+                icon_width = btn_entry.icon_width,
+                icon_height = btn_entry.icon_height,
                 enabled = btn_entry.enabled,
                 callback = btn_entry.callback,
                 hold_callback = btn_entry.hold_callback,

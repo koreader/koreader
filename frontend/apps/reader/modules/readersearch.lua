@@ -2,16 +2,14 @@ local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
-local HorizontalGroup = require("ui/widget/horizontalgroup")
-local HorizontalSpan = require("ui/widget/horizontalspan")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
-local VerticalGroup = require("ui/widget/verticalgroup")
 local logger = require("logger")
 local _ = require("gettext")
+local Screen = Device.screen
 local T = require("ffi/util").template
 
 local ReaderSearch = InputContainer:new{
@@ -109,6 +107,7 @@ function ReaderSearch:onShowFulltextSearchInput()
     end
     self.input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
+        width = math.floor(Screen:getWidth() * 0.9),
         input = self.last_search_text,
         buttons = {
             {
@@ -135,50 +134,29 @@ function ReaderSearch:onShowFulltextSearchInput()
         },
     }
 
-    -- checkboxes
     self.check_button_case = CheckButton:new{
         text = _("Case sensitive"),
         checked = not self.case_insensitive,
         parent = self.input_dialog,
         max_width = self.input_dialog._input_widget.width,
         callback = function()
-            if not self.check_button_case.checked then
-                self.check_button_case:check()
-            else
-                self.check_button_case:unCheck()
-            end
+            self.check_button_case:toggleCheck()
         end,
     }
+    self.input_dialog:addWidget(self.check_button_case)
     self.check_button_regex = CheckButton:new{
-        text = _("Regular expression (hold for help)"),
+        text = _("Regular expression (long-press for help)"),
         checked = self.use_regex,
         parent = self.input_dialog,
         max_width = self.input_dialog._input_widget.width,
         callback = function()
-            if not self.check_button_regex.checked then
-                self.check_button_regex:check()
-            else
-                self.check_button_regex:unCheck()
-            end
+            self.check_button_regex:toggleCheck()
         end,
         hold_callback = function()
             UIManager:show(InfoMessage:new{ text = help_text })
         end,
     }
-
-    local checkbox_shift = math.floor((self.input_dialog.width - self.input_dialog._input_widget.width) / 2 + 0.5)
-    local check_buttons = HorizontalGroup:new{
-        HorizontalSpan:new{width = checkbox_shift},
-        VerticalGroup:new{
-            align = "left",
-            self.check_button_case,
-            not self.ui.document.info.has_pages and self.check_button_regex or nil,
-        },
-    }
-
-    -- insert check buttons before the regular buttons
-    local nb_elements = #self.input_dialog.dialog_frame[1]
-    table.insert(self.input_dialog.dialog_frame[1], nb_elements-1, check_buttons)
+    self.input_dialog:addWidget(self.check_button_regex)
 
     UIManager:show(self.input_dialog)
     self.input_dialog:onShowKeyboard()
@@ -324,6 +302,16 @@ function ReaderSearch:onShowSearchDialog(text, direction, regex, case_insensitiv
                     text = backward_text,
                     vsync = true,
                     callback = search(self.searchNext, text, 1),
+                },
+                {
+                    icon = "appbar.search",
+                    icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE * 0.8),
+                    icon_height = Screen:scaleBySize(DGENERIC_ICON_SIZE * 0.8),
+                    callback = function()
+                        self.search_dialog:onClose()
+                        self.last_search_text = text
+                        self:onShowFulltextSearchInput()
+                    end,
                 },
                 {
                     text = forward_text,

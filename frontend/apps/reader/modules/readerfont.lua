@@ -440,18 +440,19 @@ function ReaderFont:buildFontsTestDocument()
 <head>
 <title>%s</title>
 <style>
-section > title {
+h1 {
   font-size: large;
   font-weight: bold;
   text-align: center;
   page-break-before: always;
+  margin-top: 0;
   margin-bottom: 0.5em;
 }
 a { color: black; }
 </style>
 </head>
 <body>
-<section id="list"><title>%s</title></section>
+<h1>%s</h1>
 ]], _("Available fonts test document"), _("AVAILABLE FONTS")))
     local face_list = cre.getFontFaces()
     f:write("<div style='margin: 2em'>\n")
@@ -462,7 +463,7 @@ a { color: black; }
     f:write("</div>\n\n")
     for _, font_name in ipairs(face_list) do
         local font_id = font_name:gsub(" ", "_"):gsub("'", "_")
-        f:write(string.format("<section id='%s'><title>%s</title></section>\n", font_id, font_name))
+        f:write(string.format("<h1 id='%s'>%s</h1>\n", font_id, font_name))
         f:write(string.format("<div style='font-family: %s'>\n", font_name))
         f:write(html_sample)
         f:write("\n</div>\n\n")

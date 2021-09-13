@@ -3,7 +3,6 @@ local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Event = require("ui/event")
-local FFIUtil = require("ffi/util")
 local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -24,6 +23,10 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local util = require("util")
 local Screen = Device.screen
+
+local keyboard_state = {
+    force_current_layout = false, -- Set to true to get/set current layout (instead of default layout)
+}
 
 local VirtualKeyPopup
 
@@ -58,45 +61,43 @@ function VirtualKey:init()
         self.callback = function () self.keyboard:setLayer("Shift") end
         self.skiptap = true
     elseif self.keyboard.utf8mode_keys[self.label] ~= nil then
-        self.key_chars = self:genkeyboardLayoutKeyChars()
+        self.key_chars = self:genKeyboardLayoutKeyChars()
         self.callback = function ()
             local current = G_reader_settings:readSetting("keyboard_layout")
+            local default = G_reader_settings:readSetting("keyboard_layout_default")
             local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
-            local enabled = false
             local next_layout = nil
-            for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
-                if enabled and v == true then
-                    next_layout = k
-                    break
+            local layout_index = util.arrayContains(keyboard_layouts, current)
+            if layout_index then
+                if layout_index == #keyboard_layouts then
+                    layout_index = 1
+                else
+                    layout_index = layout_index + 1
                 end
-                if k == current then
-                    enabled = true
-                end
-            end
-            if not next_layout then
-                for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
-                    if enabled and v == true then
-                        next_layout = k
-                        break
-                    end
+            else
+                if default and current ~= default then
+                    next_layout = default
+                else
+                    layout_index = 1
                 end
             end
-            if next_layout then
-                self.keyboard:setKeyboardLayout(next_layout)
-            end
+            next_layout = next_layout or keyboard_layouts[layout_index] or "en"
+            self.keyboard:setKeyboardLayout(next_layout)
         end
         self.hold_callback = function()
-            if util.tableSize(self.key_chars) > 5 then
+            if util.tableSize(self.key_chars) > 5 then -- 2 or more layouts enabled
                 self.popup = VirtualKeyPopup:new{
                     parent_key = self,
                 }
             else
                 self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
                     parent = self,
+                    keyboard_state = keyboard_state,
                 }
                 UIManager:show(self.keyboard_layout_dialog)
             end
         end
+        self.hold_cb_is_popup = true
         self.swipe_callback = function(ges)
             local key_function = self.key_chars[ges.direction.."_func"]
             if key_function then
@@ -139,6 +140,7 @@ function VirtualKey:init()
                 parent_key = self,
             }
         end
+        self.hold_cb_is_popup = true
         self.swipe_callback = function(ges)
             local key_string = self.key_chars[ges.direction] or self.key
             local key_function = self.key_chars[ges.direction.."_func"]
@@ -274,7 +276,7 @@ function VirtualKey:init()
     self.flash_keyboard = G_reader_settings:nilOrTrue("flash_keyboard")
 end
 
-function VirtualKey:genkeyboardLayoutKeyChars()
+function VirtualKey:genKeyboardLayoutKeyChars()
     local positions = {
         "northeast",
         "north",
@@ -290,25 +292,22 @@ function VirtualKey:genkeyboardLayoutKeyChars()
             UIManager:close(self.popup)
             self.keyboard_layout_dialog = KeyboardLayoutDialog:new{
                 parent = self,
+                keyboard_state = keyboard_state,
             }
             UIManager:show(self.keyboard_layout_dialog)
         end,
     }
-    local index = 1
-    for k, v in FFIUtil.orderedPairs(keyboard_layouts) do
-        if v == true then
-            key_chars[positions[index]] = string.sub(k, 1, 2)
-            key_chars[positions[index] .. "_func"] = function()
-                UIManager:tickAfterNext(function() UIManager:close(self.popup) end)
-                self.keyboard:setKeyboardLayout(k)
-            end
-            if index >= 4 then break end
-            index = index + 1
+    for i = 1, #keyboard_layouts do
+        key_chars[positions[i]] = string.sub(keyboard_layouts[i], 1, 2)
+        key_chars[positions[i] .. "_func"] = function()
+            UIManager:close(self.popup)
+            self.keyboard:setKeyboardLayout(keyboard_layouts[i])
         end
     end
     return key_chars
 end
 
+-- NOTE: We currently don't ever set want_flash to true (c.f., our invert method).
 function VirtualKey:update_keyboard(want_flash, want_fast)
     -- NOTE: We mainly use "fast" when inverted & "ui" when not, with a cherry on top:
     --       we flash the *full* keyboard instead when we release a hold.
@@ -343,12 +342,15 @@ function VirtualKey:onTapSelect(skip_flash)
     -- just in case it's not flipped to false on hold release where it's supposed to
     self.keyboard.ignore_first_hold_release = false
     if self.flash_keyboard and not skip_flash and not self.skiptap then
-        self[1].inner_bordersize = self.focused_bordersize
-        self:update_keyboard(false, true)
+        self:invert(true)
+        UIManager:forceRePaint()
+        UIManager:yieldToEPDC()
+
+        self:invert(false)
         if self.callback then
             self.callback()
         end
-        UIManager:tickAfterNext(function() self:invert(false) end)
+        UIManager:forceRePaint()
     else
         if self.callback then
             self.callback()
@@ -359,16 +361,20 @@ end
 
 function VirtualKey:onHoldSelect()
     Device:performHapticFeedback("LONG_PRESS")
-    if self.flash_keyboard and not self.skiphold then
-        self[1].inner_bordersize = self.focused_bordersize
-        self:update_keyboard(false, true)
-        -- Don't refresh the key region if we're going to show a popup on top of it ;).
+    -- No visual feedback necessary if we're going to show a popup on top of the key ;).
+    if self.flash_keyboard and not self.skiphold and not self.hold_cb_is_popup then
+        self:invert(true)
+        UIManager:forceRePaint()
+        UIManager:yieldToEPDC()
+
+        -- NOTE: We do *NOT* set hold to true here,
+        --       because some mxcfb drivers apparently like to merge the flash that it would request
+        --       with the following key redraw, leading to an unsightly double flash :/.
+        self:invert(false)
         if self.hold_callback then
-            self[1].inner_bordersize = 0
             self.hold_callback()
-        else
-            UIManager:tickAfterNext(function() self:invert(false, true) end)
         end
+        UIManager:forceRePaint()
     else
         if self.hold_callback then
             self.hold_callback()
@@ -380,12 +386,15 @@ end
 function VirtualKey:onSwipeKey(arg, ges)
     Device:performHapticFeedback("KEYBOARD_TAP")
     if self.flash_keyboard and not self.skipswipe then
-        self[1].inner_bordersize = self.focused_bordersize
-        self:update_keyboard(false, true)
+        self:invert(true)
+        UIManager:forceRePaint()
+        UIManager:yieldToEPDC()
+
+        self:invert(false)
         if self.swipe_callback then
             self.swipe_callback(ges)
         end
-        UIManager:tickAfterNext(function() self:invert(false, false) end)
+        UIManager:forceRePaint()
     else
         if self.swipe_callback then
             self.swipe_callback(ges)
@@ -422,6 +431,7 @@ function VirtualKey:onPanReleaseKey()
     return true
 end
 
+-- NOTE: We currently don't ever set hold to true (c.f., our onHoldSelect method)
 function VirtualKey:invert(invert, hold)
     if invert then
         self[1].inner_bordersize = self.focused_bordersize
@@ -766,7 +776,8 @@ function VirtualKeyboard:init()
     self.symbolmode_keys = keyboard.symbolmode_keys
     self.utf8mode_keys = keyboard.utf8mode_keys
     self.umlautmode_keys = keyboard.umlautmode_keys
-    self.height = Screen:scaleBySize(64 * #self.KEYS)
+    local keys_height = G_reader_settings:isTrue("keyboard_key_compact") and 48 or 64
+    self.height = Screen:scaleBySize(keys_height * #self.KEYS)
     self.min_layer = keyboard.min_layer
     self.max_layer = keyboard.max_layer
     self:initLayer(self.keyboard_layer)
@@ -784,10 +795,16 @@ function VirtualKeyboard:init()
 end
 
 function VirtualKeyboard:getKeyboardLayout()
+    if G_reader_settings:isFalse("keyboard_remember_layout") and not keyboard_state.force_current_layout then
+        local lang = G_reader_settings:readSetting("keyboard_layout_default")
+            or G_reader_settings:readSetting("keyboard_layout") or "en"
+        G_reader_settings:saveSetting("keyboard_layout", lang)
+    end
     return G_reader_settings:readSetting("keyboard_layout") or G_reader_settings:readSetting("language")
 end
 
 function VirtualKeyboard:setKeyboardLayout(layout)
+    keyboard_state.force_current_layout = true
     local prev_keyboard_height = self.dimen and self.dimen.h
     G_reader_settings:saveSetting("keyboard_layout", layout)
     self:init()
@@ -800,6 +817,7 @@ function VirtualKeyboard:setKeyboardLayout(layout)
     else
         self:_refresh(true)
     end
+    keyboard_state.force_current_layout = false
 end
 
 function VirtualKeyboard:onClose()

@@ -35,7 +35,6 @@ local ReaderPaging = InputContainer:new{
     number_of_pages = 0,
     visible_area = nil,
     page_area = nil,
-    show_overlap_enable = nil,
     overlap = Screen:scaleBySize(DOVERLAPPIXELS),
 
     inverse_reading_order = nil,
@@ -103,7 +102,6 @@ function ReaderPaging:init()
     end
     self.pan_interval = TimeVal:new{ usec = 1000000 / self.pan_rate }
     self.number_of_pages = self.ui.document.info.number_of_pages
-    self.ui.menu:registerToMainMenu(self)
 end
 
 function ReaderPaging:onReaderReady()
@@ -193,11 +191,6 @@ end
 function ReaderPaging:onReadSettings(config)
     self.page_positions = config:readSetting("page_positions") or {}
     self:_gotoPage(config:readSetting("last_page") or 1)
-    if config:has("show_overlap_enable") then
-        self.show_overlap_enable = config:isTrue("show_overlap_enable")
-    else
-        self.show_overlap_enable = DSHOWOVERLAP
-    end
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
     self.is_reflowed = config:has("kopt_text_wrap") and config:readSetting("kopt_text_wrap") == 1
@@ -216,7 +209,6 @@ function ReaderPaging:onSaveSettings()
     self.ui.doc_settings:saveSetting("page_positions", self.page_positions)
     self.ui.doc_settings:saveSetting("last_page", self:getTopPage())
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
-    self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
     self.ui.doc_settings:saveSetting("flipping_zoom_mode", self.flipping_zoom_mode)
     self.ui.doc_settings:saveSetting("flipping_scroll_mode", self.flipping_scroll_mode)
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
@@ -230,40 +222,6 @@ function ReaderPaging:getLastPercent()
     if self.current_page > 0 and self.number_of_pages > 0 then
         return self.current_page/self.number_of_pages
     end
-end
-
-function ReaderPaging:addToMainMenu(menu_items)
-    --- @fixme repeated code with page overlap menu for readerrolling
-    -- needs to keep only one copy of the logic as for the DRY principle.
-    -- The difference between the two menus is only the enabled func.
-    local page_overlap_menu = {
-        {
-            text = _("Page overlap"),
-            checked_func = function()
-                return self.show_overlap_enable
-            end,
-            callback = function()
-                self.show_overlap_enable = not self.show_overlap_enable
-                if not self.show_overlap_enable then
-                    self.view.dim_area:clear()
-                end
-            end,
-            separator = true,
-        },
-    }
-    local overlap_enabled_func = function() return self.show_overlap_enable end
-    for _, menu_entry in ipairs(self.view:genOverlapStyleMenu(overlap_enabled_func)) do
-        table.insert(page_overlap_menu, menu_entry)
-    end
-    menu_items.page_overlap = {
-        text = _("Page overlap"),
-        enabled_func = function()
-            return not self.view.page_scroll
-                    and (self.zoom_mode ~= "page" or (self.zoom_mode == "page" and self.is_reflowed))
-                    and not self.zoom_mode:find("height")
-        end,
-        sub_item_table = page_overlap_menu,
-    }
 end
 
 function ReaderPaging:onColorRenderingUpdate()
@@ -1083,7 +1041,7 @@ function ReaderPaging:onGotoPageRel(diff)
     self.view:PanningUpdate(panned_x, panned_y)
 
     -- Update dim area in ReaderView
-    if self.show_overlap_enable then
+    if self.view.page_overlap_enable then
         if self.current_page ~= old_page then
             self.view.dim_area:clear()
         else
@@ -1172,11 +1130,15 @@ function ReaderPaging:onGotoPrevChapter()
     return true
 end
 
-function ReaderPaging:onToggleReflow()
-    self.view.document.configurable.text_wrap = bit.bxor(self.view.document.configurable.text_wrap, 1)
+function ReaderPaging:onReflowUpdated()
     self.ui:handleEvent(Event:new("RedrawCurrentPage"))
     self.ui:handleEvent(Event:new("RestoreZoomMode"))
     self.ui:handleEvent(Event:new("InitScrollPageStates"))
+end
+
+function ReaderPaging:onToggleReflow()
+    self.view.document.configurable.text_wrap = bit.bxor(self.view.document.configurable.text_wrap, 1)
+    self:onReflowUpdated()
 end
 
 -- Duplicated in ReaderRolling

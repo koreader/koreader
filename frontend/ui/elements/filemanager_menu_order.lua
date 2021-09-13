@@ -59,7 +59,6 @@ local order = {
         "android_haptic_feedback",
         "android_back_button",
         "----------------------------",
-        "invert_page_turn_buttons",
         "opening_page_location_stack",
     },
     network = {
@@ -92,13 +91,14 @@ local order = {
         "gesture_manager",
         "gesture_intervals",
         "----------------------------",
-        "menu_activate",
         "ignore_hold_corners",
         "screen_disable_double_tab",
+        "----------------------------",
+        "menu_activate",
     },
     tools = {
         "calibre",
-        "evernote",
+        "exporter",
         "statistics",
         "move_to_archive",
         "cloud_storage",
@@ -115,6 +115,7 @@ local order = {
     more_tools = {
         "auto_frontlight",
         "battery_statistics",
+        "book_shortcuts",
         "synchronize_time",
         "keep_alive",
         "doc_setting_tweak",

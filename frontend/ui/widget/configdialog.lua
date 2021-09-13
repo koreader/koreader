@@ -90,7 +90,7 @@ function OptionTextItem:onTapSelect()
     Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_ICON)
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
-                    self.events, self.current_item, self.hide_on_apply)
+                    self.current_item, self.hide_on_apply)
 
     UIManager:setDirty(self.config, function()
         return "fast", self[1].dimen
@@ -169,7 +169,7 @@ function OptionIconItem:onTapSelect()
     Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_ICON)
     self.config:onConfigChoose(self.values, self.name,
                     self.event, self.args,
-                    self.events, self.current_item, self.hide_on_apply)
+                    self.current_item, self.hide_on_apply)
 
     UIManager:setDirty(self.config, function()
         return "fast", self[1].dimen
@@ -569,7 +569,6 @@ function ConfigOption:init()
                     values = self.options[c].values,
                     args = self.options[c].args,
                     event = self.options[c].event,
-                    events = self.options[c].events,
                     hide_on_apply = self.options[c].hide_on_apply,
                     config = self.config,
                     enabled = enabled,
@@ -614,7 +613,7 @@ function ConfigOption:init()
                         if arg == "-" or arg == "+" then
                             Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_FINE)
                             self.config:onConfigFineTuneChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].hide_on_apply,
+                                self.options[c].event, self.options[c].args, arg, self.options[c].hide_on_apply,
                                 self.options[c].fine_tune_param)
                         elseif arg == "⋮" then
                             Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_MORE)
@@ -623,7 +622,7 @@ function ConfigOption:init()
                         else
                                 Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_PROGRESS)
                             self.config:onConfigChoose(self.options[c].values, self.options[c].name,
-                                self.options[c].event, self.options[c].args, self.options[c].events, arg, self.options[c].hide_on_apply)
+                                self.options[c].event, self.options[c].args, arg, self.options[c].hide_on_apply)
                         end
 
                         UIManager:setDirty(self.config, function()
@@ -968,15 +967,7 @@ function ConfigDialog:onConfigEvent(option_event, option_arg, when_applied_callb
     return true
 end
 
-function ConfigDialog:onConfigEvents(option_events, arg_index)
-    for i=1, #option_events do
-        option_events[i].args = option_events[i].args or {}
-        self.ui:handleEvent(Event:new(option_events[i].event, option_events[i].args[arg_index]))
-    end
-    return true
-end
-
-function ConfigDialog:onConfigChoose(values, name, event, args, events, position, hide_on_apply)
+function ConfigDialog:onConfigChoose(values, name, event, args, position, hide_on_apply)
     UIManager:tickAfterNext(function()
         -- Repainting may be delayed depending on options
         local refresh_dialog_func = function()
@@ -1003,9 +994,6 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
             args = args or {}
             self:onConfigEvent(event, args[position], when_applied_callback)
         end
-        if events then
-            self:onConfigEvents(events, position)
-        end
         -- Even if each toggle refreshes itself when toggled, we still
         -- need to update and repaint the whole config panel, as other
         -- toggles may have their state (enabled/disabled) modified
@@ -1018,7 +1006,7 @@ function ConfigDialog:onConfigChoose(values, name, event, args, events, position
 end
 
 -- Tweaked variant used with the fine_tune variant of buttonprogress (direction can only be "-" or "+")
-function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, direction, hide_on_apply, params)
+function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, direction, hide_on_apply, params)
     UIManager:tickAfterNext(function()
         -- Repainting may be delayed depending on options
         local refresh_dialog_func = function()
@@ -1094,9 +1082,6 @@ function ConfigDialog:onConfigFineTuneChoose(values, name, event, args, events, 
             end
             self:onConfigEvent(event, arg, when_applied_callback)
         end
-        if events then
-            self:onConfigEvents(events, direction)
-        end
         -- Even if each toggle refreshes itself when toggled, we still
         -- need to update and repaint the whole config panel, as other
         -- toggles may have their state (enabled/disabled) modified
@@ -1170,7 +1155,6 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                 widget = DoubleSpinWidget:new{
                     title_text =  name_text or _("Set values"),
                     info_text = more_options_param.info_text,
-                    width = math.floor(Screen:getWidth() * 0.6),
                     left_text = more_options_param.left_text,
                     right_text = more_options_param.right_text,
                     left_value = curr_values[1],

@@ -210,9 +210,6 @@ function ToggleSwitch:onTapSelect(arg, gev)
         self.args = self.args or {}
         self.config:onConfigEvent(self.event, self.args[self.position])
     end
-    if self.events then
-        self.config:onConfigEvents(self.events, self.position)
-    end
     --]]
     if self.callback then
         self.callback(self.position)
@@ -224,7 +221,7 @@ function ToggleSwitch:onTapSelect(arg, gev)
             Notification:setNotifySource(Notification.SOURCE_BOTTOM_MENU_TOGGLE)
         end
         self.config:onConfigChoose(self.values, self.name,
-            self.event, self.args, self.events, self.position, self.hide_on_apply)
+            self.event, self.args, self.position, self.hide_on_apply)
 
         UIManager:setDirty(self.config, function()
             return "ui", self.dimen

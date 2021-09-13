@@ -115,7 +115,10 @@ function WebDavApi:listFolder(address, user, pass, folder_path)
                 item_fullpath = string.sub( item_fullpath, 1, -2 )
             end
             local is_current_dir = self:isCurrentDirectory( item_fullpath, address, path )
+
             local item_name = util.urlDecode( FFIUtil.basename( item_fullpath ) )
+            item_name = util.htmlEntitiesToUtf8(item_name)
+
             local is_not_collection = item:find("<[^:]*:resourcetype/>") or
                 item:find("<[^:]*:resourcetype></[^:]*:resourcetype>")
 
@@ -161,6 +164,7 @@ end
 
 function WebDavApi:downloadFile(file_url, user, pass, local_path)
     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
+    logger.dbg("WebDavApi: downloading file: ", file_url)
     local code, _, status = socket.skip(1, http.request{
         url      = file_url,
         method   = "GET",

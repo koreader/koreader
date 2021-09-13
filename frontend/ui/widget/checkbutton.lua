@@ -174,15 +174,8 @@ function CheckButton:onHoldReleaseCheckButton()
     return false
 end
 
-function CheckButton:check()
-    self:initCheckButton(true)
-    UIManager:setDirty(self.parent, function()
-        return "ui", self.dimen
-    end)
-end
-
-function CheckButton:unCheck()
-    self:initCheckButton(false)
+function CheckButton:toggleCheck()
+    self:initCheckButton(not self.checked)
     UIManager:setDirty(self.parent, function()
         return "ui", self.dimen
     end)

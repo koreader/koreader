@@ -621,7 +621,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                 break
             end
         end
-        if bookmark.text == nil then -- bookmark not found
+        if not bookmark or bookmark.text == nil then -- bookmark not found
             return
         end
     else

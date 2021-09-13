@@ -47,7 +47,6 @@ local ReaderRolling = InputContainer:new{
     current_page= nil,
     xpointer = nil,
     panning_steps = ReaderPanning.panning_steps,
-    show_overlap_enable = nil,
     cre_top_bar_enabled = false,
     visible_pages = 1,
     -- With visible_pages=2, in 2-pages mode, ensure the first
@@ -209,11 +208,6 @@ function ReaderRolling:onReadSettings(config)
             end
         end
     end
-    if config:has("show_overlap_enable") then
-        self.show_overlap_enable = config:isTrue("show_overlap_enable")
-    else
-        self.show_overlap_enable = DSHOWOVERLAP
-    end
 
     if config:has("inverse_reading_order") then
         self.inverse_reading_order = config:isTrue("inverse_reading_order")
@@ -308,7 +302,6 @@ function ReaderRolling:onSaveSettings()
     if self.ui.document then
         self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
     end
-    self.ui.doc_settings:saveSetting("show_overlap_enable", self.show_overlap_enable)
     self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
     self.ui.doc_settings:saveSetting("visible_pages", self.visible_pages)
     self.ui.doc_settings:saveSetting("hide_nonlinear_flows", self.hide_nonlinear_flows)
@@ -398,64 +391,6 @@ function ReaderRolling:getLastProgress()
 end
 
 function ReaderRolling:addToMainMenu(menu_items)
-    --- @fixme repeated code with page overlap menu for readerpaging
-    -- needs to keep only one copy of the logic as for the DRY principle.
-    -- The difference between the two menus is only the enabled func.
-    local overlap_lines_help_text = _([[
-When page overlap is enabled, some lines from the previous page will be displayed on the next page.
-You can set how many lines are shown.]])
-    local page_overlap_menu = {
-        {
-            text = _("Page overlap"),
-            checked_func = function()
-                return self.show_overlap_enable
-            end,
-            callback = function()
-                self.show_overlap_enable = not self.show_overlap_enable
-                if not self.show_overlap_enable then
-                    self.view.dim_area:clear()
-                end
-            end
-        },
-        {
-            text_func = function()
-                return T(_("Number of lines: %1"), G_reader_settings:readSetting("copt_overlap_lines") or 1)
-            end,
-            enabled_func = function()
-                return self.show_overlap_enable
-            end,
-            callback = function(touchmenu_instance)
-                local SpinWidget = require("ui/widget/spinwidget")
-                UIManager:show(SpinWidget:new{
-                    width = math.floor(Screen:getWidth() * 0.75),
-                    value = G_reader_settings:readSetting("copt_overlap_lines") or 1,
-                    value_min = 1,
-                    value_max = 10,
-                    precision = "%d",
-                    ok_text = _("Set"),
-                    title_text =  _("Set overlapped lines"),
-                    info_text = overlap_lines_help_text,
-                    callback = function(spin)
-                        G_reader_settings:saveSetting("copt_overlap_lines", spin.value)
-                        touchmenu_instance:updateItems()
-                    end,
-                })
-            end,
-            keep_menu_open = true,
-            help_text = overlap_lines_help_text,
-            separator = true,
-        },
-    }
-    local overlap_enabled_func = function() return self.show_overlap_enable end
-    for _, menu_entry in ipairs(self.view:genOverlapStyleMenu(overlap_enabled_func)) do
-        table.insert(page_overlap_menu, menu_entry)
-    end
-    menu_items.page_overlap = {
-        text = _("Page overlap"),
-        enabled_func = function() return self.view.view_mode ~= "page" end,
-        help_text = _([[When page overlap is enabled, some lines from the previous pages are shown on the next page.]]),
-        sub_item_table = page_overlap_menu,
-    }
     if self.ui.document:hasNonLinearFlows() then
         local hide_nonlinear_text = _("When hide non-linear fragments is enabled, any non-linear fragments will be hidden from the normal page flow. Such fragments will always remain accessible through links, the table of contents and the 'Go to' dialog. This only works in single-page mode.")
         menu_items.hide_nonlinear_flows = {
@@ -878,7 +813,7 @@ function ReaderRolling:onGotoViewRel(diff)
         local footer_height = ((self.view.footer_visible and not self.view.footer.settings.reclaim_height) and 1 or 0) * self.view.footer:getHeight()
         local page_visible_height = self.ui.dimen.h - footer_height
         local pan_diff = diff * page_visible_height
-        if self.show_overlap_enable then
+        if self.view.page_overlap_enable then
             local overlap_lines = G_reader_settings:readSetting("copt_overlap_lines") or 1
             local overlap_h = Screen:scaleBySize(self.ui.font.font_size * 1.1 * self.ui.font.line_space_percent/100.0) * overlap_lines
             if pan_diff > overlap_h then
@@ -1067,7 +1002,7 @@ function ReaderRolling:_gotoPos(new_pos, do_dim_area)
     local max_pos = self.ui.document.info.doc_height - self.ui.dimen.h + self.view.footer:getHeight()
     if new_pos > max_pos then new_pos = max_pos end
     -- adjust dim_area according to new_pos
-    if self.view.view_mode ~= "page" and self.show_overlap_enable and do_dim_area then
+    if self.view.view_mode ~= "page" and self.view.page_overlap_enable and do_dim_area then
         local footer_height = ((self.view.footer_visible and not self.view.footer.settings.reclaim_height) and 1 or 0) * self.view.footer:getHeight()
         local page_visible_height = self.ui.dimen.h - footer_height
         local panned_step = new_pos - self.current_pos

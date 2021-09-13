@@ -1,5 +1,6 @@
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
+local Dispatcher = require("dispatcher")
 local KeyValuePage = require("ui/widget/keyvaluepage")
 local LuaSettings = require("luasettings")
 local PowerD = require("device"):getPowerDevice()
@@ -269,9 +270,14 @@ local BatteryStatWidget = WidgetContainer:new{
     name = "batterystat",
 }
 
+function BatteryStatWidget:onDispatcherRegisterActions()
+    Dispatcher:registerAction("battery_statistics", {category="none", event="ShowBatteryStatistics", title=_("Battery statistics"), device=true, separator=true})
+end
+
 function BatteryStatWidget:init()
     -- self.ui is nil in test cases.
     if not self.ui or not self.ui.menu then return end
+    self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 end
 
@@ -283,6 +289,10 @@ function BatteryStatWidget:addToMainMenu(menu_items)
             BatteryStat:showStatistics()
         end,
     }
+end
+
+function BatteryStatWidget:onShowBatteryStatistics()
+    BatteryStat:showStatistics()
 end
 
 function BatteryStatWidget:onFlushSettings()

@@ -3,6 +3,7 @@ local BookStatusWidget = require("ui/widget/bookstatuswidget")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
+local Dispatcher = require("dispatcher")
 local DocSettings = require("docsettings")
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
@@ -138,6 +139,11 @@ ReaderStatistics.default_settings = {
     calendar_browse_future_months = false,
 }
 
+function ReaderStatistics:onDispatcherRegisterActions()
+    Dispatcher:registerAction("stats_calendar_view", {category="none", event="ShowCalendarView", title=_("Statistics calendar view"), general=true, separator=true})
+    Dispatcher:registerAction("book_statistics", {category="none", event="ShowBookStats", title=_("Book statistics"), reader=true, separator=true})
+end
+
 function ReaderStatistics:init()
     -- Disable in PIC documents (but not the FM, as we want to be registered to the FM's menu).
     if self.ui and self.ui.document and self.ui.document.is_pic then
@@ -150,6 +156,7 @@ function ReaderStatistics:init()
     self.settings = G_reader_settings:readSetting("statistics", self.default_settings)
 
     self.ui.menu:registerToMainMenu(self)
+    self:onDispatcherRegisterActions()
     self:checkInitDatabase()
     BookStatusWidget.getStats = function()
         return self:getStatsBookStatus(self.id_curr_book, self.settings.is_enabled)
@@ -1306,7 +1313,7 @@ function ReaderStatistics:getCurrentStat(id_book)
     self.data.pages = self.view.document:getPageCount()
     total_time_book = tonumber(total_time_book)
     total_read_pages = tonumber(total_read_pages)
-    local time_to_read = (self.data.pages - self.view.state.page) * self.avg_time
+    local time_to_read = self.view.state.page and ((self.data.pages - self.view.state.page) * self.avg_time) or 0
     local estimate_days_to_read = math.ceil(time_to_read/(book_read_time/tonumber(total_days)))
     local estimate_end_of_read_date = os.date("%Y-%m-%d", tonumber(now_ts + estimate_days_to_read * 86400))
     local estimates_valid = time_to_read > 0 -- above values could be 'nan' and 'nil'

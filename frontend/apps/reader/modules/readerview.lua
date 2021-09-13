@@ -3,7 +3,6 @@ ReaderView module handles all the screen painting for document browsing.
 ]]
 
 local Blitbuffer = require("ffi/blitbuffer")
-local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Geom = require("ui/geometry")
 local Event = require("ui/event")
@@ -179,7 +178,7 @@ function ReaderView:paintTo(bb, x, y)
     end
 
     -- dim last read area
-    if not self.dim_area:isEmpty() then
+    if not self.dim_area:isEmpty() and self:isOverlapAllowed() then
         if self.page_overlap_style == "dim" then
             bb:dimRect(
                 self.dim_area.x, self.dim_area.y,
@@ -790,6 +789,7 @@ function ReaderView:onReadSettings(config)
     local page_scroll = config:readSetting("kopt_page_scroll") or self.document.configurable.page_scroll
     self.page_scroll = page_scroll == 1 and true or false
     self.highlight.saved = config:readSetting("highlight") or {}
+    self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or DSHOWOVERLAP
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
     self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height")
                                               or G_reader_settings:readSetting("kopt_page_gap_height")
@@ -904,6 +904,7 @@ function ReaderView:onSaveSettings()
     end
     self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
     self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)
+    self.ui.doc_settings:saveSetting("show_overlap_enable", self.page_overlap_enable)
     self.ui.doc_settings:saveSetting("page_overlap_style", self.page_overlap_style)
 end
 
@@ -927,43 +928,6 @@ function ReaderView:getRenderModeMenuTable()
             make_mode(_("COLOUR BACKGROUND (show only background)"), 4),
             make_mode(_("COLOUR FOREGROUND (show only foreground)"), 5),
         }
-    }
-end
-
-local page_overlap_styles = {
-    arrow = _("Arrow"),
-    dim = _("Gray out"),
-}
-
-function ReaderView:genOverlapStyleMenu(overlap_enabled_func)
-    local view = self
-    local get_overlap_style = function(style)
-        return {
-            text = page_overlap_styles[style],
-            enabled_func = overlap_enabled_func,
-            checked_func = function()
-                return view.page_overlap_style == style
-            end,
-            callback = function()
-                view.page_overlap_style = style
-            end,
-            hold_callback = function()
-                UIManager:show(ConfirmBox:new{
-                    text = T(
-                        _("Set default overlap style to %1?"),
-                        style
-                    ),
-                    ok_callback = function()
-                        view.page_overlap_style = style
-                        G_reader_settings:saveSetting("page_overlap_style", style)
-                    end,
-                })
-            end,
-        }
-    end
-    return {
-        get_overlap_style("arrow"),
-        get_overlap_style("dim"),
     }
 end
 
@@ -1001,6 +965,17 @@ function ReaderView:checkAutoSaveSettings()
         UIManager:tickAfterNext(function()
             self.ui:saveSettings()
         end)
+    end
+end
+
+function ReaderView:isOverlapAllowed()
+    if self.ui.document.info.has_pages then
+        return not self.page_scroll
+            and (self.ui.paging.zoom_mode ~= "page"
+                or (self.ui.paging.zoom_mode == "page" and self.ui.paging.is_reflowed))
+            and not self.ui.paging.zoom_mode:find("height")
+    else
+        return self.view_mode ~= "page"
     end
 end
 

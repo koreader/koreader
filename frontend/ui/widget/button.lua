@@ -33,7 +33,7 @@ local Screen = Device.screen
 local logger = require("logger")
 
 local Button = InputContainer:new{
-    text = nil, -- mandatory
+    text = nil, -- mandatory (unless icon is provided)
     text_func = nil,
     icon = nil,
     icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE), -- our icons are square
