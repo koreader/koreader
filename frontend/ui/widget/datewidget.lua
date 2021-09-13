@@ -89,7 +89,7 @@ function DateWidget:update()
         alignment = "center",
         face = self.title_face,
         bold = true,
-        width = math.floor(self.screen_width * 0.02),
+        width = math.floor(math.min(self.screen_width, self.screen_height) * 0.02),
     }
     local date_group = HorizontalGroup:new{
         align = "center",
