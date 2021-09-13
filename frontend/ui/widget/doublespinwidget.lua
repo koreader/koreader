@@ -1,7 +1,6 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -11,7 +10,6 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local MovableContainer = require("ui/widget/container/movablecontainer")
-local OverlapGroup = require("ui/widget/overlapgroup")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -54,11 +52,9 @@ local DoubleSpinWidget = InputContainer:new{
 }
 
 function DoubleSpinWidget:init()
-    self.medium_font_face = Font:getFace("ffont")
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
-    self.width = self.width or math.floor(self.screen_width * 0.8)
-    self.picker_width = math.floor(self.screen_width * 0.25)
+    self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) * 0.6)
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close time widget" }
@@ -85,7 +81,6 @@ end
 function DoubleSpinWidget:update()
     local left_widget = NumberPickerWidget:new{
         show_parent = self,
-        width = self.picker_width,
         value = self.left_value,
         value_min = self.left_min,
         value_max = self.left_max,
@@ -95,7 +90,6 @@ function DoubleSpinWidget:update()
     }
     local right_widget = NumberPickerWidget:new{
         show_parent = self,
-        width = self.picker_width,
         value = self.right_value,
         value_min = self.right_min,
         value_max = self.right_max,
@@ -109,7 +103,7 @@ function DoubleSpinWidget:update()
         TextWidget:new{
             text = self.left_text,
             face = self.title_face,
-            max_width = 0.95 * self.width / 2,
+            max_width = math.floor(0.95 * self.width / 2),
         },
         left_widget,
     }
@@ -119,7 +113,7 @@ function DoubleSpinWidget:update()
         TextWidget:new{
             text = self.right_text,
             face = self.title_face,
-            max_width = 0.95 * self.width / 2,
+            max_width = math.floor(0.95 * self.width / 2),
         },
         right_widget,
     }
@@ -147,8 +141,7 @@ function DoubleSpinWidget:update()
         TextWidget:new{
             text = self.title_text,
             face = self.title_face,
-            bold = true,
-            width = self.width,
+            max_width = self.width - 2 * (Size.padding.default + Size.margin.title),
         },
     }
     local widget_line = LineWidget:new{
@@ -156,14 +149,6 @@ function DoubleSpinWidget:update()
             w = self.width,
             h = Size.line.thick,
         }
-    }
-    local widget_bar = OverlapGroup:new{
-        dimen = {
-            w = self.width,
-            h = widget_title:getSize().h
-        },
-        widget_title,
-        CloseButton:new{ window = self, padding_top = Size.margin.title, },
     }
     local widget_info
     if self.info_text then
@@ -248,7 +233,7 @@ function DoubleSpinWidget:update()
         background = Blitbuffer.COLOR_WHITE,
         VerticalGroup:new{
             align = "left",
-            widget_bar,
+            widget_title,
             widget_line,
             widget_info,
             VerticalSpan:new{ width = Size.span.vertical_large },
