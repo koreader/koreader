@@ -36,7 +36,7 @@ function ReaderSearch:init()
     self.ui.menu:registerToMainMenu(self)
 end
 
-local help_text = [[Regular expressions allow you to search for a matching pattern in a text. The simplest pattern is a simple sequence of characters, such as `James Bond`. There are many different varieties of regular expressions, but we support the ECMAScript syntax. The basics will be explained below.
+local help_text = _([[Regular expressions allow you to search for a matching pattern in a text. The simplest pattern is a simple sequence of characters, such as `James Bond`. There are many different varieties of regular expressions, but we support the ECMAScript syntax. The basics will be explained below.
 
 If you want to search for all occurrences of 'Mister Moore', 'Sir Moore' or 'Alfons Moore' but not for 'Lady Moore'.
 Enter 'Mister Moore|Sir Moore|Alfons Moore'.
@@ -54,7 +54,7 @@ A word -> '[^ ]*[^ ]'
 Last word in a sentence -> '[^ ]*\.'
 
 Complex expressions may lead to an extremely long search time, in which case not all matches will be shown.
-]]
+]])
 
 local SRELL_ERROR_CODES = {}
 SRELL_ERROR_CODES[102] = _("Wrong escape '\\'")
