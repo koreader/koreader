@@ -665,7 +665,7 @@ function Dispatcher:addSubMenu(caller, menu, location, settings)
     local section_list = {
         {"general", _("General")},
         {"device", _("Device")},
-        {"screen", _("Screen & Lights")},
+        {"screen", _("Screen and lights")},
         {"filemanager", _("File browser")},
         {"reader", _("Reader")},
         {"rolling", _("Reflowable documents (epub, fb2, txt…)")},
