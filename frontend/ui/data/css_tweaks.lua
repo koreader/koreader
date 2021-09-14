@@ -185,7 +185,7 @@ Languages like Arabic or Hebrew use right-to-left writing systems (Right-To-Left
 Usually, the publisher will have set the appropriate tags to enable RTL rendering. But if these are missing, or if you're reading plain text documents, you may want to manually enable RTL with these tweaks.
 Note that in the absence of such specifications, KOReader will try to detect the language of each paragraph to set the appropriate rendering per paragraph.
 
-You may also want to enable, in the top menu → Gear → Navigation →, Invert page turn taps and swipes.]]),
+You may also want to enable, in the top menu → Gear → Taps and gestures → Page turns → Invert page turn taps and swipes.]]),
                 separator = true,
             },
             {
