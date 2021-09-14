@@ -7,7 +7,6 @@ local ReadHistory = require("readhistory")
 local FFIUtil = require("ffi/util")
 local FeedView = require("feed_view")
 local InfoMessage = require("ui/widget/infomessage")
-local InputDialog = require("ui/widget/inputdialog")
 local LuaSettings = require("frontend/luasettings")
 local UIManager = require("ui/uimanager")
 local KeyValuePage = require("ui/widget/keyvaluepage")
@@ -52,8 +51,8 @@ local FEED_TYPE_ATOM = "atom"
 --local news_downloader_config_file = "news_downloader_settings.lua
 
 -- If a title looks like <title>blabla</title> it'll just be feed.title.
--- If a title looks like <title attr="alb">blabla</title> then we get a table.
--- Where [1] is the title string and the attributes are also available.
+-- If a title looks like <title attr="alb">blabla</title> then we get a table
+-- where [1] is the title string and the attributes are also available.
 local function getFeedTitle(possible_title)
     if type(possible_title) == "string" then
         return util.htmlEntitiesToUtf8(possible_title)
@@ -62,8 +61,8 @@ local function getFeedTitle(possible_title)
     end
 end
 
--- There can be multiple links
--- for now we just assume the first link is probably the right one.
+-- There can be multiple links.
+-- For now we just assume the first link is probably the right one.
 --- @todo Write unit tests.
 -- Some feeds that can be used for unit test.
 -- http://fransdejonge.com/feed/ for multiple links.
@@ -175,7 +174,7 @@ function NewsDownloader:getSubMenuItems()
     return sub_item_table
 end
 -- lazyInitialization sets up variables that point to the
--- downloads folder and the feeds configuration file.
+-- Downloads folder and the feeds configuration file.
 function NewsDownloader:lazyInitialization()
     if not self.initialized then
         logger.dbg("NewsDownloader: obtaining news folder")
@@ -446,59 +445,10 @@ function NewsDownloader:deserializeXMLString(xml_str)
     return xmlhandler.root
 end
 
-function NewsDownloader:processAtom(feeds, limit, download_full_article, include_images, message, enable_filter, filter_element)
-    -- Get the path to the output directory.
-    local feed_output_dir = string.format(
-        "%s%s/",
-        self.download_dir,
-        util.getSafeFilename(getFeedTitle(feeds.feed.title))
-    )
-    -- Create the output directory if it doesn't exist.
-    if not lfs.attributes(feed_outpnnut_dir, "mode") then
-        lfs.mkdir(feed_output_dir)
-    end
-    -- Download the feed.
-    for index, feed in pairs(feeds.feed.entry) do
-        -- If limit has been met, stop downloading feed.
-        if limit ~= 0 and index - 1 == limit then
-            break
-        end
-        local total_articles = limit == 0
-            and #feeds.rss.channel.item
-            or limit
-        -- Create a message to display during processing.
-        local article_message = T(
-            _("%1\n\nFetching article %2/%3:"),
-            message,
-            index,
-            total
-        )
-        -- Download the feed.
-        if download_full_article then
-            self:downloadFeed(
-                feed,
-                feed_output_dir,
-                include_images,
-                article_message,
-                enable_filter,
-                filter_element
-            )
-        else
-            self:createFromDescription(
-                feed,
-                feed.content[1],
-                feed_output_dir,
-                include_images,
-                article_message
-            )
-        end
-    end
-end
-
 function NewsDownloader:processFeed(feed_type, feeds, limit, download_full_article, include_images, message, enable_filter, filter_element)
     local feed_title
     local feed_item
-    local total_feeds
+    local total_items
     -- Setup the above vars based on feed type.
     if feed_type == FEED_TYPE_RSS then
         feed_title = util.htmlEntitiesToUtf8(feeds.rss.channel.title)
@@ -667,7 +617,7 @@ function NewsDownloader:viewFeedList()
     -- Protected call to see if feed config path returns a file that can be opened.
     local ok, feed_config = pcall(dofile, self.feed_config_path)
     if not ok or not feed_config then
-        change_feed_config = UI:confirm(
+        local change_feed_config = UI:confirm(
             _("Could not open feed list. Feeds configuration file is invalid. "),
             _("Close"),
             _("View file")
@@ -723,7 +673,6 @@ function NewsDownloader:viewFeedList()
         }
     )
     -- Show the list of feeds.
-    local kv = self.kv
     if #self.kv ~= 0 then
         UIManager:close(self.kv)
     end
@@ -739,7 +688,6 @@ function NewsDownloader:viewFeedList()
 end
 
 function NewsDownloader:viewFeedItem(data)
-    local kv = self.kv
     if #self.kv ~= 0 then
         UIManager:close(self.kv)
     end
@@ -844,7 +792,7 @@ function NewsDownloader:editFeedAttribute(id, key, value)
 end
 
 function NewsDownloader:updateFeedConfig(id, key, value)
-    local kv = self.kv
+    local UI = require("ui/trapper")
     -- Because this method is called at the menu,
     -- we might not have an active view. So this conditional
     -- statement avoids closing a null reference.
@@ -979,8 +927,8 @@ function NewsDownloader:updateFeedConfig(id, key, value)
     local feed_item_vc = FeedView:getItem(
         id,
         new_config[id],
-        function(id, edit_key, value)
-            self:editFeedAttribute(id, edit_key, value)
+        function(cb_id, cb_edit_key, cb_value)
+            self:editFeedAttribute(cb_id, cb_edit_key, cb_value)
         end
     )
     self:viewFeedItem(
@@ -990,6 +938,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
 end
 
 function NewsDownloader:deleteFeed(id)
+    local UI = require("ui/trapper")
     logger.dbg("Newsdownloader: attempting to delete feed")
     -- Check to see if we can get the config file.
     local ok, feed_config = pcall(dofile, self.feed_config_path)
