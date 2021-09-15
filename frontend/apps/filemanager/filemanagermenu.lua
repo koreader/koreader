@@ -168,7 +168,6 @@ function FileManagerMenu:setUpdateItemTable()
                             local default_perpage = Menu.items_per_page_default
                             local curr_perpage = G_reader_settings:readSetting("items_per_page") or default_perpage
                             local items = SpinWidget:new{
-                                width = math.floor(Screen:getWidth() * 0.6),
                                 value = curr_perpage,
                                 value_min = 6,
                                 value_max = 24,
@@ -192,7 +191,6 @@ function FileManagerMenu:setUpdateItemTable()
                             local default_font_size = Menu.getItemFontSize(curr_perpage)
                             local curr_font_size = G_reader_settings:readSetting("items_font_size") or default_font_size
                             local items_font = SpinWidget:new{
-                                width = math.floor(Screen:getWidth() * 0.6),
                                 value = curr_font_size,
                                 value_min = 10,
                                 value_max = 72,
@@ -372,7 +370,6 @@ To:
                     local default_perpage = KeyValuePage:getDefaultKeyValuesPerPage()
                     local curr_perpage = G_reader_settings:readSetting("keyvalues_per_page") or default_perpage
                     local items = SpinWidget:new{
-                        width = math.floor(Screen:getWidth() * 0.6),
                         value = curr_perpage,
                         value_min = 10,
                         value_max = 24,
