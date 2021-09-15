@@ -110,7 +110,7 @@ function NumberPickerWidget:init()
     }
 
     local empty_space = VerticalSpan:new{
-        width = math.ceil(self.screen_height * 0.01)
+        width = math.ceil(math.max(self.screen_width, self.screen_height) * 0.01)
     }
 
     self.formatted_value = self.value
