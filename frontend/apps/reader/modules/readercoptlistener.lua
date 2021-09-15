@@ -325,7 +325,6 @@ function ReaderCoptListener:getAltStatusBarMenu()
                     local SpinWidget = require("ui/widget/spinwidget")
                     local start_size = G_reader_settings:readSetting("cre_header_status_font_size") or 20
                     local size_spinner = SpinWidget:new{
-                        width = math.floor(Device.screen:getWidth() * 0.6),
                         value = start_size,
                         value_min = 8,
                         value_max = 36,
