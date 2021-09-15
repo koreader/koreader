@@ -1,7 +1,6 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
-local CloseButton = require("ui/widget/closebutton")
 local Device = require("device")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -12,7 +11,6 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local NumberPickerWidget = require("ui/widget/numberpickerwidget")
-local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
@@ -26,8 +24,8 @@ local SpinWidget = InputContainer:new{
     title_text = "",
     title_face = Font:getFace("x_smalltfont"),
     info_text = nil,
-    width = math.floor(Screen:getWidth() * 0.6),
-    height = Screen:getHeight(),
+    width = nil,
+    height = nil,
     value_table = nil,
     value_index = nil,
     value = 1,
@@ -50,10 +48,9 @@ local SpinWidget = InputContainer:new{
 }
 
 function SpinWidget:init()
-    self.medium_font_face = Font:getFace("ffont")
-    self.light_bar = {}
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
+    self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) * 0.6)
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close spin widget" }
@@ -80,7 +77,6 @@ end
 function SpinWidget:update()
     local value_widget = NumberPickerWidget:new{
         show_parent = self,
-        width = math.floor(self.screen_width * 0.2),
         value = self.value,
         value_table = self.value_table,
         value_index = self.value_index,
@@ -95,18 +91,14 @@ function SpinWidget:update()
         value_widget,
     }
 
-    local close_button = CloseButton:new{ window = self, padding_top = Size.margin.title, }
-    local btn_width = close_button:getSize().w + Size.padding.default * 2
-
     local value_title = FrameContainer:new{
         padding = Size.padding.default,
         margin = Size.margin.title,
         bordersize = 0,
         TextWidget:new{
             text = self.title_text,
-            max_width = self.width - btn_width,
+            max_width = self.width - 2 * (Size.padding.default + Size.margin.title),
             face = self.title_face,
-            bold = true,
         },
     }
     local value_line = LineWidget:new{
@@ -114,14 +106,6 @@ function SpinWidget:update()
             w = self.width,
             h = Size.line.thick,
         }
-    }
-    local value_bar = OverlapGroup:new{
-        dimen = {
-            w = self.width,
-            h = value_title:getSize().h
-        },
-        value_title,
-        close_button,
     }
     local buttons = {
         {
@@ -186,7 +170,7 @@ function SpinWidget:update()
 
     local vgroup = VerticalGroup:new{
         align = "left",
-        value_bar,
+        value_title,
         value_line,
     }
     if self.info_text then
@@ -204,7 +188,7 @@ function SpinWidget:update()
     table.insert(vgroup, CenterContainer:new{
         dimen = Geom:new{
             w = self.width,
-            h = value_group:getSize().h + math.floor(self.screen_height * 0.1),
+            h = value_group:getSize().h + math.floor(math.max(self.screen_width, self.screen_height) * 0.06),
         },
         value_group
     })
