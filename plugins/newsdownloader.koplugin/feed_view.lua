@@ -63,13 +63,10 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
     end
 
     -- Collect this stuff for later, with the single view.
-    local download_full_article = feed.download_full_article ~= nil
-    local include_images = feed.include_images
-        or feed.include_images == nil
-    local enable_filter = feed.enable_filter
-        or feed.enable_filter == nil
+    local download_full_article = feed.download_full_article ~= false
+    local include_images = feed.include_images ~= false
+    local enable_filter = feed.enable_filter ~= false
     local filter_element = feed.filter_element
-        or feed.filter_element == nil
 
     local vc = {
         {
