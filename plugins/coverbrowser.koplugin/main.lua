@@ -3,7 +3,6 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local _ = require("gettext")
 local BookInfoManager = require("bookinfomanager")
-local Screen = require("device").screen
 
 --[[
     This plugin provides additional display modes to file browsers (File Manager
@@ -249,7 +248,6 @@ function CoverBrowser:addToMainMenu(menu_items)
                     -- value of 10 if it hasn't.
                     local curr_items = BookInfoManager:getSetting("files_per_page") or 10
                     local items = SpinWidget:new{
-                        width = math.floor(Screen:getWidth() * 0.6),
                         value = curr_items,
                         value_min = 4,
                         value_max = 20,
