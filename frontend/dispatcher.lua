@@ -34,7 +34,6 @@ local Device = require("device")
 local Event = require("ui/event")
 local Notification = require("ui/widget/notification")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
-local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local util = require("util")
 local _ = require("gettext")
@@ -512,7 +511,6 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                             precision = "%0.1f"
                         end
                         local items = SpinWidget:new{
-                            width = math.floor(Screen:getWidth() * 0.6),
                             value = location[settings] ~= nil and location[settings][k] or settingsList[k].default or 0,
                             value_min = settingsList[k].min,
                             value_step = settingsList[k].step or 1,
@@ -559,7 +557,6 @@ function Dispatcher:addItem(caller, menu, location, settings, section)
                         end
                         local SpinWidget = require("ui/widget/spinwidget")
                         local items = SpinWidget:new{
-                            width = math.floor(Screen:getWidth() * 0.6),
                             value = location[settings] ~= nil and location[settings][k] or 0,
                             value_min = settingsList[k].min,
                             value_step = settingsList[k].step or 1,
