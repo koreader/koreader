@@ -20,7 +20,6 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
-local Screen = require("device").screen
 local N_ = _.ngettext
 local T = FFIUtil.template
 
@@ -974,7 +973,6 @@ The max value ensures a page you stay on for a long time (because you fell aslee
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
                             UIManager:show(SpinWidget:new{
-                                width = math.floor(Screen:getWidth() * 0.6),
                                 value = self.settings.calendar_nb_book_spans,
                                 value_min = 1,
                                 value_max = 5,
