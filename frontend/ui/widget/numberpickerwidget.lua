@@ -109,9 +109,7 @@ function NumberPickerWidget:init()
         end
     }
 
-    local empty_space = VerticalSpan:new{
-        width = math.ceil(math.max(self.screen_width, self.screen_height) * 0.01)
-    }
+    local empty_space = VerticalSpan:new{ width = Size.span.horizontal_default }
 
     self.formatted_value = self.value
     if not self.value_table then
