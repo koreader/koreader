@@ -665,7 +665,6 @@ end
 function ReaderZooming:_zoomFactorChange(title_text, direction, precision)
     local zoom_factor, overlap = self:getNumberOf(direction)
     UIManager:show(SpinWidget:new{
-        width = math.floor(Screen:getWidth() * 0.6),
         value = zoom_factor,
         value_min = 0.1,
         value_max = 10,
@@ -683,7 +682,6 @@ end
 
 function ReaderZooming:_zoomPanChange(text, setting)
     UIManager:show(SpinWidget:new{
-        width = math.floor(Screen:getWidth() * 0.6),
         value = self[setting],
         value_min = 0,
         value_max = 90,
