@@ -174,10 +174,8 @@ function AutoSuspend:addToMainMenu(menu_items)
         text = _("Autosuspend timeout"),
         callback = function()
             local InfoMessage = require("ui/widget/infomessage")
-            local Screen = Device.screen
             local SpinWidget = require("ui/widget/spinwidget")
             local autosuspend_spin = SpinWidget:new {
-                width = math.floor(Screen:getWidth() * 0.6),
                 value = self.auto_suspend_timeout_seconds / 60,
                 value_min = 5,
                 value_max = 240,
@@ -205,10 +203,8 @@ function AutoSuspend:addToMainMenu(menu_items)
         text = _("Autoshutdown timeout"),
         callback = function()
             local InfoMessage = require("ui/widget/infomessage")
-            local Screen = Device.screen
             local SpinWidget = require("ui/widget/spinwidget")
             local autosuspend_spin = SpinWidget:new {
-                width = math.floor(Screen:getWidth() * 0.6),
                 value = self.autoshutdown_timeout_seconds / 60 / 60,
                 -- About a minute, good for testing and battery life fanatics.
                 -- Just high enough to avoid an instant shutdown death scenario.
