@@ -188,7 +188,7 @@ function SpinWidget:update()
     table.insert(vgroup, CenterContainer:new{
         dimen = Geom:new{
             w = self.width,
-            h = value_group:getSize().h + math.floor(math.max(self.screen_width, self.screen_height) * 0.06),
+            h = value_group:getSize().h + 4 * Size.padding.large,
         },
         value_group
     })
