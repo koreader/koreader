@@ -30,7 +30,6 @@ local socketutil = require("socketutil")
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
-local Screen = require("device").screen
 
 -- constants
 local article_id_prefix = "[w-id_"
@@ -973,8 +972,6 @@ Restart KOReader after editing the config file.]]), BD.dirpath(DataStorage:getSe
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.95),
-        height = math.floor(Screen:getHeight() * 0.2),
         input_type = "string",
     }
     UIManager:show(self.settings_dialog)
@@ -1013,8 +1010,6 @@ function Wallabag:editClientSettings()
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.95),
-        height = math.floor(Screen:getHeight() * 0.2),
         input_type = "string",
     }
     UIManager:show(self.client_settings_dialog)
