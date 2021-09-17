@@ -107,7 +107,7 @@ function ReaderSearch:onShowFulltextSearchInput()
     end
     self.input_dialog = InputDialog:new{
         title = _("Enter text to search for"),
-        width = math.floor(Screen:getWidth() * 0.9),
+        width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.9),
         input = self.last_search_text,
         buttons = {
             {
