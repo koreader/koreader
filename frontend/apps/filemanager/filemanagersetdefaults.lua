@@ -56,6 +56,10 @@ function SetDefaults:ConfirmEdit()
 end
 
 function SetDefaults:init()
+    self.screen_width = Screen:getWidth()
+    self.screen_height = Screen:getHeight()
+    self.dialog_width = math.floor(math.min(self.screen_width, self.screen_height) * 0.95)
+
     self.results = {}
 
     local defaults = {}
@@ -90,8 +94,8 @@ function SetDefaults:init()
     end
 
     self.defaults_menu = Menu:new{
-        width = Screen:getWidth() - (Size.margin.fullscreen_popout * 2),
-        height = Screen:getHeight() - (Size.margin.fullscreen_popout * 2),
+        width = self.screen_width - (Size.margin.fullscreen_popout * 2),
+        height = self.screen_height - (Size.margin.fullscreen_popout * 2),
         cface = Font:getFace("smallinfofont"),
         show_parent = menu_container,
         _manager = self,
@@ -157,7 +161,7 @@ function SetDefaults:init()
                         },
                     },
                     input_type = setting_type,
-                    width = math.floor(Screen:getWidth() * 0.95),
+                    width = self.dialog_width,
                 }
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()
@@ -208,8 +212,7 @@ function SetDefaults:init()
                             },
                         },
                     },
-                    width = math.floor(Screen:getWidth() * 0.95),
-                    height = math.floor(Screen:getHeight() * 0.2),
+                    width = self.dialog_width,
                 }
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()
@@ -247,7 +250,7 @@ function SetDefaults:init()
                         },
                     },
                     input_type = setting_type,
-                    width = math.floor(Screen:getWidth() * 0.95),
+                    width = self.dialog_width,
                 }
                 UIManager:show(self.set_dialog)
                 self.set_dialog:onShowKeyboard()

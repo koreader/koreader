@@ -122,7 +122,6 @@ function FileSearcher:onShowFileSearch(search_string)
     self.search_dialog = InputDialog:new{
         title = _("Enter filename to search for"),
         input = search_string or self.search_value,
-        width = math.floor(Screen:getWidth() * 0.9),
         buttons = {
             {
                 {
