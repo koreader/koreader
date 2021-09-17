@@ -153,7 +153,10 @@ function ReaderSearch:onShowFulltextSearchInput()
             self.check_button_regex:toggleCheck()
         end,
         hold_callback = function()
-            UIManager:show(InfoMessage:new{ text = help_text })
+            UIManager:show(InfoMessage:new{
+                text = help_text,
+                width = Screen:getWidth() * 0.9,
+            })
         end,
     }
     self.input_dialog:addWidget(self.check_button_regex)
