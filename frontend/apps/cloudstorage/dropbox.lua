@@ -7,7 +7,6 @@ local MultiInputDialog = require("ui/widget/multiinputdialog")
 local UIManager = require("ui/uimanager")
 local ReaderUI = require("apps/reader/readerui")
 local util = require("util")
-local Screen = require("device").screen
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -136,8 +135,6 @@ function DropBox:config(item, callback)
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.95),
-        height = math.floor(Screen:getHeight() * 0.2),
         input_type = "text",
     }
     UIManager:show(self.settings_dialog)

@@ -161,8 +161,6 @@ function OPDSBrowser:addNewCatalog()
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.95),
-        height = math.floor(Screen:getHeight() * 0.2),
     }
     UIManager:show(self.add_server_dialog)
     self.add_server_dialog:onShowKeyboard()
@@ -213,8 +211,6 @@ function OPDSBrowser:editCalibreServer()
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.95),
-        height = math.floor(Screen:getHeight() * 0.2),
     }
     UIManager:show(self.add_server_dialog)
     self.add_server_dialog:onShowKeyboard()
@@ -890,8 +886,6 @@ function OPDSBrowser:editOPDSServer(item)
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.95),
-        height = math.floor(Screen:getHeight() * 0.2),
     }
     UIManager:show(self.edit_server_dialog)
     self.edit_server_dialog:onShowKeyboard()

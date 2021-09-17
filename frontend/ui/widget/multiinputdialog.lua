@@ -123,7 +123,8 @@ function MultiInputDialog:init()
     self[1] = CenterContainer:new{
         dimen = Geom:new{
             w = Screen:getWidth(),
-            h = Screen:getHeight() - self._input_widget:getKeyboardDimen().h,
+            h = math.max(Screen:getHeight() - self._input_widget:getKeyboardDimen().h,
+                self.dialog_frame:getSize().h),
         },
         self.dialog_frame,
     }
