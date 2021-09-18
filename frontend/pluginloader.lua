@@ -123,7 +123,7 @@ function PluginLoader:loadPlugins()
                         table.insert(self.enabled_plugins, plugin_module)
                     end
                 else
-                    logger.info("Plugin ", mainfile, " has been disabled.")
+                    logger.dbg("Plugin ", mainfile, " has been disabled.")
                 end
                 package.path = package_path
                 package.cpath = package_cpath
