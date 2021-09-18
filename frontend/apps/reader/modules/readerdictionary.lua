@@ -20,7 +20,6 @@ local ffiUtil  = require("ffi/util")
 local logger = require("logger")
 local util  = require("util")
 local _ = require("gettext")
-local Screen = Device.screen
 local T = ffiUtil.template
 
 -- We'll store the list of available dictionaries as a module local
@@ -331,7 +330,6 @@ function ReaderDictionary:addToMainMenu(menu_items)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local font_size = G_reader_settings:readSetting("dict_font_size") or 20
                     local items_font = SpinWidget:new{
-                        width = math.floor(Screen:getWidth() * 0.6),
                         value = font_size,
                         value_min = 8,
                         value_max = 32,
