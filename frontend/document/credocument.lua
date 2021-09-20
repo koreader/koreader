@@ -77,7 +77,7 @@ function CreDocument:zipContentExt(fname)
             if size and ext then break end
         end
         std_out:close()
-        return string.lower(ext)
+        if ext then return string.lower(ext) end
     end
 end
 
