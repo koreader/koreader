@@ -14,6 +14,7 @@ local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
 local Font = require("ui/font")
+local Notification = require("ui/widget/notification")
 local SpinWidget = require("ui/widget/spinwidget")
 local SunTime = require("suntime")
 local UIManager = require("ui/uimanager")
@@ -72,11 +73,45 @@ end
 
 function AutoWarmth:onDispatcherRegisterActions()
     Dispatcher:registerAction("show_ephemeris",
-        {category="none", event="ShowEphemeris", title=_("Show ephemeris"), device=true})
+        {category="none", event="ShowEphemeris", title=_("Show ephemeris"), general=true})
+    Dispatcher:registerAction("auto_warmth_off",
+        {category="none", event="AutoWarmthOff", title=_("Auto warmth off"), screen=true})
+    Dispatcher:registerAction("auto_warmth_cycle_trough",
+        {category="none", event="AutoWarmthMode", title=_("Auto warmth cycle through modes"), screen=true})
 end
 
 function AutoWarmth:onShowEphemeris()
     self:showTimesInfo(_("Information about the sun in"), true, activate_sun, false)
+end
+
+function AutoWarmth:onAutoWarmthOff()
+    self.activate = 0
+    G_reader_settings:saveSetting("autowarmth_activate", self.activate)
+    Notification:notify(_("Auto warmth turned off"))
+    self:scheduleMidnightUpdate()
+end
+
+function AutoWarmth:onAutoWarmthMode()
+    if self.activate > 0 then
+        self.activate = self.activate - 1
+    else
+        self.activate = activate_closer_midnight
+    end
+    local notify_text
+    if self.activate == 0 then
+        notify_text = _("Auto warmth turned off")
+    elseif self.activate == activate_sun then
+        notify_text = _("Auto warmth use sun position")
+    elseif self.activate == activate_schedule then
+        notify_text = _("Auto warmth use schedule")
+    elseif self.activate == activate_closer_midnight then
+        notify_text = _("Auto warmth use whatever is closer to midnight")
+    elseif self.activate == activate_closer_noon then
+        notify_text = _("Auto warmth use whatever is closer to noon")
+    end
+    G_reader_settings:saveSetting("autowarmth_activate", self.activate)
+    Notification:notify(notify_text)
+    self:scheduleMidnightUpdate()
 end
 
 function AutoWarmth:onResume()
@@ -120,8 +155,8 @@ function AutoWarmth:scheduleMidnightUpdate()
     SunTime:setDate() -- today
     SunTime:calculateTimes()
 
-    self.sched_funcs = {}
     self.sched_times = {}
+    self.sched_funcs = {}
 
     local function prepareSchedule(times, index1, index2)
         local time1 = times[index1]
@@ -233,7 +268,7 @@ function AutoWarmth:scheduleWarmthChanges(time)
     self.setWarmth(actual_warmth)
 end
 
-function AutoWarmth:hoursToClock(hours, withoutSeconds)
+function AutoWarmth:hoursToClock(hours)
     if hours then
         hours = hours % 24 * 3600 + 0.01 -- round up, due to reduced precision in settings.reader.lua
     end
@@ -493,7 +528,7 @@ function AutoWarmth:getScheduleMenu()
             mode = mode,
             text_func = function()
                 return T(_"%1: %2", text,
-                    self:hoursToClock(self.scheduler_times[num], true))
+                    self:hoursToClock(self.scheduler_times[num]))
             end,
             checked_func = function()
                 return self.scheduler_times[num] ~= nil
