@@ -736,7 +736,7 @@ local VirtualKeyboard = FocusManager:new{
     umlautmode = false,
     layout = {},
 
-    width = nil, -- non-fullscreen keyboard may cause design issues (eg Text editor)
+    width = nil,
     height = nil,
     bordersize = Size.border.default,
     padding = 0,
@@ -776,7 +776,7 @@ function VirtualKeyboard:init()
     self.symbolmode_keys = keyboard.symbolmode_keys
     self.utf8mode_keys = keyboard.utf8mode_keys
     self.umlautmode_keys = keyboard.umlautmode_keys
-    self.width = self.width or Screen:getWidth()
+    self.width = Screen:getWidth()
     local keys_height = G_reader_settings:isTrue("keyboard_key_compact") and 48 or 64
     self.height = Screen:scaleBySize(keys_height * #self.KEYS)
     self.min_layer = keyboard.min_layer
