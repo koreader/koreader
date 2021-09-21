@@ -32,6 +32,9 @@ local DateTimeWidget = InputContainer:new{
     min = 0,
     ok_text = _("Apply"),
     cancel_text = _("Close"),
+    -- Optional extra button on bottom
+    extra_text = nil,
+    extra_callback = nil,
 }
 
 function DateTimeWidget:init()
@@ -154,6 +157,22 @@ function DateTimeWidget:update()
             },
         }
     }
+    if self.extra_text then
+        table.insert(buttons,{
+            {
+                text = self.extra_text,
+                callback = function()
+                    if self.extra_callback then
+                        self.extra_callback(year_widget:getValue(), month_hour_widget:getValue(),
+                            day_min_widget:getValue())
+                    end
+                    if not self.keep_shown_on_apply then -- assume extra wants it same as ok
+                        self:onClose()
+                    end
+                end,
+            },
+        })
+    end
 
     local ok_cancel_buttons = ButtonTable:new{
         width = self.width - 2*Size.padding.default,
