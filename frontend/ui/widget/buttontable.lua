@@ -11,7 +11,7 @@ local Geom = require("ui/geometry")
 local Screen = Device.screen
 
 local ButtonTable = FocusManager:new{
-    width = Screen:getWidth(),
+    width = nil,
     buttons = {
         {
             {text="OK", enabled=true, callback=nil},
@@ -27,6 +27,7 @@ local ButtonTable = FocusManager:new{
 }
 
 function ButtonTable:init()
+    self.width = self.width or math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.9)
     self.selected = { x = 1, y = 1 }
     self.buttons_layout = {}
     self.button_by_id = {}
