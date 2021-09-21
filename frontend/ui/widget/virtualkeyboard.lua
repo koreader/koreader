@@ -736,7 +736,6 @@ local VirtualKeyboard = FocusManager:new{
     umlautmode = false,
     layout = {},
 
-    width = nil,
     height = nil,
     bordersize = Size.border.default,
     padding = 0,
