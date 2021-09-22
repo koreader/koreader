@@ -92,6 +92,7 @@ function ReadTimer:addToMainMenu(menu_items)
                         min = curr_min,
                         ok_text = _("Set timer"),
                         title_text =  _("Set reader timer"),
+                        info_text = _("Enter time in hours an minutes."),
                         callback = function(time)
                             touchmenu_instance:closeMenu()
                             self:unschedule()
@@ -140,7 +141,8 @@ function ReadTimer:addToMainMenu(menu_items)
                         min = remain_minutes or 0,
                         hour_max = 17,
                         ok_text = _("Set timer"),
-                        title_text =  _("Set reader timer from now (hours:minutes)"),
+                        title_text =  _("Set reader timer from now"),
+                        info_text = _("Enter time in hours an minutes."),
                         callback = function(time)
                             touchmenu_instance:closeMenu()
                             self:unschedule()

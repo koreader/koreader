@@ -15,12 +15,14 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
 
 local DateTimeWidget = InputContainer:new{
     title_face = Font:getFace("x_smalltfont"),
+    info_text = nil,
     width = nil,
     height = nil,
     is_date = true,
@@ -113,7 +115,6 @@ function DateTimeWidget:update()
         table.remove(date_group, 1)
     end
 
-
     local date_title = FrameContainer:new{
         padding = Size.padding.default,
         margin = Size.margin.title,
@@ -130,6 +131,21 @@ function DateTimeWidget:update()
             h = Size.line.thick,
         }
     }
+    local date_info
+    if self.info_text then
+        date_info = FrameContainer:new{
+            padding = Size.padding.default,
+            margin = Size.margin.small,
+            bordersize = 0,
+            TextBoxWidget:new{
+                text = self.info_text,
+                face = Font:getFace("x_smallinfofont"),
+                width = math.floor(self.width * 0.9),
+            }
+        }
+    else
+        date_info = VerticalSpan:new{ width = 0 }
+    end
     local buttons = {
         {
             {
@@ -191,6 +207,7 @@ function DateTimeWidget:update()
             align = "left",
             date_title,
             date_line,
+            date_info,
             CenterContainer:new{
                 dimen = Geom:new{
                     w = self.width,
