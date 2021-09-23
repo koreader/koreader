@@ -1,6 +1,7 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local CacheItem = require("cacheitem")
 local Configurable = require("configurable")
+local Device = require("device")
 local DocCache = require("document/doccache")
 local DrawContext = require("ffi/drawcontext")
 local CanvasContext = require("document/canvascontext")
@@ -392,7 +393,7 @@ function Document:getFullPageHash(pageno, zoom, rotation, gamma, render_mode, co
                     ..(self.reflowable_font_size and "|"..self.reflowable_font_size or "")
 end
 
-function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
+function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode, hinting)
     local hash_excerpt
     local hash = self:getFullPageHash(pageno, zoom, rotation, gamma, render_mode, self.render_color)
     local tile = DocCache:check(hash, TileCacheItem)
@@ -411,6 +412,9 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
         end
     end
 
+    if hinting then
+        Device:enableCPUCores(2)
+    end
     self:preRenderPage()
 
     local page_size = self:getPageDimensions(pageno, zoom, rotation)
@@ -466,17 +470,17 @@ function Document:renderPage(pageno, rect, zoom, rotation, gamma, render_mode)
     DocCache:insert(hash, tile)
 
     self:postRenderPage()
+    if hinting then
+        Device:enableCPUCores(1)
+    end
     return tile
 end
 
 -- a hint for the cache engine to paint a full page to the cache
 --- @todo this should trigger a background operation
 function Document:hintPage(pageno, zoom, rotation, gamma, render_mode)
-    --- @note: Crappy safeguard around memory issues like in #7627: if we're eating too much RAM, drop half the cache...
-    DocCache:memoryPressureCheck()
-
     logger.dbg("hinting page", pageno)
-    self:renderPage(pageno, nil, zoom, rotation, gamma, render_mode)
+    self:renderPage(pageno, nil, zoom, rotation, gamma, render_mode, true)
 end
 
 --[[

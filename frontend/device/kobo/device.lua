@@ -71,6 +71,8 @@ local Kobo = Generic:new{
     touch_dev = "/dev/input/event1",
     -- Event code to use to detect contact pressure
     pressure_event = nil,
+    -- Device features multiple CPU cores
+    isSMP = no,
 }
 
 --- @todo hasKeys for some devices?
@@ -321,6 +323,7 @@ local KoboEuropa = Kobo:new{
     battery_sysfs = "/sys/class/power_supply/battery",
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
     touch_dev = "/dev/input/by-path/platform-0-0010-event",
+    isSMP = yes,
 }
 
 function Kobo:init()
@@ -439,6 +442,9 @@ function Kobo:init()
     -- * Turn it off on startup
     -- I've chosen the latter, as I find it vaguely saner, more useful, and it matches Nickel's behavior (I think).
     self:toggleChargingLED(false)
+
+    -- Only enable a single core on startup
+    self:enableCPUCores(1)
 end
 
 function Kobo:setDateTime(year, month, day, hour, min, sec)
@@ -657,7 +663,7 @@ function Kobo:suspend()
     local has_wakeup_count = false
     f = io.open("/sys/power/wakeup_count", "r")
     if f ~= nil then
-        io.close(f)
+        f:close()
         has_wakeup_count = true
     end
 
@@ -682,7 +688,7 @@ function Kobo:suspend()
         return false
     end
     re, err_msg, err_code = f:write("1\n")
-    io.close(f)
+    f:close()
     logger.info("Kobo suspend: asked the kernel to put subsystems to sleep, ret:", re)
     if not re then
         logger.err('write error: ', err_msg, err_code)
@@ -709,7 +715,7 @@ function Kobo:suspend()
                        err_msg,
                        err_code)
         end
-        io.close(f)
+        f:close()
     end
 
     --]]
@@ -723,7 +729,7 @@ function Kobo:suspend()
             logger.err("cannot open /sys/power/state-extended for writing!")
         else
             ext_fd:write("0\n")
-            io.close(ext_fd)
+            ext_fd:close()
         end
         return false
     end
@@ -735,7 +741,7 @@ function Kobo:suspend()
     if not re then
         logger.err('write error: ', err_msg, err_code)
     end
-    io.close(f)
+    f:close()
     -- NOTE: Ideally, we'd need a way to warn the user that suspending
     -- gloriously failed at this point...
     -- We can safely assume that just from a non-zero return code, without
@@ -786,7 +792,7 @@ function Kobo:resume()
         return false
     end
     local re, err_msg, err_code = f:write("0\n")
-    io.close(f)
+    f:close()
     logger.info("Kobo resume: unflagged kernel subsystems for resume, ret:", re)
     if not re then
         logger.err('write error: ', err_msg, err_code)
@@ -799,7 +805,7 @@ function Kobo:resume()
     f = io.open("/sys/devices/virtual/input/input1/neocmd", "w")
     if f ~= nil then
         f:write("a\n")
-        io.close(f)
+        f:close()
     end
 end
 
@@ -892,7 +898,53 @@ function Kobo:toggleChargingLED(toggle)
         f:flush()
     end
 
-    io.close(f)
+    f:close()
+end
+
+-- Return the highest core number
+local function getCPUCount()
+    local fd = io.open("/sys/devices/system/cpu/possible", "r")
+    if fd then
+        local str = fd:read("*line")
+        fd:close()
+
+        -- Format is n-N, where n is the first core, and N the last (e.g., 0-3)
+        return tonumber(str:match("%d+$")) or 0
+    else
+        return 0
+    end
+end
+
+function Kobo:enableCPUCores(amount)
+    if not self:isSMP() then
+        return
+    end
+
+    if not self.cpu_count then
+        self.cpu_count = getCPUCount()
+    end
+
+    -- Not actually SMP or getCPUCount failed...
+    if self.cpu_count == 0 then
+        return
+    end
+
+    -- CPU0 is *always* online ;).
+    for n=1, self.cpu_count do
+        local path = "/sys/devices/system/cpu/cpu" .. n .. "/online"
+        local up
+        if n >= amount then
+            up = "0"
+        else
+            up = "1"
+        end
+
+        local f = io.open(path, "w")
+        if f then
+            f:write(up)
+            f:close()
+        end
+    end
 end
 
 function Kobo:isStartupScriptUpToDate()
