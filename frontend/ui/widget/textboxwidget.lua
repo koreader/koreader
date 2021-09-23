@@ -183,7 +183,7 @@ function TextBoxWidget:init()
             self:scrollViewToCharPos()
         end
     end
-    self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+    self:_updateLayout()
     if self.editable then
         self:moveCursorToCharPos(self.charpos or 1)
     end
@@ -860,6 +860,13 @@ function TextBoxWidget:_renderText(start_row_idx, end_row_idx)
     self:_renderImage(start_row_idx)
 end
 
+-- Lay out the full text, starting at the current line.
+-- (NOTE: This instantiates the inner bb (self._bb), so be careful about its lifecycle when you call this,
+--        c.f., TextBoxWidget:update).
+function TextBoxWidget:_updateLayout()
+    self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+end
+
 function TextBoxWidget:_renderImage(start_row_idx)
     local scheduled_update = self.scheduled_update
     self.scheduled_update = nil -- reset it, so we don't have to whenever we return below
@@ -1090,7 +1097,7 @@ end
 function TextBoxWidget:getSize()
     -- Make sure we actually have a BB, in case we're recycling an instance... (c.f., #8241)
     if not self._bb then
-        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+        self:_updateLayout()
     end
 
     return Geom:new{w = self.width, h = self._bb:getHeight()}
@@ -1144,7 +1151,7 @@ function TextBoxWidget:update(scheduled_update)
     -- We set this flag so :_renderText() can know we were called from a
     -- scheduled update and so not schedule another one
     self.scheduled_update = scheduled_update
-    self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+    self:_updateLayout()
     self.scheduled_update = nil
 end
 
@@ -1196,7 +1203,7 @@ function TextBoxWidget:scrollDown()
                 end
             end
         end
-        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+        self:_updateLayout()
     end
     if self.editable then
         -- move cursor to first line of visible area
@@ -1214,7 +1221,7 @@ function TextBoxWidget:scrollUp()
         else
             self.virtual_line_num = self.virtual_line_num - self.lines_per_page
         end
-        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+        self:_updateLayout()
     end
     if self.editable then
         -- move cursor to first line of visible area
@@ -1238,7 +1245,7 @@ function TextBoxWidget:scrollLines(nb_lines)
     end
     self.virtual_line_num = new_line_num
     self:free(false)
-    self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+    self:_updateLayout()
     if self.editable then
         local x, y = self:_getXYForCharPos() -- luacheck: no unused
         if y < 0 or y >= self.text_height then
@@ -1254,7 +1261,7 @@ function TextBoxWidget:scrollToTop()
     if self.virtual_line_num > 1 then
         self:free(false)
         self.virtual_line_num = 1
-        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+        self:_updateLayout()
     end
     if self.editable then
         -- move cursor to first char
@@ -1272,7 +1279,7 @@ function TextBoxWidget:scrollToBottom()
     if self.virtual_line_num ~= ln then
         self:free(false)
         self.virtual_line_num = ln
-        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+        self:_updateLayout()
     end
     if self.editable then
         -- move cursor to last char
@@ -1303,7 +1310,7 @@ function TextBoxWidget:scrollToRatio(ratio, force_to_page)
     if line_num ~= self.virtual_line_num then
         self:free(false)
         self.virtual_line_num = line_num
-        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+        self:_updateLayout()
     end
     if self.editable then
         -- move cursor to first line of visible area
@@ -1557,7 +1564,7 @@ function TextBoxWidget:moveCursorToCharPos(charpos)
     if self.virtual_line_num ~= self.prev_virtual_line_num then
         -- We scrolled the view: full render and refresh needed
         self:free(false)
-        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+        self:_updateLayout()
         -- Store the original image of where we will draw the cursor, for a
         -- quick restore and two small refreshes when moving only the cursor
         self.cursor_restore_x = x
