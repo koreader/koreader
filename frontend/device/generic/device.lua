@@ -460,6 +460,10 @@ end
 -- Device specific method for toggling the charging LED
 function Device:toggleChargingLED(toggle) end
 
+-- Device specific method for enabling a specific amount of CPU cores
+-- (Should only be implemented on embedded platforms where we can afford to control that without screwing with the system).
+function Device:enableCPUCores(amount) end
+
 --[[
 prepare for application shutdown
 --]]
