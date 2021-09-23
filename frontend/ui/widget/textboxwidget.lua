@@ -1088,7 +1088,12 @@ function TextBoxWidget:getCharPos()
 end
 
 function TextBoxWidget:getSize()
-    return Geom:new{ w = self.width, h = self._bb:getHeight()}
+    -- Make sure we actually have a BB, in case we're recycling an instance... (c.f., #8241)
+    if not self._bb then
+        self:_renderText(self.virtual_line_num, self.virtual_line_num + self.lines_per_page - 1)
+    end
+
+    return Geom:new{w = self.width, h = self._bb:getHeight()}
 end
 
 function TextBoxWidget:paintTo(bb, x, y)
@@ -1122,6 +1127,7 @@ function TextBoxWidget:free(full)
         self.cursor_restore_bb:free()
         self.cursor_restore_bb = nil
     end
+    self.line_num_to_image = nil
     if full ~= false then -- final free(): free all remaining resources
         if self.use_xtext and self._xtext then
             -- Allow not waiting until Lua gc() to cleanup C XText malloc'ed stuff
