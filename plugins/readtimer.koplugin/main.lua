@@ -80,7 +80,7 @@ function ReadTimer:addToMainMenu(menu_items)
         end,
         sub_item_table = {
             {
-                text = _("Point in Time"),
+                text = _("Set time"),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local now_t = os.date("*t")
@@ -90,8 +90,8 @@ function ReadTimer:addToMainMenu(menu_items)
                         is_date = false,
                         hour = curr_hour,
                         min = curr_min,
-                        ok_text = _("Set timer"),
-                        title_text =  _("Set reader timer"),
+                        ok_text = _("Set alarm"),
+                        title_text =  _("New alarm"),
                         info_text = _("Enter time in hours an minutes."),
                         callback = function(time)
                             touchmenu_instance:closeMenu()
@@ -123,7 +123,7 @@ function ReadTimer:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Time from now"),
+                text = _("Set interval"),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local remain_time = {}
@@ -141,7 +141,7 @@ function ReadTimer:addToMainMenu(menu_items)
                         min = remain_minutes or 0,
                         hour_max = 17,
                         ok_text = _("Set timer"),
-                        title_text =  _("Set reader timer from now"),
+                        title_text =  _("Set reader timer"),
                         info_text = _("Enter time in hours an minutes."),
                         callback = function(time)
                             touchmenu_instance:closeMenu()
