@@ -659,6 +659,9 @@ function BookInfoManager:collectSubprocesses()
             end
         end
     end
+
+    -- We're done, back to a single core
+    Device:enableCPUCores(1)
 end
 
 function BookInfoManager:terminateBackgroundJobs()
@@ -697,6 +700,11 @@ function BookInfoManager:extractInBackground(files)
     end
 
     self.cleanup_needed = true -- so we will remove temporary cache directory created by subprocess
+
+    -- If it's the first subprocess we're launching, enable 2 CPU cores
+    if #self.subprocesses_pids == 0 then
+        Device:enableCPUCores(2)
+    end
 
     -- Run task in sub-process, and remember its pid
     local task_pid = FFIUtil.runInSubProcess(task)

@@ -6,6 +6,7 @@ local CacheItem = require("cacheitem")
 local CanvasContext = require("document/canvascontext")
 local DataStorage = require("datastorage")
 local DEBUG = require("dbg")
+local Device = require("device")
 local DocCache = require("document/doccache")
 local Document = require("document/document")
 local Geom = require("ui/geometry")
@@ -99,12 +100,20 @@ function KoptInterface:setDefaultConfigurable(configurable)
 end
 
 function KoptInterface:waitForContext(kc)
-    -- if koptcontext is being processed in background thread
-    -- the isPreCache will return 1.
+    -- If our koptcontext is busy in a background thread, isPreCache will return 1.
+    local waited = false
     while kc and kc:isPreCache() == 1 do
+        waited = true
         logger.dbg("waiting for background rendering")
         util.usleep(100000)
     end
+
+    if waited or self.bg_thread then
+        -- Background thread is done, go back to a single CPU core.
+        Device:enableCPUCores(1)
+        self.bg_thread = nil
+    end
+
     return kc
 end
 
@@ -266,7 +275,7 @@ function KoptInterface:getCachedContext(doc, pageno)
         logger.dbg("reflowing page", pageno, "in foreground")
         -- reflow page
         --local secs, usecs = util.gettime()
-        page:reflow(kc, 0)
+        page:reflow(kc)
         page:close()
         --local nsecs, nusecs = util.gettime()
         --local dur = nsecs - secs + (nusecs - usecs) / 1000000
@@ -322,13 +331,13 @@ function KoptInterface:getCoverPageImage(doc)
     end
 end
 
-function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, render_mode)
+function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, render_mode, hinting)
     if doc.configurable.text_wrap == 1 then
-        return self:renderReflowedPage(doc, pageno, rect, zoom, rotation, render_mode)
+        return self:renderReflowedPage(doc, pageno, rect, zoom, rotation, render_mode, hinting)
     elseif doc.configurable.page_opt == 1 then
-        return self:renderOptimizedPage(doc, pageno, rect, zoom, rotation, render_mode)
+        return self:renderOptimizedPage(doc, pageno, rect, zoom, rotation, render_mode, hinting)
     else
-        return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, render_mode)
+        return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, render_mode, hinting)
     end
 end
 
@@ -372,7 +381,7 @@ Render optimized page into tile cache.
 
 Inherited from common document interface.
 --]]
-function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, render_mode)
+function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, render_mode, hinting)
     doc.render_mode = render_mode
     local bbox = doc:getPageBBox(pageno)
     local hash_list = { "renderoptpg" }
@@ -381,6 +390,10 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
 
     local cached = DocCache:check(hash, TileCacheItem)
     if not cached then
+        if hinting then
+            Device:enableCPUCores(2)
+        end
+
         local page_size = Document.getNativePageDimensions(doc, pageno)
         local full_page_bbox = {
             x0 = 0, y0 = 0,
@@ -409,6 +422,11 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
         tile.size = tonumber(tile.bb.stride) * tile.bb.h + 512 -- estimation
         kc:free()
         DocCache:insert(hash, tile)
+
+        if hinting then
+            Device:enableCPUCores(1)
+        end
+
         return tile
     else
         return cached
@@ -416,10 +434,13 @@ function KoptInterface:renderOptimizedPage(doc, pageno, rect, zoom, rotation, re
 end
 
 function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma, render_mode)
+    --- @note: Crappy safeguard around memory issues like in #7627: if we're eating too much RAM, drop half the cache...
+    DocCache:memoryPressureCheck()
+
     if doc.configurable.text_wrap == 1 then
-        self:hintReflowedPage(doc, pageno, zoom, rotation, gamma, render_mode)
+        self:hintReflowedPage(doc, pageno, zoom, rotation, gamma, render_mode, true)
     elseif doc.configurable.page_opt == 1 then
-        self:renderOptimizedPage(doc, pageno, nil, zoom, rotation, gamma, render_mode)
+        self:renderOptimizedPage(doc, pageno, nil, zoom, rotation, gamma, render_mode, true)
     else
         Document.hintPage(doc, pageno, zoom, rotation, gamma, render_mode)
     end
@@ -434,24 +455,32 @@ off by calling self:waitForContext(kctx)
 
 Inherited from common document interface.
 --]]
-function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, render_mode)
+function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, render_mode, hinting)
     local bbox = doc:getPageBBox(pageno)
     local hash_list = { "kctx" }
     self:getContextHash(doc, pageno, bbox, hash_list)
     local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
+        if hinting then
+            Device:enableCPUCores(2)
+        end
+
         local kc = self:createContext(doc, pageno, bbox)
         local page = doc._document:openPage(pageno)
         logger.dbg("hinting page", pageno, "in background")
         -- reflow will return immediately and running in background thread
         kc:setPreCache()
-        page:reflow(kc, 0)
+        self.bg_thread = true
+        page:reflow(kc)
         page:close()
         DocCache:insert(hash, ContextCacheItem:new{
             size = self.last_context_size or self.default_context_size,
             kctx = kc,
         })
+
+        -- We'll wait until the background thread is done to go back to a single core, as this returns immediately!
+        -- c.f., :waitForContext
     end
 end
 
