@@ -170,11 +170,6 @@ if Device:hasFrontlight() then
         local powerd = Device:getPowerDevice()
         if powerd.fl_warmth == nil then return false end
 
-        if powerd.auto_warmth then
-            Notification:notify(_("Warmth is handled automatically."))
-            return true
-        end
-
         local delta_int
         --received gesture
 
