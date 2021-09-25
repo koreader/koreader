@@ -508,12 +508,20 @@ function Kobo:initNetworkManager(NetworkMgr)
         -- We could alternatively check if lfs.attributes("/proc/sys/net/ipv4/conf/" .. os.getenv("INTERFACE"), "mode") == "directory"
         -- c.f., also what Cervantes does via /sys/class/net/eth0/carrier to check if the interface is up.
         -- That said, since we only care about whether *modules* are loaded, this does the job nicely.
-        for haystack in io.lines("/proc/modules") do
+        local f = io.open("/proc/modules", "re")
+        if not f then
+            return false
+        end
+
+        local found = false
+        for haystack in f:lines() do
             if haystack:sub(1, nlen) == needle then
-                return true
+                found = true
+                break
             end
         end
-        return false
+        f:close()
+        return found
     end
 end
 
