@@ -7,7 +7,7 @@ local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
 
 -- Date at which the last migration snippet was added
-local CURRENT_MIGRATION_DATE = 20210902
+local CURRENT_MIGRATION_DATE = 20210925
 
 -- Retrieve the date of the previous migration, if any
 local last_migration_date = G_reader_settings:readSetting("last_migration_date", 0)
@@ -313,8 +313,8 @@ if last_migration_date < 20210831 then
 end
 
 -- 20210902, Remove unneeded auto_warmth settings after #8154
-if last_migration_date < 20210902 then
-    logger.info("Performing one-time migration for 20210902")
+if last_migration_date < 20210925 then
+    logger.info("Performing one-time migration for 20210925")
     G_reader_settings:delSetting("frontlight_auto_warmth")
     G_reader_settings:delSetting("frontlight_max_warmth_hour")
 end
