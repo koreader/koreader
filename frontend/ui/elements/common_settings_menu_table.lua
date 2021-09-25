@@ -1,11 +1,10 @@
-local DateWidget = require("ui/widget/datewidget")
+local DateTimeWidget = require("ui/widget/datetimewidget")
 local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local Language = require("ui/language")
 local NetworkMgr = require("ui/network/manager")
 local UIManager = require("ui/uimanager")
-local TimeWidget = require("ui/widget/timewidget")
 local _ = require("gettext")
 local N_ = _.ngettext
 local Screen = Device.screen
@@ -131,7 +130,8 @@ if Device:setDateTime() then
             local now_t = os.date("*t")
             local curr_hour = now_t.hour
             local curr_min = now_t.min
-            local time_widget = TimeWidget:new{
+            local time_widget = DateTimeWidget:new{
+                is_date = false,
                 hour = curr_hour,
                 min = curr_min,
                 ok_text = _("Set time"),
@@ -161,7 +161,7 @@ if Device:setDateTime() then
             local curr_year = now_t.year
             local curr_month = now_t.month
             local curr_day = now_t.day
-            local date_widget = DateWidget:new{
+            local date_widget = DateTimeWidget:new{
                 year = curr_year,
                 month = curr_month,
                 day = curr_day,
