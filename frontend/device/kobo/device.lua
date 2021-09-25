@@ -570,7 +570,7 @@ function Kobo:getCodeName()
     local codename = os.getenv("PRODUCT")
     -- If that fails, run the script ourselves
     if not codename then
-        local std_out = io.popen("/bin/kobo_config.sh 2>/dev/null", "r")
+        local std_out = io.popen("/bin/kobo_config.sh 2>/dev/null", "re")
         codename = std_out:read("*line")
         std_out:close()
     end
@@ -578,7 +578,7 @@ function Kobo:getCodeName()
 end
 
 function Kobo:getFirmwareVersion()
-    local version_file = io.open("/mnt/onboard/.kobo/version", "r")
+    local version_file = io.open("/mnt/onboard/.kobo/version", "re")
     if not version_file then
         self.firmware_rev = "none"
     end
@@ -599,7 +599,7 @@ local function getProductId()
     local product_id = os.getenv("MODEL_NUMBER")
     -- If that fails, devise it ourselves
     if not product_id then
-        local version_file = io.open("/mnt/onboard/.kobo/version", "r")
+        local version_file = io.open("/mnt/onboard/.kobo/version", "re")
         if not version_file then
             return "000"
         end
@@ -669,7 +669,7 @@ function Kobo:suspend()
     --[[
 
     local has_wakeup_count = false
-    f = io.open("/sys/power/wakeup_count", "r")
+    f = io.open("/sys/power/wakeup_count", "re")
     if f ~= nil then
         f:close()
         has_wakeup_count = true
@@ -690,7 +690,7 @@ function Kobo:suspend()
     -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
     -- kernel to suspend/resume various subsystems
     -- cf. kernel/power/main.c @ L#207
-    f = io.open("/sys/power/state-extended", "w")
+    f = io.open("/sys/power/state-extended", "we")
     if not f then
         logger.err("Cannot open /sys/power/state-extended for writing!")
         return false
@@ -711,7 +711,7 @@ function Kobo:suspend()
     --[[
 
     if has_wakeup_count then
-        f = io.open("/sys/power/wakeup_count", "w")
+        f = io.open("/sys/power/wakeup_count", "we")
         if not f then
             logger.err("cannot open /sys/power/wakeup_count")
             return false
@@ -729,10 +729,10 @@ function Kobo:suspend()
     --]]
 
     logger.info("Kobo suspend: asking for a suspend to RAM . . .")
-    f = io.open("/sys/power/state", "w")
+    f = io.open("/sys/power/state", "we")
     if not f then
         -- reset state-extend back to 0 since we are giving up
-        local ext_fd = io.open("/sys/power/state-extended", "w")
+        local ext_fd = io.open("/sys/power/state-extended", "we")
         if not ext_fd then
             logger.err("cannot open /sys/power/state-extended for writing!")
         else
@@ -794,7 +794,7 @@ function Kobo:resume()
     -- NOTE: Sets gSleep_Mode_Suspend to 0. Used as a flag throughout the
     -- kernel to suspend/resume various subsystems
     -- cf. kernel/power/main.c @ L#207
-    local f = io.open("/sys/power/state-extended", "w")
+    local f = io.open("/sys/power/state-extended", "we")
     if not f then
         logger.err("cannot open /sys/power/state-extended for writing!")
         return false
@@ -810,7 +810,7 @@ function Kobo:resume()
     util.usleep(100000)
     -- cf. #1862, I can reliably break IR touch input on resume...
     -- cf. also #1943 for the rationale behind applying this workaorund in every case...
-    f = io.open("/sys/devices/virtual/input/input1/neocmd", "w")
+    f = io.open("/sys/devices/virtual/input/input1/neocmd", "we")
     if f ~= nil then
         f:write("a\n")
         f:close()
@@ -859,7 +859,7 @@ function Kobo:toggleChargingLED(toggle)
     --       (when it does, it's an option in the Energy saving settings),
     --       which is why we also limit ourselves to "true" on devices where this was tested.
     -- c.f., drivers/misc/ntx_misc_light.c
-    local f = io.open("/sys/devices/platform/ntx_led/lit", "w")
+    local f = io.open("/sys/devices/platform/ntx_led/lit", "we")
     if not f then
         logger.err("cannot open /sys/devices/platform/ntx_led/lit for writing!")
         return false
@@ -911,7 +911,7 @@ end
 
 -- Return the highest core number
 local function getCPUCount()
-    local fd = io.open("/sys/devices/system/cpu/possible", "r")
+    local fd = io.open("/sys/devices/system/cpu/possible", "re")
     if fd then
         local str = fd:read("*line")
         fd:close()
@@ -947,7 +947,7 @@ function Kobo:enableCPUCores(amount)
             up = "1"
         end
 
-        local f = io.open(path, "w")
+        local f = io.open(path, "we")
         if f then
             f:write(up)
             f:close()
