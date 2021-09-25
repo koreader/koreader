@@ -795,7 +795,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
         width = math.floor(Screen:getWidth() * (self.easy_mode and 0.75 or 0.90)),
             text = title .. location_string .. ":\n\n" ..
             info_line(0, _("Solar midnight:"), times, 1, request_easy) ..
-            "  " .. _("Dawn\n") ..
+            "  " .. _("Dawn") .. "\n" ..
             info_line(4, _("Astronomic:"), times, 2, request_easy) ..
             info_line(4, _("Nautical:"), times, 3, request_easy)..
             info_line(4, _("Civil:"), times, 4) ..
@@ -805,11 +805,11 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
             info_line(0, _("Solar noon:"), times, 6, request_easy) ..
             "\n" ..
             info_line(0, _("Sunset:"), times, 7) ..
-            "  " .. _("Dusk\n") ..
+            "  " .. _("Dusk") .. "\n" ..
             info_line(4, _("Civil:"), times, 8) ..
             info_line(4, _("Nautical:"), times, 9, request_easy) ..
             info_line(4, _("Astronomic:"), times, 10, request_easy) ..
-            "  " .. _("Dusk\n") ..
+            "  " .. _("Dusk") .. "\n" ..
             info_line(0, _("Solar midnight:"), times, midnight_index, request_easy)
     })
 end
