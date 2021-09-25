@@ -749,7 +749,8 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
     -- t .. times
     -- num .. index in times
     local function info_line(text, t, num, easy)
-        local retval = text .. string.rep(" ", 18 - text:len()) .. self:hoursToClock(t[num])
+        local tab_width = 18
+        local retval = text .. string.rep(" ", tab_width - text:len()) .. self:hoursToClock(t[num])
         if easy then
             if t[num] and self.current_times[num] and self.current_times[num] ~= t[num] then
                 return text .. "\n"
