@@ -214,10 +214,12 @@ function FileSearcher:onMenuHold(item)
                 callback = function()
                     UIManager:close(self.results_dialog)
                     self.close_callback()
-                    if is_file then
-                        FileManager:showFiles(item.dir, fullpath)
+                    local focused_path = is_file and item.dir or fullpath
+                    local focused_file = is_file and fullpath or nil
+                    if FileManager.instance then
+                        FileManager.instance:reinit(focused_path, focused_file)
                     else
-                        FileManager:showFiles(fullpath)
+                        FileManager:showFiles(focused_path, focused_file)
                     end
                 end,
             },
