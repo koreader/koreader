@@ -748,9 +748,10 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
     -- text to show
     -- t .. times
     -- num .. index in times
-    local function info_line(text, t, num, easy)
+    local function info_line(indent, text, t, num, easy)
         local tab_width = 18
-        local retval = text .. string.rep(" ", tab_width - text:len()) .. self:hoursToClock(t[num])
+        local retval = string.rep(" ", indent) .. text .. string.rep(" ", tab_width - text:len())
+            .. self:hoursToClock(t[num])
         if easy then
             if t[num] and self.current_times[num] and self.current_times[num] ~= t[num] then
                 return text .. "\n"
@@ -793,23 +794,23 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
         face = Font:getFace("scfont"),
         width = math.floor(Screen:getWidth() * (self.easy_mode and 0.75 or 0.90)),
             text = title .. location_string .. ":\n\n" ..
-            info_line(_("Solar midnight:"), times, 1, request_easy) ..
-            _("  Dawn\n") ..
-            info_line(_("    Astronomic:"), times, 2, request_easy) ..
-            info_line(_("    Nautical:"), times, 3, request_easy)..
-            info_line(_("    Civil:"), times, 4) ..
-            _("  Dawn\n") ..
-            info_line(_("Sunrise:"), times, 5) ..
+            info_line(0, _("Solar midnight:"), times, 1, request_easy) ..
+            "  " .. _("Dawn\n") ..
+            info_line(4, _("Astronomic:"), times, 2, request_easy) ..
+            info_line(4, _("Nautical:"), times, 3, request_easy)..
+            info_line(4, _("Civil:"), times, 4) ..
+            "  " .. _("Dawn\n") ..
+            info_line(0, _("Sunrise:"), times, 5) ..
             "\n" ..
-            info_line(_("Solar noon:"), times, 6, request_easy) ..
+            info_line(0, _("Solar noon:"), times, 6, request_easy) ..
             "\n" ..
-            info_line(_("Sunset:"), times, 7) ..
-            _("  Dusk\n") ..
-            info_line(_("    Civil:"), times, 8) ..
-            info_line(_("    Nautical:"), times, 9, request_easy) ..
-            info_line(_("    Astronomic:"), times, 10, request_easy) ..
-            _("  Dusk\n") ..
-            info_line(_("Solar midnight:"), times, midnight_index, request_easy)
+            info_line(0, _("Sunset:"), times, 7) ..
+            "  " .. _("Dusk\n") ..
+            info_line(4, _("Civil:"), times, 8) ..
+            info_line(4, _("Nautical:"), times, 9, request_easy) ..
+            info_line(4, _("Astronomic:"), times, 10, request_easy) ..
+            "  " .. _("Dusk\n") ..
+            info_line(0, _("Solar midnight:"), times, midnight_index, request_easy)
     })
 end
 
