@@ -26,7 +26,6 @@ local function spinWidgetSetDPI(touchmenu_instance)
     local SpinWidget = require("ui/widget/spinwidget")
     local UIManager = require("ui/uimanager")
     local items = SpinWidget:new{
-        width = math.floor(Screen:getWidth() * 0.6),
         value = custom() or dpi(),
         value_min = 90,
         value_max = 900,

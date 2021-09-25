@@ -141,7 +141,6 @@ function AutoStandby:genSpinMenuItem(text, cfg, min, max)
         enabled_func = function() return self:isAllowedByConfig() end,
         callback = function()
             local spin = SpinWidget:new {
-                width = math.floor(Device.screen:getWidth() * 0.6),
                 value = self.settings:readSetting(cfg),
                 value_min = min and min() or 0,
                 value_max = max and max() or 9999,

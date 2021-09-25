@@ -1252,7 +1252,6 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                 widget = SpinWidget:new{
                     title_text =  name_text or _("Set value"),
                     info_text = more_options_param.info_text,
-                    width = math.floor(Screen:getWidth() * 0.6),
                     value = curr_items,
                     value_index = value_index,
                     value_table = more_options_param.value_table,
