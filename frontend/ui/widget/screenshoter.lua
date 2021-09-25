@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
+local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local DataStorage = require("datastorage")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -86,11 +87,16 @@ function Screenshoter:onScreenshot(filename, when_done_func)
 end
 
 function Screenshoter:chooseFolder()
-    local screenshot_dir = G_reader_settings:readSetting("screenshot_dir") or DataStorage:getDataDir() .. "/screenshots/"
-    local confirm_box = ConfirmBox:new{
+    local screenshot_dir_default = DataStorage:getFullDataDir() .. "/screenshots/"
+    local screenshot_dir = G_reader_settings:readSetting("screenshot_dir") or screenshot_dir_default
+    local confirm_box = MultiConfirmBox:new{
         text = T(_("Screenshot folder is set to:\n%1\n\nChoose a new folder for screenshots?"), screenshot_dir),
-        ok_text = _("Choose folder"),
-        ok_callback = function()
+        choice1_text = _("Use default"),
+        choice1_callback = function()
+            G_reader_settings:saveSetting("screenshot_dir", screenshot_dir_default)
+        end,
+        choice2_text = _("Choose folder"),
+        choice2_callback = function()
             local path_chooser = require("ui/widget/pathchooser"):new{
                 select_file = false,
                 show_files = false,
