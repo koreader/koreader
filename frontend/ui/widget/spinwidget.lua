@@ -85,6 +85,7 @@ function SpinWidget:update()
         value_step = self.value_step,
         value_hold_step = self.value_hold_step,
         precision = self.precision,
+        wrap = self.wrap or false,
     }
     local value_group = HorizontalGroup:new{
         align = "center",
