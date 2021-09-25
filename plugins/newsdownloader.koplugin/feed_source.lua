@@ -1,0 +1,364 @@
+local BD = require("ui/bidi")
+local DownloadBackend = require("epubdownloadbackend")
+local NewsHelpers = require("http_utilities")
+local dateparser = require("lib.dateparser")
+local logger = require("logger")
+local util = require("util")
+local _ = require("gettext")
+local FFIUtil = require("ffi/util")
+local T = FFIUtil.template
+
+local FeedSource = {
+    download_dir = nil,
+    file_extension = ".epub"
+}
+
+function FeedSource:new(o)
+    o = o or {}
+    self.__index = self
+    setmetatable(o, self)
+    return o
+end
+
+--
+function FeedSource:getInitializedFeeds(feed_list, progress_callback, error_callback)
+    local UI = require("ui/trapper")
+    local initialized_feeds = {}
+    local unsupported_feeds_urls = {}
+    local total_feed_entries = #feed_list
+    local feed_message
+
+    for idx, feed in ipairs(feed_list) do
+        local url = feed[1]
+        -- Show a UI update
+        progress_callback(T(
+            _("Initializing feed %1 of %2"),
+            idx,
+            url
+        ))
+        -- Initialize the feed
+        local ok, response = pcall(function()
+                return self:initializeDocument(
+                    self:fetchDocumentByUrl(url)
+                )
+        end)
+        -- If the initialization worked, add the feed
+        -- to a list of initialized feeds
+        if ok and response then
+            table.insert(
+                initialized_feeds,
+                {
+                    config = feed,
+                    document = response
+                }
+            )
+        else
+            logger.dbg("FeedSource: Unsupported feed ", response)
+            table.insert(
+                unsupported_feeds_urls,
+                {
+                    url .. ": " .. response
+                }
+            )
+        end
+    end
+
+    if #unsupported_feeds_urls > 0 then
+        -- When some errors are present, we get a sour message that includes
+        -- information about the source of the error.
+        local unsupported_urls = ""
+        for key, value in pairs(unsupported_feeds_urls) do
+            -- Create the error message.
+            --            unsupported_urls = unsupported_urls .. " " .. value[1] .. " " .. value[2]
+            unsupported_urls = value[1] .. "\n\n"
+            -- Not sure what this does.
+            if key ~= #unsupported_feeds_urls then
+                unsupported_urls = BD.url(unsupported_urls) .. ", "
+            end
+        end
+        error_callback(
+            T(_([[Could not initialize some feeds\n\n %1 \n\nPlease review your feed configuration file after this process concludes.]]),
+              unsupported_urls)
+        )
+    end
+
+    return initialized_feeds
+end
+
+-- This function contacts the feed website and attempts to get
+-- the RSS/Atom document with a list of the latest items.
+function FeedSource:fetchDocumentByUrl(url)
+    local document
+    -- Get the XML document representing the feed
+    local ok, response = pcall(function()
+            local success, content = NewsHelpers:getUrlContent(url)
+            if (success) then
+                return content
+            else
+                error("Failed to download content for url:", url)
+            end
+    end)
+    -- Check to see if a response is available to deserialize.
+    if ok then
+        -- Deserialize the XML document into something Lua can use
+        document = NewsHelpers:deserializeXMLString(response)
+    end
+    -- Return the document or any errors that may have occured
+    if ok or document then
+        return document
+    else
+        if not ok then
+            error("(Reason: Failed to download feed document)")
+        else
+            error("(Reason: Error during feed document deserialization)")
+        end
+    end
+end
+
+function FeedSource:initializeDocument(document)
+    local feed_title
+    local feed_items
+    local total_items
+
+    local ok = pcall(function()
+            return self:getFeedType(
+                document,
+                function()
+                    -- RSS callback
+                    feed_title = util.htmlEntitiesToUtf8(document.rss.channel.title)
+                    feed_items = document.rss.channel.item
+                    total_items = #document.rss.channel.item
+--                    total_items = (limit == 0)
+--                        and #document.rss.channel.item
+--                        or limit
+                end,
+                function()
+                    -- Atom callback
+                    feed_title = FeedSource:getFeedTitle(document.feed.title)
+                    feed_items = document.feed.entry
+                    total_items = #document.feed.entry
+                end
+            )
+    end)
+    if ok then
+        document.title = feed_title
+        document.items = feed_items
+        document.total_items = total_items
+        return document
+    else
+        error("Could not initialize feed document")
+    end
+end
+--
+function FeedSource:getFeedItems(feed, progress_callback, error_callback)
+    local limit = tonumber(feed.config.limit)
+    local download_full_article = feed.config.download_full_article ~= false
+    local total_items = (limit == 0)
+        and feed.document.total_items
+        or limit
+
+    local feed_html = {}
+    -- Download each ite0m in the feed
+    for index, item in pairs(feed.document.items) do
+        -- If limit has been met, stop downloading feed.
+        if limit ~= 0 and index - 1 == limit then
+            break
+        end
+        -- Display feedback to user.
+        progress_callback(T(
+            _("Getting item %1 of %2 from %3"),
+            index,
+            total_items,
+            feed.document.title
+        ))
+        -- Download the article's HTML.
+        local ok, response = pcall(function()
+                return self:getItemHtml(
+                    item
+                )
+        end)
+        -- Add the result to our table, or send a
+        -- result to the error callback.
+        if ok then
+            table.insert(
+                feed_html,
+                response
+            )
+        else
+            error_callback(
+                T(_("Could not get feed item for: %1"),
+                  feed.document.title
+                )
+            )
+        end
+
+    end
+
+    if #feed_html > 0 then
+        return feed_html
+    else
+        return nil
+    end
+end
+
+   -- self:outputEpub(feed_html[0], feed_output_dir, '')
+--    self:outputEpub(html, feed_output_dir, article_message)
+--
+
+function FeedSource:getFeedType(document, rss_cb, atom_cb)
+    -- Check to see if the feed uses RSS.
+    local is_rss = document.rss
+        and document.rss.channel
+        and document.rss.channel.title
+        and document.rss.channel.item
+        and document.rss.channel.item[1]
+        and document.rss.channel.item[1].title
+        and document.rss.channel.item[1].link
+    -- Check to see if the feed uses Atom.
+    local is_atom = document.feed
+        and document.feed.title
+        and document.feed.entry[1]
+        and document.feed.entry[1].title
+        and document.feed.entry[1].link
+    -- Setup the feed values based on feed type
+    if is_atom then
+        return atom_cb()
+    elseif is_rss then
+        return rss_cb()
+    end
+    -- Return the values through our callback, or call an
+    -- error message if the feed wasn't RSS or Atom
+    if not is_rss or not is_atom then
+        local error_message
+        if not is_rss then
+            error_message = _("(Reason: Couldn't process RSS)")
+        elseif not is_atom then
+            error_message = _("(Reason: Couldn't process Atom)")
+        end
+        error(error_message)
+    end
+end
+
+function FeedSource:getItemHtml(item, download_full_article)
+    if download_full_article
+        or download_full_article == nil then
+        return NewsHelpers:loadPage(
+            FeedSource:getFeedLink(item.link)
+        )
+    else
+        -- This is broken 'cus getFeedType expects
+        -- the feed document, not feed item, as input
+        --[[local feed_description = self:getFeedType(
+            item,
+            function()
+                -- RSS cb
+                return item.description
+            end,
+            function()
+                -- Atom cb
+                return item.summary
+            end
+            )]]--
+        local feed_description = item.description or item.summary
+        local footer = _("This is just a description of the feed. To download the full article instead, go to the News Downloader settings and change 'download_full_article' to 'true'.")
+        return string.format([[<!DOCTYPE html>
+<html>
+<head><meta charset='UTF-8'><title>%s</title></head>
+<body><header><h2>%s</h2></header><article>%s</article>
+<br><footer><small>%s</small></footer>
+</body>
+</html>]], item.title, item.title, feed_description, footer)
+    end
+end
+
+function FeedSource:createEpubFromFeeds(initialized_feeds, download_dir, progress_callback, error_callback)
+    local feed_output_dir = ("%s%s/"):format(
+        download_dir,
+        util.getSafeFilename(util.htmlEntitiesToUtf8(initialized_feeds.document.title)))
+    -- Create the output directory if it doesn't exist.
+    if not lfs.attributes(feed_output_dir, "mode") then
+        lfs.mkdir(feed_output_dir)
+    end
+
+    -- Collect HTML
+    local html
+    for index, initialized_feed in pairs(initialized_feeds) do
+        html = html .. initialized_feed.items
+    end
+
+    -- Next steps here are to rewrite the createEpub method.
+    -- Decouple the HTML link fetching stuff from the actual
+    -- packing down and making epub. Ideally, have two functions
+    -- for each process.
+
+    -- DownloadBackend:getPublishableHtml
+    -- DownloadBackend:createEpub
+
+    -- DownloadBackend:createEpud
+end
+
+function FeedSource:outputEpub(html, feed_output_dir, article_message)
+    local title_with_date = FeedSource:getTitleWithDate('KO Volume 1')
+    local news_file_path = ("%s%s%s"):format(feed_output_dir,
+                                             title_with_date,
+                                             self.file_extension)
+    local html
+    local file_mode = lfs.attributes(news_file_path, "mode")
+    if file_mode == "file" then
+        logger.dbg("FeedSource:", news_file_path, "already exists. Skipping")
+    else
+        logger.dbg("FeedSource: News file will be stored to :", news_file_path)
+        DownloadBackend:createEpub(news_file_path, html, '', false, article_message, '')
+    end
+end
+
+local function parseDate(dateTime)
+    -- Uses lua-feedparser https://github.com/slact/lua-feedparser
+    -- feedparser is available under the (new) BSD license.
+    -- see: koreader/plugins/newsdownloader.koplugin/lib/LICENCE_lua-feedparser
+    local date = dateparser.parse(dateTime)
+    return os.date("%y-%m-%d_%H-%M_", date)
+end
+
+-- This appears to be used by Atom feeds in processDocument.
+function FeedSource:getTitleWithDate(feed)
+    local title = util.getSafeFilename(FeedSource:getFeedTitle(feed.title))
+    if feed.updated then
+        title = parseDate(feed.updated) .. title
+    elseif feed.pubDate then
+        title = parseDate(feed.pubDate) .. title
+    elseif feed.published then
+        title = parseDate(feed.published) .. title
+    end
+    return title
+end
+
+-- If a title looks like <title>blabla</title> it'll just be feed.title.
+-- If a title looks like <title attr="alb">blabla</title> then we get a table
+-- where [1] is the title string and the attributes are also available.
+function FeedSource:getFeedTitle(possible_title)
+    if type(possible_title) == "string" then
+        return util.htmlEntitiesToUtf8(possible_title)
+    elseif possible_title[1] and type(possible_title[1]) == "string" then
+        return util.htmlEntitiesToUtf8(possible_title[1])
+    end
+end
+-- There can be multiple links.
+-- For now we just assume the first link is probably the right one.
+--- @todo Write unit tests.
+-- Some feeds that can be used for unit test.
+-- http://fransdejonge.com/feed/ for multiple links.
+-- https://github.com/koreader/koreader/commits/master.atom for single link with attributes.
+function FeedSource:getFeedLink(possible_link)
+    local E = {}
+    if type(possible_link) == "string" then
+        return possible_link
+    elseif (possible_link._attr or E).href then
+        return possible_link._attr.href
+    elseif ((possible_link[1] or E)._attr or E).href then
+        return possible_link[1]._attr.href
+    end
+end
+
+
+return FeedSource

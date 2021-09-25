@@ -1,11 +1,8 @@
+local NewsHelpers = require("http_utilities")
 local Version = require("version")
 local ffiutil = require("ffi/util")
-local http = require("socket.http")
 local logger = require("logger")
-local ltn12 = require("ltn12")
-local socket = require("socket")
 local socket_url = require("socket.url")
-local socketutil = require("socketutil")
 local _ = require("gettext")
 local T = ffiutil.template
 
@@ -18,7 +15,6 @@ local EpubDownloadBackend = {
    -- accessible here so that caller can know it's a user dismiss.
    dismissed_error_code = "Interrupted by user",
 }
-local max_redirects = 5; --prevent infinite redirects
 
 -- filter HTML using CSS selector
 local function filter(text, element)
@@ -68,79 +64,9 @@ local function filter(text, element)
     return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
 end
 
--- Get URL content
-local function getUrlContent(url, timeout, maxtime, redirectCount)
-    logger.dbg("getUrlContent(", url, ",", timeout, ",", maxtime, ",", redirectCount, ")")
-    if not redirectCount then
-        redirectCount = 0
-    elseif redirectCount == max_redirects then
-        error("EpubDownloadBackend: reached max redirects: ", redirectCount)
-    end
-
-    if not timeout then timeout = 10 end
-    logger.dbg("timeout:", timeout)
-
-    local sink = {}
-    local parsed = socket_url.parse(url)
-    socketutil:set_timeout(timeout, maxtime or 30)
-    local request = {
-        url     = url,
-        method  = "GET",
-        sink    = maxtime and socketutil.table_sink(sink) or ltn12.sink.table(sink),
-    }
-    logger.dbg("request:", request)
-    local code, headers, status = socket.skip(1, http.request(request))
-    socketutil:reset_timeout()
-    logger.dbg("After http.request")
-    local content = table.concat(sink) -- empty or content accumulated till now
-    logger.dbg("type(code):", type(code))
-    logger.dbg("code:", code)
-    logger.dbg("headers:", headers)
-    logger.dbg("status:", status)
-    logger.dbg("#content:", #content)
-
-    if code == socketutil.TIMEOUT_CODE or
-       code == socketutil.SSL_HANDSHAKE_CODE or
-       code == socketutil.SINK_TIMEOUT_CODE
-    then
-        logger.warn("request interrupted:", code)
-        return false, code
-    end
-    if headers == nil then
-        logger.warn("No HTTP headers:", code, status)
-        return false, "Network or remote server unavailable"
-    end
-    if not code or string.sub(code, 1, 1) ~= "2" then -- all 200..299 HTTP codes are OK
-        if code and code > 299 and code < 400  and headers and headers.location then -- handle 301, 302...
-           local redirected_url = headers.location
-           local parsed_redirect_location = socket_url.parse(redirected_url)
-           if not parsed_redirect_location.host then
-             parsed_redirect_location.host = parsed.host
-             parsed_redirect_location.scheme = parsed.scheme
-             redirected_url = socket_url.build(parsed_redirect_location)
-           end
-           logger.dbg("getUrlContent: Redirecting to url: ", redirected_url)
-           return getUrlContent(redirected_url, timeout, maxtime, redirectCount + 1)
-        else
-           error("EpubDownloadBackend: Don't know how to handle HTTP response status: ", status)
-        end
-        logger.warn("HTTP status not okay:", code, status)
-        return false, "Remote server error or unavailable"
-    end
-    if headers and headers["content-length"] then
-        -- Check we really got the announced content size
-        local content_length = tonumber(headers["content-length"])
-        if #content ~= content_length then
-            return false, "Incomplete content received"
-        end
-    end
-    logger.dbg("Returning content ok")
-    return true, content
-end
-
 function EpubDownloadBackend:getResponseAsString(url)
     logger.dbg("EpubDownloadBackend:getResponseAsString(", url, ")")
-    local success, content = getUrlContent(url)
+    local success, content = NewsHelpers:getUrlContent(url)
     if (success) then
         return content
     else
@@ -154,30 +80,6 @@ end
 
 function EpubDownloadBackend:resetTrapWidget()
     self.trap_widget = nil
-end
-
-function EpubDownloadBackend:loadPage(url)
-    local completed, success, content
-    if self.trap_widget then -- if previously set with EpubDownloadBackend:setTrapWidget()
-        local Trapper = require("ui/trapper")
-        local timeout, maxtime = 30, 60
-        -- We use dismissableRunInSubprocess with complex return values:
-        completed, success, content = Trapper:dismissableRunInSubprocess(function()
-            return getUrlContent(url, timeout, maxtime)
-        end, self.trap_widget)
-        if not completed then
-            error(self.dismissed_error_code) -- "Interrupted by user"
-        end
-    else
-        local timeout, maxtime = 10, 60
-        success, content = getUrlContent(url, timeout, maxtime)
-    end
-    logger.dbg("success:", success, "type(content):", type(content), "content:", content:sub(1, 500), "...")
-    if not success then
-        error(content)
-    else
-        return content
-    end
 end
 
 local ext_to_mimetype = {
@@ -471,8 +373,8 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                 src = img.src2x
             end
             logger.dbg("Getting img ", src)
-            local success, content = getUrlContent(src)
-            -- success, content = getUrlContent(src..".unexistant") -- to simulate failure
+            local success, content = NewsHelpers:getUrlContent(src)
+            -- success, content = NewsHelpers:getUrlContent(src..".unexistant") -- to simulate failure
             if success then
                 logger.dbg("success, size:", #content)
             else
@@ -527,5 +429,24 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     collectgarbage()
     return true
 end
+
+-- There can be multiple links.
+-- For now we just assume the first link is probably the right one.
+--- @todo Write unit tests.
+-- Some feeds that can be used for unit test.
+-- http://fransdejonge.com/feed/ for multiple links.
+-- https://github.com/koreader/koreader/commits/master.atom for single link with attributes.
+function EpubDownloadBackend:getFeedLink(possible_link)
+    local E = {}
+    logger.dbg("Possible link", possible_link)
+    if type(possible_link) == "string" then
+        return possible_link
+    elseif (possible_link._attr or E).href then
+        return possible_link._attr.href
+    elseif ((possible_link[1] or E)._attr or E).href then
+        return possible_link[1]._attr.href
+    end
+end
+
 
 return EpubDownloadBackend
