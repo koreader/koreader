@@ -315,8 +315,8 @@ function FrontLightWidget:addWarmthWidgets(num_warmth, step, vertical_group)
         end
     end
 
-    if num_warmth == self.fl_max then enable_button_plus = false end
-    if num_warmth == self.fl_min then enable_button_minus = false end
+    if math.floor(num_warmth / self.nl_scale) <= self.nl_min then enable_button_minus = false end
+    if math.ceil(num_warmth / self.nl_scale) >= self.nl_max then enable_button_plus = false end
 
     local text_warmth = TextBoxWidget:new{
         text = "\n" .. _("Warmth"),
