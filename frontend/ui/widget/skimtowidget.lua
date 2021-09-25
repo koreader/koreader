@@ -47,7 +47,7 @@ function SkimToWidget:init()
     self.buttons_layout = {}
     self.selected = { x = 1, y = 2 }
 
-    local frame_width = math.floor(screen_width * 0.95)
+    local frame_width = math.floor(math.min(screen_width, screen_height) * 0.95)
     local frame_border_size = Size.border.window
     local frame_padding = Size.padding.fullscreen -- large padding for airy feeling
     local inner_width = frame_width - 2 * (frame_border_size + frame_padding)
