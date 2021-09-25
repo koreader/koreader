@@ -720,11 +720,10 @@ function AutoWarmth:getWarmthMenu()
         },
         getWarmthMenuEntry(_("Solar noon"), 6, false),
         getWarmthMenuEntry(_("Daytime"), 5),
-        getWarmthMenuEntry(_("Darkest time of civil dawn"), 4, false),
-        getWarmthMenuEntry(_("Darkest time of civil twilight"), 4, true),
-        getWarmthMenuEntry(_("Darkest time of nautical dawn"), 3, false),
-        getWarmthMenuEntry(_("Darkest time of astronomical dawn"), 2, false),
-        getWarmthMenuEntry(_("Midnight"), 1, false),
+        getWarmthMenuEntry(_("Darkest time of civil twilight"), 4),
+        getWarmthMenuEntry(_("Darkest time of nautical twilight"), 3, false),
+        getWarmthMenuEntry(_("Darkest time of astronomical twilight"), 2, false),
+        getWarmthMenuEntry(_("Solar midnight"), 1, false),
     }
 
     return tidy_menu(retval, self.easy_mode)
@@ -750,7 +749,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
     -- t .. times
     -- num .. index in times
     local function info_line(text, t, num, easy)
-        local retval = text .. self:hoursToClock(t[num])
+        local retval = text .. string.rep(" ", 18 - text:len()) .. self:hoursToClock(t[num])
         if easy then
             if t[num] and self.current_times[num] and self.current_times[num] ~= t[num] then
                 return text .. "\n"
@@ -793,22 +792,23 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
         face = Font:getFace("scfont"),
         width = math.floor(Screen:getWidth() * (self.easy_mode and 0.75 or 0.90)),
             text = title .. location_string .. ":\n\n" ..
-            info_line(_("Solar midnight: "), times, 1, request_easy) ..
+            info_line(_("Solar midnight:"), times, 1, request_easy) ..
             _("  Dawn\n") ..
-            info_line(_("    Astronomic: "), times, 2, request_easy) ..
-            info_line(_("    Nautical:   "), times, 3, request_easy)..
-            info_line(_("    Civil:      "), times, 4) ..
+            info_line(_("    Astronomic:"), times, 2, request_easy) ..
+            info_line(_("    Nautical:"), times, 3, request_easy)..
+            info_line(_("    Civil:"), times, 4) ..
             _("  Dawn\n") ..
-            info_line(_("Sunrise:        "), times, 5) ..
-            info_line(_("\nSolar noon:     "), times, 6, request_easy) ..
-
-            info_line(_("\nSunset:         "), times, 7) ..
+            info_line(_("Sunrise:"), times, 5) ..
+            "\n" ..
+            info_line(_("Solar noon:"), times, 6, request_easy) ..
+            "\n" ..
+            info_line(_("Sunset:"), times, 7) ..
             _("  Dusk\n") ..
-            info_line(_("    Civil:      "), times, 8) ..
-            info_line(_("    Nautical:   "), times, 9, request_easy) ..
-            info_line(_("    Astronomic: "), times, 10, request_easy) ..
+            info_line(_("    Civil:"), times, 8) ..
+            info_line(_("    Nautical:"), times, 9, request_easy) ..
+            info_line(_("    Astronomic:"), times, 10, request_easy) ..
             _("  Dusk\n") ..
-            info_line(_("Solar midnight: "), times, midnight_index, request_easy)
+            info_line(_("Solar midnight:"), times, midnight_index, request_easy)
     })
 end
 
