@@ -75,7 +75,7 @@ function AutoWarmth:onDispatcherRegisterActions()
     Dispatcher:registerAction("show_ephemeris",
         {category="none", event="ShowEphemeris", title=_("Show ephemeris"), general=true})
     Dispatcher:registerAction("auto_warmth_off",
-        {category="none", event="AutoWarmthOff", title=_("Auto warmth turned off"), screen=true})
+        {category="none", event="AutoWarmthOff", title=_("Auto warmth off"), screen=true})
     Dispatcher:registerAction("auto_warmth_cycle_trough",
         {category="none", event="AutoWarmthMode", title=_("Auto warmth cycle through modes"), screen=true})
 end
