@@ -248,7 +248,11 @@ local footerTextGeneratorMap = {
                     return ("[%d / %d]%d"):format(page, pages, flow)
                 end
             else
-                return ("%d / %d"):format(footer.pageno, footer.pages)
+                if footer.pages == footer.ui.document:getPageCount() then
+                    return ("%d / %d"):format(footer.pageno, footer.pages)
+                else -- 'last' page number set by a user
+                    return ("%d / (%d)"):format(footer.pageno, footer.pages)
+                end
             end
         elseif footer.position then
             return ("%d / %d"):format(footer.position, footer.doc_height)
@@ -279,7 +283,7 @@ local footerTextGeneratorMap = {
                     return ("%s [%d / %d]%d"):format(prefix, remaining, pages, flow)
                 end
             else
-                local remaining = footer.pages - footer.pageno
+                local remaining = math.max (footer.pages - footer.pageno, 0)
                 if footer.settings.pages_left_includes_current_page then
                     remaining = remaining + 1
                 end
@@ -1859,7 +1863,7 @@ function ReaderFooter:setTocMarkers(reset)
     if self.settings.disable_progress_bar or self.settings.progress_style_thin then return end
     if reset then
         self.progress_bar.ticks = nil
-        self.pages = self.ui.document:getPageCount()
+        self.pages = self.ui.doc_settings:readSetting("doc_pages_max") or self.ui.document:getPageCount()
     end
     if self.settings.toc_markers then
         self.progress_bar.tick_width = Screen:scaleBySize(self.settings.toc_markers_width)
@@ -1883,7 +1887,7 @@ function ReaderFooter:setTocMarkers(reset)
                 self.progress_bar.ticks = self.ui.toc:getTocTicksFlattened()
             end
             if self.view.view_mode == "page" then
-                self.progress_bar.last = self.pages or self.ui.document:getPageCount()
+                self.progress_bar.last = self.ui.doc_settings:readSetting("doc_pages_max") or self.ui.document:getPageCount()
             else
                 -- in scroll mode, convert pages to positions
                 if self.ui.toc then
@@ -1935,7 +1939,7 @@ function ReaderFooter:updateFooterPage(force_repaint, force_recompute)
         local pages = self.ui.document:getTotalPagesInFlow(flow)
         self.progress_bar.percentage = page / pages
     else
-        self.progress_bar.percentage = self.pageno / self.pages
+        self.progress_bar.percentage = math.min(self.pageno / self.pages, 1)
     end
     self:updateFooterText(force_repaint, force_recompute)
 end
@@ -2075,6 +2079,16 @@ function ReaderFooter:onPageUpdate(pageno)
         self:setTocMarkers(true)
     end
     self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
+    if not self.ui.document:hasHiddenFlows() then  -- check for 'last' page number set by a user
+        local doc_pages_max = self.ui.doc_settings:readSetting("doc_pages_max")
+        if doc_pages_max then
+            if doc_pages_max > self.pages then
+                doc_pages_max = self.pages
+                self.ui.doc_settings:saveSetting("doc_pages_max", doc_pages_max)
+            end
+            self.pages = doc_pages_max
+        end
+    end
     self:updateFooterPage()
 end
 
