@@ -121,6 +121,7 @@ function ProgressWidget:paintTo(bb, x, y)
         local y_pos = y + self.margin_v + self.bordersize
         local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
         for i, tick in ipairs(self.ticks) do
+            if tick > self.last then break end
             local tick_x = bar_width*(tick/self.last)
             if self._mirroredUI then
                 tick_x = bar_width - tick_x
