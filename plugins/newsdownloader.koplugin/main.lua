@@ -265,8 +265,10 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
                     )
                 end
             )
+            local epub_items = {}
             for index, feed in pairs(initialized_feeds) do
-                initialized_feeds[index]["items"] = feedSource:getFeedItems(
+--                initialized_feeds[index]["items"]
+                  local items_content = feedSource:getItemsContent(
                     feed,
                     function(progress_message)
                         UI:info(progress_message)
@@ -277,7 +279,11 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
                             error_message
                         )
                     end
-                )
+                  )
+                  table.insert(
+                      epub_items,
+                      items_content
+                  )
             end
             -- Relay any errors
             if #sync_errors > 0 then
@@ -291,7 +297,7 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
             end
 
             feedSource:createEpubFromFeeds(
-                initialized_feeds,
+                epub_items,
                 self.download_dir,
                 function()
 
@@ -309,12 +315,6 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
             -- Happy callback
             callback("Sync complete!")
 
-                --    local include_images =
---        not never_download_images
---        and feed.config.include_images
---    local filter_element = feed.config.filter_element
-            --        or feed.config.filter_element == nil
---     local enable_filter = feed.config.enable_filter ~= false
     end)
 end
 

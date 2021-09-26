@@ -150,14 +150,13 @@ function FeedSource:initializeDocument(document)
     end
 end
 --
-function FeedSource:getFeedItems(feed, progress_callback, error_callback)
+function FeedSource:getItemsContent(feed, progress_callback, error_callback)
     local limit = tonumber(feed.config.limit)
-    local download_full_article = feed.config.download_full_article ~= false
     local total_items = (limit == 0)
         and feed.document.total_items
         or limit
 
-    local feed_html = {}
+    local initialized_feed_items = {}
     -- Download each ite0m in the feed
     for index, item in pairs(feed.document.items) do
         -- If limit has been met, stop downloading feed.
@@ -173,16 +172,25 @@ function FeedSource:getFeedItems(feed, progress_callback, error_callback)
         ))
         -- Download the article's HTML.
         local ok, response = pcall(function()
-                return self:getItemHtml(
-                    item
+               return self:initializeItemHtml(
+                    feed,
+                    self:getItemHtml(
+                        item
+                    )
                 )
         end)
         -- Add the result to our table, or send a
         -- result to the error callback.
+
         if ok then
             table.insert(
-                feed_html,
-                response
+                initialized_feed_items,
+                {
+                    html = response.html,
+                    images = response.images,
+                    item_title = FeedSource:getTitleWithDate(item),
+                    feed_title = feed.document.title
+                }
             )
         else
             error_callback(
@@ -194,11 +202,32 @@ function FeedSource:getFeedItems(feed, progress_callback, error_callback)
 
     end
 
-    if #feed_html > 0 then
-        return feed_html
+    if #initialized_feed_items > 0 then
+        return initialized_feed_items
     else
         return nil
     end
+end
+
+function FeedSource:initializeItemHtml(feed, html)
+    local url = feed.config[1]
+    local download_full_article = feed.config.download_full_article ~= false
+    local include_images = not never_download_images and
+        feed.config.include_images
+    local filter_element = feed.config.filter_element or
+        feed.config.filter_element == nil
+    local enable_filter = feed.config.enable_filter ~= false
+    local images, html = DownloadBackend:getImagesAndHtml(
+        html,
+        url,
+        include_images,
+        enable_filter,
+        filter_element
+    )
+    return {
+        html = html,
+        images = images
+    }
 end
 
    -- self:outputEpub(feed_html[0], feed_output_dir, '')
@@ -207,19 +236,19 @@ end
 
 function FeedSource:getFeedType(document, rss_cb, atom_cb)
     -- Check to see if the feed uses RSS.
-    local is_rss = document.rss
-        and document.rss.channel
-        and document.rss.channel.title
-        and document.rss.channel.item
-        and document.rss.channel.item[1]
-        and document.rss.channel.item[1].title
-        and document.rss.channel.item[1].link
+    local is_rss = document.rss and
+        document.rss.channel and
+        document.rss.channel.title and
+        document.rss.channel.item and
+        document.rss.channel.item[1] and
+        document.rss.channel.item[1].title and
+        document.rss.channel.item[1].link
     -- Check to see if the feed uses Atom.
-    local is_atom = document.feed
-        and document.feed.title
-        and document.feed.entry[1]
-        and document.feed.entry[1].title
-        and document.feed.entry[1].link
+    local is_atom = document.feed and
+        document.feed.title and
+        document.feed.entry[1] and
+        document.feed.entry[1].title and
+        document.feed.entry[1].link
     -- Setup the feed values based on feed type
     if is_atom then
         return atom_cb()
@@ -271,19 +300,36 @@ function FeedSource:getItemHtml(item, download_full_article)
     end
 end
 
-function FeedSource:createEpubFromFeeds(initialized_feeds, download_dir, progress_callback, error_callback)
-    local feed_output_dir = ("%s%s/"):format(
-        download_dir,
-        util.getSafeFilename(util.htmlEntitiesToUtf8(initialized_feeds.document.title)))
-    -- Create the output directory if it doesn't exist.
-    if not lfs.attributes(feed_output_dir, "mode") then
-        lfs.mkdir(feed_output_dir)
-    end
-
+function FeedSource:createEpubFromFeeds(epub_items, download_dir, progress_callback, error_callback)
     -- Collect HTML
-    local html
-    for index, initialized_feed in pairs(initialized_feeds) do
-        html = html .. initialized_feed.items
+
+    for index, item in pairs(epub_items) do
+
+        item = item[1]
+
+        local feed_output_dir = ("%s%s/"):format(
+            download_dir,
+            util.getSafeFilename(util.htmlEntitiesToUtf8(item.feed_title)))
+        -- Create the output directory if it doesn't exist.
+        if not lfs.attributes(feed_output_dir, "mode") then
+            lfs.mkdir(feed_output_dir)
+        end
+
+        logger.dbg("Creating EPUB titled: ", item.item_title)
+
+        --        local title_with_date = FeedSource:getTitleWithDate(item.item_title)
+        local news_file_path = ("%s%s%s"):format(feed_output_dir,
+                                                 item.item_title,
+                                                 self.file_extension)
+        local file_mode = lfs.attributes(news_file_path, "mode")
+
+        DownloadBackend:createEpub(
+            news_file_path,
+            item.html,
+            item.images,
+            "message?"
+        )
+
     end
 
     -- Next steps here are to rewrite the createEpub method.

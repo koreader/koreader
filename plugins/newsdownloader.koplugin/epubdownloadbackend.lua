@@ -97,9 +97,8 @@ local ext_to_mimetype = {
     ttf = "application/truetype",
     woff = "application/font-woff",
 }
--- Create an epub file (with possibly images)
-function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, message, filter_enable, filter_element)
-    logger.dbg("EpubDownloadBackend:createEpub(", epub_path, ")")
+-- GetPublishableHtml
+function EpubDownloadBackend:getImagesAndHtml(html, url, include_images, filter_enable, filter_element)
     -- Use Trapper to display progress and ask questions through the UI.
     -- We need to have been Trapper.wrap()'ed for UI to be used, otherwise
     -- Trapper:info() and Trapper:confirm() will just use logger.
@@ -107,19 +106,21 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
     -- We may need to build absolute urls for non-absolute links and images urls
     local base_url = socket_url.parse(url)
 
-    local cancelled = false
-    local page_htmltitle = html:match([[<title>(.*)</title>]])
-    logger.dbg("page_htmltitle is ", page_htmltitle)
---    local sections = html.sections -- Wikipedia provided TOC
+    logger.dbg("Base URL::::::::", base_url)
+    --    local sections = html.sections -- Wikipedia provided TOC
     local bookid = "bookid_placeholder" --string.format("wikipedia_%s_%s_%s", lang, phtml.pageid, phtml.revid)
     -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
     -- should it changes if content is updated (as now, including the wikipedia revisionId),
     -- or should it stays the same even if revid changes (content of the same book updated).
-    if filter_enable then html = filter(html, filter_element) end
+    if filter_enable then
+        html = filter(html, filter_element)
+    end
+
     local images = {}
     local seen_images = {}
     local imagenum = 1
     local cover_imgid = nil -- best candidate for cover among our images
+
     local processImg = function(img_tag)
         local src = img_tag:match([[src="([^"]*)"]])
         if src == nil or src == "" then
@@ -174,13 +175,20 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
                 width = width,
                 height = height,
             }
-            table.insert(images, cur_image)
+
             seen_images[src] = cur_image
             -- Use first image of reasonable size (not an icon) and portrait-like as cover-image
             if not cover_imgid and width and width > 50 and height and height > 50 and height > width then
                 logger.dbg("Found a suitable cover image")
                 cover_imgid = imgid
+                cur_image["cover_image"] = true
             end
+
+            table.insert(
+                images,
+                cur_image
+            )
+
             imagenum = imagenum + 1
         end
         -- crengine will NOT use width and height attributes, but it will use
@@ -199,7 +207,6 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
         return string.format([[<img src="%s" style="%s" alt=""/>]], cur_image.imgpath, style)
     end
     html = html:gsub("(<%s*img [^>]*>)", processImg)
-    logger.dbg("Images found in html:", images)
 
     -- See what to do with images
     local use_img_2x = false
@@ -209,8 +216,38 @@ function EpubDownloadBackend:createEpub(epub_path, html, url, include_images, me
         -- We could remove the whole image container <div class="thumb"...> ,
         -- but it's a lot of nested <div> and not easy to do.
         -- So the user will see the image legends and know a bit about
-        -- the images he chose to not get.
+        -- the images they chose to not get.
     end
+
+    -- Force a GC to free the memory we used (the second call may help
+    -- reclaim more memory).
+    collectgarbage()
+    collectgarbage()
+    return images, html
+end
+
+
+function EpubDownloadBackend:createEpub(epub_path, html, images, message)
+    logger.dbg("EpubDownloadBackend:createEpub(", epub_path, ")")
+    -- Use Trapper to display progress and ask questions through the UI.
+    -- We need to have been Trapper.wrap()'ed for UI to be used, otherwise
+    -- Trapper:info() and Trapper:confirm() will just use logger.
+    local UI = require("ui/trapper")
+
+    local cancelled = false
+    local page_htmltitle = html:match([[<title>(.*)</title>]])
+
+    local include_images = #images > 0 or false
+
+    logger.dbg("Include Images ------", include_images)
+
+    logger.dbg("page_htmltitle is ", page_htmltitle)
+--    local sections = html.sections -- Wikipedia provided TOC
+    local bookid = "bookid_placeholder" --string.format("wikipedia_%s_%s_%s", lang, phtml.pageid, phtml.revid)
+    -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
+    -- should it changes if content is updated (as now, including the wikipedia revisionId),
+    -- or should it stays the same even if revid changes (content of the same book updated).
+
 
     UI:info(T(_("%1\n\nBuilding EPUB…"), message))
     -- Open the zip file (with .tmp for now, as crengine may still
