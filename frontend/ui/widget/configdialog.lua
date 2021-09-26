@@ -1141,7 +1141,10 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
             if more_options_param.event then
                 event = more_options_param.event
             end
-            local widget
+            local widget, widget_width
+            if more_options_param.widget_width then
+                widget_width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * more_options_param.widget_width)
+            end
             if more_options_param.left_min then -- DoubleSpingWidget
                 local DoubleSpinWidget = require("ui/widget/doublespinwidget")
                 -- (No support for value_table - add it if needed)
@@ -1153,7 +1156,7 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                     curr_values = self.configurable[name]
                 end
                 widget = DoubleSpinWidget:new{
-                    width = not more_options_param.name and math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.6) or nil,
+                    width = widget_width,
                     title_text =  name_text or _("Set values"),
                     info_text = more_options_param.info_text,
                     left_text = more_options_param.left_text,
@@ -1251,6 +1254,7 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                     end
                 end
                 widget = SpinWidget:new{
+                    width = widget_width,
                     title_text =  name_text or _("Set value"),
                     info_text = more_options_param.info_text,
                     value = curr_items,
