@@ -273,7 +273,7 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
 
     if #unsupported_feeds_urls <= 0 then
         -- When no errors are present, we get a happy message.
-        feed_message = _("Downloading news finished. ")
+        feed_message = _("Downloading news finished.")
     else
         -- When some errors are present, we get a sour message that includes
         -- information about the source of the error.
