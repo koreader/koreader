@@ -54,7 +54,7 @@ local DoubleSpinWidget = InputContainer:new{
 function DoubleSpinWidget:init()
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
-    self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) * 0.6)
+    self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) * 0.8)
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close time widget" }
