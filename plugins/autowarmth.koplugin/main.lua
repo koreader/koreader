@@ -75,7 +75,7 @@ function AutoWarmth:onDispatcherRegisterActions()
     Dispatcher:registerAction("show_ephemeris",
         {category="none", event="ShowEphemeris", title=_("Show ephemeris"), general=true})
     Dispatcher:registerAction("auto_warmth_off",
-        {category="none", event="AutoWarmthOff", title=_("Auto warmth off"), screen=true})
+        {category="none", event="AutoWarmthOff", title=_("Auto warmth turned off"), screen=true})
     Dispatcher:registerAction("auto_warmth_cycle_trough",
         {category="none", event="AutoWarmthMode", title=_("Auto warmth cycle through modes"), screen=true})
 end
@@ -790,26 +790,32 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
         location_string = " " .. self:getLocationString()
     end
 
+    local function add_line(text, easy)
+        return easy and "" or ("  " .. text .. "\n")
+    end
+
     UIManager:show(InfoMessage:new{
         face = Font:getFace("scfont"),
         width = math.floor(Screen:getWidth() * (self.easy_mode and 0.75 or 0.90)),
             text = title .. location_string .. ":\n\n" ..
             info_line(0, _("Solar midnight:"), times, 1, request_easy) ..
-            "  " .. _("Dawn") .. "\n" ..
+            add_line(_("Dawn"), request_easy) ..
             info_line(4, _("Astronomic:"), times, 2, request_easy) ..
             info_line(4, _("Nautical:"), times, 3, request_easy)..
-            info_line(4, _("Civil:"), times, 4) ..
-            "  " .. _("Dawn\n") ..
+            info_line(request_easy and 0 or 4,
+                request_easy and _("Twilight:") or _("Civil:"), times, 4) ..
+            add_line(_("Dawn"), request_easy) ..
             info_line(0, _("Sunrise:"), times, 5) ..
             "\n" ..
             info_line(0, _("Solar noon:"), times, 6, request_easy) ..
-            "\n" ..
+            add_line("", request_easy) ..
             info_line(0, _("Sunset:"), times, 7) ..
-            "  " .. _("Dusk") .. "\n" ..
-            info_line(4, _("Civil:"), times, 8) ..
+            add_line(_("Dusk"), request_easy) ..
+            info_line(request_easy and 0 or 4,
+                request_easy and _("Twilight:") or _("Civil:"), times, 8) ..
             info_line(4, _("Nautical:"), times, 9, request_easy) ..
             info_line(4, _("Astronomic:"), times, 10, request_easy) ..
-            "  " .. _("Dusk") .. "\n" ..
+            add_line(_("Dusk"), request_easy) ..
             info_line(0, _("Solar midnight:"), times, midnight_index, request_easy)
     })
 end
