@@ -265,10 +265,12 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
                     )
                 end
             )
-            local epub_items = {}
+            -- In this block, each feed item will be its own
+            -- epub complete with title and chapters
+            local epubs_to_make = {}
             for index, feed in pairs(initialized_feeds) do
---                initialized_feeds[index]["items"]
-                  local items_content = feedSource:getItemsContent(
+                -- Go through each feed and make new entry
+                local items_content = feedSource:getItemsContent(
                     feed,
                     function(progress_message)
                         UI:info(progress_message)
@@ -279,40 +281,63 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
                             error_message
                         )
                     end
-                  )
-                  table.insert(
-                      epub_items,
-                      items_content
-                  )
-            end
-            -- Relay any errors
-            if #sync_errors > 0 then
-                for index, error_message in pairs(sync_errors) do
-                    UI:confirm(
-                        error_message,
-                        "Continue",
-                        ""
+                )
+
+                for jndex, content in pairs(items_content) do
+                    local sub_dir = feedSource:getFeedTitle(feed.document.title)
+
+                    abs_path = feedSource:getEpubOutputDir(
+                        self.download_dir,
+                        sub_dir,
+                        content.item_title
+                    )
+
+                    local chapters = {}
+
+                    table.insert(
+                        chapters,
+                        {
+                            html = content.html,
+                            images = content.images
+                        }
+                    )
+
+                    table.insert(
+                        epubs_to_make,
+                        {
+                            title = content.item_title,
+                            chapters = chapters,
+                            abs_path = abs_path
+                        }
                     )
                 end
             end
 
-            feedSource:createEpubFromFeeds(
-                epub_items,
-                self.download_dir,
-                function()
+            --
+            for index, epub in pairs(epubs_to_make) do
+                feedSource:createEpub(
+                    epub.title,
+                    epub.chapters,
+                    epub.abs_path,
+                    function()
 
-                end,
-                function()
+                    end,
+                    function()
 
-                end
-            )
+                    end
+                )
+            end
 
+            -- Relay any errors
+            for index, error_message in pairs(sync_errors) do
+                UI:confirm(
+                    error_message,
+                    "Continue",
+                    ""
+                )
+            end
 
---            logger.dbg(initialized_feeds)
-
-            -- Go through each feed and process it
-
-            -- Happy callback
+            -- Callback to menu item
             callback("Sync complete!")
 
     end)

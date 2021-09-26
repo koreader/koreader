@@ -393,9 +393,14 @@ function EpubDownloadBackend:createEpub(epub_path, html, images, message)
 
     -- ----------------------------------------------------------------
     -- OEBPS/images/*
-    if include_images then
+    if include_images and #images > 0 then
         local nb_images = #images
         for inum, img in ipairs(images) do
+            -- Don't run this block for imgs that are
+            -- missing a src attribute
+            if not img.src then
+                return
+            end
             -- Process can be interrupted at this point between each image download
             -- by tapping while the InfoMessage is displayed
             -- We use the fast_refresh option from image #2 for a quicker download

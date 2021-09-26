@@ -286,9 +286,28 @@ function FeedSource:getItemHtml(item, download_full_article)
     end
 end
 
+function FeedSource:getEpubOutputDir(download_dir, sub_dir, epub_title)
+
+    local feed_output_dir = ("%s%s/"):format(
+        download_dir,
+        util.getSafeFilename(util.htmlEntitiesToUtf8(sub_dir)))
+
+    -- Create the output directory if it doesn't exist.
+    if not lfs.attributes(feed_output_dir, "mode") then
+        lfs.mkdir(feed_output_dir)
+    end
+
+    local file_name = FeedSource:getFeedTitle(epub_title)
+
+    return ("%s%s%s"):format(
+        feed_output_dir,
+        file_name,
+        self.file_extension
+                            )
+end
+
 function FeedSource:createEpubFromFeeds(epub_items, download_dir, progress_callback, error_callback)
     -- Collect HTML
-
     for index, feed in pairs(epub_items) do
 
         for jndex, item in pairs(feed) do
@@ -303,7 +322,6 @@ function FeedSource:createEpubFromFeeds(epub_items, download_dir, progress_callb
 
             logger.dbg("Creating EPUB titled: ", item.item_title)
 
-            --        local title_with_date = FeedSource:getTitleWithDate(item.item_title)
             local news_file_path = ("%s%s%s"):format(feed_output_dir,
                                                      item.item_title,
                                                      self.file_extension)
@@ -316,18 +334,39 @@ function FeedSource:createEpubFromFeeds(epub_items, download_dir, progress_callb
                 "message?"
             )
         end
+    end
+end
 
+function FeedSource:createEpub(title, chapters, abs_output_path, progress_callback, error_callback)
+    -- Collect HTML
+    local html = " "
+    local images = {}
+
+    if #chapters == 0 then
+        error("Error: chapters contains 0 items")
     end
 
-    -- Next steps here are to rewrite the createEpub method.
-    -- Decouple the HTML link fetching stuff from the actual
-    -- packing down and making epub. Ideally, have two functions
-    -- for each process.
+    for index, chapter in pairs(chapters) do
+        table.insert(
+            images,
+            chapter.images
+        )
+        if chapter.html then
+            html = html .. chapter.html
+        end
+    end
 
-    -- DownloadBackend:getPublishableHtml
-    -- DownloadBackend:createEpub
+    logger.dbg("Creating EPUB titled: ", title)
 
-    -- DownloadBackend:createEpud
+    local file_mode = lfs.attributes(abs_output_path, "mode")
+
+    DownloadBackend:createEpub(
+        abs_output_path,
+        html,
+        images,
+        "message?"
+    )
+
 end
 
 function FeedSource:outputEpub(html, feed_output_dir, article_message)
