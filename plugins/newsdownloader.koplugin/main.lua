@@ -287,7 +287,7 @@ function NewsDownloader:loadConfigAndProcessFeeds(touchmenu_instance)
             end
         end
         -- Tell the user there were problems.
-        feed_message = _("Downloading news finished with errors. ")
+        feed_message = _("Downloading news finished with errors.")
         -- Display a dialogue that requires the user to acknowledge
         -- that errors occured.
         UI:confirm(
@@ -308,7 +308,7 @@ review your feed configuration file.]])
     if touchmenu_instance then
         -- Ask the user if they want to go to their downloads folder
         -- or if they'd rather remain at the menu.
-        feed_message = feed_message .. _("Go to downloaders folder?")
+        feed_message = feed_message .. _("Go to download folder?")
         local should_go_to_downloads = UI:confirm(
             feed_message,
             _("Close"),
@@ -618,7 +618,7 @@ function NewsDownloader:viewFeedList()
     local ok, feed_config = pcall(dofile, self.feed_config_path)
     if not ok or not feed_config then
         local change_feed_config = UI:confirm(
-            _("Could not open feed list. Feeds configuration file is invalid. "),
+            _("Could not open feed list. Feeds configuration file is invalid."),
             _("Close"),
             _("View file")
         )
@@ -677,7 +677,7 @@ function NewsDownloader:viewFeedList()
         UIManager:close(self.kv)
     end
     self.kv = KeyValuePage:new{
-        title = _("RSS/Atom Feeds List"),
+        title = _("RSS/Atom feeds"),
         value_overflow_align = "right",
         kv_pairs = view_content,
         callback_return = function()
@@ -972,7 +972,7 @@ end
 
 function NewsDownloader:saveConfig(config)
     local UI = require("ui/trapper")
-    UI:info(_("Saving news feed list..."))
+    UI:info(_("Saving news feed list…"))
     local persist = Persist:new{
         path = self.feed_config_path
     }
