@@ -29,6 +29,7 @@ local order = {
     navi_settings = {
         "toc_alt_toc",
         "----------------------------",
+        "doc_pages_max",
         "toc_ticks_level_ignore",
         "----------------------------",
         "toc_items_per_page",
