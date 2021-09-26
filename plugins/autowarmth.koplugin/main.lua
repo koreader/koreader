@@ -18,6 +18,7 @@ local Notification = require("ui/widget/notification")
 local SpinWidget = require("ui/widget/spinwidget")
 local SunTime = require("suntime")
 local UIManager = require("ui/uimanager")
+local Utf8Proc = require("ffi/utf8proc")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local T = FFIUtil.template
@@ -750,7 +751,8 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
     -- num .. index in times
     local function info_line(indent, text, t, num, easy)
         local tab_width = 18 - indent
-        local retval = string.rep(" ", indent) .. text .. string.rep(" ", tab_width - text:len())
+        local str_len = Utf8Proc.strlen(text)
+        local retval = string.rep(" ", indent) .. text .. string.rep(" ", tab_width - str_len)
             .. self:hoursToClock(t[num])
         if easy then
             if t[num] and self.current_times[num] and self.current_times[num] ~= t[num] then
