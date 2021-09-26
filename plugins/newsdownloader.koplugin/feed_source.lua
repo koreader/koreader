@@ -194,7 +194,7 @@ function FeedSource:getItemsContent(feed, progress_callback, error_callback)
             )
         else
             error_callback(
-                T(_("Could not get feed item for: %1"),
+                T(_("Could not get content for: %1"),
                   feed.document.title
                 )
             )
@@ -269,25 +269,11 @@ function FeedSource:getFeedType(document, rss_cb, atom_cb)
 end
 
 function FeedSource:getItemHtml(item, download_full_article)
-    if download_full_article
-        or download_full_article == nil then
+    if download_full_article  then
         return NewsHelpers:loadPage(
             FeedSource:getFeedLink(item.link)
         )
     else
-        -- This is broken 'cus getFeedType expects
-        -- the feed document, not feed item, as input
-        --[[local feed_description = self:getFeedType(
-            item,
-            function()
-                -- RSS cb
-                return item.description
-            end,
-            function()
-                -- Atom cb
-                return item.summary
-            end
-            )]]--
         local feed_description = item.description or item.summary
         local footer = _("This is just a description of the feed. To download the full article instead, go to the News Downloader settings and change 'download_full_article' to 'true'.")
         return string.format([[<!DOCTYPE html>
@@ -303,32 +289,33 @@ end
 function FeedSource:createEpubFromFeeds(epub_items, download_dir, progress_callback, error_callback)
     -- Collect HTML
 
-    for index, item in pairs(epub_items) do
+    for index, feed in pairs(epub_items) do
 
-        item = item[1]
+        for jndex, item in pairs(feed) do
 
-        local feed_output_dir = ("%s%s/"):format(
-            download_dir,
-            util.getSafeFilename(util.htmlEntitiesToUtf8(item.feed_title)))
-        -- Create the output directory if it doesn't exist.
-        if not lfs.attributes(feed_output_dir, "mode") then
-            lfs.mkdir(feed_output_dir)
+            local feed_output_dir = ("%s%s/"):format(
+                download_dir,
+                util.getSafeFilename(util.htmlEntitiesToUtf8(item.feed_title)))
+            -- Create the output directory if it doesn't exist.
+            if not lfs.attributes(feed_output_dir, "mode") then
+                lfs.mkdir(feed_output_dir)
+            end
+
+            logger.dbg("Creating EPUB titled: ", item.item_title)
+
+            --        local title_with_date = FeedSource:getTitleWithDate(item.item_title)
+            local news_file_path = ("%s%s%s"):format(feed_output_dir,
+                                                     item.item_title,
+                                                     self.file_extension)
+            local file_mode = lfs.attributes(news_file_path, "mode")
+
+            DownloadBackend:createEpub(
+                news_file_path,
+                item.html,
+                item.images,
+                "message?"
+            )
         end
-
-        logger.dbg("Creating EPUB titled: ", item.item_title)
-
-        --        local title_with_date = FeedSource:getTitleWithDate(item.item_title)
-        local news_file_path = ("%s%s%s"):format(feed_output_dir,
-                                                 item.item_title,
-                                                 self.file_extension)
-        local file_mode = lfs.attributes(news_file_path, "mode")
-
-        DownloadBackend:createEpub(
-            news_file_path,
-            item.html,
-            item.images,
-            "message?"
-        )
 
     end
 
