@@ -963,6 +963,38 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
             end,
         }
     end
+    -- Allow to set "last" page of the book, to display in status bar.
+    -- Available only in "page" view mode without hidden non-linear flows.
+    menu_items.doc_pages_max = {
+        text_func = function()
+            local doc_pages = self.ui.document:getPageCount()
+            local doc_pages_max = self.ui.doc_settings:readSetting("doc_pages_max") or doc_pages
+            return T(_("Last page number: %1 (%2)"), doc_pages_max, doc_pages)
+        end,
+        keep_menu_open = true,
+        callback = function(touchmenu_instance)
+            local SpinWidget = require("ui/widget/spinwidget")
+            local doc_pages = self.ui.document:getPageCount()
+            local doc_pages_max = self.ui.doc_settings:readSetting("doc_pages_max") or doc_pages
+            local widget = SpinWidget:new{
+                value = doc_pages_max,
+                value_min = 1,
+                value_max = doc_pages,
+                value_hold_step = 10,
+                default_value = doc_pages,
+                title_text =  _("Last page number"),
+                info_text =  _("Set 'last' page number in the book to display in status bar.\nDefault: actual last page."),
+                callback = function(spin)
+                    self.ui.doc_settings:saveSetting("doc_pages_max", spin.value)
+                    self.view.footer.pages = spin.value
+                    self:onUpdateToc()
+                    self.view.footer:onUpdateFooter(self.view.footer_visible)
+                    touchmenu_instance:updateItems()
+                end
+            }
+            UIManager:show(widget)
+        end
+    }
     -- Allow to have getTocTicksFlattened() get rid of all items at some depths, which
     -- might be useful to have the footer and SkimTo progress bar less crowded.
     -- This also affects the footer current chapter title, but leave the ToC itself unchanged.
