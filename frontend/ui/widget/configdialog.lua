@@ -1153,6 +1153,7 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                     curr_values = self.configurable[name]
                 end
                 widget = DoubleSpinWidget:new{
+                    width = name ~= "word_spacing" and math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.6) or nil,
                     title_text =  name_text or _("Set values"),
                     info_text = more_options_param.info_text,
                     left_text = more_options_param.left_text,
