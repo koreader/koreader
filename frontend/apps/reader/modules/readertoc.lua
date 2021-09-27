@@ -968,32 +968,38 @@ See Style tweaks → Miscellaneous → Alternative ToC hints.]]),
     menu_items.doc_pages_max = {
         text_func = function()
             local doc_pages = self.ui.document:getPageCount()
-            local doc_pages_max = self.ui.doc_settings:readSetting("doc_pages_max") or doc_pages
+            local doc_pages_max = self.view.footer:getUserLastPage() or doc_pages
             return T(_("Last page number: %1 (%2)"), doc_pages_max, doc_pages)
         end,
         keep_menu_open = true,
         callback = function(touchmenu_instance)
-            local SpinWidget = require("ui/widget/spinwidget")
-            local doc_pages = self.ui.document:getPageCount()
-            local doc_pages_max = self.ui.doc_settings:readSetting("doc_pages_max") or doc_pages
-            local widget = SpinWidget:new{
-                value = doc_pages_max,
-                value_min = 1,
-                value_max = doc_pages,
-                value_hold_step = 10,
-                default_value = doc_pages,
-                title_text =  _("Last page number"),
-                info_text =  _("Set 'last' page number in the book to display in status bar.\nDefault: actual last page."),
-                callback = function(spin)
-                    self.ui.doc_settings:saveSetting("doc_pages_max", spin.value)
-                    self.view.footer.pages = spin.value
+            local confirm_box = require("ui/widget/multiconfirmbox"):new{
+                text = T(_("Current page number: %1\n\nSet current page as last?"), self.view.state.page),
+                choice1_text = _("Clear"),
+                choice1_callback = function()
+                    self.ui.doc_settings:delSetting("doc_pages_max")
+                    self.view.footer.pages = self.ui.document:getPageCount()
                     self:onUpdateToc()
                     self.view.footer:onUpdateFooter(self.view.footer_visible)
                     touchmenu_instance:updateItems()
-                end
+                end,
+                choice2_text = _("Set"),
+                choice2_callback = function()
+                    local doc_pages_max
+                    if self.ui.document.info.has_pages then
+                        doc_pages_max = self.view.state.page
+                    else
+                        doc_pages_max = self.ui.document:getXPointer()
+                    end
+                    self.ui.doc_settings:saveSetting("doc_pages_max", doc_pages_max)
+                    self.view.footer.pages = doc_pages_max
+                    self:onUpdateToc()
+                    self.view.footer:onUpdateFooter(self.view.footer_visible)
+                    touchmenu_instance:updateItems()
+                end,
             }
-            UIManager:show(widget)
-        end
+            UIManager:show(confirm_box)
+        end,
     }
     -- Allow to have getTocTicksFlattened() get rid of all items at some depths, which
     -- might be useful to have the footer and SkimTo progress bar less crowded.
