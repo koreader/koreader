@@ -25,7 +25,7 @@ local DoubleSpinWidget = InputContainer:new{
     title_text = "",
     title_face = Font:getFace("x_smalltfont"),
     info_text = nil,
-    width = nil,
+    width = nil, -- real width or width factor (ratio to screen width or height, which is smaller)
     height = nil,
     left_min = 1,
     left_max = 20,
@@ -54,7 +54,9 @@ local DoubleSpinWidget = InputContainer:new{
 function DoubleSpinWidget:init()
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
-    self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) * 0.8)
+    if not self.width or self.width <= 1 then
+        self.width = math.floor(math.min(self.screen_width, self.screen_height) * (self.width or 0.8))
+    end
     if Device:hasKeys() then
         self.key_events = {
             Close = { {"Back"}, doc = "close time widget" }
