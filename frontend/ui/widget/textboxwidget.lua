@@ -1134,7 +1134,6 @@ function TextBoxWidget:free(full)
         self.cursor_restore_bb:free()
         self.cursor_restore_bb = nil
     end
-    self.line_num_to_image = nil
     if full ~= false then -- final free(): free all remaining resources
         if self.use_xtext and self._xtext then
             -- Allow not waiting until Lua gc() to cleanup C XText malloc'ed stuff
@@ -1143,6 +1142,9 @@ function TextBoxWidget:free(full)
             self._xtext = nil
             -- logger.dbg("TextBoxWidget:_xtext:free()")
         end
+
+        self.line_num_to_image = nil
+        self.vertical_string_list = nil
     end
 end
 
