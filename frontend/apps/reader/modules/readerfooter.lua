@@ -1863,7 +1863,7 @@ function ReaderFooter:setTocMarkers(reset)
     if self.settings.disable_progress_bar or self.settings.progress_style_thin then return end
     if reset then
         self.progress_bar.ticks = nil
-        self.pages = self.ui.doc_settings:readSetting("doc_pages_max") or self.ui.document:getPageCount()
+        self.pages = self:getUserLastPage() or self.ui.document:getPageCount()
     end
     if self.settings.toc_markers then
         self.progress_bar.tick_width = Screen:scaleBySize(self.settings.toc_markers_width)
@@ -1887,7 +1887,7 @@ function ReaderFooter:setTocMarkers(reset)
                 self.progress_bar.ticks = self.ui.toc:getTocTicksFlattened()
             end
             if self.view.view_mode == "page" then
-                self.progress_bar.last = self.ui.doc_settings:readSetting("doc_pages_max") or self.ui.document:getPageCount()
+                self.progress_bar.last = self:getUserLastPage() or self.pages or self.ui.document:getPageCount()
             else
                 -- in scroll mode, convert pages to positions
                 if self.ui.toc then
@@ -2080,14 +2080,7 @@ function ReaderFooter:onPageUpdate(pageno)
     end
     self.ui.doc_settings:saveSetting("doc_pages", self.pages) -- for Book information
     if not self.ui.document:hasHiddenFlows() then  -- check for 'last' page number set by a user
-        local doc_pages_max = self.ui.doc_settings:readSetting("doc_pages_max")
-        if doc_pages_max then
-            if doc_pages_max > self.pages then
-                doc_pages_max = self.pages
-                self.ui.doc_settings:saveSetting("doc_pages_max", doc_pages_max)
-            end
-            self.pages = doc_pages_max
-        end
+        self.pages = self:getUserLastPage() or self.pages
     end
     self:updateFooterPage()
 end
@@ -2347,6 +2340,14 @@ end
 function ReaderFooter:onScreenResize()
     self:updateFooterContainer()
     self:resetLayout(true)
+end
+
+function ReaderFooter:getUserLastPage()
+    local doc_pages_max = self.ui.doc_settings:readSetting("doc_pages_max")
+    if type(doc_pages_max) == "string" then
+        doc_pages_max = self.ui.document:getPageFromXPointer(doc_pages_max)
+    end
+    return doc_pages_max
 end
 
 return ReaderFooter
