@@ -903,7 +903,7 @@ function ReaderStatistics:addToMainMenu(menu_items)
                                 left_text = _("Min"),
                                 left_value = self.settings.min_sec,
                                 left_default = DEFAULT_MIN_READ_SEC,
-                                left_min = 3,
+                                left_min = 0,
                                 left_max = 120,
                                 left_step = 1,
                                 left_hold_step = 10,
