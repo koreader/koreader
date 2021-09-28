@@ -159,8 +159,9 @@ function KeyboardLayoutDialog:init()
     self[1] = CenterContainer:new{
         dimen = Geom:new{
             w = Screen:getWidth(),
-            h = math.max(Screen:getHeight(), self.dialog_frame:getSize().h),
+            h = Screen:getHeight(),
         },
+        ignore_if_over = "height",
         self.movable,
     }
 end
