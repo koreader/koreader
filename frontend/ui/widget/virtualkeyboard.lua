@@ -270,7 +270,8 @@ function VirtualKey:init()
         }
     end
     if (self.keyboard.shiftmode_keys[self.label] ~= nil  and self.keyboard.shiftmode) or
-    (self.keyboard.symbolmode_keys[self.label] ~= nil and self.keyboard.symbolmode) then
+        (self.keyboard.umlautmode_keys[self.label] ~= nil and self.keyboard.umlautmode) or
+        (self.keyboard.symbolmode_keys[self.label] ~= nil and self.keyboard.symbolmode) then
         self[1].background = Blitbuffer.COLOR_LIGHT_GRAY
     end
     self.flash_keyboard = G_reader_settings:nilOrTrue("flash_keyboard")
