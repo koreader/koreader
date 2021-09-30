@@ -472,6 +472,7 @@ ReaderFooter.default_settings = {
     skim_widget_on_hold = false,
     progress_style_thin = false,
     progress_bar_position = "alongside",
+    progress_bar_invert = false,
     bottom_horizontal_separator = false,
     align = "center",
     auto_refresh_time = false,
@@ -1536,6 +1537,36 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                             self:refreshFooter(true, true)
                         end
                     },
+                    {
+                        text_func = function()
+                            return T(_("Minimal width: %1%"), self.settings.progress_bar_min_width_pct)
+                        end,
+                        enabled_func = function()
+                            return self.settings.progress_bar_position == "alongside" and not self.settings.disable_progress_bar
+                                and self.settings.all_at_once
+                        end,
+                        callback = function(touchmenu_instance)
+                            local SpinWidget = require("ui/widget/spinwidget")
+                            local items = SpinWidget:new{
+                                value = self.settings.progress_bar_min_width_pct,
+                                value_min = 5,
+                                value_step = 5,
+                                value_hold_step = 20,
+                                value_max = 50,
+                                default_value = 20,
+                                title_text =  _("Minimal width"),
+                                info_text = _("Minimal progress bar width in percentage of screen width"),
+                                keep_shown_on_apply = true,
+                                callback = function(spin)
+                                    self.settings.progress_bar_min_width_pct = spin.value
+                                    self:refreshFooter(true, true)
+                                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                                end
+                            }
+                            UIManager:show(items)
+                        end,
+                        keep_menu_open = true,
+                    },
                 },
             },
             {
@@ -1757,34 +1788,18 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                 end,
             },
             {
-                text_func = function()
-                    return T(_("Minimal width: %1%"), self.settings.progress_bar_min_width_pct)
-                end,
+                text = _("Invert direction"),
                 enabled_func = function()
-                    return self.settings.progress_bar_position == "alongside" and not self.settings.disable_progress_bar
-                        and self.settings.all_at_once
+                    return not self.settings.disable_progress_bar
                 end,
-                callback = function(touchmenu_instance)
-                    local SpinWidget = require("ui/widget/spinwidget")
-                    local items = SpinWidget:new{
-                        value = self.settings.progress_bar_min_width_pct,
-                        value_min = 5,
-                        value_step = 5,
-                        value_hold_step = 20,
-                        value_max = 50,
-                        title_text =  _("Minimal width"),
-                        text = _("Minimal progress bar width in percentage of screen width"),
-                        keep_shown_on_apply = true,
-                        callback = function(spin)
-                            self.settings.progress_bar_min_width_pct = spin.value
-                            self:refreshFooter(true, true)
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                        end
-                    }
-                    UIManager:show(items)
+                checked_func = function()
+                    return self.settings.progress_bar_invert
                 end,
-                keep_menu_open = true,
-            }
+                callback = function()
+                    self.settings.progress_bar_invert = not self.settings.progress_bar_invert
+                    self:refreshFooter(true)
+                end
+            },
         }
     })
     table.insert(sub_items, getMinibarOption("page_progress"))
@@ -1988,6 +2003,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
             self.footer_text.height = self.footer_text:getSize().h
         end
         self.progress_bar.width = math.floor(self._saved_screen_width - 2 * self.settings.progress_margin_width)
+        self.progress_bar.fill_from_right = self.settings.progress_bar_invert
     else
         if self.has_no_mode or text == "" then
             self.text_width = 0
@@ -2002,6 +2018,7 @@ function ReaderFooter:_updateFooterText(force_repaint, force_recompute)
         end
         self.progress_bar.width = math.floor(
             self._saved_screen_width - 2 * self.settings.progress_margin_width - self.text_width)
+        self.progress_bar.fill_from_right = self.settings.progress_bar_invert
     end
 
     if self.separator_line then
