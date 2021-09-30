@@ -52,7 +52,7 @@ local ProgressWidget = Widget:new{
     fill_from_right = false,
     allow_mirroring = true,
     alt = nil, -- table with alternate pages to mark with different color (in the form {{ini1, len1}, {ini2, len2}, ...})
-    _mirroredUI = BD.mirroredUILayout(),
+    _mirroredUI = nil,
     _orig_margin_v = nil,
     _orig_bordersize = nil,
 }
@@ -69,6 +69,8 @@ function ProgressWidget:paintTo(bb, x, y)
         h = my_size.h
     }
     if self.dimen.w == 0 or self.dimen.h == 0 then return end
+    
+    self._mirroredUI = self.fill_from_right or (BD.mirroredUILayout() and not self.fill_from_right)
 
     -- fill background
     bb:paintRoundedRect(x, y, my_size.w, my_size.h, self.bgcolor, self.radius)
@@ -101,7 +103,7 @@ function ProgressWidget:paintTo(bb, x, y)
     -- paint percentage infill
     -- note that "lightenRect" is misleading, it actualy darkens stuff
     if self.percentage >= 0 and self.percentage <= 1 then
-        if self.fill_from_right or (self._mirroredUI and not self.fill_from_right) then
+        if self._mirroredUI then
             bb:lightenRect(x+self.margin_h + math.ceil((my_size.w-2*self.margin_h)*(1-self.percentage)),
                     math.ceil(y+self.margin_v+self.bordersize),
                     math.ceil((my_size.w-2*self.margin_h)*self.percentage),
