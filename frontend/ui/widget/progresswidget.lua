@@ -69,7 +69,7 @@ function ProgressWidget:paintTo(bb, x, y)
         h = my_size.h
     }
     if self.dimen.w == 0 or self.dimen.h == 0 then return end
-    
+
     self._mirroredUI = self.fill_from_right or (BD.mirroredUILayout() and not self.fill_from_right)
 
     -- fill background
