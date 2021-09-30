@@ -16,6 +16,7 @@ return {
         northwest = "¡",
         east = "…",
         west = "!",
+        "·",
     },
     _at = {
         "@",
