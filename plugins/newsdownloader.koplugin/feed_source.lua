@@ -176,13 +176,13 @@ function FeedSource:getItemsContent(feed, progress_callback, error_callback)
                return self:initializeItemHtml(
                     feed,
                     self:getItemHtml(
-                        item
+                        item,
+                        feed.config.download_full_article
                     )
                 )
         end)
         -- Add the result to our table, or send a
         -- result to the error callback.
-
         if ok then
             table.insert(
                 initialized_feed_items,
@@ -272,7 +272,7 @@ function FeedSource:getFeedType(document, rss_cb, atom_cb)
 end
 
 function FeedSource:getItemHtml(item, download_full_article)
-    if download_full_article  then
+    if download_full_article then
         return NewsHelpers:loadPage(
             FeedSource:getFeedLink(item.link)
         )
@@ -342,20 +342,18 @@ end
 
 function FeedSource:createEpub(title, chapters, abs_output_path, progress_callback, error_callback)
     -- Collect HTML
-    local html = " "
     local images = {}
 
     if #chapters == 0 then
         error("Error: chapters contains 0 items")
     end
 
-    for index, chapter in pairs(chapters) do
-        table.insert(
-            images,
-            chapter.images
-        )
-        if chapter.html then
-            html = html .. chapter.html
+    for index, chapter in ipairs(chapters) do
+        for jndex, image in ipairs(chapter.images) do
+            table.insert(
+                images,
+                image
+            )
         end
     end
 
@@ -363,20 +361,14 @@ function FeedSource:createEpub(title, chapters, abs_output_path, progress_callba
         title = title
     }
 
-    epub:addManifest(images)
     epub:addToc(chapters)
+    epub:addManifest(chapters, images)
+    epub:addContents(chapters)
+    epub:addImages(images)
     epub:build(abs_output_path)
-
-    logger.dbg("Creating EPUB titled: ", title)
 
     local file_mode = lfs.attributes(abs_output_path, "mode")
 
-    DownloadBackend:createEpub(
-        abs_output_path,
-        html,
-        images,
-        "message?"
-    )
 
 end
 

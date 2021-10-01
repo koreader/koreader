@@ -17,28 +17,35 @@ local EpubDownloadBackend = {
    title = nil,
    ncx_toc = nil,
    ncx_manifest = nil,
+   ncx_contents = nil,
+   ncx_images = nil,
 }
 
 function EpubDownloadBackend:new(o)
     o = o or {}
     self.__index = self
     setmetatable(o, self)
+
+    if not o.title then
+        o.title = "Default title"
+    end
+
     return o
 end
 
-function EpubDownloadBackend:build(abs_output_dir)
+function EpubDownloadBackend:build(abs_output_path)
     local UI = require("ui/trapper")
     UI:info(T(_("%1\n\nBuilding EPUB…"), message))
 
     -- Open the zip file (with .tmp for now, as crengine may still
     -- have a handle to the final epub_path, and we don't want to
     -- delete a good one if we fail/cancel later)
-    local epub_path_tmp = abs_output_dir .. ".tmp"
+    local tmp_path = abs_output_path .. ".tmp"
     local ZipWriter = require("ffi/zipwriter")
     local epub = ZipWriter:new{}
 
-    if not epub:open(epub_path_tmp) then
-        logger.dbg("Failed to open epub_path_tmp")
+    if not epub:open(tmp_path) then
+        logger.dbg("Failed to open tmp_path")
         return false
     end
 
@@ -51,17 +58,44 @@ function EpubDownloadBackend:build(abs_output_dir)
   </rootfiles>
 </container>]])
 
+    -- Add the manifest.
+    if not self.ncx_manifest or #self.ncx_manifest == 0 then
+        error(_("EPUB does not contain a valid manifest."))
+    end
+    logger.dbg("Adding Manifest:", self.ncx_manifest)
+    epub:add("OEBPS/content.opf", table.concat(self.ncx_manifest))
+
+    -- Add the table of contents.
     if not self.ncx_toc or #self.ncx_toc == 0 then
         error(_("EPUB does not contain a valid table of contents."))
     end
     logger.dbg("Adding TOC:", self.ncx_toc)
     epub:add("OEBPS/toc.ncx", table.concat(self.ncx_toc))
 
-    if not self.ncx_manifest or #self.ncx_manifest == 0 then
-        error(_("EPUB does not contain a valid manifest."))
+    -- Add the contents.
+    if not self.ncx_contents or #self.ncx_manifest == 0 then
+        error(_("EPUB does not contain any content."))
     end
-    logger.dbg("Adding Manifest:", self.ncx_manifest)
-    epub:add("OEBPS/content.opf", table.concat(self.ncx_manifest))
+    logger.dbg("Adding Content:", self.ncx_contents)
+
+    for index, content in ipairs(self.ncx_contents) do
+        epub:add("OEBPS/" .. content.filename, content.html)
+    end
+
+    -- Add the images.
+    logger.dbg("Adding Images:", self.ncx_images)
+    if self.ncx_images then
+        for index, image in ipairs(self.ncx_images) do
+            epub:add(
+                "OEBPS/" .. image.path,
+                image.content,
+                image.no_compression
+            )
+        end
+    end
+
+    epub:close()
+    os.rename(tmp_path, abs_output_path)
 
 end
 
@@ -158,8 +192,6 @@ function EpubDownloadBackend:getImagesAndHtml(html, url, include_images, filter_
     local UI = require("ui/trapper")
     -- We may need to build absolute urls for non-absolute links and images urls
     local base_url = socket_url.parse(url)
-
-    logger.dbg("Base URL::::::::", base_url)
     --    local sections = html.sections -- Wikipedia provided TOC
     local bookid = "bookid_placeholder" --string.format("wikipedia_%s_%s_%s", lang, phtml.pageid, phtml.revid)
     -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
@@ -284,7 +316,7 @@ function EpubDownloadBackend:addToc(chapters)
     local depth = 0
     local num = 0
 
-    for index, chapter in pairs(chapters) do
+    for index, chapter in ipairs(chapters) do
         -- Add nav part for each chapter.
         table.insert(
             toc_ncx_parts,
@@ -318,7 +350,7 @@ function EpubDownloadBackend:addToc(chapters)
 ]],
 "placeholder_bookid",
 depth,
-page_htmltitle
+self.title
         )
     )
     -- Append NCX tail.
@@ -332,27 +364,47 @@ page_htmltitle
     self.ncx_toc = toc_ncx_parts
 end
 
-function EpubDownloadBackend:addManifest(images)
+function EpubDownloadBackend:addManifest(chapters, images)
     local content_opf_parts = {}
+    local spine_parts = {}
     local meta_cover = "<!-- no cover image -->"
 
     if #images > 0 then
-        for inum, img in ipairs(images) do
+        for inum, image in ipairs(images) do
             table.insert(
                 content_opf_parts,
                 string.format([[<item id="%s" href="%s" media-type="%s"/>%s]],
-                    img.imgid,
-                    img.imgpath,
-                    img.mimetype,
+                    image.imgid,
+                    image.imgpath,
+                    image.mimetype,
                     "\n"
                 )
             )
             -- See if the image has the tag we previously set indicating
             -- it can be used as a cover image.
-            logger.dbg(img)
-            if img.cover_image then
+            if image.cover_image then
                 meta_cover = string.format([[<meta name="cover" content="%s"/>]], cover_imgid)
             end
+        end
+    end
+
+    if #chapters > 0 then
+        for index, chapter in ipairs(chapters) do
+            table.insert(
+                content_opf_parts,
+                string.format([[<item id="%s" href="%s.html" media-type="application/xhtml+xml"/>%s]],
+                    chapter.md5,
+                    chapter.md5,
+                    "\n"
+                )
+            )
+            table.insert(
+                spine_parts,
+                string.format([[<itemref idref="%s"/>%s]],
+                    chapter.md5,
+                    "\n"
+                )
+            )
         end
     end
 
@@ -360,8 +412,8 @@ function EpubDownloadBackend:addManifest(images)
 
     table.insert(
         content_opf_parts,
-        string.format([[
-<?xml version='1.0' encoding='utf-8'?>
+        1,
+        string.format([[<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf"
         xmlns:dc="http://purl.org/dc/elements/1.1/"
         unique-identifier="bookid" version="2.0">
@@ -372,25 +424,83 @@ function EpubDownloadBackend:addManifest(images)
   </metadata>
   <manifest>
     <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
-    <item id="content" href="content.html" media-type="application/xhtml+xml"/>
-    <item id="css" href="stylesheet.css" media-type="text/css"/>
-]], page_htmltitle, Version:getCurrentRevision(), meta_cover))
+]], self.title, Version:getCurrentRevision(), meta_cover)
+    )
     -- tail
     table.insert(
-        content_opf_parts, [[
+        content_opf_parts,
+        string.format([[
   </manifest>
   <spine toc="ncx">
-    <itemref idref="content"/>
+%s
   </spine>
 </package>
-]])
+]], table.concat(spine_parts)
+        )
+    )
+
     self.ncx_manifest = content_opf_parts
 end
 
-function EpubDownloadBackend:addChapters(epub, chapters)
-    -- chapters.html
-    -- chapters.title
-    -- chapters.images
+function EpubDownloadBackend:addContents(chapters)
+    local contents = {}
+
+    for index, chapter in ipairs(chapters) do
+        table.insert(
+            contents,
+            {
+                filename = chapter.md5 .. ".html",
+                html = chapter.html,
+            }
+        )
+    end
+
+    self.ncx_contents = contents
+end
+
+function EpubDownloadBackend:addImages(images)
+
+    local images_table = {}
+
+    for index, image in ipairs(images) do
+        logger.dbg("_____image", image)
+        if not image.src then
+            return
+        end
+
+        local src = image.src
+        local success, content = NewsHelpers:getUrlContent(src)
+        -- success, content = NewsHelpers:getUrlContent(src..".unexistant") -- to simulate failure
+        if success then
+            logger.dbg("EpubDownloadBackend:addImages = success, size:", #content)
+        else
+            logger.dbg("EpubDownloadBackend:addImages = failure fetching:", src)
+        end
+        if success then
+            -- Images do not need to be compressed, so spare some cpu cycles
+            local no_compression = true
+            if image.mimetype == "image/svg+xml" then -- except for SVG images (which are XML text)
+                no_compression = false
+            end
+            table.insert(
+                images_table,
+                {
+                    path = image.imgpath,
+                    content = content,
+                    compression = no_compression
+                }
+            )
+        else
+            go_on = UI:confirm(T(_("Downloading image %1 failed. Continue anyway?"), index), _("Stop"), _("Continue"))
+            if not go_on then
+                cancelled = true
+                break
+            end
+        end
+    end
+
+    self.ncx_images = images_table
+
 end
 
 function EpubDownloadBackend:createEpub2(epub_path, toc, chapters)
