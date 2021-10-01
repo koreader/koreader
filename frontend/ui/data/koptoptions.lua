@@ -572,9 +572,6 @@ This can also be used to remove some gray background or to convert a grayscale o
                 toggle = {_("0 deg"), _("5 deg"), _("10 deg")},
                 values = {0, 5, 10},
                 default_value = DKOPTREADER_CONFIG_AUTO_STRAIGHTEN,
-                enabled_func = function(configurable)
-                    return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
-                end,
                 name_text_hold_callback = optionsutil.showValues,
             },
             {
