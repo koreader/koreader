@@ -3,6 +3,7 @@ local DownloadBackend = require("epubdownloadbackend")
 local NewsHelpers = require("http_utilities")
 local dateparser = require("lib.dateparser")
 local logger = require("logger")
+local md5 = require("lib.md5")
 local util = require("util")
 local _ = require("gettext")
 local FFIUtil = require("ffi/util")
@@ -188,7 +189,9 @@ function FeedSource:getItemsContent(feed, progress_callback, error_callback)
                 {
                     html = response.html,
                     images = response.images,
-                    item_title = FeedSource:getTitleWithDate(item),
+                    item_slug = FeedSource:getTitleWithDate(item),
+                    item_title = item.title,
+                    md5 = md5.sumhexa(item.title),
                     feed_title = feed.document.title
                 }
             )
@@ -355,6 +358,14 @@ function FeedSource:createEpub(title, chapters, abs_output_path, progress_callba
             html = html .. chapter.html
         end
     end
+
+    local epub = DownloadBackend:new{
+        title = title
+    }
+
+    epub:addManifest(images)
+    epub:addToc(chapters)
+    epub:build(abs_output_path)
 
     logger.dbg("Creating EPUB titled: ", title)
 

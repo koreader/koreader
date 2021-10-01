@@ -17,6 +17,7 @@ local Persist = require("persist")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local dateparser = require("lib.dateparser")
 local logger = require("logger")
+local md5 = require("lib.md5")
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
@@ -294,9 +295,15 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
 
                     local chapters = {}
 
+                    -- Not sure the slug returned is what we want.
+                    -- Should be something like 2022_09_20-ArticleTitle
+
                     table.insert(
                         chapters,
                         {
+                            title = content.item_title,
+                            slug = content.item_slug,
+                            md5 = content.md5,
                             html = content.html,
                             images = content.images
                         }
@@ -305,7 +312,7 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
                     table.insert(
                         epubs_to_make,
                         {
-                            title = content.item_title,
+                            title = content.item_slug,
                             chapters = chapters,
                             abs_path = abs_path
                         }
@@ -319,14 +326,19 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
                     epub.title,
                     epub.chapters,
                     epub.abs_path,
-                    function()
-
+                    function(progress_message)
+                        Ui:info(progress_message)
                     end,
-                    function()
-
+                    function(error_message)
+                        table.insert(
+                            sync_errors,
+                            error_message
+                        )
                     end
                 )
             end
+
+            logger.dbg("sync", sync_errors)
 
             -- Relay any errors
             for index, error_message in pairs(sync_errors) do

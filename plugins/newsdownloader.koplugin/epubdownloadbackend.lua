@@ -14,7 +14,60 @@ local EpubDownloadBackend = {
    -- and error() with this code. We make the value of this error
    -- accessible here so that caller can know it's a user dismiss.
    dismissed_error_code = "Interrupted by user",
+   title = nil,
+   ncx_toc = nil,
+   ncx_manifest = nil,
 }
+
+function EpubDownloadBackend:new(o)
+    o = o or {}
+    self.__index = self
+    setmetatable(o, self)
+    return o
+end
+
+function EpubDownloadBackend:build(abs_output_dir)
+    local UI = require("ui/trapper")
+    UI:info(T(_("%1\n\nBuilding EPUB…"), message))
+
+    -- Open the zip file (with .tmp for now, as crengine may still
+    -- have a handle to the final epub_path, and we don't want to
+    -- delete a good one if we fail/cancel later)
+    local epub_path_tmp = abs_output_dir .. ".tmp"
+    local ZipWriter = require("ffi/zipwriter")
+    local epub = ZipWriter:new{}
+
+    if not epub:open(epub_path_tmp) then
+        logger.dbg("Failed to open epub_path_tmp")
+        return false
+    end
+
+    epub:add("mimetype", "application/epub+zip")
+    epub:add("META-INF/container.xml", [[
+<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles>
+    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+  </rootfiles>
+</container>]])
+
+    if not self.ncx_toc or #self.ncx_toc == 0 then
+        error(_("EPUB does not contain a valid table of contents."))
+    end
+    logger.dbg("Adding TOC:", self.ncx_toc)
+    epub:add("OEBPS/toc.ncx", table.concat(self.ncx_toc))
+
+    if not self.ncx_manifest or #self.ncx_manifest == 0 then
+        error(_("EPUB does not contain a valid manifest."))
+    end
+    logger.dbg("Adding Manifest:", self.ncx_manifest)
+    epub:add("OEBPS/content.opf", table.concat(self.ncx_manifest))
+
+end
+
+function EpubDownloadBackend:release()
+    -- Stub for cleanup methods
+end
 
 -- filter HTML using CSS selector
 local function filter(text, element)
@@ -226,6 +279,123 @@ function EpubDownloadBackend:getImagesAndHtml(html, url, include_images, filter_
     return images, html
 end
 
+function EpubDownloadBackend:addToc(chapters)
+    local toc_ncx_parts = {}
+    local depth = 0
+    local num = 0
+
+    for index, chapter in pairs(chapters) do
+        -- Add nav part for each chapter.
+        table.insert(
+            toc_ncx_parts,
+            string.format([[<navPoint id="navpoint-%s" playOrder="%s"><navLabel><text>%s</text></navLabel><content src="%s.html"/></navPoint>]],
+                num,
+                num,
+                chapter.title,
+                chapter.md5
+            )
+        )
+        num = num + 1
+    end
+    -- Prepend NCX head.
+    table.insert(
+        toc_ncx_parts,
+        1,
+        string.format([[
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN" "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd">
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+  <head>
+    <meta name="dtb:uid" content="%s"/>
+    <meta name="dtb:depth" content="%s"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>%s</text>
+  </docTitle>
+  <navMap>
+]],
+"placeholder_bookid",
+depth,
+page_htmltitle
+        )
+    )
+    -- Append NCX tail.
+    table.insert(
+        toc_ncx_parts,
+        [[
+  </navMap>
+</ncx>
+]]
+    )
+    self.ncx_toc = toc_ncx_parts
+end
+
+function EpubDownloadBackend:addManifest(images)
+    local content_opf_parts = {}
+    local meta_cover = "<!-- no cover image -->"
+
+    if #images > 0 then
+        for inum, img in ipairs(images) do
+            table.insert(
+                content_opf_parts,
+                string.format([[<item id="%s" href="%s" media-type="%s"/>%s]],
+                    img.imgid,
+                    img.imgpath,
+                    img.mimetype,
+                    "\n"
+                )
+            )
+            -- See if the image has the tag we previously set indicating
+            -- it can be used as a cover image.
+            logger.dbg(img)
+            if img.cover_image then
+                meta_cover = string.format([[<meta name="cover" content="%s"/>]], cover_imgid)
+            end
+        end
+    end
+
+    logger.dbg("meta_cover:", meta_cover)
+
+    table.insert(
+        content_opf_parts,
+        string.format([[
+<?xml version='1.0' encoding='utf-8'?>
+<package xmlns="http://www.idpf.org/2007/opf"
+        xmlns:dc="http://purl.org/dc/elements/1.1/"
+        unique-identifier="bookid" version="2.0">
+  <metadata>
+    <dc:title>%s</dc:title>
+    <dc:publisher>KOReader %s</dc:publisher>
+    %s
+  </metadata>
+  <manifest>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item id="content" href="content.html" media-type="application/xhtml+xml"/>
+    <item id="css" href="stylesheet.css" media-type="text/css"/>
+]], page_htmltitle, Version:getCurrentRevision(), meta_cover))
+    -- tail
+    table.insert(
+        content_opf_parts, [[
+  </manifest>
+  <spine toc="ncx">
+    <itemref idref="content"/>
+  </spine>
+</package>
+]])
+    self.ncx_manifest = content_opf_parts
+end
+
+function EpubDownloadBackend:addChapters(epub, chapters)
+    -- chapters.html
+    -- chapters.title
+    -- chapters.images
+end
+
+function EpubDownloadBackend:createEpub2(epub_path, toc, chapters)
+
+end
 
 function EpubDownloadBackend:createEpub(epub_path, html, images, message)
     logger.dbg("EpubDownloadBackend:createEpub(", epub_path, ")")
@@ -236,10 +406,7 @@ function EpubDownloadBackend:createEpub(epub_path, html, images, message)
 
     local cancelled = false
     local page_htmltitle = html:match([[<title>(.*)</title>]])
-
     local include_images = #images > 0 or false
-
-    logger.dbg("Include Images ------", include_images)
 
     logger.dbg("page_htmltitle is ", page_htmltitle)
 --    local sections = html.sections -- Wikipedia provided TOC
@@ -248,7 +415,6 @@ function EpubDownloadBackend:createEpub(epub_path, html, images, message)
     -- should it changes if content is updated (as now, including the wikipedia revisionId),
     -- or should it stays the same even if revid changes (content of the same book updated).
 
-
     UI:info(T(_("%1\n\nBuilding EPUB…"), message))
     -- Open the zip file (with .tmp for now, as crengine may still
     -- have a handle to the final epub_path, and we don't want to
@@ -256,17 +422,16 @@ function EpubDownloadBackend:createEpub(epub_path, html, images, message)
     local epub_path_tmp = epub_path .. ".tmp"
     local ZipWriter = require("ffi/zipwriter")
     local epub = ZipWriter:new{}
+
     if not epub:open(epub_path_tmp) then
         logger.dbg("Failed to open epub_path_tmp")
         return false
     end
 
     -- We now create and add all the required epub files
-
     -- ----------------------------------------------------------------
     -- /mimetype : always "application/epub+zip"
     epub:add("mimetype", "application/epub+zip")
-
     -- ----------------------------------------------------------------
     -- /META-INF/container.xml : always the same content
     epub:add("META-INF/container.xml", [[
@@ -276,8 +441,6 @@ function EpubDownloadBackend:createEpub(epub_path, html, images, message)
     <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
   </rootfiles>
 </container>]])
-    logger.dbg("Added META-INF/container.xml")
-
     -- ----------------------------------------------------------------
     -- OEBPS/content.opf : metadata + list of other files (paths relative to OEBPS/ directory)
     -- Other possible items in this file that are of no interest to crengine :
@@ -292,13 +455,33 @@ function EpubDownloadBackend:createEpub(epub_path, html, images, message)
     --       <reference href="title.html" type="cover" title="Cover"/>
     --       <reference href="toc.html" type="toc" title="Table of Contents" href="toc.html" />
     --     </guide>
+
+    -- Images files and cover image.
     local content_opf_parts = {}
-    -- head
     local meta_cover = "<!-- no cover image -->"
-    if include_images and cover_imgid then
-        meta_cover = string.format([[<meta name="cover" content="%s"/>]], cover_imgid)
+
+    if include_images then
+        for inum, img in ipairs(images) do
+            table.insert(
+                content_opf_parts,
+                string.format([[<item id="%s" href="%s" media-type="%s"/>%s]],
+                    img.imgid,
+                    img.imgpath,
+                    img.mimetype,
+                    "\n"
+                )
+            )
+            -- See if the image has the tag we previously set indicating
+            -- it can be used as a cover image.
+            logger.dbg(img)
+            if img.cover_image then
+                meta_cover = string.format([[<meta name="cover" content="%s"/>]], cover_imgid)
+            end
+        end
     end
+
     logger.dbg("meta_cover:", meta_cover)
+
     table.insert(content_opf_parts, string.format([[
 <?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf"
@@ -314,12 +497,6 @@ function EpubDownloadBackend:createEpub(epub_path, html, images, message)
     <item id="content" href="content.html" media-type="application/xhtml+xml"/>
     <item id="css" href="stylesheet.css" media-type="text/css"/>
 ]], page_htmltitle, Version:getCurrentRevision(), meta_cover))
-    -- images files
-    if include_images then
-        for inum, img in ipairs(images) do
-            table.insert(content_opf_parts, string.format([[    <item id="%s" href="%s" media-type="%s"/>%s]], img.imgid, img.imgpath, img.mimetype, "\n"))
-        end
-    end
     -- tail
     table.insert(content_opf_parts, [[
   </manifest>
@@ -329,7 +506,6 @@ function EpubDownloadBackend:createEpub(epub_path, html, images, message)
 </package>
 ]])
     epub:add("OEBPS/content.opf", table.concat(content_opf_parts))
-    logger.dbg("Added OEBPS/content.opf")
 
     -- ----------------------------------------------------------------
     -- OEBPS/stylesheet.css
@@ -339,8 +515,6 @@ function EpubDownloadBackend:createEpub(epub_path, html, images, message)
     epub:add("OEBPS/stylesheet.css", [[
 /* Empty */
 ]])
-    logger.dbg("Added OEBPS/stylesheet.css")
-
     -- ----------------------------------------------------------------
     -- OEBPS/toc.ncx : table of content
     local toc_ncx_parts = {}
@@ -349,16 +523,32 @@ function EpubDownloadBackend:createEpub(epub_path, html, images, message)
     local np_end = [[</navPoint>]]
     local num = 1
     -- Add our own first section for first page, with page name as title
-    table.insert(toc_ncx_parts, string.format([[<navPoint id="navpoint-%s" playOrder="%s"><navLabel><text>%s</text></navLabel><content src="content.html"/>]], num, num, page_htmltitle))
-    table.insert(toc_ncx_parts, np_end)
+    table.insert(
+        toc_ncx_parts,
+        string.format([[<navPoint id="navpoint-%s" playOrder="%s"><navLabel><text>%s</text></navLabel><content src="content.html"/>]],
+            num,
+            num,
+            page_htmltitle
+        )
+    )
+    table.insert(
+        toc_ncx_parts,
+        np_end
+    )
     --- @todo Not essential for most articles, but longer articles might benefit
     -- from parsing <h*> tags and constructing a proper TOC
     while cur_level > 0 do
-        table.insert(toc_ncx_parts, np_end)
+        table.insert(
+            toc_ncx_parts,
+            np_end
+        )
         cur_level = cur_level - 1
     end
     -- Prepend NCX head
-    table.insert(toc_ncx_parts, 1, string.format([[
+    table.insert(
+        toc_ncx_parts,
+        1,
+        string.format([[
 <?xml version='1.0' encoding='utf-8'?>
 <!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN" "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd">
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
@@ -372,12 +562,20 @@ function EpubDownloadBackend:createEpub(epub_path, html, images, message)
     <text>%s</text>
   </docTitle>
   <navMap>
-]], bookid, depth, page_htmltitle))
+]],
+bookid,
+depth,
+page_htmltitle
+        )
+    )
     -- Append NCX tail
-    table.insert(toc_ncx_parts, [[
+    table.insert(
+        toc_ncx_parts,
+        [[
   </navMap>
 </ncx>
-]])
+]]
+    )
     epub:add("OEBPS/toc.ncx", table.concat(toc_ncx_parts))
     logger.dbg("Added OEBPS/toc.ncx")
 
