@@ -164,6 +164,7 @@ This is disabled in scroll mode. Switching from page mode with two columns to sc
                 more_options = true,
                 more_options_param = {
                     name_text = _("Left/Right Margins"),
+                    widget_width_factor = 0.6,
                     left_min = 0,
                     left_max = 140,
                     left_step = 1,
@@ -230,6 +231,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                     name_text = _("Top/Bottom Margins"),
                     names = { "t_page_margin", "b_page_margin" },
                     event = "SetPageTopAndBottomMargin",
+                    widget_width_factor = 0.6,
                     left_text = _("Top"),
                     left_min = 0,
                     left_max = 140,
@@ -280,6 +282,7 @@ In the top menu → Settings → Status bar, you can choose whether the bottom m
                     name_text = _("Top/Bottom Margins"),
                     names = { "t_page_margin", "b_page_margin" },
                     event = "SetPageTopAndBottomMargin",
+                    widget_width_factor = 0.6,
                     left_text = _("Top"),
                     left_min = 0,
                     left_max = 140,
