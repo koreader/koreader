@@ -570,7 +570,7 @@ end
 dbg:guard(UIManager, 'schedule',
     function(self, time, action)
         assert(time.sec >= 0, "Only positive time allowed")
-        assert(action ~= nil)
+        assert(action ~= nil, "No action")
     end)
 
 --[[--

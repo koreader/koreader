@@ -617,25 +617,27 @@ end
 
 -- Background extraction management
 function BookInfoManager:collectSubprocesses()
+    self.subprocesses_collector = nil
+
     -- We need to regularly watch if a sub-process has terminated by
     -- calling waitpid() so this process does not become a zombie hanging
     -- around till we exit.
     if #self.subprocesses_pids > 0 then
-        local i = 1
-        while i <= #self.subprocesses_pids do -- clean in-place
+        -- In-place removal, hence the reverse iteration.
+        for i = #self.subprocesses_pids, 1, -1 do
             local pid = self.subprocesses_pids[i]
             if FFIUtil.isSubProcessDone(pid) then
                 table.remove(self.subprocesses_pids, i)
                 -- Prevent has been issued for each bg task spawn, we must allow for each death too.
                 UIManager:allowStandby()
-            else
-                i = i + 1
             end
         end
         if #self.subprocesses_pids > 0 then
             -- still some pids around, we'll need to collect again
-            self.subprocesses_collector = UIManager:scheduleIn(
-                self.subprocesses_collect_interval, function()
+            self.subprocesses_collector = true
+            UIManager:scheduleIn(
+                self.subprocesses_collect_interval,
+                function()
                     self:collectSubprocesses()
                 end
             )
@@ -650,7 +652,6 @@ function BookInfoManager:collectSubprocesses()
                 -- we'll collect them next time we're run
             end
         else
-            self.subprocesses_collector = nil
             if self.delayed_cleanup then
                 self.delayed_cleanup = false
                 -- No more subprocesses = no more crengine indexing, we can remove our
@@ -658,6 +659,11 @@ function BookInfoManager:collectSubprocesses()
                 self:cleanUp()
             end
         end
+    end
+
+    -- We're done, back to a single core
+    if #self.subprocesses_pids == 0 then
+        Device:enableCPUCores(1)
     end
 end
 
@@ -698,6 +704,11 @@ function BookInfoManager:extractInBackground(files)
 
     self.cleanup_needed = true -- so we will remove temporary cache directory created by subprocess
 
+    -- If it's the first subprocess we're launching, enable 2 CPU cores
+    if #self.subprocesses_pids == 0 then
+        Device:enableCPUCores(2)
+    end
+
     -- Run task in sub-process, and remember its pid
     local task_pid = FFIUtil.runInSubProcess(task)
     if not task_pid then
@@ -714,8 +725,10 @@ function BookInfoManager:extractInBackground(files)
     -- and fill linux processes table)
     -- We set a single scheduled action for that
     if not self.subprocesses_collector then -- there's not one already scheduled
-        self.subprocesses_collector = UIManager:scheduleIn(
-            self.subprocesses_collect_interval, function()
+        self.subprocesses_collector = true
+        UIManager:scheduleIn(
+            self.subprocesses_collect_interval,
+            function()
                 self:collectSubprocesses()
             end
         )

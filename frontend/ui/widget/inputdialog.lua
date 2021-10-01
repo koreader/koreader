@@ -202,13 +202,15 @@ local InputDialog = InputContainer:new{
 }
 
 function InputDialog:init()
+    self.screen_width = Screen:getWidth()
+    self.screen_height = Screen:getHeight()
     if self.fullscreen then
         self.is_movable = false
         self.border_size = 0
-        self.width = Screen:getWidth() - 2*self.border_size
+        self.width = self.screen_width - 2*self.border_size
         self.covers_fullscreen = true -- hint for UIManager:_repaint()
     else
-        self.width = self.width or math.floor(Screen:getWidth() * 0.8)
+        self.width = self.width or math.floor(math.min(self.screen_width, self.screen_height) * 0.8)
     end
     if self.condensed then
         self.text_width = self.width - 2*(self.border_size + self.input_padding + self.input_margin)
@@ -334,7 +336,7 @@ function InputDialog:init()
         end
         input_widget:onCloseWidget() -- free() textboxwidget and keyboard
         -- Find out available height
-        local available_height = Screen:getHeight()
+        local available_height = self.screen_height
                                     - 2*self.border_size
                                     - self.title_widget:getSize().h
                                     - self.title_bar:getSize().h
@@ -457,9 +459,10 @@ function InputDialog:init()
                                 or self._input_widget:getKeyboardDimen().h
     self[1] = CenterContainer:new{
         dimen = Geom:new{
-            w = Screen:getWidth(),
-            h = Screen:getHeight() - keyboard_height,
+            w = self.screen_width,
+            h = self.screen_height - keyboard_height,
         },
+        ignore_if_over = "height",
         frame
     }
     if Device:isTouchDevice() then -- is used to hide the keyboard with a tap outside of inputbox

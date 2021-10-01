@@ -410,7 +410,7 @@ function ReaderUI:init()
             })
         if ok then
             self:registerModule(plugin_module.name, plugin_or_err)
-            logger.info("RD loaded plugin", plugin_module.name,
+            logger.dbg("RD loaded plugin", plugin_module.name,
                         "at", plugin_module.path)
         end
     end

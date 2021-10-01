@@ -71,11 +71,13 @@ local CreDocument = Document:new{
 function CreDocument:zipContentExt(fname)
     local std_out = io.popen("unzip ".."-qql \""..fname.."\"")
     if std_out then
+        local size, ext
         for line in std_out:lines() do
-            local size, ext = string.match(line, "%s+(%d+)%s+.+%.([^.]+)")
-            -- return the extention
-            if size and ext then return string.lower(ext) end
+            size, ext = string.match(line, "%s+(%d+)%s+.+%.([^.]+)")
+            if size and ext then break end
         end
+        std_out:close()
+        if ext then return string.lower(ext) end
     end
 end
 

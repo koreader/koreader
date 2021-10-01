@@ -262,15 +262,6 @@ else
     KOBO_TS_INPUT="/dev/input/event1"
 fi
 
-# Make sure we only keep two cores online on the Elipsa.
-# NOTE: That's a bit optimistic, we might actually need to tone that down to one,
-#       and just toggle the second one on demand (e.g., PDF).
-if [ "${PRODUCT}" = "europa" ]; then
-    echo "1" >"/sys/devices/system/cpu/cpu1/online"
-    echo "0" >"/sys/devices/system/cpu/cpu2/online"
-    echo "0" >"/sys/devices/system/cpu/cpu3/online"
-fi
-
 # We'll want to ensure Portrait rotation to allow us to use faster blitting codepaths @ 8bpp,
 # so remember the current one before fbdepth does its thing.
 IFS= read -r ORIG_FB_ROTA <"/sys/class/graphics/fb0/rotate"

@@ -1153,6 +1153,7 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                     curr_values = self.configurable[name]
                 end
                 widget = DoubleSpinWidget:new{
+                    width_factor = more_options_param.widget_width_factor,
                     title_text =  name_text or _("Set values"),
                     info_text = more_options_param.info_text,
                     left_text = more_options_param.left_text,
@@ -1250,9 +1251,9 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                     end
                 end
                 widget = SpinWidget:new{
+                    width_factor = more_options_param.widget_width_factor,
                     title_text =  name_text or _("Set value"),
                     info_text = more_options_param.info_text,
-                    width = math.floor(Screen:getWidth() * 0.6),
                     value = curr_items,
                     value_index = value_index,
                     value_table = more_options_param.value_table,

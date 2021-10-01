@@ -1088,13 +1088,12 @@ function ReaderFooter:addToMainMenu(menu_items)
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Font size (%1)"), self.settings.text_font_size)
+                            return T(_("Font size: %1"), self.settings.text_font_size)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
                             local font_size = self.settings.text_font_size
                             local items_font = SpinWidget:new{
-                                width = math.floor(Screen:getWidth() * 0.6),
                                 value = font_size,
                                 value_min = 8,
                                 value_max = 36,
@@ -1142,13 +1141,12 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    return T(_("Container height (%1)"), self.settings.container_height)
+                    return T(_("Container height: %1"), self.settings.container_height)
                 end,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local container_height = self.settings.container_height
                     local items_font = SpinWidget:new{
-                        width = math.floor(Screen:getWidth() * 0.6),
                         value = container_height,
                         value_min = 7,
                         value_max = 98,
@@ -1169,13 +1167,12 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    return T(_("Container bottom margin (%1)"), self.settings.container_bottom_padding)
+                    return T(_("Container bottom margin: %1"), self.settings.container_bottom_padding)
                 end,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local container_bottom_padding = self.settings.container_bottom_padding
                     local items_font = SpinWidget:new{
-                        width = math.floor(Screen:getWidth() * 0.6),
                         value = container_bottom_padding,
                         value_min = 0,
                         value_max = 49,
@@ -1199,12 +1196,11 @@ function ReaderFooter:addToMainMenu(menu_items)
                 sub_item_table = {
                     {
                         text_func = function()
-                            return T(_("Book title (%1%)"), self.settings.book_title_max_width_pct)
+                            return T(_("Book title: %1%"), self.settings.book_title_max_width_pct)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
                             local items = SpinWidget:new{
-                                width = math.floor(Screen:getWidth() * 0.6),
                                 value = self.settings.book_title_max_width_pct,
                                 value_min = 10,
                                 value_step = 5,
@@ -1225,12 +1221,11 @@ function ReaderFooter:addToMainMenu(menu_items)
                     },
                     {
                         text_func = function()
-                            return T(_("Current chapter (%1%)"), self.settings.book_chapter_max_width_pct)
+                            return T(_("Current chapter: %1%"), self.settings.book_chapter_max_width_pct)
                         end,
                         callback = function(touchmenu_instance)
                             local SpinWidget = require("ui/widget/spinwidget")
                             local items = SpinWidget:new{
-                                width = math.floor(Screen:getWidth() * 0.6),
                                 value = self.settings.book_chapter_max_width_pct,
                                 value_min = 10,
                                 value_step = 5,
@@ -1440,7 +1435,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
     if Device:hasBattery() then
         table.insert(sub_items[settings_submenu_num].sub_item_table, 4, {
             text_func = function()
-                return T(_("Hide battery status if level higher than (%1%)"), self.settings.battery_hide_threshold)
+                return T(_("Hide battery status if level higher than: %1%"), self.settings.battery_hide_threshold)
             end,
             enabled_func = function()
                 return self.settings.all_at_once == true
@@ -1449,7 +1444,6 @@ With this enabled, the current page is included, so the count goes from n to 1 i
             callback = function(touchmenu_instance)
                 local SpinWidget = require("ui/widget/spinwidget")
                 local battery_threshold = SpinWidget:new{
-                    width = math.floor(Screen:getWidth() * 0.6),
                     value = self.settings.battery_hide_threshold,
                     value_min = 0,
                     value_max = 100,
@@ -1598,7 +1592,6 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                             end
                             local SpinWidget = require("ui/widget/spinwidget")
                             local items = SpinWidget:new{
-                                width = math.floor(Screen:getWidth() * 0.6),
                                 value = value,
                                 value_min = value_min,
                                 value_step = 1,
@@ -1765,7 +1758,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
             },
             {
                 text_func = function()
-                    return T(_("Minimal width (%1%)"), self.settings.progress_bar_min_width_pct)
+                    return T(_("Minimal width: %1%"), self.settings.progress_bar_min_width_pct)
                 end,
                 enabled_func = function()
                     return self.settings.progress_bar_position == "alongside" and not self.settings.disable_progress_bar
@@ -1774,7 +1767,6 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local items = SpinWidget:new{
-                        width = math.floor(Screen:getWidth() * 0.6),
                         value = self.settings.progress_bar_min_width_pct,
                         value_min = 5,
                         value_step = 5,

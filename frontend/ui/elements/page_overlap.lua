@@ -1,8 +1,6 @@
-local Device = require("device")
 local ReaderUI = require("apps/reader/readerui")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
-local Screen = Device.screen
 local T = require("ffi/util").template
 
 local PageOverlap = {
@@ -57,7 +55,6 @@ table.insert(PageOverlap.sub_item_table, {
             info_text = _([[
 When page overlap is enabled, some lines from the previous page will be displayed on the next page.
 You can set how many lines are shown.]]),
-            width = math.floor(Screen:getWidth() * 0.75),
             value = G_reader_settings:readSetting("copt_overlap_lines") or 1,
             value_min = 1,
             value_max = 10,

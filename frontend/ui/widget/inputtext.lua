@@ -178,8 +178,8 @@ if Device:isTouchDevice() or Device:hasDPad() then
                     title = _("Clipboard"),
                     text = is_clipboard_empty and _("(empty)") or clipboard_value,
                     fgcolor = is_clipboard_empty and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_BLACK,
-                    width = math.floor(Screen:getWidth() * 0.8),
-                    height = math.floor(Screen:getHeight() * 0.4),
+                    width = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.8),
+                    height = math.floor(math.max(Screen:getWidth(), Screen:getHeight()) * 0.4),
                     justified = false,
                     stop_events_propagation = true,
                     buttons_table = {
@@ -522,7 +522,6 @@ function InputText:initKeyboard()
     self.keyboard = Keyboard:new{
         keyboard_layer = keyboard_layer,
         inputbox = self,
-        width = Screen:getWidth(),
     }
 end
 

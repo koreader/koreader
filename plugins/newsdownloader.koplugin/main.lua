@@ -396,7 +396,7 @@ function NewsDownloader:viewFeedList()
     local ok, feed_config = pcall(dofile, self.feed_config_path)
     if not ok or not feed_config then
         local change_feed_config = UI:confirm(
-            _("Could not open feed list. Feeds configuration file is invalid. "),
+            _("Could not open feed list. Feeds configuration file is invalid."),
             _("Close"),
             _("View file")
         )
@@ -455,7 +455,7 @@ function NewsDownloader:viewFeedList()
         UIManager:close(self.kv)
     end
     self.kv = KeyValuePage:new{
-        title = _("RSS/Atom Feeds List"),
+        title = _("RSS/Atom feeds"),
         value_overflow_align = "right",
         kv_pairs = view_content,
         callback_return = function()
@@ -750,7 +750,7 @@ end
 
 function NewsDownloader:saveConfig(config)
     local UI = require("ui/trapper")
-    UI:info(_("Saving news feed list..."))
+    UI:info(_("Saving news feed list…"))
     local persist = Persist:new{
         path = self.feed_config_path
     }

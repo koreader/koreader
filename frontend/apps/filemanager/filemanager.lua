@@ -525,7 +525,7 @@ function FileManager:init()
                 local name = plugin_module.name
                 if name then self[name] = plugin_or_err end
                 table.insert(self, plugin_or_err)
-                logger.info("FM loaded plugin", name,
+                logger.dbg("FM loaded plugin", name,
                             "at", plugin_module.path)
             end
         end

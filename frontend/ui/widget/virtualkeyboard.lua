@@ -270,7 +270,8 @@ function VirtualKey:init()
         }
     end
     if (self.keyboard.shiftmode_keys[self.label] ~= nil  and self.keyboard.shiftmode) or
-    (self.keyboard.symbolmode_keys[self.label] ~= nil and self.keyboard.symbolmode) then
+        (self.keyboard.umlautmode_keys[self.label] ~= nil and self.keyboard.umlautmode) or
+        (self.keyboard.symbolmode_keys[self.label] ~= nil and self.keyboard.symbolmode) then
         self[1].background = Blitbuffer.COLOR_LIGHT_GRAY
     end
     self.flash_keyboard = G_reader_settings:nilOrTrue("flash_keyboard")
@@ -736,7 +737,6 @@ local VirtualKeyboard = FocusManager:new{
     umlautmode = false,
     layout = {},
 
-    width = Screen:scaleBySize(600),
     height = nil,
     bordersize = Size.border.default,
     padding = 0,
@@ -776,6 +776,7 @@ function VirtualKeyboard:init()
     self.symbolmode_keys = keyboard.symbolmode_keys
     self.utf8mode_keys = keyboard.utf8mode_keys
     self.umlautmode_keys = keyboard.umlautmode_keys
+    self.width = Screen:getWidth()
     local keys_height = G_reader_settings:isTrue("keyboard_key_compact") and 48 or 64
     self.height = Screen:scaleBySize(keys_height * #self.KEYS)
     self.min_layer = keyboard.min_layer
