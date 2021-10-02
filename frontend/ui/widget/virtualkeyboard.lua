@@ -760,6 +760,7 @@ local VirtualKeyboard = FocusManager:new{
         ko_KR = "ko_KR_keyboard",
         ru = "ru_keyboard",
         tr = "tr_keyboard",
+        vi = "vn_keyboard",
     },
 }
 
