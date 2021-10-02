@@ -40,17 +40,6 @@ end
 
 local AutoWarmth = WidgetContainer:new{
     name = "autowarmth",
-    easy_mode = G_reader_settings:nilOrTrue("autowarmth_easy_mode"),
-    activate = G_reader_settings:readSetting("autowarmth_activate") or 0,
-    location = G_reader_settings:readSetting("autowarmth_location") or "Geysir",
-    latitude = G_reader_settings:readSetting("autowarmth_latitude") or 64.31, --great Geysir in Iceland
-    longitude = G_reader_settings:readSetting("autowarmth_longitude") or -20.30,
-    altitude = G_reader_settings:readSetting("autowarmth_altitude") or 200,
-    timezone = G_reader_settings:readSetting("autowarmth_timezone") or 0,
-    scheduler_times = G_reader_settings:readSetting("autowarmth_scheduler_times") or
-        {0.0, 5.5, 6.0, 6.5, 7.0, 13.0, 21.5, 22.0, 22.5, 23.0, 24.0},
-    warmth =   G_reader_settings:readSetting("autowarmth_warmth")
-        or { 90, 90, 80, 60, 20, 20, 20, 60, 80, 90, 90},
     sched_times = {},
     sched_funcs = {}, -- necessary for unschedule, function, warmth
 }
@@ -66,7 +55,18 @@ function AutoWarmth:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 
-    G_reader_settings:saveSetting("autowarmth_easy_mode", self.easy_mode)
+    self.easy_mode = G_reader_settings:nilOrTrue("autowarmth_easy_mode")
+    self.activate = G_reader_settings:readSetting("autowarmth_activate") or 0
+    self.location = G_reader_settings:readSetting("autowarmth_location") or "Geysir"
+    self.latitude = G_reader_settings:readSetting("autowarmth_latitude") or 64.31 --great Geysir in Iceland
+    self.longitude = G_reader_settings:readSetting("autowarmth_longitude") or -20.30
+    self.altitude = G_reader_settings:readSetting("autowarmth_altitude") or 200
+    self.timezone = G_reader_settings:readSetting("autowarmth_timezone") or 0
+    self.scheduler_times = G_reader_settings:readSetting("autowarmth_scheduler_times") or
+        {0.0, 5.5, 6.0, 6.5, 7.0, 13.0, 21.5, 22.0, 22.5, 23.0, 24.0}
+    self.warmth =   G_reader_settings:readSetting("autowarmth_warmth")
+        or { 90, 90, 80, 60, 20, 20, 20, 60, 80, 90, 90}
+
     -- schedule recalculation shortly afer midnight
     self:scheduleMidnightUpdate()
 end
@@ -255,6 +255,8 @@ function AutoWarmth:scheduleWarmthChanges(time)
         end
     end
 
+    if self.activate == 0 then return end
+
     local actual_warmth
     for i = 1, #self.sched_funcs do
         if self.sched_times[i] > time then
@@ -387,10 +389,10 @@ function AutoWarmth:getActivateMenu()
     end
 
     return {
-        getActivateMenuEntry( _("Sun position"), activate_sun),
-        getActivateMenuEntry( _("Time schedule"), activate_schedule),
-        getActivateMenuEntry( _("Whatever is closer to noon"), activate_closer_noon),
-        getActivateMenuEntry( _("Whatever is closer to midnight"), activate_closer_midnight),
+        getActivateMenuEntry(_("Sun position"), activate_sun),
+        getActivateMenuEntry(_("Time schedule"), activate_schedule),
+        getActivateMenuEntry(_("Whatever is closer to noon"), activate_closer_noon),
+        getActivateMenuEntry(_("Whatever is closer to midnight"), activate_closer_midnight),
     }
 end
 
