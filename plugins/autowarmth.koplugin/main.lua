@@ -17,8 +17,8 @@ local Font = require("ui/font")
 local Notification = require("ui/widget/notification")
 local SpinWidget = require("ui/widget/spinwidget")
 local SunTime = require("suntime")
+local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
-local Utf8Proc = require("ffi/utf8proc")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local T = FFIUtil.template
@@ -749,9 +749,28 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
     -- text to show
     -- t .. times
     -- num .. index in times
-    local function info_line(indent, text, t, num, easy)
+    local function info_line(indent, text, t, num, face, easy)
+        -- get width of space
+        local unit = " "
+        local tmp = TextWidget:new{
+            text = unit,
+            face = face,
+        }
+        local space_w = tmp:getSize().w
+
+        -- get width of text
+        unit = text
+        tmp = TextWidget:new{
+            text = unit,
+            face = face,
+        }
+        local text_w = tmp:getSize().w
+        tmp:free()
+
+        -- width of text in spaces
+        local str_len = math.floor(text_w / space_w + 0.5)
+
         local tab_width = 18 - indent
-        local str_len = Utf8Proc.count(text)
         local retval = string.rep(" ", indent) .. text .. string.rep(" ", tab_width - str_len)
             .. self:hoursToClock(t[num])
         if easy then
@@ -796,29 +815,30 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
         return easy and "" or ("  " .. text .. "\n")
     end
 
+    local face = Font:getFace("scfont")
     UIManager:show(InfoMessage:new{
-        face = Font:getFace("scfont"),
+        face = face,
         width = math.floor(Screen:getWidth() * (self.easy_mode and 0.75 or 0.90)),
             text = title .. location_string .. ":\n\n" ..
-            info_line(0, _("Solar midnight:"), times, 1, request_easy) ..
+            info_line(0, _("Solar midnight:"), times, 1, face, request_easy) ..
             add_line(_("Dawn"), request_easy) ..
-            info_line(4, _("Astronomic:"), times, 2, request_easy) ..
-            info_line(4, _("Nautical:"), times, 3, request_easy)..
+            info_line(4, _("Astronomic:"), times, 2, face, request_easy) ..
+            info_line(4, _("Nautical:"), times, 3, face, request_easy)..
             info_line(request_easy and 0 or 4,
-                request_easy and _("Twilight:") or _("Civil:"), times, 4) ..
+                request_easy and _("Twilight:") or _("Civil:"), times, 4, face) ..
             add_line(_("Dawn"), request_easy) ..
-            info_line(0, _("Sunrise:"), times, 5) ..
+            info_line(0, _("Sunrise:"), times, 5, face) ..
             "\n" ..
-            info_line(0, _("Solar noon:"), times, 6, request_easy) ..
+            info_line(0, _("Solar noon:"), times, 6, face, request_easy) ..
             add_line("", request_easy) ..
-            info_line(0, _("Sunset:"), times, 7) ..
+            info_line(0, _("Sunset:"), times, 7, face) ..
             add_line(_("Dusk"), request_easy) ..
             info_line(request_easy and 0 or 4,
-                request_easy and _("Twilight:") or _("Civil:"), times, 8) ..
-            info_line(4, _("Nautical:"), times, 9, request_easy) ..
-            info_line(4, _("Astronomic:"), times, 10, request_easy) ..
+                request_easy and _("Twilight:") or _("Civil:"), times, 8, face) ..
+            info_line(4, _("Nautical:"), times, 9, face, request_easy) ..
+            info_line(4, _("Astronomic:"), times, 10, face, request_easy) ..
             add_line(_("Dusk"), request_easy) ..
-            info_line(0, _("Solar midnight:"), times, midnight_index, request_easy)
+            info_line(0, _("Solar midnight:"), times, midnight_index, face, request_easy)
     })
 end
 
