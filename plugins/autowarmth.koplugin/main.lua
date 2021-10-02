@@ -751,7 +751,7 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
     -- num .. index in times
     local function info_line(indent, text, t, num, easy)
         local tab_width = 18 - indent
-        local str_len = Utf8Proc.strlen(text)
+        local str_len = Utf8Proc.count(text)
         local retval = string.rep(" ", indent) .. text .. string.rep(" ", tab_width - str_len)
             .. self:hoursToClock(t[num])
         if easy then
