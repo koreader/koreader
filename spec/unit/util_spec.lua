@@ -318,7 +318,7 @@ describe("util module", function()
 
     describe("isEmptyDir()", function()
         it("should return true on empty dir", function()
-            assert.is_true(util.isEmptyDir(DataStorage:getDataDir() .. "/data/dict")) -- should be empty during unit tests
+            assert.is_true(util.isEmptyDir(DataStorage:getDataDir() .. "/history")) -- should be empty during unit tests
         end)
         it("should return false on non-empty dir", function()
             assert.is_false(util.isEmptyDir(DataStorage:getDataDir())) -- should contain subdirectories
