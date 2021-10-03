@@ -1,10 +1,10 @@
 local en_popup = require("ui/data/keyboardlayouts/keypopup/en_popup")
 local com = en_popup.com -- comma (,)
-local prd = en_popup.prd -- period (.)
 local _at = en_popup._at
 local _eq = en_popup._eq -- equals sign (=)
 
 local el_popup = require("ui/data/keyboardlayouts/keypopup/el_popup")
+local prd = el_popup.prd -- period (.)
 local _A_el = el_popup._A_el
 local _a_el = el_popup._a_el
 local _B_el = el_popup._B_el
