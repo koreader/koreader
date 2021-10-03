@@ -633,65 +633,15 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                     )
                 end
             elseif key == FeedView.LIMIT then
-                if feed.limit then
-                    feed.limit = value
-                else
-                    table.insert(
-                        feed,
-                        {
-                            "limit",
-                            value
-                        }
-                    )
-                end
+                feed.limit = value
             elseif key == FeedView.DOWNLOAD_FULL_ARTICLE then
-                if feed.download_full_article ~= nil then
-                    feed.download_full_article = value
-                else
-                    table.insert(
-                        feed,
-                        {
-                            "download_full_article",
-                            value
-                        }
-                    )
-                end
+                feed.download_full_article = value
             elseif key == FeedView.INCLUDE_IMAGES then
-                if feed.include_images ~= nil then
-                    feed.include_images = value
-                else
-                    table.insert(
-                        feed,
-                        {
-                            "include_images",
-                            value
-                        }
-                    )
-                end
+                feed.include_images = value
             elseif key == FeedView.ENABLE_FILTER then
-                if feed.enable_filter ~= nil then
-                    feed.enable_filter = value
-                else
-                    table.insert(
-                        feed,
-                        {
-                            "enable_filter",
-                            value
-                        }
-                    )
-                end
+                feed.enable_filter = value
             elseif key == FeedView.FILTER_ELEMENT then
-                if feed.filter_element then
-                    feed.filter_element = value
-                else
-                    table.insert(
-                        feed,
-                        {
-                            "filter_element",
-                            value
-                        }
-                    )
-                end
+                feed.filter_element = value
             elseif key == FeedView.VOLUMIZE then
                 feed.volumize = value
             end
