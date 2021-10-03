@@ -7,7 +7,8 @@ local FeedView = {
     DOWNLOAD_FULL_ARTICLE = "download_full_article",
     INCLUDE_IMAGES = "include_images",
     ENABLE_FILTER = "enable_filter",
-    FILTER_ELEMENT = "filter_element"
+    FILTER_ELEMENT = "filter_element",
+    VOLUMIZE = "volumize"
 }
 
 function FeedView:getList(feed_config, callback, edit_feed_attribute_callback, delete_feed_callback)
@@ -67,6 +68,7 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
     local include_images = feed.include_images ~= false
     local enable_filter = feed.enable_filter ~= false
     local filter_element = feed.filter_element
+    local volumize = feed.volumize ~= false
 
     local vc = {
         {
@@ -133,6 +135,17 @@ function FeedView:getItem(id, feed, edit_feed_callback, delete_feed_callback)
                     id,
                     FeedView.FILTER_ELEMENT,
                     filter_element
+                )
+            end
+        },
+        {
+            _("Volumize feed"),
+            volumize,
+            callback = function()
+                edit_feed_callback(
+                    id,
+                    FeedView.VOLUMIZE,
+                    volumize
                 )
             end
         },

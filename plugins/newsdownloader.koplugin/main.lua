@@ -38,7 +38,8 @@ local NewsDownloader = WidgetContainer:new{
         download_full_article = true,
         include_images = true,
         enable_filter = false,
-        filter_element = ""
+        filter_element = "",
+        volumize = false
     },
     kv = {}
 }
@@ -545,6 +546,8 @@ function NewsDownloader:editFeedAttribute(id, key, value)
             text = _("Include images?")
         elseif key == FeedView.ENABLE_FILTER then
             text = _("Enable CSS filter?")
+        elseif key == FeedView.VOLUMIZE then
+            text = _("Volumize feed?")
         end
 
         local multi_box
@@ -689,6 +692,8 @@ function NewsDownloader:updateFeedConfig(id, key, value)
                         }
                     )
                 end
+            elseif key == FeedView.VOLUMIZE then
+                feed.volumize = value
             end
         end
         -- Now we insert the updated (or newly created) feed into the
