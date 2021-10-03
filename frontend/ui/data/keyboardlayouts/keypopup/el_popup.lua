@@ -1,4 +1,14 @@
 return {
+    prd = {
+        ".",
+        north = ":",
+        alt_label = ":",
+        northeast = ")",
+        northwest = "¡",
+        east = "…",
+        west = "!",
+        "·",
+    },
     _A_el = {
         "Α",
         northeast = "Ά",
