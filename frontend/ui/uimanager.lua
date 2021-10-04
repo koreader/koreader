@@ -654,6 +654,46 @@ end
 dbg:guard(UIManager, 'unschedule',
     function(self, action) assert(action ~= nil) end)
 
+-- Cropping widgets (i.e. ScrollableContainer) may need to intercept
+-- normal self painting by sub widgets
+function UIManager:registerCroppingWidget(widget)
+    if not self.cropping_widgets then
+        self.cropping_widgets = {}
+    end
+    self.cropping_widgets[widget] = true
+end
+
+function UIManager:unregisterCroppingWidget(widget)
+    if self.cropping_widgets and self.cropping_widgets[widget] then
+        self.cropping_widgets[widget] = nil
+        if not next(self.cropping_widgets) then
+            self.cropping_widgets = nil
+        end
+    end
+end
+
+function UIManager:getParentCroppingWidget(widget)
+    if self.cropping_widgets then
+        for cropping_widget, _ in pairs(self.cropping_widgets) do
+            if self:isDescendant(widget, cropping_widget) then
+                return cropping_widget
+            end
+        end
+    end
+end
+
+function UIManager:isDescendant(child, parent)
+    for _, w in ipairs(parent) do
+        if w == child then
+            return true
+        end
+        if self:isDescendant(child, w) then
+            return true
+        end
+    end
+    return false
+end
+
 --[[--
 Mark a window-level widget as dirty, enqueuing a repaint & refresh request for that widget, to be processed on the next UI tick.
 
@@ -1541,6 +1581,14 @@ function UIManager:widgetRepaint(widget, x, y)
     if not widget then return end
 
     logger.dbg("Explicit widgetRepaint:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
+    if self.cropping_widgets then
+        local cropping_widget = self:getParentCroppingWidget(widget)
+        if cropping_widget then
+            -- Delegate the painting of this subwidget to its cropping widget container
+            cropping_widget:paintTo(Screen.bb, cropping_widget.dimen.x, cropping_widget.dimen.y)
+            return
+        end
+    end
     widget:paintTo(Screen.bb, x, y)
 end
 
