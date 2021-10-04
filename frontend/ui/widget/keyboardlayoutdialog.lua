@@ -14,6 +14,7 @@ local Language = require("ui/language")
 local LineWidget = require("ui/widget/linewidget")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local RadioButtonTable = require("ui/widget/radiobuttontable")
+local ScrollableContainer = require("ui/widget/container/scrollablecontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
@@ -100,11 +101,12 @@ function KeyboardLayoutDialog:init()
         },
     })
 
+    -- (RadioButtonTable's width and padding setup is a bit fishy: this
+    -- looks ok because we use a CenterContainer that smooths things)
     self.radio_button_table = RadioButtonTable:new{
         radio_buttons = radio_buttons,
-        width = math.floor(self.width * 0.9),
+        width = self.title_bar:getSize().w - ScrollableContainer:getScrollbarWidth() - Size.padding.large,
         focused = true,
-        scroll = false,
         parent = self,
         face = self.face,
     }
@@ -119,6 +121,11 @@ function KeyboardLayoutDialog:init()
         show_parent = self,
     }
 
+    local max_radio_button_container_height = math.floor(Screen:getHeight()*0.9
+                    - self.title_widget:getSize().h - self.title_bar:getSize().h
+                    - Size.span.vertical_large*4 - self.button_table:getSize().h)
+    local radio_button_container_height = math.min(self.radio_button_table:getSize().h, max_radio_button_container_height)
+
     self.dialog_frame = FrameContainer:new{
         radius = Size.radius.window,
         bordersize = Size.border.window,
@@ -132,12 +139,19 @@ function KeyboardLayoutDialog:init()
             VerticalSpan:new{
                 width = Size.span.vertical_large*2,
             },
-            CenterContainer:new{
+            ScrollableContainer:new{
                 dimen = Geom:new{
                     w = self.title_bar:getSize().w,
-                    h = self.radio_button_table:getSize().h,
+                    h = radio_button_container_height,
                 },
-                self.radio_button_table,
+                show_parent = self,
+                CenterContainer:new{
+                    dimen = Geom:new{
+                        w = self.title_bar:getSize().w,
+                        h = self.radio_button_table:getSize().h,
+                    },
+                    self.radio_button_table,
+                },
             },
             VerticalSpan:new{
                 width = Size.span.vertical_large*2,
