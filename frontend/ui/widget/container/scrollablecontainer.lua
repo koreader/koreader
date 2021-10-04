@@ -45,7 +45,7 @@ function ScrollableContainer:getScrollbarWidth(scroll_bar_width)
     if not scroll_bar_width then
         scroll_bar_width = self.scroll_bar_width
     end
-    return 3 * self.scroll_bar_width
+    return 3 * scroll_bar_width
 end
 
 function ScrollableContainer:init()
