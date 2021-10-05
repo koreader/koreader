@@ -50,8 +50,8 @@ local DictQuickLookup = InputContainer:new{
     dict_index = 1,
     width = nil,
     height = nil,
-    -- box of highlighted word, quick lookup window tries to not hide the word
-    word_box = nil,
+    -- sboxes containing higlighted text, quick lookup window tries to not hide the word
+    word_boxes = nil,
 
     -- refresh_callback will be called before we trigger full refresh in onSwipe
     refresh_callback = nil,
@@ -620,16 +620,32 @@ function DictQuickLookup:init()
         local nb_lines = Math.round(self.definition_height / self.definition_line_height)
         self.definition_height = nb_lines * self.definition_line_height
         self.height = self.definition_height + others_height
-        if self.word_box then
+        if self.word_boxes then
             -- Try to not hide the highlighted word. We don't want to always
             -- get near it if we can stay center, so that more context around
             -- the word is still visible with the dict result.
             -- But if we were to be drawn over the word, move a bit if possible.
-            local box = self.word_box
+
+            -- In most cases boxes will be a single sbox, but handle multiple
+            -- sboxes by taking the top and bottom y values.
+            local word_box_top = nil
+            local word_box_bottom = nil
+            for _, box in ipairs(self.word_boxes) do
+                local box_top = box.y
+                local box_bottom = box.y + box.h
+                if word_box_top == nil or word_box_top > box_top then
+                    word_box_top = box_top
+                end
+                if word_box_bottom == nil or word_box_bottom < box_bottom then
+                    word_box_bottom = box_bottom
+                end
+            end
+
             -- Don't stick to the box, ensure a minimal padding between box and window
             local box_dict_padding = Size.padding.small
-            local word_box_top = box.y - box_dict_padding
-            local word_box_bottom = box.y + box.h + box_dict_padding
+            word_box_top = word_box_top - box_dict_padding
+            word_box_bottom = word_box_bottom + box_dict_padding
+
             local half_visible_height = (avail_height - self.height) / 2
             if word_box_bottom > half_visible_height and word_box_top <= half_visible_height + self.height then
                 -- word would be covered by our centered window
