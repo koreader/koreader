@@ -315,6 +315,7 @@ end
 function ReaderBookmark:onShowBookmark()
     self:updateHighlightsIfNeeded()
     -- build up item_table
+    local item_table = {}
     for k, v in ipairs(self.bookmarks) do
         local page = v.page
         -- for CREngine, bookmark page is xpointer
@@ -333,8 +334,11 @@ function ReaderBookmark:onShowBookmark()
             end
         end
         if v.text == nil or v.text == "" then
-            v.text = T(_("Page %1 %2 @ %3"), page, v.notes, v.datetime)
+            v.text = v.notes
         end
+        item_table[k] = require("util").tableDeepCopy(v)
+        item_table[k].page_str = tostring(page)
+        item_table[k].mandatory = item_table[k].page_str .. " " .. item_table[k].datetime:sub(1, 16)
     end
 
     local items_per_page = G_reader_settings:readSetting("bookmarks_items_per_page") or self.bookmarks_items_per_page_default
@@ -343,12 +347,11 @@ function ReaderBookmark:onShowBookmark()
 
     local bm_menu = Menu:new{
         title = _("Bookmarks"),
-        item_table = self.bookmarks,
+        item_table = item_table,
         is_borderless = true,
         is_popout = false,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
-        cface = Font:getFace("x_smallinfofont"),
         items_per_page = items_per_page,
         items_font_size = items_font_size,
         multilines_show_more_text = multilines_show_more_text,
@@ -569,22 +572,10 @@ end
 function ReaderBookmark:updateBookmark(item)
     for i=1, #self.bookmarks do
         if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
-            local page = self.ui.document:getPageFromXPointer(item.updated_highlight.pos0)
-            if self.ui.document:hasHiddenFlows() then
-                local flow = self.ui.document:getPageFlow(page)
-                page = self.ui.document:getPageNumberInFlow(page)
-                if flow > 0 then
-                    page = T("[%1]%2", page, flow)
-                end
-            end
-            local new_text = item.updated_highlight.text
             self.bookmarks[i].page = item.updated_highlight.pos0
             self.bookmarks[i].pos0 = item.updated_highlight.pos0
             self.bookmarks[i].pos1 = item.updated_highlight.pos1
             self.bookmarks[i].notes = item.updated_highlight.text
-            self.bookmarks[i].text = T(_("Page %1 %2 @ %3"), page,
-                                        new_text,
-                                        item.updated_highlight.datetime)
             self.bookmarks[i].datetime = item.updated_highlight.datetime
             self.bookmarks[i].chapter = item.updated_highlight.chapter
             self:onSaveSettings()
@@ -599,23 +590,23 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
         local pboxes = item.pboxes
         for __, bm in ipairs(self.bookmarks) do
             if item.datetime == bm.datetime and item.page == bm.page then
-                bookmark = bm
-                bookmark.pboxes = pboxes
-                if bookmark.text == nil or bookmark.text == "" then
-                    -- Make up bookmark text as done in onShowBookmark
-                    local page = bookmark.page
-                    if not self.ui.document.info.has_pages then
-                        page = self.ui.document:getPageFromXPointer(page)
-                        if self.ui.document:hasHiddenFlows() then
-                            local flow = self.ui.document:getPageFlow(page)
-                            page = self.ui.document:getPageNumberInFlow(page)
-                            if flow > 0 then
-                                page = T("[%1]%2", page, flow)
-                            end
+                bm.pboxes = pboxes
+                if bm.text == nil or bm.text == "" then
+                    bm.text = bm.notes
+                end
+                bookmark = require("util").tableDeepCopy(bm)
+                local page = bookmark.page
+                if not self.ui.document.info.has_pages then
+                    page = self.ui.document:getPageFromXPointer(page)
+                    if self.ui.document:hasHiddenFlows() then
+                        local flow = self.ui.document:getPageFlow(page)
+                        page = self.ui.document:getPageNumberInFlow(page)
+                        if flow > 0 then
+                            page = T("[%1]%2", page, flow)
                         end
                     end
-                    bookmark.text = T(_("Page %1 %2 @ %3"), page, bookmark.notes, bookmark.datetime)
                 end
+                bookmark.page_str = tostring(page)
                 break
             end
         end
@@ -627,8 +618,8 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
     end
     self.input = InputDialog:new{
         title = _("Rename bookmark"),
+        description = T("  " .. _("Page: %1") .. "     " .. _("Time: %2"), bookmark.page_str, bookmark.datetime:sub(1, 16)),
         input = bookmark.text,
-        input_type = "text",
         allow_newline = true,
         cursor_at_end = false,
         add_scroll_buttons = true,
@@ -636,13 +627,13 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
             {
                 {
                     text = _("Cancel"),
-                    is_enter_default = true,
                     callback = function()
                         UIManager:close(self.input)
                     end,
                 },
                 {
                     text = _("Rename"),
+                    is_enter_default = true,
                     callback = function()
                         local value = self.input:getInputValue()
                         if value ~= "" then
@@ -650,6 +641,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                                 if bookmark.text == bm.text and  bookmark.pos0 == bm.pos0 and
                                     bookmark.pos1 == bm.pos1 and bookmark.page == bm.page then
                                     bm.text = value
+                                    bookmark.text = value
                                     -- A bookmark isn't necessarily a highlight (it doesn't have pboxes)
                                     if bookmark.pboxes then
                                         local setting = G_reader_settings:readSetting("save_document")
@@ -690,6 +682,7 @@ function ReaderBookmark:toggleBookmark(pn_or_xp)
         self:addBookmark({
             page = pn_or_xp,
             datetime = os.date("%Y-%m-%d %H:%M:%S"),
+            text = "★",
             notes = notes,
             chapter = chapter_name
         })
@@ -806,7 +799,7 @@ function ReaderBookmark:getNumberOfHighlightsAndNotes()
             -- have been edited and became "notes". Editing them
             -- adds this 'text' field, but just showing bookmarks
             -- do that as well...
-            if self.bookmarks[i].text then
+            if self.bookmarks[i].text and self.bookmarks[i].text:sub(1, 1) ~= "★" then
                 notes = notes + 1
             end
         end
