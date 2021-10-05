@@ -675,23 +675,11 @@ end
 function UIManager:getParentCroppingWidget(widget)
     if self.cropping_widgets then
         for cropping_widget, _ in pairs(self.cropping_widgets) do
-            if self:isDescendant(widget, cropping_widget) then
+            if util.arrayReferences(cropping_widget, widget) then
                 return cropping_widget
             end
         end
     end
-end
-
-function UIManager:isDescendant(child, parent)
-    for _, w in ipairs(parent) do
-        if w == child then
-            return true
-        end
-        if self:isDescendant(child, w) then
-            return true
-        end
-    end
-    return false
 end
 
 --[[--
@@ -1606,6 +1594,17 @@ function UIManager:widgetInvert(widget, x, y, w, h)
     if not widget then return end
 
     logger.dbg("Explicit widgetInvert:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
+    if self.cropping_widgets then
+        local cropping_widget = self:getParentCroppingWidget(widget)
+        if cropping_widget then
+            -- Invert only what intersects with the cropping container
+            local widget_region = Geom:new{x=x, y=y, w=w or widget.dimen.w, h=h or widget.dimen.h}
+            local crop_region = cropping_widget:getCropRegion()
+            local invert_region = crop_region:intersect(widget_region)
+            Screen.bb:invertRect(invert_region.x, invert_region.y, invert_region.w, invert_region.h)
+            return
+        end
+    end
     Screen.bb:invertRect(x, y, w or widget.dimen.w, h or widget.dimen.h)
 end
 

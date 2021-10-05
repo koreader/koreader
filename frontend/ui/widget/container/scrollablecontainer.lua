@@ -37,6 +37,9 @@ local ScrollableContainer = InputContainer:new{
     _h_scroll_bar = nil,
     -- Scratch buffer
     _bb = nil,
+    _crop_w = nil,
+    _crop_h = nil,
+    _crop_dx = 0,
     _mirroredUI = BD.mirroredUILayout(),
 }
 
@@ -88,6 +91,20 @@ function ScrollableContainer:initState()
         self._is_scrollable = false
     else
         self._is_scrollable = true
+        self._crop_w = self.dimen.w
+        self._crop_h = self.dimen.h
+        if self._max_scroll_offset_y > 0 then
+            -- Adding a vertical scrollbar reduces the available width: recompute
+            self._max_scroll_offset_x = math.max(0, content_size.w - (self.dimen.w - 3*self.scroll_bar_width))
+        end
+        if self._max_scroll_offset_x > 0 then
+            -- Adding a horizontal scrollbar reduces the available height: recompute
+            self._max_scroll_offset_y = math.max(0, content_size.h - (self.dimen.h - 3*self.scroll_bar_width))
+            if self._max_scroll_offset_y > 0 then
+                -- And re-compute again if we have to now add a vertical scrollbar
+                self._max_scroll_offset_x = math.max(0, content_size.w - (self.dimen.w - 3*self.scroll_bar_width))
+            end
+        end
         -- Scrollbars won't be classic sub-widgets, we'll handle their painting ourselves
         if self._max_scroll_offset_y > 0 then
             self._v_scroll_bar = VerticalScrollBar:new{
@@ -97,6 +114,7 @@ function ScrollableContainer:initState()
                     self:scrollToRatio(nil, ratio)
                 end
             }
+            self._crop_w = self.dimen.w - 3*self.scroll_bar_width
         end
         if self._max_scroll_offset_x > 0 then
             self._h_scroll_bar_shift = 0
@@ -111,21 +129,36 @@ function ScrollableContainer:initState()
                     self:scrollToRatio(ratio, nil)
                 end
             }
+            self._crop_h = self.dimen.h - 3*self.scroll_bar_width
+        end
+        if self._mirroredUI then
+            if self._v_scroll_bar then
+                self._crop_dx = self.dimen.w - self._crop_w
+            end
         end
         self:_updateScrollBars()
     end
 end
 
+function ScrollableContainer:getCropRegion()
+    return Geom:new{
+        x = self.dimen.x + self._crop_dx,
+        y = self.dimen.y,
+        w = self._crop_w,
+        h = self._crop_h,
+    }
+end
+
 function ScrollableContainer:_updateScrollBars()
     if self._v_scroll_bar then
-        local dheight = self.dimen.h / (self._max_scroll_offset_y + self.dimen.h)
-        local low = self._scroll_offset_y / (self._max_scroll_offset_y + self.dimen.h)
+        local dheight = self._crop_h / (self._max_scroll_offset_y + self._crop_h)
+        local low = self._scroll_offset_y / (self._max_scroll_offset_y + self._crop_h)
         local high = low + dheight
         self._v_scroll_bar:set(low, high)
     end
     if self._h_scroll_bar then
-        local dwidth = self.dimen.w / (self._max_scroll_offset_x + self.dimen.w)
-        local low = self._scroll_offset_x / (self._max_scroll_offset_x + self.dimen.w)
+        local dwidth = self._crop_w / (self._max_scroll_offset_x + self._crop_w)
+        local low = self._scroll_offset_x / (self._max_scroll_offset_x + self._crop_w)
         local high = low + dwidth
         self._h_scroll_bar:set(low, high)
     end
@@ -133,8 +166,8 @@ end
 
 function ScrollableContainer:scrollToRatio(ratio_x, ratio_y)
     if ratio_y then
-        local dy = ratio_y * (self._max_scroll_offset_y + self.dimen.h)
-        self._scroll_offset_y = dy - Math.round(self.dimen.h/2)
+        local dy = ratio_y * (self._max_scroll_offset_y + self._crop_h)
+        self._scroll_offset_y = dy - Math.round(self._crop_h/2)
         if self._scroll_offset_y < 0 then
             self._scroll_offset_y = 0
         end
@@ -143,8 +176,8 @@ function ScrollableContainer:scrollToRatio(ratio_x, ratio_y)
         end
     end
     if ratio_x then
-        local dx = ratio_x * (self._max_scroll_offset_x + self.dimen.w)
-        self._scroll_offset_x = dx - Math.round(self.dimen.w/2)
+        local dx = ratio_x * (self._max_scroll_offset_x + self._crop_w)
+        self._scroll_offset_x = dx - Math.round(self._crop_w/2)
         if self._scroll_offset_x < 0 then
             self._scroll_offset_x = 0
         end
@@ -238,16 +271,16 @@ function ScrollableContainer:paintTo(bb, x, y)
     -- to erase bits that may not be overwritten after a scroll
     self._bb:fill(Blitbuffer.COLOR_WHITE)
     if self._mirroredUI then
-        self[1]:paintTo(self._bb, x-self._max_scroll_offset_x+self._scroll_offset_x, y-self._scroll_offset_y)
+        self[1]:paintTo(self._bb, x + self._crop_dx - self._max_scroll_offset_x + self._scroll_offset_x, y - self._scroll_offset_y)
     else
-        self[1]:paintTo(self._bb, x-self._scroll_offset_x, y-self._scroll_offset_y)
+        self[1]:paintTo(self._bb, x - self._scroll_offset_x, y - self._scroll_offset_y)
     end
-    bb:blitFrom(self._bb, x, y, x, y, self.dimen.w, self.dimen.h)
+    bb:blitFrom(self._bb, x + self._crop_dx, y, x + self._crop_dx, y, self._crop_w, self._crop_h)
 
     -- Draw our scrollbars over
     if self._h_scroll_bar then
         if self._mirroredUI then
-            self._h_scroll_bar:paintTo(bb, x+self._h_scroll_bar_shift, y + self.dimen.h - 2*self.scroll_bar_width)
+            self._h_scroll_bar:paintTo(bb, x + self._h_scroll_bar_shift, y + self.dimen.h - 2*self.scroll_bar_width)
         else
             self._h_scroll_bar:paintTo(bb, x, y + self.dimen.h - 2*self.scroll_bar_width)
         end
@@ -270,7 +303,7 @@ function ScrollableContainer:propagateEvent(event)
     end
     if event.handler == "onGesture" and event.argc == 1 then
         local ges = event.args[1]
-        -- Don't propage events that happen out of view (in the hidden
+        -- Don't propagate events that happen out of view (in the hidden
         -- scrolled-out area) to child
         if ges.pos and not ges.pos:intersectWith(self.dimen) then
             return false -- we may handle it here

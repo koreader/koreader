@@ -101,11 +101,12 @@ function KeyboardLayoutDialog:init()
         },
     })
 
-    -- (RadioButtonTable's width and padding setup is a bit fishy: this
-    -- looks ok because we use a CenterContainer that smooths things)
+    -- (RadioButtonTable's width and padding setup is a bit fishy: we get
+    -- this to look ok by using a CenterContainer to ensure some padding)
+    local scroll_container_inner_width = self.title_bar:getSize().w - ScrollableContainer:getScrollbarWidth()
     self.radio_button_table = RadioButtonTable:new{
         radio_buttons = radio_buttons,
-        width = self.title_bar:getSize().w - ScrollableContainer:getScrollbarWidth() - Size.padding.large,
+        width = scroll_container_inner_width - 2*Size.padding.large,
         focused = true,
         parent = self,
         face = self.face,
@@ -147,7 +148,7 @@ function KeyboardLayoutDialog:init()
                 show_parent = self,
                 CenterContainer:new{
                     dimen = Geom:new{
-                        w = self.title_bar:getSize().w,
+                        w = scroll_container_inner_width,
                         h = self.radio_button_table:getSize().h,
                     },
                     self.radio_button_table,
