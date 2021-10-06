@@ -15,7 +15,7 @@ jobs:
         os: [ubuntu-20.04]
 
     container: 
-        image: koreader/koappimage:0.1.7
+        image: koreader/koappimage:0.2.2
         options: --user ko
         
     env:
