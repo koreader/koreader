@@ -135,17 +135,6 @@ function ReaderBookmark:addToMainMenu(menu_items)
                     G_reader_settings:flipNilOrTrue("bookmarks_items_auto_text")
                 end
             },
-            {
-                text = _("Reverse order"),
-                checked_func = function()
-                    return G_reader_settings:isTrue("bookmarks_items_reverse_order")
-                end,
-                callback = function()
-                    G_reader_settings:flipNilOrFalse("bookmarks_items_reverse_order")
-                    self.ui.doc_settings:delSetting("bookmarks_sorted")
-                    self:fixBookmarkSort(self.ui.doc_settings)
-                end
-            },
         },
     }
 end
@@ -208,15 +197,9 @@ function ReaderBookmark:fixBookmarkSort(config)
     -- for backward compatibility, since previously bookmarks for credocuments
     -- are not well sorted. We need to do a whole sorting for at least once.
     if config:hasNot("bookmarks_sorted") then
-        if G_reader_settings:isTrue("bookmarks_items_reverse_order") then
-            table.sort(self.bookmarks, function(a, b)
-                return self:isBookmarkInReversePageOrder(a, b)
-            end)
-        else
-            table.sort(self.bookmarks, function(a, b)
-                return self:isBookmarkInPageOrder(a, b)
-            end)
-        end
+        table.sort(self.bookmarks, function(a, b)
+            return self:isBookmarkInPageOrder(a, b)
+        end)
     end
 end
 
