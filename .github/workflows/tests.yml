@@ -23,12 +23,15 @@ jobs:
         # this is for shellcheck 0.4.5 and lower; can be removed for 0.4.6
         LC_ALL: en_US.UTF8
         HOME: /home/ko
+        # pretend to be cirleci so the scripts dont have to change
         CIRCLE_WORKING_DIRECTORY: ${{ github.workspace }}
 
     steps:
+        # chown working directory to ko (docker user0
       - name: permissions
         run: sudo chown -R ko:ko /__w/koreader/
 
+        # make sure we have git >= 2.18 so github checkout behaves
       - name: git update
         run: sudo add-apt-repository ppa:git-core/ppa -y && sudo apt-get update && sudo apt-get install git -y
 
@@ -79,6 +82,7 @@ jobs:
         run: .ci/test.sh
 
       - name:  docs-and-coverage
+        # only run when the event is a push on the master branch
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
         run: .ci/after_success.sh
 
