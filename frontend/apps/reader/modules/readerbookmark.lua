@@ -16,7 +16,7 @@ local _ = require("gettext")
 local Screen = require("device").screen
 local T = require("ffi/util").template
 
-local BM_PREFIX = "★ " -- distinguish page bookmarks from highlights and notes
+local PAGE_BOOKMARK_DISPLAY_PREFIX = "★ " -- distinguish page bookmarks from highlights and notes
 
 local ReaderBookmark = InputContainer:new{
     bm_menu_title = _("Bookmarks"),
@@ -337,7 +337,7 @@ function ReaderBookmark:onShowBookmark()
         end
         item_table[k] = util.tableDeepCopy(v)
         if not v.highlighted then -- page bookmark
-            item_table[k].text = BM_PREFIX .. v.text
+            item_table[k].text = PAGE_BOOKMARK_DISPLAY_PREFIX .. v.text
         end
         item_table[k].text_orig = v.text
         item_table[k].mandatory = self:getBookmarkPageString(v.page)
@@ -610,6 +610,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                     bm.text = self:getBookmarkAutoText(bm)
                 end
                 bookmark = util.tableDeepCopy(bm)
+                bookmark.text_orig = bookmark.text
                 bookmark.mandatory = self:getBookmarkPageString(bm.page)
                 break
             end
@@ -659,7 +660,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                                 UIManager:close(self.input)
                                 if not from_highlight then
                                     if not bookmark.highlighted then
-                                        bookmark.text = BM_PREFIX .. value
+                                        bookmark.text = PAGE_BOOKMARK_DISPLAY_PREFIX .. value
                                     end
                                     self.refresh()
                                 end
