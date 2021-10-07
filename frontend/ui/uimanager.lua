@@ -654,34 +654,6 @@ end
 dbg:guard(UIManager, 'unschedule',
     function(self, action) assert(action ~= nil) end)
 
--- Cropping widgets (i.e. ScrollableContainer) may need to intercept
--- normal self painting by sub widgets
-function UIManager:registerCroppingWidget(widget)
-    if not self.cropping_widgets then
-        self.cropping_widgets = {}
-    end
-    self.cropping_widgets[widget] = true
-end
-
-function UIManager:unregisterCroppingWidget(widget)
-    if self.cropping_widgets and self.cropping_widgets[widget] then
-        self.cropping_widgets[widget] = nil
-        if not next(self.cropping_widgets) then
-            self.cropping_widgets = nil
-        end
-    end
-end
-
-function UIManager:getParentCroppingWidget(widget)
-    if self.cropping_widgets then
-        for cropping_widget, _ in pairs(self.cropping_widgets) do
-            if util.arrayReferences(cropping_widget, widget) then
-                return cropping_widget
-            end
-        end
-    end
-end
-
 --[[--
 Mark a window-level widget as dirty, enqueuing a repaint & refresh request for that widget, to be processed on the next UI tick.
 
@@ -1569,13 +1541,12 @@ function UIManager:widgetRepaint(widget, x, y)
     if not widget then return end
 
     logger.dbg("Explicit widgetRepaint:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
-    if self.cropping_widgets then
-        local cropping_widget = self:getParentCroppingWidget(widget)
-        if cropping_widget then
-            -- Delegate the painting of this subwidget to its cropping widget container
-            cropping_widget:paintTo(Screen.bb, cropping_widget.dimen.x, cropping_widget.dimen.y)
-            return
-        end
+    if widget.show_parent and widget.show_parent.cropping_widget then
+        -- The main widget parent of this subwidget has a cropping container
+        -- Delegate the painting of this subwidget to its cropping widget container
+        local cropping_widget = widget.show_parent.cropping_widget
+        cropping_widget:paintTo(Screen.bb, cropping_widget.dimen.x, cropping_widget.dimen.y)
+        return
     end
     widget:paintTo(Screen.bb, x, y)
 end
@@ -1594,16 +1565,15 @@ function UIManager:widgetInvert(widget, x, y, w, h)
     if not widget then return end
 
     logger.dbg("Explicit widgetInvert:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
-    if self.cropping_widgets then
-        local cropping_widget = self:getParentCroppingWidget(widget)
-        if cropping_widget then
-            -- Invert only what intersects with the cropping container
-            local widget_region = Geom:new{x=x, y=y, w=w or widget.dimen.w, h=h or widget.dimen.h}
-            local crop_region = cropping_widget:getCropRegion()
-            local invert_region = crop_region:intersect(widget_region)
-            Screen.bb:invertRect(invert_region.x, invert_region.y, invert_region.w, invert_region.h)
-            return
-        end
+    if widget.show_parent and widget.show_parent.cropping_widget then
+        -- The main widget parent of this subwidget has a cropping container
+        -- Invert only what intersects with the cropping container
+        local cropping_widget = widget.show_parent.cropping_widget
+        local widget_region = Geom:new{x=x, y=y, w=w or widget.dimen.w, h=h or widget.dimen.h}
+        local crop_region = cropping_widget:getCropRegion()
+        local invert_region = crop_region:intersect(widget_region)
+        Screen.bb:invertRect(invert_region.x, invert_region.y, invert_region.w, invert_region.h)
+        return
     end
     Screen.bb:invertRect(x, y, w or widget.dimen.w, h or widget.dimen.h)
 end

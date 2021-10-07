@@ -226,14 +226,7 @@ function ScrollableContainer:setScrolledOffset(offset_point)
     end
 end
 
-function ScrollableContainer:onShow()
-    -- We'll have any subwidget :repaintWidget() intercepted
-    -- and our :paintTo() called instead
-    UIManager:registerCroppingWidget(self)
-end
-
 function ScrollableContainer:onCloseWidget()
-    UIManager:unregisterCroppingWidget(self)
     if self._bb then
         self._bb:free()
         self._bb = nil

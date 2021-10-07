@@ -87,6 +87,7 @@ function RadioButton:update()
         background = self.background,
         radius = self.radius,
         padding = self.padding,
+        show_parent = self.show_parent,
         LeftContainer:new{
             dimen = Geom:new{
                 w = self.width,
