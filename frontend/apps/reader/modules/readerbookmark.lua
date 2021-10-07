@@ -610,7 +610,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                     bm.text = self:getBookmarkAutoText(bm)
                 end
                 bookmark = util.tableDeepCopy(bm)
-                bookmark.text_orig = bookmark.text
+                bookmark.text_orig = bm.text
                 bookmark.mandatory = self:getBookmarkPageString(bm.page)
                 break
             end
