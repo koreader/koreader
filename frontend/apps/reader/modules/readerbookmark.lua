@@ -11,9 +11,12 @@ local Menu = require("ui/widget/menu")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local tableDeepCopy = require("util").tableDeepCopy
 local _ = require("gettext")
 local Screen = require("device").screen
 local T = require("ffi/util").template
+
+local BM_PREFIX = "★ " -- distinguish page bookmarks from highlights and notes
 
 local ReaderBookmark = InputContainer:new{
     bm_menu_title = _("Bookmarks"),
@@ -332,10 +335,11 @@ function ReaderBookmark:onShowBookmark()
         if v.text == nil or v.text == "" then
             v.text = self:getBookmarkAutoText(v)
         end
-        item_table[k] = require("util").tableDeepCopy(v)
-        if not v.highlighted then -- real bookmark
-            item_table[k].text = "★ " .. v.text
+        item_table[k] = tableDeepCopy(v)
+        if not v.highlighted then -- page bookmark
+            item_table[k].text = BM_PREFIX .. v.text
         end
+        item_table[k].text_orig = v.text
         item_table[k].mandatory = self:getBookmarkPageString(v.page)
     end
 
@@ -605,7 +609,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                 if bm.text == nil or bm.text == "" then
                     bm.text = self:getBookmarkAutoText(bm)
                 end
-                bookmark = require("util").tableDeepCopy(bm)
+                bookmark = tableDeepCopy(bm)
                 bookmark.mandatory = self:getBookmarkPageString(bm.page)
                 break
             end
@@ -615,15 +619,11 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
         end
     else
         bookmark = item
-        if not bookmark.highlighted then -- real bookmark, remove star
-            bookmark.text = bookmark.text:sub(5)
-        end
-
     end
     self.input = InputDialog:new{
         title = _("Rename bookmark"),
         description = T("   " .. _("Page: %1") .. "     " .. _("Time: %2"), bookmark.mandatory, bookmark.datetime),
-        input = bookmark.text,
+        input = bookmark.text_orig,
         allow_newline = true,
         cursor_at_end = false,
         add_scroll_buttons = true,
@@ -632,9 +632,6 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                 {
                     text = _("Cancel"),
                     callback = function()
-                        if not from_highlight and not bookmark.highlighted then
-                            bookmark.text = "★ " .. bookmark.text
-                        end
                         UIManager:close(self.input)
                     end,
                 },
@@ -647,10 +644,11 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                             value = self:getBookmarkAutoText(bookmark)
                         end
                         for __, bm in ipairs(self.bookmarks) do
-                            if bookmark.text == bm.text and  bookmark.pos0 == bm.pos0 and
+                            if bookmark.text_orig == bm.text and  bookmark.pos0 == bm.pos0 and
                                 bookmark.pos1 == bm.pos1 and bookmark.page == bm.page then
                                 bm.text = value
                                 bookmark.text = value
+                                bookmark.text_orig = value
                                 -- A bookmark isn't necessarily a highlight (it doesn't have pboxes)
                                 if bookmark.pboxes then
                                     local setting = G_reader_settings:readSetting("save_document")
@@ -661,7 +659,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                                 UIManager:close(self.input)
                                 if not from_highlight then
                                     if not bookmark.highlighted then
-                                        bookmark.text = "★ " .. bookmark.text
+                                        bookmark.text = BM_PREFIX .. value
                                     end
                                     self.refresh()
                                 end
