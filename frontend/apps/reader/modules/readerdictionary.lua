@@ -99,7 +99,9 @@ function ReaderDictionary:init()
     self.dicts_order = G_reader_settings:readSetting("dicts_order", {})
     self.dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {})
 
-    self.ui.menu:registerToMainMenu(self)
+    if self.ui then
+        self.ui.menu:registerToMainMenu(self)
+    end
     self.data_dir = STARDICT_DATA_DIR or
         os.getenv("STARDICT_DATA_DIR") or
         DataStorage:getDataDir() .. "/data/dict"
@@ -742,10 +744,7 @@ function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progre
                 table.insert(args, opt)
             end
         end
-        table.insert(args, "--") -- prevent word starting with a "-" to be interpreted as a sdcv option
-        -- XXX: This requires <https://github.com/Dushistov/sdcv/pull/77> in
-        --      order to function properly (otherwise the first failure will
-        --      cause sdcv to exit).
+        table.insert(args, "--") -- prevent words starting with a "-" to be interpreted as a sdcv option
         util.arrayAppend(args, words)
 
         local cmd = util.shell_escape(args)
@@ -801,6 +800,17 @@ end
 
 function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     local words = {word}
+
+    if self.ui.languagesupport:hasActiveLanguagePlugins() then
+        -- Get any other candidates from any language-specific plugins we have.
+        -- We prefer the originally selected word first (in case there is a
+        -- dictionary entry for whatever text the user selected).
+        local candidates = self.ui.languagesupport:extraDictionaryFormCandidates(word)
+        if candidates then
+            util.arrayAppend(words, candidates)
+        end
+    end
+
     lookup_cancelled, results = self:rawSdcv(words, dict_names, fuzzy_search, self.lookup_progress_msg or false)
     if results == nil then -- no dictionaries found
         return {
@@ -815,7 +825,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
         local seen_results = {}
         -- Flatten the array, removing any duplicates we may have gotten (sdcv
         -- may do multiple queries, in fixed mode then in fuzzy mode, and the
-        -- LanguageSupport plugin may have returned multiple equivalent
+        -- language-specific plugin may have also returned multiple equivalent
         -- results).
         local h
         for _, term_results in ipairs(results) do
