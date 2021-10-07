@@ -9,6 +9,7 @@ local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local JSON = require("json")
 local KeyValuePage = require("ui/widget/keyvaluepage")
+local LanguageSupport = require("languagesupport")
 local LuaData = require("luadata")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
@@ -99,7 +100,9 @@ function ReaderDictionary:init()
     self.dicts_order = G_reader_settings:readSetting("dicts_order", {})
     self.dicts_disabled = G_reader_settings:readSetting("dicts_disabled", {})
 
-    self.ui.menu:registerToMainMenu(self)
+    if self.ui then
+        self.ui.menu:registerToMainMenu(self)
+    end
     self.data_dir = STARDICT_DATA_DIR or
         os.getenv("STARDICT_DATA_DIR") or
         DataStorage:getDataDir() .. "/data/dict"
@@ -801,6 +804,14 @@ end
 
 function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     local words = {word}
+    -- Get any other candidates from the LanguageSupport library. We prefer
+    -- the originally selected word first (in case there is a dictionary
+    -- entry for whatever text the user selected).
+    local candidates = LanguageSupport:dictionaryFormCandidates(self.ui.document, word)
+    if candidates then
+        util.arrayAppend(words, candidates)
+    end
+
     lookup_cancelled, results = self:rawSdcv(words, dict_names, fuzzy_search, self.lookup_progress_msg or false)
     if results == nil then -- no dictionaries found
         return {
