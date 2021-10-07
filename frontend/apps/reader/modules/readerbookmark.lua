@@ -333,6 +333,9 @@ function ReaderBookmark:onShowBookmark()
             v.text = self:getBookmarkAutoText(v)
         end
         item_table[k] = require("util").tableDeepCopy(v)
+        if not v.highlighted then -- real bookmark
+            item_table[k].text = "★ " .. v.text
+        end
         item_table[k].mandatory = self:getBookmarkPageString(v.page)
     end
 
@@ -574,14 +577,15 @@ function ReaderBookmark:updateBookmark(item)
     for i=1, #self.bookmarks do
         if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
             -- Check if the 'text' field has not been edited manually
-            local auto_text = self.bookmarks[i].text == self:getBookmarkAutoText(self.bookmarks[i])
+            local is_auto_text = (self.bookmarks[i].text == self.bookmarks[i].notes) or
+                (self.bookmarks[i].text == self:getBookmarkAutoText(self.bookmarks[i], true))
             self.bookmarks[i].page = item.updated_highlight.pos0
             self.bookmarks[i].pos0 = item.updated_highlight.pos0
             self.bookmarks[i].pos1 = item.updated_highlight.pos1
             self.bookmarks[i].notes = item.updated_highlight.text
             self.bookmarks[i].datetime = item.updated_highlight.datetime
             self.bookmarks[i].chapter = item.updated_highlight.chapter
-            if auto_text then
+            if is_auto_text then
                 self.bookmarks[i].text = self:getBookmarkAutoText(self.bookmarks[i])
             end
             self:onSaveSettings()
@@ -611,6 +615,10 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
         end
     else
         bookmark = item
+        if not bookmark.highlighted then -- real bookmark, remove star
+            bookmark.text = bookmark.text:sub(5)
+        end
+
     end
     self.input = InputDialog:new{
         title = _("Rename bookmark"),
@@ -624,6 +632,9 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                 {
                     text = _("Cancel"),
                     callback = function()
+                        if not from_highlight and not bookmark.highlighted then
+                            bookmark.text = "★ " .. bookmark.text
+                        end
                         UIManager:close(self.input)
                     end,
                 },
@@ -649,6 +660,9 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                                 end
                                 UIManager:close(self.input)
                                 if not from_highlight then
+                                    if not bookmark.highlighted then
+                                        bookmark.text = "★ " .. bookmark.text
+                                    end
                                     self.refresh()
                                 end
                                 break
@@ -670,17 +684,17 @@ function ReaderBookmark:toggleBookmark(pn_or_xp)
         table.remove(self.bookmarks, index)
     else
         -- build notes from TOC
-        local notes = "★" -- distinguish bookmarks from highlights and notes
-        local chapter_name = self.ui.toc:getTocTitleByPage(pn_or_xp)
-        if chapter_name ~= "" then
+        local notes = self.ui.toc:getTocTitleByPage(pn_or_xp)
+        local chapter_name = notes
+        if notes ~= "" then
             -- @translators In which chapter title (%1) a note is found.
-            notes = notes .. " " .. T(_("in %1"), chapter_name)
+            notes = T(_("in %1"), notes)
         end
         self:addBookmark({
             page = pn_or_xp,
             datetime = os.date("%Y-%m-%d %H:%M:%S"),
             notes = notes,
-            chapter = chapter_name,
+            chapter = chapter_name
         })
     end
 end
@@ -795,8 +809,7 @@ function ReaderBookmark:getNumberOfHighlightsAndNotes()
             -- have been edited and became "notes". Editing them
             -- adds this 'text' field, but just showing bookmarks
             -- do that as well...
-            -- Real bookmarks (★) are excluded from the count.
-            if self.bookmarks[i].text and self.bookmarks[i].notes:sub(1, 1) ~= "★" then
+            if self.bookmarks[i].text then
                 notes = notes + 1
             end
         end
@@ -822,8 +835,8 @@ function ReaderBookmark:getBookmarkPageString(page)
     return tostring(page)
 end
 
-function ReaderBookmark:getBookmarkAutoText(bookmark)
-    if G_reader_settings:nilOrTrue("bookmarks_items_auto_text") then
+function ReaderBookmark:getBookmarkAutoText(bookmark, force_auto_text)
+    if G_reader_settings:nilOrTrue("bookmarks_items_auto_text") or force_auto_text then
         local page = self:getBookmarkPageString(bookmark.page)
         return T(_("Page %1 %2 @ %3"), page, bookmark.notes, bookmark.datetime)
     else
