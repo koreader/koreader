@@ -127,6 +127,8 @@ local order = {
         "developer_options",
     },
     search = {
+        "language_support",
+        "----------------------------",
         "dictionary_lookup",
         "dictionary_lookup_history",
         "dictionary_settings",

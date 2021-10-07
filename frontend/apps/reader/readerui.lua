@@ -20,6 +20,7 @@ local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
+local LanguageSupport = require("languagesupport")
 local PluginLoader = require("pluginloader")
 local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
 local ReaderBack = require("apps/reader/modules/readerback")
@@ -172,6 +173,9 @@ function ReaderUI:init()
         view = self.view,
         ui = self,
         document = self.document,
+    })
+    self:registerModule("languagesupport", LanguageSupport:new{
+        ui = self,
     })
     -- dictionary
     self:registerModule("dictionary", ReaderDictionary:new{
