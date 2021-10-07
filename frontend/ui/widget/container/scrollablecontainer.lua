@@ -87,7 +87,7 @@ function ScrollableContainer:initState()
     self._max_scroll_offset_x = math.max(0, content_size.w - self.dimen.w)
     self._max_scroll_offset_y = math.max(0, content_size.h - self.dimen.h)
     if self._max_scroll_offset_x == 0 and self._max_scroll_offset_y == 0 then
-        -- Inner widget fully fit: no need for anything scrollable
+        -- Inner widget fits entirely: no need for anything scrollable
         self._is_scrollable = false
     else
         self._is_scrollable = true
@@ -270,11 +270,13 @@ function ScrollableContainer:paintTo(bb, x, y)
     -- We need to fill it with our usual background color on each drawing,
     -- to erase bits that may not be overwritten after a scroll
     self._bb:fill(Blitbuffer.COLOR_WHITE)
+    local dx
     if self._mirroredUI then
-        self[1]:paintTo(self._bb, x + self._crop_dx - self._max_scroll_offset_x + self._scroll_offset_x, y - self._scroll_offset_y)
+        dx = self._max_scroll_offset_x - self._scroll_offset_x - self._crop_dx
     else
-        self[1]:paintTo(self._bb, x - self._scroll_offset_x, y - self._scroll_offset_y)
+        dx = self._scroll_offset_x
     end
+    self[1]:paintTo(self._bb, x - dx, y - self._scroll_offset_y)
     bb:blitFrom(self._bb, x + self._crop_dx, y, x + self._crop_dx, y, self._crop_w, self._crop_h)
 
     -- Draw our scrollbars over
@@ -350,7 +352,7 @@ function ScrollableContainer:onScrollableTouch(_, ges)
     if not self._is_scrollable then
         return false
     end
-    -- First "pan" event may already be outsise us, we need to
+    -- First "pan" event may already be outside of us, we need to
     -- remember any "touch" event on us prior to "pan"
     logger.dbg("ScrollableContainer:onScrollableTouch", ges)
     if ges.pos:intersectWith(self.dimen) then
