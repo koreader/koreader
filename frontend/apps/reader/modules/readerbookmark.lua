@@ -11,7 +11,7 @@ local Menu = require("ui/widget/menu")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
-local tableDeepCopy = require("util").tableDeepCopy
+local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
 local T = require("ffi/util").template
@@ -335,7 +335,7 @@ function ReaderBookmark:onShowBookmark()
         if v.text == nil or v.text == "" then
             v.text = self:getBookmarkAutoText(v)
         end
-        item_table[k] = tableDeepCopy(v)
+        item_table[k] = util.tableDeepCopy(v)
         if not v.highlighted then -- page bookmark
             item_table[k].text = BM_PREFIX .. v.text
         end
@@ -609,7 +609,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                 if bm.text == nil or bm.text == "" then
                     bm.text = self:getBookmarkAutoText(bm)
                 end
-                bookmark = tableDeepCopy(bm)
+                bookmark = util.tableDeepCopy(bm)
                 bookmark.mandatory = self:getBookmarkPageString(bm.page)
                 break
             end
