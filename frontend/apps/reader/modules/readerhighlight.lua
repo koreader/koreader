@@ -5,6 +5,7 @@ local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local LanguageSupport = require("languagesupport")
 local Notification = require("ui/widget/notification")
 local TimeVal = require("ui/timeval")
 local Translator = require("ui/translator")
@@ -841,7 +842,8 @@ function ReaderHighlight:onHold(arg, ges)
     if ok and word then
         logger.dbg("selected word:", word)
         -- Convert "word selection" table to "text selection" table because we
-        -- use text selections throughout readerhighlight.
+        -- use text selections throughout readerhighlight in order to handle
+        -- LanguageSupport.
         self.is_word_selection = true
         self.selected_text = {
             text = word.word,
@@ -855,6 +857,18 @@ function ReaderHighlight:onHold(arg, ges)
             logger.dbg("link:", link)
             self.selected_link = link
         end
+
+        -- If this is a language where pan-less word selection needs some extra
+        -- work above and beyond what the document engine gives us from
+        -- getWordFromPosition, call the relevant language-specific plugin.
+        --
+        -- TODO: Check that "word" is actually single character, since
+        -- currently the only languages that have this problem are CJK where
+        -- ever "word" is treated as 1 character by KoReader. But due to utf8
+        -- and combining characters this is a bit too complicated to do at the
+        -- moment.
+        LanguageSupport:expandWordSelection(self)
+
         if self.ui.document.info.has_pages then
             self.view.highlight.temp[self.hold_pos.page] = self.selected_text.sboxes
             -- Unfortunately, getWordFromPosition() may not return good coordinates,
