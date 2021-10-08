@@ -128,7 +128,7 @@ function KeyboardLayoutDialog:init()
                     - Size.span.vertical_large*4 - self.button_table:getSize().h)
     local radio_button_container_height = math.min(self.radio_button_table:getSize().h, max_radio_button_container_height)
 
-    -- Our scrollable container needs to be know as widget.cropping_widget in
+    -- Our scrollable container needs to be known as widget.cropping_widget in
     -- the widget that is passed to UIManager:show() for UIManager to ensure
     -- proper interception of inner widget self repainting/invert (mostly used
     -- when flashing for UI feedback that we want to limit to the cropped area).

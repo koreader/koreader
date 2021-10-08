@@ -1,5 +1,14 @@
 --[[--
 ScrollableContainer allows scrolling its content (1 widget) within its own dimensions
+
+This scrollable container needs to be known as widget.cropping_widget in
+the widget using it that is passed to UIManager:show() for UIManager to
+ensure proper interception of inner widget self-repainting/invert (mostly
+used when flashing for UI feedback that we want to limit to the cropped
+area).
+If we notice some inner element flashing leaking outside the scrollable
+area, it's probably some 'show_parent' forwarding missing from the main
+widget to some of the inner widgets: chase the missing ones and add them.
 --]]
 
 local BD = require("ui/bidi")
