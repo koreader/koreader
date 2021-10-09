@@ -336,10 +336,11 @@ function ReaderBookmark:onShowBookmark()
             v.text = self:getBookmarkAutoText(v)
         end
         item_table[k] = util.tableDeepCopy(v)
+        item_table[k].text_orig = v.text or v.notes
+        item_table[k].text = item_table[k].text_orig
         if not v.highlighted then -- page bookmark
-            item_table[k].text = PAGE_BOOKMARK_DISPLAY_PREFIX .. v.text
+            item_table[k].text = PAGE_BOOKMARK_DISPLAY_PREFIX .. item_table[k].text
         end
-        item_table[k].text_orig = v.text
         item_table[k].mandatory = self:getBookmarkPageString(v.page)
     end
 
@@ -581,7 +582,7 @@ function ReaderBookmark:updateBookmark(item)
     for i=1, #self.bookmarks do
         if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
             -- Check if the 'text' field has not been edited manually
-            local is_auto_text = (self.bookmarks[i].text == self.bookmarks[i].notes) or
+            local is_auto_text = (self.bookmarks[i].text == nil) or
                 (self.bookmarks[i].text == self:getBookmarkAutoText(self.bookmarks[i], true))
             self.bookmarks[i].page = item.updated_highlight.pos0
             self.bookmarks[i].pos0 = item.updated_highlight.pos0
@@ -610,12 +611,12 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                     bm.text = self:getBookmarkAutoText(bm)
                 end
                 bookmark = util.tableDeepCopy(bm)
-                bookmark.text_orig = bm.text
+                bookmark.text_orig = bm.text or bm.notes
                 bookmark.mandatory = self:getBookmarkPageString(bm.page)
                 break
             end
         end
-        if not bookmark or bookmark.text == nil then -- bookmark not found
+        if not bookmark or bookmark.text_orig == nil then -- bookmark not found
             return
         end
     else
@@ -645,11 +646,10 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                             value = self:getBookmarkAutoText(bookmark)
                         end
                         for __, bm in ipairs(self.bookmarks) do
-                            if bookmark.text_orig == bm.text and  bookmark.pos0 == bm.pos0 and
-                                bookmark.pos1 == bm.pos1 and bookmark.page == bm.page then
+                            if bookmark.pos0 == bm.pos0 and bookmark.pos1 == bm.pos1 and bookmark.page == bm.page then
                                 bm.text = value
-                                bookmark.text = value
-                                bookmark.text_orig = value
+                                bookmark.text_orig = value or bookmark.notes
+                                bookmark.text = bookmark.text_orig
                                 -- A bookmark isn't necessarily a highlight (it doesn't have pboxes)
                                 if bookmark.pboxes then
                                     local setting = G_reader_settings:readSetting("save_document")
@@ -660,7 +660,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                                 UIManager:close(self.input)
                                 if not from_highlight then
                                     if not bookmark.highlighted then
-                                        bookmark.text = PAGE_BOOKMARK_DISPLAY_PREFIX .. value
+                                        bookmark.text = PAGE_BOOKMARK_DISPLAY_PREFIX .. bookmark.text
                                     end
                                     self.refresh()
                                 end
@@ -839,7 +839,7 @@ function ReaderBookmark:getBookmarkAutoText(bookmark, force_auto_text)
         local page = self:getBookmarkPageString(bookmark.page)
         return T(_("Page %1 %2 @ %3"), page, bookmark.notes, bookmark.datetime)
     else
-        return bookmark.notes
+        return nil
     end
 end
 
