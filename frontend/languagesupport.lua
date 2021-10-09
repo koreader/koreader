@@ -142,17 +142,13 @@ local function xpToPosition(document, xp)
     return { x = x, y = y }
 end
 
-local function xpEqual(document, xp1, xp2)
-    return document:compareXPointers(xp1, xp2) == 0
-end
-
 -- Called from ReaderHighlight:onHold after the document-specific handler has
 -- successfully grabbed a "word" from the document.
 function LanguageSupport:expandWordSelection(highlight)
     local document = highlight.ui.document
     local selection = highlight.selected_text
 
-    language_code = document:getProps().language
+    language_code = document and document:getProps().language or "UNKNOWN"
     logger.dbg("language support expanding", language_code, "selection", selection)
     if document.info.has_pages then
         -- Word selection expansion relies on CreDocument:getNextVisibleChar.
@@ -168,67 +164,36 @@ function LanguageSupport:expandWordSelection(highlight)
     -- selection is the same) then we can safely skip all of the subsequent
     -- re-selection work.
     if not new_pos0 or not new_pos1 or
-        (xpEqual(document, new_pos0, selection.pos0) and
-         xpEqual(document, new_pos1, selection.pos1)) then
+        (new_pos0 == selection.pos0 and new_pos1 == selection.pos1) then
         logger.dbg("no language plugin could expand the selection")
-        return
-    end
-    if document:getPageFromXPointer(new_pos0) ~= document:getPageFromXPointer(new_pos1) then
-        -- TODO: Handle cross-page words by switch to the multi-page scroll
-        --       mechanism used for hold-and-pan.
-        logger.dbg("entire word is not visible (cross-page word) so skipping expansion")
         return
     end
     logger.dbg("expanding selection\n",
         selection.pos0, ":", selection.pos1, "to\n", new_pos0, ":", new_pos1)
 
-    -- Get {x,y} positions from XPointers. This is needed because the only way
-    -- we can set the crengine internal selection is through page positions not
-    -- XPointers. Not doing this would require us to set the readerview temp
-    -- highlighter which isn't as accurate as crengine and requries
-    -- clearSelection() which is somewhat expensive.
-    local new_pos0_xy = xpToPosition(document, new_pos0)
-    local new_pos1_xy = xpToPosition(document, new_pos1)
-    local new_text = document:getTextFromPositions(new_pos0_xy, new_pos1_xy)
+    -- We cannot use getTextFromPositions here because the conversion to and
+    -- from screen co-ordinates leads to issues with text selection of <ruby>
+    -- text. In addition, using getTextFromXPointers means we can select text
+    -- not on the screen. But this means we need to manually create the text
+    -- selection object returned by getTextFromPositions.
+    local new_text = document:getTextFromXPointers(new_pos0, new_pos1, true)
     if not new_text then
-        -- TODO: Figure out what causes this.
-        logger.dbg("could not find text in positions", new_pos0_xy, new_pos1_xy)
+        logger.dbg("no text found in selection", new_pos0, ":", new_pos1)
         return
     end
 
-    -- getTextFromPositions struggles to handle <ruby> text properly. The
-    -- position you get from getScreenPositionFromXPointer skips over the end
-    -- of <ruby> text and selects the character after the text -- this even
-    -- more apparent when you note that the returned XPointers from
-    -- getTextFromPositions don't match the XPointers we used to generate the
-    -- screen positions in the first place. However, getTextFromXPointers
-    -- handles it correctly and fixing up the {pos0, pos1} afterwards appears
-    -- to set the highlight correctly.
-    if not xpEqual(document, new_text.pos0, new_pos0) or
-       not xpEqual(document, new_text.pos1, new_pos1) then
-        logger.dbg("getTextFromPositions returned incorrect selection", new_text.pos0, ":", new_text.pos1)
-        local accurate_text = document:getTextFromXPointers(new_pos0, new_pos1)
-        -- We only need to do this adjustment if the text is actually different.
-        if accurate_text and accurate_text ~= new_text.text then
-            logger.dbg("correcting screen-position selection to be XPointer-accurate")
-            new_text.pos0 = new_pos0
-            new_text.pos1 = new_pos1
-            new_text.text = accurate_text
-        end
-    end
-
-    -- getTextFromPositions doesn't set the sboxes correctly so we have to
-    -- manually fetch them and recreate the highlight text.
-    new_text.sboxes = document:getScreenBoxesFromPositions(new_text.pos0, new_text.pos1, true)
-    new_text.text = cleanupSelectedText(new_text.text)
-
-    highlight.selected_text = new_text
+    highlight.selected_text = {
+        text = cleanupSelectedText(new_text),
+        pos0 = new_pos0,
+        pos1 = new_pos1,
+        sboxes = document:getScreenBoxesFromPositions(new_pos0, new_pos1, true),
+    }
 end
 
 -- Called from ReaderHighlight:startSdcv after the selected has text has been
 -- OCR'd, cleaned, and otherwise made ready for sdcv.
 function LanguageSupport:dictionaryFormCandidates(document, text)
-    language_code = document:getProps().language
+    language_code = document and document:getProps().language or "UNKNOWN"
     logger.dbg("language support: convert", text, "to dictionary form (marked as", language_code..")")
 
     return self:findAndCallPlugin(
