@@ -78,7 +78,7 @@ function BookStatusWidget:init()
             self.summary = new_summary
         end
     end
-    self.total_pages = self.view.document:getPageCount()
+    self.total_pages = self.ui.document:getPageCount()
     stats_book = self:getStats()
 
     self.small_font_face = Font:getFace("smallffont")
@@ -327,7 +327,7 @@ function BookStatusWidget:genBookInfoGroup()
         }
     )
     -- progress bar
-    local read_percentage = self.view.state.page / self.total_pages
+    local read_percentage = self.ui:getCurrentPage() / self.total_pages
     local progress_bar = ProgressWidget:new{
         width = math.floor(width * 0.7),
         height = Screen:scaleBySize(10),

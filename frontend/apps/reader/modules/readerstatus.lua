@@ -236,7 +236,7 @@ function ReaderStatus:onShowBookStatus(before_show_callback)
         props = self.document:getProps(),
         document = self.document,
         settings = self.settings,
-        view = self.view,
+        ui = self.ui,
     }
     if before_show_callback then
         before_show_callback()
