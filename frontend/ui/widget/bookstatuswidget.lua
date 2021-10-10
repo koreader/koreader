@@ -327,7 +327,7 @@ function BookStatusWidget:genBookInfoGroup()
         }
     )
     -- progress bar
-    local read_percentage = self.view.document:getCurrentPage() / self.total_pages
+    local read_percentage = self.view.ui:getCurrentPage() / self.total_pages
     local progress_bar = ProgressWidget:new{
         width = math.floor(width * 0.7),
         height = Screen:scaleBySize(10),
