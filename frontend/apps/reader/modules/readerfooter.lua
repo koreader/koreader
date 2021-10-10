@@ -2257,8 +2257,8 @@ function ReaderFooter:onResume()
         return
     end
 
-    -- Force a footer repaint on resume if it was visible
-    self:onUpdateFooter(self.view.footer_visible)
+    -- Maybe perform a footer repaint on resume if it was visible.
+    self:maybeUpdateFooter()
     self:rescheduleFooterAutoRefreshIfNeeded()
 end
 
@@ -2268,8 +2268,8 @@ function ReaderFooter:onOutOfScreenSaver()
     end
 
     self._delayed_screensaver = nil
-    -- Force a footer repaint on resume if it was visible
-    self:onUpdateFooter(self.view.footer_visible)
+    -- Maybe perform a footer repaint on resume if it was visible.
+    self:maybeUpdateFooter()
     self:rescheduleFooterAutoRefreshIfNeeded()
 end
 
