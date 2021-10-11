@@ -138,6 +138,15 @@ function ReaderBookmark:addToMainMenu(menu_items)
                     G_reader_settings:flipNilOrTrue("bookmarks_items_auto_text")
                 end
             },
+            {
+                text = _("Reverse sorting"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("bookmarks_items_reverse_sorting")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("bookmarks_items_reverse_sorting")
+                end
+            },
         },
     }
 end
@@ -331,10 +340,13 @@ function ReaderBookmark:onShowBookmark()
     self:updateHighlightsIfNeeded()
     -- build up item_table
     local item_table = {}
-    for k, v in ipairs(self.bookmarks) do
+    local is_reverse_sorting = G_reader_settings:isTrue("bookmarks_items_reverse_sorting")
+    local num = #self.bookmarks + 1
+    for i, v in ipairs(self.bookmarks) do
         if v.text == nil or v.text == "" then
             v.text = self:getBookmarkAutoText(v)
         end
+        local k = is_reverse_sorting and num - i or i
         item_table[k] = util.tableDeepCopy(v)
         item_table[k].text_orig = v.text or v.notes
         item_table[k].text = item_table[k].text_orig
