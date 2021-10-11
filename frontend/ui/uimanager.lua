@@ -1541,6 +1541,16 @@ function UIManager:widgetRepaint(widget, x, y)
     if not widget then return end
 
     logger.dbg("Explicit widgetRepaint:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
+    if widget.show_parent and widget.show_parent.cropping_widget then
+        -- The main widget parent of this subwidget has a cropping container: see if
+        -- this widget is a child of this cropping container
+        local cropping_widget = widget.show_parent.cropping_widget
+        if util.arrayReferences(cropping_widget, widget) then
+            -- Delegate the painting of this subwidget to its cropping widget container
+            cropping_widget:paintTo(Screen.bb, cropping_widget.dimen.x, cropping_widget.dimen.y)
+            return
+        end
+    end
     widget:paintTo(Screen.bb, x, y)
 end
 
@@ -1558,6 +1568,19 @@ function UIManager:widgetInvert(widget, x, y, w, h)
     if not widget then return end
 
     logger.dbg("Explicit widgetInvert:", widget.name or widget.id or tostring(widget), "@ (", x, ",", y, ")")
+    if widget.show_parent and widget.show_parent.cropping_widget then
+        -- The main widget parent of this subwidget has a cropping container: see if
+        -- this widget is a child of this cropping container
+        local cropping_widget = widget.show_parent.cropping_widget
+        if util.arrayReferences(cropping_widget, widget) then
+            -- Invert only what intersects with the cropping container
+            local widget_region = Geom:new{x=x, y=y, w=w or widget.dimen.w, h=h or widget.dimen.h}
+            local crop_region = cropping_widget:getCropRegion()
+            local invert_region = crop_region:intersect(widget_region)
+            Screen.bb:invertRect(invert_region.x, invert_region.y, invert_region.w, invert_region.h)
+            return
+        end
+    end
     Screen.bb:invertRect(x, y, w or widget.dimen.w, h or widget.dimen.h)
 end
 

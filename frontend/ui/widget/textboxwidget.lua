@@ -1143,8 +1143,9 @@ function TextBoxWidget:free(full)
             -- logger.dbg("TextBoxWidget:_xtext:free()")
         end
 
+        -- c.f., :_splitToLines
+        self.vertical_string_list = {}
         self.line_num_to_image = nil
-        self.vertical_string_list = nil
     end
 end
 
