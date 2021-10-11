@@ -648,7 +648,15 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 end,
             },
             {
-                text = _("Edit"),
+                text = _("Style"),
+                callback = function()
+                    self:editHighlightStyle(page, index)
+                    UIManager:close(self.edit_highlight_dialog)
+                    self.edit_highlight_dialog = nil
+                end,
+            },
+            {
+                text = _("Note"),
                 callback = function()
                     self:editHighlight(page, index)
                     UIManager:close(self.edit_highlight_dialog)
@@ -1544,6 +1552,37 @@ function ReaderHighlight:editHighlight(page, i)
         datetime = item.datetime,
         pboxes = item.pboxes
     }, true)
+end
+
+function ReaderHighlight:editHighlightStyle(page, i)
+    local item = self.view.highlight.saved[page][i]
+    local highlight_styles = {
+        {_("Lighten"), "lighten"},
+        {_("Underline"), "underscore"},
+        {_("Invert"), "invert"},
+    }
+    local radio_buttons = {}
+    for _, v in ipairs(highlight_styles) do
+        table.insert(radio_buttons, {
+            {
+            text = v[1],
+            checked = item.drawer == v[2],
+            provider = v[2],
+            },
+        })
+    end
+    UIManager:show(require("ui/widget/radiobuttonwidget"):new{
+        title_text = _("Highlight style"),
+        width_factor = 0.5,
+        keep_shown_on_apply = true,
+        radio_buttons = radio_buttons,
+        default_provider = self.view.highlight.saved_drawer or
+            G_reader_settings:readSetting("highlight_drawing_style", "lighten"),
+        callback = function(radio)
+            self.view.highlight.saved[page][i].drawer = radio.provider
+            UIManager:setDirty(self.dialog, "ui")
+        end,
+    })
 end
 
 function ReaderHighlight:onReadSettings(config)
