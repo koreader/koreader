@@ -1,5 +1,5 @@
+local DateTimeWidget = require("ui/widget/datetimewidget")
 local InfoMessage = require("ui/widget/infomessage")
-local TimeWidget = require("ui/widget/timewidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
@@ -80,17 +80,19 @@ function ReadTimer:addToMainMenu(menu_items)
         end,
         sub_item_table = {
             {
-                text = _("Time"),
+                text = _("Set time"),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local now_t = os.date("*t")
                     local curr_hour = now_t.hour
                     local curr_min = now_t.min
-                    local time_widget = TimeWidget:new{
+                    local time_widget = DateTimeWidget:new{
+                        is_date = false,
                         hour = curr_hour,
                         min = curr_min,
-                        ok_text = _("Set timer"),
-                        title_text =  _("Set reader timer"),
+                        ok_text = _("Set alarm"),
+                        title_text =  _("New alarm"),
+                        info_text = _("Enter a time in hours and minutes."),
                         callback = function(time)
                             touchmenu_instance:closeMenu()
                             self:unschedule()
@@ -121,7 +123,7 @@ function ReadTimer:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Minutes from now"),
+                text = _("Set interval"),
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local remain_time = {}
@@ -133,12 +135,14 @@ function ReadTimer:addToMainMenu(menu_items)
                             remain_minutes = remain_time[2]
                         end
                     end
-                    local time_widget = TimeWidget:new{
+                    local time_widget = DateTimeWidget:new{
+                        is_date = false,
                         hour = remain_hours or 0,
                         min = remain_minutes or 0,
                         hour_max = 17,
                         ok_text = _("Set timer"),
-                        title_text =  _("Set reader timer from now (hours:minutes)"),
+                        title_text =  _("Set reader timer"),
+                        info_text = _("Enter a time in hours and minutes."),
                         callback = function(time)
                             touchmenu_instance:closeMenu()
                             self:unschedule()

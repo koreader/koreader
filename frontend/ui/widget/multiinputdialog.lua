@@ -125,6 +125,7 @@ function MultiInputDialog:init()
             w = Screen:getWidth(),
             h = Screen:getHeight() - self._input_widget:getKeyboardDimen().h,
         },
+        ignore_if_over = "height",
         self.dialog_frame,
     }
     UIManager:setDirty(self, "ui")

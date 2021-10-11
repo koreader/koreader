@@ -29,7 +29,7 @@ local KeyboardLayoutDialog = InputContainer:new{
     modal = true,
     stop_events_propagation = true,
     keyboard_state = nil,
-    width = math.floor(Screen:getWidth() * 0.8),
+    width = nil,
     face = Font:getFace("cfont", 22),
     title_face = Font:getFace("x_smalltfont"),
     title_padding = Size.padding.default,
@@ -40,6 +40,7 @@ local KeyboardLayoutDialog = InputContainer:new{
 
 
 function KeyboardLayoutDialog:init()
+    self.width = self.width or math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.8)
     -- Title & description
     self.title_widget = FrameContainer:new{
         padding = self.title_padding,
@@ -160,6 +161,7 @@ function KeyboardLayoutDialog:init()
             w = Screen:getWidth(),
             h = Screen:getHeight(),
         },
+        ignore_if_over = "height",
         self.movable,
     }
 end

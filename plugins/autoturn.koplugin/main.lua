@@ -1,4 +1,3 @@
-local Device = require("device")
 local Event = require("ui/event")
 local PluginShare = require("pluginshare")
 local TimeVal = require("ui/timeval")
@@ -125,11 +124,9 @@ function AutoTurn:addToMainMenu(menu_items)
             or _("Autoturn") end,
         checked_func = function() return self:_enabled() end,
         callback = function(menu)
-            local Screen = Device.screen
             local SpinWidget = require("ui/widget/spinwidget")
             local curr_items = G_reader_settings:readSetting("autoturn_timeout_seconds") or 30
             local autoturn_spin = SpinWidget:new {
-                width = math.floor(Screen:getWidth() * 0.6),
                 value = curr_items,
                 value_min = 0,
                 value_max = 240,
@@ -156,11 +153,9 @@ function AutoTurn:addToMainMenu(menu_items)
             UIManager:show(autoturn_spin)
         end,
         hold_callback = function(menu)
-            local Screen = Device.screen
             local SpinWidget = require("ui/widget/spinwidget")
             local curr_items = G_reader_settings:readSetting("autoturn_distance") or 1
             local autoturn_spin = SpinWidget:new {
-                width = math.floor(Screen:getWidth() * 0.6),
                 value = curr_items,
                 value_min = -20,
                 value_max = 20,

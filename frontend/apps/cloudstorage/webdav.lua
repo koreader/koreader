@@ -8,7 +8,6 @@ local ReaderUI = require("apps/reader/readerui")
 local WebDavApi = require("apps/cloudstorage/webdavapi")
 local util = require("util")
 local _ = require("gettext")
-local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local WebDav = {}
@@ -153,8 +152,6 @@ The start folder is appended to the server path.]])
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.95),
-        height = math.floor(Screen:getHeight() * 0.2),
         input_type = "text",
     }
     UIManager:show(self.settings_dialog)

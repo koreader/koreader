@@ -91,6 +91,7 @@ function Notification:init()
     local text_widget = TextWidget:new{
         text = self.text,
         face = self.face,
+        max_width = Screen:getWidth() - 2 * (self.margin + self.padding)
     }
     local widget_size = text_widget:getSize()
     self.frame = FrameContainer:new{

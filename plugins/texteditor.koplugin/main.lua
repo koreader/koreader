@@ -110,14 +110,13 @@ function TextEditor:getSubMenuItems()
             sub_item_table = {
                 {
                     text_func = function()
-                        return T(_("Text font size (%1)"), self.font_size)
+                        return T(_("Text font size: %1"), self.font_size)
                     end,
                     keep_menu_open = true,
                     callback = function(touchmenu_instance)
                         local SpinWidget = require("ui/widget/spinwidget")
                         local font_size = self.font_size
                         UIManager:show(SpinWidget:new{
-                            width = math.floor(Screen:getWidth() * 0.6),
                             value = font_size,
                             value_min = 8,
                             value_max = 26,
@@ -342,7 +341,6 @@ Do you want to proceed?]]),
             local path_chooser = PathChooser:new{
                 select_directory = true,
                 select_file = false,
-                height = Screen:getHeight(),
                 path = self.last_path,
                 onConfirm = function(dir_path)
                     local file_input
@@ -384,7 +382,6 @@ function TextEditor:chooseFile()
         select_file = true,
         select_directory = false,
         detailed_file_info = true,
-        height = Screen:getHeight(),
         path = self.last_path,
         onConfirm = function(file_path)
             -- Remember last_path only when we select a file from it

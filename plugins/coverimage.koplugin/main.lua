@@ -399,7 +399,6 @@ function CoverImage:sizeSpinner(touchmenu_instance, setting, title, min, max, de
     local SpinWidget = require("ui/widget/spinwidget")
     local old_val = self[setting]
     UIManager:show(SpinWidget:new{
-        width = math.floor(Device.screen:getWidth() * 0.6),
         value = old_val,
         value_min = min,
         value_max = max,

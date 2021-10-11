@@ -1058,7 +1058,6 @@ Enabling this option will restrict display to the chapter titles of progress bar
             local SpinWidget = require("ui/widget/spinwidget")
             local curr_perpage = G_reader_settings:readSetting("toc_items_per_page") or self.toc_items_per_page_default
             local items = SpinWidget:new{
-                width = math.floor(Screen:getWidth() * 0.6),
                 value = curr_perpage,
                 value_min = 6,
                 value_max = 24,
@@ -1084,7 +1083,6 @@ Enabling this option will restrict display to the chapter titles of progress bar
             local default_font_size = Menu.getItemFontSize(curr_perpage)
             local curr_font_size = G_reader_settings:readSetting("toc_items_font_size") or default_font_size
             local items_font = SpinWidget:new{
-                width = math.floor(Screen:getWidth() * 0.6),
                 value = curr_font_size,
                 value_min = 10,
                 value_max = 72,

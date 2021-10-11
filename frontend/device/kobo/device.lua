@@ -71,6 +71,8 @@ local Kobo = Generic:new{
     touch_dev = "/dev/input/event1",
     -- Event code to use to detect contact pressure
     pressure_event = nil,
+    -- Device features multiple CPU cores
+    isSMP = no,
 }
 
 --- @todo hasKeys for some devices?
@@ -321,6 +323,7 @@ local KoboEuropa = Kobo:new{
     battery_sysfs = "/sys/class/power_supply/battery",
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
     touch_dev = "/dev/input/by-path/platform-0-0010-event",
+    isSMP = yes,
 }
 
 function Kobo:init()
@@ -439,6 +442,9 @@ function Kobo:init()
     -- * Turn it off on startup
     -- I've chosen the latter, as I find it vaguely saner, more useful, and it matches Nickel's behavior (I think).
     self:toggleChargingLED(false)
+
+    -- Only enable a single core on startup
+    self:enableCPUCores(1)
 end
 
 function Kobo:setDateTime(year, month, day, hour, min, sec)
@@ -502,12 +508,20 @@ function Kobo:initNetworkManager(NetworkMgr)
         -- We could alternatively check if lfs.attributes("/proc/sys/net/ipv4/conf/" .. os.getenv("INTERFACE"), "mode") == "directory"
         -- c.f., also what Cervantes does via /sys/class/net/eth0/carrier to check if the interface is up.
         -- That said, since we only care about whether *modules* are loaded, this does the job nicely.
-        for haystack in io.lines("/proc/modules") do
+        local f = io.open("/proc/modules", "re")
+        if not f then
+            return false
+        end
+
+        local found = false
+        for haystack in f:lines() do
             if haystack:sub(1, nlen) == needle then
-                return true
+                found = true
+                break
             end
         end
-        return false
+        f:close()
+        return found
     end
 end
 
@@ -556,7 +570,7 @@ function Kobo:getCodeName()
     local codename = os.getenv("PRODUCT")
     -- If that fails, run the script ourselves
     if not codename then
-        local std_out = io.popen("/bin/kobo_config.sh 2>/dev/null", "r")
+        local std_out = io.popen("/bin/kobo_config.sh 2>/dev/null", "re")
         codename = std_out:read("*line")
         std_out:close()
     end
@@ -564,7 +578,7 @@ function Kobo:getCodeName()
 end
 
 function Kobo:getFirmwareVersion()
-    local version_file = io.open("/mnt/onboard/.kobo/version", "r")
+    local version_file = io.open("/mnt/onboard/.kobo/version", "re")
     if not version_file then
         self.firmware_rev = "none"
     end
@@ -585,7 +599,7 @@ local function getProductId()
     local product_id = os.getenv("MODEL_NUMBER")
     -- If that fails, devise it ourselves
     if not product_id then
-        local version_file = io.open("/mnt/onboard/.kobo/version", "r")
+        local version_file = io.open("/mnt/onboard/.kobo/version", "re")
         if not version_file then
             return "000"
         end
@@ -655,9 +669,9 @@ function Kobo:suspend()
     --[[
 
     local has_wakeup_count = false
-    f = io.open("/sys/power/wakeup_count", "r")
+    f = io.open("/sys/power/wakeup_count", "re")
     if f ~= nil then
-        io.close(f)
+        f:close()
         has_wakeup_count = true
     end
 
@@ -676,13 +690,13 @@ function Kobo:suspend()
     -- NOTE: Sets gSleep_Mode_Suspend to 1. Used as a flag throughout the
     -- kernel to suspend/resume various subsystems
     -- cf. kernel/power/main.c @ L#207
-    f = io.open("/sys/power/state-extended", "w")
+    f = io.open("/sys/power/state-extended", "we")
     if not f then
         logger.err("Cannot open /sys/power/state-extended for writing!")
         return false
     end
     re, err_msg, err_code = f:write("1\n")
-    io.close(f)
+    f:close()
     logger.info("Kobo suspend: asked the kernel to put subsystems to sleep, ret:", re)
     if not re then
         logger.err('write error: ', err_msg, err_code)
@@ -697,7 +711,7 @@ function Kobo:suspend()
     --[[
 
     if has_wakeup_count then
-        f = io.open("/sys/power/wakeup_count", "w")
+        f = io.open("/sys/power/wakeup_count", "we")
         if not f then
             logger.err("cannot open /sys/power/wakeup_count")
             return false
@@ -709,21 +723,21 @@ function Kobo:suspend()
                        err_msg,
                        err_code)
         end
-        io.close(f)
+        f:close()
     end
 
     --]]
 
     logger.info("Kobo suspend: asking for a suspend to RAM . . .")
-    f = io.open("/sys/power/state", "w")
+    f = io.open("/sys/power/state", "we")
     if not f then
         -- reset state-extend back to 0 since we are giving up
-        local ext_fd = io.open("/sys/power/state-extended", "w")
+        local ext_fd = io.open("/sys/power/state-extended", "we")
         if not ext_fd then
             logger.err("cannot open /sys/power/state-extended for writing!")
         else
             ext_fd:write("0\n")
-            io.close(ext_fd)
+            ext_fd:close()
         end
         return false
     end
@@ -735,7 +749,7 @@ function Kobo:suspend()
     if not re then
         logger.err('write error: ', err_msg, err_code)
     end
-    io.close(f)
+    f:close()
     -- NOTE: Ideally, we'd need a way to warn the user that suspending
     -- gloriously failed at this point...
     -- We can safely assume that just from a non-zero return code, without
@@ -780,13 +794,13 @@ function Kobo:resume()
     -- NOTE: Sets gSleep_Mode_Suspend to 0. Used as a flag throughout the
     -- kernel to suspend/resume various subsystems
     -- cf. kernel/power/main.c @ L#207
-    local f = io.open("/sys/power/state-extended", "w")
+    local f = io.open("/sys/power/state-extended", "we")
     if not f then
         logger.err("cannot open /sys/power/state-extended for writing!")
         return false
     end
     local re, err_msg, err_code = f:write("0\n")
-    io.close(f)
+    f:close()
     logger.info("Kobo resume: unflagged kernel subsystems for resume, ret:", re)
     if not re then
         logger.err('write error: ', err_msg, err_code)
@@ -796,10 +810,10 @@ function Kobo:resume()
     util.usleep(100000)
     -- cf. #1862, I can reliably break IR touch input on resume...
     -- cf. also #1943 for the rationale behind applying this workaorund in every case...
-    f = io.open("/sys/devices/virtual/input/input1/neocmd", "w")
+    f = io.open("/sys/devices/virtual/input/input1/neocmd", "we")
     if f ~= nil then
         f:write("a\n")
-        io.close(f)
+        f:close()
     end
 end
 
@@ -845,7 +859,7 @@ function Kobo:toggleChargingLED(toggle)
     --       (when it does, it's an option in the Energy saving settings),
     --       which is why we also limit ourselves to "true" on devices where this was tested.
     -- c.f., drivers/misc/ntx_misc_light.c
-    local f = io.open("/sys/devices/platform/ntx_led/lit", "w")
+    local f = io.open("/sys/devices/platform/ntx_led/lit", "we")
     if not f then
         logger.err("cannot open /sys/devices/platform/ntx_led/lit for writing!")
         return false
@@ -892,7 +906,53 @@ function Kobo:toggleChargingLED(toggle)
         f:flush()
     end
 
-    io.close(f)
+    f:close()
+end
+
+-- Return the highest core number
+local function getCPUCount()
+    local fd = io.open("/sys/devices/system/cpu/possible", "re")
+    if fd then
+        local str = fd:read("*line")
+        fd:close()
+
+        -- Format is n-N, where n is the first core, and N the last (e.g., 0-3)
+        return tonumber(str:match("%d+$")) or 0
+    else
+        return 0
+    end
+end
+
+function Kobo:enableCPUCores(amount)
+    if not self:isSMP() then
+        return
+    end
+
+    if not self.cpu_count then
+        self.cpu_count = getCPUCount()
+    end
+
+    -- Not actually SMP or getCPUCount failed...
+    if self.cpu_count == 0 then
+        return
+    end
+
+    -- CPU0 is *always* online ;).
+    for n=1, self.cpu_count do
+        local path = "/sys/devices/system/cpu/cpu" .. n .. "/online"
+        local up
+        if n >= amount then
+            up = "0"
+        else
+            up = "1"
+        end
+
+        local f = io.open(path, "we")
+        if f then
+            f:write(up)
+            f:close()
+        end
+    end
 end
 
 function Kobo:isStartupScriptUpToDate()

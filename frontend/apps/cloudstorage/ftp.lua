@@ -5,7 +5,6 @@ local FtpApi = require("apps/cloudstorage/ftpapi")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ReaderUI = require("apps/reader/readerui")
-local Screen = require("device").screen
 local UIManager = require("ui/uimanager")
 local ltn12 = require("ltn12")
 local logger = require("logger")
@@ -160,8 +159,6 @@ Username and password are optional.]])
                 },
             },
         },
-        width = math.floor(Screen:getWidth() * 0.95),
-        height = math.floor(Screen:getHeight() * 0.2),
         input_type = "text",
     }
     UIManager:show(self.settings_dialog)

@@ -226,7 +226,6 @@ function Terminal:editCommands(item)
     edit_dialog = InputDialog:new{
         title = T(_('Edit commands for "%1"'), item.text),
         input = item.commands,
-        width = Screen:getWidth() * 0.9,
         para_direction_rtl = false, -- force LTR
         input_type = "string",
         allow_newline = true,
@@ -262,7 +261,6 @@ function Terminal:editName(item)
     edit_dialog = InputDialog:new{
         title = _("Edit name"),
         input = item.text,
-        width = Screen:getWidth() * 0.9,
         para_direction_rtl = false, -- force LTR
         input_type = "string",
         allow_newline = false,
