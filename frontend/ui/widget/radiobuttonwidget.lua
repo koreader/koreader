@@ -75,6 +75,11 @@ function RadioButtonWidget:init()
 end
 
 function RadioButtonWidget:update()
+    if self.default_provider then
+        local row, col = self:getButtonIndex(self.default_provider)
+        self.radio_buttons[row][col].text = self.radio_buttons[row][col].text .. "  ★"
+    end
+
     local value_widget = RadioButtonTable:new{
         radio_buttons = self.radio_buttons,
         width = math.floor(self.width * 0.9),
@@ -131,17 +136,6 @@ function RadioButtonWidget:update()
         }
     }
 
-    if self.default_provider then
-        table.insert(buttons,{
-            {
-                text = self.default_text,
-                callback = function()
-                    local row, col = self:getButtonIndex(self.default_provider)
-                    value_widget:_checkButton(value_widget.radio_buttons_layout[row][col])
-                end,
-            },
-        })
-    end
     if self.extra_text then
         table.insert(buttons,{
             {
@@ -210,7 +204,7 @@ function RadioButtonWidget:update()
     }
     self[1] = WidgetContainer:new{
         align = "center",
-        dimen =Geom:new{
+        dimen = Geom:new{
             x = 0, y = 0,
             w = self.screen_width,
             h = self.screen_height,
