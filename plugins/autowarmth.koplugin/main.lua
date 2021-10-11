@@ -17,6 +17,7 @@ local Font = require("ui/font")
 local Notification = require("ui/widget/notification")
 local SpinWidget = require("ui/widget/spinwidget")
 local SunTime = require("suntime")
+local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
@@ -40,17 +41,6 @@ end
 
 local AutoWarmth = WidgetContainer:new{
     name = "autowarmth",
-    easy_mode = G_reader_settings:nilOrTrue("autowarmth_easy_mode"),
-    activate = G_reader_settings:readSetting("autowarmth_activate") or 0,
-    location = G_reader_settings:readSetting("autowarmth_location") or "Geysir",
-    latitude = G_reader_settings:readSetting("autowarmth_latitude") or 64.31, --great Geysir in Iceland
-    longitude = G_reader_settings:readSetting("autowarmth_longitude") or -20.30,
-    altitude = G_reader_settings:readSetting("autowarmth_altitude") or 200,
-    timezone = G_reader_settings:readSetting("autowarmth_timezone") or 0,
-    scheduler_times = G_reader_settings:readSetting("autowarmth_scheduler_times") or
-        {0.0, 5.5, 6.0, 6.5, 7.0, 13.0, 21.5, 22.0, 22.5, 23.0, 24.0},
-    warmth =   G_reader_settings:readSetting("autowarmth_warmth")
-        or { 90, 90, 80, 60, 20, 20, 20, 60, 80, 90, 90},
     sched_times = {},
     sched_funcs = {}, -- necessary for unschedule, function, warmth
 }
@@ -66,7 +56,18 @@ function AutoWarmth:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 
-    G_reader_settings:saveSetting("autowarmth_easy_mode", self.easy_mode)
+    self.easy_mode = G_reader_settings:nilOrTrue("autowarmth_easy_mode")
+    self.activate = G_reader_settings:readSetting("autowarmth_activate") or 0
+    self.location = G_reader_settings:readSetting("autowarmth_location") or "Geysir"
+    self.latitude = G_reader_settings:readSetting("autowarmth_latitude") or 64.31 --great Geysir in Iceland
+    self.longitude = G_reader_settings:readSetting("autowarmth_longitude") or -20.30
+    self.altitude = G_reader_settings:readSetting("autowarmth_altitude") or 200
+    self.timezone = G_reader_settings:readSetting("autowarmth_timezone") or 0
+    self.scheduler_times = G_reader_settings:readSetting("autowarmth_scheduler_times") or
+        {0.0, 5.5, 6.0, 6.5, 7.0, 13.0, 21.5, 22.0, 22.5, 23.0, 24.0}
+    self.warmth =   G_reader_settings:readSetting("autowarmth_warmth")
+        or { 90, 90, 80, 60, 20, 20, 20, 60, 80, 90, 90}
+
     -- schedule recalculation shortly afer midnight
     self:scheduleMidnightUpdate()
 end
@@ -255,6 +256,8 @@ function AutoWarmth:scheduleWarmthChanges(time)
         end
     end
 
+    if self.activate == 0 then return end
+
     local actual_warmth
     for i = 1, #self.sched_funcs do
         if self.sched_times[i] > time then
@@ -387,10 +390,10 @@ function AutoWarmth:getActivateMenu()
     end
 
     return {
-        getActivateMenuEntry( _("Sun position"), activate_sun),
-        getActivateMenuEntry( _("Time schedule"), activate_schedule),
-        getActivateMenuEntry( _("Whatever is closer to noon"), activate_closer_noon),
-        getActivateMenuEntry( _("Whatever is closer to midnight"), activate_closer_midnight),
+        getActivateMenuEntry(_("Sun position"), activate_sun),
+        getActivateMenuEntry(_("Time schedule"), activate_schedule),
+        getActivateMenuEntry(_("Whatever is closer to noon"), activate_closer_noon),
+        getActivateMenuEntry(_("Whatever is closer to midnight"), activate_closer_midnight),
     }
 end
 
@@ -748,9 +751,29 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
     -- text to show
     -- t .. times
     -- num .. index in times
-    local function info_line(indent, text, t, num, easy)
+    local function info_line(indent, text, t, num, face, easy)
+        -- get width of space
+        local unit = " "
+        local tmp = TextWidget:new{
+            text = unit,
+            face = face,
+        }
+        local space_w = tmp:getSize().w
+
+        -- get width of text
+        unit = text
+        tmp = TextWidget:new{
+            text = unit,
+            face = face,
+        }
+        local text_w = tmp:getSize().w
+        tmp:free()
+
+        -- width of text in spaces
+        local str_len = math.floor(text_w / space_w + 0.5)
+
         local tab_width = 18 - indent
-        local retval = string.rep(" ", indent) .. text .. string.rep(" ", tab_width - text:len())
+        local retval = string.rep(" ", indent) .. text .. string.rep(" ", tab_width - str_len)
             .. self:hoursToClock(t[num])
         if easy then
             if t[num] and self.current_times[num] and self.current_times[num] ~= t[num] then
@@ -794,29 +817,30 @@ function AutoWarmth:showTimesInfo(title, location, activator, request_easy)
         return easy and "" or ("  " .. text .. "\n")
     end
 
+    local face = Font:getFace("scfont")
     UIManager:show(InfoMessage:new{
-        face = Font:getFace("scfont"),
+        face = face,
         width = math.floor(Screen:getWidth() * (self.easy_mode and 0.75 or 0.90)),
             text = title .. location_string .. ":\n\n" ..
-            info_line(0, _("Solar midnight:"), times, 1, request_easy) ..
+            info_line(0, _("Solar midnight:"), times, 1, face, request_easy) ..
             add_line(_("Dawn"), request_easy) ..
-            info_line(4, _("Astronomic:"), times, 2, request_easy) ..
-            info_line(4, _("Nautical:"), times, 3, request_easy)..
+            info_line(4, _("Astronomic:"), times, 2, face, request_easy) ..
+            info_line(4, _("Nautical:"), times, 3, face, request_easy)..
             info_line(request_easy and 0 or 4,
-                request_easy and _("Twilight:") or _("Civil:"), times, 4) ..
+                request_easy and _("Twilight:") or _("Civil:"), times, 4, face) ..
             add_line(_("Dawn"), request_easy) ..
-            info_line(0, _("Sunrise:"), times, 5) ..
+            info_line(0, _("Sunrise:"), times, 5, face) ..
             "\n" ..
-            info_line(0, _("Solar noon:"), times, 6, request_easy) ..
+            info_line(0, _("Solar noon:"), times, 6, face, request_easy) ..
             add_line("", request_easy) ..
-            info_line(0, _("Sunset:"), times, 7) ..
+            info_line(0, _("Sunset:"), times, 7, face) ..
             add_line(_("Dusk"), request_easy) ..
             info_line(request_easy and 0 or 4,
-                request_easy and _("Twilight:") or _("Civil:"), times, 8) ..
-            info_line(4, _("Nautical:"), times, 9, request_easy) ..
-            info_line(4, _("Astronomic:"), times, 10, request_easy) ..
+                request_easy and _("Twilight:") or _("Civil:"), times, 8, face) ..
+            info_line(4, _("Nautical:"), times, 9, face, request_easy) ..
+            info_line(4, _("Astronomic:"), times, 10, face, request_easy) ..
             add_line(_("Dusk"), request_easy) ..
-            info_line(0, _("Solar midnight:"), times, midnight_index, request_easy)
+            info_line(0, _("Solar midnight:"), times, midnight_index, face, request_easy)
     })
 end
 

@@ -334,7 +334,7 @@ end
 function KoptInterface:renderPage(doc, pageno, rect, zoom, rotation, gamma, render_mode, hinting)
     if doc.configurable.text_wrap == 1 then
         return self:renderReflowedPage(doc, pageno, rect, zoom, rotation, render_mode, hinting)
-    elseif doc.configurable.page_opt == 1 then
+    elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
         return self:renderOptimizedPage(doc, pageno, rect, zoom, rotation, render_mode, hinting)
     else
         return Document.renderPage(doc, pageno, rect, zoom, rotation, gamma, render_mode, hinting)
@@ -439,7 +439,7 @@ function KoptInterface:hintPage(doc, pageno, zoom, rotation, gamma, render_mode)
 
     if doc.configurable.text_wrap == 1 then
         self:hintReflowedPage(doc, pageno, zoom, rotation, gamma, render_mode, true)
-    elseif doc.configurable.page_opt == 1 then
+    elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
         self:renderOptimizedPage(doc, pageno, nil, zoom, rotation, gamma, render_mode, true)
     else
         Document.hintPage(doc, pageno, zoom, rotation, gamma, render_mode)
@@ -487,7 +487,7 @@ end
 function KoptInterface:drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)
     if doc.configurable.text_wrap == 1 then
         self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, render_mode)
-    elseif doc.configurable.page_opt == 1 then
+    elseif doc.configurable.page_opt == 1 or doc.configurable.auto_straighten > 0 then
         self:drawContextPage(doc, target, x, y, rect, pageno, zoom, rotation, render_mode)
     else
         Document.drawPage(doc, target, x, y, rect, pageno, zoom, rotation, gamma, render_mode)

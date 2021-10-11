@@ -595,7 +595,7 @@ return {
         southeast = "ʏ", -- near-close, near-front rounded vowel IPA
         southwest = "Ŷ",
         "¥", -- Japanese Yen/Chinese Yuan currency
-        "Τ", -- Greek upsilon
+        "Υ", -- Greek upsilon
     },
     _y_ = {
         "y",

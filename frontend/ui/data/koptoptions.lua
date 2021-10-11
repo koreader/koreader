@@ -110,6 +110,19 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                 name_text_hold_callback = optionsutil.showValues,
                 help_text = _([[Set margins to be applied after page-crop and zoom modes are applied.]]),
             },
+            {
+                name = "auto_straighten",
+                name_text = _("Auto Straighten"),
+                toggle = {_("0°"), _("5°"), _("10°"), _("15°"), _("25°")},
+                values = {0, 5, 10, 15, 25},
+                event = "DummyEvent",
+                args = {0, 5, 10, 15, 25},
+                more_options = true,
+                default_value = DKOPTREADER_CONFIG_AUTO_STRAIGHTEN,
+                name_text_hold_callback = optionsutil.showValues,
+                help_text = _([[Attempt to automatically straighten tilted source pages.
+Will rotate up to specified value.]]),
+            },
         }
     },
     {
@@ -123,7 +136,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
                 end,
                 buttonprogress = true,
-                fine_tune = true,
+                more_options = true,
                 values = {0, 12, 24, 36, 48, 60, 72, 84},
                 default_pos = 4,
                 default_value = 36,
@@ -145,7 +158,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 0)
                 end,
                 buttonprogress = true,
-                fine_tune = true,
+                more_options = true,
                 values = {0, 12, 24, 36, 48, 60, 72, 84},
                 default_pos = 4,
                 default_value = 36,
@@ -561,18 +574,6 @@ This can also be used to remove some gray background or to convert a grayscale o
                 default_value = DKOPTREADER_CONFIG_DEFECT_SIZE,
                 event = "DefectSizeUpdate",
                 show = false, -- might work somehow, but larger values than 1.0 might easily eat content
-                enabled_func = function(configurable)
-                    return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
-                end,
-                name_text_hold_callback = optionsutil.showValues,
-            },
-            {
-                name = "auto_straighten",
-                name_text = _("Auto Straighten"),
-                toggle = {_("0 deg"), _("5 deg"), _("10 deg")},
-                values = {0, 5, 10},
-                default_value = DKOPTREADER_CONFIG_AUTO_STRAIGHTEN,
-                show = false, -- does not work (and slows rendering)
                 enabled_func = function(configurable)
                     return optionsutil.enableIfEquals(configurable, "text_wrap", 1)
                 end,
