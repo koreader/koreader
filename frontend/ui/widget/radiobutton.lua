@@ -22,7 +22,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
-local TextWidget = require("ui/widget/textwidget")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 
 local RadioButton = InputContainer:new{
@@ -36,20 +36,24 @@ local RadioButton = InputContainer:new{
 }
 
 function RadioButton:init()
-    self._checked_widget = TextWidget:new{
+    local fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY
+    self._checked_widget = TextBoxWidget:new{
         text = "◉ " .. self.text,
         face = self.face,
-        max_width = self.max_width,
+        width = self.max_width,
+        fgcolor = fgcolor,
     }
-    self._unchecked_widget = TextWidget:new{
+    self._unchecked_widget = TextBoxWidget:new{
         text = "◯ " .. self.text,
         face = self.face,
-        max_width = self.max_width,
+        width = self.max_width,
+        fgcolor = fgcolor,
     }
-    self._empty_widget = TextWidget:new{
+    self._empty_widget = TextBoxWidget:new{
         text = "" .. self.text,
         face = self.face,
-        max_width = self.max_width,
+        width = self.max_width,
+        fgcolor = fgcolor,
     }
     self._widget_size = self._unchecked_widget:getSize()
     if self.width == nil then
