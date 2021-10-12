@@ -346,6 +346,7 @@ function ReaderBookmark:onShowBookmark()
         if v.text == nil or v.text == "" then
             v.text = self:getBookmarkAutoText(v)
         end
+        -- bookmarks are internally sorted by descending page numbers
         local k = is_reverse_sorting and i or num - i
         item_table[k] = util.tableDeepCopy(v)
         item_table[k].text_orig = v.text or v.notes
@@ -424,6 +425,7 @@ function ReaderBookmark:onShowBookmark()
                                 ok_text = _("Remove"),
                                 ok_callback = function()
                                     bookmark:removeHighlight(item)
+                                    -- Also update item_table, so we don't have to rebuilt it in full
                                     for k, v in pairs(item_table) do
                                         if v == item then
                                             table.remove(item_table, k)
@@ -590,15 +592,10 @@ function ReaderBookmark:removeBookmark(item)
     logger.warn("removeBookmark: full scan search didn't find bookmark")
 end
 
-function ReaderBookmark:updateBookmark(item, do_update)
+function ReaderBookmark:updateBookmark(item)
     for i=1, #self.bookmarks do
         if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
-            -- Check if the 'text' field has not been edited manually
-            local is_auto_text = (self.bookmarks[i].text == nil) or
-                (self.bookmarks[i].text == self:getBookmarkAutoText(self.bookmarks[i], true))
-            if not do_update then
-                return is_auto_text
-            end
+            local is_auto_text = self:isBookmarkAutoText(self.bookmarks[i])
             self.bookmarks[i].page = item.updated_highlight.pos0
             self.bookmarks[i].pos0 = item.updated_highlight.pos0
             self.bookmarks[i].pos1 = item.updated_highlight.pos1
@@ -854,8 +851,14 @@ function ReaderBookmark:getBookmarkAutoText(bookmark, force_auto_text)
         local page = self:getBookmarkPageString(bookmark.page)
         return T(_("Page %1 %2 @ %3"), page, bookmark.notes, bookmark.datetime)
     else
+        -- When not auto_text, and 'text' would be identical to 'notes', leave 'text' be nil
         return nil
     end
+end
+
+--- Check if the 'text' field has not been edited manually
+function ReaderBookmark:isBookmarkAutoText(bookmark)
+    return (bookmark.text == nil) or (bookmark.text == self:getBookmarkAutoText(bookmark, true))
 end
 
 return ReaderBookmark
