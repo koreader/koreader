@@ -861,4 +861,12 @@ function ReaderBookmark:isBookmarkAutoText(bookmark)
     return (bookmark.text == nil) or (bookmark.text == self:getBookmarkAutoText(bookmark, true))
 end
 
+function ReaderBookmark:isHighlightAutoText(item)
+    for i=1, #self.bookmarks do
+        if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
+            return self:isBookmarkAutoText(self.bookmarks[i])
+        end
+    end
+end
+
 return ReaderBookmark
