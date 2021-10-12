@@ -669,7 +669,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                                 if bookmark.pboxes then
                                     local setting = G_reader_settings:readSetting("save_document")
                                     if setting ~= "disable" then
-                                        self.ui.document:updateHighlightContents(bookmark.page, bookmark, value)
+                                        self.ui.document:updateHighlightContents(bookmark.page, bookmark, value or bookmark.notes)
                                     end
                                 end
                                 UIManager:close(self.input)
