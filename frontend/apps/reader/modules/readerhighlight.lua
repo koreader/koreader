@@ -637,8 +637,10 @@ end
 
 function ReaderHighlight:onShowHighlightDialog(page, index)
     local item = self.view.highlight.saved[page][index]
-    local item_page = self.ui.document.info.has_pages and item.pos0.page or item.pos0
-    local is_auto_text = self.ui.bookmark:updateBookmark({page = item_page, datetime = item.datetime}, false)
+    local is_auto_text = self.ui.bookmark:isHighlightAutoText({
+        page = self.ui.document.info.has_pages and item.pos0.page or item.pos0,
+        datetime = item.datetime,
+    })
     local buttons = {
         {
             {
