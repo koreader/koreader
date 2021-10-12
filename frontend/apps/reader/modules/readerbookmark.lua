@@ -105,6 +105,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
+                    local default_font_size = Menu.getItemFontSize(curr_perpage)
                     return T(_("Bookmark font size: %1"),
                         G_reader_settings:readSetting("bookmarks_items_font_size", default_font_size))
                 end,
