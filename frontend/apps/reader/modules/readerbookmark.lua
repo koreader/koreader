@@ -590,12 +590,15 @@ function ReaderBookmark:removeBookmark(item)
     logger.warn("removeBookmark: full scan search didn't find bookmark")
 end
 
-function ReaderBookmark:updateBookmark(item)
+function ReaderBookmark:updateBookmark(item, do_update)
     for i=1, #self.bookmarks do
         if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
             -- Check if the 'text' field has not been edited manually
             local is_auto_text = (self.bookmarks[i].text == nil) or
                 (self.bookmarks[i].text == self:getBookmarkAutoText(self.bookmarks[i], true))
+            if not do_update then
+                return is_auto_text
+            end
             self.bookmarks[i].page = item.updated_highlight.pos0
             self.bookmarks[i].pos0 = item.updated_highlight.pos0
             self.bookmarks[i].pos1 = item.updated_highlight.pos1
@@ -658,7 +661,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                             value = self:getBookmarkAutoText(bookmark)
                         end
                         for __, bm in ipairs(self.bookmarks) do
-                            if bookmark.pos0 == bm.pos0 and bookmark.pos1 == bm.pos1 and bookmark.page == bm.page then
+                            if bookmark.datetime == bm.datetime and bookmark.page == bm.page then
                                 bm.text = value
                                 bookmark.text_orig = value or bookmark.notes
                                 bookmark.text = bookmark.text_orig
