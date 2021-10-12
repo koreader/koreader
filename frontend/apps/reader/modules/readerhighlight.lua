@@ -636,6 +636,9 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
 end
 
 function ReaderHighlight:onShowHighlightDialog(page, index)
+    local item = self.view.highlight.saved[page][index]
+    local item_page = self.ui.document.info.has_pages and item.pos0.page or item.pos0
+    local is_auto_text = self.ui.bookmark:updateBookmark({page = item_page, datetime = item.datetime}, false)
     local buttons = {
         {
             {
@@ -656,7 +659,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 end,
             },
             {
-                text = _("Note"),
+                text = is_auto_text and _("Add note") or _("Edit note"),
                 callback = function()
                     self:editHighlight(page, index)
                     UIManager:close(self.edit_highlight_dialog)
