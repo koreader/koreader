@@ -81,11 +81,14 @@ function ReaderBookmark:addToMainMenu(menu_items)
         text = _("Bookmarks"),
         sub_item_table = {
             {
-                text = _("Bookmarks per page"),
+                text_func = function()
+                    return T(_("Bookmarks per page: %1"),
+                        G_reader_settings:readSetting("bookmarks_items_per_page", self.bookmarks_items_per_page_default))
+                end,
                 keep_menu_open = true,
-                callback = function()
+                callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
-                    local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page") or self.bookmarks_items_per_page_default
+                    local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page", self.bookmarks_items_per_page_default)
                     local items = SpinWidget:new{
                         value = curr_perpage,
                         value_min = 6,
@@ -94,19 +97,23 @@ function ReaderBookmark:addToMainMenu(menu_items)
                         title_text =  _("Bookmarks per page"),
                         callback = function(spin)
                             G_reader_settings:saveSetting("bookmarks_items_per_page", spin.value)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
                         end
                     }
                     UIManager:show(items)
                 end
             },
             {
-                text = _("Bookmark font size"),
+                text_func = function()
+                    return T(_("Bookmark font size: %1"),
+                        G_reader_settings:readSetting("bookmarks_items_font_size", default_font_size))
+                end,
                 keep_menu_open = true,
-                callback = function()
+                callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
-                    local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page") or self.bookmarks_items_per_page_default
+                    local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page", self.bookmarks_items_per_page_default)
                     local default_font_size = Menu.getItemFontSize(curr_perpage)
-                    local curr_font_size = G_reader_settings:readSetting("bookmarks_items_font_size") or default_font_size
+                    local curr_font_size = G_reader_settings:readSetting("bookmarks_items_font_size", default_font_size)
                     local items_font = SpinWidget:new{
                         value = curr_font_size,
                         value_min = 10,
@@ -115,6 +122,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                         title_text =  _("Bookmark font size"),
                         callback = function(spin)
                             G_reader_settings:saveSetting("bookmarks_items_font_size", spin.value)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
                         end
                     }
                     UIManager:show(items_font)
@@ -666,7 +674,10 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                                 if bookmark.pboxes then
                                     local setting = G_reader_settings:readSetting("save_document")
                                     if setting ~= "disable" then
-                                        self.ui.document:updateHighlightContents(bookmark.page, bookmark, value or bookmark.notes)
+                                        if value == nil then
+                                            value = self:getBookmarkAutoText(bookmark, true)
+                                        end
+                                        self.ui.document:updateHighlightContents(bookmark.page, bookmark, value)
                                     end
                                 end
                                 UIManager:close(self.input)
