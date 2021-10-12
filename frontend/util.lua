@@ -521,11 +521,16 @@ function util.lastIndexOf(string, ch)
     if i == nil then return -1 else return i - 1 end
 end
 
+--- Pattern which matches a single well-formed UTF-8 character, including
+--- theoretical >4-byte extensions.
+-- Taken from <https://www.lua.org/manual/5.4/manual.html#pdf-utf8.charpattern>
+util.UTF8_CHAR_PATTERN = '[%z\1-\127\194-\253][\128-\191]*'
+
 --- Reverse the individual greater-than-single-byte characters
 -- @string string to reverse
 -- Taken from <https://github.com/blitmap/lua-utf8-simple#utf8reverses>
 function util.utf8Reverse(text)
-    text = text:gsub('[%z\1-\127\194-\244][\128-\191]*', function (c) return #c > 1 and c:reverse() end)
+    text = text:gsub(util.UTF8_CHAR_PATTERN, function (c) return #c > 1 and c:reverse() end)
     return text:reverse()
 end
 
@@ -589,14 +594,32 @@ end
 ---- @string c
 ---- @treturn boolean true if CJK
 function util.isCJKChar(c)
-    return string.match(c, "[\228-\234][\128-\191].") == c
+    code = BaseUtil.utf8charcode(c)
+    return (code >=  0x2E80 and code <=  0x9FFF) or -- BMP CJK Symbols
+           (code >=  0xF900 and code <=  0xFAFF) or -- CJK Compatibility Ideographs
+           (code >=  0xFE30 and code <=  0xFE4F) or -- CJK Compatibility Forms
+           (code >=  0xFF00 and code <=  0xFFEF) or -- Halfwidth and Fullwidth Forms
+           -- SIP (Plane 2)
+           (code >= 0x20000 and code <= 0x2A6DF) or -- CJK Unified Ideographs Extension B
+           (code >= 0x2A700 and code <= 0x2B73F) or -- CJK Unified Ideographs Extension C
+           (code >= 0x2B740 and code <= 0x2B81F) or -- CJK Unified Ideographs Extension D
+           (code >= 0x2B820 and code <= 0x2CEAF) or -- CJK Unified Ideographs Extension E
+           (code >= 0x2CEB0 and code <= 0x2EBEF) or -- CJK Unified Ideographs Extension F
+           (code >= 0x2F800 and code <= 0x2FA1F) or -- CJK Compatibility Ideographs Supplement
+           -- TIP (Plane 3)
+           (code >= 0x30000 and code <= 0x3134F)    -- CJK Unified Ideographs Extension G
 end
 
 --- Tests whether str contains CJK characters
 ---- @string str
 ---- @treturn boolean true if CJK
 function util.hasCJKChar(str)
-    return string.match(str, "[\228-\234][\128-\191].") ~= nil
+    for c in str:gmatch(util.UTF8_CHAR_PATTERN) do
+        if util.isCJKChar(c) then
+            return true
+        end
+    end
+    return false
 end
 
 --- Split texts into a list of words, spaces and punctuation marks.
