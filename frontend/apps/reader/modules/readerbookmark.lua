@@ -82,19 +82,19 @@ function ReaderBookmark:addToMainMenu(menu_items)
         sub_item_table = {
             {
                 text_func = function()
-                    return T(_("Bookmarks per page: %1"),
-                        G_reader_settings:readSetting("bookmarks_items_per_page", self.bookmarks_items_per_page_default))
+                    local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page")
+                    return T(_("Bookmarks per page: %1"), curr_perpage)
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
-                    local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page", self.bookmarks_items_per_page_default)
+                    local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page")
                     local items = SpinWidget:new{
                         value = curr_perpage,
                         value_min = 6,
                         value_max = 24,
                         default_value = self.bookmarks_items_per_page_default,
-                        title_text =  _("Bookmarks per page"),
+                        title_text = _("Bookmarks per page"),
                         callback = function(spin)
                             G_reader_settings:saveSetting("bookmarks_items_per_page", spin.value)
                             if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -105,15 +105,15 @@ function ReaderBookmark:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page", self.bookmarks_items_per_page_default)
+                    local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page")
                     local default_font_size = Menu.getItemFontSize(curr_perpage)
-                    return T(_("Bookmark font size: %1"),
-                        G_reader_settings:readSetting("bookmarks_items_font_size", default_font_size))
+                    local curr_font_size = G_reader_settings:readSetting("bookmarks_items_font_size", default_font_size)
+                    return T(_("Bookmark font size: %1"), curr_font_size)
                 end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
-                    local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page", self.bookmarks_items_per_page_default)
+                    local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page")
                     local default_font_size = Menu.getItemFontSize(curr_perpage)
                     local curr_font_size = G_reader_settings:readSetting("bookmarks_items_font_size", default_font_size)
                     local items_font = SpinWidget:new{
@@ -121,7 +121,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                         value_min = 10,
                         value_max = 72,
                         default_value = default_font_size,
-                        title_text =  _("Bookmark font size"),
+                        title_text = _("Bookmark font size"),
                         callback = function(spin)
                             G_reader_settings:saveSetting("bookmarks_items_font_size", spin.value)
                             if touchmenu_instance then touchmenu_instance:updateItems() end
@@ -149,7 +149,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 end
             },
             {
-                text = _("Reverse sorting"),
+                text = _("Sort by largest page number"),
                 checked_func = function()
                     return G_reader_settings:nilOrTrue("bookmarks_items_reverse_sorting")
                 end,
@@ -367,8 +367,8 @@ function ReaderBookmark:onShowBookmark()
         item_table[k].mandatory = self:getBookmarkPageString(v.page)
     end
 
-    local items_per_page = G_reader_settings:readSetting("bookmarks_items_per_page") or self.bookmarks_items_per_page_default
-    local items_font_size = G_reader_settings:readSetting("bookmarks_items_font_size") or Menu.getItemFontSize(items_per_page)
+    local items_per_page = G_reader_settings:readSetting("bookmarks_items_per_page")
+    local items_font_size = G_reader_settings:readSetting("bookmarks_items_font_size", Menu.getItemFontSize(items_per_page))
     local multilines_show_more_text = G_reader_settings:isTrue("bookmarks_items_multilines_show_more_text")
 
     local bm_menu = Menu:new{
@@ -676,10 +676,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                                 if bookmark.pboxes then
                                     local setting = G_reader_settings:readSetting("save_document")
                                     if setting ~= "disable" then
-                                        if value == nil then
-                                            value = self:getBookmarkAutoText(bookmark, true)
-                                        end
-                                        self.ui.document:updateHighlightContents(bookmark.page, bookmark, value)
+                                        self.ui.document:updateHighlightContents(bookmark.page, bookmark, value or bookmark.notes)
                                     end
                                 end
                                 UIManager:close(self.input)
