@@ -249,9 +249,8 @@ end
 -- If mark_read is true then we change status only from reading/abandoned to read (complete).
 -- Otherwise we change status from reading/abandoned to read or from read to reading.
 function ReaderStatus:onMarkBook(mark_read)
-    if self.settings.data.summary and self.settings.data.summary.status then
-        local current_status = self.settings.data.summary.status
-        if current_status == "complete" then
+    if self.settings.data.summary then
+        if self.settings.data.summary.status and self.settings.data.summary.status == "complete" then
             if mark_read then
                 -- Keep mark as read.
                 self.settings.data.summary.status = "complete"
