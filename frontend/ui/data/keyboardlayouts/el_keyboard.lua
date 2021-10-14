@@ -57,6 +57,7 @@ local _Y_el = el_popup._Y_el
 local _y_el = el_popup._y_el
 local _Z_el = el_popup._Z_el
 local _z_el = el_popup._z_el
+local acu = el_popup.acu
 
 return {
     min_layer = 1,
@@ -85,7 +86,7 @@ return {
             { _S_el,  _s_el,  "$",    "4",    "ᾏ",    "ᾆ",    "İ",    "ı", },
             { _D_el,  _d_el,  "%",    "5",    "Ἃ",    "ἃ",    "Ğ",    "ğ", },
             { _F_el,  _f_el,  "^",    "6",    "Ï",    "ï",    "Ć",    "ć", },
-            { _G_el,  _g_el,  ":",    "´",    "Ô",    "ῇ",    "Č",    "č", },
+            { _G_el,  _g_el,  ":",    acu,    "Ô",    "ῇ",    "Č",    "č", },
             { _H_el,  _h_el,  '"',    "'",    "Ή",    "ή",    "Đ",    "đ", },
             { _J_el,  _j_el,  "{",    "[",    "Ί",    "ί",    "Š",    "š", },
             { _K_el,  _k_el,  "}",    "]",    "Û",    "ὖ",    "Ž",    "ž", },
