@@ -25,6 +25,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+local Notification = require("ui/widget/notification")
 local PluginLoader = require("pluginloader")
 local ReadCollection = require("readcollection")
 local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
@@ -238,9 +239,8 @@ function FileManager:setupLayout()
                     callback = function()
                         copyFile(file)
                         UIManager:close(self.file_dialog)
-                        UIManager:show(InfoMessage:new{
-                            text = T(_("Copied to clipboard:\n%1"), BD.filepath(file)),
-                            timeout = 2,
+                        UIManager:show(Notification:new{
+                            text = is_file and _("File copied to clipboard.") or _("Folder copied to clipboard.")
                         })
                     end,
                 },
@@ -276,9 +276,8 @@ function FileManager:setupLayout()
                     callback = function()
                         cutFile(file)
                         UIManager:close(self.file_dialog)
-                        UIManager:show(InfoMessage:new{
-                            text = T(_("Cut to clipboard:\n%1"), BD.filepath(file)),
-                            timeout = 2,
+                        UIManager:show(Notification:new{
+                            text = is_file and _("File cut to clipboard.") or _("Folder cut to clipboard.")
                         })
                     end,
                 },
@@ -879,6 +878,7 @@ function FileManager:pasteHere(file)
         file = BaseUtil.realpath(file)
         local orig_basename = BaseUtil.basename(self.clipboard)
         local orig = BaseUtil.realpath(self.clipboard)
+        local is_folder = lfs.attributes(orig, "mode") == "directory"
         local dest = lfs.attributes(file, "mode") == "directory" and
             file or file:match("(.*/)")
 
@@ -888,9 +888,8 @@ function FileManager:pasteHere(file)
                 BaseUtil.execute(self.cp_bin, "-r", DocSettings:getSidecarDir(orig), dest)
             end
             if BaseUtil.execute(self.cp_bin, "-r", orig, dest) == 0 then
-                UIManager:show(InfoMessage:new {
-                    text = T(_("Copied:\n%1\nto:\n%2"), BD.filepath(orig_basename), BD.dirpath(dest)),
-                    timeout = 2,
+                UIManager:show(Notification:new{
+                    text = is_folder and _("Folder copied.") or _("File copied."),
                 })
             else
                 UIManager:show(InfoMessage:new {
@@ -910,9 +909,8 @@ function FileManager:pasteHere(file)
                 local dest_file = string.format("%s/%s", dest, BaseUtil.basename(orig))
                 require("readhistory"):updateItemByPath(orig, dest_file) -- (will update "lastfile" if needed)
                 ReadCollection:updateItemByPath(orig, dest_file)
-                UIManager:show(InfoMessage:new {
-                    text = T(_("Moved:\n%1\nto:\n%2"), BD.filepath(orig_basename), BD.dirpath(dest)),
-                    timeout = 2,
+                UIManager:show(Notification:new{
+                    text = is_folder and _("Folder moved.") or _("File moved."),
                 })
             else
                 UIManager:show(InfoMessage:new {
@@ -960,9 +958,8 @@ function FileManager:createFolder(curr_folder, new_folder)
     local code = BaseUtil.execute(self.mkdir_bin, folder)
     if code == 0 then
         self:onRefresh()
-        UIManager:show(InfoMessage:new{
-            text = T(_("Created folder:\n%1"), BD.directory(new_folder)),
-            timeout = 2,
+        UIManager:show(Notification:new{
+            text = _("Folder created."),
         })
     else
         UIManager:show(InfoMessage:new{
@@ -1001,10 +998,8 @@ function FileManager:deleteFile(file)
             doc_settings:purge()
         end
         ReadCollection:removeItemByPath(file, is_dir)
-        UIManager:show(InfoMessage:new{
-            text = is_dir and T(_("Deleted folder:\n%1"), BD.filepath(file)) or
-                T(_("Deleted file:\n%1"), BD.filepath(file)),
-            timeout = 2,
+        UIManager:show(Notification:new{
+            text = is_dir and _("Folder deleted.") or _("File deleted."),
         })
     else
         UIManager:show(InfoMessage:new{
@@ -1034,9 +1029,8 @@ function FileManager:renameFile(file)
                        move_history = false
                     end
                     if move_history then
-                        UIManager:show(InfoMessage:new{
-                            text = T(_("Renamed file:\n%1\nto:\n%2"), BD.filepath(file), BD.filepath(dest)),
-                            timeout = 2,
+                        UIManager:show(Notification:new{
+                            text = _("File renamed."),
                         })
                     else
                         UIManager:show(InfoMessage:new{
@@ -1046,9 +1040,8 @@ function FileManager:renameFile(file)
                         })
                     end
                 else
-                    UIManager:show(InfoMessage:new{
-                        text = T(_("Renamed folder:\n%1\nto:\n%2"), BD.filepath(file), BD.filepath(dest)),
-                        timeout = 2,
+                    UIManager:show(Notification:new{
+                        text = _("Folder renamed."),
                     })
                 end
             else
@@ -1242,9 +1235,8 @@ end
 
 function FileManager:onRefreshContent()
     self:onRefresh()
-    UIManager:show(InfoMessage:new{
+    UIManager:show(Notification:new{
         text = _("Content refreshed."),
-        timeout = 2,
     })
 end
 
