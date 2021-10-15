@@ -116,6 +116,9 @@ function FeedSource:fetchDocumentByUrl(url)
     end
 end
 
+-- Supply this method with the XML document returned by the feed,
+-- and it will initialized the document by extracting the feed title,
+-- feed items, and items count.
 function FeedSource:initializeDocument(document)
     local feed_title
     local feed_items
@@ -361,6 +364,8 @@ function FeedSource:createEpub(title, chapters, abs_output_path, progress_callba
         title = title
     }
 
+    progress_callback("Building EPUB: " .. title)
+
     epub:addToc(chapters)
     epub:addManifest(chapters, images)
     epub:addContents(chapters)
@@ -395,7 +400,12 @@ local function parseDate(dateTime)
     return os.date("%y-%m-%d_%H-%M_", date)
 end
 
--- This appears to be used by Atom feeds in processDocument.
+function FeedSource:getFeedTitleWithDate(feed)
+    local title = util.getSafeFilename(FeedSource:getFeedTitle(feed.document.title))
+    return os.date("%y-%m-%d_%H-%M_") .. title
+end
+
+-- Creates a title with date from a feed item.
 function FeedSource:getTitleWithDate(feed)
     local title = util.getSafeFilename(FeedSource:getFeedTitle(feed.title))
     if feed.updated then

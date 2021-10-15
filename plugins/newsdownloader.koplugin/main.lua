@@ -17,7 +17,6 @@ local Persist = require("persist")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local dateparser = require("lib.dateparser")
 local logger = require("logger")
-local md5 = require("lib.md5")
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
@@ -285,20 +284,24 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
                     end
                 )
 
-                for jndex, content in pairs(items_content) do
-                    local sub_dir = feedSource:getFeedTitle(feed.document.title)
+                local volumize = feed.volumize ~= false
+                local chapters = {}
+                local feed_title = feedSource:getFeedTitleWithDate(feed)
+                local sub_dir = feedSource:getFeedTitle(feed.document.title)
+                local abs_path = feedSource:getEpubOutputDir(
+                    self.download_dir,
+                    sub_dir,
+                    feed_title
+                )
 
+                for jndex, content in pairs(items_content) do
                     abs_path = feedSource:getEpubOutputDir(
                         self.download_dir,
                         sub_dir,
                         content.item_title
                     )
-
-                    local chapters = {}
-
                     -- Not sure the slug returned is what we want.
                     -- Should be something like 2022_09_20-ArticleTitle
-
                     table.insert(
                         chapters,
                         {
@@ -309,11 +312,28 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
                             images = content.images
                         }
                     )
-
+                    if not volumize then
+                        -- We're not volumizing, so each chapter
+                        -- will be its own epub.
+                        table.insert(
+                            epubs_to_make,
+                            {
+                                title = content.item_slug,
+                                chapters = chapters,
+                                abs_path = abs_path
+                            }
+                        )
+                        -- Reset the chapters list.
+                        chapters = {}
+                    end
+                end
+                -- We're volumizing, so all of the chapters we collected
+                -- get added to a single epub.
+                if volumize then
                     table.insert(
                         epubs_to_make,
                         {
-                            title = content.item_slug,
+                            title = feed_title,
                             chapters = chapters,
                             abs_path = abs_path
                         }
@@ -321,14 +341,14 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
                 end
             end
 
-            --
+            -- Make each EPUB.
             for index, epub in pairs(epubs_to_make) do
                 feedSource:createEpub(
                     epub.title,
                     epub.chapters,
                     epub.abs_path,
                     function(progress_message)
-                        Ui:info(progress_message)
+                        UI:info(progress_message)
                     end,
                     function(error_message)
                         table.insert(
@@ -338,8 +358,6 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
                     end
                 )
             end
-
-            logger.dbg("sync", sync_errors)
 
             -- Relay any errors
             for index, error_message in pairs(sync_errors) do
@@ -352,7 +370,6 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
 
             -- Callback to menu item
             callback("Sync complete!")
-
     end)
 end
 
