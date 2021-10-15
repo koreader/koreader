@@ -64,16 +64,15 @@ local highlight_strings = {
 }
 
 function DictQuickLookup:canSearch()
-    if self:isDocless() then
-        return false
-    end
-
     if self.is_wiki then
         -- In the Wiki variant of this widget, the Search button is coopted to cycle between enabled languages.
         if #self.wiki_languages > 1 then
             return true
         end
     else
+        if self:isDocless() then
+            return false
+        end
         -- This is to prevent an ineffective button when we're launched from the Reader's menu.
         if self.highlight then
             return true
@@ -853,6 +852,7 @@ function DictQuickLookup:update()
         -- Re-use our ScrollTextWidget (self.stw_widget)
         -- Update properties that may change across results (as done in DictQuickLookup:_instantiateScrollWidget())
         self.text_widget.text_widget.text = self.definition
+        self.text_widget.text_widget.charlist = nil -- (required when use_xtext=false for proper re-init)
         self.text_widget.text_widget.lang = self.lang and self.lang:lower()
         self.text_widget.text_widget.para_direction_rtl = self.rtl_lang
         self.text_widget.text_widget.images = self.images
