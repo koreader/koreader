@@ -77,7 +77,7 @@ end
 function RadioButtonWidget:update()
     if self.default_provider then
         local row, col = self:getButtonIndex(self.default_provider)
-        self.radio_buttons[row][col].text = self.radio_buttons[row][col].text .. "  ★"
+        self.radio_buttons[row][col].text = self.radio_buttons[row][col].text .. "\u{A0}\u{A0}★"
     end
 
     local value_widget = RadioButtonTable:new{
