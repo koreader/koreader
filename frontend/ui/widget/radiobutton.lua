@@ -39,11 +39,12 @@ local RadioButton = InputContainer:new{
 
 function RadioButton:init()
     local fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY
-    local _dummy_widget = TextWidget:new{ -- to get width of radiomark
+    local dummy_widget = TextWidget:new{ -- to get width of radiomark
         text = "◉ ",
         face = self.face,
     }
-    local radiomark_width = _dummy_widget:getSize().w
+    local radiomark_width = dummy_widget:getSize().w
+    dummy_widget:free()
     local text_widget = TextBoxWidget:new{
         text = self.text,
         face = self.face,
