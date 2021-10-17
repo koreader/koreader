@@ -65,7 +65,9 @@ function NewsHelpers:getUrlContent(url, timeout, maxtime, redirectCount)
             logger.dbg("getUrlContent: Redirecting to url: ", redirected_url)
             return self:getUrlContent(redirected_url, timeout, maxtime, redirectCount + 1)
         else
-            error("EpubDownloadBackend: Don't know how to handle HTTP response status: ", status)
+            --            error("EpubDownloadBackend: Don't know how to handle HTTP response status: " .. status)
+--            error("EpubDownloadBackend: Don't know how to handle HTTP response status.")
+            return false, status
         end
         logger.warn("HTTP status not okay:", code, status)
         return false, "Remote server error or unavailable"

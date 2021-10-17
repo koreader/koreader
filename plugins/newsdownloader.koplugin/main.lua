@@ -1,7 +1,5 @@
 local BD = require("ui/bidi")
 local DataStorage = require("datastorage")
---local DownloadBackend = require("internaldownloadbackend")
---local DownloadBackend = require("luahttpdownloadbackend")
 local ReadHistory = require("readhistory")
 local FFIUtil = require("ffi/util")
 local FeedView = require("feed_view")
@@ -17,6 +15,7 @@ local Persist = require("persist")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local dateparser = require("lib.dateparser")
 local logger = require("logger")
+local md5 = require("ffi/sha2").md5
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
@@ -27,7 +26,9 @@ local NewsDownloader = WidgetContainer:new{
     feed_config_file = "feed_config.lua",
     feed_config_path = nil,
     news_config_file = "news_settings.lua",
+    news_history_file = "news_history.lua",
     settings = nil,
+    history = nil,
     download_dir_name = "news",
     download_dir = nil,
     config_key_custom_dl_dir = "custom_dl_dir",
@@ -185,6 +186,8 @@ function NewsDownloader:lazyInitialization()
                     DataStorage:getFullDataDir(),
                     self.download_dir_name)
         end
+        logger.dbg("NewsDownloader: initializing download history")
+        self.history = LuaSettings:open(("%s/%s"):format(DataStorage:getSettingsDir(), self.news_history_file))
         logger.dbg("NewsDownloader: Custom directory set to:", self.download_dir)
         -- If the directory doesn't exist we will create it.
         if not lfs.attributes(self.download_dir, "mode") then
@@ -269,6 +272,8 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
             -- In this block, each feed item will be its own
             -- epub complete with title and chapters
             local epubs_to_make = {}
+            local feed_history = {}
+
             for index, feed in pairs(initialized_feeds) do
                 -- Go through each feed and make new entry
                 local items_content = feedSource:getItemsContent(
@@ -284,66 +289,88 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
                     end
                 )
 
-                local volumize = feed.volumize ~= false
+                local volumize = feed.config.volumize ~= false
                 local chapters = {}
                 local feed_title = feedSource:getFeedTitleWithDate(feed)
+                local feed_id = feed.config[1] -- The url.
                 local sub_dir = feedSource:getFeedTitle(feed.document.title)
-                local abs_path = feedSource:getEpubOutputDir(
-                    self.download_dir,
-                    sub_dir,
-                    feed_title
-                )
+                local item_history = {}
 
                 for jndex, content in pairs(items_content) do
-                    abs_path = feedSource:getEpubOutputDir(
-                        self.download_dir,
-                        sub_dir,
-                        content.item_title
-                    )
-                    -- Not sure the slug returned is what we want.
-                    -- Should be something like 2022_09_20-ArticleTitle
-                    table.insert(
-                        chapters,
-                        {
-                            title = content.item_title,
-                            slug = content.item_slug,
-                            md5 = content.md5,
-                            html = content.html,
-                            images = content.images
-                        }
-                    )
-                    if not volumize then
-                        -- We're not volumizing, so each chapter
-                        -- will be its own epub.
+                    -- Check to see if we've already downloaded this item.
+                    local history_for_feed = self.history:child(feed_id)
+
+                    if history_for_feed:has(content.md5) then
+                        logger.dbg("NewsDownloader: ", "Item already downloaded")
+                        UI:info(_("Skipping downloaded item"))
+                    else
+                        local abs_path = feedSource:getEpubOutputDir(
+                            self.download_dir,
+                            sub_dir,
+                            content.item_title
+                        )
+
+                        -- Not sure the slug returned is what we want.
+                        -- Should be something like 2022_09_20-ArticleTitle
                         table.insert(
-                            epubs_to_make,
+                            chapters,
                             {
-                                title = content.item_slug,
-                                chapters = chapters,
-                                abs_path = abs_path
+                                title = content.item_title,
+                                slug = content.item_slug,
+                                md5 = content.md5,
+                                html = content.html,
+                                images = content.images
                             }
                         )
-                        -- Reset the chapters list.
-                        chapters = {}
+
+                        if not volumize then
+                            -- We're not volumizing, so each chapter
+                            -- will be its own epub.
+                            table.insert(
+                                epubs_to_make,
+                                {
+                                    title = content.item_title,
+                                    chapters = chapters,
+                                    abs_path = abs_path,
+                                    id = feed_id,
+                                }
+                            )
+                            -- Reset the chapters list.
+                            chapters = {}
+                        end
+
+                        table.insert(
+                            item_history,
+                            content.md5
+                        )
                     end
                 end
                 -- We're volumizing, so all of the chapters we collected
                 -- get added to a single epub.
-                if volumize then
+                if volumize and #chapters > 0 then
+                    local abs_path = feedSource:getEpubOutputDir(
+                        self.download_dir,
+                        sub_dir,
+                        feed_title
+                    )
+
                     table.insert(
                         epubs_to_make,
                         {
                             title = feed_title,
                             chapters = chapters,
-                            abs_path = abs_path
+                            abs_path = abs_path,
+                            id = feed_id,
                         }
                     )
                 end
+
+                feed_history[feed_id] = item_history
             end
 
             -- Make each EPUB.
             for index, epub in pairs(epubs_to_make) do
-                feedSource:createEpub(
+                local ok = feedSource:createEpub(
                     epub.title,
                     epub.chapters,
                     epub.abs_path,
@@ -357,7 +384,22 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
                         )
                     end
                 )
+                if ok then
+                    -- Save the hashes to the setting for this feed.
+                    local hashes_to_save = feed_history[epub.id]
+                    local history_for_feed = self.history:child(epub.id)
+
+                    for index, hash in ipairs(hashes_to_save) do
+                        if history_for_feed:hasNot(hash) then
+                            history_for_feed:saveSetting(hash, true)
+                        end
+                    end
+                end
             end
+
+            logger.dbg(epubs_to_make)
+
+            self.history:flush()
 
             -- Relay any errors
             for index, error_message in pairs(sync_errors) do
@@ -408,11 +450,10 @@ function NewsDownloader:setCustomDownloadDirectory()
 end
 
 function NewsDownloader:viewFeedList()
-    local UI = require("ui/trapper")
-    UI:info(_("Loading news feed list…"))
     -- Protected call to see if feed config path returns a file that can be opened.
     local ok, feed_config = pcall(dofile, self.feed_config_path)
     if not ok or not feed_config then
+        local UI = require("ui/trapper")
         local change_feed_config = UI:confirm(
             _("Could not open feed list. Feeds configuration file is invalid."),
             _("Close"),
@@ -422,15 +463,6 @@ function NewsDownloader:viewFeedList()
             self:changeFeedConfig()
         end
         return
-    end
-    UI:clear()
-    -- See if the config file contains any feed items
-    if #feed_config <= 0 then
-        logger.err("NewsDownloader: empty feed list.", self.feed_config_path)
-        -- Why not ask the user if they want to add one?
-        -- Or, in future, move along to our list UI with an entry for new feeds
-
-        --return
     end
 
     local view_content = FeedView:getList(
@@ -443,8 +475,12 @@ function NewsDownloader:viewFeedList()
         function(id, edit_key, value)
             self:editFeedAttribute(id, edit_key, value)
         end,
-        function(id)
-            self:deleteFeed(id)
+        function(id, action)
+            if action == FeedView.ACTION_DELETE_FEED then
+                self:deleteFeed(id)
+            elseif action == FeedView.ACTION_RESET_HISTORY then
+                self:resetFeedHistory(id)
+            end
         end
     )
     -- Add a "Add new feed" button with callback
@@ -500,10 +536,15 @@ end
 
 function NewsDownloader:editFeedAttribute(id, key, value)
     local kv = self.kv
-    -- There are basically two types of values: string (incl. numbers)
-    -- and booleans. This block chooses what type of value our
-    -- attribute will need and displays the corresponding dialog.
-    if key == FeedView.URL
+    -- This block determines what kind of UI to produce, or action to run,
+    -- based on the key value. Some values need an input dialog, others need
+    -- a Yes/No dialog.
+    if key == FeedView.RESET_HISTORY then
+        -- Show a "are you sure" box.
+        -- Reset the history
+        self.history:removeTableItem(value, 1)
+        self.history:flush()
+    elseif key == FeedView.URL
         or key == FeedView.LIMIT
         or key == FeedView.FILTER_ELEMENT then
 
@@ -608,6 +649,7 @@ function NewsDownloader:updateFeedConfig(id, key, value)
     end
 
     local ok, feed_config = pcall(dofile, self.feed_config_path)
+
     if not ok or not feed_config then
         UI:info(T(_("Invalid configuration file. Detailed error message:\n%1"), feed_config))
         return
@@ -616,7 +658,6 @@ function NewsDownloader:updateFeedConfig(id, key, value)
     if #feed_config <= 0 then
         logger.dbg("NewsDownloader: empty feed list.", self.feed_config_path)
     end
-
     -- Check to see if the id is larger than the number of feeds. If it is,
     -- then we know this is a new add. Insert the base array.
     if id > #feed_config then
@@ -684,7 +725,6 @@ function NewsDownloader:updateFeedConfig(id, key, value)
     self:viewFeedItem(
         feed_item_vc
     )
-
 end
 
 function NewsDownloader:deleteFeed(id)
@@ -692,6 +732,7 @@ function NewsDownloader:deleteFeed(id)
     logger.dbg("Newsdownloader: attempting to delete feed")
     -- Check to see if we can get the config file.
     local ok, feed_config = pcall(dofile, self.feed_config_path)
+
     if not ok or not feed_config then
         UI:info(T(_("Invalid configuration file. Detailed error message:\n%1"), feed_config))
         return
@@ -701,6 +742,7 @@ function NewsDownloader:deleteFeed(id)
     -- and key (i.e.: the key that triggered this function.
     -- If we are at the right spot, we overrite (or create) the value
     local new_config = {}
+
     for idx, feed in ipairs(feed_config) do
         -- Check to see if this is the correct feed to update.
         if idx ~= id then
@@ -712,10 +754,20 @@ function NewsDownloader:deleteFeed(id)
     end
     -- Save the config
     local Trapper = require("ui/trapper")
+
     Trapper:wrap(function()
             logger.dbg("NewsDownloader: config to save", new_config)
             self:saveConfig(new_config)
     end)
+    -- Refresh the view
+    self:viewFeedList()
+end
+
+function NewsDownloader:resetFeedHistory(url)
+    local UI = require("ui/trapper")
+    logger.dbg("Newsdownloader: attempting to reset feed history")
+    self.history:saveSetting(url, {})
+    self.history:flush()
     -- Refresh the view
     self:viewFeedList()
 end
@@ -735,6 +787,9 @@ function NewsDownloader:saveConfig(config)
     UI:reset()
 end
 
+-- This function opens an input dialog that lets the user
+-- manually change their feed config. This function is called
+-- when there is an error with the parsing.
 function NewsDownloader:changeFeedConfig()
     local feed_config_file = io.open(self.feed_config_path, "rb")
     local config = feed_config_file:read("*all")
@@ -777,6 +832,7 @@ function NewsDownloader:changeFeedConfig()
     UIManager:show(config_editor)
     config_editor:onShowKeyboard()
 end
+
 function NewsDownloader:openDownloadsFolder()
     local FileManager = require("apps/filemanager/filemanager")
     if self.ui.document then

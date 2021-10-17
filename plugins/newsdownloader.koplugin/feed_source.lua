@@ -10,7 +10,6 @@ local FFIUtil = require("ffi/util")
 local T = FFIUtil.template
 
 local FeedSource = {
-    download_dir = nil,
     file_extension = ".epub"
 }
 
@@ -21,7 +20,6 @@ function FeedSource:new(o)
     return o
 end
 
---
 function FeedSource:getInitializedFeeds(feed_list, progress_callback, error_callback)
     local UI = require("ui/trapper")
     local initialized_feeds = {}
@@ -78,7 +76,7 @@ function FeedSource:getInitializedFeeds(feed_list, progress_callback, error_call
             end
         end
         error_callback(
-            T(_([[Could not initialize some feeds\n\n %1 \n\nPlease review your feed configuration file after this process concludes.]]),
+            T(_([[Could not initialize some feeds\n\n %1 \n\nPlease review your feed configuration file.]]),
               unsupported_urls)
         )
     end
@@ -132,9 +130,6 @@ function FeedSource:initializeDocument(document)
                     feed_title = util.htmlEntitiesToUtf8(document.rss.channel.title)
                     feed_items = document.rss.channel.item
                     total_items = #document.rss.channel.item
---                    total_items = (limit == 0)
---                        and #document.rss.channel.item
---                        or limit
                 end,
                 function()
                     -- Atom callback
@@ -144,6 +139,7 @@ function FeedSource:initializeDocument(document)
                 end
             )
     end)
+
     if ok then
         document.title = feed_title
         document.items = feed_items
@@ -153,13 +149,12 @@ function FeedSource:initializeDocument(document)
         error("Could not initialize feed document")
     end
 end
---
+
 function FeedSource:getItemsContent(feed, progress_callback, error_callback)
     local limit = tonumber(feed.config.limit)
-    local total_items = (limit == 0)
-        and feed.document.total_items
-        or limit
-
+    local total_items = (limit == 0) and
+        feed.document.total_items or
+        limit
     local initialized_feed_items = {}
     -- Download each ite0m in the feed
     for index, item in pairs(feed.document.items) do
@@ -192,7 +187,7 @@ function FeedSource:getItemsContent(feed, progress_callback, error_callback)
                 {
                     html = response.html,
                     images = response.images,
-                    item_slug = FeedSource:getTitleWithDate(item),
+                    item_slug = FeedSource:getItemTitleWithDate(item),
                     item_title = item.title,
                     md5 = md5(item.title),
                     feed_title = feed.document.title
@@ -235,10 +230,6 @@ function FeedSource:initializeItemHtml(feed, html)
         images = images
     }
 end
-
-   -- self:outputEpub(feed_html[0], feed_output_dir, '')
---    self:outputEpub(html, feed_output_dir, article_message)
---
 
 function FeedSource:getFeedType(document, rss_cb, atom_cb)
     -- Check to see if the feed uses RSS.
@@ -292,6 +283,7 @@ function FeedSource:getItemHtml(item, download_full_article)
     end
 end
 
+-- @todo: move this elsewhere
 function FeedSource:getEpubOutputDir(download_dir, sub_dir, epub_title)
 
     local feed_output_dir = ("%s%s/"):format(
@@ -312,44 +304,20 @@ function FeedSource:getEpubOutputDir(download_dir, sub_dir, epub_title)
                             )
 end
 
-function FeedSource:createEpubFromFeeds(epub_items, download_dir, progress_callback, error_callback)
-    -- Collect HTML
-    for index, feed in pairs(epub_items) do
-
-        for jndex, item in pairs(feed) do
-
-            local feed_output_dir = ("%s%s/"):format(
-                download_dir,
-                util.getSafeFilename(util.htmlEntitiesToUtf8(item.feed_title)))
-            -- Create the output directory if it doesn't exist.
-            if not lfs.attributes(feed_output_dir, "mode") then
-                lfs.mkdir(feed_output_dir)
-            end
-
-            logger.dbg("Creating EPUB titled: ", item.item_title)
-
-            local news_file_path = ("%s%s%s"):format(feed_output_dir,
-                                                     item.item_title,
-                                                     self.file_extension)
-            local file_mode = lfs.attributes(news_file_path, "mode")
-
-            DownloadBackend:createEpub(
-                news_file_path,
-                item.html,
-                item.images,
-                "message?"
-            )
-        end
-    end
-end
-
 function FeedSource:createEpub(title, chapters, abs_output_path, progress_callback, error_callback)
-    -- Collect HTML
-    local images = {}
+
+    local file_exists = lfs.attributes(abs_output_path, "mode")
+
+    if file_exists then
+        logger.dbg("NewsDownloader: Skipping. EPUB file already exists", abs_output_path)
+        return true
+    end
 
     if #chapters == 0 then
         error("Error: chapters contains 0 items")
     end
+
+    local images = {}
 
     for index, chapter in ipairs(chapters) do
         for jndex, image in ipairs(chapter.images) do
@@ -360,36 +328,25 @@ function FeedSource:createEpub(title, chapters, abs_output_path, progress_callba
         end
     end
 
-    local epub = DownloadBackend:new{
-        title = title
-    }
+    local epub = DownloadBackend:new{}
 
     progress_callback("Building EPUB: " .. title)
 
+    epub:setTitle(title)
     epub:addToc(chapters)
     epub:addManifest(chapters, images)
     epub:addContents(chapters)
     epub:addImages(images)
     epub:build(abs_output_path)
 
-    local file_mode = lfs.attributes(abs_output_path, "mode")
+    file_exists = lfs.attributes(abs_output_path, "mode")
 
-
-end
-
-function FeedSource:outputEpub(html, feed_output_dir, article_message)
-    local title_with_date = FeedSource:getTitleWithDate('KO Volume 1')
-    local news_file_path = ("%s%s%s"):format(feed_output_dir,
-                                             title_with_date,
-                                             self.file_extension)
-    local html
-    local file_mode = lfs.attributes(news_file_path, "mode")
-    if file_mode == "file" then
-        logger.dbg("FeedSource:", news_file_path, "already exists. Skipping")
+    if file_exists then
+        return true
     else
-        logger.dbg("FeedSource: News file will be stored to :", news_file_path)
-        DownloadBackend:createEpub(news_file_path, html, '', false, article_message, '')
+        return false
     end
+
 end
 
 local function parseDate(dateTime)
@@ -406,14 +363,14 @@ function FeedSource:getFeedTitleWithDate(feed)
 end
 
 -- Creates a title with date from a feed item.
-function FeedSource:getTitleWithDate(feed)
-    local title = util.getSafeFilename(FeedSource:getFeedTitle(feed.title))
-    if feed.updated then
-        title = parseDate(feed.updated) .. title
-    elseif feed.pubDate then
-        title = parseDate(feed.pubDate) .. title
-    elseif feed.published then
-        title = parseDate(feed.published) .. title
+function FeedSource:getItemTitleWithDate(item)
+    local title = util.getSafeFilename(FeedSource:getFeedTitle(item.title))
+    if item.updated then
+        title = parseDate(item.updated) .. title
+    elseif item.pubDate then
+        title = parseDate(item.pubDate) .. title
+    elseif item.published then
+        title = parseDate(item.published) .. title
     end
     return title
 end
