@@ -395,7 +395,7 @@ function AutoWarmth:getActivateMenu()
             _("Only use the times calculated from the position of the sun."),
             activate_sun),
         getActivateMenuEntry(_("Time schedule"),
-            _("Only use the times form the schedule."),
+            _("Only use the times from the schedule."),
             activate_schedule),
         getActivateMenuEntry(_("Whatever is closer to noon"),
             _("Use the times from the sun position or schedule that are closer to noon."),
