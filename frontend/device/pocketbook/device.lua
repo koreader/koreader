@@ -611,6 +611,14 @@ local PocketBook840 = PocketBook:new{
     display_dpi = 250,
 }
 
+-- PocketBook InkPad Lite (970)
+local PocketBook970 = PocketBook:new{
+    model = "PB970",
+    display_dpi = 150,
+    isAlwaysPortrait = yes,
+    hasNaturalLight = yes,
+}
+
 -- PocketBook InkPad X (1040)
 local PocketBook1040 = PocketBook:new{
     model = "PB1040",
@@ -677,6 +685,8 @@ elseif codename == "PB741" then
     return PocketBook741
 elseif codename == "PocketBook 840" then
     return PocketBook840
+elseif codename == "PB970" then
+    return PocketBook970
 elseif codename == "PB1040" then
     return PocketBook1040
 elseif codename == "PocketBook Color Lux" then
