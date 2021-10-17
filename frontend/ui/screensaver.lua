@@ -554,7 +554,7 @@ function Screensaver:show()
             props = doc:getProps(),
             document = doc,
             settings = doc_settings,
-            view = ui.view,
+            ui = ui,
             readonly = true,
         }
     elseif self.screensaver_type == "random_image" or self.screensaver_type == "image_file" then
