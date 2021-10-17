@@ -126,17 +126,6 @@ function NewsDownloader:getSubMenuItems()
                     callback = function() self:setCustomDownloadDirectory() end,
                 },
                 {
-                    text = _("Never download images"),
-                    keep_menu_open = true,
-                    checked_func = function()
-                        return self.settings:isTrue("never_download_images")
-                    end,
-                    callback = function()
-                        self.settings:toggle("never_download_images")
-                        self.settings:flush()
-                    end,
-                },
-                {
                     text = _("Delete all downloaded items"),
                     keep_menu_open = true,
                     callback = function()
@@ -251,7 +240,6 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
             local UI = require("ui/trapper")
             -- Get the config
             local config = self:loadConfig()
-            local never_download_images = self.settings:isTrue("never_download_images")
             local sync_errors = {}
             -- Get the HTML for the feeds
             local feedSource = FeedSource:new{}
@@ -429,7 +417,7 @@ function NewsDownloader:removeNewsButKeepFeedConfig()
         end
     end
     UIManager:show(InfoMessage:new{
-                       text = _("All downloaded news feed items deleted.")
+                       text = _("All downloaded news feed items deleted. To download these again in the future, reset the feed history.")
     })
 end
 
@@ -720,6 +708,13 @@ function NewsDownloader:updateFeedConfig(id, key, value)
         new_config[id],
         function(cb_id, cb_edit_key, cb_value)
             self:editFeedAttribute(cb_id, cb_edit_key, cb_value)
+        end,
+        function(id, action)
+            if action == FeedView.ACTION_DELETE_FEED then
+                self:deleteFeed(id)
+            elseif action == FeedView.ACTION_RESET_HISTORY then
+                self:resetFeedHistory(id)
+            end
         end
     )
     self:viewFeedItem(

@@ -179,6 +179,7 @@ function FeedSource:getItemsContent(feed, progress_callback, error_callback)
                     )
                 )
         end)
+
         -- Add the result to our table, or send a
         -- result to the error callback.
         if ok then
@@ -213,8 +214,7 @@ end
 function FeedSource:initializeItemHtml(feed, html)
     local url = feed.config[1]
     local download_full_article = feed.config.download_full_article ~= false
-    local include_images = not never_download_images and
-        feed.config.include_images
+    local include_images = feed.config.include_images ~= false
     local filter_element = feed.config.filter_element or
         feed.config.filter_element == nil
     local enable_filter = feed.config.enable_filter ~= false
