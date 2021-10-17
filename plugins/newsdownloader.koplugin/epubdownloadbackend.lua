@@ -289,11 +289,10 @@ function EpubDownloadBackend:getImagesAndHtml(html, url, include_images, filter_
         local style = table.concat(style_props, "; ")
         return string.format([[<img src="%s" style="%s" alt=""/>]], cur_image.imgpath, style)
     end
-    html = html:gsub("(<%s*img [^>]*>)", processImg)
 
-    -- See what to do with images
-    local use_img_2x = false
-    if not include_images then
+    if include_images then
+        html = html:gsub("(<%s*img [^>]*>)", processImg)
+    else
         -- Remove img tags to avoid little blank squares of missing images
         html = html:gsub("<%s*img [^>]*>", "")
         -- We could remove the whole image container <div class="thumb"...> ,
