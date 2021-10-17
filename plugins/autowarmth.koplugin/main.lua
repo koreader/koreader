@@ -373,9 +373,10 @@ function AutoWarmth:getSubMenuItems()
 end
 
 function AutoWarmth:getActivateMenu()
-    local function getActivateMenuEntry(text, activator)
+    local function getActivateMenuEntry(text, help_text, activator)
         return {
             text = text,
+            help_text = help_text,
             checked_func = function() return self.activate == activator end,
             callback = function()
                 if self.activate ~= activator then
@@ -390,10 +391,18 @@ function AutoWarmth:getActivateMenu()
     end
 
     return {
-        getActivateMenuEntry(_("Sun position"), activate_sun),
-        getActivateMenuEntry(_("Time schedule"), activate_schedule),
-        getActivateMenuEntry(_("Whatever is closer to noon"), activate_closer_noon),
-        getActivateMenuEntry(_("Whatever is closer to midnight"), activate_closer_midnight),
+        getActivateMenuEntry(_("Sun position"),
+            _("Only use the times calculated from the position of the sun."),
+            activate_sun),
+        getActivateMenuEntry(_("Time schedule"),
+            _("Only use the times form the schedule."),
+            activate_schedule),
+        getActivateMenuEntry(_("Whatever is closer to noon"),
+            _("Use the times from the sun position or schedule that are closer to noon."),
+            activate_closer_noon),
+        getActivateMenuEntry(_("Whatever is closer to midnight"),
+            _("Use the times from the sun position or schedule that are closer to midnight."),
+            activate_closer_midnight),
     }
 end
 
