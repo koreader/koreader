@@ -3,7 +3,7 @@ local DownloadBackend = require("epubdownloadbackend")
 local NewsHelpers = require("http_utilities")
 local dateparser = require("lib.dateparser")
 local logger = require("logger")
-local md5 = require("lib.md5")
+local md5 = require("ffi/sha2").md5
 local util = require("util")
 local _ = require("gettext")
 local FFIUtil = require("ffi/util")
@@ -194,7 +194,7 @@ function FeedSource:getItemsContent(feed, progress_callback, error_callback)
                     images = response.images,
                     item_slug = FeedSource:getTitleWithDate(item),
                     item_title = item.title,
-                    md5 = md5.sumhexa(item.title),
+                    md5 = md5(item.title),
                     feed_title = feed.document.title
                 }
             )
