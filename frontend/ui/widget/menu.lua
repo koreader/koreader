@@ -361,7 +361,7 @@ function MenuItem:init()
             -- return true if we fit
             return item_name:getSize().h <= max_item_height
         end
-        local min_font_size = 12
+        local min_font_size = math.max(12, self.font_size - 8)
         -- First, try with specified font size: short text might fit
         if not make_item_name(self.font_size) then
             -- It doesn't, try with min font size: very long text might not fit
