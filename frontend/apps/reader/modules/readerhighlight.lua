@@ -259,6 +259,12 @@ function ReaderHighlight:onReaderReady()
     self:setupTouchZones()
 end
 
+local highlight_style = {
+    {_("Lighten"), "lighten"},
+    {_("Underline"), "underscore"},
+    {_("Invert"), "invert"},
+}
+
 local long_press_action = {
     {_("Ask with popup dialog"), "ask"},
     {_("Do nothing"), "nothing"},
@@ -273,8 +279,60 @@ function ReaderHighlight:addToMainMenu(menu_items)
     -- insert table to main reader menu
     menu_items.highlight_options = {
         text = _("Highlight style"),
-        sub_item_table = self:genHighlightDrawerMenu(),
+        sub_item_table = {},
     }
+    for _, v in ipairs(highlight_style) do
+        table.insert(menu_items.highlight_options.sub_item_table, {
+            text_func = function()
+                local text = v[1]
+                if v[2] == G_reader_settings:readSetting("highlight_drawing_style") then
+                    text = text .. "   ★"
+                end
+                return text
+            end,
+            checked_func = function()
+                return self.view.highlight.saved_drawer == v[2]
+            end,
+            callback = function()
+                self.view.highlight.saved_drawer = v[2]
+            end,
+            hold_callback = function(touchmenu_instance)
+                G_reader_settings:saveSetting("highlight_drawing_style", v[2])
+                if touchmenu_instance then touchmenu_instance:updateItems() end
+            end,
+        })
+    end
+    table.insert(menu_items.highlight_options.sub_item_table, {
+        text_func = function()
+            return T(_("Highlight opacity: %1"), G_reader_settings:readSetting("highlight_lighten_factor", 0.2))
+        end,
+        enabled_func = function()
+            return self.view.highlight.saved_drawer == "lighten"
+        end,
+        callback = function(touchmenu_instance)
+            local SpinWidget = require("ui/widget/spinwidget")
+            local curr_val = G_reader_settings:readSetting("highlight_lighten_factor", 0.2)
+            local spin_widget = SpinWidget:new{
+                value = curr_val,
+                value_min = 0,
+                value_max = 1,
+                precision = "%.2f",
+                value_step = 0.1,
+                value_hold_step = 0.25,
+                default_value = 0.2,
+                keep_shown_on_apply = true,
+                title_text =  _("Highlight opacity"),
+                info_text = _("The higher the value, the darker the highlight."),
+                callback = function(spin)
+                    G_reader_settings:saveSetting("highlight_lighten_factor", spin.value)
+                    self.view.highlight.lighten_factor = spin.value
+                    UIManager:setDirty(self.dialog, "ui")
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
+                end
+            }
+            UIManager:show(spin_widget)
+        end,
+    })
     if self.document.info.has_pages then
         menu_items.panel_zoom_options = {
             text = _("Panel zoom (manga/comic)"),
@@ -314,12 +372,6 @@ function ReaderHighlight:addToMainMenu(menu_items)
     end
 end
 
-local highlight_style = {
-    lighten = _("Lighten"),
-    underscore = _("Underline"),
-    invert = _("Invert"),
-}
-
 function ReaderHighlight:genPanelZoomMenu()
     return {
         {
@@ -350,65 +402,6 @@ function ReaderHighlight:genPanelZoomMenu()
                 G_reader_settings:saveSettingForExt("panel_zoom_fallback_to_text_selection", self.panel_zoom_fallback_to_text_selection, ext)
             end,
             separator = true,
-        },
-    }
-end
-
-function ReaderHighlight:genHighlightDrawerMenu()
-    local get_highlight_style = function(style)
-        return {
-            text_func = function()
-                local text = highlight_style[style]
-                if style == G_reader_settings:readSetting("highlight_drawing_style") then
-                    text = text .. "   ★"
-                end
-                return text
-            end,
-            checked_func = function()
-                return self.view.highlight.saved_drawer == style
-            end,
-            callback = function()
-                self.view.highlight.saved_drawer = style
-            end,
-            hold_callback = function(touchmenu_instance)
-                G_reader_settings:saveSetting("highlight_drawing_style", style)
-                if touchmenu_instance then touchmenu_instance:updateItems() end
-            end,
-        }
-    end
-    return {
-        get_highlight_style("lighten"),
-        get_highlight_style("underscore"),
-        get_highlight_style("invert"),
-        {
-            text_func = function()
-                return T(_("Highlight opacity: %1"), G_reader_settings:readSetting("highlight_lighten_factor", 0.2))
-            end,
-            enabled_func = function()
-                return self.view.highlight.saved_drawer == "lighten"
-            end,
-            callback = function()
-                local SpinWidget = require("ui/widget/spinwidget")
-                local curr_val = G_reader_settings:readSetting("highlight_lighten_factor", 0.2)
-                local items = SpinWidget:new{
-                    value = curr_val,
-                    value_min = 0,
-                    value_max = 1,
-                    precision = "%.2f",
-                    value_step = 0.1,
-                    value_hold_step = 0.25,
-                    default_value = 0.2,
-                    keep_shown_on_apply = true,
-                    title_text =  _("Highlight opacity"),
-                    info_text = _("The higher the value, the darker the highlight."),
-                    callback = function(spin)
-                        G_reader_settings:saveSetting("highlight_lighten_factor", spin.value)
-                        self.view.highlight.lighten_factor = spin.value
-                        UIManager:setDirty(self.dialog, "ui")
-                    end
-                }
-                UIManager:show(items)
-            end,
         },
     }
 end
@@ -611,7 +604,7 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
         page = highlight_beginning,
         datetime = highlight_time,
         updated_highlight = new_highlight
-    }, true)
+    })
     if side == 0 then
         -- Ensure we show the page with the new beginning of highlight
         if not self.ui.document:isXPointerInCurrentPage(new_beginning) then
@@ -636,6 +629,11 @@ function ReaderHighlight:updateHighlight(page, index, side, direction, move_by_c
 end
 
 function ReaderHighlight:onShowHighlightDialog(page, index)
+    local item = self.view.highlight.saved[page][index]
+    local is_auto_text = self.ui.bookmark:isHighlightAutoText({
+        page = self.ui.document.info.has_pages and item.pos0.page or item.pos0,
+        datetime = item.datetime,
+    })
     local buttons = {
         {
             {
@@ -648,7 +646,15 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 end,
             },
             {
-                text = _("Edit"),
+                text = _("Style"),
+                callback = function()
+                    self:editHighlightStyle(page, index)
+                    UIManager:close(self.edit_highlight_dialog)
+                    self.edit_highlight_dialog = nil
+                end,
+            },
+            {
+                text = is_auto_text and _("Add note") or _("Edit note"),
                 callback = function()
                     self:editHighlight(page, index)
                     UIManager:close(self.edit_highlight_dialog)
@@ -1278,15 +1284,21 @@ function ReaderHighlight:onCycleHighlightAction()
 end
 
 function ReaderHighlight:onCycleHighlightStyle()
-    local next_actions = {
-        lighten = "underscore",
-        underscore = "invert",
-        invert = "lighten"
-    }
-    self.view.highlight.saved_drawer = next_actions[self.view.highlight.saved_drawer]
+    local current_style = self.view.highlight.saved_drawer
+    local next_style_num
+    for i, v in ipairs(highlight_style) do
+        if v[2] == current_style then
+            next_style_num = i + 1
+            break
+        end
+    end
+    if next_style_num > #highlight_style then
+        next_style_num = 1
+    end
+    self.view.highlight.saved_drawer = highlight_style[next_style_num][2]
     self.ui.doc_settings:saveSetting("highlight_drawer", self.view.highlight.saved_drawer)
     UIManager:show(Notification:new{
-        text = T(_("Default highlight style changed to '%1'."), highlight_style[self.view.highlight.saved_drawer]),
+        text = T(_("Default highlight style changed to '%1'."), highlight_style[next_style_num][1]),
     })
     return true
 end
@@ -1544,6 +1556,32 @@ function ReaderHighlight:editHighlight(page, i)
         datetime = item.datetime,
         pboxes = item.pboxes
     }, true)
+end
+
+function ReaderHighlight:editHighlightStyle(page, i)
+    local item = self.view.highlight.saved[page][i]
+    local radio_buttons = {}
+    for _, v in ipairs(highlight_style) do
+        table.insert(radio_buttons, {
+            {
+            text = v[1],
+            checked = item.drawer == v[2],
+            provider = v[2],
+            },
+        })
+    end
+    UIManager:show(require("ui/widget/radiobuttonwidget"):new{
+        title_text = _("Highlight style"),
+        width_factor = 0.5,
+        keep_shown_on_apply = true,
+        radio_buttons = radio_buttons,
+        default_provider = self.view.highlight.saved_drawer or
+            G_reader_settings:readSetting("highlight_drawing_style", "lighten"),
+        callback = function(radio)
+            self.view.highlight.saved[page][i].drawer = radio.provider
+            UIManager:setDirty(self.dialog, "ui")
+        end,
+    })
 end
 
 function ReaderHighlight:onReadSettings(config)

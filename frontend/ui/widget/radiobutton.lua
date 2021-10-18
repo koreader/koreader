@@ -20,8 +20,10 @@ local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LeftContainer = require("ui/widget/container/leftcontainer")
+local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 
@@ -36,20 +38,51 @@ local RadioButton = InputContainer:new{
 }
 
 function RadioButton:init()
-    self._checked_widget = TextWidget:new{
-        text = "◉ " .. self.text,
+    local fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY
+    local dummy_widget = TextWidget:new{ -- to get width of radiomark
+        text = "◉ ",
         face = self.face,
-        max_width = self.max_width,
     }
-    self._unchecked_widget = TextWidget:new{
-        text = "◯ " .. self.text,
+    local radiomark_width = dummy_widget:getSize().w
+    dummy_widget:free()
+    local text_widget = TextBoxWidget:new{
+        text = self.text,
         face = self.face,
-        max_width = self.max_width,
+        width = self.max_width - radiomark_width,
+        fgcolor = fgcolor,
     }
-    self._empty_widget = TextWidget:new{
-        text = "" .. self.text,
+    local checked_widget = TextBoxWidget:new{
+        text = "◉ ",
         face = self.face,
-        max_width = self.max_width,
+        width = radiomark_width,
+        fgcolor = fgcolor,
+    }
+    local unchecked_widget = TextBoxWidget:new{
+        text = "◯ ",
+        face = self.face,
+        width = radiomark_width,
+        fgcolor = fgcolor,
+    }
+    local empty_widget = TextBoxWidget:new{
+        text = "",
+        face = self.face,
+        width = radiomark_width,
+        fgcolor = fgcolor,
+    }
+    self._checked_widget = HorizontalGroup:new{
+        align = "top",
+        checked_widget,
+        text_widget,
+    }
+    self._unchecked_widget = HorizontalGroup:new{
+        align = "top",
+        unchecked_widget,
+        text_widget,
+    }
+    self._empty_widget = HorizontalGroup:new{
+        align = "top",
+        empty_widget,
+        text_widget,
     }
     self._widget_size = self._unchecked_widget:getSize()
     if self.width == nil then
