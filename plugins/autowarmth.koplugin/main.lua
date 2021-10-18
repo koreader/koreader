@@ -352,15 +352,19 @@ function AutoWarmth:getSubMenuItems()
         },
         {
             text = _("Location settings"),
-            enabled_func = function() return self.activate ~= activate_schedule end,
             sub_item_table = self:getLocationMenu(),
         },
         {
             text = _("Schedule settings"),
-            enabled_func = function() return self.activate ~= activate_sun end,
+            enabled_func = function()
+                return self.activate ~= activate_sun and self.activate ~=0
+            end,
             sub_item_table = self:getScheduleMenu(),
         },
         {
+            enabled_func = function()
+                return self.activate ~=0
+            end,
             text = Device:hasNaturalLight() and _("Warmth and night mode settings")
                 or _("Night mode settings"),
             sub_item_table = self:getWarmthMenu(),
@@ -860,6 +864,11 @@ end
 --            activate_schedule .. scheduler times
 function AutoWarmth:getTimesMenu(title, location, activator)
     return {
+        enabled_func = function()
+            -- always show sun position times so you can see ephemeris
+            return self.activate ~= 0 and activator ~= activate_schedule
+                or activator == activate_sun
+        end,
         text_func = function()
             if location then
                 return title .. " " .. self:getLocationString()
