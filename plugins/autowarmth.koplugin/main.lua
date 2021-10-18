@@ -355,7 +355,7 @@ function AutoWarmth:getSubMenuItems()
             sub_item_table = self:getLocationMenu(),
         },
         {
-            text = _("Schedule settings"),
+            text = _("Time schedule settings"),
             enabled_func = function()
                 return self.activate ~= activate_sun and self.activate ~=0
             end,
@@ -372,7 +372,7 @@ function AutoWarmth:getSubMenuItems()
         },
         self:getTimesMenu(_("Active parameters")),
         self:getTimesMenu(_("Information about the sun in"), true, activate_sun),
-        self:getTimesMenu(_("Information about the schedule"), false, activate_schedule),
+        self:getTimesMenu(_("Information about the time schedule"), false, activate_schedule),
     }
 end
 
@@ -866,7 +866,7 @@ function AutoWarmth:getTimesMenu(title, location, activator)
     return {
         enabled_func = function()
             -- always show sun position times so you can see ephemeris
-            return self.activate ~= 0 and activator ~= activate_schedule
+            return self.activate ~= 0 and (self.activate ~= activate_sun or activator == nil)
                 or activator == activate_sun
         end,
         text_func = function()
