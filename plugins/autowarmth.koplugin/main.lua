@@ -352,15 +352,19 @@ function AutoWarmth:getSubMenuItems()
         },
         {
             text = _("Location settings"),
-            enabled_func = function() return self.activate ~= activate_schedule end,
             sub_item_table = self:getLocationMenu(),
         },
         {
-            text = _("Schedule settings"),
-            enabled_func = function() return self.activate ~= activate_sun end,
+            text = _("Time schedule settings"),
+            enabled_func = function()
+                return self.activate ~= activate_sun and self.activate ~=0
+            end,
             sub_item_table = self:getScheduleMenu(),
         },
         {
+            enabled_func = function()
+                return self.activate ~=0
+            end,
             text = Device:hasNaturalLight() and _("Warmth and night mode settings")
                 or _("Night mode settings"),
             sub_item_table = self:getWarmthMenu(),
@@ -368,14 +372,15 @@ function AutoWarmth:getSubMenuItems()
         },
         self:getTimesMenu(_("Active parameters")),
         self:getTimesMenu(_("Information about the sun in"), true, activate_sun),
-        self:getTimesMenu(_("Information about the schedule"), false, activate_schedule),
+        self:getTimesMenu(_("Information about the time schedule"), false, activate_schedule),
     }
 end
 
 function AutoWarmth:getActivateMenu()
-    local function getActivateMenuEntry(text, activator)
+    local function getActivateMenuEntry(text, help_text, activator)
         return {
             text = text,
+            help_text = help_text,
             checked_func = function() return self.activate == activator end,
             callback = function()
                 if self.activate ~= activator then
@@ -390,10 +395,18 @@ function AutoWarmth:getActivateMenu()
     end
 
     return {
-        getActivateMenuEntry(_("Sun position"), activate_sun),
-        getActivateMenuEntry(_("Time schedule"), activate_schedule),
-        getActivateMenuEntry(_("Whatever is closer to noon"), activate_closer_noon),
-        getActivateMenuEntry(_("Whatever is closer to midnight"), activate_closer_midnight),
+        getActivateMenuEntry(_("Sun position"),
+            _("Only use the times calculated from the position of the sun."),
+            activate_sun),
+        getActivateMenuEntry(_("Time schedule"),
+            _("Only use the times from the schedule."),
+            activate_schedule),
+        getActivateMenuEntry(_("Whatever is closer to noon"),
+            _("Use the times from the sun position or schedule that are closer to noon."),
+            activate_closer_noon),
+        getActivateMenuEntry(_("Whatever is closer to midnight"),
+            _("Use the times from the sun position or schedule that are closer to midnight."),
+            activate_closer_midnight),
     }
 end
 
@@ -851,6 +864,11 @@ end
 --            activate_schedule .. scheduler times
 function AutoWarmth:getTimesMenu(title, location, activator)
     return {
+        enabled_func = function()
+            -- always show sun position times so you can see ephemeris
+            return self.activate ~= 0 and (self.activate ~= activate_sun or activator == nil)
+                or activator == activate_sun
+        end,
         text_func = function()
             if location then
                 return title .. " " .. self:getLocationString()
