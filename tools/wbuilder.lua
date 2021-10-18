@@ -390,7 +390,7 @@ function testBookStatus()
         thumbnail = doc:getCoverPageImage(),
         props = doc:getProps(),
         document = doc,
-        view = reader.view,
+        ui = reader,
     }
     UIManager:show(status_page)
 end
