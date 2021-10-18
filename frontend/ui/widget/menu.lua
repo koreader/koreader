@@ -342,7 +342,7 @@ function MenuItem:init()
     elseif self.multilines_show_more_text then
         -- Multi-lines, with font size decrease if needed to show more of the text.
         -- It would be costly/slow with use_xtext if we were to try all
-        -- font sizes from self.font_size to min_font_size (12).
+        -- font sizes from self.font_size to min_font_size.
         -- So, we try to optimize the search of the best font size.
         logger.dbg("multilines_show_more_text menu item font sizing start")
         local function make_item_name(font_size)
@@ -361,7 +361,9 @@ function MenuItem:init()
             -- return true if we fit
             return item_name:getSize().h <= max_item_height
         end
-        local min_font_size = 12
+        -- To keep item readable, do not decrease font size by more than 8 points
+        -- relative to the specified font size, being not smaller than 12 absolute points.
+        local min_font_size = math.max(12, self.font_size - 8)
         -- First, try with specified font size: short text might fit
         if not make_item_name(self.font_size) then
             -- It doesn't, try with min font size: very long text might not fit

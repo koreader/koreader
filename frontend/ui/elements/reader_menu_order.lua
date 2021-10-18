@@ -35,9 +35,7 @@ local order = {
         "toc_items_font_size",
         "toc_items_with_dots",
         "----------------------------",
-        "bookmarks_items_per_page",
-        "bookmarks_items_font_size",
-        "bookmarks_items_show_more_text",
+        "bookmarks_settings",
     },
     typeset = {
         "set_render_style",

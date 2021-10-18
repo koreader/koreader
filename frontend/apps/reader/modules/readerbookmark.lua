@@ -3,7 +3,6 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
-local Font = require("ui/font")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -12,9 +11,12 @@ local Menu = require("ui/widget/menu")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local Screen = require("device").screen
 local T = require("ffi/util").template
+
+local PAGE_BOOKMARK_DISPLAY_PREFIX = "★ " -- distinguish page bookmarks from highlights and notes
 
 local ReaderBookmark = InputContainer:new{
     bm_menu_title = _("Bookmarks"),
@@ -75,55 +77,87 @@ function ReaderBookmark:addToMainMenu(menu_items)
             end,
         }
     end
-    menu_items.bookmarks_items_per_page = {
-        text = _("Bookmarks per page"),
-        keep_menu_open = true,
-        callback = function()
-            local SpinWidget = require("ui/widget/spinwidget")
-            local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page") or self.bookmarks_items_per_page_default
-            local items = SpinWidget:new{
-                value = curr_perpage,
-                value_min = 6,
-                value_max = 24,
-                default_value = self.bookmarks_items_per_page_default,
-                title_text =  _("Bookmarks per page"),
-                callback = function(spin)
-                    G_reader_settings:saveSetting("bookmarks_items_per_page", spin.value)
+    menu_items.bookmarks_settings = {
+        text = _("Bookmarks"),
+        sub_item_table = {
+            {
+                text_func = function()
+                    local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page")
+                    return T(_("Bookmarks per page: %1"), curr_perpage)
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page")
+                    local items = SpinWidget:new{
+                        value = curr_perpage,
+                        value_min = 6,
+                        value_max = 24,
+                        default_value = self.bookmarks_items_per_page_default,
+                        title_text = _("Bookmarks per page"),
+                        callback = function(spin)
+                            G_reader_settings:saveSetting("bookmarks_items_per_page", spin.value)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end
+                    }
+                    UIManager:show(items)
                 end
-            }
-            UIManager:show(items)
-        end
-    }
-    menu_items.bookmarks_items_font_size = {
-        text = _("Bookmark font size"),
-        keep_menu_open = true,
-        callback = function()
-            local SpinWidget = require("ui/widget/spinwidget")
-            local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page") or self.bookmarks_items_per_page_default
-            local default_font_size = Menu.getItemFontSize(curr_perpage)
-            local curr_font_size = G_reader_settings:readSetting("bookmarks_items_font_size") or default_font_size
-            local items_font = SpinWidget:new{
-                value = curr_font_size,
-                value_min = 10,
-                value_max = 72,
-                default_value = default_font_size,
-                title_text =  _("Bookmark font size"),
-                callback = function(spin)
-                    G_reader_settings:saveSetting("bookmarks_items_font_size", spin.value)
+            },
+            {
+                text_func = function()
+                    local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page")
+                    local default_font_size = Menu.getItemFontSize(curr_perpage)
+                    local curr_font_size = G_reader_settings:readSetting("bookmarks_items_font_size", default_font_size)
+                    return T(_("Bookmark font size: %1"), curr_font_size)
+                end,
+                keep_menu_open = true,
+                callback = function(touchmenu_instance)
+                    local SpinWidget = require("ui/widget/spinwidget")
+                    local curr_perpage = G_reader_settings:readSetting("bookmarks_items_per_page")
+                    local default_font_size = Menu.getItemFontSize(curr_perpage)
+                    local curr_font_size = G_reader_settings:readSetting("bookmarks_items_font_size", default_font_size)
+                    local items_font = SpinWidget:new{
+                        value = curr_font_size,
+                        value_min = 10,
+                        value_max = 72,
+                        default_value = default_font_size,
+                        title_text = _("Bookmark font size"),
+                        callback = function(spin)
+                            G_reader_settings:saveSetting("bookmarks_items_font_size", spin.value)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end
+                    }
+                    UIManager:show(items_font)
+                end,
+            },
+            {
+                text = _("Shrink bookmark font size to fit more text"),
+                checked_func = function()
+                    return G_reader_settings:isTrue("bookmarks_items_multilines_show_more_text")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrFalse("bookmarks_items_multilines_show_more_text")
                 end
-            }
-            UIManager:show(items_font)
-        end,
-    }
-    menu_items.bookmarks_items_show_more_text = {
-        text = _("Shrink bookmark font size to fit more text"),
-        keep_menu_open = true,
-        checked_func = function()
-            return G_reader_settings:isTrue("bookmarks_items_multilines_show_more_text")
-        end,
-        callback = function()
-            G_reader_settings:flipNilOrFalse("bookmarks_items_multilines_show_more_text")
-        end
+            },
+            {
+                text = _("Add page number / timestamp to bookmark"),
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("bookmarks_items_auto_text")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("bookmarks_items_auto_text")
+                end
+            },
+            {
+                text = _("Sort by largest page number"),
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("bookmarks_items_reverse_sorting")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("bookmarks_items_reverse_sorting")
+                end
+            },
+        },
     }
 end
 
@@ -315,40 +349,35 @@ end
 function ReaderBookmark:onShowBookmark()
     self:updateHighlightsIfNeeded()
     -- build up item_table
-    for k, v in ipairs(self.bookmarks) do
-        local page = v.page
-        -- for CREngine, bookmark page is xpointer
-        if not self.ui.document.info.has_pages then
-            if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
-                page = self.ui.pagemap:getXPointerPageLabel(page, true)
-            else
-                page = self.ui.document:getPageFromXPointer(page)
-                if self.ui.document:hasHiddenFlows() then
-                    local flow = self.ui.document:getPageFlow(page)
-                    page = self.ui.document:getPageNumberInFlow(page)
-                    if flow > 0 then
-                        page = T("[%1]%2", page, flow)
-                    end
-                end
-            end
-        end
+    local item_table = {}
+    local is_reverse_sorting = G_reader_settings:nilOrTrue("bookmarks_items_reverse_sorting")
+    local num = #self.bookmarks + 1
+    for i, v in ipairs(self.bookmarks) do
         if v.text == nil or v.text == "" then
-            v.text = T(_("Page %1 %2 @ %3"), page, v.notes, v.datetime)
+            v.text = self:getBookmarkAutoText(v)
         end
+        -- bookmarks are internally sorted by descending page numbers
+        local k = is_reverse_sorting and i or num - i
+        item_table[k] = util.tableDeepCopy(v)
+        item_table[k].text_orig = v.text or v.notes
+        item_table[k].text = item_table[k].text_orig
+        if not v.highlighted then -- page bookmark
+            item_table[k].text = PAGE_BOOKMARK_DISPLAY_PREFIX .. item_table[k].text
+        end
+        item_table[k].mandatory = self:getBookmarkPageString(v.page)
     end
 
-    local items_per_page = G_reader_settings:readSetting("bookmarks_items_per_page") or self.bookmarks_items_per_page_default
-    local items_font_size = G_reader_settings:readSetting("bookmarks_items_font_size") or Menu.getItemFontSize(items_per_page)
+    local items_per_page = G_reader_settings:readSetting("bookmarks_items_per_page")
+    local items_font_size = G_reader_settings:readSetting("bookmarks_items_font_size", Menu.getItemFontSize(items_per_page))
     local multilines_show_more_text = G_reader_settings:isTrue("bookmarks_items_multilines_show_more_text")
 
     local bm_menu = Menu:new{
         title = _("Bookmarks"),
-        item_table = self.bookmarks,
+        item_table = item_table,
         is_borderless = true,
         is_popout = false,
         width = Screen:getWidth(),
         height = Screen:getHeight(),
-        cface = Font:getFace("x_smallinfofont"),
         items_per_page = items_per_page,
         items_font_size = items_font_size,
         multilines_show_more_text = multilines_show_more_text,
@@ -406,7 +435,14 @@ function ReaderBookmark:onShowBookmark()
                                 ok_text = _("Remove"),
                                 ok_callback = function()
                                     bookmark:removeHighlight(item)
-                                    bm_menu:switchItemTable(nil, bookmark.bookmarks, -1)
+                                    -- Also update item_table, so we don't have to rebuilt it in full
+                                    for k, v in pairs(item_table) do
+                                        if v == item then
+                                            table.remove(item_table, k)
+                                            break
+                                        end
+                                    end
+                                    bm_menu:switchItemTable(nil, item_table, -1)
                                     UIManager:close(self.textviewer)
                                 end,
                             })
@@ -569,25 +605,18 @@ end
 function ReaderBookmark:updateBookmark(item)
     for i=1, #self.bookmarks do
         if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
-            local page = self.ui.document:getPageFromXPointer(item.updated_highlight.pos0)
-            if self.ui.document:hasHiddenFlows() then
-                local flow = self.ui.document:getPageFlow(page)
-                page = self.ui.document:getPageNumberInFlow(page)
-                if flow > 0 then
-                    page = T("[%1]%2", page, flow)
-                end
-            end
-            local new_text = item.updated_highlight.text
+            local is_auto_text = self:isBookmarkAutoText(self.bookmarks[i])
             self.bookmarks[i].page = item.updated_highlight.pos0
             self.bookmarks[i].pos0 = item.updated_highlight.pos0
             self.bookmarks[i].pos1 = item.updated_highlight.pos1
             self.bookmarks[i].notes = item.updated_highlight.text
-            self.bookmarks[i].text = T(_("Page %1 %2 @ %3"), page,
-                                        new_text,
-                                        item.updated_highlight.datetime)
             self.bookmarks[i].datetime = item.updated_highlight.datetime
             self.bookmarks[i].chapter = item.updated_highlight.chapter
+            if is_auto_text then
+                self.bookmarks[i].text = self:getBookmarkAutoText(self.bookmarks[i])
+            end
             self:onSaveSettings()
+            break
         end
     end
 end
@@ -599,27 +628,17 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
         local pboxes = item.pboxes
         for __, bm in ipairs(self.bookmarks) do
             if item.datetime == bm.datetime and item.page == bm.page then
-                bookmark = bm
-                bookmark.pboxes = pboxes
-                if bookmark.text == nil or bookmark.text == "" then
-                    -- Make up bookmark text as done in onShowBookmark
-                    local page = bookmark.page
-                    if not self.ui.document.info.has_pages then
-                        page = self.ui.document:getPageFromXPointer(page)
-                        if self.ui.document:hasHiddenFlows() then
-                            local flow = self.ui.document:getPageFlow(page)
-                            page = self.ui.document:getPageNumberInFlow(page)
-                            if flow > 0 then
-                                page = T("[%1]%2", page, flow)
-                            end
-                        end
-                    end
-                    bookmark.text = T(_("Page %1 %2 @ %3"), page, bookmark.notes, bookmark.datetime)
+                bm.pboxes = pboxes
+                if bm.text == nil or bm.text == "" then
+                    bm.text = self:getBookmarkAutoText(bm)
                 end
+                bookmark = util.tableDeepCopy(bm)
+                bookmark.text_orig = bm.text or bm.notes
+                bookmark.mandatory = self:getBookmarkPageString(bm.page)
                 break
             end
         end
-        if not bookmark or bookmark.text == nil then -- bookmark not found
+        if not bookmark or bookmark.text_orig == nil then -- bookmark not found
             return
         end
     else
@@ -627,8 +646,8 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
     end
     self.input = InputDialog:new{
         title = _("Rename bookmark"),
-        input = bookmark.text,
-        input_type = "text",
+        description = T("   " .. _("Page: %1") .. "     " .. _("Time: %2"), bookmark.mandatory, bookmark.datetime),
+        input = bookmark.text_orig,
         allow_newline = true,
         cursor_at_end = false,
         add_scroll_buttons = true,
@@ -636,33 +655,38 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
             {
                 {
                     text = _("Cancel"),
-                    is_enter_default = true,
                     callback = function()
                         UIManager:close(self.input)
                     end,
                 },
                 {
                     text = _("Rename"),
+                    is_enter_default = true,
                     callback = function()
                         local value = self.input:getInputValue()
-                        if value ~= "" then
-                            for __, bm in ipairs(self.bookmarks) do
-                                if bookmark.text == bm.text and  bookmark.pos0 == bm.pos0 and
-                                    bookmark.pos1 == bm.pos1 and bookmark.page == bm.page then
-                                    bm.text = value
-                                    -- A bookmark isn't necessarily a highlight (it doesn't have pboxes)
-                                    if bookmark.pboxes then
-                                        local setting = G_reader_settings:readSetting("save_document")
-                                        if setting ~= "disable" then
-                                            self.ui.document:updateHighlightContents(bookmark.page, bookmark, value)
-                                        end
+                        if value == "" then -- blank input resets the 'text' field to auto-text
+                            value = self:getBookmarkAutoText(bookmark)
+                        end
+                        for __, bm in ipairs(self.bookmarks) do
+                            if bookmark.datetime == bm.datetime and bookmark.page == bm.page then
+                                bm.text = value
+                                bookmark.text_orig = value or bookmark.notes
+                                bookmark.text = bookmark.text_orig
+                                -- A bookmark isn't necessarily a highlight (it doesn't have pboxes)
+                                if bookmark.pboxes then
+                                    local setting = G_reader_settings:readSetting("save_document")
+                                    if setting ~= "disable" then
+                                        self.ui.document:updateHighlightContents(bookmark.page, bookmark, value or bookmark.notes)
                                     end
-                                    UIManager:close(self.input)
-                                    if not from_highlight then
-                                        self.refresh()
-                                    end
-                                    break
                                 end
+                                UIManager:close(self.input)
+                                if not from_highlight then
+                                    if not bookmark.highlighted then
+                                        bookmark.text = PAGE_BOOKMARK_DISPLAY_PREFIX .. bookmark.text
+                                    end
+                                    self.refresh()
+                                end
+                                break
                             end
                         end
                         UIManager:close(self.input)
@@ -812,6 +836,47 @@ function ReaderBookmark:getNumberOfHighlightsAndNotes()
         end
     end
     return highlights, notes
+end
+
+function ReaderBookmark:getBookmarkPageString(page)
+    if not self.ui.document.info.has_pages then
+        if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+            page = self.ui.pagemap:getXPointerPageLabel(page, true)
+        else
+            page = self.ui.document:getPageFromXPointer(page)
+            if self.ui.document:hasHiddenFlows() then
+                local flow = self.ui.document:getPageFlow(page)
+                page = self.ui.document:getPageNumberInFlow(page)
+                if flow > 0 then
+                    page = T("[%1]%2", page, flow)
+                end
+            end
+        end
+    end
+    return tostring(page)
+end
+
+function ReaderBookmark:getBookmarkAutoText(bookmark, force_auto_text)
+    if G_reader_settings:nilOrTrue("bookmarks_items_auto_text") or force_auto_text then
+        local page = self:getBookmarkPageString(bookmark.page)
+        return T(_("Page %1 %2 @ %3"), page, bookmark.notes, bookmark.datetime)
+    else
+        -- When not auto_text, and 'text' would be identical to 'notes', leave 'text' be nil
+        return nil
+    end
+end
+
+--- Check if the 'text' field has not been edited manually
+function ReaderBookmark:isBookmarkAutoText(bookmark)
+    return (bookmark.text == nil) or (bookmark.text == self:getBookmarkAutoText(bookmark, true))
+end
+
+function ReaderBookmark:isHighlightAutoText(item)
+    for i=1, #self.bookmarks do
+        if item.datetime == self.bookmarks[i].datetime and item.page == self.bookmarks[i].page then
+            return self:isBookmarkAutoText(self.bookmarks[i])
+        end
+    end
 end
 
 return ReaderBookmark
