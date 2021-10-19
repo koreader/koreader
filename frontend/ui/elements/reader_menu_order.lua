@@ -76,6 +76,7 @@ local order = {
         "document_auto_save",
         "document_save",
         "document_end_action",
+        "language_support",
     },
     device = {
         "keyboard_layout",
