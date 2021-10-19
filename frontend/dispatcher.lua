@@ -144,7 +144,7 @@ local settingsList = {
     -- the rest of the table elements are built from their counterparts in CreOptions
     rotation_mode = {category="string", device=true},
     visible_pages = {category="string", rolling=true, separator=true},
-    h_page_margins = {category="absolutenumber", rolling=true},
+    h_page_margins = {category="string", rolling=true},
     sync_t_b_page_margins = {category="string", rolling=true},
     t_page_margin = {category="absolutenumber", rolling=true},
     b_page_margin = {category="absolutenumber", rolling=true, separator=true},
