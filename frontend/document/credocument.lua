@@ -561,25 +561,14 @@ function CreDocument:getWordFromPosition(pos)
         if text_range.pos0 and text_range.pos1 then
             -- get segments from these pos, to build the overall box
             local word_boxes = self._document:getWordBoxesFromPositions(text_range.pos0, text_range.pos1, true)
-            if #word_boxes > 0 then
-                local overall_box
-                for i = 1, #word_boxes do
-                    local line_box = word_boxes[i]
-                    if not overall_box then
-                        overall_box = line_box
-                    else
-                        if line_box.x0 < overall_box.x0 then overall_box.x0 = line_box.x0 end
-                        if line_box.y0 < overall_box.y0 then overall_box.y0 = line_box.y0 end
-                        if line_box.x1 > overall_box.x1 then overall_box.x1 = line_box.x1 end
-                        if line_box.y1 > overall_box.y1 then overall_box.y1 = line_box.y1 end
-                    end
-                end
-                wordbox.sbox = Geom:new{
-                    x = overall_box.x0,
-                    y = overall_box.y0,
-                    w = overall_box.x1 - overall_box.x0,
-                    h = overall_box.y1 - overall_box.y0,
-                }
+            -- convert to Geom so we can use Geom.boundingBox
+            for i=1, #word_boxes do
+                local v = word_boxes[i]
+                word_boxes[i] = { x = v.x0,        y = v.y0,
+                                  w = v.x1 - v.x0, h = v.y1 - v.y0 }
+            end
+            wordbox.sbox = Geom.boundingBox(word_boxes)
+            if wordbox.sbox then
                 box_found = true
             end
         end
