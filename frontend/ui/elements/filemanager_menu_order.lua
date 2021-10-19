@@ -131,6 +131,8 @@ local order = {
         "dictionary_lookup_history",
         "dictionary_settings",
         "----------------------------",
+        "language_support",
+        "----------------------------",
         "wikipedia_lookup",
         "wikipedia_history",
         "wikipedia_settings",
