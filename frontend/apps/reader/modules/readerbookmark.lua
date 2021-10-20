@@ -8,6 +8,7 @@ local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
+local Notification = require("ui/widget/notification")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
@@ -347,6 +348,7 @@ function ReaderBookmark:updateHighlightsIfNeeded()
 end
 
 function ReaderBookmark:onShowBookmark()
+    self.select_mode = false
     self:updateHighlightsIfNeeded()
     -- build up item_table
     local item_table = {}
@@ -403,65 +405,156 @@ function ReaderBookmark:onShowBookmark()
 
     -- buid up menu widget method as closure
     local bookmark = self
-    function bm_menu:onMenuChoice(item)
-        bookmark.ui.link:addCurrentLocationToStack()
-        bookmark:gotoBookmark(item.page, item.pos0)
+    function bm_menu:onMenuSelect(item)
+        if self.select_mode then
+            if item.dim then
+                item.dim = nil
+                self.select_count = self.select_count - 1
+            else
+                item.dim = true
+                self.select_count = self.select_count + 1
+            end
+            bm_menu:updateItems()
+        else
+            bookmark.ui.link:addCurrentLocationToStack()
+            bookmark:gotoBookmark(item.page, item.pos0)
+            bm_menu.close_callback()
+        end
     end
 
     function bm_menu:onMenuHold(item)
-        self.textviewer = TextViewer:new{
-            title = _("Bookmark details"),
-            text = item.notes,
-            width = self.textviewer_width,
-            height = self.textviewer_height,
-            buttons_table = {
-                {
-                    {
-                        text = _("Rename this bookmark"),
+        if self.select_mode then
+            UIManager:show(ConfirmBox:new{
+                text = T(_("Bookmarks selected: %1\nRemove selected bookmarks?"), self.select_count),
+                ok_text = _("Remove"),
+                ok_callback = function()
+                    self.select_mode = false
+                    for i = #item_table, 1, -1 do
+                        if item_table[i].dim then
+                            bookmark:removeHighlight(item_table[i])
+                            table.remove(item_table, i)
+                        end
+                    end
+                    bm_menu:switchItemTable(nil, item_table, -1)
+                end,
+                other_buttons_first = true,
+                other_buttons = {
+                    {{
+                        text = _("Unselect all"),
                         callback = function()
-                            bookmark:renameBookmark(item)
-                            UIManager:close(self.textviewer)
+                            for _, v in pairs(item_table) do
+                                if v.dim then
+                                    v.dim = nil
+                                end
+                            end
+                            self.select_count = 0
+                            bm_menu:updateItems()
                         end,
                     },
                     {
-                        text = _("Remove this bookmark"),
+                        text = _("Select all"),
                         callback = function()
-                            UIManager:show(ConfirmBox:new{
-                                text = _("Remove this bookmark?"),
-                                cancel_text = _("Cancel"),
-                                cancel_callback = function()
-                                    return
-                                end,
-                                ok_text = _("Remove"),
-                                ok_callback = function()
-                                    bookmark:removeHighlight(item)
-                                    -- Also update item_table, so we don't have to rebuilt it in full
-                                    for k, v in pairs(item_table) do
-                                        if v == item then
-                                            table.remove(item_table, k)
-                                            break
+                            for _, v in pairs(item_table) do
+                                v.dim = true
+                            end
+                            self.select_count = #item_table
+                            bm_menu:updateItems()
+                        end,
+                    }},
+                    {{
+                        text = _("Exit select mode"),
+                        callback = function()
+                            for _, v in pairs(item_table) do
+                                if v.dim then
+                                    v.dim = nil
+                                end
+                            end
+                            self.select_mode = false
+                            bm_menu:updateItems()
+                        end,
+                    },
+                    {
+                        text = _("Select page"),
+                        callback = function()
+                            local item_first = (bm_menu.page - 1) * bm_menu.perpage + 1
+                            local item_last = math.min(item_first + bm_menu.perpage - 1, #item_table)
+                            for i = item_first, item_last do
+                                if item_table[i].dim == nil then
+                                    item_table[i].dim = true
+                                    self.select_count = self.select_count + 1
+                                end
+                            end
+                            bm_menu:updateItems()
+                        end,
+                    }},
+                },
+            })
+        else
+            self.textviewer = TextViewer:new{
+                title = _("Bookmark details"),
+                text = item.notes,
+                width = self.textviewer_width,
+                height = self.textviewer_height,
+                buttons_table = {
+                    {
+                        {
+                            text = _("Rename this bookmark"),
+                            callback = function()
+                                bookmark:renameBookmark(item)
+                                UIManager:close(self.textviewer)
+                            end,
+                        },
+                        {
+                            text = _("Remove this bookmark"),
+                            callback = function()
+                                UIManager:show(ConfirmBox:new{
+                                    text = _("Remove this bookmark?"),
+                                    cancel_text = _("Cancel"),
+                                    cancel_callback = function()
+                                        return
+                                    end,
+                                    ok_text = _("Remove"),
+                                    ok_callback = function()
+                                        bookmark:removeHighlight(item)
+                                        -- Also update item_table, so we don't have to rebuilt it in full
+                                        for k, v in pairs(item_table) do
+                                            if v == item then
+                                                table.remove(item_table, k)
+                                                break
+                                            end
                                         end
-                                    end
-                                    bm_menu:switchItemTable(nil, item_table, -1)
-                                    UIManager:close(self.textviewer)
-                                end,
-                            })
-                        end,
+                                        bm_menu:switchItemTable(nil, item_table, -1)
+                                        UIManager:close(self.textviewer)
+                                    end,
+                                })
+                            end,
+                        },
                     },
-                },
-                {
                     {
-                        text = _("Close"),
-                        is_enter_default = true,
-                        callback = function()
-                            UIManager:close(self.textviewer)
-                        end,
+                        {
+                            text = _("Close"),
+                            is_enter_default = true,
+                            callback = function()
+                                UIManager:close(self.textviewer)
+                            end,
+                        },
+                        {
+                            text = _("Remove more bookmarks"),
+                            callback = function()
+                                self.select_mode = true
+                                self.select_count = 0
+                                UIManager:close(self.textviewer)
+                                UIManager:show(Notification:new{
+                                    text = _("Tap bookmarks to select, then long-press"),
+                                })
+                            end,
+                        },
                     },
-                },
+                }
             }
-        }
-        UIManager:show(self.textviewer)
-        return true
+            UIManager:show(self.textviewer)
+            return true
+        end
     end
 
     bm_menu.close_callback = function()
