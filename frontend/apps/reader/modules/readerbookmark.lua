@@ -498,10 +498,14 @@ function ReaderBookmark:onShowBookmark()
                 buttons_table = {
                     {
                         {
-                            text = _("Rename this bookmark"),
+                            text = _("Remove bookmarks"),
                             callback = function()
-                                bookmark:renameBookmark(item)
+                                self.select_mode = true
+                                self.select_count = 0
                                 UIManager:close(self.textviewer)
+                                UIManager:show(Notification:new{
+                                    text = _("Tap bookmarks to select, then long-press"),
+                                })
                             end,
                         },
                         {
@@ -539,14 +543,10 @@ function ReaderBookmark:onShowBookmark()
                             end,
                         },
                         {
-                            text = _("Remove more bookmarks"),
+                            text = _("Rename this bookmark"),
                             callback = function()
-                                self.select_mode = true
-                                self.select_count = 0
+                                bookmark:renameBookmark(item)
                                 UIManager:close(self.textviewer)
-                                UIManager:show(Notification:new{
-                                    text = _("Tap bookmarks to select, then long-press"),
-                                })
                             end,
                         },
                     },
