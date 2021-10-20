@@ -55,7 +55,7 @@ function FileManagerHistory:onMenuHold(item)
                 enabled = item.file ~= currently_opened_file and DocSettings:hasSidecarFile(util.realpath(item.file)),
                 callback = function()
                     UIManager:show(ConfirmBox:new{
-                        text = T(_("Purge .sdr folder to reset settings for this document?\n\n%1\n\nAny highlight or bookmark will be permanently lost."), BD.filename(item.text)),
+                        text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."), BD.filepath(item.file)),
                         ok_text = _("Reset"),
                         ok_callback = function()
                             filemanagerutil.purgeSettings(item.file)
@@ -81,7 +81,7 @@ function FileManagerHistory:onMenuHold(item)
                 enabled = (item.file ~= currently_opened_file and lfs.attributes(item.file, "mode")) and true or false,
                 callback = function()
                     UIManager:show(ConfirmBox:new{
-                        text = _("Are you sure that you want to delete this file?\n") .. BD.filepath(item.file) .. ("\n") .. _("If you delete a file, it is permanently lost."),
+                        text = T(_("Are you sure that you want to delete this document?\n\n%1\n\nIf you delete a file, it is permanently lost."), BD.filepath(item.file)),
                         ok_text = _("Delete"),
                         ok_callback = function()
                             local FileManager = require("apps/filemanager/filemanager")

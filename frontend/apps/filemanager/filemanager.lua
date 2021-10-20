@@ -254,10 +254,10 @@ function FileManager:setupLayout()
                 },
                 {
                     text = _("Reset settings"),
-                    enabled = DocSettings:hasSidecarFile(BaseUtil.realpath(file)),
+                    enabled = is_file and DocSettings:hasSidecarFile(BaseUtil.realpath(file)),
                     callback = function()
                         UIManager:show(ConfirmBox:new{
-                            text = T(_("Purge .sdr folder to reset settings for this document?\n%1\nAny highlight or bookmark will be permanently lost."), BD.filename(self.file_dialog.title)),
+                            text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."), BD.filepath(file)),
                             ok_text = _("Reset"),
                             ok_callback = function()
                                 filemanagerutil.purgeSettings(file)
@@ -288,8 +288,8 @@ function FileManager:setupLayout()
                     callback = function()
                         UIManager:close(self.file_dialog)
                         UIManager:show(ConfirmBox:new{
-                            text = is_file and T(_("Delete file?\n%1\nIf you delete a file, it is permanently lost."), BD.filepath(file)) or
-                                T(_("Delete folder?\n%1\nIf you delete a folder, its content is permanently lost."), BD.filepath(file)),
+                            text = is_file and T(_("Delete file?\n\n%1\n\nIf you delete a file, it is permanently lost."), BD.filepath(file)) or
+                                T(_("Delete folder?\n\n%1\n\nIf you delete a folder, its content is permanently lost."), BD.filepath(file)),
                             ok_text = _("Delete"),
                             ok_callback = function()
                                 deleteFile(file)
