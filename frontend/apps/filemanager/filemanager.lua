@@ -25,7 +25,6 @@ local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
-local Notification = require("ui/widget/notification")
 local PluginLoader = require("pluginloader")
 local ReadCollection = require("readcollection")
 local ReaderDeviceStatus = require("apps/reader/modules/readerdevicestatus")
@@ -239,9 +238,6 @@ function FileManager:setupLayout()
                     callback = function()
                         copyFile(file)
                         UIManager:close(self.file_dialog)
-                        UIManager:show(Notification:new{
-                            text = is_file and _("File copied to clipboard.") or _("Folder copied to clipboard.")
-                        })
                     end,
                 },
                 {
@@ -276,9 +272,6 @@ function FileManager:setupLayout()
                     callback = function()
                         cutFile(file)
                         UIManager:close(self.file_dialog)
-                        UIManager:show(Notification:new{
-                            text = is_file and _("File cut to clipboard.") or _("Folder cut to clipboard.")
-                        })
                     end,
                 },
                 {
@@ -887,11 +880,7 @@ function FileManager:pasteHere(file)
             if DocSettings:hasSidecarFile(orig) then
                 BaseUtil.execute(self.cp_bin, "-r", DocSettings:getSidecarDir(orig), dest)
             end
-            if BaseUtil.execute(self.cp_bin, "-r", orig, dest) == 0 then
-                UIManager:show(Notification:new{
-                    text = is_folder and _("Folder copied.") or _("File copied."),
-                })
-            else
+            if BaseUtil.execute(self.cp_bin, "-r", orig, dest) ~= 0 then
                 UIManager:show(InfoMessage:new {
                     text = T(_("Failed to copy:\n%1\nto:\n%2"), BD.filepath(orig_basename), BD.dirpath(dest)),
                     icon = "notice-warning",
@@ -909,9 +898,6 @@ function FileManager:pasteHere(file)
                 local dest_file = string.format("%s/%s", dest, BaseUtil.basename(orig))
                 require("readhistory"):updateItemByPath(orig, dest_file) -- (will update "lastfile" if needed)
                 ReadCollection:updateItemByPath(orig, dest_file)
-                UIManager:show(Notification:new{
-                    text = is_folder and _("Folder moved.") or _("File moved."),
-                })
             else
                 UIManager:show(InfoMessage:new {
                     text = T(_("Failed to move:\n%1\nto:\n%2"), BD.filepath(orig_basename), BD.dirpath(dest)),
@@ -958,9 +944,6 @@ function FileManager:createFolder(curr_folder, new_folder)
     local code = BaseUtil.execute(self.mkdir_bin, folder)
     if code == 0 then
         self:onRefresh()
-        UIManager:show(Notification:new{
-            text = _("Folder created."),
-        })
     else
         UIManager:show(InfoMessage:new{
             text = T(_("Failed to create folder:\n%1"), BD.directory(new_folder)),
@@ -998,9 +981,6 @@ function FileManager:deleteFile(file)
             doc_settings:purge()
         end
         ReadCollection:removeItemByPath(file, is_dir)
-        UIManager:show(Notification:new{
-            text = is_dir and _("Folder deleted.") or _("File deleted."),
-        })
     else
         UIManager:show(InfoMessage:new{
             text = T(_("Failed to delete:\n%1"), BD.filepath(file)),
@@ -1028,21 +1008,13 @@ function FileManager:renameFile(file)
                        not self:moveFile(doc:getSidecarDir(file), doc:getSidecarDir(dest)) then
                        move_history = false
                     end
-                    if move_history then
-                        UIManager:show(Notification:new{
-                            text = _("File renamed."),
-                        })
-                    else
+                    if not move_history then
                         UIManager:show(InfoMessage:new{
                             text = T(_("Renamed file:\n%1\nto:\n%2\n\nFailed to move history data.\nThe reading history may be lost."),
                                 BD.filepath(file), BD.filepath(dest)),
                             icon = "notice-warning",
                         })
                     end
-                else
-                    UIManager:show(Notification:new{
-                        text = _("Folder renamed."),
-                    })
                 end
             else
                 UIManager:show(InfoMessage:new{
@@ -1235,9 +1207,6 @@ end
 
 function FileManager:onRefreshContent()
     self:onRefresh()
-    UIManager:show(Notification:new{
-        text = _("Content refreshed."),
-    })
 end
 
 return FileManager
