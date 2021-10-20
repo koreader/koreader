@@ -55,7 +55,7 @@ function FileManagerHistory:onMenuHold(item)
                 enabled = item.file ~= currently_opened_file and DocSettings:hasSidecarFile(util.realpath(item.file)),
                 callback = function()
                     UIManager:show(ConfirmBox:new{
-                        text = T(_("Purge .sdr folder to reset settings for this document?\n%1\nAny highlight or bookmark will be permantly lost."), BD.filename(item.text)),
+                        text = T(_("Purge .sdr folder to reset settings for this document?\n\n%1\n\nAny highlight or bookmark will be permanently lost."), BD.filename(item.text)),
                         ok_text = _("Reset"),
                         ok_callback = function()
                             filemanagerutil.purgeSettings(item.file)

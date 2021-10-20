@@ -257,7 +257,7 @@ function FileManager:setupLayout()
                     enabled = DocSettings:hasSidecarFile(BaseUtil.realpath(file)),
                     callback = function()
                         UIManager:show(ConfirmBox:new{
-                            text = T(_("Purge .sdr folder to reset settings for this document?\n%1\nAny highlight or bookmark will be permantly lost."), BD.filename(self.file_dialog.title)),
+                            text = T(_("Purge .sdr folder to reset settings for this document?\n%1\nAny highlight or bookmark will be permanently lost."), BD.filename(self.file_dialog.title)),
                             ok_text = _("Reset"),
                             ok_callback = function()
                                 filemanagerutil.purgeSettings(file)

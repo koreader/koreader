@@ -411,7 +411,6 @@ function DocSettings:purge(full)
     -- We should have meet the candidate we used and remove it above. But in
     -- case we didn't, remove it
     if self.filepath and lfs.attributes(self.filepath, "mode") == "file" then
-        logger.dbg("purge: REMOVED ", fullpath)
         os.remove(self.filepath)
     end
     self.data = {}
