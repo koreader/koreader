@@ -10,6 +10,7 @@ local Screen = require("device").screen
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("ffi/util")
 local _ = require("gettext")
+local T = util.template
 
 local FileManagerHistory = InputContainer:extend{
     hist_menu_title = _("History"),
@@ -50,12 +51,12 @@ function FileManagerHistory:onMenuHold(item)
     local buttons = {
         {
             {
-                text = _("Purge .sdr"),
+                text = _("Reset settings"),
                 enabled = item.file ~= currently_opened_file and DocSettings:hasSidecarFile(util.realpath(item.file)),
                 callback = function()
                     UIManager:show(ConfirmBox:new{
-                        text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), BD.filename(item.text)),
-                        ok_text = _("Purge"),
+                        text = T(_("Purge .sdr folder to reset settings for this document?\n%1\nAny highlight or bookmark will be permantly lost."), BD.filename(item.text)),
+                        ok_text = _("Reset"),
                         ok_callback = function()
                             filemanagerutil.purgeSettings(item.file)
                             require("readhistory"):fileSettingsPurged(item.file)

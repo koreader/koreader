@@ -243,7 +243,7 @@ function CoverMenu:updateItems(select_number)
                     UIManager:close(self.file_dialog)
                 end
 
-                -- Fudge the "Purge .sdr" button ([1][3]) callback to also trash the cover_info_cache
+                -- Fudge the "Reset settings" button ([1][3]) callback to also trash the cover_info_cache
                 local orig_purge_callback = orig_buttons[1][3].callback
                 orig_buttons[1][3].callback = function()
                     -- Wipe the cache

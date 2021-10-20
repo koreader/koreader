@@ -33,13 +33,7 @@ end
 function filemanagerutil.purgeSettings(file)
     local file_abs_path = util.realpath(file)
     if file_abs_path then
-        os.remove(DocSettings:getSidecarFile(file_abs_path))
-        -- Also remove backup, otherwise it will be used if we re-open this document
-        -- (it also allows for the sidecar folder to be empty and removed)
-        os.remove(DocSettings:getSidecarFile(file_abs_path)..".old")
-        -- If the sidecar folder is empty, os.remove() can delete it.
-        -- Otherwise, the following statement has no effect.
-        os.remove(DocSettings:getSidecarDir(file_abs_path))
+        DocSettings:open(file_abs_path):purge()
     end
 end
 

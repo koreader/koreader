@@ -9,6 +9,7 @@ local dump = require("dump")
 local ffiutil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 
 local DocSettings = {}
 
@@ -140,7 +141,7 @@ function DocSettings:open(docfile)
                                end
                            end)
     local ok, stored, filepath
-    for _, k in pairs(candidates) do
+    for _, k in ipairs(candidates) do
         -- Ignore empty files
         if lfs.attributes(k[1], "size") > 0 then
             ok, stored = pcall(dofile, k[1])
@@ -312,7 +313,7 @@ function DocSettings:flush()
     self:ensureSidecar(self.sidecar)
     local s_out = dump(self.data)
     os.setlocale('C', 'numeric')
-    for _, f in pairs(serials) do
+    for _, f in ipairs(serials) do
         local directory_updated = false
         if lfs.attributes(f, "mode") == "file" then
             -- As an additional safety measure (to the ffiutil.fsync* calls
@@ -338,7 +339,7 @@ function DocSettings:flush()
 
             if self.candidates ~= nil
             and G_reader_settings:nilOrFalse("preserve_legacy_docsetting") then
-                for _, k in pairs(self.candidates) do
+                for _, k in ipairs(self.candidates) do
                     if k[1] ~= f and k[1] ~= f .. ".old" then
                         logger.dbg("Remove legacy file ", k[1])
                         os.remove(k[1])
@@ -366,12 +367,52 @@ function DocSettings:getFilePath()
 end
 
 --- Purges (removes) sidecar directory.
-function DocSettings:purge()
+function DocSettings:purge(full)
+    -- Remove any of the old ones we may consider as candidates
+    -- in DocSettings:open()
     if self.history_file then
         os.remove(self.history_file)
+        os.remove(self.history_file .. ".old")
+    end
+    if self.legacy_sidecar_file then
+        os.remove(self.legacy_sidecar_file)
     end
     if lfs.attributes(self.sidecar, "mode") == "directory" then
-        ffiutil.purgeDir(self.sidecar)
+        if full then
+            -- Asked to remove all the content of this .sdr directory,
+            -- whether it's ours or not
+            ffiutil.purgeDir(self.sidecar)
+        else
+            -- Only remove the files we know we may have created
+            -- with our usual names.
+            for f in lfs.dir(self.sidecar) do
+                local fullpath = self.sidecar.."/"..f
+                local to_remove = false
+                if lfs.attributes(fullpath, "mode") == "file" then
+                    -- Currently, we only create a single file in there,
+                    -- named metadata.suffix.lua (ie. metadata.epub.lua),
+                    -- with possibly backups named metadata.epub.lua.old and
+                    -- metadata.epub.lua.old_dom20180528, so all sharing the
+                    -- same base: self.sidecar_file
+                    if util.stringStartsWith(fullpath, self.sidecar_file) then
+                        to_remove = true
+                    end
+                end
+                if to_remove then
+                    os.remove(fullpath)
+                    logger.dbg("purge: removed ", fullpath)
+                end
+            end
+            -- If the sidecar folder ends up empty, os.remove() can delete it.
+            -- Otherwise, the following statement has no effect.
+            os.remove(self.sidecar)
+        end
+    end
+    -- We should have meet the candidate we used and remove it above. But in
+    -- case we didn't, remove it
+    if self.filepath and lfs.attributes(self.filepath, "mode") == "file" then
+        logger.dbg("purge: REMOVED ", fullpath)
+        os.remove(self.filepath)
     end
     self.data = {}
 end
