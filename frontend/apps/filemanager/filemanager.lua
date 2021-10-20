@@ -871,7 +871,6 @@ function FileManager:pasteHere(file)
         file = BaseUtil.realpath(file)
         local orig_basename = BaseUtil.basename(self.clipboard)
         local orig = BaseUtil.realpath(self.clipboard)
-        local is_folder = lfs.attributes(orig, "mode") == "directory"
         local dest = lfs.attributes(file, "mode") == "directory" and
             file or file:match("(.*/)")
 
