@@ -10,6 +10,7 @@ local Screen = require("device").screen
 local filemanagerutil = require("apps/filemanager/filemanagerutil")
 local util = require("ffi/util")
 local _ = require("gettext")
+local T = util.template
 
 local FileManagerHistory = InputContainer:extend{
     hist_menu_title = _("History"),
@@ -50,12 +51,12 @@ function FileManagerHistory:onMenuHold(item)
     local buttons = {
         {
             {
-                text = _("Purge .sdr"),
+                text = _("Reset settings"),
                 enabled = item.file ~= currently_opened_file and DocSettings:hasSidecarFile(util.realpath(item.file)),
                 callback = function()
                     UIManager:show(ConfirmBox:new{
-                        text = util.template(_("Purge .sdr to reset settings for this document?\n\n%1"), BD.filename(item.text)),
-                        ok_text = _("Purge"),
+                        text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."), BD.filepath(item.file)),
+                        ok_text = _("Reset"),
                         ok_callback = function()
                             filemanagerutil.purgeSettings(item.file)
                             require("readhistory"):fileSettingsPurged(item.file)
@@ -80,7 +81,7 @@ function FileManagerHistory:onMenuHold(item)
                 enabled = (item.file ~= currently_opened_file and lfs.attributes(item.file, "mode")) and true or false,
                 callback = function()
                     UIManager:show(ConfirmBox:new{
-                        text = _("Are you sure that you want to delete this file?\n") .. BD.filepath(item.file) .. ("\n") .. _("If you delete a file, it is permanently lost."),
+                        text = T(_("Are you sure that you want to delete this document?\n\n%1\n\nIf you delete a file, it is permanently lost."), BD.filepath(item.file)),
                         ok_text = _("Delete"),
                         ok_callback = function()
                             local FileManager = require("apps/filemanager/filemanager")
