@@ -568,12 +568,12 @@ function ReaderBookmark:onShowBookmark()
                                                     if check_button_bookmark.checked or check_button_highlight.checked then
                                                         local search_str = Utf8Proc.lowercase(util.fixUtf8(input_dialog:getInputText(), "?"))
                                                         for i = #item_table, 1, -1 do
-                                                            local item = item_table[i]
-                                                            local is_bookmark = item.highlighted == nil
+                                                            local bm_item = item_table[i]
+                                                            local is_bookmark = bm_item.highlighted == nil
                                                             if (check_button_bookmark.checked and is_bookmark) or
                                                                 (check_button_highlight.checked and not is_bookmark) then
                                                                 if search_str ~= "" then
-                                                                    local bm_text = Utf8Proc.lowercase(util.fixUtf8(item.notes .. item.text, "?"))
+                                                                    local bm_text = Utf8Proc.lowercase(util.fixUtf8(bm_item.notes .. bm_item.text, "?"))
                                                                     if not bm_text:find(search_str) then
                                                                         table.remove(item_table, i)
                                                                     end
