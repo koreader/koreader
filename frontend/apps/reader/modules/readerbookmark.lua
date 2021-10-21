@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local CenterContainer = require("ui/widget/container/centercontainer")
+local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
 local Device = require("device")
 local Event = require("ui/event")
@@ -11,6 +12,7 @@ local Menu = require("ui/widget/menu")
 local Notification = require("ui/widget/notification")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
+local Utf8Proc = require("ffi/utf8proc")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
@@ -498,17 +500,6 @@ function ReaderBookmark:onShowBookmark()
                 buttons_table = {
                     {
                         {
-                            text = _("Remove bookmarks"),
-                            callback = function()
-                                self.select_mode = true
-                                self.select_count = 0
-                                UIManager:close(self.textviewer)
-                                UIManager:show(Notification:new{
-                                    text = _("Tap bookmarks to select, then long-press"),
-                                })
-                            end,
-                        },
-                        {
                             text = _("Remove this bookmark"),
                             callback = function()
                                 UIManager:show(ConfirmBox:new{
@@ -533,19 +524,102 @@ function ReaderBookmark:onShowBookmark()
                                 })
                             end,
                         },
+                        {
+                            text = _("Rename this bookmark"),
+                            callback = function()
+                                bookmark:renameBookmark(item)
+                                UIManager:close(self.textviewer)
+                            end,
+                        },
+                    },
+                    {},
+                    {
+                        {
+                            text = _("Remove bookmarks"),
+                            callback = function()
+                                self.select_mode = true
+                                self.select_count = 0
+                                UIManager:close(self.textviewer)
+                                UIManager:show(Notification:new{
+                                    text = _("Tap bookmarks to select, then long-press"),
+                                })
+                            end,
+                        },
+                        {
+                            text = _("Filter bookmarks"),
+                            callback = function()
+                                UIManager:close(self.textviewer)
+                                local input_dialog, check_button_bookmark, check_button_highlight
+                                input_dialog = InputDialog:new{
+                                    title = _("Filter bookmarks"),
+                                    input_hint = _("(containing text)"),
+                                    buttons = {
+                                        {
+                                            {
+                                                text = _("Close"),
+                                                callback = function()
+                                                    UIManager:close(input_dialog)
+                                                end,
+                                            },
+                                            {
+                                                text = _("Apply"),
+                                                is_enter_default = true,
+                                                callback = function()
+                                                    if check_button_bookmark.checked or check_button_highlight.checked then
+                                                        local search_str = Utf8Proc.lowercase(util.fixUtf8(input_dialog:getInputText(), "?"))
+                                                        for i = #item_table, 1, -1 do
+                                                            local item = item_table[i]
+                                                            local is_bookmark = item.highlighted == nil
+                                                            if (check_button_bookmark.checked and is_bookmark) or
+                                                                (check_button_highlight.checked and not is_bookmark) then
+                                                                if search_str ~= "" then
+                                                                    local bm_text = Utf8Proc.lowercase(util.fixUtf8(item.notes .. item.text, "?"))
+                                                                    if not bm_text:find(search_str) then
+                                                                        table.remove(item_table, i)
+                                                                    end
+                                                                end
+                                                            else
+                                                                table.remove(item_table, i)
+                                                            end
+                                                        end
+                                                        UIManager:close(input_dialog)
+                                                        bm_menu:switchItemTable(_("Bookmarks (filtered)"), item_table)
+                                                    end
+                                                end,
+                                            },
+                                        },
+                                    },
+                                }
+                                check_button_bookmark = CheckButton:new{
+                                    text = _("page bookmarks"),
+                                    checked = true,
+                                    parent = input_dialog,
+                                    max_width = input_dialog._input_widget.width,
+                                    callback = function()
+                                        check_button_bookmark:toggleCheck()
+                                    end,
+                                }
+                                input_dialog:addWidget(check_button_bookmark)
+                                check_button_highlight = CheckButton:new{
+                                    text = _("highlights"),
+                                    checked = true,
+                                    parent = input_dialog,
+                                    max_width = input_dialog._input_widget.width,
+                                    callback = function()
+                                        check_button_highlight:toggleCheck()
+                                    end,
+                                }
+                                input_dialog:addWidget(check_button_highlight)
+                                UIManager:show(input_dialog)
+                                input_dialog:onShowKeyboard()
+                            end,
+                        },
                     },
                     {
                         {
                             text = _("Close"),
                             is_enter_default = true,
                             callback = function()
-                                UIManager:close(self.textviewer)
-                            end,
-                        },
-                        {
-                            text = _("Rename this bookmark"),
-                            callback = function()
-                                bookmark:renameBookmark(item)
                                 UIManager:close(self.textviewer)
                             end,
                         },
