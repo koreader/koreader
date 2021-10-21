@@ -9,7 +9,6 @@ local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
-local Notification = require("ui/widget/notification")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
@@ -351,6 +350,7 @@ end
 
 function ReaderBookmark:onShowBookmark()
     self.select_mode = false
+    self.filtered_mode = false
     self:updateHighlightsIfNeeded()
     -- build up item_table
     local item_table = {}
@@ -472,7 +472,7 @@ function ReaderBookmark:onShowBookmark()
                                 end
                             end
                             self.select_mode = false
-                            bm_menu:updateItems()
+                            bm_menu:switchItemTable(self.filtered_mode and _("Bookmarks (filtered)") or _("Bookmarks"), item_table)
                         end,
                     },
                     {
@@ -525,7 +525,7 @@ function ReaderBookmark:onShowBookmark()
                             end,
                         },
                         {
-                            text = _("Rename this bookmark"),
+                            text = bookmark:isHighlightAutoText(item) and _("Add note") or _("Edit note"),
                             callback = function()
                                 bookmark:renameBookmark(item)
                                 UIManager:close(self.textviewer)
@@ -540,9 +540,7 @@ function ReaderBookmark:onShowBookmark()
                                 self.select_mode = true
                                 self.select_count = 0
                                 UIManager:close(self.textviewer)
-                                UIManager:show(Notification:new{
-                                    text = _("Tap bookmarks to select, then long-press"),
-                                })
+                                bm_menu:switchItemTable(_("Bookmarks (select mode)"), item_table)
                             end,
                         },
                         {
@@ -584,6 +582,7 @@ function ReaderBookmark:onShowBookmark()
                                                         end
                                                         UIManager:close(input_dialog)
                                                         bm_menu:switchItemTable(_("Bookmarks (filtered)"), item_table)
+                                                        self.filtered_mode = true
                                                     end
                                                 end,
                                             },
@@ -812,7 +811,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
         bookmark = item
     end
     self.input = InputDialog:new{
-        title = _("Rename bookmark"),
+        title = _("Edit note"),
         description = T("   " .. _("Page: %1") .. "     " .. _("Time: %2"), bookmark.mandatory, bookmark.datetime),
         input = bookmark.text_orig,
         allow_newline = true,
@@ -827,7 +826,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                     end,
                 },
                 {
-                    text = _("Rename"),
+                    text = _("Save"),
                     is_enter_default = true,
                     callback = function()
                         local value = self.input:getInputValue()
