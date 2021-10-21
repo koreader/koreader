@@ -5,14 +5,14 @@ Configurable attributes:
 
  * width
  * height
- * margin_v  -- vertical margin for solid infill
- * margin_h  -- horizontal margin for solid infill
+ * margin_v  -- vertical margin between border and fill bar
+ * margin_h  -- horizontal margin between border and fill bar
  * radius
  * bordersize
  * bordercolor
  * bgcolor
- * altcolor   -- alternate backrgound color for "alt" pages
- * rectdim    -- dim amount for infill
+ * fillcolor  -- color of the main fill bar
+ * altcolor   -- color of the alt fill bar
  * ticks (list)  -- default to nil, use this if you want to insert markers
  * tick_width
  * last  -- maximum tick, used with ticks
@@ -43,8 +43,8 @@ local ProgressWidget = Widget:new{
     bordersize = Screen:scaleBySize(1),
     bordercolor = Blitbuffer.COLOR_BLACK,
     bgcolor = Blitbuffer.COLOR_WHITE,
+    fillcolor = Blitbuffer.COLOR_DARK_GRAY,
     altcolor = Blitbuffer.COLOR_LIGHT_GRAY,
-    rectdim = 1/2,
     percentage = nil,
     ticks = nil,
     tick_width = Screen:scaleBySize(3),
@@ -70,67 +70,79 @@ function ProgressWidget:paintTo(bb, x, y)
     }
     if self.dimen.w == 0 or self.dimen.h == 0 then return end
 
-    -- fill background
-    bb:paintRoundedRect(x, y, my_size.w, my_size.h, self.bgcolor, self.radius)
-    -- paint border
-    bb:paintBorder(x, y,
-                   my_size.w, my_size.h,
-                   self.bordersize, self.bordercolor, self.radius)
-    -- background for alternate pages (e.g. non-linear flows)
+    -- We'll draw every bar element in order, bottom to top.
+    local fill_width = my_size.w - 2*(self.margin_h + self.bordersize)
+    local fill_y = y + self.margin_v + self.bordersize
+    local fill_height = my_size.h - 2*(self.margin_v + self.bordersize)
+
+    if self.radius == 0 then
+        -- If we don't have rounded borders, we can start with a simple border colored rectangle.
+        bb:paintRect(x, y, my_size.w, my_size.h, self.bordercolor)
+        -- And a full background bar inside (i.e., on top) of that.
+        bb:paintRect(x + self.margin_h + self.bordersize,
+                     fill_y,
+                     math.ceil(fill_width),
+                     math.ceil(fill_height),
+                     self.bgcolor)
+    else
+        -- Otherwise, we have to start with the background.
+        bb:paintRoundedRect(x, y, my_size.w, my_size.h, self.bgcolor, self.radius)
+        -- Then the border around that.
+        bb:paintBorder(x, y,
+                       my_size.w, my_size.h,
+                       self.bordersize, self.bordercolor, self.radius)
+    end
+
+    -- Then we can just paint the fill rectangle(s) and tick(s) on top of that.
+    -- First the fill bar(s)...
+    -- Fill bar for alternate pages (e.g. non-linear flows).
     if self.alt and self.alt[1] ~= nil then
-        local bar_width = (my_size.w-2*self.margin_h)
-        local y_pos = y + self.margin_v + self.bordersize
-        local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
         for i=1, #self.alt do
-            local tick_x = bar_width*((self.alt[i][1]-1)/self.last)
-            local width = bar_width*(self.alt[i][2]/self.last)
-            width = math.ceil(tick_x + width)
+            local tick_x = fill_width * ((self.alt[i][1] - 1) / self.last)
+            local width = fill_width * (self.alt[i][2] / self.last)
+            if self._mirroredUI then
+                tick_x = fill_width - tick_x - width
+            end
             tick_x = math.floor(tick_x)
-            width = width - tick_x
-            if self._mirroredUI then
-                tick_x = bar_width - tick_x - width
-            end
-            bb:paintRect(
-                x + self.margin_h + tick_x,
-                y_pos,
-                width,
-                bar_height,
-                self.altcolor)
+            width = math.ceil(width)
+
+            bb:paintRect(x + self.margin_h + self.bordersize + tick_x,
+                         fill_y,
+                         width,
+                         math.ceil(fill_height),
+                         self.altcolor)
         end
     end
-    -- paint percentage infill
-    -- note that "lightenRect" is misleading, it actualy darkens stuff
+
+    -- Main fill bar for the specified percentage.
     if self.percentage >= 0 and self.percentage <= 1 then
+        local fill_x = x + self.margin_h + self.bordersize
         if self.fill_from_right or (self._mirroredUI and not self.fill_from_right) then
-            bb:lightenRect(x+self.margin_h + math.ceil((my_size.w-2*self.margin_h)*(1-self.percentage)),
-                    math.ceil(y+self.margin_v+self.bordersize),
-                    math.ceil((my_size.w-2*self.margin_h)*self.percentage),
-                    my_size.h-2*(self.margin_v+self.bordersize),
-                    self.rectdim)
-        else
-            bb:lightenRect(x+self.margin_h,
-                    math.ceil(y+self.margin_v+self.bordersize),
-                    math.ceil((my_size.w-2*self.margin_h)*self.percentage),
-                    my_size.h-2*(self.margin_v+self.bordersize),
-                    self.rectdim)
+            fill_x = fill_x + (fill_width * (1 - self.percentage))
+            fill_x = math.floor(fill_x)
         end
+
+        bb:paintRect(fill_x,
+                     fill_y,
+                     math.ceil(fill_width * self.percentage),
+                     math.ceil(fill_height),
+                     self.fillcolor)
     end
-    -- ticks
+
+    -- ...then the tick(s).
     if self.ticks and self.last and self.last > 0 then
-        local bar_width = (my_size.w-2*self.margin_h)
-        local y_pos = y + self.margin_v + self.bordersize
-        local bar_height = my_size.h-2*(self.margin_v+self.bordersize)
         for i, tick in ipairs(self.ticks) do
-            local tick_x = bar_width*(tick/self.last)
+            local tick_x = fill_width * (tick / self.last)
             if self._mirroredUI then
-                tick_x = bar_width - tick_x
+                tick_x = fill_width - tick_x
             end
-            bb:paintRect(
-                x + self.margin_h + tick_x,
-                y_pos,
-                self.tick_width,
-                bar_height,
-                self.bordercolor)
+            tick_x = math.floor(tick_x)
+
+            bb:paintRect(x + self.margin_h + self.bordersize + tick_x,
+                         fill_y,
+                         self.tick_width,
+                         math.ceil(fill_height),
+                         self.bordercolor)
         end
     end
 end
