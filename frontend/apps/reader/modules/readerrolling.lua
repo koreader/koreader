@@ -1210,7 +1210,7 @@ function ReaderRolling:showEngineProgress(percent)
             self.engine_progress_widget = ProgressWidget:new{
                 width = w,
                 height = h,
-                rectdim = 1, -- we need pure B&W for refreshFast
+                fillcolor = Blitbuffer.COLOR_BLACK, -- we need pure B&W for refreshFast
                 percentage = percent,
                 margin_h = 0,
                 margin_v = 0,
