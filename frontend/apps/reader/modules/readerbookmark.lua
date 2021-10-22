@@ -569,7 +569,7 @@ function ReaderBookmark:onShowBookmark()
                                                         local is_search_str = false
                                                         if search_str ~= "" then
                                                             is_search_str = true
-                                                            search_str = Utf8Proc.lowercase(util.fixUtf8(input_dialog:getInputText(), "?"))
+                                                            search_str = Utf8Proc.lowercase(util.fixUtf8(search_str, "?"))
                                                         end
                                                         for i = #item_table, 1, -1 do
                                                             local bm_item = item_table[i]
