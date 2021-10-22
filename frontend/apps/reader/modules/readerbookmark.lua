@@ -18,7 +18,8 @@ local _ = require("gettext")
 local Screen = require("device").screen
 local T = require("ffi/util").template
 
-local PAGE_BOOKMARK_DISPLAY_PREFIX = "★ " -- distinguish page bookmarks from highlights and notes
+local NOTE_DISPLAY_PREFIX = "\u{F040} "
+local PAGE_BOOKMARK_DISPLAY_PREFIX = "\u{F097} "
 
 local ReaderBookmark = InputContainer:new{
     bm_menu_title = _("Bookmarks"),
@@ -365,7 +366,11 @@ function ReaderBookmark:onShowBookmark()
         item_table[k] = util.tableDeepCopy(v)
         item_table[k].text_orig = v.text or v.notes
         item_table[k].text = item_table[k].text_orig
-        if not v.highlighted then -- page bookmark
+        if v.highlighted then -- highlights and notes
+            if not self:isHighlightAutoText(v) then -- notes
+                item_table[k].text = NOTE_DISPLAY_PREFIX .. item_table[k].text
+            end
+        else -- page bookmarks
             item_table[k].text = PAGE_BOOKMARK_DISPLAY_PREFIX .. item_table[k].text
         end
         item_table[k].mandatory = self:getBookmarkPageString(v.page)
@@ -444,7 +449,7 @@ function ReaderBookmark:onShowBookmark()
                     {{
                         text = _("Unselect all"),
                         callback = function()
-                            for _, v in pairs(item_table) do
+                            for _, v in ipairs(item_table) do
                                 if v.dim then
                                     v.dim = nil
                                 end
@@ -456,7 +461,7 @@ function ReaderBookmark:onShowBookmark()
                     {
                         text = _("Select all"),
                         callback = function()
-                            for _, v in pairs(item_table) do
+                            for _, v in ipairs(item_table) do
                                 v.dim = true
                             end
                             self.select_count = #item_table
@@ -466,7 +471,7 @@ function ReaderBookmark:onShowBookmark()
                     {{
                         text = _("Exit select mode"),
                         callback = function()
-                            for _, v in pairs(item_table) do
+                            for _, v in ipairs(item_table) do
                                 if v.dim then
                                     v.dim = nil
                                 end
@@ -504,16 +509,12 @@ function ReaderBookmark:onShowBookmark()
                             callback = function()
                                 UIManager:show(ConfirmBox:new{
                                     text = _("Remove this bookmark?"),
-                                    cancel_text = _("Cancel"),
-                                    cancel_callback = function()
-                                        return
-                                    end,
                                     ok_text = _("Remove"),
                                     ok_callback = function()
                                         bookmark:removeHighlight(item)
                                         -- Also update item_table, so we don't have to rebuilt it in full
-                                        for k, v in pairs(item_table) do
-                                            if v == item then
+                                        for k, v in ipairs(item_table) do
+                                            if item.datetime == v.datetime and item.page == v.page then
                                                 table.remove(item_table, k)
                                                 break
                                             end
@@ -564,14 +565,20 @@ function ReaderBookmark:onShowBookmark()
                                                 is_enter_default = true,
                                                 callback = function()
                                                     if check_button_bookmark.checked or check_button_highlight.checked then
-                                                        local search_str = Utf8Proc.lowercase(util.fixUtf8(input_dialog:getInputText(), "?"))
+                                                        local search_str = input_dialog:getInputText()
+                                                        local is_search_str = false
+                                                        if search_str ~= "" then
+                                                            is_search_str = true
+                                                            search_str = Utf8Proc.lowercase(util.fixUtf8(input_dialog:getInputText(), "?"))
+                                                        end
                                                         for i = #item_table, 1, -1 do
                                                             local bm_item = item_table[i]
                                                             local is_bookmark = bm_item.highlighted == nil
                                                             if (check_button_bookmark.checked and is_bookmark) or
                                                                 (check_button_highlight.checked and not is_bookmark) then
-                                                                if search_str ~= "" then
-                                                                    local bm_text = Utf8Proc.lowercase(util.fixUtf8(bm_item.notes .. bm_item.text, "?"))
+                                                                if is_search_str then
+                                                                    local bm_text = bm_item.notes .. bm_item.text
+                                                                    bm_text = Utf8Proc.lowercase(util.fixUtf8(bm_text, "?"))
                                                                     if not bm_text:find(search_str) then
                                                                         table.remove(item_table, i)
                                                                     end
@@ -847,7 +854,11 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                                 end
                                 UIManager:close(self.input)
                                 if not from_highlight then
-                                    if not bookmark.highlighted then
+                                    if bookmark.highlighted then
+                                        if not self:isHighlightAutoText(bookmark) then
+                                            bookmark.text = NOTE_DISPLAY_PREFIX .. bookmark.text
+                                        end
+                                    else
                                         bookmark.text = PAGE_BOOKMARK_DISPLAY_PREFIX .. bookmark.text
                                     end
                                     self.refresh()
