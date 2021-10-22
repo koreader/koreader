@@ -35,7 +35,6 @@ local RadioButtonWidget = InputContainer:new{
     close_callback = nil,
     keep_shown_on_apply = false,
     default_provider = nil,
-    default_text = _("Use default"),
     extra_text = nil,
     extra_callback = nil,
     -- output
