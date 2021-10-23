@@ -538,19 +538,22 @@ function KoptInterface:getReflowedTextBoxes(doc, pageno)
     local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
+        local kc
         local kctx_hash = hash:gsub("^rfpgboxes|", "kctx|")
         cached = DocCache:check(kctx_hash)
-        if cached then
-            local kc = self:waitForContext(cached.kctx)
-            --kc:setDebug()
-            local fullwidth, fullheight = kc:getPageDim()
-            local boxes, nr_word = kc:getReflowedWordBoxes("dst", 0, 0, fullwidth, fullheight)
-            if not boxes then
-                return nil
-            end
-            DocCache:insert(hash, CacheItem:new{ rfpgboxes = boxes, size = 192 * nr_word }) -- estimation
-            return boxes
+        if not cached then
+            kc = self:getCachedContext(doc, pageno)
+        else
+            kc = self:waitForContext(cached.kctx)
         end
+        --kc:setDebug()
+        local fullwidth, fullheight = kc:getPageDim()
+        local boxes, nr_word = kc:getReflowedWordBoxes("dst", 0, 0, fullwidth, fullheight)
+        if not boxes then
+            return
+        end
+        DocCache:insert(hash, CacheItem:new{ rfpgboxes = boxes, size = 192 * nr_word }) -- estimation
+        return boxes
     else
         return cached.rfpgboxes
     end
@@ -566,19 +569,27 @@ function KoptInterface:getNativeTextBoxes(doc, pageno)
     local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
+        local kc
         local kctx_hash = hash:gsub("^nativepgboxes|", "kctx|")
         cached = DocCache:check(kctx_hash)
-        if cached then
-            local kc = self:waitForContext(cached.kctx)
-            --kc:setDebug()
-            local fullwidth, fullheight = kc:getPageDim()
-            local boxes, nr_word = kc:getNativeWordBoxes("dst", 0, 0, fullwidth, fullheight)
-            if not boxes then
-                return nil
-            end
-            DocCache:insert(hash, CacheItem:new{ nativepgboxes = boxes, size = 192 * nr_word }) -- estimation
-            return boxes
+        if not cached then
+            kc = self:createContext(doc, pageno)
+            DocCache:insert(kctx_hash, ContextCacheItem:new{
+                persistent = true,
+                size = self.last_context_size or self.default_context_size,
+                kctx = kc,
+            })
+        else
+            kc = self:waitForContext(cached.kctx)
         end
+        --kc:setDebug()
+        local fullwidth, fullheight = kc:getPageDim()
+        local boxes, nr_word = kc:getNativeWordBoxes("dst", 0, 0, fullwidth, fullheight)
+        if not boxes then
+            return
+        end
+        DocCache:insert(hash, CacheItem:new{ nativepgboxes = boxes, size = 192 * nr_word }) -- estimation
+        return boxes
     else
         return cached.nativepgboxes
     end
@@ -596,21 +607,24 @@ function KoptInterface:getReflowedTextBoxesFromScratch(doc, pageno)
     local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
+        local reflowed_kc
         local kctx_hash = hash:gsub("^scratchrfpgboxes|", "kctx|")
         cached = DocCache:check(kctx_hash)
-        if cached then
-            local reflowed_kc = self:waitForContext(cached.kctx)
-            local fullwidth, fullheight = reflowed_kc:getPageDim()
-            local kc = self:createContext(doc, pageno)
-            kc:copyDestBMP(reflowed_kc)
-            local boxes, nr_word = kc:getNativeWordBoxes("dst", 0, 0, fullwidth, fullheight)
-            kc:free()
-            if not boxes then
-                return nil
-            end
-            DocCache:insert(hash, CacheItem:new{ scratchrfpgboxes = boxes, size = 192 * nr_word }) -- estimation
-            return boxes
+        if not cached then
+            reflowed_kc = self:getCachedContext(doc, pageno)
+        else
+            reflowed_kc = self:waitForContext(cached.kctx)
         end
+        local fullwidth, fullheight = reflowed_kc:getPageDim()
+        local kc = self:createContext(doc, pageno)
+        kc:copyDestBMP(reflowed_kc)
+        local boxes, nr_word = kc:getNativeWordBoxes("dst", 0, 0, fullwidth, fullheight)
+        kc:free()
+        if not boxes then
+            return
+        end
+        DocCache:insert(hash, CacheItem:new{ scratchrfpgboxes = boxes, size = 192 * nr_word }) -- estimation
+        return boxes
     else
         return cached.scratchrfpgboxes
     end
@@ -723,17 +737,20 @@ function KoptInterface:getReflewOCRWord(doc, pageno, rect)
     local hash = table.concat(hash_list, "|")
     local cached = DocCache:check(hash)
     if not cached then
+        local kc
         local kctx_hash = hash:gsub("^rfocrword|", "kctx|")
         cached = DocCache:check(kctx_hash)
-        if cached then
-            local kc = self:waitForContext(cached.kctx)
-            local _, word = pcall(
-                kc.getTOCRWord, kc, "dst",
-                rect.x, rect.y, rect.w, rect.h,
-                self.tessocr_data, self.ocr_lang, self.ocr_type, 0, 1)
-            DocCache:insert(hash, CacheItem:new{ rfocrword = word, size = #word + 64 }) -- estimation
-            return word
+        if not cached then
+            kc = self:getCachedContext(doc, pageno)
+        else
+            kc = self:waitForContext(cached.kctx)
         end
+        local _, word = pcall(
+            kc.getTOCRWord, kc, "dst",
+            rect.x, rect.y, rect.w, rect.h,
+            self.tessocr_data, self.ocr_lang, self.ocr_type, 0, 1)
+        DocCache:insert(hash, CacheItem:new{ rfocrword = word, size = #word + 64 }) -- estimation
+        return word
     else
         return cached.rfocrword
     end
