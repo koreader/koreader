@@ -398,8 +398,8 @@ function ReaderDictionary:addToMainMenu(menu_items)
     end
 end
 
-function ReaderDictionary:onLookupWord(word, is_sane, box, highlight, link)
-    logger.dbg("dict lookup word:", word, box)
+function ReaderDictionary:onLookupWord(word, is_sane, boxes, highlight, link)
+    logger.dbg("dict lookup word:", word, boxes)
     -- escape quotes and other funny characters in word
     word = self:cleanSelection(word, is_sane)
     logger.dbg("dict stripped word:", word)
@@ -408,7 +408,7 @@ function ReaderDictionary:onLookupWord(word, is_sane, box, highlight, link)
 
     -- Wrapped through Trapper, as we may be using Trapper:dismissablePopen() in it
     Trapper:wrap(function()
-        self:stardictLookup(word, self.enabled_dict_names, not self.disable_fuzzy_search, box, link)
+        self:stardictLookup(word, self.enabled_dict_names, not self.disable_fuzzy_search, boxes, link)
     end)
     return true
 end
@@ -447,7 +447,7 @@ function ReaderDictionary:onHtmlDictionaryLinkTapped(dictionary, link)
 
     -- Wrapped through Trapper, as we may be using Trapper:dismissablePopen() in it
     Trapper:wrap(function()
-        self:stardictLookup(word, {dictionary}, false, link_box, nil)
+        self:stardictLookup(word, {dictionary}, false, {link_box}, nil)
     end)
 end
 
@@ -815,7 +815,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     return final_results
 end
 
-function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, link)
+function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link)
     if word == "" then
         return
     end
@@ -859,7 +859,7 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
                 lookup_cancelled = false,
             }
         }
-        self:showDict(word, nope, box, link)
+        self:showDict(word, nope, boxes, link)
         return
     end
 
@@ -877,10 +877,10 @@ function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, box, li
         return
     end
 
-    self:showDict(word, tidyMarkup(results), box, link)
+    self:showDict(word, tidyMarkup(results), boxes, link)
 end
 
-function ReaderDictionary:showDict(word, results, box, link)
+function ReaderDictionary:showDict(word, results, boxes, link)
     if results and results[1] then
         logger.dbg("showing quick lookup window", word, results)
         self.dict_window = DictQuickLookup:new{
@@ -893,7 +893,7 @@ function ReaderDictionary:showDict(word, results, box, link)
             -- selected link, if any
             selected_link = link,
             results = results,
-            word_box = box,
+            word_boxes = boxes,
             preferred_dictionaries = self.preferred_dictionaries,
             -- differentiate between dict and wiki
             is_wiki = self.is_wiki,
