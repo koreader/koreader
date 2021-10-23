@@ -68,7 +68,7 @@ function Japanese:onWordLookup(args)
         return
     end
 
-    -- @todo Try to repeatedly reduce the text and deinflect the shortened text
+    --- @todo Try to repeatedly reduce the text and deinflect the shortened text
     --       to provide more candidates. This is particularly needed because
     --       JMDict has a habit of creating entries for compounds or phrases
     --       that do not exist in monolingual dictionaries (even in 大辞林 or
@@ -80,7 +80,7 @@ function Japanese:onWordLookup(args)
     results = self.deinflector:deinflect(text)
     logger.dbg("japanese.koplugin: deinflection of", text, "results:", results)
 
-    -- @todo Pass up the reasons list (formatted Yomichan style) to the
+    --- @todo Pass up the reasons list (formatted Yomichan style) to the
     --       dictionary pop-up so you can get some more information about the
     --       inflection. But this would require adding some kind of tag
     --       metadata that we have to pass through from the lookup to the
@@ -185,7 +185,7 @@ function Japanese:onWordSelection(args)
     -- Calling sdcv is fairly expensive, so reduce the cost by trying every
     -- candidate in one shot and then picking the longest one which gave us a
     -- result.
-    -- @todo Given there is a limit to how many command-line arguments you can
+    --- @todo Given there is a limit to how many command-line arguments you can
     --       pass, we should split up the candidate list if it's too long.
     local best_word
     local cancelled, all_results = self.dictionary:rawSdcv(all_words)

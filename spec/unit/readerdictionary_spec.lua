@@ -52,7 +52,7 @@ describe("Readerdictionary module", function()
         assert.spy(s).was_called()
         assert.spy(s).was_called_with(match.is_ref(readerui.languagesupport), word)
         if readerui.languagesupport.plugins["japanese_support"] then
-            -- @todo This should probably check against a set or sorted list
+            --- @todo This should probably check against a set or sorted list
             --       of the candidates we'd expect.
             assert.spy(s).was_returned_with(match.is_not_nil())
         end
