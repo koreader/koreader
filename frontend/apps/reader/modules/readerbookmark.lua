@@ -552,7 +552,7 @@ function ReaderBookmark:onShowBookmark()
                             text = _("Filter bookmarks"),
                             callback = function()
                                 UIManager:close(self.textviewer)
-                                local input_dialog, check_button_bookmark, check_button_highlight
+                                local input_dialog, check_button_bookmark, check_button_highlight, check_button_note
                                 input_dialog = InputDialog:new{
                                     title = _("Filter bookmarks"),
                                     input_hint = _("(containing text)"),
