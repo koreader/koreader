@@ -10,6 +10,7 @@ local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
+local Size = require("ui/size")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
@@ -410,7 +411,8 @@ function ReaderBookmark:onShowBookmark()
         items_per_page = items_per_page,
         items_font_size = items_font_size,
         multilines_show_more_text = multilines_show_more_text,
-        line_color = show_separator and Blitbuffer.COLOR_LIGHT_GRAY or Blitbuffer.COLOR_WHITE,
+        linesize = show_separator and Size.line.thin or Size.line.medium,
+        line_color = show_separator and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE,
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",
@@ -462,7 +464,7 @@ function ReaderBookmark:onShowBookmark()
                             table.remove(item_table, i)
                         end
                     end
-                    bm_menu:switchItemTable(nil, item_table, -1)
+                    bm_menu:switchItemTable(self.filtered_mode and _("Bookmarks (filtered)") or _("Bookmarks"), item_table, -1)
                 end,
                 other_buttons_first = true,
                 other_buttons = {
