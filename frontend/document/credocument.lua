@@ -828,8 +828,9 @@ function CreDocument:getTextFromXPointer(xp)
     end
 end
 
-function CreDocument:getTextFromXPointers(pos0, pos1)
-    return self._document:getTextFromXPointers(pos0, pos1)
+function CreDocument:getTextFromXPointers(pos0, pos1, draw_selection)
+    local draw_segmented_selection = draw_selection -- always use segmented selections
+    return self._document:getTextFromXPointers(pos0, pos1, draw_selection, draw_segmented_selection)
 end
 
 function CreDocument:getHTMLFromXPointer(xp, flags, from_final_parent)
@@ -1583,6 +1584,7 @@ function CreDocument:setupCallCache()
             elseif name == "highlightXPointer" then add_buffer_trash = true
             elseif name == "getWordFromPosition" then add_buffer_trash = true
             elseif name == "getTextFromPositions" then add_buffer_trash = true
+            elseif name == "getTextFromXPointers" then add_buffer_trash = true
             elseif name == "findText" then add_buffer_trash = true
             elseif name == "resetBufferCache" then add_buffer_trash = true
 
@@ -1611,7 +1613,6 @@ function CreDocument:setupCallCache()
             elseif name == "getHTMLFromXPointers" then no_wrap = true
             elseif name == "getImageFromPosition" then no_wrap = true
             elseif name == "getTextFromXPointer" then no_wrap = true
-            elseif name == "getTextFromXPointers" then no_wrap = true
             elseif name == "getPageOffsetX" then no_wrap = true
             elseif name == "getNextVisibleWordStart" then no_wrap = true
             elseif name == "getNextVisibleWordEnd" then no_wrap = true
