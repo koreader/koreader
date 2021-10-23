@@ -18,7 +18,7 @@ local _ = require("gettext")
 local Screen = require("device").screen
 local T = require("ffi/util").template
 
-local display_prefix = {
+local DISPLAY_PREFIX = {
     bookmark = "\u{F097} ",
     highlight = "",
     note = "\u{F040} ",
@@ -381,7 +381,7 @@ function ReaderBookmark:onShowBookmark()
             item_table[k].type = "bookmark"
         end
         item_table[k].text_orig = v.text or v.notes
-        item_table[k].text = display_prefix[item_table[k].type] .. item_table[k].text_orig
+        item_table[k].text = DISPLAY_PREFIX[item_table[k].type] .. item_table[k].text_orig
         item_table[k].mandatory = self:getBookmarkPageString(v.page)
     end
 
@@ -572,8 +572,8 @@ function ReaderBookmark:onShowBookmark()
                                                 is_enter_default = true,
                                                 callback = function()
                                                     if check_button_bookmark.checked
-                                                        or check_button_highlight.checked
-                                                        or check_button_note.checked then
+                                                            or check_button_highlight.checked
+                                                            or check_button_note.checked then
                                                         local search_str = input_dialog:getInputText()
                                                         local is_search_str = false
                                                         if search_str ~= "" then
@@ -583,8 +583,8 @@ function ReaderBookmark:onShowBookmark()
                                                         for i = #item_table, 1, -1 do
                                                             local bm_item = item_table[i]
                                                             if (check_button_bookmark.checked and bm_item.type == "bookmark")
-                                                                or (check_button_highlight.checked and bm_item.type == "highlight")
-                                                                or (check_button_note.checked and bm_item.type == "note") then
+                                                                    or (check_button_highlight.checked and bm_item.type == "highlight")
+                                                                    or (check_button_note.checked and bm_item.type == "note") then
                                                                 if is_search_str then
                                                                     local bm_text = bm_item.notes .. bm_item.text
                                                                     bm_text = Utf8Proc.lowercase(util.fixUtf8(bm_text, "?"))
@@ -880,7 +880,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                                 end
                                 UIManager:close(self.input)
                                 if not from_highlight then
-                                    bookmark.text = display_prefix[bookmark.type] .. bookmark.text
+                                    bookmark.text = DISPLAY_PREFIX[bookmark.type] .. bookmark.text
                                     self.refresh()
                                 end
                                 break
