@@ -1072,7 +1072,7 @@ function ReaderHighlight:lookup(selected_text, selected_link)
             for _, sbox in ipairs(selected_text.sboxes) do
                 local word = self.ui.document:getOCRWord(self.hold_pos.page, { sbox = sbox })
                 logger.dbg("OCRed word:", word)
-                -- @fixme This might produce incorrect results on RTL text.
+                --- @fixme This might produce incorrect results on RTL text.
                 if word and word ~= "" then
                     text = text .. word
                 end

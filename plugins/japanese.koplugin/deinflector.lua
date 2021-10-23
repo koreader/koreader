@@ -435,7 +435,7 @@ function Deinflector:init()
                                     DEFAULT_TEXT_CONVERSIONS
     if self.rules ~= nil then return end -- already loaded
 
-    -- @todo Maybe make this location configurable?
+    --- @todo Maybe make this location configurable?
     inflections = parsePluginJson("yomichan-deinflect.json")
 
     -- Normalise the reasons and convert the rules to the rule_types bitflags.
