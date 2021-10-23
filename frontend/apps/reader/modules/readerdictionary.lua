@@ -709,9 +709,8 @@ function ReaderDictionary:onShowDictionaryLookup()
     return true
 end
 
-function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
-    local final_results = {}
-    local seen_results = {}
+function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progress_msg)
+    local all_results = {}
     -- Allow for two sdcv calls : one in the classic data/dict, and
     -- another one in data/dict_ext if it exists
     -- We could put in data/dict_ext dictionaries with a great number of words
@@ -725,14 +724,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     end
     -- early exit if no dictionaries
     if dictDirsEmpty(dict_dirs) then
-        final_results = {
-            {
-                dict = "",
-                word = word,
-                definition = _([[No dictionaries installed. Please search for "Dictionary support" in the KOReader Wiki to get more information about installing new dictionaries.]]),
-            }
-        }
-        return final_results
+        return false, nil
     end
     local lookup_cancelled = false
     for _, dict_dir in ipairs(dict_dirs) do
@@ -751,7 +743,10 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
             end
         end
         table.insert(args, "--") -- prevent word starting with a "-" to be interpreted as a sdcv option
-        table.insert(args, word)
+        -- XXX: This requires <https://github.com/Dushistov/sdcv/pull/77> in
+        --      order to function properly (otherwise the first failure will
+        --      cause sdcv to exit).
+        util.arrayAppend(args, words)
 
         local cmd = util.shell_escape(args)
         -- cmd = "sleep 7 ; " .. cmd     -- uncomment to simulate long lookup time
@@ -773,30 +768,70 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
         -- definition found, sdcv will output some message on stderr, and
         -- let stdout empty) by appending an "echo":
         cmd = cmd .. "; echo"
-        local completed, results_str = Trapper:dismissablePopen(cmd, self.lookup_progress_msg or false)
+        local completed, results_str = Trapper:dismissablePopen(cmd, lookup_progress_msg)
         lookup_cancelled = not completed
-
         if results_str and results_str ~= "\n" then -- \n is when lookup was cancelled
-            local ok, results = pcall(JSON.decode, results_str)
-            if ok and results then
-                -- we may get duplicates (sdcv may do multiple queries,
-                -- in fixed mode then in fuzzy mode), we have to remove them
-                local h
-                for _,r in ipairs(results) do
-                    h = r.dict .. r.word .. r.definition
-                    if seen_results[h] == nil then
-                        table.insert(final_results, r)
-                        seen_results[h] = true
-                    end
+            -- sdcv can return multiple results if we passed multiple words to
+            -- the cmdline. In this case, the lookup results for each word are
+            -- newline separated. The JSON output doesn't contain raw newlines
+            -- so it's safe to split. Ideally luajson would support jsonl but
+            -- unfortunately it doesn't and it also seems to decode the last
+            -- object rather than the first one if there are multiple.
+            for _, entry_str in ipairs(util.splitToArray(results_str, "\n")) do
+                local ok, results = pcall(JSON.decode, entry_str)
+                if ok and results then
+                    table.insert(all_results, results)
+                else
+                    logger.warn("JSON data cannot be decoded", results)
+                    -- Need to insert an empty table so that the word entries
+                    -- match up to the result entries (so that callers can
+                    -- batch lookups to reduce the cost of bulk lookups while
+                    -- still being able to figure out which lookup came from
+                    -- which word).
+                    table.insert(all_results, {})
                 end
-            else
-                logger.warn("JSON data cannot be decoded", results)
             end
         end
     end
-    if #final_results == 0 then
+    if #all_results ~= #words then
+        logger.warn("sdcv returned a different number of results than the number of words")
+    end
+    return lookup_cancelled, all_results
+end
+
+function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
+    local words = {word}
+    lookup_cancelled, results = self:rawSdcv(words, dict_names, fuzzy_search, self.lookup_progress_msg or false)
+    if results == nil then -- no dictionaries found
+        return {
+            {
+                dict = "",
+                word = word,
+                definition = _([[No dictionaries installed. Please search for "Dictionary support" in the KOReader Wiki to get more information about installing new dictionaries.]]),
+            }
+        }
+    else -- flatten any possible results
+        local flat_results = {}
+        local seen_results = {}
+        -- Flatten the array, removing any duplicates we may have gotten (sdcv
+        -- may do multiple queries, in fixed mode then in fuzzy mode, and the
+        -- LanguageSupport plugin may have returned multiple equivalent
+        -- results).
+        local h
+        for _, term_results in ipairs(results) do
+            for _, r in ipairs(term_results) do
+                h = r.dict .. r.word .. r.definition
+                if seen_results[h] == nil then
+                    table.insert(flat_results, r)
+                    seen_results[h] = true
+                end
+            end
+        end
+        results = flat_results
+    end
+    if #results == 0 then -- no results found
         -- dummy results
-        final_results = {
+        results = {
             {
                 dict = _("Not available"),
                 word = word,
@@ -809,10 +844,9 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     if lookup_cancelled then
         -- Also put this as a k/v into the results array: when using dict_ext,
         -- we may get results from the 1st lookup, and have interrupted the 2nd.
-        final_results.lookup_cancelled = true
+        results.lookup_cancelled = true
     end
-
-    return final_results
+    return results
 end
 
 function ReaderDictionary:stardictLookup(word, dict_names, fuzzy_search, boxes, link)
