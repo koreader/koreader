@@ -513,170 +513,173 @@ end
 
 common_settings.document = {
     text = _("Document"),
+    -- submenus are filled by menu_order
+}
+
+common_settings.document_auto_save = {
+    text_func = function()
+        local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
+        local s_interval
+        if interval == false then
+            s_interval = _("only on close")
+        else
+            s_interval = T(N_("every 1 m", "every %1 m", interval), interval)
+        end
+        return T(_("Auto-save book metadata: %1"), s_interval)
+    end,
+    help_text = auto_save_help_text,
+    sub_item_table = {
+        genAutoSaveMenuItem(false),
+        genAutoSaveMenuItem(5),
+        genAutoSaveMenuItem(15),
+        genAutoSaveMenuItem(60),
+        warn_about_auto_save and {
+            text = _("Important info about this auto-save option"),
+            keep_menu_open = true,
+            callback = function()
+                UIManager:show(InfoMessage:new{ text = auto_save_help_text, })
+            end,
+        } or nil,
+    },
+}
+
+common_settings.document_save = {
+    text = _("Save document (write highlights into PDF)"),
     sub_item_table = {
         {
-            text_func = function()
-                local interval = G_reader_settings:readSetting("auto_save_settings_interval_minutes")
-                local s_interval
-                if interval == false then
-                    s_interval = _("only on close")
-                else
-                    s_interval = T(N_("every 1 m", "every %1 m", interval), interval)
-                end
-                return T(_("Auto-save book metadata: %1"), s_interval)
+            text = _("Prompt"),
+            checked_func = function()
+                local setting = G_reader_settings:readSetting("save_document")
+                return setting == "prompt" or setting == nil
             end,
-            help_text = auto_save_help_text,
-            sub_item_table = {
-                genAutoSaveMenuItem(false),
-                genAutoSaveMenuItem(5),
-                genAutoSaveMenuItem(15),
-                genAutoSaveMenuItem(60),
-                warn_about_auto_save and {
-                    text = _("Important info about this auto-save option"),
-                    keep_menu_open = true,
-                    callback = function()
-                        UIManager:show(InfoMessage:new{ text = auto_save_help_text, })
-                    end,
-                } or nil,
-            },
+            callback = function()
+                G_reader_settings:delSetting("save_document")
+            end,
         },
         {
-            text = _("Save document (write highlights into PDF)"),
-            sub_item_table = {
-                {
-                    text = _("Prompt"),
-                    checked_func = function()
-                        local setting = G_reader_settings:readSetting("save_document")
-                        return setting == "prompt" or setting == nil
-                    end,
-                    callback = function()
-                        G_reader_settings:delSetting("save_document")
-                    end,
-                },
-                {
-                    text = _("Always"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("save_document")
-                                   == "always"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("save_document", "always")
-                    end,
-                },
-                {
-                    text = _("Disable"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("save_document")
-                                   == "disable"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("save_document", "disable")
-                    end,
-                },
-            },
+            text = _("Always"),
+            checked_func = function()
+                return G_reader_settings:readSetting("save_document")
+                           == "always"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("save_document", "always")
+            end,
         },
         {
-            text = _("End of document action"),
-            sub_item_table = {
-                {
-                    text = _("Always mark as read"),
-                    checked_func = function()
-                        return G_reader_settings:isTrue("end_document_auto_mark")
-                    end,
-                    callback = function()
-                        G_reader_settings:flipNilOrFalse("end_document_auto_mark")
-                    end,
-                    separator = true,
-                },
-                {
-                    text = _("Ask with popup dialog"),
-                    checked_func = function()
-                        local setting = G_reader_settings:readSetting("end_document_action")
-                        return setting == "pop-up" or setting == nil
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "pop-up")
-                    end,
-                },
-                {
-                    text = _("Do nothing"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action") == "nothing"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "nothing")
-                    end,
-                },
-                {
-                    text = _("Book status"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action") == "book_status"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "book_status")
-                    end,
-                },
-                {
-                    text = _("Delete file"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action") == "delete_file"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "delete_file")
-                    end,
-                },
-                {
-                    text = _("Open next file"),
-                    enabled_func = function()
-                        return G_reader_settings:readSetting("collate") ~= "access"
-                    end,
-                    checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action") == "next_file"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "next_file")
-                    end,
-                },
-                {
-                    text = _("Go to beginning"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action") == "goto_beginning"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "goto_beginning")
-                    end,
-                },
-                {
-                    text = _("Return to file browser"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action") == "file_browser"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "file_browser")
-                    end,
-                },
-                {
-                    text = _("Mark book as read"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action") == "mark_read"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "mark_read")
-                    end,
-                },
-                {
-                    text = _("Book status and return to file browser"),
-                    checked_func = function()
-                        return G_reader_settings:readSetting("end_document_action") == "book_status_file_browser"
-                    end,
-                    callback = function()
-                        G_reader_settings:saveSetting("end_document_action", "book_status_file_browser")
-                    end,
-                },
-            }
+            text = _("Disable"),
+            checked_func = function()
+                return G_reader_settings:readSetting("save_document")
+                           == "disable"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("save_document", "disable")
+            end,
         },
     },
 }
+
+common_settings.document_end_action = {
+    text = _("End of document action"),
+    sub_item_table = {
+        {
+            text = _("Always mark as read"),
+            checked_func = function()
+                return G_reader_settings:isTrue("end_document_auto_mark")
+            end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("end_document_auto_mark")
+            end,
+            separator = true,
+        },
+        {
+            text = _("Ask with popup dialog"),
+            checked_func = function()
+                local setting = G_reader_settings:readSetting("end_document_action")
+                return setting == "pop-up" or setting == nil
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("end_document_action", "pop-up")
+            end,
+        },
+        {
+            text = _("Do nothing"),
+            checked_func = function()
+                return G_reader_settings:readSetting("end_document_action") == "nothing"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("end_document_action", "nothing")
+            end,
+        },
+        {
+            text = _("Book status"),
+            checked_func = function()
+                return G_reader_settings:readSetting("end_document_action") == "book_status"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("end_document_action", "book_status")
+            end,
+        },
+        {
+            text = _("Delete file"),
+            checked_func = function()
+                return G_reader_settings:readSetting("end_document_action") == "delete_file"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("end_document_action", "delete_file")
+            end,
+        },
+        {
+            text = _("Open next file"),
+            enabled_func = function()
+                return G_reader_settings:readSetting("collate") ~= "access"
+            end,
+            checked_func = function()
+                return G_reader_settings:readSetting("end_document_action") == "next_file"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("end_document_action", "next_file")
+            end,
+        },
+        {
+            text = _("Go to beginning"),
+            checked_func = function()
+                return G_reader_settings:readSetting("end_document_action") == "goto_beginning"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("end_document_action", "goto_beginning")
+            end,
+        },
+        {
+            text = _("Return to file browser"),
+            checked_func = function()
+                return G_reader_settings:readSetting("end_document_action") == "file_browser"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("end_document_action", "file_browser")
+            end,
+        },
+        {
+            text = _("Mark book as read"),
+            checked_func = function()
+                return G_reader_settings:readSetting("end_document_action") == "mark_read"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("end_document_action", "mark_read")
+            end,
+        },
+        {
+            text = _("Book status and return to file browser"),
+            checked_func = function()
+                return G_reader_settings:readSetting("end_document_action") == "book_status_file_browser"
+            end,
+            callback = function()
+                G_reader_settings:saveSetting("end_document_action", "book_status_file_browser")
+            end,
+        },
+    }
+}
+
 common_settings.language = Language:getLangMenuTable()
 
 common_settings.screenshot = {
