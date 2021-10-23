@@ -847,7 +847,8 @@ function ReaderHighlight:onHold(arg, ges)
     if ok and word then
         logger.dbg("selected word:", word)
         -- Convert "word selection" table to "text selection" table because we
-        -- use text selections throughout readerhighlight.
+        -- use text selections throughout readerhighlight in order to allow the
+        -- highlight to be corrected by language-specific plugins more easily.
         self.is_word_selection = true
         self.selected_text = {
             text = word.word or "",
@@ -862,6 +863,18 @@ function ReaderHighlight:onHold(arg, ges)
             logger.dbg("link:", link)
             self.selected_link = link
         end
+
+        if self.ui.languagesupport:hasActiveLanguagePlugins() then
+            -- If this is a language where pan-less word selection needs some
+            -- extra work above and beyond what the document engine gives us
+            -- from getWordFromPosition, call the relevant language-specific
+            -- plugin.
+            local new_selected_text = self.ui.languagesupport:improveWordSelection(self.selected_text)
+            if new_selected_text then
+                self.selected_text = new_selected_text
+            end
+        end
+
         if self.ui.document.info.has_pages then
             self.view.highlight.temp[self.hold_pos.page] = self.selected_text.sboxes
             -- Unfortunately, getWordFromPosition() may not return good coordinates,
@@ -1325,6 +1338,13 @@ function ReaderHighlight:highlightFromHoldPos()
     if self.hold_pos then
         if not self.selected_text then
             self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.hold_pos)
+            if self.ui.languagesupport:hasActiveLanguagePlugins() then
+                -- Match language-specific expansion you'd get from self:onHold().
+                local new_selected_text = self.ui.languagesupport:improveWordSelection(self.selected_text)
+                if new_selected_text then
+                    self.selected_text = new_selected_text
+                end
+            end
             logger.dbg("selected text:", self.selected_text)
         end
     end
