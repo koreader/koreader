@@ -361,9 +361,12 @@ function ReaderBookmark:onShowBookmark()
     local is_reverse_sorting = G_reader_settings:nilOrTrue("bookmarks_items_reverse_sorting")
     local num = #self.bookmarks + 1
     for i, v in ipairs(self.bookmarks) do
-        local is_auto_text = v.text == nil or v.text == ""
-        if is_auto_text then
+        local is_auto_text
+        if v.text == nil or v.text == "" then
+            is_auto_text = true
             v.text = self:getBookmarkAutoText(v)
+        else
+            is_auto_text = self:isBookmarkAutoText(v)
         end
         -- bookmarks are internally sorted by descending page numbers
         local k = is_reverse_sorting and i or num - i
