@@ -72,6 +72,11 @@ local order = {
         "----------------------------",
         "status_bar",
     },
+    document = {
+        "document_auto_save",
+        "document_save",
+        "document_end_action",
+    },
     device = {
         "keyboard_layout",
         "time",
