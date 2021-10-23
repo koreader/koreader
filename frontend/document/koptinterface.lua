@@ -789,14 +789,7 @@ function KoptInterface:getClipPageContext(doc, pos0, pos1, pboxes, drawer)
     assert(pos0.zoom == pos1.zoom)
     local rect
     if pboxes and #pboxes > 0 then
-        local box = pboxes[1]
-        rect = Geom:new{
-            x = box.x, y = box.y,
-            w = box.w, h = box.h,
-        }
-        for _, _box in ipairs(pboxes) do
-            rect = rect:combine(Geom:new(_box))
-        end
+        rect = Geom.boundingBox(pboxes)
     else
         local zoom = pos0.zoom or 1
         rect = {
@@ -1241,14 +1234,9 @@ function KoptInterface:nativeToPageRectTransform(doc, pageno, rect)
             y = rect.y + rect.h - 5
         }
         local boxes = self:getPageBoxesFromPositions(doc, pageno, pos0, pos1)
-        local res_rect = nil
-        if #boxes > 0 then
-            res_rect = boxes[1]
-            for _, box in pairs(boxes) do
-                res_rect = res_rect:combine(box)
-            end
+        if boxes then
+            return Geom.boundingBox(boxes)
         end
-        return res_rect
     else
         return rect
     end
