@@ -18,8 +18,11 @@ local _ = require("gettext")
 local Screen = require("device").screen
 local T = require("ffi/util").template
 
-local NOTE_DISPLAY_PREFIX = "\u{F040} "
-local PAGE_BOOKMARK_DISPLAY_PREFIX = "\u{F097} "
+local display_prefix = {
+    bookmark = "\u{F097} ",
+    highlight = "",
+    note = "\u{F040} ",
+}
 
 local ReaderBookmark = InputContainer:new{
     bm_menu_title = _("Bookmarks"),
@@ -358,21 +361,24 @@ function ReaderBookmark:onShowBookmark()
     local is_reverse_sorting = G_reader_settings:nilOrTrue("bookmarks_items_reverse_sorting")
     local num = #self.bookmarks + 1
     for i, v in ipairs(self.bookmarks) do
-        if v.text == nil or v.text == "" then
+        local is_auto_text = v.text == nil or v.text == ""
+        if is_auto_text then
             v.text = self:getBookmarkAutoText(v)
         end
         -- bookmarks are internally sorted by descending page numbers
         local k = is_reverse_sorting and i or num - i
         item_table[k] = util.tableDeepCopy(v)
-        item_table[k].text_orig = v.text or v.notes
-        item_table[k].text = item_table[k].text_orig
-        if v.highlighted then -- highlights and notes
-            if not self:isHighlightAutoText(v) then -- notes
-                item_table[k].text = NOTE_DISPLAY_PREFIX .. item_table[k].text
+        if v.highlighted then
+            if is_auto_text then
+                item_table[k].type = "highlight"
+            else
+                item_table[k].type = "note"
             end
-        else -- page bookmarks
-            item_table[k].text = PAGE_BOOKMARK_DISPLAY_PREFIX .. item_table[k].text
+        else
+            item_table[k].type = "bookmark"
         end
+        item_table[k].text_orig = v.text or v.notes
+        item_table[k].text = display_prefix[item_table[k].type] .. item_table[k].text_orig
         item_table[k].mandatory = self:getBookmarkPageString(v.page)
     end
 
@@ -500,8 +506,6 @@ function ReaderBookmark:onShowBookmark()
             self.textviewer = TextViewer:new{
                 title = _("Bookmark details"),
                 text = item.notes,
-                width = self.textviewer_width,
-                height = self.textviewer_height,
                 buttons_table = {
                     {
                         {
@@ -564,7 +568,9 @@ function ReaderBookmark:onShowBookmark()
                                                 text = _("Apply"),
                                                 is_enter_default = true,
                                                 callback = function()
-                                                    if check_button_bookmark.checked or check_button_highlight.checked then
+                                                    if check_button_bookmark.checked
+                                                        or check_button_highlight.checked
+                                                        or check_button_note.checked then
                                                         local search_str = input_dialog:getInputText()
                                                         local is_search_str = false
                                                         if search_str ~= "" then
@@ -573,9 +579,9 @@ function ReaderBookmark:onShowBookmark()
                                                         end
                                                         for i = #item_table, 1, -1 do
                                                             local bm_item = item_table[i]
-                                                            local is_bookmark = bm_item.highlighted == nil
-                                                            if (check_button_bookmark.checked and is_bookmark) or
-                                                                (check_button_highlight.checked and not is_bookmark) then
+                                                            if (check_button_bookmark.checked and bm_item.type == "bookmark")
+                                                                or (check_button_highlight.checked and bm_item.type == "highlight")
+                                                                or (check_button_note.checked and bm_item.type == "note") then
                                                                 if is_search_str then
                                                                     local bm_text = bm_item.notes .. bm_item.text
                                                                     bm_text = Utf8Proc.lowercase(util.fixUtf8(bm_text, "?"))
@@ -616,6 +622,16 @@ function ReaderBookmark:onShowBookmark()
                                     end,
                                 }
                                 input_dialog:addWidget(check_button_highlight)
+                                check_button_note = CheckButton:new{
+                                    text = _("notes"),
+                                    checked = true,
+                                    parent = input_dialog,
+                                    max_width = input_dialog._input_widget.width,
+                                    callback = function()
+                                        check_button_note:toggleCheck()
+                                    end,
+                                }
+                                input_dialog:addWidget(check_button_note)
                                 UIManager:show(input_dialog)
                                 input_dialog:onShowKeyboard()
                             end,
@@ -839,6 +855,13 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                         local value = self.input:getInputValue()
                         if value == "" then -- blank input resets the 'text' field to auto-text
                             value = self:getBookmarkAutoText(bookmark)
+                            if bookmark.type == "note" then
+                                bookmark.type = "highlight"
+                            end
+                        else
+                            if bookmark.type == "highlight" then
+                                bookmark.type = "note"
+                            end
                         end
                         for __, bm in ipairs(self.bookmarks) do
                             if bookmark.datetime == bm.datetime and bookmark.page == bm.page then
@@ -854,13 +877,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                                 end
                                 UIManager:close(self.input)
                                 if not from_highlight then
-                                    if bookmark.highlighted then
-                                        if not self:isHighlightAutoText(bookmark) then
-                                            bookmark.text = NOTE_DISPLAY_PREFIX .. bookmark.text
-                                        end
-                                    else
-                                        bookmark.text = PAGE_BOOKMARK_DISPLAY_PREFIX .. bookmark.text
-                                    end
+                                    bookmark.text = display_prefix[bookmark.type] .. bookmark.text
                                     self.refresh()
                                 end
                                 break
