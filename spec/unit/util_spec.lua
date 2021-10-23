@@ -96,8 +96,8 @@ describe("util module", function()
             }, words)
         end)
         it("should split Korean words", function()
-			-- Technically splitting on spaces is correct but we treat Korean
-			-- as if it were any other CJK text.
+            -- Technically splitting on spaces is correct but we treat Korean
+            -- as if it were any other CJK text.
             local words = util.splitToWords("대한민국의 국기는 대한민국 국기법에 따라 태극기")
             assert.are_same({
                 "대","한","민","국","의"," ","국","기","는"," ",
