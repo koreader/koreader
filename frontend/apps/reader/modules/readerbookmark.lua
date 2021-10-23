@@ -1,4 +1,5 @@
 local BD = require("ui/bidi")
+local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
 local ConfirmBox = require("ui/widget/confirmbox")
@@ -19,9 +20,9 @@ local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local DISPLAY_PREFIX = {
-    bookmark = "\u{F097} ",
-    highlight = "",
+    highlight = "\u{2592} ",
     note = "\u{F040} ",
+    bookmark = "\u{F097} ",
 }
 
 local ReaderBookmark = InputContainer:new{
@@ -146,12 +147,12 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 end
             },
             {
-                text = _("Add page number / timestamp to bookmark"),
+                text = _("Show separator between items"),
                 checked_func = function()
-                    return G_reader_settings:nilOrTrue("bookmarks_items_auto_text")
+                    return G_reader_settings:isTrue("bookmarks_items_show_separator")
                 end,
                 callback = function()
-                    G_reader_settings:flipNilOrTrue("bookmarks_items_auto_text")
+                    G_reader_settings:flipNilOrFalse("bookmarks_items_show_separator")
                 end
             },
             {
@@ -161,6 +162,15 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     G_reader_settings:flipNilOrTrue("bookmarks_items_reverse_sorting")
+                end
+            },
+            {
+                text = _("Add page number / timestamp to bookmark"),
+                checked_func = function()
+                    return G_reader_settings:nilOrTrue("bookmarks_items_auto_text")
+                end,
+                callback = function()
+                    G_reader_settings:flipNilOrTrue("bookmarks_items_auto_text")
                 end
             },
         },
@@ -388,6 +398,7 @@ function ReaderBookmark:onShowBookmark()
     local items_per_page = G_reader_settings:readSetting("bookmarks_items_per_page")
     local items_font_size = G_reader_settings:readSetting("bookmarks_items_font_size", Menu.getItemFontSize(items_per_page))
     local multilines_show_more_text = G_reader_settings:isTrue("bookmarks_items_multilines_show_more_text")
+    local show_separator = G_reader_settings:isTrue("bookmarks_items_show_separator")
 
     local bm_menu = Menu:new{
         title = _("Bookmarks"),
@@ -399,7 +410,7 @@ function ReaderBookmark:onShowBookmark()
         items_per_page = items_per_page,
         items_font_size = items_font_size,
         multilines_show_more_text = multilines_show_more_text,
-        line_color = require("ffi/blitbuffer").COLOR_WHITE,
+        line_color = show_separator and Blitbuffer.COLOR_LIGHT_GRAY or Blitbuffer.COLOR_WHITE,
         on_close_ges = {
             GestureRange:new{
                 ges = "two_finger_swipe",
@@ -605,18 +616,8 @@ function ReaderBookmark:onShowBookmark()
                                         },
                                     },
                                 }
-                                check_button_bookmark = CheckButton:new{
-                                    text = _("page bookmarks"),
-                                    checked = true,
-                                    parent = input_dialog,
-                                    max_width = input_dialog._input_widget.width,
-                                    callback = function()
-                                        check_button_bookmark:toggleCheck()
-                                    end,
-                                }
-                                input_dialog:addWidget(check_button_bookmark)
                                 check_button_highlight = CheckButton:new{
-                                    text = _("highlights"),
+                                    text = _(" \u{2592}  highlights"),
                                     checked = true,
                                     parent = input_dialog,
                                     max_width = input_dialog._input_widget.width,
@@ -626,7 +627,7 @@ function ReaderBookmark:onShowBookmark()
                                 }
                                 input_dialog:addWidget(check_button_highlight)
                                 check_button_note = CheckButton:new{
-                                    text = _("notes"),
+                                    text = _(" \u{F040}  notes"),
                                     checked = true,
                                     parent = input_dialog,
                                     max_width = input_dialog._input_widget.width,
@@ -635,6 +636,16 @@ function ReaderBookmark:onShowBookmark()
                                     end,
                                 }
                                 input_dialog:addWidget(check_button_note)
+                                check_button_bookmark = CheckButton:new{
+                                    text = _(" \u{F097}  page bookmarks"),
+                                    checked = true,
+                                    parent = input_dialog,
+                                    max_width = input_dialog._input_widget.width,
+                                    callback = function()
+                                        check_button_bookmark:toggleCheck()
+                                    end,
+                                }
+                                input_dialog:addWidget(check_button_bookmark)
                                 UIManager:show(input_dialog)
                                 input_dialog:onShowKeyboard()
                             end,
