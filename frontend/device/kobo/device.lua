@@ -73,6 +73,8 @@ local Kobo = Generic:new{
     pressure_event = nil,
     -- Device features multiple CPU cores
     isSMP = no,
+    -- Device supports "eclipse" waveform modes (i.e., optimized for nightmode).
+    hasEclipseWfm = no,
 }
 
 --- @todo hasKeys for some devices?
@@ -312,6 +314,7 @@ local KoboLuna = Kobo:new{
 local KoboEuropa = Kobo:new{
     model = "Kobo_europa",
     isSunxi = yes,
+    hasEclipseWfm = yes,
     canToggleChargingLED = yes,
     hasFrontlight = yes,
     hasGSensor = yes,
@@ -330,6 +333,7 @@ local KoboEuropa = Kobo:new{
 local KoboCadmus = Kobo:new{
     model = "Kobo_cadmus",
     isSunxi = yes,
+    hasEclipseWfm = yes,
     canToggleChargingLED = yes,
     hasFrontlight = yes,
     hasKeys = yes,
@@ -353,6 +357,32 @@ local KoboCadmus = Kobo:new{
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
     touch_dev = "/dev/input/by-path/platform-0-0010-event",
     isSMP = yes,
+}
+
+-- Kobo Libra 2:
+local KoboIo = Kobo:new{
+    model = "Kobo_io",
+    isMk7 = yes,
+    hasEclipseWfm = yes,
+    canToggleChargingLED = yes,
+    hasFrontlight = yes,
+    hasKeys = yes,
+    hasGSensor = yes,
+    canToggleGSensor = yes,
+    pressure_event = C.ABS_MT_PRESSURE,
+    touch_mirrored_x = false,
+    misc_ntx_gsensor_protocol = true,
+    display_dpi = 300,
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_mixer = "/sys/class/backlight/lm3630a_led/color",
+        -- Warmth goes from 0 to 10 on the device's side (our own internal scale is still normalized to [0...100])
+        -- NOTE: Those three extra keys are *MANDATORY* if frontlight_mixer is set!
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = true,
+    },
 }
 
 function Kobo:init()
@@ -1036,6 +1066,8 @@ elseif codename == "europa" then
     return KoboEuropa
 elseif codename == "cadmus" then
     return KoboCadmus
+elseif codename == "io" then
+    return KoboIo
 else
     error("unrecognized Kobo model "..codename)
 end
