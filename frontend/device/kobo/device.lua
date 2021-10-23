@@ -338,6 +338,16 @@ local KoboCadmus = Kobo:new{
     pressure_event = C.ABS_MT_PRESSURE,
     misc_ntx_gsensor_protocol = true,
     display_dpi = 300,
+    hasNaturalLight = yes,
+    frontlight_settings = {
+        frontlight_white = "/sys/class/backlight/mxc_msp430.0/brightness",
+        frontlight_mixer = "/sys/class/leds/aw99703-bl_FL1/color",
+        -- Warmth goes from 0 to 10 on the device's side (our own internal scale is still normalized to [0...100])
+        -- NOTE: Those three extra keys are *MANDATORY* if frontlight_mixer is set!
+        nl_min = 0,
+        nl_max = 10,
+        nl_inverted = false,
+    },
     boot_rota = C.FB_ROTATE_CW,
     battery_sysfs = "/sys/class/power_supply/battery",
     ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
