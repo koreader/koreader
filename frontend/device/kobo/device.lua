@@ -326,6 +326,25 @@ local KoboEuropa = Kobo:new{
     isSMP = yes,
 }
 
+-- Kobo Sage
+local KoboCadmus = Kobo:new{
+    model = "Kobo_cadmus",
+    isSunxi = yes,
+    canToggleChargingLED = yes,
+    hasFrontlight = yes,
+    hasKeys = yes,
+    hasGSensor = yes,
+    canToggleGSensor = yes,
+    pressure_event = C.ABS_MT_PRESSURE,
+    misc_ntx_gsensor_protocol = true,
+    display_dpi = 300,
+    boot_rota = C.FB_ROTATE_CW,
+    battery_sysfs = "/sys/class/power_supply/battery",
+    ntx_dev = "/dev/input/by-path/platform-ntx_event0-event",
+    touch_dev = "/dev/input/by-path/platform-0-0010-event",
+    isSMP = yes,
+}
+
 function Kobo:init()
     -- Check if we need to disable MXCFB_WAIT_FOR_UPDATE_COMPLETE ioctls...
     local mxcfb_bypass_wait_for
@@ -1005,6 +1024,8 @@ elseif codename == "luna" then
     return KoboLuna
 elseif codename == "europa" then
     return KoboEuropa
+elseif codename == "cadmus" then
+    return KoboCadmus
 else
     error("unrecognized Kobo model "..codename)
 end
