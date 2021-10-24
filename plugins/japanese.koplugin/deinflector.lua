@@ -37,7 +37,7 @@ local RULE_TYPES = {
 }
 
 local function toRuleTypes(...)
-    final = 0
+    local final = 0
     for _, ruleType in ipairs({...}) do
         if RULE_TYPES[ruleType] then
             final = bit.bor(final, RULE_TYPES[ruleType])
@@ -102,7 +102,7 @@ function Deinflector:deinflectVerbatim(text)
                     -- Check if we've already found this deinflection. If so,
                     -- that means there was a shorter reason path to it and
                     -- this deinflection is almost certainly theoretical.
-                    new_term = current.term:sub(1, -#rule.kanaIn-1) .. rule.kanaOut
+                    local new_term = current.term:sub(1, -#rule.kanaIn-1) .. rule.kanaOut
                     if not seen[new_term] then
                         table.insert(results, makeDeinflectionResult(
                             new_term,
@@ -435,14 +435,14 @@ function Deinflector:init()
                                     DEFAULT_TEXT_CONVERSIONS
     if self.rules ~= nil then return end -- already loaded
 
-    --- @todo Maybe make this location configurable?
-    inflections = parsePluginJson("yomichan-deinflect.json")
+    --- @todo Maybe make this location configurable or look in the user-controlled data directory too?
+    local inflections = parsePluginJson("yomichan-deinflect.json")
 
     -- Normalise the reasons and convert the rules to the rule_types bitflags.
     self.rules = {}
     local nrules, nvariants = 0, 0
     for reason, rules in pairs(inflections) do
-        variants = {}
+        local variants = {}
         for i, variant in ipairs(rules) do
             variants[i] = {
                 kanaIn = variant.kanaIn,

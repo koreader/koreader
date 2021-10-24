@@ -20,7 +20,6 @@ knowledge may be necessary (such as during text selection and dictionary lookup
 of a text fragment).
 ]]
 
-local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local dbg = require("dbg")
 local logger = require("logger")
@@ -115,8 +114,8 @@ local function callPlugin(plugin, handler_name, ...)
         return
     end
     -- Handler could return any number of values, collect them all.
-    ret = {pcall(handler, plugin, ...)}
-    ok = table.remove(ret, 1)
+    local ret = {pcall(handler, plugin, ...)}
+    local ok = table.remove(ret, 1)
     if not ok then
         logger.err("language plugin", plugin, "crashed during", handler_name, "handler:", unpack(ret))
         return
@@ -130,7 +129,7 @@ function LanguageSupport:_findAndCallPlugin(language_code, handler_name, ...)
     for name, plugin in pairs(self.plugins) do
         if plugin:supportsLanguage(language_code) then
             logger.dbg("language support: trying", name, "plugin's", handler_name)
-            ret = callPlugin(plugin, handler_name, ...)
+            local ret = callPlugin(plugin, handler_name, ...)
             if ret ~= nil then
                 return unpack(ret)
             end
@@ -143,7 +142,7 @@ function LanguageSupport:_findAndCallPlugin(language_code, handler_name, ...)
     for name, plugin in pairs(self.plugins) do
         if not plugin:supportsLanguage(language_code) then
             logger.dbg("language support (fallback): trying", name, "plugin's", handler_name)
-            ret = callPlugin(plugin, handler_name, ...)
+            local ret = callPlugin(plugin, handler_name, ...)
             if ret ~= nil then
                 return unpack(ret)
             end
@@ -195,14 +194,14 @@ function LanguageSupport:improveWordSelection(selection)
         return
     end
 
-    language_code = self.document:getProps().language or "unknown"
+    local language_code = self.document:getProps().language or "unknown"
     logger.dbg("language support: improving", language_code, "selection", selection)
 
     -- Rather than requiring each language plugin to use document: methods
     -- correctly, return a set of callbacks that are document-agnostic (and
     -- have the document handle as an upvalue of the closure) and could be used
     -- for non-EPUB formats in the future.
-    callbacks = createDocumentCallbacks(self.document)
+    local callbacks = createDocumentCallbacks(self.document)
     if not callbacks then
         return
     end
@@ -251,7 +250,7 @@ end
 function LanguageSupport:extraDictionaryFormCandidates(text)
     if not self:hasActiveLanguagePlugins() then return end -- nothing to do
 
-    language_code = self.document and self.document:getProps().language or "unknown"
+    local language_code = self.document and self.document:getProps().language or "unknown"
     logger.dbg("language support: convert", text, "to dictionary form (marked as", language_code..")")
 
     return self:_findAndCallPlugin(
@@ -263,16 +262,17 @@ end
 function LanguageSupport:addToMainMenu(menu_items)
     if not self:hasActiveLanguagePlugins() then return end -- nothing to do
 
-    local sub_table = {}
-
     -- Sort the plugin keys so we have consistent ordering in the menu.
     local plugin_names = {}
     for name in pairs(self.plugins) do
         table.insert(plugin_names, name)
     end
     table.sort(plugin_names)
+
+    -- Link up each plugin's submenu.
+    local sub_table = {}
     for _, name in ipairs(plugin_names) do
-        plugin = self.plugins[name]
+        local plugin = self.plugins[name]
         if plugin.genMenuItem ~= nil then
             local menuItem = plugin:genMenuItem()
             -- Set help_text in case the plugin hasn't.
@@ -281,8 +281,8 @@ function LanguageSupport:addToMainMenu(menu_items)
             end
             table.insert(sub_table, menuItem)
         else
-            -- A basic fallback menu, showing a description of the plugin when
-            -- tapped (if supplied).
+            -- Plugin didn't have a menu defined so use a basic fallback menu,
+            -- showing a description of the plugin when held for help.
             table.insert(sub_table, {
                 text = plugin.pretty_name or plugin.fullname or name,
                 help_text = plugin.description,
