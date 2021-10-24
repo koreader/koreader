@@ -10,7 +10,6 @@ local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
 local Menu = require("ui/widget/menu")
-local Size = require("ui/size")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
@@ -27,8 +26,6 @@ local DISPLAY_PREFIX = {
 }
 
 local ReaderBookmark = InputContainer:new{
-    bm_menu_title = _("Bookmarks"),
-    bbm_menu_title = _("Bookmark browsing mode"),
     bookmarks_items_per_page_default = 14,
     bookmarks = nil,
 }
@@ -60,9 +57,8 @@ function ReaderBookmark:init()
 end
 
 function ReaderBookmark:addToMainMenu(menu_items)
-    -- insert table to main reader menu
     menu_items.bookmarks = {
-        text = self.bm_menu_title,
+        text = _("Bookmarks"),
         callback = function()
             self:onShowBookmark()
         end,
@@ -77,7 +73,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
     end
     if self.ui.document.info.has_pages then
         menu_items.bookmark_browsing_mode = {
-            text = self.bbm_menu_title,
+            text = _("Bookmark browsing mode"),
             checked_func = function() return self.ui.paging.bookmark_flipping_mode end,
             callback = function(touchmenu_instance)
                 self:enableBookmarkBrowsingMode()
@@ -411,7 +407,6 @@ function ReaderBookmark:onShowBookmark()
         items_per_page = items_per_page,
         items_font_size = items_font_size,
         multilines_show_more_text = multilines_show_more_text,
-        linesize = show_separator and Size.line.thin or Size.line.medium,
         line_color = show_separator and Blitbuffer.COLOR_DARK_GRAY or Blitbuffer.COLOR_WHITE,
         on_close_ges = {
             GestureRange:new{
@@ -519,9 +514,19 @@ function ReaderBookmark:onShowBookmark()
                 },
             })
         else
+            local bm_view = T(_("Page: %1"), item.mandatory) .. "     " .. T(_("Time: %1"), item.datetime) .. "\n\n"
+            if item.type == "bookmark" then
+                bm_view = bm_view .. item.text
+            else
+                bm_view = bm_view .. DISPLAY_PREFIX["highlight"] .. item.notes
+                if item.type == "note" then
+                    bm_view = bm_view .. "\n\n" .. item.text
+                end
+            end
             self.textviewer = TextViewer:new{
                 title = _("Bookmark details"),
-                text = item.notes,
+                text = bm_view,
+                justified = false,
                 buttons_table = {
                     {
                         {
@@ -619,7 +624,7 @@ function ReaderBookmark:onShowBookmark()
                                     },
                                 }
                                 check_button_highlight = CheckButton:new{
-                                    text = _(" \u{2592}  highlights"),
+                                    text = " " .. DISPLAY_PREFIX["highlight"] .. " " .. _("highlights"),
                                     checked = true,
                                     parent = input_dialog,
                                     max_width = input_dialog._input_widget.width,
@@ -629,7 +634,7 @@ function ReaderBookmark:onShowBookmark()
                                 }
                                 input_dialog:addWidget(check_button_highlight)
                                 check_button_note = CheckButton:new{
-                                    text = _(" \u{F040}  notes"),
+                                    text = " " .. DISPLAY_PREFIX["note"] .. " " .. _("notes"),
                                     checked = true,
                                     parent = input_dialog,
                                     max_width = input_dialog._input_widget.width,
@@ -639,7 +644,7 @@ function ReaderBookmark:onShowBookmark()
                                 }
                                 input_dialog:addWidget(check_button_note)
                                 check_button_bookmark = CheckButton:new{
-                                    text = _(" \u{F097}  page bookmarks"),
+                                    text = " " .. DISPLAY_PREFIX["bookmark"] .. " " .. _("page bookmarks"),
                                     checked = true,
                                     parent = input_dialog,
                                     max_width = input_dialog._input_widget.width,
@@ -851,7 +856,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
     end
     self.input = InputDialog:new{
         title = _("Edit note"),
-        description = T("   " .. _("Page: %1") .. "     " .. _("Time: %2"), bookmark.mandatory, bookmark.datetime),
+        description = "   " .. T(_("Page: %1"), bookmark.mandatory) .. "     " .. T(_("Time: %1"), bookmark.datetime),
         input = bookmark.text_orig,
         allow_newline = true,
         cursor_at_end = false,
