@@ -20,9 +20,9 @@ local Screen = require("device").screen
 local T = require("ffi/util").template
 
 local DISPLAY_PREFIX = {
-    highlight = "\u{2592} ",
-    note = "\u{F040} ",
-    bookmark = "\u{F097} ",
+    highlight = "\u{2592}\u{2002}",
+    note = "\u{F040}\u{2002}",
+    bookmark = "\u{F097}\u{2002}",
 }
 
 local ReaderBookmark = InputContainer:new{
@@ -526,7 +526,7 @@ function ReaderBookmark:onShowBookmark()
             self.textviewer = TextViewer:new{
                 title = _("Bookmark details"),
                 text = bm_view,
-                justified = false,
+                justified = G_reader_settings:nilOrTrue("dict_justify"),
                 buttons_table = {
                     {
                         {
@@ -624,7 +624,7 @@ function ReaderBookmark:onShowBookmark()
                                     },
                                 }
                                 check_button_highlight = CheckButton:new{
-                                    text = " " .. DISPLAY_PREFIX["highlight"] .. " " .. _("highlights"),
+                                    text = " " .. DISPLAY_PREFIX["highlight"] .. _("highlights"),
                                     checked = true,
                                     parent = input_dialog,
                                     max_width = input_dialog._input_widget.width,
@@ -634,7 +634,7 @@ function ReaderBookmark:onShowBookmark()
                                 }
                                 input_dialog:addWidget(check_button_highlight)
                                 check_button_note = CheckButton:new{
-                                    text = " " .. DISPLAY_PREFIX["note"] .. " " .. _("notes"),
+                                    text = " " .. DISPLAY_PREFIX["note"] .. _("notes"),
                                     checked = true,
                                     parent = input_dialog,
                                     max_width = input_dialog._input_widget.width,
@@ -644,7 +644,7 @@ function ReaderBookmark:onShowBookmark()
                                 }
                                 input_dialog:addWidget(check_button_note)
                                 check_button_bookmark = CheckButton:new{
-                                    text = " " .. DISPLAY_PREFIX["bookmark"] .. " " .. _("page bookmarks"),
+                                    text = " " .. DISPLAY_PREFIX["bookmark"] .. _("page bookmarks"),
                                     checked = true,
                                     parent = input_dialog,
                                     max_width = input_dialog._input_widget.width,
