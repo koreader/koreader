@@ -811,7 +811,7 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
         end
     end
 
-    lookup_cancelled, results = self:rawSdcv(words, dict_names, fuzzy_search, self.lookup_progress_msg or false)
+    local lookup_cancelled, results = self:rawSdcv(words, dict_names, fuzzy_search, self.lookup_progress_msg or false)
     if results == nil then -- no dictionaries found
         return {
             {

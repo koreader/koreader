@@ -19,11 +19,9 @@
 -- together in order to reduce the impact we have on text selection.
 
 local Deinflector = require("deinflector")
-local InfoMessage = require("ui/widget/infomessage")
 local LanguageSupport = require("languagesupport")
 local ReaderDictionary = require("apps/reader/modules/readerdictionary")
 local UIManager = require("ui/uimanager")
-local JSON = require("json")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local util = require("util")
@@ -77,7 +75,7 @@ function Japanese:onWordLookup(args)
     --       extra work to be efficient (since we need to remove the last
     --       character in the string).
 
-    results = self.deinflector:deinflect(text)
+    local results = self.deinflector:deinflect(text)
     logger.dbg("japanese.koplugin: deinflection of", text, "results:", results)
 
     --- @todo Pass up the reasons list (formatted Yomichan style) to the
@@ -86,7 +84,7 @@ function Japanese:onWordLookup(args)
     --       metadata that we have to pass through from the lookup to the
     --       dictionary pop-up.
 
-    candidates = {}
+    local candidates = {}
     for i, result in ipairs(results) do
         candidates[i] = result.term
     end
@@ -112,7 +110,6 @@ end
 -- @see languagesupport.improveWordSelection
 -- @see languagesupport.registerPlugin
 function Japanese:onWordSelection(args)
-    local pos0, pos1 = args.pos0, args.pos1
     local callbacks = args.callbacks
     local current_text = args.text
 
@@ -128,7 +125,7 @@ function Japanese:onWordSelection(args)
     -- We reset the end of the range to pos0+1 because crengine will select
     -- half-width katakana (ｶﾀｶﾅ) in strange ways that often overshoots the
     -- end of words.
-    pos1 = callbacks.get_next_char_pos(pos0)
+    local pos0, pos1 = args.pos0, callbacks.get_next_char_pos(args.pos0)
 
     -- We try to advance the end position until we hit a word.
     --

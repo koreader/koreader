@@ -601,7 +601,7 @@ function util.isCJKChar(c)
     if #c < 3 then
         return false
     end
-    code = BaseUtil.utf8charcode(c)
+    local code = BaseUtil.utf8charcode(c)
     -- The weird bracketing is intentional -- we use the lowest possible
     -- codepoint as a shortcut so if the codepoint is below U+1100 we
     -- immediately return false.
