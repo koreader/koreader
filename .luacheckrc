@@ -137,6 +137,7 @@ exclude_files = {
 -- don't balk on busted stuff in spec
 files["spec/unit/*"].std = "+busted"
 files["spec/unit/*"].globals = {
+    "match", -- busted global <https://github.com/mpeterv/luacheck/pull/200>
     "package",
     "requireBackgroundRunner",
     "stopBackgroundRunner",
