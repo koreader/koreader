@@ -706,6 +706,17 @@ function InputText:searchString(str, case_sensitive, start_pos)
     return char_pos
 end
 
+function InputText:getChar(idx)
+    if not idx then idx = self.charpos - 1 end -- use the previous character
+    if idx < 0 then idx = #self.charlist + idx end -- allow negative indexes
+    if idx < 1 or idx > #self.charlist then return end
+    return self.charlist[idx]
+end
+
+function InputText:getCharPos()
+    return self.charpos
+end
+
 function InputText:addChars(chars)
     if not chars then
         -- VirtualKeyboard:addChar(key) gave us 'nil' once (?!)
