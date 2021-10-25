@@ -16,13 +16,15 @@ local Utf8Proc = require("ffi/utf8proc")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
+local N_ = _.ngettext
 local Screen = require("device").screen
 local T = require("ffi/util").template
 
+-- mark the type of a bookmark with a symbol + non-expandable space
 local DISPLAY_PREFIX = {
-    highlight = "\u{2592}\u{2002}",
-    note = "\u{F040}\u{2002}",
-    bookmark = "\u{F097}\u{2002}",
+    highlight = "\u{2592}\u{2002}", -- "medium shade"
+    note = "\u{F040}\u{2002}", -- "pencil"
+    bookmark = "\u{F097}\u{2002}", -- "empty bookmark"
 }
 
 local ReaderBookmark = InputContainer:new{
@@ -448,8 +450,14 @@ function ReaderBookmark:onShowBookmark()
 
     function bm_menu:onMenuHold(item)
         if self.select_mode then
+            local info_text
+            if self.select_count == 0 then
+                info_text = _("No bookmarks selected")
+            else
+                info_text = T(N_("Remove selected bookmark?", "Remove %1 selected bookmarks?", self.select_count), self.select_count)
+            end
             UIManager:show(ConfirmBox:new{
-                text = T(_("Bookmarks selected: %1\nRemove selected bookmarks?"), self.select_count),
+                text = info_text,
                 ok_text = _("Remove"),
                 ok_callback = function()
                     self.select_mode = false
@@ -464,7 +472,7 @@ function ReaderBookmark:onShowBookmark()
                 other_buttons_first = true,
                 other_buttons = {
                     {{
-                        text = _("Unselect all"),
+                        text = _("Deselect all"),
                         callback = function()
                             for _, v in ipairs(item_table) do
                                 if v.dim then
@@ -530,10 +538,10 @@ function ReaderBookmark:onShowBookmark()
                 buttons_table = {
                     {
                         {
-                            text = _("Remove this bookmark"),
+                            text = _("Remove bookmark"),
                             callback = function()
                                 UIManager:show(ConfirmBox:new{
-                                    text = _("Remove this bookmark?"),
+                                    text = _("Remove bookmark?"),
                                     ok_text = _("Remove"),
                                     ok_callback = function()
                                         bookmark:removeHighlight(item)
@@ -561,7 +569,7 @@ function ReaderBookmark:onShowBookmark()
                     {},
                     {
                         {
-                            text = _("Remove bookmarks"),
+                            text = _("Bulk remove"),
                             callback = function()
                                 self.select_mode = true
                                 self.select_count = 0
