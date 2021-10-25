@@ -83,8 +83,10 @@ local ReaderUI = InputContainer:new{
 }
 
 function ReaderUI:registerModule(name, ui_module, always_active)
-    if name then self[name] = ui_module end
-    ui_module.name = "reader" .. name
+    if name then
+        self[name] = ui_module
+        ui_module.name = "reader" .. name
+    end
     table.insert(self, ui_module)
     if always_active then
         -- to get events even when hidden

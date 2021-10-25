@@ -490,24 +490,38 @@ function FileManager:setupLayout()
     end
 end
 
+function FileManager:registerModule(name, ui_module, always_active)
+    if name then
+        self[name] = ui_module
+        ui_module.name = "filemanager" .. name
+    end
+    table.insert(self, ui_module)
+    if always_active then
+        -- to get events even when hidden
+        table.insert(self.active_widgets, ui_module)
+    end
+end
+
 -- NOTE: The only thing that will *ever* instantiate a new FileManager object is our very own showFiles below!
 function FileManager:init()
     self:setupLayout()
+    self.active_widgets = {}
 
-    local screenshoter = Screenshoter:new{ prefix = 'FileManager' }
-    table.insert(self, screenshoter) -- for regular events
-    self.active_widgets = { screenshoter } -- to get events even when hidden
+    self:registerModule("screenshot", Screenshoter:new{
+        prefix = 'FileManager',
+        ui = self,
+    }, true)
 
-    table.insert(self, self.menu)
-    table.insert(self, FileManagerHistory:new{ ui = self })
-    table.insert(self, FileManagerCollection:new{ ui = self })
-    table.insert(self, FileManagerFileSearcher:new{ ui = self })
-    table.insert(self, FileManagerShortcuts:new{ ui = self })
-    table.insert(self, LanguageSupport:new{ ui = self })
-    table.insert(self, ReaderDictionary:new{ ui = self })
-    table.insert(self, ReaderWikipedia:new{ ui = self })
-    table.insert(self, ReaderDeviceStatus:new{ ui = self })
-    table.insert(self, DeviceListener:new{ ui = self })
+    self:registerModule("menu", self.menu)
+    self:registerModule("history", FileManagerHistory:new{ ui = self })
+    self:registerModule("collections", FileManagerCollection:new{ ui = self })
+    self:registerModule("filesearcher", FileManagerFileSearcher:new{ ui = self })
+    self:registerModule("folder_shortcuts", FileManagerShortcuts:new{ ui = self })
+    self:registerModule("languagesupport", LanguageSupport:new{ ui = self })
+    self:registerModule("dictionary", ReaderDictionary:new{ ui = self })
+    self:registerModule("wikipedia", ReaderWikipedia:new{ ui = self })
+    self:registerModule("devicestatus", ReaderDeviceStatus:new{ ui = self })
+    self:registerModule("devicelistener", DeviceListener:new{ ui = self })
 
     -- koreader plugins
     for _, plugin_module in ipairs(PluginLoader:loadPlugins()) do
@@ -516,10 +530,8 @@ function FileManager:init()
                 plugin_module, { ui = self, })
             -- Keep references to the modules which do not register into menu.
             if ok then
-                local name = plugin_module.name
-                if name then self[name] = plugin_or_err end
-                table.insert(self, plugin_or_err)
-                logger.dbg("FM loaded plugin", name,
+                self:registerModule(plugin_module.name, plugin_or_err)
+                logger.dbg("FM loaded plugin", plugin_module.name,
                             "at", plugin_module.path)
             end
         end
