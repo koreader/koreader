@@ -801,7 +801,7 @@ end
 function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     local words = {word}
 
-    if self.ui.languagesupport:hasActiveLanguagePlugins() then
+    if self.ui.languagesupport and self.ui.languagesupport:hasActiveLanguagePlugins() then
         -- Get any other candidates from any language-specific plugins we have.
         -- We prefer the originally selected word first (in case there is a
         -- dictionary entry for whatever text the user selected).
