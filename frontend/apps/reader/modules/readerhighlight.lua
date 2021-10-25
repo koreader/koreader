@@ -864,7 +864,7 @@ function ReaderHighlight:onHold(arg, ges)
             self.selected_link = link
         end
 
-        if self.ui.languagesupport:hasActiveLanguagePlugins() then
+        if self.ui.languagesupport and self.ui.languagesupport:hasActiveLanguagePlugins() then
             -- If this is a language where pan-less word selection needs some
             -- extra work above and beyond what the document engine gives us
             -- from getWordFromPosition, call the relevant language-specific
@@ -1338,7 +1338,7 @@ function ReaderHighlight:highlightFromHoldPos()
     if self.hold_pos then
         if not self.selected_text then
             self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.hold_pos)
-            if self.ui.languagesupport:hasActiveLanguagePlugins() then
+            if self.ui.languagesupport and self.ui.languagesupport:hasActiveLanguagePlugins() then
                 -- Match language-specific expansion you'd get from self:onHold().
                 local new_selected_text = self.ui.languagesupport:improveWordSelection(self.selected_text)
                 if new_selected_text then
