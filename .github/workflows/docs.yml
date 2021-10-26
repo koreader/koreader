@@ -1,0 +1,13 @@
+name: Docs
+
+on:
+    workflow_dispatch:
+    push:
+        branches:
+          - master
+
+jobs:
+    call-workflow:
+        uses: yparitcher/doc/.github/workflows/docs.yml@gh-pages
+        #uses: koreader/doc/.github/workflows/docs.yml@gh-pages
+
