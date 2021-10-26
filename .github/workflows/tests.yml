@@ -1,0 +1,77 @@
+name: CI tests
+
+defaults:
+  run:
+    shell: bash
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Path: ~/local/bin"
+        run: echo ~/local/bin >> $GITHUB_PATH
+
+      - name: Install luarocks
+        run:  curl -sSL "https://raw.githubusercontent.com/yparitcher/virdevenv/master/docker/ubuntu/baseimage/install_luarocks.sh" | sudo bash
+
+      - name: Install Lint
+        run:  curl -sSL "https://raw.githubusercontent.com/yparitcher/virdevenv/master/docker/ubuntu/baseimage/install_lint.sh" | bash -s ~
+
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+
+      - name: Lint
+        run: .ci/check.sh
+
+      - name: Check
+        run: ./kodev check
+
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+        EMULATE_READER: 1
+        # pretend to be cirleci so the scripts dont have to change
+        CIRCLE_WORKING_DIRECTORY: ${{ github.workspace }}
+        GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
+
+    steps:
+      - name: Install
+        run: sudo apt-get install -y gettext ccache ninja-build libtool-bin libsdl2-2.0-0
+
+      - name: Install luarocks
+        run:  curl -sSL "https://raw.githubusercontent.com/yparitcher/virdevenv/master/docker/ubuntu/baseimage/install_luarocks.sh" | sudo bash
+
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+        # need to init some stuff first or git will complain when sticking in base cache
+      - name: Init base submodule
+        run: git submodule init base && git submodule update base && pushd base && git submodule init && git submodule update && popd
+
+      - name: base cache check
+        run: pushd base && git_rev_base=$(git describe HEAD) && popd && echo $git_rev_base && echo $git_rev_base >git-rev-base
+
+      - name: Cache base
+        uses: actions/cache@v2
+        with:
+            path: |
+                ~/.ccache
+                base
+            key: build-${{ hashFiles('git-rev-base') }}
+
+      - name: Build
+        run: ./kodev build
+
+      - name: Test
+        run: ./kodev test front
+
+#      - name:  docs-and-coverage
+#        # only run when the event is a push on the master branch
+#        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+#        run: .ci/github_after_success.sh
+#
