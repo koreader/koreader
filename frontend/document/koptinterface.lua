@@ -275,7 +275,7 @@ function KoptInterface:getCachedContext(doc, pageno)
         logger.dbg("reflowing page", pageno, "in foreground")
         -- reflow page
         --local secs, usecs = util.gettime()
-        page:reflow(kc)
+        page:reflow(kc, doc.render_mode or DRENDER_MODE) -- Fall backs to a default set to DDJVU_RENDER_COLOR
         page:close()
         --local nsecs, nusecs = util.gettime()
         --local dur = nsecs - secs + (nusecs - usecs) / 1000000
@@ -472,7 +472,7 @@ function KoptInterface:hintReflowedPage(doc, pageno, zoom, rotation, gamma, rend
         -- reflow will return immediately and running in background thread
         kc:setPreCache()
         self.bg_thread = true
-        page:reflow(kc)
+        page:reflow(kc, render_mode)
         page:close()
         DocCache:insert(hash, ContextCacheItem:new{
             size = self.last_context_size or self.default_context_size,
