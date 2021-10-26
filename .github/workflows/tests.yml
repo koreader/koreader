@@ -1,0 +1,76 @@
+name: CI tests
+
+defaults:
+  run:
+    shell: bash
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    container: 
+        image: koreader/koappimage:0.1.8
+        # for now until docker crash fixed
+        #image: koreader/koappimage:0.2.2
+        options: --user ko
+        
+    env:
+        EMULATE_READER: 1
+        HOME: /home/ko
+        # pretend to be cirleci so the scripts dont have to change
+        CIRCLE_WORKING_DIRECTORY: ${{ github.workspace }}
+
+    steps:
+        # chown working directory to ko (docker user)
+        # Allow ko user to access /__w/_temp/ directory to be able to save & restore cache
+      - name: permissions
+        run: sudo chown -R ko:ko /__w/koreader/ && sudo chmod 777 /__w/_temp/
+
+        # make sure we have git >= 2.18 so github checkout behaves
+      - name: git update
+        run: sudo add-apt-repository ppa:git-core/ppa -y && sudo apt-get update && sudo apt-get install git -y
+
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: need to init some stuff first or git will complain when sticking in base cache
+        run: git submodule init base && git submodule update base && pushd base && git submodule init && git submodule update && popd
+
+      - name: base cache check
+        run: pushd base && git_rev_base=$(git describe HEAD) && popd && echo $git_rev_base && echo $git_rev_base >git-rev-base
+
+      - name: Cache base
+        uses: actions/cache@v2
+        with:
+            path: |
+                /home/ko/.ccache
+                base
+            key: build-${{ hashFiles('git-rev-base') }}
+
+      - name: setup env
+        run: echo "${HOME}/bin" | sudo tee -a $GITHUB_PATH
+
+      - name: install
+        run: .ci/install.sh
+
+      - name: fetch
+        run: .ci/fetch.sh
+
+      - name: check
+        run: .ci/check.sh
+
+      - name:  build
+        run: .ci/build.sh
+
+      - name:  test
+        run: .ci/test.sh
+
+      - name:  docs-and-coverage
+        # only run when the event is a push on the master branch
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        run: .ci/after_success.sh
+
