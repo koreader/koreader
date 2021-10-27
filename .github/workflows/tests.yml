@@ -21,6 +21,7 @@ jobs:
         HOME: /home/ko
         # pretend to be cirleci so the scripts dont have to change
         CIRCLE_WORKING_DIRECTORY: ${{ github.workspace }}
+        GITHUB_TOKEN: ${{ github.token }}
 
     steps:
         # chown working directory to ko (docker user)
@@ -73,5 +74,5 @@ jobs:
       - name:  docs-and-coverage
         # only run when the event is a push on the master branch
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-        run: .ci/after_success.sh
+        run: .ci/github_after_success.sh
 
