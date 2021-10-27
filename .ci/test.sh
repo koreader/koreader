@@ -10,4 +10,4 @@ source "${CI_DIR}/common.sh"
 #} && popd || exit
 #
 #make testfront BUSTED_SPEC_FILE="${BUSTED_SPEC_FILE}"
-make testfront
+travis_retry make testfront
