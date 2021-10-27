@@ -29,7 +29,7 @@ jobs:
         run: sudo chown -R ko:ko /__w/koreader/ && sudo chmod 777 /__w/_temp/
 
         # make sure we have git >= 2.18 so github checkout behaves
-      - name: git update
+      - name: Update git
         run: sudo add-apt-repository ppa:git-core/ppa -y && sudo apt-get update && sudo apt-get install git -y
 
       - name: Check out Git repository
@@ -37,7 +37,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: need to init some stuff first or git will complain when sticking in base cache
+        # need to init some stuff first or git will complain when sticking in base cache
+      - name: Init base submodule
         run: git submodule init base && git submodule update base && pushd base && git submodule init && git submodule update && popd
 
       - name: base cache check
