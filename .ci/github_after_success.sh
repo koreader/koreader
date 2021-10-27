@@ -14,7 +14,7 @@ pushd l10n && {
     git diff --numstat | grep "1[[:space:]]1[[:space:]]templates/koreader.pot" && echo -e "\\n${ANSI_GREEN}No updated translations found." || {
         git -c user.name="KOReader build bot" -c user.email="non-reply@koreader.rocks" \
             commit templates/koreader.pot -m "Updated translation source file"
-        git push --quiet "https://${GITHUB_TOKEN}@github.com/koreader/koreader-translations.git" master
+        git push --quiet "https://${GITHUB_PAT}@github.com/koreader/koreader-translations.git" master
         echo -e "\\n${ANSI_GREEN}Translation update pushed."
     }
 } && popd || exit
@@ -37,7 +37,7 @@ pushd koreader_doc && {
     echo -e "\\n${ANSI_GREEN}Pushing document update..."
     git -c user.name="KOReader build bot" -c user.email="non-reply@koreader.rocks" \
         commit -a --amend -m 'Automated documentation build from travis-ci.'
-    git push -f --quiet "https://${GITHUB_TOKEN}@github.com/koreader/doc.git" gh-pages >/dev/null
+    git push -f --quiet "https://${GITHUB_PAT}@github.com/koreader/doc.git" gh-pages >/dev/null
     echo -e "\\n${ANSI_GREEN}Documentation update pushed."
 } && popd || exit
 
