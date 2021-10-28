@@ -13,7 +13,6 @@ on:
 jobs:
   docs:
     runs-on: ubuntu-latest
-    needs: get_token
 
     env:
         # pretend to be cirleci so the scripts dont have to change
