@@ -1,0 +1,12 @@
+name: Doc Translations Coverage
+
+on:
+    workflow_dispatch:
+    push:
+        branches:
+          - master
+
+jobs:
+    call-workflow:
+        uses: koreader/doc/.github/workflows/docs.yml
+
