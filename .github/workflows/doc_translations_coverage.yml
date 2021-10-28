@@ -8,5 +8,5 @@ on:
 
 jobs:
     call-workflow:
-        uses: koreader/doc/.github/workflows/docs.yml
+        uses: koreader/doc/.github/workflows/docs.yml@gh-pages
 
