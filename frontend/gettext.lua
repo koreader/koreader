@@ -268,6 +268,8 @@ function GetText_mt.__index.changeLang(new_lang)
                     s = s:gsub("\\n", "\n")
                     -- unescape " or msgid won't match
                     s = s:gsub('\\"', '"')
+                    -- unescape \\ or msgid won't match
+                    s = s:gsub("\\\\", "\\")
                     data[what] = (data[what] or "") .. s
                 else
                     -- Don't save this fuzzy string and unset fuzzy for the next one.
