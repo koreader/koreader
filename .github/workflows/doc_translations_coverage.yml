@@ -8,5 +8,7 @@ on:
 
 jobs:
     call-workflow:
-        uses: koreader/doc/.github/workflows/docs.yml@gh-pages
+        #temp untill merge
+        uses: yparitcher/doc/.github/workflows/docs.yml@gh-pages
+        #uses: koreader/doc/.github/workflows/docs.yml@gh-pages
 
