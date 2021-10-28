@@ -1,4 +1,4 @@
-name: Doc Translations Coverage
+name: Docs
 
 on:
     workflow_dispatch:
