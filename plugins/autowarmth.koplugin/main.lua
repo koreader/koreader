@@ -256,7 +256,10 @@ function AutoWarmth:scheduleWarmthChanges(time)
         end
     end
 
+    UIManager:unschedule(AutoWarmth.setWarmth) -- to be safe, if there are no scheduled entries
+
     if self.activate == 0 then return end
+    if #self.sched_funcs == 0 then return end
 
     -- `actual_warmth` is the value which should be applied now.
     -- `next_warmth` is valid `delay_time` seconds after now for resume on some devices (KA1)
