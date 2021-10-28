@@ -28,7 +28,7 @@ local util = require("util")
 local activate_sun = 1
 local activate_schedule = 2
 local activate_closer_noon = 3
-local activate_closer_midnight =4
+local activate_closer_midnight = 4
 
 local midnight_index = 11
 
@@ -258,17 +258,37 @@ function AutoWarmth:scheduleWarmthChanges(time)
 
     if self.activate == 0 then return end
 
-    local actual_warmth
+    -- `actual_warmth` is the value which should be applied now.
+    -- `next_warmth` is valid `delay_time` seconds after now for resume on some devices (KA1)
+    -- Most of the times this will be the same as `actual_warmth`.
+    -- We need both, as we could have a very rapid change in warmth (depending on user settings)
+    -- or by chance a change in warmth very shortly after (a few ms) resume time.
+    local delay_time = 1.5
+    -- Use the last warmth value, so that we have a valid value when resuming after 24:00 but
+    -- before true midnight. OK, this value is actually not quite the right one, as it is calculated
+    -- for the current day (and not the previous one), but this is for a corner case
+    -- and the error is small.
+    local actual_warmth = self.sched_funcs[#self.sched_funcs][2]
+    local next_warmth = actual_warmth
     for i = 1, #self.sched_funcs do
-        if self.sched_times[i] > time then
-            UIManager:scheduleIn( self.sched_times[i] - time,
-                self.sched_funcs[i][1], self.sched_funcs[i][2])
-        else
+        if self.sched_times[i] <= time then
             actual_warmth = self.sched_funcs[i][2] or actual_warmth
+        else
+            UIManager:scheduleIn(self.sched_times[i] - time,
+                self.sched_funcs[i][1], self.sched_funcs[i][2])
+        end
+        if self.sched_times[i] <= time + delay_time then
+            next_warmth = self.sched_funcs[i][2] or next_warmth
         end
     end
-    -- update current warmth directly
+    -- update current warmth immediately
     self.setWarmth(actual_warmth)
+
+    -- On some strange devices like KA1 the above doesn't work right after a resume so
+    -- schedule setting of another valid warmth (=`next_warmth`) again (one time).
+    -- On sane devices this schedule does no harm.
+    -- see https://github.com/koreader/koreader/issues/8363
+    UIManager:scheduleIn(delay_time, self.setWarmth, next_warmth)
 end
 
 function AutoWarmth:hoursToClock(hours)

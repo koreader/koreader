@@ -2,6 +2,7 @@ local BD = require("ui/bidi")
 local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
 local Event = require("ui/event")
+local Geom = require("ui/geometry")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Notification = require("ui/widget/notification")
@@ -436,6 +437,7 @@ function ReaderHighlight:clear(clear_id)
         self.restore_page_mode_func()
         self.restore_page_mode_func = nil
     end
+    self.is_word_selection = false
     self.selected_text_start_xpointer = nil
     if self.hold_pos then
         self.hold_pos = nil
@@ -844,23 +846,43 @@ function ReaderHighlight:onHold(arg, ges)
     local ok, word = pcall(self.ui.document.getWordFromPosition, self.ui.document, self.hold_pos)
     if ok and word then
         logger.dbg("selected word:", word)
-        self.selected_word = word
+        -- Convert "word selection" table to "text selection" table because we
+        -- use text selections throughout readerhighlight in order to allow the
+        -- highlight to be corrected by language-specific plugins more easily.
+        self.is_word_selection = true
+        self.selected_text = {
+            text = word.word or "",
+            pos0 = word.pos0 or word.pos,
+            pos1 = word.pos1 or word.pos,
+            sboxes = word.sbox and { word.sbox },
+            pboxes = word.pbox and { word.pbox },
+        }
         local link = self.ui.link:getLinkFromGes(ges)
         self.selected_link = nil
         if link then
             logger.dbg("link:", link)
             self.selected_link = link
         end
+
+        if self.ui.languagesupport and self.ui.languagesupport:hasActiveLanguagePlugins() then
+            -- If this is a language where pan-less word selection needs some
+            -- extra work above and beyond what the document engine gives us
+            -- from getWordFromPosition, call the relevant language-specific
+            -- plugin.
+            local new_selected_text = self.ui.languagesupport:improveWordSelection(self.selected_text)
+            if new_selected_text then
+                self.selected_text = new_selected_text
+            end
+        end
+
         if self.ui.document.info.has_pages then
-            local boxes = {}
-            table.insert(boxes, self.selected_word.sbox)
-            self.view.highlight.temp[self.hold_pos.page] = boxes
+            self.view.highlight.temp[self.hold_pos.page] = self.selected_text.sboxes
             -- Unfortunately, getWordFromPosition() may not return good coordinates,
             -- so refresh the whole page
             UIManager:setDirty(self.dialog, "ui")
         else
-            -- With crengine, getWordFromPosition() does return good coordinates
-            UIManager:setDirty(self.dialog, "ui", self.selected_word.sbox)
+            -- With crengine, getWordFromPosition() does return good coordinates.
+            UIManager:setDirty(self.dialog, "ui", Geom.boundingBox(self.selected_text.sboxes))
         end
         self:_resetHoldTimer()
         if word.pos0 then
@@ -992,6 +1014,7 @@ function ReaderHighlight:onHoldPan(_, ges)
 
     local old_text = self.selected_text and self.selected_text.text
     self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.holdpan_pos)
+    self.is_word_selection = false
 
     if self.selected_text and self.selected_text.pos0 then
         if not self.selected_text_start_xpointer then
@@ -1015,13 +1038,6 @@ function ReaderHighlight:onHoldPan(_, ges)
     logger.dbg("selected text:", self.selected_text)
     if self.selected_text then
         self.view.highlight.temp[self.hold_pos.page] = self.selected_text.sboxes
-        -- remove selected word if hold moves out of word box
-        if not self.selected_text.sboxes or #self.selected_text.sboxes == 0 then
-            self.selected_word = nil
-        elseif self.selected_word and not self.selected_word.sbox:contains(self.selected_text.sboxes[1]) or
-            #self.selected_text.sboxes > 1 then
-            self.selected_word = nil
-        end
     end
     UIManager:setDirty(self.dialog, "ui")
 end
@@ -1035,18 +1051,36 @@ You can download language data files for version 3.04 from https://tesseract-ocr
 
 Copy the language data files for Tesseract 3.04 (e.g., eng.traineddata for English and spa.traineddata for Spanish) into koreader/data/tessdata]])
 
-function ReaderHighlight:lookup(selected_word, selected_link)
+function ReaderHighlight:lookup(selected_text, selected_link)
+    -- convert sboxes to word boxes
+    local word_boxes = {}
+    for i, sbox in ipairs(selected_text.sboxes) do
+        word_boxes[i] = self.view:pageToScreenTransform(self.hold_pos.page, sbox)
+    end
+
     -- if we extracted text directly
-    if selected_word.word and self.hold_pos then
-        local word_box = self.view:pageToScreenTransform(self.hold_pos.page, selected_word.sbox)
-        self.ui:handleEvent(Event:new("LookupWord", selected_word.word, false, word_box, self, selected_link))
+    if selected_text.text and self.hold_pos then
+        self.ui:handleEvent(Event:new("LookupWord", selected_text.text, false, word_boxes, self, selected_link))
     -- or we will do OCR
-    elseif selected_word.sbox and self.hold_pos then
-        local word = self.ui.document:getOCRWord(self.hold_pos.page, selected_word)
-        logger.dbg("OCRed word:", word)
-        if word and word ~= "" then
-            local word_box = self.view:pageToScreenTransform(self.hold_pos.page, selected_word.sbox)
-            self.ui:handleEvent(Event:new("LookupWord", word, false, word_box, self, selected_link))
+    elseif selected_text.sboxes and self.hold_pos then
+        local text = self.ui.document:getOCRText(self.hold_pos.page, selected_text.sboxes)
+        if not text then
+            -- getOCRText is not implemented in some document backends, but
+            -- getOCRWord is implemented everywhere. As such, fall back to
+            -- getOCRWord.
+            text = ""
+            for _, sbox in ipairs(selected_text.sboxes) do
+                local word = self.ui.document:getOCRWord(self.hold_pos.page, { sbox = sbox })
+                logger.dbg("OCRed word:", word)
+                --- @fixme This might produce incorrect results on RTL text.
+                if word and word ~= "" then
+                    text = text .. word
+                end
+            end
+        end
+        logger.dbg("OCRed text:", text)
+        if text and text ~= "" then
+            self.ui:handleEvent(Event:new("LookupWord", text, false, word_boxes, self, selected_link))
         else
             UIManager:show(InfoMessage:new{
                 text = info_message_ocr_text,
@@ -1227,15 +1261,15 @@ function ReaderHighlight:onHoldRelease()
         end
         self.hold_last_tv = nil
     end
-    if self.selected_word then -- single-word selection
+    if self.is_word_selection then -- single-word selection
         if long_final_hold or G_reader_settings:isTrue("highlight_action_on_single_word") then
-            -- Force a 0-distance pan to have a self.selected_text with this word,
-            -- which will enable the highlight menu or action instead of dict lookup
-            self:onHoldPan(nil, {pos=self.hold_ges_pos})
+            self.is_word_selection = false
         end
     end
 
-    if self.selected_text then
+    if self.is_word_selection then
+        self:lookup(self.selected_text, self.selected_link)
+    else
         local default_highlight_action = G_reader_settings:readSetting("default_highlight_action", "ask")
         if long_final_hold or default_highlight_action == "ask" then
             -- bypass default action and show popup if long final hold
@@ -1257,9 +1291,6 @@ function ReaderHighlight:onHoldRelease()
             -- No self:onClose() to not remove the selected text
             -- which will have been the first search result
         end
-    elseif self.selected_word then
-        self:lookup(self.selected_word, self.selected_link)
-        self.selected_word = nil
     end
     return true
 end
@@ -1307,6 +1338,13 @@ function ReaderHighlight:highlightFromHoldPos()
     if self.hold_pos then
         if not self.selected_text then
             self.selected_text = self.ui.document:getTextFromPositions(self.hold_pos, self.hold_pos)
+            if self.ui.languagesupport and self.ui.languagesupport:hasActiveLanguagePlugins() then
+                -- Match language-specific expansion you'd get from self:onHold().
+                local new_selected_text = self.ui.languagesupport:improveWordSelection(self.selected_text)
+                if new_selected_text then
+                    self.selected_text = new_selected_text
+                end
+            end
             logger.dbg("selected text:", self.selected_text)
         end
     end

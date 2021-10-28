@@ -35,6 +35,12 @@ local order = {
         "device",
         -- end common settings
     },
+    document = {
+        "document_auto_save",
+        "document_save",
+        "document_end_action",
+        "language_support",
+    },
     device = {
         "keyboard_layout",
         "time",

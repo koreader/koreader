@@ -88,6 +88,23 @@ describe("util module", function()
                 "彩","虹","是","通","过","太","阳","光","的","折","射","引","起","的","。",
             }, words)
         end)
+        it("should split Japanese words", function()
+            local words = util.splitToWords("色は匂へど散りぬるを我が世誰ぞ常ならむ")
+            assert.are_same({
+                "色","は","匂","へ","ど","散","り","ぬ","る","を",
+                "我","が","世","誰","ぞ","常","な","ら","む",
+            }, words)
+        end)
+        it("should split Korean words", function()
+            -- Technically splitting on spaces is correct but we treat Korean
+            -- as if it were any other CJK text.
+            local words = util.splitToWords("대한민국의 국기는 대한민국 국기법에 따라 태극기")
+            assert.are_same({
+                "대","한","민","국","의"," ","국","기","는"," ",
+                "대","한","민","국"," ","국","기","법","에"," ",
+                "따","라"," ","태","극","기",
+            }, words)
+        end)
         it("should split words of multilingual text", function()
             local words = util.splitToWords("BBC纪录片")
             assert.are_same({"BBC", "纪", "录", "片"}, words)
@@ -108,7 +125,7 @@ describe("util module", function()
                     table.insert(table_of_words, word)
                     word = ""
                 end
-                if i == #table_chars then table.insert(table_of_words, word) end
+                if i == #table_chars and word ~= "" then table.insert(table_of_words, word) end
             end
             assert.are_same({
                 "Pójdźże, ",
@@ -121,7 +138,7 @@ describe("util module", function()
                 "gavilán",
             }, table_of_words)
         end)
-        it("should split text to line - CJK", function()
+        it("should split text to line - CJK Chinese", function()
             local text = "彩虹是通过太阳光的折射引起的。"
             local word = ""
             local table_of_words = {}
@@ -134,10 +151,74 @@ describe("util module", function()
                     table.insert(table_of_words, word)
                     word = ""
                 end
-                if i == #table_chars then table.insert(table_of_words, word) end
+                if i == #table_chars and word ~= "" then table.insert(table_of_words, word) end
             end
             assert.are_same({
                 "彩","虹","是","通","过","太","阳","光","的","折","射","引","起","的","。",
+            }, table_of_words)
+        end)
+        it("should split text to line - CJK Japanese", function()
+            local text = "色は匂へど散りぬるを我が世誰ぞ常ならむ"
+            local word = ""
+            local table_of_words = {}
+            local c
+            local table_chars = util.splitToChars(text)
+            for i = 1, #table_chars  do
+                c = table_chars[i]
+                word = word .. c
+                if util.isSplittable(c) then
+                    table.insert(table_of_words, word)
+                    word = ""
+                end
+                if i == #table_chars and word ~= "" then table.insert(table_of_words, word) end
+            end
+            assert.are_same({
+                "色","は","匂","へ","ど","散","り","ぬ","る","を",
+                "我","が","世","誰","ぞ","常","な","ら","む",
+            }, table_of_words)
+        end)
+        it("should split text to line - CJK Korean", function()
+            local text = "대한민국의 국기는 대한민국 국기법에 따라 태극기"
+            local word = ""
+            local table_of_words = {}
+            local c
+            local table_chars = util.splitToChars(text)
+            for i = 1, #table_chars  do
+                c = table_chars[i]
+                word = word .. c
+                if util.isSplittable(c) then
+                    table.insert(table_of_words, word)
+                    word = ""
+                end
+                if i == #table_chars and word ~= "" then table.insert(table_of_words, word) end
+            end
+            assert.are_same({
+                "대","한","민","국","의"," ","국","기","는"," ",
+                "대","한","민","국"," ","국","기","법","에"," ",
+                "따","라"," ","태","극","기",
+            }, table_of_words)
+        end)
+        it("should split text to line - mixed CJK and latin", function()
+            local text = "This is Russian: русский язык, Chinese: 汉语, Japanese: 日本語、 Korean: 한국어。"
+            local word = ""
+            local table_of_words = {}
+            local c
+            local table_chars = util.splitToChars(text)
+            for i = 1, #table_chars  do
+                c = table_chars[i]
+                word = word .. c
+                if util.isSplittable(c) then
+                    table.insert(table_of_words, word)
+                    word = ""
+                end
+                if i == #table_chars and word ~= "" then table.insert(table_of_words, word) end
+            end
+            assert.are_same({
+                "This ", "is ",
+                "Russian: ", "русский ", "язык, ",
+                "Chinese: ", "汉","语",", ",
+                "Japanese: ", "日","本","語","、", " ",
+                "Korean: ", "한","국","어","。",
             }, table_of_words)
         end)
         it("should split text to line with next_c - unicode", function()
@@ -154,7 +235,7 @@ describe("util module", function()
                     table.insert(table_of_words, word)
                     word = ""
                 end
-                if i == #table_chars then table.insert(table_of_words, word) end
+                if i == #table_chars and word ~= "" then table.insert(table_of_words, word) end
             end
             assert.are_same({
                 "Ce ",
@@ -187,7 +268,7 @@ describe("util module", function()
                     table.insert(table_of_words, word)
                     word = ""
                 end
-                if i == #table_chars then table.insert(table_of_words, word) end
+                if i == #table_chars and word ~= "" then table.insert(table_of_words, word) end
             end
             assert.are_same({
                 "Ce ",

@@ -144,27 +144,7 @@ Works for rectangles, dimensions and points
 @treturn Geom
 ]]
 function Geom:combine(rect_b)
-    -- We'll want to return a *new* object, so, start with a copy of self
-    local combined = self:copy()
-    if not rect_b or rect_b:area() == 0 then return combined end
-
-    if combined.x > rect_b.x then
-        combined.x = rect_b.x
-    end
-    if combined.y > rect_b.y then
-        combined.y = rect_b.y
-    end
-    if self.x + self.w > rect_b.x + rect_b.w then
-        combined.w = self.x + self.w - combined.x
-    else
-        combined.w = rect_b.x + rect_b.w - combined.x
-    end
-    if self.y + self.h > rect_b.y + rect_b.h then
-        combined.h = self.y + self.h - combined.y
-    else
-        combined.h = rect_b.y + rect_b.h - combined.y
-    end
-    return combined
+    return Geom.boundingBox({self, rect_b})
 end
 
 --[[--
@@ -437,6 +417,36 @@ function Geom:isEmpty()
         return true
     end
     return false
+end
+
+--[[--
+Returns a bounding box which encompasses all passed rectangles.
+@tparam Geom rectangles to encompass
+@treturn Geom bounding box or nil if no rectangles passed
+]]
+function Geom.boundingBox(boxes)
+    local bounding_box
+    for _, geom in ipairs(boxes) do
+        -- Easier to work with (x0,x0)+(x1,y1) pairs.
+        local box = { x0 = geom.x, y0 = geom.y,
+                      x1 = geom.x + geom.w, y1 = geom.y + geom.h }
+        if not bounding_box then
+            bounding_box = box
+        else
+            if box.x0 < bounding_box.x0 then bounding_box.x0 = box.x0 end
+            if box.y0 < bounding_box.y0 then bounding_box.y0 = box.y0 end
+            if box.x1 > bounding_box.x1 then bounding_box.x1 = box.x1 end
+            if box.y1 > bounding_box.y1 then bounding_box.y1 = box.y1 end
+        end
+    end
+    if bounding_box then
+        return Geom:new{
+            x = bounding_box.x0,
+            y = bounding_box.y0,
+            w = bounding_box.x1 - bounding_box.x0,
+            h = bounding_box.y1 - bounding_box.y0,
+        }
+    end
 end
 
 return Geom

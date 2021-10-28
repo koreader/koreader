@@ -521,11 +521,16 @@ function util.lastIndexOf(string, ch)
     if i == nil then return -1 else return i - 1 end
 end
 
+--- Pattern which matches a single well-formed UTF-8 character, including
+--- theoretical >4-byte extensions.
+-- Taken from <https://www.lua.org/manual/5.4/manual.html#pdf-utf8.charpattern>
+util.UTF8_CHAR_PATTERN = '[%z\1-\127\194-\253][\128-\191]*'
+
 --- Reverse the individual greater-than-single-byte characters
 -- @string string to reverse
 -- Taken from <https://github.com/blitmap/lua-utf8-simple#utf8reverses>
 function util.utf8Reverse(text)
-    text = text:gsub('[%z\1-\127\194-\244][\128-\191]*', function (c) return #c > 1 and c:reverse() end)
+    text = text:gsub(util.UTF8_CHAR_PATTERN, function (c) return #c > 1 and c:reverse() end)
     return text:reverse()
 end
 
@@ -554,7 +559,7 @@ function util.splitToChars(text)
         --   characters directly, but only as a pair.
         local hi_surrogate
         local hi_surrogate_uchar
-        for uchar in string.gmatch(text, "([%z\1-\127\194-\244][\128-\191]*)") do
+        for uchar in text:gmatch(util.UTF8_CHAR_PATTERN) do
             charcode = BaseUtil.utf8charcode(uchar)
             -- (not sure why we need this prevcharcode check; we could get
             -- charcode=nil with invalid UTF-8, but should we then really
@@ -589,14 +594,47 @@ end
 ---- @string c
 ---- @treturn boolean true if CJK
 function util.isCJKChar(c)
-    return string.match(c, "[\228-\234][\128-\191].") == c
+    -- Smallest CJK codepoint is 0x1100 which requires at least 3 utf8 bytes to
+    -- encode (U+07FF is the largest codepoint that can be represented in 2
+    -- bytes with utf8). So if the character is shorter than 3 bytes it's
+    -- definitely not CJK and no need to decode it.
+    if #c < 3 then
+        return false
+    end
+    local code = BaseUtil.utf8charcode(c)
+    -- The weird bracketing is intentional -- we use the lowest possible
+    -- codepoint as a shortcut so if the codepoint is below U+1100 we
+    -- immediately return false.
+    return -- BMP (Plane 0)
+            code >=  0x1100 and (code <=  0x11FF  or -- Hangul Jamo
+           (code >=  0x2E80 and  code <=  0x9FFF) or -- Numerous CJK Blocks (NB: has some gaps)
+           (code >=  0xA960 and  code <=  0xA97F) or -- Hangul Jamo Extended-A
+           (code >=  0xAC00 and  code <=  0xD7AF) or -- Hangul Syllables
+           (code >=  0xD7B0 and  code <=  0xD7FF) or -- Hangul Jame Extended-B
+           (code >=  0xF900 and  code <=  0xFAFF) or -- CJK Compatibility Ideographs
+           (code >=  0xFE30 and  code <=  0xFE4F) or -- CJK Compatibility Forms
+           (code >=  0xFF00 and  code <=  0xFFEF) or -- Halfwidth and Fullwidth Forms
+           -- SIP (Plane 2)
+           (code >= 0x20000 and  code <= 0x2A6DF) or -- CJK Unified Ideographs Extension B
+           (code >= 0x2A700 and  code <= 0x2B73F) or -- CJK Unified Ideographs Extension C
+           (code >= 0x2B740 and  code <= 0x2B81F) or -- CJK Unified Ideographs Extension D
+           (code >= 0x2B820 and  code <= 0x2CEAF) or -- CJK Unified Ideographs Extension E
+           (code >= 0x2CEB0 and  code <= 0x2EBEF) or -- CJK Unified Ideographs Extension F
+           (code >= 0x2F800 and  code <= 0x2FA1F) or -- CJK Compatibility Ideographs Supplement
+           -- TIP (Plane 3)
+           (code >= 0x30000 and  code <= 0x3134F))   -- CJK Unified Ideographs Extension G
 end
 
 --- Tests whether str contains CJK characters
 ---- @string str
 ---- @treturn boolean true if CJK
 function util.hasCJKChar(str)
-    return string.match(str, "[\228-\234][\128-\191].") ~= nil
+    for c in str:gmatch(util.UTF8_CHAR_PATTERN) do
+        if util.isCJKChar(c) then
+            return true
+        end
+    end
+    return false
 end
 
 --- Split texts into a list of words, spaces and punctuation marks.
@@ -607,8 +645,10 @@ function util.splitToWords(text)
     for word in util.gsplit(text, "[%s%p]+", true) do
         -- if space split word contains CJK characters
         if util.hasCJKChar(word) then
-            -- split with CJK characters
-            for char in util.gsplit(word, "[\228-\234\192-\255][\128-\191]+", true) do
+            -- split all non-ASCII characters separately (FIXME ideally we
+            -- would split only the CJK characters, but you cannot define CJK
+            -- characters trivially with a byte-only Lua pattern).
+            for char in util.gsplit(word, "[\192-\255][\128-\191]+", true) do
                 table.insert(wlist, char)
             end
         else

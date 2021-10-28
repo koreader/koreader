@@ -13,9 +13,18 @@ describe("Readerhighlight module", function()
     end)
 
     local function highlight_single_word(readerui, pos0)
+        local s = spy.on(readerui.languagesupport, "improveWordSelection")
+
         readerui.highlight:onHold(nil, { pos = pos0 })
         readerui.highlight:onHoldRelease()
         readerui.highlight:onHighlight()
+
+        assert.spy(s).was_called()
+        assert.spy(s).was_called_with(match.is_ref(readerui.languagesupport),
+                                      match.is_ref(readerui.highlight.selected_text))
+        -- Reset in case we're called more than once.
+        readerui.languagesupport.improveWordSelection:revert()
+
         UIManager:scheduleIn(1, function()
             UIManager:close(readerui.dictionary.dict_window)
             UIManager:close(readerui)
@@ -72,13 +81,14 @@ describe("Readerhighlight module", function()
 
     describe("highlight for EPUB documents", function()
         local page = 10
-        local readerui
+        local readerui, selection_spy
         setup(function()
             local sample_epub = "spec/front/unit/data/juliet.epub"
             readerui = ReaderUI:new{
                 dimen = Screen:getSize(),
                 document = DocumentRegistry:openDocument(sample_epub),
             }
+            selection_spy = spy.on(readerui.languagesupport, "improveWordSelection")
         end)
         teardown(function()
             readerui:closeDocument()
@@ -88,6 +98,7 @@ describe("Readerhighlight module", function()
             UIManager:quit()
             readerui.rolling:onGotoPage(page)
             UIManager:show(readerui)
+            selection_spy:clear()
             --- @fixme HACK: Mock UIManager:run x and y for readerui.dimen
             --- @todo Refactor readerview's dimen handling so we can get rid of
             -- this workaround
@@ -99,6 +110,7 @@ describe("Readerhighlight module", function()
         it("should highlight single word", function()
             highlight_single_word(readerui, Geom:new{ x = 400, y = 70 })
             Screen:shot("screenshots/reader_highlight_single_word_epub.png")
+            assert.spy(selection_spy).was_called()
             assert.truthy(readerui.view.highlight.saved[page])
         end)
         it("should highlight text", function()
@@ -106,6 +118,7 @@ describe("Readerhighlight module", function()
                            Geom:new{ x = 400, y = 110 },
                            Geom:new{ x = 400, y = 170 })
             Screen:shot("screenshots/reader_highlight_text_epub.png")
+            assert.spy(selection_spy).was_called()
             assert.truthy(readerui.view.highlight.saved[page])
         end)
         it("should response on tap gesture", function()
@@ -114,6 +127,7 @@ describe("Readerhighlight module", function()
                                Geom:new{ x = 350, y = 395 },
                                Geom:new{ x = 80, y = 265 })
             Screen:shot("screenshots/reader_tap_highlight_text_epub.png")
+            assert.spy(selection_spy).was_called()
         end)
     end)
 

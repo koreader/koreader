@@ -50,8 +50,8 @@ local DictQuickLookup = InputContainer:new{
     dict_index = 1,
     width = nil,
     height = nil,
-    -- box of highlighted word, quick lookup window tries to not hide the word
-    word_box = nil,
+    -- sboxes containing highlighted text, quick lookup window tries to not hide the word
+    word_boxes = nil,
 
     -- refresh_callback will be called before we trigger full refresh in onSwipe
     refresh_callback = nil,
@@ -130,7 +130,7 @@ function DictQuickLookup:init()
             --             -- don't pass self.highlight to subsequent lookup, we want
             --             -- the first to be the only one to unhighlight selection
             --             -- when closed
-            --             Event:new("LookupWord", word, self.word_box))
+            --             Event:new("LookupWord", word, true, {self.word_box}))
             --     end
             -- },
             -- Allow selection of one or more words (see textboxwidget.lua) :
@@ -619,16 +619,32 @@ function DictQuickLookup:init()
         local nb_lines = Math.round(self.definition_height / self.definition_line_height)
         self.definition_height = nb_lines * self.definition_line_height
         self.height = self.definition_height + others_height
-        if self.word_box then
+        if self.word_boxes and #self.word_boxes > 0 then
             -- Try to not hide the highlighted word. We don't want to always
             -- get near it if we can stay center, so that more context around
             -- the word is still visible with the dict result.
             -- But if we were to be drawn over the word, move a bit if possible.
-            local box = self.word_box
-            -- Don't stick to the box, ensure a minimal padding between box and window
-            local box_dict_padding = Size.padding.small
-            local word_box_top = box.y - box_dict_padding
-            local word_box_bottom = box.y + box.h + box_dict_padding
+
+            -- In most cases boxes will be a single sbox, but handle multiple
+            -- sboxes by taking the top and bottom y values.
+            local word_box_top
+            local word_box_bottom
+            for _, box in ipairs(self.word_boxes) do
+                local box_top = box.y
+                local box_bottom = box.y + box.h
+                if not word_box_top or word_box_top > box_top then
+                    word_box_top = box_top
+                end
+                if not word_box_bottom or word_box_bottom < box_bottom then
+                    word_box_bottom = box_bottom
+                end
+            end
+
+            -- Don't stick to the box, ensure a minimal padding between box and
+            -- window.
+            word_box_top = word_box_top - Size.padding.small
+            word_box_bottom = word_box_bottom + Size.padding.small
+
             local half_visible_height = (avail_height - self.height) / 2
             if word_box_bottom > half_visible_height and word_box_top <= half_visible_height + self.height then
                 -- word would be covered by our centered window

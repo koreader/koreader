@@ -20,6 +20,7 @@ local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
+local LanguageSupport = require("languagesupport")
 local PluginLoader = require("pluginloader")
 local ReaderActivityIndicator = require("apps/reader/modules/readeractivityindicator")
 local ReaderBack = require("apps/reader/modules/readerback")
@@ -82,8 +83,10 @@ local ReaderUI = InputContainer:new{
 }
 
 function ReaderUI:registerModule(name, ui_module, always_active)
-    if name then self[name] = ui_module end
-    ui_module.name = "reader" .. name
+    if name then
+        self[name] = ui_module
+        ui_module.name = "reader" .. name
+    end
     table.insert(self, ui_module)
     if always_active then
         -- to get events even when hidden
@@ -170,6 +173,10 @@ function ReaderUI:init()
     self:registerModule("gotopage", ReaderGoto:new{
         dialog = self.dialog,
         view = self.view,
+        ui = self,
+        document = self.document,
+    })
+    self:registerModule("languagesupport", LanguageSupport:new{
         ui = self,
         document = self.document,
     })

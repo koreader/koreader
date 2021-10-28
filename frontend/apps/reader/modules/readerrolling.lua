@@ -775,7 +775,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
             end
             -- Paint directly to the screen and force a regional refresh
             Screen.bb:paintRect(screen_x, screen_y, marker_w, marker_h, Blitbuffer.COLOR_BLACK)
-            Screen["refreshFast"](Screen, screen_x, screen_y, marker_w, marker_h)
+            Screen:refreshFast(screen_x, screen_y, marker_w, marker_h)
             if delayed_unmark then
                 self.unmark_func = function()
                     self.unmark_func = nil
@@ -786,7 +786,7 @@ function ReaderRolling:onGotoXPointer(xp, marker_xp)
                     -- it directly to screen and triggering a regional refresh.
                     if self.mark_orig_content_bb then
                         Screen.bb:blitFrom(self.mark_orig_content_bb, screen_x, screen_y, 0, 0, marker_w, marker_h)
-                        Screen["refreshUI"](Screen, screen_x, screen_y, marker_w, marker_h)
+                        Screen:refreshUI(screen_x, screen_y, marker_w, marker_h)
                         self.mark_orig_content_bb:free()
                         self.mark_orig_content_bb = nil
                     end
@@ -1210,6 +1210,7 @@ function ReaderRolling:showEngineProgress(percent)
             self.engine_progress_widget = ProgressWidget:new{
                 width = w,
                 height = h,
+                fillcolor = Blitbuffer.COLOR_BLACK, -- we need pure B&W for refreshFast
                 percentage = percent,
                 margin_h = 0,
                 margin_v = 0,
@@ -1224,7 +1225,7 @@ function ReaderRolling:showEngineProgress(percent)
         -- as UIManager won't get a change to run until loading/rendering
         -- is finished.
         self.engine_progress_widget:paintTo(Screen.bb, x, y)
-        Screen["refreshFast"](Screen, x, y, w, h)
+        Screen:refreshFast(x, y, w, h)
         self.engine_progress_update_not_before = now + ENGINE_PROGRESS_UPDATE_DELAY
     else
         -- Done: cleanup

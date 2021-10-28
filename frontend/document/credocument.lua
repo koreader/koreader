@@ -561,25 +561,14 @@ function CreDocument:getWordFromPosition(pos)
         if text_range.pos0 and text_range.pos1 then
             -- get segments from these pos, to build the overall box
             local word_boxes = self._document:getWordBoxesFromPositions(text_range.pos0, text_range.pos1, true)
-            if #word_boxes > 0 then
-                local overall_box
-                for i = 1, #word_boxes do
-                    local line_box = word_boxes[i]
-                    if not overall_box then
-                        overall_box = line_box
-                    else
-                        if line_box.x0 < overall_box.x0 then overall_box.x0 = line_box.x0 end
-                        if line_box.y0 < overall_box.y0 then overall_box.y0 = line_box.y0 end
-                        if line_box.x1 > overall_box.x1 then overall_box.x1 = line_box.x1 end
-                        if line_box.y1 > overall_box.y1 then overall_box.y1 = line_box.y1 end
-                    end
-                end
-                wordbox.sbox = Geom:new{
-                    x = overall_box.x0,
-                    y = overall_box.y0,
-                    w = overall_box.x1 - overall_box.x0,
-                    h = overall_box.y1 - overall_box.y0,
-                }
+            -- convert to Geom so we can use Geom.boundingBox
+            for i=1, #word_boxes do
+                local v = word_boxes[i]
+                word_boxes[i] = { x = v.x0,        y = v.y0,
+                                  w = v.x1 - v.x0, h = v.y1 - v.y0 }
+            end
+            wordbox.sbox = Geom.boundingBox(word_boxes)
+            if wordbox.sbox then
                 box_found = true
             end
         end
@@ -839,8 +828,9 @@ function CreDocument:getTextFromXPointer(xp)
     end
 end
 
-function CreDocument:getTextFromXPointers(pos0, pos1)
-    return self._document:getTextFromXPointers(pos0, pos1)
+function CreDocument:getTextFromXPointers(pos0, pos1, draw_selection)
+    local draw_segmented_selection = draw_selection -- always use segmented selections
+    return self._document:getTextFromXPointers(pos0, pos1, draw_selection, draw_segmented_selection)
 end
 
 function CreDocument:getHTMLFromXPointer(xp, flags, from_final_parent)
@@ -1594,6 +1584,7 @@ function CreDocument:setupCallCache()
             elseif name == "highlightXPointer" then add_buffer_trash = true
             elseif name == "getWordFromPosition" then add_buffer_trash = true
             elseif name == "getTextFromPositions" then add_buffer_trash = true
+            elseif name == "getTextFromXPointers" then add_buffer_trash = true
             elseif name == "findText" then add_buffer_trash = true
             elseif name == "resetBufferCache" then add_buffer_trash = true
 
@@ -1622,7 +1613,6 @@ function CreDocument:setupCallCache()
             elseif name == "getHTMLFromXPointers" then no_wrap = true
             elseif name == "getImageFromPosition" then no_wrap = true
             elseif name == "getTextFromXPointer" then no_wrap = true
-            elseif name == "getTextFromXPointers" then no_wrap = true
             elseif name == "getPageOffsetX" then no_wrap = true
             elseif name == "getNextVisibleWordStart" then no_wrap = true
             elseif name == "getNextVisibleWordEnd" then no_wrap = true
