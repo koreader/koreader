@@ -1,5 +1,9 @@
 name: Docs
 
+defaults:
+  run:
+    shell: bash
+
 on:
     workflow_dispatch:
     push:
@@ -7,7 +11,30 @@ on:
           - master
 
 jobs:
-    call-workflow:
-        uses: yparitcher/doc/.github/workflows/docs.yml@gh-pages
-        #uses: koreader/doc/.github/workflows/docs.yml@gh-pages
+  docs:
+    runs-on: ubuntu-latest
+    needs: get_token
+
+    env:
+        # pretend to be cirleci so the scripts dont have to change
+        CIRCLE_WORKING_DIRECTORY: ${{ github.workspace }}
+
+    steps:
+      - name: Install ldoc
+        run: sudo apt-get update && sudo apt-get install lua-ldoc lua-markdown -y
+
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Obtain GitHub App Installation Access Token
+        id: githubAppAuth
+        run: |
+          TOKEN="$(npx obtain-github-app-installation-access-token ci ${{ secrets.COMMIT_APP_KEY_DOCS }})"
+
+      - name:  docs
+        run: .ci/docs.sh
+        env:
+          GITHUB_APP_TOKEN: ${{ steps.githubAppAuth.outputs.token }}
 
