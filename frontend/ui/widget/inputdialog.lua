@@ -318,6 +318,7 @@ function InputDialog:init()
         -- Create a dummy input widget to get some metrics
         local input_widget = InputText:new{
             text = self.fullscreen and "-" or self.input,
+            input_type = self.input_type,
             face = self.input_face,
             width = self.text_width,
             padding = self.input_padding,
