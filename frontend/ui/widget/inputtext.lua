@@ -13,6 +13,7 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
 local VerticalGroup = require("ui/widget/verticalgroup")
+local dbg = require("dbg")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -728,6 +729,11 @@ function InputText:addChars(chars)
     self.charpos = self.charpos + #util.splitToChars(chars)
     self:initTextBox(table.concat(self.charlist), true)
 end
+dbg:guard(InputText, "addChars",
+    function(self, chars)
+        assert(type(chars) == "string",
+            "Wrong chars value type (expected string)!")
+    end)
 
 function InputText:delChar()
     if self.readonly or not self:isTextEditable(true) then
