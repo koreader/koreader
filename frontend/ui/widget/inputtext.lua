@@ -13,6 +13,7 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
 local VerticalGroup = require("ui/widget/verticalgroup")
+local dbg = require("dbg")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -570,6 +571,9 @@ end
 -- Handle text coming directly as text from the Device layer (eg. soft keyboard
 -- or via SDL's keyboard mapping).
 function InputText:onTextInput(text)
+    if type(text) == "number" then
+        text = tostring(text)
+    end
     self:addChars(text)
     return true
 end
@@ -712,9 +716,6 @@ function InputText:addChars(chars)
         -- which would crash table.concat()
         return
     end
-    if type(chars) ~= "string" then
-        chars = tostring(chars)
-    end
     if self.enter_callback and chars == "\n" then
         UIManager:scheduleIn(0.3, function() self.enter_callback() end)
         return
@@ -731,6 +732,11 @@ function InputText:addChars(chars)
     self.charpos = self.charpos + #util.splitToChars(chars)
     self:initTextBox(table.concat(self.charlist), true)
 end
+dbg:guard(InputText, "addChars",
+        function(self, chars)
+            assert(type(chars) == "string",
+                   "Wrong chars value type (expected string)!")
+        end)
 
 function InputText:delChar()
     if self.readonly or not self:isTextEditable(true) then
