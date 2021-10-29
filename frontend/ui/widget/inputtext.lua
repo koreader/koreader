@@ -571,9 +571,6 @@ end
 -- Handle text coming directly as text from the Device layer (eg. soft keyboard
 -- or via SDL's keyboard mapping).
 function InputText:onTextInput(text)
-    if type(text) == "number" then
-        text = tostring(text)
-    end
     self:addChars(text)
     return true
 end
