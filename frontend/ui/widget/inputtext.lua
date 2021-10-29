@@ -730,10 +730,10 @@ function InputText:addChars(chars)
     self:initTextBox(table.concat(self.charlist), true)
 end
 dbg:guard(InputText, "addChars",
-        function(self, chars)
-            assert(type(chars) == "string",
-                   "Wrong chars value type (expected string)!")
-        end)
+    function(self, chars)
+        assert(type(chars) == "string",
+            "Wrong chars value type (expected string)!")
+    end)
 
 function InputText:delChar()
     if self.readonly or not self:isTextEditable(true) then
