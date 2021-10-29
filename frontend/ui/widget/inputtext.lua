@@ -712,6 +712,9 @@ function InputText:addChars(chars)
         -- which would crash table.concat()
         return
     end
+    if type(chars) ~= "string" then
+        chars = tostring(chars)
+    end
     if self.enter_callback and chars == "\n" then
         UIManager:scheduleIn(0.3, function() self.enter_callback() end)
         return
