@@ -1344,4 +1344,73 @@ function util.stringEndsWith(str, ending)
    return ending == "" or str:sub(-#ending) == ending
 end
 
+local WrappedFunction_mt = {
+    __call = function(self, ...)
+        if self.before_callback then
+            self.before_callback(self.target_table)
+        end
+        if self.func then
+            return self.func(...)
+        end
+    end,
+}
+
+--- Wrap (or replace) a table method with a custom method, in a revertable way.
+-- This is primarily useful for interfaces where it is necessary to wrap table
+-- methods as a method of extension (most notably, wrapping inputtext for some
+-- keyboard layouts).
+--
+-- The returned table is the same table `target_table[target_field_name]` is
+-- set to. In addition to being callable, the new method has two sub-methods:
+--
+--  * `:revert()` will un-wrap the method and revert it to the original state.
+--
+--    Note that if a method is wrapped multiple times, reverting it will revert
+--    it to the state of the method when util.wrapMethod was called (and if
+--    called on the table returned from util.wrapMethod, that is the state when
+--    that particular util.wrapMethod was called).
+--
+--  * `:raw_method_call(...)` will call the original method with the arguments
+--    `(target_table, ...)` and return whatever it returns. Note that the
+--    target_table used is the one associated with the util.wrapMethod call.
+--
+--    This makes it more ergonomic to use the internally-wrapped table methods
+--    in the case where you've replaced the regular function with your own
+--    implementation but you need the original functions inside your
+--    implementation.
+--
+-- This is loosely based on busted/luassert's spies implementation (MIT).
+--   <https://github.com/Olivine-Labs/luassert/blob/v1.7.11/src/spy.lua>
+--
+-- @tparam table target_table The table whose method will be wrapped.
+-- @tparam string target_field_name The name of the field to wrap.
+-- @tparam nil|func new_func If non-nil, this function will be called instead of the original function after wrapping.
+-- @tparam nil|func before_callback If non-nil, this function will be called (with the target_table as the only argument) before the function is called.
+function util.wrapMethod(target_table, target_field_name, new_func, before_callback)
+    local old_func = target_table[target_field_name]
+    local wrapped = setmetatable({
+        target_table = target_table,
+        target_field_name = target_field_name,
+        old_func = old_func,
+
+        before_callback = before_callback,
+        func = new_func or old_func,
+
+        revert = function(self)
+            if not self.reverted then
+                self.target_table[self.target_field_name] = self.old_func
+                self.reverted = true
+            end
+        end,
+
+        raw_method_call = function(self, ...)
+            if self.old_func then
+                return self.old_func(self.target_table, ...)
+            end
+        end,
+    }, WrappedFunction_mt)
+    target_table[target_field_name] = wrapped
+    return wrapped
+end
+
 return util
