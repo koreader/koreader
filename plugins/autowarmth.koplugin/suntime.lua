@@ -64,7 +64,7 @@ SunTime.astronomic = Rad(-18)
 SunTime.nautic =  Rad(-12)
 SunTime.civil = Rad(-6)
 -- SunTime.eod = Rad(-49/60) -- approx. end of day
-SunTime.earth_flatten = 0 -- toDo 1 / 298.257223563 -- WGS84
+SunTime.earth_flatten = 0 -- not ready yet 1 / 298.257223563 -- WGS84
 SunTime.average_temperature = 10 -- °C
 
 ----------------------------------------------------------------
