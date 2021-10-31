@@ -179,7 +179,8 @@ function ReaderHighlight:init()
         return {
             text= _("Hyphenate"),
             show_in_highlight_dialog_func = function()
-                return _self.ui.userhyph and _self.ui.userhyph:isAvailable() and not _self.selected_text.text:find("[ ,;-%.\n]")
+                return _self.ui.userhyph and _self.ui.userhyph:isAvailable()
+                    and not _self.selected_text.text:find("[ ,;-%.\n]")
             end,
             callback = function()
                 _self.ui.userhyph:modifyUserEntry(_self.selected_text.text)
@@ -746,6 +747,10 @@ function ReaderHighlight:removeFromHighlightDialog(idx)
 end
 
 function ReaderHighlight:onShowHighlightMenu()
+    if not self.selected_text then
+        return
+    end
+
     local highlight_buttons = {{}}
 
     local columns = 2
