@@ -4,7 +4,7 @@ WPA client helper for Kobo.
 
 local FFIUtil = require("ffi/util")
 local InfoMessage = require("ui/widget/infomessage")
-local WpaClient = require('lj-wpaclient/wpaclient')
+local WpaClient = require("lj-wpaclient/wpaclient")
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local T = FFIUtil.template
@@ -20,13 +20,17 @@ function WpaSupplicant:getNetworkList()
         return nil, T(CLIENT_INIT_ERR_MSG, err)
     end
 
-    local list = wcli:scanThenGetResults()
+    local list
+    list, err = wcli:scanThenGetResults()
     wcli:close()
+    if list == nil then
+        return nil, T("An error occurred while scanning: %1.", err)
+    end
 
     local saved_networks = self:getAllSavedNetworks()
     local curr_network = self:getCurrentNetwork()
 
-    for _,network in ipairs(list) do
+    for _, network in ipairs(list) do
         network.signal_quality = network:getSignalQuality()
         local saved_nw = saved_networks:readSetting(network.ssid)
         if saved_nw then
@@ -58,27 +62,30 @@ end
 
 --- Authenticates network.
 function WpaSupplicant:authenticateNetwork(network)
-    local err, wcli, nw_id
+    local wcli, reply, err
 
     wcli, err = WpaClient.new(self.wpa_supplicant.ctrl_interface)
     if not wcli then
         return false, T(CLIENT_INIT_ERR_MSG, err)
     end
 
-    nw_id, err = wcli:addNetwork()
-    if err then return false, err end
+    reply, err = wcli:addNetwork()
+    if reply == nil then
+        return false, err
+    end
+    local nw_id = reply
 
-    local re = wcli:setNetwork(nw_id, "ssid", string.format("\"%s\"", network.ssid))
-    if re == "FAIL" then
+    reply, err = wcli:setNetwork(nw_id, "ssid", string.format("\"%s\"", network.ssid))
+    if reply == nil or reply == "FAIL" then
         wcli:removeNetwork(nw_id)
-        return false, _("An error occurred while selecting network.")
+        return false, T("An error occurred while selecting network: %1.", err)
     end
     -- if password is empty it’s an open AP
     if network.password and #network.password == 0 then -- Open AP
-        re = wcli:setNetwork(nw_id, "key_mgmt", "NONE")
-        if re == "FAIL" then
+        reply, err = wcli:setNetwork(nw_id, "key_mgmt", "NONE")
+        if reply == nil or reply == "FAIL" then
             wcli:removeNetwork(nw_id)
-            return false, _("An error occurred while setting passwordless mode.")
+            return false, T("An error occurred while setting passwordless mode: %1.", err)
         end
     -- else it’s a WPA AP
     else
@@ -86,10 +93,10 @@ function WpaSupplicant:authenticateNetwork(network)
             network.psk = calculatePsk(network.ssid, network.password)
             self:saveNetwork(network)
         end
-        re = wcli:setNetwork(nw_id, "psk", network.psk)
-        if re == "FAIL" then
+        reply, err = wcli:setNetwork(nw_id, "psk", network.psk)
+        if reply == nil or reply == "FAIL" then
             wcli:removeNetwork(nw_id)
-            return false, _("An error occurred while setting password.")
+            return false, T("An error occurred while setting password: %1.", err)
         end
     end
     wcli:enableNetworkByID(nw_id)
@@ -99,10 +106,32 @@ function WpaSupplicant:authenticateNetwork(network)
     local failure_cnt = 0
     local max_retry = 30
     local info = InfoMessage:new{text = _("Authenticating…")}
-    local msg
+    local success = false
+    local msg = _("Authenticated")
     UIManager:show(info)
     UIManager:forceRePaint()
     while cnt < max_retry do
+        -- Start by checking if we're not actually connected already...
+        -- NOTE: This is mainly to catch corner-cases where our preferred network list differs from the system's,
+        --       and ours happened to be sorted earlier because of a better signal quality...
+        local connected, state = wcli:getConnectedNetwork()
+        if connected then
+            network.wpa_supplicant_id = connected.id
+            network.ssid = connected.ssid
+            success = true
+            break
+        else
+            if state then
+                UIManager:close(info)
+                -- Make the state prettier
+                local first, rest = state:sub(1, 1), state:sub(2)
+                info = InfoMessage:new{text = string.upper(first) .. string.lower(rest) .. "…"}
+                UIManager:show(info)
+                UIManager:forceRePaint()
+            end
+        end
+
+        -- Otherwise, poke at the wpa_supplicant socket for a bit...
         local ev = wcli:readEvent()
         if ev ~= nil then
             if not ev:isScanEvent() then
@@ -113,28 +142,30 @@ function WpaSupplicant:authenticateNetwork(network)
             end
             if ev:isAuthSuccessful() then
                 network.wpa_supplicant_id = nw_id
-                re = true
+                success = true
                 break
             elseif ev:isAuthFailed() then
                 failure_cnt = failure_cnt + 1
                 if failure_cnt > 3 then
-                    re, msg = false, _("Failed to authenticate")
+                    success, msg = false, _("Failed to authenticate")
                     break
                 end
             end
         else
-            FFIUtil.sleep(1)
+            wcli:waitForEvent(1 * 1000)
             cnt = cnt + 1
         end
     end
-    if re ~= true then wcli:removeNetwork(nw_id) end
+    if success ~= true then
+        wcli:removeNetwork(nw_id)
+    end
     wcli:close()
     UIManager:close(info)
     UIManager:forceRePaint()
     if cnt >= max_retry then
-        re, msg = false, _("Timed out")
+        success, msg = false, _("Timed out")
     end
-    return re, msg
+    return success, msg
 end
 
 function WpaSupplicant:disconnectNetwork(network)
