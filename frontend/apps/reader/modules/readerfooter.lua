@@ -95,7 +95,8 @@ local symbol_prefix = {
         percentage = nil,
         book_time_to_read = nil,
         chapter_time_to_read = BD.mirroredUILayout() and "«" or "»",
-        frontlight = "*",
+        frontlight = "✺",
+        frontlight_warmth = "⊛",
         -- @translators This is the footer compact item prefix for memory usage.
         mem_usage = C_("FooterCompactItemsPrefix", "M"),
         wifi_status = "",
