@@ -8,14 +8,18 @@ Module to calculate ephemeris and other times depending on the sun position
 
 Maximal errors from 2020-2050 are:
 
-* 33.58° (Casablanca)   24s
-* 37.97° (Athene)       25s
-* 41.91° (Rome)         28s
-* 47.25° (Innsbruck)    14s
-* 52.32° (Berlin)       32s
-* 64.14° (Reykjavik)   113s
-* 65.69° (Akureyri)    530s
-* 70.67° (Hammerfest) 4960s
+* 33.58° Casablanca:   24s
+* 37.97° Athene:       25s
+* 41.91° Rome:         28s
+* 47.25° Innsbruck:    14s
+* 52.32° Berlin:       32s
+* 64.14° Reykjavik:   113s
+* 65.69° Akureyri:   <110s (except *)
+* 70.67° Hammerfest: <105s (except **)
+
+*) A few days around beginning of summer (error <530s)
+
+**) A few days after and befor midnight sun (error <1200s)
 
 @usage
     local SunTime = require("suntime")
@@ -287,22 +291,10 @@ function SunTime:initVars(hour)
     self.r = self.a * (1 - self.num_ex * cos(self.E))
 
     self.eod = -atan(6.96342e8/self.r) - self.refract
---                    ^--sun radius                ^- astronomical refraction (at altitude)
+    --                ^--sun radius            ^- astronomical refraction (at altitude)
 
     self.zgl = self:getZgl()
 end
-
---[[
-function SunTime:getTimeDiff_noflatten(height)
-    local val = (sin(height) - sin(self.pos.latitude)*sin(self.decl))
-                / (cos(self.pos.latitude)*cos(self.decl))
-
-    if math.abs(val) > 1 then
-        return
-    end
-    return 12/math.pi * acos(val)
-end
-]]
 
 function SunTime:getTimeDiff(height)
     -- Project latitude from spherical coordinates onto ellipsoid coordinates
