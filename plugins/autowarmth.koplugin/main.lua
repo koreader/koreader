@@ -1,8 +1,8 @@
 --[[--
-@module koplugin.autowarmth
-
 Plugin for setting screen warmth based on the sun position and/or a time schedule
-]]
+
+@module koplugin.autowarmth
+--]]--
 
 local Device = require("device")
 
@@ -149,9 +149,8 @@ function AutoWarmth:scheduleMidnightUpdate()
     -- first unschedule all old functions
     UIManager:unschedule(self.scheduleMidnightUpdate) -- when called from menu or resume
 
-    local toRad = math.pi / 180
-    SunTime:setPosition(self.location, self.latitude * toRad, self.longitude * toRad,
-        self.timezone, self.altitude)
+    SunTime:setPosition(self.location, self.latitude, self.longitude,
+        self.timezone, self.altitude, true)
     SunTime:setAdvanced()
     SunTime:setDate() -- today
     SunTime:calculateTimes()
