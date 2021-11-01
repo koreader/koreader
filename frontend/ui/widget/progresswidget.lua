@@ -187,6 +187,7 @@ function ProgressWidget:updateStyle(thick, height)
         self.bordersize = Screen:scaleBySize(1)
         self.radius = Screen:scaleBySize(2)
         self.bgcolor = Blitbuffer.COLOR_WHITE
+        self.fillcolor = Blitbuffer.COLOR_DARK_GRAY
         self._orig_margin_v = nil
         self._orig_bordersize = nil
         if height then
@@ -198,6 +199,7 @@ function ProgressWidget:updateStyle(thick, height)
         self.bordersize = 0
         self.radius = 0
         self.bgcolor = Blitbuffer.COLOR_GRAY
+        self.fillcolor = Blitbuffer.COLOR_DIM_GRAY
         self.ticks = nil
         self._orig_margin_v = nil
         self._orig_bordersize = nil
