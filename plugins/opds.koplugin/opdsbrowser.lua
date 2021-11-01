@@ -496,6 +496,7 @@ function OPDSBrowser:genItemTableFromCatalog(catalog, item_url, username, passwo
                         table.insert(item.acquisitions, {
                             type = link.type,
                             href = build_href(link.href),
+                            title = link.title,
                         })
                     elseif link.rel == self.thumbnail_rel then
                         item.thumbnail = build_href(link.href)
@@ -702,7 +703,11 @@ function OPDSBrowser:showDownloads(item)
                 if filetype then
                     filetype = string.lower(filetype)
                     -- append DOWNWARDS BLACK ARROW ⬇ U+2B07 to format
-                    button.text = string.upper(filetype) .. "\xE2\xAC\x87"
+                    if acquisition.title then
+                        button.text = acquisition.title .. "\xE2\xAC\x87"
+                    else
+                        button.text = string.upper(filetype) .. "\xE2\xAC\x87"
+                    end
                     button.callback = function()
                         self:downloadFile(item, filetype, acquisition.href)
                         UIManager:close(self.download_dialog)
