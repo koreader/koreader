@@ -748,6 +748,7 @@ end
 
 function ReaderHighlight:onShowHighlightMenu()
     if not self.selected_text then
+        logger.dbg("readerhighlight: onShowHighlightMenu called with nil selected_text -- ignoring")
         return
     end
 
@@ -1272,29 +1273,31 @@ function ReaderHighlight:onHoldRelease()
         end
     end
 
-    if self.is_word_selection then
-        self:lookup(self.selected_text, self.selected_link)
-    else
-        local default_highlight_action = G_reader_settings:readSetting("default_highlight_action", "ask")
-        if long_final_hold or default_highlight_action == "ask" then
-            -- bypass default action and show popup if long final hold
-            self:onShowHighlightMenu()
-        elseif default_highlight_action == "highlight" then
-            self:saveHighlight()
-            self:onClose()
-        elseif default_highlight_action == "translate" then
-            self:translate(self.selected_text)
-            self:onClose()
-        elseif default_highlight_action == "wikipedia" then
-            self:lookupWikipedia()
-            self:onClose()
-        elseif default_highlight_action == "dictionary" then
-            self:onHighlightDictLookup()
-            self:onClose()
-        elseif default_highlight_action == "search" then
-            self:onHighlightSearch()
-            -- No self:onClose() to not remove the selected text
-            -- which will have been the first search result
+    if self.selected_text then
+        if self.is_word_selection then
+            self:lookup(self.selected_text, self.selected_link)
+        else
+            local default_highlight_action = G_reader_settings:readSetting("default_highlight_action", "ask")
+            if long_final_hold or default_highlight_action == "ask" then
+                -- bypass default action and show popup if long final hold
+                self:onShowHighlightMenu()
+            elseif default_highlight_action == "highlight" then
+                self:saveHighlight()
+                self:onClose()
+            elseif default_highlight_action == "translate" then
+                self:translate(self.selected_text)
+                self:onClose()
+            elseif default_highlight_action == "wikipedia" then
+                self:lookupWikipedia()
+                self:onClose()
+            elseif default_highlight_action == "dictionary" then
+                self:onHighlightDictLookup()
+                self:onClose()
+            elseif default_highlight_action == "search" then
+                self:onHighlightSearch()
+                -- No self:onClose() to not remove the selected text
+                -- which will have been the first search result
+            end
         end
     end
     return true
