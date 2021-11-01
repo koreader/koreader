@@ -64,7 +64,7 @@ SunTime.astronomic = Rad(-18)
 SunTime.nautic =  Rad(-12)
 SunTime.civil = Rad(-6)
 -- SunTime.eod = Rad(-49/60) -- approx. end of day
-SunTime.earth_flatten = 0 -- not ready yet 1 / 298.257223563 -- WGS84
+SunTime.earth_flatten = 1 / 298.257223563 -- WGS84
 SunTime.average_temperature = 10 -- °C
 
 ----------------------------------------------------------------
@@ -297,17 +297,8 @@ function SunTime:initVars(hour)
 end
 
 function SunTime:getTimeDiff(height)
-    -- Project latitude from spherical coordinates onto ellipsoid coordinates
-    -- so that the surface normal vectors are parallel
-    local ffac = 1/(1 - self.earth_flatten)
-    local flattened_latitude
-    if math.abs(self.pos.latitude) ~= math.pi/2 then
-        flattened_latitude = atan(ffac * tan(self.pos.latitude)) -- ffac
-    else
-        flattened_latitude = self.pos.latitude
-    end
-    local val = (sin(height) - sin(flattened_latitude)*sin(self.decl))
-                / (cos(flattened_latitude)*cos(self.decl))
+    local val = (sin(height) - sin(self.pos.latitude)*sin(self.decl))
+                / (cos(self.pos.latitude)*cos(self.decl))
 
     if math.abs(val) > 1 then
         return
