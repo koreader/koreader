@@ -29,11 +29,49 @@ function filemanagerutil.abbreviate(path)
     return path
 end
 
--- Purge doc settings in sidecar directory,
+-- Purge doc settings in sidecar directory
 function filemanagerutil.purgeSettings(file)
     local file_abs_path = util.realpath(file)
     if file_abs_path then
         DocSettings:open(file_abs_path):purge()
+    end
+end
+
+-- Purge reflowable doc font and page settings
+function filemanagerutil.purgeViewSettings(file)
+    local view_settings = {
+        "font_face",
+        -- crop tab
+        "copt_h_page_margins",
+        "copt_t_page_margin",
+        "copt_b_page_margin",
+        -- pageview tab
+        "copt_line_spacing",
+        "line_space_percent",
+        -- textsize tab
+        "font_size",
+        "copt_font_size",
+        "word_spacing",
+        "copt_word_spacing",
+        "word_expansion",
+        "copt_word_expansion",
+        -- contrast tab
+        "gamma_index",
+        "copt_font_gamma",
+        "font_base_weight",
+        "copt_font_base_weight",
+        "font_hinting",
+        "copt_font_hinting",
+        "font_kerning",
+        "copt_font_kerning",
+    }
+    local file_abs_path = util.realpath(file)
+    if file_abs_path then
+        local doc_settings = DocSettings:open(file_abs_path)
+        for _, v in ipairs(view_settings) do
+            doc_settings:delSetting(v)
+        end
+        doc_settings:close()
     end
 end
 
