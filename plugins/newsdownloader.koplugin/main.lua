@@ -260,6 +260,7 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
             -- In this block, each feed item will be its own
             -- epub complete with title and chapters
             local epubs_to_make = {}
+            local epubs_successfully_created = {}
             local feed_history = {}
 
             for index, feed in pairs(initialized_feeds) do
@@ -382,6 +383,11 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
                             history_for_feed:saveSetting(hash, true)
                         end
                     end
+                    -- Add the epub title to the successfully created table.
+                    table.insert(
+                        epubs_successfully_created,
+                        epub.title
+                    )
                 end
             end
 
@@ -393,13 +399,17 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
             for index, error_message in pairs(sync_errors) do
                 UI:confirm(
                     error_message,
-                    "Continue",
+                    _("Continue"),
                     ""
                 )
             end
 
-            -- Callback to menu item
-            callback("Sync complete!")
+            local message = (#epubs_successfully_created == 0) and
+                _("Sync complete. No new EPUBs created.") or
+                T(_("Sync complete. EPUBs created: %1"),
+                  table.concat(epubs_successfully_created, ", "))
+
+            callback(message)
     end)
 end
 
