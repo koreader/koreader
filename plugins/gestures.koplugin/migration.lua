@@ -179,11 +179,14 @@ end
 
 function Migration:migrateGestures(caller)
     for _, ges_mode in ipairs({"gesture_fm", "gesture_reader"}) do
-        for k, v in pairs(G_reader_settings:readSetting(ges_mode)) do
-            Migration:convertAction(caller.settings_data.data[ges_mode], k, v)
+        local ges_mode_setting = G_reader_settings:readSetting(ges_mode)
+        if ges_mode_setting then
+            for k, v in pairs(ges_mode_setting) do
+                Migration:convertAction(caller.settings_data.data[ges_mode], k, v)
+            end
+            caller.settings_data:flush()
+            G_reader_settings:delSetting(ges_mode)
         end
-        caller.settings_data:flush()
-        G_reader_settings:delSetting(ges_mode)
     end
     --custom multiswipes
     if custom_multiswipes_table then
