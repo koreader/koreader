@@ -2,6 +2,7 @@ local BD = require("ui/bidi")
 local ButtonDialogTitle = require("ui/widget/buttondialogtitle")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DocSettings = require("docsettings")
+local DocumentRegistry = require("document/documentregistry")
 local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Menu = require("ui/widget/menu")
@@ -51,9 +52,29 @@ function FileManagerHistory:onMenuHold(item)
     local buttons = {
         {
             {
+                text = _("Remove from history"),
+                callback = function()
+                    require("readhistory"):removeItem(item)
+                    self._manager:updateItemTable()
+                    UIManager:close(self.histfile_dialog)
+                end,
+            },
+            {
                 text = _("Reset settings"),
                 enabled = item.file ~= currently_opened_file and DocSettings:hasSidecarFile(util.realpath(item.file)),
                 callback = function()
+                    local other_buttons
+                    if DocumentRegistry:getProvider(item.file).provider == "crengine" then
+                        other_buttons = {
+                            {{
+                                text = _("Reset font and page settings only"),
+                                callback = function()
+                                    filemanagerutil.purgeViewSettings(item.file)
+                                    UIManager:close(self.histfile_dialog)
+                                end,
+                            }},
+                        }
+                    end
                     UIManager:show(ConfirmBox:new{
                         text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."), BD.filepath(item.file)),
                         ok_text = _("Reset"),
@@ -63,15 +84,9 @@ function FileManagerHistory:onMenuHold(item)
                             self._manager:updateItemTable()
                             UIManager:close(self.histfile_dialog)
                         end,
+                        other_buttons_first = true,
+                        other_buttons = other_buttons,
                     })
-                end,
-            },
-            {
-                text = _("Remove from history"),
-                callback = function()
-                    require("readhistory"):removeItem(item)
-                    self._manager:updateItemTable()
-                    UIManager:close(self.histfile_dialog)
                 end,
             },
         },
