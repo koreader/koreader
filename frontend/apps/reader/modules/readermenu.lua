@@ -176,6 +176,23 @@ function ReaderMenu:setUpdateItemTable()
     end
 
     -- typeset tab
+    self.menu_items.reset_view_settings = {
+        text = _("Reset view settings to default"),
+        keep_menu_open = true,
+        callback = function()
+            UIManager:show(ConfirmBox:new{
+                text = _("Reset current document font and page settings to default values?\nThe document will be reloaded."),
+                ok_text = _("Reset"),
+                ok_callback = function()
+                    local current_file = self.ui.document.file
+                    self:onTapCloseMenu()
+                    self.ui:onClose()
+                    require("apps/filemanager/filemanagerutil").purgeViewSettings(current_file)
+                    require("apps/reader/readerui"):showReader(current_file)
+                end,
+            })
+        end,
+    }
     self.menu_items.page_overlap = require("ui/elements/page_overlap")
 
     -- settings tab
