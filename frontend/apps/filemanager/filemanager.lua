@@ -253,18 +253,6 @@ function FileManager:setupLayout()
                     text = _("Reset settings"),
                     enabled = is_file and DocSettings:hasSidecarFile(BaseUtil.realpath(file)),
                     callback = function()
-                        local other_buttons
-                        if DocumentRegistry:getProvider(file).provider == "crengine" then
-                            other_buttons = {
-                                {{
-                                    text = _("Reset font and page settings only"),
-                                    callback = function()
-                                        filemanagerutil.purgeViewSettings(file)
-                                        UIManager:close(self.file_dialog)
-                                    end,
-                                }},
-                            }
-                        end
                         UIManager:show(ConfirmBox:new{
                             text = T(_("Reset settings for this document?\n\n%1\n\nAny highlights or bookmarks will be permanently lost."), BD.filepath(file)),
                             ok_text = _("Reset"),
@@ -274,8 +262,6 @@ function FileManager:setupLayout()
                                 self:refreshPath()
                                 UIManager:close(self.file_dialog)
                             end,
-                            other_buttons_first = true,
-                            other_buttons = other_buttons,
                         })
                     end,
                 },
