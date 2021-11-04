@@ -13,9 +13,7 @@ local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
 local Persist = require("persist")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local dateparser = require("lib.dateparser")
 local logger = require("logger")
-local md5 = require("ffi/sha2").md5
 local util = require("util")
 local _ = require("gettext")
 local T = FFIUtil.template
@@ -138,6 +136,9 @@ function NewsDownloader:getSubMenuItems()
                                 )
                                 if should_delete then
                                     self:removeNewsButKeepFeedConfig()
+                                    -- Move user to the downloads folder to avoid an error where they
+                                    -- are within a feed folder which we have just deleted.
+                                    self:openDownloadsFolder()
                                     Trapper:reset()
                                 else
                                     Trapper:reset()
@@ -263,7 +264,7 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
             local epubs_successfully_created = {}
             local feed_history = {}
 
-            for index, feed in pairs(initialized_feeds) do
+            for feed_index, feed in pairs(initialized_feeds) do
                 -- Go through each feed and make new entry
                 local items_content = feedSource:getItemsContent(
                     feed,
@@ -285,7 +286,7 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
                 local sub_dir = feedSource:getFeedTitle(feed.document.title)
                 local item_history = {}
 
-                for jndex, content in pairs(items_content) do
+                for content_index, content in pairs(items_content) do
                     -- Check to see if we've already downloaded this item.
                     local history_for_feed = self.history:child(feed_id)
 
@@ -358,7 +359,7 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
             end
 
             -- Make each EPUB.
-            for index, epub in pairs(epubs_to_make) do
+            for epub_index, epub in pairs(epubs_to_make) do
                 local ok = feedSource:createEpub(
                     epub.title,
                     epub.chapters,
@@ -477,7 +478,20 @@ function NewsDownloader:viewFeedList()
             if action == FeedView.ACTION_DELETE_FEED then
                 self:deleteFeed(id)
             elseif action == FeedView.ACTION_RESET_HISTORY then
-                self:resetFeedHistory(id)
+                local Trapper = require("ui/trapper")
+                Trapper:wrap(function()
+                        local should_reset = Trapper:confirm(
+                            _("Are you sure you want to reset the feed history? Proceeding will cause items to be re-downloaded next time you sync."),
+                            _("Cancel"),
+                            _("Reset")
+                        )
+                        if should_reset then
+                            self:resetFeedHistory(id)
+                            Trapper:reset()
+                        else
+                            Trapper:reset()
+                        end
+                end)
             end
         end
     )
@@ -719,11 +733,24 @@ function NewsDownloader:updateFeedConfig(id, key, value)
         function(cb_id, cb_edit_key, cb_value)
             self:editFeedAttribute(cb_id, cb_edit_key, cb_value)
         end,
-        function(id, action)
+        function(feed_id, action)
             if action == FeedView.ACTION_DELETE_FEED then
-                self:deleteFeed(id)
+                self:deleteFeed(feed_id)
             elseif action == FeedView.ACTION_RESET_HISTORY then
-                self:resetFeedHistory(id)
+                local Trapper = require("ui/trapper")
+                Trapper:wrap(function()
+                        local should_reset = Trapper:confirm(
+                            _("Are you sure you want to reset the feed history? Proceeding will cause items to be re-downloaded next time you sync."),
+                            _("Cancel"),
+                            _("Reset")
+                        )
+                        if should_reset then
+                            self:resetFeedHistory(id)
+                            Trapper:reset()
+                        else
+                            Trapper:reset()
+                        end
+                end)
             end
         end
     )
@@ -769,7 +796,6 @@ function NewsDownloader:deleteFeed(id)
 end
 
 function NewsDownloader:resetFeedHistory(url)
-    local UI = require("ui/trapper")
     logger.dbg("Newsdownloader: attempting to reset feed history")
     self.history:saveSetting(url, {})
     self.history:flush()

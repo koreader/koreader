@@ -66,11 +66,10 @@ function NewsHelpers:getUrlContent(url, timeout, maxtime, redirectCount)
             return self:getUrlContent(redirected_url, timeout, maxtime, redirectCount + 1)
         else
             --            error("EpubDownloadBackend: Don't know how to handle HTTP response status: " .. status)
---            error("EpubDownloadBackend: Don't know how to handle HTTP response status.")
+            --            error("EpubDownloadBackend: Don't know how to handle HTTP response status.")
+            logger.warn("HTTP status not okay:", code, status)
             return false, status
         end
-        logger.warn("HTTP status not okay:", code, status)
-        return false, "Remote server error or unavailable"
     end
     if headers and headers["content-length"] then
         -- Check we really got the announced content size
@@ -85,7 +84,7 @@ end
 
 function NewsHelpers:loadPage(url)
     logger.dbg("Load page: ", url)
-    local completed, success, content
+    local success, content
 --[[    if self.trap_widget then -- if previously set with EpubDownloadBackend:setTrapWidget()
         local Trapper = require("ui/trapper")
         local timeout, maxtime = 30, 60

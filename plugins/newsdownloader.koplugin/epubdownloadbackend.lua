@@ -1,12 +1,10 @@
 local NewsHelpers = require("http_utilities")
 local Version = require("version")
-local ffiutil = require("ffi/util")
 local logger = require("logger")
 local socket_url = require("socket.url")
 local _ = require("gettext")
-local T = ffiutil.template
 
-local EpubDownloadBackend = {
+local EpubBuilder = {
    -- Can be set so HTTP requests will be done under Trapper and
    -- be interruptible
    trap_widget = nil,
@@ -21,7 +19,7 @@ local EpubDownloadBackend = {
    ncx_images = nil,
 }
 
-function EpubDownloadBackend:new(o)
+function EpubBuilder:new(o)
     o = o or {}
     self.__index = self
     setmetatable(o, self)
@@ -29,10 +27,7 @@ function EpubDownloadBackend:new(o)
     return o
 end
 
-function EpubDownloadBackend:build(abs_output_path)
-    local UI = require("ui/trapper")
-    UI:info(T(_("%1\n\nBuilding EPUB…"), message))
-
+function EpubBuilder:build(abs_output_path)
     -- Open the zip file (with .tmp for now, as crengine may still
     -- have a handle to the final epub_path, and we don't want to
     -- delete a good one if we fail/cancel later)
@@ -97,7 +92,7 @@ function EpubDownloadBackend:build(abs_output_path)
 
 end
 
-function EpubDownloadBackend:release()
+function EpubBuilder:release()
     -- Stub for cleanup methods
 end
 
@@ -149,8 +144,8 @@ local function filter(text, element)
     return "<!DOCTYPE html><html><head></head><body>" .. filtered .. "</body></html>"
 end
 
-function EpubDownloadBackend:getResponseAsString(url)
-    logger.dbg("EpubDownloadBackend:getResponseAsString(", url, ")")
+function EpubBuilder:getResponseAsString(url)
+    logger.dbg("EpubBuilder:getResponseAsString(", url, ")")
     local success, content = NewsHelpers:getUrlContent(url)
     if (success) then
         return content
@@ -159,11 +154,11 @@ function EpubDownloadBackend:getResponseAsString(url)
     end
 end
 
-function EpubDownloadBackend:setTrapWidget(trap_widget)
+function EpubBuilder:setTrapWidget(trap_widget)
     self.trap_widget = trap_widget
 end
 
-function EpubDownloadBackend:resetTrapWidget()
+function EpubBuilder:resetTrapWidget()
     self.trap_widget = nil
 end
 
@@ -183,26 +178,13 @@ local ext_to_mimetype = {
     woff = "application/font-woff",
 }
 -- GetPublishableHtml
-function EpubDownloadBackend:getImagesAndHtml(html, url, include_images, filter_enable, filter_element)
-    -- Use Trapper to display progress and ask questions through the UI.
-    -- We need to have been Trapper.wrap()'ed for UI to be used, otherwise
-    -- Trapper:info() and Trapper:confirm() will just use logger.
-    local UI = require("ui/trapper")
-    -- We may need to build absolute urls for non-absolute links and images urls
+function EpubBuilder:getImagesAndHtml(html, url, include_images, filter_enable, filter_element)
     local base_url = socket_url.parse(url)
-    --    local sections = html.sections -- Wikipedia provided TOC
-    local bookid = "bookid_placeholder" --string.format("wikipedia_%s_%s_%s", lang, phtml.pageid, phtml.revid)
-    -- Not sure if this bookid may ever be used by indexing software/calibre, but if it is,
-    -- should it changes if content is updated (as now, including the wikipedia revisionId),
-    -- or should it stays the same even if revid changes (content of the same book updated).
-    if filter_enable then
-        html = filter(html, filter_element)
-    end
-
     local images = {}
     local seen_images = {}
     local imagenum = 1
     local cover_imgid = nil -- best candidate for cover among our images
+    html = filter_enable and filter(html, filter_element) or html
 
     local processImg = function(img_tag)
         local src = img_tag:match([[src="([^"]*)"]])
@@ -308,12 +290,12 @@ function EpubDownloadBackend:getImagesAndHtml(html, url, include_images, filter_
     return images, html
 end
 
-function EpubDownloadBackend:setTitle(title)
+function EpubBuilder:setTitle(title)
     self.title = title
 end
 
 
-function EpubDownloadBackend:addToc(chapters)
+function EpubBuilder:addToc(chapters)
     local toc_ncx_parts = {}
     local depth = 0
     local num = 0
@@ -366,7 +348,7 @@ self.title
     self.ncx_toc = toc_ncx_parts
 end
 
-function EpubDownloadBackend:addManifest(chapters, images)
+function EpubBuilder:addManifest(chapters, images)
     local content_opf_parts = {}
     local spine_parts = {}
     local meta_cover = "<!-- no cover image -->"
@@ -385,7 +367,7 @@ function EpubDownloadBackend:addManifest(chapters, images)
             -- See if the image has the tag we previously set indicating
             -- it can be used as a cover image.
             if image.cover_image then
-                meta_cover = string.format([[<meta name="cover" content="%s"/>]], cover_imgid)
+                meta_cover = string.format([[<meta name="cover" content="%s"/>]], image.imgid)
             end
         end
     end
@@ -444,7 +426,7 @@ function EpubDownloadBackend:addManifest(chapters, images)
     self.ncx_manifest = content_opf_parts
 end
 
-function EpubDownloadBackend:addContents(chapters)
+function EpubBuilder:addContents(chapters)
     local contents = {}
 
     for index, chapter in ipairs(chapters) do
@@ -460,7 +442,7 @@ function EpubDownloadBackend:addContents(chapters)
     self.ncx_contents = contents
 end
 
-function EpubDownloadBackend:addImages(images)
+function EpubBuilder:addImages(images)
     local images_table = {}
 
     for index, image in ipairs(images) do
@@ -472,9 +454,9 @@ function EpubDownloadBackend:addImages(images)
         local success, content = NewsHelpers:getUrlContent(src)
         -- success, content = NewsHelpers:getUrlContent(src..".unexistant") -- to simulate failure
         if success then
-            logger.dbg("EpubDownloadBackend:addImages = success, size:", #content)
+            logger.dbg("EpubBuilder:addImages = success, size:", #content)
         else
-            logger.dbg("EpubDownloadBackend:addImages = failure fetching:", src)
+            logger.dbg("EpubBuilder:addImages = failure fetching:", src)
         end
 
         if success then
@@ -491,13 +473,6 @@ function EpubDownloadBackend:addImages(images)
                     compression = no_compression
                 }
             )
-        else
-            local UI = require("ui/trapper")
-            go_on = UI:confirm(T(_("Downloading image %1 failed. Continue anyway?"), index), _("Stop"), _("Continue"))
-            if not go_on then
-                cancelled = true
-                break
-            end
         end
     end
 
@@ -511,7 +486,7 @@ end
 -- Some feeds that can be used for unit test.
 -- http://fransdejonge.com/feed/ for multiple links.
 -- https://github.com/koreader/koreader/commits/master.atom for single link with attributes.
-function EpubDownloadBackend:getFeedLink(possible_link)
+function EpubBuilder:getFeedLink(possible_link)
     local E = {}
     logger.dbg("Possible link", possible_link)
     if type(possible_link) == "string" then
@@ -524,4 +499,4 @@ function EpubDownloadBackend:getFeedLink(possible_link)
 end
 
 
-return EpubDownloadBackend
+return EpubBuilder

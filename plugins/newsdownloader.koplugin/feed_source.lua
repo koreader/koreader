@@ -21,11 +21,8 @@ function FeedSource:new(o)
 end
 
 function FeedSource:getInitializedFeeds(feed_list, progress_callback, error_callback)
-    local UI = require("ui/trapper")
     local initialized_feeds = {}
     local unsupported_feeds_urls = {}
-    local total_feed_entries = #feed_list
-    local feed_message
 
     for idx, feed in ipairs(feed_list) do
         local url = feed[1]
@@ -213,12 +210,12 @@ end
 
 function FeedSource:initializeItemHtml(feed, html)
     local url = feed.config[1]
-    local download_full_article = feed.config.download_full_article ~= false
+    -- local download_full_article = feed.config.download_full_article ~= false
     local include_images = feed.config.include_images ~= false
     local filter_element = feed.config.filter_element or
         feed.config.filter_element == nil
     local enable_filter = feed.config.enable_filter ~= false
-    local images, html = DownloadBackend:getImagesAndHtml(
+    local item_images, item_html = DownloadBackend:getImagesAndHtml(
         html,
         url,
         include_images,
@@ -226,8 +223,8 @@ function FeedSource:initializeItemHtml(feed, html)
         filter_element
     )
     return {
-        html = html,
-        images = images
+        html = item_html,
+        images = item_images
     }
 end
 
