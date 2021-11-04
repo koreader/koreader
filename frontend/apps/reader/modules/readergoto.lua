@@ -45,7 +45,7 @@ function ReaderGoto:onShowGotoDialog()
     end
     input_hint = input_hint .. string.format("  %.2f%%", curr_page / self.document:getPageCount() * 100)
     self.goto_dialog = InputDialog:new{
-        title = _("Enter page number or %"),
+        title = _("Enter page number or percentage"),
         input_hint = input_hint,
         description = self.document:hasHiddenFlows() and
             _([[
