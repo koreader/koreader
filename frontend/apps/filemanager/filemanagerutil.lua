@@ -45,9 +45,14 @@ function filemanagerutil.purgeViewSettings(file)
         "copt_h_page_margins",
         "copt_t_page_margin",
         "copt_b_page_margin",
+        "kopt_trim_page",
+        -- pagefit tab
+        "kopt_zoom_mode_type",
+        "kopt_zoom_mode_genus",
         -- pageview tab
         "copt_line_spacing",
         "line_space_percent",
+        "kopt_page_scroll",
         -- textsize tab
         "font_size",
         "copt_font_size",
@@ -55,6 +60,7 @@ function filemanagerutil.purgeViewSettings(file)
         "copt_word_spacing",
         "word_expansion",
         "copt_word_expansion",
+        "kopt_text_wrap",
         -- contrast tab
         "gamma_index",
         "copt_font_gamma",
@@ -64,6 +70,7 @@ function filemanagerutil.purgeViewSettings(file)
         "copt_font_hinting",
         "font_kerning",
         "copt_font_kerning",
+        "kopt_contrast",
     }
     local file_abs_path = util.realpath(file)
     if file_abs_path then
