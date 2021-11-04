@@ -656,6 +656,7 @@ end
 -- add functions or text here:
 -- Functions are executed and text will shown on a long press on a minibar option
 local minibar_option = {}
+minibar_option[MODE.pages_left_book] = _("Can be configured to include or exclude the current page.")
 minibar_option[MODE.percentage] = _("Progress percentage can be shown with zero, one or two decimal places.")
 minibar_option[MODE.mem_usage] = _("Show memory usage in MiB.")
 minibar_option[MODE.custom_text] = ReaderFooter.set_custom_text
@@ -1501,7 +1502,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                 return T(_("Hide battery status if level higher than: %1%"), self.settings.battery_hide_threshold)
             end,
             enabled_func = function()
-                return self.settings.all_at_once == true
+                return self.settings.all_at_once == true and self.settings.battery == true
             end,
             separator = true,
             callback = function(touchmenu_instance)
