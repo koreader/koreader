@@ -9,6 +9,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local InputDialog = require("ui/widget/inputdialog")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local ProgressWidget = require("ui/widget/progresswidget")
@@ -44,6 +45,7 @@ local MODE = {
     bookmark_count = 14,
     chapter_progress = 15,
     frontlight_warmth = 16,
+    custom_text = 17,
 }
 
 local symbol_prefix = {
@@ -69,6 +71,8 @@ local symbol_prefix = {
         mem_usage = C_("FooterLetterPrefix", "M:"),
         -- @translators This is the footer letter prefix for Wi-Fi status.
         wifi_status = C_("FooterLetterPrefix", "W:"),
+        -- no prefix for custom text
+        custom_text = C_("FooterLetterPrefix", ""),
     },
     icons = {
         time = "⌚",
@@ -84,6 +88,7 @@ local symbol_prefix = {
         mem_usage = "",
         wifi_status = "",
         wifi_status_off = "",
+        custom_text = "",
     },
     compact_items = {
         time = nil,
@@ -101,6 +106,7 @@ local symbol_prefix = {
         mem_usage = C_("FooterCompactItemsPrefix", "M"),
         wifi_status = "",
         wifi_status_off = "",
+        custom_text = "",
     }
 }
 if BD.mirroredUILayout() then
@@ -346,7 +352,7 @@ local footerTextGeneratorMap = {
         if statm then
             local dummy, rss = statm:read("*number", "*number")
             statm:close()
-            -- we got the nb of 4Kb-pages used, that we convert to Mb
+            -- we got the nb of 4Kb-pages used, that we convert to MiB
             rss = math.floor(rss * 4096 / 1024 / 1024)
             return (prefix .. " %d"):format(rss)
         end
@@ -418,7 +424,12 @@ local footerTextGeneratorMap = {
         else
             return ""
         end
-    end
+    end,
+    custom_text = function(footer)
+        local symbol_type = footer.settings.item_prefix
+        local prefix = symbol_prefix[symbol_type].custom_text
+        return (prefix .. footer.custom_text)
+    end,
 }
 
 local ReaderFooter = WidgetContainer:extend{
@@ -605,7 +616,49 @@ function ReaderFooter:init()
     end
 
     self.visibility_change = nil
+
+    self.custom_text = G_reader_settings:readSetting("reader_footer_custom_text") or "KOReader"
 end
+
+function ReaderFooter:set_custom_text(touchmenu_instance)
+    local text_dialog
+    text_dialog = InputDialog:new{
+        title = _("Enter a custom text"),
+        input = self.custom_text,
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(text_dialog)
+                    end,
+                },
+                {
+                    text = _("OK"),
+                    callback = function()
+                        local new_text = text_dialog:getInputText()
+                        if self.custom_text ~= new_text then
+                            self.custom_text = new_text
+                            G_reader_settings:saveSetting("reader_footer_custom_text",
+                                self.custom_text)
+                            UIManager:close(text_dialog)
+                            self:refreshFooter(true, true)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                        end
+                    end,
+                },
+            }}
+        }
+    UIManager:show(text_dialog)
+    text_dialog:onShowKeyboard()
+end
+
+-- add functions or text here:
+-- Functions are executed and text will shown on a long press on a minibar option
+local minibar_option = {}
+minibar_option[MODE.percentage] = _("Progress percentage can be shown with zero, one or two decimal places.")
+minibar_option[MODE.mem_usage] = _("Show memory usage in MiB.")
+minibar_option[MODE.custom_text] = ReaderFooter.set_custom_text
 
 function ReaderFooter:updateFooterContainer()
     local margin_span = HorizontalSpan:new{ width = self.horizontal_margin }
@@ -896,6 +949,7 @@ function ReaderFooter:textOptionTitles(option)
         wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
         book_title = _("Book title"),
         book_chapter = _("Current chapter"),
+        custom_text = T(_("Custom text (\'%1\')"), self.custom_text),
     }
     return option_titles[option]
 end
@@ -930,6 +984,14 @@ function ReaderFooter:addToMainMenu(menu_items)
             text_func = function()
                 return self:textOptionTitles(option)
             end,
+            help_text = type(minibar_option[MODE[option]]) == "string"
+                and minibar_option[MODE[option]],
+            help_text_func = type(minibar_option[MODE[option]]) == "function" and
+                function(touchmenu_instance)
+                    if minibar_option[MODE[option]] ~= "string" then
+                        minibar_option[MODE[option]](self, touchmenu_instance)
+                    end
+                end,
             checked_func = function()
                 return self.settings[option] == true
             end,
@@ -1812,6 +1874,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
     end
     table.insert(sub_items, getMinibarOption("book_title"))
     table.insert(sub_items, getMinibarOption("book_chapter"))
+    table.insert(sub_items, getMinibarOption("custom_text"))
 
     -- Settings menu: keep the same parent page for going up from submenu
     for i = 1, #sub_items[settings_submenu_num].sub_item_table do
