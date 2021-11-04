@@ -2400,4 +2400,8 @@ function ReaderFooter:onScreenResize()
     self:resetLayout(true)
 end
 
+function ReaderFooter:onTimeFormatChanged()
+    self:refreshFooter(true, true)
+end
+
 return ReaderFooter
