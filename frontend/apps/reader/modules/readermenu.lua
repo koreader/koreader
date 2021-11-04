@@ -178,6 +178,15 @@ function ReaderMenu:setUpdateItemTable()
     -- typeset tab
     self.menu_items.reset_view_settings = {
         text = _("Reset view settings to default"),
+        help_text = _([[This will reset current document font and page settings to default values, including:
+- font face,
+- font size,
+- font weight,
+- contrast,
+- word spacing,
+- word expansion,
+- line spacing,
+- page margins.]]),
         keep_menu_open = true,
         callback = function()
             UIManager:show(ConfirmBox:new{
