@@ -428,7 +428,10 @@ local footerTextGeneratorMap = {
     custom_text = function(footer)
         local symbol_type = footer.settings.item_prefix
         local prefix = symbol_prefix[symbol_type].custom_text
-        return (prefix .. footer.custom_text)
+        -- if custom_text contains only spaces, request to merge it with the text before and after,
+        -- in other words, don't add a separator then.
+        local merge = footer.custom_text:gsub(" ", ""):len() == 0
+        return (prefix .. footer.custom_text), merge
     end,
 }
 
@@ -624,6 +627,7 @@ function ReaderFooter:set_custom_text(touchmenu_instance)
     local text_dialog
     text_dialog = InputDialog:new{
         title = _("Enter a custom text"),
+        description = _("A series of spaces can be entered as spacer placeholders."),
         input = self.custom_text,
         buttons = {
             {
@@ -1905,16 +1909,28 @@ function ReaderFooter:genAllFooterText()
     -- We need to BD.wrap() all items and separators, so we're
     -- sure they are laid out in our order (reversed in RTL),
     -- without ordering by the RTL Bidi algorithm.
+    local prev_had_merge
     for _, gen in ipairs(self.footerTextGenerators) do
         -- Skip empty generators, so they don't generate bogus separators
-        local text = gen(self)
+        local text, merge = gen(self)
         if text and text ~= "" then
             if self.settings.item_prefix == "compact_items" then
                 -- remove whitespace from footer items if symbol_type is compact_items
                 -- use a hair-space to avoid issues with RTL display
                 text = text:gsub("%s", "\xE2\x80\x8A")
             end
-            table.insert(info, BD.wrap(text))
+            -- if generator request a merge of this item, add it directly,
+            -- i.e. no separator before and after the text then.
+            if merge then
+                local merge_pos = #info == 0 and 1 or #info
+                info[merge_pos] = (info[merge_pos] or "") .. text
+                prev_had_merge = true
+            elseif prev_had_merge then
+                info[#info] = info[#info] .. text
+                prev_had_merge = false
+            else
+                table.insert(info, BD.wrap(text))
+            end
         end
     end
     return table.concat(info, BD.wrap(separator))
