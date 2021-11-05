@@ -6,7 +6,6 @@ local socket = require("socket")
 local ltn12 = require("ltn12")
 
 local NewsHelpers = {
-
 }
 
 local max_redirects = 5; --prevent infinite redirects

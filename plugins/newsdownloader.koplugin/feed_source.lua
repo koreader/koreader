@@ -143,7 +143,7 @@ function FeedSource:initializeDocument(document)
         document.total_items = total_items
         return document
     else
-        error("Could not initialize feed document")
+        error(_("Could not initialize feed document"))
     end
 end
 
@@ -188,14 +188,12 @@ function FeedSource:getItemsContent(feed, progress_callback, error_callback)
                     item_slug = FeedSource:getItemTitleWithDate(item),
                     item_title = item.title,
                     md5 = md5(item.title),
-                    feed_title = feed.document.title
+                    feed_title = feed.document.title,
                 }
             )
         else
             error_callback(
-                T(_("Could not get content for: %1"),
-                  feed.document.title
-                )
+                T(_("Could not get content for: %1"), feed.document.title)
             )
         end
 
@@ -311,7 +309,7 @@ function FeedSource:createEpub(title, chapters, abs_output_path, progress_callba
     end
 
     if #chapters == 0 then
-        error("Error: chapters contains 0 items")
+        error(_("Error: chapters contains 0 items"))
     end
 
     local images = {}
@@ -327,7 +325,7 @@ function FeedSource:createEpub(title, chapters, abs_output_path, progress_callba
 
     local epub = DownloadBackend:new{}
 
-    progress_callback("Building EPUB: " .. title)
+    progress_callback(_("Building EPUB: ") .. title)
 
     epub:setTitle(title)
     epub:addToc(chapters)

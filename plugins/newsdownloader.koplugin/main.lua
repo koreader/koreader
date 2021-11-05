@@ -389,6 +389,14 @@ function NewsDownloader:syncAllFeedsWithUI(touchmenu_instance, callback)
                         epubs_successfully_created,
                         epub.title
                     )
+                else
+                    table.insert(
+                        sync_errors,
+                        T(
+                            _('Error building EPUB %1'),
+                            epub.title
+                        )
+                    )
                 end
             end
 
