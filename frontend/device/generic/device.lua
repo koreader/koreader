@@ -9,7 +9,8 @@ local Geom = require("ui/geometry")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
-local T = require("ffi/util").template
+local ffiUtil = require("ffi/util")
+local T = ffiUtil.template
 
 local function yes() return true end
 local function no() return false end
@@ -307,6 +308,11 @@ function Device:onPowerEvent(ev)
                     self.screen:clear()
                 end
                 self.screen:refreshFull()
+
+                -- On Kobo, on sunxi SoCs with a recent kernel, wait a tiny bit more to avoid weird refresh glitches...
+                if self:isKobo() and self:isSunxi() then
+                    ffiUtil.usleep(150 * 1000)
+                end
             end
         else
             -- nil it, in case user switched ScreenSaver modes during our lifetime.

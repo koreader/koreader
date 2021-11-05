@@ -524,12 +524,20 @@ local dictionaries = {
         url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_italian-english-2.4.2.tar.gz"
     },
     {
-        name = "Japanese(Kanji)-English dictionary",
+        name = "JMdict Japanese-English dictionary",
         lang_in = "Japanese",
         lang_out = "English",
-        entries = 108472,
-        license = "from http://ftp.cc.monash.edu.au/pub/nihongo/",
-        url = "https://gitlab.com/avsej/dicts-stardict-form-xdxf/raw/d636cc5e8d4a47e22ac7466f4af6d435a8a3f650/002c/stardict-comn_sdict05_jap-eng-2.4.2.tar.gz"
+        entries = 188380,
+        license = "CC-BY-SA 3.0 (from https://www.edrdg.org/wiki/index.php/JMdictDB_Project)",
+        url = "https://cyphar.github.io/jpn-stardicts/JMdict-ja-en.tar.gz"
+    },
+    {
+        name = "JMnedict Japanese-English name dictionary",
+        lang_in = "Japanese",
+        lang_out = "English",
+        entries = 741290,
+        license = "CC-BY-SA 3.0 (from https://www.edrdg.org/wiki/index.php/JMdictDB_Project)",
+        url = "https://cyphar.github.io/jpn-stardicts/JMnedict-ja-en.tar.gz"
     },
     {
         name = "Latin-English dictionary",
