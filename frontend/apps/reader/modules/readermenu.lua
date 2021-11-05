@@ -176,7 +176,7 @@ function ReaderMenu:setUpdateItemTable()
     end
 
     -- typeset tab
-    self.menu_items.reset_view_settings = {
+    self.menu_items.reset_document_settings = {
         text = _("Reset document settings to default"),
         keep_menu_open = true,
         callback = function()
