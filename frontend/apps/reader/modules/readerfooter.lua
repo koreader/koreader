@@ -1917,20 +1917,7 @@ function ReaderFooter:genAllFooterText()
             table.insert(info, BD.wrap(text))
         end
     end
-    -- with # as separator, replace "  #" with "  "
-    local retval = table.concat(info, BD.wrap(separator))
-    local pattern = "  " .. BD.wrap(separator) -- two spaces
-    local dummy, remove_pos = retval:find("  " .. BD.wrap(separator)) -- two spaces
-    if separator ~= " " and remove_pos then
-        retval = retval:gsub(pattern, "  ") -- two spaces
-    end
-    -- with # as replace "#  " with "  "
-    pattern = BD.wrap(separator) .. "  "
-    remove_pos = retval:find(BD.wrap(separator) .. "  ") -- two spaces
-    if separator ~= " " and remove_pos then
-        retval = retval:gsub(pattern, "  ") -- two spaces
-    end
-    return retval
+    return table.concat(info, BD.wrap(separator))
 end
 
 function ReaderFooter:setTocMarkers(reset)
