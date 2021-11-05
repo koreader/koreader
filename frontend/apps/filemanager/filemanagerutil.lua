@@ -37,46 +37,25 @@ function filemanagerutil.purgeSettings(file)
     end
 end
 
--- Purge reflowable doc font and page settings
+-- Purge doc settings except kept
 function filemanagerutil.purgeViewSettings(file)
-    local view_settings = {
-        "font_face",
-        -- crop tab
-        "copt_h_page_margins",
-        "copt_t_page_margin",
-        "copt_b_page_margin",
-        "kopt_trim_page",
-        -- pagefit tab
-        "kopt_zoom_mode_type",
-        "kopt_zoom_mode_genus",
-        -- pageview tab
-        "copt_line_spacing",
-        "line_space_percent",
-        "kopt_page_scroll",
-        -- textsize tab
-        "font_size",
-        "copt_font_size",
-        "word_spacing",
-        "copt_word_spacing",
-        "word_expansion",
-        "copt_word_expansion",
-        "kopt_text_wrap",
-        -- contrast tab
-        "gamma_index",
-        "copt_font_gamma",
-        "font_base_weight",
-        "copt_font_base_weight",
-        "font_hinting",
-        "copt_font_hinting",
-        "font_kerning",
-        "copt_font_kerning",
-        "kopt_contrast",
+    local settings_kept = {
+        "bookmarks",
+        "bookmarks_sorted",
+        "bookmarks_version",
+        "cre_dom_version",
+        "highlight",
+        "highlights_imported",
+        "last_page",
+        "last_xpointer",
     }
     local file_abs_path = util.realpath(file)
     if file_abs_path then
         local doc_settings = DocSettings:open(file_abs_path)
-        for _, v in ipairs(view_settings) do
-            doc_settings:delSetting(v)
+        for k in pairs(doc_settings.data) do
+            if not require("util").arrayContains(settings_kept, k) then
+                doc_settings:delSetting(k)
+            end
         end
         doc_settings:close()
     end
