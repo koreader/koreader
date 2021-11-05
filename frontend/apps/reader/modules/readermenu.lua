@@ -176,31 +176,12 @@ function ReaderMenu:setUpdateItemTable()
     end
 
     -- typeset tab
-    local help_text = self.ui.document.info.has_pages and
-        _([[This will reset current document page settings to default values, including:
-- reflow mode,
-- page crop,
-- fit,
-- zoom,
-- view mode,
-- contrast.]]) or
-        _([[This will reset current document font and page settings to default values, including:
-- font face,
-- font size,
-- font weight,
-- contrast,
-- word spacing,
-- word expansion,
-- line spacing,
-- page margins.]])
-
     self.menu_items.reset_view_settings = {
-        text = _("Reset view settings to default"),
-        help_text = help_text,
+        text = _("Reset document settings to default"),
         keep_menu_open = true,
         callback = function()
             UIManager:show(ConfirmBox:new{
-                text = _("Reset current document font and page settings to default values?\nThe document will be reloaded."),
+                text = _("Reset current document settings to default values?\n\nReading position, highlights and bookmarks will be kept.\nThe document will be reopened."),
                 ok_text = _("Reset"),
                 ok_callback = function()
                     local current_file = self.ui.document.file
