@@ -325,13 +325,18 @@ function FeedSource:createEpub(title, chapters, abs_output_path, progress_callba
 
     local epub = DownloadBackend:new{}
 
-    progress_callback(_("Building EPUB: ") .. title)
-
+    progress_callback(T(_("Building EPUB %1"), title))
     epub:setTitle(title)
     epub:addToc(chapters)
     epub:addManifest(chapters, images)
+
+    progress_callback(T(_("Building EPUB %1: %2"), title, _("Adding contents")))
     epub:addContents(chapters)
+
+    progress_callback(T(_("Building EPUB %1: %2"), title, _("Adding images")))
     epub:addImages(images)
+
+    progress_callback(T(_("Building EPUB %1: %2"), title, _("Writing EPUB to disk")))
     epub:build(abs_output_path)
 
     file_exists = lfs.attributes(abs_output_path, "mode")
