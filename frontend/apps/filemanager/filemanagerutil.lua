@@ -40,20 +40,20 @@ end
 -- Purge doc settings except kept
 function filemanagerutil.purgeViewSettings(file)
     local settings_kept = {
-        "bookmarks",
-        "bookmarks_sorted",
-        "bookmarks_version",
-        "cre_dom_version",
-        "highlight",
-        "highlights_imported",
-        "last_page",
-        "last_xpointer",
+        bookmarks = true,
+        bookmarks_sorted = true,
+        bookmarks_version = true,
+        cre_dom_version = true,
+        highlight = true,
+        highlights_imported = true,
+        last_page = true,
+        last_xpointer = true,
     }
     local file_abs_path = util.realpath(file)
     if file_abs_path then
         local doc_settings = DocSettings:open(file_abs_path)
         for k in pairs(doc_settings.data) do
-            if not require("util").arrayContains(settings_kept, k) then
+            if not settings_kept[k] then
                 doc_settings:delSetting(k)
             end
         end
