@@ -38,7 +38,7 @@ local order = {
         "bookmarks_settings",
     },
     typeset = {
-        "reset_view_settings",
+        "reset_document_settings",
         "----------------------------",
         "set_render_style",
         "style_tweaks",
