@@ -707,6 +707,20 @@ function InputText:searchString(str, case_sensitive, start_pos)
     return char_pos
 end
 
+--- Return the character at the given offset. If is_absolute is truthy then the
+-- offset is the absolute position, otherwise the offset is added to the current
+-- cursor position (negative offsets are allowed).
+function InputText:getChar(offset, is_absolute)
+    local idx
+    if is_absolute then
+        idx = offset
+    else
+        idx = self.charpos + offset
+    end
+    if idx < 1 or idx > #self.charlist then return end
+    return self.charlist[idx]
+end
+
 function InputText:addChars(chars)
     if not chars then
         -- VirtualKeyboard:addChar(key) gave us 'nil' once (?!)
