@@ -1,3 +1,85 @@
+--[[--
+Widget for taking multiple user inputs.
+
+Example:
+
+    local MultiInputDialog = require("ui/widget/multiinputdialog")
+    local @{ui.uimanager|UIManager} = require("ui/uimanager")
+    local @{gettext|_} = require("gettext")
+
+    local sample_input
+    sample_input = MultipleInputDialog:new{
+        title = _("Title to show"),
+        fields = {
+            {
+                text = _("First input"),
+                description = _("Describe this field"),
+                input_type = "string",
+                hint = _("Name"),
+            },
+            {
+                text = _("2nd input"),
+                input_type = "string",
+                hint = _("Address"),
+            },
+            {
+                text = _("3rd input"),
+                input_type = "string",
+                hint = hint_username,
+            },
+            {
+                text = 666,
+                description = _("Enter a number"),
+                input_type = "number",
+                hint = 123,
+            },
+        }
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(self.sample_input)
+                    end
+                },
+                {
+                    text = _("Info"),
+                    callback = function()
+                        UIManager:show(InfoMessage:new{ text = _("Information") })
+                    end
+                },
+                {
+                    text = _("Calculate settings"),
+                    callback = function()
+                        local fields = MultiInputDialog:getFields()
+                        if fields[1] ~= "" and fields[2] ~= "" then
+                            -- insert code here
+                            UIManager:close(self.sample_input)
+                            -- If we have a touch menu: Update menu entries,
+                            -- when called from a menu
+                            if touchmenu_instance then
+                                touchmenu_instance:updateItems()
+                            end
+                        else
+                            UIManager:show(InfoMessage:new{
+                                text = _("Please fill in all fields.")
+                            })
+                        end
+                    end
+                },
+            },
+        },
+    }
+    UIManager:show(sample_input)
+    sample_input:onShowKeyboard()
+
+
+It is strongly recommended to use a text describing the action to be
+executed, as demonstrated in the example above. If the resulting phrase would be
+longer than three words it should just read "OK".
+--]]--
+
+
 local Blitbuffer = require("ffi/blitbuffer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
