@@ -1013,9 +1013,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                 and option_help_text[MODE[option]],
             help_text_func = type(option_help_text[MODE[option]]) == "function" and
                 function(touchmenu_instance)
-                    if option_help_text[MODE[option]] ~= "string" then
-                        option_help_text[MODE[option]](self, touchmenu_instance)
-                    end
+                    option_help_text[MODE[option]](self, touchmenu_instance)
                 end,
             checked_func = function()
                 return self.settings[option] == true
