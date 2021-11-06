@@ -9,6 +9,7 @@ local Notification = require("ui/widget/notification")
 local TimeVal = require("ui/timeval")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
+local dbg = require("dbg")
 local logger = require("logger")
 local util = require("util")
 local ffiUtil = require("ffi/util")
@@ -771,6 +772,11 @@ function ReaderHighlight:onShowHighlightMenu()
     }
     UIManager:show(self.highlight_dialog)
 end
+dbg:guard(ReaderHighlight, "onShowHighlightMenu",
+    function(self)
+        assert(self.selected_text ~= nil,
+            "onShowHighlightMenu must not be called with nil self.selected_text!")
+    end)
 
 function ReaderHighlight:_resetHoldTimer(clear)
     if clear then
@@ -1093,6 +1099,11 @@ function ReaderHighlight:lookup(selected_text, selected_link)
         end
     end
 end
+dbg:guard(ReaderHighlight, "lookup",
+    function(self, selected_text, selected_link)
+        assert(selected_text ~= nil,
+            "lookup must not be called with nil selected_text!")
+    end)
 
 function ReaderHighlight:viewSelectionHTML(debug_view, no_css_files_buttons)
     if self.ui.document.info.has_pages then
@@ -1251,6 +1262,11 @@ function ReaderHighlight:translate(selected_text)
         end
     end
 end
+dbg:guard(ReaderHighlight, "translate",
+    function(self, selected_text)
+        assert(selected_text ~= nil,
+            "translate must not be called with nil selected_text!")
+    end)
 
 function ReaderHighlight:onTranslateText(text)
     Translator:showTranslation(text)
@@ -1272,29 +1288,31 @@ function ReaderHighlight:onHoldRelease()
         end
     end
 
-    if self.is_word_selection then
-        self:lookup(self.selected_text, self.selected_link)
-    else
-        local default_highlight_action = G_reader_settings:readSetting("default_highlight_action", "ask")
-        if long_final_hold or default_highlight_action == "ask" then
-            -- bypass default action and show popup if long final hold
-            self:onShowHighlightMenu()
-        elseif default_highlight_action == "highlight" then
-            self:saveHighlight()
-            self:onClose()
-        elseif default_highlight_action == "translate" then
-            self:translate(self.selected_text)
-            self:onClose()
-        elseif default_highlight_action == "wikipedia" then
-            self:lookupWikipedia()
-            self:onClose()
-        elseif default_highlight_action == "dictionary" then
-            self:onHighlightDictLookup()
-            self:onClose()
-        elseif default_highlight_action == "search" then
-            self:onHighlightSearch()
-            -- No self:onClose() to not remove the selected text
-            -- which will have been the first search result
+    if self.selected_text then
+        if self.is_word_selection then
+            self:lookup(self.selected_text, self.selected_link)
+        else
+            local default_highlight_action = G_reader_settings:readSetting("default_highlight_action", "ask")
+            if long_final_hold or default_highlight_action == "ask" then
+                -- bypass default action and show popup if long final hold
+                self:onShowHighlightMenu()
+            elseif default_highlight_action == "highlight" then
+                self:saveHighlight()
+                self:onClose()
+            elseif default_highlight_action == "translate" then
+                self:translate(self.selected_text)
+                self:onClose()
+            elseif default_highlight_action == "wikipedia" then
+                self:lookupWikipedia()
+                self:onClose()
+            elseif default_highlight_action == "dictionary" then
+                self:onHighlightDictLookup()
+                self:onClose()
+            elseif default_highlight_action == "search" then
+                self:onHighlightSearch()
+                -- No self:onClose() to not remove the selected text
+                -- which will have been the first search result
+            end
         end
     end
     return true
