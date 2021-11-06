@@ -761,6 +761,10 @@ local VirtualKeyboard = FocusManager:new{
         ru = "ru_keyboard",
         tr = "tr_keyboard",
     },
+
+    lang_has_submenu = {
+        ja = true,
+    },
 }
 
 function VirtualKeyboard:init()
