@@ -1361,7 +1361,9 @@ function ReaderFooter:addToMainMenu(menu_items)
             },
             {
                 text_func = function()
-                    return T(_("Item separator: '%1'"), self:get_separator_symbol())
+                    local separator = self:get_separator_symbol()
+                    separator = separator ~= "" and separator or "none"
+                    return T(_("Item separator: %1"), separator)
                 end,
                 sub_item_table = {
                     {
