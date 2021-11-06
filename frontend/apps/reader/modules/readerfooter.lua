@@ -3,7 +3,6 @@ local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
-local DoubleInputDialog = require("ui/widget/doubleinputdialog")
 local Event = require("ui/event")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
@@ -12,6 +11,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ProgressWidget = require("ui/widget/progresswidget")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
@@ -626,15 +626,21 @@ function ReaderFooter:init()
 end
 
 function ReaderFooter:set_custom_text(touchmenu_instance)
-
     local text_dialog
-    text_dialog = DoubleInputDialog:new{
+    text_dialog = MultiInputDialog:new{
         title = "Enter a custom text",
-        input1_text = self.custom_text or "",
-        input1_desc = _("Custom string:"),
-        input2_text = self.custom_text_repetitions,
-        input2_type = "number",
-        input2_desc = _("Number of repetitions:"),
+        fields = {
+            {
+                text =  self.custom_text or "",
+                description = _("Custom string:"),
+                input_type = "string",
+            },
+            {
+                text = self.custom_text_repetitions,
+                description =_("Number of repetitions:"),
+                input_type =  "number",
+            },
+        },
         buttons = {
             {
                 {
@@ -646,7 +652,8 @@ function ReaderFooter:set_custom_text(touchmenu_instance)
                 {
                     text = _("Set"),
                     callback = function()
-                        local new_text, new_repetitions = text_dialog:getInputText()
+                        local inputs = MultiInputDialog:getFields()
+                        local new_text, new_repetitions = inputs[1], inputs[2]
                         if new_text == "" then
                             new_text = " "
                         end
