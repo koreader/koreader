@@ -676,13 +676,12 @@ function ReaderFooter:set_custom_text(touchmenu_instance)
     text_dialog:onShowKeyboard()
 end
 
--- add functions or text here:
--- Functions are executed and text will shown on a long press on a minibar option
-local minibar_option = {}
-minibar_option[MODE.pages_left_book] = _("Can be configured to include or exclude the current page.")
-minibar_option[MODE.percentage] = _("Progress percentage can be shown with zero, one or two decimal places.")
-minibar_option[MODE.mem_usage] = _("Show memory usage in MiB.")
-minibar_option[MODE.custom_text] = ReaderFooter.set_custom_text
+-- Help text string, or function, to be shown, or executed, on a long press on menu item
+local option_help_text = {}
+option_help_text[MODE.pages_left_book] = _("Can be configured to include or exclude the current page.")
+option_help_text[MODE.percentage] = _("Progress percentage can be shown with zero, one or two decimal places.")
+option_help_text[MODE.mem_usage] = _("Show memory usage in MiB.")
+option_help_text[MODE.custom_text] = ReaderFooter.set_custom_text
 
 function ReaderFooter:updateFooterContainer()
     local margin_span = HorizontalSpan:new{ width = self.horizontal_margin }
@@ -1010,12 +1009,12 @@ function ReaderFooter:addToMainMenu(menu_items)
             text_func = function()
                 return self:textOptionTitles(option)
             end,
-            help_text = type(minibar_option[MODE[option]]) == "string"
-                and minibar_option[MODE[option]],
-            help_text_func = type(minibar_option[MODE[option]]) == "function" and
+            help_text = type(option_help_text[MODE[option]]) == "string"
+                and option_help_text[MODE[option]],
+            help_text_func = type(option_help_text[MODE[option]]) == "function" and
                 function(touchmenu_instance)
-                    if minibar_option[MODE[option]] ~= "string" then
-                        minibar_option[MODE[option]](self, touchmenu_instance)
+                    if option_help_text[MODE[option]] ~= "string" then
+                        option_help_text[MODE[option]](self, touchmenu_instance)
                     end
                 end,
             checked_func = function()
