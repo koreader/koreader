@@ -3,13 +3,13 @@ local Blitbuffer = require("ffi/blitbuffer")
 local BottomContainer = require("ui/widget/container/bottomcontainer")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
+local DoubleInputDialog = require("ui/widget/doubleinputdialog")
 local Event = require("ui/event")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
-local InputDialog = require("ui/widget/inputdialog")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local ProgressWidget = require("ui/widget/progresswidget")
@@ -431,7 +431,7 @@ local footerTextGeneratorMap = {
         -- if custom_text contains only spaces, request to merge it with the text before and after,
         -- in other words, don't add a separator then.
         local merge = footer.custom_text:gsub(" ", ""):len() == 0
-        return (prefix .. footer.custom_text), merge
+        return (prefix .. footer.custom_text:rep(footer.custom_text_repetitions)), merge
     end,
 }
 
@@ -621,14 +621,20 @@ function ReaderFooter:init()
     self.visibility_change = nil
 
     self.custom_text = G_reader_settings:readSetting("reader_footer_custom_text") or "KOReader"
+    self.custom_text_repetitions =
+        tonumber(G_reader_settings:readSetting("reader_footer_custom_text_repetitions")) or 1
 end
 
 function ReaderFooter:set_custom_text(touchmenu_instance)
+
     local text_dialog
-    text_dialog = InputDialog:new{
-        title = _("Enter a custom text"),
-        description = _("A series of spaces can be entered as spacer placeholders."),
-        input = self.custom_text,
+    text_dialog = DoubleInputDialog:new{
+        title = "Enter a custom text",
+        input1_text = self.custom_text or "",
+        input1_desc = _("Custom string:"),
+        input2_text = self.custom_text_repetitions,
+        input2_type = "number",
+        input2_desc = _("Number of repetitions:"),
         buttons = {
             {
                 {
@@ -638,21 +644,34 @@ function ReaderFooter:set_custom_text(touchmenu_instance)
                     end,
                 },
                 {
-                    text = _("OK"),
+                    text = _("Set"),
                     callback = function()
-                        local new_text = text_dialog:getInputText()
+                        local new_text, new_repetitions = text_dialog:getInputText()
+                        if new_text == "" then
+                            new_text = " "
+                        end
                         if self.custom_text ~= new_text then
                             self.custom_text = new_text
                             G_reader_settings:saveSetting("reader_footer_custom_text",
                                 self.custom_text)
-                            UIManager:close(text_dialog)
-                            self:refreshFooter(true, true)
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
                         end
+                        new_repetitions = tonumber(new_repetitions) or 1
+                        if new_repetitions < 1 then
+                            new_repetitions = 1
+                        end
+                        if new_repetitions and self.custom_text_repetitions ~= new_repetitions then
+                            self.custom_text_repetitions = new_repetitions
+                            G_reader_settings:saveSetting("reader_footer_custom_text_repetitions",
+                                self.custom_text_repetitions)
+                        end
+                        UIManager:close(text_dialog)
+                        self:refreshFooter(true, true)
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
                     end,
                 },
-            }}
-        }
+            },
+        },
+    }
     UIManager:show(text_dialog)
     text_dialog:onShowKeyboard()
 end
@@ -954,7 +973,9 @@ function ReaderFooter:textOptionTitles(option)
         wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
         book_title = _("Book title"),
         book_chapter = _("Current chapter"),
-        custom_text = T(_("Custom text (\'%1\')"), self.custom_text),
+        custom_text = T(_("Custom text (\'%1\'%2)"), self.custom_text,
+            self.custom_text_repetitions > 1 and
+            string.format(", %d ".._("repetitions"), self.custom_text_repetitions) or ""),
     }
     return option_titles[option]
 end
