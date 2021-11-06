@@ -1,113 +1,251 @@
+--------
+-- Japanese 12-key flick keyboard layout, modelled after Android's flick
+-- keyboard. Rather than being modal, it has the ability to apply modifiers to
+-- the previous character. In addition, users can tap a kana key to cycle
+-- through the various kana in that kana row (and associated small kana).
+--
+-- Note that because we cannot have tri-state buttons (and we want to be able
+-- to input katakana) we emulate a quad-state button using the symbol and shift
+-- layers. Users just have to tap whatever mode they want and they should be
+-- able to get there easily.
+--------
+
+local TimeVal = require("ui/timeval")
+local logger = require("logger")
+local util = require("util")
+local _ = require("gettext")
+local N_ = _.ngettext
+local T = require("ffi/util").template
+
+local K = require("frontend/ui/data/keyboardlayouts/ja_keyboard_keys")
+
+local DEFAULT_KEITAI_TAP_INTERVAL = 2
+
+-- "Keitai input" is an input mode similar to T9 mobile input, where you tap a
+-- key to cycle through several candidate characters. The tap interval is how
+-- long we are going to wait before committing to the current character. See
+-- <https://en.wikipedia.org/wiki/Japanese_input_method#Mobile_phones> for more
+-- information.
+
+local function getKeitaiTapInterval()
+    return G_reader_settings:readSetting("keyboard_japanese_keitai_tap_interval") or DEFAULT_KEITAI_TAP_INTERVAL
+end
+
+local function setKeitaiTapInterval(interval)
+    G_reader_settings:saveSetting("keyboard_japanese_keitai_tap_interval", interval)
+end
+
+local function exitKeitaiMode(inputbox)
+    logger.dbg("ja_kbd: clearing keitai window last tap tv")
+    inputbox._ja_last_tap_tv = nil
+end
+
+local function wrappedAddChars(inputbox, char)
+    -- Find the relevant modifier cycle tables.
+    local modifier_table = K.MODIFIER_TABLE[char]
+    local keitai_cycle = K.KEITAI_TABLE[char]
+
+    -- For keitai buttons, are we still in the tap interval?
+    local within_tap_window
+    if keitai_cycle then
+        if inputbox._ja_last_tap_tv then
+            within_tap_window = TimeVal:getDuration(inputbox._ja_last_tap_tv) < getKeitaiTapInterval()
+        end
+        inputbox._ja_last_tap_tv = TimeVal:now()
+    else
+        -- This is a non-keitai or non-tap key, so break out of keitai window.
+        exitKeitaiMode(inputbox)
+    end
+
+    -- Get the character behind the cursor and figure out how to modify it.
+    local new_char
+    local current_char = inputbox:getChar(-1)
+    if modifier_table then
+        new_char = modifier_table[current_char]
+    elseif keitai_cycle and keitai_cycle[current_char] and within_tap_window then
+        new_char = keitai_cycle[current_char]
+    else
+        -- Regular key, just add it as normal.
+        inputbox.addChars:raw_method_call(char)
+        return
+    end
+
+    -- Replace character if there was a valid replacement.
+    logger.dbg("ja_kbd: applying", char, "key to", current_char, "yielded", new_char or "<nil>")
+    if not current_char then return end -- no character to modify
+    if new_char then
+        -- Use the raw methods to avoid calling the callbacks.
+        inputbox.delChar:raw_method_call()
+        inputbox.addChars:raw_method_call(new_char)
+    end
+end
+
+local function wrapInputBox(inputbox)
+    if inputbox._ja_wrapped == nil then
+        inputbox._ja_wrapped = true
+        local wrappers = {}
+
+        -- Wrap all of the navigation and non-single-character-input keys with
+        -- a callback to clear the tap window, but pass through to the
+        -- original function.
+
+        -- Delete text.
+        table.insert(wrappers, util.wrapMethod(inputbox, "delChar",          nil, exitKeitaiMode))
+        table.insert(wrappers, util.wrapMethod(inputbox, "delToStartOfLine", nil, exitKeitaiMode))
+        table.insert(wrappers, util.wrapMethod(inputbox, "clear",            nil, exitKeitaiMode))
+        -- Navigation.
+        table.insert(wrappers, util.wrapMethod(inputbox, "leftChar",  nil, exitKeitaiMode))
+        table.insert(wrappers, util.wrapMethod(inputbox, "rightChar", nil, exitKeitaiMode))
+        table.insert(wrappers, util.wrapMethod(inputbox, "upLine",    nil, exitKeitaiMode))
+        table.insert(wrappers, util.wrapMethod(inputbox, "downLine",  nil, exitKeitaiMode))
+        -- Move to other input box.
+        table.insert(wrappers, util.wrapMethod(inputbox, "unfocus", nil, exitKeitaiMode))
+        -- Gestures to move cursor.
+        table.insert(wrappers, util.wrapMethod(inputbox, "onTapTextBox",   nil, exitKeitaiMode))
+        table.insert(wrappers, util.wrapMethod(inputbox, "onHoldTextBox",  nil, exitKeitaiMode))
+        table.insert(wrappers, util.wrapMethod(inputbox, "onSwipeTextBox", nil, exitKeitaiMode))
+
+        -- addChars is the only method we need a more complicated wrapper for.
+        table.insert(wrappers, util.wrapMethod(inputbox, "addChars", wrappedAddChars, nil))
+
+        return function()
+            if inputbox._ja_wrapped then
+                for _, wrapper in ipairs(wrappers) do
+                    wrapper:revert()
+                end
+                inputbox._ja_last_tap_tv = nil
+                inputbox._ja_wrapped = nil
+            end
+        end
+    end
+end
+
+local function genMenuItems(self)
+    return {
+        {
+            text_func = function()
+                local interval = getKeitaiTapInterval()
+                if interval ~= 0 then
+                    -- @translators Keitai input is a kind of Japanese keyboard input mode (similar to T9 keypad input). See <https://en.wikipedia.org/wiki/Japanese_input_method#Mobile_phones> for more information.
+                    return T(N_("Keitai tap interval: %1 second", "Keitai tap interval: %1 seconds", interval), interval)
+                else
+                    -- @translators Flick and keitai are kinds of Japanese keyboard input modes. See <https://en.wikipedia.org/wiki/Japanese_input_method#Mobile_phones> for more information.
+                    return _("Keitai input: disabled (flick-only input)")
+                end
+            end,
+            help_text = _("How long to wait for the next tap when in keitai input mode before committing to the current character. During this window, tapping a single key will loop through candidates for the current character being input. Any other input will cause you to leave keitai mode."),
+            keep_menu_open = true,
+            callback = function(touchmenu_instance)
+                local SpinWidget = require("ui/widget/spinwidget")
+                local UIManager = require("ui/uimanager")
+                local Screen = require("device").screen
+                local items = SpinWidget:new{
+                    title_text = _("Keitai tap interval"),
+                    info_text = T(_([[
+How long to wait (in seconds) for the next tap when in keitai input mode before committing to the current character. During this window, tapping a single key will loop through candidates for the current character being input. Any other input will cause you to leave keitai mode.
+
+If set to 0, keitai input is disabled entirely and only flick input can be used.
+
+Default value: %1]]), DEFAULT_KEITAI_TAP_INTERVAL),
+                    width = math.floor(Screen:getWidth() * 0.75),
+                    value = getKeitaiTapInterval(),
+                    value_min = 0,
+                    value_max = 10,
+                    value_step = 1,
+                    ok_text = _("Set interval"),
+                    default_value = DEFAULT_KEITAI_TAP_INTERVAL,
+                    callback = function(spin)
+                        setKeitaiTapInterval(spin.value)
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                }
+                UIManager:show(items)
+            end,
+        },
+    }
+end
+
+-- Basic modifier keys.
+local M_l = { label = "←", } -- Arrow left
+local M_r = { label = "→", } -- Arrow right
+local Msw = { label = "🌐", } -- Switch keyboard
+local Mbk = { label = "", bold = false, } -- Backspace
+
+-- Modifier key for kana input.
+local Mmd = { label = "◌゙ ◌゚", alt_label = "大⇔小",
+              K.MODIFIER_KEY_CYCLIC,
+              west = K.MODIFIER_KEY_DAKUTEN,
+              north = K.MODIFIER_KEY_SMALLKANA,
+              east = K.MODIFIER_KEY_HANDAKUTEN, }
+-- Modifier key for latin input.
+local Msh = { label = "a⇔A",
+              K.MODIFIER_KEY_SHIFT }
+
+-- In order to emulate the tri-modal system of 12-key keyboards we treat shift
+-- and symbol modes as being used to specify which of the three target layers
+-- to use. The four modes are hiragana (default), katakana (shift), English
+-- letters (symbol), numbers and symbols (shift+symbol).
+--
+-- In order to make it easy for users to know which button will take them to a
+-- specific mode, we need to give different keys the same name at certain
+-- times, so we append a \0 to one set so that the VirtualKeyboard can
+-- differentiate them on key tap even though they look the same to the user.
+
+-- Shift-mode toggle button.
+local Sh_abc = { label = "ABC\0", alt_label = "ひらがな", bold = true, }
+local Sh_sym = { label = "記号\0", bold = true, } -- Switch to numbers and symbols.
+local Sh_hir = { label = "ひらがな\0", bold = true, } -- Switch to hiragana.
+local Sh_kat = { label = "カタカナ\0", bold = true, } -- Switch to katakana.
+-- Symbol-mode toggle button.
+local Sy_abc = { label = "ABC", alt_label = "記号", bold = true, }
+local Sy_sym = { label = "記号", bold = true, } -- Switch to numbers and symbols.
+local Sy_hir = { label = "ひらがな", bold = true, } -- Switch to hiragana.
+local Sy_kat = { label = "カタカナ", bold = true, } -- Switch to katakana.
+
 return {
     min_layer = 1,
-    max_layer = 10,
-    shiftmode_keys = {[""] = true},
-    symbolmode_keys = {["記号"] = true, ["かな"] = true},
+    max_layer = 4,
+    shiftmode_keys = {["ABC\0"] = true, ["記号\0"] = true, ["カタカナ\0"] = true, ["ひらがな\0"] = true},
+    symbolmode_keys = {["ABC"] = true, ["記号"] = true, ["ひらがな"] = true,  ["カタカナ"] = true},
     utf8mode_keys = {["🌐"] = true},
-    umlautmode_keys = {["゜"] = true},
     keys = {
-        -- first row
-        {  --  1       2       3       4       5        6       7       8       9        10
-            { "ア",    "あ",    "~",    "`",    "ア",    "あ",    "~",    "`",    "ア",    "あ", },
-            { "カ",    "か",    "!",    "1",    "ガ",    "が",    "!",    "1",    "カ",    "か", },
-            { "サ",    "さ",    "@",    "2",    "ザ",    "ざ",    "@",    "2",    "サ",    "さ", },
-            { "タ",    "た",    "#",    "3",    "ダ",    "だ",    "#",    "3",    "タ",    "た" },
-            { "ナ",    "な",    "$",    "4",    "ナ",    "な",    "$",    "4",    "ナ",    "な", },
-            { "ハ",    "は",    "%",    "5",    "バ",    "ば",    "%",    "5",    "パ",    "ぱ", },
-            { "マ",    "ま",    "^",    "6",    "マ",    "ま",     "^",    "6",    "マ",    "ま", },
-            { "ヤ",    "や",    "&",    "7",   "ヤ",     "や",    "&",    "7",    "ヤ",    "や", },
-            { "ラ",    "ら",    "*",    "8",    "ラ",     "ら",    "*",    "8",    "ラ",    "ら", },
-            { "ワ",    "わ",    "(",    "9",    "ワ",     "わ",    "(",    "9",    "ワ",    "わ", },
-            { "ァ",    "ぁ",    ")",    "0",    "ァ",     "ぁ",    ")",    "0",    "ァ",    "ぁ", },
-            { "ャ",    "ゃ",    "_",    "-",    "ャ",     "ゃ",    "_",    "-",    "ャ",    "ゃ", },
-            { "゛",    "゛",    "+",    "=",    "゛",      "゛",     "+",    "=",    "゛",     "゛", },
+        -- first row [🌐, あ, か, さ, <bksp>]
+        {  -- R         r         S         s
+            Msw,
+            { K.k_a,    K.h_a,    K.s_1,    K.l_1, },
+            { K.kKa,    K.hKa,    K.s_2,    K.l_2, },
+            { K.kSa,    K.hSa,    K.s_3,    K.l_3, },
+            Mbk,
         },
-        -- second row
-        {  --  1       2       3       4       5       6        7       8       9       10
-            { "イ",    "い",    "Q",    "q",    "イ",    "い",    "Q",    "q",    "イ",    "い", },
-            { "キ",    "き",    "W",    "w",    "ギ",    "ぎ",    "W",    "w",    "キ",    "き", },
-            { "シ",    "し",    "E",    "e",    "ジ",    "じ",    "E",    "e",    "シ",    "し", },
-            { "チ",    "ち",    "R",    "r",    "ヂ",    "ぢ",    "R",    "r",    "チ",    "ち", },
-            { "ニ",    "に",    "T",    "t",    "ニ",    "に",    "T",    "t",    "ニ",    "に", },
-            { "ヒ",    "ひ",    "Y",    "y",    "ビ",    "び",    "Y",    "y",    "ピ",    "ぴ", },
-            { "ミ",    "み",    "U",    "u",    "ミ",    "み",    "U",    "u",    "ミ",    "み", },
-            { "　",    "　",    "I",    "i",   "　",    "　",    "I",    "i",    "　",    "　", },
-            { "リ",    "り",    "O",    "o",    "リ",    "り",     "O",    "o",    "リ",    "り", },
-            { "　",    "　",    "P",    "p",   "　",    "　",    "P",    "p",    "　",    "　", },
-            { "ィ",    "ぃ",    "{",    "[",    "ィ",     "ぃ",    "{",    "[",    "ィ",    "ぃ", },
-            { "ュ",    "ゅ",    "}",    "]",    "ュ",    "ゅ",    "}",     "]",    "ュ",    "ゅ", },
-            { "゜",    "゜",    "|",    "\\",    "゜",     "゜",     "|",    "\\",    "゜",    "゜", },
+        -- second row [←, た, な, は, →]
+        {  -- R         r         S         s
+            M_l,
+            { K.kTa,    K.hTa,    K.s_4,    K.l_4, },
+            { K.kNa,    K.hNa,    K.s_5,    K.l_5, },
+            { K.kHa,    K.hHa,    K.s_6,    K.l_6, },
+            M_r,
         },
-        -- third row
-        {  --  1       2       3       4       5       6        7       8       9       10
-            { "ウ",    "う",    "A",    "a",    "ヴ",    "ゔ",     "A",    "a",    "ウ",    "う", },
-            { "ク",    "く",    "S",    "s",    "グ",    "ぐ",     "S",    "s",    "ク",    "く", },
-            { "ス",    "す",    "D",    "d",    "ズ",    "ず",    "D",    "d",    "ス",    "す", },
-            { "ツ",    "つ",    "F",    "f",    "ヅ",    "づ",    "F",    "f",    "ツ",    "つ", },
-            { "ヌ",    "ぬ",    "G",    "g",    "ヌ",    "ぬ",    "G",    "g",    "ヌ",    "ぬ", },
-            { "フ",    "ふ",    "H",    "h",    "ブ",    "ぶ",    "H",    "h",    "プ",    "ぷ", },
-            { "ム",    "む",    "J",    "j",    "ム",    "む",    "J",    "j",    "ム",    "む", },
-            { "ユ",    "ゆ",    "K",    "k",    "ユ",    "ゆ",    "K",    "k",    "ユ",    "ゆ", },
-            { "ル",    "る",    "L",    "l",    "ル",    "る",    "L",    "l",    "ル",    "る", },
-            { "ヲ",    "を",    ":",    ";",    "ヲ",    "を",    ":",    ";",    "ヲ",     "を", },
-            { "ゥ",    "ぅ",    "\"",    "'",    "ゥ",    "ぅ",    "\"",    "'",    "ゥ",    "ぅ", },
-            { "ョ",    "ょ",    "『",    "「",     "ョ",    "ょ",    "『",    "「",    "ョ",     "ょ", },
-            { "ー",    "ー",    "』",    "」",    "ー",    "ー",    "』",    "」",    "ー",    "ー", },
+        -- third row [<shift>, ま, や, ら, < >]
+        {  -- R         r         S         s
+            { Sh_hir,   Sh_kat,   Sh_abc,   Sh_sym, }, -- Shift
+            { K.kMa,    K.hMa,    K.s_7,    K.l_7, },
+            { K.kYa,    K.hYa,    K.s_8,    K.l_8, },
+            { K.kRa,    K.hRa,    K.s_9,    K.l_9, },
+            { label = "␣",
+              "　",     "　",     " ",      " ",} -- whitespace
         },
-        -- fourth row
-        {  --  1       2       3       4       5       6        7       8       9       10
-            { "エ",    "え",    "Z",    "z",    "エ",    "え",    "Z",    "z",    "エ",    "え", },
-            { "ケ",    "け",    "X",    "x",    "ゲ",    "げ",    "X",    "x",    "ケ",    "け", },
-            { "セ",    "せ",    "C",    "c",    "ゼ",    "ぜ",    "C",    "c",    "セ",    "せ", },
-            { "テ",    "て",    "V",    "v",    "デ",    "で",    "V",    "v",    "テ",    "て", },
-            { "ネ",    "ね",    "B",    "b",    "ネ",    "ね",    "B",    "b",    "ネ",    "ね", },
-            { "ヘ",    "へ",    "N",    "n",    "ベ",    "べ",    "N",    "n",    "ペ",    "ぺ", },
-            { "メ",    "め",    "M",    "m",    "メ",     "め",    "M",    "m",    "メ",    "め", },
-            { "　",    "　",    "<",    ",",    "　",    "　",    "<",    ",",    "　",    "　", },
-            { "レ",    "れ",    ">",    ".",    "レ",     "れ",    ">",    ".",    "レ",    "れ", },
-            { "　",    "　",    "?",    "/",    "　",    "　",    "?",    "/",    "　",    "　", },
-            { "ェ",    "ぇ",    "～",    "・",    "ェ",     "ぇ",    "～",    "・",    "ェ",    "ぇ", },
-            { "ッ",    "っ",    "…",    "、",     "ッ",    "っ",    "…",    "、",    "ッ",    "っ", },
-            { "、",    "、",    "￥",     "。",    "、",     "、",    "￥",    "。",    "、",     "、", },
-        },
-        -- fifth row
-        {  --  1       2       3       4       5       6        7       8       9       10
-            { "オ",    "お",    "Á",    "á",    "オ",    "お",    "Á",    "á",    "オ",    "お", },
-            { "コ",    "こ",    "É",    "é",    "ゴ",    "ご",    "É",    "é",    "コ",    "こ", },
-            { "ソ",    "そ",    "Í",    "í",    "ゾ",    "ぞ",    "Í",    "í",    "ソ",    "そ", },
-            { "ト",    "と",    "Ó",    "ó",    "ド",    "ど",    "Ó",    "ó",    "ト",    "と", },
-            { "ノ",    "の",    "Ú",    "ú",    "ノ",    "の",    "Ú",    "ú",    "ノ",    "の", },
-            { "ホ",    "ほ",    "Ñ",    "ñ",    "ボ",    "ぼ",    "Ñ",    "ñ",    "ホ",    "ほ", },
-            { "モ",    "も",    "Ü",    "ü",    "モ",    "も",    "Ü",    "ü",    "モ",    "も", },
-            { "ヨ",    "よ",    "¿",    "ç",    "ヨ",    "よ",    "¿",    "ç",    "ヨ",    "よ", },
-            { "ロ",    "ろ",    "¡",    "ß",    "ロ",    "ろ",    "¡",    "ß",    "ロ",    "ろ", },
-            { "ン",    "ん",    "Æ",    "æ",    "ン",    "ん",    "Æ",    "æ",    "ン",    "ん", },
-            { "ォ",    "ぉ",    "€",    "£",    "ォ",     "ぉ",    "€",    "£",    "ォ",    "ぉ", },
-            { "　",    "　",    "«",    "【",    "　",    "　",    "«",    "”",    "　",    "　", },
-            { "。",    "。",    "»",    "】",     "。",     "。",    "’",    "”",    "。",     "。", },
-        },
-        -- sixth row
-        {
-            { label = "",
-              width = 1.5
-            },
-            { label = "🌐",
-              width = 1.5
-            },
-            { "記号",  "記号",  "かな",  "かな",  "記号",  "記号",  "かな",  "かな",  "記号",  "記号",
-              width = 1.5},
-            { label = "空白",
-              " ",    " ",    " ",    " ",    " ",    " ",    " ",    " ",    " ",    " ",
-              width = 5.5},
-            { label = "⮠",
-              "\n",   "\n",   "\n",   "\n",   "\n",   "\n",   "\n",   "\n",   "\n",   "\n",
-              width = 1.5,
-              bold = true
-            },
-            { label = "",
-              width = 1.5,
-              bold = false
-            },
+        -- fourth row [symbol, modifier, わ, 。, enter]
+        {  -- R         r         S         s
+            { Sy_sym,   Sy_abc,   Sy_kat,   Sy_hir, }, -- Symbols
+            { Mmd,      Mmd,      K.s_b,    Msh, },
+            { K.kWa,    K.hWa,    K.s_0,    K.l_0, },
+            { K.k_P,    K.h_P,    K.s_p,    K.l_P, },
+            { label = "⮠", bold = true,
+              "\n",     "\n",     "\n",     "\n",}, -- newline
         },
     },
+
+    -- Methods.
+    wrapInputBox = wrapInputBox,
+    genMenuItems = genMenuItems,
 }
