@@ -1248,7 +1248,17 @@ function ReaderFooter:addToMainMenu(menu_items)
                 },
             },
             {
-                text = _("Alignment"),
+                text_func = function()
+                    local align_text
+                    if self.settings.align == "left" then
+                        align_text = _("Left")
+                    elseif self.settings.align == "right" then
+                        align_text = _("Right")
+                    else
+                        align_text = _("Center")
+                    end
+                    return T(_("Alignment: %1"), align_text)
+                end,
                 separator = true,
                 enabled_func = function()
                     return self.settings.disable_progress_bar or self.settings.progress_bar_position ~= "alongside"
@@ -1287,7 +1297,17 @@ function ReaderFooter:addToMainMenu(menu_items)
                 }
             },
             {
-                text = _("Prefix"),
+                text_func = function()
+                    local prefix_text = ""
+                    if self.settings.item_prefix == "icons" then
+                        prefix_text = _("Icons")
+                    elseif self.settings.item_prefix == "compact_items" then
+                        prefix_text = _("Compact Items")
+                    elseif self.settings.item_prefix == "letters" then
+                        prefix_text = _("Letters")
+                    end
+                    return T(_("Prefix: %1"), prefix_text)
+                end,
                 sub_item_table = {
                     {
                         text_func = function()
@@ -1340,7 +1360,9 @@ function ReaderFooter:addToMainMenu(menu_items)
                 },
             },
             {
-                text = _("Item separator"),
+                text_func = function()
+                    return T(_("Item separator: '%1'"), self:get_separator_symbol())
+                end,
                 sub_item_table = {
                     {
                         text = _("Vertical line (|)"),
@@ -1363,6 +1385,16 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                     },
                     {
+                        text = _("Dot (·)"),
+                        checked_func = function()
+                            return self.settings.items_separator == "dot"
+                        end,
+                        callback = function()
+                            self.settings.items_separator = "dot"
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
                         text = _("No separator"),
                         checked_func = function()
                             return self.settings.items_separator == "none"
@@ -1375,7 +1407,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                 },
             },
             {
-                text = _("Progress percentage format"),
+                text_func = function()
+                    return T(_("Progress percentage format: %1"),
+                        self:progressPercentage(tonumber(self.settings.progress_pct_format)))
+                end,
                 sub_item_table = {
                     {
                         text_func = function()
@@ -1827,17 +1862,26 @@ end
 -- this method will be updated at runtime based on user setting
 function ReaderFooter:genFooterText() end
 
+function ReaderFooter:get_separator_symbol()
+    if self.settings.items_separator == "bar" then
+        return "|"
+    elseif self.settings.items_separator == "dot" then
+        return "·"
+    elseif self.settings.items_separator == "bullet" then
+        return "•"
+    end
+
+    return ""
+end
+
 function ReaderFooter:genAllFooterText()
     local info = {}
     local separator = "  "
     if self.settings.item_prefix == "compact_items" then
         separator = " "
     end
-    if self.settings.items_separator == "bar" then
-        separator = " | "
-    elseif self.settings.items_separator == "bullet" then
-        separator = " • "
-    end
+    separator = string.format("%s%s%s", separator, self:get_separator_symbol(), separator)
+
     -- We need to BD.wrap() all items and separators, so we're
     -- sure they are laid out in our order (reversed in RTL),
     -- without ordering by the RTL Bidi algorithm.
