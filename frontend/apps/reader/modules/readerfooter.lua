@@ -1887,7 +1887,10 @@ function ReaderFooter:genAllFooterText()
     if self.settings.item_prefix == "compact_items" then
         separator = " "
     end
-    separator = string.format("%s%s%s", separator, self:get_separator_symbol(), separator)
+    local separator_symbol = self:get_separator_symbol()
+    if separator_symbol ~= "" then
+        separator = string.format(" %s ", self:get_separator_symbol())
+    end
 
     -- We need to BD.wrap() all items and separators, so we're
     -- sure they are laid out in our order (reversed in RTL),
