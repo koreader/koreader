@@ -38,8 +38,8 @@ function filemanagerutil.purgeSettings(file)
 end
 
 -- Purge doc settings except kept
-function filemanagerutil.purgeViewSettings(file)
-    local settings_kept = {
+function filemanagerutil.resetDocumentSettings(file)
+    local settings_to_keep = {
         bookmarks = true,
         bookmarks_sorted = true,
         bookmarks_version = true,
@@ -53,7 +53,7 @@ function filemanagerutil.purgeViewSettings(file)
     if file_abs_path then
         local doc_settings = DocSettings:open(file_abs_path)
         for k in pairs(doc_settings.data) do
-            if not settings_kept[k] then
+            if not settings_to_keep[k] then
                 doc_settings:delSetting(k)
             end
         end
