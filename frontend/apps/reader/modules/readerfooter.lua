@@ -1090,7 +1090,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     if self.settings.text_font_bold == true then
                         font_weight = ", " .. _("bold")
                     end
-                    return T(_("Font (%1%2)"), self.settings.text_font_size, font_weight)
+                    return T(_("Font: %1%2"), self.settings.text_font_size, font_weight)
                 end,
                 sub_item_table = {
                     {
