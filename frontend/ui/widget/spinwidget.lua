@@ -145,6 +145,9 @@ function SpinWidget:update()
             {
                 text = self.default_text,
                 callback = function()
+                    if self.default_callback then
+                        self.default_callback(self)
+                    end
                     value_widget.value = self.default_value
                     value_widget:update()
                 end,
