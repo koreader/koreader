@@ -1531,7 +1531,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
                 return T(_("Hide battery status if level higher than: %1%"), self.settings.battery_hide_threshold)
             end,
             enabled_func = function()
-                return self.settings.all_at_once == true and self.settings.battery == true
+                return self.settings.all_at_once == true
             end,
             separator = true,
             callback = function(touchmenu_instance)
