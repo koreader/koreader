@@ -43,8 +43,9 @@ function ReaderGoto:onShowGotoDialog()
     else
         input_hint = T("@%1 (1 - %2)", curr_page, self.document:getPageCount())
     end
+    input_hint = input_hint .. string.format("  %.2f%%", curr_page / self.document:getPageCount() * 100)
     self.goto_dialog = InputDialog:new{
-        title = _("Enter page number"),
+        title = _("Enter page number or percentage"),
         input_hint = input_hint,
         description = self.document:hasHiddenFlows() and
             _([[
@@ -55,22 +56,7 @@ x for an absolute page number
         buttons = {
             {
                 {
-                    text = _("Cancel"),
-                    callback = function()
-                        self:close()
-                    end,
-                },
-                {
-                    text = _("Go to page"),
-                    is_enter_default = true,
-                    callback = function()
-                        self:gotoPage()
-                    end,
-                }
-            },
-            {
-                {
-                    text = _("Skim document"),
+                    text = _("Skim"),
                     callback = function()
                         self:close()
                         self.skimto = SkimToWidget:new{
@@ -85,6 +71,27 @@ x for an absolute page number
 
                     end,
                 },
+                {
+                    text = _("Go to %"),
+                    callback = function()
+                        self:gotoPercent()
+                    end,
+                }
+            },
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        self:close()
+                    end,
+                },
+                {
+                    text = _("Go to page"),
+                    is_enter_default = true,
+                    callback = function()
+                        self:gotoPage()
+                    end,
+                }
             },
         },
         input_type = "number",
@@ -158,6 +165,15 @@ function ReaderGoto:gotoPage()
                 end
             end
         end
+    end
+end
+
+function ReaderGoto:gotoPercent()
+    local number = self.goto_dialog:getInputValue()
+    if number then
+        self.ui.link:addCurrentLocationToStack()
+        self.ui:handleEvent(Event:new("GotoPercent", number))
+        self:close()
     end
 end
 
