@@ -981,7 +981,7 @@ function ReaderFooter:textOptionTitles(option)
         book_chapter = _("Current chapter"),
         custom_text = T(_("Custom text: \'%1\'%2"), self.custom_text,
             self.custom_text_repetitions > 1 and
-            string.format(" (%d ".._("times") .. ")", self.custom_text_repetitions) or ""),
+            string.format(" × %d", self.custom_text_repetitions) or ""),
     }
     return option_titles[option]
 end
