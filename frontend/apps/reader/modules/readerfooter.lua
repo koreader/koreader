@@ -1095,7 +1095,8 @@ function ReaderFooter:addToMainMenu(menu_items)
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local font_size = self.settings.text_font_size
-                    local items_font = SpinWidget:new{
+                    local items_font
+                    items_font = SpinWidget:new{
                         value = font_size,
                         value_min = 8,
                         value_max = 36,
@@ -1117,6 +1118,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         default_callback = function()
                             self.settings.text_font_bold = false
+                            self.settings.text_font_size = items_font.default_value
                             self.footer_text:free()
                             self.footer_text = TextWidget:new{
                                 text = self.footer_text.text,
