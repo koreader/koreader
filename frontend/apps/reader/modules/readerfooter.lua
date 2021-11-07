@@ -1096,6 +1096,18 @@ function ReaderFooter:addToMainMenu(menu_items)
                     local SpinWidget = require("ui/widget/spinwidget")
                     local font_size = self.settings.text_font_size
                     local items_font
+                    local function update_footer_and_menu()
+                        self.footer_text:free()
+                        self.footer_text = TextWidget:new{
+                            text = self.footer_text.text,
+                            face = Font:getFace(self.text_font_face, self.settings.text_font_size),
+                            bold = self.settings.text_font_bold,
+                        }
+                        self.text_container[1] = self.footer_text
+                        self:refreshFooter(true, true)
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end
+
                     items_font = SpinWidget:new{
                         value = font_size,
                         value_min = 8,
@@ -1106,41 +1118,17 @@ function ReaderFooter:addToMainMenu(menu_items)
                         keep_shown_on_apply = true,
                         callback = function(spin)
                             self.settings.text_font_size = spin.value
-                            self.footer_text:free()
-                            self.footer_text = TextWidget:new{
-                                text = self.footer_text.text,
-                                face = Font:getFace(self.text_font_face, self.settings.text_font_size),
-                                bold = self.settings.text_font_bold,
-                            }
-                            self.text_container[1] = self.footer_text
-                            self:refreshFooter(true, true)
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                            update_footer_and_menu()
                         end,
                         default_callback = function()
                             self.settings.text_font_bold = false
                             self.settings.text_font_size = items_font.default_value
-                            self.footer_text:free()
-                            self.footer_text = TextWidget:new{
-                                text = self.footer_text.text,
-                                face = Font:getFace(self.text_font_face, self.settings.text_font_size),
-                                bold = self.settings.text_font_bold,
-                            }
-                            self.text_container[1] = self.footer_text
-                            self:refreshFooter(true, true)
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                            update_footer_and_menu()
                         end,
                         extra_text = _("Bold font"),
                         extra_callback = function()
                             self.settings.text_font_bold = not self.settings.text_font_bold
-                            self.footer_text:free()
-                            self.footer_text = TextWidget:new{
-                                text = self.footer_text.text,
-                                face = Font:getFace(self.text_font_face, self.settings.text_font_size),
-                                bold = self.settings.text_font_bold,
-                            }
-                            self.text_container[1] = self.footer_text
-                            self:refreshFooter(true, true)
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
+                            update_footer_and_menu()
                         end,
                     }
                     UIManager:show(items_font)
