@@ -979,9 +979,9 @@ function ReaderFooter:textOptionTitles(option)
         wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
         book_title = _("Book title"),
         book_chapter = _("Current chapter"),
-        custom_text = T(_("Custom text (\'%1\'%2)"), self.custom_text,
+        custom_text = T(_("Custom text: \'%1\'%2"), self.custom_text,
             self.custom_text_repetitions > 1 and
-            string.format(", %d ".._("repetitions"), self.custom_text_repetitions) or ""),
+            string.format(" (%d ".._("times") .. ")", self.custom_text_repetitions) or ""),
     }
     return option_titles[option]
 end
