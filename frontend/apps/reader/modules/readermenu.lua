@@ -181,13 +181,13 @@ function ReaderMenu:setUpdateItemTable()
         keep_menu_open = true,
         callback = function()
             UIManager:show(ConfirmBox:new{
-                text = _("Reset current document settings to default values?\n\nReading position, highlights and bookmarks will be kept.\nThe document will be reopened."),
+                text = _("Reset current document settings to their default values?\n\nReading position, highlights and bookmarks will be kept.\nThe document will be reloaded."),
                 ok_text = _("Reset"),
                 ok_callback = function()
                     local current_file = self.ui.document.file
                     self:onTapCloseMenu()
                     self.ui:onClose()
-                    require("apps/filemanager/filemanagerutil").purgeViewSettings(current_file)
+                    require("apps/filemanager/filemanagerutil").resetDocumentSettings(current_file)
                     require("apps/reader/readerui"):showReader(current_file)
                 end,
             })
