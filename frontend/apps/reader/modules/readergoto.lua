@@ -169,11 +169,10 @@ function ReaderGoto:gotoPage()
 end
 
 function ReaderGoto:gotoPercent()
-    local number = tonumber(self.goto_dialog:getInputText())
+    local number = self.goto_dialog:getInputValue()
     if number then
-        number = math.max(1, self.document:getPageCount() * number / 100)
         self.ui.link:addCurrentLocationToStack()
-        self.ui:handleEvent(Event:new("GotoPage", number))
+        self.ui:handleEvent(Event:new("GotoPercent", number))
         self:close()
     end
 end
