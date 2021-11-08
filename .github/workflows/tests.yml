@@ -21,7 +21,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y luarocks gettext ccache
 
       - name: Luarocks
-        run: sudo luarocks install luacheck
+        run: sudo luarocks install luacheck && sudo luarocks install busted
 
       - name: Check out Git repository
         uses: actions/checkout@v2
@@ -43,14 +43,14 @@ jobs:
                 base
             key: build-${{ hashFiles('git-rev-base') }}
 
-      - name: Build
-        run: ./kodev build
-
       - name: Check
         run: ./kodev check
 
+      - name: Build
+        run: ./kodev build
+
       - name: Test
-        run: ./kodev test
+        run: ./kodev test front
 
 #      - name: install
 #        run: .ci/install.sh
