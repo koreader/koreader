@@ -20,6 +20,9 @@ jobs:
       - name: Install
         run: sudo apt-get update && sudo apt-get install -y luarocks gettext ccache
 
+      - name: Luarocks
+        run: luarocks --local install luacheck
+
       - name: Check out Git repository
         uses: actions/checkout@v2
         with:
