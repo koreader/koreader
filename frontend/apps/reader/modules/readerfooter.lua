@@ -1132,7 +1132,15 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                         callback = function(touchmenu_instance)
                             self.settings.text_font_bold = not self.settings.text_font_bold
-                            update_footer_and_menu()
+                            self.footer_text:free()
+                            self.footer_text = TextWidget:new{
+                                text = self.footer_text.text,
+                                face = Font:getFace(self.text_font_face, self.settings.text_font_size),
+                                bold = self.settings.text_font_bold,
+                            }
+                            self.text_container[1] = self.footer_text
+                            self:refreshFooter(true, true)
+                            if touchmenu_instance then touchmenu_instance:updateItems() end
                         end,
                         keep_menu_open = true,
                     },
