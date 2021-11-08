@@ -248,7 +248,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
                     if nb_disabled > 0 then
                         nb_str = nb_enabled .. "/" .. nb_available
                     end
-                    return T(_("Manage dictionaries (%1)"), nb_str)
+                    return T(_("Manage dictionaries: %1"), nb_str)
                 end,
                 enabled_func = function()
                     return self:getNumberOfDictionaries() > 0
@@ -326,7 +326,7 @@ function ReaderDictionary:addToMainMenu(menu_items)
             { -- setting used by dictquicklookup
                 text_func = function()
                     local font_size = G_reader_settings:readSetting("dict_font_size") or 20
-                    return T(_("Font size (%1)"), font_size)
+                    return T(_("Font size: %1"), font_size)
                 end,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
