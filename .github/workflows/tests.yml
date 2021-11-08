@@ -43,6 +43,12 @@ jobs:
       - name: Build
         run: ./kodev build
 
+      - name: Check
+        run: ./kodev check
+
+      - name: Test
+        run: ./kodev test
+
 #      - name: install
 #        run: .ci/install.sh
 #
