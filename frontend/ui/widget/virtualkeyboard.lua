@@ -28,6 +28,8 @@ local keyboard_state = {
     force_current_layout = false, -- Set to true to get/set current layout (instead of default layout)
 }
 
+local DEFAULT_LABEL_SIZE = 22
+
 local VirtualKeyPopup
 
 local VirtualKey = InputContainer:new{
@@ -51,7 +53,7 @@ local VirtualKey = InputContainer:new{
 }
 
 function VirtualKey:init()
-    local label_font_size = G_reader_settings:readSetting("keyboard_key_font_size") or 22
+    local label_font_size = G_reader_settings:readSetting("keyboard_key_font_size", DEFAULT_LABEL_SIZE)
     self.face = Font:getFace("infont", label_font_size)
     self.bold = G_reader_settings:isTrue("keyboard_key_bold")
     if self.keyboard.symbolmode_keys[self.label] ~= nil then
@@ -736,6 +738,7 @@ local VirtualKeyboard = FocusManager:new{
     symbolmode = false,
     umlautmode = false,
     layout = {},
+    default_label_size = DEFAULT_LABEL_SIZE,
 
     height = nil,
     bordersize = Size.border.default,

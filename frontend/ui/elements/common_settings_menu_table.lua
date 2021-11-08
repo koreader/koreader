@@ -688,6 +688,7 @@ common_settings.screenshot = {
         local Screenshoter = require("ui/widget/screenshoter")
         Screenshoter:chooseFolder()
     end,
+    keep_menu_open = true,
 }
 
 return common_settings

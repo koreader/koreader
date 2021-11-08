@@ -1,6 +1,7 @@
 local CheckButton = require("ui/widget/checkbutton")
 local FFIUtil = require("ffi/util")
 local Language = require("ui/language")
+local T = require("ffi/util").template
 local UIManager = require("ui/uimanager")
 local VirtualKeyboard = require("ui/widget/virtualkeyboard")
 local dbg = require("dbg")
@@ -8,6 +9,7 @@ local util = require("util")
 local _ = require("gettext")
 
 local input_dialog, check_button_bold, check_button_border, check_button_compact
+
 
 local sub_item_table = {
     {
@@ -25,12 +27,15 @@ local sub_item_table = {
         separator = true,
     },
     {
-        text = _("Keyboard font size"),
+        text_func = function()
+            return T(_("Keyboard font size: %1"),
+                G_reader_settings:readSetting("keyboard_key_font_size", VirtualKeyboard.default_label_size) )
+        end,
         keep_menu_open = true,
-        callback = function()
+        callback = function(touchmenu_instance)
             input_dialog = require("ui/widget/inputdialog"):new{
                 title = _("Keyboard font size"),
-                input = tostring(G_reader_settings:readSetting("keyboard_key_font_size") or 22),
+                input = tostring(G_reader_settings:readSetting("keyboard_key_font_size", VirtualKeyboard.default_label_size)),
                 input_hint = "(16 - 30)",
                 buttons = {
                     {
@@ -53,6 +58,7 @@ local sub_item_table = {
                                     input_dialog._input_widget:onCloseKeyboard()
                                     input_dialog._input_widget:initKeyboard()
                                     input_dialog:onShowKeyboard()
+                                    if touchmenu_instance then touchmenu_instance:updateItems() end
                                 end
                             end,
                         },
