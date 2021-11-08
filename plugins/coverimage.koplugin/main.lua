@@ -80,7 +80,7 @@ function CoverImage:init()
     self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path",
         default_fallback_path)
     self.cover_image_cache_path = G_reader_settings:readSetting("cover_image_cache_path",
-            default_cache_path)
+       default_cache_path)
     self.cover_image_cache_maxfiles = G_reader_settings:readSetting("cover_image_cache_maxfiles", 36)
     self.cover_image_cache_maxsize = G_reader_settings:readSetting("cover_image_cache_maxsize", 5) -- MB
     self.cover_image_cache_prefix = "cover_"
