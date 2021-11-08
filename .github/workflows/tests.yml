@@ -46,27 +46,15 @@ jobs:
       - name: Check
         run: ./kodev check
 
+      - name: Check 2
+        run: .ci/check.sh
+
       - name: Build
         run: ./kodev build
 
       - name: Test
         run: ./kodev test front
 
-#      - name: install
-#        run: .ci/install.sh
-#
-#      - name: fetch
-#        run: .ci/fetch.sh
-#
-#      - name: check
-#        run: .ci/check.sh
-#
-#      - name:  build
-#        run: .ci/build.sh
-#
-#      - name:  test
-#        run: .ci/test.sh
-#
 #      - name:  docs-and-coverage
 #        # only run when the event is a push on the master branch
 #        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
