@@ -620,9 +620,9 @@ function ReaderFooter:init()
 
     self.visibility_change = nil
 
-    self.custom_text = G_reader_settings:readSetting("reader_footer_custom_text") or "KOReader"
+    self.custom_text = G_reader_settings:readSetting("reader_footer_custom_text", "KOReader")
     self.custom_text_repetitions =
-        tonumber(G_reader_settings:readSetting("reader_footer_custom_text_repetitions")) or 1
+        tonumber(G_reader_settings:readSetting("reader_footer_custom_text_repetitions", "1"))
 end
 
 function ReaderFooter:set_custom_text(touchmenu_instance)
