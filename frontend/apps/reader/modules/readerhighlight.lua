@@ -1682,14 +1682,17 @@ function ReaderHighlight:extendHighlights(page1, i1, item2_pos0, item2_pos1)
     local new_pos1 = self.ui.document:compareXPointers(item1.pos1, item2_pos1) == 1 and item2_pos1 or item1.pos1
     self:deleteHighlight(page1, i1)
     -- construct new extended highlight
-    self.hold_pos = {}
-    self.hold_pos.page = self.ui.document:getPageFromXPointer(new_pos0)
+    self.hold_pos = {
+        page = self.ui.document:getPageFromXPointer(new_pos0),
+    }
     self.selected_text = {
         text = self.ui.document:getTextFromXPointers(new_pos0, new_pos1),
         pos0 = new_pos0,
         pos1 = new_pos1,
     }
     self:saveHighlight()
+    self.hold_pos = nil
+    self.selected_text = nil
     UIManager:setDirty(self.dialog, "ui")
 end
 
