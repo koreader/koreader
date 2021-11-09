@@ -45,6 +45,7 @@ local function cleanupSelectedText(text)
 end
 
 function ReaderHighlight:init()
+    self.select_mode = false
     self._highlight_buttons = {
         -- highlight and add_note are for the document itself,
         -- so we put them first.
@@ -129,6 +130,20 @@ function ReaderHighlight:init()
                     -- text window, and also if NetworkMgr:promptWifiOn()
                     -- is needed, so the user can just tap again on this
                     -- button and does not need to select the text again.
+                end,
+            }
+        end,
+        ["12_select_more"] = function(_self)
+            return {
+                text = _("Extend highlighting"),
+                enabled = _self.hold_pos ~= nil,
+                callback = function()
+                    self.page1, self.i1 = _self:saveHighlight()
+                    self.select_mode = true
+                    UIManager:show(Notification:new{
+                        text = _("Select another fragment to finish highlighting."),
+                    })
+                    _self:onClose()
                 end,
             }
         end,
@@ -1273,6 +1288,20 @@ function ReaderHighlight:onTranslateText(text)
 end
 
 function ReaderHighlight:onHoldRelease()
+    if self.select_mode then -- extended highlighting, ending fragment
+        if self.selected_text then
+            local pos0, pos1 = self.selected_text.pos0, self.selected_text.pos1
+            self:clear()
+            self:extendHighlights(self.page1, self.i1, pos0, pos1)
+            self.select_mode = false
+        else -- long-press on empty space
+            UIManager:show(Notification:new{
+                text = _("Select another fragment to finish highlighting."),
+            })
+        end
+        return true
+    end
+    
     local long_final_hold = false
     if self.hold_last_tv then
         local hold_duration = TimeVal:now() - self.hold_last_tv
@@ -1643,6 +1672,25 @@ function ReaderHighlight:editHighlightStyle(page, i)
             UIManager:setDirty(self.dialog, "ui")
         end,
     })
+end
+
+function ReaderHighlight:extendHighlights(page1, i1, item2_pos0, item2_pos1)
+    -- item1 - starting fragment (saved), item2 - ending fragment
+    -- new highlight includes item1, item2 and the text between them
+    local item1 = self.view.highlight.saved[page1][i1]
+    local new_pos0 = self.ui.document:compareXPointers(item1.pos0, item2_pos0) == 1 and item1.pos0 or item2_pos0
+    local new_pos1 = self.ui.document:compareXPointers(item1.pos1, item2_pos1) == 1 and item2_pos1 or item1.pos1
+    self:deleteHighlight(page1, i1)
+    -- construct new extended highlight
+    self.hold_pos = {}
+    self.hold_pos.page = self.ui.document:getPageFromXPointer(new_pos0)
+    self.selected_text = {
+        text = self.ui.document:getTextFromXPointers(new_pos0, new_pos1),
+        pos0 = new_pos0,
+        pos1 = new_pos1,
+    }
+    self:saveHighlight()
+    UIManager:setDirty(self.dialog, "ui")
 end
 
 function ReaderHighlight:onReadSettings(config)
