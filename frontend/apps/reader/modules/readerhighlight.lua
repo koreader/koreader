@@ -45,7 +45,7 @@ local function cleanupSelectedText(text)
 end
 
 function ReaderHighlight:init()
-    self.select_mode = false
+    self.select_mode = false -- extended highlighting
     self._highlight_buttons = {
         -- highlight and add_note are for the document itself,
         -- so we put them first.
@@ -133,12 +133,12 @@ function ReaderHighlight:init()
                 end,
             }
         end,
-        ["12_select_more"] = function(_self)
+        ["12_select_mode"] = function(_self)
             return {
                 text = _("Extend highlighting"),
                 enabled = _self.hold_pos ~= nil,
                 callback = function()
-                    self.page1, self.i1 = _self:saveHighlight()
+                    self.highlight_page, self.highlight_idx = _self:saveHighlight()
                     self.select_mode = true
                     UIManager:show(Notification:new{
                         text = _("Select another fragment to finish highlighting."),
@@ -476,7 +476,7 @@ function ReaderHighlight:onTap(_, ges)
     -- ReaderHighlight:clear can only return true if self.hold_pos was set anyway.
     local cleared = self.hold_pos and self:clear()
     -- We only care about potential taps on existing highlights, not on taps that closed a highlight menu.
-    if not cleared and ges then
+    if not cleared and ges and not self.select_mode then
         if self.ui.document.info.has_pages then
             return self:onTapPageSavedHighlight(ges)
         else
@@ -1291,8 +1291,8 @@ function ReaderHighlight:onHoldRelease()
     if self.select_mode then -- extended highlighting, ending fragment
         if self.selected_text then
             local pos0, pos1 = self.selected_text.pos0, self.selected_text.pos1
-            self:clear()
-            self:extendHighlights(self.page1, self.i1, pos0, pos1)
+            self.ui.document:clearSelection()
+            self:extendHighlights(self.highlight_page, self.highlight_idx, pos0, pos1)
             self.select_mode = false
         else -- long-press on empty space
             UIManager:show(Notification:new{
@@ -1674,13 +1674,13 @@ function ReaderHighlight:editHighlightStyle(page, i)
     })
 end
 
-function ReaderHighlight:extendHighlights(page1, i1, item2_pos0, item2_pos1)
+function ReaderHighlight:extendHighlights(page, i, item2_pos0, item2_pos1)
     -- item1 - starting fragment (saved), item2 - ending fragment
     -- new highlight includes item1, item2 and the text between them
-    local item1 = self.view.highlight.saved[page1][i1]
+    local item1 = self.view.highlight.saved[page][i]
     local new_pos0 = self.ui.document:compareXPointers(item1.pos0, item2_pos0) == 1 and item1.pos0 or item2_pos0
     local new_pos1 = self.ui.document:compareXPointers(item1.pos1, item2_pos1) == 1 and item2_pos1 or item1.pos1
-    self:deleteHighlight(page1, i1)
+    self:deleteHighlight(page, i)
     -- construct new extended highlight
     self.hold_pos = {
         page = self.ui.document:getPageFromXPointer(new_pos0),
