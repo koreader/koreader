@@ -379,7 +379,7 @@ function SunTime:calculateMidnight()
 end
 
 --[[--
-Calculates the ephemeris ant twilight times
+Calculates the ephemeris and twilight times
 
 @usage
 SunTime:calculateTime()
@@ -445,7 +445,7 @@ function SunTime:calculateTimes()
 end
 
 -- Get time in seconds (either actual time in hours or date struct)
-function SunTime:getTimeInSec(val) -- luacheck: ignore 212
+function SunTime:getTimeInSec(val)
     if not val then
         val = os.date("*t")
     end
