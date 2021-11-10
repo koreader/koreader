@@ -158,9 +158,9 @@ function SunTime:setPosition(name, latitude, longitude, time_zone, altitude, deg
     -- check for sane values
     -- latitudes are from -90° to +90°
     if latitude > math.pi/2 then
-        latitude = math.pi
+        latitude = math.pi/2
     elseif latitude < -math.pi/2 then
-        latitude = -math.pi
+        latitude = -math.pi/2
     end
     -- longitudes are from -180° to +180°
     if longitude > math.pi then
