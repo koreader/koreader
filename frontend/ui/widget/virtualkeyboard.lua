@@ -738,7 +738,6 @@ local VirtualKeyboard = FocusManager:new{
     symbolmode = false,
     umlautmode = false,
     layout = {},
-    default_label_size = DEFAULT_LABEL_SIZE,
 
     height = nil,
     bordersize = Size.border.default,
