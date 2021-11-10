@@ -10,7 +10,6 @@ local _ = require("gettext")
 
 local input_dialog, check_button_bold, check_button_border, check_button_compact
 
-
 local sub_item_table = {
     {
         text = _("Keyboard layout"),
