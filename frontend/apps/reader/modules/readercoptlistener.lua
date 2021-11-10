@@ -264,15 +264,15 @@ function ReaderCoptListener:getAltStatusBarMenu()
             },
             {
                 text_func = function()
-                    local status = _("off")
+                    local status = _("Off")
                     if self.battery == 1 then
                         if self.battery_percent == 1 then
-                            status = _("percentage")
+                            status = _("Percentage")
                         else
-                            status = _("icon")
+                            status = _("Icon")
                         end
                     end
-                    return T(_("Battery status (%1)"), status)
+                    return T(_("Battery status: %1"), status)
                 end,
                 sub_item_table = {
                     {
@@ -319,7 +319,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
             },
             {
                 text_func = function()
-                    return T(_("Font size (%1)"), G_reader_settings:readSetting("cre_header_status_font_size") or 20 )
+                    return T(_("Font size: %1"), G_reader_settings:readSetting("cre_header_status_font_size") or 20 )
                 end,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
