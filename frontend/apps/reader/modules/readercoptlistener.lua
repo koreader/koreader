@@ -10,6 +10,8 @@ local _ = require("gettext")
 
 local ReaderCoptListener = EventListener:new{}
 
+local CRE_HEADER_DEFAULT_SIZE = 20
+
 function ReaderCoptListener:onReadSettings(config)
     local view_mode = config:readSetting("copt_view_mode")
                    or G_reader_settings:readSetting("copt_view_mode")
@@ -23,15 +25,15 @@ function ReaderCoptListener:onReadSettings(config)
     self.view.view_mode = view_mode_name
 
     -- crengine top status bar can only show author and title together
-    self.title = G_reader_settings:readSetting("cre_header_title") or 1
-    self.clock = G_reader_settings:readSetting("cre_header_clock") or 1
-    self.header_auto_refresh = G_reader_settings:readSetting("cre_header_auto_refresh") or 1
-    self.page_number = G_reader_settings:readSetting("cre_header_page_number") or 1
-    self.page_count = G_reader_settings:readSetting("cre_header_page_count") or 1
-    self.reading_percent = G_reader_settings:readSetting("cre_header_reading_percent") or 0
-    self.battery = G_reader_settings:readSetting("cre_header_battery") or 1
-    self.battery_percent = G_reader_settings:readSetting("cre_header_battery_percent") or 0
-    self.chapter_marks = G_reader_settings:readSetting("cre_header_chapter_marks") or 1
+    self.title = G_reader_settings:readSetting("cre_header_title", 1)
+    self.clock = G_reader_settings:readSetting("cre_header_clock", 1)
+    self.header_auto_refresh = G_reader_settings:readSetting("cre_header_auto_refresh", 1)
+    self.page_number = G_reader_settings:readSetting("cre_header_page_number", 1)
+    self.page_count = G_reader_settings:readSetting("cre_header_page_count", 1)
+    self.reading_percent = G_reader_settings:readSetting("cre_header_reading_percent", 0)
+    self.battery = G_reader_settings:readSetting("cre_header_battery", 1)
+    self.battery_percent = G_reader_settings:readSetting("cre_header_battery_percent", 0)
+    self.chapter_marks = G_reader_settings:readSetting("cre_header_chapter_marks", 1)
 
     self.ui.document._document:setIntProperty("window.status.title", self.title)
     self.ui.document._document:setIntProperty("window.status.clock", self.clock)
@@ -45,7 +47,7 @@ function ReaderCoptListener:onReadSettings(config)
     self:onTimeFormatChanged()
 
     -- Enable or disable crengine header status line (note that for crengine, 0=header enabled, 1=header disabled)
-    local status_line = config:readSetting("copt_status_line") or G_reader_settings:readSetting("copt_status_line") or 1
+    local status_line = config:readSetting("copt_status_line") or G_reader_settings:readSetting("copt_status_line", 1)
     self.ui:handleEvent(Event:new("SetStatusLine", status_line))
 
     self.old_battery_level = Device:getPowerDevice():getCapacity()
@@ -319,11 +321,11 @@ function ReaderCoptListener:getAltStatusBarMenu()
             },
             {
                 text_func = function()
-                    return T(_("Font size: %1"), G_reader_settings:readSetting("cre_header_status_font_size") or 20 )
+                    return T(_("Font size: %1"), G_reader_settings:readSetting("cre_header_status_font_size", CRE_HEADER_DEFAULT_SIZE))
                 end,
                 callback = function(touchmenu_instance)
                     local SpinWidget = require("ui/widget/spinwidget")
-                    local start_size = G_reader_settings:readSetting("cre_header_status_font_size") or 20
+                    local start_size = G_reader_settings:readSetting("cre_header_status_font_size", CRE_HEADER_DEFAULT_SIZE)
                     local size_spinner = SpinWidget:new{
                         value = start_size,
                         value_min = 8,
