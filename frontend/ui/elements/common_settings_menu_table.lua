@@ -347,8 +347,8 @@ local back_to_exit_str = {
 }
 common_settings.back_to_exit = {
     text_func = function()
-        local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
-        return T(_("Back to exit (%1)"),
+        local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt")
+        return T(_("Back to exit: %1"),
                  back_to_exit_str[back_to_exit][2])
     end,
     sub_item_table = {
