@@ -156,14 +156,16 @@ function SunTime:setPosition(name, latitude, longitude, time_zone, altitude, deg
     end
 
     -- check for sane values
+    -- latitudes are from -90° to +90°
     if latitude > math.pi/2 then
-        latitude = math.pi
-    elseif latitude < - math.pi/2 then
-        latitude = -math.pi
+        latitude = math.pi/2
+    elseif latitude < -math.pi/2 then
+        latitude = -math.pi/2
     end
-    if longitude > math.pi/2 then
+    -- longitudes are from -180° to +180°
+    if longitude > math.pi then
         longitude = math.pi
-    elseif longitude < - math.pi/2 then
+    elseif longitude < -math.pi then
         longitude = -math.pi
     end
 
@@ -377,7 +379,7 @@ function SunTime:calculateMidnight()
 end
 
 --[[--
-Calculates the ephemeris ant twilight times
+Calculates the ephemeris and twilight times
 
 @usage
 SunTime:calculateTime()
@@ -443,7 +445,7 @@ function SunTime:calculateTimes()
 end
 
 -- Get time in seconds (either actual time in hours or date struct)
-function SunTime:getTimeInSec(val) -- luacheck: ignore 212
+function SunTime:getTimeInSec(val)
     if not val then
         val = os.date("*t")
     end
