@@ -266,12 +266,12 @@ function ReaderCoptListener:getAltStatusBarMenu()
             },
             {
                 text_func = function()
-                    local status = _("Off")
+                    local status = _("off")
                     if self.battery == 1 then
                         if self.battery_percent == 1 then
-                            status = _("Percentage")
+                            status = _("percentage")
                         else
-                            status = _("Icon")
+                            status = _("icon")
                         end
                     end
                     return T(_("Battery status: %1"), status)
