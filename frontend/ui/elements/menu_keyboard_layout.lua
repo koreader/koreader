@@ -1,11 +1,11 @@
 local CheckButton = require("ui/widget/checkbutton")
 local FFIUtil = require("ffi/util")
 local Language = require("ui/language")
-local T = require("ffi/util").template
 local UIManager = require("ui/uimanager")
 local VirtualKeyboard = require("ui/widget/virtualkeyboard")
 local dbg = require("dbg")
 local util = require("util")
+local T = require("ffi/util").template
 local _ = require("gettext")
 
 local input_dialog, check_button_bold, check_button_border, check_button_compact
@@ -45,7 +45,7 @@ local sub_item_table = {
     },
     {
         text_func = function()
-            return T(_("Keyboard font size: %1%2%3%4"),
+            return T(_("Keyboard settings: %1pt%2%3%4"),
                 G_reader_settings:readSetting("keyboard_key_font_size", VirtualKeyboard.default_label_size),
                 G_reader_settings:isTrue("keyboard_key_bold") and string.format(", %s", _("bold")) or "",
                 G_reader_settings:isTrue("keyboard_key_border") and string.format(", %s", _("border")) or "",
