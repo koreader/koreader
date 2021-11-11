@@ -28,7 +28,7 @@ function FeedSource:getInitializedFeeds(feed_list, progress_callback, error_call
         local url = feed[1]
         -- Show a UI update
         progress_callback(T(
-            _("Initializing feed %1 of %2"),
+            _("Setting up feed %1 of %2."),
             idx,
             url
         ))
