@@ -137,11 +137,11 @@ for lang, keyboard_layout in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboa
             return text
         end,
         checked_func = function()
-            local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
+            local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
             return util.arrayContains(keyboard_layouts, lang)
         end,
         callback = function()
-            local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
+            local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
             local layout_index = util.arrayContains(keyboard_layouts, lang)
             if layout_index then
                 table.remove(keyboard_layouts, layout_index)
