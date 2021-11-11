@@ -45,7 +45,7 @@ function FeedSource:getInitializedFeeds(feed_list, progress_callback, error_call
                 initialized_feeds,
                 {
                     config = feed,
-                    document = response
+                    document = response,
                 }
             )
         else
