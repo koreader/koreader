@@ -345,6 +345,18 @@ local back_to_exit_str = {
     always = {_("Always"), _("always")},
     disable ={_("Disable"), _("disable")},
 }
+local function getMenuItems(title, setting, default)
+    return {
+        text = title,
+        checked_func = function()
+            return G_reader_settings:readSetting(setting) == default
+        end,
+        callback = function()
+            G_reader_settings:saveSetting(setting,default)
+        end,
+    }
+end
+
 common_settings.back_to_exit = {
     text_func = function()
         local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt")
@@ -352,43 +364,16 @@ common_settings.back_to_exit = {
                  back_to_exit_str[back_to_exit][2])
     end,
     sub_item_table = {
-        {
-            text = back_to_exit_str.prompt[1],
-            checked_func = function()
-                local setting = G_reader_settings:readSetting("back_to_exit")
-                return setting == "prompt" or setting == nil
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("back_to_exit", "prompt")
-            end,
-        },
-        {
-            text = back_to_exit_str.always[1],
-            checked_func = function()
-                return G_reader_settings:readSetting("back_to_exit")
-                           == "always"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("back_to_exit", "always")
-            end,
-        },
-        {
-            text = back_to_exit_str.disable[1],
-            checked_func = function()
-                return G_reader_settings:readSetting("back_to_exit")
-                           == "disable"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("back_to_exit", "disable")
-            end,
-        },
+        getMenuItems(back_to_exit_str.prompt[1], "back_to_exit", "prompt"),
+        getMenuItems(back_to_exit_str.always[1], "back_to_exit", "always"),
+        getMenuItems(back_to_exit_str.disable[1], "back_to_exit", "disable"),
     },
 }
 common_settings.back_in_filemanager = {
     text_func = function()
         local menu_info = ""
-        local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager")
-        if back_in_filemanager == nil or back_in_filemanager == "default" then
+        local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager", "default")
+        if back_in_filemanager == "default" then
             menu_info = _("back to exit")
         elseif back_in_filemanager == "parent_folder" then
             menu_info = _("go to parent folder")
@@ -403,35 +388,25 @@ common_settings.back_in_filemanager = {
                          back_to_exit_str[back_to_exit][2])
             end,
             checked_func = function()
-                local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager")
-                return back_in_filemanager == nil or back_in_filemanager == "default"
+                return G_reader_settings:readSetting("back_in_filemanager", "default") == "default"
             end,
             callback = function()
                 G_reader_settings:saveSetting("back_in_filemanager", "default")
             end,
         },
-        {
-            text = _("Go to parent folder"),
-            checked_func = function()
-                return G_reader_settings:readSetting("back_in_filemanager")
-                           == "parent_folder"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("back_in_filemanager", "parent_folder")
-            end,
-        },
+        getMenuItems(_("Go to parent folder"), "back_in_filemanager", "parent_folder"),
     },
 }
 common_settings.back_in_reader = {
     -- All these options are managed by ReaderBack
     text_func = function()
         local menu_info = ""
-        local back_in_reader = G_reader_settings:readSetting("back_in_reader")
+        local back_in_reader = G_reader_settings:readSetting("back_in_reader", "previous_location")
         if back_in_reader == "default" then
             menu_info = _("back to exit")
         elseif back_in_reader == "filebrowser" then
             menu_info = _("go to filebrowser")
-        elseif back_in_reader == "previous_location" or back_in_reader == nil then
+        elseif back_in_reader == "previous_location" then
             menu_info = _("go to previous location")
         elseif back_in_reader == "previous_read_page" then
             menu_info = _("go to previus read page")
@@ -452,34 +427,9 @@ common_settings.back_in_reader = {
                 G_reader_settings:saveSetting("back_in_reader", "default")
             end,
         },
-        {
-            text = _("Go to file browser"),
-            checked_func = function()
-                return G_reader_settings:readSetting("back_in_reader") == "filebrowser"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("back_in_reader", "filebrowser")
-            end,
-        },
-        {
-            text = _("Go to previous location"),
-            checked_func = function()
-                local back_in_reader = G_reader_settings:readSetting("back_in_reader")
-                return back_in_reader == "previous_location" or back_in_reader == nil
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("back_in_reader", "previous_location")
-            end,
-        },
-        {
-            text = _("Go to previous read page"),
-            checked_func = function()
-                return G_reader_settings:readSetting("back_in_reader") == "previous_read_page"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("back_in_reader", "previous_read_page")
-            end,
-        },
+        getMenuItems(_("Go to file browser"), "back_in_reader", "filebrowser"),
+        getMenuItems(_("Go to previous location"), "back_in_reader", "previous_location"),
+        getMenuItems(_("Go to previous read page"), "back_in_reader", "previous_read_page"),
     },
 }
 common_settings.opening_page_location_stack = {
