@@ -10,9 +10,27 @@ local _ = require("gettext")
 
 local input_dialog, check_button_bold, check_button_border, check_button_compact
 
+local function getActivatedKeyboards()
+    local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
+    local activated_keyboards = {}
+    for lang, dummy in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
+        if util.arrayContains(keyboard_layouts, lang) then
+            table.insert(activated_keyboards, Language:getLanguageName(lang))
+        end
+    end
+    return table.concat(activated_keyboards, ", ")
+end
+
 local sub_item_table = {
     {
-        text = _("Keyboard layout"),
+        text_func = function()
+            local activated_keyboards = getActivatedKeyboards()
+            if activated_keyboards ~= "" then
+                return string.format(_("Keyboard layout: %s"), activated_keyboards)
+            else
+                return _("Keyboard layout")
+            end
+        end,
         sub_item_table = {},
     },
     {
