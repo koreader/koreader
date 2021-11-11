@@ -345,14 +345,14 @@ local back_to_exit_str = {
     always = {_("Always"), _("always")},
     disable ={_("Disable"), _("disable")},
 }
-local function getMenuItems(title, setting, default)
+local function genGenericMenuEntry(title, setting, value, default)
     return {
         text = title,
         checked_func = function()
-            return G_reader_settings:readSetting(setting) == default
+            return G_reader_settings:readSetting(setting, default) == value
         end,
         callback = function()
-            G_reader_settings:saveSetting(setting,default)
+            G_reader_settings:saveSetting(setting, value)
         end,
     }
 end
@@ -364,9 +364,9 @@ common_settings.back_to_exit = {
                  back_to_exit_str[back_to_exit][2])
     end,
     sub_item_table = {
-        getMenuItems(back_to_exit_str.prompt[1], "back_to_exit", "prompt"),
-        getMenuItems(back_to_exit_str.always[1], "back_to_exit", "always"),
-        getMenuItems(back_to_exit_str.disable[1], "back_to_exit", "disable"),
+        genGenericMenuEntry(back_to_exit_str.prompt[1], "back_to_exit", "prompt"),
+        genGenericMenuEntry(back_to_exit_str.always[1], "back_to_exit", "always"),
+        genGenericMenuEntry(back_to_exit_str.disable[1], "back_to_exit", "disable"),
     },
 }
 common_settings.back_in_filemanager = {
@@ -394,7 +394,7 @@ common_settings.back_in_filemanager = {
                 G_reader_settings:saveSetting("back_in_filemanager", "default")
             end,
         },
-        getMenuItems(_("Go to parent folder"), "back_in_filemanager", "parent_folder"),
+        genGenericMenuEntry(_("Go to parent folder"), "back_in_filemanager", "parent_folder"),
     },
 }
 common_settings.back_in_reader = {
@@ -427,9 +427,9 @@ common_settings.back_in_reader = {
                 G_reader_settings:saveSetting("back_in_reader", "default")
             end,
         },
-        getMenuItems(_("Go to file browser"), "back_in_reader", "filebrowser"),
-        getMenuItems(_("Go to previous location"), "back_in_reader", "previous_location"),
-        getMenuItems(_("Go to previous read page"), "back_in_reader", "previous_read_page"),
+        genGenericMenuEntry(_("Go to file browser"), "back_in_reader", "filebrowser"),
+        genGenericMenuEntry(_("Go to previous location"), "back_in_reader", "previous_location"),
+        genGenericMenuEntry(_("Go to previous read page"), "back_in_reader", "previous_read_page"),
     },
 }
 common_settings.opening_page_location_stack = {
@@ -504,6 +504,7 @@ common_settings.document_auto_save = {
         genAutoSaveMenuItem(false),
         genAutoSaveMenuItem(5),
         genAutoSaveMenuItem(15),
+        genAutoSaveMenuItem(30),
         genAutoSaveMenuItem(60),
         warn_about_auto_save and {
             text = _("Important info about this auto-save option"),
@@ -518,36 +519,9 @@ common_settings.document_auto_save = {
 common_settings.document_save = {
     text = _("Save document (write highlights into PDF)"),
     sub_item_table = {
-        {
-            text = _("Prompt"),
-            checked_func = function()
-                local setting = G_reader_settings:readSetting("save_document")
-                return setting == "prompt" or setting == nil
-            end,
-            callback = function()
-                G_reader_settings:delSetting("save_document")
-            end,
-        },
-        {
-            text = _("Always"),
-            checked_func = function()
-                return G_reader_settings:readSetting("save_document")
-                           == "always"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("save_document", "always")
-            end,
-        },
-        {
-            text = _("Disable"),
-            checked_func = function()
-                return G_reader_settings:readSetting("save_document")
-                           == "disable"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("save_document", "disable")
-            end,
-        },
+        genGenericMenuEntry(_("Prompt"), "save_document", "prompt", "prompt"),
+        genGenericMenuEntry(_("Always"), "save_document", "always"),
+        genGenericMenuEntry(_("Disable"), "save_document", "disable"),
     },
 }
 
@@ -564,43 +538,10 @@ common_settings.document_end_action = {
             end,
             separator = true,
         },
-        {
-            text = _("Ask with popup dialog"),
-            checked_func = function()
-                local setting = G_reader_settings:readSetting("end_document_action")
-                return setting == "pop-up" or setting == nil
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("end_document_action", "pop-up")
-            end,
-        },
-        {
-            text = _("Do nothing"),
-            checked_func = function()
-                return G_reader_settings:readSetting("end_document_action") == "nothing"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("end_document_action", "nothing")
-            end,
-        },
-        {
-            text = _("Book status"),
-            checked_func = function()
-                return G_reader_settings:readSetting("end_document_action") == "book_status"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("end_document_action", "book_status")
-            end,
-        },
-        {
-            text = _("Delete file"),
-            checked_func = function()
-                return G_reader_settings:readSetting("end_document_action") == "delete_file"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("end_document_action", "delete_file")
-            end,
-        },
+        genGenericMenuEntry(_("Ask with popup dialog"), "end_document_action", "pop-up", "pop-up"),
+        genGenericMenuEntry(_("Do nothing"), "end_document_action", "nothing"),
+        genGenericMenuEntry(_("Book status"), "end_document_action", "book_status"),
+        genGenericMenuEntry(_("Delete file"), "end_document_action", "delete_file"),
         {
             text = _("Open next file"),
             enabled_func = function()
@@ -613,42 +554,10 @@ common_settings.document_end_action = {
                 G_reader_settings:saveSetting("end_document_action", "next_file")
             end,
         },
-        {
-            text = _("Go to beginning"),
-            checked_func = function()
-                return G_reader_settings:readSetting("end_document_action") == "goto_beginning"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("end_document_action", "goto_beginning")
-            end,
-        },
-        {
-            text = _("Return to file browser"),
-            checked_func = function()
-                return G_reader_settings:readSetting("end_document_action") == "file_browser"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("end_document_action", "file_browser")
-            end,
-        },
-        {
-            text = _("Mark book as read"),
-            checked_func = function()
-                return G_reader_settings:readSetting("end_document_action") == "mark_read"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("end_document_action", "mark_read")
-            end,
-        },
-        {
-            text = _("Book status and return to file browser"),
-            checked_func = function()
-                return G_reader_settings:readSetting("end_document_action") == "book_status_file_browser"
-            end,
-            callback = function()
-                G_reader_settings:saveSetting("end_document_action", "book_status_file_browser")
-            end,
-        },
+        genGenericMenuEntry(_("Go to beginning"), "end_document_action", "goto_beginning"),
+        genGenericMenuEntry(_("Return to file browser"), "end_document_action", "file_browser"),
+        genGenericMenuEntry(_("Mark book as read"), "end_document_action", "mark_read"),
+        genGenericMenuEntry(_("Book status and return to file browser"), "end_document_action", "book_status_file_browser"),
     }
 }
 
