@@ -385,11 +385,20 @@ common_settings.back_to_exit = {
     },
 }
 common_settings.back_in_filemanager = {
-    text = _("Back in file browser"),
+    text_func = function()
+        local menu_info = ""
+        local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager")
+        if back_in_filemanager == nil or back_in_filemanager == "default" then
+            menu_info = _("back to exit")
+        elseif back_in_filemanager == "parent_folder" then
+            menu_info = _("go to parent folder")
+        end
+        return T(_("Back in file browser: %1"), menu_info)
+    end,
     sub_item_table = {
         {
             text_func = function()
-                local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
+                local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt")
                 return T(_("Back to exit (%1)"),
                          back_to_exit_str[back_to_exit][2])
             end,
@@ -415,11 +424,24 @@ common_settings.back_in_filemanager = {
 }
 common_settings.back_in_reader = {
     -- All these options are managed by ReaderBack
-    text = _("Back in reader"),
+    text_func = function()
+        local menu_info = ""
+        local back_in_reader = G_reader_settings:readSetting("back_in_reader")
+        if back_in_reader == "default" then
+            menu_info = _("back to exit")
+        elseif back_in_reader == "filebrowser" then
+            menu_info = _("go to filebrowser")
+        elseif back_in_reader == "previous_location" or back_in_reader == nil then
+            menu_info = _("go to previous location")
+        elseif back_in_reader == "previous_read_page" then
+            menu_info = _("go to previus read page")
+        end
+        return T(_("Back in reader: %1"), menu_info)
+    end,
     sub_item_table = {
         {
             text_func = function()
-                local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
+                local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt")
                 return T(_("Back to exit (%1)"),
                          back_to_exit_str[back_to_exit][2])
             end,
