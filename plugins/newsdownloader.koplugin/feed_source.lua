@@ -296,7 +296,7 @@ function FeedSource:getEpubOutputDir(download_dir, sub_dir, epub_title)
         feed_output_dir,
         file_name,
         self.file_extension
-                            )
+    )
 end
 
 function FeedSource:createEpub(title, chapters, abs_output_path, progress_callback, error_callback)
