@@ -59,7 +59,21 @@ function ReaderHighlight:init()
                 enabled = _self.hold_pos ~= nil,
             }
         end,
-        ["02_add_note"] = function(_self)
+        ["02_select"] = function(_self)
+            return {
+                text = _("Select"),
+                enabled = _self.hold_pos ~= nil,
+                callback = function()
+                    self.highlight_page, self.highlight_idx = _self:saveHighlight()
+                    self.select_mode = true
+                    UIManager:show(Notification:new{
+                        text = _("Select ending fragment"),
+                    })
+                    _self:onClose()
+                end,
+            }
+        end,
+        ["03_add_note"] = function(_self)
             return {
                 text = _("Add Note"),
                 callback = function()
@@ -71,28 +85,16 @@ function ReaderHighlight:init()
         end,
         -- copy and search are internal functions that don't depend on anything,
         -- hence the second line.
-        ["03_copy"] = function(_self)
+        ["04_copy"] = function(_self)
             return {
                 text = C_("Text", "Copy"),
                 enabled = Device:hasClipboard(),
                 callback = function()
                     Device.input.setClipboardText(cleanupSelectedText(_self.selected_text.text))
                     _self:onClose()
-                    self:clear()
                     UIManager:show(Notification:new{
                         text = _("Selection copied to clipboard."),
                     })
-                end,
-            }
-        end,
-        ["04_search"] = function(_self)
-            return {
-                text = _("Search"),
-                callback = function()
-                    _self:onHighlightSearch()
-                    -- We don't call _self:onClose(), crengine will highlight
-                    -- search matches on the current page, and self:clear()
-                    -- would redraw and remove crengine native highlights
                 end,
             }
         end,
@@ -133,17 +135,14 @@ function ReaderHighlight:init()
                 end,
             }
         end,
-        ["12_select_mode"] = function(_self)
+        ["08_search"] = function(_self)
             return {
-                text = _("Extend highlighting"),
-                enabled = _self.hold_pos ~= nil,
+                text = _("Search"),
                 callback = function()
-                    self.highlight_page, self.highlight_idx = _self:saveHighlight()
-                    self.select_mode = true
-                    UIManager:show(Notification:new{
-                        text = _("Select another fragment to finish highlighting."),
-                    })
-                    _self:onClose()
+                    _self:onHighlightSearch()
+                    -- We don't call _self:onClose(), crengine will highlight
+                    -- search matches on the current page, and self:clear()
+                    -- would redraw and remove crengine native highlights
                 end,
             }
         end,
@@ -151,7 +150,7 @@ function ReaderHighlight:init()
 
     -- Text export functions if applicable.
     if not self.ui.document.info.has_pages then
-        self:addToHighlightDialog("08_view_html", function(_self)
+        self:addToHighlightDialog("09_view_html", function(_self)
             return {
                 text = _("View HTML"),
                 callback = function()
@@ -162,7 +161,7 @@ function ReaderHighlight:init()
     end
 
     if Device:canShareText() then
-        self:addToHighlightDialog("09_share_text", function(_self)
+        self:addToHighlightDialog("10_share_text", function(_self)
             return {
                 text = _("Share Text"),
                 callback = function()
@@ -176,7 +175,7 @@ function ReaderHighlight:init()
     end
 
     -- Links
-    self:addToHighlightDialog("10_follow_link", function(_self)
+    self:addToHighlightDialog("11_follow_link", function(_self)
         return {
             text = _("Follow Link"),
             show_in_highlight_dialog_func = function()
@@ -191,7 +190,7 @@ function ReaderHighlight:init()
     end)
 
     -- User hyphenation dict
-    self:addToHighlightDialog("11_user_dict", function(_self)
+    self:addToHighlightDialog("12_user_dict", function(_self)
         return {
             text= _("Hyphenate"),
             show_in_highlight_dialog_func = function()
@@ -1290,14 +1289,9 @@ end
 function ReaderHighlight:onHoldRelease()
     if self.select_mode then -- extended highlighting, ending fragment
         if self.selected_text then
-            local pos0, pos1 = self.selected_text.pos0, self.selected_text.pos1
-            self.ui.document:clearSelection()
-            self:extendHighlights(self.highlight_page, self.highlight_idx, pos0, pos1)
             self.select_mode = false
-        else -- long-press on empty space
-            UIManager:show(Notification:new{
-                text = _("Select another fragment to finish highlighting."),
-            })
+            self:extendHighlights()
+            self:onShowHighlightMenu() -- "ask" is default action
         end
         return true
     end
@@ -1674,25 +1668,23 @@ function ReaderHighlight:editHighlightStyle(page, i)
     })
 end
 
-function ReaderHighlight:extendHighlights(page, i, item2_pos0, item2_pos1)
-    -- item1 - starting fragment (saved), item2 - ending fragment
-    -- new highlight includes item1, item2 and the text between them
-    local item1 = self.view.highlight.saved[page][i]
+function ReaderHighlight:extendHighlights()
+    -- item1 - starting fragment (saved), item2 - ending fragment (currently selected)
+    -- new extended highlight includes item1, item2 and the text between them
+    local item1 = self.view.highlight.saved[self.highlight_page][self.highlight_idx]
+    local item2_pos0, item2_pos1 = self.selected_text.pos0, self.selected_text.pos1
     local new_pos0 = self.ui.document:compareXPointers(item1.pos0, item2_pos0) == 1 and item1.pos0 or item2_pos0
     local new_pos1 = self.ui.document:compareXPointers(item1.pos1, item2_pos1) == 1 and item2_pos1 or item1.pos1
-    self:deleteHighlight(page, i)
-    -- construct new extended highlight
+    self:deleteHighlight(self.highlight_page, self.highlight_idx)
+    -- construct new highlight
     self.hold_pos = {
         page = self.ui.document:getPageFromXPointer(new_pos0),
     }
     self.selected_text = {
-        text = self.ui.document:getTextFromXPointers(new_pos0, new_pos1),
+        text = self.ui.document:getTextFromXPointers(new_pos0, new_pos1, true), -- draw new highlight
         pos0 = new_pos0,
         pos1 = new_pos1,
     }
-    self:saveHighlight()
-    self.hold_pos = nil
-    self.selected_text = nil
     UIManager:setDirty(self.dialog, "ui")
 end
 
