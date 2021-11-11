@@ -9,12 +9,13 @@ local DEBUG = require("dbg")
 local Device = require("device")
 local DocCache = require("document/doccache")
 local Document = require("document/document")
+local FFIUtil = require("ffi/util")
 local Geom = require("ui/geometry")
 local KOPTContext = require("ffi/koptcontext")
 local Persist = require("persist")
 local TileCacheItem = require("document/tilecacheitem")
 local logger = require("logger")
-local util = require("ffi/util")
+local util = require("util")
 
 local KoptInterface = {
     ocrengine = "ocrengine",
@@ -105,7 +106,7 @@ function KoptInterface:waitForContext(kc)
     while kc and kc:isPreCache() == 1 do
         waited = true
         logger.dbg("waiting for background rendering")
-        util.usleep(100000)
+        FFIUtil.usleep(100000)
     end
 
     if waited or self.bg_thread then
@@ -274,10 +275,10 @@ function KoptInterface:getCachedContext(doc, pageno)
         local page = doc._document:openPage(pageno)
         logger.dbg("reflowing page", pageno, "in foreground")
         -- reflow page
-        --local secs, usecs = util.gettime()
+        --local secs, usecs = FFIUtil.gettime()
         page:reflow(kc, doc.render_mode or DRENDER_MODE) -- Fall backs to a default set to DDJVU_RENDER_COLOR
         page:close()
-        --local nsecs, nusecs = util.gettime()
+        --local nsecs, nusecs = FFIUtil.gettime()
         --local dur = nsecs - secs + (nusecs - usecs) / 1000000
         --self:logReflowDuration(pageno, dur)
         local fullwidth, fullheight = kc:getPageDim()
@@ -840,7 +841,7 @@ function KoptInterface:clipPagePNGString(doc, pos0, pos1, pboxes, drawer)
     -- there is no fmemopen in Android so leptonica.pixWriteMemPng will
     -- fail silently, workaround is creating a PNG file and read back the string
     local png = nil
-    if util.isAndroid() then
+    if FFIUtil.isAndroid() then
         local tmp = "cache/tmpclippng.png"
         kc:exportSrcPNGFile(pboxes, drawer, tmp)
         local pngfile = io.open(tmp, "rb")
@@ -914,7 +915,6 @@ Get text and text boxes between `pos0` and `pos1`.
 --]]
 function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
     if not pos0 or not pos1 or #boxes == 0 then return {} end
-    local isCJKChar = require("util").isCJKChar
     local line_text = ""
     local line_boxes = {}
     local i_start, j_start = getWordBoxIndices(boxes, pos0)
@@ -968,10 +968,11 @@ function KoptInterface:getTextFromBoxes(boxes, pos0, pos1)
                         -- should be stuck
                         add_space = false
                     elseif dist_from_prev_word < box_height * 0.8 then
-                        if isCJKChar(prev_word:sub(-3, -1)) and isCJKChar(word:sub(1, 3)) then
-                            -- Two CJK chars whose spacing is not large enough
-                            -- (we checked the 3 UTF8 bytes that CJK chars must be,
-                            -- no need to split into unicode codepoints)
+                        local prev_word_end = prev_word:match(util.UTF8_CHAR_PATTERN.."$")
+                        local word_start = word:match(util.UTF8_CHAR_PATTERN)
+                        if util.isCJKChar(prev_word_end) and util.isCJKChar(word_start) then
+                            -- Two CJK chars whose spacing is not large enough,
+                            -- but even so they must not have a space added.
                             add_space = false
                         end
                     end
