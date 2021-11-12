@@ -28,16 +28,24 @@ function FeedSource:getInitializedFeeds(feed_list, progress_callback, error_call
         local url = feed[1]
         -- Show a UI update
         progress_callback(T(
-            _("Initializing feed %1 of %2"),
+            _("Setting up feed %1 of %2."),
             idx,
             url
         ))
         -- Initialize the feed
+<<<<<<< HEAD
         local ok, response = pcall(
             function()
                 return self:initializeDocument(self:fetchDocumentByUrl(url))
             end
         )
+=======
+        local ok, response = pcall(function()
+            return self:initializeDocument(
+                self:fetchDocumentByUrl(url)
+            )
+        end)
+>>>>>>> 5fd08af269287b9c55fcba2afcfe2d8607a031d8
         -- If the initialization worked, add the feed
         -- to a list of initialized feeds
         if ok and response then
@@ -45,7 +53,7 @@ function FeedSource:getInitializedFeeds(feed_list, progress_callback, error_call
                 initialized_feeds,
                 {
                     config = feed,
-                    document = response
+                    document = response,
                 }
             )
         else
@@ -296,7 +304,7 @@ function FeedSource:getEpubOutputDir(download_dir, sub_dir, epub_title)
         feed_output_dir,
         file_name,
         self.file_extension
-                            )
+    )
 end
 
 function FeedSource:createEpub(title, chapters, abs_output_path, progress_callback, error_callback)
