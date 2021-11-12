@@ -161,14 +161,14 @@ function FeedSource:getItemsContent(feed, progress_callback, error_callback)
         end
         -- Display feedback to user.
         progress_callback(T(
-            _("Getting item %1 of %2 from %3"),
+            _("%3\n Downloading item %1 of %2"),
             index,
             total_items,
             feed.document.title
         ))
         -- Download the article's HTML.
         local ok, response = pcall(function()
-               return self:initializeItemHtml(
+                return self:initializeItemHtml(
                     feed,
                     self:getItemHtml(
                         item,
