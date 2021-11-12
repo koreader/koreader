@@ -337,16 +337,17 @@ function FeedSource:createEpub(title, chapters, abs_output_path, progress_callba
     epub:addImages(images)
 
     progress_callback(T(_("Building EPUB %1: %2"), title, _("Writing EPUB to disk")))
-    epub:build(abs_output_path)
+    local ok = pcall(function()
+        return epub:build(abs_output_path)
+    end)
 
-    file_exists = lfs.attributes(abs_output_path, "mode")
-
-    if file_exists then
-        return true
-    else
-        return false
+    if ok then
+        if lfs.attributes(abs_output_path, "mode") then
+            return true
+        end
     end
 
+    return false
 end
 
 local function parseDate(dateTime)
