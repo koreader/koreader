@@ -33,11 +33,11 @@ function FeedSource:getInitializedFeeds(feed_list, progress_callback, error_call
             url
         ))
         -- Initialize the feed
-        local ok, response = pcall(function()
-                return self:initializeDocument(
-                    self:fetchDocumentByUrl(url)
-                )
-        end)
+        local ok, response = pcall(
+            function()
+                return self:initializeDocument(self:fetchDocumentByUrl(url))
+            end
+        )
         -- If the initialization worked, add the feed
         -- to a list of initialized feeds
         if ok and response then
