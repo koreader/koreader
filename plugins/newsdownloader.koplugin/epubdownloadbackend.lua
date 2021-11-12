@@ -51,21 +51,21 @@ function EpubBuilder:build(abs_output_path)
 
     -- Add the manifest.
     if not self.ncx_manifest or #self.ncx_manifest == 0 then
-        error(_("EPUB does not contain a valid manifest."))
+        error("EPUB does not contain a valid manifest.")
     end
     --logger.dbg("Adding Manifest:", self.ncx_manifest)
     epub:add("OEBPS/content.opf", table.concat(self.ncx_manifest))
 
     -- Add the table of contents.
     if not self.ncx_toc or #self.ncx_toc == 0 then
-        error(_("EPUB does not contain a valid table of contents."))
+        error("EPUB does not contain a valid table of contents.")
     end
     --logger.dbg("Adding TOC:", self.ncx_toc)
     epub:add("OEBPS/toc.ncx", table.concat(self.ncx_toc))
 
     -- Add the contents.
     if not self.ncx_contents or #self.ncx_manifest == 0 then
-        error(_("EPUB does not contain any content."))
+        error("EPUB does not contain any content.")
     end
     --logger.dbg("Adding Content:", self.ncx_contents)
 
