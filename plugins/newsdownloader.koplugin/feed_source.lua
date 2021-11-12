@@ -41,21 +41,15 @@ function FeedSource:getInitializedFeeds(feed_list, progress_callback, error_call
         -- If the initialization worked, add the feed
         -- to a list of initialized feeds
         if ok and response then
-            table.insert(
-                initialized_feeds,
-                {
-                    config = feed,
-                    document = response,
-                }
-            )
+            table.insert(initialized_feeds, {
+                config = feed,
+                document = response,
+            })
         else
             logger.dbg("FeedSource: Unsupported feed ", response)
-            table.insert(
-                unsupported_feeds_urls,
-                {
-                    url .. ": " .. response
-                }
-            )
+            table.insert(unsupported_feeds_urls, {
+                url .. ": " .. response
+            })
         end
     end
 
@@ -180,17 +174,14 @@ function FeedSource:getItemsContent(feed, progress_callback, error_callback)
         -- Add the result to our table, or send a
         -- result to the error callback.
         if ok then
-            table.insert(
-                initialized_feed_items,
-                {
-                    html = response.html,
-                    images = response.images,
-                    item_slug = FeedSource:getItemTitleWithDate(item),
-                    item_title = item.title,
-                    md5 = md5(item.title),
-                    feed_title = feed.document.title,
-                }
-            )
+            table.insert(initialized_feed_items, {
+                html = response.html,
+                images = response.images,
+                item_slug = FeedSource:getItemTitleWithDate(item),
+                item_title = item.title,
+                md5 = md5(item.title),
+                feed_title = feed.document.title,
+            })
         else
             error_callback(
                 T(_("Could not get content for: %1"), feed.document.title)
