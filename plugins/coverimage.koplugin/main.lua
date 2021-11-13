@@ -72,15 +72,17 @@ local default_fallback_path = DataStorage:getDataDir() .. "/"
 
 function CoverImage:init()
     self.cover_image_path = G_reader_settings:readSetting("cover_image_path") or Device:getDefaultCoverPath()
-    self.cover_image_format = G_reader_settings:readSetting("cover_image_format") or "auto"
-    self.cover_image_quality = G_reader_settings:readSetting("cover_image_quality") or 75
-    self.cover_image_grayscale = G_reader_settings:readSetting("cover_image_grayscale") or false
-    self.cover_image_stretch_limit = G_reader_settings:readSetting("cover_image_stretch_limit") or 8
-    self.cover_image_background = G_reader_settings:readSetting("cover_image_background") or "black"
-    self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path") or default_fallback_path
-    self.cover_image_cache_path = G_reader_settings:readSetting("cover_image_cache_path") or default_cache_path
-    self.cover_image_cache_maxfiles = G_reader_settings:readSetting("cover_image_cache_maxfiles") or 36
-    self.cover_image_cache_maxsize = G_reader_settings:readSetting("cover_image_cache_maxsize") or 5 -- MB
+    self.cover_image_format = G_reader_settings:readSetting("cover_image_format", "auto")
+    self.cover_image_quality = G_reader_settings:readSetting("cover_image_quality", 75)
+    self.cover_image_grayscale = G_reader_settings:isTrue("cover_image_grayscale")
+    self.cover_image_stretch_limit = G_reader_settings:readSetting("cover_image_stretch_limit", 8)
+    self.cover_image_background = G_reader_settings:readSetting("cover_image_background", "black")
+    self.cover_image_fallback_path = G_reader_settings:readSetting("cover_image_fallback_path",
+        default_fallback_path)
+    self.cover_image_cache_path = G_reader_settings:readSetting("cover_image_cache_path",
+       default_cache_path)
+    self.cover_image_cache_maxfiles = G_reader_settings:readSetting("cover_image_cache_maxfiles", 36)
+    self.cover_image_cache_maxsize = G_reader_settings:readSetting("cover_image_cache_maxsize", 5) -- MB
     self.cover_image_cache_prefix = "cover_"
     self.cover = G_reader_settings:isTrue("cover_image_enabled")
     self.fallback = G_reader_settings:isTrue("cover_image_fallback")
@@ -406,7 +408,7 @@ function CoverImage:sizeSpinner(touchmenu_instance, setting, title, min, max, de
         title_text = title,
         ok_text = _("Set"),
         callback = function(spin)
-            if self:coverEnabled() and spin.value ~= old_val then
+            if spin.value ~= old_val then
                 self[setting] = spin.value
                 G_reader_settings:saveSetting(setting, self[setting])
                 if callback then
@@ -463,7 +465,7 @@ function CoverImage:menuEntryCache()
                     else
                         number = _("off")
                     end
-                    return T(_("Maximum number of cached covers (%1)"), number)
+                    return T(_("Maximum number of cached covers: %1"), number)
                 end,
                 help_text = _("If set to zero the number of cache files is unlimited.\nIf set to -1 the cache is disabled."),
                 checked_func = function()
@@ -483,7 +485,7 @@ function CoverImage:menuEntryCache()
                     else
                         number = _("off")
                     end
-                    return T(_("Maximum size of cached covers (%1)"), number)
+                    return T(_("Maximum size of cached covers: %1"), number)
                 end,
                 help_text = _("If set to zero the cache size is unlimited.\nIf set to -1 the cache is disabled."),
                 checked_func = function()
@@ -494,7 +496,8 @@ function CoverImage:menuEntryCache()
                 end,
             },
             self:menuEntrySetPath("cover_image_cache_path", _("Cover cache folder"), _("Current cache path:\n%1"),
-                ("Choose a cache folder. The contents of the old folder will be migrated."), default_cache_path, true, false, self.migrateCache),
+                ("Choose a cache folder. The contents of the old folder will be migrated."),
+                default_cache_path, true, false, self.migrateCache),
             {
                 text = _("Clear cached covers"),
                 help_text_func = function()
@@ -614,7 +617,7 @@ function CoverImage:menuEntrySBF()
         sub_item_table = {
             {
                 text_func = function()
-                    return T(_("Aspect ratio stretch threshold (%1)"),
+                    return T(_("Aspect ratio stretch threshold: %1"),
                         self.cover_image_stretch_limit ~= 0 and self.cover_image_stretch_limit .. "%" or _("off"))
                 end,
                 keep_menu_open = true,

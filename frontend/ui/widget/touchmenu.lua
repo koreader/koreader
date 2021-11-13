@@ -925,7 +925,7 @@ function TouchMenu:onMenuHold(item, text_truncated)
     elseif item.help_text or type(item.help_text_func) == "function" then
         local help_text = item.help_text
         if item.help_text_func then
-            help_text = item.help_text_func()
+            help_text = item.help_text_func(self)
         end
         if help_text then
             UIManager:show(InfoMessage:new{ text = help_text, })

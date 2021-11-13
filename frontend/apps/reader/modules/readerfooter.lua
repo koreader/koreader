@@ -11,6 +11,7 @@ local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local LineWidget = require("ui/widget/linewidget")
+local MultiInputDialog = require("ui/widget/multiinputdialog")
 local ProgressWidget = require("ui/widget/progresswidget")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
@@ -44,6 +45,7 @@ local MODE = {
     bookmark_count = 14,
     chapter_progress = 15,
     frontlight_warmth = 16,
+    custom_text = 17,
 }
 
 local symbol_prefix = {
@@ -69,6 +71,8 @@ local symbol_prefix = {
         mem_usage = C_("FooterLetterPrefix", "M:"),
         -- @translators This is the footer letter prefix for Wi-Fi status.
         wifi_status = C_("FooterLetterPrefix", "W:"),
+        -- no prefix for custom text
+        custom_text = C_("FooterLetterPrefix", ""),
     },
     icons = {
         time = "⌚",
@@ -84,6 +88,7 @@ local symbol_prefix = {
         mem_usage = "",
         wifi_status = "",
         wifi_status_off = "",
+        custom_text = "",
     },
     compact_items = {
         time = nil,
@@ -101,6 +106,7 @@ local symbol_prefix = {
         mem_usage = C_("FooterCompactItemsPrefix", "M"),
         wifi_status = "",
         wifi_status_off = "",
+        custom_text = "",
     }
 }
 if BD.mirroredUILayout() then
@@ -346,7 +352,7 @@ local footerTextGeneratorMap = {
         if statm then
             local dummy, rss = statm:read("*number", "*number")
             statm:close()
-            -- we got the nb of 4Kb-pages used, that we convert to Mb
+            -- we got the nb of 4Kb-pages used, that we convert to MiB
             rss = math.floor(rss * 4096 / 1024 / 1024)
             return (prefix .. " %d"):format(rss)
         end
@@ -418,7 +424,15 @@ local footerTextGeneratorMap = {
         else
             return ""
         end
-    end
+    end,
+    custom_text = function(footer)
+        local symbol_type = footer.settings.item_prefix
+        local prefix = symbol_prefix[symbol_type].custom_text
+        -- if custom_text contains only spaces, request to merge it with the text before and after,
+        -- in other words, don't add a separator then.
+        local merge = footer.custom_text:gsub(" ", ""):len() == 0
+        return (prefix .. footer.custom_text:rep(footer.custom_text_repetitions)), merge
+    end,
 }
 
 local ReaderFooter = WidgetContainer:extend{
@@ -605,7 +619,76 @@ function ReaderFooter:init()
     end
 
     self.visibility_change = nil
+
+    self.custom_text = G_reader_settings:readSetting("reader_footer_custom_text", "KOReader")
+    self.custom_text_repetitions =
+        tonumber(G_reader_settings:readSetting("reader_footer_custom_text_repetitions", "1"))
 end
+
+function ReaderFooter:set_custom_text(touchmenu_instance)
+    local text_dialog
+    text_dialog = MultiInputDialog:new{
+        title = "Enter a custom text",
+        fields = {
+            {
+                text =  self.custom_text or "",
+                description = _("Custom string:"),
+                input_type = "string",
+            },
+            {
+                text = self.custom_text_repetitions,
+                description =_("Number of repetitions:"),
+                input_type =  "number",
+            },
+        },
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(text_dialog)
+                    end,
+                },
+                {
+                    text = _("Set"),
+                    callback = function()
+                        local inputs = MultiInputDialog:getFields()
+                        local new_text, new_repetitions = inputs[1], inputs[2]
+                        if new_text == "" then
+                            new_text = " "
+                        end
+                        if self.custom_text ~= new_text then
+                            self.custom_text = new_text
+                            G_reader_settings:saveSetting("reader_footer_custom_text",
+                                self.custom_text)
+                        end
+                        new_repetitions = tonumber(new_repetitions) or 1
+                        if new_repetitions < 1 then
+                            new_repetitions = 1
+                        end
+                        if new_repetitions and self.custom_text_repetitions ~= new_repetitions then
+                            self.custom_text_repetitions = new_repetitions
+                            G_reader_settings:saveSetting("reader_footer_custom_text_repetitions",
+                                self.custom_text_repetitions)
+                        end
+                        UIManager:close(text_dialog)
+                        self:refreshFooter(true, true)
+                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                    end,
+                },
+            },
+        },
+    }
+    UIManager:show(text_dialog)
+    text_dialog:onShowKeyboard()
+end
+
+-- Help text string, or function, to be shown, or executed, on a long press on menu item
+local option_help_text = {}
+option_help_text[MODE.pages_left_book] = _("Can be configured to include or exclude the current page.")
+option_help_text[MODE.percentage] = _("Progress percentage can be shown with zero, one or two decimal places.")
+option_help_text[MODE.mem_usage] = _("Show memory usage in MiB.")
+option_help_text[MODE.custom_text] = ReaderFooter.set_custom_text
 
 function ReaderFooter:updateFooterContainer()
     local margin_span = HorizontalSpan:new{ width = self.horizontal_margin }
@@ -896,6 +979,9 @@ function ReaderFooter:textOptionTitles(option)
         wifi_status = T(_("Wi-Fi status (%1)"), symbol_prefix[symbol].wifi_status),
         book_title = _("Book title"),
         book_chapter = _("Current chapter"),
+        custom_text = T(_("Custom text: \'%1\'%2"), self.custom_text,
+            self.custom_text_repetitions > 1 and
+            string.format(" × %d", self.custom_text_repetitions) or ""),
     }
     return option_titles[option]
 end
@@ -930,6 +1016,12 @@ function ReaderFooter:addToMainMenu(menu_items)
             text_func = function()
                 return self:textOptionTitles(option)
             end,
+            help_text = type(option_help_text[MODE[option]]) == "string"
+                and option_help_text[MODE[option]],
+            help_text_func = type(option_help_text[MODE[option]]) == "function" and
+                function(touchmenu_instance)
+                    option_help_text[MODE[option]](self, touchmenu_instance)
+                end,
             checked_func = function()
                 return self.settings[option] == true
             end,
@@ -1085,7 +1177,13 @@ function ReaderFooter:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Font"),
+                text_func = function()
+                    local font_weight = ""
+                    if self.settings.text_font_bold == true then
+                        font_weight = ", " .. _("bold")
+                    end
+                    return T(_("Font: %1%2"), self.settings.text_font_size, font_weight)
+                end,
                 sub_item_table = {
                     {
                         text_func = function()
@@ -1248,7 +1346,17 @@ function ReaderFooter:addToMainMenu(menu_items)
                 },
             },
             {
-                text = _("Alignment"),
+                text_func = function()
+                    local align_text
+                    if self.settings.align == "left" then
+                        align_text = _("Left")
+                    elseif self.settings.align == "right" then
+                        align_text = _("Right")
+                    else
+                        align_text = _("Center")
+                    end
+                    return T(_("Alignment: %1"), align_text)
+                end,
                 separator = true,
                 enabled_func = function()
                     return self.settings.disable_progress_bar or self.settings.progress_bar_position ~= "alongside"
@@ -1287,7 +1395,17 @@ function ReaderFooter:addToMainMenu(menu_items)
                 }
             },
             {
-                text = _("Prefix"),
+                text_func = function()
+                    local prefix_text = ""
+                    if self.settings.item_prefix == "icons" then
+                        prefix_text = _("Icons")
+                    elseif self.settings.item_prefix == "compact_items" then
+                        prefix_text = _("Compact Items")
+                    elseif self.settings.item_prefix == "letters" then
+                        prefix_text = _("Letters")
+                    end
+                    return T(_("Prefix: %1"), prefix_text)
+                end,
                 sub_item_table = {
                     {
                         text_func = function()
@@ -1340,7 +1458,11 @@ function ReaderFooter:addToMainMenu(menu_items)
                 },
             },
             {
-                text = _("Item separator"),
+                text_func = function()
+                    local separator = self:get_separator_symbol()
+                    separator = separator ~= "" and separator or "none"
+                    return T(_("Item separator: %1"), separator)
+                end,
                 sub_item_table = {
                     {
                         text = _("Vertical line (|)"),
@@ -1363,6 +1485,16 @@ function ReaderFooter:addToMainMenu(menu_items)
                         end,
                     },
                     {
+                        text = _("Dot (·)"),
+                        checked_func = function()
+                            return self.settings.items_separator == "dot"
+                        end,
+                        callback = function()
+                            self.settings.items_separator = "dot"
+                            self:refreshFooter(true)
+                        end,
+                    },
+                    {
                         text = _("No separator"),
                         checked_func = function()
                             return self.settings.items_separator == "none"
@@ -1375,7 +1507,10 @@ function ReaderFooter:addToMainMenu(menu_items)
                 },
             },
             {
-                text = _("Progress percentage format"),
+                text_func = function()
+                    return T(_("Progress percentage format: %1"),
+                        self:progressPercentage(tonumber(self.settings.progress_pct_format)))
+                end,
                 sub_item_table = {
                     {
                         text_func = function()
@@ -1812,6 +1947,7 @@ With this enabled, the current page is included, so the count goes from n to 1 i
     end
     table.insert(sub_items, getMinibarOption("book_title"))
     table.insert(sub_items, getMinibarOption("book_chapter"))
+    table.insert(sub_items, getMinibarOption("custom_text"))
 
     -- Settings menu: keep the same parent page for going up from submenu
     for i = 1, #sub_items[settings_submenu_num].sub_item_table do
@@ -1827,30 +1963,54 @@ end
 -- this method will be updated at runtime based on user setting
 function ReaderFooter:genFooterText() end
 
+function ReaderFooter:get_separator_symbol()
+    if self.settings.items_separator == "bar" then
+        return "|"
+    elseif self.settings.items_separator == "dot" then
+        return "·"
+    elseif self.settings.items_separator == "bullet" then
+        return "•"
+    end
+
+    return ""
+end
+
 function ReaderFooter:genAllFooterText()
     local info = {}
     local separator = "  "
     if self.settings.item_prefix == "compact_items" then
         separator = " "
     end
-    if self.settings.items_separator == "bar" then
-        separator = " | "
-    elseif self.settings.items_separator == "bullet" then
-        separator = " • "
+    local separator_symbol = self:get_separator_symbol()
+    if separator_symbol ~= "" then
+        separator = string.format(" %s ", self:get_separator_symbol())
     end
+
     -- We need to BD.wrap() all items and separators, so we're
     -- sure they are laid out in our order (reversed in RTL),
     -- without ordering by the RTL Bidi algorithm.
+    local prev_had_merge
     for _, gen in ipairs(self.footerTextGenerators) do
         -- Skip empty generators, so they don't generate bogus separators
-        local text = gen(self)
+        local text, merge = gen(self)
         if text and text ~= "" then
             if self.settings.item_prefix == "compact_items" then
                 -- remove whitespace from footer items if symbol_type is compact_items
                 -- use a hair-space to avoid issues with RTL display
                 text = text:gsub("%s", "\xE2\x80\x8A")
             end
-            table.insert(info, BD.wrap(text))
+            -- if generator request a merge of this item, add it directly,
+            -- i.e. no separator before and after the text then.
+            if merge then
+                local merge_pos = #info == 0 and 1 or #info
+                info[merge_pos] = (info[merge_pos] or "") .. text
+                prev_had_merge = true
+            elseif prev_had_merge then
+                info[#info] = info[#info] .. text
+                prev_had_merge = false
+            else
+                table.insert(info, BD.wrap(text))
+            end
         end
     end
     return table.concat(info, BD.wrap(separator))
@@ -2334,6 +2494,10 @@ end
 function ReaderFooter:onScreenResize()
     self:updateFooterContainer()
     self:resetLayout(true)
+end
+
+function ReaderFooter:onTimeFormatChanged()
+    self:refreshFooter(true, true)
 end
 
 return ReaderFooter
