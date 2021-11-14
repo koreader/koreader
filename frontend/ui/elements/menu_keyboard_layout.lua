@@ -48,7 +48,7 @@ local sub_item_table = {
             return T(_("Keyboard settings: %1pt%2%3%4"),
                 G_reader_settings:readSetting("keyboard_key_font_size", VirtualKeyboard.default_label_size),
                 G_reader_settings:isTrue("keyboard_key_bold") and string.format(", %s", _("bold")) or "",
-                G_reader_settings:isTrue("keyboard_key_border") and string.format(", %s", _("border")) or "",
+                G_reader_settings:nilOrTrue("keyboard_key_border") and string.format(", %s", _("border")) or "",
                 G_reader_settings:isTrue("keyboard_key_compact") and string.format(", %s", _("compact")) or "")
         end,
         keep_menu_open = true,
