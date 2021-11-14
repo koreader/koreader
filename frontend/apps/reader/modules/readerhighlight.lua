@@ -1289,9 +1289,16 @@ end
 function ReaderHighlight:onHoldRelease()
     if self.select_mode then -- extended highlighting, ending fragment
         if self.selected_text then
-            self.select_mode = false
-            self:extendHighlights()
-            self:onShowHighlightMenu() -- "ask" is default action
+            if self.ui.document.info.has_pages and self.ui.paging.current_page ~= self.highlight_page then
+                self.ui.paging:_gotoPage(self.highlight_page)
+                UIManager:show(Notification:new{
+                    text = _("Fragments must be within one page"),
+                })
+            else
+                self.select_mode = false
+                self:extendHighlights()
+                self:onShowHighlightMenu() -- "ask" is default action
+            end
         end
         return true
     end
@@ -1673,17 +1680,53 @@ function ReaderHighlight:extendHighlights()
     -- new extended highlight includes item1, item2 and the text between them
     local item1 = self.view.highlight.saved[self.highlight_page][self.highlight_idx]
     local item2_pos0, item2_pos1 = self.selected_text.pos0, self.selected_text.pos1
-    local new_pos0 = self.ui.document:compareXPointers(item1.pos0, item2_pos0) == 1 and item1.pos0 or item2_pos0
-    local new_pos1 = self.ui.document:compareXPointers(item1.pos1, item2_pos1) == 1 and item2_pos1 or item1.pos1
-    self:deleteHighlight(self.highlight_page, self.highlight_idx)
-    -- construct new highlight
-    self.hold_pos = {
-        page = self.ui.document:getPageFromXPointer(new_pos0),
-    }
+    -- getting starting and ending positions, text and pboxes of extended highlight
+    local new_pos0, new_pos1, new_text, new_pboxes
+    if self.ui.document.info.has_pages then
+        local is_reflow = self.ui.document.configurable.text_wrap == 1
+        local new_page = self.hold_pos.page
+        -- reflow mode doesn't set page in positions
+        if is_reflow then
+            item1.pos0.page = new_page
+            item1.pos1.page = new_page
+            item2_pos0.page = new_page
+            item2_pos1.page = new_page
+        end
+        -- pos0 and pos1 are not in order within highlights, hence sorting all
+        local function comparePositions (pos1, pos2)
+            local box1 = self.ui.document:getWordFromPosition(pos1).pbox
+            local box2 = self.ui.document:getWordFromPosition(pos2).pbox
+            if box1.y == box2.y then
+                return box1.x < box2.x
+            else
+                return box1.y < box2.y
+            end
+        end
+        local positions = {item1.pos0, item1.pos1, item2_pos0, item2_pos1}
+        self.ui.document.configurable.text_wrap = 0 -- native positions
+        table.sort(positions, comparePositions)
+        new_pos0 = positions[1]
+        new_pos1 = positions[4]
+        local text_boxes = self.ui.document:getTextFromPositions(new_pos0, new_pos1)
+        self.ui.document.configurable.text_wrap = is_reflow and 1 or 0 -- restore reflow
+        new_text = text_boxes.text
+        new_pboxes = text_boxes.pboxes
+        -- draw
+        self.view.highlight.temp[new_page] = self.ui.document:getPageBoxesFromPositions(new_page, new_pos0, new_pos1)
+    else
+        -- pos0 and pos1 are in order within highlights
+        new_pos0 = self.ui.document:compareXPointers(item1.pos0, item2_pos0) == 1 and item1.pos0 or item2_pos0
+        new_pos1 = self.ui.document:compareXPointers(item1.pos1, item2_pos1) == 1 and item2_pos1 or item1.pos1
+        self.hold_pos.page = self.ui.document:getPageFromXPointer(new_pos0)
+        -- true to draw
+        new_text = self.ui.document:getTextFromXPointers(new_pos0, new_pos1, true)
+    end
+    self:deleteHighlight(self.highlight_page, self.highlight_idx) -- starting fragment
     self.selected_text = {
-        text = self.ui.document:getTextFromXPointers(new_pos0, new_pos1, true), -- draw new highlight
+        text = new_text,
         pos0 = new_pos0,
         pos1 = new_pos1,
+        pboxes = new_pboxes,
     }
     UIManager:setDirty(self.dialog, "ui")
 end
