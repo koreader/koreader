@@ -64,7 +64,7 @@ function ReaderHighlight:init()
                 text = _("Select"),
                 enabled = _self.hold_pos ~= nil,
                 callback = function()
-                    _self:selectHighlight()
+                    _self:startSelection()
                     _self:onClose()
                 end,
             }
@@ -282,7 +282,7 @@ local long_press_action = {
     {_("Ask with popup dialog"), "ask"},
     {_("Do nothing"), "nothing"},
     {_("Highlight"), "highlight"},
-    {_("Select / highlight"), "select"},
+    {_("Select and highlight"), "select"},
     {_("Translate"), "translate"},
     {_("Wikipedia"), "wikipedia"},
     {_("Dictionary"), "dictionary"},
@@ -1295,7 +1295,7 @@ function ReaderHighlight:onHoldRelease()
                 })
             else
                 self.select_mode = false
-                self:extendHighlight()
+                self:extendSelection()
                 if default_highlight_action == "select" then
                     self:saveHighlight()
                     self:clear()
@@ -1333,7 +1333,8 @@ function ReaderHighlight:onHoldRelease()
                 self:saveHighlight()
                 self:onClose()
             elseif default_highlight_action == "select" then
-                self:selectHighlight()
+                self:startSelection()
+                self:onClose()
             elseif default_highlight_action == "translate" then
                 self:translate(self.selected_text)
                 self:onClose()
@@ -1613,14 +1614,6 @@ function ReaderHighlight:onHighlightDictLookup()
     end
 end
 
-function ReaderHighlight:shareHighlight()
-    logger.info("share highlight")
-end
-
-function ReaderHighlight:moreAction()
-    logger.info("more action")
-end
-
 function ReaderHighlight:deleteHighlight(page, i, bookmark_item)
     self.ui:handleEvent(Event:new("DelHighlight"))
     logger.dbg("delete highlight", page, i)
@@ -1680,7 +1673,7 @@ function ReaderHighlight:editHighlightStyle(page, i)
     })
 end
 
-function ReaderHighlight:selectHighlight()
+function ReaderHighlight:startSelection()
     self.highlight_page, self.highlight_idx = self:saveHighlight()
     self.select_mode = true
     UIManager:show(Notification:new{
@@ -1688,7 +1681,7 @@ function ReaderHighlight:selectHighlight()
     })
 end
 
-function ReaderHighlight:extendHighlight()
+function ReaderHighlight:extendSelection()
     -- item1 - starting fragment (saved), item2 - ending fragment (currently selected)
     -- new extended highlight includes item1, item2 and the text between them
     local item1 = self.view.highlight.saved[self.highlight_page][self.highlight_idx]
@@ -1721,9 +1714,9 @@ function ReaderHighlight:extendHighlight()
         new_pos0 = positions[1]
         new_pos1 = positions[4]
         local text_boxes = self.ui.document:getTextFromPositions(new_pos0, new_pos1)
-        self.ui.document.configurable.text_wrap = is_reflow and 1 or 0 -- restore reflow
         new_text = text_boxes.text
         new_pboxes = text_boxes.pboxes
+        self.ui.document.configurable.text_wrap = is_reflow and 1 or 0 -- restore reflow
         -- draw
         self.view.highlight.temp[new_page] = self.ui.document:getPageBoxesFromPositions(new_page, new_pos0, new_pos1)
     else
