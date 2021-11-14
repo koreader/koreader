@@ -46,20 +46,9 @@ end
 
 function ReaderHighlight:init()
     self.select_mode = false -- extended highlighting
+
     self._highlight_buttons = {
-        -- highlight and add_note are for the document itself,
-        -- so we put them first.
-        ["01_highlight"] = function(_self)
-            return {
-                text = _("Highlight"),
-                callback = function()
-                    _self:saveHighlight()
-                    _self:onClose()
-                end,
-                enabled = _self.hold_pos ~= nil,
-            }
-        end,
-        ["02_select"] = function(_self)
+        ["01_select"] = function(_self)
             return {
                 text = _("Select"),
                 enabled = _self.hold_pos ~= nil,
@@ -69,19 +58,17 @@ function ReaderHighlight:init()
                 end,
             }
         end,
-        ["03_add_note"] = function(_self)
+        ["02_highlight"] = function(_self)
             return {
-                text = _("Add Note"),
+                text = _("Highlight"),
                 callback = function()
-                    _self:addNote()
+                    _self:saveHighlight()
                     _self:onClose()
                 end,
                 enabled = _self.hold_pos ~= nil,
             }
         end,
-        -- copy and search are internal functions that don't depend on anything,
-        -- hence the second line.
-        ["04_copy"] = function(_self)
+        ["03_copy"] = function(_self)
             return {
                 text = C_("Text", "Copy"),
                 enabled = Device:hasClipboard(),
@@ -94,8 +81,16 @@ function ReaderHighlight:init()
                 end,
             }
         end,
-        -- then information lookup functions, putting on the left those that
-        -- depend on an internet connection.
+        ["04_add_note"] = function(_self)
+            return {
+                text = _("Add Note"),
+                callback = function()
+                    _self:addNote()
+                    _self:onClose()
+                end,
+                enabled = _self.hold_pos ~= nil,
+            }
+        end,
         ["05_wikipedia"] = function(_self)
             return {
                 text = _("Wikipedia"),
@@ -131,7 +126,7 @@ function ReaderHighlight:init()
                 end,
             }
         end,
-        ["08_search"] = function(_self)
+        ["12_search"] = function(_self)
             return {
                 text = _("Search"),
                 callback = function()
@@ -144,20 +139,8 @@ function ReaderHighlight:init()
         end,
     }
 
-    -- Text export functions if applicable.
-    if not self.ui.document.info.has_pages then
-        self:addToHighlightDialog("09_view_html", function(_self)
-            return {
-                text = _("View HTML"),
-                callback = function()
-                    _self:viewSelectionHTML()
-                end,
-            }
-        end)
-    end
-
     if Device:canShareText() then
-        self:addToHighlightDialog("10_share_text", function(_self)
+        self:addToHighlightDialog("08_share_text", function(_self)
             return {
                 text = _("Share Text"),
                 callback = function()
@@ -170,7 +153,31 @@ function ReaderHighlight:init()
         end)
     end
 
-    -- Links
+    if not self.ui.document.info.has_pages then
+        self:addToHighlightDialog("09_view_html", function(_self)
+            return {
+                text = _("View HTML"),
+                callback = function()
+                    _self:viewSelectionHTML()
+                end,
+            }
+        end)
+    end
+
+    self:addToHighlightDialog("10_user_dict", function(_self)
+        return {
+            text= _("Hyphenate"),
+            show_in_highlight_dialog_func = function()
+                return _self.ui.userhyph and _self.ui.userhyph:isAvailable()
+                    and not _self.selected_text.text:find("[ ,;-%.\n]")
+            end,
+            callback = function()
+                _self.ui.userhyph:modifyUserEntry(_self.selected_text.text)
+                _self:onClose()
+            end,
+        }
+    end)
+
     self:addToHighlightDialog("11_follow_link", function(_self)
         return {
             text = _("Follow Link"),
@@ -180,21 +187,6 @@ function ReaderHighlight:init()
             callback = function()
                 local link = _self.selected_link.link or _self.selected_link
                 _self.ui.link:onGotoLink(link)
-                _self:onClose()
-            end,
-        }
-    end)
-
-    -- User hyphenation dict
-    self:addToHighlightDialog("12_user_dict", function(_self)
-        return {
-            text= _("Hyphenate"),
-            show_in_highlight_dialog_func = function()
-                return _self.ui.userhyph and _self.ui.userhyph:isAvailable()
-                    and not _self.selected_text.text:find("[ ,;-%.\n]")
-            end,
-            callback = function()
-                _self.ui.userhyph:modifyUserEntry(_self.selected_text.text)
                 _self:onClose()
             end,
         }
