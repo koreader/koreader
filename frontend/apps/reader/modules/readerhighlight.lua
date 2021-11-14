@@ -64,11 +64,7 @@ function ReaderHighlight:init()
                 text = _("Select"),
                 enabled = _self.hold_pos ~= nil,
                 callback = function()
-                    self.highlight_page, self.highlight_idx = _self:saveHighlight()
-                    self.select_mode = true
-                    UIManager:show(Notification:new{
-                        text = _("Select ending fragment"),
-                    })
+                    _self:selectHighlight()
                     _self:onClose()
                 end,
             }
@@ -286,6 +282,7 @@ local long_press_action = {
     {_("Ask with popup dialog"), "ask"},
     {_("Do nothing"), "nothing"},
     {_("Highlight"), "highlight"},
+    {_("Select / highlight"), "select"},
     {_("Translate"), "translate"},
     {_("Wikipedia"), "wikipedia"},
     {_("Dictionary"), "dictionary"},
@@ -1287,6 +1284,8 @@ function ReaderHighlight:onTranslateText(text)
 end
 
 function ReaderHighlight:onHoldRelease()
+    local default_highlight_action = G_reader_settings:readSetting("default_highlight_action", "ask")
+
     if self.select_mode then -- extended highlighting, ending fragment
         if self.selected_text then
             if self.ui.document.info.has_pages and self.ui.paging.current_page ~= self.highlight_page then
@@ -1296,8 +1295,13 @@ function ReaderHighlight:onHoldRelease()
                 })
             else
                 self.select_mode = false
-                self:extendHighlights()
-                self:onShowHighlightMenu() -- "ask" is default action
+                self:extendHighlight()
+                if default_highlight_action == "select" then
+                    self:saveHighlight()
+                    self:clear()
+                else
+                    self:onShowHighlightMenu()
+                end
             end
         end
         return true
@@ -1322,13 +1326,14 @@ function ReaderHighlight:onHoldRelease()
         if self.is_word_selection then
             self:lookup(self.selected_text, self.selected_link)
         else
-            local default_highlight_action = G_reader_settings:readSetting("default_highlight_action", "ask")
             if long_final_hold or default_highlight_action == "ask" then
                 -- bypass default action and show popup if long final hold
                 self:onShowHighlightMenu()
             elseif default_highlight_action == "highlight" then
                 self:saveHighlight()
                 self:onClose()
+            elseif default_highlight_action == "select" then
+                self:selectHighlight()
             elseif default_highlight_action == "translate" then
                 self:translate(self.selected_text)
                 self:onClose()
@@ -1675,7 +1680,15 @@ function ReaderHighlight:editHighlightStyle(page, i)
     })
 end
 
-function ReaderHighlight:extendHighlights()
+function ReaderHighlight:selectHighlight()
+    self.highlight_page, self.highlight_idx = self:saveHighlight()
+    self.select_mode = true
+    UIManager:show(Notification:new{
+        text = _("Select ending fragment"),
+    })
+end
+
+function ReaderHighlight:extendHighlight()
     -- item1 - starting fragment (saved), item2 - ending fragment (currently selected)
     -- new extended highlight includes item1, item2 and the text between them
     local item1 = self.view.highlight.saved[self.highlight_page][self.highlight_idx]
