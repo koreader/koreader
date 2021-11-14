@@ -171,7 +171,15 @@ end
 function AutoSuspend:addToMainMenu(menu_items)
     menu_items.autosuspend = {
         sorting_hint = "device",
-        text = _("Autosuspend timeout"),
+        text_func = function()
+            if self.auto_suspend_timeout_seconds  then
+                -- @translators `m` stands for minutes
+                return T(_("Autosuspend timeout: %1 m"), self.auto_suspend_timeout_seconds / 60)
+            else
+                return _("Autosuspend timeout")
+            end
+        end,
+        keep_menu_open = true,
         callback = function()
             local InfoMessage = require("ui/widget/infomessage")
             local SpinWidget = require("ui/widget/spinwidget")
@@ -200,7 +208,15 @@ function AutoSuspend:addToMainMenu(menu_items)
     if not (Device:canPowerOff() or Device:isEmulator()) then return end
     menu_items.autoshutdown = {
         sorting_hint = "device",
-        text = _("Autoshutdown timeout"),
+        text_func = function()
+            if self.autoshutdown_timeout_seconds  then
+                -- @translators `h` stands for hours
+                return T(_("Autoshutdown timeout: %1 h"), self.autoshutdown_timeout_seconds / 3600)
+            else
+                return _("Autoshutdown timeout")
+            end
+        end,
+        keep_menu_open = true,
         callback = function()
             local InfoMessage = require("ui/widget/infomessage")
             local SpinWidget = require("ui/widget/spinwidget")
