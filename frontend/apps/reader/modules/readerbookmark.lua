@@ -539,9 +539,10 @@ function ReaderBookmark:onShowBookmark()
                     {
                         {
                             text = _("Remove bookmark"),
+                            enabled = not bookmark.ui.highlight.select_mode,
                             callback = function()
                                 UIManager:show(ConfirmBox:new{
-                                    text = _("Remove bookmark?"),
+                                    text = _("Remove this bookmark?"),
                                     ok_text = _("Remove"),
                                     ok_callback = function()
                                         bookmark:removeHighlight(item)
@@ -570,6 +571,7 @@ function ReaderBookmark:onShowBookmark()
                     {
                         {
                             text = _("Bulk remove"),
+                            enabled = not bookmark.ui.highlight.select_mode,
                             callback = function()
                                 self.select_mode = true
                                 self.select_count = 0
