@@ -1,5 +1,5 @@
 --[[--
-Widget for setting the date or time
+Widget for setting the date or time.
 
 Example for input a time:
     local DateTimeWidget = require("ui/widget/datetimewidget")
