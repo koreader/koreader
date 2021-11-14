@@ -1,69 +1,64 @@
 --[[--
 Widget for taking multiple user inputs.
 
-Example:
+Example for input of two strings and a number:
 
     local MultiInputDialog = require("ui/widget/multiinputdialog")
     local @{ui.uimanager|UIManager} = require("ui/uimanager")
     local @{gettext|_} = require("gettext")
 
     local sample_input
-    sample_input = MultipleInputDialog:new{
+    sample_input = MultiInputDialog:new{
         title = _("Title to show"),
         fields = {
             {
-                text = _("First input"),
                 description = _("Describe this field"),
                 input_type = "string",
+                text = _("First input"),
                 hint = _("Name"),
             },
             {
-                text = _("2nd input"),
                 input_type = "string",
+                text = "",
                 hint = _("Address"),
             },
             {
-                text = _("3rd input"),
-                input_type = "string",
-                hint = hint_username,
-            },
-            {
-                text = 666,
                 description = _("Enter a number"),
                 input_type = "number",
+                text = 666,
                 hint = 123,
             },
-        }
+        },
         buttons = {
             {
                 {
                     text = _("Cancel"),
                     callback = function()
-                        UIManager:close(self.sample_input)
+                        UIManager:close(sample_input)
                     end
                 },
                 {
                     text = _("Info"),
                     callback = function()
-                        UIManager:show(InfoMessage:new{ text = _("Information") })
+                        -- do something
                     end
                 },
                 {
-                    text = _("Calculate settings"),
-                    callback = function()
+                    text = _("Use settings"),
+                    callback = function(touchmenu_instance)
                         local fields = MultiInputDialog:getFields()
-                        if fields[1] ~= "" and fields[2] ~= "" then
+                        -- check for user input
+                        if fields[1] ~= "" and fields[2] ~= ""
+                            and fields[3] ~= 0 then
                             -- insert code here
-                            UIManager:close(self.sample_input)
+                            UIManager:close(sample_input)
                             -- If we have a touch menu: Update menu entries,
                             -- when called from a menu
                             if touchmenu_instance then
                                 touchmenu_instance:updateItems()
                             end
                         else
-                            UIManager:show(InfoMessage:new{
-                                text = _("Please fill in all fields.")
-                            })
+                            -- not all fields where entered
                         end
                     end
                 },
