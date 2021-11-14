@@ -48,6 +48,8 @@ function ReaderHighlight:init()
     self.select_mode = false -- extended highlighting
 
     self._highlight_buttons = {
+        -- highlight and add_note are for the document itself,
+        -- so we put them first.
         ["01_select"] = function(_self)
             return {
                 text = _("Select"),
@@ -91,6 +93,8 @@ function ReaderHighlight:init()
                 enabled = _self.hold_pos ~= nil,
             }
         end,
+        -- then information lookup functions, putting on the left those that
+        -- depend on an internet connection.
         ["05_wikipedia"] = function(_self)
             return {
                 text = _("Wikipedia"),
@@ -126,6 +130,8 @@ function ReaderHighlight:init()
                 end,
             }
         end,
+        -- buttons 08-11 are conditional ones, so the number of buttons can be even or odd
+        -- let the Search button be the last, occasionally narrow or wide, less confusing
         ["12_search"] = function(_self)
             return {
                 text = _("Search"),
@@ -139,6 +145,7 @@ function ReaderHighlight:init()
         end,
     }
 
+    -- Android devices
     if Device:canShareText() then
         self:addToHighlightDialog("08_share_text", function(_self)
             return {
@@ -153,6 +160,7 @@ function ReaderHighlight:init()
         end)
     end
 
+    -- cre documents only
     if not self.ui.document.info.has_pages then
         self:addToHighlightDialog("09_view_html", function(_self)
             return {
@@ -164,6 +172,7 @@ function ReaderHighlight:init()
         end)
     end
 
+    -- User hyphenation dict
     self:addToHighlightDialog("10_user_dict", function(_self)
         return {
             text= _("Hyphenate"),
@@ -178,6 +187,7 @@ function ReaderHighlight:init()
         }
     end)
 
+    -- Links
     self:addToHighlightDialog("11_follow_link", function(_self)
         return {
             text = _("Follow Link"),
