@@ -1,5 +1,5 @@
 --[[--
-Widget that shows a confirmation alert with a message and Cancel/OK buttons
+Widget that shows a confirmation alert with a message and Cancel/OK buttons.
 
 Example:
 
