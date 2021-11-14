@@ -1,66 +1,34 @@
 --[[--
 Widget for setting the date or time
 
-Example:
+Example for input a time:
     local DateTimeWidget = require("ui/widget/datetimewidget")
-    local @{ui.uimanager|UIManager} = require("ui/uimanager")
     local @{gettext|_} = require("gettext")
-
-    local now_t = os.date("*t")
-    local curr_hour = now_t.hour
-    local curr_min = now_t.min
 
     local time_widget = DateTimeWidget:new{
         is_date = false,
-        hour = curr_hour,
-        min = curr_min,
+        hour = 10,
+        min = 30,
         ok_text = _("Set time"),
         title_text = _("Set time"),
         callback = function(time)
-            if Device:setDateTime(nil, nil, nil, time.hour, time.min) then
-                now_t = os.date("*t")
-                UIManager:show(InfoMessage:new{
-                    text = T(_("Current time: %1:%2"), string.format("%02d", now_t.hour),
-                        string.format("%02d", now_t.min))
-                })
-            else
-                UIManager:show(InfoMessage:new{
-                    text = _("Time couldn't be set"),
-                })
-            end
+            -- use time.hour and time.min here
         end
     }
     UIManager:show(time_widget)
 
-Example:
+Example for input a date:
     local DateTimeWidget = require("ui/widget/datetimewidget")
-    local @{ui.uimanager|UIManager} = require("ui/uimanager")
     local @{gettext|_} = require("gettext")
 
-    local now_t = os.date("*t")
-    local curr_year = now_t.year
-    local curr_month = now_t.month
-    local curr_day = now_t.day
-
     local date_widget = DateTimeWidget:new{
-        year = curr_year,
-        month = curr_month,
-        day = curr_day,
+        year = 2021,
+        month = 12,
+        day = 31,
         ok_text = _("Set date"),
         title_text = _("Set date"),
         callback = function(time)
-            now_t = os.date("*t")
-            if Device:setDateTime(time.year, time.month, time.day, now_t.hour, now_t.min, now_t.sec) then
-                now_t = os.date("*t")
-                UIManager:show(InfoMessage:new{
-                    text = T(_("Current date: %1-%2-%3"), now_t.year, string.format("%02d", now_t.month),
-                        string.format("%02d", now_t.day))
-                })
-            else
-                UIManager:show(InfoMessage:new{
-                    text = _("Date couldn't be set"),
-                })
-            end
+            -- use time.year, time.month, time.day here
         end
     }
     UIManager:show(date_widget)
