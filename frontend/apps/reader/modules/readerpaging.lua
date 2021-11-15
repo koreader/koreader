@@ -107,35 +107,9 @@ function ReaderPaging:onReaderReady()
     self:setupTouchZones()
 end
 
-function ReaderPaging:setupTapTouchZones()
-
-    local forward_zone, backward_zone = self.view:getTapZones()
-
-    self.ui:registerTouchZones({
-        {
-            id = "tap_forward",
-            ges = "tap",
-            screen_zone = forward_zone,
-            handler = function()
-                if G_reader_settings:nilOrFalse("page_turns_disable_tap") then
-                    return self:onGotoViewRel(1)
-                end
-            end,
-        },
-        {
-            id = "tap_backward",
-            ges = "tap",
-            screen_zone = backward_zone,
-            handler = function()
-                if G_reader_settings:nilOrFalse("page_turns_disable_tap") then
-                    return self:onGotoViewRel(-1)
-                end
-            end,
-        },
-    })
-end
-
+-- This method will be called in onSetDimensions handler
 function ReaderPaging:setupTouchZones()
+    -- deligate gesture listener to readerui
     self.ges_events = {}
     self.onGesture = nil
     if not Device:isTouchDevice() then return end
