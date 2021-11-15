@@ -17,7 +17,7 @@ Example:
                 background = Blitbuffer.COLOR_WHITE,
                 TextWidget:new{
                     text = "foo",
-                    fact = Font:getFace("cfont"),
+                    face = Font:getFace("cfont"),
                 }
             },
             FrameContainer:new{
@@ -25,7 +25,7 @@ Example:
                 background = Blitbuffer.COLOR_LIGHT_GRAY,
                 TextWidget:new{
                     text = "bar",
-                    fact = Font:getFace("cfont"),
+                    face = Font:getFace("cfont"),
                 }
             },
             -- You can add as many widgets as you want here...
