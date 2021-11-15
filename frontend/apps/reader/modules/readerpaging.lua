@@ -107,9 +107,7 @@ function ReaderPaging:onReaderReady()
     self:setupTouchZones()
 end
 
--- This method will be called in onSetDimensions handler
 function ReaderPaging:setupTouchZones()
-    -- deligate gesture listener to readerui
     self.ges_events = {}
     self.onGesture = nil
     if not Device:isTouchDevice() then return end
