@@ -851,7 +851,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                     bm.text = self:getBookmarkAutoText(bm)
                 end
                 bookmark = util.tableDeepCopy(bm)
-                bookmark.text_orig = bm.text or "" -- or bm.notes -- TODO: probably not worth it. Clear button may be easier
+                bookmark.text_orig = bm.text or bm.notes
                 bookmark.mandatory = self:getBookmarkPageString(bm.page)
                 break
             end
@@ -865,24 +865,18 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
     self.input = InputDialog:new{
         title = _("Edit note"),
         description = "   " .. T(_("Page: %1"), bookmark.mandatory) .. "     " .. T(_("Time: %1"), bookmark.datetime),
-        input = bookmark.text_orig,
+        input = self:isBookmarkAutoText(bookmark) and "" or bookmark.text_orig,
+        input_hint = self:getBookmarkAutoText(bookmark),
         allow_newline = true,
-        cursor_at_end = true, -- TODO: maybe start with text highlighted instead?
+        cursor_at_end = true,
         add_scroll_buttons = true,
-        -- fullscreen = true,
-        text_height = 200,
+        text_height = 100,
         buttons = {
             {
                 {
                     text = _("Cancel"),
                     callback = function()
                         UIManager:close(self.input)
-                    end,
-                },
-                {
-                    text = _("Clear"),
-                    callback = function()
-                        self.input:setInputText("")
                     end,
                 },
                 {
