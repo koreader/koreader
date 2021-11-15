@@ -989,7 +989,7 @@ function ReaderView:onToggleReadingOrder()
     else
         self.ui.rolling:setupTouchZones()
     end
-    local is_rtl = self.inverse_reading_order ~= BD.mirroredUILayout()
+    local is_rtl = self.inverse_reading_order ~= BD.mirroredUILayout() -- mirrored reading
     UIManager:show(Notification:new{
         text = is_rtl and _("RTL page turning.") or _("LTR page turning."),
     })
@@ -1005,7 +1005,7 @@ function ReaderView:getTapZones()
         ratio_x = DTAP_ZONE_BACKWARD.x, ratio_y = DTAP_ZONE_BACKWARD.y,
         ratio_w = DTAP_ZONE_BACKWARD.w, ratio_h = DTAP_ZONE_BACKWARD.h,
     }
-    if self.inverse_reading_order ~= BD.mirroredUILayout() then
+    if self.inverse_reading_order ~= BD.mirroredUILayout() then -- mirrored reading
         forward_zone.ratio_x = 1 - forward_zone.ratio_x - forward_zone.ratio_w
         backward_zone.ratio_x = 1 - backward_zone.ratio_x - backward_zone.ratio_w
     end
