@@ -927,12 +927,8 @@ function ReaderHighlight:onHoldPan(_, ges)
         -- With CreDocuments, allow text selection across multiple pages
         -- by (temporarily) switching to scroll mode when panning to the
         -- top left or bottom right corners.
-        local mirrored_reading = BD.mirroredUILayout()
-        if self.ui.rolling and self.ui.rolling.inverse_reading_order then
-            mirrored_reading = not mirrored_reading
-        end
         local is_in_prev_page_corner, is_in_next_page_corner
-        if mirrored_reading then
+        if self.view.inverse_reading_order ~= BD.mirroredUILayout() then
             -- Note: this might not be really usable, as crengine native selection
             -- is not adapted to RTL text
             -- top right corner
