@@ -174,8 +174,9 @@ function AutoSuspend:addToMainMenu(menu_items)
         sorting_hint = "device",
         text_func = function()
             if self.auto_suspend_timeout_seconds  then
-                -- @translators `m` stands for minutes
-                return T(_("Autosuspend timeout: %1"), util.secondsToClock(self.auto_suspend_timeout_seconds, true))
+                local duration_format = G_reader_settings:readSetting("duration_format", "classic")
+                return T(_("Autosuspend timeout: %1"), util.secondsToHClock(self.auto_suspend_timeout_seconds, false,
+                    duration_format ~= "classic"))
             else
                 return _("Autosuspend timeout")
             end
@@ -212,8 +213,9 @@ function AutoSuspend:addToMainMenu(menu_items)
         sorting_hint = "device",
         text_func = function()
             if self.autoshutdown_timeout_seconds  then
-                -- @translators `h` stands for hours
-                return T(_("Autoshutdown timeout: %1"), util.secondsToClock(self.autoshutdown_timeout_seconds, true))
+                local duration_format = G_reader_settings:readSetting("duration_format", "classic")
+                return T(_("Autoshutdown timeout: %1"), util.secondsToHClock(self.autoshutdown_timeout_seconds, false,
+                    duration_format ~= "classic"))
             else
                 return _("Autoshutdown timeout")
             end
