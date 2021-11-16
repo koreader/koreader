@@ -359,9 +359,8 @@ end
 
 common_settings.back_to_exit = {
     text_func = function()
-        local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt")
-        return T(_("Back to exit: %1"),
-                 back_to_exit_str[back_to_exit][2])
+        local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt") -- set "back_to_exit" to "prompt"
+        return T(_("Back to exit: %1"), back_to_exit_str[back_to_exit][2])
     end,
     sub_item_table = {
         genGenericMenuEntry(back_to_exit_str.prompt[1], "back_to_exit", "prompt"),
@@ -372,7 +371,7 @@ common_settings.back_to_exit = {
 common_settings.back_in_filemanager = {
     text_func = function()
         local menu_info = ""
-        local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager", "default")
+        local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager", "default") -- set "back_in_filemanager" to "default"
         if back_in_filemanager == "default" then
             menu_info = _("back to exit")
         elseif back_in_filemanager == "parent_folder" then
@@ -384,8 +383,7 @@ common_settings.back_in_filemanager = {
         {
             text_func = function()
                 local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt")
-                return T(_("Back to exit (%1)"),
-                         back_to_exit_str[back_to_exit][2])
+                return T(_("Back to exit (%1)"), back_to_exit_str[back_to_exit][2])
             end,
             checked_func = function()
                 return G_reader_settings:readSetting("back_in_filemanager", "default") == "default"
@@ -401,7 +399,7 @@ common_settings.back_in_reader = {
     -- All these options are managed by ReaderBack
     text_func = function()
         local menu_info = ""
-        local back_in_reader = G_reader_settings:readSetting("back_in_reader", "previous_location")
+        local back_in_reader = G_reader_settings:readSetting("back_in_reader", "previous_location") -- set "back_in_reader" to "previous_location"
         if back_in_reader == "default" then
             menu_info = _("back to exit")
         elseif back_in_reader == "filebrowser" then
@@ -417,8 +415,7 @@ common_settings.back_in_reader = {
         {
             text_func = function()
                 local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt")
-                return T(_("Back to exit (%1)"),
-                         back_to_exit_str[back_to_exit][2])
+                return T(_("Back to exit (%1)"), back_to_exit_str[back_to_exit][2])
             end,
             checked_func = function()
                 return G_reader_settings:readSetting("back_in_reader") == "default"
@@ -519,7 +516,7 @@ common_settings.document_auto_save = {
 common_settings.document_save = {
     text = _("Save document (write highlights into PDF)"),
     sub_item_table = {
-        genGenericMenuEntry(_("Prompt"), "save_document", "prompt", "prompt"),
+        genGenericMenuEntry(_("Prompt"), "save_document", "prompt", "prompt"), -- set "save_document" to "prompt"
         genGenericMenuEntry(_("Always"), "save_document", "always"),
         genGenericMenuEntry(_("Disable"), "save_document", "disable"),
     },
