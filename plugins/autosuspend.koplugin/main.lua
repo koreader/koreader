@@ -15,6 +15,7 @@ local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -174,13 +175,13 @@ function AutoSuspend:addToMainMenu(menu_items)
         text_func = function()
             if self.auto_suspend_timeout_seconds  then
                 -- @translators `m` stands for minutes
-                return T(_("Autosuspend timeout: %1 m"), self.auto_suspend_timeout_seconds / 60)
+                return T(_("Autosuspend timeout: %1"), util.secondsToClock(self.auto_suspend_timeout_seconds, true))
             else
                 return _("Autosuspend timeout")
             end
         end,
         keep_menu_open = true,
-        callback = function()
+        callback = function(touchmenu_instance)
             local InfoMessage = require("ui/widget/infomessage")
             local SpinWidget = require("ui/widget/spinwidget")
             local autosuspend_spin = SpinWidget:new {
@@ -200,6 +201,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                     })
                     self:_unschedule()
                     self:_start()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
                 end
             }
             UIManager:show(autosuspend_spin)
@@ -211,13 +213,13 @@ function AutoSuspend:addToMainMenu(menu_items)
         text_func = function()
             if self.autoshutdown_timeout_seconds  then
                 -- @translators `h` stands for hours
-                return T(_("Autoshutdown timeout: %1 h"), self.autoshutdown_timeout_seconds / 3600)
+                return T(_("Autoshutdown timeout: %1"), util.secondsToClock(self.autoshutdown_timeout_seconds, true))
             else
                 return _("Autoshutdown timeout")
             end
         end,
         keep_menu_open = true,
-        callback = function()
+        callback = function(touchmenu_instance)
             local InfoMessage = require("ui/widget/infomessage")
             local SpinWidget = require("ui/widget/spinwidget")
             local autosuspend_spin = SpinWidget:new {
@@ -242,6 +244,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                     })
                     self:_unschedule()
                     self:_start()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
                 end
             }
             UIManager:show(autosuspend_spin)
