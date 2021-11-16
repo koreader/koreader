@@ -309,7 +309,13 @@ function DocSettings:flush()
 
     -- If we can write to sidecar_file, we do not need to write to history_file
     -- anymore.
-    local serials = { self.sidecar_file, self.history_file }
+    local serials = {}
+    if self.sidecar_file then
+        table.insert(serials, self.sidecar_file)
+    end
+    if self.history_file then
+        table.insert(serials, self.history_file)
+    end
     self:ensureSidecar(self.sidecar)
     local s_out = dump(self.data)
     os.setlocale('C', 'numeric')
