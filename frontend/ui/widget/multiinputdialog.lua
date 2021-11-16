@@ -13,12 +13,11 @@ Example for input of two strings and a number:
         fields = {
             {
                 description = _("Describe this field"),
-                input_type = "string",
+                -- input_type = nil, -- default for text
                 text = _("First input"),
                 hint = _("Name"),
             },
             {
-                input_type = "string",
                 text = "",
                 hint = _("Address"),
             },
