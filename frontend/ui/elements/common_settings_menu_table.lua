@@ -376,7 +376,7 @@ common_settings.back_in_filemanager = {
         if back_in_filemanager == "default" then
             menu_info = _("back to exit")
         elseif back_in_filemanager == "parent_folder" then
-            menu_info = _("go to parent folder")
+            menu_info = _("parent folder")
         end
         return T(_("Back in file browser: %1"), menu_info)
     end,
@@ -405,11 +405,11 @@ common_settings.back_in_reader = {
         if back_in_reader == "default" then
             menu_info = _("back to exit")
         elseif back_in_reader == "filebrowser" then
-            menu_info = _("go to filebrowser")
+            menu_info = _("filebrowser")
         elseif back_in_reader == "previous_location" then
-            menu_info = _("go to previous location")
+            menu_info = _("previous location")
         elseif back_in_reader == "previous_read_page" then
-            menu_info = _("go to previus read page")
+            menu_info = _("previous read page")
         end
         return T(_("Back in reader: %1"), menu_info)
     end,
