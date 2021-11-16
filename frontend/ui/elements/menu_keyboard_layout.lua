@@ -1,21 +1,29 @@
 local CheckButton = require("ui/widget/checkbutton")
+local Device = require("device")
 local FFIUtil = require("ffi/util")
+local Font = require("ui/font")
 local Language = require("ui/language")
+local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VirtualKeyboard = require("ui/widget/virtualkeyboard")
 local dbg = require("dbg")
 local util = require("util")
 local T = require("ffi/util").template
 local _ = require("gettext")
+local Screen = Device.screen
 
 local input_dialog, check_button_bold, check_button_border, check_button_compact
 
-local function getActivatedKeyboards()
+local function getActivatedKeyboards(compact)
     local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
     local activated_keyboards = {}
     for lang, dummy in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
         if util.arrayContains(keyboard_layouts, lang) then
-            table.insert(activated_keyboards, Language:getLanguageName(lang))
+            if compact then
+                table.insert(activated_keyboards, lang)
+            else
+                table.insert(activated_keyboards, Language:getLanguageName(lang))
+            end
         end
     end
     return table.concat(activated_keyboards, ", ")
@@ -26,7 +34,21 @@ local sub_item_table = {
         text_func = function()
             local activated_keyboards = getActivatedKeyboards()
             if activated_keyboards ~= "" then
-                return string.format(_("Keyboard layout: %s"), activated_keyboards)
+                local item_text = string.format(_("Keyboard layout: %s"), activated_keyboards)
+
+                -- get width of text
+                local tmp = TextWidget:new{
+                    text = item_text,
+                    face = Font:getFace("cfont"),
+                }
+                local item_text_w = tmp:getSize().w
+                tmp:free()
+                if item_text_w >= Screen:getWidth() then
+                    activated_keyboards = getActivatedKeyboards(true)
+                    item_text = string.format(_("Keyboard layout: %s"), activated_keyboards)
+                end
+
+                return item_text
             else
                 return _("Keyboard layout")
             end
