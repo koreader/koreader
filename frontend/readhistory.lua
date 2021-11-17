@@ -198,6 +198,15 @@ function ReadHistory:getPreviousFile(current_file)
     end
 end
 
+function ReadHistory:getFileByDirectory(directory)
+    assert(self ~= nil)
+    for i=1, #self.hist do
+        if realpath(ffiutil.dirname(self.hist[i].file)) == realpath(directory) then
+             return self.hist[i].file
+        end
+    end
+end
+
 function ReadHistory:fileDeleted(path)
     if G_reader_settings:isTrue("autoremove_deleted_items_from_history") then
         self:removeItemByPath(path)
