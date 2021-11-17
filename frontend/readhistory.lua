@@ -200,8 +200,9 @@ end
 
 function ReadHistory:getFileByDirectory(directory)
     assert(self ~= nil)
+    local real_path = realpath(directory)
     for i=1, #self.hist do
-        if realpath(ffiutil.dirname(self.hist[i].file)) == realpath(directory) then
+        if realpath(ffiutil.dirname(self.hist[i].file)) == real_path then
              return self.hist[i].file
         end
     end
