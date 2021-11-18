@@ -74,8 +74,7 @@ local sub_item_table = {
         callback = function(touchmenu_instance)
             input_dialog = require("ui/widget/inputdialog"):new{
                 title = _("Keyboard font size"),
-                input_type = "number",
-                input = G_reader_settings:readSetting("keyboard_key_font_size", VirtualKeyboard.default_label_size),
+                input = tostring(G_reader_settings:readSetting("keyboard_key_font_size", VirtualKeyboard.default_label_size)),
                 input_hint = "(16 - 30)",
                 buttons = {
                     {
