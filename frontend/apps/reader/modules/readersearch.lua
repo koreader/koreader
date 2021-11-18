@@ -160,7 +160,7 @@ function ReaderSearch:onShowFulltextSearchInput()
             })
         end,
     }
-    if not self.ui.document.info.has_pages then
+    if self.ui.rolling then
         self.input_dialog:addWidget(self.check_button_regex)
     end
 
