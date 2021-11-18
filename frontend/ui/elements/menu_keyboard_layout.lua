@@ -1,14 +1,15 @@
 local CheckButton = require("ui/widget/checkbutton")
+local CheckMark = require("ui/widget/checkmark")
 local Device = require("device")
 local FFIUtil = require("ffi/util")
 local Font = require("ui/font")
 local Language = require("ui/language")
+local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VirtualKeyboard = require("ui/widget/virtualkeyboard")
 local dbg = require("dbg")
 local util = require("util")
-local T = require("ffi/util").template
 local _ = require("gettext")
 local Screen = Device.screen
 
@@ -43,9 +44,11 @@ local sub_item_table = {
                 }
                 local item_text_w = tmp:getSize().w
                 tmp:free()
-                if item_text_w >= Screen:getWidth() then
-                    activated_keyboards = getActivatedKeyboards(true)
-                    item_text = string.format(_("Keyboard layout: %s"), activated_keyboards)
+                local checked_widget = CheckMark:new{ -- for layout, to :getSize()
+                    checked = true,
+                }
+                if item_text_w >= Screen:getWidth()- 2*Size.padding.default - checked_widget:getSize().w then
+                    item_text = string.format(_("Keyboard layout: %s"), _("many"))
                 end
 
                 return item_text
@@ -66,18 +69,13 @@ local sub_item_table = {
         separator = true,
     },
     {
-        text_func = function()
-            return T(_("Keyboard settings: %1pt%2%3%4"),
-                G_reader_settings:readSetting("keyboard_key_font_size", VirtualKeyboard.default_label_size),
-                G_reader_settings:isTrue("keyboard_key_bold") and string.format(", %s", _("bold")) or "",
-                G_reader_settings:nilOrTrue("keyboard_key_border") and string.format(", %s", _("border")) or "",
-                G_reader_settings:isTrue("keyboard_key_compact") and string.format(", %s", _("compact")) or "")
-        end,
+        text = _("Keyboard settings"),
         keep_menu_open = true,
         callback = function(touchmenu_instance)
             input_dialog = require("ui/widget/inputdialog"):new{
                 title = _("Keyboard font size"),
-                input = tostring(G_reader_settings:readSetting("keyboard_key_font_size", VirtualKeyboard.default_label_size)),
+                input_type = "number",
+                input = G_reader_settings:readSetting("keyboard_key_font_size", VirtualKeyboard.default_label_size),
                 input_hint = "(16 - 30)",
                 buttons = {
                     {
@@ -152,7 +150,7 @@ local sub_item_table = {
 for lang, keyboard_layout in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
     table.insert(sub_item_table[1].sub_item_table, {
         text_func = function()
-            local text = Language:getLanguageName(lang)
+            local text = Language:getLanguageName(lang) .. " (" .. lang ..")"
             if G_reader_settings:readSetting("keyboard_layout_default") == lang then
                 text = text .. "   ★"
             end
