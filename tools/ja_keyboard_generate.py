@@ -151,10 +151,11 @@ class Key(object):
 		if lua_items:
 			lua_items.append("\n") # Put the labels on a separate line.
 		for direction, key in zip(["", "west", "north", "east", "south"], self.popout):
-			if direction:
-				lua_items.append(f'{direction} = {escape_luastring(key)}')
-			else:
-				lua_items.append(f'{escape_luastring(key)}')
+			if key != '\0':
+				if direction:
+					lua_items.append(f'{direction} = {escape_luastring(key)}')
+				else:
+					lua_items.append(f'{escape_luastring(key)}')
 		lua_item = f'{self.name} = {{ {", ".join(lua_items)} }}'
 		# Fix newlines to match the indentation and remove the doubled comma.
 		indent = len(self.name) + 4 * (indent_level + 1)
@@ -200,13 +201,13 @@ KEYPADS = [
 
 	# Latin alphabet.
 	Key("l_1", "@-_/１", label="@-_/", alt_label="１"),
-	Key("l_2", "abc２", loop="abcABC２", label="abc", alt_label="２"),
-	Key("l_3", "def３", loop="defDEF３", label="def", alt_label="３"),
-	Key("l_4", "ghi４", loop="ghiGHI４", label="ghi", alt_label="４"),
-	Key("l_5", "jkl５", loop="jklJKL５", label="jkl", alt_label="５"),
-	Key("l_6", "mno６", loop="mnoMNO６", label="mno", alt_label="６"),
+	Key("l_2", "abc\0２", loop="abcABC２", label="abc", alt_label="２"),
+	Key("l_3", "def\0３", loop="defDEF３", label="def", alt_label="３"),
+	Key("l_4", "ghi\0４", loop="ghiGHI４", label="ghi", alt_label="４"),
+	Key("l_5", "jkl\0５", loop="jklJKL５", label="jkl", alt_label="５"),
+	Key("l_6", "mno\0６", loop="mnoMNO６", label="mno", alt_label="６"),
 	Key("l_7", "pqrs７", loop="pqrsPQRS７", label="pqrs", alt_label="７"),
-	Key("l_8", "tuv８", loop="tuvTUV８", label="tuv", alt_label="８"),
+	Key("l_8", "tuv\0８", loop="tuvTUV８", label="tuv", alt_label="８"),
 	Key("l_9", "wxyz９", loop="wxyzWXYZ９", label="wxyz", alt_label="９"),
 	Key("l_0", "'\":;０", label="'\":;", alt_label="０"),
 	Key("l_P", ",.?!", label=",.?!"),

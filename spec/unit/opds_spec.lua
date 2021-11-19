@@ -316,6 +316,7 @@ describe("OPDS module #nocov", function()
             local entry = entries[2]
             assert.are.same(entry.title, "1000 Mythological Characters Briefly Described")
             assert.are.same(entry.link[1].href, "https://www.gutenberg.org/ebooks/42474.epub.images")
+            assert.are.same(entry.link[1].title, "EPUB (with images)")
         end)
     end)
 
