@@ -865,7 +865,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
     self.input = InputDialog:new{
         title = _("Edit note"),
         description = "   " .. T(_("Page: %1"), bookmark.mandatory) .. "     " .. T(_("Time: %1"), bookmark.datetime),
-        input = self:isHighlightAutoText(bookmark) and "" or bookmark.text_orig, -- TODO: figure out why this doesn't work from Bookmarks page
+        input = self:isHighlightAutoText(bookmark) and "" or bookmark.text_orig,
         input_hint = self:getBookmarkAutoText(bookmark),
         allow_newline = true,
         cursor_at_end = true,
