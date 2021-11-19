@@ -149,7 +149,7 @@ local sub_item_table = {
 for lang, keyboard_layout in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
     table.insert(sub_item_table[1].sub_item_table, {
         text_func = function()
-            local text = Language:getLanguageName(lang) .. " (" .. lang ..")"
+            local text = Language:getLanguageName(lang) .. " (" .. string.sub(lang, 1, 2) ..")"
             if G_reader_settings:readSetting("keyboard_layout_default") == lang then
                 text = text .. "   ★"
             end
