@@ -792,12 +792,16 @@ function ReaderView:onReadSettings(config)
     -- Highlight formats in crengine and mupdf are incompatible.
     -- Backup highlights when the document is opened with incompatible engine.
     if #self.highlight.saved > 0 then
-        local hl_type = type(self.highlight.saved[1][1].pos0)
-        if (self.ui.rolling and hl_type == "table") or (self.ui.paging and hl_type == "string") then
-            local highlight_tmp = config:readSetting("highlight_backup", {})
-            config:saveSetting("highlight", highlight_tmp)
-            config:saveSetting("highlight_backup", self.highlight.saved)
-            self.highlight.saved = config:readSetting("highlight")
+        if self.ui.rolling and type(self.highlight.saved[1][1].pos0) == "table" then
+            config:saveSetting("highlight_paging", self.highlight.saved)
+            self.highlight.saved = config:readSetting("highlight_rolling", {})
+            config:saveSetting("highlight", self.highlight.saved)
+            config:delSetting("highlight_rolling")
+        elseif self.ui.paging and type(self.highlight.saved[1][1].pos0) == "string" then
+            config:saveSetting("highlight_rolling", self.highlight.saved)
+            self.highlight.saved = config:readSetting("highlight_paging", {})
+            config:saveSetting("highlight", self.highlight.saved)
+            config:delSetting("highlight_paging")
         end
     end
     self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or DSHOWOVERLAP
