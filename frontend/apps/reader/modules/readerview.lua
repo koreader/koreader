@@ -788,7 +788,22 @@ function ReaderView:onReadSettings(config)
     self:resetLayout()
     local page_scroll = config:readSetting("kopt_page_scroll") or self.document.configurable.page_scroll
     self.page_scroll = page_scroll == 1 and true or false
-    self.highlight.saved = config:readSetting("highlight") or {}
+    self.highlight.saved = config:readSetting("highlight", {})
+    -- Highlight formats in crengine and mupdf are incompatible.
+    -- Backup highlights when the document is opened with incompatible engine.
+    if #self.highlight.saved > 0 then
+        if self.ui.rolling and type(self.highlight.saved[1][1].pos0) == "table" then
+            config:saveSetting("highlight_paging", self.highlight.saved)
+            self.highlight.saved = config:readSetting("highlight_rolling", {})
+            config:saveSetting("highlight", self.highlight.saved)
+            config:delSetting("highlight_rolling")
+        elseif self.ui.paging and type(self.highlight.saved[1][1].pos0) == "string" then
+            config:saveSetting("highlight_rolling", self.highlight.saved)
+            self.highlight.saved = config:readSetting("highlight_paging", {})
+            config:saveSetting("highlight", self.highlight.saved)
+            config:delSetting("highlight_paging")
+        end
+    end
     self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or DSHOWOVERLAP
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
     self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height")
