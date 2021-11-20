@@ -268,12 +268,16 @@ function ReaderBookmark:onReadSettings(config)
     -- Bookmark formats in crengine and mupdf are incompatible.
     -- Backup bookmarks when the document is opened with incompatible engine.
     if #self.bookmarks > 0 then
-        local bm_type = type(self.bookmarks[1].page)
-        if (self.ui.rolling and bm_type == "number") or (self.ui.paging and bm_type == "string") then
-            local bookmarks_tmp = config:readSetting("bookmarks_backup", {})
-            config:saveSetting("bookmarks", bookmarks_tmp)
-            config:saveSetting("bookmarks_backup", self.bookmarks)
-            self.bookmarks = config:readSetting("bookmarks")
+        if self.ui.rolling and type(self.bookmarks[1].page) == "number" then
+            config:saveSetting("bookmarks_paging", self.bookmarks)
+            self.bookmarks = config:readSetting("bookmarks_rolling", {})
+            config:saveSetting("bookmarks", self.bookmarks)
+            config:delSetting("bookmarks_rolling")
+        elseif self.ui.paging and type(self.bookmarks[1].page) == "string" then
+            config:saveSetting("bookmarks_rolling", self.bookmarks)
+            self.bookmarks = config:readSetting("bookmarks_paging", {})
+            config:saveSetting("bookmarks", self.bookmarks)
+            config:delSetting("bookmarks_paging")
         end
     end
     -- need to do this after initialization because checking xpointer
