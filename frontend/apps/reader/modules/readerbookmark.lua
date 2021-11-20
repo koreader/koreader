@@ -264,7 +264,22 @@ function ReaderBookmark:importSavedHighlight(config)
 end
 
 function ReaderBookmark:onReadSettings(config)
-    self.bookmarks = config:readSetting("bookmarks") or {}
+    self.bookmarks = config:readSetting("bookmarks", {})
+    -- Bookmark formats in crengine and mupdf are incompatible.
+    -- Backup bookmarks when the document is opened with incompatible engine.
+    if #self.bookmarks > 0 then
+        if self.ui.rolling and type(self.bookmarks[1].page) == "number" then
+            config:saveSetting("bookmarks_paging", self.bookmarks)
+            self.bookmarks = config:readSetting("bookmarks_rolling", {})
+            config:saveSetting("bookmarks", self.bookmarks)
+            config:delSetting("bookmarks_rolling")
+        elseif self.ui.paging and type(self.bookmarks[1].page) == "string" then
+            config:saveSetting("bookmarks_rolling", self.bookmarks)
+            self.bookmarks = config:readSetting("bookmarks_paging", {})
+            config:saveSetting("bookmarks", self.bookmarks)
+            config:delSetting("bookmarks_paging")
+        end
+    end
     -- need to do this after initialization because checking xpointer
     -- may cause segfaults before credocuments are inited.
     self.ui:registerPostInitCallback(function()
