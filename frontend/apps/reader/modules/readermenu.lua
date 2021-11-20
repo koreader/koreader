@@ -251,29 +251,9 @@ function ReaderMenu:setUpdateItemTable()
     for id, common_setting in pairs(dofile("frontend/ui/elements/common_info_menu_table.lua")) do
         self.menu_items[id] = common_setting
     end
-
-    self.menu_items.exit_menu = {
-        text = _("Exit"),
-        hold_callback = function()
-            self:exitOrRestart()
-        end,
-    }
-    self.menu_items.exit = {
-        text = _("Exit"),
-        callback = function()
-            self:exitOrRestart()
-        end,
-    }
-    self.menu_items.restart_koreader = {
-        text = _("Restart KOReader"),
-        callback = function()
-            self:exitOrRestart(function() UIManager:restartKOReader() end)
-        end,
-    }
-    if not Device:canRestart() then
-        self.menu_items.exit_menu = self.menu_items.exit
-        self.menu_items.exit = nil
-        self.menu_items.restart_koreader = nil
+    -- insert common exit for reader
+    for id, common_setting in pairs(dofile("frontend/ui/elements/common_exit_menu.lua").table(self)) do
+        self.menu_items[id] = common_setting
     end
 
     self.menu_items.open_previous_document = {
