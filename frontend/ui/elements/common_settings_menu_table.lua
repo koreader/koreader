@@ -403,7 +403,7 @@ common_settings.back_in_reader = {
         if back_in_reader == "default" then
             menu_info = _("back to exit")
         elseif back_in_reader == "filebrowser" then
-            menu_info = _("filebrowser")
+            menu_info = _("file browser")
         elseif back_in_reader == "previous_location" then
             menu_info = _("previous location")
         elseif back_in_reader == "previous_read_page" then
