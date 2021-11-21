@@ -150,7 +150,7 @@ end
 ---- @treturn string clock string in the form of 1h30'10'' or 1h30m10s
 function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
     -- @translators \" stands for the seconds symbol
-    SECONDS_SYMBOL = _("\"")
+    local SECONDS_SYMBOL = _("\"")
     seconds = tonumber(seconds)
     if seconds == 0 then
         if withoutSeconds then
@@ -194,11 +194,11 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
         if hmsFormat then
             time_string = time_string:gsub(":", "h", 1)
             time_string = time_string:gsub(":", "m", 1)
-            return time_string .. (withoutSeconds and "" or "s")
+            return withoutSeconds and time_string or (time_string .. "s")
         else
             time_string = time_string:gsub(":", "h", 1)
             time_string = time_string:gsub(":", "'", 1)
-            return time_string .. (withoutSeconds and "" or SECONDS_SYMBOL)
+            return withoutSeconds and time_string or (time_string .. SECONDS_SYMBOL)
         end
     end
 end
