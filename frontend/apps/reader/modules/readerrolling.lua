@@ -42,7 +42,6 @@ local ReaderRolling = InputContainer:new{
     pan_rate = 30,  -- default 30 ops, will be adjusted in readerui
     rendering_hash = 0,
     current_pos = 0,
-    inverse_reading_order = nil,
     -- only used for page view mode
     current_page= nil,
     xpointer = nil,
@@ -209,12 +208,6 @@ function ReaderRolling:onReadSettings(config)
         end
     end
 
-    if config:has("inverse_reading_order") then
-        self.inverse_reading_order = config:isTrue("inverse_reading_order")
-    else
-        self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
-    end
-
     -- This self.visible_pages may not be the current nb of visible pages
     -- as crengine may decide to not ensure that in some conditions.
     -- It's the one we got from settings, the one the user has decided on
@@ -302,7 +295,6 @@ function ReaderRolling:onSaveSettings()
     if self.ui.document then
         self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
     end
-    self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
     self.ui.doc_settings:saveSetting("visible_pages", self.visible_pages)
     self.ui.doc_settings:saveSetting("hide_nonlinear_flows", self.hide_nonlinear_flows)
 end
@@ -320,23 +312,7 @@ function ReaderRolling:setupTouchZones()
     self.onGesture = nil
     if not Device:isTouchDevice() then return end
 
-    local forward_zone = {
-        ratio_x = DTAP_ZONE_FORWARD.x, ratio_y = DTAP_ZONE_FORWARD.y,
-        ratio_w = DTAP_ZONE_FORWARD.w, ratio_h = DTAP_ZONE_FORWARD.h,
-    }
-    local backward_zone = {
-        ratio_x = DTAP_ZONE_BACKWARD.x, ratio_y = DTAP_ZONE_BACKWARD.y,
-        ratio_w = DTAP_ZONE_BACKWARD.w, ratio_h = DTAP_ZONE_BACKWARD.h,
-    }
-
-    local do_mirror = BD.mirroredUILayout()
-    if self.inverse_reading_order then
-        do_mirror = not do_mirror
-    end
-    if do_mirror then
-        forward_zone.ratio_x = 1 - forward_zone.ratio_x - forward_zone.ratio_w
-        backward_zone.ratio_x = 1 - backward_zone.ratio_x - backward_zone.ratio_w
-    end
+    local forward_zone, backward_zone = self.view:getTapZones()
 
     self.ui:registerTouchZones({
         {
@@ -470,7 +446,7 @@ function ReaderRolling:onSwipe(_, ges)
     local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
     if direction == "west" then
         if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
-            if self.inverse_reading_order then
+            if self.view.inverse_reading_order then
                 self:onGotoViewRel(-1)
             else
                 self:onGotoViewRel(1)
@@ -479,7 +455,7 @@ function ReaderRolling:onSwipe(_, ges)
         end
     elseif direction == "east" then
         if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
-            if self.inverse_reading_order then
+            if self.view.inverse_reading_order then
                 self:onGotoViewRel(1)
             else
                 self:onGotoViewRel(-1)
@@ -1470,20 +1446,6 @@ function ReaderRolling:onToggleHideNonlinear()
     -- the footer needs updating, and TOC markers may come or go.
     self.ui.document:cacheFlows()
     self.ui:handleEvent(Event:new("UpdateToc"))
-end
-
--- Duplicated in ReaderPaging
-function ReaderRolling:onToggleReadingOrder()
-    self.inverse_reading_order = not self.inverse_reading_order
-    self:setupTouchZones()
-    local is_rtl = BD.mirroredUILayout()
-    if self.inverse_reading_order then
-        is_rtl = not is_rtl
-    end
-    UIManager:show(Notification:new{
-        text = is_rtl and _("RTL page turning.") or _("LTR page turning."),
-    })
-    return true
 end
 
 return ReaderRolling
