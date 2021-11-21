@@ -1400,7 +1400,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     if self.settings.item_prefix == "icons" then
                         prefix_text = _("Icons")
                     elseif self.settings.item_prefix == "compact_items" then
-                        prefix_text = _("Compact Items")
+                        prefix_text = _("Compact items")
                     elseif self.settings.item_prefix == "letters" then
                         prefix_text = _("Letters")
                     end
