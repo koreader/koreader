@@ -147,7 +147,7 @@ end
 ---- @int seconds number of seconds
 ---- @bool withoutSeconds if true 1h30', if false 1h30'10''
 ---- @bool hmsFormat, if true format 1h30m10s
----- @treturn string clock string in the form of 1h30' or 1h30'10''
+---- @treturn string clock string in the form of 1h30'10'' or 1h30m10s
 function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
     seconds = tonumber(seconds)
     if seconds == 0 then
@@ -185,52 +185,18 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
             end
         end
     else
-        local round = withoutSeconds and require("optmath").round or passthrough
-        local hours = string.format("%d", seconds / 3600)
-        local mins = string.format("%02d", round(seconds % 3600 / 60))
+        local time_string = util.secondsToClock(seconds, withoutSeconds)
         if withoutSeconds then
-            if mins == "60" then
-                mins = string.format("%02d", 0)
-                hours = string.format("%d", hours + 1)
-            end
-            if hours == "0" then
-                -- We can optimize out the % 3600 since the branch ensures we're < than 3600
-                mins = string.format("%d", round(seconds / 60))
-                if hmsFormat then
-                    return T(_("%1m"), mins)
-                else
-                    return mins .. "'"
-                end
-            end
-            -- @translators This is the 'h' for hour, like in 1h30. This is a duration.
-            return T(_("%1h%2"), hours, mins)
+            time_string = time_string .. ":"
+        end
+        if hmsFormat then
+            time_string = time_string:gsub(":", "h", 1)
+            time_string = time_string:gsub(":", "m", 1)
+            return time_string .. (withoutSeconds and "" or "s")
         else
-            local secs = string.format("%02d", seconds % 60)
-            if hours == "0" then
-                mins = string.format("%d", round(seconds / 60))
-                if hmsFormat then
-                    -- @translators This is the 'm' for minute and the 's' for second, like in 1m30s. This is a duration.
-                    return T(_("%1m%2s"), mins, secs)
-                else
-                    return mins .. "'" .. secs .. "''"
-                end
-            end
-            if hmsFormat then
-                if secs == "00" then
-                    -- @translators This is the 'h' for hour and the 'm' for minute, like in 1h30m. This is a duration.
-                    return T(_("%1h%2m"), hours, mins)
-                else
-                    -- @translators This is the 'h' for hour, the 'm' for minute and the 's' for second, like in 1h30m30s. This is a duration.
-                    return T(_("%1h%2m%3s"), hours, mins, secs)
-                end
-
-            else
-                if secs == "00" then
-                    return T(_("%1h%2'"), hours, mins)
-                else
-                    return T(_("%1h%2'%3''"), hours, mins, secs)
-                end
-            end
+            time_string = time_string:gsub(":", "h", 1)
+            time_string = time_string:gsub(":", "'", 1)
+            return time_string .. (withoutSeconds and "" or "''")
         end
     end
 end
