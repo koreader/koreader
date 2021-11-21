@@ -764,7 +764,7 @@ Tap a book in the search results to open it.]]),
         self.menu_items[id] = common_setting
     end
     -- insert common exit for filemanager
-    for id, common_setting in pairs(dofile("frontend/ui/elements/common_exit_menu.lua").table(self)) do
+    for id, common_setting in pairs(dofile("frontend/ui/elements/common_exit_menu_table.lua")) do
         self.menu_items[id] = common_setting
     end
     if not Device:isTouchDevice() then
