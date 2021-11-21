@@ -149,6 +149,8 @@ end
 ---- @bool hmsFormat, if true format 1h30m10s
 ---- @treturn string clock string in the form of 1h30'10'' or 1h30m10s
 function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
+    -- @translators \" stands for the seconds symbol
+    SECONDS_SYMBOL = _("\"")
     seconds = tonumber(seconds)
     if seconds == 0 then
         if withoutSeconds then
@@ -161,7 +163,7 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
             if hmsFormat then
                 return T(_("%1s"), "0")
             else
-                return "0''"
+                return "0" .. SECONDS_SYMBOL
             end
         end
     elseif seconds < 60 then
@@ -181,7 +183,7 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
             if hmsFormat then
                 return T(_("%1m%2s"), "0", string.format("%02d", seconds))
             else
-                return "0'" .. string.format("%02d", seconds) .. "''"
+                return "0'" .. string.format("%02d", seconds) .. SECONDS_SYMBOL
             end
         end
     else
@@ -196,17 +198,17 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
         else
             time_string = time_string:gsub(":", "h", 1)
             time_string = time_string:gsub(":", "'", 1)
-            return time_string .. (withoutSeconds and "" or "''")
+            return time_string .. (withoutSeconds and "" or SECONDS_SYMBOL)
         end
     end
 end
 
 --- Converts seconds to a clock type (classic or modern), based on the given format preference
 --- "Classic" format calls secondsToClock, and "Modern" format calls secondsToHClock
----- @string Either "modern" for 1h30' or "classic" for 1:30
----- @bool withoutSeconds if true 1h30' or 1:30, if false 1h30'10'' or 1:30:10
----- @bool hmsFormat, modern format only, if true format 1h30m10s
----- @treturn string clock string in the specific format of 1h30', 1h30'10'' or 1:30'
+---- @string Either "modern" for 1h30'10" or "classic" for 1:30:10
+---- @bool withoutSeconds if true 1h30' or 1h30m, if false 1h30'10" or 1h30m10s
+---- @bool hmsFormat, modern format only, if true format 1h30m or 1h30m10s
+---- @treturn string clock string in the specific format of 1h30', 1h30'10" resp. 1h30m, 1h30m10s
 function util.secondsToClockDuration(format, seconds, withoutSeconds, hmsFormat)
     if format == "modern" then
         return util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
