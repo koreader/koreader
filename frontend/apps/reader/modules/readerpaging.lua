@@ -4,7 +4,6 @@ local Event = require("ui/event")
 local Geom = require("ui/geometry")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local Math = require("optmath")
-local Notification = require("ui/widget/notification")
 local ReaderZooming = require("apps/reader/modules/readerzooming")
 local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
@@ -37,7 +36,6 @@ local ReaderPaging = InputContainer:new{
     page_area = nil,
     overlap = Screen:scaleBySize(DOVERLAPPIXELS),
 
-    inverse_reading_order = nil,
     page_flipping_mode = false,
     bookmark_flipping_mode = false,
     flip_steps = {0,1,2,5,10,20,50,100},
@@ -108,24 +106,12 @@ function ReaderPaging:onReaderReady()
     self:setupTouchZones()
 end
 
-function ReaderPaging:setupTapTouchZones()
-    local forward_zone = {
-        ratio_x = DTAP_ZONE_FORWARD.x, ratio_y = DTAP_ZONE_FORWARD.y,
-        ratio_w = DTAP_ZONE_FORWARD.w, ratio_h = DTAP_ZONE_FORWARD.h,
-    }
-    local backward_zone = {
-        ratio_x = DTAP_ZONE_BACKWARD.x, ratio_y = DTAP_ZONE_BACKWARD.y,
-        ratio_w = DTAP_ZONE_BACKWARD.w, ratio_h = DTAP_ZONE_BACKWARD.h,
-    }
+function ReaderPaging:setupTouchZones()
+    self.ges_events = {}
+    self.onGesture = nil
+    if not Device:isTouchDevice() then return end
 
-    local do_mirror = BD.mirroredUILayout()
-    if self.inverse_reading_order then
-        do_mirror = not do_mirror
-    end
-    if do_mirror then
-        forward_zone.ratio_x = 1 - forward_zone.ratio_x - forward_zone.ratio_w
-        backward_zone.ratio_x = 1 - backward_zone.ratio_x - backward_zone.ratio_w
-    end
+    local forward_zone, backward_zone = self.view:getTapZones()
 
     self.ui:registerTouchZones({
         {
@@ -148,19 +134,6 @@ function ReaderPaging:setupTapTouchZones()
                 end
             end,
         },
-    })
-end
-
--- This method will be called in onSetDimensions handler
-function ReaderPaging:setupTouchZones()
-    -- deligate gesture listener to readerui
-    self.ges_events = {}
-    self.onGesture = nil
-
-    if not Device:isTouchDevice() then return end
-
-    self:setupTapTouchZones()
-    self.ui:registerTouchZones({
         {
             id = "paging_swipe",
             ges = "swipe",
@@ -194,11 +167,6 @@ function ReaderPaging:onReadSettings(config)
     self.flipping_zoom_mode = config:readSetting("flipping_zoom_mode") or "page"
     self.flipping_scroll_mode = config:isTrue("flipping_scroll_mode")
     self.is_reflowed = config:has("kopt_text_wrap") and config:readSetting("kopt_text_wrap") == 1
-    if config:has("inverse_reading_order") then
-        self.inverse_reading_order = config:isTrue("inverse_reading_order")
-    else
-        self.inverse_reading_order = G_reader_settings:isTrue("inverse_reading_order")
-    end
     for _, v in ipairs(ReaderZooming.zoom_pan_settings) do
         self[v] = config:readSetting(v) or G_reader_settings:readSetting(v) or ReaderZooming[v]
     end
@@ -211,7 +179,6 @@ function ReaderPaging:onSaveSettings()
     self.ui.doc_settings:saveSetting("percent_finished", self:getLastPercent())
     self.ui.doc_settings:saveSetting("flipping_zoom_mode", self.flipping_zoom_mode)
     self.ui.doc_settings:saveSetting("flipping_scroll_mode", self.flipping_scroll_mode)
-    self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
 end
 
 function ReaderPaging:getLastProgress()
@@ -400,7 +367,7 @@ function ReaderPaging:onSwipe(_, ges)
         return true
     elseif direction == "west" then
         if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
-            if self.inverse_reading_order then
+            if self.view.inverse_reading_order then
                 self:onGotoViewRel(-1)
             else
                 self:onGotoViewRel(1)
@@ -409,7 +376,7 @@ function ReaderPaging:onSwipe(_, ges)
         end
     elseif direction == "east" then
         if G_reader_settings:nilOrFalse("page_turns_disable_swipe") then
-            if self.inverse_reading_order then
+            if self.view.inverse_reading_order then
                 self:onGotoViewRel(1)
             else
                 self:onGotoViewRel(-1)
@@ -1139,20 +1106,6 @@ end
 function ReaderPaging:onToggleReflow()
     self.view.document.configurable.text_wrap = bit.bxor(self.view.document.configurable.text_wrap, 1)
     self:onReflowUpdated()
-end
-
--- Duplicated in ReaderRolling
-function ReaderPaging:onToggleReadingOrder()
-    self.inverse_reading_order = not self.inverse_reading_order
-    self:setupTouchZones()
-    local is_rtl = BD.mirroredUILayout()
-    if self.inverse_reading_order then
-        is_rtl = not is_rtl
-    end
-    UIManager:show(Notification:new{
-        text = is_rtl and _("RTL page turning.") or _("LTR page turning."),
-    })
-    return true
 end
 
 return ReaderPaging

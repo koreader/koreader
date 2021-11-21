@@ -35,11 +35,7 @@ local PageTurns = {
             end,
             checked_func = function()
                 local ui = require("apps/reader/readerui"):_getRunningInstance()
-                if ui.document.info.has_pages then
-                    return ui.paging.inverse_reading_order
-                else
-                    return ui.rolling.inverse_reading_order
-                end
+                return ui.view.inverse_reading_order
             end,
             callback = function()
                 UIManager:broadcastEvent(Event:new("ToggleReadingOrder"))
