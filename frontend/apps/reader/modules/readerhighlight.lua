@@ -1308,7 +1308,7 @@ function ReaderHighlight:onHoldRelease()
         end
         return true
     end
-    
+
     local long_final_hold = false
     if self.hold_last_tv then
         local hold_duration = TimeVal:now() - self.hold_last_tv
