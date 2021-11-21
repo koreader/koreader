@@ -29,7 +29,6 @@ function common_exit_menu.table(app)
 		exit_settings.exit = nil
 		exit_settings.restart_koreader = nil
 	end
-
 	if Device:canSuspend() then
 		exit_settings.sleep = {
 			text = _("Sleep"),
