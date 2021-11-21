@@ -149,7 +149,7 @@ end
 ---- @bool hmsFormat, if true format 1h30m10s
 ---- @treturn string clock string in the form of 1h30'10'' or 1h30m10s
 function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
-    -- @translators \" stands for the seconds symbol
+    -- @translators \" stands for the seconds symbol.
     local SECONDS_SYMBOL = _("\"")
     seconds = tonumber(seconds)
     if seconds == 0 then
@@ -169,18 +169,21 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
     elseif seconds < 60 then
         if withoutSeconds and seconds < 30 then
             if hmsFormat then
+                -- @translators This is the 'm' for minute, like in 30m30s. This is a duration.
                 return T(_("%1m"), "0")
             else
                 return "0'"
             end
         elseif withoutSeconds and seconds >= 30 then
             if hmsFormat then
+                -- @translators This is the 'm' for minute, like in 30m30s. This is a duration.
                 return T(_("%1m"), "1")
             else
                 return "1'"
             end
         else
             if hmsFormat then
+                -- @translators This is the 'm' for minute and 's' for seconds, like in 30m30s. This is a duration.
                 return T(_("%1m%2s"), "0", string.format("%02d", seconds))
             else
                 return "0'" .. string.format("%02d", seconds) .. SECONDS_SYMBOL
@@ -192,11 +195,15 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
             time_string = time_string .. ":"
         end
         if hmsFormat then
-            time_string = time_string:gsub(":", "h", 1)
-            time_string = time_string:gsub(":", "m", 1)
-            return withoutSeconds and time_string or (time_string .. "s")
+            -- @translators This is the 'h' for hour, like in 1h30m30s. This is a duration.
+            time_string = time_string:gsub(":", _("h"), 1)
+            -- @translators This is the 'm' for minute, like in 1h30m30s. This is a duration.
+            time_string = time_string:gsub(":", _("m"), 1)
+            -- @translators This is the 's' for second, like in 1h30m30s. This is a duration.
+            return withoutSeconds and time_string or (time_string .. _("s"))
         else
-            time_string = time_string:gsub(":", "h", 1)
+            -- @translators This is the 'h' for hour, like in 1h30m30s. This is a duration.
+            time_string = time_string:gsub(":", _("h"), 1)
             time_string = time_string:gsub(":", "'", 1)
             return withoutSeconds and time_string or (time_string .. SECONDS_SYMBOL)
         end
