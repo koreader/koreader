@@ -72,7 +72,7 @@ local symbol_prefix = {
         -- @translators This is the footer letter prefix for Wi-Fi status.
         wifi_status = C_("FooterLetterPrefix", "W:"),
         -- no prefix for custom text
-        custom_text = C_("FooterLetterPrefix", ""),
+        custom_text = "",
     },
     icons = {
         time = "⌚",
