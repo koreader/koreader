@@ -816,8 +816,8 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
     -- because sdcv cannot handle CJK text properly when fuzzy searching (with
     -- Japanese, it returns hundreds of useless results).
     local shouldnt_fuzzy_search = true
-    for _, word in ipairs(words) do
-        if not util.hasCJKChar(word) then
+    for _, w in ipairs(words) do
+        if not util.hasCJKChar(w) then
             shouldnt_fuzzy_search = false
             break
         end
