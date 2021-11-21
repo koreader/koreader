@@ -74,7 +74,7 @@ function DateTimeWidget:update()
         value_min = 2021,
         value_max = 2041,
         value_step = 1,
-        value_hold_step = 4,
+        value_hold_step = self.year_hold_step or 4,
     }
     local month_hour_widget = NumberPickerWidget:new{
         show_parent = self,
@@ -82,7 +82,7 @@ function DateTimeWidget:update()
         value_min = self.is_date and 1 or 0,
         value_max = self.is_date and 12 or self.hour_max,
         value_step = 1,
-        value_hold_step = 3,
+        value_hold_step = self.hour_hold_step or self.month_hold_step or 3,
     }
     local day_min_widget = NumberPickerWidget:new{
         show_parent = self,
@@ -90,7 +90,7 @@ function DateTimeWidget:update()
         value_min = self.is_date and 1 or 0,
         value_max = self.is_date and 31 or 59,
         value_step = 1,
-        value_hold_step = self.is_date and 5 or 10,
+        value_hold_step = self.day_hold_step or self.min_hold_step or (self.is_date and 5 or 10),
         date_month_hour = month_hour_widget,
         date_year = year_widget,
     }
