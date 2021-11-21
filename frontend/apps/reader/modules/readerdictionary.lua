@@ -712,7 +712,6 @@ function ReaderDictionary:onShowDictionaryLookup()
 end
 
 function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progress_msg)
-    local all_results = {}
     -- Allow for two sdcv calls : one in the classic data/dict, and
     -- another one in data/dict_ext if it exists
     -- We could put in data/dict_ext dictionaries with a great number of words
@@ -728,6 +727,7 @@ function ReaderDictionary:rawSdcv(words, dict_names, fuzzy_search, lookup_progre
     if dictDirsEmpty(dict_dirs) then
         return false, nil
     end
+    local all_results = {}
     local lookup_cancelled = false
     for _, dict_dir in ipairs(dict_dirs) do
         if lookup_cancelled then
@@ -809,6 +809,22 @@ function ReaderDictionary:startSdcv(word, dict_names, fuzzy_search)
         if candidates then
             util.arrayAppend(words, candidates)
         end
+    end
+
+    -- If every word contains a CJK character, every word candidate is
+    -- (probably) a CJK word. We don't want fuzzy searching in this case
+    -- because sdcv cannot handle CJK text properly when fuzzy searching (with
+    -- Japanese, it returns hundreds of useless results).
+    local shouldnt_fuzzy_search = true
+    for _, word in ipairs(words) do
+        if not util.hasCJKChar(word) then
+            shouldnt_fuzzy_search = false
+            break
+        end
+    end
+    if shouldnt_fuzzy_search then
+        logger.dbg("disabling fuzzy searching for all-CJK word search:", words)
+        fuzzy_search = false
     end
 
     local lookup_cancelled, results = self:rawSdcv(words, dict_names, fuzzy_search, self.lookup_progress_msg or false)
