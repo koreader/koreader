@@ -149,8 +149,7 @@ end
 ---- @bool hmsFormat, if true format 1h30m10s
 ---- @treturn string clock string in the form of 1h30'10'' or 1h30m10s
 function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
-    -- @translators \" stands for the seconds symbol.
-    local SECONDS_SYMBOL = _("\"")
+    local SECONDS_SYMBOL = "\""
     seconds = tonumber(seconds)
     if seconds == 0 then
         if withoutSeconds then
