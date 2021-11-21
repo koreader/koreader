@@ -549,30 +549,9 @@ function ReaderUI:showReader(file, provider)
 
     -- We can now signal the existing ReaderUI/FileManager instances that it's time to go bye-bye...
     UIManager:broadcastEvent(Event:new("ShowingReader"))
-
-    -- prevent crash due to incompatible bookmarks
-    --- @todo Split bookmarks from metadata and do per-engine in conversion.
     provider = provider or DocumentRegistry:getProvider(file)
     if provider.provider then
-        local doc_settings = DocSettings:open(file)
-        local bookmarks = doc_settings:readSetting("bookmarks") or {}
-        if #bookmarks >= 1 and
-           ((provider.provider == "crengine" and type(bookmarks[1].page) == "number") or
-            (provider.provider == "mupdf" and type(bookmarks[1].page) == "string")) then
-                UIManager:show(ConfirmBox:new{
-                    text = T(_("The document '%1' with bookmarks or highlights was previously opened with a different engine. To prevent issues, bookmarks need to be deleted before continuing."),
-                        BD.filepath(file)),
-                    ok_text = _("Delete"),
-                    ok_callback = function()
-                        doc_settings:delSetting("bookmarks")
-                        doc_settings:close()
-                        self:showReaderCoroutine(file, provider)
-                    end,
-                    cancel_callback = function() self:showFileManager() end,
-                })
-        else
-            self:showReaderCoroutine(file, provider)
-        end
+        self:showReaderCoroutine(file, provider)
     end
 end
 
