@@ -556,8 +556,8 @@ function FileManager:init()
 end
 
 function FileChooser:onBack()
-    local back_to_exit = G_reader_settings:readSetting("back_to_exit") or "prompt"
-    local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager") or "default"
+    local back_to_exit = G_reader_settings:readSetting("back_to_exit", "prompt")
+    local back_in_filemanager = G_reader_settings:readSetting("back_in_filemanager", "default")
     if back_in_filemanager == "default" then
         if back_to_exit == "always" then
             return self:onClose()
