@@ -165,7 +165,7 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
                 return "0" .. SECONDS_SYMBOL
             end
         end
-    elseif seconds <= 60 then
+    elseif seconds < 60 then
         if withoutSeconds and seconds < 30 then
             if hmsFormat then
                 -- @translators This is the 'm' for minute, like in 30m30s. This is a duration.
@@ -199,11 +199,15 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
             -- @translators This is the 'm' for minute, like in 1h30m30s. This is a duration.
             time_string = time_string:gsub(":", _("m"), 1)
             -- @translators This is the 's' for second, like in 1h30m30s. This is a duration.
+            time_string = time_string:gsub("00" .. _("h"), "") -- delete leading "00h"
+            time_string = time_string:gsub("^0", "") -- delete leading "0"
             return withoutSeconds and time_string or (time_string .. _("s"))
         else
             -- @translators This is the 'h' for hour, like in 1h30m30s. This is a duration.
             time_string = time_string:gsub(":", _("h"), 1)
             time_string = time_string:gsub(":", "'", 1)
+            time_string = time_string:gsub("00" .. _("h"), "") -- delete leading "00h"
+            time_string = time_string:gsub("^0", "") -- delete leading "0"
             return withoutSeconds and time_string or (time_string .. SECONDS_SYMBOL)
         end
     end

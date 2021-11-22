@@ -589,7 +589,9 @@ describe("util module", function()
                             util.secondsToClockDuration("modern", 36090))
             assert.is_equal("10h01m30s",
                             util.secondsToClockDuration("modern", 36090, false, true))
-            assert.is_equal("10h02",
+            assert.is_equal("10h02m",
+                            util.secondsToClockDuration("modern", 36090, true, true))
+            assert.is_equal("10h02'",
                             util.secondsToClockDuration("modern", 36090, true, false))
             assert.is_equal("10:01:30",
                             util.secondsToClockDuration("classic", 36090, false, true))
