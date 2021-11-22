@@ -19,7 +19,6 @@ local UIManager = require("ui/uimanager")
 local dbg = require("dbg")
 local logger = require("logger")
 local optionsutil = require("ui/data/optionsutil")
-local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 local T = require("ffi/util").template
