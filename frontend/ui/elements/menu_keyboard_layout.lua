@@ -8,18 +8,21 @@ local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VirtualKeyboard = require("ui/widget/virtualkeyboard")
+local Screen = Device.screen
 local dbg = require("dbg")
+local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
-local Screen = Device.screen
 
 local input_dialog, check_button_bold, check_button_border, check_button_compact
 
 local function getActivatedKeyboards(compact)
     local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
     local activated_keyboards = {}
+    local nb_keyboards = 0
     for lang, dummy in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
         if util.arrayContains(keyboard_layouts, lang) then
+            nb_keyboards = nb_keyboards + 1
             if compact then
                 table.insert(activated_keyboards, lang)
             else
@@ -27,15 +30,23 @@ local function getActivatedKeyboards(compact)
             end
         end
     end
-    return table.concat(activated_keyboards, ", ")
+    if nb_keyboards == 0 then
+        logger.dbg("menu_keyboard_layout: use default keyboard")
+        if compact then
+            return VirtualKeyboard:getKeyboardLayout(), 1
+        else
+            return Language:getLanguageName(VirtualKeyboard:getKeyboardLayout()), 1
+        end
+    end
+    return table.concat(activated_keyboards, ", "), nb_keyboards
 end
 
 local sub_item_table = {
     {
         text_func = function()
-            local activated_keyboards = getActivatedKeyboards()
+            local activated_keyboards, nb_keyboards = getActivatedKeyboards()
             if activated_keyboards ~= "" then
-                local item_text = string.format(_("Keyboard layout: %s"), activated_keyboards)
+                local item_text = string.format(_("Keyboard layouts: %s"), activated_keyboards)
 
                 -- get width of text
                 local tmp = TextWidget:new{
@@ -48,12 +59,13 @@ local sub_item_table = {
                     checked = true,
                 }
                 if item_text_w >= Screen:getWidth()- 2*Size.padding.default - checked_widget:getSize().w then
-                    item_text = string.format(_("Keyboard layout: %s"), _("many"))
+                    item_text = string.format(_("Keyboard layouts: %d"), nb_keyboards)
                 end
 
                 return item_text
             else
-                return _("Keyboard layout")
+                logger.dbg("menu_keyboard_layout: empty keyboard list")
+                return _("Keyboard layouts")
             end
         end,
         sub_item_table = {},

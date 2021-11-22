@@ -63,7 +63,7 @@ function KeyboardLayoutDialog:init()
     local buttons = {}
     local radio_buttons = {}
 
-    local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
+    local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
     self.keyboard_state.force_current_layout = true
     for k, _ in FFIUtil.orderedPairs(self.parent.keyboard.lang_to_keyboard_layout) do
         local text = Language:getLanguageName(k) .. "  (" .. string.sub(k, 1, 2) .. ")"
