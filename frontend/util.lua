@@ -165,7 +165,7 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
                 return "0" .. SECONDS_SYMBOL
             end
         end
-    elseif seconds < 60 then
+    elseif seconds <= 60 then
         if withoutSeconds and seconds < 30 then
             if hmsFormat then
                 -- @translators This is the 'm' for minute, like in 30m30s. This is a duration.
