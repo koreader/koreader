@@ -45,28 +45,23 @@ local sub_item_table = {
     {
         text_func = function()
             local activated_keyboards, nb_keyboards = getActivatedKeyboards()
-            if activated_keyboards ~= "" then
-                local item_text = string.format(_("Keyboard layouts: %s"), activated_keyboards)
+            local item_text = string.format(_("Keyboard layouts: %s"), activated_keyboards)
 
-                -- get width of text
-                local tmp = TextWidget:new{
-                    text = item_text,
-                    face = Font:getFace("cfont"),
-                }
-                local item_text_w = tmp:getSize().w
-                tmp:free()
-                local checked_widget = CheckMark:new{ -- for layout, to :getSize()
-                    checked = true,
-                }
-                if item_text_w >= Screen:getWidth()- 2*Size.padding.default - checked_widget:getSize().w then
-                    item_text = string.format(_("Keyboard layouts: %d"), nb_keyboards)
-                end
-
-                return item_text
-            else
-                logger.dbg("menu_keyboard_layout: empty keyboard list")
-                return _("Keyboard layouts")
+            -- get width of text
+            local tmp = TextWidget:new{
+                text = item_text,
+                face = Font:getFace("cfont"),
+            }
+            local item_text_w = tmp:getSize().w
+            tmp:free()
+            local checked_widget = CheckMark:new{ -- for layout, to :getSize()
+                checked = true,
+            }
+            if item_text_w >= Screen:getWidth()- 2*Size.padding.default - checked_widget:getSize().w then
+                item_text = string.format(_("Keyboard layouts: %d"), nb_keyboards)
             end
+
+            return item_text
         end,
         sub_item_table = {},
     },
