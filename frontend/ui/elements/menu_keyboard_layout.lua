@@ -19,10 +19,8 @@ local input_dialog, check_button_bold, check_button_border, check_button_compact
 local function getActivatedKeyboards(compact)
     local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
     local activated_keyboards = {}
-    local nb_keyboards = 0
     for lang, dummy in FFIUtil.orderedPairs(VirtualKeyboard.lang_to_keyboard_layout) do
         if util.arrayContains(keyboard_layouts, lang) then
-            nb_keyboards = nb_keyboards + 1
             if compact then
                 table.insert(activated_keyboards, lang)
             else
@@ -30,7 +28,7 @@ local function getActivatedKeyboards(compact)
             end
         end
     end
-    if nb_keyboards == 0 then
+    if #activated_keyboards == 0 then
         logger.dbg("menu_keyboard_layout: use default keyboard")
         if compact then
             return VirtualKeyboard:getKeyboardLayout(), 1
@@ -38,7 +36,7 @@ local function getActivatedKeyboards(compact)
             return Language:getLanguageName(VirtualKeyboard:getKeyboardLayout()), 1
         end
     end
-    return table.concat(activated_keyboards, ", "), nb_keyboards
+    return table.concat(activated_keyboards, ", "), #activated_keyboards
 end
 
 local sub_item_table = {
