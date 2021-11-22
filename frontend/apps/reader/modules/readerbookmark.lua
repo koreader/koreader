@@ -866,7 +866,7 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
         title = _("Edit note"),
         description = "   " .. T(_("Page: %1"), bookmark.mandatory) .. "     " .. T(_("Time: %1"), bookmark.datetime),
         input = self:isHighlightAutoText(bookmark) and "" or bookmark.text_orig,
-        input_hint = self:getBookmarkAutoText(bookmark),
+        input_hint = self:getBookmarkAutoText(bookmark, true),
         allow_newline = true,
         cursor_at_end = true,
         add_scroll_buttons = true,
