@@ -193,9 +193,6 @@ export EXT_FONT_DIR="/usr/java/lib/fonts;/mnt/us/fonts;/var/local/font/mnt;/mnt/
 # Only setup IPTables on devices where it makes sense to do so (FW 5.x & K4)
 if [ "${INIT_TYPE}" = "upstart" ] || [ "$(uname -r)" = "2.6.31-rt11-lab126" ]; then
     logmsg "Setting up IPTables rules . . ."
-    # accept input ports for zsync plugin
-    iptables -A INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
-    iptables -A INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
     # accept input ports for calibre companion
     iptables -A INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
 fi
@@ -411,8 +408,6 @@ if [ "${INIT_TYPE}" = "upstart" ] || [ "$(uname -r)" = "2.6.31-rt11-lab126" ]; t
     logmsg "Restoring IPTables rules . . ."
     # restore firewall rules
     iptables -D INPUT -i wlan0 -p udp --dport 8134 -j ACCEPT
-    iptables -D INPUT -i wlan0 -p udp --dport 5670 -j ACCEPT
-    iptables -D INPUT -i wlan0 -p tcp --dport 49152:49162 -j ACCEPT
 fi
 
 if [ "${PASSCODE_DISABLED}" = "yes" ]; then
