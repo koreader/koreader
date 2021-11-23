@@ -40,7 +40,7 @@ table.insert(page_turns_tap_zones_sub_items, {
         local size = math.floor(G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", DTAP_ZONE_FORWARD.w) * 100)
         UIManager:show(require("ui/widget/spinwidget"):new{
             title_text = is_left_right and _("Forward tap zone width") or _("Forward tap zone height"),
-            info_text = is_left_right and _("In percentage of screen width") or _("In percentage of screen height"),
+            info_text = is_left_right and _("Percentage of screen width") or _("Percentage of screen height"),
             value = size,
             value_min = 0,
             value_max = 100,
