@@ -792,7 +792,7 @@ function ReaderView:onReadSettings(config)
     self.highlight.saved = config:readSetting("highlight", {})
     -- Highlight formats in crengine and mupdf are incompatible.
     -- Backup highlights when the document is opened with incompatible engine.
-    local _page, page_highlights = next(self.highlight.saved)
+    local _, page_highlights = next(self.highlight.saved)
     if page_highlights then
         local highlight_type = type(page_highlights[1].pos0)
         if self.ui.rolling and highlight_type == "table" then
@@ -1007,13 +1007,17 @@ function ReaderView:isOverlapAllowed()
     end
 end
 
+function ReaderView:setupTouchZones()
+    if self.ui.rolling then
+        self.ui.rolling:setupTouchZones()
+    else
+        self.ui.paging:setupTouchZones()
+    end
+end
+
 function ReaderView:onToggleReadingOrder()
     self.inverse_reading_order = not self.inverse_reading_order
-    if self.ui.document.info.has_pages then
-        self.ui.paging:setupTouchZones()
-    else
-        self.ui.rolling:setupTouchZones()
-    end
+    self:setupTouchZones()
     local is_rtl = self.inverse_reading_order ~= BD.mirroredUILayout() -- mirrored reading
     UIManager:show(Notification:new{
         text = is_rtl and _("RTL page turning.") or _("LTR page turning."),
@@ -1022,14 +1026,40 @@ function ReaderView:onToggleReadingOrder()
 end
 
 function ReaderView:getTapZones()
-    local forward_zone = {
-        ratio_x = DTAP_ZONE_FORWARD.x, ratio_y = DTAP_ZONE_FORWARD.y,
-        ratio_w = DTAP_ZONE_FORWARD.w, ratio_h = DTAP_ZONE_FORWARD.h,
-    }
-    local backward_zone = {
-        ratio_x = DTAP_ZONE_BACKWARD.x, ratio_y = DTAP_ZONE_BACKWARD.y,
-        ratio_w = DTAP_ZONE_BACKWARD.w, ratio_h = DTAP_ZONE_BACKWARD.h,
-    }
+    local forward_zone, backward_zone
+    local tap_zones_type = G_reader_settings:readSetting("page_turns_tap_zones", "default")
+    if tap_zones_type == "default" then
+        forward_zone = {
+            ratio_x = DTAP_ZONE_FORWARD.x, ratio_y = DTAP_ZONE_FORWARD.y,
+            ratio_w = DTAP_ZONE_FORWARD.w, ratio_h = DTAP_ZONE_FORWARD.h,
+        }
+        backward_zone = {
+            ratio_x = DTAP_ZONE_BACKWARD.x, ratio_y = DTAP_ZONE_BACKWARD.y,
+            ratio_w = DTAP_ZONE_BACKWARD.w, ratio_h = DTAP_ZONE_BACKWARD.h,
+        }
+    else -- user defined page turns tap zones
+        local tap_zone_forward_w = G_reader_settings:readSetting("page_turns_tap_zone_forward_size", DTAP_ZONE_FORWARD.w)
+        local tap_zone_backward_w = 1 - tap_zone_forward_w
+        if tap_zones_type == "left_right" then
+            forward_zone = {
+                ratio_x = tap_zone_backward_w, ratio_y = 0,
+                ratio_w = tap_zone_forward_w, ratio_h = 1,
+            }
+            backward_zone = {
+                ratio_x = 0, ratio_y = 0,
+                ratio_w = tap_zone_backward_w, ratio_h = 1,
+            }
+        else
+            forward_zone = {
+                ratio_x = 0, ratio_y = tap_zone_backward_w,
+                ratio_w = 1, ratio_h = tap_zone_forward_w,
+            }
+            backward_zone = {
+                ratio_x = 0, ratio_y = 0,
+                ratio_w = 1, ratio_h = tap_zone_backward_w,
+            }
+        end
+    end
     if self.inverse_reading_order ~= BD.mirroredUILayout() then -- mirrored reading
         forward_zone.ratio_x = 1 - forward_zone.ratio_x - forward_zone.ratio_w
         backward_zone.ratio_x = 1 - backward_zone.ratio_x - backward_zone.ratio_w
