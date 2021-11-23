@@ -792,7 +792,7 @@ function ReaderView:onReadSettings(config)
     self.highlight.saved = config:readSetting("highlight", {})
     -- Highlight formats in crengine and mupdf are incompatible.
     -- Backup highlights when the document is opened with incompatible engine.
-    local _, page_highlights = next(self.highlight.saved)
+    local _, page_highlights = next(self.highlight.saved) -- get the first page with highlights
     if page_highlights then
         local highlight_type = type(page_highlights[1].pos0)
         if self.ui.rolling and highlight_type == "table" then
@@ -1038,7 +1038,7 @@ function ReaderView:getTapZones()
             ratio_w = DTAP_ZONE_BACKWARD.w, ratio_h = DTAP_ZONE_BACKWARD.h,
         }
     else -- user defined page turns tap zones
-        local tap_zone_forward_w = G_reader_settings:readSetting("page_turns_tap_zone_forward_size", DTAP_ZONE_FORWARD.w)
+        local tap_zone_forward_w = G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", DTAP_ZONE_FORWARD.w)
         local tap_zone_backward_w = 1 - tap_zone_forward_w
         if tap_zones_type == "left_right" then
             forward_zone = {
