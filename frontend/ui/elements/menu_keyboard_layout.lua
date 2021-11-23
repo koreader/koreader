@@ -17,6 +17,9 @@ local _ = require("gettext")
 
 local input_dialog, check_button_bold, check_button_border, check_button_compact
 
+-- Returns a string with all selected keyboard layouts (comma separated) and
+-- the count of the selectecd layouts.
+-- If compact is set, only the abbreviations and the count are returned.
 local function getActivatedKeyboards(compact)
     local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
     local activated_keyboards = {}
