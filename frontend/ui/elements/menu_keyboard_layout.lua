@@ -9,6 +9,7 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local VirtualKeyboard = require("ui/widget/virtualkeyboard")
 local Screen = Device.screen
+local T = require("ffi/util").template
 local dbg = require("dbg")
 local logger = require("logger")
 local util = require("util")
@@ -56,7 +57,7 @@ local sub_item_table = {
                 checked = true,
             }
             if item_text_w >= Screen:getWidth()- 2*Size.padding.default - checked_widget:getSize().w then
-                item_text = string.format(_("Keyboard layouts: %d"), nb_keyboards)
+                item_text = T(_("Keyboard layouts: (%1)"), nb_keyboards)
             end
 
             return item_text
