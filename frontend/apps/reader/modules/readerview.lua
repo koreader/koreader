@@ -792,16 +792,26 @@ function ReaderView:onReadSettings(config)
     self.highlight.saved = config:readSetting("highlight", {})
     -- Highlight formats in crengine and mupdf are incompatible.
     -- Backup highlights when the document is opened with incompatible engine.
-    if #self.highlight.saved > 0 then
-        if self.ui.rolling and type(self.highlight.saved[1][1].pos0) == "table" then
+    local _page, page_highlights = next(self.highlight.saved)
+    if page_highlights then
+        local highlight_type = type(page_highlights[1].pos0)
+        if self.ui.rolling and highlight_type == "table" then
             config:saveSetting("highlight_paging", self.highlight.saved)
             self.highlight.saved = config:readSetting("highlight_rolling", {})
             config:saveSetting("highlight", self.highlight.saved)
             config:delSetting("highlight_rolling")
-        elseif self.ui.paging and type(self.highlight.saved[1][1].pos0) == "string" then
+        elseif self.ui.paging and highlight_type == "string" then
             config:saveSetting("highlight_rolling", self.highlight.saved)
             self.highlight.saved = config:readSetting("highlight_paging", {})
             config:saveSetting("highlight", self.highlight.saved)
+            config:delSetting("highlight_paging")
+        end
+    else
+        if self.ui.rolling and config:has("highlight_rolling") then
+            self.highlight.saved = config:readSetting("highlight_rolling")
+            config:delSetting("highlight_rolling")
+        elseif self.ui.paging and config:has("highlight_paging") then
+            self.highlight.saved = config:readSetting("highlight_paging")
             config:delSetting("highlight_paging")
         end
     end
