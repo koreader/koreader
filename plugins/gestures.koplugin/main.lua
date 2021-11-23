@@ -297,6 +297,11 @@ function Gestures:genMultiswipeMenu()
     for _, item in ipairs(multiswipe_list) do
         table.insert(sub_item_table, self:genSubItem(item[1], item[2]))
     end
+    -- multiswipe menu: keep the same parent page for going up from submenu
+    for i = 1, #sub_item_table do
+        sub_item_table[i].menu_item_id = i
+    end
+
     return sub_item_table
 end
 
