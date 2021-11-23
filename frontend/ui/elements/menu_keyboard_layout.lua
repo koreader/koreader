@@ -44,7 +44,7 @@ local sub_item_table = {
     {
         text_func = function()
             local activated_keyboards, nb_keyboards = getActivatedKeyboards()
-            local item_text = string.format(_("Keyboard layouts: %s"), activated_keyboards)
+            local item_text = T(_("Keyboard layouts: %1"), activated_keyboards)
 
             -- get width of text
             local tmp = TextWidget:new{
@@ -57,7 +57,7 @@ local sub_item_table = {
                 checked = true,
             }
             if item_text_w >= Screen:getWidth()- 2*Size.padding.default - checked_widget:getSize().w then
-                item_text = T(_("Keyboard layouts: (%1)"), nb_keyboards)
+                item_text = T(_("Keyboard layouts (%1)"), nb_keyboards)
             end
 
             return item_text
