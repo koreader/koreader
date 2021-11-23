@@ -28,6 +28,8 @@ local keyboard_state = {
     force_current_layout = false, -- Set to true to get/set current layout (instead of default layout)
 }
 
+local DEFAULT_LABEL_SIZE = 22
+
 local VirtualKeyPopup
 
 local VirtualKey = InputContainer:new{
@@ -51,7 +53,7 @@ local VirtualKey = InputContainer:new{
 }
 
 function VirtualKey:init()
-    local label_font_size = G_reader_settings:readSetting("keyboard_key_font_size") or 22
+    local label_font_size = G_reader_settings:readSetting("keyboard_key_font_size", DEFAULT_LABEL_SIZE)
     self.face = Font:getFace("infont", label_font_size)
     self.bold = G_reader_settings:isTrue("keyboard_key_bold")
     if self.keyboard.symbolmode_keys[self.label] ~= nil then
@@ -65,7 +67,7 @@ function VirtualKey:init()
         self.callback = function ()
             local current = G_reader_settings:readSetting("keyboard_layout")
             local default = G_reader_settings:readSetting("keyboard_layout_default")
-            local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
+            local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
             local next_layout = nil
             local layout_index = util.arrayContains(keyboard_layouts, current)
             if layout_index then
@@ -284,7 +286,7 @@ function VirtualKey:genKeyboardLayoutKeyChars()
         "northwest",
         "west",
     }
-    local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts") or {}
+    local keyboard_layouts = G_reader_settings:readSetting("keyboard_layouts", {})
     local key_chars = {
         { label = "🌐",
         },
@@ -663,7 +665,7 @@ function VirtualKeyPopup:init()
             }
         },
     }
-    self.tap_interval_override = G_reader_settings:readSetting("ges_tap_interval_on_keyboard") or 0
+    self.tap_interval_override = G_reader_settings:readSetting("ges_tap_interval_on_keyboard", 0)
     self.tap_interval_override = TimeVal:new{ usec = self.tap_interval_override }
 
     if Device:hasDPad() then
@@ -738,6 +740,7 @@ local VirtualKeyboard = FocusManager:new{
     layout = {},
 
     height = nil,
+    default_label_size = DEFAULT_LABEL_SIZE,
     bordersize = Size.border.default,
     padding = 0,
     key_padding = Size.padding.small,
@@ -786,7 +789,7 @@ function VirtualKeyboard:init()
     self.min_layer = keyboard.min_layer
     self.max_layer = keyboard.max_layer
     self:initLayer(self.keyboard_layer)
-    self.tap_interval_override = G_reader_settings:readSetting("ges_tap_interval_on_keyboard") or 0
+    self.tap_interval_override = G_reader_settings:readSetting("ges_tap_interval_on_keyboard", 0)
     self.tap_interval_override = TimeVal:new{ usec = self.tap_interval_override }
     if Device:hasDPad() then
         self.key_events.PressKey = { {"Press"}, doc = "select key" }
@@ -802,7 +805,7 @@ end
 function VirtualKeyboard:getKeyboardLayout()
     if G_reader_settings:isFalse("keyboard_remember_layout") and not keyboard_state.force_current_layout then
         local lang = G_reader_settings:readSetting("keyboard_layout_default")
-            or G_reader_settings:readSetting("keyboard_layout") or "en"
+            or G_reader_settings:readSetting("keyboard_layout", "en")
         G_reader_settings:saveSetting("keyboard_layout", lang)
     end
     return G_reader_settings:readSetting("keyboard_layout") or G_reader_settings:readSetting("language")

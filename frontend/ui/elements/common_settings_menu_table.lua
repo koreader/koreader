@@ -102,6 +102,7 @@ common_settings.time = {
                     end,
                     callback = function()
                         G_reader_settings:saveSetting("duration_format", "classic")
+                        UIManager:broadcastEvent(Event:new("UpdateFooter", true, true))
                     end,
                 },
                 {
@@ -116,6 +117,7 @@ common_settings.time = {
                     end,
                     callback = function()
                         G_reader_settings:saveSetting("duration_format", "modern")
+                        UIManager:broadcastEvent(Event:new("UpdateFooter", true, true))
                     end,
                 },
             }
@@ -566,6 +568,7 @@ common_settings.screenshot = {
         local Screenshoter = require("ui/widget/screenshoter")
         Screenshoter:chooseFolder()
     end,
+    keep_menu_open = true,
 }
 
 return common_settings
