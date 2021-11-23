@@ -243,6 +243,7 @@ function Gestures:genSubItem(ges, separator, hold_callback)
         sub_item_table_func = function() return self:genMenu(ges) end,
         separator = separator,
         hold_callback = hold_callback,
+        menu_item_id = ges,
     }
 end
 
