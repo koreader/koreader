@@ -102,4 +102,24 @@ function Math.tmax(tab, func)
     return tmin_max(tab, func, "max")
 end
 
+--[[--
+Restricts a value within an interval.
+
+@tparam value value
+@tparma min minimum
+@tparam max maximum
+@treturn a value clipped to the intervam [min, max] (borders inclusive)
+]]
+function Math.restrictRange(value, min, max)
+    if min and max and min > max then
+        min, max = max, min
+    end
+    if min and value <= min then
+        return min
+    elseif max and value >= max then
+        return max
+    end
+    return value
+end
+
 return Math
