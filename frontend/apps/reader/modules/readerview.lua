@@ -794,7 +794,7 @@ function ReaderView:onReadSettings(config)
     -- Backup highlights when the document is opened with incompatible engine.
     local page, page_highlights
     while true do -- remove empty tables for pages without highlights and get the first page with highlights
-        page, page_highlights = next(self.highlight.saved, page)
+        page, page_highlights = next(self.highlight.saved)
         if page then
             if #page_highlights == 0 then
                 self.highlight.saved[page] = nil
