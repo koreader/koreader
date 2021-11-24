@@ -72,7 +72,7 @@ local symbol_prefix = {
         -- @translators This is the footer letter prefix for Wi-Fi status.
         wifi_status = C_("FooterLetterPrefix", "W:"),
         -- no prefix for custom text
-        custom_text = C_("FooterLetterPrefix", ""),
+        custom_text = "",
     },
     icons = {
         time = "⌚",
@@ -1400,7 +1400,7 @@ function ReaderFooter:addToMainMenu(menu_items)
                     if self.settings.item_prefix == "icons" then
                         prefix_text = _("Icons")
                     elseif self.settings.item_prefix == "compact_items" then
-                        prefix_text = _("Compact Items")
+                        prefix_text = _("Compact items")
                     elseif self.settings.item_prefix == "letters" then
                         prefix_text = _("Letters")
                     end

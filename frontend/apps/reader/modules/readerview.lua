@@ -2,6 +2,7 @@
 ReaderView module handles all the screen painting for document browsing.
 ]]
 
+local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local Geom = require("ui/geometry")
@@ -788,7 +789,41 @@ function ReaderView:onReadSettings(config)
     self:resetLayout()
     local page_scroll = config:readSetting("kopt_page_scroll") or self.document.configurable.page_scroll
     self.page_scroll = page_scroll == 1 and true or false
-    self.highlight.saved = config:readSetting("highlight") or {}
+    self.highlight.saved = config:readSetting("highlight", {})
+    -- Highlight formats in crengine and mupdf are incompatible.
+    -- Backup highlights when the document is opened with incompatible engine.
+    local page, page_highlights
+    while true do -- remove empty tables for pages without highlights and get the first page with highlights
+        page, page_highlights = next(self.highlight.saved)
+        if not page or #page_highlights > 0 then
+            break -- we're done (there is none, or there is some usable)
+        else
+            self.highlight.saved[page] = nil -- clean it up while we're at it, and find another one
+        end
+    end
+    if page_highlights then
+        local highlight_type = type(page_highlights[1].pos0)
+        if self.ui.rolling and highlight_type == "table" then
+            config:saveSetting("highlight_paging", self.highlight.saved)
+            self.highlight.saved = config:readSetting("highlight_rolling", {})
+            config:saveSetting("highlight", self.highlight.saved)
+            config:delSetting("highlight_rolling")
+        elseif self.ui.paging and highlight_type == "string" then
+            config:saveSetting("highlight_rolling", self.highlight.saved)
+            self.highlight.saved = config:readSetting("highlight_paging", {})
+            config:saveSetting("highlight", self.highlight.saved)
+            config:delSetting("highlight_paging")
+        end
+    else
+        if self.ui.rolling and config:has("highlight_rolling") then
+            self.highlight.saved = config:readSetting("highlight_rolling")
+            config:delSetting("highlight_rolling")
+        elseif self.ui.paging and config:has("highlight_paging") then
+            self.highlight.saved = config:readSetting("highlight_paging")
+            config:delSetting("highlight_paging")
+        end
+    end
+    self.inverse_reading_order = config:isTrue("inverse_reading_order") or G_reader_settings:isTrue("inverse_reading_order")
     self.page_overlap_enable = config:isTrue("show_overlap_enable") or G_reader_settings:isTrue("page_overlap_enable") or DSHOWOVERLAP
     self.page_overlap_style = config:readSetting("page_overlap_style") or G_reader_settings:readSetting("page_overlap_style") or "dim"
     self.page_gap.height = Screen:scaleBySize(config:readSetting("kopt_page_gap_height")
@@ -904,6 +939,7 @@ function ReaderView:onSaveSettings()
     end
     self.ui.doc_settings:saveSetting("gamma", self.state.gamma)
     self.ui.doc_settings:saveSetting("highlight", self.highlight.saved)
+    self.ui.doc_settings:saveSetting("inverse_reading_order", self.inverse_reading_order)
     self.ui.doc_settings:saveSetting("show_overlap_enable", self.page_overlap_enable)
     self.ui.doc_settings:saveSetting("page_overlap_style", self.page_overlap_style)
 end
@@ -977,6 +1013,66 @@ function ReaderView:isOverlapAllowed()
     else
         return self.view_mode ~= "page"
     end
+end
+
+function ReaderView:setupTouchZones()
+    if self.ui.rolling then
+        self.ui.rolling:setupTouchZones()
+    else
+        self.ui.paging:setupTouchZones()
+    end
+end
+
+function ReaderView:onToggleReadingOrder()
+    self.inverse_reading_order = not self.inverse_reading_order
+    self:setupTouchZones()
+    local is_rtl = self.inverse_reading_order ~= BD.mirroredUILayout() -- mirrored reading
+    UIManager:show(Notification:new{
+        text = is_rtl and _("RTL page turning.") or _("LTR page turning."),
+    })
+    return true
+end
+
+function ReaderView:getTapZones()
+    local forward_zone, backward_zone
+    local tap_zones_type = G_reader_settings:readSetting("page_turns_tap_zones", "default")
+    if tap_zones_type == "default" then
+        forward_zone = {
+            ratio_x = DTAP_ZONE_FORWARD.x, ratio_y = DTAP_ZONE_FORWARD.y,
+            ratio_w = DTAP_ZONE_FORWARD.w, ratio_h = DTAP_ZONE_FORWARD.h,
+        }
+        backward_zone = {
+            ratio_x = DTAP_ZONE_BACKWARD.x, ratio_y = DTAP_ZONE_BACKWARD.y,
+            ratio_w = DTAP_ZONE_BACKWARD.w, ratio_h = DTAP_ZONE_BACKWARD.h,
+        }
+    else -- user defined page turns tap zones
+        local tap_zone_forward_w = G_reader_settings:readSetting("page_turns_tap_zone_forward_size_ratio", DTAP_ZONE_FORWARD.w)
+        local tap_zone_backward_w = 1 - tap_zone_forward_w
+        if tap_zones_type == "left_right" then
+            forward_zone = {
+                ratio_x = tap_zone_backward_w, ratio_y = 0,
+                ratio_w = tap_zone_forward_w, ratio_h = 1,
+            }
+            backward_zone = {
+                ratio_x = 0, ratio_y = 0,
+                ratio_w = tap_zone_backward_w, ratio_h = 1,
+            }
+        else
+            forward_zone = {
+                ratio_x = 0, ratio_y = tap_zone_backward_w,
+                ratio_w = 1, ratio_h = tap_zone_forward_w,
+            }
+            backward_zone = {
+                ratio_x = 0, ratio_y = 0,
+                ratio_w = 1, ratio_h = tap_zone_backward_w,
+            }
+        end
+    end
+    if self.inverse_reading_order ~= BD.mirroredUILayout() then -- mirrored reading
+        forward_zone.ratio_x = 1 - forward_zone.ratio_x - forward_zone.ratio_w
+        backward_zone.ratio_x = 1 - backward_zone.ratio_x - backward_zone.ratio_w
+    end
+    return forward_zone, backward_zone
 end
 
 return ReaderView

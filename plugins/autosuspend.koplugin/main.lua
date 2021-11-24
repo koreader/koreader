@@ -15,6 +15,7 @@ local TimeVal = require("ui/timeval")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -171,8 +172,17 @@ end
 function AutoSuspend:addToMainMenu(menu_items)
     menu_items.autosuspend = {
         sorting_hint = "device",
-        text = _("Autosuspend timeout"),
-        callback = function()
+        text_func = function()
+            if self.auto_suspend_timeout_seconds  then
+                local duration_format = G_reader_settings:readSetting("duration_format", "classic")
+                return T(_("Autosuspend timeout: %1"),
+                    util.secondsToClockDuration(duration_format, self.auto_suspend_timeout_seconds, true))
+            else
+                return _("Autosuspend timeout")
+            end
+        end,
+        keep_menu_open = true,
+        callback = function(touchmenu_instance)
             local InfoMessage = require("ui/widget/infomessage")
             local SpinWidget = require("ui/widget/spinwidget")
             local autosuspend_spin = SpinWidget:new {
@@ -192,6 +202,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                     })
                     self:_unschedule()
                     self:_start()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
                 end
             }
             UIManager:show(autosuspend_spin)
@@ -200,8 +211,17 @@ function AutoSuspend:addToMainMenu(menu_items)
     if not (Device:canPowerOff() or Device:isEmulator()) then return end
     menu_items.autoshutdown = {
         sorting_hint = "device",
-        text = _("Autoshutdown timeout"),
-        callback = function()
+        text_func = function()
+            if self.autoshutdown_timeout_seconds  then
+                local duration_format = G_reader_settings:readSetting("duration_format", "classic")
+                return T(_("Autoshutdown timeout: %1"),
+                    util.secondsToClockDuration(duration_format, self.autoshutdown_timeout_seconds, true))
+            else
+                return _("Autoshutdown timeout")
+            end
+        end,
+        keep_menu_open = true,
+        callback = function(touchmenu_instance)
             local InfoMessage = require("ui/widget/infomessage")
             local SpinWidget = require("ui/widget/spinwidget")
             local autosuspend_spin = SpinWidget:new {
@@ -226,6 +246,7 @@ function AutoSuspend:addToMainMenu(menu_items)
                     })
                     self:_unschedule()
                     self:_start()
+                    if touchmenu_instance then touchmenu_instance:updateItems() end
                 end
             }
             UIManager:show(autosuspend_spin)

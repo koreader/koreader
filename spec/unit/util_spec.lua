@@ -520,15 +520,15 @@ describe("util module", function()
                             util.secondsToHClock(110, true))
             assert.is_equal("2'",
                             util.secondsToHClock(120, true))
-            assert.is_equal("1h00",
+            assert.is_equal("1h00'",
                             util.secondsToHClock(3600, true))
-            assert.is_equal("1h00",
+            assert.is_equal("1h00'",
                             util.secondsToHClock(3599, true))
-            assert.is_equal("1h00",
+            assert.is_equal("1h00'",
                             util.secondsToHClock(3570, true))
             assert.is_equal("59'",
                             util.secondsToHClock(3569, true))
-            assert.is_equal("10h01",
+            assert.is_equal("10h01'",
                             util.secondsToHClock(36060, true))
         end)
         it("should round seconds to minutes in 0h00m format", function()
@@ -538,27 +538,27 @@ describe("util module", function()
                 util.secondsToHClock(90, true, true))
             assert.is_equal("2m",
                 util.secondsToHClock(110, true, true))
-            assert.is_equal("1h00",
+            assert.is_equal("1h00m",
                 util.secondsToHClock(3600, true, true))
-            assert.is_equal("1h00",
+            assert.is_equal("1h00m",
                 util.secondsToHClock(3599, true, true))
             assert.is_equal("59m",
                 util.secondsToHClock(3569, true, true))
-            assert.is_equal("10h01",
+            assert.is_equal("10h01m",
                 util.secondsToHClock(36060, true, true))
         end)
         it("should convert seconds to 0h00'00'' format", function()
-            assert.is_equal("0''",
+            assert.is_equal("0\"",
                             util.secondsToHClock(0))
-            assert.is_equal("1'00''",
+            assert.is_equal("1'00\"",
                             util.secondsToHClock(60))
-            assert.is_equal("1'29''",
+            assert.is_equal("1'29\"",
                             util.secondsToHClock(89))
-            assert.is_equal("1'30''",
+            assert.is_equal("1'30\"",
                             util.secondsToHClock(90))
-            assert.is_equal("1'50''",
+            assert.is_equal("1'50\"",
                             util.secondsToHClock(110))
-            assert.is_equal("2'00''",
+            assert.is_equal("2'00\"",
                             util.secondsToHClock(120))
         end)
     end)
@@ -577,7 +577,7 @@ describe("util module", function()
         it("should pass along withoutSeconds", function()
             assert.is_equal("10h01m30s",
                             util.secondsToClockDuration("modern", 36090, false, true))
-            assert.is_equal("10h02",
+            assert.is_equal("10h02m",
                             util.secondsToClockDuration("modern", 36090, true, true))
             assert.is_equal("10:01:30",
                             util.secondsToClockDuration("classic", 36090, false))
@@ -585,11 +585,13 @@ describe("util module", function()
                             util.secondsToClockDuration("classic", 36090, true))
         end)
         it("should pass along hmsFormat for modern format", function()
-            assert.is_equal("10h01'30''",
+            assert.is_equal("10h01'30\"",
                             util.secondsToClockDuration("modern", 36090))
             assert.is_equal("10h01m30s",
                             util.secondsToClockDuration("modern", 36090, false, true))
-            assert.is_equal("10h02",
+            assert.is_equal("10h02m",
+                            util.secondsToClockDuration("modern", 36090, true, true))
+            assert.is_equal("10h02'",
                             util.secondsToClockDuration("modern", 36090, true, false))
             assert.is_equal("10:01:30",
                             util.secondsToClockDuration("classic", 36090, false, true))
