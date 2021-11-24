@@ -182,13 +182,6 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, setting,
     local max_time_h = 21*24
     local max_time = max_time_h * 3600
     local duration_format = G_reader_settings:readSetting("duration_format", "classic")
-    local function show_info_message()
-        UIManager:show(InfoMessage:new{
-            text = T(_("%1: %2"), title,
-                util.secondsToClockDuration(duration_format, self[setting], true)),
-            timeout = 3,
-        })
-    end
     UIManager:show(DateTimeWidget:new {
         is_date = false,
         hour = math.floor(self[setting] / 3600),
@@ -210,15 +203,20 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, setting,
             self:_unschedule()
             self:_start()
             if touchmenu_instance then touchmenu_instance:updateItems() end
-            show_info_message()
+            UIManager:show(InfoMessage:new{
+                text = T(_("%1: %2"), title,
+                    util.secondsToClockDuration(duration_format, self[setting], true)),
+                timeout = 3,
+            })
         end,
-        extra_text = T(_("Set to default: %1"),util.secondsToClockDuration(duration_format, default_value, true)),
-        extra_callback = function()
-            self[setting] = default_value
-            G_reader_settings:saveSetting(setting, default_value)
-            if touchmenu_instance then touchmenu_instance:updateItems() end
-            show_info_message()
+        extra_text = T(_("Default value: %1"),util.secondsToClockDuration(duration_format, default_value, true)),
+        extra_callback = function(year, month, day, year_widget, hour_widget, min_widget)
+            hour_widget.value = math.floor(default_value / 3600)
+            hour_widget:update()
+            min_widget.value = math.floor(default_value / 60) % 60
+            min_widget:update()
         end,
+        keep_shown_on_apply = true,
     })
 end
 

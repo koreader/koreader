@@ -174,13 +174,13 @@ function DateTimeWidget:update()
         }
     }
     if self.extra_text then
-        table.insert(buttons,{
+        table.insert(buttons, 1, {
             {
                 text = self.extra_text,
                 callback = function()
                     if self.extra_callback then
                         self.extra_callback(year_widget:getValue(), month_hour_widget:getValue(),
-                            day_min_widget:getValue())
+                            day_min_widget:getValue(), year_widget, month_hour_widget, day_min_widget)
                     end
                     if not self.keep_shown_on_apply then -- assume extra wants it same as ok
                         self:onClose()
