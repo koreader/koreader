@@ -795,14 +795,10 @@ function ReaderView:onReadSettings(config)
     local page, page_highlights
     while true do -- remove empty tables for pages without highlights and get the first page with highlights
         page, page_highlights = next(self.highlight.saved)
-        if page then
-            if #page_highlights == 0 then
-                self.highlight.saved[page] = nil
-            else
-                break
-            end
+        if not page or #page_highlights > 0 then
+            break -- we're done (there is none, or there is some usable)
         else
-            break
+            self.highlight.saved[page] = nil -- clean it up while we're at it, and find another one
         end
     end
     if page_highlights then
