@@ -169,6 +169,7 @@ local InputDialog = InputContainer:new{
 
     text_width = nil,
     text_height = nil,
+    text_height_from_hint = false, -- set to true to measure input box height based on the hint string
 
     title_face = Font:getFace("x_smalltfont"),
     description_face = Font:getFace("x_smallinfofont"),
@@ -317,7 +318,8 @@ function InputDialog:init()
         -- We need to find the best height to avoid screen overflow
         -- Create a dummy input widget to get some metrics
         local input_widget = InputText:new{
-            text = self.fullscreen and "-" or self.input,
+            text = self.fullscreen and "-"
+                or (self.text_height_from_hint and self.input_hint or self.input),
             input_type = self.input_type,
             face = self.input_face,
             width = self.text_width,
