@@ -792,7 +792,15 @@ function ReaderView:onReadSettings(config)
     self.highlight.saved = config:readSetting("highlight", {})
     -- Highlight formats in crengine and mupdf are incompatible.
     -- Backup highlights when the document is opened with incompatible engine.
-    local _, page_highlights = next(self.highlight.saved) -- get the first page with highlights
+    local page, page_highlights
+    while true do -- remove empty tables for pages without highlights and get the first page with highlights
+        page, page_highlights = next(self.highlight.saved)
+        if not page or #page_highlights > 0 then
+            break -- we're done (there is none, or there is some usable)
+        else
+            self.highlight.saved[page] = nil -- clean it up while we're at it, and find another one
+        end
+    end
     if page_highlights then
         local highlight_type = type(page_highlights[1].pos0)
         if self.ui.rolling and highlight_type == "table" then
