@@ -205,7 +205,6 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
             if is_day_hour then
                 time_string = time_string:gsub("00m","")
             end
-            print("xxx", Math.minmax(1, 12,2))
             UIManager:show(InfoMessage:new{
                 text = T(_("%1: %2"), title, time_string),
                 timeout = 3,
