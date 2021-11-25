@@ -127,10 +127,10 @@ function util.secondsToClock(seconds, withoutSeconds, includeDays)
         end
     else
         local round = withoutSeconds and require("optmath").round or passthrough
-        local days = "00"
+        local days = "0"
         local hours
         if includeDays then
-            days = string.format("%02d", seconds / (24*3600)) -- implicit math.floor for string.format
+            days = string.format("%d", seconds / (24*3600)) -- implicit math.floor for string.format
             hours = string.format("%02d", (seconds / 3600) % 24)
         else
             hours = string.format("%02d", seconds / 3600)
@@ -142,10 +142,10 @@ function util.secondsToClock(seconds, withoutSeconds, includeDays)
                 mins = string.format("%02d", 0)
                 hours = string.format("%02d", hours + 1)
             end
-            return  (days ~= "00" and (days .."d") or "") .. hours .. ":" .. mins
+            return  (days ~= "0" and (days .."d") or "") .. hours .. ":" .. mins
         else
             local secs = string.format("%02d", seconds % 60)
-            return (days ~= "00" and (days .. "d") or "") .. hours .. ":" .. mins .. ":" .. secs
+            return (days ~= "0" and (days .. "d") or "") .. hours .. ":" .. mins .. ":" .. secs
         end
     end
 end
@@ -154,8 +154,9 @@ end
 ---- @int seconds number of seconds
 ---- @bool withoutSeconds if true 1h30', if false 1h30'10''
 ---- @bool hmsFormat, if true format 1h30m10s
+---- @bool includeDays, if true format 1d12h30m10s
 ---- @treturn string clock string in the form of 1h30'10'' or 1h30m10s
-function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
+function util.secondsToHClock(seconds, withoutSeconds, hmsFormat, includeDays)
     local SECONDS_SYMBOL = "\""
     seconds = tonumber(seconds)
     if seconds == 0 then
@@ -196,7 +197,7 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
             end
         end
     else
-        local time_string = util.secondsToClock(seconds, withoutSeconds, true)
+        local time_string = util.secondsToClock(seconds, withoutSeconds, includeDays)
         if withoutSeconds then
             time_string = time_string .. ":"
         end
@@ -225,13 +226,14 @@ end
 ---- @string Either "modern" for 1h30'10" or "classic" for 1:30:10
 ---- @bool withoutSeconds if true 1h30' or 1h30m, if false 1h30'10" or 1h30m10s
 ---- @bool hmsFormat, modern format only, if true format 1h30m or 1h30m10s
+---- @bool includeDays, if hours>=4 include days in clock string 1d12h10m10s
 ---- @treturn string clock string in the specific format of 1h30', 1h30'10" resp. 1h30m, 1h30m10s
-function util.secondsToClockDuration(format, seconds, withoutSeconds, hmsFormat)
+function util.secondsToClockDuration(format, seconds, withoutSeconds, hmsFormat, includeDays)
     if format == "modern" then
-        return util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
+        return util.secondsToHClock(seconds, withoutSeconds, hmsFormat, includeDays)
     else
         -- Assume "classic" to give safe default
-        return util.secondsToClock(seconds, withoutSeconds)
+        return util.secondsToClock(seconds, withoutSeconds, includeDays)
     end
 end
 

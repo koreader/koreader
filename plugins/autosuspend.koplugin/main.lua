@@ -202,7 +202,7 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
             self:_unschedule()
             self:_start()
             if touchmenu_instance then touchmenu_instance:updateItems() end
-            local time_string = util.secondsToClockDuration("modern", self[setting], true, true)
+            local time_string = util.secondsToClockDuration("modern", self[setting], true, true, true)
             if is_day_hour then
                 time_string = time_string:gsub("00m","")
             end
@@ -212,7 +212,7 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
             })
         end,
         extra_text = T(_("Default value: %1"),
-            util.secondsToClockDuration("modern", default_value, true, true):gsub("00m$","")),
+            util.secondsToClockDuration("modern", default_value, true, true, true):gsub("00m$","")),
         extra_callback = function()
             local hour = is_day_hour and math.floor(default_value / (24*3600))
                 or math.floor(default_value / 3600)
@@ -234,7 +234,7 @@ function AutoSuspend:addToMainMenu(menu_items)
         text_func = function()
             if self.auto_suspend_timeout_seconds then
                 local time_string = util.secondsToClockDuration("modern",
-                    self.auto_suspend_timeout_seconds, true, true):gsub("00m$","")
+                    self.auto_suspend_timeout_seconds, true, true, true):gsub("00m$","")
                 return T(_("Autosuspend timeout: %1"), time_string)
             else
                 return _("Autosuspend timeout")
@@ -255,7 +255,7 @@ function AutoSuspend:addToMainMenu(menu_items)
         text_func = function()
             if self.autoshutdown_timeout_seconds  then
                 local time_string = util.secondsToClockDuration("modern",
-                    self.autoshutdown_timeout_seconds, true, true):gsub("00m$","")
+                    self.autoshutdown_timeout_seconds, true, true, true):gsub("00m$","")
                 return T(_("Autoshutdown timeout: %1"), time_string)
             else
                 return _("Autoshutdown timeout")
