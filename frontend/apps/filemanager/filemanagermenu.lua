@@ -630,9 +630,9 @@ To:
     end
     if Device:isAndroid() then
         table.insert(self.menu_items.developer_options.sub_item_table, {
-            text = _("Start E-ink test"),
+            text = _("Start compatibility test"),
             callback = function()
-                Device:epdTest()
+                Device:test()
             end,
         })
     end
