@@ -111,7 +111,7 @@ Source: <a href="https://gist.github.com/jesseadams/791673">https://gist.github.
 ---- @int seconds number of seconds
 ---- @bool withoutSeconds if true 00:00, if false 00:00:00
 ---- @treturn string clock string in the form of 00:00 or 00:00:00
-function util.secondsToClock(seconds, withoutSeconds)
+function util.secondsToClock(seconds, withoutSeconds, includeDays)
     seconds = tonumber(seconds)
     if not seconds then
         if withoutSeconds then
@@ -127,8 +127,14 @@ function util.secondsToClock(seconds, withoutSeconds)
         end
     else
         local round = withoutSeconds and require("optmath").round or passthrough
-        local days = string.format("%02d", seconds / (24*3600)) --implicit math.floor for string.format
-        local hours = string.format("%02d", (seconds / 3600) % 24)
+        local days = "00"
+        local hours
+        if includeDays then
+            days = string.format("%02d", seconds / (24*3600)) -- implicit math.floor for string.format
+            hours = string.format("%02d", (seconds / 3600) % 24)
+        else
+            hours = string.format("%02d", seconds / 3600)
+        end
         local mins = string.format("%02d", round(seconds % 3600 / 60))
         if withoutSeconds then
             if mins == "60" then
@@ -190,7 +196,7 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
             end
         end
     else
-        local time_string = util.secondsToClock(seconds, withoutSeconds)
+        local time_string = util.secondsToClock(seconds, withoutSeconds, true)
         if withoutSeconds then
             time_string = time_string .. ":"
         end

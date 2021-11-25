@@ -232,9 +232,10 @@ function AutoSuspend:addToMainMenu(menu_items)
     menu_items.autosuspend = {
         sorting_hint = "device",
         text_func = function()
-            if self.auto_suspend_timeout_seconds  then
-                return T(_("Autosuspend timeout: %1"),
-                    util.secondsToClockDuration("modern", self.auto_suspend_timeout_seconds, true, true))
+            if self.auto_suspend_timeout_seconds then
+                local time_string = util.secondsToClockDuration("modern",
+                    self.auto_suspend_timeout_seconds, true, true):gsub("00m$","")
+                return T(_("Autosuspend timeout: %1"), time_string)
             else
                 return _("Autosuspend timeout")
             end
@@ -243,7 +244,7 @@ function AutoSuspend:addToMainMenu(menu_items)
         callback = function(touchmenu_instance)
              -- 60 sec (1') is the minimum and 24*3600 sec (1day) is the maximum suspend time.
             self:setSuspendShutdownTimes(touchmenu_instance,
-                _("Timeout for autosuspend"), _("Enter Time in hours and minutes."),
+                _("Timeout for autosuspend"), _("Enter time in hours and minutes."),
                 "auto_suspend_timeout_seconds", default_auto_suspend_timeout_seconds,
                 {60, 24*3600}, false)
         end,
