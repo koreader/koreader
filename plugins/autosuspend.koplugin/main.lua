@@ -17,6 +17,7 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
+local Math = require("optmath")
 local T = require("ffi/util").template
 
 local default_autoshutdown_timeout_seconds = 3*24*60*60 -- three days
@@ -171,49 +172,52 @@ function AutoSuspend:onPreventStandby()
     self.standby_prevented = true
 end
 
-function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, setting, default_value)
+function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, setting,
+        default_value, min_max, is_day_hour)
+    -- Attention if is_day_hour then time.hour stands for days and time.min for hours
+
     local InfoMessage = require("ui/widget/infomessage")
     local DateTimeWidget = require("ui/widget/datetimewidget")
-    -- About a minute, good for testing and battery life fanatics.
-    -- Just high enough to avoid an instant shutdown death scenario.
-    local min_time = 60
-    -- More than three weeks seems a bit excessive if you want to enable authoshutdown/suspend,
-    -- even if the battery can last up to three months.
-    local max_time_h = 21*24
-    local max_time = max_time_h * 3600
-    local duration_format = G_reader_settings:readSetting("duration_format", "classic")
+    local left_val = is_day_hour and math.floor(self[setting] / (24*3600))
+        or math.floor(self[setting] / 3600)
+    local right_val = is_day_hour and math.floor(self[setting] / 3600) % 24
+        or math.floor((self[setting] / 60) % 60)
     UIManager:show(DateTimeWidget:new {
         is_date = false,
-        hour = math.floor(self[setting] / 3600),
-        min = math.floor((self[setting] / 60) % 60),
-        hour_hold_step = 24,
+        hour = left_val,
+        min = right_val,
+        hour_hold_step = 5,
         min_hold_step = 10,
-        hour_max = max_time_h,
+        hour_max = is_day_hour and math.floor(min_max[2] / (24*3600)) or math.floor(min_max[2] / 3600),
+        min_max = is_day_hour and 23 or 59,
         ok_text = _("Set timeout"),
         title_text = title,
-        info_text = _("Set time in hours and minutes."),
+        info_text = info,
         callback = function(time)
-            self[setting] = math.floor((time.hour * 60 + time.min) * 60)
-            if self[setting] < min_time then
-                self[setting] = min_time
-            elseif self[setting] > max_time then
-                self[setting] = max_time
-            end
+            self[setting] = is_day_hour and (time.hour * 24 * 3600 + time.min * 3600)
+                or (time.hour * 3600 + time.min * 60)
+            self[setting] = Math.restrictRange(self[setting], min_max[1], min_max[2])
             G_reader_settings:saveSetting(setting, self[setting])
             self:_unschedule()
             self:_start()
             if touchmenu_instance then touchmenu_instance:updateItems() end
+            local time_string = util.secondsToClockDuration("modern", self[setting], true, true)
+            if is_day_hour then
+                time_string = time_string:gsub("00m","")
+            end
             UIManager:show(InfoMessage:new{
-                text = T(_("%1: %2"), title,
-                    util.secondsToClockDuration(duration_format, self[setting], true)),
+                text = T(_("%1: %2"), title, time_string),
                 timeout = 3,
             })
         end,
-        extra_text = T(_("Default value: %1"),util.secondsToClockDuration(duration_format, default_value, true)),
+        extra_text = T(_("Default value: %1"),
+            util.secondsToClockDuration("modern", default_value, true, true):gsub("00m$","")),
         extra_callback = function(year, month, day, year_widget, hour_widget, min_widget)
-            hour_widget.value = math.floor(default_value / 3600)
+            hour_widget.value = is_day_hour and math.floor(default_value / (24*3600))
+                or math.floor(default_value / 3600)
             hour_widget:update()
-            min_widget.value = math.floor(default_value / 60) % 60
+            min_widget.value = is_day_hour and math.floor(default_value / 3600) % 24
+                or math.floor(default_value / 60) % 60
             min_widget:update()
         end,
         keep_shown_on_apply = true,
@@ -225,17 +229,19 @@ function AutoSuspend:addToMainMenu(menu_items)
         sorting_hint = "device",
         text_func = function()
             if self.auto_suspend_timeout_seconds  then
-                local duration_format = G_reader_settings:readSetting("duration_format", "classic")
                 return T(_("Autosuspend timeout: %1"),
-                    util.secondsToClockDuration(duration_format, self.auto_suspend_timeout_seconds, true))
+                    util.secondsToClockDuration("modern", self.auto_suspend_timeout_seconds, true, true))
             else
                 return _("Autosuspend timeout")
             end
         end,
         keep_menu_open = true,
         callback = function(touchmenu_instance)
-            self:setSuspendShutdownTimes(touchmenu_instance, _("Timeout for autosuspend"),
-                "auto_suspend_timeout_seconds", default_auto_suspend_timeout_seconds)
+             -- 60 sec (1') is the minimum and 24*3600 sec (1day) is the maximum suspend time.
+            self:setSuspendShutdownTimes(touchmenu_instance,
+                _("Timeout for autosuspend"), _("Enter Time in hours and minutes."),
+                "auto_suspend_timeout_seconds", default_auto_suspend_timeout_seconds,
+                {60, 24*3600}, false)
         end,
     }
     if not (Device:canPowerOff() or Device:isEmulator()) then return end
@@ -243,17 +249,20 @@ function AutoSuspend:addToMainMenu(menu_items)
         sorting_hint = "device",
         text_func = function()
             if self.autoshutdown_timeout_seconds  then
-                local duration_format = G_reader_settings:readSetting("duration_format", "classic")
-                return T(_("Autoshutdown timeout: %1"),
-                    util.secondsToClockDuration(duration_format, self.autoshutdown_timeout_seconds, true))
+                local time_string = util.secondsToClockDuration("modern",
+                    self.autoshutdown_timeout_seconds, true, true):gsub("00m$","")
+                return T(_("Autoshutdown timeout: %1"), time_string)
             else
                 return _("Autoshutdown timeout")
             end
         end,
         keep_menu_open = true,
         callback = function(touchmenu_instance)
-            self:setSuspendShutdownTimes(touchmenu_instance, _("Timeout for autoshutdown"),
-                "autoshutdown_timeout_seconds", default_autoshutdown_timeout_seconds)
+            -- 5*60 sec (5') is the minimum and 28*24*3600 (28days) is the maximum shutdown time.
+            self:setSuspendShutdownTimes(touchmenu_instance,
+                _("Timeout for autoshutdown"),  _("Enter time in days and hours."),
+                "autoshutdown_timeout_seconds", default_autoshutdown_timeout_seconds,
+                {5*60, 28*24*3600}, true)
         end,
     }
 end

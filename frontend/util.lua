@@ -127,7 +127,8 @@ function util.secondsToClock(seconds, withoutSeconds)
         end
     else
         local round = withoutSeconds and require("optmath").round or passthrough
-        local hours = string.format("%02d", seconds / 3600)
+        local days = string.format("%02d", seconds / (24*3600)) --implicit math.floor for string.format
+        local hours = string.format("%02d", (seconds / 3600) % 24)
         local mins = string.format("%02d", round(seconds % 3600 / 60))
         if withoutSeconds then
             if mins == "60" then
@@ -135,10 +136,10 @@ function util.secondsToClock(seconds, withoutSeconds)
                 mins = string.format("%02d", 0)
                 hours = string.format("%02d", hours + 1)
             end
-            return hours .. ":" .. mins
+            return  (days ~= "00" and (days .."d") or "") .. hours .. ":" .. mins
         else
             local secs = string.format("%02d", seconds % 60)
-            return hours .. ":" .. mins .. ":" .. secs
+            return (days ~= "00" and (days .. "d") or "") .. hours .. ":" .. mins .. ":" .. secs
         end
     end
 end
@@ -198,15 +199,15 @@ function util.secondsToHClock(seconds, withoutSeconds, hmsFormat)
             time_string = time_string:gsub(":", _("h"), 1)
             -- @translators This is the 'm' for minute, like in 1h30m30s. This is a duration.
             time_string = time_string:gsub(":", _("m"), 1)
-            -- @translators This is the 's' for second, like in 1h30m30s. This is a duration.
-            time_string = time_string:gsub("00" .. _("h"), "") -- delete leading "00h"
+            time_string = time_string:gsub("^00" .. _("h"), "") -- delete leading "00h"
             time_string = time_string:gsub("^0", "") -- delete leading "0"
+            -- @translators This is the 's' for second, like in 1h30m30s. This is a duration.
             return withoutSeconds and time_string or (time_string .. _("s"))
         else
             -- @translators This is the 'h' for hour, like in 1h30m30s. This is a duration.
             time_string = time_string:gsub(":", _("h"), 1)
             time_string = time_string:gsub(":", "'", 1)
-            time_string = time_string:gsub("00" .. _("h"), "") -- delete leading "00h"
+            time_string = time_string:gsub("^00" .. _("h"), "") -- delete leading "00h"
             time_string = time_string:gsub("^0", "") -- delete leading "0"
             return withoutSeconds and time_string or (time_string .. SECONDS_SYMBOL)
         end

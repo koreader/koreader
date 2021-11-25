@@ -79,16 +79,16 @@ function DateTimeWidget:update()
     local month_hour_widget = NumberPickerWidget:new{
         show_parent = self,
         value = self.is_date and self.month or self.hour,
-        value_min = self.is_date and 1 or 0,
-        value_max = self.is_date and 12 or self.hour_max,
+        value_min = self.hour_min or self.month_min or (self.is_date and 1 or 0),
+        value_max = self.hour_max or self.month_max or (self.is_date and 12 or 24),
         value_step = 1,
         value_hold_step = self.hour_hold_step or self.month_hold_step or 3,
     }
     local day_min_widget = NumberPickerWidget:new{
         show_parent = self,
         value = self.is_date and self.day or self.min,
-        value_min = self.is_date and 1 or 0,
-        value_max = self.is_date and 31 or 59,
+        value_min = self.min_min or self.day_min or (self.is_date and 1 or 0),
+        value_max = self.min_max or self.day_max or (self.is_date and 31 or 59),
         value_step = 1,
         value_hold_step = self.day_hold_step or self.min_hold_step or (self.is_date and 5 or 10),
         date_month_hour = month_hour_widget,
