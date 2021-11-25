@@ -142,6 +142,7 @@ local InputDialog = InputContainer:new{
                              -- needs add_nav_bar to have a Show keyboard button to get it back
     scroll_by_pan = false, -- allow scrolling by lines with Pan (= Swipe, but wait a bit at end
                            -- of gesture before releasing) (may conflict with movable)
+    use_available_height = false, -- adjust input box to fill available height on screen
 
     -- If save_callback provided, a Save and a Close buttons will be added to the first row
     -- if reset_callback provided, a Reset button will be added (before Save) to the first row
@@ -347,16 +348,20 @@ function InputDialog:init()
                                     - vspan_after_input_text:getSize().h
                                     - buttons_container:getSize().h
                                     - keyboard_height
-        if self.fullscreen or text_height > available_height then
+                                    - Size.padding.large -- keep some padding around the dialog
+        if self.fullscreen or self.use_available_height or text_height > available_height then
             -- Don't leave unusable space in the text widget, as the user could think
             -- it's an empty line: move that space in pads after and below (for centering)
+            local original_text_height = text_height
             self.text_height = math.floor(available_height / line_height) * line_height
             local pad_height = available_height - self.text_height
             local pad_before = math.ceil(pad_height / 2)
             local pad_after = pad_height - pad_before
             vspan_before_input_text.width = vspan_before_input_text.width + pad_before
             vspan_after_input_text.width = vspan_after_input_text.width + pad_after
-            self.cursor_at_end = false -- stay at start if overflowed
+            if original_text_height > available_height then
+                self.cursor_at_end = false -- stay at start if overflowed
+            end
         else
             -- Don't leave unusable space in the text widget
             self.text_height = text_height
