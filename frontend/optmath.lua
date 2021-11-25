@@ -120,5 +120,9 @@ function Math.minmax(value, min, max)
     end
     return value
 end
+dbg:guard(Math, "minmax",
+    function(value, min, max)
+        assert(min < max, "Math.minmax: minimum must be less than maximum")
+    end)
 
 return Math
