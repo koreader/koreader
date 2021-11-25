@@ -1,3 +1,5 @@
+local dbg = require("dbg")
+
 --[[--
 Simple math helper functions
 ]]
@@ -108,15 +110,12 @@ Restricts a value within an interval.
 @tparam value value
 @tparma min minimum
 @tparam max maximum
-@treturn a value clipped to the intervam [min, max] (borders inclusive)
+@treturn a value clipped to the interval [min, max]
 ]]
-function Math.restrictRange(value, min, max)
-    if min and max and min > max then
-        min, max = max, min
-    end
-    if min and value <= min then
+function Math.minmax(value, min, max)
+    if value <= min then
         return min
-    elseif max and value >= max then
+    elseif value >= max then
         return max
     end
     return value
