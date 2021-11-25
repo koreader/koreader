@@ -182,7 +182,8 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
         or math.floor(self[setting] / 3600)
     local right_val = is_day_hour and math.floor(self[setting] / 3600) % 24
         or math.floor((self[setting] / 60) % 60)
-    UIManager:show(DateTimeWidget:new {
+    local time_spinner
+    time_spinner = DateTimeWidget:new {
         is_date = false,
         hour = left_val,
         min = right_val,
@@ -212,16 +213,19 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
         end,
         extra_text = T(_("Default value: %1"),
             util.secondsToClockDuration("modern", default_value, true, true):gsub("00m$","")),
-        extra_callback = function(year, month, day, year_widget, hour_widget, min_widget)
-            hour_widget.value = is_day_hour and math.floor(default_value / (24*3600))
+        extra_callback = function()
+            local hour = is_day_hour and math.floor(default_value / (24*3600))
                 or math.floor(default_value / 3600)
-            hour_widget:update()
-            min_widget.value = is_day_hour and math.floor(default_value / 3600) % 24
+--            hour_widget:update()
+            local min = is_day_hour and math.floor(default_value / 3600) % 24
                 or math.floor(default_value / 60) % 60
-            min_widget:update()
+--            min_widget:update()
+
+            time_spinner:update(nil, hour, min)
         end,
         keep_shown_on_apply = true,
-    })
+    }
+    UIManager:show(time_spinner)
 end
 
 function AutoSuspend:addToMainMenu(menu_items)

@@ -64,11 +64,12 @@ function DateTimeWidget:init()
     end
 
     -- Actually the widget layout
-    self:update()
+    self:layout()
 end
 
-function DateTimeWidget:update()
-    local year_widget = NumberPickerWidget:new{
+local year_widget, month_hour_widget, day_min_widget
+function DateTimeWidget:layout()
+    year_widget = NumberPickerWidget:new{
         show_parent = self,
         value = self.year,
         value_min = 2021,
@@ -76,7 +77,7 @@ function DateTimeWidget:update()
         value_step = 1,
         value_hold_step = self.year_hold_step or 4,
     }
-    local month_hour_widget = NumberPickerWidget:new{
+    month_hour_widget = NumberPickerWidget:new{
         show_parent = self,
         value = self.is_date and self.month or self.hour,
         value_min = self.hour_min or self.month_min or (self.is_date and 1 or 0),
@@ -84,7 +85,7 @@ function DateTimeWidget:update()
         value_step = 1,
         value_hold_step = self.hour_hold_step or self.month_hold_step or 3,
     }
-    local day_min_widget = NumberPickerWidget:new{
+    day_min_widget = NumberPickerWidget:new{
         show_parent = self,
         value = self.is_date and self.day or self.min,
         value_min = self.min_min or self.day_min or (self.is_date and 1 or 0),
@@ -180,7 +181,7 @@ function DateTimeWidget:update()
                 callback = function()
                     if self.extra_callback then
                         self.extra_callback(year_widget:getValue(), month_hour_widget:getValue(),
-                            day_min_widget:getValue(), year_widget, month_hour_widget, day_min_widget)
+                            day_min_widget:getValue())
                     end
                     if not self.keep_shown_on_apply then -- assume extra wants it same as ok
                         self:onClose()
@@ -240,6 +241,15 @@ function DateTimeWidget:update()
     UIManager:setDirty(self, function()
         return "ui", self.date_frame.dimen
     end)
+end
+
+function DateTimeWidget:update(left, mid, right)
+    year_widget.value = left
+    year_widget:update()
+    month_hour_widget.value = mid
+    month_hour_widget:update()
+    day_min_widget.value = right
+    day_min_widget:update()
 end
 
 function DateTimeWidget:onCloseWidget()
