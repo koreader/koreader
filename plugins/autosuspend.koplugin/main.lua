@@ -216,11 +216,8 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
         extra_callback = function()
             local hour = is_day_hour and math.floor(default_value / (24*3600))
                 or math.floor(default_value / 3600)
---            hour_widget:update()
             local min = is_day_hour and math.floor(default_value / 3600) % 24
                 or math.floor(default_value / 60) % 60
---            min_widget:update()
-
             time_spinner:update(nil, hour, min)
         end,
         keep_shown_on_apply = true,

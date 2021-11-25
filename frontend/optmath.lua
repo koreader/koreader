@@ -110,7 +110,7 @@ Restricts a value within an interval.
 @tparam value value
 @tparma min minimum
 @tparam max maximum
-@treturn a value clipped to the interval [min, max]
+@treturn a value clamped to the interval [min, max]
 ]]
 function Math.minmax(value, min, max)
     if value <= min then
