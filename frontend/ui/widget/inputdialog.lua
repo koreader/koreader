@@ -133,6 +133,7 @@ local InputDialog = InputContainer:new{
     readonly = false, -- don't allow editing, will not show keyboard
     allow_newline = false, -- allow entering new lines (this disables any enter_callback)
     cursor_at_end = true, -- starts with cursor at end of text, ready for appending
+    use_available_height = false, -- adjust input box to fill available height on screen
     fullscreen = false, -- adjust to full screen minus keyboard
     condensed = false, -- true will prevent adding air and balance between elements
     add_scroll_buttons = false, -- add scroll Up/Down buttons to first row of buttons
@@ -142,7 +143,6 @@ local InputDialog = InputContainer:new{
                              -- needs add_nav_bar to have a Show keyboard button to get it back
     scroll_by_pan = false, -- allow scrolling by lines with Pan (= Swipe, but wait a bit at end
                            -- of gesture before releasing) (may conflict with movable)
-    use_available_height = false, -- adjust input box to fill available height on screen
 
     -- If save_callback provided, a Save and a Close buttons will be added to the first row
     -- if reset_callback provided, a Reset button will be added (before Save) to the first row
