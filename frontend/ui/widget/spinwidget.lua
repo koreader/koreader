@@ -35,6 +35,8 @@ local SpinWidget = InputContainer:new{
     value_min = 0,
     value_step = 1,
     value_hold_step = 4,
+    precision = nil,
+    wrap = false,
     cancel_text = _("Close"),
     ok_text = _("Apply"),
     cancel_callback = nil,
@@ -92,7 +94,7 @@ function SpinWidget:update()
         value_step = self.value_step,
         value_hold_step = self.value_hold_step,
         precision = self.precision,
-        wrap = self.wrap or false,
+        wrap = self.wrap,
     }
     local value_group = HorizontalGroup:new{
         align = "center",
@@ -120,7 +122,8 @@ function SpinWidget:update()
     if self.default_value then
         table.insert(buttons, {
             {
-                text = self.default_text or T(_("Default value: %1"), self.default_value),
+                text = self.default_text or T(_("Default value: %1"),
+                    self.precision and string.format(self.precision, self.default_value) or self.default_value),
                 callback = function()
                     value_widget.value = self.default_value
                     value_widget:update()
