@@ -147,35 +147,10 @@ function DateTimeWidget:layout()
     else
         date_info = VerticalSpan:new{ width = 0 }
     end
-    local buttons = {
-        {
-            {
-                text = self.cancel_text,
-                callback = function()
-                    self:onClose()
-                end,
-            },
-            {
-                text = self.ok_text,
-                callback = function()
-                    if self.callback then
-                        self.year = year_widget:getValue()
-                        if self.is_date then
-                            self.month = month_hour_widget:getValue()
-                            self.day = day_min_widget:getValue()
-                        else
-                            self.hour = month_hour_widget:getValue()
-                            self.min = day_min_widget:getValue()
-                        end
-                        self:callback(self)
-                    end
-                    self:onClose()
-                end,
-            },
-        }
-    }
+
+    local buttons = {}
     if self.extra_text then
-        table.insert(buttons, 1, {
+        table.insert(buttons, {
             {
                 text = self.extra_text,
                 callback = function()
@@ -190,6 +165,32 @@ function DateTimeWidget:layout()
             },
         })
     end
+
+    table.insert(buttons, {
+        {
+            text = self.cancel_text,
+            callback = function()
+                self:onClose()
+            end,
+        },
+        {
+            text = self.ok_text,
+            callback = function()
+                if self.callback then
+                    self.year = year_widget:getValue()
+                    if self.is_date then
+                        self.month = month_hour_widget:getValue()
+                        self.day = day_min_widget:getValue()
+                    else
+                        self.hour = month_hour_widget:getValue()
+                        self.min = day_min_widget:getValue()
+                    end
+                    self:callback(self)
+                end
+                self:onClose()
+            end,
+        },
+    })
 
     local ok_cancel_buttons = ButtonTable:new{
         width = self.width - 2*Size.padding.default,

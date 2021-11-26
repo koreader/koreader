@@ -197,15 +197,13 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
         callback = function(time)
             self[setting] = is_day_hour and (time.hour * 24 * 3600 + time.min * 3600)
                 or (time.hour * 3600 + time.min * 60)
-            self[setting] = Math.minmax(self[setting], min_max[1], min_max[2])
+            self[setting] = Math.clamp(self[setting], min_max[1], min_max[2])
             G_reader_settings:saveSetting(setting, self[setting])
             self:_unschedule()
             self:_start()
             if touchmenu_instance then touchmenu_instance:updateItems() end
             local time_string = util.secondsToClockDuration("modern", self[setting], true, true, true)
-            if is_day_hour then
-                time_string = time_string:gsub("00m","")
-            end
+            time_string = time_string:gsub("00m","")
             UIManager:show(InfoMessage:new{
                 text = T(_("%1: %2"), title, time_string),
                 timeout = 3,
