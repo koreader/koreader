@@ -1,10 +1,9 @@
-local dbg = require("dbg")
-
 --[[--
 Simple math helper functions
 ]]
 
 local bit = require("bit")
+local dbg = require("dbg")
 
 local Math = {}
 
@@ -107,10 +106,10 @@ end
 --[[--
 Restricts a value within an interval.
 
-@tparam value value
-@tparma min minimum
-@tparam max maximum
-@treturn a value clamped to the interval [min, max]
+@number value
+@number min
+@number max
+@treturn number value clamped to the interval [min,max]
 ]]
 function Math.clamp(value, min, max)
     if value <= min then
