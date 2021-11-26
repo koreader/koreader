@@ -112,7 +112,7 @@ Restricts a value within an interval.
 @tparam max maximum
 @treturn a value clamped to the interval [min, max]
 ]]
-function Math.minmax(value, min, max)
+function Math.clamp(value, min, max)
     if value <= min then
         return min
     elseif value >= max then
@@ -122,7 +122,8 @@ function Math.minmax(value, min, max)
 end
 dbg:guard(Math, "minmax",
     function(value, min, max)
-        assert(min < max, "Math.minmax: minimum must be less than maximum")
+        assert(min ~= nil and max ~= nil, "Math.clamp: min " .. min .. " and max " .. nil .. " must not be nil")
+        assert(min < max, "Math.clamp: min .. " .. min .. " must be less than max " .. max)
     end)
 
 return Math
