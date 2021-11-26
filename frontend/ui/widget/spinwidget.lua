@@ -19,6 +19,7 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
+local T = require("ffi/util").template
 
 local SpinWidget = InputContainer:new{
     title_text = "",
@@ -42,7 +43,7 @@ local SpinWidget = InputContainer:new{
     keep_shown_on_apply = false,
     -- Set this to add default button that restores number to its default value
     default_value = nil,
-    default_text = _("Use default"),
+    default_text = nil,
     -- Optional extra button on bottom
     extra_text = nil,
     extra_callback = nil,
@@ -114,36 +115,12 @@ function SpinWidget:update()
             h = Size.line.thick,
         }
     }
-    local buttons = {
-        {
-            {
-                text = self.cancel_text,
-                callback = function()
-                    if self.cancel_callback then
-                        self.cancel_callback()
-                    end
-                    self:onClose()
-                end,
-            },
-            {
-                text = self.ok_text,
-                callback = function()
-                    if self.callback then
-                        self.value, self.value_index = value_widget:getValue()
-                        self.callback(self)
-                    end
-                    if not self.keep_shown_on_apply then
-                        self:onClose()
-                    end
-                end,
-            },
-        }
-    }
 
+    local buttons = {}
     if self.default_value then
-        table.insert(buttons,{
+        table.insert(buttons, {
             {
-                text = self.default_text,
+                text = self.default_text or T(_("Default value: %1"), self.default_value),
                 callback = function()
                     value_widget.value = self.default_value
                     value_widget:update()
@@ -152,7 +129,7 @@ function SpinWidget:update()
         })
     end
     if self.extra_text then
-        table.insert(buttons,{
+        table.insert(buttons, {
             {
                 text = self.extra_text,
                 callback = function()
@@ -167,6 +144,29 @@ function SpinWidget:update()
             },
         })
     end
+    table.insert(buttons, {
+        {
+            text = self.cancel_text,
+            callback = function()
+                if self.cancel_callback then
+                    self.cancel_callback()
+                end
+                self:onClose()
+            end,
+        },
+        {
+            text = self.ok_text,
+            callback = function()
+                if self.callback then
+                    self.value, self.value_index = value_widget:getValue()
+                    self.callback(self)
+                end
+                if not self.keep_shown_on_apply then
+                    self:onClose()
+                end
+            end,
+        },
+    })
 
     local ok_cancel_buttons = ButtonTable:new{
         width = self.width - 2*Size.padding.default,
