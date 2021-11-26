@@ -173,7 +173,7 @@ function AutoSuspend:onPreventStandby()
 end
 
 function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, setting,
-        default_value, min_max, is_day_hour)
+        default_value, range, is_day_hour)
     -- Attention if is_day_hour then time.hour stands for days and time.min for hours
 
     local InfoMessage = require("ui/widget/infomessage")
@@ -189,7 +189,7 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
         min = right_val,
         hour_hold_step = 5,
         min_hold_step = 10,
-        hour_max = is_day_hour and math.floor(min_max[2] / (24*3600)) or math.floor(min_max[2] / 3600),
+        hour_max = is_day_hour and math.floor(range[2] / (24*3600)) or math.floor(range[2] / 3600),
         min_max = is_day_hour and 23 or 59,
         ok_text = _("Set timeout"),
         title_text = title,
@@ -197,7 +197,7 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
         callback = function(time)
             self[setting] = is_day_hour and (time.hour * 24 * 3600 + time.min * 3600)
                 or (time.hour * 3600 + time.min * 60)
-            self[setting] = Math.clamp(self[setting], min_max[1], min_max[2])
+            self[setting] = Math.clamp(self[setting], range[1], range[2])
             G_reader_settings:saveSetting(setting, self[setting])
             self:_unschedule()
             self:_start()
