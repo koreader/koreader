@@ -31,11 +31,11 @@ local SpinWidget = InputContainer:new{
     value_table = nil,
     value_index = nil,
     value = 1,
-    value_max = 20,
     value_min = 0,
+    value_max = 20,
     value_step = 1,
     value_hold_step = 4,
-    precision = nil,
+    precision = nil, -- default "%02d" in NumberPickerWidget
     wrap = false,
     cancel_text = _("Close"),
     ok_text = _("Apply"),
@@ -43,10 +43,10 @@ local SpinWidget = InputContainer:new{
     callback = nil,
     close_callback = nil,
     keep_shown_on_apply = false,
-    -- Set this to add default button that restores number to its default value
+    -- Set this to add upper default button that restores number to its default value
     default_value = nil,
     default_text = nil,
-    -- Optional extra button on bottom
+    -- Optional extra button above ok/cancel buttons row
     extra_text = nil,
     extra_callback = nil,
 }
