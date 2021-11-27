@@ -159,13 +159,26 @@ h1 + h6, h2 + h6, h3 + h6, h4 + h6, h5 + h6 { page-break-before: avoid !importan
                 id = "text_align_most_justify",
                 title = _("Justify most text"),
                 description = _("Text justification is the default, but it may be overridden by publisher styles. This will re-enable it for most common text elements."),
-                css = [[body, p, li { text-align: justify !important; }]],
+                css = [[
+body, p, li { text-align: justify !important; }
+pre {
+    -cr-only-if: txt-document;
+        text-align: justify !important;
+        white-space: normal;
+}
+                ]],
             },
             {
                 id = "text_align_all_justify",
                 title = _("Justify all elements"),
                 description = _("Text justification is the default, but it may be overridden by publisher styles. This will force justification on all elements, some of which may not be centered as expected."),
-                css = [[* { text-align: justify !important; }]],
+                css = [[
+* { text-align: justify !important; }
+pre {
+    -cr-only-if: txt-document;
+        white-space: normal;
+}
+                ]],
                 separator = true,
             },
             {
