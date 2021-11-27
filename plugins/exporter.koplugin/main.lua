@@ -669,9 +669,11 @@ function Exporter:exportBooknotesToJoplin(client, title, booknotes)
 end
 
 function Exporter:exportBooknotesToReadwise(client, title, booknotes)
-    if not client:ping() then
-        error("Cannot reach Readwise server")
-    end
+    logger.dbg("Readwise title", title)
+    logger.dbg("Readwise booknotes", booknotes)
+    -- if not client:ping() then
+    --     error("Cannot reach Readwise server")
+    -- end
 
     -- local note_guid = client:findNoteByTitle(title, self.joplin_notebook_guid)
     -- local note = ""
