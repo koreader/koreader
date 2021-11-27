@@ -9,7 +9,7 @@ local logger = require("logger")
 local util = require("ffi/util")
 local Device = require("device")
 local JoplinClient = require("JoplinClient")
-local ReadwiseClient = require("JoplinClient")
+local ReadwiseClient = require("ReadwiseClient")
 local T = util.template
 local _ = require("gettext")
 local N_ = _.ngettext
@@ -518,10 +518,9 @@ function Exporter:exportClippings(clippings)
         end
     elseif self.readwise_export then
         exported_stamp = "readwise"
-        -- TODO
-        -- readwise_client = ReadwiseClient:new{
-        --     auth_token = self.readwise_token
-        -- }
+        readwise_client = ReadwiseClient:new{
+            auth_token = self.readwise_token
+        }
     else
         assert("an exported_stamp is expected for a new export type")
     end
@@ -671,9 +670,10 @@ end
 function Exporter:exportBooknotesToReadwise(client, title, booknotes)
     logger.dbg("Readwise title", title)
     logger.dbg("Readwise booknotes", booknotes)
-    -- if not client:ping() then
-    --     error("Cannot reach Readwise server")
-    -- end
+    -- TODO don't need to "ping"
+    if not client:ping() then
+        error("Cannot reach Readwise server")
+    end
 
     -- local note_guid = client:findNoteByTitle(title, self.joplin_notebook_guid)
     -- local note = ""
