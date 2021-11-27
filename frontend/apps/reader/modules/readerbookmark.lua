@@ -893,7 +893,6 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
         description = "   " .. T(_("Page: %1"), bookmark.mandatory) .. "     " .. T(_("Time: %1"), bookmark.datetime),
         input = bookmark.text_orig,
         allow_newline = true,
-        cursor_at_end = true,
         add_scroll_buttons = true,
         use_available_height = true,
         buttons = {
