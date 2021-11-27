@@ -9,6 +9,7 @@ local logger = require("logger")
 local util = require("ffi/util")
 local Device = require("device")
 local JoplinClient = require("JoplinClient")
+local ReadwiseClient = require("JoplinClient")
 local T = util.template
 local _ = require("gettext")
 local N_ = _.ngettext
@@ -49,10 +50,12 @@ function Exporter:init()
     self.joplin_port = settings.joplin_port or 41185
     self.joplin_token = settings.joplin_token -- or your token
     self.joplin_notebook_guid = settings.joplin_notebook_guid or nil
+    self.readwise_token = settings.readwise_token or nil
     self.html_export = settings.html_export or false
     self.joplin_export = settings.joplin_export or false
     self.txt_export = settings.txt_export or false
     self.json_export = settings.json_export or false
+    self.readwise_export = settings.readwise_export or false
     --- @todo Is this if block necessary? Nowhere in the code they are assigned both true.
     -- Do they check against external modifications to settings file?
 
@@ -60,11 +63,14 @@ function Exporter:init()
         self.txt_export = false
         self.joplin_export = false
         self.json_export = false
+        self.readwise_export = false
     elseif self.txt_export then
         self.joplin_export = false
         self.json_export = false
+        self.readwise_export = false
     elseif self.json_export then
         self.joplin_export = false
+        self.readwise_export = false
     end
 
     self.parser = MyClipping:new{
@@ -86,7 +92,8 @@ function Exporter:readyToExport()
     return self.html_export ~= false or
             self.txt_export ~= false or
             self.json_export ~= false or
-            self.joplin_export ~= false
+            self.joplin_export ~= false or
+            self.readwise_export ~= false
 end
 
 function Exporter:migrateClippings()
@@ -106,7 +113,6 @@ function Exporter:addToMainMenu(menu_items)
             {
                 text = _("Joplin") ,
                 checked_func = function() return self.joplin_export end,
-                separator = true,
                 sub_item_table ={
                     {
                         text = _("Set Joplin IP and Port"),
@@ -204,6 +210,7 @@ function Exporter:addToMainMenu(menu_items)
                                 self.html_export = false
                                 self.txt_export = false
                                 self.json_export = false
+                                self.readwise_export = false
                             end
                             self:saveSettings()
                         end
@@ -213,13 +220,84 @@ function Exporter:addToMainMenu(menu_items)
                         keep_menu_open = true,
                         callback = function()
                             UIManager:show(InfoMessage:new{
-                                text = T(_([[You can enter your auth token on your computer by saving an empty token. Then quit KOReader, edit the evernote.joplin_token field in %1/settings.reader.lua after creating a backup, and restart KOReader once you're done.
+                                text = T(_([[You can enter your auth token on your computer by saving an empty token. Then quit KOReader, edit the evernote.readwise_token field in %1/settings.reader.lua after creating a backup, and restart KOReader once you're done.
 
 To export to Joplin, you must forward the IP and port used by this plugin to the localhost:port on which Joplin is listening. This can be done with socat or a similar program. For example:
 
 For Windows: netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=41185 connectaddress=localhost connectport=41184
 
 For Linux: $socat tcp-listen:41185,reuseaddr,fork tcp:localhost:41184
+
+For more information, please visit https://github.com/koreader/koreader/wiki/Evernote-export.]])
+                            , BD.dirpath(DataStorage:getDataDir()))
+                            })
+                        end
+                    }
+                }
+            },
+            {
+                text = _("Readwise") ,
+                checked_func = function() return self.readwise_export end,
+                separator = true,
+                sub_item_table ={
+                    {
+                        text = _("Set authorization token"),
+                        keep_menu_open = true,
+                        callback = function()
+                            local MultiInputDialog = require("ui/widget/multiinputdialog")
+                            local auth_dialog
+                            auth_dialog = MultiInputDialog:new{
+                                title = _("Set authorization token for Readwise"),
+                                fields = {
+                                    {
+                                        text = self.readwise_token,
+                                        input_type = "string"
+                                    }
+                                },
+                                buttons = {
+                                    {
+                                        {
+                                            text = _("Cancel"),
+                                            callback = function()
+                                                UIManager:close(auth_dialog)
+                                            end
+                                        },
+                                        {
+                                            text = _("Set token"),
+                                            callback = function()
+                                                local auth_field = auth_dialog:getFields()
+                                                self.readwise_token = auth_field[1]
+                                                self:saveSettings()
+                                                UIManager:close(auth_dialog)
+                                            end
+                                        }
+                                    }
+                                }
+                            }
+                            UIManager:show(auth_dialog)
+                            auth_dialog:onShowKeyboard()
+                        end
+                    },
+                    {
+                        text = _("Export to Readwise"),
+                        checked_func = function() return self.readwise_export end,
+                        callback = function()
+                            self.readwise_export = not self.readwise_export
+                            if self.readwise_export then
+                                self.html_export = false
+                                self.txt_export = false
+                                self.json_export = false
+                                self.joplin_export = false
+                            end
+                            self:saveSettings()
+                        end
+                    },
+                    {
+                        text = _("Help"),
+                        keep_menu_open = true,
+                        callback = function()
+                            UIManager:show(InfoMessage:new{
+                                text = T(_([[You can enter your auth token on your computer by saving an empty token. Then quit KOReader, edit the evernote.readwise_token field in %1/settings.reader.lua after creating a backup, and restart KOReader once you're done.
 
 For more information, please visit https://github.com/koreader/koreader/wiki/Evernote-export.]])
                             , BD.dirpath(DataStorage:getDataDir()))
@@ -270,6 +348,7 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Eve
                         self.txt_export = false
                         self.html_export = false
                         self.joplin_export = false
+                        self.readwise_export = false
                     end
                     self:saveSettings()
                 end
@@ -283,6 +362,7 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Eve
                         self.txt_export = false
                         self.json_export = false
                         self.joplin_export = false
+                        self.readwise_export = false
                     end
                     self:saveSettings()
                 end
@@ -296,6 +376,7 @@ For more information, please visit https://github.com/koreader/koreader/wiki/Eve
                         self.html_export = false
                         self.json_export = false
                         self.joplin_export = false
+                        self.readwise_export = false
                     end
                     self:saveSettings()
                 end,
@@ -325,7 +406,9 @@ function Exporter:saveSettings()
         joplin_port = self.joplin_port,
         joplin_token = self.joplin_token,
         joplin_notebook_guid = self.joplin_notebook_guid,
-        joplin_export = self.joplin_export
+        joplin_export = self.joplin_export,
+        readwise_token = self.readwise_token,
+        readwise_export = self.readwise_export
     }
     G_reader_settings:saveSetting("exporter", settings)
 end
@@ -433,6 +516,12 @@ function Exporter:exportClippings(clippings)
             self.joplin_notebook_guid = joplin_client:createNotebook(self.notebook_name)
             self:saveSettings()
         end
+    elseif self.readwise_export then
+        exported_stamp = "readwise"
+        -- TODO
+        -- readwise_client = ReadwiseClient:new{
+        --     auth_token = self.readwise_token
+        -- }
     else
         assert("an exported_stamp is expected for a new export type")
     end
@@ -456,6 +545,8 @@ function Exporter:exportClippings(clippings)
                 ok, err = pcall(self.exportBooknotesToJSON, self, title, booknotes)
             elseif self.joplin_export then
                 ok, err = pcall(self.exportBooknotesToJoplin, self, joplin_client, title, booknotes)
+            elseif self.readwise_export then
+                ok, err = pcall(self.exportBooknotesToReadwise, self, readwise_client, title, booknotes)
             end
             -- Error reporting
             if not ok and err and err:find("Transport not open") then
@@ -574,6 +665,32 @@ function Exporter:exportBooknotesToJoplin(client, title, booknotes)
     else
         client:createNote(title, note, self.joplin_notebook_guid)
     end
+
+end
+
+function Exporter:exportBooknotesToReadwise(client, title, booknotes)
+    if not client:ping() then
+        error("Cannot reach Readwise server")
+    end
+
+    -- local note_guid = client:findNoteByTitle(title, self.joplin_notebook_guid)
+    -- local note = ""
+    -- for _, chapter in ipairs(booknotes) do
+    --     if chapter.title then
+    --         note = note .. "\n\t*" .. chapter.title .. "*\n\n * * *"
+    --     end
+
+    --     for _, clipping in ipairs(chapter) do
+    --         note = note .. os.date("%Y-%m-%d %H:%M:%S \n", clipping.time)
+    --         note = note .. clipping.text .. "\n * * *\n"
+    --     end
+    -- end
+
+    -- if note_guid then
+    --     client:updateNote(note_guid, note)
+    -- else
+    --     client:createNote(title, note, self.joplin_notebook_guid)
+    -- end
 
 end
 
