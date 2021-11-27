@@ -39,6 +39,8 @@ function ReadwiseClient:_makeRequest(endpoint, method, request_body)
 
     local response = json.decode(sink[1])
 
+    -- TODO check response code
+
     if response.error then
         error(response.error)
     end
@@ -52,6 +54,29 @@ function ReadwiseClient:ping()
     local highlights = self:_makeRequest("highlights?page_size=1", "GET")
 
     return highlights
+end
+
+function ReadwiseClient:createHighlights(booknotes)
+    local highlights = {}
+    for _, chapter in ipairs(booknotes) do
+        for _, clipping in ipairs(chapter) do
+            local highlight = {
+                text = clipping.text, -- TODO need to get highlighted text
+                title = booknotes.title,
+                author = booknotes.author,
+                source_type = "koreader",
+                category = "books",
+                note = clipping.text,
+                location = clipping.page,
+                location_type = "page",
+                highlighted_at = os.date("!%Y-%m-%dT%TZ", clipping.time), -- TODO: check timezone
+            }
+            table.insert(highlights, highlight)
+        end
+    end
+    logger.dbg("request", highlights) -- TODO remove
+    local result = self:_makeRequest("highlights", "POST", { highlights = highlights })
+    logger.dbg("result", result) -- TODO remove
 end
 
 return ReadwiseClient

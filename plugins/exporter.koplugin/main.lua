@@ -675,6 +675,8 @@ function Exporter:exportBooknotesToReadwise(client, title, booknotes)
         error("Cannot reach Readwise server")
     end
 
+    client:createHighlights(booknotes)
+
     -- local note_guid = client:findNoteByTitle(title, self.joplin_notebook_guid)
     -- local note = ""
     -- for _, chapter in ipairs(booknotes) do
