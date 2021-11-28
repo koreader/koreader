@@ -83,7 +83,7 @@ local KoptOptions = {
                 name_text = _("Page Crop"),
                 -- manual=0, auto=1, semi-auto=2, none=3
                 -- ordered from least to max cropping done or possible
-                toggle = {_("none"), _("auto"), _("semi-auto"), _("manual")},
+                toggle = {C_("Page crop", "none"), C_("Page crop", "auto"), C_("Page crop", "semi-auto"), C_("Page crop", "manual")},
                 alternate = false,
                 values = {3, 1, 2, 0},
                 default_value = DKOPTREADER_CONFIG_TRIM_PAGE,
@@ -103,7 +103,7 @@ In 'semi-auto' and 'manual' modes, you may need to define areas once on an odd p
             {
                 name = "page_margin",
                 name_text = _("Margin"),
-                toggle = {_("small"), _("medium"), _("large")},
+                toggle = {C_("Page margin", "small"), C_("Page margin", "medium"), C_("Page margin", "large")},
                 values = {0.05, 0.10, 0.25},
                 default_value = DKOPTREADER_CONFIG_PAGE_MARGIN,
                 event = "MarginUpdate",
@@ -334,7 +334,7 @@ left to right or reverse, top to bottom or reverse.]]),
             {
                 name = "page_gap_height",
                 name_text = _("Page Gap"),
-                toggle = {_("none"), _("small"), _("medium"), _("large")},
+                toggle = {C_("Page gap", "none"), C_("Page gap", "small"), C_("Page gap", "medium"), C_("Page gap", "large")},
                 values = {0, 8, 16, 32},
                 default_value = 8,
                 args = {0, 8, 16, 32},
@@ -359,7 +359,7 @@ left to right or reverse, top to bottom or reverse.]]),
             {
                 name = "line_spacing",
                 name_text = _("Line Spacing"),
-                toggle = {_("small"), _("medium"), _("large")},
+                toggle = {C_("Line spacing", "small"), C_("Line spacing", "medium"), C_("Line spacing", "large")},
                 values = {1.0, 1.2, 1.4},
                 default_value = DKOPTREADER_CONFIG_LINE_SPACING,
                 advanced = true,
@@ -444,7 +444,7 @@ The first option ("auto") tries to automatically align reflowed text as it is in
             {
                 name = "word_spacing",
                 name_text = _("Word Gap"),
-                toggle = {_("small"), _("auto"), _("large")},
+                toggle = {C_("Word gap", "small"), C_("Word gap", "auto"), C_("Word gap", "large")},
                 values = DKOPTREADER_CONFIG_WORD_SPACINGS,
                 default_value = DKOPTREADER_CONFIG_DEFAULT_WORD_SPACING,
                 enabled_func = function(configurable)
