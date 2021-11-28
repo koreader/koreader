@@ -239,7 +239,11 @@ function MyClipping:parseHighlight(highlights, bookmarks, book)
             for _, bookmark in pairs(bookmarks) do
                 if bookmark.datetime == item.datetime and bookmark.text then
                     local tmp = string.gsub(bookmark.text, "Page %d+ ", "")
-                    clipping.text = string.gsub(tmp, " @ %d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d", "")
+                    -- TODO this is a behavior change, does it make sense everywhere?
+                    local bookmark_quote = string.gsub(tmp, " @ %d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d", "")
+                    if bookmark_quote ~= clipping.text then
+                        clipping.note = bookmark.text
+                    end
                 end
             end
             if item.text == "" and item.pos0 and item.pos1 and

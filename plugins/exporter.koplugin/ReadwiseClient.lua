@@ -61,12 +61,12 @@ function ReadwiseClient:createHighlights(booknotes)
     for _, chapter in ipairs(booknotes) do
         for _, clipping in ipairs(chapter) do
             local highlight = {
-                text = clipping.text, -- TODO need to get highlighted text
+                text = clipping.text,
                 title = booknotes.title,
                 author = booknotes.author,
                 source_type = "koreader",
                 category = "books",
-                note = clipping.text,
+                note = clipping.note,
                 location = clipping.page,
                 location_type = "page",
                 highlighted_at = os.date("!%Y-%m-%dT%TZ", clipping.time), -- TODO: check timezone
