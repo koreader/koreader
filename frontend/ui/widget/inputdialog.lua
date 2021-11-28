@@ -348,8 +348,6 @@ function InputDialog:init()
                                     - vspan_after_input_text:getSize().h
                                     - buttons_container:getSize().h
                                     - keyboard_height
-                                    - (self.fullscreen and 0 or Size.padding.large) -- keep some padding around
-                                                                                    -- non-fullscreen dialogs
         if self.fullscreen or self.use_available_height or text_height > available_height then
             -- Don't leave unusable space in the text widget, as the user could think
             -- it's an empty line: move that space in pads after and below (for centering)
