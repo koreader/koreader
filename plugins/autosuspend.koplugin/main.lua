@@ -231,7 +231,6 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
             })
             _self:onClose()
         end,
-
         keep_shown_on_apply = true,
     }
     UIManager:show(time_spinner)
