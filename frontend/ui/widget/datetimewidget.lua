@@ -19,6 +19,7 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local Screen = Device.screen
+local T = require("ffi/util").template
 
 local DateTimeWidget = InputContainer:new{
     title_face = Font:getFace("x_smalltfont"),
@@ -149,13 +150,13 @@ function DateTimeWidget:layout()
     end
 
     local buttons = {}
-    if self.extra_text then
+    if self.default_value then
         table.insert(buttons, {
             {
-                text = self.extra_text,
+                text = self.default_text or T(_("Default value: %1"), self.default_value),
                 callback = function()
-                    if self.extra_callback then
-                        self.extra_callback(year_widget:getValue(), month_hour_widget:getValue(),
+                    if self.default_callback then
+                        self.default_callback(year_widget:getValue(), month_hour_widget:getValue(),
                             day_min_widget:getValue())
                     end
                     if not self.keep_shown_on_apply then -- assume extra wants it same as ok
@@ -165,7 +166,16 @@ function DateTimeWidget:layout()
             },
         })
     end
-
+    if self.extra_text then
+        table.insert(buttons, {
+            {
+                text = self.extra_text,
+                callback = function()
+                    self.extra_callback(self)
+                end,
+            },
+        })
+    end
     table.insert(buttons, {
         {
             text = self.cancel_text,

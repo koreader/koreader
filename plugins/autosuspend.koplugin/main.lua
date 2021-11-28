@@ -178,10 +178,13 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
 
     local InfoMessage = require("ui/widget/infomessage")
     local DateTimeWidget = require("ui/widget/datetimewidget")
-    local left_val = is_day_hour and math.floor(self[setting] / (24*3600))
-        or math.floor(self[setting] / 3600)
-    local right_val = is_day_hour and math.floor(self[setting] / 3600) % 24
-        or math.floor((self[setting] / 60) % 60)
+
+    local setting_val = self[setting] > 0 and self[setting] or default_value
+
+    local left_val = is_day_hour and math.floor(setting_val / (24*3600))
+        or math.floor(setting_val / 3600)
+    local right_val = is_day_hour and math.floor(setting_val / 3600) % 24
+        or math.floor((setting_val / 60) % 60)
     local time_spinner
     time_spinner = DateTimeWidget:new {
         is_date = false,
@@ -209,15 +212,26 @@ function AutoSuspend:setSuspendShutdownTimes(touchmenu_instance, title, info, se
                 timeout = 3,
             })
         end,
-        extra_text = T(_("Default value: %1"),
-            util.secondsToClockDuration("modern", default_value, true, true, true):gsub("00m$","")),
-        extra_callback = function()
+        default_value = util.secondsToClockDuration("modern", default_value, true, true, true):gsub("00m$",""),
+        default_callback = function()
             local hour = is_day_hour and math.floor(default_value / (24*3600))
                 or math.floor(default_value / 3600)
             local min = is_day_hour and math.floor(default_value / 3600) % 24
                 or math.floor(default_value / 60) % 60
             time_spinner:update(nil, hour, min)
         end,
+        extra_text = _("Disable"),
+        extra_callback = function(_self)
+            self[setting] = -1 -- disable with a negative time/number
+            self:_unschedule()
+            if touchmenu_instance then touchmenu_instance:updateItems() end
+            UIManager:show(InfoMessage:new{
+                text = T(_("%1: disabled"), title),
+                timeout = 3,
+            })
+            _self:onClose()
+        end,
+
         keep_shown_on_apply = true,
     }
     UIManager:show(time_spinner)
@@ -226,8 +240,11 @@ end
 function AutoSuspend:addToMainMenu(menu_items)
     menu_items.autosuspend = {
         sorting_hint = "device",
+        checked_func = function()
+            return self:_enabled()
+        end,
         text_func = function()
-            if self.auto_suspend_timeout_seconds then
+            if self.auto_suspend_timeout_seconds and self.auto_suspend_timeout_seconds > 0 then
                 local time_string = util.secondsToClockDuration("modern",
                     self.auto_suspend_timeout_seconds, true, true, true):gsub("00m$","")
                 return T(_("Autosuspend timeout: %1"), time_string)
@@ -237,7 +254,9 @@ function AutoSuspend:addToMainMenu(menu_items)
         end,
         keep_menu_open = true,
         callback = function(touchmenu_instance)
-             -- 60 sec (1') is the minimum and 24*3600 sec (1day) is the maximum suspend time.
+            -- 60 sec (1') is the minimum and 24*3600 sec (1day) is the maximum suspend time.
+            -- A suspend time of one day seems to be excessive.
+            -- But or battery testing it might give some sense.
             self:setSuspendShutdownTimes(touchmenu_instance,
                 _("Timeout for autosuspend"), _("Enter time in hours and minutes."),
                 "auto_suspend_timeout_seconds", default_auto_suspend_timeout_seconds,
@@ -247,8 +266,11 @@ function AutoSuspend:addToMainMenu(menu_items)
     if not (Device:canPowerOff() or Device:isEmulator()) then return end
     menu_items.autoshutdown = {
         sorting_hint = "device",
+        checked_func = function()
+            return self:_enabledShutdown()
+        end,
         text_func = function()
-            if self.autoshutdown_timeout_seconds  then
+            if self.autoshutdown_timeout_seconds and self.autoshutdown_timeout_seconds > 0 then
                 local time_string = util.secondsToClockDuration("modern",
                     self.autoshutdown_timeout_seconds, true, true, true):gsub("00m$","")
                 return T(_("Autoshutdown timeout: %1"), time_string)
@@ -259,6 +281,9 @@ function AutoSuspend:addToMainMenu(menu_items)
         keep_menu_open = true,
         callback = function(touchmenu_instance)
             -- 5*60 sec (5') is the minimum and 28*24*3600 (28days) is the maximum shutdown time.
+            -- Minimum time has to be big enough, to avoid start-stop death scenarious.
+            -- Maximum more than four weeks seems a bit excessive if you want to enable authoshutdown,
+            -- even if the battery can last up to three months.
             self:setSuspendShutdownTimes(touchmenu_instance,
                 _("Timeout for autoshutdown"),  _("Enter time in days and hours."),
                 "autoshutdown_timeout_seconds", default_autoshutdown_timeout_seconds,
