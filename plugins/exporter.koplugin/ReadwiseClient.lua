@@ -48,14 +48,6 @@ function ReadwiseClient:_makeRequest(endpoint, method, request_body)
     return response
 end
 
-function ReadwiseClient:ping()
-    local sink = {}
-
-    local highlights = self:_makeRequest("highlights?page_size=1", "GET")
-
-    return highlights
-end
-
 function ReadwiseClient:createHighlights(booknotes)
     local highlights = {}
     for _, chapter in ipairs(booknotes) do
@@ -69,14 +61,14 @@ function ReadwiseClient:createHighlights(booknotes)
                 note = clipping.note,
                 location = clipping.page,
                 location_type = "page",
-                highlighted_at = os.date("!%Y-%m-%dT%TZ", clipping.time), -- TODO: check timezone
+                highlighted_at = os.date("!%Y-%m-%dT%TZ", clipping.time),
             }
             table.insert(highlights, highlight)
         end
     end
     logger.dbg("request", highlights) -- TODO remove
     local result = self:_makeRequest("highlights", "POST", { highlights = highlights })
-    logger.dbg("result", result) -- TODO remove
+    logger.dbg("ReadwiseClient createHighlights", result)
 end
 
 return ReadwiseClient

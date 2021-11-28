@@ -668,34 +668,11 @@ function Exporter:exportBooknotesToJoplin(client, title, booknotes)
 end
 
 function Exporter:exportBooknotesToReadwise(client, title, booknotes)
+    -- TODO remove
     logger.dbg("Readwise title", title)
     logger.dbg("Readwise booknotes", booknotes)
-    -- TODO don't need to "ping"
-    if not client:ping() then
-        error("Cannot reach Readwise server")
-    end
 
     client:createHighlights(booknotes)
-
-    -- local note_guid = client:findNoteByTitle(title, self.joplin_notebook_guid)
-    -- local note = ""
-    -- for _, chapter in ipairs(booknotes) do
-    --     if chapter.title then
-    --         note = note .. "\n\t*" .. chapter.title .. "*\n\n * * *"
-    --     end
-
-    --     for _, clipping in ipairs(chapter) do
-    --         note = note .. os.date("%Y-%m-%d %H:%M:%S \n", clipping.time)
-    --         note = note .. clipping.text .. "\n * * *\n"
-    --     end
-    -- end
-
-    -- if note_guid then
-    --     client:updateNote(note_guid, note)
-    -- else
-    --     client:createNote(title, note, self.joplin_notebook_guid)
-    -- end
-
 end
 
 return Exporter
