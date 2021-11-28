@@ -390,8 +390,8 @@ function Device:info()
     return common_text..platform_text..eink_text..wakelocks_text
 end
 
-function Device:epdTest()
-    android.einkTest()
+function Device:test()
+    android.runTest()
 end
 
 function Device:exit()
