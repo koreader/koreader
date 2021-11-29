@@ -475,18 +475,18 @@ function KeyValuePage:init()
             dimen = self.inner_dimen:copy(),
             self.page_info,
         }
-    end
 
-    local page_return = BottomContainer:new{
-        dimen = self.inner_dimen:copy(),
-        WidgetContainer:new{
-            dimen = Geom:new{
-                w = self.inner_dimen.w,
-                h = self.return_button:getSize().h,
-            },
-            self.return_button,
+        local page_return = BottomContainer:new{
+            dimen = self.inner_dimen:copy(),
+            WidgetContainer:new{
+                dimen = Geom:new{
+                    w = self.inner_dimen.w,
+                    h = self.return_button:getSize().h,
+                },
+                self.return_button,
+            }
         }
-    }
+    end
 
     -- setup title bar
     self.title_bar = KeyValueTitle:new{

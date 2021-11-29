@@ -213,7 +213,7 @@ function BatteryStat:showStatistics()
         title = _("Battery statistics"),
         kv_pairs = kv_pairs,
         items_per_page = DEFAULT_NB_LINES,
-        one_page = true,
+        single_page = true,
     }
     UIManager:show(self.kv_page)
 end
