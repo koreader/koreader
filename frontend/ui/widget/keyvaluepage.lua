@@ -337,7 +337,7 @@ local KeyValuePage = InputContainer:new{
     -- aligment of value when key or value overflows its reserved width (for
     -- now: 50%): "left" (stick to key), "right" (stick to scren right border)
     value_overflow_align = "left",
-    -- single_page = nil,
+    single_page = nil,
 }
 
 function KeyValuePage:init()
@@ -373,6 +373,93 @@ function KeyValuePage:init()
         bordersize = 0,
         show_parent = self,
     }
+    -- group for page info
+    local chevron_left = "chevron.left"
+    local chevron_right = "chevron.right"
+    local chevron_first = "chevron.first"
+    local chevron_last = "chevron.last"
+    if BD.mirroredUILayout() then
+        chevron_left, chevron_right = chevron_right, chevron_left
+        chevron_first, chevron_last = chevron_last, chevron_first
+    end
+    self.page_info_left_chev = self.page_info_left_chev or Button:new{
+        icon = chevron_left,
+        callback = function() self:prevPage() end,
+        bordersize = 0,
+        show_parent = self,
+    }
+    self.page_info_right_chev = self.page_info_right_chev or Button:new{
+        icon = chevron_right,
+        callback = function() self:nextPage() end,
+        bordersize = 0,
+        show_parent = self,
+    }
+    self.page_info_first_chev = self.page_info_first_chev or Button:new{
+        icon = chevron_first,
+        callback = function() self:goToPage(1) end,
+        bordersize = 0,
+        show_parent = self,
+    }
+    self.page_info_last_chev = self.page_info_last_chev or Button:new{
+        icon = chevron_last,
+        callback = function() self:goToPage(self.pages) end,
+        bordersize = 0,
+        show_parent = self,
+    }
+    self.page_info_spacer = HorizontalSpan:new{
+        width = Screen:scaleBySize(32),
+    }
+
+    if self.callback_return == nil and self.return_button == nil then
+        self.page_return_arrow:hide()
+    elseif self.callback_return == nil then
+        self.page_return_arrow:disable()
+    end
+    self.return_button = HorizontalGroup:new{
+        HorizontalSpan:new{
+            width = Size.span.horizontal_small,
+        },
+        self.page_return_arrow,
+    }
+
+    self.page_info_left_chev:hide()
+    self.page_info_right_chev:hide()
+    self.page_info_first_chev:hide()
+    self.page_info_last_chev:hide()
+
+    self.page_info_text = self.page_info_text or Button:new{
+        text = "",
+        hold_input = {
+            title = _("Enter page number"),
+            type = "number",
+            hint_func = function()
+                return "(" .. "1 - " .. self.pages .. ")"
+            end,
+            deny_blank_input = true,
+            callback = function(input)
+                local page = tonumber(input)
+                if page and page >= 1 and page <= self.pages then
+                    self:goToPage(page)
+                end
+            end,
+            ok_text = _("Go to page"),
+        },
+        call_hold_input_on_tap = true,
+        bordersize = 0,
+        text_font_face = "pgfont",
+        text_font_bold = false,
+    }
+    self.page_info = HorizontalGroup:new{
+        self.page_info_first_chev,
+        self.page_info_spacer,
+        self.page_info_left_chev,
+        self.page_info_spacer,
+        self.page_info_text,
+        self.page_info_spacer,
+        self.page_info_right_chev,
+        self.page_info_spacer,
+        self.page_info_last_chev,
+    }
 
     local padding = Size.padding.large
     self.inner_dimen = Geom:new{
@@ -381,112 +468,24 @@ function KeyValuePage:init()
     }
     self.item_width = self.inner_dimen.w
 
-    local footer -- will stay nil if self.single_page is true
+    local footer = BottomContainer:new{
+        dimen = self.inner_dimen:copy(),
+        self.page_info,
+    }
     if self.single_page then
-        -- group for page info
-        local chevron_left = "chevron.left"
-        local chevron_right = "chevron.right"
-        local chevron_first = "chevron.first"
-        local chevron_last = "chevron.last"
-        if BD.mirroredUILayout() then
-            chevron_left, chevron_right = chevron_right, chevron_left
-            chevron_first, chevron_last = chevron_last, chevron_first
-        end
-        self.page_info_left_chev = self.page_info_left_chev or Button:new{
-            icon = chevron_left,
-            callback = function() self:prevPage() end,
-            bordersize = 0,
-            show_parent = self,
-        }
-        self.page_info_right_chev = self.page_info_right_chev or Button:new{
-            icon = chevron_right,
-            callback = function() self:nextPage() end,
-            bordersize = 0,
-            show_parent = self,
-        }
-        self.page_info_first_chev = self.page_info_first_chev or Button:new{
-            icon = chevron_first,
-            callback = function() self:goToPage(1) end,
-            bordersize = 0,
-            show_parent = self,
-        }
-        self.page_info_last_chev = self.page_info_last_chev or Button:new{
-            icon = chevron_last,
-            callback = function() self:goToPage(self.pages) end,
-            bordersize = 0,
-            show_parent = self,
-        }
-        self.page_info_spacer = HorizontalSpan:new{
-            width = Screen:scaleBySize(32),
-        }
-
-        if self.callback_return == nil and self.return_button == nil then
-            self.page_return_arrow:hide()
-        elseif self.callback_return == nil then
-            self.page_return_arrow:disable()
-        end
-        self.return_button = HorizontalGroup:new{
-            HorizontalSpan:new{
-                width = Size.span.horizontal_small,
-            },
-            self.page_return_arrow,
-        }
-
-        self.page_info_left_chev:hide()
-        self.page_info_right_chev:hide()
-        self.page_info_first_chev:hide()
-        self.page_info_last_chev:hide()
-
-        self.page_info_text = self.page_info_text or Button:new{
-            text = "",
-            hold_input = {
-                title = _("Enter page number"),
-                type = "number",
-                hint_func = function()
-                    return "(" .. "1 - " .. self.pages .. ")"
-                end,
-                deny_blank_input = true,
-                callback = function(input)
-                    local page = tonumber(input)
-                    if page and page >= 1 and page <= self.pages then
-                        self:goToPage(page)
-                    end
-                end,
-                ok_text = _("Go to page"),
-            },
-            call_hold_input_on_tap = true,
-            bordersize = 0,
-            text_font_face = "pgfont",
-            text_font_bold = false,
-        }
-        self.page_info = HorizontalGroup:new{
-            self.page_info_first_chev,
-            self.page_info_spacer,
-            self.page_info_left_chev,
-            self.page_info_spacer,
-            self.page_info_text,
-            self.page_info_spacer,
-            self.page_info_right_chev,
-            self.page_info_spacer,
-            self.page_info_last_chev,
-        }
-
-        footer = BottomContainer:new{
-            dimen = self.inner_dimen:copy(),
-            self.page_info,
-        }
-
-        local page_return = BottomContainer:new{
-            dimen = self.inner_dimen:copy(),
-            WidgetContainer:new{
-                dimen = Geom:new{
-                    w = self.inner_dimen.w,
-                    h = self.return_button:getSize().h,
-                },
-                self.return_button,
-            }
-        }
+        footer = nil
     end
+
+    local page_return = BottomContainer:new{
+        dimen = self.inner_dimen:copy(),
+        WidgetContainer:new{
+            dimen = Geom:new{
+                w = self.inner_dimen.w,
+                h = self.return_button:getSize().h,
+            },
+            self.return_button,
+        }
+    }
 
     -- setup title bar
     self.title_bar = KeyValueTitle:new{
@@ -526,34 +525,18 @@ function KeyValuePage:init()
 
     self:_populateItems()
 
-    local content
-    if not self.single_page then
-        content = OverlapGroup:new{
-            allow_mirroring = false,
-            dimen = self.inner_dimen:copy(),
-            VerticalGroup:new{
-                align = "left",
-                self.title_bar,
-                VerticalSpan:new{ width = span_height },
-                self.main_content,
-            },
-            page_return,
-            footer,
-        }
-    else
-        content = OverlapGroup:new{
-            allow_mirroring = false,
-            dimen = self.inner_dimen:copy(),
-            VerticalGroup:new{
-                align = "left",
-                self.title_bar,
-                VerticalSpan:new{ width = span_height },
-                self.main_content,
-            },
-            page_return,
-        }
-    end
-
+    local content = OverlapGroup:new{
+        allow_mirroring = false,
+        dimen = self.inner_dimen:copy(),
+        VerticalGroup:new{
+            align = "left",
+            self.title_bar,
+            VerticalSpan:new{ width = span_height },
+            self.main_content,
+        },
+        page_return,
+        footer,
+    }
     -- assemble page
     self[1] = FrameContainer:new{
         height = self.dimen.h,
