@@ -44,8 +44,9 @@ function SystemStat:appendCounters()
     if self.resume_sec then
         self:put({_("  Last resume time"), os.date("%c", self.resume_sec)})
     end
-    self:put({_("  Up hours"),
-             string.format("%.2f", os.difftime(os.time(), self.start_sec) / 60 / 60)})
+    local duration_fmt = G_reader_settings:readSetting("duration_format", "classic")
+    self:put({_("  Up time"),
+        util.secondsToClockDuration(duration_fmt, os.difftime(os.time(), self.start_sec), true, true, true)})
     self:put({_("Counters"), ""})
     self:put({_("  wake-ups"), self.wakeup_count})
     -- @translators The number of "sleeps", that is the number of times the device has entered standby. This could also be translated as a rendition of a phrase like "entered sleep".
@@ -56,60 +57,57 @@ end
 
 local function systemInfo()
     local result = {}
-    do
-        local stat = io.open("/proc/stat", "r")
-        if stat ~= nil then
-            for line in stat:lines() do
-                local t = util.splitToArray(line, " ")
-                if #t >= 5 and string.lower(t[1]) == "cpu" then
-                    local n1, n2, n3, n4
-                    n1 = tonumber(t[2])
-                    n2 = tonumber(t[3])
-                    n3 = tonumber(t[4])
-                    n4 = tonumber(t[5])
-                    if n1 ~= nil and n2 ~= nil and n3 ~= nil and n4 ~= nil then
-                      result.cpu = {
-                        user = n1,
-                        nice = n2,
-                        system = n3,
-                        idle = n4,
-                        total = n1 + n2 + n3 + n4
-                      }
-                      break
-                    end
+
+    local stat = io.open("/proc/stat", "r")
+    if stat ~= nil then
+        for line in stat:lines() do
+            local t = util.splitToArray(line, " ")
+            if #t >= 5 and string.lower(t[1]) == "cpu" then
+                local n1, n2, n3, n4
+                n1 = tonumber(t[2])
+                n2 = tonumber(t[3])
+                n3 = tonumber(t[4])
+                n4 = tonumber(t[5])
+                if n1 ~= nil and n2 ~= nil and n3 ~= nil and n4 ~= nil then
+                  result.cpu = {
+                    user = n1,
+                    nice = n2,
+                    system = n3,
+                    idle = n4,
+                    total = n1 + n2 + n3 + n4
+                  }
+                  break
                 end
             end
-            stat:close()
         end
+        stat:close()
     end
 
-    do
-        local meminfo = io.open("/proc/meminfo", "r")
-        if meminfo ~= nil then
-            result.memory = {}
-            for line in meminfo:lines() do
-                local t = util.splitToArray(line, " ")
-                if #t >= 2 then
-                    if string.lower(t[1]) == "memtotal:" then
-                        local n = tonumber(t[2])
-                        if n ~= nil then
-                            result.memory.total = n
-                        end
-                    elseif string.lower(t[1]) == "memfree:" then
-                        local n = tonumber(t[2])
-                        if n ~= nil then
-                            result.memory.free = n
-                        end
-                    elseif string.lower(t[1]) == "memavailable:" then
-                        local n = tonumber(t[2])
-                        if n ~= nil then
-                            result.memory.available = n
-                        end
+    local meminfo = io.open("/proc/meminfo", "r")
+    if meminfo ~= nil then
+        result.memory = {}
+        for line in meminfo:lines() do
+            local t = util.splitToArray(line, " ")
+            if #t >= 2 then
+                if string.lower(t[1]) == "memtotal:" then
+                    local n = tonumber(t[2])
+                    if n ~= nil then
+                        result.memory.total = n
+                    end
+                elseif string.lower(t[1]) == "memfree:" then
+                    local n = tonumber(t[2])
+                    if n ~= nil then
+                        result.memory.free = n
+                    end
+                elseif string.lower(t[1]) == "memavailable:" then
+                    local n = tonumber(t[2])
+                    if n ~= nil then
+                        result.memory.available = n
                     end
                 end
             end
-            meminfo:close()
         end
+        meminfo:close()
     end
     return result
 end
@@ -120,26 +118,21 @@ function SystemStat:appendSystemInfo()
         self:put({_("System information"), ""})
         -- @translators Ticks is a highly technical term. See https://superuser.com/a/101202 The correct translation is likely to simply be "ticks".
         self:put({_("  Total ticks (million)"),
-                 string.format("%.2f", stat.cpu.total / 1000000)})
+            string.format("%.2f", stat.cpu.total / 1000000)})
         -- @translators Ticks is a highly technical term. See https://superuser.com/a/101202 The correct translation is likely to simply be "ticks".
         self:put({_("  Idle ticks (million)"),
-                 string.format("%.2f", stat.cpu.idle / 1000000)})
-        self:put({_("  Processor usage %"),
-                 string.format("%.2f", (1 - stat.cpu.idle / stat.cpu.total) * 100)})
+            string.format("%.2f", stat.cpu.idle / 1000000)})
+        self:put({_("  Processor usage"),
+            string.format("%.2f %%", (1 - stat.cpu.idle / stat.cpu.total) * 100)})
     end
     if stat.memory ~= nil then
-        if stat.memory.total ~= nil then
-            self:put({_("  Total memory (MB)"),
-                     string.format("%.2f", stat.memory.total / 1024)})
-        end
-        if stat.memory.free ~= nil then
-            self:put({_("  Free memory (MB)"),
-                     string.format("%.2f", stat.memory.free / 1024)})
-        end
-        if stat.memory.available ~= nil then
-            self:put({_("  Available memory (MB)"),
-                     string.format("%.2f", stat.memory.available / 1024)})
-        end
+        self:put({_("  Total · free · available"),
+            (stat.memory.total and
+                (util.getFriendlySize(stat.memory.total * 1024, false, true) .. " · ") or "") ..
+            (stat.memory.free and
+                (util.getFriendlySize(stat.memory.free * 1024, false, true) .. " · ") or "") ..
+            (stat.memory.available and
+                util.getFriendlySize(stat.memory.available * 1024, false, true) or "")})
     end
 end
 
@@ -166,8 +159,8 @@ function SystemStat:appendProcessInfo()
         end
         local sys_stat = systemInfo()
         if sys_stat.cpu ~= nil and sys_stat.cpu.total ~= nil then
-            self:put({_("  Processor usage %"),
-                     string.format("%.2f", n1 / sys_stat.cpu.total * 100)})
+            self:put({_("  Processor usage"),
+                string.format("%.2f %%", n1 / sys_stat.cpu.total * 100)})
         else
             self:put({_("  Processor usage ticks (million)"), n1 / 1000000})
         end
@@ -180,15 +173,14 @@ function SystemStat:appendProcessInfo()
     end
 
     if #t < 23 then return end
-    n1 = tonumber(t[23])
-    if n1 ~= nil then
-        self:put({_("  Virtual memory (MB)"), string.format("%.2f", n1 / 1024 / 1024)})
-    end
+    local virtual_mem = tonumber(t[23])
+    local ram_usage = tonumber(t[24]) -- will give nil if not avail
 
-    if #t < 24 then return end
-    n1 = tonumber(t[24])
-    if n1 ~= nil then
-        self:put({_("  RAM usage (MB)"), string.format("%.2f", n1 / 256)})
+    if virtual_mem ~= nil then
+        local key = _("  Virtual memory") .. (ram_usage and " · " .._("RAM usage") or "")
+        local value = util.getFriendlySize(virtual_mem, false, true) ..
+            (ram_usage and (" · " .. util.getFriendlySize(ram_usage * 4 * 1024, false, true)) or "")
+        self:put({key, value})
     end
 end
 
@@ -198,19 +190,21 @@ function SystemStat:appendStorageInfo()
     local std_out = io.popen(
         "df -h | sed -r 's/ +/ /g' | grep " .. self.storage_filter ..
         " | sed 's/ /\\t/g' | cut -f 2,4,5,6"
-    )
+    ) -- "df -h" shows sizes in MiB, GiB ...
     if not std_out then return end
 
     self:put({_("Storage information"), ""})
     for line in std_out:lines() do
         local t = util.splitToArray(line, "\t")
+        local total_mem = t[1]:sub(1, #t[1] - 1) .. " " .. t[1]:sub(#t[1]) .. "iB"
+        local avail_mem = t[2]:sub(1, #t[2] - 1) .. " " .. t[2]:sub(#t[2]) .. "iB"
+        local percentage_used = t[3]:sub(1, #t[3] - 1) .. " " .. t[3]:sub(#t[3])
         if #t ~= 4 then
             self:put({_("  Unexpected"), line})
         else
             self:put({_("  Mount point"), t[4]})
-            self:put({_("    Available"), t[2]})
-            self:put({_("    Total"), t[1]})
-            self:put({_("    Used percentage"), t[3]})
+            self:put({_("    Total · available · used"), total_mem .. " · " ..
+                avail_mem .. " · " .. percentage_used})
         end
     end
     std_out:close()
@@ -246,6 +240,7 @@ function SystemStat:showStatistics()
     UIManager:show(KeyValuePage:new{
         title = _("System statistics"),
         kv_pairs = self.kv_pairs,
+        single_page = true,
     })
 end
 

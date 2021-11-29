@@ -985,23 +985,30 @@ end
 --- Gets human friendly size as string
 ---- @int size (bytes)
 ---- @bool right_align (by padding with spaces on the left)
+---- @bool power2 (if true use binary prefix MiB, GiB, KiB else MB, GB, kB)
 ---- @treturn string
-function util.getFriendlySize(size, right_align)
+function util.getFriendlySize(size, right_align, power2)
+    local base = power2 and 1024 or 1000
+    local base_index = power2 and 2 or 1
     local frac_format = right_align and "%6.1f" or "%.1f"
     local deci_format = right_align and "%6d" or "%d"
     size = tonumber(size)
     if not size or type(size) ~= "number" then return end
-    if size > 1000*1000*1000 then
-        -- @translators This is an abbreviation for the gigabyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 GB"), string.format(frac_format, size/1000/1000/1000))
-    end
-    if size > 1000*1000 then
-        -- @translators This is an abbreviation for the megabyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 MB"), string.format(frac_format, size/1000/1000))
-    end
-    if size > 1000 then
-        -- @translators This is an abbreviation for the kilobyte, a unit of computer memory or data storage capacity.
-        return T(_("%1 kB"), string.format(frac_format, size/1000))
+        -- @translators These are abbreviations for gigabyte, megabyte and kilobytes, units of computer memory or data storage capacity. GB, MB, kB use 1000 as base, whereas GiB, MiB, KiB use 1024.
+    local units = {
+            {_("GB"), _("GiB")},
+            {_("MB"), _("MiB")},
+            {_("kB"), _("KiB")},
+        }
+
+    local base_to_the_second = base * base
+    local base_to_the_third = base_to_the_second * base
+    if size > base_to_the_third then
+        return T(_("%1 " .. units[1][base_index]), string.format(frac_format, size/base_to_the_third))
+    elseif size > base_to_the_second then
+        return T(_("%1 " .. units[2][base_index]), string.format(frac_format, size/base_to_the_second))
+    elseif size > base then
+        return T(_("%1 " .. units[1][base_index]), string.format(frac_format, size/base))
     else
         -- @translators This is an abbreviation for the byte, a unit of computer memory or data storage capacity.
         return T(_("%1 B"), string.format(deci_format, size))
