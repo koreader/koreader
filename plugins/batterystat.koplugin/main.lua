@@ -11,7 +11,7 @@ local dbg = require("dbg")
 local util = require("util")
 local _ = require("gettext")
 
-local DEFAULT_NB_LINES = 23 -- to show all information on one page
+local DEFAULT_NB_LINES = 21 -- to show all information on one page
 
 local State = {}
 
@@ -198,20 +198,6 @@ function BatteryStat:showStatistics()
             end,
         })
     end
-    local function setItemsPerPage()
-        UIManager:show(SpinWidget:new{
-            Title = _("Number of lines in battery statistics"),
-            value = G_reader_settings:readSetting("batterystat_items_per_page", DEFAULT_NB_LINES),
-            value_min = 10,
-            value_max = 25,
-            default_value = DEFAULT_NB_LINES,
-            callback = function(spin)
-                G_reader_settings:saveSetting("batterystat_items_per_page", spin.value)
-                UIManager:close(self.kv_page)
-                self:showStatistics()
-            end,
-        })
-    end
 
     self:accumulate()
     local kv_pairs = self:dump()
@@ -223,14 +209,11 @@ function BatteryStat:showStatistics()
                                     askResetData()
                                 end)
                             end})
-    table.insert(kv_pairs, {_("Tap to change the number of lines."), "",
-                            callback = function()
-                                setItemsPerPage()
-                            end})
     self.kv_page = KeyValuePage:new{
         title = _("Battery statistics"),
         kv_pairs = kv_pairs,
-        items_per_page = G_reader_settings:readSetting("batterystat_items_per_page", DEFAULT_NB_LINES)
+        items_per_page = DEFAULT_NB_LINES,
+        one_page = true,
     }
     UIManager:show(self.kv_page)
 end
