@@ -337,7 +337,7 @@ local KeyValuePage = InputContainer:new{
     -- aligment of value when key or value overflows its reserved width (for
     -- now: 50%): "left" (stick to key), "right" (stick to scren right border)
     value_overflow_align = "left",
-    single_page = nil,
+    show_footer = true,
 }
 
 function KeyValuePage:init()
@@ -472,7 +472,7 @@ function KeyValuePage:init()
         dimen = self.inner_dimen:copy(),
         self.page_info,
     }
-    if self.single_page then
+    if not self.show_footer then
         footer = nil
     end
 
@@ -500,7 +500,7 @@ function KeyValuePage:init()
     local available_height = self.inner_dimen.h
                          - self.title_bar:getSize().h
                          - Size.span.vertical_large -- for above page_info (as title_bar adds one itself)
-                         - (self.single_page and 0 or self.page_info:getSize().h)
+                         - (show_footer and self.page_info:getSize().h or 0)
                          - 2*Size.line.thick
                             -- account for possibly 2 separator lines added
 
