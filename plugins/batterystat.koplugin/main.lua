@@ -10,8 +10,6 @@ local dbg = require("dbg")
 local util = require("util")
 local _ = require("gettext")
 
-local DEFAULT_NB_LINES = 21 -- to show all information on one page
-
 local State = {}
 
 function State:new(o)
@@ -211,8 +209,7 @@ function BatteryStat:showStatistics()
     self.kv_page = KeyValuePage:new{
         title = _("Battery statistics"),
         kv_pairs = kv_pairs,
-        items_per_page = DEFAULT_NB_LINES,
-        show_footer = false,
+        single_page = true,
     }
     UIManager:show(self.kv_page)
 end
