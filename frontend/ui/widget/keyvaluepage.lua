@@ -500,7 +500,7 @@ function KeyValuePage:init()
     local available_height = self.inner_dimen.h
                          - self.title_bar:getSize().h
                          - Size.span.vertical_large -- for above page_info (as title_bar adds one itself)
-                         - (show_footer and self.page_info:getSize().h or 0)
+                         - (self.show_footer and self.page_info:getSize().h or 0)
                          - 2*Size.line.thick
                             -- account for possibly 2 separator lines added
 
