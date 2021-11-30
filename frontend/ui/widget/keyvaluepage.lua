@@ -338,7 +338,6 @@ local KeyValuePage = InputContainer:new{
     -- now: 50%): "left" (stick to key), "right" (stick to scren right border)
     value_overflow_align = "left",
     single_page = nil, -- show all items on one single page (and make them small)
-    min_nb_items = nil, -- show at least this number of items (so items don't get to big)
 }
 
 function KeyValuePage:init()
@@ -507,11 +506,8 @@ function KeyValuePage:init()
 
     local force_items_per_page
     if self.single_page then
-        if not self.min_nb_items then
-            force_items_per_page = #self.kv_pairs
-        else
-            force_items_per_page = math.max(#self.kv_pairs, self.min_nb_items)
-        end
+        force_items_per_page = math.max(#self.kv_pairs,
+            G_reader_settings:readSetting("keyvalues_per_page") or self:getDefaultKeyValuesPerPage())
     end
 
     self.items_per_page = force_items_per_page or
