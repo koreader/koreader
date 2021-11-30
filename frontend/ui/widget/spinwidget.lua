@@ -52,7 +52,7 @@ local SpinWidget = InputContainer:new{
 }
 
 function SpinWidget:init()
-    self._value = self.value -- used to enable ok_button, self.value may be changed in extra callback
+    self.original_value = self.value -- used to enable ok_button, self.value may be changed in extra callback
     self.screen_width = Screen:getWidth()
     self.screen_height = Screen:getHeight()
     if not self.width then
@@ -163,11 +163,11 @@ function SpinWidget:update(numberpicker_value)
         },
         {
             text = self.ok_text,
-            enabled = self._value ~= value_widget:getValue(),
+            enabled = self.original_value ~= value_widget:getValue(),
             callback = function()
                 if self.callback then
                     self.value, self.value_index = value_widget:getValue()
-                    self._value = self.value
+                    self.original_value = self.value
                     self.callback(self)
                 end
                 if self.keep_shown_on_apply then
