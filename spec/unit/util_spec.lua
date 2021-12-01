@@ -410,7 +410,7 @@ describe("util module", function()
     end)
 
     describe("getFriendlySize()", function()
-        describe("should convert bytes to friendly size as string with SI prefixes", function()
+        describe("should convert bytes to friendly size as string", function()
             it("to 100.0 GB", function()
                 assert.is_equal("100.0 GB",
                                 util.getFriendlySize(100*1000*1000*1000))
@@ -458,62 +458,6 @@ describe("util module", function()
         end)
         it("should return nil when input is not a number", function()
             assert.is_nil(util.getFriendlySize("a string"))
-        end)
-    end)
-
-    describe("getFriendlySize()", function()
-        describe("should convert bytes to friendly size as string with binary prefixes", function()
-            it("to 100.0 GiB", function()
-                assert.is_equal("100.0 GiB",
-                                util.getFriendlySize(100*1024*1024*1024, false, true))
-            end)
-            it("to 1000.0 MiB", function()
-                assert.is_equal("1000.0 MiB",
-                                util.getFriendlySize(1000*1024*1024, false, true))
-            end)
-            it("to 1.0 GiB", function()
-                assert.is_equal("1.0 GiB",
-                                util.getFriendlySize(1024*1024*1024+1, false, true))
-            end)
-            it("to 1.0 MiB", function()
-                assert.is_equal("1.0 MiB",
-                                util.getFriendlySize(1024*1024+1, false, true))
-            end)
-            it("to 1.0 KiB", function()
-                assert.is_equal("1.0 KiB",
-                                util.getFriendlySize(1024+1, false, true))
-            end)
-            it("to B", function()
-                assert.is_equal("10 B",
-                                util.getFriendlySize(10, false, true))
-            end)
-            it("to 100.0 GiB with minimum field width alignment", function()
-                assert.is_equal(" 100.0 GiB",
-                                util.getFriendlySize(100*1024*1024*1024, true, true))
-            end)
-            it("to 1.0 GiB with minimum field width alignment", function()
-                assert.is_equal("   1.0 GiB",
-                                util.getFriendlySize(1024*1024*1024+1, true, true))
-            end)
-            it("to 1.0 MiB with minimum field width alignment", function()
-                assert.is_equal("   1.0 MiB",
-                                util.getFriendlySize(1024*1024+1, true, true))
-            end)
-            it("to 1.0 KiB with minimum field width alignment", function()
-                assert.is_equal("   1.0 KiB",
-                                util.getFriendlySize(1024+1, true, true))
-            end)
-            it("to B with minimum field width alignment", function()
-                assert.is_equal("    10 B",
-                                util.getFriendlySize(10, true, true))
-            end)
-        end)
-        it("should return nil when input is nil or false", function()
-            assert.is_nil(util.getFriendlySize(nil))
-            assert.is_nil(util.getFriendlySize(false))
-        end)
-        it("should return nil when input is not a number", function()
-            assert.is_nil(util.getFriendlySize("a string", true, true))
         end)
     end)
 
