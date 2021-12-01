@@ -6,6 +6,8 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local util = require("util")
 local _ = require("gettext")
 
+local SEP = " · "
+
 local SystemStat = {
     start_sec = os.time(),
     suspend_sec = nil,
@@ -25,10 +27,19 @@ function SystemStat:init()
         self.storage_filter = "' /mnt/us$'"
     elseif Device:isSDL() then
         self.storage_filter = "/dev/sd"
+    elseif Device:isAndroid() then
+        self.storage_filter = "sdcard"
     end
 end
 
 function SystemStat:put(p)
+    -- compact spaces before a unit or %-symbols
+    if p[2] and type(p[2]) == "string" then
+        p[2] = p[2]:gsub(" GB", "\u{200a}GB")
+        p[2] = p[2]:gsub(" MB", "\u{200a}MB")
+        p[2] = p[2]:gsub(" kB", "\u{200a}kB")
+        p[2] = p[2]:gsub(" %%", "\u{200a}%%")
+    end
     table.insert(self.kv_pairs, p)
 end
 
@@ -126,13 +137,13 @@ function SystemStat:appendSystemInfo()
             string.format("%.2f %%", (1 - stat.cpu.idle / stat.cpu.total) * 100)})
     end
     if stat.memory ~= nil then
-        self:put({_("  Total" .. " · " .. _("free") .." · " .. _("available")),
+        self:put({_("  Total") .. SEP .. _("free") .. SEP .. _("available"),
             (stat.memory.total and
-                (util.getFriendlySize(stat.memory.total * 1024, false, true) .. " · ") or "") ..
+                (util.getFriendlySize(stat.memory.total * 1024, false) .. SEP) or "N/A") ..
             (stat.memory.free and
-                (util.getFriendlySize(stat.memory.free * 1024, false, true) .. " · ") or "") ..
+                (util.getFriendlySize(stat.memory.free * 1024, false) .. SEP) or "N/A") ..
             (stat.memory.available and
-                util.getFriendlySize(stat.memory.available * 1024, false, true) or "")})
+                util.getFriendlySize(stat.memory.available * 1024, false) or "N/A")})
     end
 end
 
@@ -177,9 +188,9 @@ function SystemStat:appendProcessInfo()
     local ram_usage = tonumber(t[24]) -- will give nil if not avail
 
     if virtual_mem ~= nil then
-        local key = _("  Virtual memory") .. (ram_usage and " · " .._("RAM usage") or "")
-        local value = util.getFriendlySize(virtual_mem, false, true) ..
-            (ram_usage and (" · " .. util.getFriendlySize(ram_usage * 4 * 1024, false, true)) or "")
+        local key = _("  Virtual memory") .. (ram_usage and SEP .._("RAM usage") or "")
+        local value = util.getFriendlySize(virtual_mem, false) ..
+            (ram_usage and (SEP .. util.getFriendlySize(ram_usage * 4 * 1024, false)) or "")
         self:put({key, value})
     end
 end
@@ -187,24 +198,36 @@ end
 function SystemStat:appendStorageInfo()
     if self.storage_filter == nil then return end
 
-    local std_out = io.popen(
-        "df -h | sed -r 's/ +/ /g' | grep " .. self.storage_filter ..
-        " | sed 's/ /\\t/g' | cut -f 2,4,5,6"
-    ) -- "df -h" shows sizes in MiB, GiB ...
+    local df_commands = {
+        -- first choice: SI-prefixes
+        "df -H | sed -r 's/ +/ /g' | grep " .. self.storage_filter .. " | sed 's/ /\\t/g' | cut -f 2,4,5,6",
+        -- second choice: binary-prefixes
+        "df -h | sed -r 's/ +/ /g' | grep " .. self.storage_filter .. " | sed 's/ /\\t/g' | cut -f 2,4,5,6",
+        -- use busybox if available (on some Android devices)
+        "busybox df -h | busybox sed -r 's/ +/ /g' | busybox grep " .. self.storage_filter .. " | busybox sed 's/ /\\t/g' | busybox cut -f 2,4,5,6",
+    }
+
+    local std_out
+    local command_index = 1
+    while not std_out and command_index <= #df_commands+1 do
+        std_out = io.popen( df_commands[command_index] )
+        command_index = command_index + 1
+    end
+
     if not std_out then return end
 
     self:put({_("Storage information"), ""})
     for line in std_out:lines() do
         local t = util.splitToArray(line, "\t")
-        local total_mem = t[1]:sub(1, #t[1] - 1) .. " " .. t[1]:sub(#t[1]) .. "iB"
-        local avail_mem = t[2]:sub(1, #t[2] - 1) .. " " .. t[2]:sub(#t[2]) .. "iB"
+        local total_mem = t[1]:sub(1, #t[1] - 1) .. " " .. t[1]:sub(#t[1]) .. "B"
+        local avail_mem = t[2]:sub(1, #t[2] - 1) .. " " .. t[2]:sub(#t[2]) .. "B"
         local percentage_used = t[3]:sub(1, #t[3] - 1) .. " " .. t[3]:sub(#t[3])
         if #t ~= 4 then
             self:put({_("  Unexpected"), line})
         else
             self:put({_("  Mount point"), t[4]})
-            self:put({_("    Total" .. " · " .. _("available") .. " · " .. _("used")), total_mem .. " · " ..
-                avail_mem .. " · " .. percentage_used})
+            self:put({_("    Total" .. SEP .. _("available") .. SEP .. _("used")), total_mem .. SEP ..
+                avail_mem .. SEP .. percentage_used})
         end
     end
     std_out:close()
