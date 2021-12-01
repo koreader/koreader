@@ -1008,7 +1008,7 @@ function util.getFriendlySize(size, right_align, power2)
     elseif size > base_to_the_second then
         return T(_("%1 " .. units[2][base_index]), string.format(frac_format, size/base_to_the_second))
     elseif size > base then
-        return T(_("%1 " .. units[1][base_index]), string.format(frac_format, size/base))
+        return T(_("%1 " .. units[3][base_index]), string.format(frac_format, size/base))
     else
         -- @translators This is an abbreviation for the byte, a unit of computer memory or data storage capacity.
         return T(_("%1 B"), string.format(deci_format, size))

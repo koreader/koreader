@@ -126,7 +126,7 @@ function SystemStat:appendSystemInfo()
             string.format("%.2f %%", (1 - stat.cpu.idle / stat.cpu.total) * 100)})
     end
     if stat.memory ~= nil then
-        self:put({_("  Total · free · available"),
+        self:put({_("  Total" .. " · " .. _("free") .." · " .. _("available")),
             (stat.memory.total and
                 (util.getFriendlySize(stat.memory.total * 1024, false, true) .. " · ") or "") ..
             (stat.memory.free and
@@ -203,7 +203,7 @@ function SystemStat:appendStorageInfo()
             self:put({_("  Unexpected"), line})
         else
             self:put({_("  Mount point"), t[4]})
-            self:put({_("    Total · available · used"), total_mem .. " · " ..
+            self:put({_("    Total" .. " · " .. _("available") .. " · " .. _("used")), total_mem .. " · " ..
                 avail_mem .. " · " .. percentage_used})
         end
     end
