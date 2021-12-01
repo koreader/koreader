@@ -1142,7 +1142,7 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                 event = more_options_param.event
             end
             local widget
-            if more_options_param.left_min then -- DoubleSpingWidget
+            if more_options_param.left_min then -- DoubleSpinWidget
                 local DoubleSpinWidget = require("ui/widget/doublespinwidget")
                 -- (No support for value_table - add it if needed)
                 local curr_values
@@ -1211,14 +1211,15 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             text = T(_("Set default %1 to %2?"), (name_text or ""), values_string),
                             ok_text = T(_("Set as default")),
                             ok_callback = function()
+                                local setting_name
                                 if more_options_param.names then
-                                    name = self.config_options.prefix.."_"..more_options_param.names[1]
-                                    G_reader_settings:saveSetting(name, left_value)
-                                    name = self.config_options.prefix.."_"..more_options_param.names[2]
-                                    G_reader_settings:saveSetting(name, right_value)
+                                    setting_name = self.config_options.prefix.."_"..more_options_param.names[1]
+                                    G_reader_settings:saveSetting(setting_name, left_value)
+                                    setting_name = self.config_options.prefix.."_"..more_options_param.names[2]
+                                    G_reader_settings:saveSetting(setting_name, right_value)
                                 else
-                                    name = self.config_options.prefix.."_"..name
-                                    G_reader_settings:saveSetting(name, value_tables)
+                                    setting_name = self.config_options.prefix.."_"..name
+                                    G_reader_settings:saveSetting(setting_name, value_tables)
                                 end
                                 self:update()
                                 UIManager:setDirty(self, function()
@@ -1314,15 +1315,15 @@ function ConfigDialog:onConfigMoreChoose(values, name, event, args, name_text, m
                             text = T(_("Set default %1 to %2?"), (name_text or ""), value_string),
                             ok_text = T(_("Set as default")),
                             ok_callback = function()
-                                name = self.config_options.prefix.."_"..name
+                                local setting_name = self.config_options.prefix.."_"..name
                                 if more_options_param.value_table then
                                     if more_options_param.args_table then
-                                        G_reader_settings:saveSetting(name, more_options_param.args_table[spin.value_index])
+                                        G_reader_settings:saveSetting(setting_name, more_options_param.args_table[spin.value_index])
                                     else
-                                        G_reader_settings:saveSetting(name, spin.value_index)
+                                        G_reader_settings:saveSetting(setting_name, spin.value_index)
                                     end
                                 else
-                                    G_reader_settings:saveSetting(name, spin.value)
+                                    G_reader_settings:saveSetting(setting_name, spin.value)
                                 end
                                 self:update()
                                 UIManager:setDirty(self, function()
