@@ -200,37 +200,49 @@ function SystemStat:appendStorageInfo()
 
     local df_commands = {
         -- first choice: SI-prefixes
-        "df -H | sed -r 's/ +/ /g' | grep " .. self.storage_filter .. " | sed 's/ /\\t/g' | cut -f 2,4,5,6",
+        "df -H",
         -- second choice: binary-prefixes
-        "df -h | sed -r 's/ +/ /g' | grep " .. self.storage_filter .. " | sed 's/ /\\t/g' | cut -f 2,4,5,6",
+        "df -h",
         -- use busybox if available (on some Android devices)
-        "busybox df -h | busybox sed -r 's/ +/ /g' | busybox grep " .. self.storage_filter .. " | busybox sed 's/ /\\t/g' | busybox cut -f 2,4,5,6",
+        "busybox df -h",
+        -- as a last resort try df
+        "df",
     }
 
+    self:put({_("Storage information"), ""})
+
     local std_out
+    local is_entry_available
     local command_index = 1
-    while not std_out and command_index <= #df_commands+1 do
+    while not is_entry_available and command_index <= #df_commands do
         std_out = io.popen( df_commands[command_index] )
         command_index = command_index + 1
-    end
 
-    if not std_out then return end
-
-    self:put({_("Storage information"), ""})
-    for line in std_out:lines() do
-        local t = util.splitToArray(line, "\t")
-        local total_mem = t[1]:sub(1, #t[1] - 1) .. " " .. t[1]:sub(#t[1]) .. "B"
-        local avail_mem = t[2]:sub(1, #t[2] - 1) .. " " .. t[2]:sub(#t[2]) .. "B"
-        local percentage_used = t[3]:sub(1, #t[3] - 1) .. " " .. t[3]:sub(#t[3])
-        if #t ~= 4 then
-            self:put({_("  Unexpected"), line})
-        else
-            self:put({_("  Mount point"), t[4]})
-            self:put({_("    Total" .. SEP .. _("available") .. SEP .. _("used")), total_mem .. SEP ..
-                avail_mem .. SEP .. percentage_used})
+        for line in std_out:lines() do
+            if line:find("^   ") then -- can happen with busybox on long device node paths
+                line = "dummy" .. line
+            end
+            line = line:gsub(" +", "\t")
+            local t = util.splitToArray(line, "\t")
+            if line:find(self.storage_filter) then
+                local total_mem = t[2]:sub(1, #t[2] - 1) .. " " .. t[2]:sub(#t[2]) .. "B"
+                local avail_mem = t[4]:sub(1, #t[4] - 1) .. " " .. t[4]:sub(#t[4]) .. "B"
+                local percentage_used
+                if #t >= 6 then
+                    percentage_used = t[5]:sub(1, #t[5] - 1) .. " " .. t[5]:sub(#t[5])
+                    self:put({_("  Mount point"), t[6]})
+                    is_entry_available = true
+                end
+                if #t == 5 then -- a pure df on Android/Tolino
+                    self:put({_("  Mount point"), t[1]})
+                    is_entry_available = true
+                end
+                self:put({_("    Total" .. SEP .. _("available") .. SEP .. _("used")), total_mem .. SEP ..
+                    avail_mem .. SEP .. (percentage_used or "N/A")})
+            end
         end
+        std_out:close()
     end
-    std_out:close()
 end
 
 function SystemStat:onSuspend()
