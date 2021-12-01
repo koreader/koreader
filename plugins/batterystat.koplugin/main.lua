@@ -47,52 +47,50 @@ function Usage:append(state)
     self.time = self.time + os.difftime(curr.timestamp - state.timestamp)
 end
 
-function Usage:minutes()
-    return self.time / 60
-end
-
-function Usage:hours()
-    return self:minutes() / 60
-end
-
-function Usage:percentagePerHour()
+function Usage:percentageRate()
     if self.time == 0 then
         return 0
     else
-        return self.percentage / self:hours()
+        return self.percentage / self.time
     end
 end
 
-function Usage:remainingHours()
-    if self:percentagePerHour() == 0 then return "N/A" end
+function Usage:remainingTime()
+    if self:percentageRate() == 0 then return "N/A" end
     local curr = State:new()
-    return curr.percentage / self:percentagePerHour()
+    return curr.percentage / self:percentageRate()
 end
 
-function Usage:chargingHours()
-    if self:percentagePerHour() == 0 then return "N/A" end
+function Usage:chargingTime()
+    if self:percentageRate() == 0 then return "N/A" end
     local curr = State:new()
-    return math.abs(curr.percentage - 100) / self:percentagePerHour()
+    return math.abs(curr.percentage - 100) / self:percentageRate()
 end
 
 local function shorten(number)
     if number == "N/A" then return _("N/A") end
-    return string.format("%.2f", number);
+    return string.format("%.2f%%", number)
+end
+
+local function duration(number)
+    local duration_fmt = G_reader_settings:readSetting("duration_format", "classic")
+    return type(number) ~= "number" and number or
+        util.secondsToClockDuration(duration_fmt, number, true, true, true)
 end
 
 function Usage:dump(kv_pairs, id)
-    local name = id or _("Consumed %")
-    table.insert(kv_pairs, {INDENTATION .. name, shorten(self.percentage)})
-    table.insert(kv_pairs, {INDENTATION .. _("Total time"), util.secondsToHClock(self.time, true, true)})
-    table.insert(kv_pairs, {INDENTATION .. _("% per hour"), shorten(self:percentagePerHour())})
+    local name = id or _("Consumed:")
+    table.insert(kv_pairs, {INDENTATION .. _("Total time:"), duration(self.time) })
+    table.insert(kv_pairs, {INDENTATION .. name, shorten(self.percentage), "%"})
+    table.insert(kv_pairs, {INDENTATION .. _("Change per hour:"), shorten(self:percentageRate())})
 end
 
 function Usage:dumpRemaining(kv_pairs)
-    table.insert(kv_pairs, {INDENTATION .. _("Estimated remaining hours"), shorten(self:remainingHours())})
+    table.insert(kv_pairs, {INDENTATION .. _("Estimated remaining time:"), duration(self:remainingTime())})
 end
 
 function Usage:dumpCharging(kv_pairs)
-    table.insert(kv_pairs, {INDENTATION .. _("Estimated hours for charging"), shorten(self:chargingHours())})
+    table.insert(kv_pairs, {INDENTATION .. _("Estimated time for charging:"), duration(self:chargingTime())})
 end
 
 local BatteryStat = {
@@ -201,14 +199,7 @@ function BatteryStat:showStatistics()
     self:accumulate()
     local kv_pairs = self:dump()
     kv_pairs[#kv_pairs].separator = true
-    table.insert(kv_pairs, {_("If you would like to reset the data,"), "",
-                            callback = function()
-                                UIManager:setDirty(self.kv_page, "fast")
-                                UIManager:scheduleIn(0.1, function()
-                                    askResetData()
-                                end)
-                            end})
-    table.insert(kv_pairs, {_("please tap here."), "",
+    table.insert(kv_pairs, {_("Tap to reset the data."), "",
                             callback = function()
                                 UIManager:setDirty(self.kv_page, "fast")
                                 UIManager:scheduleIn(0.1, function()
@@ -218,6 +209,7 @@ function BatteryStat:showStatistics()
     self.kv_page = KeyValuePage:new{
         title = _("Battery statistics"),
         kv_pairs = kv_pairs,
+        single_page = true,
     }
     UIManager:show(self.kv_page)
 end
@@ -256,7 +248,7 @@ function BatteryStat:dump()
     self.sleeping:dump(kv_pairs)
     self.sleeping:dumpRemaining(kv_pairs)
     table.insert(kv_pairs, {_("During last charge"), ""})
-    self.charging:dump(kv_pairs, _("Charged %"))
+    self.charging:dump(kv_pairs, _("Charged:"))
     self.charging:dumpCharging(kv_pairs)
     table.insert(kv_pairs, {_("Since last charge"), ""})
     self.discharging:dump(kv_pairs)

@@ -337,6 +337,7 @@ local KeyValuePage = InputContainer:new{
     -- aligment of value when key or value overflows its reserved width (for
     -- now: 50%): "left" (stick to key), "right" (stick to scren right border)
     value_overflow_align = "left",
+    single_page = nil, -- show all items on one single page (and make them small)
 }
 
 function KeyValuePage:init()
@@ -471,6 +472,10 @@ function KeyValuePage:init()
         dimen = self.inner_dimen:copy(),
         self.page_info,
     }
+    if self.single_page then
+        footer = nil
+    end
+
     local page_return = BottomContainer:new{
         dimen = self.inner_dimen:copy(),
         WidgetContainer:new{
@@ -495,11 +500,18 @@ function KeyValuePage:init()
     local available_height = self.inner_dimen.h
                          - self.title_bar:getSize().h
                          - Size.span.vertical_large -- for above page_info (as title_bar adds one itself)
-                         - self.page_info:getSize().h
+                         - (self.single_page and 0 or self.page_info:getSize().h)
                          - 2*Size.line.thick
                             -- account for possibly 2 separator lines added
 
-    self.items_per_page = G_reader_settings:readSetting("keyvalues_per_page") or self:getDefaultKeyValuesPerPage()
+    local force_items_per_page
+    if self.single_page then
+        force_items_per_page = math.max(#self.kv_pairs,
+            G_reader_settings:readSetting("keyvalues_per_page") or self:getDefaultKeyValuesPerPage())
+    end
+
+    self.items_per_page = force_items_per_page or
+        G_reader_settings:readSetting("keyvalues_per_page") or self:getDefaultKeyValuesPerPage()
     self.item_height = math.floor(available_height / self.items_per_page)
     -- Put half of the pixels lost by floor'ing between title and content
     local span_height = math.floor((available_height - (self.items_per_page * (self.item_height))) / 2)
@@ -539,7 +551,7 @@ function KeyValuePage:init()
         margin = 0,
         bordersize = 0,
         background = Blitbuffer.COLOR_WHITE,
-        content
+        content,
     }
 end
 
