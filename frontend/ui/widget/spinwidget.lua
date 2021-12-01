@@ -165,9 +165,9 @@ function SpinWidget:update(numberpicker_value)
             text = self.ok_text,
             enabled = self.original_value ~= value_widget:getValue(),
             callback = function()
+                self.value, self.value_index = value_widget:getValue()
+                self.original_value = self.value
                 if self.callback then
-                    self.value, self.value_index = value_widget:getValue()
-                    self.original_value = self.value
                     self.callback(self)
                 end
                 if self.keep_shown_on_apply then
