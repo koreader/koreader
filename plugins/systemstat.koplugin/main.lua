@@ -137,7 +137,7 @@ function SystemStat:appendSystemInfo()
             string.format("%.2f %%", (1 - stat.cpu.idle / stat.cpu.total) * 100)})
     end
     if stat.memory ~= nil then
-        self:put({_("  Total") .. SEP .. _("free") .. SEP .. _("available"),
+        self:put({_("  RAM: total") .. SEP .. _("free") .. SEP .. _("available"),
             (stat.memory.total and
                 (util.getFriendlySize(stat.memory.total * 1024, false) .. SEP) or "N/A") ..
             (stat.memory.free and
@@ -187,10 +187,10 @@ function SystemStat:appendProcessInfo()
     local virtual_mem = tonumber(t[23])
     local ram_usage = tonumber(t[24]) -- will give nil if not avail
 
-    if virtual_mem ~= nil then
-        local key = _("  Virtual memory") .. (ram_usage and SEP .._("RAM usage") or "")
-        local value = util.getFriendlySize(virtual_mem, false) ..
-            (ram_usage and (SEP .. util.getFriendlySize(ram_usage * 4 * 1024, false)) or "")
+    if ram_usage ~= nil then
+        local key = _("  RAM: used") .. (virtual_mem and SEP .._("virtual") or "")
+        local value = util.getFriendlySize(ram_usage * 4 * 1024, false) ..
+            (virtual_mem and (SEP .. util.getFriendlySize(virtual_mem, false)) or "")
         self:put({key, value})
     end
 end
@@ -213,10 +213,8 @@ function SystemStat:appendStorageInfo()
 
     local std_out
     local is_entry_available
-    local command_index = 1
-    while not is_entry_available and command_index <= #df_commands do
-        std_out = io.popen( df_commands[command_index] )
-        command_index = command_index + 1
+    for dummy, next_command in pairs(df_commands) do
+        std_out = io.popen( next_command )
 
         for line in std_out:lines() do
             if line:find("^   ") then -- can happen with busybox on long device node paths
@@ -242,6 +240,9 @@ function SystemStat:appendStorageInfo()
             end
         end
         std_out:close()
+        if is_entry_available then
+            break
+        end
     end
 end
 
