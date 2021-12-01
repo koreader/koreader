@@ -171,7 +171,8 @@ function ReaderDeviceStatus:addToMainMenu(menu_items)
                 keep_menu_open = true,
                 callback = function(touchmenu_instance)
                     local DoubleSpinWidget = require("/ui/widget/doublespinwidget")
-                    local thresholds_widget = DoubleSpinWidget:new{
+                    local thresholds_widget
+                    thresholds_widget = DoubleSpinWidget:new{
                         title_text = _("Battery level alert thresholds"),
                         info_text = _([[
 Low level threshold is checked when the device is not charging.
@@ -190,11 +191,15 @@ High level threshold is checked when the device is charging.]]),
                         right_hold_step = 5,
                         default_values = true,
                         callback = function(left_value, right_value)
-                            if not left_value then return end -- "Use defaults" pressed
+                            if not left_value then -- "Default" button pressed
+                                left_value = 20
+                                right_value = 100
+                            end
                             self.battery_threshold = left_value
                             self.battery_threshold_high = right_value
                             G_reader_settings:saveSetting("device_status_battery_threshold", self.battery_threshold)
                             G_reader_settings:saveSetting("device_status_battery_threshold_high", self.battery_threshold_high)
+                            UIManager:close(thresholds_widget)
                             touchmenu_instance:updateItems()
                             powerd:setDismissBatteryStatus(false)
                         end,
