@@ -89,10 +89,10 @@ function DoubleSpinWidget:init()
     self:update()
 end
 
-function DoubleSpinWidget:update()
+function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_value)
     local left_widget = NumberPickerWidget:new{
         show_parent = self,
-        value = self.left_value,
+        value = numberpicker_left_value or self.left_value,
         value_min = self.left_min,
         value_max = self.left_max,
         value_step = self.left_step,
@@ -102,7 +102,7 @@ function DoubleSpinWidget:update()
     }
     local right_widget = NumberPickerWidget:new{
         show_parent = self,
-        value = self.right_value,
+        value = numberpicker_right_value or self.right_value,
         value_min = self.right_min,
         value_max = self.right_max,
         value_step = self.right_step,
@@ -110,12 +110,20 @@ function DoubleSpinWidget:update()
         precision = self.right_precision,
         wrap = self.right_wrap,
     }
+    left_widget.picker_updated_callback = function(value)
+        self:update(value, right_widget:getValue())
+    end
+    right_widget.picker_updated_callback = function(value)
+        self:update(left_widget:getValue(), value)
+    end
+    
+    local text_max_width = math.floor(0.95 * self.width / 2)
     local left_vertical_group = VerticalGroup:new{
         align = "center",
         TextWidget:new{
             text = self.left_text,
             face = self.title_face,
-            max_width = math.floor(0.95 * self.width / 2),
+            max_width = text_max_width,
         },
         left_widget,
     }
@@ -124,7 +132,7 @@ function DoubleSpinWidget:update()
         TextWidget:new{
             text = self.right_text,
             face = self.title_face,
-            max_width = math.floor(0.95 * self.width / 2),
+            max_width = text_max_width,
         },
         right_widget,
     }
@@ -221,11 +229,16 @@ function DoubleSpinWidget:update()
         },
         {
             text = self.ok_text,
+            enabled = self.left_value ~= left_widget:getValue() or self.right_value ~= right_widget:getValue(),
             callback = function()
                 if self.callback then
-                    self.callback(left_widget:getValue(), right_widget:getValue())
+                    self.left_value = left_widget:getValue()
+                    self.right_value = right_widget:getValue()
+                    self.callback(self.left_value, self.right_value)
                 end
-                if not self.keep_shown_on_apply then
+                if self.keep_shown_on_apply then
+                    self:update()
+                else
                     self:onClose()
                 end
             end,
