@@ -231,9 +231,9 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
             text = self.ok_text,
             enabled = self.left_value ~= left_widget:getValue() or self.right_value ~= right_widget:getValue(),
             callback = function()
+                self.left_value = left_widget:getValue()
+                self.right_value = right_widget:getValue()
                 if self.callback then
-                    self.left_value = left_widget:getValue()
-                    self.right_value = right_widget:getValue()
                     self.callback(self.left_value, self.right_value)
                 end
                 if self.keep_shown_on_apply then
