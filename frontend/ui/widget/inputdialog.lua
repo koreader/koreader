@@ -14,7 +14,7 @@ Example:
         input = "default value",
         -- A placeholder text shown in the text box.
         input_hint = _("Hint text"),
-        input_type = "string",
+        -- input_type = nil, -- default for text
         -- A description shown above the input.
         description = _("Some more description."),
         -- text_type = "password",
