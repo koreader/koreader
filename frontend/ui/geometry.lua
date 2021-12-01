@@ -1,5 +1,5 @@
 --[[--
-2D Geometry utilities
+Utilities for 2D geometry.
 
 All of these apply to full rectangles:
 

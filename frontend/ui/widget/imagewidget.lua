@@ -1,5 +1,5 @@
 --[[--
-ImageWidget shows an image from a file or memory
+ImageWidget shows an image from a file or memory.
 
 Show image from file example:
 

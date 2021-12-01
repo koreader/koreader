@@ -1,3 +1,40 @@
+--[[--
+Widget for setting the date or time.
+
+Example for input a time:
+    local DateTimeWidget = require("ui/widget/datetimewidget")
+    local @{gettext|_} = require("gettext")
+
+    local time_widget = DateTimeWidget:new{
+        is_date = false,
+        hour = 10,
+        min = 30,
+        ok_text = _("Set time"),
+        title_text = _("Set time"),
+        callback = function(time)
+            -- use time.hour and time.min here
+        end
+    }
+    UIManager:show(time_widget)
+
+Example for input a date:
+    local DateTimeWidget = require("ui/widget/datetimewidget")
+    local @{gettext|_} = require("gettext")
+
+    local date_widget = DateTimeWidget:new{
+        year = 2021,
+        month = 12,
+        day = 31,
+        ok_text = _("Set date"),
+        title_text = _("Set date"),
+        callback = function(time)
+            -- use time.year, time.month, time.day here
+        end
+    }
+    UIManager:show(date_widget)
+
+--]]--
+
 local Blitbuffer = require("ffi/blitbuffer")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
