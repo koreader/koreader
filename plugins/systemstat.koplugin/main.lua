@@ -34,12 +34,6 @@ end
 
 function SystemStat:put(p)
     -- compact spaces before a unit or %-symbols
-    if p[2] and type(p[2]) == "string" then
-        p[2] = p[2]:gsub(" GB", "\u{200a}GB")
-        p[2] = p[2]:gsub(" MB", "\u{200a}MB")
-        p[2] = p[2]:gsub(" kB", "\u{200a}kB")
-        p[2] = p[2]:gsub(" %%", "\u{200a}%%")
-    end
     table.insert(self.kv_pairs, p)
 end
 
@@ -183,15 +177,11 @@ function SystemStat:appendProcessInfo()
         self:put({_("  Threads"), tostring(n1)})
     end
 
-    if #t < 23 then return end
-    local virtual_mem = tonumber(t[23])
-    local ram_usage = tonumber(t[24]) -- will give nil if not avail
+    if #t < 24 then return end
+    local n1 = tonumber(t[24])
 
-    if ram_usage ~= nil then
-        local key = _("  RAM: used") .. (virtual_mem and SEP .._("virtual") or "")
-        local value = util.getFriendlySize(ram_usage * 4 * 1024, false) ..
-            (virtual_mem and (SEP .. util.getFriendlySize(virtual_mem, false)) or "")
-        self:put({key, value})
+    if n1 ~= nil then
+        self:put({_("  RAM used"), util.getFriendlySize(n1 * 4 * 1024, false)})
     end
 end
 
