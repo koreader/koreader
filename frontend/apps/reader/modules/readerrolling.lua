@@ -885,8 +885,6 @@ function ReaderRolling:updatePos()
         return
     end
 
-    Device:setIgnoreInput(true) -- avoid ANRs
-
     -- Check if the document has been re-rendered
     local new_rendering_hash = self.ui.document:getDocumentRenderingHash()
     if new_rendering_hash ~= self.rendering_hash then
@@ -910,8 +908,6 @@ function ReaderRolling:updatePos()
     UIManager:scheduleIn(0.1, function ()
         self:onCheckDomStyleCoherence()
     end)
-
-    Device:setIgnoreInput(false)
 end
 
 --[[

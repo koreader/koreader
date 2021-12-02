@@ -1,5 +1,6 @@
 local BD = require("ui/bidi")
 local ConfirmBox = require("ui/widget/confirmbox")
+local Device = require("device")
 local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -282,9 +283,11 @@ function ReaderTypeset:genStyleSheetMenu()
 end
 
 function ReaderTypeset:onApplyStyleSheet()
+    Device:setIgnoreInput(true)
     local tweaks_css = self.ui.styletweak:getCssText()
     self.ui.document:setStyleSheet(self.css, tweaks_css)
     self.ui:handleEvent(Event:new("UpdatePos"))
+    Device:setIgnoreInput(false)
     return true
 end
 
