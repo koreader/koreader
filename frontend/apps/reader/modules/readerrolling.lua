@@ -867,10 +867,19 @@ function ReaderRolling:onUpdatePos()
         -- we have set above) to avoid multiple refreshes.
         return true
     end
+
+    Device:setIgnoreInput(true)
+
     -- Calling this now ensures the re-rendering is done by crengine
     -- so updatePos() has good info and can reposition
     -- the previous xpointer accurately:
     self.ui.document:getCurrentPos()
+
+    if Device:isAndroid() then
+        Device:setIgnoreInput(false)
+        UIManager:discardEvents(true)
+    end
+
     -- Otherwise, _readMetadata() would do that, but the positioning
     -- would not work as expected, for some reason (it worked
     -- previously because of some bad setDirty() in ConfigDialog widgets
@@ -884,9 +893,6 @@ function ReaderRolling:updatePos()
         -- document closed since we were scheduleIn'ed
         return
     end
-
-    Device:setIgnoreInput(true) -- avoid ANRs
-
     -- Check if the document has been re-rendered
     local new_rendering_hash = self.ui.document:getDocumentRenderingHash()
     if new_rendering_hash ~= self.rendering_hash then
@@ -910,8 +916,6 @@ function ReaderRolling:updatePos()
     UIManager:scheduleIn(0.1, function ()
         self:onCheckDomStyleCoherence()
     end)
-
-    Device:setIgnoreInput(false)
 end
 
 --[[

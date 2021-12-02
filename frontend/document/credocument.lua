@@ -1,6 +1,7 @@
 local Blitbuffer = require("ffi/blitbuffer")
 local CanvasContext = require("document/canvascontext")
 local DataStorage = require("datastorage")
+local Device = require("device")
 local Document = require("document/document")
 local FontList = require("fontlist")
 local Geom = require("ui/geometry")
