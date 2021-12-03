@@ -196,6 +196,44 @@ function Exporter:addToMainMenu(menu_items)
                         end
                     },
                     {
+                        text = _("Set notebook GUID"),
+                        keep_menu_open = true,
+                        callback = function()
+                            local MultiInputDialog = require("ui/widget/multiinputdialog")
+                            local auth_dialog
+                            auth_dialog = MultiInputDialog:new{
+                                title = _("Set GUID for Joplin notebook"),
+                                fields = {
+                                    {
+                                        text = self.joplin_notebook_guid,
+                                        input_type = "string"
+                                    }
+                                },
+                                buttons = {
+                                    {
+                                        {
+                                            text = _("Cancel"),
+                                            callback = function()
+                                                UIManager:close(auth_dialog)
+                                            end
+                                        },
+                                        {
+                                            text = _("Set token"),
+                                            callback = function()
+                                                local auth_field = auth_dialog:getFields()
+                                                self.joplin_notebook_guid = auth_field[1]
+                                                self:saveSettings()
+                                                UIManager:close(auth_dialog)
+                                            end
+                                        }
+                                    }
+                                }
+                            }
+                            UIManager:show(auth_dialog)
+                            auth_dialog:onShowKeyboard()
+                        end
+                    },
+                    {
                         text = _("Export to Joplin"),
                         checked_func = function() return self.joplin_export end,
                         callback = function()
