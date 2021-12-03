@@ -868,10 +868,7 @@ function ReaderRolling:onUpdatePos()
         return true
     end
 
-    if Device:isAndroid() then
-        UIManager:discardEvents(60)
-        Device:setIgnoreInput(true)
-    end
+    Device:setIgnoreInput(true)
 
     -- Calling this now ensures the re-rendering is done by crengine
     -- so updatePos() has good info and can reposition

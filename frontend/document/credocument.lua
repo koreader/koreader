@@ -797,7 +797,7 @@ function CreDocument:getFontFace()
 end
 
 function CreDocument:getCurrentPos()
-    self._document:getCurrentPos()
+    return self._document:getCurrentPos()
 end
 
 function CreDocument:getPageLinks(internal_links_only)
