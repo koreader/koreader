@@ -259,6 +259,10 @@ For Windows: netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenpo
 
 For Linux: $socat tcp-listen:41185,reuseaddr,fork tcp:localhost:41184
 
+Do make sure you have add correct firewall rules for those ports.
+
+Leave the notebook GUID field blank while connecting a new Joplin server, the plugin will create a new notebook named "KOReader Notes" and save its GUID. Or fill in the correct GUID if you try to export to an existing notebook. You can get the GUID by copying its external link.
+
 For more information, please visit https://github.com/koreader/koreader/wiki/Evernote-export.]])
                             , BD.dirpath(DataStorage:getDataDir()))
                             })
