@@ -116,7 +116,7 @@ function DoubleSpinWidget:update(numberpicker_left_value, numberpicker_right_val
     right_widget.picker_updated_callback = function(value)
         self:update(left_widget:getValue(), value)
     end
-    
+
     local text_max_width = math.floor(0.95 * self.width / 2)
     local left_vertical_group = VerticalGroup:new{
         align = "center",
