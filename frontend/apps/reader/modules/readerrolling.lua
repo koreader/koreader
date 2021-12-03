@@ -867,10 +867,22 @@ function ReaderRolling:onUpdatePos()
         -- we have set above) to avoid multiple refreshes.
         return true
     end
+
+    if Device:isAndroid() then
+        UIManager:discardEvents(60)
+        Device:setIgnoreInput(true)
+    end
+
     -- Calling this now ensures the re-rendering is done by crengine
     -- so updatePos() has good info and can reposition
     -- the previous xpointer accurately:
     self.ui.document:getCurrentPos()
+
+    if Device:isAndroid() then
+        Device:setIgnoreInput(false)
+        UIManager:discardEvents(true)
+    end
+
     -- Otherwise, _readMetadata() would do that, but the positioning
     -- would not work as expected, for some reason (it worked
     -- previously because of some bad setDirty() in ConfigDialog widgets

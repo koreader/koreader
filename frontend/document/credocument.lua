@@ -797,7 +797,7 @@ function CreDocument:getFontFace()
 end
 
 function CreDocument:getCurrentPos()
-    return self._document:getCurrentPos()
+    self._document:getCurrentPos()
 end
 
 function CreDocument:getPageLinks(internal_links_only)
@@ -1567,7 +1567,6 @@ function CreDocument:setupCallCache()
             local set_arg = nil
             local set_arg2 = nil
             local is_cached = false
-            local ignore_input = nil
 
             -- Assume all set* may change rendering
             if name == "setBatteryState" then no_wrap = true -- except this one
@@ -1606,6 +1605,7 @@ function CreDocument:setupCallCache()
             -- data that we'd rather not cache, are called with many different args,
             -- or we'd rather have up to date crengine state)
             elseif name == "getCurrentPage" then no_wrap = true
+            elseif name == "getCurrentPos" then no_wrap = true
             elseif name == "getVisiblePageCount" then no_wrap = true
             elseif name == "getVisiblePageNumberCount" then no_wrap = true
             elseif name == "getCoverPageImage" then no_wrap = true
@@ -1639,10 +1639,6 @@ function CreDocument:setupCallCache()
             elseif name == "isXPointerInCurrentPage" then cache_by_tag = true
             elseif name == "getPageMapCurrentPageLabel" then cache_by_tag = true
             elseif name == "getPageMapVisiblePageLabels" then cache_by_tag = true
-
-            -- Theese functions might take a long time to compute and
-            -- can possible cause ANRs on Android
-            elseif name == "getCurrentPos" then ignore_input = true
 
             -- Assume all remaining get* can have their results
             -- cached globally by function arguments
@@ -1716,15 +1712,6 @@ function CreDocument:setupCallCache()
                         addStatMiss(name, starttime)
                         return unpack(results)
                     end
-                end
-            elseif ignore_input then
-                self[name] = function(...)
-                    if do_log then logger.dbg("callCache:", name, "ingore input: true") end
-                    Device:setIgnoreInput(true)
-                    local results = { func(...) }
-                    if do_log then logger.dbg("callCache:", name, "ingore input: false") end
-                    Device:setIgnoreInput(false)
-                    return unpack(results)
                 end
             end
             if do_stats_include_not_cached and not is_cached then
