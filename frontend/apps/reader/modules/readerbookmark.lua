@@ -396,15 +396,15 @@ function ReaderBookmark:updateHighlightsIfNeeded()
     self.ui.doc_settings:saveSetting("bookmarks_version", 20200615)
 end
 
-function ReaderBookmark:onShowBookmark(filter_table)
+function ReaderBookmark:onShowBookmark(match_table)
     self.select_mode = false
-    self.filtered_mode = filter_table and true or false
+    self.filtered_mode = match_table and true or false
     self:updateHighlightsIfNeeded()
     -- build up item_table
     local item_table = {}
     local is_reverse_sorting = G_reader_settings:nilOrTrue("bookmarks_items_reverse_sorting")
+    local curr_page = tostring(self.ui:getCurrentPage())
     local num = #self.bookmarks + 1
-    local count_not_found = 0
     for i = 1, #self.bookmarks do
         -- bookmarks are internally sorted by descending page numbers
         local v = self.bookmarks[is_reverse_sorting and i or num - i]
@@ -415,8 +415,8 @@ function ReaderBookmark:onShowBookmark(filter_table)
         else
             is_auto_text = self:isBookmarkAutoText(v)
         end
-        local k = i - count_not_found
-        item_table[k] = util.tableDeepCopy(v)
+        table.insert(item_table, util.tableDeepCopy(v))
+        local k = #item_table
         if v.highlighted then
             if is_auto_text then
                 item_table[k].type = "highlight"
@@ -426,13 +426,15 @@ function ReaderBookmark:onShowBookmark(filter_table)
         else
             item_table[k].type = "bookmark"
         end
-        if filter_table and not self:isBookmarkFound(item_table[k], filter_table) then
-            table.remove(item_table, k)
-            count_not_found = count_not_found + 1
+        if match_table and not self:isBookmarkMatchTable(item_table[k], match_table) then
+            table.remove(item_table)
         else
             item_table[k].text_orig = v.text or v.notes
             item_table[k].text = DISPLAY_PREFIX[item_table[k].type] .. item_table[k].text_orig
             item_table[k].mandatory = self:getBookmarkPageString(v.page)
+            if item_table[k].mandatory == curr_page then
+                item_table[k].bold = true
+            end
         end
     end
 
@@ -509,7 +511,7 @@ function ReaderBookmark:onShowBookmark(filter_table)
                             table.remove(item_table, i)
                         end
                     end
-                    bm_menu:switchItemTable(self.filtered_mode and _("Bookmarks (search results)") or _("Bookmarks"), item_table, -1)
+                    bm_menu:switchItemTable(bookmark.filtered_mode and _("Bookmarks (search results)") or _("Bookmarks"), item_table, -1)
                 end,
                 other_buttons_first = true,
                 other_buttons = {
@@ -544,7 +546,7 @@ function ReaderBookmark:onShowBookmark(filter_table)
                                 end
                             end
                             self.select_mode = false
-                            bm_menu:switchItemTable(self.filtered_mode and _("Bookmarks (search results)") or _("Bookmarks"), item_table)
+                            bm_menu:switchItemTable(bookmark.filtered_mode and _("Bookmarks (search results)") or _("Bookmarks"), item_table)
                         end,
                     },
                     {
@@ -625,7 +627,7 @@ function ReaderBookmark:onShowBookmark(filter_table)
                             text = _("Search bookmarks"),
                             callback = function()
                                 UIManager:close(self.textviewer)
-                                bookmark:onSearchBookmark(item_table, bm_menu)
+                                bookmark:onSearchBookmark(bm_menu)
                             end,
                         },
                     },
@@ -885,9 +887,9 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
     self.input:onShowKeyboard()
 end
 
-function ReaderBookmark:onSearchBookmark(item_table, bm_menu)
+function ReaderBookmark:onSearchBookmark(bm_menu)
     local input_dialog
-    local check_button_case, line, check_button_bookmark, check_button_highlight, check_button_note
+    local check_button_case, separator, check_button_bookmark, check_button_highlight, check_button_note
     input_dialog = InputDialog:new{
         title = _("Search bookmarks"),
         input_hint = _("(containing text)"),
@@ -907,7 +909,7 @@ function ReaderBookmark:onSearchBookmark(item_table, bm_menu)
                         if not check_button_case.checked then
                             search_str = Utf8Proc.lowercase(util.fixUtf8(search_str, "?"))
                         end
-                        local filter_table = {
+                        local match_table = {
                             search_str = search_str,
                             bookmark = check_button_bookmark.checked,
                             highlight = check_button_highlight.checked,
@@ -915,16 +917,16 @@ function ReaderBookmark:onSearchBookmark(item_table, bm_menu)
                             case_sensitive = check_button_case.checked,
                         }
                         UIManager:close(input_dialog)
-                        if item_table then -- from bookmark list
-                            for i = #item_table, 1, -1 do
-                                if not self:isBookmarkFound(item_table[i], filter_table) then
-                                    table.remove(item_table, i)
+                        if bm_menu then -- from bookmark list
+                            for i = #bm_menu.item_table, 1, -1 do
+                                if not self:isBookmarkMatchTable(bm_menu.item_table[i], match_table) then
+                                    table.remove(bm_menu.item_table, i)
                                 end
                             end
-                            bm_menu:switchItemTable(_("Bookmarks (search results)"), item_table)
+                            bm_menu:switchItemTable(_("Bookmarks (search results)"), bm_menu.item_table)
                             self.filtered_mode = true
                         else -- from main menu
-                            self:onShowBookmark(filter_table)
+                            self:onShowBookmark(match_table)
                         end
                     end,
                 },
@@ -941,7 +943,7 @@ function ReaderBookmark:onSearchBookmark(item_table, bm_menu)
         end,
     }
     input_dialog:addWidget(check_button_case)
-    line = CenterContainer:new{
+    separator = CenterContainer:new{
         dimen = Geom:new{
             w = input_dialog._input_widget.width,
             h = 2 * Size.span.vertical_large,
@@ -954,7 +956,7 @@ function ReaderBookmark:onSearchBookmark(item_table, bm_menu)
             }
         },
     }
-    input_dialog:addWidget(line)
+    input_dialog:addWidget(separator)
     check_button_highlight = CheckButton:new{
         text = " " .. DISPLAY_PREFIX["highlight"] .. _("highlights"),
         checked = true,
@@ -990,16 +992,19 @@ function ReaderBookmark:onSearchBookmark(item_table, bm_menu)
     input_dialog:onShowKeyboard()
 end
 
-function ReaderBookmark:isBookmarkFound(item, filter_table)
-    if filter_table[item.type] then
-        if filter_table.search_str == "" then
+function ReaderBookmark:isBookmarkMatchTable(item, match_table)
+    if match_table[item.type] then
+        if match_table.search_str == "" then
             return true
         else
-            local text = item.notes .. (item.text or "") -- search in the highlighted text and in the note
-            if not filter_table.case_sensitive then
+            local text = item.notes
+            if item.text then -- search in the highlighted text and in the note
+                text = text .. "|" .. item.text
+            end
+            if not match_table.case_sensitive then
                 text = Utf8Proc.lowercase(util.fixUtf8(text, "?"))
             end
-            return text:find(filter_table.search_str)
+            return text:find(match_table.search_str)
         end
     end
 end
@@ -1173,7 +1178,8 @@ end
 
 --- Check if the 'text' field has not been edited manually
 function ReaderBookmark:isBookmarkAutoText(bookmark)
-    return (bookmark.text == nil) or (bookmark.text == self:getBookmarkAutoText(bookmark, true))
+    return (bookmark.text == nil) or (bookmark.text == bookmark.notes)
+        or (bookmark.text == self:getBookmarkAutoText(bookmark, true))
 end
 
 function ReaderBookmark:isHighlightAutoText(item)
