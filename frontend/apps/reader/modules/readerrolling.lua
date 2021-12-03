@@ -884,7 +884,6 @@ function ReaderRolling:updatePos()
         -- document closed since we were scheduleIn'ed
         return
     end
-
     -- Check if the document has been re-rendered
     local new_rendering_hash = self.ui.document:getDocumentRenderingHash()
     if new_rendering_hash ~= self.rendering_hash then
