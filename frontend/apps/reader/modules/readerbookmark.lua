@@ -403,7 +403,8 @@ function ReaderBookmark:onShowBookmark(match_table)
     -- build up item_table
     local item_table = {}
     local is_reverse_sorting = G_reader_settings:nilOrTrue("bookmarks_items_reverse_sorting")
-    local curr_page = tostring(self.ui:getCurrentPage())
+    local curr_page = self:getBookmarkPageString(self.ui.rolling and self.ui.document:getXPointer()
+        or self.ui.paging.current_page)
     local num = #self.bookmarks + 1
     for i = 1, #self.bookmarks do
         -- bookmarks are internally sorted by descending page numbers
@@ -415,26 +416,24 @@ function ReaderBookmark:onShowBookmark(match_table)
         else
             is_auto_text = self:isBookmarkAutoText(v)
         end
-        table.insert(item_table, util.tableDeepCopy(v))
-        local k = #item_table
-        if v.highlighted then
+        local item = util.tableDeepCopy(v)
+        if item.highlighted then
             if is_auto_text then
-                item_table[k].type = "highlight"
+                item.type = "highlight"
             else
-                item_table[k].type = "note"
+                item.type = "note"
             end
         else
-            item_table[k].type = "bookmark"
+            item.type = "bookmark"
         end
-        if match_table and not self:isBookmarkMatchTable(item_table[k], match_table) then
-            table.remove(item_table)
-        else
-            item_table[k].text_orig = v.text or v.notes
-            item_table[k].text = DISPLAY_PREFIX[item_table[k].type] .. item_table[k].text_orig
-            item_table[k].mandatory = self:getBookmarkPageString(v.page)
-            if item_table[k].mandatory == curr_page then
-                item_table[k].bold = true
+        if not match_table or self:doesBookmarkMatchTable(item, match_table) then
+            item.text_orig = item.text or item.notes
+            item.text = DISPLAY_PREFIX[item.type] .. item.text_orig
+            item.mandatory = self:getBookmarkPageString(item.page)
+            if item.mandatory == curr_page then
+                item.bold = true
             end
+            table.insert(item_table, item)
         end
     end
 
@@ -919,7 +918,7 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
                         UIManager:close(input_dialog)
                         if bm_menu then -- from bookmark list
                             for i = #bm_menu.item_table, 1, -1 do
-                                if not self:isBookmarkMatchTable(bm_menu.item_table[i], match_table) then
+                                if not self:doesBookmarkMatchTable(bm_menu.item_table[i], match_table) then
                                     table.remove(bm_menu.item_table, i)
                                 end
                             end
@@ -992,14 +991,14 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
     input_dialog:onShowKeyboard()
 end
 
-function ReaderBookmark:isBookmarkMatchTable(item, match_table)
+function ReaderBookmark:doesBookmarkMatchTable(item, match_table)
     if match_table[item.type] then
         if match_table.search_str == "" then
             return true
         else
             local text = item.notes
             if item.text then -- search in the highlighted text and in the note
-                text = text .. "|" .. item.text
+                text = text .. "\u{FFFF}" .. item.text
             end
             if not match_table.case_sensitive then
                 text = Utf8Proc.lowercase(util.fixUtf8(text, "?"))
@@ -1149,7 +1148,7 @@ function ReaderBookmark:getNumberOfHighlightsAndNotes()
 end
 
 function ReaderBookmark:getBookmarkPageString(page)
-    if not self.ui.document.info.has_pages then
+    if self.ui.rolling then
         if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
             page = self.ui.pagemap:getXPointerPageLabel(page, true)
         else
