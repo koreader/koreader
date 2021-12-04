@@ -176,7 +176,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
             },
         },
     }
-    menu_items.bookmarks_search = {
+    menu_items.bookmark_search = {
         text = _("Bookmark search"),
         enabled_func = function()
             return self:hasBookmarks()
