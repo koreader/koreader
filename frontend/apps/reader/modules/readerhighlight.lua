@@ -663,7 +663,7 @@ function ReaderHighlight:onShowHighlightDialog(page, index)
                 end,
             },
             {
-                text = _("Style"),
+                text = C_("Highlight", "Style"),
                 callback = function()
                     self:editHighlightStyle(page, index)
                     UIManager:close(self.edit_highlight_dialog)
