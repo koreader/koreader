@@ -597,6 +597,24 @@ function ReaderUI:doShowReader(file, provider)
         ReaderUI.instance:onClose()
     end
     local document = DocumentRegistry:openDocument(file, provider)
+
+    -- wrap getCurrentPos method with setIgnoreInput's, to avoid ANRs
+    if Device:isAndroid() then
+        local wrapped_getCurrentPos = document.getCurrentPos
+        document.getCurrentPos = function(...)
+            logger.dbg("getCurrentPos(): setIgnoreInput=true")
+            Device:setIgnoreInput(true)
+
+            local returns = { wrapped_getCurrentPos(...) }
+
+            logger.dbg("getCurrenPos(): setIgnoreInput=")
+            Device:setIgnoreInput(false)
+            UIManager:discardEvents(true)
+
+            return unpack(returns)
+        end
+    end
+
     if not document then
         UIManager:show(InfoMessage:new{
             text = _("No reader engine for this file or invalid file.")
