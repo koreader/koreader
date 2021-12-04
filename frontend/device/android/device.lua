@@ -311,6 +311,7 @@ function Device:performHapticFeedback(type)
 end
 
 function Device:setIgnoreInput(enable)
+    logger.err("android.setIgnoreInput", enable)
     android.setIgnoreInput(enable)
 end
 
