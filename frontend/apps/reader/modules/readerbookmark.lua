@@ -177,7 +177,7 @@ function ReaderBookmark:addToMainMenu(menu_items)
         },
     }
     menu_items.bookmarks_search = {
-        text = _("Bookmarks search"),
+        text = _("Bookmark search"),
         enabled_func = function()
             return self:hasBookmarks()
         end,
@@ -403,29 +403,17 @@ function ReaderBookmark:onShowBookmark(match_table)
     -- build up item_table
     local item_table = {}
     local is_reverse_sorting = G_reader_settings:nilOrTrue("bookmarks_items_reverse_sorting")
-    local curr_page = self:getBookmarkPageString(self.ui.rolling and self.ui.document:getXPointer()
-        or self.ui.paging.current_page)
+    local curr_page = self.ui.rolling and self.ui.document:getXPointer() or self.ui.paging.current_page
+    curr_page = self:getBookmarkPageString(curr_page)
     local num = #self.bookmarks + 1
     for i = 1, #self.bookmarks do
         -- bookmarks are internally sorted by descending page numbers
         local v = self.bookmarks[is_reverse_sorting and i or num - i]
-        local is_auto_text
         if v.text == nil or v.text == "" then
-            is_auto_text = true
             v.text = self:getBookmarkAutoText(v)
-        else
-            is_auto_text = self:isBookmarkAutoText(v)
         end
         local item = util.tableDeepCopy(v)
-        if item.highlighted then
-            if is_auto_text then
-                item.type = "highlight"
-            else
-                item.type = "note"
-            end
-        else
-            item.type = "bookmark"
-        end
+        item.type = self:getBookmarkType(item)
         if not match_table or self:doesBookmarkMatchTable(item, match_table) then
             item.text_orig = item.text or item.notes
             item.text = DISPLAY_PREFIX[item.type] .. item.text_orig
@@ -848,35 +836,28 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                         local value = self.input:getInputValue()
                         if value == "" then -- blank input resets the 'text' field to auto-text
                             value = self:getBookmarkAutoText(bookmark)
-                            if bookmark.type == "note" then
-                                bookmark.type = "highlight"
-                            end
-                        else
-                            if bookmark.type == "highlight" then
-                                bookmark.type = "note"
-                            end
                         end
+                        bookmark.text = value or bookmark.notes
                         for __, bm in ipairs(self.bookmarks) do
                             if bookmark.datetime == bm.datetime and bookmark.page == bm.page then
                                 bm.text = value
-                                bookmark.text_orig = value or bookmark.notes
-                                bookmark.text = bookmark.text_orig
                                 -- A bookmark isn't necessarily a highlight (it doesn't have pboxes)
                                 if bookmark.pboxes then
                                     local setting = G_reader_settings:readSetting("save_document")
                                     if setting ~= "disable" then
-                                        self.ui.document:updateHighlightContents(bookmark.page, bookmark, value or bookmark.notes)
+                                        self.ui.document:updateHighlightContents(bookmark.page, bookmark, bookmark.text)
                                     end
-                                end
-                                UIManager:close(self.input)
-                                if not from_highlight then
-                                    bookmark.text = DISPLAY_PREFIX[bookmark.type] .. bookmark.text
-                                    self.refresh()
                                 end
                                 break
                             end
                         end
                         UIManager:close(self.input)
+                        if not from_highlight then
+                            bookmark.type = self:getBookmarkType(bookmark)
+                            bookmark.text_orig = bookmark.text
+                            bookmark.text = DISPLAY_PREFIX[bookmark.type] .. bookmark.text
+                            self.refresh()
+                        end
                     end,
                 },
             }
@@ -895,7 +876,7 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
         buttons = {
             {
                 {
-                    text = _("Close"),
+                    text = _("Cancel"),
                     callback = function()
                         UIManager:close(input_dialog)
                     end,
@@ -1145,6 +1126,18 @@ function ReaderBookmark:getNumberOfHighlightsAndNotes()
         end
     end
     return highlights, notes
+end
+
+function ReaderBookmark:getBookmarkType(bookmark)
+    if bookmark.highlighted then
+        if self:isBookmarkAutoText(bookmark) then
+            return "highlight"
+        else
+            return "note"
+        end
+    else
+        return "bookmark"
+    end
 end
 
 function ReaderBookmark:getBookmarkPageString(page)
