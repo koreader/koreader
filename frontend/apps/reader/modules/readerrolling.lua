@@ -868,7 +868,10 @@ function ReaderRolling:onUpdatePos()
         return true
     end
 
-    Device:setIgnoreInput(true)
+    if Device:isAndroid() then
+        logger.dbg("readerrolling:onUpdatePos() setIgnoreInput=true")
+        Device:setIgnoreInput(true)
+    end
 
     -- Calling this now ensures the re-rendering is done by crengine
     -- so updatePos() has good info and can reposition
@@ -876,6 +879,7 @@ function ReaderRolling:onUpdatePos()
     self.ui.document:getCurrentPos()
 
     if Device:isAndroid() then
+        logger.dbg("readerrolling:onUpdatePos() setIgnoreInput=false")
         Device:setIgnoreInput(false)
         UIManager:discardEvents(true)
     end
