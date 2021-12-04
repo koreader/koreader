@@ -61,7 +61,7 @@ function GetText_mt.__call(gettext, msgid)
     return gettext.translation[msgid] or gettext.wrapUntranslated(msgid)
 end
 
-local function c_escape(what)
+local function c_escape(what_full, what)
     if what == "\n" then return ""
     elseif what == "a" then return "\a"
     elseif what == "b" then return "\b"
@@ -72,7 +72,7 @@ local function c_escape(what)
     elseif what == "v" then return "\v"
     elseif what == "0" then return "\0" -- shouldn't happen, though
     else
-        return what
+        return what_full
     end
 end
 
@@ -138,7 +138,7 @@ end
 
 local function addTranslation(msgctxt, msgid, msgstr, n)
     -- translated string
-    local unescaped_string = string.gsub(msgstr, "\\(.)", c_escape)
+    local unescaped_string = string.gsub(msgstr, "(\\(.))", c_escape)
     if msgctxt and msgctxt ~= "" then
         if not GetText.context[msgctxt] then
             GetText.context[msgctxt] = {}
