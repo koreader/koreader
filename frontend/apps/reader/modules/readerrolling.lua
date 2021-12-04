@@ -868,21 +868,16 @@ function ReaderRolling:onUpdatePos()
         return true
     end
 
---    if Device:isAndroid() then
---        logger.dbg("readerrolling:onUpdatePos() setIgnoreInput=true")
---        Device:setIgnoreInput(true)
---    end
+    UIManager:discardEvents(180) -- to avoid a double re-rendering
+    Device:setIgnoreInput(true) -- to avoid ANRs on Android, disable taps
 
     -- Calling this now ensures the re-rendering is done by crengine
     -- so updatePos() has good info and can reposition
     -- the previous xpointer accurately:
     self.ui.document:getCurrentPos()
 
---    if Device:isAndroid() then
---        logger.dbg("readerrolling:onUpdatePos() setIgnoreInput=false")
---        Device:setIgnoreInput(false)
---        UIManager:discardEvents(true)
---    end
+    Device:setIgnoreInput(false) -- allow taps from now
+    UIManager:discardEvents(true) -- discard events, which might have occured (double tap).
 
     -- Otherwise, _readMetadata() would do that, but the positioning
     -- would not work as expected, for some reason (it worked

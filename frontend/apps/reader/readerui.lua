@@ -106,10 +106,7 @@ function ReaderUI:init()
     -- cap screen refresh on pan to 2 refreshes per second
     local pan_rate = Screen.low_pan_rate and 2.0 or 30.0
 
-    if Device:isAndroid() then
-        logger.dbg("ReaderUI:init() setIgnoreInput=true")
-        Device:setIgnoreInput(true)
-    end
+    Device:setIgnoreInput(true) -- don't allow taps during initialisation
 
     self.postInitCallback = {}
     self.postReaderCallback = {}
@@ -462,10 +459,7 @@ function ReaderUI:init()
     end
     self.postReaderCallback = nil
 
-    if Device:isAndroid() then
-        logger.dbg("ReaderUI:init() setIgnoreInput=false")
-        Device:setIgnoreInput(false)
-    end
+    Device:setIgnoreInput(false) -- allow taps from now on
 
     -- print("Ordered registered gestures:")
     -- for _, tzone in ipairs(self._ordered_touch_zones) do
@@ -597,24 +591,6 @@ function ReaderUI:doShowReader(file, provider)
         ReaderUI.instance:onClose()
     end
     local document = DocumentRegistry:openDocument(file, provider)
-
-    -- wrap getCurrentPos method with setIgnoreInput's, to avoid ANRs
-    if Device:isAndroid() then
-        local wrapped_getCurrentPos = document.getCurrentPos
-        document.getCurrentPos = function(...)
-            logger.dbg("getCurrentPos(): setIgnoreInput=true")
-            Device:setIgnoreInput(true)
-
-            local returns = { wrapped_getCurrentPos(...) }
-
-            logger.dbg("getCurrenPos(): setIgnoreInput=")
-            Device:setIgnoreInput(false)
-            UIManager:discardEvents(true)
-
-            return unpack(returns)
-        end
-    end
-
     if not document then
         UIManager:show(InfoMessage:new{
             text = _("No reader engine for this file or invalid file.")
