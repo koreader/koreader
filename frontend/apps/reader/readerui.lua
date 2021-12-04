@@ -106,7 +106,7 @@ function ReaderUI:init()
     -- cap screen refresh on pan to 2 refreshes per second
     local pan_rate = Screen.low_pan_rate and 2.0 or 30.0
 
-    Device:setIgnoreInput(true) -- don't allow taps during initialisation
+    Device:setIgnoreInput(true) -- Don't allow taps during initialization.
 
     self.postInitCallback = {}
     self.postReaderCallback = {}
@@ -459,7 +459,7 @@ function ReaderUI:init()
     end
     self.postReaderCallback = nil
 
-    Device:setIgnoreInput(false) -- allow taps from now on
+    Device:setIgnoreInput(false) -- Allow taps from now on.
 
     -- print("Ordered registered gestures:")
     -- for _, tzone in ipairs(self._ordered_touch_zones) do
