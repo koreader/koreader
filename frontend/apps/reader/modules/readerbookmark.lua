@@ -9,7 +9,9 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
+local LineWidget = require("ui/widget/linewidget")
 local Menu = require("ui/widget/menu")
+local Size = require("ui/size")
 local TextViewer = require("ui/widget/textviewer")
 local UIManager = require("ui/uimanager")
 local Utf8Proc = require("ffi/utf8proc")
@@ -173,6 +175,15 @@ function ReaderBookmark:addToMainMenu(menu_items)
                 end
             },
         },
+    }
+    menu_items.bookmark_search = {
+        text = _("Bookmark search"),
+        enabled_func = function()
+            return self:hasBookmarks()
+        end,
+        callback = function()
+            self:onSearchBookmark()
+        end,
     }
 end
 
@@ -385,37 +396,33 @@ function ReaderBookmark:updateHighlightsIfNeeded()
     self.ui.doc_settings:saveSetting("bookmarks_version", 20200615)
 end
 
-function ReaderBookmark:onShowBookmark()
+function ReaderBookmark:onShowBookmark(match_table)
     self.select_mode = false
-    self.filtered_mode = false
+    self.filtered_mode = match_table and true or false
     self:updateHighlightsIfNeeded()
     -- build up item_table
     local item_table = {}
     local is_reverse_sorting = G_reader_settings:nilOrTrue("bookmarks_items_reverse_sorting")
+    local curr_page = self.ui.rolling and self.ui.document:getXPointer() or self.ui.paging.current_page
+    curr_page = self:getBookmarkPageString(curr_page)
     local num = #self.bookmarks + 1
-    for i, v in ipairs(self.bookmarks) do
-        local is_auto_text
-        if v.text == nil or v.text == "" then
-            is_auto_text = true
-            v.text = self:getBookmarkAutoText(v)
-        else
-            is_auto_text = self:isBookmarkAutoText(v)
-        end
+    for i = 1, #self.bookmarks do
         -- bookmarks are internally sorted by descending page numbers
-        local k = is_reverse_sorting and i or num - i
-        item_table[k] = util.tableDeepCopy(v)
-        if v.highlighted then
-            if is_auto_text then
-                item_table[k].type = "highlight"
-            else
-                item_table[k].type = "note"
-            end
-        else
-            item_table[k].type = "bookmark"
+        local v = self.bookmarks[is_reverse_sorting and i or num - i]
+        if v.text == nil or v.text == "" then
+            v.text = self:getBookmarkAutoText(v)
         end
-        item_table[k].text_orig = v.text or v.notes
-        item_table[k].text = DISPLAY_PREFIX[item_table[k].type] .. item_table[k].text_orig
-        item_table[k].mandatory = self:getBookmarkPageString(v.page)
+        local item = util.tableDeepCopy(v)
+        item.type = self:getBookmarkType(item)
+        if not match_table or self:doesBookmarkMatchTable(item, match_table) then
+            item.text_orig = item.text or item.notes
+            item.text = DISPLAY_PREFIX[item.type] .. item.text_orig
+            item.mandatory = self:getBookmarkPageString(item.page)
+            if item.mandatory == curr_page then
+                item.bold = true
+            end
+            table.insert(item_table, item)
+        end
     end
 
     local items_per_page = G_reader_settings:readSetting("bookmarks_items_per_page")
@@ -424,7 +431,7 @@ function ReaderBookmark:onShowBookmark()
     local show_separator = G_reader_settings:isTrue("bookmarks_items_show_separator")
 
     local bm_menu = Menu:new{
-        title = _("Bookmarks"),
+        title = self.filtered_mode and _("Bookmarks (search results)") or _("Bookmarks"),
         item_table = item_table,
         is_borderless = true,
         is_popout = false,
@@ -491,7 +498,7 @@ function ReaderBookmark:onShowBookmark()
                             table.remove(item_table, i)
                         end
                     end
-                    bm_menu:switchItemTable(self.filtered_mode and _("Bookmarks (filtered)") or _("Bookmarks"), item_table, -1)
+                    bm_menu:switchItemTable(bookmark.filtered_mode and _("Bookmarks (search results)") or _("Bookmarks"), item_table, -1)
                 end,
                 other_buttons_first = true,
                 other_buttons = {
@@ -526,7 +533,7 @@ function ReaderBookmark:onShowBookmark()
                                 end
                             end
                             self.select_mode = false
-                            bm_menu:switchItemTable(self.filtered_mode and _("Bookmarks (filtered)") or _("Bookmarks"), item_table)
+                            bm_menu:switchItemTable(bookmark.filtered_mode and _("Bookmarks (search results)") or _("Bookmarks"), item_table)
                         end,
                     },
                     {
@@ -604,91 +611,10 @@ function ReaderBookmark:onShowBookmark()
                             end,
                         },
                         {
-                            text = _("Filter bookmarks"),
+                            text = _("Search bookmarks"),
                             callback = function()
                                 UIManager:close(self.textviewer)
-                                local input_dialog, check_button_bookmark, check_button_highlight, check_button_note
-                                input_dialog = InputDialog:new{
-                                    title = _("Filter bookmarks"),
-                                    input_hint = _("(containing text)"),
-                                    buttons = {
-                                        {
-                                            {
-                                                text = _("Close"),
-                                                callback = function()
-                                                    UIManager:close(input_dialog)
-                                                end,
-                                            },
-                                            {
-                                                text = _("Apply"),
-                                                is_enter_default = true,
-                                                callback = function()
-                                                    if check_button_bookmark.checked
-                                                            or check_button_highlight.checked
-                                                            or check_button_note.checked then
-                                                        local search_str = input_dialog:getInputText()
-                                                        local is_search_str = false
-                                                        if search_str ~= "" then
-                                                            is_search_str = true
-                                                            search_str = Utf8Proc.lowercase(util.fixUtf8(search_str, "?"))
-                                                        end
-                                                        for i = #item_table, 1, -1 do
-                                                            local bm_item = item_table[i]
-                                                            if (check_button_bookmark.checked and bm_item.type == "bookmark")
-                                                                    or (check_button_highlight.checked and bm_item.type == "highlight")
-                                                                    or (check_button_note.checked and bm_item.type == "note") then
-                                                                if is_search_str then
-                                                                    local bm_text = bm_item.notes .. bm_item.text
-                                                                    bm_text = Utf8Proc.lowercase(util.fixUtf8(bm_text, "?"))
-                                                                    if not bm_text:find(search_str) then
-                                                                        table.remove(item_table, i)
-                                                                    end
-                                                                end
-                                                            else
-                                                                table.remove(item_table, i)
-                                                            end
-                                                        end
-                                                        UIManager:close(input_dialog)
-                                                        bm_menu:switchItemTable(_("Bookmarks (filtered)"), item_table)
-                                                        self.filtered_mode = true
-                                                    end
-                                                end,
-                                            },
-                                        },
-                                    },
-                                }
-                                check_button_highlight = CheckButton:new{
-                                    text = " " .. DISPLAY_PREFIX["highlight"] .. _("highlights"),
-                                    checked = true,
-                                    parent = input_dialog,
-                                    max_width = input_dialog._input_widget.width,
-                                    callback = function()
-                                        check_button_highlight:toggleCheck()
-                                    end,
-                                }
-                                input_dialog:addWidget(check_button_highlight)
-                                check_button_note = CheckButton:new{
-                                    text = " " .. DISPLAY_PREFIX["note"] .. _("notes"),
-                                    checked = true,
-                                    parent = input_dialog,
-                                    max_width = input_dialog._input_widget.width,
-                                    callback = function()
-                                        check_button_note:toggleCheck()
-                                    end,
-                                }
-                                input_dialog:addWidget(check_button_note)
-                                check_button_bookmark = CheckButton:new{
-                                    text = " " .. DISPLAY_PREFIX["bookmark"] .. _("page bookmarks"),
-                                    checked = true,
-                                    parent = input_dialog,
-                                    max_width = input_dialog._input_widget.width,
-                                    callback = function()
-                                        check_button_bookmark:toggleCheck()
-                                    end,
-                                }
-                                input_dialog:addWidget(check_button_bookmark)
-                                UIManager:show(input_dialog)
-                                input_dialog:onShowKeyboard()
+                                bookmark:onSearchBookmark(bm_menu)
                             end,
                         },
                     },
@@ -910,35 +836,28 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
                         local value = self.input:getInputValue()
                         if value == "" then -- blank input resets the 'text' field to auto-text
                             value = self:getBookmarkAutoText(bookmark)
-                            if bookmark.type == "note" then
-                                bookmark.type = "highlight"
-                            end
-                        else
-                            if bookmark.type == "highlight" then
-                                bookmark.type = "note"
-                            end
                         end
+                        bookmark.text = value or bookmark.notes
                         for __, bm in ipairs(self.bookmarks) do
                             if bookmark.datetime == bm.datetime and bookmark.page == bm.page then
                                 bm.text = value
-                                bookmark.text_orig = value or bookmark.notes
-                                bookmark.text = bookmark.text_orig
                                 -- A bookmark isn't necessarily a highlight (it doesn't have pboxes)
                                 if bookmark.pboxes then
                                     local setting = G_reader_settings:readSetting("save_document")
                                     if setting ~= "disable" then
-                                        self.ui.document:updateHighlightContents(bookmark.page, bookmark, value or bookmark.notes)
+                                        self.ui.document:updateHighlightContents(bookmark.page, bookmark, bookmark.text)
                                     end
-                                end
-                                UIManager:close(self.input)
-                                if not from_highlight then
-                                    bookmark.text = DISPLAY_PREFIX[bookmark.type] .. bookmark.text
-                                    self.refresh()
                                 end
                                 break
                             end
                         end
                         UIManager:close(self.input)
+                        if not from_highlight then
+                            bookmark.type = self:getBookmarkType(bookmark)
+                            bookmark.text_orig = bookmark.text
+                            bookmark.text = DISPLAY_PREFIX[bookmark.type] .. bookmark.text
+                            self.refresh()
+                        end
                     end,
                 },
             }
@@ -946,6 +865,127 @@ function ReaderBookmark:renameBookmark(item, from_highlight)
     }
     UIManager:show(self.input)
     self.input:onShowKeyboard()
+end
+
+function ReaderBookmark:onSearchBookmark(bm_menu)
+    local input_dialog
+    local check_button_case, separator, check_button_bookmark, check_button_highlight, check_button_note
+    input_dialog = InputDialog:new{
+        title = _("Search bookmarks"),
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    callback = function()
+                        UIManager:close(input_dialog)
+                    end,
+                },
+                {
+                    text = _("Search"),
+                    is_enter_default = true,
+                    callback = function()
+                        local search_str = input_dialog:getInputText()
+                        if not check_button_case.checked then
+                            search_str = Utf8Proc.lowercase(util.fixUtf8(search_str, "?"))
+                        end
+                        local match_table = {
+                            search_str = search_str,
+                            bookmark = check_button_bookmark.checked,
+                            highlight = check_button_highlight.checked,
+                            note = check_button_note.checked,
+                            case_sensitive = check_button_case.checked,
+                        }
+                        UIManager:close(input_dialog)
+                        if bm_menu then -- from bookmark list
+                            for i = #bm_menu.item_table, 1, -1 do
+                                if not self:doesBookmarkMatchTable(bm_menu.item_table[i], match_table) then
+                                    table.remove(bm_menu.item_table, i)
+                                end
+                            end
+                            bm_menu:switchItemTable(_("Bookmarks (search results)"), bm_menu.item_table)
+                            self.filtered_mode = true
+                        else -- from main menu
+                            self:onShowBookmark(match_table)
+                        end
+                    end,
+                },
+            },
+        },
+    }
+    check_button_case = CheckButton:new{
+        text = " " .. _("Case sensitive"),
+        checked = false,
+        parent = input_dialog,
+        max_width = input_dialog._input_widget.width,
+        callback = function()
+            check_button_case:toggleCheck()
+        end,
+    }
+    input_dialog:addWidget(check_button_case)
+    separator = CenterContainer:new{
+        dimen = Geom:new{
+            w = input_dialog._input_widget.width,
+            h = 2 * Size.span.vertical_large,
+        },
+        LineWidget:new{
+            background = Blitbuffer.COLOR_DARK_GRAY,
+            dimen = Geom:new{
+                w = input_dialog._input_widget.width,
+                h = Size.line.medium,
+            }
+        },
+    }
+    input_dialog:addWidget(separator)
+    check_button_highlight = CheckButton:new{
+        text = " " .. DISPLAY_PREFIX["highlight"] .. _("highlights"),
+        checked = true,
+        parent = input_dialog,
+        max_width = input_dialog._input_widget.width,
+        callback = function()
+            check_button_highlight:toggleCheck()
+        end,
+    }
+    input_dialog:addWidget(check_button_highlight)
+    check_button_note = CheckButton:new{
+        text = " " .. DISPLAY_PREFIX["note"] .. _("notes"),
+        checked = true,
+        parent = input_dialog,
+        max_width = input_dialog._input_widget.width,
+        callback = function()
+            check_button_note:toggleCheck()
+        end,
+    }
+    input_dialog:addWidget(check_button_note)
+    check_button_bookmark = CheckButton:new{
+        text = " " .. DISPLAY_PREFIX["bookmark"] .. _("page bookmarks"),
+        checked = true,
+        parent = input_dialog,
+        max_width = input_dialog._input_widget.width,
+        callback = function()
+            check_button_bookmark:toggleCheck()
+        end,
+    }
+    input_dialog:addWidget(check_button_bookmark)
+
+    UIManager:show(input_dialog)
+    input_dialog:onShowKeyboard()
+end
+
+function ReaderBookmark:doesBookmarkMatchTable(item, match_table)
+    if match_table[item.type] then
+        if match_table.search_str == "" then
+            return true
+        else
+            local text = item.notes
+            if item.text then -- search in the highlighted text and in the note
+                text = text .. "\u{FFFF}" .. item.text
+            end
+            if not match_table.case_sensitive then
+                text = Utf8Proc.lowercase(util.fixUtf8(text, "?"))
+            end
+            return text:find(match_table.search_str)
+        end
+    end
 end
 
 function ReaderBookmark:toggleBookmark(pn_or_xp)
@@ -1087,8 +1127,20 @@ function ReaderBookmark:getNumberOfHighlightsAndNotes()
     return highlights, notes
 end
 
+function ReaderBookmark:getBookmarkType(bookmark)
+    if bookmark.highlighted then
+        if self:isBookmarkAutoText(bookmark) then
+            return "highlight"
+        else
+            return "note"
+        end
+    else
+        return "bookmark"
+    end
+end
+
 function ReaderBookmark:getBookmarkPageString(page)
-    if not self.ui.document.info.has_pages then
+    if self.ui.rolling then
         if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
             page = self.ui.pagemap:getXPointerPageLabel(page, true)
         else
@@ -1117,7 +1169,8 @@ end
 
 --- Check if the 'text' field has not been edited manually
 function ReaderBookmark:isBookmarkAutoText(bookmark)
-    return (bookmark.text == nil) or (bookmark.text == self:getBookmarkAutoText(bookmark, true))
+    return (bookmark.text == nil) or (bookmark.text == bookmark.notes)
+        or (bookmark.text == self:getBookmarkAutoText(bookmark, true))
 end
 
 function ReaderBookmark:isHighlightAutoText(item)

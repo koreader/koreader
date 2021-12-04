@@ -118,6 +118,7 @@ local settingsList = {
     clear_location_history = {category="none", event="ClearLocationStack", arg=true, title=_("Clear location history"), reader=true, separator=true},
     toc = {category="none", event="ShowToc", title=_("Table of contents"), reader=true},
     bookmarks = {category="none", event="ShowBookmark", title=_("Bookmarks"), reader=true},
+    bookmark_search = {category="none", event="SearchBookmark", title=_("Bookmark search"), reader=true},
     book_status = {category="none", event="ShowBookStatus", title=_("Book status"), reader=true},
     book_info = {category="none", event="ShowBookInfo", title=_("Book information"), reader=true},
     book_description = {category="none", event="ShowBookDescription", title=_("Book description"), reader=true},
@@ -278,6 +279,7 @@ local dispatcher_menu_order = {
 
     "toc",
     "bookmarks",
+    "bookmark_search",
 
     "book_status",
     "book_info",
