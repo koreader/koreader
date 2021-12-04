@@ -872,7 +872,6 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
     local check_button_case, separator, check_button_bookmark, check_button_highlight, check_button_note
     input_dialog = InputDialog:new{
         title = _("Search bookmarks"),
-        input_hint = _("(containing text)"),
         buttons = {
             {
                 {
