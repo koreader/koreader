@@ -73,7 +73,7 @@ local average_earth_radius = 6371e3
 local semimajor_axis = 149598022.96E3 -- earth orbit's major semi-axis in meter
 local average_speed_earth = 29.7859e3
 local aberration = asin(average_speed_earth/speed_of_light) -- Aberration relativistic
-local average_speed_equator = (2*pi * average_earth_radius) / (24*3600)
+--local average_speed_equator = (2*pi * average_earth_radius) / (24*3600)
 --------------------------------------------
 
  -- minimal twillight times in hours
