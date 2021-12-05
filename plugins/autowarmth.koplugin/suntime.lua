@@ -374,7 +374,7 @@ function SunTime:getHeight(time, eod)
     end
 
     if eod then
-        return asin(val) - eod -- todo self.eod is a bit to small
+        return asin(val) - eod -- self.eod might be a bit to small
     else
         return asin(val)
     end
