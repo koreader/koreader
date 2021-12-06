@@ -115,7 +115,12 @@ function CheckButton:onTapCheckButton()
         elseif type(self.tap_input_func) == "function" then
             self:onInput(self.tap_input_func())
         else
-            if G_reader_settings:nilOrTrue("flash_ui") then
+            if G_reader_settings:isFalse("flash_ui") then
+                self:toggleCheck()
+                if self.callback then
+                    self.callback()
+                end
+            else
                 -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
 
                 local highlight_dimen = self.dimen
@@ -135,11 +140,14 @@ function CheckButton:onTapCheckButton()
                 UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
                 UIManager:setDirty(nil, "ui", highlight_dimen)
 
+                -- Callback
+                --
+                self:toggleCheck()
+                if self.callback then
+                    self.callback()
+                end
+
                 UIManager:forceRePaint()
-            end
-            self:toggleCheck()
-            if self.callback then
-                self.callback()
             end
         end
     end
