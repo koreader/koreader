@@ -869,7 +869,6 @@ function InputDialog:_addScrollButtons(nav_bar)
                         parent = input_dialog,
                         max_width = input_dialog._input_widget.width,
                         callback = function()
-                            self.check_button_case:toggleCheck()
                             self.case_sensitive = self.check_button_case.checked
                         end,
                     }
