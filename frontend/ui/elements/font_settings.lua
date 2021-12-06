@@ -7,7 +7,7 @@ local _ = require("gettext")
 
 local LINUX_FONT_PATH = os.getenv("XDG_DATA_HOME")
     and string.format("%s/fonts", os.getenv("XDG_DATA_HOME"))
-    or string.format("%s/%s", home, ".local/share/fonts")
+    or string.format("%s/%s", Device.home_dir, ".local/share/fonts")
 local MACOS_FONT_PATH = "Library/fonts"
 
 local function getDir(isUser)
