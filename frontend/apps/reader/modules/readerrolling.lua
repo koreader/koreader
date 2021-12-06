@@ -868,8 +868,8 @@ function ReaderRolling:onUpdatePos()
         return true
     end
 
-    UIManager:discardEvents(180) -- Avoid a double re-rendering.
-    Device:setIgnoreInput(true) -- Don't allow taps during rerendering.
+    UIManager:discardEvents(3600) -- Discard any past and upcoming input event for the next hour.
+    Device:setIgnoreInput(true) -- Avoid ANRs on Android with unprocessed events.
 
     -- Calling this now ensures the re-rendering is done by crengine
     -- so updatePos() has good info and can reposition
@@ -883,7 +883,7 @@ function ReaderRolling:onUpdatePos()
     -- rerendering) before updatePos() is called.
     self:updatePos()
 
-    Device:setIgnoreInput(false) -- Allow taps from now.
+    Device:setIgnoreInput(false) -- Allow processing of events (on Android).
     UIManager:discardEvents(true) -- Discard events, which might have occured (double tap).
 end
 
