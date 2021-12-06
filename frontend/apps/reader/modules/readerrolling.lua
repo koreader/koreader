@@ -860,7 +860,7 @@ end
     font has been changed, or line height has been changed.
     Note that xpointer should not be changed.
 --]]
-function ReaderRolling:onUpdatePos()
+function ReaderRolling:onUpdatePos(no_ignore)
     if self.ui.postReaderCallback ~= nil then -- ReaderUI:init() not yet done
         -- Don't schedule any updatePos as long as ReaderUI:init() is
         -- not finished (one will be called in the ui.postReaderCallback
@@ -868,8 +868,10 @@ function ReaderRolling:onUpdatePos()
         return true
     end
 
-    UIManager:discardEvents(180) -- Avoid a double re-rendering.
-    Device:setIgnoreInput(true) -- Don't allow taps during rerendering.
+    if not no_ignore then
+        UIManager:discardEvents(180) -- Avoid a double re-rendering.
+        Device:setIgnoreInput(true) -- Don't allow taps during rerendering.
+    end
 
     -- Calling this now ensures the re-rendering is done by crengine
     -- so updatePos() has good info and can reposition
@@ -883,8 +885,10 @@ function ReaderRolling:onUpdatePos()
     -- rerendering) before updatePos() is called.
     self:updatePos()
 
-    Device:setIgnoreInput(false) -- Allow taps from now.
-    UIManager:discardEvents(true) -- Discard events, which might have occured (double tap).
+    if not no_ignore then
+        Device:setIgnoreInput(false) -- Allow taps from now.
+        UIManager:discardEvents(true) -- Discard events, which might have occured (double tap).
+    end
 end
 
 function ReaderRolling:updatePos()
@@ -953,6 +957,7 @@ function ReaderRolling:onSetDimensions(dimen)
         -- (what's done in the following else is done elsewhere by
         -- the initialization code)
     else
+        Device:setIgnoreInput(true)
         -- Initialization done: we are called on orientation change
         -- or on window resize (SDL, Android possibly).
         -- We need to temporarily re-enable internal history as crengine
@@ -962,10 +967,11 @@ function ReaderRolling:onSetDimensions(dimen)
         self.ui.document:setViewDimen(Screen:getSize())
         -- Re-setup previous position
         self:onChangeViewMode()
-        self:onUpdatePos()
+        self:onUpdatePos(true)
         -- Re-disable internal history, with required redraw
         self.ui.document:enableInternalHistory(false)
         self:onRedrawCurrentView()
+        Device:setIgnoreInput(false)
     end
 end
 
