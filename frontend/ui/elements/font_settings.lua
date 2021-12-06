@@ -10,8 +10,8 @@ local function getDir(isUser)
 
     local XDG_DATA_HOME = os.getenv("XDG_DATA_HOME")
     local LINUX_FONT_PATH = XDG_DATA_HOME
-        and string.format("%s/fonts", XDG_DATA_HOME)
-        or string.format("%s/%s", home, ".local/share/fonts")
+        and XDG_DATA_HOME .. "/fonts"
+        or home .. "/.local/share/fonts"
     local LINUX_SYS_FONT_PATH = "/usr/share/fonts"
     local MACOS_FONT_PATH = "Library/fonts"
 
@@ -31,8 +31,8 @@ local function getDir(isUser)
     elseif Device:isDesktop() or Device:isEmulator() then
         if jit.os == "OSX" then
             return isUser
-                and string.format("%s/%s", home, MACOS_FONT_PATH)
-                or string.format("/%s", MACOS_FONT_PATH)
+                and home .. "/" .. MACOS_FONT_PATH
+                or "/" .. MACOS_FONT_PATH
         else
             return isUser
                 and LINUX_FONT_PATH
