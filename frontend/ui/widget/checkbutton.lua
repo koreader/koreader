@@ -109,39 +109,39 @@ function CheckButton:initCheckButton(checked)
 end
 
 function CheckButton:onTapCheckButton()
-    if self.enabled and self.callback then
-        if G_reader_settings:isFalse("flash_ui") then
-            self.callback()
+    if self.enabled then
+        if self.tap_input then
+            self:onInput(self.tap_input)
+        elseif type(self.tap_input_func) == "function" then
+            self:onInput(self.tap_input_func())
         else
-            -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
+            if G_reader_settings:nilOrTrue("flash_ui") then
+                -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
 
-            local highlight_dimen = self.dimen
+                local highlight_dimen = self.dimen
 
-            -- Highlight
-            --
-            self[1].invert = true
-            UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
-            UIManager:setDirty(nil, "fast", highlight_dimen)
+                -- Highlight
+                --
+                self[1].invert = true
+                UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+                UIManager:setDirty(nil, "fast", highlight_dimen)
 
-            UIManager:forceRePaint()
-            UIManager:yieldToEPDC()
+                UIManager:forceRePaint()
+                UIManager:yieldToEPDC()
 
-            -- Unhighlight
-            --
-            self[1].invert = false
-            UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
-            UIManager:setDirty(nil, "ui", highlight_dimen)
+                -- Unhighlight
+                --
+                self[1].invert = false
+                UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+                UIManager:setDirty(nil, "ui", highlight_dimen)
 
-            -- Callback
-            --
-            self.callback()
-
-            UIManager:forceRePaint()
+                UIManager:forceRePaint()
+            end
+            self:toggleCheck()
+            if self.callback then
+                self.callback()
+            end
         end
-    elseif self.tap_input then
-        self:onInput(self.tap_input)
-    elseif type(self.tap_input_func) == "function" then
-        self:onInput(self.tap_input_func())
     end
     return true
 end
