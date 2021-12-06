@@ -668,7 +668,7 @@ end
 
 function OPDSBrowser:createNewDownloadDialog(path, filename, buttons)
     self.download_dialog = ButtonDialogTitle:new{
-        title = T(_("Download folder:\n%1\n\nDownload file name:\n%2\n\nDownload file type:"),
+        title = T(_("Download folder:\n%1\n\nDownload filename:\n%2\n\nDownload file type:"),
             BD.dirpath(path), filename),
         use_info_style = true,
         buttons = buttons
@@ -732,11 +732,11 @@ function OPDSBrowser:showDownloads(item)
             end,
         },
         {
-            text = _("Change file name"),
+            text = _("Change filename"),
             callback = function()
                 local input_dialog
                 input_dialog = InputDialog:new{
-                    title = _("Enter file name"),
+                    title = _("Enter filename"),
                     input = filename,
                     buttons = {
                         {
@@ -747,7 +747,7 @@ function OPDSBrowser:showDownloads(item)
                                 end,
                             },
                             {
-                                text = _("Save"),
+                                text = _("Set filename"),
                                 is_enter_default = true,
                                 callback = function()
                                     filename = input_dialog:getInputValue()
