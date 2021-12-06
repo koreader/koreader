@@ -876,15 +876,15 @@ function ReaderRolling:onUpdatePos()
     -- the previous xpointer accurately:
     self.ui.document:getCurrentPos()
 
-    Device:setIgnoreInput(false) -- Allow taps from now-
-    UIManager:discardEvents(true) -- Discard events, which might have occured (double tap).
-
     -- Otherwise, _readMetadata() would do that, but the positioning
     -- would not work as expected, for some reason (it worked
     -- previously because of some bad setDirty() in ConfigDialog widgets
     -- that were triggering a full repaint of crengine (so, the needed
     -- rerendering) before updatePos() is called.
     self:updatePos()
+
+    Device:setIgnoreInput(false) -- Allow taps from now.
+    UIManager:discardEvents(true) -- Discard events, which might have occured (double tap).
 end
 
 function ReaderRolling:updatePos()
