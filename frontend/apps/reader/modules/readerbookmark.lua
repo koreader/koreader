@@ -917,9 +917,6 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
         checked = false,
         parent = input_dialog,
         max_width = input_dialog._input_widget.width,
-        callback = function()
-            check_button_case:toggleCheck()
-        end,
     }
     input_dialog:addWidget(check_button_case)
     separator = CenterContainer:new{
@@ -941,9 +938,6 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
         checked = true,
         parent = input_dialog,
         max_width = input_dialog._input_widget.width,
-        callback = function()
-            check_button_highlight:toggleCheck()
-        end,
     }
     input_dialog:addWidget(check_button_highlight)
     check_button_note = CheckButton:new{
@@ -951,9 +945,6 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
         checked = true,
         parent = input_dialog,
         max_width = input_dialog._input_widget.width,
-        callback = function()
-            check_button_note:toggleCheck()
-        end,
     }
     input_dialog:addWidget(check_button_note)
     check_button_bookmark = CheckButton:new{
@@ -961,9 +952,6 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
         checked = true,
         parent = input_dialog,
         max_width = input_dialog._input_widget.width,
-        callback = function()
-            check_button_bookmark:toggleCheck()
-        end,
     }
     input_dialog:addWidget(check_button_bookmark)
 
