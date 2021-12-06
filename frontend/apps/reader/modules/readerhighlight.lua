@@ -9,6 +9,7 @@ local Notification = require("ui/widget/notification")
 local TimeVal = require("ui/timeval")
 local Translator = require("ui/translator")
 local UIManager = require("ui/uimanager")
+local ReaderWebSearch = require("apps/reader/modules/readerwebsearch")
 local dbg = require("dbg")
 local logger = require("logger")
 local util = require("util")
@@ -201,7 +202,45 @@ function ReaderHighlight:init()
             end,
         }
     end)
+  
+  -- Web Search
+    self:addToHighlightDialog("11_web_search_default", function(_self)
+        return {
+            text = _("Web Search"),
+            show_in_highlight_dialog_func = function()
+                return _self.selected_text ~= nil
+            end,
+            callback = function()
+                -- search_link = 'https://www.google.com/search?q='..util.urlEncode(_self.selected_text.text)
+                ReaderWebSearch = require("apps/reader/modules/readerwebsearch")
+                logger.info("default website: ", ReaderWebSearch:getWebSearchSiteDefault())
+                logger.info("address prefix: ", ReaderWebSearch:getWebSearchPrefixAddress(ReaderWebSearch:getWebSearchSiteDefault()))
+                logger.info("address suffix: ", ReaderWebSearch:getWebSearchSuffixAddress(ReaderWebSearch:getWebSearchSiteDefault()))
+                search_link = ReaderWebSearch:getWebSearchPrefixAddress(ReaderWebSearch:getWebSearchSiteDefault())..util.urlEncode(_self.selected_text.text)
+                if (ReaderWebSearch:getWebSearchSuffixAddress(ReaderWebSearch:getWebSearchSiteDefault())~='')
+                  then search_link = search_link..ReaderWebSearch:getWebSearchSuffixAddress(ReaderWebSearch:getWebSearchSiteDefault())
+                end
+                logger.info("Search Command URL: "..search_link)
+                Device:openLink(search_link)
+                _self:onClose()
+            end,
+          }
+    end)
 
+    self:addToHighlightDialog("12_web_search_select", function(_self)
+        return {
+            text = _("Web Search (other) "),
+            show_in_highlight_dialog_func = function()
+                return _self.selected_text ~= nil
+            end,
+            callback = function()
+                ReaderWebSearch = require("apps/reader/modules/readerwebsearch")
+                selected_websearchsite = ReaderWebSearch:selectWebSearchSite(_self.selected_text.text)
+                _self:onClose()
+            end,
+          }
+    end)
+  
     self.ui:registerPostInitCallback(function()
         self.ui.menu:registerToMainMenu(self)
     end)

@@ -145,6 +145,9 @@ local order = {
         "find_file",
         "----------------------------",
         "opds",
+        "----------------------------",
+        "websearch",
+        "defaultwebsearch",
     },
     main = {
         "history",

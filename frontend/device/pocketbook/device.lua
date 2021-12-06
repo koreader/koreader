@@ -17,6 +17,29 @@ _G.POCKETBOOK_FFI = true
 local function yes() return true end
 local function no() return false end
 
+local browser_app ="/ebrmain/bin/webbrowser.sh"
+
+local function isUrl(s)
+    return type(s) == "string" and s:match("*?://")
+end
+
+local function isCommand(s)
+    return os.execute("which "..s.." >/dev/null 2>&1") == 0
+end
+
+local function runCommand(command)
+      return os.execute(command) == 0
+end
+
+local function getLinkOpener()
+    if jit.os == "Linux" and isCommand(browser_app) then
+        return true, browser_app
+    elseif jit.os == "OSX" and isCommand("open") then
+        return true, "open"
+    end
+    return false
+end
+
 local ext_path = "/mnt/ext1/system/config/extensions.cfg"
 local app_name = "koreader.app"
 
@@ -63,6 +86,17 @@ local PocketBook = Generic:new{
     -- Private per-model kludges
     _fb_init = function() end,
     _model_init = function() end,
+    canOpenLink = getLinkOpener,
+    openLink = function(self, link)
+        local enabled, tool = getLinkOpener()
+        logger.info("getlinkOpener: "..tostring(enabled)..", tool:"..tool)
+        logger.info("Link: "..link)
+        logger.info("Link type:"..type(link))
+        if not enabled or not tool or not link or type(link) ~= "string" then return end
+        logger.info("Command: "..browser_app.. " '" .. link .. "'")
+        runCommand(browser_app.. " '" .. link .. "' 1>/dev/null 2>&1 &")
+        return   
+    end,
 }
 
 -- Helper to try load externally signalled book whenever we're brought to foreground
