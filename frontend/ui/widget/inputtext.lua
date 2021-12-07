@@ -393,9 +393,8 @@ function InputText:initTextBox(text, char_added)
         self._check_button = self._check_button or CheckButton:new{
             text = _("Show password"),
             parent = self,
-            max_width = self.width,
+            width = self.width,
             callback = function()
-                self._check_button:toggleCheck()
                 self.text_type = self._check_button.checked and "text" or "password"
                 self:setText(self:getText(), true)
             end,

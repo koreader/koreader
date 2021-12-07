@@ -139,20 +139,12 @@ function ReaderSearch:onShowFulltextSearchInput()
         text = _("Case sensitive"),
         checked = not self.case_insensitive,
         parent = self.input_dialog,
-        max_width = self.input_dialog._input_widget.width,
-        callback = function()
-            self.check_button_case:toggleCheck()
-        end,
     }
     self.input_dialog:addWidget(self.check_button_case)
     self.check_button_regex = CheckButton:new{
         text = _("Regular expression (long-press for help)"),
         checked = self.use_regex,
         parent = self.input_dialog,
-        max_width = self.input_dialog._input_widget.width,
-        callback = function()
-            self.check_button_regex:toggleCheck()
-        end,
         hold_callback = function()
             UIManager:show(InfoMessage:new{
                 text = help_text,
