@@ -867,7 +867,6 @@ function InputDialog:_addScrollButtons(nav_bar)
                         text = _("Case sensitive"),
                         checked = self.case_sensitive,
                         parent = input_dialog,
-                        max_width = input_dialog._input_widget.width,
                         callback = function()
                             self.case_sensitive = self.check_button_case.checked
                         end,
