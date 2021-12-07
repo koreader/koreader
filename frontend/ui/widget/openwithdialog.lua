@@ -63,7 +63,7 @@ function OpenWithDialog:init()
 
     self._check_file_button = self._check_file_button or CheckButton:new{
         text = _("Always use this engine for this file"),
-        max_width = self.element_width,
+        width = self.element_width,
         face = self.face,
         parent = self,
     }
@@ -78,7 +78,7 @@ function OpenWithDialog:init()
 
     self._check_global_button = self._check_global_button or CheckButton:new{
         text = _("Always use this engine for file type"),
-        max_width = self.element_width,
+        width = self.element_width,
         face = self.face,
         parent = self,
     }
