@@ -3,7 +3,7 @@ on: [push, pull_request]
 jobs:
   macos_build:
 
-    runs-on: macos-latest
+    runs-on: macos-11
 
     steps:
       - name: XCode version
@@ -24,7 +24,7 @@ jobs:
 
       - name: Building in progress…
         run: |
-          export MACOSX_DEPLOYMENT_TARGET=11.0;
+          export MACOSX_DEPLOYMENT_TARGET=11;
           export PATH="$(brew --prefix)/opt/gettext/bin:$(brew --prefix)/opt/gnu-getopt/bin:$(brew --prefix)/opt/bison/bin:$(brew --prefix)/opt/grep/libexec/gnubin:${PATH}";
           ./kodev release macos
 
