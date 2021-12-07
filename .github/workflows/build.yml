@@ -14,9 +14,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Homebrew upgrade
-        run: brew update -q && brew upgrade -q
-
       - name: Homebrew install dependencies
         # Compared to the README, adds ccache for faster compilation times
         # Compared to the emulator, adds p7zip.
@@ -27,6 +24,7 @@ jobs:
 
       - name: Building in progress…
         run: |
+          export MACOSX_DEPLOYMENT_TARGET=11.0;
           export PATH="$(brew --prefix)/opt/gettext/bin:$(brew --prefix)/opt/gnu-getopt/bin:$(brew --prefix)/opt/bison/bin:$(brew --prefix)/opt/grep/libexec/gnubin:${PATH}";
           ./kodev release macos
 
