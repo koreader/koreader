@@ -9,34 +9,29 @@ local function getDir(isUser)
     local home = Device.home_dir
 
     local XDG_DATA_HOME = os.getenv("XDG_DATA_HOME")
-    local LINUX_FONT_PATH = XDG_DATA_HOME
-        and XDG_DATA_HOME .. "/fonts"
-        or home .. "/.local/share/fonts"
+    local LINUX_FONT_PATH = XDG_DATA_HOME and XDG_DATA_HOME .. "/fonts"
+                                           or home .. "/.local/share/fonts"
     local LINUX_SYS_FONT_PATH = "/usr/share/fonts"
     local MACOS_FONT_PATH = "Library/fonts"
 
     if isUser and not home then return end
+
     if Device:isAndroid() then
-        return isUser
-            and home .. "/fonts;" .. home .. "/koreader/fonts"
-            or "/system/fonts"
+        return isUser and home .. "/fonts;" .. home .. "/koreader/fonts"
+                       or "/system/fonts"
     elseif Device:isPocketBook() then
-        return isUser
-            and "/mnt/ext1/system/fonts"
-            or "/ebrmain/adobefonts;/ebrmain/fonts"
+        return isUser and "/mnt/ext1/system/fonts"
+                       or "/ebrmain/adobefonts;/ebrmain/fonts"
     elseif Device:isRemarkable() then
-        return isUser
-            and LINUX_FONT_PATH
-            or LINUX_SYS_FONT_PATH
+        return isUser and LINUX_FONT_PATH
+                       or LINUX_SYS_FONT_PATH
     elseif Device:isDesktop() or Device:isEmulator() then
         if jit.os == "OSX" then
-            return isUser
-                and home .. "/" .. MACOS_FONT_PATH
-                or "/" .. MACOS_FONT_PATH
+            return isUser and home .. "/" .. MACOS_FONT_PATH
+                           or "/" .. MACOS_FONT_PATH
         else
-            return isUser
-                and LINUX_FONT_PATH
-                or LINUX_SYS_FONT_PATH
+            return isUser and LINUX_FONT_PATH
+                           or LINUX_SYS_FONT_PATH
         end
     end
 end
