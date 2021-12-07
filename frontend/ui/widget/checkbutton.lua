@@ -111,46 +111,45 @@ function CheckButton:initCheckButton(checked)
 end
 
 function CheckButton:onTapCheckButton()
-    if self.enabled then
-        if self.tap_input then
-            self:onInput(self.tap_input)
-        elseif type(self.tap_input_func) == "function" then
-            self:onInput(self.tap_input_func())
-        else
-            if G_reader_settings:isFalse("flash_ui") then
-                self:toggleCheck()
-                if self.callback then
-                    self.callback()
-                end
-            else
-                -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
-
-                local highlight_dimen = self.dimen
-
-                -- Highlight
-                --
-                self[1].invert = true
-                UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
-                UIManager:setDirty(nil, "fast", highlight_dimen)
-
-                UIManager:forceRePaint()
-                UIManager:yieldToEPDC()
-
-                -- Unhighlight
-                --
-                self[1].invert = false
-                UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
-                UIManager:setDirty(nil, "ui", highlight_dimen)
-
-                -- Callback
-                --
-                self:toggleCheck()
-                if self.callback then
-                    self.callback()
-                end
-
-                UIManager:forceRePaint()
+    if not self.enabled then return true end
+    if self.tap_input then
+        self:onInput(self.tap_input)
+    elseif type(self.tap_input_func) == "function" then
+        self:onInput(self.tap_input_func())
+    else
+        if G_reader_settings:isFalse("flash_ui") then
+            self:toggleCheck()
+            if self.callback then
+                self.callback()
             end
+        else
+            -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
+
+            local highlight_dimen = self.dimen
+
+            -- Highlight
+            --
+            self[1].invert = true
+            UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+            UIManager:setDirty(nil, "fast", highlight_dimen)
+
+            UIManager:forceRePaint()
+            UIManager:yieldToEPDC()
+
+            -- Unhighlight
+            --
+            self[1].invert = false
+            UIManager:widgetInvert(self[1], highlight_dimen.x, highlight_dimen.y, highlight_dimen.w)
+            UIManager:setDirty(nil, "ui", highlight_dimen)
+
+            -- Callback
+            --
+            self:toggleCheck()
+            if self.callback then
+                self.callback()
+            end
+
+            UIManager:forceRePaint()
         end
     end
     return true
