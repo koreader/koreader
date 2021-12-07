@@ -867,16 +867,24 @@ function ReaderRolling:onUpdatePos()
         -- we have set above) to avoid multiple refreshes.
         return true
     end
+
+    UIManager:discardEvents(math.huge) -- Discard any past and upcoming input events for the next hour.
+    Device:setIgnoreInput(true) -- Avoid ANRs on Android with unprocessed events.
+
     -- Calling this now ensures the re-rendering is done by crengine
     -- so updatePos() has good info and can reposition
     -- the previous xpointer accurately:
     self.ui.document:getCurrentPos()
+
     -- Otherwise, _readMetadata() would do that, but the positioning
     -- would not work as expected, for some reason (it worked
     -- previously because of some bad setDirty() in ConfigDialog widgets
     -- that were triggering a full repaint of crengine (so, the needed
     -- rerendering) before updatePos() is called.
     self:updatePos()
+
+    Device:setIgnoreInput(false) -- Allow processing of events (on Android).
+    UIManager:discardEvents(true) -- Discard events, which might have occured (double tap).
 end
 
 function ReaderRolling:updatePos()
