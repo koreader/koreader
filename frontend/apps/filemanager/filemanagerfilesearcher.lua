@@ -158,9 +158,7 @@ function FileSearcher:onShowFileSearch(search_string)
         text = _("Case sensitive"),
         checked = self.case_sensitive,
         parent = self.search_dialog,
-        max_width = self.search_dialog._input_widget.width,
         callback = function()
-            self.check_button_case:toggleCheck()
             self.case_sensitive = self.check_button_case.checked
         end,
     }

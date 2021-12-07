@@ -1334,6 +1334,7 @@ function CreDocument:register(registry)
     registry:addProvider("html", "text/html", self, 100)
     registry:addProvider("htm.zip", "application/zip", self, 100)
     registry:addProvider("html.zip", "application/zip", self, 100)
+    registry:addProvider("html.zip", "application/html+zip", self, 100) -- Alternative mimetype for OPDS.
     registry:addProvider("log", "text/plain", self)
     registry:addProvider("log.zip", "application/zip", self)
     registry:addProvider("md", "text/plain", self)
@@ -1344,10 +1345,12 @@ function CreDocument:register(registry)
     registry:addProvider("pdb", "application/vnd.palm", self, 90)
     -- Palmpilot Resource File
     registry:addProvider("prc", "application/vnd.palm", self)
+    registry:addProvider("rtf", "application/rtf", self, 90)
+    registry:addProvider("rtf.zip", "application/rtf+zip", self, 90) -- Alternative mimetype for OPDS.
     registry:addProvider("tcr", "application/tcr", self)
     registry:addProvider("txt", "text/plain", self, 90)
     registry:addProvider("txt.zip", "application/zip", self, 90)
-    registry:addProvider("rtf", "application/rtf", self, 90)
+    registry:addProvider("txt.zip", "application/txt+zip", self, 90) -- Alternative mimetype for OPDS.
     registry:addProvider("xhtml", "application/xhtml+xml", self, 100)
     registry:addProvider("xml", "application/xml", self, 90)
     registry:addProvider("zip", "application/zip", self, 10)

@@ -35,7 +35,9 @@ local CheckButton = InputContainer:new{
     face = Font:getFace("smallinfofont"),
     background = Blitbuffer.COLOR_WHITE,
     text = nil,
-    max_width = nil, -- must be set by the caller
+    parent = nil, -- parent widget, must be set by the caller
+    width = nil, -- default value: parent widget's input widget width
+    -- If the parent widget has no input widget, the width must be set by the caller.
 }
 
 function CheckButton:init()
@@ -54,7 +56,7 @@ function CheckButton:initCheckButton(checked)
     self._textwidget = TextBoxWidget:new{
         text = self.text,
         face = self.face,
-        width = self.max_width - self._checkmark.dimen.w,
+        width = (self.width or self.parent._input_widget.width) - self._checkmark.dimen.w,
         fgcolor = self.enabled and Blitbuffer.COLOR_BLACK or Blitbuffer.COLOR_DARK_GRAY,
     }
     local textbox_shift = math.max(0, self._checkmark.baseline - self._textwidget:getBaseline())
@@ -109,9 +111,17 @@ function CheckButton:initCheckButton(checked)
 end
 
 function CheckButton:onTapCheckButton()
-    if self.enabled and self.callback then
+    if not self.enabled then return true end
+    if self.tap_input then
+        self:onInput(self.tap_input)
+    elseif type(self.tap_input_func) == "function" then
+        self:onInput(self.tap_input_func())
+    else
         if G_reader_settings:isFalse("flash_ui") then
-            self.callback()
+            self:toggleCheck()
+            if self.callback then
+                self.callback()
+            end
         else
             -- c.f., ui/widget/iconbutton for the canonical documentation about the flash_ui code flow
 
@@ -134,14 +144,13 @@ function CheckButton:onTapCheckButton()
 
             -- Callback
             --
-            self.callback()
+            self:toggleCheck()
+            if self.callback then
+                self.callback()
+            end
 
             UIManager:forceRePaint()
         end
-    elseif self.tap_input then
-        self:onInput(self.tap_input)
-    elseif type(self.tap_input_func) == "function" then
-        self:onInput(self.tap_input_func())
     end
     return true
 end
