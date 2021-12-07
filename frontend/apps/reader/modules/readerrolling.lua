@@ -868,7 +868,7 @@ function ReaderRolling:onUpdatePos()
         return true
     end
 
-    UIManager:discardEvents(3600) -- Discard any past and upcoming input events for the next hour.
+    UIManager:discardEvents(math.huge) -- Discard any past and upcoming input events for the next hour.
     Device:setIgnoreInput(true) -- Avoid ANRs on Android with unprocessed events.
 
     -- Calling this now ensures the re-rendering is done by crengine
