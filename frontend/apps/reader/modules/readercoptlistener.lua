@@ -323,7 +323,7 @@ function ReaderCoptListener:getAltStatusBarMenu()
                 text_func = function()
                     return T(_("Font size: %1"), G_reader_settings:readSetting("cre_header_status_font_size", CRE_HEADER_DEFAULT_SIZE))
                 end,
-                callback = function(touchmenu_instance)
+                callback = function()
                     local SpinWidget = require("ui/widget/spinwidget")
                     local start_size = G_reader_settings:readSetting("cre_header_status_font_size", CRE_HEADER_DEFAULT_SIZE)
                     local size_spinner = SpinWidget:new{
@@ -335,14 +335,9 @@ function ReaderCoptListener:getAltStatusBarMenu()
                         title_text =  _("Size of top status bar"),
                         ok_text = _("Set size"),
                         callback = function(spin)
-                            -- This could change the header height, and as we refresh only on the
-                            -- new height, we could get part of a previous taller status bar
-                            -- still displayed. But as all this is covered by this menu that
-                            -- we keep open, no need to handle this case.
                             self:setAndSave("cre_header_status_font_size", "crengine.page.header.font.size", spin.value)
-                            if touchmenu_instance then touchmenu_instance:updateItems() end
-                            -- Repaint the whole page, as changing this should cause a re-rendering
-                            UIManager:setDirty(self.view.dialog, "ui")
+                            -- This will probably needs a re-rendering, so make sure it happens now.
+                            self.ui:handleEvent(Event:new("UpdatePos"))
                         end
                     }
                     UIManager:show(size_spinner)

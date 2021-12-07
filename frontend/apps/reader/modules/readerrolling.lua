@@ -900,7 +900,7 @@ function ReaderRolling:updatePos()
     end
     self:onUpdateTopStatusBarMarkers()
     UIManager:setDirty(self.view.dialog, "partial")
-    self.current_header_height = self.ui.document:getHeaderHeight()
+    self.current_header_height = self.view.view_mode == "page" and self.ui.document:getHeaderHeight() or 0
     -- Allow for the new rendering to be shown before possibly showing
     -- the "Styles have changed..." ConfirmBox so the user can decide
     -- if it is really needed
@@ -909,14 +909,9 @@ function ReaderRolling:updatePos()
     end)
 end
 
---[[
-    switching screen mode should not change current page number
---]]
 function ReaderRolling:onChangeViewMode()
-    self.rendering_hash = self.ui.document:getDocumentRenderingHash()
-    self.ui.document:_readMetadata()
-    self.current_header_height = self.ui.document:getHeaderHeight()
-    self.ui:handleEvent(Event:new("UpdateToc"))
+    self.current_header_height = self.view.view_mode == "page" and self.ui.document:getHeaderHeight() or 0
+    -- Restore current position when switching page/scroll mode
     if self.xpointer then
         self:_gotoXPointer(self.xpointer)
         -- Ensure a whole screen refresh is always enqueued
@@ -952,8 +947,7 @@ function ReaderRolling:onSetDimensions(dimen)
         self.ui.document:enableInternalHistory(true)
         -- Set document dimensions
         self.ui.document:setViewDimen(Screen:getSize())
-        -- Re-setup previous position
-        self:onChangeViewMode()
+        -- Re-render document (and update TOC, re set position)
         self:onUpdatePos()
         -- Re-disable internal history, with required redraw
         self.ui.document:enableInternalHistory(false)
