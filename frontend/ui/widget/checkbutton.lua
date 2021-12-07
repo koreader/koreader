@@ -37,6 +37,7 @@ local CheckButton = InputContainer:new{
     text = nil,
     parent = nil, -- parent widget, must be set by the caller
     width = nil, -- default value: parent widget's input widget width
+    -- If the parent widget has no input widget, the width must be set by the caller.
 }
 
 function CheckButton:init()
