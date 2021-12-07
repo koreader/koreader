@@ -916,7 +916,6 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
         text = " " .. _("Case sensitive"),
         checked = false,
         parent = input_dialog,
-        max_width = input_dialog._input_widget.width,
     }
     input_dialog:addWidget(check_button_case)
     separator = CenterContainer:new{
@@ -937,21 +936,18 @@ function ReaderBookmark:onSearchBookmark(bm_menu)
         text = " " .. DISPLAY_PREFIX["highlight"] .. _("highlights"),
         checked = true,
         parent = input_dialog,
-        max_width = input_dialog._input_widget.width,
     }
     input_dialog:addWidget(check_button_highlight)
     check_button_note = CheckButton:new{
         text = " " .. DISPLAY_PREFIX["note"] .. _("notes"),
         checked = true,
         parent = input_dialog,
-        max_width = input_dialog._input_widget.width,
     }
     input_dialog:addWidget(check_button_note)
     check_button_bookmark = CheckButton:new{
         text = " " .. DISPLAY_PREFIX["bookmark"] .. _("page bookmarks"),
         checked = true,
         parent = input_dialog,
-        max_width = input_dialog._input_widget.width,
     }
     input_dialog:addWidget(check_button_bookmark)
 
