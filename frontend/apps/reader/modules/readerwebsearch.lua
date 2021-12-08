@@ -258,7 +258,7 @@ function ReaderWebSearch:addToMainMenu(menu_items)
     end
     
     menu_items.websearch = {
-      text = _("Select Active Web Search Sites"),
+      text = _("Select active web search sites"),
       sub_item_table = sub_item_table_websearch
     }
     
