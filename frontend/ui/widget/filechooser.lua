@@ -332,6 +332,9 @@ function FileChooser:genItemTableFromPath(path)
                 file_item.bold = not file_item.bold
             end
         end
+        if self.clipboard and self.clipboard[full_path] then -- selected file
+            file_item.dim = true
+        end
         table.insert(item_table, file_item)
     end
 
