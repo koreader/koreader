@@ -91,7 +91,7 @@ local settingsList = {
     fulltext_search = {category="none", event="ShowFulltextSearchInput", title=_("Fulltext search"), general=true},
     file_search = {category="none", event="ShowFileSearch", title=_("File search"), general=true, separator=true},
     websearch = { category="none", event="ShowWebLookup", title=_("Web lookup"), device=true,},
-    defaultwebsearch = { category="none", event="ShowWebDefaultLookup", title=_("Default Web lookup"), device=true,},
+    defaultwebsearch = { category="none", event="ShowWebDefaultLookup", title=_("Default web lookup"), device=true,},
     show_menu = {category="none", event="ShowMenu", title=_("Show menu"), general=true},
     favorites = {category="none", event="ShowColl", arg="favorites", title=_("Favorites"), general=true},
     screenshot = {category="none", event="Screenshot", title=_("Screenshot"), general=true, separator=true},
