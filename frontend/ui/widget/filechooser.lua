@@ -495,6 +495,14 @@ function FileChooser:getNextFile(curr_file)
     return next_file
 end
 
+function FileChooser:selectAllFilesInFolder()
+    for _, item in pairs(self.item_table) do
+        if item.bidi_wrap_func == BD.filename then
+            self.filemanager.selected_files[item.path] = true
+        end
+    end
+end
+
 function FileChooser:showSetProviderButtons(file, one_time_providers)
     local ReaderUI = require("apps/reader/readerui")
 
