@@ -9,6 +9,7 @@ local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
 local NetworkMgr = require("ui/network/manager")
+local SpinWidget = require("ui/widget/spinwidget")
 local UIManager = require("ui/uimanager")
 local Version = require("version")
 local lfs = require("libs/libkoreader-lfs")
@@ -42,6 +43,7 @@ local OTAManager = {
     package_indexfile = "ota/package.index",
     updated_package = ota_dir .. "koreader.updated.tar",
     can_pretty_print = lfs.attributes("./fbink", "mode") == "file" and true or false,
+    nb_ota_packages = G_reader_settings:readSetting("nb_OTA_updates", 3)
 }
 
 local ota_channels = {
@@ -335,6 +337,8 @@ function OTAManager:fetchAndProcessUpdate()
                 end
             })
         end
+
+        self:cleanUpdates()
     end
 end
 
@@ -481,10 +485,65 @@ function OTAManager:getOTAMenuTable()
                         text = _("Update channel"),
                         sub_item_table = self:genChannelList()
                     },
+                    {
+                        text_func = function()
+                            return T(_("Number of saved updates: %1"),
+                                self.nb_ota_packages ~= 0 and self.nb_ota_packages or _("unlimited"))
+                        end,
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            UIManager:show(SpinWidget:new{
+                                    title_text = "Set number of saved downloaded updates",
+                                    info_text = _("Don't clean up, if number is set to zero."),
+                                    value = self.nb_ota_packages,
+                                    value_min = 0,
+                                    value_max = 99,
+                                    default_value = 3,
+                                    ok_text = _("Set"),
+                                    callback = function(spin)
+                                        self.nb_ota_packages = spin.value
+                                        G_reader_settings:saveSetting("nb_OTA_updates", spin.value)
+                                        self:cleanUpdates()
+                                        if touchmenu_instance then touchmenu_instance:updateItems() end
+                                    end,
+                                })
+                        end,
+                    },
                 }
             },
         }
     }
+end
+
+function OTAManager:cleanUpdates()
+    if self.nb_ota_packages <= 0 then
+        return
+    end
+
+    local update_template = "^koreader-" .. self:getOTAModel() .. "-.*-v.*"
+    update_template = update_template:gsub("%-","%%-") -- escape "-" for lua
+
+    local files = {}
+    local download_dir = Device:isAndroid() and "/sdcard/Download/" or ota_dir
+    for entry in lfs.dir(download_dir) do
+        if entry ~= "." and entry ~= ".." then
+            local file = download_dir .. entry
+            if entry:find(update_template) and lfs.attributes(file, "mode") == "file" then
+                table.insert(files, {
+                    name = file,
+                    mod = lfs.attributes(file).modification,
+                })
+            end
+        end
+    end
+
+    -- sort files, newest first
+    table.sort(files, function(a, b) return a.mod > b.mod end)
+
+    for i = self.nb_ota_packages+1, #files do
+       os.remove(files[i].name)
+    end
+    logger.dbg("OTAManager: deleted " .. math.max(#files - self.nb_ota_packages, 0) .. " update packages")
 end
 
 return OTAManager
