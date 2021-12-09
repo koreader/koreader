@@ -51,6 +51,9 @@ local T = BaseUtil.template
 local FileManager = InputContainer:extend{
     title = _("KOReader"),
     root_path = lfs.currentdir(),
+    
+    clipboard = nil, -- for single file operations
+    selected_files = nil, -- for group file operations
 
     mv_bin = Device:isAndroid() and "/system/bin/mv" or "/bin/mv",
     cp_bin = Device:isAndroid() and "/system/bin/cp" or "/bin/cp",
@@ -201,34 +204,34 @@ function FileManager:setupLayout()
         -- allow left bottom tap gesture, otherwise it is eaten by hidden return button
         return_arrow_propagation = true,
         -- allow Menu widget to delegate handling of some gestures to GestureManager
-        is_file_manager = true,
-        clipboard = nil, -- for select mode
+        filemanager = self,
     }
     self.file_chooser = file_chooser
     self.focused_file = nil -- use it only once
 
+    local file_manager = self
+
     function file_chooser:onPathChanged(path)  -- luacheck: ignore
-        FileManager.instance.path_text:setText(BD.directory(filemanagerutil.abbreviate(path)))
-        UIManager:setDirty(FileManager.instance, function()
-            return "ui", FileManager.instance.path_text.dimen, FileManager.instance.dithered
+        file_manager.path_text:setText(BD.directory(filemanagerutil.abbreviate(path)))
+        UIManager:setDirty(file_manager, function()
+            return "ui", file_manager.path_text.dimen, file_manager.dithered
         end)
         return true
     end
 
     function file_chooser:onFileSelect(file)  -- luacheck: ignore
-        if FileManager.instance.select_mode then
-            if self.clipboard[file] then
-                self.clipboard[file] = nil
+        if file_manager.select_mode then
+            if file_manager.selected_files[file] then
+                file_manager.selected_files[file] = nil
             else
-                self.clipboard[file] = true
+                file_manager.selected_files[file] = true
             end
             self:refreshPath()
-            return true
         else
             local ReaderUI = require("apps/reader/readerui")
             ReaderUI:showReader(file)
-            return true
         end
+        return true
     end
 
     local copyFile = function(file) self:copyFile(file) end
@@ -237,10 +240,9 @@ function FileManager:setupLayout()
     local deleteFile = function(file) self:deleteFile(file) end
     local renameFile = function(file) self:renameFile(file) end
     local setHome = function(path) self:setHome(path) end
-    local fileManager = self
 
     function file_chooser:onFileHold(file)  -- luacheck: ignore
-        if fileManager.select_mode then return true end
+        if file_manager.select_mode then return true end
         local is_file = lfs.attributes(file, "mode") == "file"
         local is_folder = lfs.attributes(file, "mode") == "directory"
         local is_not_parent_folder = BaseUtil.basename(file) ~= ".."
@@ -256,7 +258,7 @@ function FileManager:setupLayout()
                 },
                 {
                     text = C_("File", "Paste"),
-                    enabled = fileManager.clipboard and true or false,
+                    enabled = file_manager.clipboard and true or false,
                     callback = function()
                         pasteHere(file)
                         UIManager:close(self.file_dialog)
@@ -310,7 +312,7 @@ function FileManager:setupLayout()
                     enabled = is_not_parent_folder,
                     callback = function()
                         UIManager:close(self.file_dialog)
-                        fileManager.rename_dialog = InputDialog:new{
+                        file_manager.rename_dialog = InputDialog:new{
                             title = is_file and _("Rename file") or _("Rename folder"),
                             input = BaseUtil.basename(file),
                             buttons = {{
@@ -318,23 +320,23 @@ function FileManager:setupLayout()
                                     text = _("Cancel"),
                                     enabled = true,
                                     callback = function()
-                                        UIManager:close(fileManager.rename_dialog)
+                                        UIManager:close(file_manager.rename_dialog)
                                     end,
                                 },
                                 {
                                     text = _("Rename"),
                                     enabled = true,
                                     callback = function()
-                                        if fileManager.rename_dialog:getInputText() ~= "" then
+                                        if file_manager.rename_dialog:getInputText() ~= "" then
                                             renameFile(file)
-                                            UIManager:close(fileManager.rename_dialog)
+                                            UIManager:close(file_manager.rename_dialog)
                                         end
                                     end,
                                 },
                             }},
                         }
-                        UIManager:show(fileManager.rename_dialog)
-                        fileManager.rename_dialog:onShowKeyboard()
+                        UIManager:show(file_manager.rename_dialog)
+                        file_manager.rename_dialog:onShowKeyboard()
                     end,
                 }
             },
@@ -388,19 +390,19 @@ function FileManager:setupLayout()
             table.insert(buttons, {
                 {
                     text = _("Open with…"),
-                    enabled = DocumentRegistry:getProviders(file) == nil or #(DocumentRegistry:getProviders(file)) > 1 or fileManager.texteditor,
+                    enabled = DocumentRegistry:getProviders(file) == nil or #(DocumentRegistry:getProviders(file)) > 1 or file_manager.texteditor,
                     callback = function()
                         UIManager:close(self.file_dialog)
                         local one_time_providers = {}
-                        if fileManager.texteditor then
+                        if file_manager.texteditor then
                             table.insert(one_time_providers, {
                                 provider_name = _("Text editor"),
                                 callback = function()
-                                    fileManager.texteditor:checkEditFile(file)
+                                    file_manager.texteditor:checkEditFile(file)
                                 end,
                             })
                         end
-                        self:showSetProviderButtons(file, FileManager.instance, one_time_providers)
+                        self:showSetProviderButtons(file, one_time_providers)
                     end,
                 },
                 {
@@ -612,7 +614,7 @@ function FileManager:tapPlus()
     local title, buttons
     local function setSelectMode(enable)
         self.select_mode = enable
-        self.file_chooser.clipboard = enable and {} or nil
+        self.selected_files = enable and {} or nil
         self.plus_button:setIcon(enable and "check" or "plus")
         UIManager:setDirty(self, function()
             return "ui", self.plus_button.dimen, self.dithered
@@ -621,7 +623,7 @@ function FileManager:tapPlus()
     end
 
     if self.select_mode then
-        local select_count = util.tableSize(self.file_chooser.clipboard)
+        local select_count = util.tableSize(self.selected_files)
         title = select_count == 0 and _("No files selected")
             or T(N_("1 file selected", "%1 files selected", select_count), select_count)
         buttons = {
@@ -642,7 +644,7 @@ function FileManager:tapPlus()
                             ok_text = _("Delete"),
                             ok_callback = function()
                                 local readhistory = require("readhistory")
-                                for file in pairs(self.file_chooser.clipboard) do
+                                for file in pairs(self.selected_files) do
                                     self:deleteFile(file)
                                     readhistory:fileDeleted(file)
                                 end
