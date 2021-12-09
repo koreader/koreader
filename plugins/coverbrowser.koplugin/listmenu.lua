@@ -262,8 +262,10 @@ function ListMenuItem:update()
             },
         }
     else
-        if file_mode ~= "file" then
-            self.file_deleted = true
+        local filemanager = require("apps/filemanager/filemanager").instance
+        local file_selected = filemanager.selected_files and filemanager.selected_files[self.filepath]
+        if file_mode ~= "file" or file_selected then
+            self.file_deleted = true -- dim file
         end
         -- File
 
