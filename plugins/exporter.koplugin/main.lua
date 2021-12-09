@@ -629,6 +629,9 @@ function Exporter:exportBooknotesToTXT(title, booknotes)
                 if clipping.text then
                     file:write(clipping.text)
                 end
+                if clipping.note then
+                    file:write("\n---\n" .. clipping.note)
+                end
                 if clipping.image then
                     file:write(_("<An image>"))
                 end
@@ -655,7 +658,11 @@ function Exporter:exportBooknotesToJoplin(client, title, booknotes)
 
         for _, clipping in ipairs(chapter) do
             note = note .. os.date("%Y-%m-%d %H:%M:%S \n", clipping.time)
-            note = note .. clipping.text .. "\n * * *\n"
+            note = note .. clipping.text
+            if clipping.note then
+                note = note .. "\n---\n" .. clipping.note
+            end
+            note = note .. "\n * * *\n"
         end
     end
 
